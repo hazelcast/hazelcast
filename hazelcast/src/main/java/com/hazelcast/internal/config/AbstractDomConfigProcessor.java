@@ -19,11 +19,14 @@ package com.hazelcast.internal.config;
 import com.hazelcast.config.ClassFilter;
 import com.hazelcast.config.GlobalSerializerConfig;
 import com.hazelcast.config.JavaSerializationFilterConfig;
+import com.hazelcast.config.LoginModuleConfig;
 import com.hazelcast.config.NativeMemoryConfig;
 import com.hazelcast.config.SSLConfig;
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.config.SerializerConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
+import com.hazelcast.config.security.JaasAuthenticationConfig;
+import com.hazelcast.config.security.RealmConfig;
 import com.hazelcast.memory.MemorySize;
 import com.hazelcast.memory.MemoryUnit;
 import org.w3c.dom.NamedNodeMap;
@@ -276,4 +279,33 @@ public abstract class AbstractDomConfigProcessor implements DomConfigProcessor {
         }
     }
 
+    protected void handleJaasAuthentication(RealmConfig realmConfig, Node node) {
+        JaasAuthenticationConfig jaasAuthenticationConfig = new JaasAuthenticationConfig();
+        for (Node child : childElements(node)) {
+            String nodeName = cleanNodeName(child);
+            if ("login-module".equals(nodeName)) {
+                jaasAuthenticationConfig.addLoginModuleConfig(handleLoginModule(child));
+            }
+        }
+        realmConfig.setJaasAuthenticationConfig(jaasAuthenticationConfig);
+    }
+
+    protected LoginModuleConfig handleLoginModule(Node node) {
+        NamedNodeMap attrs = node.getAttributes();
+        Node classNameNode = attrs.getNamedItem("class-name");
+        String className = getTextContent(classNameNode);
+        Node usageNode = attrs.getNamedItem("usage");
+        LoginModuleConfig.LoginModuleUsage usage =
+                usageNode != null ? LoginModuleConfig.LoginModuleUsage.get(getTextContent(usageNode))
+                        : LoginModuleConfig.LoginModuleUsage.REQUIRED;
+        LoginModuleConfig moduleConfig = new LoginModuleConfig(className, usage);
+        for (Node child : childElements(node)) {
+            String nodeName = cleanNodeName(child);
+            if ("properties".equals(nodeName)) {
+                fillProperties(child, moduleConfig.getProperties());
+                break;
+            }
+        }
+        return moduleConfig;
+    }
 }

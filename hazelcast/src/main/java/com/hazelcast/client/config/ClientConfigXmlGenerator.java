@@ -28,6 +28,7 @@ import com.hazelcast.config.EntryListenerConfig;
 import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.GlobalSerializerConfig;
 import com.hazelcast.config.ListenerConfig;
+import com.hazelcast.config.LoginModuleConfig;
 import com.hazelcast.config.NativeMemoryConfig;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.config.NearCachePreloaderConfig;
@@ -37,6 +38,9 @@ import com.hazelcast.config.SSLConfig;
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.config.SerializerConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
+import com.hazelcast.config.security.JaasAuthenticationConfig;
+import com.hazelcast.config.security.KerberosIdentityConfig;
+import com.hazelcast.config.security.RealmConfig;
 import com.hazelcast.config.security.TokenIdentityConfig;
 import com.hazelcast.config.security.UsernamePasswordIdentityConfig;
 import com.hazelcast.internal.config.AliasedDiscoveryConfigUtils;
@@ -55,6 +59,7 @@ import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
 import java.io.StringReader;
 import java.io.StringWriter;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -212,7 +217,7 @@ public final class ClientConfigXmlGenerator {
     }
 
     private static void security(XmlGenerator gen, ClientSecurityConfig security) {
-        if (security == null || !security.hasIdentityConfig()) {
+        if (security == null) {
             return;
         }
         gen.open("security");
@@ -231,6 +236,62 @@ public final class ClientConfigXmlGenerator {
             gen.open("credentials-factory", "class-name", cfConfig.getClassName())
             .appendProperties(cfConfig.getProperties())
             .close();
+        }
+        kerberosIdentityGenerator(gen, security.getKerberosIdentityConfig());
+        Map<String, RealmConfig> realms = security.getRealmConfigs();
+        if (realms != null && !realms.isEmpty()) {
+            gen.open("realms");
+            for (Map.Entry<String, RealmConfig> realmEntry : realms.entrySet()) {
+                securityRealmGenerator(gen, realmEntry.getKey(), realmEntry.getValue());
+            }
+            gen.close();
+        }
+        gen.close();
+    }
+
+    private static void kerberosIdentityGenerator(XmlGenerator gen, KerberosIdentityConfig c) {
+        if (c == null) {
+            return;
+        }
+        gen.open("kerberos")
+            .nodeIfContents("realm", c.getRealm())
+            .nodeIfContents("security-realm", c.getSecurityRealm())
+            .nodeIfContents("service-name-prefix", c.getServiceNamePrefix())
+            .nodeIfContents("spn", c.getSpn())
+            .close();
+    }
+
+    private static void securityRealmGenerator(XmlGenerator gen, String name, RealmConfig c) {
+        gen.open("realm", "name", name);
+        if (c.isAuthenticationConfigured()) {
+            gen.open("authentication");
+            jaasAuthenticationGenerator(gen, c.getJaasAuthenticationConfig());
+            gen.close();
+        }
+        gen.close();
+    }
+
+    private static void jaasAuthenticationGenerator(XmlGenerator gen, JaasAuthenticationConfig c) {
+        if (c == null) {
+            return;
+        }
+        appendLoginModules(gen, "jaas", c.getLoginModuleConfigs());
+    }
+
+    private static void appendLoginModules(XmlGenerator gen, String tag, List<LoginModuleConfig> loginModuleConfigs) {
+        gen.open(tag);
+        for (LoginModuleConfig lm : loginModuleConfigs) {
+            List<String> attrs = new ArrayList<>();
+            attrs.add("class-name");
+            attrs.add(lm.getClassName());
+
+            if (lm.getUsage() != null) {
+                attrs.add("usage");
+                attrs.add(lm.getUsage().name());
+            }
+            gen.open("login-module", attrs.toArray())
+                    .appendProperties(lm.getProperties())
+                    .close();
         }
         gen.close();
     }

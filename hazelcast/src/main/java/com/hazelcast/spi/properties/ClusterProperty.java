@@ -1027,7 +1027,7 @@ public final class ClusterProperty {
      * Client protocol message size limit (in bytes) for unverified connections (i.e. maximal length of authentication message).
      */
     public static final HazelcastProperty CLIENT_PROTOCOL_UNVERIFIED_MESSAGE_BYTES =
-            new HazelcastProperty("hazelcast.client.protocol.max.message.bytes", 1024);
+            new HazelcastProperty("hazelcast.client.protocol.max.message.bytes", 4096);
 
     public static final HazelcastProperty AUDIT_LOG_ENABLED = new HazelcastProperty("hazelcast.auditlog.enabled", false);
 

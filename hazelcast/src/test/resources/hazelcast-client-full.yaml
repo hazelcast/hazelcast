@@ -140,11 +140,24 @@ hazelcast-client:
             key-boolean: true
 
   security:
-    credentials: com.hazelcast.security.UsernamePasswordCredentials
     credentials-factory:
       class-name: com.hazelcast.examples.MyCredentialsFactory
       properties:
         property: value
+    realms:
+      - name: krb5Initiator
+        authentication:
+          jaas:
+            - class-name: com.sun.security.auth.module.Krb5LoginModule
+              usage: REQUIRED
+              properties:
+                isInitiator: true
+                useTicketCache: false
+                doNotPrompt: true
+                useKeyTab: true
+                storeKey: true
+                principal: jduke@HAZELCAST.COM
+                keyTab: /opt/jduke.keytab
 
   listeners:
     - com.hazelcast.examples.MembershipListener

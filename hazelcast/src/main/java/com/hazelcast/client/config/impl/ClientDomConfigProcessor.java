@@ -47,6 +47,8 @@ import com.hazelcast.config.NearCachePreloaderConfig;
 import com.hazelcast.config.SSLConfig;
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
+import com.hazelcast.config.security.KerberosIdentityConfig;
+import com.hazelcast.config.security.RealmConfig;
 import com.hazelcast.config.security.TokenIdentityConfig;
 import com.hazelcast.internal.config.AbstractDomConfigProcessor;
 import com.hazelcast.internal.config.AliasedDiscoveryConfigUtils;
@@ -629,6 +631,10 @@ public class ClientDomConfigProcessor extends AbstractDomConfigProcessor {
                 handleTokenIdentity(clientSecurityConfig, child);
             } else if ("credentials-factory".equals(nodeName)) {
                 handleCredentialsFactory(child, clientSecurityConfig);
+            } else if ("kerberos".equals(nodeName)) {
+                handleKerberosIdentity(child, clientSecurityConfig);
+            } else if ("realms".equals(nodeName)) {
+                handleRealms(child, clientSecurityConfig);
             }
         }
         clientConfig.setSecurityConfig(clientSecurityConfig);
@@ -637,6 +643,52 @@ public class ClientDomConfigProcessor extends AbstractDomConfigProcessor {
     protected void handleTokenIdentity(ClientSecurityConfig clientSecurityConfig, Node node) {
         clientSecurityConfig.setTokenIdentityConfig(new TokenIdentityConfig(
                 getTokenEncoding(getAttribute(node, "encoding")), getTextContent(node)));
+    }
+
+    private void handleKerberosIdentity(Node node, ClientSecurityConfig clientSecurityConfig) {
+        KerberosIdentityConfig kerbIdentity = new KerberosIdentityConfig();
+        for (Node child : childElements(node)) {
+            String nodeName = cleanNodeName(child);
+            if ("realm".equals(nodeName)) {
+                kerbIdentity.setRealm(getTextContent(child));
+            } else if ("security-realm".equals(nodeName)) {
+                kerbIdentity.setSecurityRealm(getTextContent(child));
+            } else if ("service-name-prefix".equals(nodeName)) {
+                kerbIdentity.setServiceNamePrefix(getTextContent(child));
+            } else if ("spn".equals(nodeName)) {
+                kerbIdentity.setSpn(getTextContent(child));
+            }
+        }
+        clientSecurityConfig.setKerberosIdentityConfig(kerbIdentity);
+    }
+
+    protected void handleRealms(Node node, ClientSecurityConfig clientSecurityConfig) {
+        for (Node child : childElements(node)) {
+            if ("realm".equals(cleanNodeName(child))) {
+                handleRealm(child, clientSecurityConfig);
+            }
+        }
+    }
+
+    protected void handleRealm(Node node, ClientSecurityConfig clientSecurityConfig) {
+        String realmName = getAttribute(node, "name");
+        RealmConfig realmConfig = new RealmConfig();
+        clientSecurityConfig.addRealmConfig(realmName, realmConfig);
+        for (Node child : childElements(node)) {
+            String nodeName = cleanNodeName(child);
+            if ("authentication".equals(nodeName)) {
+                handleAuthentication(realmConfig, child);
+            }
+        }
+    }
+
+    private void handleAuthentication(RealmConfig realmConfig, Node node) {
+        for (Node child : childElements(node)) {
+            String nodeName = cleanNodeName(child);
+            if ("jaas".equals(nodeName)) {
+                handleJaasAuthentication(realmConfig, child);
+            }
+        }
     }
 
     private void handleCredentialsFactory(Node node, ClientSecurityConfig clientSecurityConfig) {

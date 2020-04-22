@@ -247,6 +247,11 @@ class TestClientRegistry {
             return true;
         }
 
+        @Override
+        public Address getInitAddress() {
+            return remoteAddress;
+        }
+
         private ClientMessage readFromPacket(ClientMessage packet) {
             //Since frames are read, there should be no need to re-read to client message
             //return ClientMessage.createForDecode(packet.buffer(), 0);

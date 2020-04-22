@@ -23,7 +23,10 @@ import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.config.cp.FencedLockConfig;
 import com.hazelcast.config.cp.RaftAlgorithmConfig;
 import com.hazelcast.config.cp.SemaphoreConfig;
+import com.hazelcast.config.security.AbstractClusterLoginConfig;
 import com.hazelcast.config.security.JaasAuthenticationConfig;
+import com.hazelcast.config.security.KerberosAuthenticationConfig;
+import com.hazelcast.config.security.KerberosIdentityConfig;
 import com.hazelcast.config.security.LdapAuthenticationConfig;
 import com.hazelcast.config.security.RealmConfig;
 import com.hazelcast.config.security.TlsAuthenticationConfig;
@@ -291,6 +294,7 @@ public class ConfigXmlGenerator {
             jaasAuthenticationGenerator(gen, c.getJaasAuthenticationConfig());
             tlsAuthenticationGenerator(gen, c.getTlsAuthenticationConfig());
             ldapAuthenticationGenerator(gen, c.getLdapAuthenticationConfig());
+            kerberosAuthenticationGenerator(gen, c.getKerberosAuthenticationConfig());
             gen.close();
         }
         if (c.isIdentityConfigured()) {
@@ -307,6 +311,7 @@ public class ConfigXmlGenerator {
             if (ti != null) {
                 gen.node("token", getOrMaskValue(ti.getTokenEncoded()), "encoding", ti.getEncoding().toString());
             }
+            kerberosIdentityGenerator(gen, c.getKerberosIdentityConfig());
             gen.close();
         }
         gen.close();
@@ -316,14 +321,16 @@ public class ConfigXmlGenerator {
         if (c == null) {
             return;
         }
-        gen.node("tls", null, "roleAttribute", c.getRoleAttribute());
+        XmlGenerator tlsGen = gen.open("tls", "roleAttribute", c.getRoleAttribute());
+        addClusterLoginElements(tlsGen, c)
+            .close();
     }
 
     private static void ldapAuthenticationGenerator(XmlGenerator gen, LdapAuthenticationConfig c) {
         if (c == null) {
             return;
         }
-        gen.open("ldap")
+        addClusterLoginElements(gen.open("ldap"), c)
             .node("url", c.getUrl())
             .nodeIfContents("socket-factory-class-name", c.getSocketFactoryClassName())
             .nodeIfContents("parse-dn", c.isParseDn())
@@ -341,7 +348,39 @@ public class ConfigXmlGenerator {
             .nodeIfContents("user-context", c.getUserContext())
             .nodeIfContents("user-filter", c.getUserFilter())
             .nodeIfContents("user-search-scope", c.getUserSearchScope())
+            .nodeIfContents("skip-authentication", c.getSkipAuthentication())
             .close();
+    }
+
+    private static void kerberosAuthenticationGenerator(XmlGenerator gen, KerberosAuthenticationConfig c) {
+        if (c == null) {
+            return;
+        }
+        XmlGenerator kerberosGen = gen.open("kerberos");
+        addClusterLoginElements(kerberosGen, c)
+            .nodeIfContents("relax-flags-check", c.getRelaxFlagsCheck())
+            .nodeIfContents("security-realm", c.getSecurityRealm());
+        ldapAuthenticationGenerator(kerberosGen, c.getLdapAuthenticationConfig());
+        kerberosGen.close();
+    }
+
+    private static void kerberosIdentityGenerator(XmlGenerator gen, KerberosIdentityConfig c) {
+        if (c == null) {
+            return;
+        }
+        gen.open("kerberos")
+            .nodeIfContents("realm", c.getRealm())
+            .nodeIfContents("security-realm", c.getSecurityRealm())
+            .nodeIfContents("service-name-prefix", c.getServiceNamePrefix())
+            .nodeIfContents("spn", c.getSpn())
+            .close();
+    }
+
+    private static XmlGenerator addClusterLoginElements(XmlGenerator gen, AbstractClusterLoginConfig<?> c) {
+        gen.nodeIfContents("skip-identity", c.getSkipIdentity());
+        gen.nodeIfContents("skip-endpoint", c.getSkipEndpoint());
+        gen.nodeIfContents("skip-role", c.getSkipRole());
+        return gen;
     }
 
     private static void jaasAuthenticationGenerator(XmlGenerator gen, JaasAuthenticationConfig c) {

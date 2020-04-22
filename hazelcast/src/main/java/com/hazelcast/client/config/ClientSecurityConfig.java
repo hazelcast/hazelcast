@@ -16,11 +16,15 @@
 
 package com.hazelcast.client.config;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
 
 import com.hazelcast.config.CredentialsFactoryConfig;
 import com.hazelcast.config.security.CredentialsIdentityConfig;
 import com.hazelcast.config.security.IdentityConfig;
+import com.hazelcast.config.security.KerberosIdentityConfig;
+import com.hazelcast.config.security.RealmConfig;
 import com.hazelcast.config.security.TokenIdentityConfig;
 import com.hazelcast.config.security.UsernamePasswordIdentityConfig;
 import com.hazelcast.security.Credentials;
@@ -33,6 +37,8 @@ public class ClientSecurityConfig {
 
     private IdentityConfig identityConfig;
 
+    private Map<String, RealmConfig> realmConfigs = new HashMap<>();
+
     public ClientSecurityConfig() {
     }
 
@@ -41,6 +47,10 @@ public class ClientSecurityConfig {
             identityConfig = null;
         } else {
             identityConfig = securityConfig.identityConfig.copy();
+        }
+        Map<String, RealmConfig> srcRealmConfigs = securityConfig.getRealmConfigs();
+        if (srcRealmConfigs != null) {
+            realmConfigs.putAll(srcRealmConfigs);
         }
     }
 
@@ -63,6 +73,15 @@ public class ClientSecurityConfig {
     }
 
     public ClientSecurityConfig setTokenIdentityConfig(TokenIdentityConfig identityConfig) {
+        this.identityConfig = identityConfig;
+        return this;
+    }
+
+    public KerberosIdentityConfig getKerberosIdentityConfig() {
+        return getIfType(identityConfig, KerberosIdentityConfig.class);
+    }
+
+    public ClientSecurityConfig setKerberosIdentityConfig(KerberosIdentityConfig identityConfig) {
         this.identityConfig = identityConfig;
         return this;
     }
@@ -98,16 +117,35 @@ public class ClientSecurityConfig {
         return identityConfig != null;
     }
 
+    public ClientSecurityConfig addRealmConfig(String realmName, RealmConfig realmConfig) {
+        realmConfigs.put(realmName, realmConfig);
+        return this;
+    }
+
+    public RealmConfig getRealmConfig(String realmName) {
+        return realmName == null ? null : realmConfigs.get(realmName);
+    }
+
+    public Map<String, RealmConfig> getRealmConfigs() {
+        return realmConfigs;
+    }
+
+    public void setRealmConfigs(Map<String, RealmConfig> realmConfigs) {
+        this.realmConfigs = realmConfigs;
+    }
+
+
     @Override
     public String toString() {
         return "ClientSecurityConfig{"
                 + "identityConfig=" + identityConfig
+                + ", realmConfigs=" + realmConfigs
                 + '}';
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(identityConfig);
+        return Objects.hash(identityConfig, realmConfigs);
     }
 
     @Override
@@ -122,7 +160,8 @@ public class ClientSecurityConfig {
             return false;
         }
         ClientSecurityConfig other = (ClientSecurityConfig) obj;
-        return Objects.equals(identityConfig, other.identityConfig);
+        return Objects.equals(identityConfig, other.identityConfig)
+                && Objects.equals(realmConfigs, other.realmConfigs);
     }
 
     private <T> T getIfType(Object inst, Class<T> clazz) {

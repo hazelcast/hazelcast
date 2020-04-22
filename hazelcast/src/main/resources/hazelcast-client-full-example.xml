@@ -377,6 +377,9 @@
         * <token>
             Defines a static TokenCredentials instance as the client's identity. It can have attribute "encoding".
             Content of the element is token value in given encoding (or in plain text).
+        * <kerberos>
+            Uses Kerberos service ticket (wrapped as GSS-API init token) as the identity.
+            It may reference a security realm  in the <realms> section. The realm is used for the Kerberos authentication.
     -->
     <security>
         <credentials-factory class-name="com.hazelcast.examples.MyCredentialsFactory">
@@ -387,7 +390,32 @@
         <!--
         <username-password username="client1" password="s3crEt"/>
         <token encoding="base64">SGF6ZWxjYXN0</token>
+        <kerberos>
+            <realm>HAZELCAST.COM</realm>
+            <security-realm>krb5Initiator</security-realm>
+            <service-name-prefix>hz/</service-name-prefix>
+            <spn>hz/127.0.0.1@HAZELCAST.COM</spn>
+        </kerberos>
          -->
+        <realms>
+            <realm name="krb5Initiator">
+                <authentication>
+                    <jaas>
+                        <login-module class-name="com.sun.security.auth.module.Krb5LoginModule" usage="REQUIRED">
+                            <properties>
+                                <property name="isInitiator">true</property>
+                                <property name="useTicketCache">false</property>
+                                <property name="doNotPrompt">true</property>
+                                <property name="useKeyTab">true</property>
+                                <property name="storeKey">true</property>
+                                <property name="principal">jduke@HAZELCAST.COM</property>
+                                <property name="keyTab">/opt/jduke.keytab</property>
+                            </properties>
+                        </login-module>
+                    </jaas>
+                </authentication>
+            </realm>
+        </realms>
     </security>
 
     <!--
