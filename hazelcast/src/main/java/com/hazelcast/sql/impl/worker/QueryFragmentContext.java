@@ -16,6 +16,7 @@
 
 package com.hazelcast.sql.impl.worker;
 
+import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.state.QueryStateCallback;
 
 import java.util.List;
@@ -23,7 +24,7 @@ import java.util.List;
 /**
  * Context of a running query fragment.
  */
-public final class QueryFragmentContext {
+public final class QueryFragmentContext implements ExpressionEvalContext {
 
     private final List<Object> arguments;
     private final QueryFragmentScheduleCallback scheduleCallback;
@@ -41,6 +42,7 @@ public final class QueryFragmentContext {
         this.stateCallback = stateCallback;
     }
 
+    @Override
     public Object getArgument(int index) {
         assert index >= 0 && index < arguments.size();
 
