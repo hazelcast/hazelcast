@@ -16,10 +16,15 @@
 
 package com.hazelcast.sql.impl;
 
+import com.hazelcast.core.HazelcastException;
 import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.sql.impl.optimizer.NoOpSqlOptimizer;
+import com.hazelcast.sql.impl.optimizer.SqlOptimizer;
 
+import java.lang.reflect.Constructor;
 import java.util.function.Consumer;
 
 /**
@@ -31,6 +36,11 @@ public class SqlServiceImpl implements Consumer<Packet> {
 
     /** Default state check frequency. */
     private static final long STATE_CHECK_FREQUENCY = 10_000L;
+
+    private static final String OPTIMIZER_CLASS_PROPERTY_NAME = "hazelcast.sql.optimizerClass";
+    private static final String OPTIMIZER_CLASS_DEFAULT = "com.hazelcast.sql.impl.calcite.CalciteSqlOptimizer";
+
+    private final SqlOptimizer optimizer;
 
     private volatile SqlInternalService internalService;
 
@@ -53,6 +63,8 @@ public class SqlServiceImpl implements Consumer<Packet> {
             OUTBOX_BATCH_SIZE,
             STATE_CHECK_FREQUENCY
         );
+
+        optimizer = createOptimizer(nodeEngine);
     }
 
     public void start() {
@@ -78,8 +90,52 @@ public class SqlServiceImpl implements Consumer<Packet> {
         this.internalService = internalService;
     }
 
+    public SqlOptimizer getOptimizer() {
+        return optimizer;
+    }
+
     @Override
     public void accept(Packet packet) {
         internalService.onPacket(packet);
+    }
+
+    /**
+     * Create either normal or no-op optimizer instance.
+     *
+     * @param nodeEngine Node engine.
+     * @return Optimizer.
+     */
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    private static SqlOptimizer createOptimizer(NodeEngine nodeEngine) {
+        // 1. Resolve class name.
+        String className = System.getProperty(OPTIMIZER_CLASS_PROPERTY_NAME, OPTIMIZER_CLASS_DEFAULT);
+
+        // 2. Get the class.
+        Class clazz;
+
+        try {
+            clazz = Class.forName(className);
+        } catch (ClassNotFoundException e) {
+            return new NoOpSqlOptimizer();
+        } catch (Exception e) {
+            throw new HazelcastException("Failed to resolve optimizer class " + className + ": " + e.getMessage(), e);
+        }
+
+        // 3. Get required constructor.
+        Constructor<SqlOptimizer> constructor;
+
+        try {
+            constructor = clazz.getConstructor(NodeEngine.class);
+        } catch (ReflectiveOperationException e) {
+            throw new HazelcastException("Failed to get the constructor for the optimizer class "
+                + className + ": " + e.getMessage(), e);
+        }
+
+        // 4. Finally, get the instance.
+        try {
+            return constructor.newInstance(nodeEngine);
+        } catch (ReflectiveOperationException e) {
+            throw new HazelcastException("Failed to instantiate the optimizer class " + className + ": " + e.getMessage(), e);
+        }
     }
 }
