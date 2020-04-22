@@ -26,8 +26,8 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
-import java.nio.charset.Charset;
 import java.nio.charset.CharsetEncoder;
+import java.nio.charset.StandardCharsets;
 
 import static com.hazelcast.internal.diagnostics.Diagnostics.MAX_ROLLED_FILE_COUNT;
 import static com.hazelcast.internal.diagnostics.Diagnostics.MAX_ROLLED_FILE_SIZE_MB;
@@ -130,7 +130,7 @@ final class DiagnosticsLogFile {
 
     private PrintWriter newWriter() throws FileNotFoundException {
         FileOutputStream fos = new FileOutputStream(file, true);
-        CharsetEncoder encoder = Charset.forName("UTF-8").newEncoder();
+        CharsetEncoder encoder = StandardCharsets.UTF_8.newEncoder();
         return new PrintWriter(new BufferedWriter(new OutputStreamWriter(fos, encoder), Short.MAX_VALUE));
     }
 

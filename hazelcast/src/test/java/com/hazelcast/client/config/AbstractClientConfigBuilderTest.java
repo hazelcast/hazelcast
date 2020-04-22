@@ -31,6 +31,8 @@ import com.hazelcast.config.IndexType;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.JavaSerializationFilterConfig;
 import com.hazelcast.config.ListenerConfig;
+import com.hazelcast.config.LoginModuleConfig;
+import com.hazelcast.config.LoginModuleConfig.LoginModuleUsage;
 import com.hazelcast.config.MaxSizePolicy;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.config.QueryCacheConfig;
@@ -39,6 +41,8 @@ import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.config.SerializerConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.config.XMLConfigBuilderTest;
+import com.hazelcast.config.security.JaasAuthenticationConfig;
+import com.hazelcast.config.security.RealmConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.topic.TopicOverloadPolicy;
@@ -403,6 +407,17 @@ public abstract class AbstractClientConfigBuilderTest extends HazelcastTestSuppo
         assertEquals("com.hazelcast.examples.MyCredentialsFactory", credentialsFactoryConfig.getClassName());
         Properties properties = credentialsFactoryConfig.getProperties();
         assertEquals("value", properties.getProperty("property"));
+        RealmConfig realmConfig = securityConfig.getRealmConfig("krb5Initiator");
+        assertNotNull(realmConfig);
+        JaasAuthenticationConfig jaasConf = realmConfig.getJaasAuthenticationConfig();
+        assertNotNull(jaasConf);
+        List<LoginModuleConfig> loginModuleConfigs = jaasConf.getLoginModuleConfigs();
+        assertNotNull(loginModuleConfigs);
+        assertEquals(1, loginModuleConfigs.size());
+        LoginModuleConfig loginModuleConfig = loginModuleConfigs.get(0);
+        assertEquals("com.sun.security.auth.module.Krb5LoginModule", loginModuleConfig.getClassName());
+        assertEquals(LoginModuleUsage.REQUIRED, loginModuleConfig.getUsage());
+        assertEquals("jduke@HAZELCAST.COM", loginModuleConfig.getProperties().get("principal"));
     }
 
     @Test(expected = HazelcastException.class)
@@ -455,6 +470,9 @@ public abstract class AbstractClientConfigBuilderTest extends HazelcastTestSuppo
 
     @Test
     public abstract void testTokenIdentityConfig();
+
+    @Test
+    public abstract void testKerberosIdentityConfig();
 
     @Test
     public abstract void testMetricsConfig();

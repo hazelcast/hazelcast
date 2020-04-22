@@ -18,11 +18,39 @@ package com.hazelcast.test.compatibility;
 
 import net.bytebuddy.agent.ByteBuddyAgent;
 import net.bytebuddy.agent.builder.AgentBuilder;
+import net.bytebuddy.asm.ModifierAdjustment;
+import net.bytebuddy.description.modifier.MethodManifestation;
+import net.bytebuddy.description.type.TypeDescription;
+import net.bytebuddy.dynamic.DynamicType;
 import net.bytebuddy.jar.asm.Opcodes;
 
 import java.lang.instrument.Instrumentation;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
+
+import static com.hazelcast.test.TestCollectionUtils.setOf;
+import static net.bytebuddy.matcher.ElementMatchers.nameStartsWith;
+import static net.bytebuddy.matcher.ElementMatchers.named;
 
 public final class CompatibilityTestUtils {
+
+    // Class name -> List<final method names> to be processed for
+    // removing final modifier
+    private static final Map<String, Set<String>> FINAL_METHODS;
+
+    static {
+        Map<String, Set<String>> finalMethods = new HashMap<>();
+        finalMethods.put("com.hazelcast.cp.internal.session.AbstractProxySessionManager",
+                setOf("getSession", "getSessionAcquireCount"));
+        finalMethods.put("com.hazelcast.spi.impl.AbstractInvocationFuture",
+                setOf("get"));
+        finalMethods.put("com.hazelcast.cp.internal.datastructures.spi.blocking.AbstractBlockingService",
+                setOf("getRegistryOrNull"));
+        finalMethods.put("com.hazelcast.cp.internal.datastructures.spi.blocking.ResourceRegistry",
+                setOf("getWaitTimeouts"));
+        FINAL_METHODS = finalMethods;
+    }
 
     /**
      * When running a compatibility test, all com.hazelcast.* classes are transformed so that none are
@@ -37,8 +65,9 @@ public final class CompatibilityTestUtils {
         Instrumentation instrumentation = ByteBuddyAgent.install();
         new AgentBuilder.Default().with(AgentBuilder.TypeStrategy.Default.REDEFINE)
                                   .with(AgentBuilder.InitializationStrategy.NoOp.INSTANCE)
-                                  .type(target -> target.getName().startsWith("com.hazelcast"))
+                                  .type(nameStartsWith("com.hazelcast"))
                                   .transform((builder, typeDescription, classLoader, module) -> {
+                                      builder = manifestMethodAsPlain(builder, typeDescription);
                                       int actualModifiers = typeDescription.getActualModifiers(false);
                                       // unset final modifier
                                       int nonFinalModifiers = actualModifiers & ~Opcodes.ACC_FINAL;
@@ -48,5 +77,22 @@ public final class CompatibilityTestUtils {
                                           return builder;
                                       }
                                   }).installOn(instrumentation);
+    }
+
+    /**
+     * This method assigns the {@link MethodManifestation.PLAIN} to each method of the
+     * given {@link TypeDescription} that is listed in {@link #FINAL_METHODS}.
+     */
+    private static DynamicType.Builder manifestMethodAsPlain(DynamicType.Builder builder,
+                                                             TypeDescription typeDescription) {
+        final String typeName = typeDescription.getName();
+        if (FINAL_METHODS.containsKey(typeName)) {
+            for (String methodName : FINAL_METHODS.get(typeName)) {
+                builder = builder.visit(new ModifierAdjustment()
+                                .withMethodModifiers(named(methodName), MethodManifestation.PLAIN)
+                );
+            }
+        }
+        return builder;
     }
 }

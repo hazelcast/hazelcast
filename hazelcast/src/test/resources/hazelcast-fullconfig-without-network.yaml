@@ -614,6 +614,85 @@ hazelcast:
               usage: REQUIRED
               properties:
                 property: value
+      - name: ldapRealm
+        authentication:
+          ldap:
+             url: ldap://ldap.my-company.example
+             socket-factory-class-name: socketFactoryClassName
+             parse-dn: true
+             role-context: roleContext
+             role-filter: roleFilter
+             role-mapping-attribute: roleMappingAttribute
+             role-mapping-mode: reverse
+             role-name-attribute: roleNameAttribute
+             role-recursion-max-depth: 25
+             role-search-scope: object
+             user-name-attribute: userNameAttribute
+             system-user-dn: systemUserDn
+             system-user-password: systemUserPassword
+             password-attribute: passwordAttribute
+             user-context: userContext
+             user-filter: userFilter
+             user-search-scope: one-level
+      - name: tlsRealm
+        authentication:
+          tls:
+             roleAttribute: cn
+      - name: usernamePasswordIdentityRealm
+        identity:
+          username-password:
+             username: user
+             password: Hazelcast
+      - name: tokenIdentityRealm
+        identity:
+          token:
+             encoding: base64
+             value: SGF6ZWxjYXN0
+      - name: kerberosRealm
+        authentication:
+          kerberos:
+            skip-role: true
+            relax-flags-check: true
+            security-realm: krb5Acceptor
+            ldap:
+              url: ldap://127.0.0.1/
+              system-user-dn: uid=admin,ou=system
+              system-user-password: secret
+              skip-authentication: true
+              user-filter: "(krb5PrincipalName={login})"
+              role-mapping-attribute: cn
+        identity:
+          kerberos:
+            realm: HAZELCAST.COM
+            security-realm: krb5Initiator
+            service-name-prefix: hz/
+            spn: hz/127.0.0.1@HAZELCAST.COM
+      - name: krb5Acceptor
+        authentication:
+          jaas:
+            - class-name: com.sun.security.auth.module.Krb5LoginModule
+              usage: REQUIRED
+              properties:
+                isInitiator: false
+                useTicketCache: false
+                doNotPrompt: true
+                useKeyTab: true
+                storeKey: true
+                principal: hz/127.0.0.1@HAZELCAST.COM
+                keyTab: /opt/hz-localhost.keytab
+      - name: krb5Initiator
+        authentication:
+          jaas:
+            - class-name: com.sun.security.auth.module.Krb5LoginModule
+              usage: REQUIRED
+              properties:
+                isInitiator: true
+                useTicketCache: false
+                doNotPrompt: true
+                useKeyTab: true
+                storeKey: true
+                principal: hz/127.0.0.1@HAZELCAST.COM
+                keyTab: /opt/hz-localhost.keytab
     member-authentication:
       realm: mr
     client-authentication:

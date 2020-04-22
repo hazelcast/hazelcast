@@ -67,7 +67,7 @@ class MockJoiner extends AbstractJoiner {
                 }
 
                 logger.fine("Sending join request to " + joinAddress);
-                if (!clusterJoinManager.sendJoinRequest(joinAddress, true)) {
+                if (!clusterJoinManager.sendJoinRequest(joinAddress)) {
                     logger.fine("Could not send join request to " + joinAddress);
                     clusterService.setMasterAddressToJoin(null);
                 }

@@ -44,6 +44,9 @@ public class NodeEngineAnswer extends AbstractAnswer {
             return mock(OperationServiceImpl.class, new OperationServiceAnswer(operationService));
         } else if (arguments.length == 0 && methodName.equals("getConfigClassLoader")) {
             return targetClassloader;
+        } else if (arguments.length == 0 && methodName.equals("getSplitBrainMergePolicyProvider")) {
+            Object provider = invokeForMock(invocation, arguments);
+            return createMockForTargetClass(provider, new DelegatingAnswer(provider));
         } else if (arguments.length == 0 && (methodName.startsWith("get") || methodName.startsWith("is"))) {
             return invoke(invocation);
         }

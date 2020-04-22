@@ -20,7 +20,6 @@ import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
 import com.hazelcast.internal.json.JsonReducedValueParser;
 import com.hazelcast.internal.json.JsonValue;
-import com.hazelcast.internal.nio.Bits;
 import com.hazelcast.internal.nio.BufferObjectDataInput;
 import com.hazelcast.query.impl.getters.JsonPathCursor;
 import com.hazelcast.spi.impl.operationexecutor.impl.OperationThread;
@@ -31,6 +30,7 @@ import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CoderResult;
+import java.nio.charset.StandardCharsets;
 
 public class DataInputNavigableJsonAdapter extends NavigableJsonInputAdapter {
 
@@ -93,7 +93,8 @@ public class DataInputNavigableJsonAdapter extends NavigableJsonInputAdapter {
 
     static class UTF8Reader extends Reader {
 
-        static final ThreadLocal<CharsetDecoder> DECODER_THREAD_LOCAL = ThreadLocal.withInitial(Bits.UTF_8::newDecoder);
+        static final ThreadLocal<CharsetDecoder> DECODER_THREAD_LOCAL = ThreadLocal
+          .withInitial(StandardCharsets.UTF_8::newDecoder);
 
         private final CharsetDecoder decoder;
         private final ByteBuffer inputBuffer;
@@ -107,7 +108,7 @@ public class DataInputNavigableJsonAdapter extends NavigableJsonInputAdapter {
             inputBuffer.position(input.position());
             decoder = Thread.currentThread() instanceof OperationThread
                     ? DECODER_THREAD_LOCAL.get()
-                    : Bits.UTF_8.newDecoder();
+                    : StandardCharsets.UTF_8.newDecoder();
         }
 
         // default read() implementation does not handle surrogate pairs well

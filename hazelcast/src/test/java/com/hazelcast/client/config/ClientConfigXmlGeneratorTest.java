@@ -30,6 +30,7 @@ import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.IndexType;
 import com.hazelcast.config.ListenerConfig;
+import com.hazelcast.config.LoginModuleConfig;
 import com.hazelcast.config.NativeMemoryConfig;
 import com.hazelcast.config.NativeMemoryConfig.MemoryAllocatorType;
 import com.hazelcast.config.NearCacheConfig;
@@ -40,6 +41,10 @@ import com.hazelcast.config.SSLConfig;
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.config.SerializerConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
+import com.hazelcast.config.LoginModuleConfig.LoginModuleUsage;
+import com.hazelcast.config.security.JaasAuthenticationConfig;
+import com.hazelcast.config.security.KerberosIdentityConfig;
+import com.hazelcast.config.security.RealmConfig;
 import com.hazelcast.config.security.TokenEncoding;
 import com.hazelcast.config.security.TokenIdentityConfig;
 import com.hazelcast.config.security.UsernamePasswordIdentityConfig;
@@ -313,6 +318,24 @@ public class ClientConfigXmlGeneratorTest extends HazelcastTestSupport {
         clientConfig.getSecurityConfig().setTokenIdentityConfig(identityConfig);
         ClientConfig actual = newConfigViaGenerator();
         assertEquals(identityConfig, actual.getSecurityConfig().getTokenIdentityConfig());
+    }
+
+    @Test
+    public void kerberosIdentity() {
+        KerberosIdentityConfig identityConfig = new KerberosIdentityConfig()
+                .setRealm("realm")
+                .setSecurityRealm("security-realm")
+                .setServiceNamePrefix("prefix")
+                .setSpn("spn");
+        RealmConfig realmConfig = new RealmConfig().setJaasAuthenticationConfig(new JaasAuthenticationConfig()
+                .addLoginModuleConfig(new LoginModuleConfig("test.Krb5LoginModule", LoginModuleUsage.REQUIRED)
+                        .setProperty("principal", "jduke")));
+
+        ClientSecurityConfig securityConfig = clientConfig.getSecurityConfig()
+            .setKerberosIdentityConfig(identityConfig)
+            .addRealmConfig("kerberos", realmConfig);
+        ClientConfig actual = newConfigViaGenerator();
+        assertEquals(securityConfig, actual.getSecurityConfig());
     }
 
     @Test

@@ -49,7 +49,6 @@ import com.hazelcast.spi.discovery.integration.DiscoveryServiceProvider;
 import com.hazelcast.spi.discovery.integration.DiscoveryServiceSettings;
 import com.hazelcast.spi.properties.HazelcastProperties;
 
-import javax.security.auth.callback.UnsupportedCallbackException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -93,9 +92,7 @@ class ClusterDiscoveryServiceBuilder {
             if (credentialsFactory == null) {
                 credentialsFactory = new StaticCredentialsFactory(new UsernamePasswordCredentials(null, null));
             }
-            credentialsFactory.configure(cs -> {
-                throw new UnsupportedCallbackException(cs[0]);
-            });
+            credentialsFactory.configure(new ClientCallbackHandler(config));
             DiscoveryService discoveryService = initDiscoveryService(config);
             AddressProvider provider;
             if (externalAddressProvider != null) {

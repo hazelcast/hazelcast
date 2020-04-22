@@ -342,12 +342,30 @@ hazelcast-client:
   # * "token"
   #     Defines a static TokenCredentials instance as the client's identity. It can have attribute "encoding".
   #     Content of the attribute "value" is token value in given encoding (or in plain text).
-  #
+  # * "kerberos"
+  #     Uses Kerberos service ticket (wrapped as GSS-API init token) as the identity.
+  #     It may reference a security realm  in the <realms> section. The realm is used for the Kerberos authentication.
+
   security:
     credentials-factory:
       class-name: com.hazelcast.examples.MyCredentialsFactory
       properties:
         property: value
+    realms:
+      - name: krb5Initiator
+        authentication:
+          jaas:
+            - class-name: com.sun.security.auth.module.Krb5LoginModule
+              usage: REQUIRED
+              properties:
+                isInitiator: true
+                useTicketCache: false
+                doNotPrompt: true
+                useKeyTab: true
+                storeKey: true
+                principal: jduke@HAZELCAST.COM
+                keyTab: /opt/jduke.keytab
+
   #
   # ===== HAZELCAST LISTENER CONFIGURATIONS =====
   #

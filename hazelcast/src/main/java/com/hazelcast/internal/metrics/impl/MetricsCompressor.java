@@ -80,6 +80,8 @@ import static java.lang.Math.multiplyExact;
  */
 public class MetricsCompressor {
 
+    static final int UNSIGNED_BYTE_MAX_VALUE = 255;
+
     @SuppressWarnings({"checkstyle:MagicNumber", "checkstyle:TrailingComment"})
     private static final int INITIAL_BUFFER_SIZE_METRICS = 2 << 11; // 4kB
     @SuppressWarnings({"checkstyle:MagicNumber", "checkstyle:TrailingComment"})
@@ -134,26 +136,26 @@ public class MetricsCompressor {
         tmpDos = new DataOutputStream(tmpBaos);
     }
 
-    public void addLong(MetricDescriptor descriptor, long value) {
+    public void addLong(MetricDescriptor descriptor, long value) throws LongWordException {
         try {
+            tmpBaos.reset();
             writeDescriptor(descriptor);
             tmpDos.writeByte(ValueType.LONG.ordinal());
             tmpDos.writeLong(value);
             metricDos.write(tmpBaos.internalBuffer(), 0, tmpBaos.size());
-            tmpBaos.reset();
         } catch (IOException e) {
             // should never be thrown
             throw new RuntimeException(e);
         }
     }
 
-    public void addDouble(MetricDescriptor descriptor, double value) {
+    public void addDouble(MetricDescriptor descriptor, double value) throws LongWordException {
         try {
+            tmpBaos.reset();
             writeDescriptor(descriptor);
             tmpDos.writeByte(ValueType.DOUBLE.ordinal());
             tmpDos.writeDouble(value);
             metricDos.write(tmpBaos.internalBuffer(), 0, tmpBaos.size());
-            tmpBaos.reset();
         } catch (IOException e) {
             // should never be thrown
             throw new RuntimeException(e);
@@ -161,7 +163,7 @@ public class MetricsCompressor {
     }
 
     @SuppressWarnings({"checkstyle:CyclomaticComplexity", "checkstyle:NPathComplexity"})
-    private void writeDescriptor(MetricDescriptor descriptor) throws IOException {
+    private void writeDescriptor(MetricDescriptor descriptor) throws IOException, LongWordException {
         int mask = calculateDescriptorMask(descriptor);
         tmpDos.writeByte(mask);
 
@@ -257,20 +259,21 @@ public class MetricsCompressor {
         dictionaryDos.writeInt(words.size());
         String lastWord = "";
         for (MetricsDictionary.Word word : words) {
-
+            tmpBaos.reset();
             String wordText = word.word();
+            if (wordText.length() > UNSIGNED_BYTE_MAX_VALUE) {
+                // this should have been checked earlier, this is a safety check
+                throw new RuntimeException("Dictionary element too long: " + wordText);
+            }
             int maxCommonLen = Math.min(lastWord.length(), wordText.length());
             int commonLen = 0;
-            boolean common = true;
-            for (int i = 0; i < maxCommonLen && common; i++) {
-                if (wordText.charAt(i) == lastWord.charAt(i)) {
-                    commonLen++;
-                } else {
-                    common = false;
-                }
+            while (commonLen < maxCommonLen
+                    && wordText.charAt(commonLen) == lastWord.charAt(commonLen)) {
+                commonLen++;
             }
 
             int diffLen = wordText.length() - commonLen;
+            // we write to tmpDos to avoid the allocation of byte[1] in DeflaterOutputStream.write(int)
             tmpDos.writeInt(word.dictionaryId());
             tmpDos.writeByte(commonLen);
             tmpDos.writeByte(diffLen);
@@ -279,7 +282,6 @@ public class MetricsCompressor {
             }
             lastWord = wordText;
             dictionaryDos.write(tmpBaos.internalBuffer(), 0, tmpBaos.size());
-            tmpBaos.reset();
         }
     }
 
@@ -389,20 +391,16 @@ public class MetricsCompressor {
 
         for (int i = 0; i < dictionarySize; i++) {
             int dictionaryId = dis.readInt();
-            byte commonLen = dis.readByte();
-            byte diffLen = dis.readByte();
-
-            for (int j = 0; j < commonLen; j++) {
-                sb.append(lastWord.charAt(j));
-            }
-
+            int commonLen = dis.readUnsignedByte();
+            int diffLen = dis.readUnsignedByte();
+            sb.append(lastWord, 0, commonLen);
             for (int j = 0; j < diffLen; j++) {
                 sb.append(dis.readChar());
             }
             String readWord = sb.toString();
             lastWord = readWord;
             dictionary[dictionaryId] = readWord;
-            sb.delete(0, commonLen + diffLen);
+            sb.setLength(0);
         }
 
         return dictionary;

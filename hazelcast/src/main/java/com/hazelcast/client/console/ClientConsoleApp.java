@@ -17,8 +17,6 @@
 package com.hazelcast.client.console;
 
 import com.hazelcast.client.HazelcastClient;
-import com.hazelcast.client.config.ClientConfig;
-import com.hazelcast.client.config.XmlClientConfigBuilder;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.collection.IList;
 import com.hazelcast.collection.IQueue;
@@ -53,7 +51,7 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.IOException;
 import java.lang.management.ManagementFactory;
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -181,7 +179,7 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
      */
     static class DefaultLineReader implements LineReader {
 
-        BufferedReader in = new BufferedReader(new InputStreamReader(System.in, Charset.forName("UTF-8")));
+        BufferedReader in = new BufferedReader(new InputStreamReader(System.in, StandardCharsets.UTF_8));
 
         public String readLine() throws Exception {
             return in.readLine();
@@ -1544,18 +1542,11 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
     }
 
     /**
-     * Starts the test application. Loads the config from classpath hazelcast.xml,
-     * if it fails to load, will use default config.
+     * Starts the test application. It loads the client configuration using the resolution logic as described in
+     * {@link HazelcastClient#newHazelcastClient()}.
      */
     public static void main(String[] args) {
-        ClientConfig clientConfig;
-
-        try {
-            clientConfig = new XmlClientConfigBuilder().build();
-        } catch (IllegalArgumentException e) {
-            clientConfig = new ClientConfig();
-        }
-        final HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
+        HazelcastInstance client = HazelcastClient.newHazelcastClient();
         ClientConsoleApp clientConsoleApp = new ClientConsoleApp(client, System.out);
         clientConsoleApp.start(args);
     }

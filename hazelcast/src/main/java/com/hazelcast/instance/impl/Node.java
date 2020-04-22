@@ -761,9 +761,9 @@ public class Node {
                 liteMember, createConfigCheck(), memberAddresses, dataMemberCount, clusterVersion, memberListVersion);
     }
 
-    public JoinRequest createJoinRequest(boolean withCredentials) {
-        final Credentials credentials = (withCredentials && securityContext != null)
-                ? securityContext.getCredentialsFactory().newCredentials() : null;
+    public JoinRequest createJoinRequest(Address remoteAddress) {
+        final Credentials credentials = (remoteAddress != null && securityContext != null)
+                ? securityContext.getCredentialsFactory().newCredentials(remoteAddress) : null;
         final Set<UUID> excludedMemberUuids = nodeExtension.getInternalHotRestartService().getExcludedMemberUuids();
 
         MemberImpl localMember = getLocalMember();

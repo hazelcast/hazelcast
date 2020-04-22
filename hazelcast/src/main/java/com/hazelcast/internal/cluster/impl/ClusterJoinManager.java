@@ -446,14 +446,13 @@ public class ClusterJoinManager {
      * Send join request to {@code toAddress}.
      *
      * @param toAddress       the currently known master address.
-     * @param withCredentials use cluster credentials
      * @return {@code true} if join request was sent successfully, otherwise {@code false}.
      */
-    public boolean sendJoinRequest(Address toAddress, boolean withCredentials) {
+    public boolean sendJoinRequest(Address toAddress) {
         if (toAddress == null) {
             toAddress = clusterService.getMasterAddress();
         }
-        JoinRequestOp joinRequest = new JoinRequestOp(node.createJoinRequest(withCredentials));
+        JoinRequestOp joinRequest = new JoinRequestOp(node.createJoinRequest(toAddress));
         return nodeEngine.getOperationService().send(joinRequest, toAddress);
     }
 
@@ -530,7 +529,7 @@ public class ClusterJoinManager {
             if (conn != null && conn.isAlive()) {
                 logger.info(format("Ignoring master response %s from %s since this node has an active master %s",
                         masterAddress, callerAddress, currentMaster));
-                sendJoinRequest(currentMaster, true);
+                sendJoinRequest(currentMaster);
             } else {
                 logger.warning(format("Ambiguous master response! Received master response %s from %s. "
                                 + "This node has a master %s, but does not have an active connection to it. "
@@ -546,7 +545,7 @@ public class ClusterJoinManager {
     private void setMasterAndJoin(Address masterAddress) {
         clusterService.setMasterAddress(masterAddress);
         node.getConnectionManager(MEMBER).getOrConnect(masterAddress);
-        if (!sendJoinRequest(masterAddress, true)) {
+        if (!sendJoinRequest(masterAddress)) {
             logger.warning("Could not create connection to possible master " + masterAddress);
         }
     }

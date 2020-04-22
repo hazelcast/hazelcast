@@ -16,18 +16,26 @@
 
 package com.hazelcast.multimap;
 
+import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.internal.util.Clock;
 import com.hazelcast.map.LocalMapStats;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.internal.util.Clock;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.function.Consumer;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -40,19 +48,36 @@ public class LocalMultiMapStatsTest extends HazelcastTestSupport {
 
     private HazelcastInstance instance;
     private String mapName = "mapName";
+    private String mapNameSet = "mapNameSet";
 
     @Before
     public void setUp() {
-        instance = createHazelcastInstance(getConfig());
+        MultiMapConfig multiMapConfig1 = new MultiMapConfig()
+                .setName(mapName)
+                .setValueCollectionType(MultiMapConfig.ValueCollectionType.LIST);
+        MultiMapConfig multiMapConfig2 = new MultiMapConfig()
+                .setName(mapNameSet)
+                .setValueCollectionType(MultiMapConfig.ValueCollectionType.SET);
+        instance = createHazelcastInstance(getConfig()
+                .addMultiMapConfig(multiMapConfig1)
+                .addMultiMapConfig(multiMapConfig2));
     }
 
     protected LocalMultiMapStats getMultiMapStats() {
-        return instance.getMultiMap(mapName).getLocalMultiMapStats();
+        return getMultiMapStats(mapName);
+    }
+
+    protected LocalMultiMapStats getMultiMapStats(String multiMapName) {
+        return instance.getMultiMap(multiMapName).getLocalMultiMapStats();
     }
 
     protected <K, V> MultiMap<K, V> getMultiMap() {
+        return getMultiMap(mapName);
+    }
+
+    protected <K, V> MultiMap<K, V> getMultiMap(String multiMapName) {
         warmUpPartitions(instance);
-        return instance.getMultiMap(mapName);
+        return instance.getMultiMap(multiMapName);
     }
 
     @Test
@@ -74,8 +99,63 @@ public class LocalMultiMapStatsTest extends HazelcastTestSupport {
             map.get(i);
         }
         LocalMapStats localMapStats = getMultiMapStats();
+
         assertEquals(100, localMapStats.getPutOperationCount());
         assertEquals(100, localMapStats.getHits());
+    }
+
+    public void testPutAllAndHitsGeneratedTemplate(Map<Integer, Collection<? extends Integer>> expectedMultiMap,
+                                                   Consumer<MultiMap<Integer, Integer>> putAllOperation) {
+        MultiMap<Integer, Integer> mmap1 = getMultiMap();
+        MultiMap<Integer, Integer> mmap2 = getMultiMap(mapNameSet);
+        for (int i = 0; i < 100; i++) {
+            expectedMultiMap.put(i, new ArrayList<>(Arrays.asList(1, 1, 1)));
+        }
+
+        putAllOperation.accept(mmap1);
+        putAllOperation.accept(mmap2);
+
+        sleepMillis(100);
+        for (int i = 0; i < 100; i++) {
+            mmap1.get(i);
+            mmap2.get(i);
+        }
+        sleepMillis(10);
+        testPutAllAndHitsGeneratedTemplateVerify();
+    }
+
+    public void testPutAllAndHitsGeneratedTemplateVerify() {
+        LocalMapStats localMapStats1 = getMultiMapStats();
+        LocalMapStats localMapStats2 = getMultiMapStats(mapNameSet);
+
+        assertEquals(300, localMapStats1.getOwnedEntryCount());
+        assertEquals(100, localMapStats1.getPutOperationCount());
+        assertEquals(100, localMapStats1.getHits());
+        assertEquals(100, localMapStats2.getOwnedEntryCount());
+        assertEquals(100, localMapStats2.getPutOperationCount());
+        assertEquals(100, localMapStats2.getHits());
+    }
+
+    @Test
+    public void testPutAllAndHitsGeneratedMap() {
+        Map<Integer, Collection<? extends Integer>> expectedMultiMap = new HashMap<>();
+        testPutAllAndHitsGeneratedTemplate(expectedMultiMap,
+                (o) -> {
+                    o.putAllAsync(expectedMultiMap);
+                }
+        );
+    }
+
+    @Test
+    public void testPutAllAndHitsGeneratedKey() {
+        Map<Integer, Collection<? extends Integer>> expectedMultiMap = new HashMap<>();
+        testPutAllAndHitsGeneratedTemplate(expectedMultiMap,
+                (o) -> {
+                    for (int i = 0; i < 100; ++i) {
+                        o.putAllAsync(i, expectedMultiMap.get(i));
+                    }
+                }
+        );
     }
 
     @Test

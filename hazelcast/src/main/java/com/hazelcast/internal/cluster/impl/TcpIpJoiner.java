@@ -122,7 +122,7 @@ public class TcpIpJoiner extends AbstractJoiner {
                 if (logger.isFineEnabled()) {
                     logger.fine("Sending joinRequest " + targetAddress);
                 }
-                clusterJoinManager.sendJoinRequest(targetAddress, true);
+                clusterJoinManager.sendJoinRequest(targetAddress);
                 //noinspection BusyWait
                 Thread.sleep(JOIN_RETRY_WAIT_TIME);
             }
@@ -254,7 +254,7 @@ public class TcpIpJoiner extends AbstractJoiner {
                 if (logger.isFineEnabled()) {
                     logger.fine("Sending join request to " + masterAddress);
                 }
-                clusterJoinManager.sendJoinRequest(masterAddress, true);
+                clusterJoinManager.sendJoinRequest(masterAddress);
             } else {
                 sendMasterQuestion(addresses);
             }

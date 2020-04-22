@@ -32,6 +32,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
@@ -312,7 +313,7 @@ public class OSGiScriptEngineManager extends ScriptEngineManager {
                 BufferedReader reader = null;
                 try {
                     reader = new BufferedReader(
-                            new InputStreamReader(u.openStream(), "UTF-8"));
+                            new InputStreamReader(u.openStream(), StandardCharsets.UTF_8));
                     String line;
                     while ((line = reader.readLine()) != null) {
                         line = line.trim();
