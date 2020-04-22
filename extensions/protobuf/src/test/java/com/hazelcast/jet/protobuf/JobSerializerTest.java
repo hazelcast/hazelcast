@@ -36,8 +36,12 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import java.util.List;
+import java.util.stream.IntStream;
 
+import static com.hazelcast.function.FunctionEx.identity;
+import static com.hazelcast.jet.pipeline.ServiceFactories.sharedService;
 import static java.util.Collections.singletonList;
+import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -57,7 +61,7 @@ public class JobSerializerTest extends SimpleTestInClusterSupport {
                             new SerializerConfig().setTypeClass(Person.class).setClass(PersonSerializer.class)
                     );
 
-        initializeWithClient(1, config, clientConfig);
+        initializeWithClient(2, config, clientConfig);
     }
 
     @Test
@@ -105,6 +109,21 @@ public class JobSerializerTest extends SimpleTestInClusterSupport {
         // type id
         ClientListProxy<Animal> proxy = ((ClientListProxy) client().getList(listName));
         assertThat(proxy.dataSubList(0, 1).get(0).getType()).isEqualTo(ANIMAL_TYPE_ID);
+    }
+
+    @Test
+    public void when_serializerIsRegisteredForDistributedJob_then_itIsAvailableForAllStages() {
+        List<String> input = IntStream.range(0, 10_000).boxed().map(t -> Integer.toString(t)).collect(toList());
+
+        Pipeline pipeline = Pipeline.create();
+        pipeline.readFrom(TestSources.items(input))
+                .map(name -> Person.newBuilder().setName(name).build())
+                .groupingKey(identity())
+                .filterUsingService(sharedService(ctx -> null), (s, k, v) -> true)
+                .map(person -> person.getName())
+                .writeTo(AssertionSinks.assertAnyOrder(input));
+
+        client().newJob(pipeline, new JobConfig().registerSerializer(Person.class, PersonSerializer.class)).join();
     }
 
     private static class PersonSerializer extends ProtobufSerializer<Person> {
