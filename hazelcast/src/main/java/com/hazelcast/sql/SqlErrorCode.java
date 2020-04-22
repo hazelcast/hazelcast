@@ -44,6 +44,9 @@ public final class SqlErrorCode {
     /** An error caused concurrent destroy of a map. */
     public static final int MAP_DESTROYED = 1006;
 
+    /** Map loading is not finished yet. */
+    public static final int MAP_LOADING_IN_PROGRESS = 1007;
+
     /** An error with data conversion or transformation. */
     public static final int DATA_EXCEPTION = 2000;
 

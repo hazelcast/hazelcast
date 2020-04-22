@@ -21,6 +21,7 @@ import com.hazelcast.internal.util.Clock;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.recordstore.RecordStore;
+import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.sql.SqlErrorCode;
 import com.hazelcast.sql.impl.QueryException;
 
@@ -99,7 +100,12 @@ public class MapScanExecIterator {
                         continue;
                     }
 
-                    currentRecordStore.checkIfLoaded();
+                    try {
+                        currentRecordStore.checkIfLoaded();
+                    } catch (RetryableHazelcastException e) {
+                        throw QueryException.error(SqlErrorCode.MAP_LOADING_IN_PROGRESS, "Map loading is in progress: "
+                            + map.getName(), e);
+                    }
 
                     currentRecordStoreIterator = currentRecordStore.getStorage().mutationTolerantIterator();
                 }
