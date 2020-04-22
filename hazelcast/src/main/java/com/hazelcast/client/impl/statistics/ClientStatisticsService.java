@@ -352,7 +352,6 @@ public class ClientStatisticsService {
                 metricsRegistry.newLongGauge("runtime.totalMemory"),
                 metricsRegistry.newLongGauge("runtime.uptime"),
                 metricsRegistry.newLongGauge("runtime.usedMemory"),
-                metricsRegistry.newLongGauge("executionService.userExecutorQueueSize"),
         };
 
         void fillMetrics(long collectionTimestamp, final StringBuilder stats, final TcpClientConnection mainConnection) {

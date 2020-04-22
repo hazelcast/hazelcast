@@ -16,24 +16,9 @@
 
 package com.hazelcast.internal.management;
 
-import com.hazelcast.instance.impl.HazelcastInstanceImpl;
-import com.hazelcast.internal.management.dto.ConnectionManagerDTO;
-import com.hazelcast.internal.management.dto.EventServiceDTO;
-import com.hazelcast.internal.management.dto.MXBeansDTO;
-import com.hazelcast.internal.management.dto.ManagedExecutorDTO;
-import com.hazelcast.internal.management.dto.OperationServiceDTO;
-import com.hazelcast.internal.management.dto.PartitionServiceBeanDTO;
-import com.hazelcast.internal.management.dto.ProxyServiceDTO;
 import com.hazelcast.internal.monitor.impl.MemberStateImpl;
-import com.hazelcast.internal.server.Server;
-import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.util.OperatingSystemMXBeanSupport;
 import com.hazelcast.internal.util.RuntimeAvailableProcessors;
-import com.hazelcast.internal.util.executor.ManagedExecutorService;
-import com.hazelcast.spi.impl.eventservice.EventService;
-import com.hazelcast.spi.impl.executionservice.ExecutionService;
-import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
-import com.hazelcast.spi.impl.proxyservice.ProxyService;
 
 import java.lang.management.ClassLoadingMXBean;
 import java.lang.management.ManagementFactory;
@@ -55,52 +40,6 @@ final class TimedMemberStateFactoryHelper {
     private static final int PERCENT_MULTIPLIER = 100;
 
     private TimedMemberStateFactoryHelper() {
-    }
-
-    static void registerJMXBeans(HazelcastInstanceImpl instance, MemberStateImpl memberState) {
-        final EventService es = instance.node.nodeEngine.getEventService();
-        final OperationServiceImpl os = instance.node.nodeEngine.getOperationService();
-        final Server server = instance.node.server;
-        final InternalPartitionService ps = instance.node.partitionService;
-        final ProxyService proxyService = instance.node.nodeEngine.getProxyService();
-        final ExecutionService executionService = instance.node.nodeEngine.getExecutionService();
-
-        final MXBeansDTO beans = new MXBeansDTO();
-        final EventServiceDTO esBean = new EventServiceDTO(es);
-        beans.setEventServiceBean(esBean);
-        final OperationServiceDTO osBean = new OperationServiceDTO(os);
-        beans.setOperationServiceBean(osBean);
-        final ConnectionManagerDTO cmBean = new ConnectionManagerDTO(server);
-        beans.setConnectionManagerBean(cmBean);
-        final PartitionServiceBeanDTO psBean = new PartitionServiceBeanDTO(ps, instance);
-        beans.setPartitionServiceBean(psBean);
-        final ProxyServiceDTO proxyServiceBean = new ProxyServiceDTO(proxyService);
-        beans.setProxyServiceBean(proxyServiceBean);
-
-        final ManagedExecutorService systemExecutor = executionService.getExecutor(ExecutionService.SYSTEM_EXECUTOR);
-        final ManagedExecutorService asyncExecutor = executionService.getExecutor(ExecutionService.ASYNC_EXECUTOR);
-        final ManagedExecutorService scheduledExecutor = executionService.getExecutor(ExecutionService.SCHEDULED_EXECUTOR);
-        final ManagedExecutorService clientExecutor = executionService.getExecutor(ExecutionService.CLIENT_EXECUTOR);
-        final ManagedExecutorService queryExecutor = executionService.getExecutor(ExecutionService.QUERY_EXECUTOR);
-        final ManagedExecutorService ioExecutor = executionService.getExecutor(ExecutionService.IO_EXECUTOR);
-        final ManagedExecutorService offloadableExecutor = executionService.getExecutor(ExecutionService.OFFLOADABLE_EXECUTOR);
-
-        final ManagedExecutorDTO systemExecutorDTO = new ManagedExecutorDTO(systemExecutor);
-        final ManagedExecutorDTO asyncExecutorDTO = new ManagedExecutorDTO(asyncExecutor);
-        final ManagedExecutorDTO scheduledExecutorDTO = new ManagedExecutorDTO(scheduledExecutor);
-        final ManagedExecutorDTO clientExecutorDTO = new ManagedExecutorDTO(clientExecutor);
-        final ManagedExecutorDTO queryExecutorDTO = new ManagedExecutorDTO(queryExecutor);
-        final ManagedExecutorDTO ioExecutorDTO = new ManagedExecutorDTO(ioExecutor);
-        final ManagedExecutorDTO offloadableExecutorDTO = new ManagedExecutorDTO(offloadableExecutor);
-
-        beans.putManagedExecutor(ExecutionService.SYSTEM_EXECUTOR, systemExecutorDTO);
-        beans.putManagedExecutor(ExecutionService.ASYNC_EXECUTOR, asyncExecutorDTO);
-        beans.putManagedExecutor(ExecutionService.SCHEDULED_EXECUTOR, scheduledExecutorDTO);
-        beans.putManagedExecutor(ExecutionService.CLIENT_EXECUTOR, clientExecutorDTO);
-        beans.putManagedExecutor(ExecutionService.QUERY_EXECUTOR, queryExecutorDTO);
-        beans.putManagedExecutor(ExecutionService.IO_EXECUTOR, ioExecutorDTO);
-        beans.putManagedExecutor(ExecutionService.OFFLOADABLE_EXECUTOR, offloadableExecutorDTO);
-        memberState.setBeans(beans);
     }
 
     static void createRuntimeProps(MemberStateImpl memberState) {
