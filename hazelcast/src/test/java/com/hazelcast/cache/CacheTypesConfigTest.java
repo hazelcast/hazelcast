@@ -26,6 +26,7 @@ import com.hazelcast.config.UserCodeDeploymentConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.util.FilteringClassLoader;
 import com.hazelcast.internal.util.RootCauseMatcher;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -88,6 +89,24 @@ public class CacheTypesConfigTest extends HazelcastTestSupport {
         expect.expectCause(new RootCauseMatcher(ClassNotFoundException.class, "classloading.domain.PersonEntryProcessor - "
                 + "Package excluded explicitly"));
         cache.invoke(key, new PersonEntryProcessor());
+    }
+
+    @Test
+    public void cacheConfigShouldBeAddedOnJoiningMember_whenNoMemberResolvesClass() {
+        // given a member who cannot resolve the value type of a CacheConfig
+        HazelcastInstance hz1 = factory.newHazelcastInstance(getClassFilteringConfig());
+        // and a new member that creates a CacheConfig with an explicit value type
+        HazelcastInstance hz2 = factory.newHazelcastInstance(getConfig());
+        CachingProvider cachingProvider = createServerCachingProvider(hz1);
+        cachingProvider.getCacheManager().createCache(cacheName, createCacheConfig());
+        // ensure cluster is formed but cache is not used
+        assertClusterSize(2, hz1, hz2);
+        // member that is aware of value type leaves cluster
+        hz2.shutdown();
+
+        // then new member unaware of the value type can join the cluster
+        hz2 = factory.newHazelcastInstance(getClassFilteringConfig());
+        assertClusterSize(2, hz1, hz2);
     }
 
     // When the joining member is not aware of key or value class but it is later resolvable via user code deployment, then
@@ -162,6 +181,12 @@ public class CacheTypesConfigTest extends HazelcastTestSupport {
         CacheConfig<String, Person> cacheConfig = new CacheConfig<>();
         cacheConfig.setTypes(String.class, Person.class);
         return cacheConfig;
+    }
+
+    @Override
+    protected Config getConfig() {
+        return smallInstanceConfig()
+                .setProperty(ClusterProperty.MAX_JOIN_SECONDS.getName(), "10");
     }
 
     private Config getClassFilteringConfig() {

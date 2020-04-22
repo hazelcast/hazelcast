@@ -762,7 +762,7 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
         OnJoinCacheOperation preJoinCacheOperation;
         preJoinCacheOperation = new OnJoinCacheOperation();
         for (Map.Entry<String, CompletableFuture<CacheConfig>> cacheConfigEntry : configs.entrySet()) {
-            CacheConfig cacheConfig = new PreJoinCacheConfig(cacheConfigEntry.getValue().join());
+            CacheConfig cacheConfig = new PreJoinCacheConfig(cacheConfigEntry.getValue().join(), false);
             preJoinCacheOperation.addCacheConfig(cacheConfig);
         }
         return preJoinCacheOperation;
