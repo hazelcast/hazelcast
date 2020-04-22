@@ -33,13 +33,13 @@
     </parent>
 
     <properties>
-        <!-- needed for CheckStyle -->
+        <!-- Needed for CheckStyle -->
         <main.basedir>${project.parent.basedir}</main.basedir>
 
         <calcite.version>1.22.0</calcite.version>
         <guava.version>19.0</guava.version>
 
-        <relocation.root>com.hazelcast.sql.shaded</relocation.root>
+        <relocation.root>com.hazelcast</relocation.root>
     </properties>
 
     <build>
@@ -115,6 +115,7 @@
                                 <filter>
                                     <artifact>*:*</artifact>
                                     <excludes>
+                                        <!-- Exclude signatures -->
                                         <exclude>META-INF/*.SF</exclude>
                                         <exclude>META-INF/*.DSA</exclude>
                                         <exclude>META-INF/*.RSA</exclude>
@@ -123,6 +124,7 @@
                                 <filter>
                                     <artifact>org.apache.calcite:*</artifact>
                                     <excludes>
+                                        <!-- Avoid automatic discovery of Calcite JDBC. -->
                                         <exclude>META-INF/services/java.sql.Driver</exclude>
                                         <exclude>codegen/**</exclude>
                                     </excludes>
@@ -130,14 +132,24 @@
                                 <filter>
                                     <artifact>org.apache.calcite.avatica:*</artifact>
                                     <excludes>
+                                        <!-- Avoid automatic discovery of Avatica JDBC. -->
                                         <exclude>META-INF/services/java.sql.Driver</exclude>
+                                        <!-- Exclude Avatica ProtoBuf definitions, since Avatica is not used. -->
                                         <exclude>*.proto</exclude>
                                     </excludes>
                                 </filter>
                                 <filter>
                                     <artifact>org.codehaus.janino:janino</artifact>
                                     <excludes>
+                                        <!-- Replace with the one from src/main/resources for correct reflection in runtime. -->
                                         <exclude>org.codehaus.commons.compiler.properties</exclude>
+                                    </excludes>
+                                </filter>
+                                <filter>
+                                    <artifact>com.fasterxml.jackson.core:jackson-core</artifact>
+                                    <excludes>
+                                        <!-- Jackson Core is already included in hazelcast.jar. -->
+                                        <exclude>**</exclude>
                                     </excludes>
                                 </filter>
                             </filters>
