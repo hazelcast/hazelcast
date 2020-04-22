@@ -356,7 +356,8 @@ compile "com.hazelcast.jet:hazelcast-jet-protobuf:${hazelcast.jet.version}"
 
 <!--END_DOCUSAURUS_CODE_TABS-->
 
-Implement the adapter by extending the provided class:
+Implement the adapter by extending the provided class (where `Person`
+is of any Protobuf `GeneratedMessageV3` type):
 
 ```java
 class PersonSerializer extends ProtobufSerializer<Person> {
