@@ -25,7 +25,6 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.sql.impl.NodeServiceProviderImpl;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.LoggingQueryOperationHandler;
-import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.exec.io.Inbox;
 import com.hazelcast.sql.impl.exec.io.Outbox;
@@ -39,7 +38,6 @@ import com.hazelcast.sql.impl.exec.scan.MapScanExec;
 import com.hazelcast.sql.impl.expression.ConstantPredicateExpression;
 import com.hazelcast.sql.impl.extract.GenericQueryTargetDescriptor;
 import com.hazelcast.sql.impl.expression.ColumnExpression;
-import com.hazelcast.sql.impl.expression.ConstantPredicateExpression;
 import com.hazelcast.sql.impl.operation.QueryExecuteOperation;
 import com.hazelcast.sql.impl.operation.QueryExecuteOperationFragment;
 import com.hazelcast.sql.impl.plan.node.MapScanPlanNode;
@@ -274,7 +272,7 @@ public class CreateExecPlanNodeVisitorTest {
         QueryExecuteOperationFragment rootFragment = new QueryExecuteOperationFragment(
             projectNode,
             EXPLICIT,
-            Collections.singletonList(MEMBER_ID_1)
+            Collections.singletonList(membedId1)
         );
 
         QueryExecuteOperation operation = createOperation(
@@ -307,7 +305,7 @@ public class CreateExecPlanNodeVisitorTest {
         QueryExecuteOperationFragment rootFragment = new QueryExecuteOperationFragment(
             filterNode,
             EXPLICIT,
-            Collections.singletonList(MEMBER_ID_1)
+            Collections.singletonList(membedId1)
         );
 
         QueryExecuteOperation operation = createOperation(
