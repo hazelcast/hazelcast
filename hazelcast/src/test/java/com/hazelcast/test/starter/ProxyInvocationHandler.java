@@ -114,11 +114,12 @@ class ProxyInvocationHandler implements InvocationHandler, Serializable {
             return true;
         }
 
-        // if there return types are equals -> they are loaded
-        // by the same classloader -> no need to proxy what it returns
+        // if return types are equal & delegateResult's type is equal then
+        // no need to proxy the result
         Class<?> returnClass = proxyMethod.getReturnType();
         Class<?> delegateReturnClass = delegateMethod.getReturnType();
-        return !(returnClass.equals(delegateReturnClass));
+        return !(returnClass.equals(delegateReturnClass)
+                && returnClass.equals(delegateResult.getClass()));
     }
 
     @SuppressWarnings("unchecked")
