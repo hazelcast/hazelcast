@@ -18,7 +18,7 @@ package com.hazelcast.internal.metrics.impl;
 
 import com.hazelcast.internal.metrics.MetricConsumer;
 import com.hazelcast.internal.metrics.MetricDescriptor;
-import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
@@ -26,6 +26,8 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static com.hazelcast.internal.metrics.MetricTarget.DIAGNOSTICS;
 import static com.hazelcast.internal.metrics.MetricTarget.JMX;
@@ -33,6 +35,8 @@ import static com.hazelcast.internal.metrics.MetricTarget.MANAGEMENT_CENTER;
 import static com.hazelcast.internal.metrics.ProbeUnit.BYTES;
 import static com.hazelcast.internal.metrics.ProbeUnit.COUNT;
 import static com.hazelcast.internal.metrics.ProbeUnit.PERCENT;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.only;
 import static org.mockito.Mockito.spy;
@@ -40,9 +44,13 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 
-@RunWith(HazelcastParallelClassRunner.class)
+@RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class MetricsCompressorTest {
+
+    private static final String LONG_NAME = Stream.generate(() -> "a")
+                                                 .limit(MetricsDictionary.MAX_WORD_LENGTH + 1)
+                                                 .collect(Collectors.joining());
 
     private final DefaultMetricDescriptorSupplier supplier = new DefaultMetricDescriptorSupplier();
     private final Supplier<? extends MetricDescriptor> supplierSpy = spy(supplier);
@@ -306,5 +314,92 @@ public class MetricsCompressorTest {
         MetricsCompressor.extractMetrics(blob, metricConsumerSpy, supplierSpy);
 
         verify(metricConsumerSpy).consumeLong(sameMetric, 43L);
+    }
+
+    @Test
+    public void testLongTagValue() {
+        DefaultMetricDescriptorSupplier supplier = new DefaultMetricDescriptorSupplier();
+        MetricsCompressor compressor = new MetricsCompressor();
+
+        String longPrefix = Stream.generate(() -> "a")
+                                  .limit(MetricsDictionary.MAX_WORD_LENGTH - 1)
+                                  .collect(Collectors.joining());
+        MetricDescriptor metric1 = supplier.get()
+                                           .withMetric("metricName")
+                                           .withTag("tag0", longPrefix + "0")
+                                           .withTag("tag1", longPrefix + "1");
+
+        compressor.addLong(metric1, 42);
+        byte[] blob = compressor.getBlobAndReset();
+
+        MetricConsumer metricConsumer = new MetricConsumer() {
+            @Override
+            public void consumeLong(MetricDescriptor descriptor, long value) {
+                assertEquals(42, value);
+                assertEquals("metricName", descriptor.metric());
+                assertEquals(longPrefix + "0", descriptor.tagValue("tag0"));
+                assertEquals(longPrefix + "1", descriptor.tagValue("tag1"));
+            }
+
+            @Override
+            public void consumeDouble(MetricDescriptor descriptor, double value) {
+                fail("Restored a double metric");
+            }
+        };
+
+        MetricConsumer metricConsumerSpy = spy(metricConsumer);
+        MetricsCompressor.extractMetrics(blob, metricConsumerSpy, supplierSpy);
+    }
+
+    @Test
+    public void when_tooLongWord_then_metricIgnored__tagName() {
+        when_tooLongWord_then_metricIgnored(supplier.get().withTag(LONG_NAME, "a"));
+    }
+
+    @Test
+    public void when_tooLongWord_then_metricIgnored__tagValue() {
+        when_tooLongWord_then_metricIgnored(supplier.get().withTag("n", LONG_NAME));
+    }
+
+    @Test
+    public void when_tooLongWord_then_metricIgnored__metricName() {
+        when_tooLongWord_then_metricIgnored(supplier.get().withMetric(LONG_NAME));
+    }
+
+    @Test
+    public void when_tooLongWord_then_metricIgnored__prefix() {
+        when_tooLongWord_then_metricIgnored(supplier.get().withPrefix(LONG_NAME));
+    }
+
+    @Test
+    public void when_tooLongWord_then_metricIgnored__discriminatorTag() {
+        when_tooLongWord_then_metricIgnored(supplier.get().withDiscriminator(LONG_NAME, "a"));
+    }
+
+    @Test
+    public void when_tooLongWord_then_metricIgnored__discriminatorValue() {
+        when_tooLongWord_then_metricIgnored(supplier.get().withDiscriminator("n", LONG_NAME));
+    }
+
+    private void when_tooLongWord_then_metricIgnored(MetricDescriptor badDescriptor) {
+        MetricsCompressor compressor = new MetricsCompressor();
+        try {
+            compressor.addLong(badDescriptor, 42);
+            fail("should have failed");
+        } catch (LongWordException ignored) {
+        }
+        assertEquals(0, compressor.count());
+        // add a good descriptor after a bad one to check that the tmp streams are reset properly
+        MetricDescriptor goodDescriptor = supplier.get();
+        compressor.addLong(goodDescriptor, 43);
+        assertEquals(1, compressor.count());
+        byte[] blob = compressor.getBlobAndReset();
+
+        // try to decompress the metrics to see that a valid data were produced
+        MetricConsumer metricConsumerMock = mock(MetricConsumer.class);
+        MetricsCompressor.extractMetrics(blob, metricConsumerMock, supplierSpy);
+        verify(metricConsumerMock).consumeLong(goodDescriptor, 43L);
+        verifyNoMoreInteractions(metricConsumerMock);
+        verify(supplierSpy, times(1)).get();
     }
 }
