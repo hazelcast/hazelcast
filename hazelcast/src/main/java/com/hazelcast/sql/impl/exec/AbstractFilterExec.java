@@ -26,7 +26,7 @@ import java.util.List;
 /**
  * Abstract filter executor that removes rows from the output based on a condition.
  * <p>
- * Currently the executor batches rows, and reports progress only when the batch is full or when EOS has been raeched.
+ * Currently the executor batches rows, and reports progress only when the batch is full or when EOS has been reached.
  * This is done to minimize the operator evaluation overhead.
  * <p>
  * The compiled counterpart does not require batching.
