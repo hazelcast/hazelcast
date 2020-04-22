@@ -21,6 +21,7 @@ import static com.hazelcast.test.Accessors.getAddress;
 import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
 import static com.hazelcast.test.HazelcastTestSupport.smallInstanceConfig;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import java.io.BufferedWriter;
@@ -37,6 +38,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 
+import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -76,6 +78,7 @@ public class ClientConsoleTest {
         try (BufferedWriter writer = Files.newBufferedWriter(cfgFile.toPath())) {
             writer.write("hazelcast-client:\n"
                     + "  cluster-name: " + getTestMethodName() + "\n"
+                    + "  instance-name: clientConsoleApp\n"
                     + "  network:\n"
                     + "    cluster-members:\n"
                     + "      - " + address.getHost() + ":" + address.getPort() + "\n");
@@ -87,7 +90,11 @@ public class ClientConsoleTest {
         try {
             tp.execute(() -> ClientConsoleApp.main(null));
             assertTrueEventually(() -> assertFalse(hz.getClientService().getConnectedClients().isEmpty()));
+            HazelcastInstance client = HazelcastClient.getHazelcastClientByName("clientConsoleApp");
+            assertNotNull(client);
+            client.shutdown();
         } finally {
+            HazelcastClient.shutdownAll();
             tp.shutdown();
         }
     }
