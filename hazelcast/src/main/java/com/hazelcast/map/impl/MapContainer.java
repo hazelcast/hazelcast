@@ -46,7 +46,6 @@ import com.hazelcast.map.impl.record.DataRecordFactory;
 import com.hazelcast.map.impl.record.ObjectRecordFactory;
 import com.hazelcast.map.impl.record.RecordFactory;
 import com.hazelcast.internal.serialization.Data;
-import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.partition.PartitioningStrategy;
 import com.hazelcast.query.impl.Index;
 import com.hazelcast.query.impl.Indexes;
@@ -77,7 +76,8 @@ import static java.lang.System.getProperty;
  * supporting structures for all of the maps' functionalities.
  */
 @SuppressWarnings({"WeakerAccess", "checkstyle:classfanoutcomplexity"})
-public class MapContainer {
+public class
+MapContainer {
 
     protected final String name;
     protected final String splitBrainProtectionName;
@@ -435,10 +435,6 @@ public class MapContainer {
 
     public boolean isPersistWanReplicatedData() {
         return persistWanReplicatedData;
-    }
-
-    public RecordStore<?> getExistingRecordStore(int partitionId) {
-        return mapServiceContext.getExistingRecordStore(partitionId, name);
     }
 
     private class ObjectToData implements Function<Object, Data> {

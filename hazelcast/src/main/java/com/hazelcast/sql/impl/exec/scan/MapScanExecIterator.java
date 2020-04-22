@@ -93,7 +93,7 @@ public class MapScanExecIterator {
                             "Partition is not owned by member: " + nextPart);
                     }
 
-                    currentRecordStore = map.getExistingRecordStore(nextPart);
+                    currentRecordStore = map.getMapServiceContext().getRecordStore(nextPart, map.getName());
 
                     if (currentRecordStore == null) {
                         // RecordStore might be missing if the associated partition is empty. Just skip it.
