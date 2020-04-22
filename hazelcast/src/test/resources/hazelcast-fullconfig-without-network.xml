@@ -640,6 +640,103 @@
                     </jaas>
                 </authentication>
             </realm>
+            <realm name="ldapRealm">
+                <authentication>
+                    <ldap>
+                        <url>ldap://ldap.my-company.example</url>
+                        <socket-factory-class-name>socketFactoryClassName</socket-factory-class-name>
+                        <parse-dn>true</parse-dn>
+                        <role-context>roleContext</role-context>
+                        <role-filter>roleFilter</role-filter>
+                        <role-mapping-attribute>roleMappingAttribute</role-mapping-attribute>
+                        <role-mapping-mode>reverse</role-mapping-mode>
+                        <role-name-attribute>roleNameAttribute</role-name-attribute>
+                        <role-recursion-max-depth>25</role-recursion-max-depth>
+                        <role-search-scope>object</role-search-scope>
+                        <user-name-attribute>userNameAttribute</user-name-attribute>
+                        <system-user-dn>systemUserDn</system-user-dn>
+                        <system-user-password>systemUserPassword</system-user-password>
+                        <password-attribute>passwordAttribute</password-attribute>
+                        <user-context>userContext</user-context>
+                        <user-filter>userFilter</user-filter>
+                        <user-search-scope>one-level</user-search-scope>
+                    </ldap>
+                </authentication>
+            </realm>
+            <realm name="tlsRealm">
+                <authentication>
+                    <tls roleAttribute="cn"/>
+                </authentication>
+            </realm>
+            <realm name="usernamePasswordIdentityRealm">
+                <identity>
+                    <username-password username="user" password="Hazelcast" />
+                </identity>
+            </realm>
+            <realm name="tokenIdentityRealm">
+                <identity>
+                    <token encoding="base64">SGF6ZWxjYXN0</token>
+                </identity>
+            </realm>
+            <realm name="kerberosRealm">
+                <authentication>
+                    <kerberos>
+                        <skip-role>true</skip-role>
+                        <relax-flags-check>true</relax-flags-check>
+                        <security-realm>krb5Acceptor</security-realm>
+                        <ldap>
+                            <url>ldap://127.0.0.1/</url>
+                            <system-user-dn>uid=admin,ou=system</system-user-dn>
+                            <system-user-password>secret</system-user-password>
+                            <skip-authentication>true</skip-authentication>
+                            <user-filter>(krb5PrincipalName={login})</user-filter>
+                            <role-mapping-attribute>cn</role-mapping-attribute>
+                        </ldap>
+                    </kerberos>
+                </authentication>
+                <identity>
+                    <kerberos>
+                        <realm>HAZELCAST.COM</realm>
+                        <security-realm>krb5Initiator</security-realm>
+                        <service-name-prefix>hz/</service-name-prefix>
+                        <spn>hz/127.0.0.1@HAZELCAST.COM</spn>
+                    </kerberos>
+                </identity>
+            </realm>
+            <realm name="krb5Acceptor">
+                <authentication>
+                    <jaas>
+                        <login-module class-name="com.sun.security.auth.module.Krb5LoginModule" usage="REQUIRED">
+                            <properties>
+                                <property name="isInitiator">false</property>
+                                <property name="useTicketCache">false</property>
+                                <property name="doNotPrompt">true</property>
+                                <property name="useKeyTab">true</property>
+                                <property name="storeKey">true</property>
+                                <property name="principal">hz/127.0.0.1@HAZELCAST.COM</property>
+                                <property name="keyTab">/opt/hz-localhost.keytab</property>
+                            </properties>
+                        </login-module>
+                    </jaas>
+                </authentication>
+            </realm>
+            <realm name="krb5Initiator">
+                <authentication>
+                    <jaas>
+                        <login-module class-name="com.sun.security.auth.module.Krb5LoginModule" usage="REQUIRED">
+                            <properties>
+                                <property name="isInitiator">true</property>
+                                <property name="useTicketCache">false</property>
+                                <property name="doNotPrompt">true</property>
+                                <property name="useKeyTab">true</property>
+                                <property name="storeKey">true</property>
+                                <property name="principal">hz/127.0.0.1@HAZELCAST.COM</property>
+                                <property name="keyTab">/opt/hz-localhost.keytab</property>
+                            </properties>
+                        </login-module>
+                    </jaas>
+                </authentication>
+            </realm>
         </realms>
         <member-authentication realm="mr"/>
         <client-authentication realm="cr"/>

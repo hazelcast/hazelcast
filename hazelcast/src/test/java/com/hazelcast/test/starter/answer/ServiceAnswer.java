@@ -20,13 +20,16 @@ import com.hazelcast.cache.impl.ICacheRecordStore;
 import com.hazelcast.cache.impl.PreJoinCacheConfig;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.InMemoryFormat;
+import com.hazelcast.internal.services.ObjectNamespace;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.multimap.impl.MultiMapPartitionContainer;
-import com.hazelcast.internal.services.ObjectNamespace;
+import com.hazelcast.spi.impl.NodeEngine;
 import org.mockito.invocation.InvocationOnMock;
 
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
+import static com.hazelcast.test.starter.ReflectionUtils.getFieldValueReflectively;
 import static org.mockito.Mockito.mock;
 
 /**
@@ -106,6 +109,25 @@ class ServiceAnswer extends AbstractAnswer {
         } else if (arguments.length == 0 && methodName.startsWith("isRunning")) {
             // LifecycleService
             return invoke(invocation);
+        } else if (arguments.length == 0 && methodName.startsWith("isDiscoveryCompleted")) {
+            // RaftService
+            return invoke(invocation);
+        } else if (arguments.length == 0 && methodName.startsWith("getInvocationManager")) {
+            // RaftService
+            Object raftInvocationManager = invokeForMock(invocation);
+            Object delegateSerializationService = getSerializationService();
+            return createMockForTargetClass(raftInvocationManager,
+                    new RaftInvocationManagerAnswer(raftInvocationManager, delegateSerializationService));
+        } else if (arguments.length == 1 && methodName.equals("getSession")) {
+            // ProxySessionManagerService
+            return invoke(invocation, arguments);
+        } else if (arguments.length == 2 && methodName.equals("getSessionAcquireCount")) {
+            // ProxySessionManagerService
+            return invoke(invocation, arguments);
+        } else if (arguments.length == 1 && methodName.equals("getRegistryOrNull")) {
+            // AbstractBlockingService
+            Object result = invoke(false, invocation, arguments[0]);
+            return createMockForTargetClass(result, new DelegatingAnswer(result));
         } else if (arguments.length == 0 && methodName.startsWith("get")) {
             return invoke(invocation);
         }
@@ -126,5 +148,20 @@ class ServiceAnswer extends AbstractAnswer {
             return null;
         }
         return mock(ICacheRecordStore.class, new RecordStoreAnswer(recordStore));
+    }
+
+    /**
+     * Assuming delegate has a field {@code nodeEngine}, returns the serialization
+     * service from {@link NodeEngine#getSerializationService()}.
+    */
+    private Object getSerializationService() {
+        try {
+            Object nodeEngine = getFieldValueReflectively(delegate, "nodeEngine");
+            Method getter = nodeEngine.getClass().getDeclaredMethod("getSerializationService");
+            return getter.invoke(nodeEngine);
+        } catch (IllegalAccessException | NoSuchMethodException | InvocationTargetException e) {
+            throw new UnsupportedOperationException("Could not invoke "
+                    + "nodeEngine#getSerializationService()", e);
+        }
     }
 }

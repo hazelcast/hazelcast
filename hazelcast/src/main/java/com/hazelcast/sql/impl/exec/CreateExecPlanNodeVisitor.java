@@ -29,8 +29,10 @@ import com.hazelcast.sql.impl.operation.QueryExecuteOperation;
 import com.hazelcast.sql.impl.operation.QueryExecuteOperationFragment;
 import com.hazelcast.sql.impl.operation.QueryExecuteOperationFragmentMapping;
 import com.hazelcast.sql.impl.operation.QueryOperationHandler;
+import com.hazelcast.sql.impl.plan.node.FilterPlanNode;
 import com.hazelcast.sql.impl.plan.node.PlanNode;
 import com.hazelcast.sql.impl.plan.node.PlanNodeVisitor;
+import com.hazelcast.sql.impl.plan.node.ProjectPlanNode;
 import com.hazelcast.sql.impl.plan.node.RootPlanNode;
 import com.hazelcast.sql.impl.plan.node.io.EdgeAwarePlanNode;
 import com.hazelcast.sql.impl.plan.node.io.ReceivePlanNode;
@@ -71,7 +73,7 @@ public class CreateExecPlanNodeVisitor implements PlanNodeVisitor {
     private final Map<Integer, InboundHandler> inboxes = new HashMap<>();
 
     /** Outboxes. */
-    private Map<Integer, Map<UUID, OutboundHandler>> outboxes = new HashMap<>();
+    private final Map<Integer, Map<UUID, OutboundHandler>> outboxes = new HashMap<>();
 
     public CreateExecPlanNodeVisitor(
         QueryOperationHandler operationHandler,
@@ -176,6 +178,28 @@ public class CreateExecPlanNodeVisitor implements PlanNodeVisitor {
         }
 
         return res;
+    }
+
+    @Override
+    public void onProjectNode(ProjectPlanNode node) {
+        Exec res = new ProjectExec(
+            node.getId(),
+            pop(),
+            node.getProjects()
+        );
+
+        push(res);
+    }
+
+    @Override
+    public void onFilterNode(FilterPlanNode node) {
+        Exec res = new FilterExec(
+            node.getId(),
+            pop(),
+            node.getFilter()
+        );
+
+        push(res);
     }
 
     @Override

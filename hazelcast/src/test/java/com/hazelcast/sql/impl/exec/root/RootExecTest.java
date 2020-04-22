@@ -54,11 +54,8 @@ public class RootExecTest extends SqlTestSupport {
 
         RootExec exec = new RootExec(2, upstream, consumer, 8);
 
-        // Make sure that the context is propagated.
         QueryFragmentContext context = emptyFragmentContext();
-
         exec.setup(context);
-
         assertSame(context, consumer.getContext());
 
         assertEquals(IterationResult.WAIT, exec.advance());

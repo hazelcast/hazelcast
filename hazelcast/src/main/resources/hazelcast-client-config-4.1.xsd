@@ -418,22 +418,53 @@
         </xs:simpleContent>
     </xs:complexType>
     <xs:complexType name="security">
+        <xs:sequence>
+            <xs:choice minOccurs="0">
+                <xs:element name="username-password" type="username-password"/>
+                <xs:element name="credentials-factory" type="security-object"/>
+                <xs:element name="token" type="token"/>
+                <xs:element name="kerberos" type="kerberos-identity"/>
+            </xs:choice>
+            <xs:element name="realms" type="realms" minOccurs="0" maxOccurs="1"/>
+        </xs:sequence>
+    </xs:complexType>
+    <xs:complexType name="realms">
+        <xs:sequence>
+            <xs:element name="realm" type="realm" minOccurs="0" maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:complexType>
+    <xs:complexType name="realm">
+        <xs:all>
+            <xs:element name="authentication" type="authentication" minOccurs="0" maxOccurs="1"/>
+        </xs:all>
+        <xs:attribute name="name" type="xs:string" use="required"/>
+    </xs:complexType>
+    <xs:complexType name="authentication">
         <xs:choice>
-            <xs:element name="username-password" type="username-password"/>
-            <xs:element name="credentials-factory" type="security-object"/>
-            <xs:element name="token" type="token"/>
+            <xs:element name="jaas" type="login-modules"/>
         </xs:choice>
     </xs:complexType>
-    <xs:complexType name="credentials">
-        <xs:annotation>
-            <xs:documentation>Credentials className
-            </xs:documentation>
-        </xs:annotation>
-        <xs:simpleContent>
-            <xs:extension base="non-space-string"/>
-        </xs:simpleContent>
+    <xs:complexType name="login-modules">
+        <xs:sequence>
+            <xs:element name="login-module" type="login-module" minOccurs="0" maxOccurs="unbounded"/>
+        </xs:sequence>
     </xs:complexType>
-
+    <xs:complexType name="login-module">
+        <xs:sequence>
+            <xs:element name="properties" type="properties" minOccurs="0" maxOccurs="1"/>
+        </xs:sequence>
+        <xs:attribute name="class-name" type="non-space-string" use="required"/>
+        <xs:attribute name="usage" use="optional" default="REQUIRED">
+            <xs:simpleType>
+                <xs:restriction base="non-space-string">
+                    <xs:enumeration value="REQUIRED"/>
+                    <xs:enumeration value="OPTIONAL"/>
+                    <xs:enumeration value="REQUISITE"/>
+                    <xs:enumeration value="SUFFICIENT"/>
+                </xs:restriction>
+            </xs:simpleType>
+        </xs:attribute>
+    </xs:complexType>
     <xs:complexType name="security-object">
         <xs:sequence>
             <xs:element name="properties" type="properties" minOccurs="0" maxOccurs="1"/>
@@ -844,6 +875,14 @@
                 </xs:attribute>
             </xs:extension>
         </xs:simpleContent>
+    </xs:complexType>
+    <xs:complexType name="kerberos-identity">
+        <xs:all>
+            <xs:element name="realm" type="xs:string" minOccurs="0"/>
+            <xs:element name="security-realm" type="xs:string" minOccurs="0"/>
+            <xs:element name="service-name-prefix" type="xs:string" minOccurs="0"/>
+            <xs:element name="spn" type="xs:string" minOccurs="0"/>
+        </xs:all>
     </xs:complexType>
 
     <xs:complexType name="metrics">

@@ -19,6 +19,7 @@ package com.hazelcast.multimap.impl;
 import com.hazelcast.internal.serialization.DataSerializerHook;
 import com.hazelcast.internal.serialization.impl.ArrayDataSerializableFactory;
 import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
+import com.hazelcast.internal.util.ConstructorFunction;
 import com.hazelcast.multimap.impl.operations.ClearBackupOperation;
 import com.hazelcast.multimap.impl.operations.ClearOperation;
 import com.hazelcast.multimap.impl.operations.ContainsEntryOperation;
@@ -32,8 +33,11 @@ import com.hazelcast.multimap.impl.operations.KeySetOperation;
 import com.hazelcast.multimap.impl.operations.MergeBackupOperation;
 import com.hazelcast.multimap.impl.operations.MergeOperation;
 import com.hazelcast.multimap.impl.operations.MultiMapOperationFactory;
+import com.hazelcast.multimap.impl.operations.MultiMapPutAllOperationFactory;
 import com.hazelcast.multimap.impl.operations.MultiMapReplicationOperation;
 import com.hazelcast.multimap.impl.operations.MultiMapResponse;
+import com.hazelcast.multimap.impl.operations.PutAllBackupOperation;
+import com.hazelcast.multimap.impl.operations.PutAllOperation;
 import com.hazelcast.multimap.impl.operations.PutBackupOperation;
 import com.hazelcast.multimap.impl.operations.PutOperation;
 import com.hazelcast.multimap.impl.operations.RemoveAllBackupOperation;
@@ -59,7 +63,6 @@ import com.hazelcast.multimap.impl.txn.TxnRollbackBackupOperation;
 import com.hazelcast.multimap.impl.txn.TxnRollbackOperation;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.internal.util.ConstructorFunction;
 
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.MULTIMAP_DS_FACTORY;
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.MULTIMAP_DS_FACTORY_ID;
@@ -122,7 +125,9 @@ public class MultiMapDataSerializerHook implements DataSerializerHook {
     public static final int MERGE_BACKUP_OPERATION = 50;
     public static final int DELETE = 51;
     public static final int DELETE_BACKUP = 52;
-
+    public static final int PUT_ALL = 53;
+    public static final int PUT_ALL_BACKUP = 54;
+    public static final int PUT_ALL_PARTITION_AWARE_FACTORY = 55;
 
     public int getFactoryId() {
         return F_ID;
@@ -130,7 +135,7 @@ public class MultiMapDataSerializerHook implements DataSerializerHook {
 
     public DataSerializableFactory createFactory() {
         ConstructorFunction<Integer, IdentifiedDataSerializable>[] constructors
-                = new ConstructorFunction[DELETE_BACKUP + 1];
+                = new ConstructorFunction[PUT_ALL_PARTITION_AWARE_FACTORY + 1];
         constructors[CLEAR_BACKUP] = arg -> new ClearBackupOperation();
         constructors[CLEAR] = arg -> new ClearOperation();
         constructors[CONTAINS_ENTRY] = arg -> new ContainsEntryOperation();
@@ -172,6 +177,9 @@ public class MultiMapDataSerializerHook implements DataSerializerHook {
         constructors[MERGE_BACKUP_OPERATION] = arg -> new MergeBackupOperation();
         constructors[DELETE] = arg -> new DeleteOperation();
         constructors[DELETE_BACKUP] = arg -> new DeleteBackupOperation();
+        constructors[PUT_ALL] = arg -> new PutAllOperation();
+        constructors[PUT_ALL_BACKUP] = arg -> new PutAllBackupOperation();
+        constructors[PUT_ALL_PARTITION_AWARE_FACTORY] = arg -> new MultiMapPutAllOperationFactory();
 
         return new ArrayDataSerializableFactory(constructors);
     }

@@ -16,51 +16,52 @@
 
 package com.hazelcast.internal.metrics.impl;
 
+import com.hazelcast.internal.metrics.impl.MetricsDictionary.Word;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
+import java.util.Iterator;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class MetricsDictionaryTest {
+
+    @Rule
+    public ExpectedException exception = ExpectedException.none();
+
+    private MetricsDictionary dictionary = new MetricsDictionary();
+
     @Test
     public void testGrowing() {
-        MetricsDictionary dictionary = new MetricsDictionary();
         for (int i = 0; i < 256; i++) {
             String word = Integer.toString(i);
             int dictionaryId = dictionary.getDictionaryId(word);
             assertEquals(i, dictionaryId);
-            assertEquals(word, dictionary.get(i));
-
-            String foundWord = dictionary.get(dictionaryId);
-            assertEquals(word, foundWord);
-
-            assertNull(dictionary.get(i + 1));
-            assertEquals(i + 1, dictionary.size());
         }
     }
 
     @Test
-    public void testGetWithNegativeIdReturnsNull() {
-        MetricsDictionary dictionary = new MetricsDictionary();
-        assertNull(dictionary.get(-1));
-    }
+    public void testWordsOrdered() {
+        assertEquals(0, dictionary.getDictionaryId("b"));
+        assertEquals(1, dictionary.getDictionaryId("a"));
 
-    @Test
-    public void testGetWithNonExistentIdReturnsNull() {
-        MetricsDictionary dictionary = new MetricsDictionary();
-        assertNull(dictionary.get(Integer.MAX_VALUE));
+        Iterator<Word> iterator = dictionary.words().iterator();
+        assertEquals("a", iterator.next().word());
+        assertEquals("b", iterator.next().word());
     }
 
     @Test
     public void testGetDictionaryIdReturnsSameIdForSameWord() {
-        MetricsDictionary dictionary = new MetricsDictionary();
         int word1Id = dictionary.getDictionaryId("word1");
         dictionary.getDictionaryId("word2");
         dictionary.getDictionaryId("word3");
@@ -69,4 +70,12 @@ public class MetricsDictionaryTest {
         assertEquals(word1Id, dictionary.getDictionaryId("word1"));
     }
 
+    @Test
+    public void when_tooLongWord_then_fails() {
+        String longWord = Stream.generate(() -> "a")
+                                .limit(MetricsDictionary.MAX_WORD_LENGTH + 1)
+                                .collect(Collectors.joining());
+        exception.expect(LongWordException.class);
+        dictionary.getDictionaryId(longWord);
+    }
 }

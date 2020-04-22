@@ -200,7 +200,27 @@
             <hz:member>127.0.0.1:5700</hz:member>
             <hz:member>127.0.0.1:5701</hz:member>
         </hz:network>
-
+        <hz:security>
+            <hz:realms>
+                <hz:realm name="krb5Initiator">
+                    <hz:authentication>
+                        <hz:jaas>
+                            <hz:login-module class-name="com.sun.security.auth.module.Krb5LoginModule" usage="REQUIRED">
+                                <hz:properties>
+                                    <hz:property name="isInitiator">true</hz:property>
+                                    <hz:property name="useTicketCache">false</hz:property>
+                                    <hz:property name="doNotPrompt">true</hz:property>
+                                    <hz:property name="useKeyTab">true</hz:property>
+                                    <hz:property name="storeKey">true</hz:property>
+                                    <hz:property name="principal">jduke@HAZELCAST.COM</hz:property>
+                                    <hz:property name="keyTab">/opt/jduke.keytab</hz:property>
+                                </hz:properties>
+                            </hz:login-module>
+                        </hz:jaas>
+                    </hz:authentication>
+                </hz:realm>
+            </hz:realms>
+        </hz:security>
     </hz:client>
 
     <hz:client id="client6">

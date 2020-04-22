@@ -133,6 +133,10 @@ public class TcpClientConnection implements ClientConnection {
         return remoteAddress;
     }
 
+    public Address getInitAddress() {
+        return (Address) attributeMap.get(Address.class);
+    }
+
     public UUID getRemoteUuid() {
         return remoteUuid;
     }

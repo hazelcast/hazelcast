@@ -98,6 +98,11 @@ public class LoginModuleConfig {
         return this;
     }
 
+    public LoginModuleConfig setProperty(String key, String value) {
+        properties.setProperty(key, value);
+        return this;
+    }
+
     @Override
     public String toString() {
         return "LoginModuleConfig{className='" + className + "', usage=" + usage
