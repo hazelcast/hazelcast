@@ -18,7 +18,7 @@ recommend the following minimum as a good starting point:
 * 16 GB RAM
 
 Jet is tested to run on Linux machines, but it's compatible with any
-operation systems where the JDK is available.
+operating system where the JDK is available.
 
 ## Jet Home Folder
 
