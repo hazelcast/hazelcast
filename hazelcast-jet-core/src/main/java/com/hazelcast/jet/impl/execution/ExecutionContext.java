@@ -247,11 +247,14 @@ public class ExecutionContext implements DynamicMetricsProvider {
      * Starts the phase 1 of a new snapshot.
      */
     public CompletableFuture<SnapshotPhase1Result> beginSnapshotPhase1(long snapshotId, String mapName, int flags) {
+        LoggingUtil.logFine(logger, "Starting snapshot %d phase 1 for %s on member", snapshotId, jobNameAndExecutionId());
         synchronized (executionLock) {
             if (cancellationFuture.isDone()) {
                 throw new CancellationException();
             } else if (executionFuture != null && executionFuture.isDone()) {
-                // if execution is done, there are 0 processors to take snapshots. Therefore we're done now.
+                // if execution is done, there are 0 processors to take snapshot of. Therefore we're done now.
+                LoggingUtil.logFine(logger, "Ignoring snapshot %d phase 1 for %s: execution completed",
+                        snapshotId, jobNameAndExecutionId());
                 return CompletableFuture.completedFuture(new SnapshotPhase1Result(0, 0, 0, null));
             }
             return snapshotContext.startNewSnapshotPhase1(snapshotId, mapName, flags);
@@ -267,7 +270,9 @@ public class ExecutionContext implements DynamicMetricsProvider {
             if (cancellationFuture.isDone()) {
                 throw new CancellationException();
             } else if (executionFuture != null && executionFuture.isDone()) {
-                // if execution is done, there are 0 processors to take snapshots. Therefore we're done now.
+                // if execution is done, there are 0 processors to take snapshot of. Therefore we're done now.
+                LoggingUtil.logFine(logger, "Ignoring snapshot %d phase 2 for %s: execution completed",
+                        snapshotId, jobNameAndExecutionId());
                 return CompletableFuture.completedFuture(null);
             }
             return snapshotContext.startNewSnapshotPhase2(snapshotId, success);

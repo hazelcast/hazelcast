@@ -12,10 +12,11 @@ This allows Jet cluster to be shut down gracefully and restarted without
 a data loss. When the cluster restarts, the jobs will automatically be
 restarted, without having to submit them to the cluster again.
 
-Jet regularly [snapshots](../architecture/fault-tolerance) it's state.
-The state snapshot can be used as a recovery point. Snapshots are stored
-in memory. Lossless Cluster Restart works by persisting the RAM-based
-snapshot data to disk. It uses the [Hot Restart Persistence](https://docs.hazelcast.org/docs/latest/manual/html-single/index.html#hot-restart-persistence)
+Jet jobs regularly [snapshot](../architecture/fault-tolerance) their
+state. A state snapshot can be used as a recovery point. Snapshots are
+stored in memory. Lossless Cluster Restart works by persisting the
+RAM-based snapshot data to disk. It uses the [Hot Restart
+Persistence](https://docs.hazelcast.org/docs/latest/manual/html-single/index.html#hot-restart-persistence)
 feature of Hazelcast under the hood.
 
 ## Enabling Lossless Restart
@@ -29,9 +30,9 @@ hazelcast-jet:
     lossless-restart-enabled: true
 ```
 
-By the default the snapshot will be written to `<JET_HOME>/recovery`
-folder . To change this directory where the data will be stored,
-configure the `hot-restart-persistence` option in `hazelcast.yaml`:
+By default the snapshot will be written to `<JET_HOME>/recovery` folder.
+To change the directory where the data will be stored, configure the
+`hot-restart-persistence` option in `hazelcast.yaml`:
 
 ```yml
 hazelcast:
@@ -42,14 +43,14 @@ hazelcast:
 
 See the
 [docs](https://docs.hazelcast.org/docs/{imdg-version}/manual/html-single/index.html#hot-restart-persistence)
-for detailed description including fine-tuning.
+for a detailed description including fine tuning.
 
-## Safely Shutting Down A Jet Cluster
+## Safely Shutting Down a Jet Cluster
 
-For lossless restart to work, the cluster must be shutdown gracefully.
-When members are shutdown one by one in rapid succession, this starts an
-automatic rebalancing process where backup partitions are promoted and
-new backups are created for each member. This may result in
+For lossless restart to work the cluster must be shut down gracefully.
+When members are shutdown one by one in a rapid succession, Jet triggers
+an automatic rebalancing process where backup partitions are promoted
+and new backups are created for each member. This may result in
 out-of-memory errors or data loss.
 
 The entire cluster can be shut down using the `jet-cluster-admin`
@@ -95,19 +96,19 @@ Lossless Cluster Restart is a _maintenance_ tool. It isn't a means of
 fault tolerance.
 
 The purpose of the Lossless Cluster Restart is to provide a maintenance
-window for member operations and restart the cluster in a fast way. As
-a part of the ordered shutdown process, Jet makes sure that the
-in-memory snapshot data were persisted safely.
+window for member operations and restart the cluster in a fast way. As a
+part of the graceful shutdown process Jet makes sure that the in-memory
+snapshot data were persisted safely.
 
-The fault tolerance of Jet is entirely RAM-based. Snapshots is stored in
-multiple in-memory replicas across the cluster. Given the redundancy
-present in the cluster, this is sufficient to maintain a running cluster
+The fault tolerance of Jet is entirely RAM-based. Snapshots are stored
+in multiple in-memory replicas across the cluster. Given the redundancy
+present in the cluster this is sufficient to maintain a running cluster
 across single-node failures (or multiple-node, depending on the backup
 count), but it doesn’t cover the case when the entire cluster must shut
 down.
 
 This design decision allows Jet to exclude disk from the operations that
-affect Job execution, leading to low and predictable latency.
+affect job execution, leading to low and predictable latency.
 
 ## Performance considerations
 

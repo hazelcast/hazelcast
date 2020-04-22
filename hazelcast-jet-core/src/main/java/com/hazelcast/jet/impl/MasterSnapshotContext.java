@@ -110,7 +110,7 @@ class MasterSnapshotContext {
                         + ". Received execution ID: " + idToString(executionId));
                 return;
             }
-            snapshotQueue.add(tuple3(null, false, null));
+            enqueueSnapshot(null, false, null);
         } finally {
             mc.unlock();
         }
