@@ -29,6 +29,14 @@
         </fileSet>
 
         <fileSet>
+            <directory>hazelcast-sql/target</directory>
+            <outputDirectory>/lib/</outputDirectory>
+            <includes>
+                <include>hazelcast-sql-${project.version}.jar</include>
+            </includes>
+        </fileSet>
+
+        <fileSet>
             <directory>hazelcast/target/</directory>
             <outputDirectory>/lib/</outputDirectory>
             <includes>

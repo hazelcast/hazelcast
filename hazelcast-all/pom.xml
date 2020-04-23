@@ -176,10 +176,14 @@
         </dependency>
         <dependency>
             <groupId>com.hazelcast</groupId>
+            <artifactId>hazelcast-sql</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.hazelcast</groupId>
             <artifactId>hazelcast-wm</artifactId>
             <version>4.0</version>
         </dependency>
-
         <dependency>
             <groupId>com.hazelcast</groupId>
             <artifactId>hazelcast</artifactId>
@@ -187,13 +191,11 @@
             <version>${project.parent.version}</version>
             <classifier>tests</classifier>
         </dependency>
-
         <dependency>
             <groupId>org.apache.felix</groupId>
             <artifactId>org.apache.felix.utils</artifactId>
             <version>${felix.utils.version}</version>
             <scope>test</scope>
         </dependency>
-
     </dependencies>
 </project>
