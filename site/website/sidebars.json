@@ -62,6 +62,7 @@
     ],
     "Design Documents": [
       "design-docs/index",
+      "design-docs/010-operator-framework",
       "design-docs/009-pulsar-connector",
       "design-docs/007-grpc-support",
       "design-docs/006-declarative-serialization",
