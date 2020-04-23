@@ -16,7 +16,7 @@
 
 package com.hazelcast.sql.impl.calcite.opt.physical.join;
 
-import com.hazelcast.sql.impl.calcite.common.AbstractJoinRel;
+import com.hazelcast.sql.impl.calcite.opt.AbstractJoinRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.PhysicalRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.visitor.PhysicalRelVisitor;
 import org.apache.calcite.plan.RelOptCluster;

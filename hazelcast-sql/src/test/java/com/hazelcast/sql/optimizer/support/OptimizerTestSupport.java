@@ -22,7 +22,7 @@ import com.hazelcast.sql.impl.calcite.opt.logical.LogicalRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.PhysicalRel;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastSchema;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
-import com.hazelcast.sql.impl.calcite.statistics.TableStatistics;
+import com.hazelcast.sql.impl.calcite.schema.statistic.TableStatistic;
 import com.hazelcast.sql.impl.expression.ColumnExpression;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.Expression;
@@ -127,7 +127,7 @@ public abstract class OptimizerTestSupport {
             null,
             fieldTypes("f1", INT, "f2", INT, "f3", INT, "f4", INT, "f5", INT),
             null,
-            new TableStatistics(100))
+            new TableStatistic(100))
         );
 
         return new HazelcastSchema(tableMap);

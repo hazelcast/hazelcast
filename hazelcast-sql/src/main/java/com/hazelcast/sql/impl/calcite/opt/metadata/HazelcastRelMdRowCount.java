@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.calcite.cost.metadata;
+package com.hazelcast.sql.impl.calcite.opt.metadata;
 
 import org.apache.calcite.rel.core.TableScan;
 import org.apache.calcite.rel.metadata.ReflectiveRelMetadataProvider;
@@ -26,12 +26,12 @@ import org.apache.calcite.util.BuiltInMethod;
 /**
  * Metadata which provides row count estimates.
  */
-public final class RowCountMetadata extends RelMdRowCount {
+public final class HazelcastRelMdRowCount extends RelMdRowCount {
     /** Provider to be registered in Calcite. */
     public static final RelMetadataProvider SOURCE =
-        ReflectiveRelMetadataProvider.reflectiveSource(BuiltInMethod.ROW_COUNT.method, new RowCountMetadata());
+        ReflectiveRelMetadataProvider.reflectiveSource(BuiltInMethod.ROW_COUNT.method, new HazelcastRelMdRowCount());
 
-    private RowCountMetadata() {
+    private HazelcastRelMdRowCount() {
         // No-op.
     }
 

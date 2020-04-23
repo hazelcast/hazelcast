@@ -16,7 +16,7 @@
 
 package com.hazelcast.sql.impl.calcite.opt.logical;
 
-import com.hazelcast.sql.impl.calcite.HazelcastRelNode;
+import com.hazelcast.sql.impl.calcite.opt.HazelcastRelNode;
 
 /**
  * Marker interface for logical relations.

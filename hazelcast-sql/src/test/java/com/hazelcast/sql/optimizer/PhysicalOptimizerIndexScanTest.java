@@ -20,7 +20,7 @@ import com.hazelcast.config.IndexType;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastSchema;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastTableIndex;
-import com.hazelcast.sql.impl.calcite.statistics.TableStatistics;
+import com.hazelcast.sql.impl.calcite.schema.statistic.TableStatistic;
 import com.hazelcast.sql.optimizer.support.PhysicalOptimizerTestSupport;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.schema.Table;
@@ -50,7 +50,7 @@ public class PhysicalOptimizerIndexScanTest extends PhysicalOptimizerTestSupport
             null,
             fieldTypes("f1", INT, "f2", INT, "f3", INT),
             null,
-            new TableStatistics(100)
+            new TableStatistic(100)
         );
 
         tableMap.put(pTable.getName(), pTable);

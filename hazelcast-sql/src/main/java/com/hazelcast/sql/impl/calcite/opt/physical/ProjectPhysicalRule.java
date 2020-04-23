@@ -16,10 +16,10 @@
 
 package com.hazelcast.sql.impl.calcite.opt.physical;
 
-import com.hazelcast.sql.impl.calcite.HazelcastConventions;
-import com.hazelcast.sql.impl.calcite.distribution.DistributionField;
-import com.hazelcast.sql.impl.calcite.distribution.DistributionTrait;
-import com.hazelcast.sql.impl.calcite.distribution.DistributionType;
+import com.hazelcast.sql.impl.calcite.opt.HazelcastConventions;
+import com.hazelcast.sql.impl.calcite.opt.distribution.DistributionField;
+import com.hazelcast.sql.impl.calcite.opt.distribution.DistributionTrait;
+import com.hazelcast.sql.impl.calcite.opt.distribution.DistributionType;
 import com.hazelcast.sql.impl.calcite.opt.OptUtils;
 import com.hazelcast.sql.impl.calcite.opt.logical.ProjectLogicalRel;
 import org.apache.calcite.plan.RelOptRule;
@@ -41,7 +41,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static com.hazelcast.sql.impl.calcite.distribution.DistributionType.PARTITIONED;
+import static com.hazelcast.sql.impl.calcite.opt.distribution.DistributionType.PARTITIONED;
 
 /**
  * This rule converts logical projection into physical projection. Physical projection inherits distribution of the

@@ -25,8 +25,8 @@ import com.hazelcast.partition.PartitioningStrategy;
 import com.hazelcast.partition.strategy.DeclarativePartitioningStrategy;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.spi.impl.NodeEngine;
-import com.hazelcast.sql.impl.calcite.statistics.StatisticProvider;
-import com.hazelcast.sql.impl.calcite.statistics.TableStatistics;
+import com.hazelcast.sql.impl.calcite.schema.statistic.StatisticProvider;
+import com.hazelcast.sql.impl.calcite.schema.statistic.TableStatistic;
 import com.hazelcast.sql.impl.schema.SqlSchemaResolver;
 import com.hazelcast.sql.impl.schema.SqlTableField;
 import com.hazelcast.sql.impl.schema.SqlTableSchema;
@@ -174,7 +174,7 @@ public final class SchemaUtils {
                 tableSchema.getValueDescriptor(),
                 fieldTypes,
                 fieldPaths,
-                new TableStatistics(rowCount)
+                new TableStatistic(rowCount)
             );
 
             res.add(table);

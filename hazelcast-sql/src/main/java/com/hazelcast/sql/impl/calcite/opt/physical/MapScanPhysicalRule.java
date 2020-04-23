@@ -18,9 +18,9 @@ package com.hazelcast.sql.impl.calcite.opt.physical;
 
 import com.hazelcast.config.IndexType;
 import com.hazelcast.internal.util.BiTuple;
-import com.hazelcast.sql.impl.calcite.HazelcastConventions;
-import com.hazelcast.sql.impl.calcite.distribution.DistributionField;
-import com.hazelcast.sql.impl.calcite.distribution.DistributionTrait;
+import com.hazelcast.sql.impl.calcite.opt.HazelcastConventions;
+import com.hazelcast.sql.impl.calcite.opt.distribution.DistributionField;
+import com.hazelcast.sql.impl.calcite.opt.distribution.DistributionTrait;
 import com.hazelcast.sql.impl.calcite.opt.OptUtils;
 import com.hazelcast.sql.impl.calcite.opt.logical.MapScanLogicalRel;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
@@ -51,7 +51,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static com.hazelcast.sql.impl.calcite.distribution.DistributionType.PARTITIONED;
+import static com.hazelcast.sql.impl.calcite.opt.distribution.DistributionType.PARTITIONED;
 
 /**
  * Convert logical map scan to either replicated or partitioned physical scan.

@@ -16,10 +16,10 @@
 
 package com.hazelcast.sql.impl.calcite.opt.physical.join;
 
-import com.hazelcast.sql.impl.calcite.HazelcastConventions;
-import com.hazelcast.sql.impl.calcite.distribution.DistributionField;
-import com.hazelcast.sql.impl.calcite.distribution.DistributionTrait;
-import com.hazelcast.sql.impl.calcite.distribution.DistributionType;
+import com.hazelcast.sql.impl.calcite.opt.HazelcastConventions;
+import com.hazelcast.sql.impl.calcite.opt.distribution.DistributionField;
+import com.hazelcast.sql.impl.calcite.opt.distribution.DistributionTrait;
+import com.hazelcast.sql.impl.calcite.opt.distribution.DistributionType;
 import com.hazelcast.sql.impl.calcite.opt.OptUtils;
 import com.hazelcast.sql.impl.calcite.opt.logical.JoinLogicalRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.AbstractPhysicalRule;
@@ -39,8 +39,8 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-import static com.hazelcast.sql.impl.calcite.distribution.DistributionTrait.PARTITIONED_UNKNOWN_DIST;
-import static com.hazelcast.sql.impl.calcite.distribution.DistributionTrait.REPLICATED_DIST;
+import static com.hazelcast.sql.impl.calcite.opt.distribution.DistributionTrait.PARTITIONED_UNKNOWN_DIST;
+import static com.hazelcast.sql.impl.calcite.opt.distribution.DistributionTrait.REPLICATED_DIST;
 
 /**
  * General rule for join processing.

@@ -28,7 +28,7 @@ import org.apache.calcite.sql.validate.SqlValidatorCatalogReader;
 import org.apache.calcite.sql.validate.SqlValidatorImpl;
 
 public class HazelcastSqlValidator extends SqlValidatorImpl {
-    private static final HazelcastResource HZ_RESOURCE = Resources.create(HazelcastResource.class);
+    private static final HazelcastSqlValidatorResource HZ_RESOURCE = Resources.create(HazelcastSqlValidatorResource.class);
 
     public HazelcastSqlValidator(
         SqlOperatorTable opTab,

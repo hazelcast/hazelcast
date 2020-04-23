@@ -16,14 +16,14 @@
 
 package com.hazelcast.sql.impl.calcite.opt.physical;
 
-import com.hazelcast.sql.impl.calcite.HazelcastConventions;
+import com.hazelcast.sql.impl.calcite.opt.HazelcastConventions;
 import com.hazelcast.sql.impl.calcite.opt.OptUtils;
 import com.hazelcast.sql.impl.calcite.opt.logical.RootLogicalRel;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.RelOptRuleCall;
 import org.apache.calcite.rel.RelNode;
 
-import static com.hazelcast.sql.impl.calcite.distribution.DistributionTrait.ROOT_DIST;
+import static com.hazelcast.sql.impl.calcite.opt.distribution.DistributionTrait.ROOT_DIST;
 
 /**
  * Rule to convert the logical root node to physical root node.

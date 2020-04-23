@@ -16,9 +16,9 @@
 
 package com.hazelcast.sql.impl.calcite.opt.physical;
 
-import com.hazelcast.sql.impl.calcite.HazelcastConventions;
-import com.hazelcast.sql.impl.calcite.distribution.DistributionTrait;
-import com.hazelcast.sql.impl.calcite.distribution.DistributionType;
+import com.hazelcast.sql.impl.calcite.opt.HazelcastConventions;
+import com.hazelcast.sql.impl.calcite.opt.distribution.DistributionTrait;
+import com.hazelcast.sql.impl.calcite.opt.distribution.DistributionType;
 import com.hazelcast.sql.impl.calcite.opt.OptUtils;
 import com.hazelcast.sql.impl.calcite.opt.logical.SortLogicalRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.exchange.SortMergeExchangePhysicalRel;
@@ -38,8 +38,8 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
-import static com.hazelcast.sql.impl.calcite.distribution.DistributionType.REPLICATED;
-import static com.hazelcast.sql.impl.calcite.distribution.DistributionType.ROOT;
+import static com.hazelcast.sql.impl.calcite.opt.distribution.DistributionType.REPLICATED;
+import static com.hazelcast.sql.impl.calcite.opt.distribution.DistributionType.ROOT;
 
 /**
  * Rule which converts logical sort into its physical counterpart. There are several forms of physical implementations:

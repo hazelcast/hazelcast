@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.calcite.distribution;
+package com.hazelcast.sql.impl.calcite.opt.distribution;
 
 import com.hazelcast.sql.impl.calcite.opt.physical.RootPhysicalRel;
 import org.apache.calcite.plan.HazelcastRelOptCluster;
@@ -27,10 +27,10 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
-import static com.hazelcast.sql.impl.calcite.distribution.DistributionType.ANY;
-import static com.hazelcast.sql.impl.calcite.distribution.DistributionType.PARTITIONED;
-import static com.hazelcast.sql.impl.calcite.distribution.DistributionType.REPLICATED;
-import static com.hazelcast.sql.impl.calcite.distribution.DistributionType.ROOT;
+import static com.hazelcast.sql.impl.calcite.opt.distribution.DistributionType.ANY;
+import static com.hazelcast.sql.impl.calcite.opt.distribution.DistributionType.PARTITIONED;
+import static com.hazelcast.sql.impl.calcite.opt.distribution.DistributionType.REPLICATED;
+import static com.hazelcast.sql.impl.calcite.opt.distribution.DistributionType.ROOT;
 
 /**
  * Distribution trait. Defines how the given relation is distributed in the cluster. We define three principal

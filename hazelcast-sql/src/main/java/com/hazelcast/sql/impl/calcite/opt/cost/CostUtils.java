@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.calcite.cost;
+package com.hazelcast.sql.impl.calcite.opt.cost;
 
 /**
  * Utility methods for cost estimation.

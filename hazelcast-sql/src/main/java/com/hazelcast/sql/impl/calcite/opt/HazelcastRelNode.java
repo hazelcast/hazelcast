@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.calcite;
+package com.hazelcast.sql.impl.calcite.opt;
 
 import org.apache.calcite.plan.HazelcastRelOptCluster;
 import org.apache.calcite.rel.RelNode;

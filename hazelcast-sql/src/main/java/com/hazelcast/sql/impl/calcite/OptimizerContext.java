@@ -21,11 +21,11 @@ import com.hazelcast.cluster.memberselector.MemberSelectors;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.SqlErrorCode;
-import com.hazelcast.sql.impl.calcite.cost.CostFactory;
-import com.hazelcast.sql.impl.calcite.cost.metadata.MetadataProvider;
-import com.hazelcast.sql.impl.calcite.distribution.DistributionTrait;
-import com.hazelcast.sql.impl.calcite.distribution.DistributionTraitDef;
-import com.hazelcast.sql.impl.calcite.operators.HazelcastSqlOperatorTable;
+import com.hazelcast.sql.impl.calcite.opt.cost.CostFactory;
+import com.hazelcast.sql.impl.calcite.opt.distribution.DistributionTrait;
+import com.hazelcast.sql.impl.calcite.opt.distribution.DistributionTraitDef;
+import com.hazelcast.sql.impl.calcite.opt.metadata.HazelcastRelMdRowCount;
+import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlOperatorTable;
 import com.hazelcast.sql.impl.calcite.opt.OptUtils;
 import com.hazelcast.sql.impl.calcite.opt.logical.LogicalRel;
 import com.hazelcast.sql.impl.calcite.opt.logical.LogicalRules;
@@ -38,9 +38,11 @@ import com.hazelcast.sql.impl.calcite.opt.physical.RootPhysicalRule;
 import com.hazelcast.sql.impl.calcite.opt.physical.SortPhysicalRule;
 import com.hazelcast.sql.impl.calcite.opt.physical.agg.AggregatePhysicalRule;
 import com.hazelcast.sql.impl.calcite.opt.physical.join.JoinPhysicalRule;
+import com.hazelcast.sql.impl.calcite.schema.HazelcastCalciteCatalogReader;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastSchema;
 import com.hazelcast.sql.impl.calcite.schema.SchemaUtils;
-import com.hazelcast.sql.impl.calcite.statistics.StatisticProvider;
+import com.hazelcast.sql.impl.calcite.schema.statistic.StatisticProvider;
+import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlConformance;
 import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlValidator;
 import com.hazelcast.sql.impl.optimizer.OptimizerRuleCallTracker;
 import com.hazelcast.sql.impl.schema.SqlSchemaResolver;
@@ -63,6 +65,8 @@ import org.apache.calcite.rel.RelCollationTraitDef;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.RelRoot;
 import org.apache.calcite.rel.core.RelFactories;
+import org.apache.calcite.rel.metadata.ChainedRelMetadataProvider;
+import org.apache.calcite.rel.metadata.DefaultRelMetadataProvider;
 import org.apache.calcite.rel.metadata.JaninoRelMetadataProvider;
 import org.apache.calcite.rel.metadata.RelMetadataProvider;
 import org.apache.calcite.rel.rules.SubQueryRemoveRule;
@@ -87,6 +91,11 @@ import java.util.Properties;
  * Optimizer context which holds the whole environment for the given optimization session.
  */
 public final class OptimizerContext {
+    public static final RelMetadataProvider METADATA_PROVIDER = ChainedRelMetadataProvider.of(ImmutableList.of(
+        HazelcastRelMdRowCount.SOURCE,
+        DefaultRelMetadataProvider.INSTANCE
+    ));
+
     /** Converter: whether to convert LogicalTableScan to some physical form immediately or not. We do not need this. */
     private static final boolean CONVERTER_CONVERT_TABLE_ACCESS = false;
 
@@ -377,7 +386,7 @@ public final class OptimizerContext {
 
     private static HazelcastRelOptCluster createCluster(VolcanoPlanner planner, JavaTypeFactory typeFactory, int memberCount) {
         // TODO: Use CachingRelMetadataProvider instead?
-        RelMetadataProvider relMetadataProvider = JaninoRelMetadataProvider.of(MetadataProvider.INSTANCE);
+        RelMetadataProvider relMetadataProvider = JaninoRelMetadataProvider.of(METADATA_PROVIDER);
 
         HazelcastRelOptCluster cluster = HazelcastRelOptCluster.create(planner, new RexBuilder(typeFactory), memberCount);
         cluster.setMetadataProvider(relMetadataProvider);

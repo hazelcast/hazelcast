@@ -17,9 +17,9 @@
 package com.hazelcast.sql.impl.calcite.opt.physical.agg;
 
 import com.hazelcast.sql.impl.calcite.opt.OptUtils;
-import com.hazelcast.sql.impl.calcite.distribution.DistributionField;
-import com.hazelcast.sql.impl.calcite.distribution.DistributionTrait;
-import com.hazelcast.sql.impl.calcite.distribution.DistributionType;
+import com.hazelcast.sql.impl.calcite.opt.distribution.DistributionField;
+import com.hazelcast.sql.impl.calcite.opt.distribution.DistributionTrait;
+import com.hazelcast.sql.impl.calcite.opt.distribution.DistributionType;
 import com.hazelcast.sql.impl.calcite.opt.logical.AggregateLogicalRel;
 import org.apache.calcite.plan.HazelcastRelOptCluster;
 import org.apache.calcite.rel.RelNode;

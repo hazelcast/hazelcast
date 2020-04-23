@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hazelcast.sql.impl.calcite.statistics;
+package com.hazelcast.sql.impl.calcite.schema.statistic;
 
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.map.impl.MapService;

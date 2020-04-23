@@ -14,22 +14,30 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.calcite.cost.metadata;
-
-import com.google.common.collect.ImmutableList;
-import org.apache.calcite.rel.metadata.ChainedRelMetadataProvider;
-import org.apache.calcite.rel.metadata.DefaultRelMetadataProvider;
-import org.apache.calcite.rel.metadata.RelMetadataProvider;
+package com.hazelcast.sql.impl.calcite.schema.statistic;
 
 /**
- * Metadata provider for cost model.
+ * Simple table statistics.
  */
-public final class MetadataProvider {
-    /** Singleton instance. */
-    public static final RelMetadataProvider INSTANCE = ChainedRelMetadataProvider.of(ImmutableList
-        .of(RowCountMetadata.SOURCE, DefaultRelMetadataProvider.INSTANCE));
+public class TableStatistic extends TableStatisticAdapter {
+    /** Row count. */
+    private final Long rowCount;
 
-    private MetadataProvider() {
-        // No-op.
+    public TableStatistic(long rowCount) {
+        this((Long) rowCount);
+    }
+
+    public TableStatistic(Long rowCount) {
+        this.rowCount = rowCount;
+    }
+
+    @Override
+    public Double getRowCount() {
+        return rowCount != null ? (double) rowCount : null;
+    }
+
+    @Override
+    public String toString() {
+        return getClass().getSimpleName() + "{rowCount=" + rowCount + '}';
     }
 }

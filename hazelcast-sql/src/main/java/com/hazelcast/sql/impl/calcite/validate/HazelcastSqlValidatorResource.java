@@ -14,30 +14,15 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.calcite.statistics;
+package com.hazelcast.sql.impl.calcite.validate;
+
+import org.apache.calcite.runtime.Resources;
+import org.apache.calcite.sql.validate.SqlValidatorException;
 
 /**
- * Simple table statistics.
+ * Error message resources.
  */
-public class TableStatistics extends TableStatisticAdapter {
-    /** Row count. */
-    private final Long rowCount;
-
-    public TableStatistics(long rowCount) {
-        this((Long) rowCount);
-    }
-
-    public TableStatistics(Long rowCount) {
-        this.rowCount = rowCount;
-    }
-
-    @Override
-    public Double getRowCount() {
-        return rowCount != null ? (double) rowCount : null;
-    }
-
-    @Override
-    public String toString() {
-        return getClass().getSimpleName() + "{rowCount=" + rowCount + '}';
-    }
+public interface HazelcastSqlValidatorResource {
+    @Resources.BaseMessage("UNION is not supported")
+    Resources.ExInst<SqlValidatorException> unionNotSupported();
 }

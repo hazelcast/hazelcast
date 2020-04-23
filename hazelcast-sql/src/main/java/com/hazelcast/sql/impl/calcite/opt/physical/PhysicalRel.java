@@ -16,7 +16,7 @@
 
 package com.hazelcast.sql.impl.calcite.opt.physical;
 
-import com.hazelcast.sql.impl.calcite.HazelcastRelNode;
+import com.hazelcast.sql.impl.calcite.opt.HazelcastRelNode;
 import com.hazelcast.sql.impl.calcite.opt.physical.visitor.PhysicalRelVisitor;
 
 /**

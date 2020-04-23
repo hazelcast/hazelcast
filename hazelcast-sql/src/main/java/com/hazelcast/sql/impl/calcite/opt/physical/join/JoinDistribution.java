@@ -16,7 +16,7 @@
 
 package com.hazelcast.sql.impl.calcite.opt.physical.join;
 
-import com.hazelcast.sql.impl.calcite.distribution.DistributionType;
+import com.hazelcast.sql.impl.calcite.opt.distribution.DistributionType;
 
 /**
  * Distribution of input with respect to join condition.

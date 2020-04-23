@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.calcite.distribution;
+package com.hazelcast.sql.impl.calcite.opt.distribution;
 
-import com.hazelcast.sql.impl.calcite.HazelcastConventions;
+import com.hazelcast.sql.impl.calcite.opt.HazelcastConventions;
 import com.hazelcast.sql.impl.calcite.opt.OptUtils;
 import com.hazelcast.sql.impl.calcite.opt.physical.ReplicatedToDistributedPhysicalRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.exchange.BroadcastExchangePhysicalRel;
@@ -31,10 +31,10 @@ import org.apache.calcite.rel.RelNode;
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.hazelcast.sql.impl.calcite.distribution.DistributionType.ANY;
-import static com.hazelcast.sql.impl.calcite.distribution.DistributionType.PARTITIONED;
-import static com.hazelcast.sql.impl.calcite.distribution.DistributionType.REPLICATED;
-import static com.hazelcast.sql.impl.calcite.distribution.DistributionType.ROOT;
+import static com.hazelcast.sql.impl.calcite.opt.distribution.DistributionType.ANY;
+import static com.hazelcast.sql.impl.calcite.opt.distribution.DistributionType.PARTITIONED;
+import static com.hazelcast.sql.impl.calcite.opt.distribution.DistributionType.REPLICATED;
+import static com.hazelcast.sql.impl.calcite.opt.distribution.DistributionType.ROOT;
 
 public class DistributionTraitDef extends RelTraitDef<DistributionTrait> {
     public static final DistributionTraitDef INSTANCE = new DistributionTraitDef();

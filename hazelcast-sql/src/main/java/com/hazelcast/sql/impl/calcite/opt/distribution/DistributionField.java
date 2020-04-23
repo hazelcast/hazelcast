@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.calcite.distribution;
+package com.hazelcast.sql.impl.calcite.opt.distribution;
 
 import java.util.Objects;
 

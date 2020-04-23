@@ -14,15 +14,14 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.calcite.validate;
+package com.hazelcast.sql.impl.calcite.schema.statistic;
 
-import org.apache.calcite.runtime.Resources;
-import org.apache.calcite.sql.validate.SqlValidatorException;
+import com.hazelcast.core.DistributedObject;
 
 /**
- * Error message resources.
+ * Contains statistics required for planner.
  */
-public interface HazelcastResource {
-    @Resources.BaseMessage("UNION is not supported")
-    Resources.ExInst<SqlValidatorException> unionNotSupported();
+public interface StatisticProvider {
+
+    long getRowCount(DistributedObject container);
 }

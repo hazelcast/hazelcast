@@ -14,44 +14,34 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.calcite.operators;
+package com.hazelcast.sql.impl.calcite.validate.functions;
 
 import org.apache.calcite.sql.SqlAggFunction;
-import org.apache.calcite.sql.SqlFunction;
 import org.apache.calcite.sql.SqlFunctionCategory;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.type.OperandTypes;
 import org.apache.calcite.sql.type.ReturnTypes;
-import org.apache.calcite.sql.util.ReflectiveSqlOperatorTable;
+import org.apache.calcite.util.Optionality;
 
 /**
- * Custom functions.
+ * Distributed aggregate function (for internal use only).
  */
-public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable {
-    public static final SqlFunction LENGTH =
-        new SqlFunction(
-            "LENGTH",
-            SqlKind.OTHER_FUNCTION,
-            ReturnTypes.INTEGER_NULLABLE,
+public class DistributedAvgAggFunction extends SqlAggFunction {
+    /** Name. */
+    private static final String NAME = "DIST_AVG";
+
+    public DistributedAvgAggFunction() {
+        super(
+            NAME,
             null,
-            OperandTypes.CHARACTER,
-            SqlFunctionCategory.NUMERIC
+            SqlKind.OTHER_FUNCTION,
+            ReturnTypes.AVG_AGG_FUNCTION,
+            null,
+            OperandTypes.NUMERIC,
+            SqlFunctionCategory.NUMERIC,
+            false,
+            false,
+            Optionality.FORBIDDEN
         );
-
-    /** Function to calculate distributed average. */
-    public static final SqlAggFunction DISTRIBUTED_AVG = new DistributedAvgAggFunction();
-
-    private static final HazelcastSqlOperatorTable INSTANCE = new HazelcastSqlOperatorTable();
-
-    static {
-        INSTANCE.init();
-    }
-
-    private HazelcastSqlOperatorTable() {
-        // No-op.
-    }
-
-    public static HazelcastSqlOperatorTable instance() {
-        return INSTANCE;
     }
 }
