@@ -17,6 +17,7 @@
 package com.hazelcast.sql.impl.exec.sort;
 
 import com.hazelcast.sql.impl.row.Row;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -55,6 +56,7 @@ public class MergeSort {
         this(sources, comparator, UNLIMITED);
     }
 
+    @SuppressFBWarnings(value = "EI_EXPOSE_REP2", justification = "This is an internal class")
     public MergeSort(MergeSortSource[] sources, SortKeyComparator comparator, int limit) {
         this.sources = sources;
         this.heap = new PriorityQueue<>(comparator);

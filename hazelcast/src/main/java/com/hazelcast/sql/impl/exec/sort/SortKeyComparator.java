@@ -16,12 +16,15 @@
 
 package com.hazelcast.sql.impl.exec.sort;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 import java.util.Comparator;
 import java.util.List;
 
 /**
  * Comparator fot the sort key.
  */
+@SuppressFBWarnings(value = "SE_COMPARATOR_SHOULD_BE_SERIALIZABLE", justification = "Never serialized")
 public class SortKeyComparator implements Comparator<SortKey> {
     /** List of ascending collations. */
     private final List<Boolean> ascs;

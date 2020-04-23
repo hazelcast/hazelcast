@@ -19,6 +19,7 @@ package com.hazelcast.sql.impl.exec.io;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.row.RowBatch;
 import com.hazelcast.sql.impl.partitioner.RowPartitioner;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 /**
  * Send qualifier for unicast sender.
@@ -34,6 +35,7 @@ public class UnicastOutboxSendQualifier implements OutboxSendQualifier {
 
     private int outboxIndex;
 
+    @SuppressFBWarnings(value = "EI_EXPOSE_REP2", justification = "This is an internal class")
     public UnicastOutboxSendQualifier(RowPartitioner partitioner, int[] partitionOutboxIndexes) {
         this.partitioner = partitioner;
         this.partitionOutboxIndexes = partitionOutboxIndexes;

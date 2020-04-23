@@ -17,6 +17,7 @@
 package com.hazelcast.sql.impl.expression.string;
 
 import com.hazelcast.sql.impl.QueryException;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.Objects;
 import java.util.regex.Matcher;
@@ -51,6 +52,7 @@ public class LikeFunctionExecutor {
     /** Last Java pattern. */
     private Pattern lastJavaPattern;
 
+    @SuppressFBWarnings(value = "NP_BOOLEAN_RETURN_NULL", justification = "SQL ternary logic allows NULL")
     public Boolean like(String source, String pattern, String escape) {
         // TODO: Validate the implementation against ANSI.
         if (source == null || pattern == null) {

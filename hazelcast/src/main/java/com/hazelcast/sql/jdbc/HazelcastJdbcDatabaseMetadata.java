@@ -16,16 +16,21 @@
 
 package com.hazelcast.sql.jdbc;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
 import java.sql.RowIdLifetime;
 import java.sql.SQLException;
 
+
 /**
  * JDBC database metadata.
  */
+// TODO: Remove NP_NONNULL_RETURN_VIOLATION suppression when ready
 @SuppressWarnings({"RedundantThrows", "checkstyle:MethodCount"})
+@SuppressFBWarnings(value = "NP_NONNULL_RETURN_VIOLATION", justification = "Prototype")
 public class HazelcastJdbcDatabaseMetadata implements DatabaseMetaData {
     /** Connection which produced this metadata. */
     private final HazelcastJdbcConnection connection;

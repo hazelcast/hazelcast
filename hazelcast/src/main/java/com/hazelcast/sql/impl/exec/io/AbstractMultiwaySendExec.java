@@ -19,6 +19,7 @@ package com.hazelcast.sql.impl.exec.io;
 import com.hazelcast.sql.impl.exec.Exec;
 import com.hazelcast.sql.impl.row.RowBatch;
 import com.hazelcast.sql.impl.worker.QueryFragmentContext;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.HashMap;
 import java.util.Iterator;
@@ -32,6 +33,7 @@ public abstract class AbstractMultiwaySendExec extends AbstractSendExec {
     protected final Outbox[] outboxes;
     private final Map<Integer, Position> pendingPositions = new HashMap<>();
 
+    @SuppressFBWarnings(value = "EI_EXPOSE_REP2", justification = "This is an internal class")
     public AbstractMultiwaySendExec(int id, Exec upstream, Outbox[] outboxes) {
         super(id, upstream);
 

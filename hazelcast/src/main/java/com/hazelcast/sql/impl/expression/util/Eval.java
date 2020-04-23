@@ -19,6 +19,7 @@ package com.hazelcast.sql.impl.expression.util;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.row.Row;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
@@ -41,6 +42,7 @@ public final class Eval {
      * @param row        the row to evaluate the expression on.
      * @return the converted evaluation result.
      */
+    @SuppressFBWarnings(value = "NP_BOOLEAN_RETURN_NULL", justification = "SQL ternary logic allows NULL")
     public static Boolean asBoolean(Expression<?> expression, Row row, ExpressionEvalContext context) {
         Object res = expression.eval(row, context);
 

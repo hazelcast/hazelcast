@@ -29,6 +29,7 @@ import com.hazelcast.sql.impl.type.QueryDataTypeUtils;
 import com.hazelcast.sql.impl.type.SqlDaySecondInterval;
 import com.hazelcast.sql.impl.type.SqlYearMonthInterval;
 import com.hazelcast.sql.impl.type.converter.Converter;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -71,6 +72,7 @@ public class ComparisonPredicate extends BiExpression<Boolean> {
         return new ComparisonPredicate(coercedFirst, coercedSecond, type, comparisonMode);
     }
 
+    @SuppressFBWarnings(value = "NP_BOOLEAN_RETURN_NULL", justification = "SQL ternary logic allows NULL")
     @Override
     public Boolean eval(Row row, ExpressionEvalContext context) {
         Object operand1Value = operand1.eval(row, context);

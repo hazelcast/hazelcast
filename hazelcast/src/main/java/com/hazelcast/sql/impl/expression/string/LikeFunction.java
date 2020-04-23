@@ -31,6 +31,9 @@ import java.io.IOException;
  * LIKE string function.
  */
 public class LikeFunction extends TriExpression<Boolean> {
+
+    private static final long serialVersionUID = -3795317922395825892L;
+
     /** Executor. */
     private transient LikeFunctionExecutor like = new LikeFunctionExecutor();
 
