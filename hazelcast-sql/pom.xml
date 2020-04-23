@@ -38,8 +38,6 @@
 
         <calcite.version>1.22.0</calcite.version>
         <guava.version>19.0</guava.version>
-
-        <relocation.root>com.hazelcast</relocation.root>
     </properties>
 
     <build>
