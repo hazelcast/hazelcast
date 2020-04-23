@@ -20,7 +20,9 @@ import com.hazelcast.jet.SimpleTestInClusterSupport;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.grpc.greeter.GreeterGrpc;
 import com.hazelcast.jet.grpc.greeter.GreeterOuterClass.HelloReply;
+import com.hazelcast.jet.grpc.greeter.GreeterOuterClass.HelloReplyList;
 import com.hazelcast.jet.grpc.greeter.GreeterOuterClass.HelloRequest;
+import com.hazelcast.jet.grpc.greeter.GreeterOuterClass.HelloRequestList;
 import com.hazelcast.jet.impl.util.ExceptionUtil;
 import com.hazelcast.jet.pipeline.BatchStage;
 import com.hazelcast.jet.pipeline.BatchStageWithKey;
@@ -102,7 +104,7 @@ public class GrpcServiceTest extends SimpleTestInClusterSupport {
 
         Pipeline p = Pipeline.create();
         BatchStageWithKey<String, String> stage = p.readFrom(TestSources.items(items))
-                                           .groupingKey(i -> i);
+                                                   .groupingKey(i -> i);
         // When
         BatchStage<String> mapped = stage.mapUsingServiceAsync(bidirectionalStreaming(port), (service, key, item) -> {
             HelloRequest req = HelloRequest.newBuilder().setName(item).build();
@@ -115,7 +117,6 @@ public class GrpcServiceTest extends SimpleTestInClusterSupport {
         }));
         instance().newJob(p).join();
     }
-
 
     @Test
     public void when_bidirectionalStreaming_withFaultyService() throws IOException {
@@ -221,6 +222,87 @@ public class GrpcServiceTest extends SimpleTestInClusterSupport {
         }
     }
 
+    @Test
+    public void when_repeatedBidirectionalStreaming() throws IOException {
+        // Given
+        server = createServer(new GreeterServiceImpl());
+        final int port = server.getPort();
+
+        List<String> items = IntStream.range(0, ITEM_COUNT).mapToObj(Integer::toString).collect(toList());
+
+        Pipeline p = Pipeline.create();
+
+        BatchStage<String> stage = p.readFrom(TestSources.items(items));
+
+        // When
+        BatchStage<String> mapped = stage.mapUsingServiceAsyncBatched(
+                repeatedBidirectionalStreaming(port), 128, (service, itemList) -> {
+            HelloRequestList req = HelloRequestList.newBuilder().addAllName(itemList).build();
+            return service.call(req).thenApply(HelloReplyList::getMessageList);
+        });
+
+        // Then
+        List<String> expected = IntStream.range(0, ITEM_COUNT).boxed()
+                .map(t -> "Hello " + Integer.toString(t)).collect(toList());
+        mapped.writeTo(AssertionSinks.assertAnyOrder(expected));
+        instance().newJob(p).join();
+    }
+
+    @Test
+    public void when_repeatedBidirectionalStreaming_distributed() throws IOException {
+        // Given
+        server = createServer(new GreeterServiceImpl());
+        final int port = server.getPort();
+
+        List<String> items = IntStream.range(0, ITEM_COUNT).mapToObj(Integer::toString).collect(toList());
+
+        Pipeline p = Pipeline.create();
+        BatchStageWithKey<String, String> stage = p.readFrom(TestSources.items(items))
+                                                   .groupingKey(i -> i);
+        // When
+        BatchStage<String> mapped = stage.mapUsingServiceAsyncBatched(
+                repeatedBidirectionalStreaming(port), 128, (service, itemList) -> {
+            HelloRequestList req = HelloRequestList.newBuilder().addAllName(itemList).build();
+            return service.call(req).thenApply(HelloReplyList::getMessageList);
+        });
+
+        // Then
+        mapped.writeTo(AssertionSinks.assertCollected(e -> {
+            assertEquals("unexpected number of items received", ITEM_COUNT, e.size());
+        }));
+        instance().newJob(p).join();
+    }
+
+    @Test
+    public void when_repeatedBidirectionalStreaming_withFaultyService() throws IOException {
+        // Given
+        server = createServer(new FaultyGreeterServiceImpl());
+        final int port = server.getPort();
+
+        List<String> items = IntStream.range(0, ITEM_COUNT).mapToObj(Integer::toString).collect(toList());
+
+        Pipeline p = Pipeline.create();
+
+        BatchStage<String> stage = p.readFrom(TestSources.items(items));
+
+        // When
+        BatchStage<String> mapped = stage.mapUsingServiceAsyncBatched(
+                repeatedBidirectionalStreaming(port), 128, (service, itemList) -> {
+            HelloRequestList req = HelloRequestList.newBuilder().addAllName(itemList).build();
+            return service.call(req).thenApply(HelloReplyList::getMessageList);
+        });
+
+        // Then
+        mapped.writeTo(Sinks.noop());
+        try {
+            instance().newJob(p).join();
+            fail("Job should have failed");
+        } catch (Exception e) {
+            Throwable ex = ExceptionUtil.peel(e);
+            assertThat(ex.getMessage()).contains("com.hazelcast.jet.grpc.impl.StatusRuntimeExceptionJet");
+        }
+    }
+
     private ServiceFactory<?, ? extends GrpcService<HelloRequest, HelloReply>> unary(int port) {
         return unaryService(
                 () -> ManagedChannelBuilder.forAddress("localhost", port).usePlaintext(),
@@ -233,6 +315,14 @@ public class GrpcServiceTest extends SimpleTestInClusterSupport {
         return bidirectionalStreamingService(
                 () -> ManagedChannelBuilder.forAddress("localhost", port).usePlaintext(),
                 channel -> GreeterGrpc.newStub(channel)::sayHelloBidirectional
+        );
+    }
+
+    private ServiceFactory<?, ? extends GrpcService<HelloRequestList, HelloReplyList>>
+            repeatedBidirectionalStreaming(int port) {
+        return bidirectionalStreamingService(
+                () -> ManagedChannelBuilder.forAddress("localhost", port).usePlaintext(),
+                channel -> GreeterGrpc.newStub(channel)::sayHelloRepeatedBidirectional
         );
     }
 
@@ -252,6 +342,27 @@ public class GrpcServiceTest extends SimpleTestInClusterSupport {
             return new StreamObserver<HelloRequest>() {
                 @Override
                 public void onNext(HelloRequest value) {
+                    responseObserver.onError(new RuntimeException("something went wrong"));
+                }
+
+                @Override
+                public void onError(Throwable t) {
+
+                }
+
+                @Override
+                public void onCompleted() {
+                    responseObserver.onCompleted();
+                }
+            };
+        }
+
+        @Override
+        public StreamObserver<HelloRequestList> sayHelloRepeatedBidirectional(
+                StreamObserver<HelloReplyList> responseObserver) {
+            return new StreamObserver<HelloRequestList>() {
+                @Override
+                public void onNext(HelloRequestList value) {
                     responseObserver.onError(new RuntimeException("something went wrong"));
                 }
 
@@ -292,6 +403,34 @@ public class GrpcServiceTest extends SimpleTestInClusterSupport {
                     HelloReply reply = HelloReply.newBuilder()
                                                  .setMessage("Hello " + value.getName())
                                                  .build();
+
+                    responseObserver.onNext(reply);
+                }
+
+                @Override
+                public void onError(Throwable t) {
+                    t.printStackTrace();
+                }
+
+                @Override
+                public void onCompleted() {
+                    responseObserver.onCompleted();
+                }
+            };
+        }
+
+        @Override
+        public StreamObserver<HelloRequestList> sayHelloRepeatedBidirectional(
+                StreamObserver<HelloReplyList> responseObserver) {
+            return new StreamObserver<HelloRequestList>() {
+
+                @Override
+                public void onNext(HelloRequestList value) {
+                    HelloReplyList.Builder builder = HelloReplyList.newBuilder();
+                    for (String string : value.getNameList()) {
+                        builder.addMessage("Hello " + string);
+                    }
+                    HelloReplyList reply = builder.build();
 
                     responseObserver.onNext(reply);
                 }
