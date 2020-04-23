@@ -33,12 +33,10 @@ public final class TernaryLogic {
         for (Expression<?> operand : operands) {
             Boolean result = Eval.asBoolean(operand, row, context);
 
-            if (result == Boolean.FALSE) {
-                return Boolean.FALSE;
-            }
-
             if (result == null) {
                 seenUnknown = true;
+            } else if (!result) {
+                return Boolean.FALSE;
             }
         }
 
@@ -51,12 +49,10 @@ public final class TernaryLogic {
         for (Expression<?> operand : operands) {
             Boolean result = Eval.asBoolean(operand, row, context);
 
-            if (result == Boolean.TRUE) {
-                return Boolean.TRUE;
-            }
-
             if (result == null) {
                 seenUnknown = true;
+            } else if (result) {
+                return Boolean.TRUE;
             }
         }
 
@@ -76,19 +72,19 @@ public final class TernaryLogic {
     }
 
     public static boolean isTrue(Boolean value) {
-        return value == Boolean.TRUE;
+        return value != null && value;
     }
 
     public static boolean isNotTrue(Boolean value) {
-        return value != Boolean.TRUE;
+        return value == null || !value;
     }
 
     public static boolean isFalse(Boolean value) {
-        return value == Boolean.FALSE;
+        return value != null && !value;
     }
 
     public static boolean isNotFalse(Boolean value) {
-        return value != Boolean.FALSE;
+        return value == null || value;
     }
 
 }
