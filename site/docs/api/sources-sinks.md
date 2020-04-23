@@ -1,5 +1,5 @@
 ---
-title: Sources and Sinks 
+title: Sources and Sinks
 description: Birds-eye view of all pre-defined sources available in Jet.
 ---
 
@@ -865,7 +865,8 @@ Pipeline p = Pipeline.create();
 p.readFrom(Sources.jdbc(
     () -> DriverManager.getConnection("jdbc:mysql://localhost:3306/mysql"),
     (con, parallelism, index) -> {
-        PreparedStatement stmt = con.prepareStatement("SELECT * FROM person WHERE MOD(id, ?) = ?)");
+        PreparedStatement stmt = con.prepareStatement(
+              "SELECT * FROM person WHERE MOD(id, ?) = ?)");
         stmt.setInt(1, parallelism);
         stmt.setInt(2, index);
         return stmt.executeQuery();
@@ -1097,8 +1098,9 @@ Pipeline p = Pipeline.create();
 p.readFrom(TestSources.items("a", "b", "c", "d"))
  .writeTo(Sinks.observable(observable));
 
-Future<List<String>> future = observable.toFuture(s -> s.collect(Collectors.toList()));
-
+Future<List<String>> future = observable.toFuture(
+    s -> s.collect(Collectors.toList())
+);
 jet.newJob(p);
 
 try {
@@ -1111,7 +1113,7 @@ try {
 }
 ```
 
-#### Clean-up
+#### Cleanup
 
 As `Observable`s are backed by `Ringbuffer`s stored in the cluster which
 should be cleaned up by the client, once they are no longer necessary
@@ -1222,8 +1224,7 @@ If Jet doesn’t natively support the data source/sink you need, you can
 build a connector for it yourself by using the
 [SourceBuilder](/javadoc/{jet-version}/com/hazelcast/jet/pipeline/SourceBuilder.html)
 and
-[SinkBuilder](/javadoc/{jet-version}/com/hazelcast/jet/pipeline/SinkBuilder.html)
-.
+[SinkBuilder](/javadoc/{jet-version}/com/hazelcast/jet/pipeline/SinkBuilder.html).
 
 ### SourceBuilder
 
