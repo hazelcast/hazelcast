@@ -130,9 +130,10 @@ public final class GrpcServices {
      * }</pre>
      * We can create the following service factory:
      * <pre>{@code
-     * ServiceFactory<?, ? extends GrpcService<HelloRequest, HelloResponse> greeterService = bidirectionalStreamingService(
-     *     () -> ManagedChannelBuilder.forAddress("localhost", 5000).usePlaintext(),
-     *     channel -> GreeterGrpc.newStub(channel)::sayHello
+     * ServiceFactory<?, ? extends GrpcService<HelloRequest, HelloResponse> greeterService =
+     *     bidirectionalStreamingService(
+     *         () -> ManagedChannelBuilder.forAddress("localhost", 5000).usePlaintext(),
+     *         channel -> GreeterGrpc.newStub(channel)::sayHello
      * );
      * }</pre>
      * where {@code GreeterGrpc} is the auto-generated class by the protobuf compiler.

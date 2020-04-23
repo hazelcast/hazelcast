@@ -12,7 +12,7 @@ service ProductService {
 }
 
 service BrokerService {
-  rpc BrokerInfo (BrokerInfoRequest) returns (BrokerInfoReply) {}
+  rpc BrokerInfo (stream BrokerInfoRequest) returns (stream BrokerInfoReply) {}
 }
 
 message ProductInfoRequest {

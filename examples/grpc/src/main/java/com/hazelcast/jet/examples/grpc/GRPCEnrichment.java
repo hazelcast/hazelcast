@@ -32,6 +32,7 @@ import io.grpc.ManagedChannelBuilder;
 import io.grpc.ServerBuilder;
 
 import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.Map;
@@ -44,6 +45,7 @@ import static com.hazelcast.function.Functions.entryValue;
 import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.datamodel.Tuple2.tuple2;
 import static com.hazelcast.jet.datamodel.Tuple3.tuple3;
+import static com.hazelcast.jet.grpc.GrpcServices.bidirectionalStreamingService;
 import static com.hazelcast.jet.grpc.GrpcServices.unaryService;
 import static com.hazelcast.jet.pipeline.JournalInitialPosition.START_FROM_CURRENT;
 import static java.util.stream.Collectors.toMap;
@@ -80,20 +82,7 @@ public final class GRPCEnrichment {
      * using the {@link StreamStage#mapUsingServiceAsync}
      * method.
      */
-    public static Pipeline enrichUsingGRPC() throws Exception {
-        Map<Integer, Product> productMap = readLines("products.txt")
-                .collect(toMap(Entry::getKey, e -> new Product(e.getKey(), e.getValue())));
-        Map<Integer, Broker> brokerMap = readLines("brokers.txt")
-                .collect(toMap(Entry::getKey, e -> new Broker(e.getKey(), e.getValue())));
-
-        ServerBuilder.forPort(PORT)
-                     .executor(Executors.newFixedThreadPool(4))
-                     .addService(new ProductServiceImpl(productMap))
-                     .addService(new BrokerServiceImpl(brokerMap))
-                     .build()
-                     .start();
-        System.out.println("*** Server started, listening on " + PORT);
-
+    public static Pipeline enrichUsingGRPC() {
         // The stream to be enriched: trades
         Pipeline p = Pipeline.create();
         StreamStage<Trade> trades = p
@@ -101,16 +90,16 @@ public final class GRPCEnrichment {
                 .withoutTimestamps()
                 .map(entryValue());
 
-
         ServiceFactory<?, ? extends GrpcService<ProductInfoRequest, ProductInfoReply>> productService = unaryService(
-                () -> ManagedChannelBuilder.forAddress("localhost", PORT).usePlaintext(),
+                () -> ManagedChannelBuilder.forAddress("localhost", PORT).useTransportSecurity().usePlaintext(),
                 channel -> ProductServiceGrpc.newStub(channel)::productInfo
         );
 
-        ServiceFactory<?, ? extends GrpcService<BrokerInfoRequest, BrokerInfoReply>> brokerService = unaryService(
-                () -> ManagedChannelBuilder.forAddress("localhost", PORT).usePlaintext(),
-                channel -> BrokerServiceGrpc.newStub(channel)::brokerInfo
-        );
+        ServiceFactory<?, ? extends GrpcService<BrokerInfoRequest, BrokerInfoReply>> brokerService =
+                bidirectionalStreamingService(
+                        () -> ManagedChannelBuilder.forAddress("localhost", PORT).usePlaintext(),
+                        channel -> BrokerServiceGrpc.newStub(channel)::brokerInfo
+                );
 
         // Enrich the trade by querying the product and broker name from the gRPC services
         trades.mapUsingServiceAsync(productService,
@@ -123,7 +112,7 @@ public final class GRPCEnrichment {
                       (service, t) -> {
                           BrokerInfoRequest request = BrokerInfoRequest.newBuilder().setId(t.f0().brokerId()).build();
                           return service.call(request)
-                                  .thenApply(brokerReply -> tuple3(t.f0(), t.f1(), brokerReply.getBrokerName()));
+                                        .thenApply(brokerReply -> tuple3(t.f0(), t.f1(), brokerReply.getBrokerName()));
                       })
               // output is (trade, productName, brokerName)
               .writeTo(Sinks.logger());
@@ -140,7 +129,7 @@ public final class GRPCEnrichment {
         EventGenerator eventGenerator = new EventGenerator(jet.getMap(TRADES));
         eventGenerator.start();
         try {
-            // comment out the code to try the appropriate enrichment method
+            startGRPCServer();
             Pipeline p = enrichUsingGRPC();
             Job job = jet.newJob(p);
             eventGenerator.generateEventsForFiveSeconds();
@@ -153,6 +142,21 @@ public final class GRPCEnrichment {
             eventGenerator.shutdown();
             Jet.shutdownAll();
         }
+    }
+
+    private static void startGRPCServer() throws IOException {
+        Map<Integer, Product> productMap = readLines("products.txt")
+                .collect(toMap(Entry::getKey, e -> new Product(e.getKey(), e.getValue())));
+        Map<Integer, Broker> brokerMap = readLines("brokers.txt")
+                .collect(toMap(Entry::getKey, e -> new Broker(e.getKey(), e.getValue())));
+
+        ServerBuilder.forPort(PORT)
+                     .executor(Executors.newFixedThreadPool(4))
+                     .addService(new ProductServiceImpl(productMap))
+                     .addService(new BrokerServiceImpl(brokerMap))
+                     .build()
+                     .start();
+        System.out.println("*** Server started, listening on " + PORT);
     }
 
     private static Stream<Map.Entry<Integer, String>> readLines(String file) {

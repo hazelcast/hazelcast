@@ -35,10 +35,26 @@ public class BrokerServiceImpl extends BrokerServiceImplBase {
     }
 
     @Override
-    public void brokerInfo(BrokerInfoRequest request, StreamObserver<BrokerInfoReply> responseObserver) {
-        String brokerName = brokers.get(request.getId()).name();
-        BrokerInfoReply reply = BrokerInfoReply.newBuilder().setBrokerName(brokerName).build();
-        responseObserver.onNext(reply);
-        responseObserver.onCompleted();
+    public StreamObserver<BrokerInfoRequest> brokerInfo(StreamObserver<BrokerInfoReply> responseObserver) {
+
+        return new StreamObserver<BrokerInfoRequest>() {
+            @Override
+            public void onNext(BrokerInfoRequest request) {
+                String brokerName = brokers.get(request.getId()).name();
+                BrokerInfoReply reply = BrokerInfoReply.newBuilder().setBrokerName(brokerName).build();
+                responseObserver.onNext(reply);
+            }
+
+            @Override
+            public void onError(Throwable t) {
+                t.printStackTrace();
+            }
+
+            @Override
+            public void onCompleted() {
+                responseObserver.onCompleted();
+            }
+        };
+
     }
 }
