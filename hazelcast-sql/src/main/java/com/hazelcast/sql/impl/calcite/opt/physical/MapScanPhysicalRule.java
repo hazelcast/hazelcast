@@ -200,11 +200,13 @@ public final class MapScanPhysicalRule extends AbstractPhysicalRule {
             return null;
         }
 
-        RelCollation collation = createIndexCollation(scan, index);
+
 
         // TODO: We must add collation here (see commented line). Somehow it breaks the planner.
         RelTraitSet traitSet = OptUtils.toPhysicalConvention(scan.getTraitSet(), distribution);
-        //  RelTraitSet traitSet = RuleUtils.toPhysicalConvention(scan.getTraitSet(), distribution).plus(collation);
+
+//        RelCollation collation = createIndexCollation(scan, index);
+//        RelTraitSet traitSet = RuleUtils.toPhysicalConvention(scan.getTraitSet(), distribution).plus(collation);
 
         return new MapIndexScanPhysicalRel(
             scan.getCluster(),
