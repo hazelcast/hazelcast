@@ -33,11 +33,9 @@ public class SortKeyComparator implements Comparator<SortKey> {
         this.ascs = ascs;
     }
 
-    @SuppressWarnings("rawtypes")
+    @SuppressWarnings({"rawtypes", "unchecked"})
     @Override
     public int compare(SortKey o1, SortKey o2) {
-        int res;
-
         for (int i = 0; i < ascs.size(); i++) {
             boolean asc = ascs.get(i);
 
@@ -47,18 +45,9 @@ public class SortKeyComparator implements Comparator<SortKey> {
             Comparable item1Comp = (Comparable) item1;
             Comparable item2Comp = (Comparable) item2;
 
-            //noinspection unchecked
-            res = item1Comp.compareTo(item2Comp);
-
-            if (!asc) {
-                res = -res;
-            }
+            int res = asc ? item1Comp.compareTo(item2Comp) : item2Comp.compareTo(item1Comp);
 
             if (res != 0) {
-                if (!asc) {
-                    res = -res;
-                }
-
                 return res;
             }
         }

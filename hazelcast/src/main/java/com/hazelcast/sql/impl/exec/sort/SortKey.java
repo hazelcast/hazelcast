@@ -51,7 +51,7 @@ public class SortKey {
         if (obj instanceof SortKey) {
             SortKey other = (SortKey) obj;
 
-            return other.index == ((SortKey) obj).index;
+            return index == other.index;
         } else {
             return false;
         }
