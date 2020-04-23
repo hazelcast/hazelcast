@@ -3111,12 +3111,16 @@
         </xs:sequence>
     </xs:complexType>
     <xs:complexType name="client-security">
-        <xs:choice>
-            <xs:element name="username-password" type="username-password"/>
-            <xs:element name="credentials-factory" type="credentials-factory"/>
-            <xs:element name="token" type="token"/>
-            <xs:element name="credentials-ref" type="xs:string"/>
-        </xs:choice>
+        <xs:sequence>
+            <xs:choice minOccurs="0">
+                <xs:element name="username-password" type="username-password"/>
+                <xs:element name="credentials-factory" type="credentials-factory"/>
+                <xs:element name="token" type="token"/>
+                <xs:element name="kerberos" type="kerberos-identity"/>
+                <xs:element name="credentials-ref" type="xs:string"/>
+            </xs:choice>
+            <xs:element name="realms" type="realms" minOccurs="0" maxOccurs="1"/>
+        </xs:sequence>
     </xs:complexType>
     <xs:complexType name="proxy-factories">
         <xs:sequence>
@@ -4952,6 +4956,7 @@
             <xs:element name="jaas" type="login-modules"/>
             <xs:element name="tls" type="tls-authentication"/>
             <xs:element name="ldap" type="ldap-authentication"/>
+            <xs:element name="kerberos" type="kerberos-authentication"/>
         </xs:choice>
     </xs:complexType>
     <xs:complexType name="tls-authentication">
@@ -4978,6 +4983,7 @@
             <xs:element name="user-context" type="xs:string" minOccurs="0"/>
             <xs:element name="user-filter" type="xs:string" minOccurs="0"/>
             <xs:element name="user-search-scope" type="ldap-search-scope" minOccurs="0"/>
+            <xs:element name="skip-authentication" type="xs:boolean" minOccurs="0"/>
         </xs:all>
     </xs:complexType>
     <xs:simpleType name="ldap-role-mapping-mode">
@@ -4994,11 +5000,19 @@
             <xs:enumeration value="subtree"/>
         </xs:restriction>
     </xs:simpleType>
+    <xs:complexType name="kerberos-authentication">
+        <xs:all>
+            <xs:element name="relax-flags-check" type="xs:boolean" minOccurs="0"/>
+            <xs:element name="security-realm" type="xs:string" minOccurs="0"/>
+            <xs:element name="ldap" type="ldap-authentication" minOccurs="0"/>
+        </xs:all>
+    </xs:complexType>
     <xs:complexType name="identity">
         <xs:choice>
             <xs:element name="username-password" type="username-password"/>
             <xs:element name="credentials-factory" type="credentials-factory"/>
             <xs:element name="token" type="token"/>
+            <xs:element name="kerberos" type="kerberos-identity"/>
             <xs:element name="credentials-ref" type="xs:string"/>
         </xs:choice>
     </xs:complexType>
@@ -5019,6 +5033,14 @@
                 </xs:attribute>
             </xs:extension>
         </xs:simpleContent>
+    </xs:complexType>
+    <xs:complexType name="kerberos-identity">
+        <xs:all>
+            <xs:element name="realm" type="xs:string" minOccurs="0"/>
+            <xs:element name="security-realm" type="xs:string" minOccurs="0"/>
+            <xs:element name="service-name-prefix" type="xs:string" minOccurs="0"/>
+            <xs:element name="spn" type="xs:string" minOccurs="0"/>
+        </xs:all>
     </xs:complexType>
     <xs:complexType name="realm-reference">
         <xs:attribute name="realm" type="xs:string" use="required"/>

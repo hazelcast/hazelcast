@@ -23,11 +23,9 @@ package com.hazelcast.sql.impl.expression;
  * @see Expression#eval
  */
 public interface ExpressionEvalContext {
-
     /**
      * @param index Argument index.
      * @return The query argument.
      */
     Object getArgument(int index);
-
 }

@@ -52,7 +52,6 @@ import com.hazelcast.config.JavaKeyStoreSecureStoreConfig;
 import com.hazelcast.config.JoinConfig;
 import com.hazelcast.config.ListConfig;
 import com.hazelcast.config.ListenerConfig;
-import com.hazelcast.config.LoginModuleConfig;
 import com.hazelcast.config.ManagementCenterConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapPartitionLostListenerConfig;
@@ -122,7 +121,9 @@ import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.config.cp.FencedLockConfig;
 import com.hazelcast.config.cp.RaftAlgorithmConfig;
 import com.hazelcast.config.cp.SemaphoreConfig;
-import com.hazelcast.config.security.JaasAuthenticationConfig;
+import com.hazelcast.config.security.AbstractClusterLoginConfig;
+import com.hazelcast.config.security.KerberosAuthenticationConfig;
+import com.hazelcast.config.security.KerberosIdentityConfig;
 import com.hazelcast.config.security.LdapAuthenticationConfig;
 import com.hazelcast.config.security.RealmConfig;
 import com.hazelcast.config.security.TlsAuthenticationConfig;
@@ -2638,25 +2639,6 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         config.getMemberAttributeConfig().setAttribute(attributeName, value);
     }
 
-    LoginModuleConfig handleLoginModule(Node node) {
-        NamedNodeMap attrs = node.getAttributes();
-        Node classNameNode = attrs.getNamedItem("class-name");
-        String className = getTextContent(classNameNode);
-        Node usageNode = attrs.getNamedItem("usage");
-        LoginModuleConfig.LoginModuleUsage usage =
-                usageNode != null ? LoginModuleConfig.LoginModuleUsage.get(getTextContent(usageNode))
-                        : LoginModuleConfig.LoginModuleUsage.REQUIRED;
-        LoginModuleConfig moduleConfig = new LoginModuleConfig(className, usage);
-        for (Node child : childElements(node)) {
-            String nodeName = cleanNodeName(child);
-            if ("properties".equals(nodeName)) {
-                fillProperties(child, moduleConfig.getProperties());
-                break;
-            }
-        }
-        return moduleConfig;
-    }
-
     private void handlePermissionPolicy(Node node) {
         NamedNodeMap attrs = node.getAttributes();
         Node classNameNode = attrs.getNamedItem("class-name");
@@ -2963,7 +2945,9 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             } else if ("tls".contentEquals(nodeName)) {
                 handleTlsAuthentication(realmConfig, child);
             } else if ("ldap".contentEquals(nodeName)) {
-                handleLdapAuthentication(realmConfig, child);
+                realmConfig.setLdapAuthenticationConfig(createLdapAuthentication(child));
+            } else if ("kerberos".contentEquals(nodeName)) {
+                handleKerberosAuthentication(realmConfig, child);
             }
         }
     }
@@ -2977,6 +2961,8 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
                 handleCredentialsFactory(realmConfig, child);
             } else if ("token".contentEquals(nodeName)) {
                 handleToken(realmConfig, child);
+            } else if ("kerberos".contentEquals(nodeName)) {
+                handleKerberosIdentity(realmConfig, child);
             }
         }
     }
@@ -2987,9 +2973,27 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         realmConfig.setTokenIdentityConfig(tic);
     }
 
+    protected void handleKerberosIdentity(RealmConfig realmConfig, Node node) {
+        KerberosIdentityConfig kerbIdentity = new KerberosIdentityConfig();
+        for (Node child : childElements(node)) {
+            String nodeName = cleanNodeName(child);
+            if ("realm".equals(nodeName)) {
+                kerbIdentity.setRealm(getTextContent(child));
+            } else if ("security-realm".equals(nodeName)) {
+                kerbIdentity.setSecurityRealm(getTextContent(child));
+            } else if ("service-name-prefix".equals(nodeName)) {
+                kerbIdentity.setServiceNamePrefix(getTextContent(child));
+            } else if ("spn".equals(nodeName)) {
+                kerbIdentity.setSpn(getTextContent(child));
+            }
+        }
+        realmConfig.setKerberosIdentityConfig(kerbIdentity);
+    }
+
     protected void handleTlsAuthentication(RealmConfig realmConfig, Node node) {
         String roleAttribute = getAttribute(node, "roleAttribute");
         TlsAuthenticationConfig tlsCfg = new TlsAuthenticationConfig();
+        fillClusterLoginConfig(tlsCfg, node);
 
         if (roleAttribute != null) {
             tlsCfg.setRoleAttribute(roleAttribute);
@@ -2997,8 +3001,9 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         realmConfig.setTlsAuthenticationConfig(tlsCfg);
     }
 
-    protected void handleLdapAuthentication(RealmConfig realmConfig, Node node) {
+    protected LdapAuthenticationConfig createLdapAuthentication(Node node) {
         LdapAuthenticationConfig ldapCfg = new LdapAuthenticationConfig();
+        fillClusterLoginConfig(ldapCfg, node);
         for (Node child : childElements(node)) {
             String nodeName = cleanNodeName(child);
             if ("url".equals(nodeName)) {
@@ -3035,20 +3040,27 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
                 ldapCfg.setUserFilter(getTextContent(child));
             } else if ("user-search-scope".contentEquals(nodeName)) {
                 ldapCfg.setUserSearchScope(getSearchScope(getTextContent(child)));
+            } else if ("skip-authentication".contentEquals(nodeName)) {
+                ldapCfg.setSkipAuthentication(getBooleanValue(getTextContent(child)));
             }
         }
-        realmConfig.setLdapAuthenticationConfig(ldapCfg);
+        return ldapCfg;
     }
 
-    protected void handleJaasAuthentication(RealmConfig realmConfig, Node node) {
-        JaasAuthenticationConfig jaasAuthenticationConfig = new JaasAuthenticationConfig();
+    protected void handleKerberosAuthentication(RealmConfig realmConfig, Node node) {
+        KerberosAuthenticationConfig krbCfg = new KerberosAuthenticationConfig();
+        fillClusterLoginConfig(krbCfg, node);
         for (Node child : childElements(node)) {
             String nodeName = cleanNodeName(child);
-            if ("login-module".equals(nodeName)) {
-                jaasAuthenticationConfig.addLoginModuleConfig(handleLoginModule(child));
+            if ("relax-flags-check".equals(nodeName)) {
+                krbCfg.setRelaxFlagsCheck(getBooleanValue(getTextContent(child)));
+            } else if ("security-realm".contentEquals(nodeName)) {
+                krbCfg.setSecurityRealm(getTextContent(child));
+            } else if ("ldap".contentEquals(nodeName)) {
+                krbCfg.setLdapAuthenticationConfig(createLdapAuthentication(child));
             }
         }
-        realmConfig.setJaasAuthenticationConfig(jaasAuthenticationConfig);
+        realmConfig.setKerberosAuthenticationConfig(krbCfg);
     }
 
     private void handleCredentialsFactory(RealmConfig realmConfig, Node node) {
@@ -3062,4 +3074,18 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             }
         }
     }
+
+    private void fillClusterLoginConfig(AbstractClusterLoginConfig<?> config, Node node) {
+        for (Node child : childElements(node)) {
+            String nodeName = cleanNodeName(child);
+            if ("skip-identity".equals(nodeName)) {
+                config.setSkipIdentity(getBooleanValue(getTextContent(child)));
+            } else if ("skip-endpoint".equals(nodeName)) {
+                config.setSkipEndpoint(getBooleanValue(getTextContent(child)));
+            } else if ("skip-role".equals(nodeName)) {
+                config.setSkipRole(getBooleanValue(getTextContent(child)));
+            }
+        }
+    }
+
 }

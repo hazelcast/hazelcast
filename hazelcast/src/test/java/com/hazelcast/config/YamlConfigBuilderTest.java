@@ -22,6 +22,9 @@ import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.config.cp.FencedLockConfig;
 import com.hazelcast.config.cp.RaftAlgorithmConfig;
 import com.hazelcast.config.cp.SemaphoreConfig;
+import com.hazelcast.config.security.KerberosAuthenticationConfig;
+import com.hazelcast.config.security.KerberosIdentityConfig;
+import com.hazelcast.config.security.LdapAuthenticationConfig;
 import com.hazelcast.config.security.RealmConfig;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.internal.nio.IOUtil;
@@ -196,6 +199,18 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "              usage: REQUIRED\n"
                 + "              properties:\n"
                 + "                client-property2: client-value2\n"
+                + "      - name: kerberos\n"
+                + "        authentication:\n"
+                + "          kerberos:\n"
+                + "            skip-role: false\n"
+                + "            relax-flags-check: true\n"
+                + "            security-realm: krb5Acceptor\n"
+                + "            ldap:\n"
+                + "              url: ldap://127.0.0.1\n"
+                + "        identity:\n"
+                + "          kerberos:\n"
+                + "            realm: HAZELCAST.COM\n"
+                + "            security-realm: krb5Initializer\n"
                 + "    client-permission-policy:\n"
                 + "      class-name: MyPermissionPolicy\n"
                 + "      properties:\n"
@@ -248,6 +263,25 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
         assertEquals(LoginModuleUsage.REQUIRED, clientLoginModuleCfg2.getUsage());
         assertEquals(1, clientLoginModuleCfg2.getProperties().size());
         assertEquals("client-value2", clientLoginModuleCfg2.getProperties().getProperty("client-property2"));
+
+        RealmConfig kerberosRealm = securityConfig.getRealmConfig("kerberos");
+        assertNotNull(kerberosRealm);
+        KerberosIdentityConfig kerbIdentity = kerberosRealm.getKerberosIdentityConfig();
+        assertNotNull(kerbIdentity);
+        assertEquals("HAZELCAST.COM", kerbIdentity.getRealm());
+        assertEquals("krb5Initializer", kerbIdentity.getSecurityRealm());
+
+        KerberosAuthenticationConfig kerbAuthentication = kerberosRealm.getKerberosAuthenticationConfig();
+        assertNotNull(kerbAuthentication);
+        assertEquals(Boolean.TRUE, kerbAuthentication.getRelaxFlagsCheck());
+        assertEquals(Boolean.FALSE, kerbAuthentication.getSkipRole());
+        assertNull(kerbAuthentication.getSkipIdentity());
+        assertEquals("krb5Acceptor", kerbAuthentication.getSecurityRealm());
+
+        LdapAuthenticationConfig kerbLdapAuthentication = kerbAuthentication.getLdapAuthenticationConfig();
+        assertNotNull(kerbLdapAuthentication);
+        assertEquals("ldap://127.0.0.1", kerbLdapAuthentication.getUrl());
+
         // client-permission-policy
         PermissionPolicyConfig permissionPolicyConfig = securityConfig.getClientPolicyConfig();
         assertEquals("MyPermissionPolicy", permissionPolicyConfig.getClassName());

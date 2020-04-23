@@ -19,77 +19,94 @@ package com.hazelcast.sql.impl.exec;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.row.EmptyRowBatch;
 import com.hazelcast.sql.impl.row.HeapRow;
+import com.hazelcast.sql.impl.row.ListRowBatch;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.row.RowBatch;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Projection executor.
+ * Project executor. Get rows from the incoming batch, projects them, and put into the output batch.
  */
+@SuppressWarnings("rawtypes")
 public class ProjectExec extends AbstractUpstreamAwareExec {
-    /** Projection expressions. */
-    private final List<Expression> projections;
 
-    /** Current row. */
-    private RowBatch curRow;
+    private final List<Expression> projects;
+    private RowBatch currentBatch;
 
-    public ProjectExec(int id, Exec upstream, List<Expression> projections) {
+    public ProjectExec(int id, Exec upstream, List<Expression> projects) {
         super(id, upstream);
 
-        this.projections = projections;
+        this.projects = projects;
     }
 
     @Override
     public IterationResult advance0() {
         while (true) {
+            // Give up if no data is available.
             if (!state.advance()) {
                 return IterationResult.WAIT;
             }
 
-            Row upstreamRow = state.nextIfExists();
+            // Skip empty input.
+            RowBatch upstreamBatch = state.consumeBatch();
 
-            if (upstreamRow != null) {
-                curRow = projectRow(upstreamRow);
+            if (upstreamBatch.getRowCount() == 0) {
+                if (state.isDone()) {
+                    currentBatch = EmptyRowBatch.INSTANCE;
 
-                return state.isDone() ? IterationResult.FETCHED_DONE : IterationResult.FETCHED;
+                    return IterationResult.FETCHED_DONE;
+                } else {
+                    continue;
+                }
             }
 
-            if (state.isDone()) {
-                curRow = EmptyRowBatch.INSTANCE;
+            // Perform projection.
+            currentBatch = projectBatch(upstreamBatch);
 
-                return IterationResult.FETCHED_DONE;
-            }
+            return state.isDone() ? IterationResult.FETCHED_DONE : IterationResult.FETCHED;
         }
-    }
-
-    /**
-     * Project upstream row.
-     *
-     * @param row Upstream row.
-     * @return Projected row.
-     */
-    private HeapRow projectRow(Row row) {
-        HeapRow projectedRow = new HeapRow(projections.size());
-
-        int colIdx = 0;
-
-        for (Expression projection : projections) {
-            Object projectionRes = projection.eval(row, ctx);
-
-            projectedRow.set(colIdx++, projectionRes);
-        }
-
-        return projectedRow;
     }
 
     @Override
     public RowBatch currentBatch0() {
-        return curRow;
+        return currentBatch;
     }
 
     @Override
     protected void reset1() {
-        curRow = null;
+        currentBatch = null;
+    }
+
+    public List<Expression> getProjects() {
+        return projects;
+    }
+
+    private RowBatch projectBatch(RowBatch upstreamBatch) {
+        List<Row> rows = new ArrayList<>(upstreamBatch.getRowCount());
+
+        for (int i = 0; i < upstreamBatch.getRowCount(); i++) {
+            Row upstreamRow = upstreamBatch.getRow(i);
+            Row row = projectRow(upstreamRow);
+
+            rows.add(row);
+        }
+
+        return new ListRowBatch(rows);
+    }
+
+    private Row projectRow(Row upstreamRow) {
+        HeapRow row = new HeapRow(projects.size());
+
+        int colIdx = 0;
+
+        for (Expression<?> projection : projects) {
+            Object projectionRes = projection.eval(upstreamRow, ctx);
+
+            row.set(colIdx++, projectionRes);
+        }
+
+        return row;
     }
 }

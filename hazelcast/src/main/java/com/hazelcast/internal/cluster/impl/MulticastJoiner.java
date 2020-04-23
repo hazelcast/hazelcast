@@ -90,7 +90,7 @@ public class MulticastJoiner extends AbstractJoiner {
                 if (logger.isFineEnabled()) {
                     logger.fine("Joining to master " + master);
                 }
-                clusterJoinManager.sendJoinRequest(master, true);
+                clusterJoinManager.sendJoinRequest(master);
             } else {
                 break;
             }
@@ -174,7 +174,7 @@ public class MulticastJoiner extends AbstractJoiner {
             if (logger.isFineEnabled()) {
                 logger.fine("Searching for master node. Max tries: " + maxTryCount.get());
             }
-            JoinRequest joinRequest = node.createJoinRequest(false);
+            JoinRequest joinRequest = node.createJoinRequest(null);
             while (node.isRunning() && currentTryCount.incrementAndGet() <= maxTryCount.get()) {
                 joinRequest.setTryCount(currentTryCount.get());
                 node.multicastService.send(joinRequest);

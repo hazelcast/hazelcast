@@ -16,6 +16,8 @@
 
 package com.hazelcast.multimap;
 
+import com.hazelcast.config.Config;
+import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.multimap.impl.MultiMapContainer;
@@ -30,6 +32,12 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 
 import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static java.lang.String.format;
@@ -56,7 +64,13 @@ public class MultiMapContainerStatisticsTest extends HazelcastTestSupport {
     @Before
     public void setUp() {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
-        HazelcastInstance[] instances = factory.newInstances(smallInstanceConfig());
+        Config cfg = smallInstanceConfig();
+        MultiMapConfig multiMapConfig1 = new MultiMapConfig()
+                .setName(MULTI_MAP_NAME)
+                .setValueCollectionType(MultiMapConfig.ValueCollectionType.SET)
+                .setBinary(true);
+        cfg.addMultiMapConfig(multiMapConfig1);
+        HazelcastInstance[] instances = factory.newInstances(cfg);
 
         key = generateKeyOwnedBy(instances[0]);
         multiMap = instances[0].getMultiMap(MULTI_MAP_NAME);
@@ -142,6 +156,37 @@ public class MultiMapContainerStatisticsTest extends HazelcastTestSupport {
         multiMap.clear();
         assertNewLastAccessTime();
         assertNewLastUpdateTime();
+
+        Map<String, Collection<? extends String>> expectedMultiMap = new HashMap<>();
+        // a successful putAll(Map) operation on a Hash backed mmap updates the lastAccessTime and lastUpdateTime
+        expectedMultiMap.put(key, new ArrayList<>(Arrays.asList("value", "value", "value")));
+        sleepMillis(10);
+        multiMap.putAllAsync(expectedMultiMap).toCompletableFuture().join();
+        assertNewLastAccessTime();
+        assertNewLastUpdateTime();
+        // a successful clear operation updates the lastAccessTime and the lastUpdateTime
+        sleepMillis(10);
+        multiMap.clear();
+        assertNewLastAccessTime();
+        assertNewLastUpdateTime();
+
+        // a successful putAll(K,V) operation on a Hash backed mmap updates the lastAccessTime and lastUpdateTime
+        sleepMillis(10);
+        multiMap.putAllAsync(key, expectedMultiMap.get(key)).toCompletableFuture().join();
+        assertNewLastAccessTime();
+        assertNewLastUpdateTime();
+
+        // an unsuccessful putAll(Map) operation on a Hash backed mmap updates the lastAccessTime but not lastUpdateTime
+        sleepMillis(10);
+        multiMap.putAllAsync(expectedMultiMap).toCompletableFuture().join();
+        assertNewLastAccessTime();
+        assertSameLastUpdateTime();
+
+        // an unsuccessful putAll(K,V) operation on a Hash backed mmap updates the lastAccessTime but not lastUpdateTime
+        sleepMillis(10);
+        multiMap.putAllAsync(key, expectedMultiMap.get(key)).toCompletableFuture().join();
+        assertNewLastAccessTime();
+        assertSameLastUpdateTime();
 
         // no operation should update the lastAccessTime or lastUpdateTime on the backup container
         assertSameLastAccessTimeOnBackup();

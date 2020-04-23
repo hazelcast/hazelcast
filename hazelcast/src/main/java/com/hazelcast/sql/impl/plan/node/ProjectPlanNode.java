@@ -19,6 +19,8 @@ package com.hazelcast.sql.impl.plan.node;
 import com.hazelcast.internal.serialization.impl.SerializationUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.sql.impl.SqlDataSerializerHook;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
@@ -31,8 +33,8 @@ import java.util.Objects;
  * Projection.
  */
 @SuppressWarnings("rawtypes")
-public class ProjectPlanNode extends UniInputPlanNode {
-    /** Projections. */
+public class ProjectPlanNode extends UniInputPlanNode implements IdentifiedDataSerializable {
+
     private List<Expression> projects;
 
     public ProjectPlanNode() {
@@ -66,6 +68,16 @@ public class ProjectPlanNode extends UniInputPlanNode {
     }
 
     @Override
+    public int getFactoryId() {
+        return SqlDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getClassId() {
+        return SqlDataSerializerHook.NODE_PROJECT;
+    }
+
+    @Override
     public void writeData1(ObjectDataOutput out) throws IOException {
         SerializationUtil.writeList(projects, out);
     }
@@ -77,7 +89,7 @@ public class ProjectPlanNode extends UniInputPlanNode {
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, upstream, projects);
+        return Objects.hash(id, projects, upstream);
     }
 
     @Override
@@ -92,11 +104,6 @@ public class ProjectPlanNode extends UniInputPlanNode {
 
         ProjectPlanNode that = (ProjectPlanNode) o;
 
-        return id == that.id && upstream.equals(that.upstream) && projects.equals(that.projects);
-    }
-
-    @Override
-    public String toString() {
-        return getClass().getSimpleName() + "{id=" + id + ", projects=" + projects + ", upstream=" + upstream + '}';
+        return id == that.id && projects.equals(that.projects) && upstream.equals(that.upstream);
     }
 }

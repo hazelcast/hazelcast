@@ -18,6 +18,8 @@ package com.hazelcast.sql.impl.expression;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.sql.impl.SqlDataSerializerHook;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
@@ -27,7 +29,7 @@ import java.util.Objects;
 /**
  * Column access expression.
  */
-public class ColumnExpression<T> implements Expression<T> {
+public class ColumnExpression<T> implements Expression<T>, IdentifiedDataSerializable {
     /** Index in the row. */
     private int index;
 
@@ -38,7 +40,7 @@ public class ColumnExpression<T> implements Expression<T> {
         // No-op.
     }
 
-    public ColumnExpression(int index, QueryDataType type) {
+    private ColumnExpression(int index, QueryDataType type) {
         this.index = index;
         this.type = type;
     }
@@ -49,16 +51,22 @@ public class ColumnExpression<T> implements Expression<T> {
 
     @SuppressWarnings("unchecked")
     @Override public T eval(Row row, ExpressionEvalContext context) {
-        // TODO: VO: We need to double-check that all values which could be returned here are already normalized.
-        //  Most like this is already so, because normalization must happen on all leaf nodes (KeyValueExtractorExpression,
-        //  ParameterExpression, ConstantExpression), and ColumnExpression is not a leaf node! So the task is to ensure
-        //  that all leaf always return normalized values.
         return (T) row.get(index);
     }
 
     @Override
     public QueryDataType getType() {
         return type;
+    }
+
+    @Override
+    public int getFactoryId() {
+        return SqlDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getClassId() {
+        return SqlDataSerializerHook.EXPRESSION_COLUMN;
     }
 
     @Override
@@ -75,7 +83,7 @@ public class ColumnExpression<T> implements Expression<T> {
 
     @Override
     public int hashCode() {
-        return Objects.hash(index);
+        return Objects.hash(index, type);
     }
 
     @Override
@@ -90,11 +98,6 @@ public class ColumnExpression<T> implements Expression<T> {
 
         ColumnExpression<?> that = (ColumnExpression<?>) o;
 
-        return index == that.index;
-    }
-
-    @Override
-    public String toString() {
-        return getClass().getSimpleName() + "{index=" + index + '}';
+        return index == that.index && type.equals(that.type);
     }
 }

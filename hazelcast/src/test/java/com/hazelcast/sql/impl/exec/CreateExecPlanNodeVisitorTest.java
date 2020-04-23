@@ -19,8 +19,8 @@ package com.hazelcast.sql.impl.exec;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.LoggingQueryOperationHandler;
+import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.exec.io.Inbox;
 import com.hazelcast.sql.impl.exec.io.Outbox;
@@ -30,11 +30,15 @@ import com.hazelcast.sql.impl.exec.io.flowcontrol.simple.SimpleFlowControl;
 import com.hazelcast.sql.impl.exec.io.flowcontrol.simple.SimpleFlowControlFactory;
 import com.hazelcast.sql.impl.exec.root.RootExec;
 import com.hazelcast.sql.impl.exec.root.RootResultConsumer;
+import com.hazelcast.sql.impl.expression.ColumnExpression;
+import com.hazelcast.sql.impl.expression.ConstantPredicateExpression;
 import com.hazelcast.sql.impl.operation.QueryExecuteOperation;
 import com.hazelcast.sql.impl.operation.QueryExecuteOperationFragment;
+import com.hazelcast.sql.impl.plan.node.FilterPlanNode;
 import com.hazelcast.sql.impl.plan.node.PlanNode;
 import com.hazelcast.sql.impl.plan.node.PlanNodeSchema;
 import com.hazelcast.sql.impl.plan.node.PlanNodeVisitor;
+import com.hazelcast.sql.impl.plan.node.ProjectPlanNode;
 import com.hazelcast.sql.impl.plan.node.RootPlanNode;
 import com.hazelcast.sql.impl.plan.node.io.ReceivePlanNode;
 import com.hazelcast.sql.impl.plan.node.io.RootSendPlanNode;
@@ -224,6 +228,72 @@ public class CreateExecPlanNodeVisitorTest {
         assertSame(inbox, visitor.getInboxes().get(EDGE_1_ID));
 
         assertEquals(0, visitor.getOutboxes().size());
+    }
+
+    @Test
+    public void testProject() {
+        UpstreamNode upstreamNode = new UpstreamNode(nextNodeId());
+
+        ProjectPlanNode projectNode = new ProjectPlanNode(
+            nextNodeId(),
+            upstreamNode,
+            Collections.singletonList(ColumnExpression.create(0, QueryDataType.INT))
+        );
+
+        QueryExecuteOperationFragment rootFragment = new QueryExecuteOperationFragment(
+            projectNode,
+            EXPLICIT,
+            Collections.singletonList(MEMBER_ID_1)
+        );
+
+        QueryExecuteOperation operation = createOperation(
+            Collections.singletonList(rootFragment),
+            Collections.emptyMap(),
+            Collections.emptyMap(),
+            Collections.emptyMap()
+        );
+
+        CreateExecPlanNodeVisitor visitor = visit(operation, rootFragment);
+
+        ProjectExec projectExec = (ProjectExec) visitor.pop();
+        assertEquals(projectNode.getId(), projectExec.getId());
+        assertEquals(projectNode.getProjects(), projectExec.getProjects());
+
+        UpstreamExec upstreamExec = (UpstreamExec) projectExec.getUpstream();
+        assertEquals(upstreamNode.getId(), upstreamExec.getId());
+    }
+
+    @Test
+    public void testFilter() {
+        UpstreamNode upstreamNode = new UpstreamNode(nextNodeId());
+
+        FilterPlanNode filterNode = new FilterPlanNode(
+            nextNodeId(),
+            upstreamNode,
+            new ConstantPredicateExpression(true)
+        );
+
+        QueryExecuteOperationFragment rootFragment = new QueryExecuteOperationFragment(
+            filterNode,
+            EXPLICIT,
+            Collections.singletonList(MEMBER_ID_1)
+        );
+
+        QueryExecuteOperation operation = createOperation(
+            Collections.singletonList(rootFragment),
+            Collections.emptyMap(),
+            Collections.emptyMap(),
+            Collections.emptyMap()
+        );
+
+        CreateExecPlanNodeVisitor visitor = visit(operation, rootFragment);
+
+        FilterExec filterExec = (FilterExec) visitor.pop();
+        assertEquals(filterNode.getId(), filterExec.getId());
+        assertEquals(filterNode.getFilter(), filterExec.getFilter());
+
+        UpstreamExec upstreamExec = (UpstreamExec) filterExec.getUpstream();
+        assertEquals(upstreamNode.getId(), upstreamExec.getId());
     }
 
     private static CreateExecPlanNodeVisitor visit(QueryExecuteOperation operation, QueryExecuteOperationFragment fragment) {

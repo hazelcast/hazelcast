@@ -16,16 +16,27 @@
 
 package com.hazelcast.sql.impl.exec;
 
-import com.hazelcast.sql.impl.row.EmptyRowBatch;
+import com.hazelcast.sql.impl.row.ListRowBatch;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.row.RowBatch;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
- * Abstract filter executor.
+ * Abstract filter executor that removes rows from the output based on a condition.
+ * <p>
+ * Currently the executor batches rows, and reports progress only when the batch is full or when EOS has been reached.
+ * This is done to minimize the operator evaluation overhead.
+ * <p>
+ * The compiled counterpart does not require batching.
  */
 public abstract class AbstractFilterExec extends AbstractUpstreamAwareExec {
-    /** Current row. */
-    private RowBatch curRow;
+
+    static final int BATCH_SIZE = 1024;
+
+    private List<Row> currentRows;
+    private ListRowBatch currentBatch;
 
     protected AbstractFilterExec(int id, Exec upstream) {
         super(id, upstream);
@@ -33,37 +44,54 @@ public abstract class AbstractFilterExec extends AbstractUpstreamAwareExec {
 
     @Override
     public IterationResult advance0() {
+        if (currentRows == null) {
+            currentRows = new ArrayList<>(BATCH_SIZE);
+            currentBatch = null;
+        }
+
+        int count = currentRows.size();
+
         while (true) {
+            // Wait if cannot get more rows.
             if (!state.advance()) {
                 return IterationResult.WAIT;
             }
 
+            // Consume results until the batch is full.
             for (Row upstreamRow : state) {
                 boolean matches = eval(upstreamRow);
 
                 if (matches) {
-                    curRow = upstreamRow;
+                    currentRows.add(upstreamRow);
 
-                    return state.isDone() ? IterationResult.FETCHED_DONE : IterationResult.FETCHED;
+                    if (++count == BATCH_SIZE) {
+                        return prepareBatch(state.isDone() ? IterationResult.FETCHED_DONE : IterationResult.FETCHED);
+                    }
                 }
             }
 
             if (state.isDone()) {
-                curRow = EmptyRowBatch.INSTANCE;
-
-                return IterationResult.FETCHED_DONE;
+                return prepareBatch(IterationResult.FETCHED_DONE);
             }
         }
     }
 
+    private IterationResult prepareBatch(IterationResult result) {
+        currentBatch = new ListRowBatch(currentRows);
+        currentRows = null;
+
+        return result;
+    }
+
     @Override
     public RowBatch currentBatch0() {
-        return curRow;
+        return currentBatch;
     }
 
     @Override
     protected void reset1() {
-        curRow = null;
+        currentRows = null;
+        currentBatch = null;
     }
 
     protected abstract boolean eval(Row row);

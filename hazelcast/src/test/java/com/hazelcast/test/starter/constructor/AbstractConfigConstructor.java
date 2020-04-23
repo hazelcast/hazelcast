@@ -216,7 +216,7 @@ abstract class AbstractConfigConstructor extends AbstractStarterObjectConstructo
      */
     private static Object cloneSplitBrainProtectionFunctionImplementation(Object splitBrainProtectionFunction, Class<?> targetClass) throws Exception {
         if (targetClass.getName().equals("com.hazelcast.splitbrainprotection.impl.ProbabilisticSplitBrainProtectionFunction")) {
-            int size = (Integer) getFieldValueReflectively(splitBrainProtectionFunction, "splitBrainProtectionSize");
+            int size = (Integer) getFieldValueReflectively(splitBrainProtectionFunction, "minimumClusterSize");
             double suspicionThreshold = (Double) getFieldValueReflectively(splitBrainProtectionFunction, "suspicionThreshold");
             int maxSampleSize = (Integer) getFieldValueReflectively(splitBrainProtectionFunction, "maxSampleSize");
             long minStdDeviationMillis = (Long) getFieldValueReflectively(splitBrainProtectionFunction, "minStdDeviationMillis");
@@ -230,7 +230,7 @@ abstract class AbstractConfigConstructor extends AbstractStarterObjectConstructo
             return constructor.newInstance(size, heartbeatIntervalMillis, acceptableHeartbeatPauseMillis,
                     maxSampleSize, minStdDeviationMillis, suspicionThreshold);
         } else if (targetClass.getName().equals("com.hazelcast.splitbrainprotection.impl.RecentlyActiveSplitBrainProtectionFunction")) {
-            int size = (Integer) getFieldValueReflectively(splitBrainProtectionFunction, "splitBrainProtectionSize");
+            int size = (Integer) getFieldValueReflectively(splitBrainProtectionFunction, "minimumClusterSize");
             int heartbeatToleranceMillis = (Integer) getFieldValueReflectively(splitBrainProtectionFunction, "heartbeatToleranceMillis");
 
             Constructor<?> constructor = targetClass.getConstructor(Integer.TYPE, Integer.TYPE);

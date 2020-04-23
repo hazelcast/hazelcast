@@ -110,6 +110,9 @@ import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.config.cp.FencedLockConfig;
 import com.hazelcast.config.cp.RaftAlgorithmConfig;
 import com.hazelcast.config.cp.SemaphoreConfig;
+import com.hazelcast.config.security.KerberosAuthenticationConfig;
+import com.hazelcast.config.security.KerberosIdentityConfig;
+import com.hazelcast.config.security.RealmConfig;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.cp.IAtomicLong;
@@ -176,6 +179,7 @@ import static com.hazelcast.internal.util.CollectionUtil.isNotEmpty;
 import static com.hazelcast.spi.properties.ClusterProperty.MERGE_FIRST_RUN_DELAY_SECONDS;
 import static com.hazelcast.spi.properties.ClusterProperty.MERGE_NEXT_RUN_DELAY_SECONDS;
 import static com.hazelcast.spi.properties.ClusterProperty.PARTITION_COUNT;
+import static java.lang.Boolean.TRUE;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -595,6 +599,17 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
             permTypes.remove(pc.getType());
         }
         assertTrue("All permission types should be listed in fullConfig. Not found ones: " + permTypes, permTypes.isEmpty());
+
+        RealmConfig kerberosRealm = securityConfig.getRealmConfig("kerberosRealm");
+        assertNotNull(kerberosRealm);
+        KerberosAuthenticationConfig kerbAuthentication = kerberosRealm.getKerberosAuthenticationConfig();
+        assertNotNull(kerbAuthentication);
+        assertEquals(TRUE, kerbAuthentication.getRelaxFlagsCheck());
+        assertEquals("krb5Acceptor", kerbAuthentication.getSecurityRealm());
+        assertNotNull(kerbAuthentication.getLdapAuthenticationConfig());
+        KerberosIdentityConfig kerbIdentity = kerberosRealm.getKerberosIdentityConfig();
+        assertNotNull(kerbIdentity);
+        assertEquals("HAZELCAST.COM", kerbIdentity.getRealm());
     }
 
     @Test

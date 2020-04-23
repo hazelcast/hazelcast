@@ -18,6 +18,8 @@ package com.hazelcast.sql.impl.plan.node;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.sql.impl.SqlDataSerializerHook;
 import com.hazelcast.sql.impl.expression.Expression;
 
 import java.io.IOException;
@@ -26,8 +28,8 @@ import java.util.Objects;
 /**
  * Filter node.
  */
-public class FilterPlanNode extends UniInputPlanNode {
-    /** Condition. */
+public class FilterPlanNode extends UniInputPlanNode implements IdentifiedDataSerializable {
+
     private Expression<Boolean> filter;
 
     public FilterPlanNode() {
@@ -52,6 +54,16 @@ public class FilterPlanNode extends UniInputPlanNode {
     }
 
     @Override
+    public int getFactoryId() {
+        return SqlDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getClassId() {
+        return SqlDataSerializerHook.NODE_FILTER;
+    }
+
+    @Override
     public void writeData1(ObjectDataOutput out) throws IOException {
         out.writeObject(filter);
     }
@@ -63,7 +75,7 @@ public class FilterPlanNode extends UniInputPlanNode {
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, upstream, filter);
+        return Objects.hash(id, filter, upstream);
     }
 
     @Override
@@ -78,11 +90,6 @@ public class FilterPlanNode extends UniInputPlanNode {
 
         FilterPlanNode that = (FilterPlanNode) o;
 
-        return id == that.id && upstream.equals(that.upstream) && filter.equals(that.filter);
-    }
-
-    @Override
-    public String toString() {
-        return getClass().getSimpleName() + "{id=" + id + ", filter=" + filter + ", upstream=" + upstream + '}';
+        return id == that.id && filter.equals(that.filter) && upstream.equals(that.upstream);
     }
 }

@@ -198,7 +198,7 @@ abstract class AbstractAnswer implements Answer {
      * @return the (proxied) result from the invocation
      * @throws Exception if the invocation fails
      */
-    private Object invoke(boolean proxyResult, InvocationOnMock invocation, Object... arguments) throws Exception {
+    Object invoke(boolean proxyResult, InvocationOnMock invocation, Object... arguments) throws Exception {
         Method originalMethod = invocation.getMethod();
         Object[] originalArguments = invocation.getArguments();
         // if an argument was proxied, we need to replace the parameterType for a correct method lookup
@@ -217,7 +217,7 @@ abstract class AbstractAnswer implements Answer {
                     || !argumentClass.getName().startsWith("com.hazelcast")) {
                 continue;
             }
-            parameterTypes[i] = argumentClass;
+            parameterTypes[i] = argumentClass.getClassLoader().loadClass(parameterTypes[i].getName());
         }
         Method delegateMethod = getDelegateMethod(originalMethod.getName(), parameterTypes);
         return invoke(proxyResult, delegateMethod, arguments);
@@ -234,7 +234,7 @@ abstract class AbstractAnswer implements Answer {
      * @return the (proxied) result from the invocation
      * @throws Exception if the invocation fails
      */
-    private Object invoke(boolean proxyResult, Method delegateMethod, Object... arguments) throws Exception {
+    Object invoke(boolean proxyResult, Method delegateMethod, Object... arguments) throws Exception {
         Object result = invokeDelegateMethod(delegateMethod, arguments);
         if (result == null) {
             return null;
@@ -264,7 +264,8 @@ abstract class AbstractAnswer implements Answer {
                 return createMockForTargetClass(result, new DataStructureElementAnswer(result));
             }
         }
-        return proxyResult ? proxyObjectForStarter(targetClassloader, result) : result;
+        return (proxyResult && !resultClass.isPrimitive())
+                ? proxyObjectForStarter(targetClassloader, result) : result;
     }
 
     /**

@@ -150,7 +150,7 @@ public class DynamicSecurityConfig extends SecurityConfig {
 
     @Override
     public RealmConfig getRealmConfig(String realmName) {
-        throw new UnsupportedOperationException("Unsupported operation");
+        return staticSecurityConfig.getRealmConfig(realmName);
     }
 
     @Override

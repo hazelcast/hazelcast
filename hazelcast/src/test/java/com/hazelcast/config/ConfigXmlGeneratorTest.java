@@ -29,6 +29,8 @@ import com.hazelcast.config.cp.FencedLockConfig;
 import com.hazelcast.config.cp.SemaphoreConfig;
 import com.hazelcast.config.properties.PropertyDefinition;
 import com.hazelcast.config.security.JaasAuthenticationConfig;
+import com.hazelcast.config.security.KerberosAuthenticationConfig;
+import com.hazelcast.config.security.KerberosIdentityConfig;
 import com.hazelcast.config.security.LdapAuthenticationConfig;
 import com.hazelcast.config.security.LdapRoleMappingMode;
 import com.hazelcast.config.security.LdapSearchScope;
@@ -86,6 +88,8 @@ import static com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.T
 import static com.hazelcast.config.ConfigCompatibilityChecker.checkEndpointConfigCompatible;
 import static com.hazelcast.config.ConfigXmlGenerator.MASK_FOR_SENSITIVE_DATA;
 import static com.hazelcast.instance.ProtocolType.MEMBER;
+import static java.lang.Boolean.FALSE;
+import static java.lang.Boolean.TRUE;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -540,6 +544,9 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         Config cfg = new Config();
 
         RealmConfig realmConfig = new RealmConfig().setLdapAuthenticationConfig(new LdapAuthenticationConfig()
+                .setSkipIdentity(TRUE)
+                .setSkipEndpoint(FALSE)
+                .setSkipRole(TRUE)
                 .setParseDn(true)
                 .setPasswordAttribute("passwordAttribute")
                 .setRoleContext("roleContext")
@@ -557,8 +564,34 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
                 .setUserFilter("userFilter")
                 .setUserNameAttribute("userNameAttribute")
                 .setUserSearchScope(LdapSearchScope.ONE_LEVEL)
+                .setSkipAuthentication(TRUE)
         );
         SecurityConfig expectedConfig = new SecurityConfig().setClientRealmConfig("ldapRealm", realmConfig);
+        cfg.setSecurityConfig(expectedConfig);
+
+        SecurityConfig actualConfig = getNewConfigViaXMLGenerator(cfg).getSecurityConfig();
+        assertEquals(expectedConfig, actualConfig);
+    }
+
+    @Test
+    public void testKerberosConfig() {
+        Config cfg = new Config();
+
+        RealmConfig realmConfig = new RealmConfig()
+            .setKerberosAuthenticationConfig(new KerberosAuthenticationConfig()
+                .setSkipIdentity(TRUE)
+                .setSkipEndpoint(FALSE)
+                .setSkipRole(TRUE)
+                .setRelaxFlagsCheck(TRUE)
+                .setSecurityRealm("jaasRealm")
+                .setLdapAuthenticationConfig(new LdapAuthenticationConfig()
+                        .setUrl("url")))
+            .setKerberosIdentityConfig(new KerberosIdentityConfig()
+                .setRealm("HAZELCAST.COM")
+                .setSecurityRealm("krb5Init")
+                .setServiceNamePrefix("hz/")
+                .setSpn("spn@HAZELCAST.COM"));
+        SecurityConfig expectedConfig = new SecurityConfig().setMemberRealmConfig("kerberosRealm", realmConfig);
         cfg.setSecurityConfig(expectedConfig);
 
         SecurityConfig actualConfig = getNewConfigViaXMLGenerator(cfg).getSecurityConfig();

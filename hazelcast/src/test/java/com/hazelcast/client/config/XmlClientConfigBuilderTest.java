@@ -24,6 +24,7 @@ import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.config.XMLConfigBuilderTest;
+import com.hazelcast.config.security.KerberosIdentityConfig;
 import com.hazelcast.config.security.TokenIdentityConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.internal.cluster.Versions;
@@ -376,6 +377,28 @@ public class XmlClientConfigBuilderTest extends AbstractClientConfigBuilderTest 
         assertNotNull(tokenIdentityConfig);
         assertArrayEquals("Hazelcast".getBytes(StandardCharsets.US_ASCII), tokenIdentityConfig.getToken());
         assertEquals("SGF6ZWxjYXN0", tokenIdentityConfig.getTokenEncoded());
+    }
+
+    @Override
+    @Test
+    public void testKerberosIdentityConfig() {
+        String xml = HAZELCAST_CLIENT_START_TAG
+                + "<security>"
+                + "    <kerberos>\n"
+                + "        <realm>HAZELCAST.COM</realm>"
+                + "        <security-realm>krb5Initiator</security-realm>"
+                + "        <service-name-prefix>hz/</service-name-prefix>"
+                + "        <spn>hz/127.0.0.1@HAZELCAST.COM</spn>"
+                + "    </kerberos>"
+                + "</security>"
+                + HAZELCAST_CLIENT_END_TAG;
+        ClientConfig config = buildConfig(xml);
+        KerberosIdentityConfig identityConfig = config.getSecurityConfig().getKerberosIdentityConfig();
+        assertNotNull(identityConfig);
+        assertEquals("HAZELCAST.COM", identityConfig.getRealm());
+        assertEquals("krb5Initiator", identityConfig.getSecurityRealm());
+        assertEquals("hz/", identityConfig.getServiceNamePrefix());
+        assertEquals("hz/127.0.0.1@HAZELCAST.COM", identityConfig.getSpn());
     }
 
     @Override

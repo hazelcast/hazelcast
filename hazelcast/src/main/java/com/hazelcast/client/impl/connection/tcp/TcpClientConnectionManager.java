@@ -769,7 +769,8 @@ public class TcpClientConnectionManager implements ClientConnectionManager {
     }
 
     private void authenticateOnCluster(TcpClientConnection connection) {
-        ClientMessage request = encodeAuthenticationRequest();
+        Address memberAddress = connection.getInitAddress();
+        ClientMessage request = encodeAuthenticationRequest(memberAddress);
         ClientInvocationFuture future = new ClientInvocation(client, request, null, connection).invokeUrgent();
         ClientAuthenticationCodec.ResponseParameters response;
         try {
@@ -857,12 +858,12 @@ public class TcpClientConnectionManager implements ClientConnectionManager {
         }
     }
 
-    private ClientMessage encodeAuthenticationRequest() {
+    private ClientMessage encodeAuthenticationRequest(Address toAddress) {
         InternalSerializationService ss = client.getSerializationService();
         byte serializationVersion = ss.getVersion();
 
         CandidateClusterContext currentContext = clusterDiscoveryService.current();
-        Credentials credentials = currentContext.getCredentialsFactory().newCredentials();
+        Credentials credentials = currentContext.getCredentialsFactory().newCredentials(toAddress);
         String clusterName = currentContext.getClusterName();
         currentCredentials = credentials;
 

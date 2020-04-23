@@ -17,6 +17,7 @@
 package com.hazelcast.config.security;
 
 import java.util.Objects;
+import java.util.Properties;
 
 import com.hazelcast.config.LoginModuleConfig;
 import com.hazelcast.config.LoginModuleConfig.LoginModuleUsage;
@@ -24,7 +25,7 @@ import com.hazelcast.config.LoginModuleConfig.LoginModuleUsage;
 /**
  * Typed authentication configuration for the {@code X509CertificateLoginModule}.
  */
-public class TlsAuthenticationConfig implements AuthenticationConfig {
+public class TlsAuthenticationConfig extends AbstractClusterLoginConfig<TlsAuthenticationConfig> {
 
     private String roleAttribute;
 
@@ -38,25 +39,32 @@ public class TlsAuthenticationConfig implements AuthenticationConfig {
     }
 
     @Override
+    protected Properties initLoginModuleProperties() {
+        Properties props = super.initLoginModuleProperties();
+        setIfConfigured(props, "roleAttribute", roleAttribute);
+        return props;
+    }
+
+    @Override
     public LoginModuleConfig[] asLoginModuleConfigs() {
         LoginModuleConfig loginModuleConfig = new LoginModuleConfig("com.hazelcast.security.loginimpl.X509CertificateLoginModule",
                 LoginModuleUsage.REQUIRED);
-        if (roleAttribute != null) {
-            loginModuleConfig.getProperties().setProperty("roleAttribute", roleAttribute);
-        }
+        loginModuleConfig.setProperties(initLoginModuleProperties());
         return new LoginModuleConfig[] { loginModuleConfig };
     }
 
     @Override
     public String toString() {
-        StringBuilder builder = new StringBuilder();
-        builder.append("TlsAuthenticationConfig [roleAttribute=").append(roleAttribute).append("]");
-        return builder.toString();
+        return "TlsAuthenticationConfig [roleAttribute=" + roleAttribute + ", getSkipIdentity()=" + getSkipIdentity()
+                + ", getSkipEndpoint()=" + getSkipEndpoint() + ", getSkipRole()=" + getSkipRole() + "]";
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(roleAttribute);
+        final int prime = 31;
+        int result = super.hashCode();
+        result = prime * result + Objects.hash(roleAttribute);
+        return result;
     }
 
     @Override
@@ -64,7 +72,7 @@ public class TlsAuthenticationConfig implements AuthenticationConfig {
         if (this == obj) {
             return true;
         }
-        if (obj == null) {
+        if (!super.equals(obj)) {
             return false;
         }
         if (getClass() != obj.getClass()) {
@@ -72,5 +80,10 @@ public class TlsAuthenticationConfig implements AuthenticationConfig {
         }
         TlsAuthenticationConfig other = (TlsAuthenticationConfig) obj;
         return Objects.equals(roleAttribute, other.roleAttribute);
+    }
+
+    @Override
+    protected TlsAuthenticationConfig self() {
+        return this;
     }
 }

@@ -23,15 +23,11 @@ import com.hazelcast.sql.impl.row.Row;
  * Filter executor.
  */
 public class FilterExec extends AbstractFilterExec {
-    /** Filter. */
+
     private final Expression<Boolean> filter;
 
     public FilterExec(int id, Exec upstream, Expression<Boolean> filter) {
         super(id, upstream);
-
-        if (filter == null) {
-            throw new IllegalArgumentException("AA");
-        }
 
         this.filter = filter;
     }
@@ -43,8 +39,7 @@ public class FilterExec extends AbstractFilterExec {
         return res != null && res;
     }
 
-    @Override
-    public String toString() {
-        return getClass().getSimpleName() + "{filter=" + filter + ", upstreamState=" + state + '}';
+    public Expression<Boolean> getFilter() {
+        return filter;
     }
 }

@@ -24,6 +24,8 @@ import com.hazelcast.config.cp.FencedLockConfig;
 import com.hazelcast.config.cp.RaftAlgorithmConfig;
 import com.hazelcast.config.cp.SemaphoreConfig;
 import com.hazelcast.config.security.JaasAuthenticationConfig;
+import com.hazelcast.config.security.KerberosAuthenticationConfig;
+import com.hazelcast.config.security.KerberosIdentityConfig;
 import com.hazelcast.config.security.LdapAuthenticationConfig;
 import com.hazelcast.config.security.RealmConfig;
 import com.hazelcast.config.security.TlsAuthenticationConfig;
@@ -1555,8 +1557,10 @@ public class ConfigCompatibilityChecker {
                     && isCompatible(c1.getJaasAuthenticationConfig(), c2.getJaasAuthenticationConfig())
                     && isCompatible(c1.getTlsAuthenticationConfig(), c2.getTlsAuthenticationConfig())
                     && isCompatible(c1.getLdapAuthenticationConfig(), c2.getLdapAuthenticationConfig())
+                    && isCompatible(c1.getKerberosAuthenticationConfig(), c2.getKerberosAuthenticationConfig())
                     && isCompatible(c1.getUsernamePasswordIdentityConfig(), c2.getUsernamePasswordIdentityConfig())
                     && isCompatible(c1.getTokenIdentityConfig(), c2.getTokenIdentityConfig())
+                    && isCompatible(c1.getKerberosIdentityConfig(), c2.getKerberosIdentityConfig())
                     ;
         }
 
@@ -1574,6 +1578,14 @@ public class ConfigCompatibilityChecker {
         }
 
         private static boolean isCompatible(LdapAuthenticationConfig c1, LdapAuthenticationConfig c2) {
+            return c1 == c2 || (c1 != null && c2 != null && c1.equals(c2));
+        }
+
+        private static boolean isCompatible(KerberosAuthenticationConfig c1, KerberosAuthenticationConfig c2) {
+            return c1 == c2 || (c1 != null && c2 != null && c1.equals(c2));
+        }
+
+        private static boolean isCompatible(KerberosIdentityConfig c1, KerberosIdentityConfig c2) {
             return c1 == c2 || (c1 != null && c2 != null && c1.equals(c2));
         }
 

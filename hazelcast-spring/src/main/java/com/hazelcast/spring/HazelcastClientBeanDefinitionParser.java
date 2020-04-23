@@ -37,11 +37,15 @@ import com.hazelcast.config.CredentialsFactoryConfig;
 import com.hazelcast.config.EntryListenerConfig;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.ListenerConfig;
+import com.hazelcast.config.LoginModuleConfig;
 import com.hazelcast.config.MetricsJmxConfig;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.config.PredicateConfig;
 import com.hazelcast.config.QueryCacheConfig;
 import com.hazelcast.config.SSLConfig;
+import com.hazelcast.config.security.JaasAuthenticationConfig;
+import com.hazelcast.config.security.KerberosIdentityConfig;
+import com.hazelcast.config.security.RealmConfig;
 import com.hazelcast.config.security.TokenEncoding;
 import com.hazelcast.config.security.TokenIdentityConfig;
 import com.hazelcast.config.security.UsernamePasswordIdentityConfig;
@@ -212,8 +216,13 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
                             .addConstructorArgValue(TokenEncoding.getTokenEncoding(getAttribute(child, "encoding")))
                             .addConstructorArgValue(getTextContent(child));
                     securityConfigBuilder.addPropertyValue("TokenIdentityConfig", configBuilder.getBeanDefinition());
+                } else if ("kerberos".equals(nodeName)) {
+                    createAndFillBeanBuilder(child, KerberosIdentityConfig.class, "KerberosIdentityConfig",
+                            securityConfigBuilder);
                 } else if ("credentials-ref".equals(nodeName)) {
                     securityConfigBuilder.addPropertyReference("credentials", getTextContent(child));
+                } else if ("realms".equals(nodeName)) {
+                    handleRealms(child, securityConfigBuilder);
                 }
             }
             configBuilder.addPropertyValue("securityConfig", beanDefinition);
@@ -538,6 +547,78 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
             configBuilder.addPropertyValue("metricsConfig", metricsConfigBuilder.getBeanDefinition());
         }
 
+        private void handleRealms(Node node, BeanDefinitionBuilder securityConfigBuilder) {
+            ManagedMap<String, BeanDefinition> realms = new ManagedMap<>();
+            for (Node child : childElements(node)) {
+                String nodeName = cleanNodeName(child);
+                if ("realm".equals(nodeName)) {
+                    realms.put(getAttribute(child, "name"), handleRealm(child, securityConfigBuilder));
+                }
+            }
+            securityConfigBuilder.addPropertyValue("realmConfigs", realms);
+        }
+
+        private AbstractBeanDefinition handleRealm(Node node, BeanDefinitionBuilder securityConfigBuilder) {
+            BeanDefinitionBuilder realmConfigBuilder = createBeanBuilder(RealmConfig.class);
+            AbstractBeanDefinition beanDefinition = realmConfigBuilder.getBeanDefinition();
+            for (Node child : childElements(node)) {
+                String nodeName = cleanNodeName(child);
+                if ("authentication".equals(nodeName)) {
+                    handleAuthentication(child, realmConfigBuilder);
+                }
+            }
+            return beanDefinition;
+        }
+
+
+        private void handleAuthentication(Node node, BeanDefinitionBuilder realmConfigBuilder) {
+            for (Node child : childElements(node)) {
+                String nodeName = cleanNodeName(child);
+                if ("jaas".equals(nodeName)) {
+                    handleLoginModules(child, realmConfigBuilder);
+                }
+            }
+        }
+
+        private void handleLoginModules(Node node, BeanDefinitionBuilder realmConfigBuilder) {
+            BeanDefinitionBuilder jaasConfigBuilder = createBeanBuilder(JaasAuthenticationConfig.class);
+            AbstractBeanDefinition beanDefinition = jaasConfigBuilder.getBeanDefinition();
+            List<BeanDefinition> lms = new ManagedList<>();
+            for (Node child : childElements(node)) {
+                String nodeName = cleanNodeName(child);
+                if ("login-module".equals(nodeName)) {
+                    handleLoginModule(child, lms);
+                }
+            }
+            jaasConfigBuilder.addPropertyValue("loginModuleConfigs", lms);
+            realmConfigBuilder.addPropertyValue("jaasAuthenticationConfig", beanDefinition);
+        }
+
+
+        private void handleLoginModule(Node node, List<BeanDefinition> list) {
+            BeanDefinitionBuilder lmConfigBuilder = createBeanBuilder(LoginModuleConfig.class);
+            AbstractBeanDefinition beanDefinition = lmConfigBuilder.getBeanDefinition();
+            fillAttributeValues(node, lmConfigBuilder, "class-name", "implementation");
+            NamedNodeMap attributes = node.getAttributes();
+            Node classNameNode = attributes.getNamedItem("class-name");
+            String className = classNameNode != null ? getTextContent(classNameNode) : null;
+            Node implNode = attributes.getNamedItem("implementation");
+            String implementation = implNode != null ? getTextContent(implNode) : null;
+            lmConfigBuilder.addPropertyValue("className", className);
+            if (implementation != null) {
+                lmConfigBuilder.addPropertyReference("implementation", implementation);
+            }
+            isTrue(className != null || implementation != null, "One of 'class-name' or 'implementation'"
+                    + " attributes is required to create LoginModule!");
+            for (Node child : childElements(node)) {
+                String nodeName = cleanNodeName(child);
+                if ("properties".equals(nodeName)) {
+                    handleProperties(child, lmConfigBuilder);
+                    break;
+                }
+            }
+            list.add(beanDefinition);
+        }
     }
 
 }
