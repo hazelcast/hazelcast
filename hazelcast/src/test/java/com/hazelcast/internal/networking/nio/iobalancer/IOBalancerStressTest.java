@@ -51,7 +51,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import static com.hazelcast.test.Accessors.getConnectionManagerManager;
+import static com.hazelcast.test.Accessors.getConnectionManager;
 import static com.hazelcast.test.Accessors.getNode;
 import static org.junit.Assert.assertTrue;
 
@@ -92,9 +92,9 @@ public class IOBalancerStressTest extends HazelcastTestSupport {
     }
 
     private void assertBalanced(HazelcastInstance hz) {
-        ServerConnectionManager em = getConnectionManagerManager(hz);
+        ServerConnectionManager cm = getConnectionManager(hz);
 
-        Map<NioThread, Set<MigratablePipeline>> pipelinesPerOwner = getPipelinesPerOwner(em);
+        Map<NioThread, Set<MigratablePipeline>> pipelinesPerOwner = getPipelinesPerOwner(cm);
 
         try {
             for (Map.Entry<NioThread, Set<MigratablePipeline>> entry : pipelinesPerOwner.entrySet()) {
@@ -109,9 +109,9 @@ public class IOBalancerStressTest extends HazelcastTestSupport {
         }
     }
 
-    private Map<NioThread, Set<MigratablePipeline>> getPipelinesPerOwner(ServerConnectionManager em) {
+    private Map<NioThread, Set<MigratablePipeline>> getPipelinesPerOwner(ServerConnectionManager cm) {
         Map<NioThread, Set<MigratablePipeline>> pipelinesPerOwner = new HashMap<NioThread, Set<MigratablePipeline>>();
-        for (ServerConnection connection : em.getActiveConnections()) {
+        for (ServerConnection connection : cm.getConnections()) {
             NioChannel channel = (NioChannel) ((TcpServerConnection) connection).getChannel();
             add(pipelinesPerOwner, channel.inboundPipeline());
             add(pipelinesPerOwner, channel.outboundPipeline());
@@ -123,7 +123,7 @@ public class IOBalancerStressTest extends HazelcastTestSupport {
         NioThread pipelineOwner = pipeline.owner();
         Set<MigratablePipeline> pipelines = pipelinesPerOwner.get(pipelineOwner);
         if (pipelines == null) {
-            pipelines = new HashSet<MigratablePipeline>();
+            pipelines = new HashSet<>();
             pipelinesPerOwner.put(pipelineOwner, pipelines);
         }
         pipelines.add(pipeline);
@@ -169,9 +169,9 @@ public class IOBalancerStressTest extends HazelcastTestSupport {
         for (NioThread in : networking.getInputThreads()) {
             sb.append(in).append(": ").append(in.getEventCount()).append("\n");
 
-            for (ServerConnection connection : cm.getActiveConnections()) {
-                TcpServerConnection c = (TcpServerConnection) connection;
-                NioInboundPipeline inboundPipeline = ((NioChannel) c.getChannel()).inboundPipeline();
+            for (ServerConnection connection : cm.getConnections()) {
+                TcpServerConnection tcpConnection = (TcpServerConnection) connection;
+                NioInboundPipeline inboundPipeline = ((NioChannel) tcpConnection.getChannel()).inboundPipeline();
                 if (inboundPipeline.owner() == in) {
                     sb.append("\t").append(inboundPipeline).append(" load:").append(inboundPipeline.load()).append("\n");
                 }
@@ -181,9 +181,9 @@ public class IOBalancerStressTest extends HazelcastTestSupport {
         for (NioThread in : networking.getOutputThreads()) {
             sb.append(in).append(": ").append(in.getEventCount()).append("\n");
 
-            for (ServerConnection connection : cm.getActiveConnections()) {
-                TcpServerConnection tcpServerConnection = (TcpServerConnection) connection;
-                NioOutboundPipeline outboundPipeline = ((NioChannel) tcpServerConnection.getChannel()).outboundPipeline();
+            for (ServerConnection connection : cm.getConnections()) {
+                TcpServerConnection tcpConnection = (TcpServerConnection) connection;
+                NioOutboundPipeline outboundPipeline = ((NioChannel) tcpConnection.getChannel()).outboundPipeline();
                 if (outboundPipeline.owner() == in) {
                     sb.append("\t").append(outboundPipeline).append(" load:").append(outboundPipeline.load()).append("\n");
                 }

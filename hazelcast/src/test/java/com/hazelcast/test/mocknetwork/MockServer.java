@@ -21,20 +21,21 @@ import com.hazelcast.cluster.Member;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.instance.impl.NodeState;
-import com.hazelcast.internal.server.NetworkStats;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.nio.ConnectionLifecycleListener;
 import com.hazelcast.internal.nio.ConnectionListener;
 import com.hazelcast.internal.nio.Packet;
-import com.hazelcast.internal.server.ServerContext;
+import com.hazelcast.internal.server.NetworkStats;
 import com.hazelcast.internal.server.Server;
 import com.hazelcast.internal.server.ServerConnection;
 import com.hazelcast.internal.server.ServerConnectionManager;
+import com.hazelcast.internal.server.ServerContext;
 import com.hazelcast.internal.util.concurrent.ThreadFactoryImpl;
 import com.hazelcast.internal.util.executor.StripedRunnable;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.executionservice.ExecutionService;
 
+import javax.annotation.Nonnull;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
@@ -46,6 +47,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Predicate;
 
 import static com.hazelcast.internal.util.ThreadUtil.createThreadPoolName;
 import static com.hazelcast.test.HazelcastTestSupport.suspectMember;
@@ -98,7 +100,7 @@ class MockServer implements Server {
         }
 
         @Override
-        public MockServerConnection getOrConnect(Address address) {
+        public MockServerConnection getOrConnect(Address address, boolean silent) {
             MockServerConnection conn = server.connectionMap.get(address);
             if (conn != null && conn.isAlive()) {
                 return conn;
@@ -166,11 +168,6 @@ class MockServer implements Server {
         }
 
         @Override
-        public MockServerConnection getOrConnect(Address address, boolean silent) {
-            return getOrConnect(address);
-        }
-
-        @Override
         public synchronized boolean register(final Address remoteAddress, final ServerConnection c) {
             MockServerConnection connection = (MockServerConnection) c;
             if (!server.live) {
@@ -220,13 +217,13 @@ class MockServer implements Server {
         }
 
         @Override
-        public Collection getConnections() {
+        public @Nonnull Collection getConnections() {
             return server.connectionMap.values();
         }
 
         @Override
-        public Collection getActiveConnections() {
-            return server.connectionMap.values();
+        public int connectionCount(Predicate<ServerConnection> predicate) {
+            return (int) server.connectionMap.values().stream().filter(predicate).count();
         }
 
         @Override
@@ -344,13 +341,8 @@ class MockServer implements Server {
     }
 
     @Override
-    public Collection<ServerConnection> getConnections() {
+    public @Nonnull Collection<ServerConnection> getConnections() {
         return connectionManager.getConnections();
-    }
-
-    @Override
-    public Collection<ServerConnection> getActiveConnections() {
-        return connectionManager.getActiveConnections();
     }
 
     @Override

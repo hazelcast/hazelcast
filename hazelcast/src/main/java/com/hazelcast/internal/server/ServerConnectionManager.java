@@ -21,8 +21,11 @@ import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.nio.ConnectionListenable;
 import com.hazelcast.internal.nio.Packet;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.Collection;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
 
 /**
  * Responsible for managing {@link ServerConnection} instances.
@@ -31,27 +34,43 @@ public interface ServerConnectionManager
         extends ConnectionListenable<ServerConnection>, Consumer<Packet> {
 
     /**
-     * Returns connections that have been successfully established (ie. Bind was completed)
-     */
-    //todo: I think we can get rid of this method since it is very implementation specific.
-    Collection<ServerConnection> getConnections();
-
-    /**
-     * Returns <b>all</b> active connections or not that are currently holding resources on this member.
-     * If the connection never successfully finishes with the handshake then it will only be visible
-     * through this sub-set.
+     * Returns all connections managed by this ServerConnectionManager.
      *
-     * @return Collection of all connections hold on this member
+     * In case of a member connection, it will also return connections that have not yet completed the
+     * {@link com.hazelcast.internal.cluster.impl.MemberHandshake}.
      */
-    Collection<ServerConnection> getActiveConnections();
+    @Nonnull Collection<ServerConnection> getConnections();
 
     /**
-     * Registers (ie. stores) the connection for the given remote remoteAddress.
+     * Returns the number of connections that satisfy some predicate.
+     *
+     * @param predicate the Predicate. Predicate can be null which means that no filtering is done.
+     * @return the count
+     */
+    default int connectionCount(@Nullable Predicate<ServerConnection> predicate) {
+        if (predicate == null) {
+            return getConnections().size();
+        }
+
+        return (int) getConnections().stream().filter(predicate).count();
+    }
+
+    /**
+     * Returns the number of connections.
+     *
+     * @return the number of connections.
+     */
+    default int connectionCount() {
+        return connectionCount(null);
+    }
+
+    /**
+     * Registers (i.e. stores) the connection for the given remote remoteAddress.
      * Once this call finishes every subsequent call to {@link #get(Address)} will return
      * the relevant {@link Connection} resource.
      *
-     * @param remoteAddress    - The remote endpoint to register the connection under
-     * @param connection - The connection to be registered
+     * @param remoteAddress - The remote address to register the connection under
+     * @param connection    - The connection to be registered
      * @return True if the call was successful
      */
     boolean register(Address remoteAddress, ServerConnection connection);
@@ -71,7 +90,9 @@ public interface ServerConnectionManager
      * @return the found connection, or {@code null} if no connection exists
      * @see #getOrConnect(Address, boolean)
      */
-    ServerConnection getOrConnect(Address address);
+    default ServerConnection getOrConnect(Address address) {
+        return getOrConnect(address, true);
+    }
 
     /**
      * Gets the existing connection for a given address. If it does not exist, the system will try to connect
@@ -121,5 +142,10 @@ public interface ServerConnectionManager
      */
     NetworkStats getNetworkStats();
 
+    /**
+     * Gets the Server this {@link ServerConnectionManager} belongs to.
+     *
+     * @return the Server.
+     */
     Server getServer();
 }
