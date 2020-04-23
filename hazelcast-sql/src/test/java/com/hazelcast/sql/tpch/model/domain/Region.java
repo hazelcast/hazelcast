@@ -16,13 +16,18 @@
 
 package com.hazelcast.sql.tpch.model.domain;
 
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.DataSerializable;
+
+import java.io.IOException;
 import java.io.Serializable;
 
 /**
  * TPC-H model: region.
  */
 @SuppressWarnings("checkstyle:ParameterName")
-public class Region implements Serializable {
+public class Region implements DataSerializable {
     public long r_regionkey;
     public String r_name;
     public String r_comment;
@@ -47,5 +52,19 @@ public class Region implements Serializable {
 
     public String getR_comment() {
         return r_comment;
+    }
+
+    @Override
+    public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeLong(r_regionkey);
+        out.writeUTF(r_name);
+        out.writeUTF(r_comment);
+    }
+
+    @Override
+    public void readData(ObjectDataInput in) throws IOException {
+        r_regionkey = in.readLong();
+        r_name = in.readUTF();
+        r_comment = in.readUTF();
     }
 }

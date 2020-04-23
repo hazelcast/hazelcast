@@ -16,6 +16,11 @@
 
 package com.hazelcast.sql.tpch.model.domain;
 
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.DataSerializable;
+
+import java.io.IOException;
 import java.io.Serializable;
 import java.math.BigDecimal;
 
@@ -23,7 +28,7 @@ import java.math.BigDecimal;
  * TPC-H model: part.
  */
 @SuppressWarnings("checkstyle:ParameterName")
-public class Part implements Serializable {
+public class Part implements DataSerializable {
     public String p_name;
     public String p_mfgr;
     public String p_brand;
@@ -87,5 +92,29 @@ public class Part implements Serializable {
 
     public String getP_comment() {
         return p_comment;
+    }
+
+    @Override
+    public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeUTF(p_name);
+        out.writeUTF(p_mfgr);
+        out.writeUTF(p_brand);
+        out.writeUTF(p_type);
+        out.writeInt(p_size);
+        out.writeUTF(p_container);
+        out.writeObject(p_retailprice);
+        out.writeUTF(p_comment);
+    }
+
+    @Override
+    public void readData(ObjectDataInput in) throws IOException {
+        p_name = in.readUTF();
+        p_mfgr = in.readUTF();
+        p_brand = in.readUTF();
+        p_type = in.readUTF();
+        p_size = in.readInt();
+        p_container = in.readUTF();
+        p_retailprice = in.readObject();
+        p_comment = in.readUTF();
     }
 }

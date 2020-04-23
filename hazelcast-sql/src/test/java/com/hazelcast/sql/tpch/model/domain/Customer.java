@@ -16,6 +16,11 @@
 
 package com.hazelcast.sql.tpch.model.domain;
 
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.DataSerializable;
+
+import java.io.IOException;
 import java.io.Serializable;
 import java.math.BigDecimal;
 
@@ -23,7 +28,7 @@ import java.math.BigDecimal;
  * TPC-H model: customer.
  */
 @SuppressWarnings("checkstyle:ParameterName")
-public class Customer implements Serializable {
+public class Customer implements DataSerializable {
     public String c_name;
     public String c_address;
     public long c_nationkey;
@@ -31,6 +36,28 @@ public class Customer implements Serializable {
     public BigDecimal c_acctbal;
     public String c_mktsegment;
     public String c_comment;
+
+    @Override
+    public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeUTF(c_name);
+        out.writeUTF(c_address);
+        out.writeLong(c_nationkey);
+        out.writeUTF(c_phone);
+        out.writeObject(c_acctbal);
+        out.writeUTF(c_mktsegment);
+        out.writeUTF(c_comment);
+    }
+
+    @Override
+    public void readData(ObjectDataInput in) throws IOException {
+        c_name = in.readUTF();
+        c_address = in.readUTF();
+        c_nationkey = in.readLong();
+        c_phone = in.readUTF();
+        c_acctbal = in.readObject();
+        c_mktsegment = in.readUTF();
+        c_comment = in.readUTF();
+    }
 
     public Customer() {
         // No-op.

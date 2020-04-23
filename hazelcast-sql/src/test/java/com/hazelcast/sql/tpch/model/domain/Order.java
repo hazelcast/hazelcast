@@ -16,6 +16,11 @@
 
 package com.hazelcast.sql.tpch.model.domain;
 
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.DataSerializable;
+
+import java.io.IOException;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -24,7 +29,7 @@ import java.time.LocalDate;
  * TPC-H model: order.
  */
 @SuppressWarnings("checkstyle:ParameterName")
-public class Order implements Serializable {
+public class Order implements DataSerializable {
     public String o_orderstatus;
     public BigDecimal o_totalprice;
     public LocalDate o_orderdate;
@@ -83,7 +88,29 @@ public class Order implements Serializable {
         return o_comment;
     }
 
-    public static class Key implements Serializable {
+    @Override
+    public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeUTF(o_orderstatus);
+        out.writeObject(o_totalprice);
+        out.writeObject(o_orderdate);
+        out.writeUTF(o_orderpriority);
+        out.writeUTF(o_clerk);
+        out.writeInt(o_shippriority);
+        out.writeUTF(o_comment);
+    }
+
+    @Override
+    public void readData(ObjectDataInput in) throws IOException {
+        o_orderstatus = in.readUTF();
+        o_totalprice = in.readObject();
+        o_orderdate = in.readObject();
+        o_orderpriority = in.readUTF();
+        o_clerk = in.readUTF();
+        o_shippriority = in.readInt();
+        o_comment = in.readUTF();
+    }
+
+    public static class Key implements DataSerializable {
         public long o_orderkey;
         public long o_custkey;
 
@@ -102,6 +129,18 @@ public class Order implements Serializable {
 
         public long getO_custkey() {
             return o_custkey;
+        }
+
+        @Override
+        public void writeData(ObjectDataOutput out) throws IOException {
+            out.writeLong(o_orderkey);
+            out.writeLong(o_custkey);
+        }
+
+        @Override
+        public void readData(ObjectDataInput in) throws IOException {
+            o_orderkey = in.readLong();
+            o_custkey = in.readLong();
         }
     }
 }

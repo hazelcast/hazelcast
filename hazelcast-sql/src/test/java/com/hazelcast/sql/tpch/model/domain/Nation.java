@@ -16,13 +16,18 @@
 
 package com.hazelcast.sql.tpch.model.domain;
 
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.DataSerializable;
+
+import java.io.IOException;
 import java.io.Serializable;
 
 /**
  * TPC-H model: nation.
  */
 @SuppressWarnings("checkstyle:ParameterName")
-public class Nation implements Serializable {
+public class Nation implements DataSerializable {
     public long n_nationkey;
     public String n_name;
     public long n_regionkey;
@@ -53,5 +58,21 @@ public class Nation implements Serializable {
 
     public String getN_comment() {
         return n_comment;
+    }
+
+    @Override
+    public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeLong(n_nationkey);
+        out.writeUTF(n_name);
+        out.writeLong(n_regionkey);
+        out.writeUTF(n_comment);
+    }
+
+    @Override
+    public void readData(ObjectDataInput in) throws IOException {
+        n_nationkey = in.readLong();
+        n_name = in.readUTF();
+        n_regionkey = in.readLong();
+        n_comment = in.readUTF();
     }
 }

@@ -16,6 +16,11 @@
 
 package com.hazelcast.sql.tpch.model.domain;
 
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.DataSerializable;
+
+import java.io.IOException;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -24,7 +29,7 @@ import java.time.LocalDate;
  * TPC-H model: lineitem.
  */
 @SuppressWarnings("checkstyle:ParameterName")
-public class LineItem implements Serializable {
+public class LineItem implements DataSerializable {
     public long l_suppkey;
     public BigDecimal l_quantity;
     public BigDecimal l_extendedprice;
@@ -126,7 +131,41 @@ public class LineItem implements Serializable {
         return l_comment;
     }
 
-    public static final class Key implements Serializable {
+    @Override
+    public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeLong(l_suppkey);
+        out.writeObject(l_quantity);
+        out.writeObject(l_extendedprice);
+        out.writeObject(l_discount);
+        out.writeObject(l_tax);
+        out.writeUTF(l_returnflag);
+        out.writeUTF(l_linestatus);
+        out.writeObject(l_shipdate);
+        out.writeObject(l_commitdate);
+        out.writeObject(l_receiptdate);
+        out.writeUTF(l_shipinstruct);
+        out.writeUTF(l_shipmode);
+        out.writeUTF(l_comment);
+    }
+
+    @Override
+    public void readData(ObjectDataInput in) throws IOException {
+        l_suppkey = in.readLong();
+        l_quantity = in.readObject();
+        l_extendedprice = in.readObject();
+        l_discount = in.readObject();
+        l_tax = in.readObject();
+        l_returnflag = in.readUTF();
+        l_linestatus = in.readUTF();
+        l_shipdate = in.readObject();
+        l_commitdate = in.readObject();
+        l_receiptdate = in.readObject();
+        l_shipinstruct = in.readUTF();
+        l_shipmode = in.readUTF();
+        l_comment = in.readUTF();
+    }
+
+    public static final class Key implements DataSerializable {
         public long l_orderkey;
         public long l_partkey;
         public long l_linenumber;
@@ -151,6 +190,20 @@ public class LineItem implements Serializable {
 
         public long getL_linenumber() {
             return l_linenumber;
+        }
+
+        @Override
+        public void writeData(ObjectDataOutput out) throws IOException {
+            out.writeLong(l_orderkey);
+            out.writeLong(l_partkey);
+            out.writeLong(l_linenumber);
+        }
+
+        @Override
+        public void readData(ObjectDataInput in) throws IOException {
+            l_orderkey = in.readLong();
+            l_partkey = in.readLong();
+            l_linenumber = in.readLong();
         }
     }
 }

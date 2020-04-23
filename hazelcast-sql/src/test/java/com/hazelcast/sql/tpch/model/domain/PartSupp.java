@@ -16,6 +16,11 @@
 
 package com.hazelcast.sql.tpch.model.domain;
 
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.DataSerializable;
+
+import java.io.IOException;
 import java.io.Serializable;
 import java.math.BigDecimal;
 
@@ -23,7 +28,7 @@ import java.math.BigDecimal;
  * TPC-H model: partsupp.
  */
 @SuppressWarnings("checkstyle:ParameterName")
-public class PartSupp implements Serializable {
+public class PartSupp implements DataSerializable {
     public int ps_availqty;
     public BigDecimal ps_supplycost;
     public String ps_comment;
@@ -50,7 +55,21 @@ public class PartSupp implements Serializable {
         return ps_comment;
     }
 
-    public static class Key implements Serializable {
+    @Override
+    public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeInt(ps_availqty);
+        out.writeObject(ps_supplycost);
+        out.writeUTF(ps_comment);
+    }
+
+    @Override
+    public void readData(ObjectDataInput in) throws IOException {
+        ps_availqty = in.readInt();
+        ps_supplycost = in.readObject();
+        ps_comment = in.readUTF();
+    }
+
+    public static class Key implements DataSerializable {
         public long ps_partkey;
         public long ps_suppkey;
 
@@ -69,6 +88,18 @@ public class PartSupp implements Serializable {
 
         public long getPs_suppkey() {
             return ps_suppkey;
+        }
+
+        @Override
+        public void writeData(ObjectDataOutput out) throws IOException {
+            out.writeLong(ps_partkey);
+            out.writeLong(ps_suppkey);
+        }
+
+        @Override
+        public void readData(ObjectDataInput in) throws IOException {
+            ps_partkey = in.readLong();
+            ps_suppkey = in.readLong();
         }
     }
 }
