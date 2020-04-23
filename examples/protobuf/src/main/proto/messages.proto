@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+package com.hazelcast.jet.protobuf;
+
+message Broker {
+  int32 id = 1;
+}
+
+message Product {
+  string name = 1;
+}

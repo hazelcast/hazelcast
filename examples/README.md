@@ -192,7 +192,7 @@ samples using the Core API.
 - [Custom Sink](source-sink-builder/src/main/java/com/hazelcast/jet/examples/sinkbuilder/TopicSink.java)
   - construct a custom Hazelcast `ITopic` sink
 
-## Integration with Frameworks
+## Integration with Frameworks and Libraries
 
 ### Spring Framework
 - [Annotation-Based Spring Context](spring/src/main/java/com/hazelcast/jet/examples/spring/AnnotationBasedConfigurationSample.java)
@@ -210,3 +210,7 @@ samples using the Core API.
   - XML-based dependency injection into a Jet Processor
 - [Spring Boot App that Runs a Jet
   Job](spring-boot/src/main/java/com/hazelcast/jet/examples/spring/SpringBootSample.java)
+
+### Protocol Buffers
+- [Protobuf Serializer Adapter](protobuf/src/main/java/com/hazelcast/jet/examples/protobuf/ProtobufSerializerAdapter.java)
+- [Protobuf Serializer Hook Adapter](protobuf/src/main/java/com/hazelcast/jet/examples/protobuf/ProtobufSerializerHookAdapter.java)
