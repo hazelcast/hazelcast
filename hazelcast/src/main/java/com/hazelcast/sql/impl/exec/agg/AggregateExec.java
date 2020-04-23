@@ -85,10 +85,6 @@ public class AggregateExec extends AbstractUpstreamAwareExec {
 
     @Override
     protected void setup1(QueryFragmentContext ctx) {
-        for (AggregateExpression expression : expressions) {
-            expression.setup(this);
-        }
-
         if (!sorted) {
             map = new HashMap<>();
         }

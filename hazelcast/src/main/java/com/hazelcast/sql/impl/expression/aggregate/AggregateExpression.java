@@ -22,7 +22,6 @@ import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.worker.QueryFragmentContext;
 import com.hazelcast.sql.impl.exec.agg.AggregateCollector;
-import com.hazelcast.sql.impl.exec.agg.AggregateExec;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
@@ -31,15 +30,12 @@ import java.io.IOException;
 /**
  * Common parent for all aggregate accumulators.
  */
-public abstract class AggregateExpression<T> implements DataSerializable {
+public abstract class AggregateExpression implements DataSerializable {
     /** Result type. */
     protected QueryDataType resType;
 
     /** Distinct flag. */
     protected boolean distinct;
-
-    /** Parent executor. */
-    protected transient AggregateExec parent;
 
     protected AggregateExpression() {
         // No-op.
@@ -48,10 +44,6 @@ public abstract class AggregateExpression<T> implements DataSerializable {
     protected AggregateExpression(QueryDataType resType, boolean distinct) {
         this.resType = resType;
         this.distinct = distinct;
-    }
-
-    public void setup(AggregateExec parent) {
-        this.parent = parent;
     }
 
     /**

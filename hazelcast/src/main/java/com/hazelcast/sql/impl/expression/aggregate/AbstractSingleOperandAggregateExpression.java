@@ -30,7 +30,7 @@ import java.util.Objects;
 /**
  * Aggregate accumulator which uses only a single input.
  */
-public abstract class AbstractSingleOperandAggregateExpression<T> extends AggregateExpression<T> {
+public abstract class AbstractSingleOperandAggregateExpression<T> extends AggregateExpression {
     /** Operand. */
     private Expression<?> operand;
 

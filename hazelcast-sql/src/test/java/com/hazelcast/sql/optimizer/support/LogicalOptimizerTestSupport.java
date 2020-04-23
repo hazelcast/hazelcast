@@ -94,12 +94,12 @@ public abstract class LogicalOptimizerTestSupport extends OptimizerTestSupport {
         return join;
     }
 
-    protected AggregateLogicalRel assertAggregate(RelNode rel, List<Integer> expGroup, List<AggregateExpression<?>> expAggExps) {
+    protected AggregateLogicalRel assertAggregate(RelNode rel, List<Integer> expGroup, List<AggregateExpression> expAggExps) {
         AggregateLogicalRel agg = assertClass(rel, AggregateLogicalRel.class);
 
         assertEquals(expGroup, agg.getGroupSet().toList());
 
-        List<AggregateExpression<?>> aggExps = new ArrayList<>(agg.getAggCallList().size());
+        List<AggregateExpression> aggExps = new ArrayList<>(agg.getAggCallList().size());
         for (AggregateCall aggCall : agg.getAggCallList()) {
             aggExps.add(PlanCreateVisitor.convertAggregateCall(aggCall, TestPlanNodeSchema.INSTANCE));
         }

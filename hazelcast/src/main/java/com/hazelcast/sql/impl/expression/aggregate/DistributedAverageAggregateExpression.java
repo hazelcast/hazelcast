@@ -32,7 +32,7 @@ import java.util.Objects;
 /**
  * Distributed average.
  */
-public class DistributedAverageAggregateExpression<T> extends AggregateExpression<T> {
+public class DistributedAverageAggregateExpression extends AggregateExpression {
     /** SUM operand. */
     private Expression<?> sumOperand;
 
@@ -50,8 +50,8 @@ public class DistributedAverageAggregateExpression<T> extends AggregateExpressio
         this.countOperand = countOperand;
     }
 
-    public static DistributedAverageAggregateExpression<?> create(Expression<?> sumOperand, Expression<?> countOperand) {
-        return new DistributedAverageAggregateExpression<>(sumOperand, countOperand);
+    public static DistributedAverageAggregateExpression create(Expression<?> sumOperand, Expression<?> countOperand) {
+        return new DistributedAverageAggregateExpression(sumOperand, countOperand);
     }
 
     @Override
@@ -101,7 +101,7 @@ public class DistributedAverageAggregateExpression<T> extends AggregateExpressio
             return false;
         }
 
-        DistributedAverageAggregateExpression<?> that = (DistributedAverageAggregateExpression<?>) o;
+        DistributedAverageAggregateExpression that = (DistributedAverageAggregateExpression) o;
 
         return sumOperand.equals(that.sumOperand) && countOperand.equals(that.countOperand);
     }
