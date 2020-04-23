@@ -278,13 +278,13 @@ public class LocalReplicatedMapStatsImpl implements LocalReplicatedMapStats, Jso
         return convertNanosToMillis(totalRemoveLatenciesNanos);
     }
 
-    @Probe(name = REPLICATED_MAP_MAX_GET_LATENCY, unit = MS)
+    @Probe(name = REPLICATED_MAP_MAX_PUT_LATENCY, unit = MS)
     @Override
     public long getMaxPutLatency() {
         return convertNanosToMillis(maxPutLatencyNanos);
     }
 
-    @Probe(name = REPLICATED_MAP_MAX_PUT_LATENCY, unit = MS)
+    @Probe(name = REPLICATED_MAP_MAX_GET_LATENCY, unit = MS)
     @Override
     public long getMaxGetLatency() {
         return convertNanosToMillis(maxGetLatencyNanos);
