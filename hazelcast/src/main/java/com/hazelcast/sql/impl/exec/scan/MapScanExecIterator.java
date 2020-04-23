@@ -29,7 +29,7 @@ import java.util.Iterator;
 import java.util.Map;
 
 /**
- * Iterator over map partitions..
+ * Iterator over map partitions.
  */
 @SuppressWarnings("rawtypes")
 public class MapScanExecIterator {
