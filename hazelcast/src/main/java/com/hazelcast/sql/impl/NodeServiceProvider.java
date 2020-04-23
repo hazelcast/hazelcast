@@ -18,6 +18,7 @@ package com.hazelcast.sql.impl;
 
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.map.impl.MapContainer;
 
 import java.util.Collection;
 import java.util.UUID;
@@ -40,6 +41,12 @@ public interface NodeServiceProvider extends ClockProvider, LocalMemberIdProvide
      * @return Connection object or {@code null} if the connection cannot be established.
      */
     Connection getConnection(UUID memberId);
+
+    /**
+     * @param name Map name.
+     * @return Container or {@code null} if map with the given name doesn't exist.
+     */
+    MapContainer getMap(String name);
 
     /**
      * Get logger for class.

@@ -76,7 +76,8 @@ import static java.lang.System.getProperty;
  * supporting structures for all of the maps' functionalities.
  */
 @SuppressWarnings({"WeakerAccess", "checkstyle:classfanoutcomplexity"})
-public class MapContainer {
+public class
+MapContainer {
 
     protected final String name;
     protected final String splitBrainProtectionName;
@@ -107,6 +108,8 @@ public class MapContainer {
     private volatile Evictor evictor;
 
     private boolean persistWanReplicatedData;
+
+    private volatile boolean destroyed;
 
     /**
      * Operations which are done in this constructor should obey the rules defined
@@ -390,8 +393,20 @@ public class MapContainer {
         return interceptorRegistry;
     }
 
+    /**
+     * Callback invoked before record store and indexes are destroyed. Ensures that if map iterator observes a non-destroyed
+     * state, then associated data structures are still valid.
+     */
+    public void onBeforeDestroy() {
+        destroyed = true;
+    }
+
     // callback called when the MapContainer is de-registered from MapService and destroyed - basically on map-destroy
     public void onDestroy() {
+    }
+
+    public boolean isDestroyed() {
+        return destroyed;
     }
 
     public boolean shouldCloneOnEntryProcessing(int partitionId) {

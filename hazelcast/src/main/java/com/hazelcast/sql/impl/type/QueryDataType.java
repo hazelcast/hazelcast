@@ -111,6 +111,20 @@ public class QueryDataType implements IdentifiedDataSerializable {
         return precision;
     }
 
+    public Object convert(Object value) {
+        if (value == null) {
+            return value;
+        }
+
+        Class<?> valueClass = value.getClass();
+
+        if (valueClass == converter.getValueClass()) {
+            return value;
+        }
+
+        return converter.convertToSelf(Converters.getConverter(valueClass), value);
+    }
+
     @Override
     public int getFactoryId() {
         return SqlDataSerializerHook.F_ID;

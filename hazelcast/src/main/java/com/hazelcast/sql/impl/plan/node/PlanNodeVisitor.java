@@ -36,6 +36,7 @@ public interface PlanNodeVisitor {
     void onRootSendNode(RootSendPlanNode node);
     void onProjectNode(ProjectPlanNode node);
     void onFilterNode(FilterPlanNode node);
+    void onMapScanNode(MapScanPlanNode node);
 
     /**
      * Callback for a node without special handlers. For testing only.
