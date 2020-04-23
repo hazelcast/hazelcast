@@ -1,5 +1,5 @@
 ---
-title: Call gRPC service
+title: Call gRPC Service
 description: How to call unary or bidirectional streaming gRPC service from a pipeline.
 ---
 
