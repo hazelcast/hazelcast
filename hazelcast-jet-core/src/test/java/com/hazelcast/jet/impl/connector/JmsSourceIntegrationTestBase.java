@@ -92,7 +92,6 @@ public abstract class JmsSourceIntegrationTestBase extends SimpleTestInClusterSu
     private String destinationName = "dest" + counter++;
 
     private Pipeline p = Pipeline.create();
-    private IList<Object> srcList;
     private IList<Object> sinkList;
 
     @BeforeClass
@@ -102,7 +101,6 @@ public abstract class JmsSourceIntegrationTestBase extends SimpleTestInClusterSu
 
     @Before
     public void before() {
-        srcList = instance().getList("src-" + counter++);
         sinkList = instance().getList("sink-" + counter++);
     }
 

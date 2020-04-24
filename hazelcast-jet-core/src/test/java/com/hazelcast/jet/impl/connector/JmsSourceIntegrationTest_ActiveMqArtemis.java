@@ -20,9 +20,11 @@ import com.hazelcast.function.SupplierEx;
 import org.apache.activemq.artemis.jms.client.ActiveMQConnectionFactory;
 import org.apache.activemq.artemis.junit.EmbeddedActiveMQResource;
 import org.junit.ClassRule;
+import org.junit.Ignore;
 
 import javax.jms.ConnectionFactory;
 
+@Ignore // ignored due to https://issues.apache.org/jira/browse/ARTEMIS-2735
 public class JmsSourceIntegrationTest_ActiveMqArtemis extends JmsSourceIntegrationTestBase {
 
     @ClassRule

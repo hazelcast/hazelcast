@@ -159,6 +159,7 @@ public class StreamJmsP<T> extends AbstractProcessor {
                     }
                     seenIds.add(msgId);
                     if (restoredIds.remove(msgId)) {
+                        logFine(getLogger(), "Redelivered message dropped: %s", t);
                         continue;
                     }
                 }
@@ -184,7 +185,7 @@ public class StreamJmsP<T> extends AbstractProcessor {
                     .filter(ids -> !ids.isEmpty())
                     .map(ids -> entry(SEEN_IDS_KEY, ids))
                     .onFirstNull(() -> snapshotTraverser = null);
-            logFine(getLogger(), "Saved %d message(s) IDs to snapshot", seenIds.size());
+            logFine(getLogger(), "Saved %d seenIds and %d restoredIds to snapshot", seenIds.size(), restoredIds.size());
         }
         return emitFromTraverserToSnapshot(snapshotTraverser);
     }
@@ -218,8 +219,8 @@ public class StreamJmsP<T> extends AbstractProcessor {
         }
         // Ignore if not in ex-once mode. The user could cancelAndExportSnapshot() and restart with
         // a lower guarantee.
-        // We could restore multiple collections: each processor saves one and it's restored to all
-        // because we can't control which processor receives which messages.
+        // We could restore multiple collections: each processor saves up to two collections and it's restored to
+        // all processors because we can't control which processor receives which messages.
         if (guarantee == EXACTLY_ONCE) {
             @SuppressWarnings("unchecked")
             Set<Object> castValue = (Set<Object>) value;
