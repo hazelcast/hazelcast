@@ -98,13 +98,6 @@ public class NodeServiceProviderImpl implements NodeServiceProvider {
     }
 
     @Override
-    public MapContainer getMap(String name) {
-        MapService mapService = nodeEngine.getService(MapService.SERVICE_NAME);
-
-        return mapService.getMapServiceContext().getMapContainer(name);
-    }
-
-    @Override
     public ReplicatedMapProxy<?, ?> getReplicatedMap(String name) {
         return (ReplicatedMapProxy<?, ?>) nodeEngine.getHazelcastInstance().getReplicatedMap(name);
     }

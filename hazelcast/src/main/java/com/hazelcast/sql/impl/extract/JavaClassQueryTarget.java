@@ -59,9 +59,9 @@ public class JavaClassQueryTarget implements QueryTarget, GenericTargetAccessor 
     @Override
     public QueryExtractor createExtractor(String path, QueryDataType type) {
         if (path == null) {
-            return new GenericTargetExtractor(this, type);
+            return new GenericTargetExtractor(isKey, this, type);
         } else {
-            return new GenericFieldExtractor(this, type, extractors, path);
+            return new GenericFieldExtractor(isKey, this, type, extractors, path);
         }
     }
 

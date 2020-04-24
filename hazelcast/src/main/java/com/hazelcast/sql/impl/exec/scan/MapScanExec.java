@@ -118,7 +118,7 @@ public class MapScanExec extends AbstractMapScanExec {
     @Override
     protected void reset0() {
         recordIterator = null;
-        currentBatch = null;
+        currentRows = null;
     }
 
     @Override
