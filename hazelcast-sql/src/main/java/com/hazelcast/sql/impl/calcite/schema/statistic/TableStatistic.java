@@ -16,6 +16,10 @@
 
 package com.hazelcast.sql.impl.calcite.schema.statistic;
 
+import org.apache.calcite.util.ImmutableBitSet;
+
+import java.util.List;
+
 /**
  * Simple table statistics.
  */
@@ -34,6 +38,12 @@ public class TableStatistic extends TableStatisticAdapter {
     @Override
     public Double getRowCount() {
         return rowCount != null ? (double) rowCount : null;
+    }
+
+    @Override
+    public List<ImmutableBitSet> getKeys() {
+        // TODO: Do we need to reutrn __key here?
+        return null;
     }
 
     @Override

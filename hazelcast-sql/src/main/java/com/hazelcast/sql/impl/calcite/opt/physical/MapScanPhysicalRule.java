@@ -543,10 +543,10 @@ public final class MapScanPhysicalRule extends AbstractPhysicalRule {
             } else {
                 // Try extracting the field from the key-based path and check if it is the distribution field.
                 // E.g. "field" -> (attribute) -> "__key.distField" -> (strategy) -> "distField".
-                String keyPath = QueryPath.extractKeyPath(path);
+                QueryPath path0 = QueryPath.create(path);
 
-                if (keyPath != null) {
-                    if (keyPath.equals(distributionFieldName)) {
+                if (path0.isKey()) {
+                    if (path0.getPath().equals(distributionFieldName)) {
                         return Collections.singletonList(new DistributionField(index));
                     }
                 }
