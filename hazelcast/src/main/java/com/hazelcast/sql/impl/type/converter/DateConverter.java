@@ -17,7 +17,6 @@
 package com.hazelcast.sql.impl.type.converter;
 
 import java.time.OffsetDateTime;
-import java.time.ZoneOffset;
 import java.util.Date;
 
 /**
@@ -38,6 +37,6 @@ public final class DateConverter extends AbstractTimestampWithTimezoneConverter 
 
     @Override
     public OffsetDateTime asTimestampWithTimezone(Object val) {
-        return OffsetDateTime.ofInstant(((Date) val).toInstant(), ZoneOffset.UTC);
+        return OffsetDateTime.ofInstant(((Date) val).toInstant(), DEFAULT_ZONE);
     }
 }

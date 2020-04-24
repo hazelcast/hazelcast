@@ -353,7 +353,7 @@ public class ConvertersTest {
         LocalTime time = LocalTime.parse(timeString);
         LocalDate date = LocalDate.now();
         LocalDateTime dateTime = LocalDateTime.of(date, time);
-        OffsetDateTime globalDateTime = OffsetDateTime.ofInstant(dateTime.toInstant(ZoneOffset.UTC), ZoneId.systemDefault());
+        OffsetDateTime globalDateTime = ZonedDateTime.of(dateTime, ZoneId.systemDefault()).toOffsetDateTime();
 
         assertEquals(timeString, converter.asVarchar(time));
         assertEquals(time, converter.asTime(time));
@@ -373,7 +373,7 @@ public class ConvertersTest {
         String dateString = "2020-02-02";
         LocalDate date = LocalDate.parse(dateString);
         LocalDateTime dateTime = date.atStartOfDay();
-        OffsetDateTime globalDateTime = OffsetDateTime.ofInstant(dateTime.toInstant(ZoneOffset.UTC), ZoneId.systemDefault());
+        OffsetDateTime globalDateTime = ZonedDateTime.of(dateTime, ZoneId.systemDefault()).toOffsetDateTime();
 
         assertEquals(dateString, converter.asVarchar(date));
         assertEquals(date, converter.asDate(date));
@@ -412,7 +412,7 @@ public class ConvertersTest {
 
         Date val = new Date();
 
-        checkTimestampWithTimezone(converter, val, OffsetDateTime.ofInstant(val.toInstant(), ZoneOffset.UTC));
+        checkTimestampWithTimezone(converter, val, OffsetDateTime.ofInstant(val.toInstant(), ZoneId.systemDefault()));
 
         checkConverterSelf(converter);
     }
@@ -426,7 +426,7 @@ public class ConvertersTest {
 
         Calendar val = Calendar.getInstance();
 
-        checkTimestampWithTimezone(converter, val, OffsetDateTime.ofInstant(val.toInstant(), ZoneOffset.UTC));
+        checkTimestampWithTimezone(converter, val, OffsetDateTime.ofInstant(val.toInstant(), val.getTimeZone().toZoneId()));
 
         checkConverterSelf(converter);
     }
@@ -440,7 +440,7 @@ public class ConvertersTest {
 
         Instant val = Instant.now();
 
-        checkTimestampWithTimezone(converter, val, OffsetDateTime.ofInstant(val, ZoneOffset.UTC));
+        checkTimestampWithTimezone(converter, val, OffsetDateTime.ofInstant(val, ZoneId.systemDefault()));
 
         checkConverterSelf(converter);
     }
