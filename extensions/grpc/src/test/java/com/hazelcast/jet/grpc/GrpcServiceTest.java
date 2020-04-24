@@ -119,6 +119,30 @@ public class GrpcServiceTest extends SimpleTestInClusterSupport {
     }
 
     @Test
+    public void whenNotAsync_bidirectionalStreaming_distributed() throws IOException {
+        // Given
+        server = createServer(new GreeterServiceImpl());
+        final int port = server.getPort();
+
+        List<String> items = IntStream.range(0, ITEM_COUNT).mapToObj(Integer::toString).collect(toList());
+
+        Pipeline p = Pipeline.create();
+        BatchStageWithKey<String, String> stage = p.readFrom(TestSources.items(items))
+                .groupingKey(i -> i);
+        // When
+        BatchStage<String> mapped = stage.mapUsingService(bidirectionalStreaming(port), (service, key, item) -> {
+            HelloRequest req = HelloRequest.newBuilder().setName(item).build();
+            return service.call(req).thenApply(HelloReply::getMessage).get();
+        });
+
+        // Then
+        mapped.writeTo(AssertionSinks.assertCollected(e -> {
+            assertEquals("unexpected number of items received", ITEM_COUNT, e.size());
+        }));
+        instance().newJob(p).join();
+    }
+
+    @Test
     public void when_bidirectionalStreaming_withFaultyService() throws IOException {
         // Given
         server = createServer(new FaultyGreeterServiceImpl());
@@ -184,6 +208,31 @@ public class GrpcServiceTest extends SimpleTestInClusterSupport {
         BatchStage<String> mapped = stage.mapUsingServiceAsync(unary(port), (service, key, item) -> {
             HelloRequest req = HelloRequest.newBuilder().setName(item).build();
             return service.call(req).thenApply(HelloReply::getMessage);
+        });
+
+        // Then
+        mapped.writeTo(AssertionSinks.assertCollected(e -> {
+            assertEquals("unexpected number of items received", ITEM_COUNT, e.size());
+        }));
+        instance().newJob(p).join();
+    }
+
+    @Test
+    public void whenNotAsync_unary_distributed() throws IOException {
+        // Given
+        server = createServer(new GreeterServiceImpl());
+        final int port = server.getPort();
+
+        List<String> items = IntStream.range(0, ITEM_COUNT).mapToObj(Integer::toString).collect(toList());
+
+        Pipeline p = Pipeline.create();
+
+        BatchStageWithKey<String, String> stage = p.readFrom(TestSources.items(items))
+                .groupingKey(i -> i);
+        // When
+        BatchStage<String> mapped = stage.mapUsingService(unary(port), (service, key, item) -> {
+            HelloRequest req = HelloRequest.newBuilder().setName(item).build();
+            return service.call(req).thenApply(HelloReply::getMessage).get();
         });
 
         // Then
