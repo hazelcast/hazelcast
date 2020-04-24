@@ -36,6 +36,7 @@ public class LdapAuthenticationConfig extends AbstractClusterLoginConfig<LdapAut
     private String socketFactoryClassName;
     private String systemUserDn;
     private String systemUserPassword;
+    private String systemAuthentication;
 
     // BasicLdapLoginModule
     private boolean parseDn;
@@ -54,6 +55,7 @@ public class LdapAuthenticationConfig extends AbstractClusterLoginConfig<LdapAut
     private String userFilter;
     private LdapSearchScope userSearchScope;
     private Boolean skipAuthentication;
+    private String securityRealm;
 
     public String getUrl() {
         return url;
@@ -217,6 +219,24 @@ public class LdapAuthenticationConfig extends AbstractClusterLoginConfig<LdapAut
         return this;
     }
 
+    public String getSecurityRealm() {
+        return securityRealm;
+    }
+
+    public LdapAuthenticationConfig setSecurityRealm(String securityRealm) {
+        this.securityRealm = securityRealm;
+        return this;
+    }
+
+    public String getSystemAuthentication() {
+        return systemAuthentication;
+    }
+
+    public LdapAuthenticationConfig setSystemAuthentication(String systemAuthentication) {
+        this.systemAuthentication = systemAuthentication;
+        return this;
+    }
+
     @Override
     protected Properties initLoginModuleProperties() {
         Properties props = super.initLoginModuleProperties();
@@ -232,24 +252,26 @@ public class LdapAuthenticationConfig extends AbstractClusterLoginConfig<LdapAut
         setIfConfigured(props, "roleSearchScope", roleSearchScope);
         setIfConfigured(props, "userNameAttribute", userNameAttribute);
 
-        if (!isNullOrEmpty(systemUserDn)) {
-            props.setProperty(Context.SECURITY_AUTHENTICATION, "simple");
-            props.setProperty(Context.SECURITY_PRINCIPAL, systemUserDn);
+        boolean useSystemAccount = !isNullOrEmpty(systemUserDn) || !isNullOrEmpty(systemAuthentication);
+        if (useSystemAccount) {
+            setIfConfigured(props, Context.SECURITY_AUTHENTICATION, systemAuthentication);
+            setIfConfigured(props, Context.SECURITY_PRINCIPAL, systemUserDn);
             setIfConfigured(props, Context.SECURITY_CREDENTIALS, systemUserPassword);
             setIfConfigured(props, "passwordAttribute", passwordAttribute);
             setIfConfigured(props, "userContext", userContext);
             setIfConfigured(props, "userFilter", userFilter);
             setIfConfigured(props, "userSearchScope", userSearchScope);
             setIfConfigured(props, "skipAuthentication", skipAuthentication);
+            setIfConfigured(props, "securityRealm", securityRealm);
         }
         return props;
     }
 
     @Override
     public LoginModuleConfig[] asLoginModuleConfigs() {
-        boolean useSystemUser = !isNullOrEmpty(systemUserDn);
+        boolean useSystemAccount = !isNullOrEmpty(systemUserDn) || !isNullOrEmpty(systemAuthentication);
         LoginModuleConfig loginModuleConfig = new LoginModuleConfig(
-                useSystemUser ? "com.hazelcast.security.loginimpl.LdapLoginModule"
+                useSystemAccount ? "com.hazelcast.security.loginimpl.LdapLoginModule"
                         : "com.hazelcast.security.loginimpl.BasicLdapLoginModule",
                 LoginModuleUsage.REQUIRED);
 
@@ -261,24 +283,24 @@ public class LdapAuthenticationConfig extends AbstractClusterLoginConfig<LdapAut
     @Override
     public String toString() {
         return "LdapAuthenticationConfig [url=" + url + ", socketFactoryClassName=" + socketFactoryClassName + ", systemUserDn="
-                + systemUserDn + ", systemUserPassword=***, parseDn=" + parseDn + ", roleContext="
-                + roleContext + ", roleFilter=" + roleFilter + ", roleMappingAttribute=" + roleMappingAttribute
-                + ", roleMappingMode=" + roleMappingMode + ", roleNameAttribute=" + roleNameAttribute
-                + ", roleRecursionMaxDepth=" + roleRecursionMaxDepth + ", roleSearchScope=" + roleSearchScope
-                + ", userNameAttribute=" + userNameAttribute + ", passwordAttribute=" + passwordAttribute + ", userContext="
-                + userContext + ", userFilter=" + userFilter + ", userSearchScope=" + userSearchScope + ", skipAuthentication="
-                + skipAuthentication + ", getSkipIdentity()=" + getSkipIdentity() + ", getSkipEndpoint()=" + getSkipEndpoint()
-                + ", getSkipRole()=" + getSkipRole() + "]";
+                + systemUserDn + ", systemUserPassword=***, parseDn=" + parseDn + ", roleContext=" + roleContext
+                + ", roleFilter=" + roleFilter + ", roleMappingAttribute=" + roleMappingAttribute + ", roleMappingMode="
+                + roleMappingMode + ", roleNameAttribute=" + roleNameAttribute + ", roleRecursionMaxDepth="
+                + roleRecursionMaxDepth + ", roleSearchScope=" + roleSearchScope + ", userNameAttribute=" + userNameAttribute
+                + ", passwordAttribute=" + passwordAttribute + ", userContext=" + userContext + ", userFilter=" + userFilter
+                + ", userSearchScope=" + userSearchScope + ", skipAuthentication=" + skipAuthentication + ", securityRealm="
+                + securityRealm + ", systemAuthentication=" + systemAuthentication + ", getSkipIdentity()=" + getSkipIdentity()
+                + ", getSkipEndpoint()=" + getSkipEndpoint() + ", getSkipRole()=" + getSkipRole() + "]";
     }
 
     @Override
     public int hashCode() {
         final int prime = 31;
         int result = super.hashCode();
-        result = prime * result
-                + Objects.hash(parseDn, passwordAttribute, roleContext, roleFilter, roleMappingAttribute, roleMappingMode,
-                        roleNameAttribute, roleRecursionMaxDepth, roleSearchScope, skipAuthentication, socketFactoryClassName,
-                        systemUserDn, systemUserPassword, url, userContext, userFilter, userNameAttribute, userSearchScope);
+        result = prime * result + Objects.hash(parseDn, passwordAttribute, roleContext, roleFilter, roleMappingAttribute,
+                roleMappingMode, roleNameAttribute, roleRecursionMaxDepth, roleSearchScope, skipAuthentication,
+                socketFactoryClassName, systemUserDn, systemUserPassword, url, userContext, userFilter, userNameAttribute,
+                userSearchScope, securityRealm, systemAuthentication);
         return result;
     }
 
@@ -305,6 +327,8 @@ public class LdapAuthenticationConfig extends AbstractClusterLoginConfig<LdapAut
                 && Objects.equals(systemUserDn, other.systemUserDn)
                 && Objects.equals(systemUserPassword, other.systemUserPassword) && Objects.equals(url, other.url)
                 && Objects.equals(userContext, other.userContext) && Objects.equals(userFilter, other.userFilter)
+                && Objects.equals(securityRealm, other.securityRealm)
+                && Objects.equals(systemAuthentication, other.systemAuthentication)
                 && Objects.equals(userNameAttribute, other.userNameAttribute) && userSearchScope == other.userSearchScope;
     }
 

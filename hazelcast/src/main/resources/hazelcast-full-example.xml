@@ -2223,6 +2223,8 @@
                         <user-name-attribute>userNameAttribute</user-name-attribute>
                         <system-user-dn>systemUserDn</system-user-dn>
                         <system-user-password>systemUserPassword</system-user-password>
+                        <system-authentication>simple</system-authentication>
+                        <security-realm>realmName</security-realm>
                         <password-attribute>passwordAttribute</password-attribute>
                         <user-context>userContext</user-context>
                         <user-filter>userFilter</user-filter>
@@ -2253,8 +2255,8 @@
                         <security-realm>krb5Acceptor</security-realm>
                         <ldap>
                             <url>ldap://127.0.0.1/</url>
-                            <system-user-dn>uid=admin,ou=system</system-user-dn>
-                            <system-user-password>secret</system-user-password>
+                            <system-authentication>GSSAPI</system-authentication>
+                            <security-realm>krb5Initiator</security-realm>
                             <skip-authentication>true</skip-authentication>
                             <user-filter>(krb5PrincipalName={login})</user-filter>
                             <role-mapping-attribute>cn</role-mapping-attribute>
