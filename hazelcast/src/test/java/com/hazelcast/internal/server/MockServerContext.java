@@ -197,15 +197,13 @@ public class MockServerContext implements ServerContext {
 
     @Override
     public void executeAsync(final Runnable runnable) {
-        new Thread() {
-            public void run() {
-                try {
-                    runnable.run();
-                } catch (Throwable t) {
-                    logger.severe(t);
-                }
+        new Thread(() -> {
+            try {
+                runnable.run();
+            } catch (Throwable t) {
+                logger.severe(t);
             }
-        }.start();
+        }).start();
     }
 
     @Override
@@ -249,13 +247,17 @@ public class MockServerContext implements ServerContext {
             }
 
             @Override
-            public CompletableFuture<EventRegistration> registerListenerAsync(@Nonnull String serviceName, @Nonnull String topic,
+            public CompletableFuture<EventRegistration> registerListenerAsync(@Nonnull String serviceName,
+                                                                              @Nonnull String topic,
                                                                               @Nonnull Object listener) {
                 return null;
             }
 
             @Override
-            public EventRegistration registerListener(@Nonnull String serviceName, @Nonnull String topic, @Nonnull EventFilter filter, @Nonnull Object listener) {
+            public EventRegistration registerListener(@Nonnull String serviceName,
+                                                      @Nonnull String topic,
+                                                      @Nonnull EventFilter filter,
+                                                      @Nonnull Object listener) {
                 return null;
             }
 
@@ -354,21 +356,18 @@ public class MockServerContext implements ServerContext {
 
     @Override
     public InboundHandler[] createInboundHandlers(EndpointQualifier qualifier, final ServerConnection connection) {
-        return new InboundHandler[]{new PacketDecoder(connection, new Consumer<Packet>() {
-            @Override
-            public void accept(Packet packet) {
-                try {
-                    if (packet.getPacketType() == MEMBER_HANDSHAKE) {
-                        connection.getConnectionManager().accept(packet);
-                    } else {
-                        Consumer<Packet> consumer = packetConsumer;
-                        if (consumer != null) {
-                            consumer.accept(packet);
-                        }
+        return new InboundHandler[]{new PacketDecoder(connection, packet -> {
+            try {
+                if (packet.getPacketType() == MEMBER_HANDSHAKE) {
+                    connection.getConnectionManager().accept(packet);
+                } else {
+                    Consumer<Packet> consumer = packetConsumer;
+                    if (consumer != null) {
+                        consumer.accept(packet);
                     }
-                } catch (Exception e) {
-                    logger.severe(e);
                 }
+            } catch (Exception e) {
+                logger.severe(e);
             }
         })};
     }

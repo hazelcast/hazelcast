@@ -351,7 +351,7 @@ class TestClientRegistry {
 
         private void register() {
             Node node = remoteNodeEngine.getNode();
-            node.getConnectionManager(CLIENT).register(getRemoteAddress(), this);
+            node.getServer().getConnectionManager(CLIENT).register(getRemoteAddress(), this);
         }
 
         @Override

@@ -280,7 +280,7 @@ public abstract class HazelcastTestSupport {
 
     public static Packet toPacket(HazelcastInstance local, HazelcastInstance remote, Operation operation) {
         InternalSerializationService serializationService = Accessors.getSerializationService(local);
-        ServerConnectionManager connectionManager = Accessors.getEndpointManager(local);
+        ServerConnectionManager connectionManager = Accessors.getConnectionManagerManager(local);
 
         return new Packet(serializationService.toBytes(operation), operation.getPartitionId())
                 .setPacketType(Packet.Type.OPERATION)

@@ -52,9 +52,9 @@ public class TcpServerConnectionManagerMetricsTest extends HazelcastTestSupport 
         getNodeEngineImpl(instance).getMetricsRegistry().collect(collector);
 
         // defined by ServerEndpointManager
-        //verifyCollectedOnce(collector, metricDescriptor(TCP_PREFIX_CONNECTION, "count"));
+        verifyCollectedOnce(collector, metricDescriptor(TCP_PREFIX_CONNECTION, "count"));
         // defined by ServerUnifiedEndpointManager
-        //verifyCollectedOnce(collector, metricDescriptor(TCP_PREFIX_CONNECTION, "clientCount"));
+        verifyCollectedOnce(collector, metricDescriptor(TCP_PREFIX_CONNECTION, "clientCount"));
         verifyCollectedOnce(collector, metricDescriptor(TCP_PREFIX_CONNECTION, "textCount"));
     }
 
@@ -67,8 +67,8 @@ public class TcpServerConnectionManagerMetricsTest extends HazelcastTestSupport 
 
     private MetricDescriptor metricDescriptor(String prefix, String metric) {
         return DEFAULT_DESCRIPTOR_SUPPLIER.get()
-                                          .withPrefix(prefix)
-                                          .withMetric(metric)
-                                          .withUnit(COUNT);
+                .withPrefix(prefix)
+                .withMetric(metric)
+                .withUnit(COUNT);
     }
 }

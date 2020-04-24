@@ -298,8 +298,7 @@ public class TcpServerAcceptor implements DynamicMetricsProvider {
         }
 
         private void newConnection(final EndpointQualifier qualifier, SocketChannel socketChannel) throws IOException {
-            TcpServerConnectionManager connectionManager = (TcpServerConnectionManager)
-                    server.getUnifiedOrDedicatedEndpointManager(qualifier);
+            TcpServerConnectionManager connectionManager = server.getConnectionManager(qualifier);
             Channel channel = connectionManager.newChannel(socketChannel, false);
 
             if (logger.isFineEnabled()) {

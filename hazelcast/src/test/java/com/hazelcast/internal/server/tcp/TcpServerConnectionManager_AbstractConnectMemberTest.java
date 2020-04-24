@@ -19,10 +19,7 @@ package com.hazelcast.internal.server.tcp;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.nio.ConnectionType;
 import com.hazelcast.internal.server.ServerConnectionManager;
-import com.hazelcast.test.AssertTask;
 import org.junit.Test;
-
-import java.net.UnknownHostException;
 
 import static com.hazelcast.instance.EndpointQualifier.MEMBER;
 import static org.junit.Assert.assertEquals;
@@ -39,36 +36,36 @@ public abstract class TcpServerConnectionManager_AbstractConnectMemberTest
 
     @Test
     public void testConnectionCount() {
-        networkingServiceA.start();
-        networkingServiceB.start();
+        tcpServerA.start();
+        tcpServerB.start();
 
-        connect(networkingServiceA, addressB);
+        connect(tcpServerA, addressB);
 
-        assertEquals(1, networkingServiceA.getConnectionManager(MEMBER).getConnections().size());
-        assertEquals(1, networkingServiceB.getConnectionManager(MEMBER).getConnections().size());
+        assertEquals(1, tcpServerA.getConnectionManager(MEMBER).getConnections().size());
+        assertEquals(1, tcpServerB.getConnectionManager(MEMBER).getConnections().size());
     }
 
     // ================== getOrConnect ======================================================
 
     @Test
-    public void getOrConnect_whenNotConnected_thenEventuallyConnectionAvailable() throws UnknownHostException {
-        startAllNetworkingServices();
+    public void getOrConnect_whenNotConnected_thenEventuallyConnectionAvailable() {
+        startAllTcpServers();
 
-        Connection c = networkingServiceA.getConnectionManager(MEMBER).getOrConnect(addressB);
+        Connection c = tcpServerA.getConnectionManager(MEMBER).getOrConnect(addressB);
         assertNull(c);
 
-        connect(networkingServiceA, addressB);
+        connect(tcpServerA, addressB);
 
-        assertEquals(1, networkingServiceA.getConnectionManager(MEMBER).getActiveConnections().size());
-        assertEquals(1, networkingServiceB.getConnectionManager(MEMBER).getActiveConnections().size());
+        assertEquals(1, tcpServerA.getConnectionManager(MEMBER).getActiveConnections().size());
+        assertEquals(1, tcpServerB.getConnectionManager(MEMBER).getActiveConnections().size());
     }
 
     @Test
-    public void getOrConnect_whenAlreadyConnectedSameConnectionReturned() throws UnknownHostException {
-        startAllNetworkingServices();
+    public void getOrConnect_whenAlreadyConnectedSameConnectionReturned() {
+        startAllTcpServers();
 
-        Connection c1 = connect(networkingServiceA, addressB);
-        Connection c2 = networkingServiceA.getConnectionManager(MEMBER).getOrConnect(addressB);
+        Connection c1 = connect(tcpServerA, addressB);
+        Connection c2 = tcpServerA.getConnectionManager(MEMBER).getOrConnect(addressB);
 
         assertSame(c1, c2);
     }
@@ -76,29 +73,24 @@ public abstract class TcpServerConnectionManager_AbstractConnectMemberTest
     // ================== destroy ======================================================
 
     @Test
-    public void destroyConnection_whenActive() throws Exception {
-        startAllNetworkingServices();
+    public void destroyConnection_whenActive() {
+        startAllTcpServers();
 
-        final TcpServerConnection connAB = connect(networkingServiceA, addressB);
-        final TcpServerConnection connBA = connect(networkingServiceB, addressA);
+        final TcpServerConnection connAB = connect(tcpServerA, addressB);
+        final TcpServerConnection connBA = connect(tcpServerB, addressA);
 
         connAB.close(null, null);
 
         assertIsDestroyed(connAB);
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertIsDestroyed(connBA);
-            }
-        });
+        assertTrueEventually(() -> assertIsDestroyed(connBA));
     }
 
     @Test
-    public void destroyConnection_whenAlreadyDestroyed_thenCallIgnored() throws Exception {
-        startAllNetworkingServices();
+    public void destroyConnection_whenAlreadyDestroyed_thenCallIgnored() {
+        startAllTcpServers();
 
-        networkingServiceA.getConnectionManager(MEMBER).getOrConnect(addressB);
-        TcpServerConnection c = connect(networkingServiceA, addressB);
+        tcpServerA.getConnectionManager(MEMBER).getOrConnect(addressB);
+        TcpServerConnection c = connect(tcpServerA, addressB);
 
         // first destroy
         c.close(null, null);
@@ -119,20 +111,20 @@ public abstract class TcpServerConnectionManager_AbstractConnectMemberTest
     // ================== connection ======================================================
 
     @Test
-    public void connect() throws UnknownHostException {
-        startAllNetworkingServices();
+    public void connect() {
+        startAllTcpServers();
 
-        TcpServerConnection connAB = connect(networkingServiceA, addressB);
+        TcpServerConnection connAB = connect(tcpServerA, addressB);
         assertTrue(connAB.isAlive());
         assertEquals(ConnectionType.MEMBER, connAB.getConnectionType());
-        assertEquals(1, networkingServiceA.getConnectionManager(MEMBER).getActiveConnections().size());
+        assertEquals(1, tcpServerA.getConnectionManager(MEMBER).getActiveConnections().size());
 
-        TcpServerConnection connBA = (TcpServerConnection) networkingServiceB.getConnectionManager(MEMBER).get(addressA);
+        TcpServerConnection connBA = (TcpServerConnection) tcpServerB.getConnectionManager(MEMBER).get(addressA);
         assertTrue(connBA.isAlive());
         assertEquals(ConnectionType.MEMBER, connBA.getConnectionType());
-        assertEquals(1, networkingServiceB.getConnectionManager(MEMBER).getActiveConnections().size());
+        assertEquals(1, tcpServerB.getConnectionManager(MEMBER).getActiveConnections().size());
 
-        assertEquals(networkingServiceA.getContext().getThisAddress(), connBA.getRemoteAddress());
-        assertEquals(networkingServiceB.getContext().getThisAddress(), connAB.getRemoteAddress());
+        assertEquals(tcpServerA.getContext().getThisAddress(), connBA.getRemoteAddress());
+        assertEquals(tcpServerB.getContext().getThisAddress(), connAB.getRemoteAddress());
     }
 }

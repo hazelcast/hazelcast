@@ -57,8 +57,8 @@ import com.hazelcast.internal.monitor.impl.MemberStateImpl;
 import com.hazelcast.internal.monitor.impl.NodeStateImpl;
 import com.hazelcast.internal.partition.IPartition;
 import com.hazelcast.internal.partition.InternalPartitionService;
-import com.hazelcast.internal.server.AggregateServerConnectionManager;
 import com.hazelcast.internal.server.NetworkStats;
+import com.hazelcast.internal.server.Server;
 import com.hazelcast.internal.services.StatisticsAwareService;
 import com.hazelcast.map.LocalMapStats;
 import com.hazelcast.map.impl.MapService;
@@ -201,10 +201,10 @@ public class TimedMemberStateFactory {
 
         memberState.setClientStats(getClientAttributes(node.getClientEngine().getClientStatistics()));
 
-        AggregateServerConnectionManager aggregateEndpointManager = node.getServer().getAggregateConnectionManager();
-        memberState.setInboundNetworkStats(createAdvancedNetworkStats(aggregateEndpointManager.getNetworkStats(),
+        Server server = node.getServer();
+        memberState.setInboundNetworkStats(createAdvancedNetworkStats(server.getNetworkStats(),
                 NetworkStats::getBytesReceived));
-        memberState.setOutboundNetworkStats(createAdvancedNetworkStats(aggregateEndpointManager.getNetworkStats(),
+        memberState.setOutboundNetworkStats(createAdvancedNetworkStats(server.getNetworkStats(),
                 NetworkStats::getBytesSent));
     }
 
@@ -291,7 +291,7 @@ public class TimedMemberStateFactory {
     }
 
     private int handleFlakeIdGenerator(MemberStateImpl memberState, int count, Config config,
-            Map<String, LocalFlakeIdGeneratorStats> flakeIdstats) {
+                                       Map<String, LocalFlakeIdGeneratorStats> flakeIdstats) {
         for (Map.Entry<String, LocalFlakeIdGeneratorStats> entry : flakeIdstats.entrySet()) {
             String name = entry.getKey();
             if (config.findFlakeIdGeneratorConfig(name).isStatisticsEnabled()) {

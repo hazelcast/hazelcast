@@ -18,6 +18,7 @@ package com.hazelcast.internal.partition;
 
 import com.hazelcast.cluster.Address;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.server.FirewallingServer;
 import com.hazelcast.internal.server.OperationPacketFilter;
@@ -82,10 +83,10 @@ public class DirtyBackupTest extends PartitionCorrectnessTestSupport {
 
     private static void setBackupPacketReorderFilter(HazelcastInstance instance) {
         Node node = getNode(instance);
-        FirewallingServer.FirewallingEndpointManager
-                em = (FirewallingServer.FirewallingEndpointManager) node.getConnectionManager();
-        em.setPacketFilter(new BackupPacketReorderFilter(node.getSerializationService()));
-        em.setDelayMillis(100, 1000);
+        FirewallingServer.FirewallingServerConnectionManager cm = (FirewallingServer.FirewallingServerConnectionManager)
+                node.getServer().getConnectionManager(EndpointQualifier.MEMBER);
+        cm.setPacketFilter(new BackupPacketReorderFilter(node.getSerializationService()));
+        cm.setDelayMillis(100, 1000);
     }
 
     private static class BackupPacketReorderFilter extends OperationPacketFilter implements PacketFilter {

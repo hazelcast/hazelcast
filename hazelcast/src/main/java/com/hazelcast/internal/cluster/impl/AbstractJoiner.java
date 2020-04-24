@@ -188,7 +188,8 @@ public abstract class AbstractJoiner
                 boolean allConnected = true;
                 Collection<Member> members = clusterService.getMembers();
                 for (Member member : members) {
-                    if (!member.localMember() && node.getConnectionManager(MEMBER).getOrConnect(member.getAddress()) == null) {
+                    if (!member.localMember() && node.getServer().getConnectionManager(MEMBER)
+                            .getOrConnect(member.getAddress()) == null) {
                         allConnected = false;
                         if (logger.isFineEnabled()) {
                             logger.fine("Not-connected to " + member.getAddress());
@@ -238,7 +239,7 @@ public abstract class AbstractJoiner
             logger.fine("Sending SplitBrainJoinMessage to " + target);
         }
 
-        Connection conn = node.getConnectionManager(MEMBER).getOrConnect(target, true);
+        Connection conn = node.getServer().getConnectionManager(MEMBER).getOrConnect(target, true);
         long timeout = SPLIT_BRAIN_CONN_TIMEOUT_MILLIS;
         while (conn == null) {
             timeout -= SPLIT_BRAIN_SLEEP_TIME_MILLIS;
@@ -253,7 +254,7 @@ public abstract class AbstractJoiner
                 currentThread().interrupt();
                 return null;
             }
-            conn = node.getConnectionManager(MEMBER).get(target);
+            conn = node.getServer().getConnectionManager(MEMBER).get(target);
         }
 
         NodeEngine nodeEngine = node.nodeEngine;

@@ -60,9 +60,9 @@ public abstract class TcpServerConnection_AbstractTest extends HazelcastTestSupp
     protected Address addressB;
     protected Address addressC;
 
-    protected TcpServer networkingServiceA;
-    protected TcpServer networkingServiceB;
-    protected TcpServer networkingServiceC;
+    protected TcpServer tcpServerA;
+    protected TcpServer tcpServerB;
+    protected TcpServer tcpServerC;
 
     protected MockServerContext serverContextA;
     protected MockServerContext serverContextB;
@@ -74,23 +74,23 @@ public abstract class TcpServerConnection_AbstractTest extends HazelcastTestSupp
 
     @Before
     public void setup() throws Exception {
-
         loggingService = new LoggingServiceImpl("somegroup", "log4j2", BuildInfoProvider.getBuildInfo(), true);
         logger = loggingService.getLogger(TcpServerConnection_AbstractTest.class);
 
         metricsRegistryA = newMetricsRegistry();
-        networkingServiceA = newNetworkingService(metricsRegistryA);
-        serverContextA = (MockServerContext) networkingServiceA.getContext();
+
+        tcpServerA = newMockTcpServer(metricsRegistryA);
+        serverContextA = (MockServerContext) tcpServerA.getContext();
         addressA = serverContextA.getThisAddress();
 
         metricsRegistryB = newMetricsRegistry();
-        networkingServiceB = newNetworkingService(metricsRegistryB);
-        serverContextB = (MockServerContext) networkingServiceB.getContext();
+        tcpServerB = newMockTcpServer(metricsRegistryB);
+        serverContextB = (MockServerContext) tcpServerB.getContext();
         addressB = serverContextB.getThisAddress();
 
         metricsRegistryC = newMetricsRegistry();
-        networkingServiceC = newNetworkingService(metricsRegistryC);
-        serverContextC = (MockServerContext) networkingServiceC.getContext();
+        tcpServerC = newMockTcpServer(metricsRegistryC);
+        serverContextC = (MockServerContext) tcpServerC.getContext();
         addressC = serverContextC.getThisAddress();
 
         serializationService = new DefaultSerializationServiceBuilder()
@@ -100,26 +100,26 @@ public abstract class TcpServerConnection_AbstractTest extends HazelcastTestSupp
 
     @After
     public void tearDown() {
-        networkingServiceA.shutdown();
-        networkingServiceB.shutdown();
-        networkingServiceC.shutdown();
+        tcpServerA.shutdown();
+        tcpServerB.shutdown();
+        tcpServerC.shutdown();
 
         metricsRegistryA.shutdown();
         metricsRegistryB.shutdown();
         metricsRegistryC.shutdown();
     }
 
-    protected void startAllNetworkingServices() {
-        networkingServiceA.start();
-        networkingServiceB.start();
-        networkingServiceC.start();
+    protected void startAllTcpServers() {
+        tcpServerA.start();
+        tcpServerB.start();
+        tcpServerC.start();
     }
 
     protected MetricsRegistryImpl newMetricsRegistry() {
         return new MetricsRegistryImpl(loggingService.getLogger(MetricsRegistryImpl.class), INFO);
     }
 
-    protected TcpServer newNetworkingService(MetricsRegistry metricsRegistry) throws Exception {
+    protected TcpServer newMockTcpServer(MetricsRegistry metricsRegistry) throws Exception {
         MockServerContext serverContext = null;
         while (serverContext == null) {
             try {
@@ -132,22 +132,19 @@ public abstract class TcpServerConnection_AbstractTest extends HazelcastTestSupp
         }
 
         ServerSocketRegistry registry = new ServerSocketRegistry(singletonMap(MEMBER, serverContext.serverSocketChannel), true);
-
-        final MockServerContext finalServiceContext = serverContext;
-        TcpServer serverNetworkingService = new TcpServer(null,
+        MockServerContext finalServiceContext = serverContext;
+        return new TcpServer(null,
                 serverContext,
                 registry,
-                serverContext.loggingService,
                 metricsRegistry,
                 networkingFactory.create(serverContext, metricsRegistry),
                 qualifier -> new UnifiedChannelInitializer(finalServiceContext));
-        return serverNetworkingService;
     }
 
     // ====================== support ========================================
 
     protected TcpServerConnection connect(Address address) {
-        return connect(networkingServiceA, address);
+        return connect(tcpServerA, address);
     }
 
     protected TcpServerConnection connect(final TcpServer service, final Address address) {
@@ -163,11 +160,11 @@ public abstract class TcpServerConnection_AbstractTest extends HazelcastTestSupp
         return ref.get();
     }
 
-    public static ServerConnection getConnection(TcpServer service, SocketAddress localSocketAddress) {
+    public static ServerConnection getConnection(TcpServer server, SocketAddress localSocketAddress) {
         long startMs = System.currentTimeMillis();
 
         for (; ; ) {
-            for (ServerConnection connection : service.getConnectionManager(MEMBER).getActiveConnections()) {
+            for (ServerConnection connection : server.getConnectionManager(MEMBER).getActiveConnections()) {
                 if (connection.getRemoteSocketAddress().equals(localSocketAddress)) {
                     return connection;
                 }

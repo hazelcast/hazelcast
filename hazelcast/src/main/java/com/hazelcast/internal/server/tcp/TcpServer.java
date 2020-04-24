@@ -28,16 +28,21 @@ import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.networking.ChannelInitializer;
 import com.hazelcast.internal.networking.Networking;
-import com.hazelcast.internal.server.AggregateServerConnectionManager;
-import com.hazelcast.internal.server.ServerContext;
+import com.hazelcast.internal.nio.ConnectionListener;
+import com.hazelcast.internal.server.NetworkStats;
 import com.hazelcast.internal.server.Server;
+import com.hazelcast.internal.server.ServerConnection;
 import com.hazelcast.internal.server.ServerConnectionManager;
+import com.hazelcast.internal.server.ServerContext;
 import com.hazelcast.internal.util.concurrent.ThreadFactoryImpl;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.LoggingService;
-import com.hazelcast.spi.properties.HazelcastProperties;
 
+import java.util.Collection;
+import java.util.Collections;
 import java.util.EnumMap;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -49,13 +54,10 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 
-import static com.hazelcast.instance.EndpointQualifier.CLIENT;
-import static com.hazelcast.instance.EndpointQualifier.MEMBER;
-import static com.hazelcast.instance.EndpointQualifier.MEMCACHE;
-import static com.hazelcast.instance.EndpointQualifier.REST;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.TCP_PREFIX;
 import static com.hazelcast.internal.util.ThreadUtil.createThreadPoolName;
 import static com.hazelcast.spi.properties.ClusterProperty.NETWORK_STATS_REFRESH_INTERVAL_SECONDS;
+import static java.util.Collections.emptyMap;
 import static java.util.Collections.singleton;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
@@ -64,9 +66,7 @@ public final class TcpServer implements Server {
     private static final int SCHEDULER_POOL_SIZE = 4;
 
     private final ServerContext context;
-
     private final ILogger logger;
-
     private final Networking networking;
     private final MetricsRegistry metricsRegistry;
     // accessed only in synchronized methods
@@ -74,94 +74,45 @@ public final class TcpServer implements Server {
     private final RefreshNetworkStatsTask refreshStatsTask;
     private final int refreshStatsIntervalSeconds;
     private final ServerSocketRegistry registry;
-
-    private final ConcurrentMap<EndpointQualifier, ServerConnectionManager> connectionManagers
+    private final ConcurrentMap<EndpointQualifier, TcpServerConnectionManager> connectionManagers
             = new ConcurrentHashMap<>();
-    private final UnifiedServerConnectionManager unifiedConnectionManager;
-    private final AggregateServerConnectionManager aggregateConnectionManager;
-
+    private final TcpServerConnectionManager unifiedConnectionManager;
     private final ScheduledExecutorService scheduler;
-
     // accessed only in synchronized block
     private final AtomicReference<TcpServerAcceptor> acceptorRef = new AtomicReference<>();
 
     private volatile boolean live;
 
-    TcpServer(Config config,
-              ServerContext context,
-              ServerSocketRegistry registry,
-              LoggingService loggingService,
-              MetricsRegistry metricsRegistry,
-              Networking networking,
-              Function<EndpointQualifier, ChannelInitializer> channelInitializerFn) {
-        this(config, context, registry, loggingService, metricsRegistry, networking, channelInitializerFn, null);
-    }
-
     public TcpServer(Config config,
                      ServerContext context,
                      ServerSocketRegistry registry,
-                     LoggingService loggingService,
                      MetricsRegistry metricsRegistry,
                      Networking networking,
-                     Function<EndpointQualifier, ChannelInitializer> channelInitializerFn,
-                     HazelcastProperties properties) {
+                     Function<EndpointQualifier, ChannelInitializer> channelInitializerFn) {
         this.context = context;
         this.networking = networking;
         this.metricsRegistry = metricsRegistry;
-        this.refreshStatsTask = new RefreshNetworkStatsTask(connectionManagers);
-        this.refreshStatsIntervalSeconds = properties != null ? properties.getInteger(NETWORK_STATS_REFRESH_INTERVAL_SECONDS) : 1;
+        this.refreshStatsTask = new RefreshNetworkStatsTask();
+        this.refreshStatsIntervalSeconds = context.properties().getInteger(NETWORK_STATS_REFRESH_INTERVAL_SECONDS);
         this.registry = registry;
-        this.logger = loggingService.getLogger(TcpServer.class);
+        this.logger = context.getLoggingService().getLogger(TcpServer.class);
         this.scheduler = new ScheduledThreadPoolExecutor(SCHEDULER_POOL_SIZE,
                 new ThreadFactoryImpl(createThreadPoolName(context.getHazelcastName(), "TcpIpNetworkingService")));
+
         if (registry.holdsUnifiedSocket()) {
-            unifiedConnectionManager = new UnifiedServerConnectionManager(this, null, channelInitializerFn,
-                    context, loggingService, properties);
+            unifiedConnectionManager = new TcpServerConnectionManager(
+                    this, null, channelInitializerFn, context, ProtocolType.valuesAsSet());
         } else {
             unifiedConnectionManager = null;
-        }
-
-        initConnectionManagers(config, context, loggingService, channelInitializerFn, properties);
-        if (unifiedConnectionManager != null) {
-            this.aggregateConnectionManager = new UnifiedAggregateConnectionManager(unifiedConnectionManager, connectionManagers);
-        } else {
-            this.aggregateConnectionManager = new DefaultAggregateConnectionManager(connectionManagers);
-            refreshStatsTask.registerMetrics(metricsRegistry);
-        }
-
-        metricsRegistry
-                .registerDynamicMetricsProvider(new MetricsProvider(acceptorRef, connectionManagers, unifiedConnectionManager));
-    }
-
-    private void initConnectionManagers(Config config,
-                                        ServerContext serverContext,
-                                        LoggingService loggingService,
-                                        Function<EndpointQualifier, ChannelInitializer> channelInitializerFn,
-                                        HazelcastProperties properties) {
-        if (unifiedConnectionManager != null) {
-            connectionManagers.put(MEMBER, new MemberViewUnifiedServerConnectionManager(unifiedConnectionManager));
-            connectionManagers.put(CLIENT, new ClientViewUnifiedEndpointManager(unifiedConnectionManager));
-            connectionManagers.put(REST, new TextViewUnifiedServerConnectionManager(unifiedConnectionManager, true));
-            connectionManagers.put(MEMCACHE, new TextViewUnifiedServerConnectionManager(unifiedConnectionManager, false));
-        } else {
             for (EndpointConfig endpointConfig : config.getAdvancedNetworkConfig().getEndpointConfigs().values()) {
                 EndpointQualifier qualifier = endpointConfig.getQualifier();
-                ServerConnectionManager cm = newConnectionManager(serverContext, endpointConfig, channelInitializerFn,
-                        loggingService, properties, singleton(endpointConfig.getProtocolType()));
+                TcpServerConnectionManager cm = new TcpServerConnectionManager(
+                        this, endpointConfig, channelInitializerFn, context, singleton(endpointConfig.getProtocolType()));
                 connectionManagers.put(qualifier, cm);
             }
+            refreshStatsTask.registerMetrics(metricsRegistry);
         }
-    }
-
-    private ServerConnectionManager newConnectionManager(
-            ServerContext serverContext,
-            EndpointConfig endpointConfig,
-            Function<EndpointQualifier, ChannelInitializer> channelInitializerFn,
-            LoggingService loggingService,
-            HazelcastProperties properties,
-            Set<ProtocolType> supportedProtocolTypes) {
-        return new TcpServerConnectionManager(this, endpointConfig, channelInitializerFn, serverContext, loggingService,
-                properties, supportedProtocolTypes);
+        metricsRegistry.registerDynamicMetricsProvider(new MetricsProvider());
     }
 
     @Override
@@ -216,9 +167,7 @@ public final class TcpServer implements Server {
         if (unifiedConnectionManager != null) {
             unifiedConnectionManager.reset(false);
         } else {
-            for (ServerConnectionManager connectionManager : connectionManagers.values()) {
-                ((TcpServerConnectionManager) connectionManager).reset(false);
-            }
+            connectionManagers.values().forEach(connectionManager -> connectionManager.reset(false));
         }
 
         networking.shutdown();
@@ -233,48 +182,87 @@ public final class TcpServer implements Server {
         if (unifiedConnectionManager != null) {
             unifiedConnectionManager.reset(true);
         } else {
-            for (ServerConnectionManager connectionManager : connectionManagers.values()) {
-                ((TcpServerConnectionManager) connectionManager).reset(true);
+            connectionManagers.values().forEach(connectionManager -> connectionManager.reset(true));
+        }
+    }
+
+    @Override
+    public Collection<ServerConnection> getConnections() {
+        if (unifiedConnectionManager != null) {
+            return unifiedConnectionManager.getConnections();
+        }
+
+        Set<ServerConnection> connections = null;
+        for (TcpServerConnectionManager connectionManager : connectionManagers.values()) {
+            Collection<ServerConnection> endpointConnections = connectionManager.getConnections();
+            if (endpointConnections != null && !endpointConnections.isEmpty()) {
+                if (connections == null) {
+                    connections = new HashSet<>();
+                }
+
+                connections.addAll(endpointConnections);
             }
         }
+
+        return connections == null ? Collections.emptySet() : connections;
     }
 
-    /**
-     * The aggregate endpoint manager acts as a composite of all configured endpoints.
-     * This is never null. In an environment with multiple endpoints, this is a super endpoint
-     * that wraps them all and reports total connections or registers listeners to all separate endpoints.
-     * Note: You can't create a connection through it, you will have to access the respective endpoint for that.
-     *
-     * In an environment with a unified endpoint, this will also act as a wrapper on the views of the unified endpoint
-     * (see {@link MemberViewUnifiedServerConnectionManager} and the others).
-     *
-     * @return
-     */
     @Override
-    public AggregateServerConnectionManager getAggregateConnectionManager() {
-        return aggregateConnectionManager;
-    }
-
-    /**
-     * Returns the respective endpoint manager based on the qualifier.
-     * Under unified endpoint environments, this will return the respective view of the {@link UnifiedServerConnectionManager}
-     * eg. {@link MemberViewUnifiedServerConnectionManager} or {@link ClientViewUnifiedEndpointManager} which report
-     * connections based on the qualifier, but they register/create connection directly on the Unified manager.
-     *
-     * @param qualifier
-     * @return
-     */
-    public ServerConnectionManager getConnectionManager(EndpointQualifier qualifier) {
-        ServerConnectionManager mgr = connectionManagers.get(qualifier);
-        if (mgr == null) {
-            logger.finest("An connection manager for qualifier " + qualifier + " was never registered.");
+    public Collection<ServerConnection> getActiveConnections() {
+        if (unifiedConnectionManager != null) {
+            return unifiedConnectionManager.getActiveConnections();
         }
 
-        return mgr;
+        Set<ServerConnection> connections = null;
+        for (TcpServerConnectionManager connectionManager : connectionManagers.values()) {
+            Collection<ServerConnection> endpointConnections = connectionManager.getActiveConnections();
+            if (endpointConnections != null && !endpointConnections.isEmpty()) {
+                if (connections == null) {
+                    connections = new HashSet<>();
+                }
+
+                connections.addAll(endpointConnections);
+            }
+        }
+        return connections == null ? Collections.emptySet() : connections;
     }
 
-    ServerConnectionManager getUnifiedOrDedicatedEndpointManager(EndpointQualifier qualifier) {
-        return unifiedConnectionManager != null ? unifiedConnectionManager : connectionManagers.get(qualifier);
+    @Override
+    public Map<EndpointQualifier, NetworkStats> getNetworkStats() {
+        if (unifiedConnectionManager != null) {
+            return emptyMap();
+        }
+
+        Map<EndpointQualifier, NetworkStats> stats = null;
+        for (Map.Entry<EndpointQualifier, TcpServerConnectionManager> entry : connectionManagers.entrySet()) {
+            if (stats == null) {
+                stats = new HashMap<>();
+            }
+            stats.put(entry.getKey(), entry.getValue().getNetworkStats());
+        }
+        return stats == null ? emptyMap() : stats;
+    }
+
+    @Override
+    public void addConnectionListener(ConnectionListener<ServerConnection> listener) {
+        if (unifiedConnectionManager != null) {
+            unifiedConnectionManager.addConnectionListener(listener);
+        } else {
+            connectionManagers.values().forEach(manager -> manager.addConnectionListener(listener));
+        }
+    }
+
+    @Override
+    public TcpServerConnectionManager getConnectionManager(EndpointQualifier qualifier) {
+        if (unifiedConnectionManager != null) {
+            return unifiedConnectionManager;
+        }
+
+        TcpServerConnectionManager connectionManager = connectionManagers.get(qualifier);
+        if (connectionManager == null) {
+            logger.finest("An connection manager for qualifier " + qualifier + " was never registered.");
+        }
+        return connectionManager;
     }
 
     public void scheduleDeferred(Runnable task, long delay, TimeUnit unit) {
@@ -306,22 +294,19 @@ public final class TcpServer implements Server {
     }
 
     /**
-     * Responsible for periodical re-calculation of network stats in all EndpointManagers.
+     * Responsible for periodical re-calculation of network stats in all ConnectionManager.
      * Also registers per protocol network stats metrics which are meant to be consumed in Management Center.
      * <p>
      * Only used when Advanced Networking is enabled.
      *
      * @see ServerConnectionManager#getNetworkStats()
-     * @see AggregateServerConnectionManager#getNetworkStats()
      */
-    private static final class RefreshNetworkStatsTask implements Runnable {
+    private final class RefreshNetworkStatsTask implements Runnable {
 
-        private final ConcurrentMap<EndpointQualifier, ServerConnectionManager> connectionManagers;
         private final EnumMap<ProtocolType, AtomicLong> bytesReceivedPerProtocol = new EnumMap<>(ProtocolType.class);
         private final EnumMap<ProtocolType, AtomicLong> bytesSentPerProtocol = new EnumMap<>(ProtocolType.class);
 
-        RefreshNetworkStatsTask(ConcurrentMap<EndpointQualifier, ServerConnectionManager> connectionManagers) {
-            this.connectionManagers = connectionManagers;
+        RefreshNetworkStatsTask() {
             for (ProtocolType type : ProtocolType.valuesAsSet()) {
                 bytesReceivedPerProtocol.put(type, new AtomicLong());
                 bytesSentPerProtocol.put(type, new AtomicLong());
@@ -329,7 +314,7 @@ public final class TcpServer implements Server {
         }
 
         void registerMetrics(MetricsRegistry metricsRegistry) {
-            for (final ProtocolType type : ProtocolType.valuesAsSet()) {
+            for (ProtocolType type : ProtocolType.valuesAsSet()) {
                 metricsRegistry.registerStaticProbe(this, "tcp.bytesReceived." + type.name(), ProbeLevel.INFO,
                         (LongProbeFunction<RefreshNetworkStatsTask>) source -> bytesReceivedPerProtocol.get(type).get());
                 metricsRegistry.registerStaticProbe(this, "tcp.bytesSend." + type.name(), ProbeLevel.INFO,
@@ -343,13 +328,11 @@ public final class TcpServer implements Server {
                 long bytesReceived = 0;
                 long bytesSent = 0;
 
-                for (ServerConnectionManager connectionManager : connectionManagers.values()) {
-                    TcpServerConnectionManager tcpServerConnectionManager = (TcpServerConnectionManager) connectionManager;
-                    tcpServerConnectionManager.refreshNetworkStats();
-
-                    if (type == tcpServerConnectionManager.getEndpointQualifier().getType()) {
-                        bytesReceived += tcpServerConnectionManager.getNetworkStats().getBytesReceived();
-                        bytesSent += tcpServerConnectionManager.getNetworkStats().getBytesSent();
+                for (TcpServerConnectionManager connectionManager : connectionManagers.values()) {
+                    connectionManager.refreshNetworkStats();
+                    if (type == connectionManager.getEndpointQualifier().getType()) {
+                        bytesReceived += connectionManager.getNetworkStats().getBytesReceived();
+                        bytesSent += connectionManager.getNetworkStats().getBytesSent();
                     }
                 }
 
@@ -357,42 +340,25 @@ public final class TcpServer implements Server {
                 bytesSentPerProtocol.get(type).lazySet(bytesSent);
             }
         }
-
     }
 
-    private static final class MetricsProvider implements DynamicMetricsProvider {
-        private final AtomicReference<TcpServerAcceptor> acceptorRef;
-        private final ConcurrentMap<EndpointQualifier, ServerConnectionManager> connectionManagers;
-        private final UnifiedServerConnectionManager unifiedConnectionManager;
-
-        private MetricsProvider(AtomicReference<TcpServerAcceptor> acceptorRef,
-                                ConcurrentMap<EndpointQualifier, ServerConnectionManager> connectionManagers,
-                                UnifiedServerConnectionManager unifiedConnectionManager) {
-            this.acceptorRef = acceptorRef;
-            this.connectionManagers = connectionManagers;
-            this.unifiedConnectionManager = unifiedConnectionManager;
-        }
-
+    private final class MetricsProvider implements DynamicMetricsProvider {
         @Override
         public void provideDynamicMetrics(MetricDescriptor descriptor, MetricsCollectionContext context) {
             descriptor.withPrefix(TCP_PREFIX);
             context.collect(descriptor, this);
 
-            TcpServerAcceptor acceptor = this.acceptorRef.get();
+            TcpServerAcceptor acceptor = acceptorRef.get();
             if (acceptor != null) {
                 acceptor.provideDynamicMetrics(descriptor.copy(), context);
             }
 
-            for (ServerConnectionManager manager : this.connectionManagers.values()) {
-                if (manager instanceof DynamicMetricsProvider) {
-                    ((DynamicMetricsProvider) manager).provideDynamicMetrics(descriptor.copy(), context);
-                }
-            }
-
             if (unifiedConnectionManager != null) {
                 unifiedConnectionManager.provideDynamicMetrics(descriptor.copy(), context);
+            } else {
+                connectionManagers.values().forEach(
+                        manager -> manager.provideDynamicMetrics(descriptor.copy(), context));
             }
         }
     }
-
 }

@@ -345,7 +345,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
 
     @Override
     public void init(NodeEngine nodeEngine, Properties properties) {
-        node.getConnectionManager(CLIENT).addConnectionListener(connectionListener);
+        node.getServer().getConnectionManager(CLIENT).addConnectionListener(connectionListener);
 
         ClientHeartbeatMonitor heartbeatMonitor = new ClientHeartbeatMonitor(
                 endpointManager, getLogger(ClientHeartbeatMonitor.class), nodeEngine.getExecutionService(), node.getProperties());
