@@ -344,6 +344,8 @@ public class ConfigXmlGenerator {
             .nodeIfContents("user-name-attribute", c.getUserNameAttribute())
             .nodeIfContents("system-user-dn", c.getSystemUserDn())
             .nodeIfContents("system-user-password", c.getSystemUserPassword())
+            .nodeIfContents("system-authentication", c.getSystemAuthentication())
+            .nodeIfContents("security-realm", c.getSecurityRealm())
             .nodeIfContents("password-attribute", c.getPasswordAttribute())
             .nodeIfContents("user-context", c.getUserContext())
             .nodeIfContents("user-filter", c.getUserFilter())

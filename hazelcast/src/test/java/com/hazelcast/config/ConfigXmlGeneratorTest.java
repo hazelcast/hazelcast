@@ -559,6 +559,8 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
                 .setSocketFactoryClassName("socketFactoryClassName")
                 .setSystemUserDn("systemUserDn")
                 .setSystemUserPassword("systemUserPassword")
+                .setSystemAuthentication("GSSAPI")
+                .setSecurityRealm("krb5Initiator")
                 .setUrl("url")
                 .setUserContext("userContext")
                 .setUserFilter("userFilter")

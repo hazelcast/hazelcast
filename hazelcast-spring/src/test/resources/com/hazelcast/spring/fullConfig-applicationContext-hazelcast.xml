@@ -635,6 +635,8 @@
                                 <hz:user-name-attribute>userNameAttribute</hz:user-name-attribute>
                                 <hz:system-user-dn>systemUserDn</hz:system-user-dn>
                                 <hz:system-user-password>systemUserPassword</hz:system-user-password>
+                                <hz:system-authentication>simple</hz:system-authentication>
+                                <hz:security-realm>realmName</hz:security-realm>
                                 <hz:password-attribute>passwordAttribute</hz:password-attribute>
                                 <hz:user-context>userContext</hz:user-context>
                                 <hz:user-filter>userFilter</hz:user-filter>
@@ -662,8 +664,8 @@
                                 <hz:security-realm>krb5Acceptor</hz:security-realm>
                                 <hz:ldap>
                                     <hz:url>ldap://127.0.0.1/</hz:url>
-                                    <hz:system-user-dn>uid=admin,ou=system</hz:system-user-dn>
-                                    <hz:system-user-password>secret</hz:system-user-password>
+                                    <hz:system-authentication>GSSAPI</hz:system-authentication>
+                                    <hz:security-realm>krb5Initiator</hz:security-realm>
                                     <hz:skip-authentication>true</hz:skip-authentication>
                                     <hz:user-filter>(krb5PrincipalName={login})</hz:user-filter>
                                     <hz:role-mapping-attribute>cn</hz:role-mapping-attribute>

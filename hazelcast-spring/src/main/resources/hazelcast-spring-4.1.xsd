@@ -4979,6 +4979,8 @@
 
             <xs:element name="system-user-dn" type="xs:string" minOccurs="0"/>
             <xs:element name="system-user-password" type="xs:string" minOccurs="0"/>
+            <xs:element name="system-authentication" type="xs:string" minOccurs="0"/>
+            <xs:element name="security-realm" type="xs:string" minOccurs="0"/>
             <xs:element name="password-attribute" type="xs:string" minOccurs="0"/>
             <xs:element name="user-context" type="xs:string" minOccurs="0"/>
             <xs:element name="user-filter" type="xs:string" minOccurs="0"/>
