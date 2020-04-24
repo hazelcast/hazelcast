@@ -20,13 +20,22 @@ import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
+/**
+ * An extractor that uses {@link com.hazelcast.query.impl.getters.Extractors} for field retrieval.
+ */
 public class GenericFieldExtractor extends AbstractGenericExtractor {
 
     private final Extractors extractors;
     private final String path;
 
-    public GenericFieldExtractor(GenericTargetAccessor targetAccessor, QueryDataType type, Extractors extractors, String path) {
-        super(targetAccessor, type);
+    public GenericFieldExtractor(
+        boolean key,
+        GenericTargetAccessor targetAccessor,
+        QueryDataType type,
+        Extractors extractors,
+        String path
+    ) {
+        super(key, targetAccessor, type);
 
         this.extractors = extractors;
         this.path = path;
@@ -36,10 +45,9 @@ public class GenericFieldExtractor extends AbstractGenericExtractor {
     public Object get() {
         try {
             return type.convert(extractors.extract(getTarget(), path, null));
-        } catch (QueryException e) {
-            throw e;
         } catch (Exception e) {
-            throw QueryException.dataException("Cannot convert object field \"" + path + "\" to " + type, e);
+            throw QueryException.dataException("Cannot extract " + (key ? "key" : "value") + " field \"" + path
+                + "\" of type " + type + ": " + e.getMessage(), e);
         }
     }
 }

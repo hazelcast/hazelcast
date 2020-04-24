@@ -32,6 +32,7 @@
         <module>hazelcast</module>
         <module>hazelcast-spring</module>
         <module>hazelcast-build-utils</module>
+        <module>hazelcast-sql</module>
         <module>hazelcast-all</module>
         <module>hazelcast-sql</module>
     </modules>
@@ -117,6 +118,10 @@
 
         <h2.version>1.3.160</h2.version>
         <atomikos.version>3.9.3</atomikos.version>
+
+        <!-- The path to relocated external dependencies. -->
+        <relocation.root>com.hazelcast</relocation.root>
+
         <!-- Additional JVM system arguments -->
         <extraVmArgs/>
         <vmHeapSettings>-Xms512m -Xmx2G</vmHeapSettings>

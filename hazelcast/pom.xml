@@ -246,11 +246,11 @@
                             <relocations>
                                 <relocation>
                                     <pattern>com.fasterxml.jackson</pattern>
-                                    <shadedPattern>com.hazelcast.com.fasterxml.jackson</shadedPattern>
+                                    <shadedPattern>${relocation.root}.com.fasterxml.jackson</shadedPattern>
                                 </relocation>
                                 <relocation>
                                     <pattern>org.snakeyaml</pattern>
-                                    <shadedPattern>com.hazelcast.org.snakeyaml</shadedPattern>
+                                    <shadedPattern>${relocation.root}.org.snakeyaml</shadedPattern>
                                 </relocation>
                             </relocations>
                             <transformers>

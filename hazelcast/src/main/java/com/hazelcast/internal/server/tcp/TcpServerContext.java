@@ -323,7 +323,7 @@ public class TcpServerContext implements ServerContext {
         public void run() {
             ClusterServiceImpl clusterService = node.clusterService;
             if (clusterService.getMember(endpoint) != null) {
-                node.getConnectionManager(MEMBER).getOrConnect(endpoint);
+                node.getServer().getConnectionManager(MEMBER).getOrConnect(endpoint);
             }
         }
     }

@@ -170,6 +170,11 @@ public class PartitionContainer {
     }
 
     public void destroyMap(MapContainer mapContainer) {
+        // Mark map container destroyed before the underlying data structures are destroyed. We need this to ensure that every
+        // reader that observed non-destroyed state may use previously read data. E.g. if the reader returned only Key1 it
+        // is guaranteed that it hadn't missed Key2 because it was destroyed earlier.
+        mapContainer.onBeforeDestroy();
+
         String name = mapContainer.getName();
         RecordStore recordStore = maps.remove(name);
         if (recordStore != null) {

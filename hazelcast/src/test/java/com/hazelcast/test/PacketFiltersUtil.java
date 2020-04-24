@@ -17,10 +17,11 @@
 package com.hazelcast.test;
 
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.cluster.Address;
-import com.hazelcast.internal.server.FirewallingServer.FirewallingEndpointManager;
+import com.hazelcast.internal.server.FirewallingServer.FirewallingServerConnectionManager;
 import com.hazelcast.internal.server.OperationPacketFilter;
 import com.hazelcast.internal.server.PacketFilter;
 import com.hazelcast.internal.util.Preconditions;
@@ -42,13 +43,13 @@ public final class PacketFiltersUtil {
     private PacketFiltersUtil() {
     }
 
-    public static FirewallingEndpointManager getEndpointManager(HazelcastInstance instance) {
+    public static FirewallingServerConnectionManager getConnectionManager(HazelcastInstance instance) {
         Node node = getNode(instance);
-        return (FirewallingEndpointManager) node.getConnectionManager();
+        return (FirewallingServerConnectionManager) node.getServer().getConnectionManager(EndpointQualifier.MEMBER);
     }
 
     public static void resetPacketFiltersFrom(HazelcastInstance instance) {
-        FirewallingEndpointManager cm = getEndpointManager(instance);
+        FirewallingServerConnectionManager cm = getConnectionManager(instance);
         cm.removePacketFilter();
     }
 
@@ -95,18 +96,20 @@ public final class PacketFiltersUtil {
     private static void filterOperationsFrom(HazelcastInstance instance, int factory, List<Integer> opTypes,
             PacketFilter.Action action) {
         Node node = getNode(instance);
-        FirewallingEndpointManager em = (FirewallingEndpointManager) node.getConnectionManager();
+        FirewallingServerConnectionManager cm = (FirewallingServerConnectionManager)
+                node.getServer().getConnectionManager(EndpointQualifier.MEMBER);
         PacketFilter packetFilter = new EndpointAgnosticPacketFilter(node.getSerializationService(), factory, opTypes, action);
-        em.setPacketFilter(packetFilter);
+        cm.setPacketFilter(packetFilter);
     }
 
     private static void filterOperationsBetween(HazelcastInstance from, Collection<Address> addresses, int factory, List<Integer> opTypes,
                                                 PacketFilter.Action action) {
         Node node = getNode(from);
-        FirewallingEndpointManager em = (FirewallingEndpointManager) node.getConnectionManager();
+        FirewallingServerConnectionManager cm = (FirewallingServerConnectionManager)
+                node.getServer().getConnectionManager(EndpointQualifier.MEMBER);
         PacketFilter packetFilter = new EndpointAwarePacketFilter(node.getSerializationService(), addresses, factory,
                 opTypes, action);
-        em.setPacketFilter(packetFilter);
+        cm.setPacketFilter(packetFilter);
     }
 
     private static Collection<Address> getAddresses(Collection<HazelcastInstance> instances) {

@@ -16,6 +16,13 @@
 
 package com.hazelcast.sql.impl.extract;
 
+/**
+ * An interface that provides an indirection between {@link AbstractGenericExtractor} implementations and the parent
+ * {@link QueryTarget}. It allows us to have different target implementations that produce same generic extractors.
+ */
 public interface GenericTargetAccessor {
+    /**
+     * @return Current target.
+     */
     Object getTarget();
 }

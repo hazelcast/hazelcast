@@ -19,19 +19,21 @@ package com.hazelcast.sql.impl.extract;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
+/**
+ * An extractor that returns the target itself.
+ */
 public class GenericTargetExtractor extends AbstractGenericExtractor {
-    public GenericTargetExtractor(GenericTargetAccessor targetAccessor, QueryDataType type) {
-        super(targetAccessor, type);
+    public GenericTargetExtractor(boolean key, GenericTargetAccessor targetAccessor, QueryDataType type) {
+        super(key, targetAccessor, type);
     }
 
     @Override
     public Object get() {
         try {
             return type.convert(getTarget());
-        } catch (QueryException e) {
-            throw e;
         } catch (Exception e) {
-            throw QueryException.dataException("Cannot convert object to " + type, e);
+            throw QueryException.dataException("Cannot convert " + (key ? "key" : "value") + " to " + type + ": "
+                + e.getMessage(), e);
         }
     }
 }

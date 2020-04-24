@@ -116,6 +116,11 @@ public abstract class TestPlanNodeVisitorAdapter implements PlanNodeVisitor {
     }
 
     @Override
+    public void onMapScanNode(MapScanPlanNode node) {
+        // No-op.
+    }
+
+    @Override
     public void onOtherNode(PlanNode node) {
         // No-op.
     }

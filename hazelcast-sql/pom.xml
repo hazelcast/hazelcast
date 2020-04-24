@@ -20,67 +20,25 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
+    <name>hazelcast-sql</name>
+    <artifactId>hazelcast-sql</artifactId>
+    <description>SQL Parser and Optimizer</description>
+    <packaging>jar</packaging>
+
     <parent>
-        <artifactId>hazelcast-root</artifactId>
         <groupId>com.hazelcast</groupId>
+        <artifactId>hazelcast-root</artifactId>
         <version>4.1-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
-    <artifactId>hazelcast-sql</artifactId>
-
     <properties>
-        <!-- needed for CheckStyle -->
+        <!-- Needed for CheckStyle -->
         <main.basedir>${project.parent.basedir}</main.basedir>
 
-        <relocation.root>com.hazelcast.sql</relocation.root>
+        <calcite.version>1.22.0</calcite.version>
+        <guava.version>19.0</guava.version>
     </properties>
-
-    <dependencies>
-        <dependency>
-            <groupId>com.hazelcast</groupId>
-            <artifactId>hazelcast</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>com.hazelcast</groupId>
-            <artifactId>hazelcast</artifactId>
-            <scope>test</scope>
-            <version>${project.parent.version}</version>
-            <classifier>tests</classifier>
-        </dependency>
-
-        <dependency>
-            <groupId>org.apache.calcite</groupId>
-            <artifactId>calcite-core</artifactId>
-            <version>1.21.0</version>
-        </dependency>
-
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-api</artifactId>
-            <version>${slf4j.api.version}</version>
-            <scope>provided</scope>
-            <optional>true</optional>
-        </dependency>
-
-        <!--
-          Dependencies below are overriding hazelcast-root's ones. It should
-          be safe since everything is already shaded into hazelcast and
-          hazelcast-client modules.
-        -->
-        <dependency>
-            <groupId>org.apache.commons</groupId>
-            <artifactId>commons-lang3</artifactId>
-            <version>3.8</version>
-        </dependency>
-        <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>jackson-core</artifactId>
-            <version>2.9.8</version>
-        </dependency>
-    </dependencies>
 
     <build>
         <resources>
@@ -118,21 +76,24 @@
                             <goal>shade</goal>
                         </goals>
                         <configuration>
-                            <shadedArtifactId>hazelcast-sql</shadedArtifactId>
-                            <promoteTransitiveDependencies>true</promoteTransitiveDependencies>
-                            <createDependencyReducedPom>true</createDependencyReducedPom>
-                            <minimizeJar>false</minimizeJar>
+                            <finalName>${project.build.finalName}</finalName>
                             <createSourcesJar>true</createSourcesJar>
                             <shadeSourcesContent>true</shadeSourcesContent>
                             <shadeTestJar>true</shadeTestJar>
                             <artifactSet>
-                                <excludes>
-                                    <exclude>com.hazelcast:hazelcast</exclude>
-                                    <exclude>com.hazelcast:hazelcast-client</exclude>
-                                </excludes>
+                                <includes>
+                                    <include>com.fasterxml.jackson.core:jackson-core</include>
+                                    <include>com.google.guava:guava</include>
+                                    <include>com.jayway.jsonpath:json-path</include>
+                                    <include>org.apache.calcite.avatica:avatica-core</include>
+                                    <include>org.apache.calcite:calcite-core</include>
+                                    <include>org.apache.calcite:calcite-linq4j</include>
+                                    <include>org.codehaus.janino:commons-compiler</include>
+                                    <include>org.codehaus.janino:janino</include>
+                                    <include>org.slf4j:slf4j-api</include>
+                                </includes>
                             </artifactSet>
                             <relocations>
-                                <!-- dots are needed to move only packages and not files -->
                                 <relocation>
                                     <pattern>com.</pattern>
                                     <shadedPattern>${relocation.root}.com.</shadedPattern>
@@ -143,46 +104,50 @@
                                     <shadedPattern>${relocation.root}.org.</shadedPattern>
                                 </relocation>
                             </relocations>
-
                             <transformers>
-                                <transformer
-                                        implementation="org.apache.maven.plugins.shade.resource.ApacheLicenseResourceTransformer"/>
-                                <transformer
-                                        implementation="org.apache.maven.plugins.shade.resource.ApacheNoticeResourceTransformer"/>
-                                <transformer
-                                        implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.ApacheLicenseResourceTransformer"/>
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.ApacheNoticeResourceTransformer"/>
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
                             </transformers>
                             <filters>
-                                <!-- TODO: the drivers are still present and visible to 3rd party tools -->
+                                <filter>
+                                    <artifact>*:*</artifact>
+                                    <excludes>
+                                        <!-- Exclude signatures -->
+                                        <exclude>META-INF/*.SF</exclude>
+                                        <exclude>META-INF/*.DSA</exclude>
+                                        <exclude>META-INF/*.RSA</exclude>
+                                    </excludes>
+                                </filter>
                                 <filter>
                                     <artifact>org.apache.calcite:*</artifact>
                                     <excludes>
+                                        <!-- Avoid automatic discovery of Calcite JDBC. -->
                                         <exclude>META-INF/services/java.sql.Driver</exclude>
+                                        <exclude>codegen/**</exclude>
                                     </excludes>
                                 </filter>
                                 <filter>
                                     <artifact>org.apache.calcite.avatica:*</artifact>
                                     <excludes>
+                                        <!-- Avoid automatic discovery of Avatica JDBC. -->
                                         <exclude>META-INF/services/java.sql.Driver</exclude>
+                                        <!-- Exclude Avatica ProtoBuf definitions, since Avatica is not used. -->
+                                        <exclude>*.proto</exclude>
                                     </excludes>
                                 </filter>
                                 <filter>
                                     <artifact>org.codehaus.janino:janino</artifact>
                                     <excludes>
-                                        <!--
-                                          While shading, Janino's getResource call is being incorrectly
-                                          transformed, so we just excluding the original file and adding
-                                          the new one where Maven Shade expects it.
-                                          -->
+                                        <!-- Replace with the one from src/main/resources for correct reflection in runtime. -->
                                         <exclude>org.codehaus.commons.compiler.properties</exclude>
                                     </excludes>
                                 </filter>
                                 <filter>
-                                    <artifact>*:*</artifact>
+                                    <artifact>com.fasterxml.jackson.core:jackson-core</artifact>
                                     <excludes>
-                                        <exclude>META-INF/*.SF</exclude>
-                                        <exclude>META-INF/*.DSA</exclude>
-                                        <exclude>META-INF/*.RSA</exclude>
+                                        <!-- Jackson Core is already included in hazelcast.jar. -->
+                                        <exclude>**</exclude>
                                     </excludes>
                                 </filter>
                             </filters>
@@ -193,4 +158,116 @@
         </plugins>
     </build>
 
+    <dependencies>
+        <dependency>
+            <groupId>com.hazelcast</groupId>
+            <artifactId>hazelcast</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.hazelcast</groupId>
+            <artifactId>hazelcast</artifactId>
+            <scope>test</scope>
+            <version>${project.parent.version}</version>
+            <classifier>tests</classifier>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.calcite</groupId>
+            <artifactId>calcite-core</artifactId>
+            <version>${calcite.version}</version>
+            <exclusions>
+                <!-- Exclusions for Calcite. -->
+                <exclusion>
+                    <groupId>commons-codec</groupId>
+                    <artifactId>commons-codec</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>commons-io</groupId>
+                    <artifactId>commons-io</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>com.esri.geometry</groupId>
+                    <artifactId>esri-geometry-api</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>com.fasterxml.jackson.core</groupId>
+                    <artifactId>jackson-core</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>com.fasterxml.jackson.core</groupId>
+                    <artifactId>jackson-annotations</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>com.fasterxml.jackson.core</groupId>
+                    <artifactId>jackson-databind</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>com.fasterxml.jackson.dataformat</groupId>
+                    <artifactId>jackson-dataformat-yaml</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>com.google.code.findbugs</groupId>
+                    <artifactId>jsr305</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>com.yahoo.datasketches</groupId>
+                    <artifactId>sketches-core</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>net.hydromatic</groupId>
+                    <artifactId>aggdesigner-algorithm</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.apache.calcite.avatica</groupId>
+                    <artifactId>avatica-server</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.apache.commons</groupId>
+                    <artifactId>commons-dbcp2</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.apache.commons</groupId>
+                    <artifactId>commons-lang3</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.apiguardian</groupId>
+                    <artifactId>apiguardian-api</artifactId>
+                </exclusion>
+                <!-- Exclusions for Avatica. -->
+                <exclusion>
+                    <groupId>com.google.protobuf</groupId>
+                    <artifactId>protobuf-java</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.apache.calcite.avatica</groupId>
+                    <artifactId>avatica-metrics</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.apache.httpcomponents</groupId>
+                    <artifactId>httpclient</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.apache.httpcomponents</groupId>
+                    <artifactId>httpcore</artifactId>
+                </exclusion>
+                <!-- Exclusions for jsonpath. -->
+                <exclusion>
+                    <groupId>net.minidev</groupId>
+                    <artifactId>json-smart</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-core</artifactId>
+            <version>${jackson.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+            <version>${guava.version}</version>
+        </dependency>
+    </dependencies>
 </project>

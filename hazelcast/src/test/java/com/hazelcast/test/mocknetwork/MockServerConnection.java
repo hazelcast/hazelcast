@@ -35,7 +35,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
-import static com.hazelcast.test.mocknetwork.MockServer.MockEndpointManager.isTargetLeft;
+import static com.hazelcast.test.mocknetwork.MockServer.MockServerConnectionManager.isTargetLeft;
 import static org.junit.Assert.assertNotNull;
 
 public class MockServerConnection implements ServerConnection {

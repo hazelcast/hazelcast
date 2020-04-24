@@ -20,6 +20,8 @@ import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.query.impl.getters.Extractors;
+import com.hazelcast.sql.SqlErrorCode;
+import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.exec.IterationResult;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.extract.QueryTargetDescriptor;
@@ -37,25 +39,21 @@ import java.util.List;
  * Executor for map scan.
  */
 public class MapScanExec extends AbstractMapScanExec {
-    /** Batch size. */
-    private static final int BATCH_SIZE = 1000;
+    /** Batch size. To be moved outside when the memory management is ready. */
+    static final int BATCH_SIZE = 1024;
 
-    /** Underlying map. */
     private final MapContainer map;
+    private final PartitionIdSet partitions;
 
-    /** Partitions to be scanned. */
-    private final PartitionIdSet parts;
-
-    /** Records iterator. */
+    private int migrationStamp;
     private MapScanExecIterator recordIterator;
 
-    /** Current row. */
-    private List<Row> currentBatch;
+    private List<Row> currentRows;
 
     public MapScanExec(
         int id,
         MapContainer map,
-        PartitionIdSet parts,
+        PartitionIdSet partitions,
         QueryTargetDescriptor keyDescriptor,
         QueryTargetDescriptor valueDescriptor,
         List<String> fieldNames,
@@ -67,42 +65,54 @@ public class MapScanExec extends AbstractMapScanExec {
         super(id, map.getName(), keyDescriptor, valueDescriptor, fieldNames, fieldTypes, projects, filter, serializationService);
 
         this.map = map;
-        this.parts = parts;
+        this.partitions = partitions;
     }
 
     @Override
     protected void setup1(QueryFragmentContext ctx) {
-        recordIterator = MapScanExecUtils.createIterator(map, parts);
+        migrationStamp = map.getMapServiceContext().getService().getMigrationStamp();
+        recordIterator = MapScanExecUtils.createIterator(map, partitions);
     }
 
     @Override
     public IterationResult advance0() {
-        currentBatch = null;
+        currentRows = null;
 
         while (recordIterator.tryAdvance()) {
             HeapRow row = prepareRow(recordIterator.getKey(), recordIterator.getValue());
 
             if (row != null) {
-                if (currentBatch == null) {
-                    currentBatch = new ArrayList<>(BATCH_SIZE);
+                if (currentRows == null) {
+                    currentRows = new ArrayList<>(BATCH_SIZE);
                 }
 
-                currentBatch.add(row);
+                currentRows.add(row);
 
-                if (currentBatch.size() == BATCH_SIZE) {
+                if (currentRows.size() == BATCH_SIZE) {
                     break;
                 }
             }
         }
 
-        boolean done = currentBatch == null || !recordIterator.canAdvance();
+        boolean done = !recordIterator.hasNext();
+
+        // Check for concurrent migration
+        if (!map.getMapServiceContext().getService().validateMigrationStamp(migrationStamp)) {
+            throw QueryException.error(SqlErrorCode.PARTITION_MIGRATED, "Map scan failed due to concurrent partition migration "
+                + "(result consistency cannot be guaranteed)");
+        }
+
+        // Check for concurrent map destroy
+        if (map.isDestroyed()) {
+            throw QueryException.error(SqlErrorCode.MAP_DESTROYED, "IMap has been destroyed concurrently: " + mapName);
+        }
 
         return done ? IterationResult.FETCHED_DONE : IterationResult.FETCHED;
     }
 
     @Override
     public RowBatch currentBatch0() {
-        return currentBatch != null ? new ListRowBatch(currentBatch) : null;
+        return currentRows != null ? new ListRowBatch(currentRows) : null;
     }
 
     @Override
@@ -120,13 +130,7 @@ public class MapScanExec extends AbstractMapScanExec {
         return map;
     }
 
-    public PartitionIdSet getParts() {
-        return parts;
-    }
-
-    @Override
-    public String toString() {
-        return getClass().getSimpleName() + "{mapName=" + mapName + ", fieldNames=" + fieldNames
-            + ", projects=" + projects + ", filter=" + filter + ", partitionCount=" + parts.size() + '}';
+    public PartitionIdSet getPartitions() {
+        return partitions;
     }
 }

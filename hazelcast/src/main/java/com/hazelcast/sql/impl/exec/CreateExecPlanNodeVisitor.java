@@ -25,6 +25,10 @@ import com.hazelcast.sql.impl.exec.agg.AggregateExec;
 import com.hazelcast.sql.impl.exec.fetch.FetchExec;
 import com.hazelcast.sql.impl.exec.scan.index.MapIndexScanExec;
 import com.hazelcast.sql.impl.exec.io.BroadcastSendExec;
+import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.util.collection.PartitionIdSet;
+import com.hazelcast.map.impl.MapContainer;
+import com.hazelcast.sql.impl.NodeServiceProvider;
 import com.hazelcast.sql.impl.exec.io.InboundHandler;
 import com.hazelcast.sql.impl.exec.io.Inbox;
 import com.hazelcast.sql.impl.exec.io.OutboundHandler;
@@ -40,11 +44,13 @@ import com.hazelcast.sql.impl.exec.join.HashJoinExec;
 import com.hazelcast.sql.impl.exec.join.NestedLoopJoinExec;
 import com.hazelcast.sql.impl.exec.root.RootExec;
 import com.hazelcast.sql.impl.exec.scan.MapScanExec;
+import com.hazelcast.sql.impl.exec.scan.MapScanExec;
 import com.hazelcast.sql.impl.exec.scan.ReplicatedMapScanExec;
 import com.hazelcast.sql.impl.operation.QueryExecuteOperation;
 import com.hazelcast.sql.impl.operation.QueryExecuteOperationFragment;
 import com.hazelcast.sql.impl.operation.QueryExecuteOperationFragmentMapping;
 import com.hazelcast.sql.impl.operation.QueryOperationHandler;
+import com.hazelcast.sql.impl.plan.node.MapScanPlanNode;
 import com.hazelcast.sql.impl.plan.node.AggregatePlanNode;
 import com.hazelcast.sql.impl.plan.node.FetchPlanNode;
 import com.hazelcast.sql.impl.plan.node.FilterPlanNode;
@@ -298,6 +304,28 @@ public class CreateExecPlanNodeVisitor implements PlanNodeVisitor {
     }
 
     @Override
+    public void onProjectNode(ProjectPlanNode node) {
+        Exec res = new ProjectExec(
+            node.getId(),
+            pop(),
+            node.getProjects()
+        );
+
+        push(res);
+    }
+
+    @Override
+    public void onFilterNode(FilterPlanNode node) {
+        Exec res = new FilterExec(
+            node.getId(),
+            pop(),
+            node.getFilter()
+        );
+
+        push(res);
+    }
+
+    @Override
     public void onMapScanNode(MapScanPlanNode node) {
         Exec res;
 
@@ -393,28 +421,6 @@ public class CreateExecPlanNodeVisitor implements PlanNodeVisitor {
             node.getAscs(),
             node.getFetch(),
             node.getOffset()
-        );
-
-        push(res);
-    }
-
-    @Override
-    public void onProjectNode(ProjectPlanNode node) {
-        Exec res = new ProjectExec(
-            node.getId(),
-            pop(),
-            node.getProjects()
-        );
-
-        push(res);
-    }
-
-    @Override
-    public void onFilterNode(FilterPlanNode node) {
-        Exec res = new FilterExec(
-            node.getId(),
-            pop(),
-            node.getFilter()
         );
 
         push(res);

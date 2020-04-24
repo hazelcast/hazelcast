@@ -58,9 +58,8 @@ public class TcpServerConnectionManager_MemoryLeakTest
 
         assertClusterSizeEventually(1, hz1);
 
-        MemberViewUnifiedServerConnectionManager endpointManager = (MemberViewUnifiedServerConnectionManager)
-                networkingService.getConnectionManager(EndpointQualifier.MEMBER);
+        TcpServerConnectionManager connectionManager = networkingService.getConnectionManager(EndpointQualifier.MEMBER);
 
-        assertTrueAllTheTime(() -> assertEquals(0, endpointManager.getAcceptedChannelsSize()), 5);
+        assertTrueAllTheTime(() -> assertEquals(0, connectionManager.acceptedChannels.size()), 5);
     }
 }

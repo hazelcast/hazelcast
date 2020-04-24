@@ -23,7 +23,6 @@ import com.hazelcast.sql.impl.extract.QueryTargetDescriptor;
 import com.hazelcast.sql.impl.worker.QueryFragmentContext;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.row.HeapRow;
-import com.hazelcast.sql.impl.row.KeyValueRow;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
 import java.util.List;
@@ -41,7 +40,7 @@ public abstract class AbstractMapScanExec extends AbstractExec {
     protected final List<Integer> projects;
     protected final Expression<Boolean> filter;
     private final InternalSerializationService serializationService;
-    private KeyValueRow keyValueRow;
+    private MapScanRow row;
 
     protected AbstractMapScanExec(
         int id,
@@ -68,7 +67,7 @@ public abstract class AbstractMapScanExec extends AbstractExec {
 
     @Override
     protected final void setup0(QueryFragmentContext ctx) {
-        keyValueRow = KeyValueRow.create(
+        row = MapScanRow.create(
             keyDescriptor,
             valueDescriptor,
             fieldNames,
@@ -89,11 +88,20 @@ public abstract class AbstractMapScanExec extends AbstractExec {
         return true;
     }
 
+    /**
+     * Prepare the row for the given key and value:
+     * 1) Check filter
+     * 2) Extract projections
+     *
+     * @param rawkey Key (data or object)
+     * @param rawValue Value (data or object)
+     * @return Row that is ready for processing by parent operators or {@code null} if the row hasn't passed the filter.
+     */
     protected HeapRow prepareRow(Object rawkey, Object rawValue) {
-        keyValueRow.setKeyValue(rawkey, rawValue);
+        row.setKeyValue(rawkey, rawValue);
 
         // Filter.
-        if (filter != null && !filter.eval(keyValueRow, ctx)) {
+        if (filter != null && !filter.eval(row, ctx)) {
             return null;
         }
 
@@ -101,7 +109,7 @@ public abstract class AbstractMapScanExec extends AbstractExec {
         HeapRow row = new HeapRow(projects.size());
 
         for (int j = 0; j < projects.size(); j++) {
-            Object projectRes = keyValueRow.get(projects.get(j));
+            Object projectRes = this.row.get(projects.get(j));
 
             row.set(j, projectRes);
         }
@@ -112,7 +120,7 @@ public abstract class AbstractMapScanExec extends AbstractExec {
     /**
      * Create extractors for the given operator.
      *
-     * @return Extractors for map.
+     * @return Extractors.
      */
     protected abstract Extractors createExtractors();
 

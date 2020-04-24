@@ -18,12 +18,17 @@ package com.hazelcast.sql.impl.extract;
 
 import com.hazelcast.sql.impl.type.QueryDataType;
 
+/**
+ * Base class for generic extractors.
+ */
 public abstract class AbstractGenericExtractor implements QueryExtractor {
 
+    protected final boolean key;
     protected final QueryDataType type;
     private final GenericTargetAccessor targetAccessor;
 
-    protected AbstractGenericExtractor(GenericTargetAccessor targetAccessor, QueryDataType type) {
+    protected AbstractGenericExtractor(boolean key, GenericTargetAccessor targetAccessor, QueryDataType type) {
+        this.key = key;
         this.targetAccessor = targetAccessor;
         this.type = type;
     }

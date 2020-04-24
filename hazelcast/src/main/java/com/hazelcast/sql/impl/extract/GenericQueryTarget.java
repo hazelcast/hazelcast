@@ -25,15 +25,15 @@ public class GenericQueryTarget implements QueryTarget, GenericTargetAccessor {
 
     private final InternalSerializationService serializationService;
     private final Extractors extractors;
-    private final boolean isKey;
+    private final boolean key;
 
     private Object rawTarget;
     private Object target;
 
-    public GenericQueryTarget(InternalSerializationService serializationService, Extractors extractors, boolean isKey) {
+    public GenericQueryTarget(InternalSerializationService serializationService, Extractors extractors, boolean key) {
         this.serializationService = serializationService;
         this.extractors = extractors;
-        this.isKey = isKey;
+        this.key = key;
     }
 
     @Override
@@ -45,9 +45,9 @@ public class GenericQueryTarget implements QueryTarget, GenericTargetAccessor {
     @Override
     public QueryExtractor createExtractor(String path, QueryDataType type) {
         if (path == null) {
-            return new GenericTargetExtractor(this, type);
+            return new GenericTargetExtractor(key, this, type);
         } else {
-            return new GenericFieldExtractor(this, type, extractors, path);
+            return new GenericFieldExtractor(key, this, type, extractors, path);
         }
     }
 
@@ -58,5 +58,9 @@ public class GenericQueryTarget implements QueryTarget, GenericTargetAccessor {
         }
 
         return target;
+    }
+
+    public boolean isKey() {
+        return key;
     }
 }

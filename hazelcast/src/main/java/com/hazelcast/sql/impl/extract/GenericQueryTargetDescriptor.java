@@ -19,11 +19,16 @@ package com.hazelcast.sql.impl.extract;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.query.impl.getters.Extractors;
+import com.hazelcast.sql.impl.SqlDataSerializerHook;
 
 import java.io.IOException;
 
-public class GenericQueryTargetDescriptor implements QueryTargetDescriptor {
+/**
+ * Generic descriptor that imposes no limitations on the underlying target.
+ */
+public class GenericQueryTargetDescriptor implements QueryTargetDescriptor, IdentifiedDataSerializable {
 
     public static final GenericQueryTargetDescriptor INSTANCE = new GenericQueryTargetDescriptor();
 
@@ -34,6 +39,16 @@ public class GenericQueryTargetDescriptor implements QueryTargetDescriptor {
     @Override
     public QueryTarget create(InternalSerializationService serializationService, Extractors extractors, boolean isKey) {
         return new GenericQueryTarget(serializationService, extractors, isKey);
+    }
+
+    @Override
+    public int getFactoryId() {
+        return SqlDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getClassId() {
+        return SqlDataSerializerHook.TARGET_DESCRIPTOR_GENERIC;
     }
 
     @Override

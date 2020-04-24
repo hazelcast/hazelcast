@@ -22,7 +22,6 @@ import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.cluster.memberselector.MemberSelectors;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.internal.nio.Connection;
-import com.hazelcast.internal.server.ServerConnectionManager;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapService;
@@ -85,9 +84,17 @@ public class NodeServiceProviderImpl implements NodeServiceProvider {
             return null;
         }
 
-        ServerConnectionManager endpointManager = nodeEngine.getNode().getConnectionManager(EndpointQualifier.MEMBER);
+        return nodeEngine.getNode()
+                .getServer()
+                .getConnectionManager(EndpointQualifier.MEMBER)
+                .getOrConnect(member.getAddress());
+    }
 
-        return endpointManager.getOrConnect(member.getAddress());
+    @Override
+    public MapContainer getMap(String name) {
+        MapService mapService = nodeEngine.getService(MapService.SERVICE_NAME);
+
+        return mapService.getMapServiceContext().getMapContainers().get(name);
     }
 
     @Override

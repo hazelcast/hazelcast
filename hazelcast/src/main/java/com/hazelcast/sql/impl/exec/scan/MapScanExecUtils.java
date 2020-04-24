@@ -20,6 +20,9 @@ import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.query.impl.getters.Extractors;
 
+/**
+ * Utility class containing helper methods for map iteration. Simplifies implementation of query compiler.
+ */
 public final class MapScanExecUtils {
     private MapScanExecUtils() {
         // No-op.
@@ -30,6 +33,6 @@ public final class MapScanExecUtils {
     }
 
     public static MapScanExecIterator createIterator(MapContainer map, PartitionIdSet parts) {
-        return new MapScanExecIterator(map, parts);
+        return new MapScanExecIterator(map, parts.iterator());
     }
 }

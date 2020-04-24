@@ -16,6 +16,8 @@
 
 package com.hazelcast.sql.impl.plan.node;
 
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.sql.impl.SqlDataSerializerHook;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.extract.QueryTargetDescriptor;
 import com.hazelcast.sql.impl.type.QueryDataType;
@@ -26,7 +28,7 @@ import java.util.Objects;
 /**
  * Node to scan a partitioned map.
  */
-public class MapScanPlanNode extends AbstractMapScanPlanNode {
+public class MapScanPlanNode extends AbstractMapScanPlanNode implements IdentifiedDataSerializable {
     public MapScanPlanNode() {
         // No-op.
     }
@@ -51,7 +53,7 @@ public class MapScanPlanNode extends AbstractMapScanPlanNode {
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, mapName, fieldNames, projects, filter);
+        return Objects.hash(id, mapName, fieldNames, fieldTypes, projects, filter, keyDescriptor, valueDescriptor);
     }
 
     @Override
@@ -64,13 +66,26 @@ public class MapScanPlanNode extends AbstractMapScanPlanNode {
             return false;
         }
 
-        AbstractMapScanPlanNode that = (AbstractMapScanPlanNode) o;
+        MapScanPlanNode that = (MapScanPlanNode) o;
 
         return id == that.id
             && mapName.equals(that.mapName)
             && fieldNames.equals(that.fieldNames)
+            && fieldTypes.equals(that.fieldTypes)
             && projects.equals(that.projects)
-            && Objects.equals(filter, that.filter);
+            && Objects.equals(filter, that.filter)
+            && keyDescriptor.equals(that.keyDescriptor)
+            && valueDescriptor.equals(that.valueDescriptor);
+    }
+
+    @Override
+    public int getFactoryId() {
+        return SqlDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getClassId() {
+        return SqlDataSerializerHook.NODE_MAP_SCAN;
     }
 
     @Override

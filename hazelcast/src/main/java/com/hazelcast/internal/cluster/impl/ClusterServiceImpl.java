@@ -132,7 +132,7 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
         clusterJoinManager = new ClusterJoinManager(node, this, lock);
         clusterHeartbeatManager = new ClusterHeartbeatManager(node, this, lock);
 
-        node.server.getConnectionManager(MEMBER).addConnectionListener(this);
+        node.getServer().getConnectionManager(MEMBER).addConnectionListener(this);
         ExecutionService executionService = nodeEngine.getExecutionService();
         executionService.register(CLUSTER_EXECUTOR_NAME, 2, Integer.MAX_VALUE, ExecutorType.CACHED);
         executionService.register(SPLIT_BRAIN_HANDLER_EXECUTOR_NAME, 2, Integer.MAX_VALUE, ExecutorType.CACHED);
@@ -193,7 +193,7 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
                 return;
             }
 
-            Connection conn = node.getConnectionManager(MEMBER).get(address);
+            Connection conn = node.getServer().getConnectionManager(MEMBER).get(address);
             if (conn != null && conn.isAlive()) {
                 if (logger.isFineEnabled()) {
                     logger.fine("Cannot suspect " + member + ", since there's a live connection -> " + conn);

@@ -67,7 +67,7 @@ public class NodeAnswer extends AbstractAnswer {
                 Class<?> endpointQualifierClass = arguments[0].getClass();
                 Method method = delegate.getClass().getMethod("getEndpointManager", endpointQualifierClass);
                 Object endpointManager = invoke(false, method, arguments);
-                return mock(targetClassloader.loadClass(FirewallingServer.FirewallingEndpointManager.class.getName()),
+                return mock(targetClassloader.loadClass(FirewallingServer.FirewallingServerConnectionManager.class.getName()),
                         new FirewallingConnectionManagerAnswer(endpointManager));
             }
         } else if (arguments.length == 0 && methodName.equals("getServer")) {

@@ -61,6 +61,6 @@ public class OutboundOperationHandler {
             packet.raiseFlags(FLAG_URGENT);
         }
 
-        return node.getConnectionManager(MEMBER).transmit(packet, connection);
+        return node.getServer().getConnectionManager(MEMBER).transmit(packet, connection);
     }
 }

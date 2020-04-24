@@ -36,7 +36,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 import org.junit.runners.Parameterized.UseParametersRunnerFactory;
-import usercodedeployment.CapitalizatingFirstnameExtractor;
+import usercodedeployment.CapitalizingFirstNameExtractor;
 import usercodedeployment.EntryProcessorWithAnonymousAndInner;
 import usercodedeployment.IncrementingEntryProcessor;
 import usercodedeployment.Person;
@@ -197,12 +197,12 @@ public class ClientUserCodeDeploymentTest extends ClientTestSupport {
 
         ClientConfig clientConfig = new ClientConfig();
         ClientUserCodeDeploymentConfig clientUserCodeDeploymentConfig = new ClientUserCodeDeploymentConfig();
-        clientUserCodeDeploymentConfig.addClass(CapitalizatingFirstnameExtractor.class);
+        clientUserCodeDeploymentConfig.addClass(CapitalizingFirstNameExtractor.class);
         clientUserCodeDeploymentConfig.addClass(Person.class);
         clientConfig.setUserCodeDeploymentConfig(clientUserCodeDeploymentConfig.setEnabled(true));
 
         Config config = createNodeConfig();
-        config.getMapConfig(mapName).addAttributeConfig(new AttributeConfig(attributeName, "usercodedeployment.CapitalizatingFirstnameExtractor"));
+        config.getMapConfig(mapName).addAttributeConfig(new AttributeConfig(attributeName, "usercodedeployment.CapitalizingFirstNameExtractor"));
 
         factory.newHazelcastInstance(config);
         factory.newHazelcastInstance(config);

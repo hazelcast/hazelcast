@@ -18,38 +18,47 @@ package com.hazelcast.sql.impl.exec.scan;
 
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.util.Clock;
-import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.recordstore.RecordStore;
+import com.hazelcast.spi.exception.RetryableHazelcastException;
+import com.hazelcast.sql.SqlErrorCode;
+import com.hazelcast.sql.impl.QueryException;
 
-import java.util.AbstractMap;
 import java.util.Iterator;
 import java.util.Map;
 
+/**
+ * Iterator over map partitions.
+ */
 @SuppressWarnings("rawtypes")
 public class MapScanExecIterator {
+
     private final MapContainer map;
     private final Iterator<Integer> partsIterator;
     private final long now = Clock.currentTimeMillis();
+
     private RecordStore currentRecordStore;
     private Iterator<Map.Entry<Data, Record<Object>>> currentRecordStoreIterator;
-    private Map.Entry<Data, Record<Object>> current;
-    private Map.Entry<Data, Record<Object>> next;
 
-    public MapScanExecIterator(MapContainer map, PartitionIdSet parts) {
+    private Data currentKey;
+    private Object currentValue;
+    private Data nextKey;
+    private Object nextValue;
+
+    public MapScanExecIterator(MapContainer map, Iterator<Integer> partsIterator) {
         this.map = map;
+        this.partsIterator = partsIterator;
 
-        partsIterator = parts.iterator();
-
-        next = advance0();
+        advance0();
     }
 
     public boolean tryAdvance() {
-        if (next != null) {
-            current = next;
+        if (hasNext()) {
+            currentKey = nextKey;
+            currentValue = nextValue;
 
-            next = advance0();
+            advance0();
 
             return true;
         } else {
@@ -57,36 +66,62 @@ public class MapScanExecIterator {
         }
     }
 
-    public boolean canAdvance() {
-        return next != null;
+    public boolean hasNext() {
+        return nextKey != null;
     }
 
+    /**
+     * Get the next key/value pair from the store.
+     */
     @SuppressWarnings("unchecked")
-    private Map.Entry<Data, Record<Object>> advance0() {
+    private void advance0() {
         while (true) {
             // Move to the next record store if needed.
             if (currentRecordStoreIterator == null) {
                 if (!partsIterator.hasNext()) {
-                    return null;
+                    nextKey = null;
+                    nextValue = null;
+
+                    return;
                 } else {
                     int nextPart = partsIterator.next();
 
-                    currentRecordStore = map.getRecordStore(nextPart);
+                    boolean isOwned = map.getMapServiceContext().getOwnedPartitions().contains(nextPart);
 
-                    currentRecordStore.checkIfLoaded();
+                    if (!isOwned) {
+                        throw QueryException.error(SqlErrorCode.PARTITION_MIGRATED,
+                            "Partition is not owned by member: " + nextPart);
+                    }
 
-                    currentRecordStoreIterator = currentRecordStore.iterator();
+                    currentRecordStore = map.getMapServiceContext().getRecordStore(nextPart, map.getName());
+
+                    if (currentRecordStore == null) {
+                        // RecordStore might be missing if the associated partition is empty. Just skip it.
+                        continue;
+                    }
+
+                    try {
+                        currentRecordStore.checkIfLoaded();
+                    } catch (RetryableHazelcastException e) {
+                        throw QueryException.error(SqlErrorCode.MAP_LOADING_IN_PROGRESS, "Map loading is in progress: "
+                            + map.getName(), e);
+                    }
+
+                    currentRecordStoreIterator = currentRecordStore.getStorage().mutationTolerantIterator();
                 }
             }
 
             assert currentRecordStoreIterator != null;
 
-            // Move to the next valid entry.
+            // Move to the next valid entry inside the record store.
             while (currentRecordStoreIterator.hasNext()) {
                 Map.Entry<Data, Record<Object>> entry = currentRecordStoreIterator.next();
 
                 if (!currentRecordStore.isExpired(entry.getValue(), now, false)) {
-                    return new AbstractMap.SimpleEntry<>(entry.getKey(), entry.getValue());
+                    nextKey = entry.getKey();
+                    nextValue = entry.getValue().getValue();
+
+                    return;
                 }
             }
 
@@ -97,10 +132,10 @@ public class MapScanExecIterator {
     }
 
     public Object getKey() {
-        return current.getKey();
+        return currentKey;
     }
 
     public Object getValue() {
-        return current.getValue().getValue();
+        return currentValue;
     }
 }

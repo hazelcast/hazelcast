@@ -41,13 +41,13 @@ public interface PlanNodeVisitor {
     void onRootSendNode(RootSendPlanNode node);
     void onUnicastSendNode(UnicastSendPlanNode node);
     void onBroadcastSendNode(BroadcastSendPlanNode node);
-    void onMapScanNode(MapScanPlanNode node);
     void onMapIndexScanNode(MapIndexScanPlanNode node);
     void onReplicatedMapScanNode(ReplicatedMapScanPlanNode node);
     void onSortNode(SortPlanNode node);
     void onReceiveSortMergeNode(ReceiveSortMergePlanNode node);
     void onProjectNode(ProjectPlanNode node);
     void onFilterNode(FilterPlanNode node);
+    void onMapScanNode(MapScanPlanNode node);
     void onAggregateNode(AggregatePlanNode node);
     void onNestedLoopJoinNode(NestedLoopJoinPlanNode node);
     void onHashJoinNode(HashJoinPlanNode node);

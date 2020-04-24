@@ -38,6 +38,9 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.UUID;
 
+/**
+ * Contains many of the dependencies passed to the {@link Server}.
+ */
 @SuppressWarnings({"checkstyle:methodcount"})
 public interface ServerContext {
 

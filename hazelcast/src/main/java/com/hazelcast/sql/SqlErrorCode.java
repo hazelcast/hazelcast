@@ -38,11 +38,20 @@ public final class SqlErrorCode {
     /** Query was cancelled due to timeout. */
     public static final int TIMEOUT = 1004;
 
+    /** An error caused by concurrent migration of partition to other member. */
+    public static final int PARTITION_MIGRATED = 1005;
+
+    /** An error caused concurrent destroy of a map. */
+    public static final int MAP_DESTROYED = 1006;
+
+    /** Map loading is not finished yet. */
+    public static final int MAP_LOADING_IN_PROGRESS = 1007;
+
     /** Generic parsing error. */
-    public static final int PARSING = 1005;
+    public static final int PARSING = 1008;
 
     /** Client has left the topology. */
-    public static final int CLIENT_LEAVE = 1006;
+    public static final int CLIENT_LEAVE = 1009;
 
     /** An error with data conversion or transformation. */
     public static final int DATA_EXCEPTION = 2000;

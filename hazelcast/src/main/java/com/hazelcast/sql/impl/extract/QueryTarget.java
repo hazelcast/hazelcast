@@ -18,6 +18,16 @@ package com.hazelcast.sql.impl.extract;
 
 import com.hazelcast.sql.impl.type.QueryDataType;
 
+/**
+ * Target that is used to extract values from map entry's key or value.
+ * <p>
+ * Extractors are created once per query using the {@link #createExtractor(String, QueryDataType)} method. The target is then
+ * updated for every map record using the {@link #setTarget(Object)} method, while extractors remain the same.
+ * <p>
+ * The motivation for this design is to minimize the overhead on extractors creation and to avoid constant overhead associated
+ * with data extraction, by maintaining the state. An example is {@code PortableGetter} that opens a reader on every get
+ * operation. Instead, the reader might be opened in {@code setTarget} once and then reused for all fields.
+ */
 public interface QueryTarget {
     void setTarget(Object target);
     QueryExtractor createExtractor(String path, QueryDataType type);
