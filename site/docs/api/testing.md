@@ -56,7 +56,7 @@ This means we can create multiple lightweight Hazelcast Jet instances
 in our tests without using any networking resources.
 
 To create Hazelcast Jet instances with mock network(along with a lot
-of convenience methods), one needs to extend `com.hazelcast.jet.core.JetTestSupport`
+of convenience methods), you need to extend `com.hazelcast.jet.core.JetTestSupport`
 class.
 
 Here is a simple test harness which creates 2 node Hazelcast Jet cluster
@@ -108,7 +108,7 @@ public class ClusteringTest extends JetTestSupport {
 }
 ```
 
-Similar to the Hazelcast Jet nodes, one can create Hazelcast Jet clients
+Similar to the Hazelcast Jet nodes, you can create Hazelcast Jet clients
 with the same factories. There is no need to provide any network
 configuration for clients to discover nodes since they are using the
 same factory. The discovery will work out of the box.
@@ -170,7 +170,7 @@ write meaningful test.
 ## Integration Tests
 
 For integration testing, there might be a need to create real instances
-without the mock network. For those cases one can create real instances
+without the mock network. For those cases you can create real instances
 with `Jet.newJetInstance()` method.
 
 ## Using random cluster names
@@ -179,7 +179,7 @@ If multiple tests are running in parallel there is a chance that the
 clusters in each test can discover others, interfere the test
 execution and most of the time causing both of them to fail.
 
-To avoid such scenarios, one needs to isolate the clusters in each test
+To avoid such scenarios, you need to isolate the clusters in each test
 execution by giving them unique cluster names. This way, they won't
 try to connect each other since the nodes will only try to connect to
 other members with the same cluster name property.
@@ -223,7 +223,7 @@ Mock instances created from the factory of `com.hazelcast.jet.core.JetTestSuppor
 are cleaned-up automatically after the test execution has been finished.
 
 If the test contains real instances, then they either needs to be
-tracked individually and shut down when the test finished or one can
+tracked individually and shut down when the test finished or you can
 write a teardown method like below to shut down all instances created.
 
 ```java
@@ -233,7 +233,7 @@ write a teardown method like below to shut down all instances created.
     }
 ```
 
-Either way one has to shut down Hazelcast Jet instances after the test
+Either way you have to shut down Hazelcast Jet instances after the test
 has been finished to reclaim resources and not to leave a room for
 interference with the next test execution due to distributed
 nature of the product.
@@ -523,7 +523,7 @@ Finished Running Test: test in 0.009 seconds.
 
 ## Waiting for job to be in desired state
 
-On some use cases, one needs to make the job is submitted and running
+On some use cases, you need to make the job is submitted and running
 on the cluster before generating any events on the controlled source
 to observe results. To achieve that following assertion could be used
 to validate job is in the desired state.
