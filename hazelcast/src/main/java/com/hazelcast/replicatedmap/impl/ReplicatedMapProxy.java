@@ -50,10 +50,9 @@ import com.hazelcast.splitbrainprotection.SplitBrainProtectionOn;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.ArrayList;
+import java.util.BitSet;
 import java.util.Collection;
 import java.util.Comparator;
-import java.util.Iterator;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -90,6 +89,7 @@ public class ReplicatedMapProxy<K, V> extends AbstractDistributedObject<Replicat
     private static final int RETRY_INTERVAL_COUNT = 3;
     private static final int KEY_SET_MIN_SIZE = 16;
     private static final int KEY_SET_STORE_MULTIPLE = 4;
+    private static final int PARALLEL_INIT_REQUESTS_LIMIT = 100;
 
     private static final LocalReplicatedMapStats EMPTY_LOCAL_MAP_STATS = new EmptyLocalReplicatedMapStats();
 
@@ -120,31 +120,38 @@ public class ReplicatedMapProxy<K, V> extends AbstractDistributedObject<Replicat
         }
         fireMapDataLoadingTasks();
         if (!config.isAsyncFillup()) {
-            int partitionCount = nodeEngine.getPartitionService().getPartitionCount();
-            Set<Integer> nonLoadedStores = new LinkedHashSet<Integer>(partitionCount);
-            int[] retryCount = new int[partitionCount];
-            for (int i = 0; i < partitionCount; i++) {
-                nonLoadedStores.add(i);
-            }
-            while (true) {
-                Iterator<Integer> nonLoadedStoresIterator = nonLoadedStores.iterator();
-                while (nonLoadedStoresIterator.hasNext()) {
-                    int nonLoadedPartition = nonLoadedStoresIterator.next();
-                    ReplicatedRecordStore store = service.getReplicatedRecordStore(name, false, nonLoadedPartition);
-                    if (store == null || !store.isLoaded()) {
-                        if ((retryCount[nonLoadedPartition]++) % RETRY_INTERVAL_COUNT == 0) {
-                            requestDataForPartition(nonLoadedPartition);
-                        }
-                    } else {
-                        nonLoadedStoresIterator.remove();
-                    }
-                }
+            syncFill();
+        }
+    }
 
-                if (nonLoadedStores.isEmpty()) {
-                    break;
+    private void syncFill() {
+        int partitionCount = nodeEngine.getPartitionService().getPartitionCount();
+        BitSet nonLoadedStores = new BitSet(partitionCount);
+        int[] retryCount = new int[partitionCount];
+        for (int i = 0; i < partitionCount; i++) {
+            nonLoadedStores.set(i);
+        }
+        while (true) {
+            int remainingParallelRequests = PARALLEL_INIT_REQUESTS_LIMIT;
+            for (int nonLoadedPartition = nonLoadedStores.nextSetBit(0);
+                 nonLoadedPartition>= 0 && remainingParallelRequests > 0;
+                 nonLoadedPartition = nonLoadedStores.nextSetBit(nonLoadedPartition + 1)) {
+
+                ReplicatedRecordStore store = service.getReplicatedRecordStore(name, false, nonLoadedPartition);
+                if (store == null || !store.isLoaded()) {
+                    if ((retryCount[nonLoadedPartition]++) % RETRY_INTERVAL_COUNT == 0) {
+                        requestDataForPartition(nonLoadedPartition);
+                        remainingParallelRequests--;
+                    }
+                } else {
+                    nonLoadedStores.clear(nonLoadedPartition);
                 }
-                sleep();
             }
+
+            if (nonLoadedStores.isEmpty()) {
+                break;
+            }
+            sleep();
         }
     }
 
