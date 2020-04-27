@@ -233,15 +233,15 @@ $ kubectl logs hazelcast-jet-0
 ...
 ...
 ...
-2020-03-05 10:02:44,698  INFO [c.h.i.c.ClusterService] [main] - [172.17.0.6]:5701 [dev] [{imdg-version}]
+2020-03-05 10:02:44,698  INFO [c.h.i.c.ClusterService] [main]
 
 Members {size:1, ver:1} [
  Member [172.17.0.6]:5701 - 03a22d3c-d88a-40bf-81b0-8f85e16acb0f this
 ]
 
-2020-03-05 10:02:44,725  INFO [c.h.c.LifecycleService] [main] - [172.17.0.6]:5701 [dev] [{imdg-version}] [172.17.0.6]:5701 is STARTED
-2020-03-05 10:03:20,387  INFO [c.h.i.n.t.TcpIpConnection] [hz.distracted_bartik.IO.thread-in-2] - [172.17.0.6]:5701 [dev] [{imdg-version}] Initialized new cluster connection between /172.17.0.6:5701 and /172.17.0.7:49103
-2020-03-05 10:03:27,381  INFO [c.h.i.c.ClusterService] [hz.distracted_bartik.priority-generic-operation.thread-0] - [172.17.0.6]:5701 [dev] [{imdg-version}]
+2020-03-05 10:02:44,725  INFO [c.h.c.LifecycleService] [main] - [172.17.0.6]:5701 is STARTED
+2020-03-05 10:03:20,387  INFO [c.h.i.n.t.TcpIpConnection] [hz.distracted_bartik.IO.thread-in-2] - [Initialized new cluster connection between /172.17.0.6:5701 and /172.17.0.7:49103
+2020-03-05 10:03:27,381  INFO [c.h.i.c.ClusterService] [hz.distracted_bartik.priority-generic-operation.thread-0]
 
 Members {size:2, ver:2} [
  Member [172.17.0.6]:5701 - 03a22d3c-d88a-40bf-81b0-8f85e16acb0f this

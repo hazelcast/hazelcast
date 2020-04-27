@@ -120,7 +120,7 @@ below:
 2020-03-17 14:31:18.947  INFO 1 --- [           main] c.h.j.management.service.LicenseService  : License Info : License{allowedNumberOfNodes=NNN, expiryDate=MM/DD/YYYY 23:59:59, featureList=[ Management Center, Clustered JMX, Clustered Rest, Security, Hot Restart, Jet Management Center, Jet Lossless Recovery, Jet Rolling Job Upgrade, Jet Enterprise ], type=Enterprise HD, companyName=null, ownerEmail=null, keyHash=NNN, No Version Restriction}
 
 ...
-2020-03-17 14:31:17.523  INFO 1 --- [-center.event-5] c.h.c.impl.spi.ClientClusterService      : jet-management-center [jet] [{jet-version}] [{jet-version}]
+2020-03-17 14:31:17.523  INFO 1 --- [-center.event-5] c.h.c.impl.spi.ClientClusterService      : jet-management-center [jet]
 
 Members [1] {
     Member [172.17.0.2]:5701 - 32349cdf-8c9a-413f-8dad-80f2ef7bbcd6

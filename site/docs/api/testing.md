@@ -151,7 +151,7 @@ Members {size:2, ver:2} [
  Member [127.0.0.1]:5702 - 920d1b0c-0898-4b6e-9009-8f29889d6a77 this
 ]
 ....
-10:45:04.890 [ INFO] [c.h.c.i.s.ClientClusterService] [{imdg-version}]
+10:45:04.890 [ INFO] [c.h.c.i.s.ClientClusterService]
 
 Members [2] {
  Member [127.0.0.1]:5701 - 93328d97-0975-4dfa-bf56-4d46e8a469a1
