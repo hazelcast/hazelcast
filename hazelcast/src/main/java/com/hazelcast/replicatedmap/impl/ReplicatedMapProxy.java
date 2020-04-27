@@ -75,7 +75,7 @@ import static java.lang.Thread.currentThread;
  * @param <K> key type
  * @param <V> value type
  */
-@SuppressWarnings("checkstyle:methodcount")
+@SuppressWarnings({"checkstyle:methodcount", "checkstyle:classfanoutcomplexity"})
 public class ReplicatedMapProxy<K, V> extends AbstractDistributedObject<ReplicatedMapService>
         implements ReplicatedMap<K, V>, InitializingObject {
 
@@ -134,7 +134,7 @@ public class ReplicatedMapProxy<K, V> extends AbstractDistributedObject<Replicat
         while (true) {
             int remainingParallelRequests = PARALLEL_INIT_REQUESTS_LIMIT;
             for (int nonLoadedPartition = nonLoadedStores.nextSetBit(0);
-                 nonLoadedPartition>= 0 && remainingParallelRequests > 0;
+                 nonLoadedPartition >= 0 && remainingParallelRequests > 0;
                  nonLoadedPartition = nonLoadedStores.nextSetBit(nonLoadedPartition + 1)) {
 
                 ReplicatedRecordStore store = service.getReplicatedRecordStore(name, false, nonLoadedPartition);
