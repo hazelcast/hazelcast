@@ -23,6 +23,7 @@ import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Scanner;
 import java.util.concurrent.TimeUnit;
 
@@ -32,6 +33,7 @@ final class RestClient {
     private String body;
     private int readTimeoutSeconds;
     private int connectTimeoutSeconds;
+    private int retries;
 
     private RestClient(String url) {
         this.url = url;
@@ -41,8 +43,10 @@ final class RestClient {
         return new RestClient(url);
     }
 
-    RestClient withHeader(String key, String value) {
-        headers.add(new Parameter(key, value));
+    RestClient withHeaders(Map<String, String> headers) {
+        for (Map.Entry<String, String> entry : headers.entrySet()) {
+            this.headers.add(new Parameter(entry.getKey(), entry.getValue()));
+        }
         return this;
     }
 
@@ -61,12 +65,21 @@ final class RestClient {
         return this;
     }
 
+    RestClient withRetries(int retries) {
+        this.retries = retries;
+        return this;
+    }
+
     String get() {
-        return call("GET");
+        return callWithRetries("GET");
     }
 
     String post() {
-        return call("POST");
+        return callWithRetries("POST");
+    }
+
+    private String callWithRetries(String method) {
+        return RetryUtils.retry(() -> call(method), retries);
     }
 
     private String call(String method) {

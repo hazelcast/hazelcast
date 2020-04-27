@@ -19,18 +19,35 @@ import com.hazelcast.core.HazelcastException;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
+import java.text.SimpleDateFormat;
+import java.time.Clock;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.TimeZone;
 
 /**
- * Utility class to format AWS Request to the canonical form.
+ * Utility class for AWS Requests.
  */
-final class AwsUrlUtils {
+final class AwsRequestUtils {
 
-    private AwsUrlUtils() {
+    private AwsRequestUtils() {
+    }
+
+    static String currentTimestamp(Clock clock) {
+        SimpleDateFormat df = new SimpleDateFormat("yyyyMMdd'T'HHmmss'Z'");
+        df.setTimeZone(TimeZone.getTimeZone("UTC"));
+        return df.format(Instant.now(clock).toEpochMilli());
+    }
+
+    static RestClient createRestClient(String url, AwsConfig awsConfig) {
+        return RestClient.create(url)
+            .withConnectTimeoutSeconds(awsConfig.getConnectionTimeoutSeconds())
+            .withReadTimeoutSeconds(awsConfig.getReadTimeoutSeconds())
+            .withRetries(awsConfig.getConnectionRetries());
     }
 
     static String canonicalQueryString(Map<String, String> attributes) {
@@ -49,7 +66,10 @@ final class AwsUrlUtils {
 
     private static String canonicalQueryString(List<String> list) {
         Iterator<String> it = list.iterator();
-        StringBuilder result = new StringBuilder(it.next());
+        StringBuilder result = new StringBuilder();
+        if (it.hasNext()) {
+            result.append(it.next());
+        }
         while (it.hasNext()) {
             result.append('&').append(it.next());
         }
@@ -68,5 +88,12 @@ final class AwsUrlUtils {
             throw new HazelcastException(e);
         }
         return encoded;
+    }
+
+    static String urlFor(String endpoint) {
+        if (endpoint.startsWith("http")) {
+            return endpoint;
+        }
+        return "https://" + endpoint;
     }
 }

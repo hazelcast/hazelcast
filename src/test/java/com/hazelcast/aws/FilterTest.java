@@ -19,18 +19,19 @@ import org.junit.Test;
 
 import java.util.Map;
 
+import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 
 public class FilterTest {
 
     @Test
-    public void getFilterAttributes() {
+    public void add() {
         // given
         Filter filter = new Filter();
 
         // when
-        filter.addFilter("key", "value");
-        filter.addFilter("second-key", "second-value");
+        filter.add("key", "value");
+        filter.add("second-key", "second-value");
         Map<String, String> result = filter.getFilterAttributes();
 
         // then
@@ -39,6 +40,24 @@ public class FilterTest {
         assertEquals("value", result.get("Filter.1.Value.1"));
         assertEquals("second-key", result.get("Filter.2.Name"));
         assertEquals("second-value", result.get("Filter.2.Value.1"));
+    }
+
+    @Test
+    public void addMulti() {
+        // given
+        Filter filter = new Filter();
+
+        // when
+        filter.addMulti("key", asList("value", "second-value"));
+
+        // then
+        Map<String, String> result = filter.getFilterAttributes();
+
+        // then
+        assertEquals(3, result.size());
+        assertEquals("key", result.get("Filter.1.Name"));
+        assertEquals("value", result.get("Filter.1.Value.1"));
+        assertEquals("second-value", result.get("Filter.1.Value.2"));
     }
 
 }

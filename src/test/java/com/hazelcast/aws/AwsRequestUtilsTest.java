@@ -17,13 +17,28 @@ package com.hazelcast.aws;
 
 import org.junit.Test;
 
+import java.time.Clock;
+import java.time.Instant;
+import java.time.ZoneId;
 import java.util.HashMap;
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 
 
-public class AwsUrlUtilsTest {
+public class AwsRequestUtilsTest {
+
+    @Test
+    public void currentTimestamp() {
+        // given
+        Clock clock = Clock.fixed(Instant.ofEpochMilli(1585909518929L), ZoneId.systemDefault());
+
+        // when
+        String currentTimestamp = AwsRequestUtils.currentTimestamp(clock);
+
+        // then
+        assertEquals("20200403T102518Z", currentTimestamp);
+    }
 
     @Test
     public void canonicalQueryString() {
@@ -33,9 +48,16 @@ public class AwsUrlUtilsTest {
         attributes.put("attribute", "attribute+value");
 
         // when
-        String result = AwsUrlUtils.canonicalQueryString(attributes);
+        String result = AwsRequestUtils.canonicalQueryString(attributes);
 
         assertEquals("attribute=attribute%2Bvalue&second-attribute=second-attribute%2Bvalue", result);
+    }
+
+    @Test
+    public void urlFor() {
+        assertEquals("https://some-endpoint", AwsRequestUtils.urlFor("some-endpoint"));
+        assertEquals("https://some-endpoint", AwsRequestUtils.urlFor("https://some-endpoint"));
+        assertEquals("http://some-endpoint", AwsRequestUtils.urlFor("http://some-endpoint"));
     }
 
 }

@@ -57,11 +57,11 @@ final class PortRange {
     private void validatePorts() {
         if (fromPort < MIN_PORT || fromPort > MAX_PORT) {
             throw new IllegalArgumentException(
-                    String.format("Specified port (%s) outside of port range (%s-%s)", fromPort, MIN_PORT, MAX_PORT));
+                String.format("Specified port (%s) outside of port range (%s-%s)", fromPort, MIN_PORT, MAX_PORT));
         }
         if (toPort < MIN_PORT || toPort > MAX_PORT) {
             throw new IllegalArgumentException(
-                    String.format("Specified port (%s) outside of port range (%s-%s)", toPort, MIN_PORT, MAX_PORT));
+                String.format("Specified port (%s) outside of port range (%s-%s)", toPort, MIN_PORT, MAX_PORT));
         }
         if (fromPort > toPort) {
             throw new IllegalArgumentException(String.format("Port %s is greater than %s", fromPort, toPort));
@@ -74,5 +74,10 @@ final class PortRange {
 
     int getToPort() {
         return toPort;
+    }
+
+    @Override
+    public String toString() {
+        return String.format("%d-%d", fromPort, toPort);
     }
 }

@@ -17,62 +17,65 @@ package com.hazelcast.aws;
 
 import com.hazelcast.internal.json.Json;
 import com.hazelcast.internal.json.JsonObject;
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.Logger;
+
+import static com.hazelcast.aws.AwsRequestUtils.createRestClient;
 
 /**
- * Responsible for connecting to AWS EC2 and ECS Instance Metadata API.
+ * Responsible for connecting to AWS EC2 and ECS Metadata API.
  *
  * @see <a href="http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-instance-metadata.html">EC2 Instance Metatadata</a>
- * @see <a href="https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-iam-roles.html">ECS Task Metadata</a>
+ * @see <a href="https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-iam-roles.html">ECS Task IAM Role Metadata</a>
+ * @see <a href="https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-metadata-endpoint.html">ECS Task Metadata</a>
  */
 class AwsMetadataApi {
-    private static final ILogger LOGGER = Logger.getLogger(AwsMetadataApi.class);
-
     private static final String EC2_METADATA_ENDPOINT = "http://169.254.169.254/latest/meta-data";
-    private static final String ECS_METADATA_ENDPOINT = "http://169.254.170.2";
+    private static final String ECS_IAM_ROLE_METADATA_ENDPOINT = "http://169.254.170.2" + System.getenv(
+        "AWS_CONTAINER_CREDENTIALS_RELATIVE_URI");
+    private static final String ECS_TASK_METADATA_ENDPOINT = System.getenv("ECS_CONTAINER_METADATA_URI");
 
     private static final String SECURITY_CREDENTIALS_URI = "/iam/security-credentials/";
-    private static final String AVAILABILITY_ZONE_URI = "/placement/availability-zone/";
 
-    private final String ec2Endpoint;
-    private final String ecsEndpoint;
+    private final String ec2MetadataEndpoint;
+    private final String ecsIamRoleEndpoint;
+    private final String ecsTaskMetadataEndpoint;
     private final AwsConfig awsConfig;
 
     AwsMetadataApi(AwsConfig awsConfig) {
-        this.ec2Endpoint = EC2_METADATA_ENDPOINT;
-        this.ecsEndpoint = ECS_METADATA_ENDPOINT;
+        this.ec2MetadataEndpoint = EC2_METADATA_ENDPOINT;
+        this.ecsIamRoleEndpoint = ECS_IAM_ROLE_METADATA_ENDPOINT;
+        this.ecsTaskMetadataEndpoint = ECS_TASK_METADATA_ENDPOINT;
         this.awsConfig = awsConfig;
     }
 
     /**
      * For test purposes only.
      */
-    AwsMetadataApi(String ec2Endpoint, String ecsEndpoint, AwsConfig awsConfig) {
-        this.ec2Endpoint = ec2Endpoint;
-        this.ecsEndpoint = ecsEndpoint;
+    AwsMetadataApi(String ec2MetadataEndpoint, String ecsIamRoleEndpoint, String ecsTaskMetadataEndpoint,
+                   AwsConfig awsConfig) {
+        this.ec2MetadataEndpoint = ec2MetadataEndpoint;
+        this.ecsIamRoleEndpoint = ecsIamRoleEndpoint;
+        this.ecsTaskMetadataEndpoint = ecsTaskMetadataEndpoint;
         this.awsConfig = awsConfig;
     }
 
-    String availabilityZone() {
-        String uri = ec2Endpoint.concat(AVAILABILITY_ZONE_URI);
-        return retrieveMetadataFromURI(uri);
+    String availabilityZoneEc2() {
+        String uri = ec2MetadataEndpoint.concat("/placement/availability-zone/");
+        return createRestClient(uri, awsConfig).get();
     }
 
-    String defaultIamRole() {
-        String uri = ec2Endpoint.concat(SECURITY_CREDENTIALS_URI);
-        return retrieveMetadataFromURI(uri);
+    String defaultIamRoleEc2() {
+        String uri = ec2MetadataEndpoint.concat(SECURITY_CREDENTIALS_URI);
+        return createRestClient(uri, awsConfig).get();
     }
 
-    AwsCredentials credentials(String iamRole) {
-        String uri = ec2Endpoint.concat(SECURITY_CREDENTIALS_URI).concat(iamRole);
-        String response = retrieveMetadataFromURI(uri);
+    AwsCredentials credentialsEc2(String iamRole) {
+        String uri = ec2MetadataEndpoint.concat(SECURITY_CREDENTIALS_URI).concat(iamRole);
+        String response = createRestClient(uri, awsConfig).get();
         return parseCredentials(response);
     }
 
-    AwsCredentials credentialsFromEcs(String relativeUrl) {
-        String uri = ecsEndpoint + relativeUrl;
-        String response = retrieveMetadataFromURI(uri);
+    AwsCredentials credentialsEcs() {
+        String response = createRestClient(ecsIamRoleEndpoint, awsConfig).get();
         return parseCredentials(response);
     }
 
@@ -85,14 +88,34 @@ class AwsMetadataApi {
             .build();
     }
 
-    /**
-     * Performs the HTTP request to retrieve AWS Instance Metadata from the given URI.
-     */
-    private String retrieveMetadataFromURI(final String uri) {
-        return RetryUtils.retry(() -> RestClient.create(uri)
-                .withConnectTimeoutSeconds(awsConfig.getConnectionTimeoutSeconds())
-                .withReadTimeoutSeconds(awsConfig.getReadTimeoutSeconds())
-                .get()
-            , awsConfig.getConnectionRetries());
+    EcsMetadata metadataEcs() {
+        String response = createRestClient(ecsTaskMetadataEndpoint, awsConfig).get();
+        return parseEcsMetadata(response);
+    }
+
+    private EcsMetadata parseEcsMetadata(String response) {
+        JsonObject metadata = Json.parse(response).asObject();
+        JsonObject labels = metadata.get("Labels").asObject();
+        String taskArn = labels.get("com.amazonaws.ecs.task-arn").asString();
+        String clusterArn = labels.get("com.amazonaws.ecs.cluster").asString();
+        return new EcsMetadata(taskArn, clusterArn);
+    }
+
+    static class EcsMetadata {
+        private final String taskArn;
+        private final String clusterArn;
+
+        EcsMetadata(String taskArn, String clusterArn) {
+            this.taskArn = taskArn;
+            this.clusterArn = clusterArn;
+        }
+
+        String getTaskArn() {
+            return taskArn;
+        }
+
+        String getClusterArn() {
+            return clusterArn;
+        }
     }
 }

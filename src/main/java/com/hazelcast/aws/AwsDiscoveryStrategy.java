@@ -17,7 +17,6 @@ package com.hazelcast.aws;
 
 import com.hazelcast.cluster.Address;
 import com.hazelcast.config.InvalidConfigurationException;
-import com.hazelcast.internal.util.StringUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.spi.discovery.AbstractDiscoveryStrategy;
@@ -26,15 +25,17 @@ import com.hazelcast.spi.discovery.DiscoveryStrategy;
 import com.hazelcast.spi.discovery.SimpleDiscoveryNode;
 import com.hazelcast.spi.partitiongroup.PartitionGroupMetaData;
 
-import java.time.Clock;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import static com.hazelcast.aws.AwsProperties.ACCESS_KEY;
+import static com.hazelcast.aws.AwsProperties.CLUSTER;
 import static com.hazelcast.aws.AwsProperties.CONNECTION_RETRIES;
 import static com.hazelcast.aws.AwsProperties.CONNECTION_TIMEOUT_SECONDS;
+import static com.hazelcast.aws.AwsProperties.FAMILY;
 import static com.hazelcast.aws.AwsProperties.HOST_HEADER;
 import static com.hazelcast.aws.AwsProperties.IAM_ROLE;
 import static com.hazelcast.aws.AwsProperties.PORT;
@@ -42,6 +43,7 @@ import static com.hazelcast.aws.AwsProperties.READ_TIMEOUT_SECONDS;
 import static com.hazelcast.aws.AwsProperties.REGION;
 import static com.hazelcast.aws.AwsProperties.SECRET_KEY;
 import static com.hazelcast.aws.AwsProperties.SECURITY_GROUP_NAME;
+import static com.hazelcast.aws.AwsProperties.SERVICE_NAME;
 import static com.hazelcast.aws.AwsProperties.TAG_KEY;
 import static com.hazelcast.aws.AwsProperties.TAG_VALUE;
 
@@ -53,11 +55,11 @@ import static com.hazelcast.aws.AwsProperties.TAG_VALUE;
 public class AwsDiscoveryStrategy
     extends AbstractDiscoveryStrategy {
     private static final ILogger LOGGER = Logger.getLogger(AwsDiscoveryStrategy.class);
+
     private static final String DEFAULT_PORT_RANGE = "5701-5708";
     private static final Integer DEFAULT_CONNECTION_RETRIES = 3;
     private static final int DEFAULT_CONNECTION_TIMEOUT_SECONDS = 10;
     private static final int DEFAULT_READ_TIMEOUT_SECONDS = 10;
-    private static final String DEFAULT_HOST_HEADER = "ec2.amazonaws.com";
 
     private final AwsClient awsClient;
     private final PortRange portRange;
@@ -68,13 +70,9 @@ public class AwsDiscoveryStrategy
         super(LOGGER, properties);
 
         AwsConfig awsConfig = createAwsConfig();
-        logConfiguration(awsConfig);
+        LOGGER.info("Using AWS discovery plugin with configuration: " + awsConfig);
 
-        AwsMetadataApi awsMetadataApi = new AwsMetadataApi(awsConfig);
-        AwsDescribeInstancesApi awsDescribeInstancesApi = new AwsDescribeInstancesApi(awsConfig,
-            new AwsEc2RequestSigner(), Clock.systemUTC());
-
-        this.awsClient = new AwsClient(awsMetadataApi, awsDescribeInstancesApi, awsConfig, new Environment());
+        this.awsClient = AwsClientConfigurator.createAwsClient(awsConfig);
         this.portRange = awsConfig.getHzPort();
     }
 
@@ -93,7 +91,7 @@ public class AwsDiscoveryStrategy
                 .setAccessKey(getOrNull(ACCESS_KEY)).setSecretKey(getOrNull(SECRET_KEY))
                 .setRegion(getOrDefault(REGION.getDefinition(), null))
                 .setIamRole(getOrNull(IAM_ROLE))
-                .setHostHeader(getOrDefault(HOST_HEADER.getDefinition(), DEFAULT_HOST_HEADER))
+                .setHostHeader(getOrNull(HOST_HEADER.getDefinition()))
                 .setSecurityGroupName(getOrNull(SECURITY_GROUP_NAME)).setTagKey(getOrNull(TAG_KEY))
                 .setTagValue(getOrNull(TAG_VALUE))
                 .setConnectionTimeoutSeconds(getOrDefault(CONNECTION_TIMEOUT_SECONDS.getDefinition(),
@@ -101,8 +99,10 @@ public class AwsDiscoveryStrategy
                 .setConnectionRetries(getOrDefault(CONNECTION_RETRIES.getDefinition(), DEFAULT_CONNECTION_RETRIES))
                 .setReadTimeoutSeconds(getOrDefault(READ_TIMEOUT_SECONDS.getDefinition(), DEFAULT_READ_TIMEOUT_SECONDS))
                 .setHzPort(new PortRange(getPortRange()))
+                .setCluster(getOrNull(CLUSTER))
+                .setFamily(getOrNull(FAMILY))
+                .setServiceName(getOrNull(SERVICE_NAME))
                 .build();
-
         } catch (IllegalArgumentException e) {
             throw new InvalidConfigurationException("AWS configuration is not valid", e);
         }
@@ -122,28 +122,12 @@ public class AwsDiscoveryStrategy
         return portRange.toString();
     }
 
-    private void logConfiguration(AwsConfig config) {
-        if (StringUtil.isNullOrEmptyAfterTrim(config.getSecretKey()) || StringUtil
-            .isNullOrEmptyAfterTrim(config.getAccessKey())) {
-
-            if (!StringUtil.isNullOrEmptyAfterTrim(config.getIamRole())) {
-                LOGGER.info("Describe instances will be queried with iam-role, "
-                    + "please make sure given iam-role have ec2:AwsDescribeInstancesApi policy attached.");
-            } else {
-                LOGGER.info("Describe instances will be queried with iam-role assigned to EC2 instance, "
-                    + "please make sure given iam-role have ec2:AwsDescribeInstancesApi policy attached.");
-            }
-        } else {
-            if (!StringUtil.isNullOrEmptyAfterTrim(config.getIamRole())) {
-                LOGGER.info("No need to define iam-role, when access and secret keys are configured!");
-            }
-        }
-    }
-
     @Override
     public Map<String, String> discoverLocalMetadata() {
         if (memberMetadata.isEmpty()) {
-            memberMetadata.put(PartitionGroupMetaData.PARTITION_GROUP_ZONE, awsClient.getAvailabilityZone());
+            String availabilityZone = awsClient.getAvailabilityZone();
+            LOGGER.info(String.format("Availability zone found: '%s'", availabilityZone));
+            memberMetadata.put(PartitionGroupMetaData.PARTITION_GROUP_ZONE, availabilityZone);
         }
         return memberMetadata;
     }
@@ -151,32 +135,30 @@ public class AwsDiscoveryStrategy
     @Override
     public Iterable<DiscoveryNode> discoverNodes() {
         try {
-            final Map<String, String> privatePublicIpAddressPairs = awsClient.getAddresses();
-            if (privatePublicIpAddressPairs.isEmpty()) {
-                LOGGER.warning("No IP addresses found!");
-                return Collections.emptyList();
-            }
+            Map<String, String> addresses = awsClient.getAddresses();
+            logResult(addresses);
 
-            if (LOGGER.isFinestEnabled()) {
-                final StringBuilder sb = new StringBuilder("Found the following IP addresses:\n");
-                for (Map.Entry<String, String> entry : privatePublicIpAddressPairs.entrySet()) {
-                    sb.append("    ").append(entry.getKey()).append(" : ").append(entry.getValue()).append("\n");
-                }
-                LOGGER.finest(sb.toString());
-            }
-
-            final ArrayList<DiscoveryNode> nodes = new ArrayList<>(privatePublicIpAddressPairs.size());
-            for (Map.Entry<String, String> entry : privatePublicIpAddressPairs.entrySet()) {
+            List<DiscoveryNode> result = new ArrayList<>();
+            for (Map.Entry<String, String> entry : addresses.entrySet()) {
                 for (int port = portRange.getFromPort(); port <= portRange.getToPort(); port++) {
-                    nodes.add(new SimpleDiscoveryNode(new Address(entry.getKey(), port), new Address(entry.getValue(), port)));
+                    Address privateAddress = new Address(entry.getKey(), port);
+                    Address publicAddress = new Address(entry.getValue(), port);
+                    result.add(new SimpleDiscoveryNode(privateAddress, publicAddress));
                 }
             }
-
-            return nodes;
+            return result;
         } catch (Exception e) {
             LOGGER.warning("Cannot discover nodes, returning empty list", e);
             return Collections.emptyList();
         }
+    }
+
+    private static void logResult(Map<String, String> addresses) {
+        if (addresses.isEmpty()) {
+            LOGGER.warning("No IP addresses found!");
+        }
+
+        LOGGER.fine(String.format("Found the following (private => public) addresses: %s", addresses));
     }
 
     private String getOrNull(AwsProperties awsProperties) {

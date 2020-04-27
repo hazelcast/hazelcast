@@ -17,12 +17,9 @@ package com.hazelcast.aws;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
-import org.xml.sax.SAXException;
 
 import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
 import java.io.ByteArrayInputStream;
-import java.io.IOException;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
@@ -41,13 +38,16 @@ final class XmlNode {
         this.node = node;
     }
 
-    static XmlNode create(String xmlString) throws ParserConfigurationException, IOException, SAXException {
-        DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
-        dbf.setNamespaceAware(true);
-        dbf.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
-        Document doc = dbf.newDocumentBuilder().parse(new ByteArrayInputStream(xmlString.getBytes(UTF_8)));
-
-        return new XmlNode(doc.getDocumentElement());
+    static XmlNode create(String xmlString) {
+        try {
+            DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+            dbf.setNamespaceAware(true);
+            dbf.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+            Document doc = dbf.newDocumentBuilder().parse(new ByteArrayInputStream(xmlString.getBytes(UTF_8)));
+            return new XmlNode(doc.getDocumentElement());
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     Node getNode() {

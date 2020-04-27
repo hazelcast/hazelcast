@@ -24,7 +24,6 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -54,6 +53,62 @@ public class AwsDiscoveryStrategyTest {
         Map<String, Comparable> properties = new HashMap<>();
         properties.put("hz-port", String.format("%s-%s", PORT1, PORT2));
         awsDiscoveryStrategy = new AwsDiscoveryStrategy(properties, awsClient);
+    }
+
+    @Test(expected = InvalidConfigurationException.class)
+    public void newInvalidPropertiesBothEc2AndEcs() {
+        // given
+        Map<String, Comparable> properties = new HashMap<>();
+        properties.put("iam-role", "some-role");
+        properties.put("cluster", "some-cluster");
+
+        // when
+        new AwsDiscoveryStrategy(properties);
+
+        // then
+        // throw exception
+    }
+
+    @Test(expected = InvalidConfigurationException.class)
+    public void newInvalidPropertiesBothFamilyAndServiceNameDefined() {
+        // given
+        Map<String, Comparable> properties = new HashMap<>();
+        properties.put("family", "family-name");
+        properties.put("service-name", "service-name");
+
+        // when
+        new AwsDiscoveryStrategy(properties);
+
+        // then
+        // throw exception
+    }
+
+    @Test(expected = InvalidConfigurationException.class)
+    public void newInvalidPropertiesAccessKeyWithoutSecretKey() {
+        // given
+        Map<String, Comparable> properties = new HashMap<>();
+        properties.put("access-key", "access-key");
+
+        // when
+        new AwsDiscoveryStrategy(properties);
+
+        // then
+        // throw exception
+    }
+
+    @Test(expected = InvalidConfigurationException.class)
+    public void newInvalidPropertiesIamRoleWithAccessKey() {
+        // given
+        Map<String, Comparable> properties = new HashMap<>();
+        properties.put("iam-role", "iam-role");
+        properties.put("access-key", "access-key");
+        properties.put("secret-key", "secret-key");
+
+        // when
+        new AwsDiscoveryStrategy(properties);
+
+        // then
+        // throw exception
     }
 
     @Test(expected = InvalidConfigurationException.class)

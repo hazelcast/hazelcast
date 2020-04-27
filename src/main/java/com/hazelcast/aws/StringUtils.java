@@ -20,25 +20,13 @@ final class StringUtils {
     private StringUtils() {
     }
 
-    /**
-     * Checks if a string is empty or not after trim operation
-     *
-     * @param s the string to check.
-     * @return true if the string is null or empty, false otherwise
-     */
-    private static boolean isEmpty(String s) {
+    static boolean isEmpty(String s) {
         if (s == null) {
             return true;
         }
         return s.trim().isEmpty();
     }
 
-    /**
-     * Checks if a string is empty or not after trim operation
-     *
-     * @param s the string to check.
-     * @return true if the string is not null or not empty, false otherwise
-     */
     static boolean isNotEmpty(String s) {
         return !isEmpty(s);
     }

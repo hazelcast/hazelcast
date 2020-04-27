@@ -27,6 +27,8 @@ import static com.github.tomakehurst.wiremock.client.WireMock.post;
 import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
+import static com.github.tomakehurst.wiremock.stubbing.Scenario.STARTED;
+import static java.util.Collections.singletonMap;
 import static org.junit.Assert.assertEquals;
 
 public class RestClientTest {
@@ -48,7 +50,7 @@ public class RestClientTest {
     public void getSuccess() {
         // given
         stubFor(get(urlEqualTo(API_ENDPOINT))
-                .willReturn(aResponse().withStatus(200).withBody(BODY_RESPONSE)));
+            .willReturn(aResponse().withStatus(200).withBody(BODY_RESPONSE)));
 
         // when
         String result = RestClient.create(String.format("%s%s", address, API_ENDPOINT)).get();
@@ -58,18 +60,42 @@ public class RestClientTest {
     }
 
     @Test
-    public void getWithHeaderSuccess() {
+    public void getWithHeadersSuccess() {
         // given
         String headerKey = "Metadata-Flavor";
         String headerValue = "Google";
         stubFor(get(urlEqualTo(API_ENDPOINT))
-                .withHeader(headerKey, equalTo(headerValue))
-                .willReturn(aResponse().withStatus(200).withBody(BODY_RESPONSE)));
+            .withHeader(headerKey, equalTo(headerValue))
+            .willReturn(aResponse().withStatus(200).withBody(BODY_RESPONSE)));
 
         // when
         String result = RestClient.create(String.format("%s%s", address, API_ENDPOINT))
-                                  .withHeader(headerKey, headerValue)
-                                  .get();
+            .withHeaders(singletonMap(headerKey, headerValue))
+            .get();
+
+        // then
+        assertEquals(BODY_RESPONSE, result);
+    }
+
+    @Test
+    public void getWithRetries() {
+        // given
+        stubFor(get(urlEqualTo(API_ENDPOINT))
+            .inScenario("Retry Scenario")
+            .whenScenarioStateIs(STARTED)
+            .willReturn(aResponse().withStatus(500).withBody("Internal error"))
+            .willSetStateTo("Second Try"));
+        stubFor(get(urlEqualTo(API_ENDPOINT))
+            .inScenario("Retry Scenario")
+            .whenScenarioStateIs("Second Try")
+            .willReturn(aResponse().withStatus(200).withBody(BODY_RESPONSE)));
+
+        // when
+        String result = RestClient.create(String.format("%s%s", address, API_ENDPOINT))
+            .withReadTimeoutSeconds(1200)
+            .withConnectTimeoutSeconds(1200)
+            .withRetries(1)
+            .get();
 
         // then
         assertEquals(BODY_RESPONSE, result);
@@ -79,7 +105,7 @@ public class RestClientTest {
     public void getFailure() {
         // given
         stubFor(get(urlEqualTo(API_ENDPOINT))
-                .willReturn(aResponse().withStatus(500).withBody("Internal error")));
+            .willReturn(aResponse().withStatus(500).withBody("Internal error")));
 
         // when
         RestClient.create(String.format("%s%s", address, API_ENDPOINT)).get();
@@ -92,13 +118,13 @@ public class RestClientTest {
     public void postSuccess() {
         // given
         stubFor(post(urlEqualTo(API_ENDPOINT))
-                .withRequestBody(equalTo(BODY_REQUEST))
-                .willReturn(aResponse().withStatus(200).withBody(BODY_RESPONSE)));
+            .withRequestBody(equalTo(BODY_REQUEST))
+            .willReturn(aResponse().withStatus(200).withBody(BODY_RESPONSE)));
 
         // when
         String result = RestClient.create(String.format("%s%s", address, API_ENDPOINT))
-                                  .withBody(BODY_REQUEST)
-                                  .post();
+            .withBody(BODY_REQUEST)
+            .post();
 
         // then
         assertEquals(BODY_RESPONSE, result);

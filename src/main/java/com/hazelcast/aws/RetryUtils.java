@@ -55,8 +55,8 @@ final class RetryUtils {
                     throw ExceptionUtil.rethrow(e);
                 }
                 long waitIntervalMs = backoffIntervalForRetry(retryCount);
-                LOGGER.warning(String.format("Couldn't connect to the AWS service, [%s] retrying in %s seconds...", retryCount,
-                        waitIntervalMs / MS_IN_SECOND));
+                LOGGER.fine(String.format("Couldn't connect to the AWS service, [%s] retrying in %s seconds...",
+                    retryCount, waitIntervalMs / MS_IN_SECOND));
                 sleep(waitIntervalMs);
             }
         }

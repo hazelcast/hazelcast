@@ -15,7 +15,6 @@
 
 package com.hazelcast.aws;
 
-import com.hazelcast.config.TcpIpConfig;
 import com.hazelcast.config.properties.PropertyDefinition;
 import com.hazelcast.config.properties.PropertyTypeConverter;
 import com.hazelcast.config.properties.SimplePropertyDefinition;
@@ -40,8 +39,9 @@ enum AwsProperties {
     SECRET_KEY("secret-key", STRING, true),
 
     /**
-     * The region where your members are running. Default value is us-east-1. You need to specify this if the region is other
-     * than the default one.
+     * The region where your members are running.
+     * <p>
+     * If not defined, the current instance region is used.
      */
     REGION("region", STRING, true),
 
@@ -53,7 +53,6 @@ enum AwsProperties {
 
     /**
      * The URL that is the entry point for a web service (the address where the EC2 API can be found).
-     * Default value is ec2.amazonaws.com.
      */
     HOST_HEADER("host-header", STRING, true),
 
@@ -74,8 +73,9 @@ enum AwsProperties {
     TAG_VALUE("tag-value", STRING, true),
 
     /**
-     * Sets the connect timeout in seconds. See {@link TcpIpConfig#setConnectionTimeoutSeconds(int)} for more information.
-     * Its default value is 5.
+     * Sets the connect timeout in seconds.
+     * <p>
+     * Its default value is 10.
      */
     CONNECTION_TIMEOUT_SECONDS("connection-timeout-seconds", INTEGER, true),
 
@@ -92,14 +92,41 @@ enum AwsProperties {
     READ_TIMEOUT_SECONDS("read-timeout-seconds", INTEGER, true),
 
     /**
-     * The discovery mechanism will discover only IP addresses. You can define the port or the port range on which Hazelcast is
+     * The discovery mechanism will discover only IP addresses. You can define the port or the port range on which
+     * Hazelcast is
      * expected to be running.
      * <p>
      * Sample values: "5701", "5701-5710".
      * <p>
      * The default value is "5701-5708".
      */
-    PORT("hz-port", STRING, true);
+    PORT("hz-port", STRING, true),
+
+    /**
+     * ECS Cluster name or Cluster ARN.
+     * <p>
+     * If not defined, the current ECS Task cluster is used.
+     */
+    CLUSTER("cluster", STRING, true),
+
+    /**
+     * ECS Task Family name that is used to narrow the Hazelcast members to be within the same Task Definition
+     * family.
+     * <p>
+     * It is optional.
+     * <p>
+     * Note that this option is mutually exclusive with "service-name".
+     */
+    FAMILY("family", STRING, true),
+
+    /**
+     * ECS Task Service Name that is used to narrow the Hazelcast members to be within the same ECS Service.
+     * <p>
+     * It is optional.
+     * <p>
+     * Note that this option is mutually exclusive with "family".
+     */
+    SERVICE_NAME("service-name", STRING, true);
 
     private final PropertyDefinition propertyDefinition;
 

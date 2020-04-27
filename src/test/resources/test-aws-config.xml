@@ -15,7 +15,7 @@
   -->
 
 <hazelcast xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-           xsi:schemaLocation="http://www.hazelcast.com/schema/config hazelcast-config-3.10.xsd"
+           xsi:schemaLocation="http://www.hazelcast.com/schema/config hazelcast-config-4.0.xsd"
            xmlns="http://www.hazelcast.com/schema/config">
 
     <properties>
@@ -25,7 +25,7 @@
     <network>
         <join>
             <multicast enabled="false"/>
-            <tcp-ip enabled="false"/>
+            <tcp-ip/>
             <aws enabled="false"/>
             <discovery-strategies>
                 <discovery-strategy enabled="true" class="com.hazelcast.aws.AwsDiscoveryStrategy">
@@ -33,7 +33,6 @@
                         <property name="access-key">test-access-key</property>
                         <property name="secret-key">test-secret-key</property>
                         <property name="region">us-east-1</property>
-                        <property name="iam-role">test-iam-role</property>
                         <property name="host-header">ec2.test-host-header</property>
                         <property name="security-group-name">test-security-group-name</property>
                         <property name="tag-key">test-tag-key</property>
