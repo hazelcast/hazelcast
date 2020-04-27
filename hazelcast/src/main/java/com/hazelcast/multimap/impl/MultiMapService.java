@@ -69,7 +69,6 @@ import com.hazelcast.transaction.impl.Transaction;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.EventListener;
 import java.util.HashMap;
@@ -190,7 +189,6 @@ public class MultiMapService implements ManagedService, RemoteService, Fragmente
     @Override
     public void shutdown(boolean terminate) {
         reset();
-        Arrays.fill(partitionContainers, null);
     }
 
     public MultiMapContainer getOrCreateCollectionContainer(int partitionId, String name) {
