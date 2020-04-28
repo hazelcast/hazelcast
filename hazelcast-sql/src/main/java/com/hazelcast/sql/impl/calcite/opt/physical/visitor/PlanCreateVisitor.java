@@ -20,8 +20,8 @@ import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.QueryMetadata;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
+import com.hazelcast.sql.impl.calcite.opt.AbstractMapScanRel;
 import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlOperatorTable;
-import com.hazelcast.sql.impl.calcite.opt.AbstractScanRel;
 import com.hazelcast.sql.impl.calcite.opt.ExplainCreator;
 import com.hazelcast.sql.impl.calcite.opt.physical.FetchPhysicalRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.FilterPhysicalRel;
@@ -728,7 +728,7 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
         return expression.accept(converter);
     }
 
-    private static PlanNodeSchema getScanSchemaBeforeProject(AbstractScanRel rel) {
+    private static PlanNodeSchema getScanSchemaBeforeProject(AbstractMapScanRel rel) {
         AbstractMapTable table = rel.getMap();
 
         List<QueryDataType> types = new ArrayList<>();
@@ -740,7 +740,7 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
         return new PlanNodeSchema(types);
     }
 
-    private static List<String> getScanFieldPaths(AbstractScanRel rel) {
+    private static List<String> getScanFieldPaths(AbstractMapScanRel rel) {
         AbstractMapTable table = rel.getMap();
 
         List<String> paths = new ArrayList<>();
