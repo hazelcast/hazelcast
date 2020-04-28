@@ -31,6 +31,7 @@ import com.hazelcast.internal.networking.Networking;
 import com.hazelcast.internal.networking.OutboundHandler;
 import com.hazelcast.internal.networking.nio.iobalancer.IOBalancer;
 import com.hazelcast.internal.util.ConcurrencyDetection;
+import com.hazelcast.internal.util.ThreadAffinity;
 import com.hazelcast.internal.util.concurrent.BackoffIdleStrategy;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
@@ -115,14 +116,15 @@ public final class NioNetworking implements Networking, DynamicMetricsProvider {
     private final BackoffIdleStrategy idleStrategy;
     private final boolean selectorWorkaroundTest;
     private final boolean selectionKeyWakeupEnabled;
+    private final ThreadAffinity outputThreadAffinity;
     private volatile ExecutorService closeListenerExecutor;
     private final ConcurrencyDetection concurrencyDetection;
     private final boolean writeThroughEnabled;
+    private final ThreadAffinity inputThreadAffinity;
     private volatile IOBalancer ioBalancer;
     private volatile NioThread[] inputThreads;
     private volatile NioThread[] outputThreads;
     private volatile ScheduledFuture publishFuture;
-
     // Currently this is a coarse grained aggregation of the bytes/send received.
     // In the future you probably want to split this up in member and client and potentially
     // wan specific.
@@ -143,6 +145,8 @@ public final class NioNetworking implements Networking, DynamicMetricsProvider {
         this.outputThreadCount = ctx.outputThreadCount;
         this.logger = loggingService.getLogger(NioNetworking.class);
         this.errorHandler = ctx.errorHandler;
+        this.inputThreadAffinity = ctx.inputThreadAffinity;
+        this.outputThreadAffinity = ctx.outputThreadAffinity;
         this.balancerIntervalSeconds = ctx.balancerIntervalSeconds;
         this.selectorMode = ctx.selectorMode;
         this.selectorWorkaroundTest = ctx.selectorWorkaroundTest;
@@ -216,6 +220,7 @@ public final class NioNetworking implements Networking, DynamicMetricsProvider {
                     idleStrategy);
             thread.id = i;
             thread.setSelectorWorkaroundTest(selectorWorkaroundTest);
+            thread.setThreadAffinity(inputThreadAffinity);
             inThreads[i] = thread;
             thread.start();
         }
@@ -231,6 +236,7 @@ public final class NioNetworking implements Networking, DynamicMetricsProvider {
                     idleStrategy);
             thread.id = i;
             thread.setSelectorWorkaroundTest(selectorWorkaroundTest);
+            thread.setThreadAffinity(outputThreadAffinity);
             outThreads[i] = thread;
             thread.start();
         }
@@ -476,6 +482,9 @@ public final class NioNetworking implements Networking, DynamicMetricsProvider {
         private int inputThreadCount = 1;
         private int outputThreadCount = 1;
         private int balancerIntervalSeconds;
+        private ThreadAffinity inputThreadAffinity = ThreadAffinity.DISABLED;
+        private ThreadAffinity outputThreadAffinity = ThreadAffinity.DISABLED;
+
         // The selector mode determines how IO threads will block (or not) on the Selector:
         //  select:         this is the default mode, uses Selector.select(long timeout)
         //  selectnow:      use Selector.selectNow()
@@ -547,12 +556,36 @@ public final class NioNetworking implements Networking, DynamicMetricsProvider {
         }
 
         public Context inputThreadCount(int inputThreadCount) {
+            if (inputThreadAffinity.isEnabled()) {
+                return this;
+            }
             this.inputThreadCount = inputThreadCount;
             return this;
         }
 
         public Context outputThreadCount(int outputThreadCount) {
+            if (outputThreadAffinity.isEnabled()) {
+                return this;
+            }
             this.outputThreadCount = outputThreadCount;
+            return this;
+        }
+
+        public Context inputThreadAffinity(ThreadAffinity inputThreadAffinity) {
+            this.inputThreadAffinity = inputThreadAffinity;
+
+            if (inputThreadAffinity.isEnabled()) {
+                inputThreadCount = inputThreadAffinity.getThreadCount();
+            }
+            return this;
+        }
+
+        public Context outputThreadAffinity(ThreadAffinity outputThreadAffinity) {
+            this.outputThreadAffinity = outputThreadAffinity;
+
+            if (outputThreadAffinity.isEnabled()) {
+                outputThreadCount = outputThreadAffinity.getThreadCount();
+            }
             return this;
         }
 
