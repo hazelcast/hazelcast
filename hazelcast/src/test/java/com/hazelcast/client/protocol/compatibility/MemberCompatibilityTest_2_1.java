@@ -7438,6 +7438,56 @@ public class MemberCompatibilityTest_2_1 {
         compareClientMessages(fromFile, encoded);
     }
 
+    @Test
+    public void test_SqlExecuteCodec_decodeRequest() {
+        int fileClientMessageIndex = 825;
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        SqlExecuteCodec.RequestParameters parameters = SqlExecuteCodec.decodeRequest(fromFile);
+        assertTrue(isEqual(aString, parameters.query));
+        assertTrue(isEqual(aListOfData, parameters.parameters));
+    }
+
+    @Test
+    public void test_SqlExecuteCodec_encodeResponse() {
+        int fileClientMessageIndex = 826;
+        ClientMessage encoded = SqlExecuteCodec.encodeResponse(aData, anInt);
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        compareClientMessages(fromFile, encoded);
+    }
+
+    @Test
+    public void test_SqlFetchCodec_decodeRequest() {
+        int fileClientMessageIndex = 827;
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        SqlFetchCodec.RequestParameters parameters = SqlFetchCodec.decodeRequest(fromFile);
+        assertTrue(isEqual(aData, parameters.queryId));
+        assertTrue(isEqual(anInt, parameters.pageSize));
+    }
+
+    @Test
+    public void test_SqlFetchCodec_encodeResponse() {
+        int fileClientMessageIndex = 828;
+        ClientMessage encoded = SqlFetchCodec.encodeResponse(aListOfData, aBoolean);
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        compareClientMessages(fromFile, encoded);
+    }
+
+    @Test
+    public void test_SqlCloseCodec_decodeRequest() {
+        int fileClientMessageIndex = 829;
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        SqlCloseCodec.RequestParameters parameters = SqlCloseCodec.decodeRequest(fromFile);
+        assertTrue(isEqual(aData, parameters.queryId));
+    }
+
+    @Test
+    public void test_SqlCloseCodec_encodeResponse() {
+        int fileClientMessageIndex = 830;
+        ClientMessage encoded = SqlCloseCodec.encodeResponse();
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        compareClientMessages(fromFile, encoded);
+    }
+
     private void compareClientMessages(ClientMessage binaryMessage, ClientMessage encodedMessage) {
         ClientMessage.Frame binaryFrame, encodedFrame;
 
