@@ -38,6 +38,8 @@ import org.junit.Ignore;
 import org.junit.Test;
 
 import java.math.BigDecimal;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
@@ -46,13 +48,14 @@ import java.util.Map;
 import static junit.framework.TestCase.fail;
 
 /**
- * Tests of TPC-H benchmark queries.
+ * Tests for TPC-H benchmark queries.
+ * <p>
+ * In order to run the test you need to generate 1Gb of TPC-H (scale factor 1) and put it into the
  */
-@Ignore
 @SuppressWarnings({"checkstyle:OperatorWrap", "unused"})
 public class TpcHTest extends SqlTestSupport {
-    // TODO: Externalize data location.
-    private static final String DATA_DIR = "/home/devozerov/code/tpch/2.18.0_rc2/dbgen";
+
+    private static final String DATA_DIR = "/tmp/hazelcast/tpch";
     private static final int DOWNSCALE = 10;
 
     private static TestHazelcastInstanceFactory factory;
@@ -60,6 +63,10 @@ public class TpcHTest extends SqlTestSupport {
 
     @BeforeClass
     public static void beforeClass() {
+        if (!Files.exists(Paths.get(DATA_DIR))) {
+            throw new RuntimeException("Generated data is not found in " + DATA_DIR);
+        }
+
         factory = new TestHazelcastInstanceFactory(2);
 
         member = factory.newHazelcastInstance(prepareConfig());
