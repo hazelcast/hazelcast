@@ -1,5 +1,36 @@
 This document lists the new features, enhancements, fixed issues and, removed or deprecated features for Hazelcast IMDG 3.12.x release. The numbers in the square brackets refer to the issues in Hazelcast's GitHub repositories.
 
+==== 3.12.7 ====
+
+1. Enhancements
+
+* Added a public API to load configuration files: the new `load()` method in `Config`,
+`ClientConfig`, and `ClientFailoverConfig` loads the configurations with
+given locations. If not found, the default configuration is returned. [#16864]
+* Updated the version of Hazelcast Kubernetes discovery plugin to 1.5.3. [#16589]
+* Added the support for automatically detecting the classloader of a type for
+the user code deployment feature. [#16421]
+
+2. Fixes
+
+* Fixed an issue where Map, Cache, MultiMap data structures
+were returning negative values (`size()`) when the size is more than
+`Integer.MAX_VALUE`. [#16897]
+* Fixed an issue where explicitly registering portable class definitions
+was failing with multiple portable factories and overlapping class IDs. [#16832]
+* Fixed an issue where Reliable Topic was not working properly due to
+missing permissions. [#16773]
+* Fixed an issue where the wait key of a blocking call within a Raft
+invocation was still being reported as a live operation, when the key times out. [#16616]
+* Fixed an issue where the upload of classes using the client user code
+deployment were not successful when they are retrieved not in their created order. [#16610]
+* Fixed an issue where `InPredicate` was not invoking value comparison when the
+read attribute is null. [#16578]
+* Fixed an invalidation issue when using a transactional map from a cache
+with Near Cache: the cache invalidation event occurs when the
+`transactionalMap.put` method is called. As a result, the entry was getting
+invalidated before the change is committed to the map. [#16577]
+
 ==== 3.12.6 ====
 
 1. New Features
