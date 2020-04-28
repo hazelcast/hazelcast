@@ -18,8 +18,8 @@ package com.hazelcast.sql.optimizer;
 
 import com.hazelcast.config.IndexType;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastSchema;
-import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastTableIndex;
+import com.hazelcast.sql.impl.calcite.schema.PartitionedMapTable;
 import com.hazelcast.sql.impl.calcite.schema.statistic.TableStatistic;
 import com.hazelcast.sql.optimizer.support.PhysicalOptimizerTestSupport;
 import org.apache.calcite.rel.RelNode;
@@ -40,10 +40,9 @@ public class PhysicalOptimizerIndexScanTest extends PhysicalOptimizerTestSupport
     protected HazelcastSchema createDefaultSchema() {
         Map<String, Table> tableMap = new HashMap<>();
 
-        HazelcastTable pTable = new HazelcastTable(
+        PartitionedMapTable pTable = new PartitionedMapTable(
             null,
             "p",
-            true,
             null,
             Collections.singletonList(new HazelcastTableIndex("idx1", IndexType.SORTED, list("f1"))),
             null,

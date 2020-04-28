@@ -19,7 +19,6 @@ package com.hazelcast.sql.impl.calcite.opt.physical;
 import com.hazelcast.sql.impl.calcite.opt.cost.CostUtils;
 import com.hazelcast.sql.impl.calcite.opt.AbstractScanRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.visitor.PhysicalRelVisitor;
-import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastTableIndex;
 import com.hazelcast.sql.impl.exec.scan.index.IndexFilter;
 import org.apache.calcite.plan.RelOptCluster;
@@ -113,7 +112,7 @@ public class MapIndexScanPhysicalRel extends AbstractScanRel implements Physical
         // 1. Get cost of the scan itself. For replicated map cost is multiplied by the number of nodes.
         RelOptCost scanCost = super.computeSelfCost(planner, mq);
 
-        if (table.unwrap(HazelcastTable.class).isReplicated()) {
+        if (isReplicated()) {
             scanCost = scanCost.multiplyBy(getHazelcastCluster().getMemberCount());
         }
 

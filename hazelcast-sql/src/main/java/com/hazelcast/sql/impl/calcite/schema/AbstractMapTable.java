@@ -26,7 +26,6 @@ import org.apache.calcite.rel.type.RelDataTypeFieldImpl;
 import org.apache.calcite.rel.type.RelRecordType;
 import org.apache.calcite.rel.type.StructKind;
 import org.apache.calcite.schema.Statistic;
-import org.apache.calcite.schema.impl.AbstractTable;
 import org.apache.calcite.sql.type.SqlTypeName;
 
 import java.util.ArrayList;
@@ -36,9 +35,9 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Hazelcast table which provides information about its fields.
+ * Base class for Hazelcast map-based tables.
  */
-public final class HazelcastTable extends AbstractTable {
+public abstract class AbstractMapTable extends HazelcastAbstractTable {
 
     private static final Map<QueryDataTypeFamily, SqlTypeName> QUERY_TO_SQL_TYPE = new HashMap<>();
 
@@ -72,8 +71,6 @@ public final class HazelcastTable extends AbstractTable {
 
     private final String schemaName;
     private final String name;
-    private final boolean partitioned;
-    private final String distributionField;
     private final List<HazelcastTableIndex> indexes;
     private final Statistic statistic;
     private final QueryTargetDescriptor keyDescriptor;
@@ -83,11 +80,9 @@ public final class HazelcastTable extends AbstractTable {
 
     private RelDataType rowType;
 
-    public HazelcastTable(
+    protected AbstractMapTable(
         String schemaName,
         String name,
-        boolean partitioned,
-        String distributionField,
         List<HazelcastTableIndex> indexes,
         QueryTargetDescriptor keyDescriptor,
         QueryTargetDescriptor valueDescriptor,
@@ -97,14 +92,28 @@ public final class HazelcastTable extends AbstractTable {
     ) {
         this.schemaName = schemaName;
         this.name = name;
-        this.partitioned = partitioned;
-        this.distributionField = distributionField;
         this.keyDescriptor = keyDescriptor;
         this.valueDescriptor = valueDescriptor;
         this.fieldTypes = fieldTypes != null ? fieldTypes : Collections.emptyMap();
         this.fieldPaths = fieldPaths != null ? fieldPaths : Collections.emptyMap();
         this.indexes = indexes != null ? indexes : Collections.emptyList();
         this.statistic = statistic;
+    }
+
+    @Override
+    public String getSchemaName() {
+        return schemaName;
+    }
+
+    @Override
+    public String getName() {
+        return name;
+    }
+
+    @Override
+    public boolean isTopLevel() {
+        // Hazelcast tables are exposed at the top level schema.
+        return true;
     }
 
     public QueryDataType getFieldType(String fieldName) {
@@ -118,26 +127,6 @@ public final class HazelcastTable extends AbstractTable {
         String path = fieldPaths.get(fieldName);
 
         return path != null ? path : fieldName;
-    }
-
-    public String getSchemaName() {
-        return schemaName;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public boolean isPartitioned() {
-        return partitioned;
-    }
-
-    public boolean isReplicated() {
-        return !isPartitioned();
-    }
-
-    public String getDistributionField() {
-        return distributionField;
     }
 
     public List<HazelcastTableIndex> getIndexes() {
@@ -187,8 +176,6 @@ public final class HazelcastTable extends AbstractTable {
 
     @Override
     public String toString() {
-        return getClass().getSimpleName() + "{name=" + name + ", partitioned=" + partitioned
-            + ", distributionField=" + distributionField + ", indexes=" + indexes + '}';
+        return getClass().getSimpleName() + "{schemaName=" + schemaName + ", name=" + name + '}';
     }
-
 }

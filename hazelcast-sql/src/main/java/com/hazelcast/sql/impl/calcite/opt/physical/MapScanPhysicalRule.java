@@ -23,8 +23,8 @@ import com.hazelcast.sql.impl.calcite.opt.distribution.DistributionField;
 import com.hazelcast.sql.impl.calcite.opt.distribution.DistributionTrait;
 import com.hazelcast.sql.impl.calcite.opt.OptUtils;
 import com.hazelcast.sql.impl.calcite.opt.logical.MapScanLogicalRel;
-import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastTableIndex;
+import com.hazelcast.sql.impl.calcite.schema.PartitionedMapTable;
 import com.hazelcast.sql.impl.exec.scan.index.IndexFilter;
 import com.hazelcast.sql.impl.exec.scan.index.IndexFilterType;
 import com.hazelcast.sql.impl.extract.QueryPath;
@@ -81,7 +81,7 @@ public final class MapScanPhysicalRule extends AbstractPhysicalRule {
 
             call.transformTo(newScan);
         } else {
-            HazelcastTable table = scan.getTableUnwrapped();
+            PartitionedMapTable table = scan.getTable().unwrap(PartitionedMapTable.class);
 
             DistributionTrait distribution = getDistributionTrait(table, scan.getProjects());
 
@@ -478,12 +478,12 @@ public final class MapScanPhysicalRule extends AbstractPhysicalRule {
     /**
      * Get distribution trait for the given table.
      *
-     * @param hazelcastTable Table.
+     * @param table Table.
      * @param projects Projects.
      * @return Distribution trait.
      */
-    private static DistributionTrait getDistributionTrait(HazelcastTable hazelcastTable, List<Integer> projects) {
-        List<DistributionField> distributionFields = getDistributionFields(hazelcastTable);
+    private static DistributionTrait getDistributionTrait(PartitionedMapTable table, List<Integer> projects) {
+        List<DistributionField> distributionFields = getDistributionFields(table);
 
         if (distributionFields.isEmpty()) {
             return DistributionTrait.PARTITIONED_UNKNOWN_DIST;
@@ -510,20 +510,16 @@ public final class MapScanPhysicalRule extends AbstractPhysicalRule {
     /**
      * Get distribution field of the given table.
      *
-     * @param hazelcastTable Table.
+     * @param table Table.
      * @return Distribution field wrapped into a list or an empty list if no distribution field could be determined.
      */
-    private static List<DistributionField> getDistributionFields(HazelcastTable hazelcastTable) {
-        if (hazelcastTable.isReplicated()) {
-            return Collections.emptyList();
-        }
-
-        String distributionFieldName = hazelcastTable.getDistributionField();
+    private static List<DistributionField> getDistributionFields(PartitionedMapTable table) {
+        String distributionFieldName = table.getDistributionField();
 
         int index = 0;
 
-        for (RelDataTypeField field : hazelcastTable.getFieldList()) {
-            String path = hazelcastTable.getFieldPath(field.getName());
+        for (RelDataTypeField field : table.getFieldList()) {
+            String path = table.getFieldPath(field.getName());
 
             if (path.equals(QueryPath.KEY)) {
                 // If there is no distribution field, use the whole key.

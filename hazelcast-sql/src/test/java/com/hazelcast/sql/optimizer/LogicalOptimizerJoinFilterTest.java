@@ -19,7 +19,7 @@ package com.hazelcast.sql.optimizer;
 import com.hazelcast.sql.impl.calcite.opt.logical.JoinLogicalRel;
 import com.hazelcast.sql.impl.calcite.opt.logical.ProjectLogicalRel;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastSchema;
-import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
+import com.hazelcast.sql.impl.calcite.schema.PartitionedMapTable;
 import com.hazelcast.sql.impl.calcite.schema.statistic.TableStatistic;
 import com.hazelcast.sql.impl.expression.predicate.ComparisonMode;
 import com.hazelcast.sql.optimizer.support.LogicalOptimizerTestSupport;
@@ -48,9 +48,9 @@ public class LogicalOptimizerJoinFilterTest extends LogicalOptimizerTestSupport 
     @Override
     protected HazelcastSchema createDefaultSchema() {
         Map<String, Table> tableMap = new HashMap<>();
-        tableMap.put("r", new HazelcastTable(null, "r", true, null, null, null, null,
+        tableMap.put("r", new PartitionedMapTable(null, "r", null, null, null, null,
                 fieldTypes("r_f1", INT, "r_f2", INT, "r_f3", INT), null, new TableStatistic(100)));
-        tableMap.put("s", new HazelcastTable(null, "s", true, null, null, null, null,
+        tableMap.put("s", new PartitionedMapTable(null, "s", null, null, null, null,
                 fieldTypes("s_f1", INT, "s_f2", INT, "s_f3", INT), null, new TableStatistic(100)));
 
         return new HazelcastSchema(tableMap);

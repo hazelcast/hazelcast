@@ -18,7 +18,6 @@ package com.hazelcast.sql.impl.calcite.opt.logical;
 
 import com.hazelcast.sql.impl.calcite.opt.cost.CostUtils;
 import com.hazelcast.sql.impl.calcite.opt.AbstractMapScanRel;
-import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelOptCost;
 import org.apache.calcite.plan.RelOptPlanner;
@@ -54,7 +53,7 @@ public class MapScanLogicalRel extends AbstractMapScanRel implements LogicalRel 
         // 1. Get cost of the scan itself. For replicated map cost is multiplied by the number of nodes.
         RelOptCost scanCost = super.computeSelfCost(planner, mq);
 
-        if (table.unwrap(HazelcastTable.class).isReplicated()) {
+        if (isReplicated()) {
             scanCost = scanCost.multiplyBy(getHazelcastCluster().getMemberCount());
         }
 

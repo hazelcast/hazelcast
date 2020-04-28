@@ -41,7 +41,7 @@ import com.hazelcast.sql.impl.calcite.opt.physical.exchange.SortMergeExchangePhy
 import com.hazelcast.sql.impl.calcite.opt.physical.exchange.UnicastExchangePhysicalRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.join.HashJoinPhysicalRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.join.NestedLoopJoinPhysicalRel;
-import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
+import com.hazelcast.sql.impl.calcite.schema.AbstractMapTable;
 import com.hazelcast.sql.impl.explain.QueryExplain;
 import com.hazelcast.sql.impl.expression.ColumnExpression;
 import com.hazelcast.sql.impl.expression.Expression;
@@ -54,7 +54,6 @@ import com.hazelcast.sql.impl.expression.aggregate.MaxAggregateExpression;
 import com.hazelcast.sql.impl.expression.aggregate.MinAggregateExpression;
 import com.hazelcast.sql.impl.expression.aggregate.SingleValueAggregateExpression;
 import com.hazelcast.sql.impl.expression.aggregate.SumAggregateExpression;
-import com.hazelcast.sql.impl.extract.QueryTargetDescriptor;
 import com.hazelcast.sql.impl.optimizer.OptimizerStatistics;
 import com.hazelcast.sql.impl.partitioner.AllFieldsRowPartitioner;
 import com.hazelcast.sql.impl.partitioner.FieldsRowPartitioner;
@@ -235,9 +234,9 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
 
         MapScanPlanNode scanNode = new MapScanPlanNode(
             pollId(rel),
-            rel.getTableUnwrapped().getName(),
-            scanKeyDescriptor(rel),
-            scanValueDescriptor(rel),
+            rel.getMap().getName(),
+            rel.getMap().getKeyDescriptor(),
+            rel.getMap().getValueDescriptor(),
             fieldPaths,
             schemaBefore.getTypes(),
             rel.getProjects(),
@@ -255,9 +254,9 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
 
         MapIndexScanPlanNode scanNode = new MapIndexScanPlanNode(
             pollId(rel),
-            rel.getTableUnwrapped().getName(),
-            scanKeyDescriptor(rel),
-            scanValueDescriptor(rel),
+            rel.getMap().getName(),
+            rel.getMap().getKeyDescriptor(),
+            rel.getMap().getValueDescriptor(),
             fieldPaths,
             schemaBefore.getTypes(),
             rel.getProjects(),
@@ -277,9 +276,9 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
 
         ReplicatedMapScanPlanNode scanNode = new ReplicatedMapScanPlanNode(
             pollId(rel),
-            rel.getTableUnwrapped().getName(),
-            scanKeyDescriptor(rel),
-            scanValueDescriptor(rel),
+            rel.getMap().getName(),
+            rel.getMap().getKeyDescriptor(),
+            rel.getMap().getValueDescriptor(),
             fieldPaths,
             schemaBefore.getTypes(),
             rel.getProjects(),
@@ -730,7 +729,7 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
     }
 
     private static PlanNodeSchema getScanSchemaBeforeProject(AbstractScanRel rel) {
-        HazelcastTable table = rel.getTableUnwrapped();
+        AbstractMapTable table = rel.getMap();
 
         List<QueryDataType> types = new ArrayList<>();
 
@@ -742,7 +741,7 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
     }
 
     private static List<String> getScanFieldPaths(AbstractScanRel rel) {
-        HazelcastTable table = rel.getTableUnwrapped();
+        AbstractMapTable table = rel.getMap();
 
         List<String> paths = new ArrayList<>();
 
@@ -754,14 +753,6 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
 
         return paths;
     }
-
-     private static QueryTargetDescriptor scanKeyDescriptor(AbstractScanRel rel) {
-         return rel.getTableUnwrapped().getKeyDescriptor();
-     }
-
-     private static QueryTargetDescriptor scanValueDescriptor(AbstractScanRel rel) {
-         return rel.getTableUnwrapped().getValueDescriptor();
-     }
 
     // TODO: Data member mapping should be used only for fragments with scans!
     private PlanFragmentMapping dataMemberMapping() {

@@ -21,7 +21,7 @@ import com.hazelcast.sql.impl.calcite.OptimizerContext;
 import com.hazelcast.sql.impl.calcite.opt.logical.LogicalRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.PhysicalRel;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastSchema;
-import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
+import com.hazelcast.sql.impl.calcite.schema.PartitionedMapTable;
 import com.hazelcast.sql.impl.calcite.schema.statistic.TableStatistic;
 import com.hazelcast.sql.impl.expression.ColumnExpression;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
@@ -117,10 +117,9 @@ public abstract class OptimizerTestSupport {
      */
     protected HazelcastSchema createDefaultSchema() {
         Map<String, Table> tableMap = new HashMap<>();
-        tableMap.put("p", new HazelcastTable(
+        tableMap.put("p", new PartitionedMapTable(
             null,
             "p",
-            true,
             null,
             null,
             null,

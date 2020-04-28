@@ -25,10 +25,6 @@ import com.hazelcast.sql.impl.exec.agg.AggregateExec;
 import com.hazelcast.sql.impl.exec.fetch.FetchExec;
 import com.hazelcast.sql.impl.exec.scan.index.MapIndexScanExec;
 import com.hazelcast.sql.impl.exec.io.BroadcastSendExec;
-import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.internal.util.collection.PartitionIdSet;
-import com.hazelcast.map.impl.MapContainer;
-import com.hazelcast.sql.impl.NodeServiceProvider;
 import com.hazelcast.sql.impl.exec.io.InboundHandler;
 import com.hazelcast.sql.impl.exec.io.Inbox;
 import com.hazelcast.sql.impl.exec.io.OutboundHandler;
@@ -44,7 +40,6 @@ import com.hazelcast.sql.impl.exec.join.HashJoinExec;
 import com.hazelcast.sql.impl.exec.join.NestedLoopJoinExec;
 import com.hazelcast.sql.impl.exec.root.RootExec;
 import com.hazelcast.sql.impl.exec.scan.MapScanExec;
-import com.hazelcast.sql.impl.exec.scan.MapScanExec;
 import com.hazelcast.sql.impl.exec.scan.ReplicatedMapScanExec;
 import com.hazelcast.sql.impl.operation.QueryExecuteOperation;
 import com.hazelcast.sql.impl.operation.QueryExecuteOperationFragment;
@@ -55,7 +50,6 @@ import com.hazelcast.sql.impl.plan.node.AggregatePlanNode;
 import com.hazelcast.sql.impl.plan.node.FetchPlanNode;
 import com.hazelcast.sql.impl.plan.node.FilterPlanNode;
 import com.hazelcast.sql.impl.plan.node.MapIndexScanPlanNode;
-import com.hazelcast.sql.impl.plan.node.MapScanPlanNode;
 import com.hazelcast.sql.impl.plan.node.MaterializedInputPlanNode;
 import com.hazelcast.sql.impl.plan.node.PlanNode;
 import com.hazelcast.sql.impl.plan.node.PlanNodeVisitor;
@@ -82,7 +76,7 @@ import java.util.UUID;
 /**
  * Visitor which builds an executor for every observed physical node.
  */
- @SuppressWarnings({"checkstyle:ClassDataAbstractionCoupling", "ClassFanOutComplexity"})
+@SuppressWarnings({"checkstyle:ClassDataAbstractionCoupling", "ClassFanOutComplexity"})
 public class CreateExecPlanNodeVisitor implements PlanNodeVisitor {
     /** Operation handler. */
     private final QueryOperationHandler operationHandler;

@@ -64,8 +64,8 @@ public final class SchemaUtils {
         SqlSchemaResolver schemaResolver
     ) {
         // Create partitioned and replicated schemas.
-        List<HazelcastTable> partitionedTables = prepareSchemaTables(nodeEngine, statisticProvider, schemaResolver, true);
-        List<HazelcastTable> replicatedTables = prepareSchemaTables(nodeEngine, statisticProvider, schemaResolver, false);
+        List<AbstractMapTable> partitionedTables = prepareSchemaTables(nodeEngine, statisticProvider, schemaResolver, true);
+        List<AbstractMapTable> replicatedTables = prepareSchemaTables(nodeEngine, statisticProvider, schemaResolver, false);
 
         // Create root schema.
         Map<String, Schema> schemaMap = new HashMap<>();
@@ -80,9 +80,9 @@ public final class SchemaUtils {
     private static void processTables(
         Map<String, Schema> schemaMap,
         Map<String, Table> topTableMap,
-        List<HazelcastTable> tables
+        List<AbstractMapTable> tables
     ) {
-        for (HazelcastTable table : tables) {
+        for (AbstractMapTable table : tables) {
             String schemaName = table.getSchemaName();
 
             HazelcastSchema schema = (HazelcastSchema) schemaMap.get(schemaName);
@@ -112,8 +112,8 @@ public final class SchemaUtils {
      *     if replicated tables.
      * @return List of tables.
      */
-    @SuppressWarnings("rawtypes")
-    private static List<HazelcastTable> prepareSchemaTables(
+    @SuppressWarnings({"rawtypes", "checkstyle:MethodLength"})
+    private static List<AbstractMapTable> prepareSchemaTables(
         NodeEngine nodeEngine,
         StatisticProvider statisticProvider,
         SqlSchemaResolver schemaResolver,
@@ -123,7 +123,7 @@ public final class SchemaUtils {
 
         Collection<String> mapNames = nodeEngine.getProxyService().getDistributedObjectNames(serviceName);
 
-        List<HazelcastTable> res = new ArrayList<>();
+        List<AbstractMapTable> res = new ArrayList<>();
 
         for (String mapName : mapNames) {
             DistributedObject map = nodeEngine.getProxyService().getDistributedObject(
@@ -164,18 +164,32 @@ public final class SchemaUtils {
             Map<String, QueryDataType> fieldTypes = prepareFieldTypes(tableSchema);
             Map<String, String> fieldPaths = prepareFieldPaths(tableSchema);
 
-            HazelcastTable table = new HazelcastTable(
-                tableSchema.getSchema(),
-                mapName,
-                partitioned,
-                distributionField,
-                indexes,
-                tableSchema.getKeyDescriptor(),
-                tableSchema.getValueDescriptor(),
-                fieldTypes,
-                fieldPaths,
-                new TableStatistic(rowCount)
-            );
+            AbstractMapTable table;
+
+            if (partitioned) {
+                table = new PartitionedMapTable(
+                    tableSchema.getSchema(),
+                    mapName,
+                    distributionField,
+                    indexes,
+                    tableSchema.getKeyDescriptor(),
+                    tableSchema.getValueDescriptor(),
+                    fieldTypes,
+                    fieldPaths,
+                    new TableStatistic(rowCount)
+                );
+            } else {
+                table = new ReplicatedMapTable(
+                    tableSchema.getSchema(),
+                    mapName,
+                    indexes,
+                    tableSchema.getKeyDescriptor(),
+                    tableSchema.getValueDescriptor(),
+                    fieldTypes,
+                    fieldPaths,
+                    new TableStatistic(rowCount)
+                );
+            }
 
             res.add(table);
         }

@@ -18,7 +18,7 @@ package com.hazelcast.sql.impl.calcite.opt;
 
 import com.hazelcast.sql.impl.calcite.opt.distribution.DistributionTrait;
 import com.hazelcast.sql.impl.calcite.opt.distribution.DistributionTraitDef;
-import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
+import com.hazelcast.sql.impl.calcite.schema.AbstractMapTable;
 import org.apache.calcite.plan.Convention;
 import org.apache.calcite.plan.ConventionTraitDef;
 import org.apache.calcite.plan.RelOptCluster;
@@ -84,7 +84,7 @@ public final class OptUtils {
      * @param convention Convention.
      * @return Operand.
      */
-    public static <R1 extends RelNode, R2 extends RelNode, R3 extends RelNode> RelOptRuleOperand parentChildChild(
+    public static <R1 extends RelNode, R2 extends RelNode> RelOptRuleOperand parentChildChild(
         Class<R1> cls,
         Class<R2> childCls1,
         Class<R2> childCls2,
@@ -294,6 +294,6 @@ public final class OptUtils {
     }
 
     public static boolean isProjectableFilterable(TableScan scan) {
-        return scan.getTable().unwrap(HazelcastTable.class) != null;
+        return scan.getTable().unwrap(AbstractMapTable.class) != null;
     }
 }
