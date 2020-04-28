@@ -27,6 +27,7 @@ import com.hazelcast.config.ServerSocketEndpointConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
+import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.map.IMap;
 import com.hazelcast.partition.Partition;
 import com.hazelcast.scheduledexecutor.IScheduledExecutorService;
@@ -56,6 +57,7 @@ import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
 import static com.hazelcast.test.HazelcastTestSupport.smallInstanceConfig;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
@@ -106,6 +108,16 @@ public class AdvancedNetworkClientIntegrationTest {
 
         for (Member member : members) {
             assertContains(clientViewOfAddresses, member.getAddressMap().get(CLIENT));
+        }
+    }
+
+    @Test
+    public void testClientViewOfAddressMap() {
+        client = HazelcastClient.newHazelcastClient(getClientConfig());
+        for (Member member: client.getCluster().getMembers()) {
+            assertEquals(member.getAddress(), member.getAddressMap().get(CLIENT));
+            int memberPort = member.getAddressMap().get(EndpointQualifier.MEMBER).getPort();
+            assertTrue("member address port is between 5700 and 6000", 5700  <= memberPort && memberPort <= 6000);
         }
     }
 

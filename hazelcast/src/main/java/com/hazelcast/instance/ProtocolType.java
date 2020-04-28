@@ -79,4 +79,13 @@ public enum ProtocolType {
     public String getDescriptor() {
         return descriptor;
     }
+
+    /**
+     * Used by the generated {@link com.hazelcast.client.impl.protocol.codec.custom.ProtocolTypeCodec}.
+     *
+     * @return the same value as {@code ordinal()}
+     */
+    public int getOrdinal() {
+        return ordinal();
+    }
 }

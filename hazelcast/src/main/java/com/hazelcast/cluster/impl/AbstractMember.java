@@ -16,12 +16,12 @@
 
 package com.hazelcast.cluster.impl;
 
+import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Member;
-import com.hazelcast.internal.util.UUIDSerializationUtil;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.instance.ProtocolType;
+import com.hazelcast.internal.util.UUIDSerializationUtil;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.cluster.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.version.MemberVersion;
@@ -56,9 +56,15 @@ public abstract class AbstractMember implements Member {
 
     protected AbstractMember(Map<EndpointQualifier, Address> addresses, MemberVersion version,
                              UUID uuid, Map<String, String> attributes, boolean liteMember) {
-        this.address = addresses.get(MEMBER);
+        this(addresses, addresses.get(EndpointQualifier.MEMBER), version, uuid, attributes, liteMember);
+    }
+
+    protected AbstractMember(Map<EndpointQualifier, Address> addresses, Address address, MemberVersion version,
+                             UUID uuid, Map<String, String> attributes, boolean liteMember) {
+        this.address = address;
         this.addressMap = addresses;
         assert address != null : "Address is required!";
+        assert addressMap.containsValue(address) : "addresses should contain address";
         this.version = version;
         this.uuid = uuid;
         if (attributes != null) {
