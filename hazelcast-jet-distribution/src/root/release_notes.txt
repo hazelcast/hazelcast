@@ -1,9 +1,75 @@
-In this Release Notes document, you will find the new features and fixes of the
-Hazelcast Jet release. The numbers in the square brackets refer to the issue number
-in Hazelcast Jet GitHub repository. You can reach to the full descriptions of the
-issues at https://github.com/hazelcast/hazelcast-jet/issues/<issue number>.
 
-The label in the brackets refer to the respective module.
+
+                    Hazelcast Jet Release Notes
+
+This document keeps the history of Hazelcast Jet releases. We try to
+enumerate all the non-trivial changes done to the product. The changes
+are categorized into the following:
+
+    1. New features
+    2. Enhancements to the existing features
+    3. Fixes of bugs and other problems
+    4. Breaking changes (those that result in either compile errors or changes
+       in runtime behavior)
+
+The items in the lists follow this format:
+
+[module] Description [PR_or_issue_number]
+
+For major features that have an associated design document, [TDD_number]
+appears at the start of the description.
+
+To expand an issue number into a full GitHub link, use this template:
+
+https://github.com/hazelcast/hazelcast-jet/issues/<issue number>
+
+
+** Hazelcast Jet 4.1 **
+
+Members of the open source community that appear in these release notes:
+
+@TomaszGaweda
+@caioguedes
+@SapnaDerajeRadhakrishna
+
+Thank you for your valuable contributions!
+
+1. New Features
+
+[jms] Exactly-once guarantee for JMS sink (#1813)
+[jdbc] Exactly-once guarantee for JDBC sink (#1813)
+[core] JobConfig.addClass() automatically adds nested classes to the job (#1932)
+[core] JobConfig.addPackage() adds a whole Java package to the job (#1932, #2077)
+[core] Job-scoped serializer deployment (#2020, #2038, #2039, #2043, #2071, #2075, #2082, #2190)
+[core] [006] Protobuf serializer support (#2100)
+[pipeline-api] [007] Support gRPC for mapUsingService (#2095, #2185)
+
+2. Enhancements
+
+[jet-cli] Use log4j2 instead of log4j (#1981)
+[jet-cli] Simplify default log output (#2047)
+[core] Add useful error message when serializer not registered (#2061)
+[integration] Add hazelcast-azure cluster self-discovery plugin to the
+    fat JAR in the distribution archive (#2079)
+[pipeline-api] First-class support for inner hash join (@TomaszGaweda #2089)
+[core] When Jet starts up, it now logs the cluster name (@caioguedes #2105)
+[core] Add useful error message when trying to deploy a JDK class with JobConfig (#2108)
+[core] Implement JobConfig.toString (@SapnaDerajeRadhakrishna #2152)
+[core] Do not destroy Observable on shutdown (#2170)
+
+3. Fixes
+
+[core] Don't send the interrupt signal to blocking threads when a job is terminating (#1971)
+[core] Consistently prefer YAML over XML config files when both present (#2033)
+
+4. Breaking Changes
+
+[integration] Replace Supplier<Schema> with just Schema (#2005)
+[integration] Reorder parameters in JMS source so the lambda comes last (#2062)
+[jet-cli] Change smart routing (connecting to all cluster members) default to disabled (#2104)
+[pipeline-api] For xUsingServiceAsync transforms, reduce the default number of concurrent
+               service calls per processor. Before: 256; now: 4. (#2204)
+
 
 ** Hazelcast Jet 4.0 **
 
@@ -82,6 +148,7 @@ The label in the brackets refer to the respective module.
 [hadoop] Hadoop source/sink now named as HadoopSources.inputFormat/outputFormat()
 [licensing] Move connectors and plugins to the Hazelcast Community License [#1892]
 
+
 ** Hazelcast Jet 3.2 **
 
 1. New Features
@@ -126,6 +193,7 @@ The label in the brackets refer to the respective module.
 [core] Add more details to exceptions if a job fails with TopologyChangedException [#1595]
 [core] Add consistent exception if job.join() is called before or after job is completed [#1600, #1612]
 
+
 ** Hazelcast Jet 3.1 **
 
 1. New Features
@@ -166,6 +234,7 @@ The label in the brackets refer to the respective module.
                called inside a streaming source. [#1394]
 [core] Signatures of SourceProcessors.convenientSourceP and convenientTimestampedSourceP
        have been updated to support fault tolerance [#1394]
+
 
 ** Hazelcast Jet 3.0 **
 
@@ -223,11 +292,13 @@ have been removed [#1293]
 [core] When submitting jobs, if a job with same name already exists an exception will be thrown [#1203]
 [core] Group password is deprecated and removed [#1302]
 
+
 ** Hazelcast Jet 0.7.2 **
 
 1. Fixes
 
 [core] Fix for missing config schema file in previous release
+
 
 ** Hazelcast Jet 0.7.1 **
 
@@ -248,6 +319,7 @@ have been removed [#1293]
 [core] Fix for a race during snapshot creation which could result in snapshot not completing [#1101]
 [core] Don't materialize distinct keys in SessionWindowP [#1121]
 [core] Do not add Watermarks to a stream if there are no windowing stages [#1144]
+
 
 ** Hazelcast Jet 0.7 **
 
@@ -319,6 +391,7 @@ have been removed [#1293]
 [kafka] Kafka source should handle InterruptException in all cases
 [hadoop] When matching HDFS hostnames against member hostnames, use alternative ways than just reverse DNS [#858]
 
+
 ** Hazelcast Jet 0.6 **
 
 1. New Features
@@ -375,6 +448,7 @@ and watermarks will be forwarded automatically once it returns true.
 [core] `complete` methods on `ProcessorMetaSupplier` and `ProcessorSupplier` have been renamed to `close()`
 [java.util.stream] DistributedStream creation moved to DistributedStream class from Map and List instances. We strongly
 suggest to switch to Pipeline API instead of java.util.stream API.
+
 
 ** Hazelcast Jet 0.5 **
 
