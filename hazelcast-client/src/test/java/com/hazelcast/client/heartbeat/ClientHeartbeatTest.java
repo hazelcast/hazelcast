@@ -180,13 +180,22 @@ public class ClientHeartbeatTest extends ClientTestSupport {
     @Test
     public void testAsyncInvocation_whenHeartbeatStopped() throws Throwable {
         hazelcastFactory.newHazelcastInstance();
-        HazelcastInstance client = hazelcastFactory.newHazelcastClient(getClientConfig());
-        HazelcastInstance instance2 = hazelcastFactory.newHazelcastInstance();
+        final HazelcastInstance client = hazelcastFactory.newHazelcastClient(getClientConfig());
+        final HazelcastInstance instance2 = hazelcastFactory.newHazelcastInstance();
 
         // make sure client is connected to instance2
         IMap<String, String> map = client.getMap(randomString());
-        String keyOwnedByInstance2 = generateKeyOwnedBy(instance2);
+        final String keyOwnedByInstance2 = generateKeyOwnedBy(instance2);
         map.put(keyOwnedByInstance2, randomString());
+
+        // verify client received the latest partition update
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() {
+                Member owner = client.getPartitionService().getPartition(keyOwnedByInstance2).getOwner();
+                assertEquals(instance2.getCluster().getLocalMember(), owner);
+            }
+        });
 
         blockMessagesFromInstance(instance2, client);
 
