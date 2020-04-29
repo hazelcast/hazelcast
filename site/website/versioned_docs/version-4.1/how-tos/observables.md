@@ -1,6 +1,8 @@
 ---
 title: Receive Results on the Client
 description: How to monitor Jet job results on the client side.
+id: version-4.1-observables
+original_id: observables
 ---
 
 Usually Jet jobs make use of distributed data Sinks to output results,
@@ -62,7 +64,7 @@ observable.destroy();
 ## Clean-up
 
 Observables are backed by
-[Ringbuffers](/javadoc/{jet-version}/com/hazelcast/ringbuffer/Ringbuffer.html)
+[Ringbuffers](/javadoc/4.1/com/hazelcast/ringbuffer/Ringbuffer.html)
 stored in the cluster which should be cleaned up by the client, once
 they are no longer necessary. They have a `destroy()` method which does
 just that. If the Observable isn’t destroyed, its memory will be leaked

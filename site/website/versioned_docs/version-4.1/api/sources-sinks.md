@@ -1,6 +1,8 @@
 ---
 title: Sources and Sinks
 description: Birds-eye view of all pre-defined sources available in Jet.
+id: version-4.1-sources-sinks
+original_id: sources-sinks
 ---
 
 Hazelcast Jet comes out of the box with many different sources and sinks
@@ -95,7 +97,7 @@ dependency to your application:
 <!--Gradle-->
 
 ```groovy
-compile 'com.hazelcast.jet:hazelcast-jet-avro:{jet-version}'
+compile 'com.hazelcast.jet:hazelcast-jet-avro:4.1'
 ```
 
 <!--Maven-->
@@ -104,7 +106,7 @@ compile 'com.hazelcast.jet:hazelcast-jet-avro:{jet-version}'
 <dependency>
   <groupId>com.hazelcast.jet</groupId>
   <artifactId>hazelcast-jet-avro</artifactId>
-  <version>{jet-version}</version>
+  <version>4.1</version>
 </dependency>
 ```
 
@@ -202,7 +204,7 @@ dependency to your application:
 <!--Gradle-->
 
 ```groovy
-compile 'com.hazelcast.jet:hazelcast-jet-hadoop:{jet-version}'
+compile 'com.hazelcast.jet:hazelcast-jet-hadoop:4.1'
 ```
 
 <!--Maven-->
@@ -211,7 +213,7 @@ compile 'com.hazelcast.jet:hazelcast-jet-hadoop:{jet-version}'
 <dependency>
   <groupId>com.hazelcast.jet</groupId>
   <artifactId>hazelcast-jet-hadoop</artifactId>
-  <version>{jet-version}</version>
+  <version>4.1</version>
 </dependency>
 ```
 
@@ -279,7 +281,7 @@ application:
 <!--Gradle-->
 
 ```groovy
-compile 'com.hazelcast.jet:hazelcast-jet-s3:{jet-version}'
+compile 'com.hazelcast.jet:hazelcast-jet-s3:4.1'
 ```
 
 <!--Maven-->
@@ -288,7 +290,7 @@ compile 'com.hazelcast.jet:hazelcast-jet-s3:{jet-version}'
 <dependency>
   <groupId>com.hazelcast.jet</groupId>
   <artifactId>hazelcast-jet-s3</artifactId>
-  <version>{jet-version}</version>
+  <version>4.1</version>
 </dependency>
 ```
 
@@ -353,7 +355,7 @@ dependency to your application:
 
 ```groovy
 
-compile 'com.hazelcast.jet:hazelcast-jet-kafka:{jet-version}'
+compile 'com.hazelcast.jet:hazelcast-jet-kafka:4.1'
 ```
 
 <!--Maven-->
@@ -362,7 +364,7 @@ compile 'com.hazelcast.jet:hazelcast-jet-kafka:{jet-version}'
 <dependency>
   <groupId>com.hazelcast.jet</groupId>
   <artifactId>hazelcast-jet-kafka</artifactId>
-  <version>{jet-version}</version>
+  <version>4.1</version>
 </dependency>
 ```
 
@@ -1222,9 +1224,9 @@ processing even with at-least-once sinks.
 
 If Jet doesn’t natively support the data source/sink you need, you can
 build a connector for it yourself by using the
-[SourceBuilder](/javadoc/{jet-version}/com/hazelcast/jet/pipeline/SourceBuilder.html)
+[SourceBuilder](/javadoc/4.1/com/hazelcast/jet/pipeline/SourceBuilder.html)
 and
-[SinkBuilder](/javadoc/{jet-version}/com/hazelcast/jet/pipeline/SinkBuilder.html).
+[SinkBuilder](/javadoc/4.1/com/hazelcast/jet/pipeline/SinkBuilder.html).
 
 ### SourceBuilder
 

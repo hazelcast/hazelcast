@@ -1,6 +1,8 @@
 ---
 title: Serialization
 description: Options available for (de)serialization when using Jet.
+id: version-4.1-serialization
+original_id: serialization
 ---
 
 To be able to send object state over a network or store it in a file
@@ -157,8 +159,8 @@ types:
 
 - [java.io.Serializable](https://docs.oracle.com/javase/8/docs/api/java/io/Serializable.html)
 - [java.io.Externalizable](https://docs.oracle.com/javase/8/docs/api/java/io/Externalizable.html)
-- [com.hazelcast.nio.serialization.Portable](/javadoc/{jet-version}/com/hazelcast/nio/serialization/Portable.html)
-- [com.hazelcast.nio.serialization.StreamSerializer](/javadoc/{jet-version}/com/hazelcast/nio/serialization/StreamSerializer.html)
+- [com.hazelcast.nio.serialization.Portable](/javadoc/4.1/com/hazelcast/nio/serialization/Portable.html)
+- [com.hazelcast.nio.serialization.StreamSerializer](/javadoc/4.1/com/hazelcast/nio/serialization/StreamSerializer.html)
 
 The following table provides a comparison between them to help you in
 deciding which interface to use in your applications.
@@ -215,7 +217,7 @@ not to mention very wasteful with memory.
 
 For the best performance and simplest implementation we recommend using
 the Hazelcast
-[StreamSerializer](/javadoc/{jet-version}/com/hazelcast/nio/serialization/StreamSerializer.html)
+[StreamSerializer](/javadoc/4.1/com/hazelcast/nio/serialization/StreamSerializer.html)
 mechanism. Here is a sample implementation for a `Person` class:
 
 ```java
@@ -341,7 +343,7 @@ dependency to your Jet job's project:
 <!--Gradle-->
 
 ```groovy
-compile "com.hazelcast.jet:hazelcast-jet-protobuf:${jet-version}"
+compile "com.hazelcast.jet:hazelcast-jet-protobuf:4.1"
 ```
 
 <!--Maven-->
@@ -350,7 +352,7 @@ compile "com.hazelcast.jet:hazelcast-jet-protobuf:${jet-version}"
 <dependency>
     <groupId>com.hazelcast.jet</groupId>
     <artifactId>hazelcast-jet-protobuf</artifactId>
-    <version>${jet-version}</version>
+    <version>4.1</version>
 </dependency>
 ```
 

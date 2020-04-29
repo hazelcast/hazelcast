@@ -1,9 +1,11 @@
 ---
 title: Receive IMap Change Stream
 description: How to monitor the stream of change events happening to an `IMap.`
+id: version-4.1-stream-imap
+original_id: stream-imap
 ---
 
-[IMap](/javadoc/{jet-version}/com/hazelcast/map/IMap.html)
+[IMap](/javadoc/4.1/com/hazelcast/map/IMap.html)
 is the main data structure in Hazelcast IMDG. Jet can use it as both a
 data source and a data sink. It can serve as both a batch source, giving
 you all the current data, and as a streaming source, giving you a stream
