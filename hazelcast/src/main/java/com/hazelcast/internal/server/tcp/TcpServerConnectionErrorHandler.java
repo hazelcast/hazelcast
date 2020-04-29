@@ -20,6 +20,8 @@ import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.server.ServerContext;
 import com.hazelcast.logging.ILogger;
 
+import static com.hazelcast.spi.properties.ClusterProperty.CONNECTION_MONITOR_INTERVAL;
+import static com.hazelcast.spi.properties.ClusterProperty.CONNECTION_MONITOR_MAX_FAULTS;
 import static java.lang.System.currentTimeMillis;
 
 public class TcpServerConnectionErrorHandler {
@@ -35,8 +37,8 @@ public class TcpServerConnectionErrorHandler {
     TcpServerConnectionErrorHandler(TcpServerConnectionManager connectionManager, Address endPoint) {
         this.endPoint = endPoint;
         this.serverContext = connectionManager.getServer().getContext();
-        this.minInterval = serverContext.getConnectionMonitorInterval();
-        this.maxFaults = serverContext.getConnectionMonitorMaxFaults();
+        this.minInterval = serverContext.properties().getMillis(CONNECTION_MONITOR_INTERVAL);
+        this.maxFaults = serverContext.properties().getInteger(CONNECTION_MONITOR_MAX_FAULTS);
         this.logger = serverContext.getLoggingService().getLogger(getClass());
     }
 
