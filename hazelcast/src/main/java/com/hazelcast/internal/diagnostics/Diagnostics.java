@@ -104,6 +104,13 @@ public class Diagnostics {
     public static final HazelcastProperty FILENAME_PREFIX
             = new HazelcastProperty("hazelcast.diagnostics.filename.prefix");
 
+    /**
+     * Send all the Diagnostics logs to the stdout, instead of storing on the file system.
+     * <p>
+     * The default is false.
+     */
+    public static final HazelcastProperty STDOUT = new HazelcastProperty("hazelcast.diagnostics.stdout", false);
+
     final AtomicReference<DiagnosticsPlugin[]> staticTasks = new AtomicReference<>(
             new DiagnosticsPlugin[0]
     );
@@ -114,10 +121,11 @@ public class Diagnostics {
     final boolean includeEpochTime;
     final File directory;
 
-    DiagnosticsLogFile diagnosticsLogFile;
+    DiagnosticsLogOutput diagnosticsLogOutput;
 
     private final ConcurrentMap<Class<? extends DiagnosticsPlugin>, DiagnosticsPlugin> pluginsMap = new ConcurrentHashMap<>();
     private final boolean enabled;
+    private final boolean stdout;
 
     private ScheduledExecutorService scheduler;
 
@@ -130,11 +138,15 @@ public class Diagnostics {
         this.includeEpochTime = properties.getBoolean(INCLUDE_EPOCH_TIME);
         this.directory = new File(properties.getString(DIRECTORY));
         this.enabled = properties.getBoolean(ENABLED);
+        this.stdout = properties.getBoolean(STDOUT);
     }
 
     // just for testing (returns the current file the system is writing to)
-    public File currentFile() {
-        return diagnosticsLogFile.file;
+    public File currentFile() throws UnsupportedOperationException {
+        if (stdout) {
+            throw new UnsupportedOperationException();
+        }
+        return ((DiagnosticsLogFile) diagnosticsLogOutput).file;
     }
 
     /**
@@ -207,7 +219,12 @@ public class Diagnostics {
             return;
         }
 
-        this.diagnosticsLogFile = new DiagnosticsLogFile(this);
+        if (stdout) {
+            this.diagnosticsLogOutput = new DiagnosticsLogStdout(this);
+        } else {
+            this.diagnosticsLogOutput = new DiagnosticsLogFile(this);
+        }
+
         this.scheduler = new ScheduledThreadPoolExecutor(1, new DiagnosticSchedulerThreadFactory());
 
         logger.info("Diagnostics started");
@@ -234,7 +251,7 @@ public class Diagnostics {
         @Override
         public void run() {
             try {
-                diagnosticsLogFile.write(plugin);
+                diagnosticsLogOutput.write(plugin);
             } catch (Throwable t) {
                 // we need to catch any exception; otherwise the task is going to be removed by the scheduler
                 logger.severe(t);

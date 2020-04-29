@@ -125,7 +125,7 @@ public class DiagnosticsTest extends HazelcastTestSupport {
         Diagnostics diagnostics = newDiagnostics(new Config().setProperty(Diagnostics.ENABLED.getName(), "false"));
         diagnostics.start();
 
-        assertNull("DiagnosticsLogFile should be null", diagnostics.diagnosticsLogFile);
+        assertNull("DiagnosticsLogFile should be null", diagnostics.diagnosticsLogOutput);
     }
 
     @Test
@@ -133,7 +133,7 @@ public class DiagnosticsTest extends HazelcastTestSupport {
         Diagnostics diagnostics = newDiagnostics(new Config().setProperty(Diagnostics.ENABLED.getName(), "true"));
         diagnostics.start();
 
-        assertNotNull("DiagnosticsLogFile should not be null", diagnostics.diagnosticsLogFile);
+        assertNotNull("DiagnosticsLogFile should not be null", diagnostics.diagnosticsLogOutput);
     }
 
     private Diagnostics newDiagnostics(Config config) throws Exception {
