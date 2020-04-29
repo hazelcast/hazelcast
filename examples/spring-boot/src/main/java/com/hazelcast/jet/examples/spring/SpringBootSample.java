@@ -24,6 +24,7 @@ import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -39,6 +40,7 @@ import org.springframework.web.bind.annotation.RestController;
  * Submit the job via `http://localhost:8080/submitJob` and observe the output.
  */
 @RestController
+@SpringBootApplication
 public class SpringBootSample {
 
     @Autowired
