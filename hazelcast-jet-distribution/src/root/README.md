@@ -90,4 +90,4 @@ Additional Information
 
 * [Hazelcast Jet on GitHub](https://github.com/hazelcast-jet), the repo includes [code examples](https://github.com/hazelcast/hazelcast-jet/tree/master/examples)
 * [Hazelcast Jet Homepage](https://jet.hazelcast.org)
-* [Hazelcast Jet Reference Manual](https://docs.hazelcast.org/docs/jet/latest/manual/)
+* [Hazelcast Jet Reference Manual](https://jet-start.sh/docs)
