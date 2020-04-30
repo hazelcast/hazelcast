@@ -105,7 +105,7 @@ import static com.hazelcast.client.properties.ClientProperty.IO_OUTPUT_THREAD_CO
 import static com.hazelcast.client.properties.ClientProperty.IO_WRITE_THROUGH_ENABLED;
 import static com.hazelcast.client.properties.ClientProperty.SHUFFLE_MEMBER_LIST;
 import static com.hazelcast.core.LifecycleEvent.LifecycleState.CLIENT_CHANGED_CLUSTER;
-import static com.hazelcast.internal.nio.IOUtil.closeResource;
+import static com.hazelcast.internal.nio.IOUtil.closeQuietly;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.stream.Collectors.toList;
@@ -665,7 +665,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager {
             channel.start();
             return connection;
         } catch (Exception e) {
-            closeResource(socketChannel);
+            closeQuietly(socketChannel);
             logger.finest(e);
             throw rethrow(e);
         }

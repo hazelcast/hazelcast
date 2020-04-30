@@ -47,7 +47,7 @@ import java.util.UUID;
 
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 import static com.hazelcast.map.impl.querycache.subscriber.QueryCacheEventListenerAdapters.createQueryCacheListenerAdaptor;
-import static com.hazelcast.internal.nio.IOUtil.closeResource;
+import static com.hazelcast.internal.nio.IOUtil.closeQuietly;
 import static com.hazelcast.internal.util.Preconditions.checkHasText;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
@@ -112,7 +112,7 @@ public class NodeQueryCacheEventService implements QueryCacheEventService<EventD
                 return registration.getId();
             }
         } finally {
-            closeResource(mutex);
+            closeQuietly(mutex);
         }
     }
 
@@ -129,7 +129,7 @@ public class NodeQueryCacheEventService implements QueryCacheEventService<EventD
                 eventService.deregisterAllListeners(SERVICE_NAME, cacheId);
             }
         } finally {
-            closeResource(mutex);
+            closeQuietly(mutex);
         }
     }
 

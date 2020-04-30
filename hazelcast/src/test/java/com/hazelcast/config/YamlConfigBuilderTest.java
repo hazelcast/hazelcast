@@ -27,7 +27,6 @@ import com.hazelcast.config.security.KerberosIdentityConfig;
 import com.hazelcast.config.security.LdapAuthenticationConfig;
 import com.hazelcast.config.security.RealmConfig;
 import com.hazelcast.instance.EndpointQualifier;
-import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.splitbrainprotection.SplitBrainProtectionOn;
 import com.hazelcast.splitbrainprotection.impl.ProbabilisticSplitBrainProtectionFunction;
 import com.hazelcast.splitbrainprotection.impl.RecentlyActiveSplitBrainProtectionFunction;
@@ -65,6 +64,7 @@ import static com.hazelcast.config.PermissionConfig.PermissionType.CONFIG;
 import static com.hazelcast.config.WanQueueFullBehavior.DISCARD_AFTER_MUTATION;
 import static com.hazelcast.config.WanQueueFullBehavior.THROW_EXCEPTION;
 import static com.hazelcast.config.XmlYamlConfigBuilderEqualsTest.readResourceToString;
+import static com.hazelcast.internal.nio.IOUtil.closeQuietly;
 import static java.io.File.createTempFile;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -2976,7 +2976,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
         try {
             config = new YamlConfigBuilder(yamlResource).build();
         } finally {
-            IOUtil.closeResource(yamlResource);
+            closeQuietly(yamlResource);
         }
         Set<PermissionConfig.PermissionType> permTypes = new HashSet<>(Arrays
                 .asList(PermissionConfig.PermissionType.values()));

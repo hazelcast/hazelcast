@@ -30,7 +30,7 @@ import java.nio.channels.FileChannel;
 import java.util.List;
 import java.util.Map;
 
-import static com.hazelcast.internal.nio.IOUtil.closeResource;
+import static com.hazelcast.internal.nio.IOUtil.closeQuietly;
 import static com.hazelcast.test.HazelcastTestSupport.randomString;
 import static com.hazelcast.test.compatibility.SamplingSerializationService.SERIALIZED_SAMPLES_PER_CLASS_NAME;
 import static com.hazelcast.internal.util.StringUtil.LINE_SEPARATOR;
@@ -75,8 +75,8 @@ public class SamplingRunListener extends RunListener {
         } catch (IOException e) {
             LOGGER.severe(e);
         } finally {
-            closeResource(indexOutput);
-            closeResource(serializedSamplesOutput);
+            closeQuietly(indexOutput);
+            closeQuietly(serializedSamplesOutput);
         }
     }
 }

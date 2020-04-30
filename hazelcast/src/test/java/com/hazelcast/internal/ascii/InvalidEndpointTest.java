@@ -20,7 +20,6 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.RestServerEndpointConfig;
 import com.hazelcast.config.ServerSocketEndpointConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.TestAwareInstanceFactory;
 import com.hazelcast.test.annotation.SlowTest;
@@ -45,6 +44,7 @@ import java.util.concurrent.ExecutionException;
 
 import static com.hazelcast.instance.EndpointQualifier.MEMCACHE;
 import static com.hazelcast.instance.EndpointQualifier.REST;
+import static com.hazelcast.internal.nio.IOUtil.closeQuietly;
 import static com.hazelcast.test.HazelcastTestSupport.ignore;
 import static org.junit.Assert.fail;
 
@@ -140,8 +140,8 @@ public class InvalidEndpointTest {
             response = client.execute(request);
             return new HTTPCommunicator.ConnectionResponse(response);
         } finally {
-            IOUtil.closeResource(response);
-            IOUtil.closeResource(client);
+            closeQuietly(response);
+            closeQuietly(client);
         }
     }
 

@@ -24,7 +24,7 @@ import java.io.FileNotFoundException;
 import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
 
-import static com.hazelcast.internal.nio.IOUtil.closeResource;
+import static com.hazelcast.internal.nio.IOUtil.closeQuietly;
 
 /**
  * Starts a Hazelcast Member.
@@ -55,7 +55,7 @@ public final class HazelcastMemberStarter {
                 printWriter = new PrintWriter("ports" + File.separator + printPort, "UTF-8");
                 printWriter.println(hz.getCluster().getLocalMember().getAddress().getPort());
             } finally {
-                closeResource(printWriter);
+                closeQuietly(printWriter);
             }
         }
     }

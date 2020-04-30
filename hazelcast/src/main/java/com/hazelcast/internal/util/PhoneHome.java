@@ -42,7 +42,7 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.internal.nio.IOUtil.closeResource;
+import static com.hazelcast.internal.nio.IOUtil.closeQuietly;
 import static com.hazelcast.internal.util.EmptyStatement.ignore;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static java.lang.System.getenv;
@@ -182,7 +182,7 @@ public class PhoneHome {
         } catch (IOException ignored) {
             ignore(ignored);
         } finally {
-            closeResource(is);
+            closeQuietly(is);
         }
         return downloadId;
     }
@@ -199,7 +199,7 @@ public class PhoneHome {
         } catch (Exception ignored) {
             ignore(ignored);
         } finally {
-            closeResource(in);
+            closeQuietly(in);
         }
     }
 

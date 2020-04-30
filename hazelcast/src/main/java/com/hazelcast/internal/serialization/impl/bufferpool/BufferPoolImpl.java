@@ -26,7 +26,7 @@ import java.io.Closeable;
 import java.util.ArrayDeque;
 import java.util.Queue;
 
-import static com.hazelcast.internal.nio.IOUtil.closeResource;
+import static com.hazelcast.internal.nio.IOUtil.closeQuietly;
 
 /**
  * Default {BufferPool} implementation.
@@ -89,7 +89,7 @@ public class BufferPoolImpl implements BufferPool {
 
     private static <C extends Closeable> void offerOrClose(Queue<C> queue, C item) {
         if (queue.size() == MAX_POOLED_ITEMS) {
-            closeResource(item);
+            closeQuietly(item);
             return;
         }
 

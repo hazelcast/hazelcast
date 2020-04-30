@@ -17,7 +17,6 @@
 package com.hazelcast.osgi;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
@@ -33,6 +32,7 @@ import java.net.URL;
 import java.util.Enumeration;
 import java.util.jar.Manifest;
 
+import static com.hazelcast.internal.nio.IOUtil.closeQuietly;
 import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -83,7 +83,7 @@ public class CheckDependenciesIT extends HazelcastTestSupport {
             inputStream = hazelcastAllManifestUrl.openStream();
             return new Manifest(inputStream);
         } finally {
-            IOUtil.closeResource(inputStream);
+            closeQuietly(inputStream);
         }
     }
 

@@ -26,7 +26,6 @@ import com.hazelcast.internal.config.yaml.YamlDomChecker;
 import com.hazelcast.internal.yaml.YamlLoader;
 import com.hazelcast.internal.yaml.YamlMapping;
 import com.hazelcast.internal.yaml.YamlNode;
-import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.spi.annotation.PrivateApi;
 import org.w3c.dom.Node;
@@ -39,6 +38,7 @@ import java.net.URL;
 import java.util.Properties;
 
 import static com.hazelcast.internal.config.yaml.W3cDomUtil.asW3cNode;
+import static com.hazelcast.internal.nio.IOUtil.closeQuietly;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.Preconditions.checkTrue;
 
@@ -132,7 +132,7 @@ public class YamlClientConfigBuilder extends AbstractYamlConfigBuilder {
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
         } finally {
-            IOUtil.closeResource(in);
+            closeQuietly(in);
         }
     }
 

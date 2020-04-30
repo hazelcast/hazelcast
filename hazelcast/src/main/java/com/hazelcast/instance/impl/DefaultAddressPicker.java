@@ -49,6 +49,7 @@ import java.util.Objects;
 
 import static com.hazelcast.instance.EndpointQualifier.MEMBER;
 import static com.hazelcast.instance.impl.ServerSocketHelper.createServerSocketChannel;
+import static com.hazelcast.internal.nio.IOUtil.closeQuietly;
 import static com.hazelcast.internal.util.AddressUtil.fixScopeIdAndGetInetAddress;
 import static com.hazelcast.internal.util.CollectionUtil.isEmpty;
 import static com.hazelcast.internal.util.CollectionUtil.isNotEmpty;
@@ -126,9 +127,7 @@ class DefaultAddressPicker
             }
         } catch (Exception e) {
             ServerSocketChannel serverSocketChannel = getServerSocketChannel(endpointQualifier);
-            if (serverSocketChannel != null) {
-                serverSocketChannel.close();
-            }
+            closeQuietly(serverSocketChannel);
             logger.severe(e);
             throw e;
         }

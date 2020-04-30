@@ -26,7 +26,7 @@ import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
 
-import static com.hazelcast.internal.nio.IOUtil.closeResource;
+import static com.hazelcast.internal.nio.IOUtil.closeQuietly;
 import static com.hazelcast.internal.util.Preconditions.isNotNull;
 import static java.util.Collections.enumeration;
 
@@ -129,8 +129,8 @@ public class FilteringClassLoader extends ClassLoader {
         } catch (Exception e) {
             throw new ClassNotFoundException(name, e);
         } finally {
-            closeResource(os);
-            closeResource(is);
+            closeQuietly(os);
+            closeQuietly(is);
         }
     }
 }

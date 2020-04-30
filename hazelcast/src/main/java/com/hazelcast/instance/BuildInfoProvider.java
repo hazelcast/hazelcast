@@ -24,7 +24,7 @@ import java.io.InputStream;
 import java.lang.reflect.Field;
 import java.util.Properties;
 
-import static com.hazelcast.internal.nio.IOUtil.closeResource;
+import static com.hazelcast.internal.nio.IOUtil.closeQuietly;
 import static com.hazelcast.internal.util.EmptyStatement.ignore;
 
 /**
@@ -110,7 +110,7 @@ public final class BuildInfoProvider {
         } catch (Exception ignored) {
             ignore(ignored);
         } finally {
-            closeResource(properties);
+            closeQuietly(properties);
         }
         return runtimeProperties;
     }

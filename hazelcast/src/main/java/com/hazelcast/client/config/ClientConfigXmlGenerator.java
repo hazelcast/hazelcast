@@ -65,7 +65,7 @@ import java.util.List;
 import java.util.Map;
 
 import static com.hazelcast.client.config.impl.ClientAliasedDiscoveryConfigUtils.aliasedDiscoveryConfigsFrom;
-import static com.hazelcast.internal.nio.IOUtil.closeResource;
+import static com.hazelcast.internal.nio.IOUtil.closeQuietly;
 import static com.hazelcast.internal.util.StringUtil.isNullOrEmpty;
 
 /**
@@ -187,7 +187,7 @@ public final class ClientConfigXmlGenerator {
             return input;
         } finally {
             if (xmlOutput != null) {
-                closeResource(xmlOutput.getWriter());
+                closeQuietly(xmlOutput.getWriter());
             }
         }
     }

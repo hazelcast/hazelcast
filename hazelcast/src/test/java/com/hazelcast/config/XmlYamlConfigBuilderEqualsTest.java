@@ -33,6 +33,7 @@ import java.util.Comparator;
 import java.util.Set;
 import java.util.TreeSet;
 
+import static com.hazelcast.internal.nio.IOUtil.closeQuietly;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -153,7 +154,7 @@ public class XmlYamlConfigBuilderEqualsTest extends HazelcastTestSupport {
             try {
                 out.print(passwordFileContent);
             } finally {
-                IOUtil.closeResource(out);
+                closeQuietly(out);
             }
         }
         return file;

@@ -42,7 +42,6 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.net.ServerSocket;
 import java.nio.BufferOverflowException;
 import java.nio.ByteBuffer;
 import java.nio.file.Files;
@@ -50,8 +49,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.hazelcast.internal.nio.IOUtil.close;
-import static com.hazelcast.internal.nio.IOUtil.closeResource;
+import static com.hazelcast.internal.nio.IOUtil.closeQuietly;
 import static com.hazelcast.internal.nio.IOUtil.compactOrClear;
 import static com.hazelcast.internal.nio.IOUtil.compress;
 import static com.hazelcast.internal.nio.IOUtil.copy;
@@ -388,29 +386,29 @@ public class IOUtilTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testCloseResource() throws Exception {
+    public void testCloseQuietly() throws Exception {
         Closeable closeable = mock(Closeable.class);
 
-        closeResource(closeable);
+        closeQuietly(closeable);
 
         verify(closeable).close();
         verifyNoMoreInteractions(closeable);
     }
 
     @Test
-    public void testCloseResource_withException() throws Exception {
+    public void testCloseQuietly_withException() throws Exception {
         Closeable closeable = mock(Closeable.class);
         doThrow(new IOException("expected")).when(closeable).close();
 
-        closeResource(closeable);
+        closeQuietly(closeable);
 
         verify(closeable).close();
         verifyNoMoreInteractions(closeable);
     }
 
     @Test
-    public void testCloseResource_withNull() {
-        closeResource(null);
+    public void testCloseQuietly_withNull() {
+        closeQuietly(null);
     }
 
     @Test
@@ -504,7 +502,7 @@ public class IOUtilTest extends HazelcastTestSupport {
 
             assertTrue("source and target should have the same content", isEqualsContents(source, target));
         } finally {
-            closeResource(inputStream);
+            closeQuietly(inputStream);
         }
     }
 
@@ -824,17 +822,6 @@ public class IOUtilTest extends HazelcastTestSupport {
         readAttributeValue(input);
     }
 
-    @Test
-    public void testCloseServerSocket_whenServerSocketThrows() throws Exception {
-        ServerSocket serverSocket = mock(ServerSocket.class);
-        doThrow(new IOException()).when(serverSocket).close();
-        try {
-            close(serverSocket);
-        } catch (Exception ex) {
-            fail("IOUtils should silently close server socket when exception thrown");
-        }
-    }
-
     @Test(expected = HazelcastException.class)
     public void testRename_whenFileNowNotExist() {
         File toBe = mock(File.class);
@@ -955,7 +942,7 @@ public class IOUtilTest extends HazelcastTestSupport {
         } catch (IOException e) {
             throw rethrow(e);
         } finally {
-            closeResource(writer);
+            closeQuietly(writer);
         }
     }
 
@@ -1001,8 +988,8 @@ public class IOUtilTest extends HazelcastTestSupport {
             e.printStackTrace();
             return false;
         } finally {
-            closeResource(is1);
-            closeResource(is2);
+            closeQuietly(is1);
+            closeQuietly(is2);
         }
     }
 }

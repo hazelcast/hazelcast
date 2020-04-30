@@ -20,7 +20,6 @@ import com.hazelcast.config.Config;
 import com.hazelcast.instance.AddressPicker;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.cluster.Address;
-import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.OverridePropertyRule;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -42,6 +41,7 @@ import static com.hazelcast.instance.impl.DefaultAddressPicker.PREFER_IPV4_STACK
 import static com.hazelcast.instance.impl.DefaultAddressPicker.PREFER_IPV6_ADDRESSES;
 import static com.hazelcast.instance.impl.DefaultAddressPickerTest.findIPv6NonLoopbackInterface;
 import static com.hazelcast.instance.EndpointQualifier.MEMBER;
+import static com.hazelcast.internal.nio.IOUtil.closeQuietly;
 import static com.hazelcast.spi.properties.ClusterProperty.PREFER_IPv4_STACK;
 import static com.hazelcast.test.OverridePropertyRule.clear;
 import static org.junit.Assert.assertEquals;
@@ -105,7 +105,7 @@ public class IpVersionPreferenceTest {
             Address bindAddress = addressPicker.getBindAddress(MEMBER);
             assertEquals("Bind address: " + bindAddress, expectedIPv6, bindAddress.isIPv6());
         } finally {
-            IOUtil.closeResource(addressPicker.getServerSocketChannel(MEMBER));
+            closeQuietly(addressPicker.getServerSocketChannel(MEMBER));
         }
     }
 

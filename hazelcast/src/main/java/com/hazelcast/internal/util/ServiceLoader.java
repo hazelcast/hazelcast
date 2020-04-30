@@ -38,7 +38,7 @@ import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Set;
 
-import static com.hazelcast.internal.nio.IOUtil.closeResource;
+import static com.hazelcast.internal.nio.IOUtil.closeQuietly;
 import static com.hazelcast.internal.util.EmptyStatement.ignore;
 import static com.hazelcast.internal.util.Preconditions.isNotNull;
 import static java.lang.Boolean.getBoolean;
@@ -143,7 +143,7 @@ public final class ServiceLoader {
                     names.add(new ServiceDefinition(name, urlDefinition.classLoader));
                 }
             } finally {
-                closeResource(r);
+                closeQuietly(r);
             }
             return names;
         } catch (Exception e) {

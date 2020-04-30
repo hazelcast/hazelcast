@@ -27,7 +27,7 @@ import org.junit.runner.RunWith;
 
 import java.io.ByteArrayInputStream;
 
-import static com.hazelcast.internal.nio.IOUtil.closeResource;
+import static com.hazelcast.internal.nio.IOUtil.closeQuietly;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -45,7 +45,7 @@ public class BufferingInputStreamTest {
 
     @After
     public void tearDown() throws Exception {
-        closeResource(in);
+        closeQuietly(in);
     }
 
     @Test

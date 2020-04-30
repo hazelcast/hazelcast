@@ -19,7 +19,6 @@ package com.hazelcast.internal.usercodedeployment.impl;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.config.UserCodeDeploymentConfig;
 import com.hazelcast.internal.cluster.ClusterService;
-import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.internal.usercodedeployment.UserCodeDeploymentClassLoader;
 import com.hazelcast.internal.usercodedeployment.UserCodeDeploymentService;
 import com.hazelcast.internal.usercodedeployment.impl.operation.ClassDataFinderOperation;
@@ -42,6 +41,7 @@ import java.util.concurrent.Future;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static com.hazelcast.internal.nio.IOUtil.closeQuietly;
 import static java.security.AccessController.doPrivileged;
 
 /**
@@ -135,7 +135,7 @@ public final class ClassLocator {
                 return classSource.define(name, classDef);
             }
         } finally {
-            IOUtil.closeResource(classMutex);
+            closeQuietly(classMutex);
         }
     }
 
@@ -175,7 +175,7 @@ public final class ClassLocator {
                 return classSource.getClazz(name);
             }
         } finally {
-            IOUtil.closeResource(classMutex);
+            closeQuietly(classMutex);
         }
     }
 

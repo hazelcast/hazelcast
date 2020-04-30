@@ -37,7 +37,7 @@ import java.io.IOException;
 
 import static com.hazelcast.config.InMemoryFormat.BINARY;
 import static com.hazelcast.config.InMemoryFormat.OBJECT;
-import static com.hazelcast.internal.nio.IOUtil.closeResource;
+import static com.hazelcast.internal.nio.IOUtil.closeQuietly;
 import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static com.hazelcast.test.Accessors.getSerializationService;
 import static org.junit.Assert.assertArrayEquals;
@@ -177,8 +177,8 @@ public class RingbufferContainerSerializationTest extends HazelcastTestSupport {
         } catch (IOException e) {
             throw new RuntimeException(e);
         } finally {
-            closeResource(out);
-            closeResource(in);
+            closeQuietly(out);
+            closeQuietly(in);
         }
     }
 

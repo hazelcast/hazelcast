@@ -36,7 +36,7 @@ import java.io.RandomAccessFile;
 import java.nio.channels.FileChannel;
 import java.nio.channels.OverlappingFileLockException;
 
-import static com.hazelcast.internal.nio.IOUtil.closeResource;
+import static com.hazelcast.internal.nio.IOUtil.closeQuietly;
 import static com.hazelcast.internal.nio.IOUtil.deleteQuietly;
 import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
@@ -67,7 +67,7 @@ public class NearCachePreloaderLockTest extends HazelcastTestSupport {
 
     @After
     public void tearDown() {
-        closeResource(channel);
+        closeQuietly(channel);
         deleteQuietly(lockFile);
         deleteQuietly(preloaderLockFile);
     }

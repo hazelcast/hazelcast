@@ -17,12 +17,13 @@
 package com.hazelcast.spi.discovery.multicast.impl;
 
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.internal.nio.IOUtil;
 
 import java.io.ByteArrayInputStream;
 import java.io.ObjectInputStream;
 import java.net.DatagramPacket;
 import java.net.MulticastSocket;
+
+import static com.hazelcast.internal.nio.IOUtil.closeQuietly;
 
 public class MulticastDiscoveryReceiver {
 
@@ -55,8 +56,8 @@ public class MulticastDiscoveryReceiver {
                 logger.finest("Couldn't get member info from multicast channel " + e.getMessage());
             }
         } finally {
-            IOUtil.closeResource(bis);
-            IOUtil.closeResource(in);
+            closeQuietly(bis);
+            closeQuietly(in);
         }
         return null;
     }

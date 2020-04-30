@@ -88,7 +88,7 @@ public class DefaultAddressPickerHostnameTest {
 
     @After
     public void after() {
-        addressPicker.getServerSocketChannels().values().forEach(IOUtil::closeResource);
+        addressPicker.getServerSocketChannels().values().forEach(IOUtil::closeQuietly);
     }
 
     @Test

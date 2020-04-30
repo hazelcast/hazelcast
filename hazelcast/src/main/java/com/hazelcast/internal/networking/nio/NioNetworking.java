@@ -62,7 +62,7 @@ import static com.hazelcast.internal.metrics.ProbeUnit.BYTES;
 import static com.hazelcast.internal.networking.nio.SelectorMode.SELECT;
 import static com.hazelcast.internal.networking.nio.SelectorMode.SELECT_NOW_STRING;
 import static com.hazelcast.internal.networking.nio.SelectorMode.SELECT_WITH_FIX;
-import static com.hazelcast.internal.nio.IOUtil.closeResource;
+import static com.hazelcast.internal.nio.IOUtil.closeQuietly;
 import static com.hazelcast.internal.util.HashUtil.hashToIndex;
 import static com.hazelcast.internal.util.ThreadUtil.createThreadPoolName;
 import static com.hazelcast.internal.util.concurrent.BackoffIdleStrategy.createBackoffIdleStrategy;
@@ -257,7 +257,7 @@ public final class NioNetworking implements Networking, DynamicMetricsProvider {
         // if there are any channels left, we close them.
         for (Channel channel : channels) {
             if (!channel.isClosed()) {
-                closeResource(channel);
+                closeQuietly(channel);
             }
         }
         //and clear them to prevent memory leaks.

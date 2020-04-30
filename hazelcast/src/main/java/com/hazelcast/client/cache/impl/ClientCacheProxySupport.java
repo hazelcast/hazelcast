@@ -52,7 +52,6 @@ import com.hazelcast.client.impl.spi.impl.ClientInvocationFuture;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.core.ManagedContext;
-import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.internal.util.FutureUtil;
@@ -95,6 +94,7 @@ import static com.hazelcast.cache.impl.operation.MutableOperation.IGNORE_COMPLET
 import static com.hazelcast.client.cache.impl.ClientCacheProxySupportUtil.addCallback;
 import static com.hazelcast.client.cache.impl.ClientCacheProxySupportUtil.getSafely;
 import static com.hazelcast.client.cache.impl.ClientCacheProxySupportUtil.handleFailureOnCompletionListener;
+import static com.hazelcast.internal.nio.IOUtil.closeQuietly;
 import static com.hazelcast.internal.util.CollectionUtil.objectToDataCollection;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrowAllowedTypeFirst;
@@ -799,7 +799,7 @@ abstract class ClientCacheProxySupport<K, V> extends ClientProxy implements ICac
         UUID registrationId = listenerCompleter.removeListener(cacheEntryListenerConfiguration);
         if (registrationId != null) {
             Closeable closeable = closeableListeners.remove(registrationId);
-            IOUtil.closeResource(closeable);
+            closeQuietly(closeable);
         }
     }
 
@@ -1183,7 +1183,7 @@ abstract class ClientCacheProxySupport<K, V> extends ClientProxy implements ICac
 
         listenerCompleter.clearListeners();
         for (Closeable closeable : closeableListeners.values()) {
-            IOUtil.closeResource(closeable);
+            closeQuietly(closeable);
         }
     }
 

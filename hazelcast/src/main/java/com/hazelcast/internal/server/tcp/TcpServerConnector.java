@@ -36,6 +36,7 @@ import java.util.Collection;
 import java.util.LinkedList;
 import java.util.logging.Level;
 
+import static com.hazelcast.internal.nio.IOUtil.closeQuietly;
 import static com.hazelcast.spi.properties.ClusterProperty.SOCKET_CLIENT_BIND;
 import static com.hazelcast.spi.properties.ClusterProperty.SOCKET_CLIENT_BIND_ANY;
 
@@ -199,7 +200,7 @@ class TcpServerConnector {
                     new SendMemberHandshakeTask(logger, serverContext, connection, address, true).run();
                 } catch (Exception e) {
                     closeConnection(connection, e);
-                    closeSocket(socketChannel);
+                    closeQuietly(socketChannel);
                     logger.log(level, "Could not connect to: " + socketAddress + ". Reason: " + e.getClass().getSimpleName()
                             + "[" + e.getMessage() + "]");
                     throw e;
@@ -240,16 +241,6 @@ class TcpServerConnector {
         private void closeConnection(final Connection connection, Throwable t) {
             if (connection != null) {
                 connection.close(null, t);
-            }
-        }
-
-        private void closeSocket(final SocketChannel socketChannel) {
-            if (socketChannel != null) {
-                try {
-                    socketChannel.close();
-                } catch (final IOException e) {
-                    logger.finest("Closing socket channel failed", e);
-                }
             }
         }
     }

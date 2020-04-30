@@ -19,7 +19,7 @@ package com.hazelcast.internal.util;
 import java.io.File;
 import java.io.InputStream;
 
-import static com.hazelcast.internal.nio.IOUtil.closeResource;
+import static com.hazelcast.internal.nio.IOUtil.closeQuietly;
 import static com.hazelcast.internal.nio.IOUtil.copy;
 import static com.hazelcast.internal.nio.IOUtil.getFileFromResourcesAsStream;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
@@ -57,7 +57,7 @@ public final class ICMPHelper {
         } catch (Throwable t) {
             throw rethrow(t);
         } finally {
-            closeResource(src);
+            closeQuietly(src);
         }
     }
 

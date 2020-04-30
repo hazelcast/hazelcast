@@ -36,7 +36,7 @@ import java.util.jar.Attributes;
 import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
 
-import static com.hazelcast.internal.nio.IOUtil.closeResource;
+import static com.hazelcast.internal.nio.IOUtil.closeQuietly;
 import static com.hazelcast.internal.nio.IOUtil.getFileFromResources;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -72,7 +72,7 @@ public class HazelcastManifestTransformerTest {
 
     @After
     public void tearDown() {
-        closeResource(is);
+        closeQuietly(is);
     }
 
     @Test

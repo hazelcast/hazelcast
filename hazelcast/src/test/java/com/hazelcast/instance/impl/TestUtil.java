@@ -33,7 +33,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-import static com.hazelcast.internal.util.EmptyStatement.ignore;
+import static com.hazelcast.internal.nio.IOUtil.closeQuietly;
 import static com.hazelcast.test.HazelcastTestSupport.sleepMillis;
 import static java.lang.reflect.Proxy.isProxyClass;
 
@@ -215,13 +215,7 @@ public final class TestUtil {
             if (ds != null) {
                 ds.close();
             }
-            try {
-                if (ss != null) {
-                    ss.close();
-                }
-            } catch (IOException e) {
-                ignore(e);
-            }
+            closeQuietly(ss);
         }
     }
 

@@ -35,7 +35,7 @@ import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
-import static com.hazelcast.internal.nio.IOUtil.closeResource;
+import static com.hazelcast.internal.nio.IOUtil.closeQuietly;
 import static java.lang.String.format;
 import static org.junit.Assert.assertEquals;
 
@@ -110,10 +110,10 @@ public class HazelcastStarterUtils {
         } catch (Exception e) {
             throw new GuardianException("Object transfer via serialization failed for: " + object, e);
         } finally {
-            closeResource(objectInputStream);
-            closeResource(byteArrayInputStream);
-            closeResource(objectOutputStream);
-            closeResource(byteArrayOutputStream);
+            closeQuietly(objectInputStream);
+            closeQuietly(byteArrayInputStream);
+            closeQuietly(objectOutputStream);
+            closeQuietly(byteArrayOutputStream);
         }
     }
 
@@ -162,8 +162,8 @@ public class HazelcastStarterUtils {
             if (byteArrayInputStream != null) {
                 byteArrayInputStreamCloseMethod.invoke(byteArrayInputStream);
             }
-            closeResource(objectOutputStream);
-            closeResource(byteArrayOutputStream);
+            closeQuietly(objectOutputStream);
+            closeQuietly(byteArrayOutputStream);
         }
     }
 

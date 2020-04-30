@@ -40,8 +40,6 @@ import java.io.ObjectStreamClass;
 import java.io.OutputStream;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Proxy;
-import java.net.ServerSocket;
-import java.net.Socket;
 import java.net.URL;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
@@ -354,14 +352,14 @@ public final class IOUtil {
      *
      * @param closeable the resource to close. If {@code null}, no action is taken.
      */
-    public static void closeResource(Closeable closeable) {
+    public static void closeQuietly(Closeable closeable) {
         if (closeable == null) {
             return;
         }
         try {
             closeable.close();
         } catch (IOException e) {
-            Logger.getLogger(IOUtil.class).finest("closeResource failed", e);
+            Logger.getLogger(IOUtil.class).finest("close failed", e);
         }
     }
 
@@ -372,38 +370,6 @@ public final class IOUtil {
         try {
             conn.close(reason, null);
         } catch (Throwable e) {
-            Logger.getLogger(IOUtil.class).finest("closeResource failed", e);
-        }
-    }
-
-    /**
-     * Quietly attempts to close a {@link ServerSocket}, swallowing any exception.
-     *
-     * @param serverSocket server socket to close. If {@code null}, no action is taken.
-     */
-    public static void close(ServerSocket serverSocket) {
-        if (serverSocket == null) {
-            return;
-        }
-        try {
-            serverSocket.close();
-        } catch (IOException e) {
-            Logger.getLogger(IOUtil.class).finest("closeResource failed", e);
-        }
-    }
-
-    /**
-     * Quietly attempts to close a {@link Socket}, swallowing any exception.
-     *
-     * @param socket socket to close. If {@code null}, no action is taken.
-     */
-    public static void close(Socket socket) {
-        if (socket == null) {
-            return;
-        }
-        try {
-            socket.close();
-        } catch (IOException e) {
             Logger.getLogger(IOUtil.class).finest("closeResource failed", e);
         }
     }
@@ -557,7 +523,7 @@ public final class IOUtil {
         } catch (IOException e) {
             throw rethrow(e);
         } finally {
-            closeResource(fos);
+            closeQuietly(fos);
         }
     }
 
@@ -612,7 +578,7 @@ public final class IOUtil {
         } catch (Exception e) {
             throw new HazelcastException("Error occurred while copying InputStream", e);
         } finally {
-            closeResource(out);
+            closeQuietly(out);
         }
     }
 
@@ -649,8 +615,8 @@ public final class IOUtil {
         } catch (Exception e) {
             throw new HazelcastException("Error occurred while copying file", e);
         } finally {
-            closeResource(in);
-            closeResource(out);
+            closeQuietly(in);
+            closeQuietly(out);
         }
     }
 
@@ -679,7 +645,7 @@ public final class IOUtil {
             drainTo(is, os);
             return os.toByteArray();
         } finally {
-            closeResource(os);
+            closeQuietly(os);
         }
     }
 

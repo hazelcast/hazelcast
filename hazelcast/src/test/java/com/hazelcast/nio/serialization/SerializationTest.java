@@ -30,7 +30,6 @@ import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuil
 import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.internal.serialization.impl.JavaDefaultSerializers.JavaSerializer;
 import com.hazelcast.cluster.Address;
-import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.internal.serialization.SerializationService;
@@ -68,6 +67,7 @@ import java.util.UUID;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static com.hazelcast.internal.nio.IOUtil.closeQuietly;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
@@ -650,7 +650,7 @@ public class SerializationTest extends HazelcastTestSupport {
             } catch (IOException e) {
                 return super.findClass(name);
             } finally {
-                IOUtil.closeResource(in);
+                closeQuietly(in);
             }
         }
     }

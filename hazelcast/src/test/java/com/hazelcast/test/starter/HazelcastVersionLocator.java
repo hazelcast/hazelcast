@@ -26,7 +26,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 
-import static com.hazelcast.internal.nio.IOUtil.closeResource;
+import static com.hazelcast.internal.nio.IOUtil.closeQuietly;
 import static com.hazelcast.internal.nio.IOUtil.drainTo;
 import static com.hazelcast.test.JenkinsDetector.isOnJenkins;
 import static com.hazelcast.test.starter.HazelcastStarterUtils.rethrowGuardianException;
@@ -124,8 +124,8 @@ public class HazelcastVersionLocator {
         } catch (IOException e) {
             throw rethrowGuardianException(e);
         } finally {
-            closeResource(fos);
-            closeResource(is);
+            closeQuietly(fos);
+            closeQuietly(is);
         }
     }
 

@@ -31,7 +31,7 @@ import java.nio.charset.StandardCharsets;
 
 import static com.hazelcast.internal.diagnostics.Diagnostics.MAX_ROLLED_FILE_COUNT;
 import static com.hazelcast.internal.diagnostics.Diagnostics.MAX_ROLLED_FILE_SIZE_MB;
-import static com.hazelcast.internal.nio.IOUtil.closeResource;
+import static com.hazelcast.internal.nio.IOUtil.closeQuietly;
 import static com.hazelcast.internal.nio.IOUtil.deleteQuietly;
 import static java.lang.Math.round;
 import static java.lang.String.format;
@@ -89,7 +89,7 @@ final class DiagnosticsLogFile {
         } catch (IOException e) {
             logger.warning("Failed to write to file:" + file.getAbsolutePath(), e);
             file = null;
-            closeResource(printWriter);
+            closeQuietly(printWriter);
             printWriter = null;
         } catch (RuntimeException e) {
             logger.warning("Failed to write file: " + file, e);
@@ -135,7 +135,7 @@ final class DiagnosticsLogFile {
     }
 
     private void rollover() {
-        closeResource(printWriter);
+        closeQuietly(printWriter);
         printWriter = null;
         file = null;
         index++;

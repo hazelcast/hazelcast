@@ -20,7 +20,6 @@ import com.hazelcast.internal.networking.Channel;
 import com.hazelcast.internal.networking.ChannelCloseListener;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-import com.hazelcast.internal.nio.IOUtil;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -34,6 +33,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
+import static com.hazelcast.internal.nio.IOUtil.closeQuietly;
 import static com.hazelcast.internal.util.Preconditions.checkNotNegative;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static java.lang.String.format;
@@ -144,11 +144,8 @@ public abstract class AbstractChannel implements Channel {
             if (logger.isFinestEnabled()) {
                 logger.finest("Successfully connected to: " + address + " using socket " + socketChannel.socket());
             }
-        } catch (RuntimeException e) {
-            IOUtil.closeResource(this);
-            throw e;
-        } catch (IOException e) {
-            IOUtil.closeResource(this);
+        } catch (RuntimeException | IOException e) {
+            closeQuietly(this);
             throw e;
         }
     }

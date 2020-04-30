@@ -21,7 +21,6 @@ import com.hazelcast.internal.config.MemberDomConfigProcessor;
 import com.hazelcast.internal.config.XmlConfigLocator;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.spi.annotation.PrivateApi;
 import org.w3c.dom.Document;
@@ -38,6 +37,7 @@ import java.net.URL;
 import java.util.Properties;
 
 import static com.hazelcast.instance.BuildInfoProvider.HAZELCAST_INTERNAL_OVERRIDE_VERSION;
+import static com.hazelcast.internal.nio.IOUtil.closeQuietly;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.Preconditions.checkTrue;
 import static com.hazelcast.internal.util.StringUtil.LINE_SEPARATOR;
@@ -215,7 +215,7 @@ public class XmlConfigBuilder extends AbstractXmlConfigBuilder implements Config
             }
             throw new InvalidConfigurationException(e.getMessage(), e);
         } finally {
-            IOUtil.closeResource(is);
+            closeQuietly(is);
         }
         return doc;
     }

@@ -16,7 +16,6 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.SlowTest;
@@ -48,6 +47,7 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.regex.Pattern;
 
+import static com.hazelcast.internal.nio.IOUtil.closeQuietly;
 import static com.hazelcast.test.TestCollectionUtils.setOf;
 import static org.junit.Assert.assertEquals;
 
@@ -78,7 +78,7 @@ public class XmlConfigSchemaLocationTest extends HazelcastTestSupport {
 
     @After
     public void tearDown() {
-        IOUtil.closeResource(httpClient);
+        closeQuietly(httpClient);
     }
 
     @Test
@@ -103,7 +103,7 @@ public class XmlConfigSchemaLocationTest extends HazelcastTestSupport {
                 stream = classLoader.getResourceAsStream(resource);
                 validateSchemaLocationUrl(stream, resource);
             } finally {
-                IOUtil.closeResource(stream);
+                closeQuietly(stream);
             }
         }
     }
@@ -168,7 +168,7 @@ public class XmlConfigSchemaLocationTest extends HazelcastTestSupport {
             response = httpClient.execute(httpGet);
             return response.getStatusLine().getStatusCode();
         } finally {
-            IOUtil.closeResource(response);
+            closeQuietly(response);
         }
     }
 

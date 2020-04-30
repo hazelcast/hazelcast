@@ -20,12 +20,11 @@ import com.hazelcast.client.config.impl.ClientConfigSections;
 import com.hazelcast.client.config.impl.ClientDomConfigProcessor;
 import com.hazelcast.client.config.impl.XmlClientConfigLocator;
 import com.hazelcast.config.AbstractXmlConfigBuilder;
-import com.hazelcast.internal.config.ConfigLoader;
 import com.hazelcast.config.InvalidConfigurationException;
+import com.hazelcast.internal.config.ConfigLoader;
+import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-import com.hazelcast.internal.nio.IOUtil;
-import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.spi.annotation.PrivateApi;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -39,6 +38,7 @@ import java.io.InputStream;
 import java.net.URL;
 import java.util.Properties;
 
+import static com.hazelcast.internal.nio.IOUtil.closeQuietly;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.Preconditions.checkTrue;
 import static com.hazelcast.internal.util.StringUtil.LINE_SEPARATOR;
@@ -127,7 +127,7 @@ public class XmlClientConfigBuilder extends AbstractXmlConfigBuilder {
             LOGGER.severe(msg);
             throw new InvalidConfigurationException(e.getMessage(), e);
         } finally {
-            IOUtil.closeResource(inputStream);
+            closeQuietly(inputStream);
         }
     }
 
@@ -158,7 +158,7 @@ public class XmlClientConfigBuilder extends AbstractXmlConfigBuilder {
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
         } finally {
-            IOUtil.closeResource(in);
+            closeQuietly(in);
         }
     }
 

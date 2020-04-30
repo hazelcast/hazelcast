@@ -22,7 +22,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 
-import static com.hazelcast.internal.nio.IOUtil.closeResource;
+import static com.hazelcast.internal.nio.IOUtil.closeQuietly;
 
 public final class TestStringUtils {
 
@@ -50,9 +50,9 @@ public final class TestStringUtils {
         } catch (IOException e) {
             throw new RuntimeException(e);
         } finally {
-            closeResource(reader);
-            closeResource(streamReader);
-            closeResource(stream);
+            closeQuietly(reader);
+            closeQuietly(streamReader);
+            closeQuietly(stream);
         }
     }
 }

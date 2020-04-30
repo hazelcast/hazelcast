@@ -16,7 +16,7 @@
 
 package com.hazelcast.cluster;
 
-import static com.hazelcast.internal.nio.IOUtil.closeResource;
+import static com.hazelcast.internal.nio.IOUtil.closeQuietly;
 import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
 import static com.hazelcast.test.HazelcastTestSupport.smallInstanceConfig;
 import static org.junit.Assert.assertFalse;
@@ -130,7 +130,7 @@ public class MulticastDeserializationTest {
         try {
             oos.writeObject(object);
         } finally {
-            closeResource(oos);
+            closeQuietly(oos);
         }
         byte[] data = bos.toByteArray();
         MulticastSocket multicastSocket = null;

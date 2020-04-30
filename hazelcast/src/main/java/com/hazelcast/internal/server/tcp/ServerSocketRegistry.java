@@ -26,7 +26,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static com.hazelcast.internal.nio.IOUtil.closeResource;
+import static com.hazelcast.internal.nio.IOUtil.closeQuietly;
 
 /**
  * Registry that holds all initiated ServerSocket when advanced-networking is in-use
@@ -92,7 +92,7 @@ public class ServerSocketRegistry
     public void destroy() {
         if (isOpen.compareAndSet(true, false)) {
             for (ServerSocketChannel channel : serverSocketChannelMap.values()) {
-                closeResource(channel);
+                closeQuietly(channel);
             }
         }
     }

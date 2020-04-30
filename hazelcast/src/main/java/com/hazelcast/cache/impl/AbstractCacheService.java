@@ -38,7 +38,6 @@ import com.hazelcast.internal.metrics.MetricDescriptor;
 import com.hazelcast.internal.metrics.MetricsCollectionContext;
 import com.hazelcast.internal.monitor.LocalCacheStats;
 import com.hazelcast.internal.monitor.impl.LocalCacheStatsImpl;
-import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.internal.partition.IPartitionLostEvent;
 import com.hazelcast.internal.partition.MigrationEndpoint;
 import com.hazelcast.internal.partition.PartitionAwareService;
@@ -92,6 +91,7 @@ import static com.hazelcast.config.CacheConfigAccessor.getTenantControl;
 import static com.hazelcast.internal.config.ConfigValidator.checkCacheConfig;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CACHE_PREFIX;
 import static com.hazelcast.internal.metrics.impl.ProviderHelper.provide;
+import static com.hazelcast.internal.nio.IOUtil.closeQuietly;
 import static com.hazelcast.internal.util.ConcurrencyUtil.CALLER_RUNS;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.internal.util.FutureUtil.RETHROW_EVERYTHING;
@@ -675,9 +675,7 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
 
     private void removeFromLocalResources(UUID registrationId) {
         Closeable listener = closeableListeners.remove(registrationId);
-        if (listener != null) {
-            IOUtil.closeResource(listener);
-        }
+        closeQuietly(listener);
     }
 
     @Override
@@ -751,7 +749,7 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
 
         if (cacheResources != null) {
             for (Closeable resource : cacheResources) {
-                IOUtil.closeResource(resource);
+                closeQuietly(resource);
             }
             cacheResources.clear();
         }

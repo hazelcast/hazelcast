@@ -21,7 +21,6 @@ import com.hazelcast.config.AdvancedNetworkConfig;
 import com.hazelcast.config.SSLConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.ascii.rest.HttpCommandProcessor;
-import com.hazelcast.internal.nio.IOUtil;
 import org.apache.http.Consts;
 import org.apache.http.Header;
 import org.apache.http.HttpEntity;
@@ -60,6 +59,7 @@ import java.util.UUID;
 
 import static com.hazelcast.instance.EndpointQualifier.REST;
 import static com.hazelcast.internal.ascii.rest.HttpCommand.CONTENT_TYPE_PLAIN_TEXT;
+import static com.hazelcast.internal.nio.IOUtil.closeQuietly;
 import static com.hazelcast.internal.util.StringUtil.bytesToString;
 import static com.hazelcast.test.Accessors.getNode;
 
@@ -444,8 +444,8 @@ public class HTTPCommunicator {
             response = client.execute(request);
             return new ConnectionResponse(response);
         } finally {
-            IOUtil.closeResource(response);
-            IOUtil.closeResource(client);
+            closeQuietly(response);
+            closeQuietly(client);
         }
     }
 
@@ -458,8 +458,8 @@ public class HTTPCommunicator {
             response = client.execute(request);
             return new ConnectionResponse(response);
         } finally {
-            IOUtil.closeResource(response);
-            IOUtil.closeResource(client);
+            closeQuietly(response);
+            closeQuietly(client);
         }
     }
 
@@ -491,8 +491,8 @@ public class HTTPCommunicator {
 
             return new ConnectionResponse(response);
         } finally {
-            IOUtil.closeResource(response);
-            IOUtil.closeResource(client);
+            closeQuietly(response);
+            closeQuietly(client);
         }
     }
 
@@ -505,8 +505,8 @@ public class HTTPCommunicator {
             response = client.execute(request);
             return new ConnectionResponse(response);
         } finally {
-            IOUtil.closeResource(response);
-            IOUtil.closeResource(client);
+            closeQuietly(response);
+            closeQuietly(client);
         }
     }
 

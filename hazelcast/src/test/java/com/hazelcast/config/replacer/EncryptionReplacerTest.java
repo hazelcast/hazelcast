@@ -19,7 +19,6 @@ package com.hazelcast.config.replacer;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.OverridePropertyRule;
 import com.hazelcast.test.annotation.QuickTest;
@@ -37,6 +36,7 @@ import java.util.Enumeration;
 import java.util.Properties;
 
 import static com.hazelcast.config.replacer.EncryptionReplacer.encrypt;
+import static com.hazelcast.internal.nio.IOUtil.closeQuietly;
 import static org.hamcrest.CoreMatchers.allOf;
 import static org.hamcrest.CoreMatchers.endsWith;
 import static org.hamcrest.CoreMatchers.startsWith;
@@ -187,7 +187,7 @@ public class EncryptionReplacerTest extends AbstractPbeReplacerTest {
             try {
                 out.print(string);
             } finally {
-                IOUtil.closeResource(out);
+                closeQuietly(out);
             }
         }
         return file;

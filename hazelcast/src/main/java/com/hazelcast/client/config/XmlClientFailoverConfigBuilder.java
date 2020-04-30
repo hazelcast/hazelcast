@@ -25,7 +25,6 @@ import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.spi.annotation.PrivateApi;
 import org.w3c.dom.Document;
@@ -40,6 +39,7 @@ import java.io.InputStream;
 import java.net.URL;
 import java.util.Properties;
 
+import static com.hazelcast.internal.nio.IOUtil.closeQuietly;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.Preconditions.checkTrue;
 import static com.hazelcast.internal.util.StringUtil.LINE_SEPARATOR;
@@ -135,7 +135,7 @@ public class XmlClientFailoverConfigBuilder extends AbstractXmlConfigBuilder {
             LOGGER.severe(msg);
             throw new InvalidConfigurationException(e.getMessage(), e);
         } finally {
-            IOUtil.closeResource(inputStream);
+            closeQuietly(inputStream);
         }
     }
 
@@ -154,7 +154,7 @@ public class XmlClientFailoverConfigBuilder extends AbstractXmlConfigBuilder {
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
         } finally {
-            IOUtil.closeResource(in);
+            closeQuietly(in);
         }
         return clientFailoverConfig;
     }

@@ -43,7 +43,7 @@ import java.io.InputStream;
 import java.net.URL;
 import java.util.ArrayList;
 
-import static com.hazelcast.internal.nio.IOUtil.closeResource;
+import static com.hazelcast.internal.nio.IOUtil.closeQuietly;
 import static com.hazelcast.internal.util.StringUtil.LINE_SEPARATOR;
 
 /**
@@ -119,9 +119,9 @@ public abstract class AbstractXmlConfigHelper {
             throw new InvalidConfigurationException(e.getMessage(), e);
         } finally {
             for (StreamSource source : schemas) {
-                closeResource(source.getInputStream());
+                closeQuietly(source.getInputStream());
             }
-            closeResource(inputStream);
+            closeQuietly(inputStream);
         }
     }
 

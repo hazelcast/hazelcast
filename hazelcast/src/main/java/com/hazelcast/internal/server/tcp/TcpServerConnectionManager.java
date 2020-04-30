@@ -257,7 +257,7 @@ public class TcpServerConnectionManager
     }
 
     public synchronized void reset(boolean cleanListeners) {
-        acceptedChannels.forEach(IOUtil::closeResource);
+        acceptedChannels.forEach(IOUtil::closeQuietly);
         connectionsMap.values().forEach(conn -> close(conn, "EndpointManager is stopping"));
         activeConnections.forEach(conn -> close(conn, "EndpointManager is stopping"));
         acceptedChannels.clear();

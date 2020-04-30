@@ -52,7 +52,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 
-import static com.hazelcast.internal.nio.IOUtil.closeResource;
+import static com.hazelcast.internal.nio.IOUtil.closeQuietly;
 import static com.hazelcast.internal.util.IterableUtil.limit;
 import static com.hazelcast.internal.util.IterableUtil.map;
 import static com.hazelcast.logging.Logger.getLogger;
@@ -444,7 +444,7 @@ public class MapKeyLoader {
             sendKeyLoadCompleted(clusterSize, loadError);
 
             if (keys instanceof Closeable) {
-                closeResource((Closeable) keys);
+                closeQuietly((Closeable) keys);
             }
         }
     }

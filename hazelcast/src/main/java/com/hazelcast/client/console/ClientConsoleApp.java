@@ -32,7 +32,6 @@ import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IExecutorService;
 import com.hazelcast.cp.IAtomicLong;
-import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.internal.util.Clock;
 import com.hazelcast.internal.util.RuntimeAvailableProcessors;
 import com.hazelcast.map.IMap;
@@ -68,6 +67,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 
+import static com.hazelcast.internal.nio.IOUtil.closeQuietly;
 import static com.hazelcast.internal.util.StringUtil.lowerCaseInternal;
 import static java.lang.String.format;
 import static java.lang.Thread.currentThread;
@@ -500,7 +500,7 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
             } catch (IOException e) {
                 e.printStackTrace();
             } finally {
-                IOUtil.closeResource(br);
+                closeQuietly(br);
             }
         } else {
             println("File not found! " + f.getAbsolutePath());

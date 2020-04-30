@@ -16,7 +16,6 @@
 
 package com.hazelcast.config.replacer;
 
-import com.hazelcast.internal.nio.IOUtil;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -41,7 +40,8 @@ import java.util.Properties;
 
 import static com.hazelcast.internal.config.DomConfigHelper.childElements;
 import static com.hazelcast.internal.config.DomConfigHelper.cleanNodeName;
-import static com.hazelcast.internal.nio.IOUtil.closeResource;
+import static com.hazelcast.internal.nio.IOUtil.closeQuietly;
+import static com.hazelcast.internal.nio.IOUtil.toByteArray;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.internal.util.Preconditions.checkFalse;
 import static com.hazelcast.internal.util.Preconditions.checkPositive;
@@ -105,9 +105,9 @@ public class EncryptionReplacer extends AbstractPbeReplacer {
             if (passwordFile != null) {
                 FileInputStream fis = new FileInputStream(passwordFile);
                 try {
-                    baos.write(IOUtil.toByteArray(fis));
+                    baos.write(toByteArray(fis));
                 } finally {
-                    IOUtil.closeResource(fis);
+                    closeQuietly(fis);
                 }
             }
             if (passwordUserProperties) {
@@ -185,7 +185,7 @@ public class EncryptionReplacer extends AbstractPbeReplacer {
             Element root = doc.getDocumentElement();
             return loadProperties(findReplacerDefinition(root));
         } finally {
-            closeResource(fileInputStream);
+            closeQuietly(fileInputStream);
         }
     }
 

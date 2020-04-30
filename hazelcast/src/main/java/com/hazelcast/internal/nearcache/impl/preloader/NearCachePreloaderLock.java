@@ -29,7 +29,7 @@ import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
 import java.nio.channels.OverlappingFileLockException;
 
-import static com.hazelcast.internal.nio.IOUtil.closeResource;
+import static com.hazelcast.internal.nio.IOUtil.closeQuietly;
 
 class NearCachePreloaderLock {
 
@@ -82,7 +82,7 @@ class NearCachePreloaderLock {
             throw new HazelcastException("Unknown failure while acquiring lock on " + lockFile.getAbsolutePath(), e);
         } finally {
             if (fileLock == null) {
-                closeResource(channel);
+                closeQuietly(channel);
             }
         }
     }

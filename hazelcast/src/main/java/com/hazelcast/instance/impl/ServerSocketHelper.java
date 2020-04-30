@@ -20,7 +20,6 @@ import com.hazelcast.config.EndpointConfig;
 import com.hazelcast.config.NetworkConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.internal.nio.IOUtil;
 
 import java.io.IOException;
 import java.net.InetAddress;
@@ -29,6 +28,7 @@ import java.net.ServerSocket;
 import java.nio.channels.ServerSocketChannel;
 import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.internal.nio.IOUtil.closeQuietly;
 import static com.hazelcast.internal.server.ServerContext.KILO_BYTE;
 
 final class ServerSocketHelper {
@@ -50,16 +50,16 @@ final class ServerSocketHelper {
      * When {@code bindAny} is {@code false}, {@code ServerSocket} will be bound to specific {@code bindAddress}.
      * Otherwise, it will be bound to any local address ({@code 0.0.0.0}).
      *
-     * @param logger                logger instance
-     * @param endpointConfig        the {@link EndpointConfig} that supplies network configuration for the
-     *                              server socket
-     * @param bindAddress           InetAddress to bind created {@code ServerSocket}
-     * @param port                  initial port number to attempt to bind
-     * @param portCount             count of subsequent ports to attempt to bind to if initial port is already bound
-     * @param isPortAutoIncrement   when {@code true} attempt to bind to {@code portCount} subsequent ports
-     *                              after {@code port} is found already bound
-     * @param isReuseAddress        sets reuse address socket option
-     * @param bindAny               when {@code true} bind any local address otherwise bind given {@code bindAddress}
+     * @param logger              logger instance
+     * @param endpointConfig      the {@link EndpointConfig} that supplies network configuration for the
+     *                            server socket
+     * @param bindAddress         InetAddress to bind created {@code ServerSocket}
+     * @param port                initial port number to attempt to bind
+     * @param portCount           count of subsequent ports to attempt to bind to if initial port is already bound
+     * @param isPortAutoIncrement when {@code true} attempt to bind to {@code portCount} subsequent ports
+     *                            after {@code port} is found already bound
+     * @param isReuseAddress      sets reuse address socket option
+     * @param bindAny             when {@code true} bind any local address otherwise bind given {@code bindAddress}
      * @return actual port number that created {@code ServerSocketChannel} is bound to
      */
     static ServerSocketChannel createServerSocketChannel(ILogger logger, EndpointConfig endpointConfig, InetAddress bindAddress,
@@ -86,8 +86,8 @@ final class ServerSocketHelper {
     }
 
     private static ServerSocketChannel tryOpenServerSocketChannel(EndpointConfig endpointConfig, InetAddress bindAddress,
-                                                          int initialPort, boolean isReuseAddress,  int portTrialCount,
-                                                          boolean bindAny, ILogger logger)
+                                                                  int initialPort, boolean isReuseAddress, int portTrialCount,
+                                                                  boolean bindAny, ILogger logger)
             throws IOException {
         assert portTrialCount > 0 : "Port trial count must be positive: " + portTrialCount;
 
@@ -107,7 +107,7 @@ final class ServerSocketHelper {
     }
 
     private static ServerSocketChannel openServerSocketChannel(EndpointConfig endpointConfig, InetSocketAddress socketBindAddress,
-                                                        boolean reuseAddress, ILogger logger)
+                                                               boolean reuseAddress, ILogger logger)
             throws IOException {
 
         ServerSocket serverSocket = null;
@@ -136,11 +136,9 @@ final class ServerSocketHelper {
             serverSocketChannel.configureBlocking(false);
             return serverSocketChannel;
         } catch (IOException e) {
-            IOUtil.close(serverSocket);
-            IOUtil.closeResource(serverSocketChannel);
+            closeQuietly(serverSocket);
+            closeQuietly(serverSocketChannel);
             throw e;
         }
     }
-
-
 }

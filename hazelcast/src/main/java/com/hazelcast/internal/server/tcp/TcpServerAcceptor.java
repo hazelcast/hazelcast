@@ -46,7 +46,7 @@ import static com.hazelcast.internal.metrics.MetricDescriptorConstants.TCP_METRI
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.TCP_PREFIX_ACCEPTOR;
 import static com.hazelcast.internal.metrics.ProbeUnit.MS;
 import static com.hazelcast.internal.networking.nio.SelectorMode.SELECT_WITH_FIX;
-import static com.hazelcast.internal.nio.IOUtil.closeResource;
+import static com.hazelcast.internal.nio.IOUtil.closeQuietly;
 import static com.hazelcast.internal.util.ThreadUtil.createThreadPoolName;
 import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
 import static java.lang.Math.max;
@@ -288,11 +288,7 @@ public class TcpServerAcceptor implements DynamicMetricsProvider {
             } else {
                 logger.severe("Unexpected error while accepting connection! "
                         + e.getClass().getName() + ": " + e.getMessage());
-                try {
-                    serverSocketChannel.close();
-                } catch (Exception ex) {
-                    logger.finest("Closing server socket failed", ex);
-                }
+                closeQuietly(serverSocketChannel);
                 serverContext.onFatalError(e);
             }
         }
@@ -319,7 +315,7 @@ public class TcpServerAcceptor implements DynamicMetricsProvider {
             } catch (Exception e) {
                 exceptionCount.inc();
                 logger.warning(e.getClass().getName() + ": " + e.getMessage(), e);
-                closeResource(channel);
+                closeQuietly(channel);
             }
         }
     }

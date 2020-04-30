@@ -42,7 +42,7 @@ import java.util.List;
 import java.util.Map;
 
 import static com.hazelcast.config.CacheConfigAccessor.getTenantControl;
-import static com.hazelcast.internal.nio.IOUtil.closeResource;
+import static com.hazelcast.internal.nio.IOUtil.closeQuietly;
 import static com.hazelcast.internal.util.MapUtil.createHashMap;
 
 /**
@@ -86,7 +86,7 @@ public class CacheReplicationOperation extends Operation implements IdentifiedDa
                 try {
                     storeRecordsToReplicate(recordStore);
                 } finally {
-                    closeResource(tenantContext);
+                    closeQuietly(tenantContext);
                 }
             }
         }

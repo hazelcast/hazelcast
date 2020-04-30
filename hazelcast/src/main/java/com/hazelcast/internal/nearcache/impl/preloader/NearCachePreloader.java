@@ -40,7 +40,7 @@ import java.util.Iterator;
 import static com.hazelcast.internal.nio.Bits.INT_SIZE_IN_BYTES;
 import static com.hazelcast.internal.nio.Bits.readIntB;
 import static com.hazelcast.internal.nio.Bits.writeIntB;
-import static com.hazelcast.internal.nio.IOUtil.closeResource;
+import static com.hazelcast.internal.nio.IOUtil.closeQuietly;
 import static com.hazelcast.internal.nio.IOUtil.deleteQuietly;
 import static com.hazelcast.internal.nio.IOUtil.getPath;
 import static com.hazelcast.internal.nio.IOUtil.readFullyOrNothing;
@@ -142,7 +142,7 @@ public class NearCachePreloader<K> {
         } catch (Exception e) {
             logger.warning(format("Could not pre-load Near Cache %s (%s)", nearCacheName, storeFile.getAbsolutePath()), e);
         } finally {
-            closeResource(bis);
+            closeQuietly(bis);
         }
     }
 
@@ -189,7 +189,7 @@ public class NearCachePreloader<K> {
             }
 
             fos.flush();
-            closeResource(fos);
+            closeQuietly(fos);
             rename(tmpStoreFile, storeFile);
 
             updatePersistenceStats(startedNanos);
@@ -198,7 +198,7 @@ public class NearCachePreloader<K> {
 
             nearCacheStats.addPersistenceFailure(e);
         } finally {
-            closeResource(fos);
+            closeQuietly(fos);
             deleteQuietly(tmpStoreFile);
         }
     }

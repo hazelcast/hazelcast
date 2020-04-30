@@ -39,7 +39,7 @@ import java.util.jar.JarInputStream;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static com.hazelcast.internal.nio.IOUtil.closeResource;
+import static com.hazelcast.internal.nio.IOUtil.closeQuietly;
 import static com.hazelcast.internal.nio.IOUtil.toByteArray;
 import static com.hazelcast.internal.util.EmptyStatement.ignore;
 
@@ -79,7 +79,7 @@ public class ClientUserCodeDeploymentService {
             } catch (IOException e) {
                 ignore(e);
             } finally {
-                closeResource(is);
+                closeQuietly(is);
             }
         }
     }
@@ -91,7 +91,7 @@ public class ClientUserCodeDeploymentService {
                 loadClassesFromJar(os, jarPath);
             }
         } finally {
-            closeResource(os);
+            closeQuietly(os);
         }
     }
 
@@ -115,7 +115,7 @@ public class ClientUserCodeDeploymentService {
                 classDefinitionList.add(new AbstractMap.SimpleEntry<>(className, classDefinition));
             } while (true);
         } finally {
-            closeResource(inputStream);
+            closeQuietly(inputStream);
         }
     }
 

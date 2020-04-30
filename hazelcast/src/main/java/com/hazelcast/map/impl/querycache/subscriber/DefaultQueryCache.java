@@ -56,7 +56,7 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Future;
 
-import static com.hazelcast.internal.nio.IOUtil.closeResource;
+import static com.hazelcast.internal.nio.IOUtil.closeQuietly;
 import static com.hazelcast.internal.util.FutureUtil.waitWithDeadline;
 import static com.hazelcast.internal.util.Preconditions.checkNoNullInside;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
@@ -187,7 +187,7 @@ class DefaultQueryCache<K, V> extends AbstractInternalQueryCache<K, V> {
                 removeAllUserDefinedListeners();
             }
         } finally {
-            closeResource(mutex);
+            closeQuietly(mutex);
         }
     }
 
@@ -515,7 +515,7 @@ class DefaultQueryCache<K, V> extends AbstractInternalQueryCache<K, V> {
                         subscriberContext.newEndToEndConstructor(request));
             }
         } finally {
-            closeResource(mutex);
+            closeQuietly(mutex);
         }
     }
 

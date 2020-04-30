@@ -37,7 +37,7 @@ import java.util.LinkedList;
 import java.util.List;
 
 import static com.hazelcast.internal.diagnostics.AbstractDiagnosticsPluginTest.cleanupDiagnosticFiles;
-import static com.hazelcast.internal.nio.IOUtil.closeResource;
+import static com.hazelcast.internal.nio.IOUtil.closeQuietly;
 import static com.hazelcast.internal.util.StringUtil.LINE_SEPARATOR;
 import static com.hazelcast.test.Accessors.getMetricsRegistry;
 import static org.junit.Assert.assertFalse;
@@ -138,7 +138,7 @@ public class DiagnosticsLogTest extends HazelcastTestSupport {
         } catch (IOException e) {
             throw new RuntimeException(e);
         } finally {
-            closeResource(br);
+            closeQuietly(br);
         }
     }
 
