@@ -65,11 +65,13 @@ public final class HazelcastWriters {
     }
 
     @Nonnull
-    public static ProcessorMetaSupplier writeMapSupplier(
+    public static <T, K, V> ProcessorMetaSupplier writeMapSupplier(
             @Nonnull String name,
-            @Nullable ClientConfig clientConfig
+            @Nullable ClientConfig clientConfig,
+            @Nonnull FunctionEx<? super T, ? extends K> toKeyFn,
+            @Nonnull FunctionEx<? super T, ? extends V> toValueFn
     ) {
-        return preferLocalParallelismOne(new WriteMapP.Supplier(asXmlString(clientConfig), name));
+        return preferLocalParallelismOne(new WriteMapP.Supplier<>(asXmlString(clientConfig), name, toKeyFn, toValueFn));
     }
 
     @Nonnull
