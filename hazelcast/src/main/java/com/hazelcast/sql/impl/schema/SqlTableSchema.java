@@ -16,37 +16,39 @@
 
 package com.hazelcast.sql.impl.schema;
 
+import com.hazelcast.core.DistributedObject;
 import com.hazelcast.sql.impl.extract.QueryTargetDescriptor;
 
 import java.util.List;
 
 public class SqlTableSchema {
-    private final String schema;
     private final String name;
+    private final DistributedObject target;
     private final QueryTargetDescriptor keyDescriptor;
     private final QueryTargetDescriptor valueDescriptor;
     private final List<SqlTableField> fields;
 
     public SqlTableSchema(
-        String schema,
         String name,
+        DistributedObject target,
         QueryTargetDescriptor keyDescriptor,
         QueryTargetDescriptor valueDescriptor,
         List<SqlTableField> fields
     ) {
-        this.schema = schema;
         this.name = name;
+        this.target = target;
         this.keyDescriptor = keyDescriptor;
         this.valueDescriptor = valueDescriptor;
         this.fields = fields;
     }
 
-    public String getSchema() {
-        return schema;
-    }
-
     public String getName() {
         return name;
+    }
+
+    @SuppressWarnings("unchecked")
+    public <T extends DistributedObject> T getTarget() {
+        return (T) target;
     }
 
     public QueryTargetDescriptor getKeyDescriptor() {

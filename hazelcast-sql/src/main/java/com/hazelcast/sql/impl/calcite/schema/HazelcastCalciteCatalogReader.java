@@ -19,30 +19,30 @@ package com.hazelcast.sql.impl.calcite.schema;
 import org.apache.calcite.config.CalciteConnectionConfig;
 import org.apache.calcite.jdbc.CalciteSchema;
 import org.apache.calcite.prepare.CalciteCatalogReader;
-import org.apache.calcite.prepare.Prepare;
 import org.apache.calcite.rel.type.RelDataTypeFactory;
 import org.apache.calcite.sql.SqlFunctionCategory;
 import org.apache.calcite.sql.SqlIdentifier;
 import org.apache.calcite.sql.SqlOperator;
 import org.apache.calcite.sql.SqlSyntax;
 import org.apache.calcite.sql.validate.SqlNameMatcher;
+import org.apache.calcite.sql.validate.SqlNameMatchers;
 
-import java.util.Collections;
 import java.util.List;
 
-// TODO: Do we need it still?
-// TODO: RelDataTypeDrillImpl
 public class HazelcastCalciteCatalogReader extends CalciteCatalogReader {
-
-    public HazelcastCalciteCatalogReader(CalciteSchema rootSchema, RelDataTypeFactory typeFactory,
-        CalciteConnectionConfig config) {
-        super(rootSchema, Collections.emptyList(), typeFactory, config);
-    }
-
-    @Override
-    public Prepare.PreparingTable getTable(List<String> names) {
-        // TODO
-        return super.getTable(names);
+    public HazelcastCalciteCatalogReader(
+        CalciteSchema rootSchema,
+        List<List<String>> schemaPaths,
+        RelDataTypeFactory typeFactory,
+        CalciteConnectionConfig config
+    ) {
+        super(
+            rootSchema,
+            SqlNameMatchers.withCaseSensitive(config != null && config.caseSensitive()),
+            schemaPaths,
+            typeFactory,
+            config
+        );
     }
 
     @Override

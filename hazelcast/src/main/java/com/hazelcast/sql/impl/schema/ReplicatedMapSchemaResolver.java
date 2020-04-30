@@ -16,42 +16,65 @@
 
 package com.hazelcast.sql.impl.schema;
 
-import com.hazelcast.core.DistributedObject;
 import com.hazelcast.internal.serialization.Data;
-import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.util.BiTuple;
-import com.hazelcast.replicatedmap.impl.ReplicatedMapProxy;
+import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecord;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
+import com.hazelcast.spi.impl.NodeEngine;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.List;
 
 /**
  * Schema resolver for replicated maps.
  */
-public class ReplicatedMapSqlSchemaResolver extends MapSqlSchemaResolver {
-    public ReplicatedMapSqlSchemaResolver(InternalSerializationService ss) {
-        super(ss);
+public class ReplicatedMapSchemaResolver extends MapSchemaResolver {
+    public ReplicatedMapSchemaResolver(NodeEngine nodeEngine) {
+        super(nodeEngine);
     }
 
     @Override
-    protected String getSchemaName() {
-        return SqlSchemaResolver.SCHEMA_NAME_REPLICATED;
-    }
+    public List<SqlTableSchema> getTables() {
+        ReplicatedMapService mapService = nodeEngine.getService(ReplicatedMapService.SERVICE_NAME);
 
-    @Override
-    protected BiTuple<Data, Object> getSample(DistributedObject object) {
-        if (object instanceof ReplicatedMapProxy) {
-            return getSample0((ReplicatedMapProxy<?, ?>) object);
-        } else {
-            return null;
+        List<SqlTableSchema> res = new ArrayList<>();
+
+
+        for (String mapName : mapService.getPartitionContainer(0).getStores().keySet()) {
+            BiTuple<Data, Object> sample = getSample(mapService, mapName);
+
+            if (sample == null) {
+                continue;
+            }
+
+            // TODO: This creates a container. Avoid!
+            SqlTableSchema schema = resolveFromSample(
+                mapName,
+                nodeEngine.getHazelcastInstance().getReplicatedMap(mapName),
+                sample.element1(),
+                sample.element2()
+            );
+
+            if (schema == null) {
+                continue;
+            }
+
+            res.add(schema);
         }
+
+        return res;
     }
 
     @SuppressWarnings("rawtypes")
-    private BiTuple<Data, Object> getSample0(ReplicatedMapProxy<?, ?> map) {
-        Collection<ReplicatedRecordStore> stores = map.getService().getAllReplicatedRecordStores(map.getName());
+    private BiTuple<Data, Object> getSample(ReplicatedMapService mapService, String mapName) {
+        Collection<ReplicatedRecordStore> stores = mapService.getAllReplicatedRecordStores(mapName);
+
+        if (stores == null) {
+            return null;
+        }
 
         for (ReplicatedRecordStore store : stores) {
             Iterator<ReplicatedRecord> iterator = store.recordIterator();
@@ -68,7 +91,7 @@ public class ReplicatedMapSqlSchemaResolver extends MapSqlSchemaResolver {
             if (!(key instanceof Data)) {
                 // TODO: Refactor code to avoid that double serialization/deserialization. Our code should be able to work with
                 //  objects in the same way it works with data!
-                key = ss.toData(key);
+                key = nodeEngine.getSerializationService().toData(key);
             }
 
             return BiTuple.of((Data) key, value);

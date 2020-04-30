@@ -23,6 +23,7 @@ import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.sql.impl.optimizer.NoOpSqlOptimizer;
+import com.hazelcast.sql.impl.optimizer.OptimizationTask;
 import com.hazelcast.sql.impl.optimizer.SqlOptimizer;
 import com.hazelcast.sql.SqlCursor;
 import com.hazelcast.sql.SqlQuery;
@@ -168,11 +169,11 @@ public class SqlServiceImpl implements SqlService, Consumer<Packet> {
                 throw QueryException.error("SQL statement to be explained cannot be empty");
             }
 
-            Plan plan = optimizer.prepare(unwrappedSql);
+            Plan plan = prepare(unwrappedSql);
 
             state = internalService.executeExplain(plan);
         } else {
-            Plan plan = optimizer.prepare(sql);
+            Plan plan = prepare(sql);
 
             state = internalService.execute(
                 plan,
@@ -183,6 +184,10 @@ public class SqlServiceImpl implements SqlService, Consumer<Packet> {
         }
 
         return new SqlCursorImpl(state);
+    }
+
+    private Plan prepare(String sql) {
+        return optimizer.prepare(new OptimizationTask.Builder(sql).build());
     }
 
     /**

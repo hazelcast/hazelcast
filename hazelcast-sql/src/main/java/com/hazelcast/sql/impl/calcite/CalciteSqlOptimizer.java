@@ -16,12 +16,12 @@
 
 package com.hazelcast.sql.impl.calcite;
 
-import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.partition.Partition;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.calcite.opt.physical.visitor.SqlToQueryType;
+import com.hazelcast.sql.impl.optimizer.OptimizationTask;
 import com.hazelcast.sql.impl.plan.Plan;
 import com.hazelcast.sql.impl.calcite.opt.logical.LogicalRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.PhysicalRel;
@@ -32,10 +32,6 @@ import com.hazelcast.sql.impl.calcite.schema.statistic.StatisticProvider;
 import com.hazelcast.sql.impl.optimizer.OptimizerRuleCallTracker;
 import com.hazelcast.sql.impl.optimizer.OptimizerStatistics;
 import com.hazelcast.sql.impl.optimizer.SqlOptimizer;
-import com.hazelcast.sql.impl.schema.ChainedSqlSchemaResolver;
-import com.hazelcast.sql.impl.schema.PartitionedMapSqlSchemaResolver;
-import com.hazelcast.sql.impl.schema.ReplicatedMapSqlSchemaResolver;
-import com.hazelcast.sql.impl.schema.SqlSchemaResolver;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.type.RelDataType;
@@ -58,27 +54,23 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
     /** Statistics provider. */
     private final StatisticProvider statisticProvider;
 
-    /** Schema resolver. */
-    private final SqlSchemaResolver schemaResolver;
-
     public CalciteSqlOptimizer(NodeEngine nodeEngine) {
         this.nodeEngine = nodeEngine;
 
         statisticProvider = new DefaultStatisticProvider();
-
-        schemaResolver = new ChainedSqlSchemaResolver(
-            new PartitionedMapSqlSchemaResolver((InternalSerializationService) nodeEngine.getSerializationService()),
-            new ReplicatedMapSqlSchemaResolver((InternalSerializationService) nodeEngine.getSerializationService())
-        );
     }
 
     @Override
-    public Plan prepare(String sql) {
+    public Plan prepare(OptimizationTask task) {
         // 1. Prepare context.
-        OptimizerContext context = OptimizerContext.create(nodeEngine, statisticProvider, schemaResolver);
+        OptimizerContext context = OptimizerContext.create(
+            nodeEngine,
+            task.getSchemaPaths(),
+            statisticProvider
+        );
 
         // 2. Parse SQL string and validate it.
-        SqlNode node = context.parse(sql);
+        SqlNode node = context.parse(task.getSql());
         RelDataType parameterRowType = context.getParameterRowType(node);
 
         // 3. Convert to REL.
@@ -100,7 +92,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
 
         OptimizerStatistics stats = statsEnabled ? new OptimizerStatistics(dur, physicalRuleCallTracker) : null;
 
-        return doCreatePlan(sql, parameterRowType, physicalRel, stats);
+        return doCreatePlan(task.getSql(), parameterRowType, physicalRel, stats);
     }
 
     /**

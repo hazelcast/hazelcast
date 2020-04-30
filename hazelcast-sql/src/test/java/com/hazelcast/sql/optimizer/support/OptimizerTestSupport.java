@@ -22,6 +22,7 @@ import com.hazelcast.sql.impl.calcite.opt.logical.LogicalRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.PhysicalRel;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastSchema;
 import com.hazelcast.sql.impl.calcite.schema.PartitionedMapTable;
+import com.hazelcast.sql.impl.calcite.schema.SchemaUtils;
 import com.hazelcast.sql.impl.calcite.schema.statistic.TableStatistic;
 import com.hazelcast.sql.impl.expression.ColumnExpression;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
@@ -37,6 +38,7 @@ import org.junit.After;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -85,7 +87,12 @@ public abstract class OptimizerTestSupport {
     protected Result optimize(String sql, HazelcastSchema schema) {
         OptimizerConfig config = OptimizerConfig.builder().build();
 
-        OptimizerContext context = OptimizerContext.create(schema, 1, config);
+        OptimizerContext context = OptimizerContext.create(
+            SchemaUtils.createCatalog(schema),
+            Collections.emptyList(),
+            1,
+            config
+        );
 
         return optimize(sql, context);
     }

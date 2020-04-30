@@ -25,8 +25,8 @@ public interface SqlOptimizer {
     /**
      * Prepare SQL query.
      *
-     * @param sql SQL.
-     * @return Executable plan.
+     * @param task Optimization task containing all necessary context.
+     * @return Prepared plan.
      */
-    Plan prepare(String sql);
+    Plan prepare(OptimizationTask task);
 }

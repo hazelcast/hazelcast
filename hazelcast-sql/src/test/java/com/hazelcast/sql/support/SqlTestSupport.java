@@ -19,6 +19,7 @@ package com.hazelcast.sql.support;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.sql.SqlCursor;
 import com.hazelcast.sql.SqlRow;
+import com.hazelcast.sql.impl.optimizer.OptimizationTask;
 import com.hazelcast.sql.impl.plan.Plan;
 import com.hazelcast.sql.impl.SqlCursorImpl;
 import com.hazelcast.sql.impl.SqlServiceImpl;
@@ -33,7 +34,7 @@ public class SqlTestSupport {
     protected Plan getPlan(HazelcastInstance target, String sql) {
         SqlServiceImpl sqlService = (SqlServiceImpl) target.getSqlService();
 
-        return sqlService.getOptimizer().prepare(sql);
+        return sqlService.getOptimizer().prepare(new OptimizationTask.Builder(sql).build());
     }
 
     protected SqlCursor executeQuery(HazelcastInstance target, String sql) {

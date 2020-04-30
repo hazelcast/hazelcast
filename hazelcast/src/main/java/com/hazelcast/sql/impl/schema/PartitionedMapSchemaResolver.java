@@ -16,44 +16,61 @@
 
 package com.hazelcast.sql.impl.schema;
 
-import com.hazelcast.core.DistributedObject;
 import com.hazelcast.internal.serialization.Data;
-import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.util.BiTuple;
+import com.hazelcast.map.impl.MapService;
+import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.PartitionContainer;
-import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.recordstore.RecordStore;
+import com.hazelcast.spi.impl.NodeEngine;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.function.BiConsumer;
 
-/**
- * Schema resolver for partitioned maps.
- */
-public class PartitionedMapSqlSchemaResolver extends MapSqlSchemaResolver {
-    public PartitionedMapSqlSchemaResolver(InternalSerializationService ss) {
-        super(ss);
+public class PartitionedMapSchemaResolver extends MapSchemaResolver {
+    public PartitionedMapSchemaResolver(NodeEngine nodeEngine) {
+        super(nodeEngine);
     }
 
     @Override
-    protected String getSchemaName() {
-        return SqlSchemaResolver.SCHEMA_NAME_PARTITIONED;
-    }
+    public List<SqlTableSchema> getTables() {
+        MapService mapService = nodeEngine.getService(MapService.SERVICE_NAME);
+        MapServiceContext context = mapService.getMapServiceContext();
 
-    @Override
-    protected BiTuple<Data, Object> getSample(DistributedObject object) {
-        if (object instanceof MapProxyImpl) {
-            return getSample0((MapProxyImpl<?, ?>) object);
-        } else {
-            return null;
+        List<SqlTableSchema> res = new ArrayList<>();
+
+        for (String mapName : context.getMapContainers().keySet()) {
+            BiTuple<Data, Object> sample = getSample(context, mapName);
+
+            if (sample == null) {
+                continue;
+            }
+
+            // TODO: This creates a container. Avoid!
+            SqlTableSchema schema = resolveFromSample(
+                mapName,
+                nodeEngine.getHazelcastInstance().getMap(mapName),
+                sample.element1(),
+                sample.element2()
+            );
+
+            if (schema == null) {
+                continue;
+            }
+
+            res.add(schema);
         }
+
+        return res;
     }
 
-    private BiTuple<Data, Object> getSample0(MapProxyImpl<?, ?> map) {
+    private BiTuple<Data, Object> getSample(MapServiceContext context, String mapName) {
         RecordConsumer recordConsumer = new RecordConsumer();
 
-        for (PartitionContainer partitionContainer : map.getMapServiceContext().getPartitionContainers()) {
-            RecordStore<?> recordStore = partitionContainer.getRecordStore(map.getName());
+        for (PartitionContainer partitionContainer : context.getPartitionContainers()) {
+            RecordStore<?> recordStore = partitionContainer.getRecordStore(mapName);
 
             try {
                 recordStore.forEach(recordConsumer, true, true);

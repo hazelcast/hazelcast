@@ -45,7 +45,6 @@ import com.hazelcast.sql.impl.calcite.schema.statistic.StatisticProvider;
 import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlConformance;
 import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlValidator;
 import com.hazelcast.sql.impl.optimizer.OptimizerRuleCallTracker;
-import com.hazelcast.sql.impl.schema.SqlSchemaResolver;
 import org.apache.calcite.adapter.java.JavaTypeFactory;
 import org.apache.calcite.avatica.util.Casing;
 import org.apache.calcite.config.CalciteConnectionConfig;
@@ -85,6 +84,7 @@ import org.apache.calcite.tools.Programs;
 import org.apache.calcite.tools.RuleSet;
 import org.apache.calcite.tools.RuleSets;
 
+import java.util.List;
 import java.util.Properties;
 
 /**
@@ -144,39 +144,33 @@ public final class OptimizerContext {
         this.planner = planner;
     }
 
-    /**
-     * Create new context for the given node engine.
-     *
-     * @param nodeEngine Node engine.
-     * @return Context.
-     */
     public static OptimizerContext create(
         NodeEngine nodeEngine,
-        StatisticProvider statisticProvider,
-        SqlSchemaResolver schemaResolver
+        List<List<String>> schemaPaths,
+        StatisticProvider statisticProvider
     ) {
-        HazelcastSchema rootSchema = SchemaUtils.createRootSchema(nodeEngine, statisticProvider, schemaResolver);
+        HazelcastSchema rootSchema = SchemaUtils.createRootSchema(nodeEngine, statisticProvider);
 
         int memberCount = nodeEngine.getClusterService().getSize(MemberSelectors.DATA_MEMBER_SELECTOR);
 
-        return create(rootSchema, memberCount, getOptimizerConfig());
+        return create(rootSchema, schemaPaths, memberCount, getOptimizerConfig());
     }
 
-    /**
-     * Create new context for the given schema.
-     *
-     * @param rootSchema Root schema.
-     * @param memberCount Member count.
-     * @return Context.
-     */
-    public static OptimizerContext create(HazelcastSchema rootSchema, int memberCount, OptimizerConfig config) {
+    public static OptimizerContext create(
+        HazelcastSchema rootSchema,
+        List<List<String>> schemaPaths,
+        int memberCount,
+        OptimizerConfig config
+    ) {
+        List<List<String>> schemaPaths0 = SchemaUtils.prepareSchemaPaths(schemaPaths);
+
         if (config == null) {
             config = OptimizerConfig.builder().build();
         }
 
         JavaTypeFactory typeFactory = new HazelcastTypeFactory();
         CalciteConnectionConfig connectionConfig = createConnectionConfig();
-        Prepare.CatalogReader catalogReader = createCatalogReader(typeFactory, connectionConfig, rootSchema);
+        Prepare.CatalogReader catalogReader = createCatalogReader(typeFactory, connectionConfig, rootSchema, schemaPaths0);
         SqlValidator validator = createValidator(typeFactory, catalogReader);
         VolcanoPlanner planner = createPlanner(connectionConfig);
         HazelcastRelOptCluster cluster = createCluster(planner, typeFactory, memberCount);
@@ -347,10 +341,12 @@ public final class OptimizerContext {
     private static Prepare.CatalogReader createCatalogReader(
         JavaTypeFactory typeFactory,
         CalciteConnectionConfig config,
-        HazelcastSchema rootSchema
+        HazelcastSchema rootSchema,
+        List<List<String>> schemaPaths
     ) {
         return new HazelcastCalciteCatalogReader(
             new HazelcastRootCalciteSchema(rootSchema),
+            schemaPaths,
             typeFactory,
             config
         );

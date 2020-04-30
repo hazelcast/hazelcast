@@ -19,9 +19,9 @@ package com.hazelcast.sql.impl.schema;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.internal.util.BiTuple;
 import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.FieldType;
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.extract.GenericQueryTargetDescriptor;
 import com.hazelcast.sql.impl.extract.JavaClassQueryTargetDescriptor;
 import com.hazelcast.sql.impl.extract.PortableQueryTargetDescriptor;
@@ -36,34 +36,24 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-public abstract class MapSqlSchemaResolver implements SqlSchemaResolver {
+/**
+ * Resolver for map schemas.
+ */
+public abstract class MapSchemaResolver {
+
     private static final String METHOD_PREFIX_GET = "get";
     private static final String METHOD_PREFIX_IS = "is";
     private static final String METHOD_GET_CLASS = "getClass";
 
-    /** Serialization service. */
-    protected final InternalSerializationService ss;
+    protected final NodeEngine nodeEngine;
 
-    protected MapSqlSchemaResolver(InternalSerializationService ss) {
-        this.ss = ss;
+    protected MapSchemaResolver(NodeEngine nodeEngine) {
+        this.nodeEngine = nodeEngine;
     }
 
-    @Override
-    public SqlTableSchema resolve(DistributedObject object) {
-        BiTuple<Data, Object> sample = getSample(object);
+    public abstract List<SqlTableSchema> getTables();
 
-        if (sample == null) {
-            return null;
-        }
-
-        return resolveFromSample(object.getName(), sample.element1(), sample.element2());
-    }
-
-    protected abstract String getSchemaName();
-
-    protected abstract BiTuple<Data, Object> getSample(DistributedObject object);
-
-    private SqlTableSchema resolveFromSample(String mapName, Data key, Object value) {
+    protected SqlTableSchema resolveFromSample(String mapName, DistributedObject target, Data key, Object value) {
         Map<String, SqlTableField> fieldMap = new LinkedHashMap<>();
 
         QueryTargetDescriptor valueExtractorDescriptor = resolve(value, false, fieldMap);
@@ -76,10 +66,18 @@ public abstract class MapSqlSchemaResolver implements SqlSchemaResolver {
 
         List<SqlTableField> fields = new ArrayList<>(fieldMap.values());
 
-        return new SqlTableSchema(getSchemaName(), mapName, keyExtractorDescriptor, valueExtractorDescriptor, fields);
+        return new SqlTableSchema(
+            mapName,
+            target,
+            keyExtractorDescriptor,
+            valueExtractorDescriptor,
+            fields
+        );
     }
 
     private QueryTargetDescriptor resolve(Object target, boolean isKey, Map<String, SqlTableField> fieldMap) {
+        InternalSerializationService ss = (InternalSerializationService) nodeEngine.getSerializationService();
+
         try {
             if (target instanceof Data) {
                 Data data = (Data) target;

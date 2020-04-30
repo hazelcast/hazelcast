@@ -17,17 +17,16 @@
 package com.hazelcast.sql.impl.calcite.schema;
 
 import com.hazelcast.config.IndexConfig;
-import com.hazelcast.core.DistributedObject;
 import com.hazelcast.map.impl.MapContainer;
-import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.partition.PartitioningStrategy;
 import com.hazelcast.partition.strategy.DeclarativePartitioningStrategy;
-import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
+import com.hazelcast.replicatedmap.impl.ReplicatedMapProxy;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.calcite.schema.statistic.StatisticProvider;
 import com.hazelcast.sql.impl.calcite.schema.statistic.TableStatistic;
-import com.hazelcast.sql.impl.schema.SqlSchemaResolver;
+import com.hazelcast.sql.impl.schema.PartitionedMapSchemaResolver;
+import com.hazelcast.sql.impl.schema.ReplicatedMapSchemaResolver;
 import com.hazelcast.sql.impl.schema.SqlTableField;
 import com.hazelcast.sql.impl.schema.SqlTableSchema;
 import com.hazelcast.sql.impl.type.QueryDataType;
@@ -35,19 +34,27 @@ import org.apache.calcite.schema.Schema;
 import org.apache.calcite.schema.Table;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
-import static com.hazelcast.sql.impl.schema.SqlSchemaResolver.SCHEMA_NAME_PARTITIONED;
-import static com.hazelcast.sql.impl.schema.SqlSchemaResolver.SCHEMA_NAME_REPLICATED;
-
 /**
- * Utility classes for schema creation.
+ * Utility classes for schema creation and management.
  */
 public final class SchemaUtils {
+    /** Default catalog for local Hazelcast cluster. */
+    public static final String CATALOG = "hazelcast";
+
+    /** Name of the implicit schema containing partitioned maps. */
+    public static final String SCHEMA_NAME_PARTITIONED = "partitioned";
+
+    /** Name of the implicit schema containing replicated maps. */
+    public static final String SCHEMA_NAME_REPLICATED = "replicated";
+
     private SchemaUtils() {
         // No-op.
     }
@@ -55,146 +62,110 @@ public final class SchemaUtils {
     /**
      * Creates root schema for the given node engine.
      *
-     * @param nodeEngine Node engine.
      * @return Root schema.
      */
     public static HazelcastSchema createRootSchema(
         NodeEngine nodeEngine,
-        StatisticProvider statisticProvider,
-        SqlSchemaResolver schemaResolver
+        StatisticProvider statisticProvider
     ) {
         // Create partitioned and replicated schemas.
-        List<AbstractMapTable> partitionedTables = prepareSchemaTables(nodeEngine, statisticProvider, schemaResolver, true);
-        List<AbstractMapTable> replicatedTables = prepareSchemaTables(nodeEngine, statisticProvider, schemaResolver, false);
+        HazelcastSchema partitionedSchema = preparePartitionedSchema(nodeEngine, statisticProvider);
+        HazelcastSchema replicatedSchema = prepareReplicatedSchema(nodeEngine, statisticProvider);
 
-        // Create root schema.
+        // Define predefined schemas.
         Map<String, Schema> schemaMap = new HashMap<>();
-        Map<String, Table> topTableMap = new HashMap<>();
+        schemaMap.put(SCHEMA_NAME_PARTITIONED, partitionedSchema);
+        schemaMap.put(SCHEMA_NAME_REPLICATED, replicatedSchema);
 
-        processTables(schemaMap, topTableMap, partitionedTables);
-        processTables(schemaMap, topTableMap, replicatedTables);
+        HazelcastSchema schema = new HazelcastSchema(schemaMap, Collections.emptyMap());
 
-        return new HazelcastSchema(schemaMap, topTableMap);
-    }
-
-    private static void processTables(
-        Map<String, Schema> schemaMap,
-        Map<String, Table> topTableMap,
-        List<AbstractMapTable> tables
-    ) {
-        for (AbstractMapTable table : tables) {
-            String schemaName = table.getSchemaName();
-
-            HazelcastSchema schema = (HazelcastSchema) schemaMap.get(schemaName);
-
-            if (schema == null) {
-                // TODO: Ugly, refactor it.
-                schema = new HazelcastSchema(new HashMap<>());
-
-                schemaMap.put(schemaName, schema);
-            }
-
-            // TODO: What to do in case the table with this name is already registered? Print a warning?
-            schema.getTableMap().putIfAbsent(table.getName(), table);
-
-            if (schemaName.equals(SCHEMA_NAME_PARTITIONED) || schemaName.equals(SCHEMA_NAME_REPLICATED)) {
-                // TODO: What to do in case the table with this name is already registered? Print a warning?
-                topTableMap.putIfAbsent(table.getName(), table);
-            }
-        }
+        // Create the root.
+        return createCatalog(schema);
     }
 
     /**
-     * Prepare the list of available tables.
+     * Creates the top-level catalog containing the given child schema.
      *
-     * @param nodeEngine Node engine.
-     * @param partitioned {@code True} to prepare the list of partitioned tables, {@code false} to prepare the list
-     *     if replicated tables.
-     * @return List of tables.
+     * @param schema Schema.
+     * @return Catalog.
      */
-    @SuppressWarnings({"rawtypes", "checkstyle:MethodLength"})
-    private static List<AbstractMapTable> prepareSchemaTables(
-        NodeEngine nodeEngine,
-        StatisticProvider statisticProvider,
-        SqlSchemaResolver schemaResolver,
-        boolean partitioned
-    ) {
-        String serviceName = partitioned ? MapService.SERVICE_NAME : ReplicatedMapService.SERVICE_NAME;
+    public static HazelcastSchema createCatalog(Schema schema) {
+        return new HazelcastSchema(
+            Collections.singletonMap(CATALOG, schema),
+            Collections.emptyMap()
+        );
+    }
 
-        Collection<String> mapNames = nodeEngine.getProxyService().getDistributedObjectNames(serviceName);
+    @SuppressWarnings("rawtypes")
+    private static HazelcastSchema preparePartitionedSchema(NodeEngine nodeEngine, StatisticProvider statisticProvider) {
+        Map<String, Table> tableMap = new HashMap<>();
 
-        List<AbstractMapTable> res = new ArrayList<>();
+        PartitionedMapSchemaResolver resolver = new PartitionedMapSchemaResolver(nodeEngine);
 
-        for (String mapName : mapNames) {
-            DistributedObject map = nodeEngine.getProxyService().getDistributedObject(
-                serviceName,
-                mapName,
-                nodeEngine.getLocalMember().getUuid()
-            );
-
-            SqlTableSchema tableSchema = schemaResolver.resolve(map);
-
-            if (tableSchema == null) {
-                // Skip empty maps.
-                continue;
-            }
+        for (SqlTableSchema tableSchema : resolver.getTables()) {
+            MapProxyImpl<?, ?> map = tableSchema.getTarget();
 
             long rowCount = statisticProvider.getRowCount(map);
 
-            String distributionField;
-            List<HazelcastTableIndex> indexes;
+            PartitioningStrategy strategy = map.getPartitionStrategy();
 
-            if (partitioned) {
-                MapProxyImpl<?, ?> map0 = (MapProxyImpl) map;
-                PartitioningStrategy strategy = map0.getPartitionStrategy();
+            String distributionField = null;
 
-                if (strategy instanceof DeclarativePartitioningStrategy) {
-                    distributionField = ((DeclarativePartitioningStrategy) strategy).getField();
-                } else {
-                    distributionField = null;
-                }
-
-
-                indexes = getIndexes(map0);
-            } else {
-                distributionField = null;
-                indexes = null;
+            if (strategy instanceof DeclarativePartitioningStrategy) {
+                distributionField = ((DeclarativePartitioningStrategy) strategy).getField();
             }
+
+            List<HazelcastTableIndex> indexes = getIndexes(map);
 
             Map<String, QueryDataType> fieldTypes = prepareFieldTypes(tableSchema);
             Map<String, String> fieldPaths = prepareFieldPaths(tableSchema);
 
-            AbstractMapTable table;
+            AbstractMapTable table = new PartitionedMapTable(
+                SCHEMA_NAME_PARTITIONED,
+                tableSchema.getName(),
+                distributionField,
+                indexes,
+                tableSchema.getKeyDescriptor(),
+                tableSchema.getValueDescriptor(),
+                fieldTypes,
+                fieldPaths,
+                new TableStatistic(rowCount)
+            );
 
-            if (partitioned) {
-                table = new PartitionedMapTable(
-                    tableSchema.getSchema(),
-                    mapName,
-                    distributionField,
-                    indexes,
-                    tableSchema.getKeyDescriptor(),
-                    tableSchema.getValueDescriptor(),
-                    fieldTypes,
-                    fieldPaths,
-                    new TableStatistic(rowCount)
-                );
-            } else {
-                table = new ReplicatedMapTable(
-                    tableSchema.getSchema(),
-                    mapName,
-                    indexes,
-                    tableSchema.getKeyDescriptor(),
-                    tableSchema.getValueDescriptor(),
-                    fieldTypes,
-                    fieldPaths,
-                    new TableStatistic(rowCount)
-                );
-            }
-
-            res.add(table);
+            tableMap.put(tableSchema.getName(), table);
         }
 
-        return res;
+        return new HazelcastSchema(Collections.emptyMap(), tableMap);
+    }
+
+    private static HazelcastSchema prepareReplicatedSchema(NodeEngine nodeEngine, StatisticProvider statisticProvider) {
+        Map<String, Table> tableMap = new HashMap<>();
+
+        ReplicatedMapSchemaResolver resolver = new ReplicatedMapSchemaResolver(nodeEngine);
+
+        for (SqlTableSchema tableSchema : resolver.getTables()) {
+            ReplicatedMapProxy<?, ?> map = tableSchema.getTarget();
+
+            long rowCount = statisticProvider.getRowCount(map);
+
+            Map<String, QueryDataType> fieldTypes = prepareFieldTypes(tableSchema);
+            Map<String, String> fieldPaths = prepareFieldPaths(tableSchema);
+
+            AbstractMapTable table = new ReplicatedMapTable(
+                SCHEMA_NAME_REPLICATED,
+                tableSchema.getName(),
+                Collections.emptyList(),
+                tableSchema.getKeyDescriptor(),
+                tableSchema.getValueDescriptor(),
+                fieldTypes,
+                fieldPaths,
+                new TableStatistic(rowCount)
+            );
+
+            tableMap.put(tableSchema.getName(), table);
+        }
+
+        return new HazelcastSchema(Collections.emptyMap(), tableMap);
     }
 
     private static Map<String, QueryDataType> prepareFieldTypes(SqlTableSchema tableSchema) {
@@ -250,6 +221,32 @@ public final class SchemaUtils {
 
             res.add(new HazelcastTableIndex(indexConfig.getName(), indexConfig.getType(), indexConfig.getAttributes()));
         }
+
+        return res;
+    }
+
+    /**
+     * Prepares schema paths that will be used for search.
+     *
+     * @param currentSchemaPaths Additional schema paths to be considered.
+     * @return Schema paths to be used.
+     */
+    public static List<List<String>> prepareSchemaPaths(List<List<String>> currentSchemaPaths) {
+        List<List<String>> res = new ArrayList<>();
+
+        if (currentSchemaPaths != null) {
+            res.addAll(currentSchemaPaths);
+        }
+
+        // Default schemas in the default catalog
+        res.add(Arrays.asList("hazelcast", "partitioned"));
+        res.add(Arrays.asList("hazelcast", "replicated"));
+
+        // Default catalog
+        res.add(Collections.singletonList("hazelcast"));
+
+        // Current scope
+        res.add(Collections.emptyList());
 
         return res;
     }
