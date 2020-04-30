@@ -255,10 +255,6 @@ public class DistributionTrait implements RelTrait {
             DistributionField field = fields.get(i);
 
             builder.append("$").append(field.getIndex());
-
-            if (field.getNestedField() != null) {
-                builder.append(".").append(field.getNestedField());
-            }
         }
 
         builder.append("}");

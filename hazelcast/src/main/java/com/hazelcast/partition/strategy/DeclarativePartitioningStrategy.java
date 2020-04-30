@@ -36,14 +36,16 @@ public class DeclarativePartitioningStrategy<K> implements PartitioningStrategy<
 
     @Override
     public Object getPartitionKey(K key) {
-        return extractors.extract(key, field, null);
+        return field != null ? extractors.extract(key, field, null) : key;
     }
 
     @Override
     public void setSerializationService(SerializationService ss) {
-        InternalSerializationService ss0 = (InternalSerializationService) ss;
+        if (field != null) {
+            InternalSerializationService ss0 = (InternalSerializationService) ss;
 
-        extractors = Extractors.newBuilder(ss0).setClassLoader(ss0.getClassLoader()).build();
+            extractors = Extractors.newBuilder(ss0).setClassLoader(ss0.getClassLoader()).build();
+        }
     }
 
     public String getField() {

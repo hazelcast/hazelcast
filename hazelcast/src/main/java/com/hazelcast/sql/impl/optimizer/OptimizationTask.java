@@ -27,42 +27,42 @@ public final class OptimizationTask {
     private final String sql;
 
     /** The scopes for object lookup in addition to the default ones. */
-    private final List<List<String>> schemaPaths;
+    private final List<List<String>> searchPaths;
 
-    private OptimizationTask(String sql, List<List<String>> schemaPaths) {
+    private OptimizationTask(String sql, List<List<String>> searchPaths) {
         this.sql = sql;
-        this.schemaPaths = schemaPaths;
+        this.searchPaths = searchPaths;
     }
 
     public String getSql() {
         return sql;
     }
 
-    public List<List<String>> getSchemaPaths() {
-        return schemaPaths;
+    public List<List<String>> getSearchPaths() {
+        return searchPaths;
     }
 
     public static class Builder {
 
         private final String sql;
-        private List<List<String>> schemaPaths;
+        private List<List<String>> searchPaths;
 
         public Builder(String sql) {
             this.sql = sql;
         }
 
-        public Builder addSchemaPath(List<String> schemaPath) {
-            if (schemaPaths == null) {
-                schemaPaths = new ArrayList<>(1);
+        public Builder addSchemaPath(List<String> searchPath) {
+            if (searchPaths == null) {
+                searchPaths = new ArrayList<>(1);
             }
 
-            schemaPaths.add(schemaPath);
+            searchPaths.add(searchPath);
 
             return this;
         }
 
         public OptimizationTask build() {
-            return new OptimizationTask(sql, schemaPaths);
+            return new OptimizationTask(sql, searchPaths);
         }
     }
 }

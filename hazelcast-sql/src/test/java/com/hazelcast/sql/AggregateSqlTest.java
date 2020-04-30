@@ -18,7 +18,7 @@ package com.hazelcast.sql;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.sql.support.ModelGenerator;
-import com.hazelcast.sql.support.SqlTestSupport;
+import com.hazelcast.sql.support.CalciteSqlTestSupport;
 import com.hazelcast.sql.support.model.person.Person;
 import com.hazelcast.sql.support.model.person.PersonKey;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -43,7 +43,7 @@ import static junit.framework.TestCase.assertNotNull;
  */
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class AggregateSqlTest extends SqlTestSupport {
+public class AggregateSqlTest extends CalciteSqlTestSupport {
     private static TestHazelcastInstanceFactory factory;
     private static HazelcastInstance member;
 

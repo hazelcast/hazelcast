@@ -19,8 +19,8 @@ package com.hazelcast.sql.impl.calcite.opt.physical;
 import com.hazelcast.sql.impl.calcite.opt.AbstractMapScanRel;
 import com.hazelcast.sql.impl.calcite.opt.cost.CostUtils;
 import com.hazelcast.sql.impl.calcite.opt.physical.visitor.PhysicalRelVisitor;
-import com.hazelcast.sql.impl.calcite.schema.HazelcastTableIndex;
 import com.hazelcast.sql.impl.exec.scan.index.IndexFilter;
+import com.hazelcast.sql.impl.schema.map.MapTableIndex;
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelOptCost;
 import org.apache.calcite.plan.RelOptPlanner;
@@ -38,7 +38,7 @@ import java.util.List;
  */
 public class MapIndexScanPhysicalRel extends AbstractMapScanRel implements PhysicalRel {
     /** Target index. */
-    private final HazelcastTableIndex index;
+    private final MapTableIndex index;
 
     /** Index filter. */
     private final IndexFilter indexFilter;
@@ -51,7 +51,7 @@ public class MapIndexScanPhysicalRel extends AbstractMapScanRel implements Physi
         RelTraitSet traitSet,
         RelOptTable table,
         List<Integer> projects,
-        HazelcastTableIndex index,
+        MapTableIndex index,
         IndexFilter indexFilter,
         RexNode remainderFilter,
         RexNode originalFilter
@@ -63,7 +63,7 @@ public class MapIndexScanPhysicalRel extends AbstractMapScanRel implements Physi
         this.remainderFilter = remainderFilter;
     }
 
-    public HazelcastTableIndex getIndex() {
+    public MapTableIndex getIndex() {
         return index;
     }
 

@@ -16,27 +16,29 @@
 
 package com.hazelcast.sql.impl.exec.io;
 
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.sql.impl.exec.Exec;
-import com.hazelcast.sql.impl.row.RowBatch;
 import com.hazelcast.sql.impl.partitioner.RowPartitioner;
+import com.hazelcast.sql.impl.row.RowBatch;
 
 /**
  * Unicast sender.
  */
 public class UnicastSendExec extends AbstractMultiwaySendExec {
 
-    private UnicastOutboxSendQualifier qualifier;
+    private final UnicastOutboxSendQualifier qualifier;
 
     public UnicastSendExec(
         int id,
         Exec upstream,
         Outbox[] outboxes,
         RowPartitioner rowPartitioner,
-        int[] partitionOutboxIndexes
+        int[] partitionOutboxIndexes,
+        InternalSerializationService serializationService
     ) {
         super(id, upstream, outboxes);
 
-        qualifier = new UnicastOutboxSendQualifier(rowPartitioner, partitionOutboxIndexes);
+        qualifier = new UnicastOutboxSendQualifier(rowPartitioner, partitionOutboxIndexes, serializationService);
     }
 
     @Override

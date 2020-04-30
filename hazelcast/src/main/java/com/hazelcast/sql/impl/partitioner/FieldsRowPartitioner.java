@@ -16,6 +16,7 @@
 
 package com.hazelcast.sql.impl.partitioner;
 
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.SerializationUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -43,12 +44,11 @@ public class FieldsRowPartitioner extends AbstractFieldsRowPartitioner {
 
     @SuppressWarnings("checkstyle:MagicNumber")
     @Override
-    protected int getHash(Row row) {
+    protected int getHash(Row row, InternalSerializationService serializationService) {
         int res = 0;
 
         for (Integer field : fields) {
-            Object val = row.get(field);
-            int hash = val != null ? val.hashCode() : 0;
+            int hash = getFieldHash(row.get(field), serializationService);
 
             res = 31 * res + hash;
         }

@@ -16,27 +16,30 @@
 
 package com.hazelcast.sql.impl.calcite;
 
+import com.hazelcast.cluster.memberselector.MemberSelectors;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.partition.Partition;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
-import com.hazelcast.sql.impl.calcite.opt.physical.visitor.SqlToQueryType;
-import com.hazelcast.sql.impl.optimizer.OptimizationTask;
-import com.hazelcast.sql.impl.plan.Plan;
 import com.hazelcast.sql.impl.calcite.opt.logical.LogicalRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.PhysicalRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.visitor.NodeIdVisitor;
 import com.hazelcast.sql.impl.calcite.opt.physical.visitor.PlanCreateVisitor;
-import com.hazelcast.sql.impl.calcite.schema.statistic.DefaultStatisticProvider;
-import com.hazelcast.sql.impl.calcite.schema.statistic.StatisticProvider;
+import com.hazelcast.sql.impl.calcite.opt.physical.visitor.SqlToQueryType;
+import com.hazelcast.sql.impl.optimizer.OptimizationTask;
 import com.hazelcast.sql.impl.optimizer.OptimizerRuleCallTracker;
 import com.hazelcast.sql.impl.optimizer.OptimizerStatistics;
 import com.hazelcast.sql.impl.optimizer.SqlOptimizer;
+import com.hazelcast.sql.impl.plan.Plan;
+import com.hazelcast.sql.impl.schema.TableResolver;
+import com.hazelcast.sql.impl.schema.map.PartitionedMapTableResolver;
+import com.hazelcast.sql.impl.schema.map.ReplicatedMapTableResolver;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.sql.SqlNode;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -51,22 +54,23 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
     /** Node engine. */
     private final NodeEngine nodeEngine;
 
-    /** Statistics provider. */
-    private final StatisticProvider statisticProvider;
-
     public CalciteSqlOptimizer(NodeEngine nodeEngine) {
         this.nodeEngine = nodeEngine;
-
-        statisticProvider = new DefaultStatisticProvider();
     }
 
     @Override
     public Plan prepare(OptimizationTask task) {
         // 1. Prepare context.
+        List<TableResolver> tableResolvers = new ArrayList<>(2);
+        tableResolvers.add(new PartitionedMapTableResolver(nodeEngine));
+        tableResolvers.add(new ReplicatedMapTableResolver(nodeEngine));
+
+        int memberCount = nodeEngine.getClusterService().getSize(MemberSelectors.DATA_MEMBER_SELECTOR);
+
         OptimizerContext context = OptimizerContext.create(
-            nodeEngine,
-            task.getSchemaPaths(),
-            statisticProvider
+            tableResolvers,
+            task.getSearchPaths(),
+            memberCount
         );
 
         // 2. Parse SQL string and validate it.

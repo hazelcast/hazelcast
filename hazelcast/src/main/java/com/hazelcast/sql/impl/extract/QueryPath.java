@@ -16,7 +16,12 @@
 
 package com.hazelcast.sql.impl.extract;
 
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.sql.impl.QueryException;
+
+import java.io.IOException;
 
 import static com.hazelcast.query.QueryConstants.KEY_ATTRIBUTE_NAME;
 import static com.hazelcast.query.QueryConstants.THIS_ATTRIBUTE_NAME;
@@ -24,21 +29,25 @@ import static com.hazelcast.query.QueryConstants.THIS_ATTRIBUTE_NAME;
 /**
  * Represent a path to the attribute within a key-value pair.
  */
-public final class QueryPath {
+public final class QueryPath implements DataSerializable {
 
     public static final String KEY = KEY_ATTRIBUTE_NAME.value();
     public static final String VALUE = THIS_ATTRIBUTE_NAME.value();
 
+    public static final QueryPath KEY_PATH = new QueryPath(null, true);
+    public static final QueryPath VALUE_PATH = new QueryPath(null, false);
+
     private static final String KEY_PREFIX = KEY + ".";
     private static final String VALUE_PREFIX = VALUE + ".";
 
-    private static final QueryPath KEY_PATH = new QueryPath(null, true);
-    private static final QueryPath VALUE_PATH = new QueryPath(null, false);
+    private boolean key;
+    private String path;
 
-    private final boolean key;
-    private final String path;
+    public QueryPath() {
+        // No-op.
+    }
 
-    private QueryPath(String path, boolean key) {
+    public QueryPath(String path, boolean key) {
         this.path = path;
         this.key = key;
     }
@@ -93,5 +102,45 @@ public final class QueryPath {
 
     private static QueryException badPathException(String path) {
         throw QueryException.error("Field cannot be empty: " + path);
+    }
+
+    @Override
+    public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeBoolean(key);
+        out.writeUTF(path);
+    }
+
+    @Override
+    public void readData(ObjectDataInput in) throws IOException {
+        key = in.readBoolean();
+        path = in.readUTF();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        QueryPath path1 = (QueryPath) o;
+
+        if (key != path1.key) {
+            return false;
+        }
+
+        return path != null ? path.equals(path1.path) : path1.path == null;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = (key ? 1 : 0);
+
+        result = 31 * result + (path != null ? path.hashCode() : 0);
+
+        return result;
     }
 }

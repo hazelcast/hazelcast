@@ -21,15 +21,21 @@ import com.hazelcast.sql.impl.calcite.OptimizerContext;
 import com.hazelcast.sql.impl.calcite.opt.logical.LogicalRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.PhysicalRel;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastSchema;
-import com.hazelcast.sql.impl.calcite.schema.PartitionedMapTable;
-import com.hazelcast.sql.impl.calcite.schema.SchemaUtils;
-import com.hazelcast.sql.impl.calcite.schema.statistic.TableStatistic;
+import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
+import com.hazelcast.sql.impl.calcite.schema.HazelcastTableStatistic;
 import com.hazelcast.sql.impl.expression.ColumnExpression;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.predicate.AndPredicate;
 import com.hazelcast.sql.impl.expression.predicate.ComparisonMode;
 import com.hazelcast.sql.impl.expression.predicate.ComparisonPredicate;
+import com.hazelcast.sql.impl.extract.QueryPath;
+import com.hazelcast.sql.impl.schema.ConstantTableStatistics;
+import com.hazelcast.sql.impl.schema.SchemaUtils;
+import com.hazelcast.sql.impl.schema.TableField;
+import com.hazelcast.sql.impl.schema.map.MapTableField;
+import com.hazelcast.sql.impl.schema.map.MapTableIndex;
+import com.hazelcast.sql.impl.schema.map.PartitionedMapTable;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.schema.Table;
@@ -38,9 +44,7 @@ import org.junit.After;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -88,8 +92,8 @@ public abstract class OptimizerTestSupport {
         OptimizerConfig config = OptimizerConfig.builder().build();
 
         OptimizerContext context = OptimizerContext.create(
-            SchemaUtils.createCatalog(schema),
-            Collections.emptyList(),
+            OptimizerContext.createCatalog(schema),
+            SchemaUtils.prepareSearchPaths(null, null),
             1,
             config
         );
@@ -117,6 +121,25 @@ public abstract class OptimizerTestSupport {
         return res;
     }
 
+    public static HazelcastTable partitionedTable(
+        String name,
+        List<TableField> fields,
+        List<MapTableIndex> indexes,
+        long rowCount
+    ) {
+        PartitionedMapTable table = new PartitionedMapTable(
+            name,
+            fields,
+            new ConstantTableStatistics(rowCount),
+            null,
+            null,
+            indexes,
+            PartitionedMapTable.DISTRIBUTION_FIELD_ORDINAL_NONE
+        );
+
+        return new HazelcastTable(table, new HazelcastTableStatistic(rowCount));
+    }
+
     /**
      * Creates the default test schema. Override that method if you would like to have anoher schema.
      *
@@ -124,17 +147,13 @@ public abstract class OptimizerTestSupport {
      */
     protected HazelcastSchema createDefaultSchema() {
         Map<String, Table> tableMap = new HashMap<>();
-        tableMap.put("p", new PartitionedMapTable(
-            null,
+
+        tableMap.put("p", partitionedTable(
             "p",
+            fields("f1", INT, "f2", INT, "f3", INT, "f4", INT, "f5", INT),
             null,
-            null,
-            null,
-            null,
-            fieldTypes("f1", INT, "f2", INT, "f3", INT, "f4", INT, "f5", INT),
-            null,
-            new TableStatistic(100))
-        );
+            100
+        ));
 
         return new HazelcastSchema(tableMap);
     }
@@ -179,13 +198,21 @@ public abstract class OptimizerTestSupport {
         return ColumnExpression.create(col, QueryDataType.VARCHAR);
     }
 
-    protected static Map<String, QueryDataType> fieldTypes(Object ... namesAndTypes) {
-        Map<String, QueryDataType> fieldTypes = new LinkedHashMap<>();
+    protected static List<TableField> fields(Object ... namesAndTypes) {
         assert namesAndTypes.length % 2 == 0;
+
+        List<TableField> res = new ArrayList<>();
+
         for (int i = 0; i < namesAndTypes.length / 2; ++i) {
-            fieldTypes.put((String) namesAndTypes[i * 2], (QueryDataType) namesAndTypes[i * 2 + 1]);
+            String fieldName = (String) namesAndTypes[i * 2];
+            QueryDataType fieldType = (QueryDataType) namesAndTypes[i * 2 + 1];
+
+            MapTableField field = new MapTableField(fieldName, fieldType, new QueryPath(fieldName, false));
+
+            res.add(field);
         }
-        return fieldTypes;
+
+        return res;
     }
 
     /**

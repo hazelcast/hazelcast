@@ -16,7 +16,8 @@
 
 package com.hazelcast.sql.impl.calcite.schema;
 
-import com.hazelcast.sql.impl.extract.QueryTargetDescriptor;
+import com.hazelcast.sql.impl.schema.Table;
+import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 import org.apache.calcite.rel.type.RelDataType;
@@ -26,18 +27,19 @@ import org.apache.calcite.rel.type.RelDataTypeFieldImpl;
 import org.apache.calcite.rel.type.RelRecordType;
 import org.apache.calcite.rel.type.StructKind;
 import org.apache.calcite.schema.Statistic;
+import org.apache.calcite.schema.impl.AbstractTable;
 import org.apache.calcite.sql.type.SqlTypeName;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 /**
- * Base class for Hazelcast map-based tables.
+ * Base class for all tables in the Calcite integration. Exposes table and schema names in order to form the complete
+ * schema for optimization.
  */
-public abstract class AbstractMapTable extends HazelcastAbstractTable {
+public class HazelcastTable extends AbstractTable {
 
     private static final Map<QueryDataTypeFamily, SqlTypeName> QUERY_TO_SQL_TYPE = new HashMap<>();
 
@@ -69,80 +71,19 @@ public abstract class AbstractMapTable extends HazelcastAbstractTable {
         QUERY_TO_SQL_TYPE.put(QueryDataTypeFamily.NULL, SqlTypeName.NULL);
     }
 
-    private final String schemaName;
-    private final String name;
-    private final List<HazelcastTableIndex> indexes;
+    private final Table target;
     private final Statistic statistic;
-    private final QueryTargetDescriptor keyDescriptor;
-    private final QueryTargetDescriptor valueDescriptor;
-    private final Map<String, QueryDataType> fieldTypes;
-    private final Map<String, String> fieldPaths;
 
     private RelDataType rowType;
 
-    protected AbstractMapTable(
-        String schemaName,
-        String name,
-        List<HazelcastTableIndex> indexes,
-        QueryTargetDescriptor keyDescriptor,
-        QueryTargetDescriptor valueDescriptor,
-        Map<String, QueryDataType> fieldTypes,
-        Map<String, String> fieldPaths,
-        Statistic statistic
-    ) {
-        this.schemaName = schemaName;
-        this.name = name;
-        this.keyDescriptor = keyDescriptor;
-        this.valueDescriptor = valueDescriptor;
-        this.fieldTypes = fieldTypes != null ? fieldTypes : Collections.emptyMap();
-        this.fieldPaths = fieldPaths != null ? fieldPaths : Collections.emptyMap();
-        this.indexes = indexes != null ? indexes : Collections.emptyList();
+    public HazelcastTable(Table target, Statistic statistic) {
+        this.target = target;
         this.statistic = statistic;
     }
 
-    @Override
-    public String getSchemaName() {
-        return schemaName;
-    }
-
-    @Override
-    public String getName() {
-        return name;
-    }
-
-    @Override
-    public boolean isTopLevel() {
-        // Hazelcast tables are exposed at the top level schema.
-        return true;
-    }
-
-    public QueryDataType getFieldType(String fieldName) {
-        QueryDataType fieldType = fieldTypes.get(fieldName);
-
-        assert fieldType != null;
-        return fieldType;
-    }
-
-    public String getFieldPath(String fieldName) {
-        String path = fieldPaths.get(fieldName);
-
-        return path != null ? path : fieldName;
-    }
-
-    public List<HazelcastTableIndex> getIndexes() {
-        return indexes;
-    }
-
-    public List<RelDataTypeField> getFieldList() {
-        return rowType.getFieldList();
-    }
-
-    public QueryTargetDescriptor getKeyDescriptor() {
-        return keyDescriptor;
-    }
-
-    public QueryTargetDescriptor getValueDescriptor() {
-        return valueDescriptor;
+    @SuppressWarnings("unchecked")
+    public <T extends Table> T getTarget() {
+        return (T) target;
     }
 
     @Override
@@ -151,20 +92,29 @@ public abstract class AbstractMapTable extends HazelcastAbstractTable {
             return rowType;
         }
 
-        List<RelDataTypeField> fields = new ArrayList<>(fieldTypes.size());
-        for (Map.Entry<String, QueryDataType> entry : fieldTypes.entrySet()) {
-            QueryDataTypeFamily typeFamily = entry.getValue().getTypeFamily();
+        List<RelDataTypeField> convertedFields = new ArrayList<>(target.getFieldCount());
 
-            SqlTypeName sqlTypeName = QUERY_TO_SQL_TYPE.get(typeFamily);
+        for (int i = 0; i < target.getFieldCount(); i++) {
+            TableField field = target.getField(i);
+
+            String fieldName = field.getName();
+            QueryDataType fieldType = field.getType();
+            QueryDataTypeFamily fieldTypeFamily = fieldType.getTypeFamily();
+
+            SqlTypeName sqlTypeName = QUERY_TO_SQL_TYPE.get(fieldTypeFamily);
+
             if (sqlTypeName == null) {
-                throw new IllegalStateException("unexpected type family: " + typeFamily);
+                throw new IllegalStateException("unexpected type family: " + fieldTypeFamily);
             }
+
             RelDataType relDataType = typeFactory.createSqlType(sqlTypeName);
             RelDataType nullableRelDataType = typeFactory.createTypeWithNullability(relDataType, true);
-            RelDataTypeField field = new RelDataTypeFieldImpl(entry.getKey(), fields.size(), nullableRelDataType);
-            fields.add(field);
+
+            RelDataTypeField convertedField = new RelDataTypeFieldImpl(fieldName, convertedFields.size(), nullableRelDataType);
+            convertedFields.add(convertedField);
         }
-        rowType = new RelRecordType(StructKind.PEEK_FIELDS, fields, false);
+
+        rowType = new RelRecordType(StructKind.PEEK_FIELDS, convertedFields, false);
 
         return rowType;
     }
@@ -172,10 +122,5 @@ public abstract class AbstractMapTable extends HazelcastAbstractTable {
     @Override
     public Statistic getStatistic() {
         return statistic;
-    }
-
-    @Override
-    public String toString() {
-        return getClass().getSimpleName() + "{schemaName=" + schemaName + ", name=" + name + '}';
     }
 }

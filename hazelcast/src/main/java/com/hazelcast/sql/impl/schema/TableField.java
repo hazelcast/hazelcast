@@ -19,17 +19,15 @@ package com.hazelcast.sql.impl.schema;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
 /**
- * SQL table field descriptor.
+ * Base class for all table field. Different backends may have additional metadata associated with the field.
  */
-// TODO: Type nullability is not integrated! This will begatively affect compiler. Make sure to integrate it properly.
-public class SqlTableField {
+public abstract class TableField {
+
     private final String name;
-    private final String path;
     private final QueryDataType type;
 
-    public SqlTableField(String name, String path, QueryDataType type) {
+    protected TableField(String name, QueryDataType type) {
         this.name = name;
-        this.path = path;
         this.type = type;
     }
 
@@ -37,16 +35,7 @@ public class SqlTableField {
         return name;
     }
 
-    public String getPath() {
-        return path;
-    }
-
     public QueryDataType getType() {
         return type;
-    }
-
-    @Override
-    public String toString() {
-        return "SqlTableField{name=" + name + ", path=" + path + ", type=" + type + '}';
     }
 }

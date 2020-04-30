@@ -84,11 +84,7 @@ public final class JoinLogicalRule extends RelOptRule {
             filterNulls
         );
 
-        // TODO: Convert LEFT/RIGHT OUTER JOIN to INNER JOIN in case corresponding side doesn't allow nulls.
-        // TODO: E.g. "A LEFT OUTER JOIN B on A.a = B.b1 AND B.b2 = ?" is equivalent to
-        // TODO: "A INNER JOIN B on A.a1 = B.b AND A.a2 = ?" because if a row from A doesn't have a matching row in B,
-        // TODO: then resulting tuple will have all attributes of B set to NULL and "B.b2 = ?" will filter out this
-        // TODO: tuple anyway.
+        // TODO: Convert LEFT/RIGHT OUTER JOIN to INNER JOIN rule
 
         RelNode transform;
 

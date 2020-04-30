@@ -16,19 +16,32 @@
 
 package com.hazelcast.sql.impl.partitioner;
 
+import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.util.HashUtil;
 import com.hazelcast.sql.impl.row.Row;
+
+import static com.hazelcast.internal.serialization.impl.SerializationUtil.EMPTY_PARTITIONING_STRATEGY;
 
 /**
  * Partitioner that calculates row partition based on row field values.
  */
 public abstract class AbstractFieldsRowPartitioner implements RowPartitioner {
     @Override
-    public final int getPartition(Row row, int partitionCount) {
-        int hash = getHash(row);
+    public final int getPartition(Row row, int partitionCount, InternalSerializationService serializationService) {
+        int hash = getHash(row, serializationService);
 
         return HashUtil.hashToIndex(hash, partitionCount);
     }
 
-    protected abstract int getHash(Row row);
+    protected abstract int getHash(Row row, InternalSerializationService serializationService);
+
+    protected int getFieldHash(Object val, InternalSerializationService serializationService) {
+        // TODO 1: Optimize hashing of primitive types, to avoid serialization
+        // TODO 2: Do not use Data for multi-field because in this case the other side is never "declarative"?
+        // TODO 3: Make sure that the code is shared with AbstractSerialiazationService.calculatePartitionHash
+        Data data = serializationService.toData(val, EMPTY_PARTITIONING_STRATEGY);
+
+        return data != null ? data.getPartitionHash() : 0;
+    }
 }

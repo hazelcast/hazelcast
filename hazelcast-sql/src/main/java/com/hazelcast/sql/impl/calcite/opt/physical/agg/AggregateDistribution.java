@@ -112,13 +112,6 @@ public final class AggregateDistribution {
         }
 
         for (int i = 0; i < inputFieldGroup.size(); i++) {
-            DistributionField field = inputFieldGroup.get(i);
-
-            if (field.getNestedField() != null) {
-                // Input is distributed by the inner field of a field used in GROUP BY. We cannot use it.
-                return false;
-            }
-
             if (!aggGroupSet.get(i)) {
                 // GROUP BY doesn't contain input distribution field. Distribution is lost.
                 return false;

@@ -635,8 +635,6 @@ public final class JoinPhysicalRule extends AbstractPhysicalRule {
         List<Integer> res = new ArrayList<>(joinKeys.size());
 
         for (DistributionField field : fields) {
-            assert field.getNestedField() == null;
-
             int joinKeyIndex = joinKeys.indexOf(field.getIndex());
 
             if (joinKeyIndex == -1) {

@@ -14,29 +14,29 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.calcite.schema;
+package com.hazelcast.sql.impl.schema.map;
 
+import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.extract.QueryTargetDescriptor;
-import com.hazelcast.sql.impl.type.QueryDataType;
-import org.apache.calcite.schema.Statistic;
+import com.hazelcast.sql.impl.schema.TableField;
+import com.hazelcast.sql.impl.schema.TableStatistics;
 
 import java.util.List;
-import java.util.Map;
 
-/**
- * Table backed by a ReplicatedMap.
- */
-public final class ReplicatedMapTable extends AbstractMapTable {
+import static com.hazelcast.sql.impl.schema.SchemaUtils.SCHEMA_NAME_REPLICATED;
+
+public class ReplicatedMapTable extends AbstractMapTable {
     public ReplicatedMapTable(
-        String schemaName,
         String name,
-        List<HazelcastTableIndex> indexes,
+        List<TableField> fields,
+        TableStatistics statistics,
         QueryTargetDescriptor keyDescriptor,
-        QueryTargetDescriptor valueDescriptor,
-        Map<String, QueryDataType> fieldTypes,
-        Map<String, String> fieldPaths,
-        Statistic statistic
+        QueryTargetDescriptor valueDescriptor
     ) {
-        super(schemaName, name, indexes, keyDescriptor, valueDescriptor, fieldTypes, fieldPaths, statistic);
+        super(SCHEMA_NAME_REPLICATED, name, fields, statistics, keyDescriptor, valueDescriptor);
+    }
+
+    public ReplicatedMapTable(String name, QueryException exception) {
+        super(SCHEMA_NAME_REPLICATED, name, exception);
     }
 }

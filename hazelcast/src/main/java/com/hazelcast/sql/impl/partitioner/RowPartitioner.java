@@ -16,6 +16,7 @@
 
 package com.hazelcast.sql.impl.partitioner;
 
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.sql.impl.row.Row;
 
@@ -28,7 +29,8 @@ public interface RowPartitioner extends DataSerializable {
      *
      * @param row Row.
      * @param partitionCount Number of partitions.
+     * @param serializationService Serialization service for partition calculation.
      * @return Partition, between 0 (inclusive) and .
      */
-    int getPartition(Row row, int partitionCount);
+    int getPartition(Row row, int partitionCount, InternalSerializationService serializationService);
 }

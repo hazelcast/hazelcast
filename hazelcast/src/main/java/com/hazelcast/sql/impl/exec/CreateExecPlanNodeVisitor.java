@@ -240,7 +240,8 @@ public class CreateExecPlanNodeVisitor implements PlanNodeVisitor {
                 pop(),
                 outboxes,
                 node.getPartitioner(),
-                partitionOutboxIndexes
+                partitionOutboxIndexes,
+                serializationService
             );
         }
     }
@@ -339,7 +340,7 @@ public class CreateExecPlanNodeVisitor implements PlanNodeVisitor {
                     localParts,
                     node.getKeyDescriptor(),
                     node.getValueDescriptor(),
-                    node.getFieldNames(),
+                    node.getFieldPaths(),
                     node.getFieldTypes(),
                     node.getProjects(),
                     node.getFilter(),
@@ -371,7 +372,7 @@ public class CreateExecPlanNodeVisitor implements PlanNodeVisitor {
                     localParts,
                     node.getKeyDescriptor(),
                     node.getValueDescriptor(),
-                    node.getFieldNames(),
+                    node.getFieldPaths(),
                     node.getFieldTypes(),
                     node.getProjects(),
                     node.getFilter(),
@@ -396,7 +397,7 @@ public class CreateExecPlanNodeVisitor implements PlanNodeVisitor {
             map,
             node.getKeyDescriptor(),
             node.getValueDescriptor(),
-            node.getFieldNames(),
+            node.getFieldPaths(),
             node.getFieldTypes(),
             node.getProjects(),
             node.getFilter(),
@@ -490,7 +491,8 @@ public class CreateExecPlanNodeVisitor implements PlanNodeVisitor {
                 node.getId(),
                 upstream,
                 node.getPartitioner(),
-                localParts
+                localParts,
+                serializationService
             );
         }
 
