@@ -1,30 +1,37 @@
 [
     {
         "version": "4.1",
+        "releaseNotes": "/blog/2020/04/29/jet-41-is-released",
         "size" : 60.5
     },
     {
         "version": "4.0",
+        "releaseNotes": "/blog/2020/03/02/jet-40-is-released",
         "size" : 44.8
     },
     {
         "version": "3.2.2",
+        "manual": "https://docs.hazelcast.org/docs/jet/3.2.2/manual/",
         "size" : 60.6
     },
     {
         "version": "3.2.1",
+        "manual": "https://docs.hazelcast.org/docs/jet/3.2.1/manual/",
         "size" : 60.4
     },
     {
         "version": "3.2",
+        "manual": "https://docs.hazelcast.org/docs/jet/3.2/manual/",
         "size" : 60.4
     },
     {
         "version": "3.1",
+        "manual": "https://docs.hazelcast.org/docs/jet/3.1/manual/",
         "size" : 98.8
     },
     {
         "version": "3.0",
+        "manual": "https://docs.hazelcast.org/docs/jet/3.0/manual/",
         "size" : 98.5
     }
 ]

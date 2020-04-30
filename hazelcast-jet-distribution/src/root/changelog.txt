@@ -1,3 +1,21 @@
+** Hazelcast Jet 4.1 **
+
+* You can now use our JMS and JDBC sinks with the exactly-once guarantee.
+* We simplified adding classes to the Jet job configuration object. You
+  can add a whole package in one call and, for `jobConfig.addClass`, we
+  automatically add all the class's nested classes, including anonymous
+  ones.
+* We made the serialization setup simpler. You can now register custom
+  serializers with the job and we added extra convenience for protobuf
+  serialization.
+* We added a `ServiceFactory` that accesses an external gRPC service. You
+  can now use `mapUsingService` to transform the data by calling either
+  a unary or a bidirectional streaming gRPC service.
+* We added the `innerHashJoin` transform that achieves an inner join
+  directly instead of requiring custom code in the `mapToOutputFn`. Credit
+  for this one goes to @TomaszGaweda.
+
+
 ** Hazelcast Jet 4.0 **
 
 * Updated Hazelcast IMDG version to 4.0, which brings many new features

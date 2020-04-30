@@ -96,7 +96,7 @@ public class JetCommandLine implements Runnable {
     @Option(names = {"-f", "--config"},
             description = "Optional path to a client config XML/YAML file." +
                     " The default is to use config/hazelcast-client.yaml." +
-                    " If you set this option, Jet will ignore the --addresses and --group options.",
+                    " If you set this option, Jet will ignore the --addresses and --cluster-name options.",
             order = 0
     )
     private File config;

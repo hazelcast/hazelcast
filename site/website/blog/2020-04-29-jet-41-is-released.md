@@ -129,7 +129,7 @@ you want a client instance, add the client configuration file
 (`hazelcast-client.yaml`).
 
 For more details, see the [design
-document](docs/design-docs/004-spring-boot-starter).
+document](/docs/design-docs/004-spring-boot-starter).
 
 ## Kubernetes Operator and OpenShift Support
 

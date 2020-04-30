@@ -13,11 +13,11 @@ const Container = CompLibrary.Container;
 
 const CWD = process.cwd();
 
-const versions = require(`${CWD}/versions.json`);
+const versions = require(`${CWD}/all-versions.json`);
 
 function Versions(props) {
   const { config: siteConfig } = props;
-  const latestVersion = versions[0];
+  const latest = versions[0];
   const repoUrl = `https://github.com/${siteConfig.organizationName}/${siteConfig.projectName}`;
   return (
     <div className="docMainWrapper wrapper">
@@ -30,7 +30,7 @@ function Versions(props) {
           <table className="versions">
             <tbody>
               <tr>
-                <th>{latestVersion}</th>
+                <th>{latest.version}</th>
                 <td>
                   {/* You are supposed to change this href where appropriate
                         Example: href="<baseUrl>/docs(/:language)/:id" */}
@@ -43,12 +43,13 @@ function Versions(props) {
                   </a>
                 </td>
                 <td>
-                  <a href={`${repoUrl}/releases/tag/v${latestVersion}`}>
+                  <a href={ latest.releaseNotes ? `${latest.releaseNotes}`
+                  : `${repoUrl}/releases/tag/v${latest.version}`}>
                     Release Notes
                   </a>
                 </td>
                 <td>
-                  <a href={`/javadoc/${latestVersion}`}>Javadoc</a>
+                  <a href={`/javadoc/${latest.version}`}>Javadoc</a>
                 </td>
               </tr>
             </tbody>
@@ -81,28 +82,27 @@ function Versions(props) {
           <table className="versions">
             <tbody>
               {versions.map(
-                version =>
-                  version !== latestVersion && (
-                    <tr key={version}>
-                      <th>{version}</th>
+                current =>
+                current !== latest && (
+                    <tr key={current.version}>
+                      <th>{current.version}</th>
                       <td>
                         {/* You are supposed to change this href where appropriate
                         Example: href="<baseUrl>/docs(/:language)/:version/:id" */}
-                        <a
-                          href={`${siteConfig.baseUrl}${siteConfig.docsUrl}/${
-                            props.language ? props.language + "/" : ""
-                          }${version}/get-started/intro`}
-                        >
+                        <a href={ current.manual ? `${current.manual}` 
+                          : `${siteConfig.baseUrl}${siteConfig.docsUrl}/${props.language ? props.language + "/" : ""}${current.version}/get-started/intro`
+                        }>
                           Documentation
                         </a>
                       </td>
                       <td>
-                        <a href={`${repoUrl}/releases/tag/v${version}`}>
-                          Release Notes
-                        </a>
+                      <a href={ current.releaseNotes ? `${current.releaseNotes}`
+                      : `${repoUrl}/releases/tag/v${current.version}`}>
+                        Release Notes
+                      </a>
                       </td>
                       <td>
-                        <a href={`/javadoc/${version}`}>Javadoc</a>
+                        <a href={`/javadoc/${current.version}`}>Javadoc</a>
                       </td>
                     </tr>
                   )

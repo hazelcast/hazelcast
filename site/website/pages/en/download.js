@@ -44,8 +44,9 @@ function Downloads(props) {
                 </td>
                 <td>{latest.size}MB</td>
                 <td>
-                  <a href={`${repoUrl}/releases/tag/v${latest.version}`}>
-                        Release Notes
+                  <a href={ latest.releaseNotes ? `${latest.releaseNotes}`
+                  : `${repoUrl}/releases/tag/v${latest.version}`}>
+                    Release Notes
                   </a>
                 </td>
                 <td>
@@ -83,7 +84,8 @@ function Downloads(props) {
                       {current.size} MB
                       </td>
                       <td>
-                        <a href={`${repoUrl}/releases/tag/v${current.version}`}>
+                      <a href={ current.releaseNotes ? `${current.releaseNotes}`
+                        : `${repoUrl}/releases/tag/v${current.version}`}>
                           Release Notes
                         </a>
                       </td>
