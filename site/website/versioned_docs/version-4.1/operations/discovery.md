@@ -13,7 +13,7 @@ cluster members is always via TCP/IP, regardless of the discovery
 mechanism used.
 
 The discovery mechanism must be configured before node startup and
-the options are [configured)(configuration) in `hazelcast.yaml`.
+the options are [configured](configuration) in `hazelcast.yaml`.
 
 Hazelcast Jet supports the following discovery mechanisms.
 
