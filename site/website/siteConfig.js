@@ -36,6 +36,7 @@ const siteConfig = {
         {doc: 'get-started/intro', label: 'Documentation'},
         // {doc: 'connectors/imap', label: 'Connectors'},
         {page: 'download', label: "Download"},
+        {page: 'demos', label: "Demos"},
         {href: `/javadoc/${latestVersion}`, label: "Javadoc"},
         {href: 'https://github.com/hazelcast/hazelcast-jet', label: "View on GitHub"},
         {href: 'https://gitter.im/hazelcast/hazelcast-jet', label: "Chat With Us"},
