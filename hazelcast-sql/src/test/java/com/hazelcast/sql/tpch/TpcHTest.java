@@ -39,6 +39,7 @@ import org.junit.Test;
 
 import java.math.BigDecimal;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -50,12 +51,13 @@ import static junit.framework.TestCase.fail;
 /**
  * Tests for TPC-H benchmark queries.
  * <p>
- * In order to run the test you need to generate 1Gb of TPC-H (scale factor 1) and put it into the
+ * In order to run the test you need to generate 1Gb of TPC-H (scale factor 1) and put it into the "tpch" directory of the
+ * hazelcast-sql project.
  */
 @SuppressWarnings({"checkstyle:OperatorWrap", "unused"})
 public class TpcHTest extends SqlTestSupport {
 
-    private static final String DATA_DIR = "/tmp/hazelcast/tpch";
+    private static final String DATA_DIR = "tpch";
     private static final int DOWNSCALE = 10;
 
     private static TestHazelcastInstanceFactory factory;
@@ -63,8 +65,10 @@ public class TpcHTest extends SqlTestSupport {
 
     @BeforeClass
     public static void beforeClass() {
-        if (!Files.exists(Paths.get(DATA_DIR))) {
-            throw new RuntimeException("Generated data is not found in " + DATA_DIR);
+        Path dataDir = Paths.get(DATA_DIR).toAbsolutePath().normalize();
+
+        if (!Files.exists(dataDir)) {
+            throw new RuntimeException("Generated data is not found in " + dataDir);
         }
 
         factory = new TestHazelcastInstanceFactory(2);
@@ -82,7 +86,7 @@ public class TpcHTest extends SqlTestSupport {
         member.getReplicatedMap("nation");
         member.getReplicatedMap("region");
 
-        ModelConfig modelConfig = ModelConfig.builder().setDirectory(DATA_DIR).setDownscale(DOWNSCALE).build();
+        ModelConfig modelConfig = ModelConfig.builder().setDirectory(dataDir.toString()).setDownscale(DOWNSCALE).build();
         ModelLoader.load(modelConfig, member);
     }
 
