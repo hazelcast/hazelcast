@@ -52,12 +52,12 @@ import static junit.framework.TestCase.fail;
  * Tests for TPC-H benchmark queries.
  * <p>
  * In order to run the test you need to generate 1Gb of TPC-H (scale factor 1) and put it into the "tpch" directory of the
- * hazelcast-sql project.
+ * hazelcast-sql project. The directory could be overridden with a system property {@link #DATA_DIR_PROPERTY}.
  */
 @SuppressWarnings({"checkstyle:OperatorWrap", "unused"})
 public class TpcHTest extends SqlTestSupport {
-
-    private static final String DATA_DIR = "tpch";
+    private static final String DATA_DIR_PROPERTY = "hazelcast.sql.test.tpch_dir";
+    private static final String DATA_DIR_DEFAULT = "tpch";
     private static final int DOWNSCALE = 10;
 
     private static TestHazelcastInstanceFactory factory;
@@ -65,7 +65,9 @@ public class TpcHTest extends SqlTestSupport {
 
     @BeforeClass
     public static void beforeClass() {
-        Path dataDir = Paths.get(DATA_DIR).toAbsolutePath().normalize();
+        String dir = System.getProperty(DATA_DIR_PROPERTY, DATA_DIR_DEFAULT);
+
+        Path dataDir = Paths.get(dir).toAbsolutePath().normalize();
 
         if (!Files.exists(dataDir)) {
             throw new RuntimeException("Generated data is not found in " + dataDir);
