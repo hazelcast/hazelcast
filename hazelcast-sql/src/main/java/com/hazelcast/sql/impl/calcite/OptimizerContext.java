@@ -25,6 +25,7 @@ import com.hazelcast.sql.impl.calcite.opt.cost.CostFactory;
 import com.hazelcast.sql.impl.calcite.opt.distribution.DistributionTrait;
 import com.hazelcast.sql.impl.calcite.opt.distribution.DistributionTraitDef;
 import com.hazelcast.sql.impl.calcite.opt.metadata.HazelcastRelMdRowCount;
+import com.hazelcast.sql.impl.calcite.parser.HazelcastSqlParser;
 import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlOperatorTable;
 import com.hazelcast.sql.impl.calcite.opt.OptUtils;
 import com.hazelcast.sql.impl.calcite.opt.logical.LogicalRel;
@@ -191,6 +192,7 @@ public final class OptimizerContext {
         try {
             SqlParser.ConfigBuilder parserConfig = SqlParser.configBuilder();
 
+            parserConfig.setParserFactory(HazelcastSqlParser.FACTORY);
             parserConfig.setCaseSensitive(true);
             parserConfig.setUnquotedCasing(Casing.UNCHANGED);
             parserConfig.setQuotedCasing(Casing.UNCHANGED);
