@@ -175,9 +175,12 @@ Thank you for your valuable contributions!
 
 - [jms] Exactly-once guarantee for JMS sink (#1813)
 - [jdbc] Exactly-once guarantee for JDBC sink (#1813)
-- [core] JobConfig.addClass() automatically adds nested classes to the job (#1932)
-- [core] JobConfig.addPackage() adds a whole Java package to the job (#1932, #2077)
-- [core] Job-scoped serializer deployment (#2020, #2038, #2039, #2043, #2071, #2075, #2082, #2190)
+- [core] JobConfig.addClass() automatically adds nested classes to the
+  job (#1932)
+- [core] JobConfig.addPackage() adds a whole Java package to the job
+  (#1932, #2077)
+- [core] Job-scoped serializer deployment (#2020, #2038, #2039, #2043,
+  #2071, #2075, #2082, #2190)
 - [core] [006] Protobuf serializer support (#2100)
 - [pipeline-api] [007] Support gRPC for mapUsingService (#2095, #2185)
 
@@ -188,21 +191,29 @@ Thank you for your valuable contributions!
 - [core] Add useful error message when serializer not registered (#2061)
 - [jet-cli] Add hazelcast-azure cluster self-discovery plugin to the
   fat JAR in the distribution archive (#2079)
-- [pipeline-api] First-class support for inner hash join (@TomaszGaweda #2089)
-- [core] When Jet starts up, it now logs the cluster name (@caioguedes #2105)
-- [core] Add useful error message when trying to deploy a JDK class with JobConfig (#2108)
+- [pipeline-api] First-class support for inner hash join (@TomaszGaweda
+  #2089)
+- [core] When Jet starts up, it now logs the cluster name (@caioguedes
+  #2105)
+- [core] Add useful error message when trying to deploy a JDK class with
+  JobConfig (#2108)
 - [core] Implement JobConfig.toString (@SapnaDerajeRadhakrishna #2152)
 - [core] Do not destroy Observable on shutdown (#2170)
 
 ### Fixes
 
-- [core] Don't send the interrupt signal to blocking threads when a job is terminating (#1971)
-- [core] Consistently prefer YAML over XML config files when both present (#2033)
+- [core] Don't send the interrupt signal to blocking threads when a job
+  is terminating (#1971)
+- [core] Consistently prefer YAML over XML config files when both
+  present (#2033)
 
 ### Breaking Changes
 
 - [avro] Replace Supplier<Schema> with just Schema for Avro Sink (#2005)
-- [jms] Reorder parameters in JMS source so the lambda comes last (#2062)
-- [jet-cli] Change smart routing (connecting to all cluster members) default to disabled (#2104)
-- [pipeline-api] For xUsingServiceAsync transforms, reduce the default number of concurrent
-  service calls per processor. Before: 256; now: 4. (#2204)
+- [jms] Reorder parameters in JMS source so the lambda comes last
+  (#2062)
+- [jet-cli] Change smart routing (connecting to all cluster members)
+  default to disabled (#2104)
+- [pipeline-api] For xUsingServiceAsync transforms, reduce the default
+  number of concurrent service calls per processor. Before: 256; now: 4.
+  (#2204)
