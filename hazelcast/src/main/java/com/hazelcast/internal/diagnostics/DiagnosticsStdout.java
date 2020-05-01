@@ -42,6 +42,7 @@ final class DiagnosticsStdout implements DiagnosticsLog {
         this.logWriter = new DiagnosticsLogWriterImpl(diagnostics.includeEpochTime);
         this.printWriter = newWriter();
         logWriter.init(printWriter);
+        logger.info("Sending diagnostics logs to the stdout");
     }
 
     public void write(DiagnosticsPlugin plugin) {

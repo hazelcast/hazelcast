@@ -98,7 +98,9 @@ final class DiagnosticsLogFile implements DiagnosticsLog {
 
     private File newFile(int index) {
         createDirectoryIfDoesNotExist();
-        return new File(diagnostics.directory, format(fileName, index));
+        File fresh = new File(diagnostics.directory, format(fileName, index));
+        logger.info("Current diagnostics log file is " + fresh.getAbsolutePath());
+        return fresh;
     }
 
     private void createDirectoryIfDoesNotExist() {
