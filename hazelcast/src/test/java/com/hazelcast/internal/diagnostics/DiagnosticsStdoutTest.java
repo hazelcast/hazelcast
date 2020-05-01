@@ -40,7 +40,7 @@ import static org.junit.Assert.assertNotNull;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-public class DiagnosticsLogStdoutTest extends HazelcastTestSupport {
+public class DiagnosticsStdoutTest extends HazelcastTestSupport {
 
     private PrintStream stdout;
     private ByteArrayOutputStream fakeStdout;

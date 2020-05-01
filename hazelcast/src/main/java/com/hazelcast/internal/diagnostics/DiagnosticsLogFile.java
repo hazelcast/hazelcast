@@ -41,7 +41,7 @@ import static java.lang.String.format;
  * <p>
  * Should only be called from the {@link Diagnostics}.
  */
-final class DiagnosticsLogFile implements DiagnosticsLogOutput {
+final class DiagnosticsLogFile implements DiagnosticsLog {
 
     private static final int ONE_MB = 1024 * 1024;
 

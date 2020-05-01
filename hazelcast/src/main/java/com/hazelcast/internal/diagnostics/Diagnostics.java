@@ -121,7 +121,7 @@ public class Diagnostics {
     final boolean includeEpochTime;
     final File directory;
 
-    DiagnosticsLogOutput diagnosticsLogOutput;
+    DiagnosticsLog diagnosticsLog;
 
     private final ConcurrentMap<Class<? extends DiagnosticsPlugin>, DiagnosticsPlugin> pluginsMap = new ConcurrentHashMap<>();
     private final boolean enabled;
@@ -146,7 +146,7 @@ public class Diagnostics {
         if (stdout) {
             throw new UnsupportedOperationException();
         }
-        return ((DiagnosticsLogFile) diagnosticsLogOutput).file;
+        return ((DiagnosticsLogFile) diagnosticsLog).file;
     }
 
     /**
@@ -220,9 +220,9 @@ public class Diagnostics {
         }
 
         if (stdout) {
-            this.diagnosticsLogOutput = new DiagnosticsLogStdout(this);
+            this.diagnosticsLog = new DiagnosticsStdout(this);
         } else {
-            this.diagnosticsLogOutput = new DiagnosticsLogFile(this);
+            this.diagnosticsLog = new DiagnosticsLogFile(this);
         }
 
         this.scheduler = new ScheduledThreadPoolExecutor(1, new DiagnosticSchedulerThreadFactory());
@@ -251,7 +251,7 @@ public class Diagnostics {
         @Override
         public void run() {
             try {
-                diagnosticsLogOutput.write(plugin);
+                diagnosticsLog.write(plugin);
             } catch (Throwable t) {
                 // we need to catch any exception; otherwise the task is going to be removed by the scheduler
                 logger.severe(t);

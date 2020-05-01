@@ -16,6 +16,6 @@
 
 package com.hazelcast.internal.diagnostics;
 
-public interface DiagnosticsLogOutput {
+public interface DiagnosticsLog {
     void write(DiagnosticsPlugin plugin);
 }

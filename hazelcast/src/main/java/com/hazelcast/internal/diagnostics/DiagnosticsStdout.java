@@ -25,18 +25,18 @@ import java.nio.charset.CharsetEncoder;
 import java.nio.charset.StandardCharsets;
 
 /**
- * Represents the DiagnosticsLogStdout.
+ * Represents the DiagnosticsStdout.
  * <p>
  * Should only be called from the {@link Diagnostics}.
  */
-final class DiagnosticsLogStdout implements DiagnosticsLogOutput {
+final class DiagnosticsStdout implements DiagnosticsLog {
     private final Diagnostics diagnostics;
     private final ILogger logger;
     private final DiagnosticsLogWriterImpl logWriter;
     private final PrintWriter printWriter;
     private boolean staticPluginsRendered;
 
-    DiagnosticsLogStdout(Diagnostics diagnostics) {
+    DiagnosticsStdout(Diagnostics diagnostics) {
         this.diagnostics = diagnostics;
         this.logger = diagnostics.logger;
         this.logWriter = new DiagnosticsLogWriterImpl(diagnostics.includeEpochTime);
