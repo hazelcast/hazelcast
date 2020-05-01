@@ -514,12 +514,16 @@ public final class Predicates {
      * Creates a paging predicate with an inner predicate and page size. Results will be filtered via inner predicate
      * and will be returned in natural order.
      *
+     * <b>Object being compared must implement {@link java.lang.Comparable}.  
+     * Use custom comparator if Object does not implement {@link java.lang.Comparable}</b>
+     *
      * @param predicate the inner predicate through which results will be filtered
      * @param pageSize  the page size
      * @param <K>       the type of keys the predicate operates on.
      * @param <V>       the type of values the predicate operates on.
      * @throws IllegalArgumentException if pageSize is not greater than 0
      * @throws IllegalArgumentException if inner predicate is also a paging predicate
+     * @throws IllegalArgumentException if Object being compared does not implement {@link java.lang.Comparable}
      */
     public static <K, V> PagingPredicate<K, V> pagingPredicate(Predicate predicate, int pageSize) {
         return new PagingPredicateImpl<>(predicate, pageSize);
