@@ -21,7 +21,7 @@ import com.hazelcast.transaction.TransactionalMultiMap;
 import com.hazelcast.multimap.impl.MultiMapRecord;
 import com.hazelcast.multimap.impl.MultiMapService;
 import com.hazelcast.multimap.impl.operations.CountOperation;
-import com.hazelcast.multimap.impl.operations.GetAllOperation;
+import com.hazelcast.multimap.impl.operations.GetOperation;
 import com.hazelcast.multimap.impl.operations.MultiMapOperationFactory;
 import com.hazelcast.multimap.impl.operations.MultiMapResponse;
 import com.hazelcast.internal.serialization.Data;
@@ -214,7 +214,7 @@ public abstract class TransactionalMultiMapProxySupport<K, V>
 
         Collection<MultiMapRecord> coll = txMap.get(key);
         if (coll == null) {
-            GetAllOperation operation = new GetAllOperation(name, key);
+            GetOperation operation = new GetOperation(name, key);
             operation.setThreadId(ThreadUtil.getThreadId());
             try {
                 int partitionId = partitionService.getPartitionId(key);

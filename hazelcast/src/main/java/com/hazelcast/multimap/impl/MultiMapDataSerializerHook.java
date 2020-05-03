@@ -28,7 +28,7 @@ import com.hazelcast.multimap.impl.operations.DeleteBackupOperation;
 import com.hazelcast.multimap.impl.operations.DeleteOperation;
 import com.hazelcast.multimap.impl.operations.EntrySetOperation;
 import com.hazelcast.multimap.impl.operations.EntrySetResponse;
-import com.hazelcast.multimap.impl.operations.GetAllOperation;
+import com.hazelcast.multimap.impl.operations.GetOperation;
 import com.hazelcast.multimap.impl.operations.KeySetOperation;
 import com.hazelcast.multimap.impl.operations.MergeBackupOperation;
 import com.hazelcast.multimap.impl.operations.MergeOperation;
@@ -141,7 +141,7 @@ public class MultiMapDataSerializerHook implements DataSerializerHook {
         constructors[CONTAINS_ENTRY] = arg -> new ContainsEntryOperation();
         constructors[COUNT] = arg -> new CountOperation();
         constructors[ENTRY_SET] = arg -> new EntrySetOperation();
-        constructors[GET_ALL] = arg -> new GetAllOperation();
+        constructors[GET] = arg -> new GetOperation();
         constructors[KEY_SET] = arg -> new KeySetOperation();
         constructors[PUT_BACKUP] = arg -> new PutBackupOperation();
         constructors[PUT] = arg -> new PutOperation();
