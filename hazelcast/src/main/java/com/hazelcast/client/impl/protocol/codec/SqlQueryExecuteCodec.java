@@ -19,7 +19,6 @@ package com.hazelcast.client.impl.protocol.codec;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
-import com.hazelcast.client.impl.protocol.codec.custom.*;
 
 import javax.annotation.Nullable;
 
@@ -37,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Starts execution of an SQL query.
  */
 @Generated("28884598c3fdacc0c86328ee1dea4ced")
-public final class SqlExecuteCodec {
+public final class SqlQueryExecuteCodec {
     //hex: 0x210100
     public static final int REQUEST_MESSAGE_TYPE = 2162944;
     //hex: 0x210101
@@ -46,7 +45,7 @@ public final class SqlExecuteCodec {
     private static final int RESPONSE_COLUMN_COUNT_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_COLUMN_COUNT_FIELD_OFFSET + INT_SIZE_IN_BYTES;
 
-    private SqlExecuteCodec() {
+    private SqlQueryExecuteCodec() {
     }
 
     @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
@@ -66,7 +65,7 @@ public final class SqlExecuteCodec {
     public static ClientMessage encodeRequest(java.lang.String query, @Nullable java.util.Collection<com.hazelcast.internal.serialization.Data> parameters) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
-        clientMessage.setOperationName("Sql.Execute");
+        clientMessage.setOperationName("Sql.QueryExecute");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
         encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
@@ -76,7 +75,7 @@ public final class SqlExecuteCodec {
         return clientMessage;
     }
 
-    public static SqlExecuteCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
+    public static SqlQueryExecuteCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         RequestParameters request = new RequestParameters();
         //empty initial frame
@@ -111,7 +110,7 @@ public final class SqlExecuteCodec {
         return clientMessage;
     }
 
-    public static SqlExecuteCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
+    public static SqlQueryExecuteCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         ResponseParameters response = new ResponseParameters();
         ClientMessage.Frame initialFrame = iterator.next();

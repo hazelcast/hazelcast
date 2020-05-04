@@ -16,18 +16,19 @@
 
 package com.hazelcast.sql.impl;
 
-import com.hazelcast.core.HazelcastException;
 import com.hazelcast.config.SqlConfig;
+import com.hazelcast.core.HazelcastException;
 import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.sql.impl.optimizer.NoOpSqlOptimizer;
-import com.hazelcast.sql.impl.optimizer.OptimizationTask;
-import com.hazelcast.sql.impl.optimizer.SqlOptimizer;
 import com.hazelcast.sql.SqlCursor;
 import com.hazelcast.sql.SqlQuery;
 import com.hazelcast.sql.SqlService;
+import com.hazelcast.sql.SqlUpdate;
+import com.hazelcast.sql.impl.optimizer.NoOpSqlOptimizer;
+import com.hazelcast.sql.impl.optimizer.OptimizationTask;
+import com.hazelcast.sql.impl.optimizer.SqlOptimizer;
 import com.hazelcast.sql.impl.plan.Plan;
 import com.hazelcast.sql.impl.state.QueryState;
 
@@ -78,14 +79,14 @@ public class SqlServiceImpl implements SqlService, Consumer<Packet> {
         InternalSerializationService serializationService = (InternalSerializationService) nodeEngine.getSerializationService();
 
         internalService = new SqlInternalService(
-            instanceName,
-            nodeServiceProvider,
-            serializationService,
-            operationThreadCount,
-            fragmentThreadCount,
-            OUTBOX_BATCH_SIZE,
-            STATE_CHECK_FREQUENCY,
-            maxMemory
+                instanceName,
+                nodeServiceProvider,
+                serializationService,
+                operationThreadCount,
+                fragmentThreadCount,
+                OUTBOX_BATCH_SIZE,
+                STATE_CHECK_FREQUENCY,
+                maxMemory
         );
 
         optimizer = createOptimizer(nodeEngine);
@@ -152,7 +153,7 @@ public class SqlServiceImpl implements SqlService, Consumer<Packet> {
         }
 
         if (timeout < 0) {
-            throw QueryException.error("Timeout cannot be negative: " + pageSize);
+            throw QueryException.error("Timeout cannot be negative: " + timeout);
         }
 
         if (pageSize <= 0) {
@@ -176,10 +177,10 @@ public class SqlServiceImpl implements SqlService, Consumer<Packet> {
             Plan plan = prepare(sql);
 
             state = internalService.execute(
-                plan,
-                params0,
-                timeout,
-                pageSize
+                    plan,
+                    params0,
+                    timeout,
+                    pageSize
             );
         }
 
@@ -188,6 +189,11 @@ public class SqlServiceImpl implements SqlService, Consumer<Packet> {
 
     private Plan prepare(String sql) {
         return optimizer.prepare(new OptimizationTask.Builder(sql).build());
+    }
+
+    @Override
+    public void update(SqlUpdate update) {
+        throw new UnsupportedOperationException();
     }
 
     /**
@@ -219,7 +225,7 @@ public class SqlServiceImpl implements SqlService, Consumer<Packet> {
             constructor = clazz.getConstructor(NodeEngine.class);
         } catch (ReflectiveOperationException e) {
             throw new HazelcastException("Failed to get the constructor for the optimizer class "
-                + className + ": " + e.getMessage(), e);
+                    + className + ": " + e.getMessage(), e);
         }
 
         // 4. Finally, get the instance.

@@ -19,9 +19,6 @@ package com.hazelcast.client.impl.protocol.codec;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
-import com.hazelcast.client.impl.protocol.codec.custom.*;
-
-import javax.annotation.Nullable;
 
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
@@ -37,7 +34,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Fetches the next page.
  */
 @Generated("d5c2a0a98fefcb4397864299760f7e4e")
-public final class SqlFetchCodec {
+public final class SqlQueryFetchCodec {
     //hex: 0x210200
     public static final int REQUEST_MESSAGE_TYPE = 2163200;
     //hex: 0x210201
@@ -47,7 +44,7 @@ public final class SqlFetchCodec {
     private static final int RESPONSE_LAST_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_LAST_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
 
-    private SqlFetchCodec() {
+    private SqlQueryFetchCodec() {
     }
 
     @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
@@ -67,7 +64,7 @@ public final class SqlFetchCodec {
     public static ClientMessage encodeRequest(com.hazelcast.internal.serialization.Data queryId, int pageSize) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
-        clientMessage.setOperationName("Sql.Fetch");
+        clientMessage.setOperationName("Sql.QueryFetch");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
         encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
@@ -77,7 +74,7 @@ public final class SqlFetchCodec {
         return clientMessage;
     }
 
-    public static SqlFetchCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
+    public static SqlQueryFetchCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         RequestParameters request = new RequestParameters();
         ClientMessage.Frame initialFrame = iterator.next();
@@ -111,7 +108,7 @@ public final class SqlFetchCodec {
         return clientMessage;
     }
 
-    public static SqlFetchCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
+    public static SqlQueryFetchCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         ResponseParameters response = new ResponseParameters();
         ClientMessage.Frame initialFrame = iterator.next();

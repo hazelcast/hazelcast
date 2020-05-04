@@ -26,7 +26,7 @@ public interface SqlService {
     /**
      * Execute query.
      *
-     * @param sql SQL.
+     * @param sql    SQL.
      * @param params Parameters.
      * @return Cursor.
      */
@@ -49,4 +49,12 @@ public interface SqlService {
      * @return Cursor.
      */
     SqlCursor query(SqlQuery query);
+
+    default void update(String sql) {
+        SqlUpdate update = new SqlUpdate(sql);
+
+        update(update);
+    }
+
+    void update(SqlUpdate update);
 }

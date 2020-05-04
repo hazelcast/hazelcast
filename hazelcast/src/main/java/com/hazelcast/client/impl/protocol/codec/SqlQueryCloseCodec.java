@@ -19,9 +19,6 @@ package com.hazelcast.client.impl.protocol.codec;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
-import com.hazelcast.client.impl.protocol.codec.custom.*;
-
-import javax.annotation.Nullable;
 
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
@@ -37,7 +34,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Closes server-side query cursor.
  */
 @Generated("0caba402377e0f7471ef90b1645ed3c5")
-public final class SqlCloseCodec {
+public final class SqlQueryCloseCodec {
     //hex: 0x210300
     public static final int REQUEST_MESSAGE_TYPE = 2163456;
     //hex: 0x210301
@@ -45,7 +42,7 @@ public final class SqlCloseCodec {
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
 
-    private SqlCloseCodec() {
+    private SqlQueryCloseCodec() {
     }
 
     @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
@@ -60,7 +57,7 @@ public final class SqlCloseCodec {
     public static ClientMessage encodeRequest(com.hazelcast.internal.serialization.Data queryId) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
-        clientMessage.setOperationName("Sql.Close");
+        clientMessage.setOperationName("Sql.QueryClose");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
         encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
@@ -69,7 +66,7 @@ public final class SqlCloseCodec {
         return clientMessage;
     }
 
-    public static SqlCloseCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
+    public static SqlQueryCloseCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         RequestParameters request = new RequestParameters();
         //empty initial frame
@@ -91,7 +88,7 @@ public final class SqlCloseCodec {
         return clientMessage;
     }
 
-    public static SqlCloseCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
+    public static SqlQueryCloseCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         ResponseParameters response = new ResponseParameters();
         //empty initial frame
