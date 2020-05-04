@@ -14,14 +14,26 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.calcite.schema.statistic;
+package com.hazelcast.sql.impl.schema.map;
 
-import com.hazelcast.core.DistributedObject;
+import com.hazelcast.sql.impl.extract.QueryPath;
+import com.hazelcast.sql.impl.schema.TableField;
+import com.hazelcast.sql.impl.type.QueryDataType;
 
 /**
- * Contains statistics required for planner.
+ * Field of IMap or ReplicatedMap.
  */
-public interface StatisticProvider {
+public class MapTableField extends TableField {
+    /** Path to the field. */
+    private final QueryPath path;
 
-    long getRowCount(DistributedObject container);
+    public MapTableField(String name, QueryDataType type, QueryPath path) {
+        super(name, type);
+
+        this.path = path;
+    }
+
+    public QueryPath getPath() {
+        return path;
+    }
 }

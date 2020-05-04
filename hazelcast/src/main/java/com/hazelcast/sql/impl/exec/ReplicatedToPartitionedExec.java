@@ -16,6 +16,7 @@
 
 package com.hazelcast.sql.impl.exec;
 
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.partitioner.RowPartitioner;
@@ -27,17 +28,25 @@ public class ReplicatedToPartitionedExec extends AbstractFilterExec {
 
     private final RowPartitioner partitioner;
     private final PartitionIdSet parts;
+    private final InternalSerializationService serializationService;
 
-    public ReplicatedToPartitionedExec(int id, Exec upstream, RowPartitioner partitioner, PartitionIdSet parts) {
+    public ReplicatedToPartitionedExec(
+        int id,
+        Exec upstream,
+        RowPartitioner partitioner,
+        PartitionIdSet parts,
+        InternalSerializationService serializationService
+    ) {
         super(id, upstream);
 
         this.partitioner = partitioner;
         this.parts = parts;
+        this.serializationService = serializationService;
     }
 
     @Override
     protected boolean eval(Row row) {
-        int part = partitioner.getPartition(row, parts.getPartitionCount());
+        int part = partitioner.getPartition(row, parts.getPartitionCount(), serializationService);
 
         return parts.contains(part);
     }

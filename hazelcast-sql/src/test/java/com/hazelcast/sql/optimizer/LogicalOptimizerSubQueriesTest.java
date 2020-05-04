@@ -20,8 +20,6 @@ import com.hazelcast.sql.impl.calcite.opt.logical.AggregateLogicalRel;
 import com.hazelcast.sql.impl.calcite.opt.logical.JoinLogicalRel;
 import com.hazelcast.sql.impl.calcite.opt.logical.ProjectLogicalRel;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastSchema;
-import com.hazelcast.sql.impl.calcite.schema.PartitionedMapTable;
-import com.hazelcast.sql.impl.calcite.schema.statistic.TableStatistic;
 import com.hazelcast.sql.impl.expression.predicate.ComparisonMode;
 import com.hazelcast.sql.impl.expression.predicate.IsNotNullPredicate;
 import com.hazelcast.sql.optimizer.support.LogicalOptimizerTestSupport;
@@ -42,10 +40,8 @@ public class LogicalOptimizerSubQueriesTest extends LogicalOptimizerTestSupport 
     protected HazelcastSchema createDefaultSchema() {
         Map<String, Table> tableMap = new HashMap<>();
 
-        tableMap.put("r", new PartitionedMapTable(null, "r", null, null, null, null,
-                fieldTypes("r", INT, "r1", INT, "r2", INT, "r3", INT), null, new TableStatistic(100)));
-        tableMap.put("s", new PartitionedMapTable(null, "s", null, null, null, null,
-                fieldTypes("s", INT, "s1", INT, "s2", INT, "s3", INT), null, new TableStatistic(100)));
+        tableMap.put("r", partitionedTable("r", fields("r", INT, "r1", INT, "r2", INT, "r3", INT), null, 100));
+        tableMap.put("s", partitionedTable("s", fields("s", INT, "s1", INT, "s2", INT, "s3", INT), null, 100));
 
         return new HazelcastSchema(tableMap);
     }

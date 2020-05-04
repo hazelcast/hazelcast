@@ -55,6 +55,12 @@ public class ModelGenerator {
 
         MapConfig departmentCfg = new MapConfig(DEPARTMENT);
 
+        departmentCfg.setPartitioningStrategyConfig(
+            new PartitioningStrategyConfig().setPartitioningStrategy(
+                new DeclarativePartitioningStrategy<>()
+            )
+        );
+
         MapConfig personCfg = new MapConfig(PERSON);
 
         personCfg.setPartitioningStrategyConfig(

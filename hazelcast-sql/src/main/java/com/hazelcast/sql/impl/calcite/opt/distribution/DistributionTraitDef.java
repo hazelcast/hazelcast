@@ -156,9 +156,6 @@ public class DistributionTraitDef extends RelTraitDef<DistributionTrait> {
             List<Integer> res = new ArrayList<>(fields.size());
 
             for (DistributionField field : fields) {
-                // Nested fields should be eliminated at this point.
-                assert field.getNestedField() == null;
-
                 res.add(field.getIndex());
             }
 

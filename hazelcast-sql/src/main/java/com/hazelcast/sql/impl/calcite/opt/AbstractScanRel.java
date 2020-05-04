@@ -16,6 +16,7 @@
 
 package com.hazelcast.sql.impl.calcite.opt;
 
+import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelOptTable;
 import org.apache.calcite.plan.RelTraitSet;
@@ -43,6 +44,10 @@ public abstract class AbstractScanRel extends TableScan {
 
     public List<Integer> getProjects() {
         return projects != null ? projects : identity();
+    }
+
+    public HazelcastTable getTableUnwrapped() {
+        return table.unwrap(HazelcastTable.class);
     }
 
     @Override

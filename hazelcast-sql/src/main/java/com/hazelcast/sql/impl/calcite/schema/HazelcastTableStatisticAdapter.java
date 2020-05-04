@@ -14,40 +14,45 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.calcite.schema.statistic;
+package com.hazelcast.sql.impl.calcite.schema;
 
+import org.apache.calcite.rel.RelCollation;
+import org.apache.calcite.rel.RelDistribution;
+import org.apache.calcite.rel.RelDistributionTraitDef;
+import org.apache.calcite.rel.RelReferentialConstraint;
+import org.apache.calcite.schema.Statistic;
 import org.apache.calcite.util.ImmutableBitSet;
 
+import java.util.Collections;
 import java.util.List;
 
 /**
- * Simple table statistics.
+ * Table statisic adapter.
  */
-public class TableStatistic extends TableStatisticAdapter {
-    /** Row count. */
-    private final Long rowCount;
-
-    public TableStatistic(long rowCount) {
-        this((Long) rowCount);
-    }
-
-    public TableStatistic(Long rowCount) {
-        this.rowCount = rowCount;
+public abstract class HazelcastTableStatisticAdapter implements Statistic {
+    @Override
+    public boolean isKey(ImmutableBitSet columns) {
+        return false;
     }
 
     @Override
-    public Double getRowCount() {
-        return rowCount != null ? (double) rowCount : null;
+    public List<RelReferentialConstraint> getReferentialConstraints() {
+        return Collections.emptyList();
+    }
+
+    @Override
+    public List<RelCollation> getCollations() {
+        return Collections.emptyList();
+    }
+
+    @Override
+    public RelDistribution getDistribution() {
+        return RelDistributionTraitDef.INSTANCE.getDefault();
     }
 
     @Override
     public List<ImmutableBitSet> getKeys() {
         // TODO: Do we need to reutrn __key here?
         return null;
-    }
-
-    @Override
-    public String toString() {
-        return getClass().getSimpleName() + "{rowCount=" + rowCount + '}';
     }
 }

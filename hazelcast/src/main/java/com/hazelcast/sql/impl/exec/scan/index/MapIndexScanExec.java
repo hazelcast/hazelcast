@@ -27,6 +27,7 @@ import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.sql.impl.exec.scan.AbstractMapScanExec;
 import com.hazelcast.sql.impl.exec.IterationResult;
 import com.hazelcast.sql.impl.expression.Expression;
+import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.extract.QueryTargetDescriptor;
 import com.hazelcast.sql.impl.row.HeapRow;
 import com.hazelcast.sql.impl.row.Row;
@@ -73,7 +74,7 @@ public class MapIndexScanExec extends AbstractMapScanExec {
         PartitionIdSet parts,
         QueryTargetDescriptor keyDescriptor,
         QueryTargetDescriptor valueDescriptor,
-        List<String> fieldNames,
+        List<QueryPath> fieldPaths,
         List<QueryDataType> fieldTypes,
         List<Integer> projects,
         Expression<Boolean> filter,
@@ -81,7 +82,7 @@ public class MapIndexScanExec extends AbstractMapScanExec {
         IndexFilter indexFilter,
         InternalSerializationService serializationService
     ) {
-        super(id, map.getName(), keyDescriptor, valueDescriptor, fieldNames, fieldTypes, projects, filter, serializationService);
+        super(id, map.getName(), keyDescriptor, valueDescriptor, fieldPaths, fieldTypes, projects, filter, serializationService);
 
         this.map = map;
         this.parts = parts;
@@ -181,7 +182,7 @@ public class MapIndexScanExec extends AbstractMapScanExec {
 
     @Override
     public String toString() {
-        return getClass().getSimpleName() + "{mapName=" + mapName + ", fieldNames=" + fieldNames + ", projects=" + projects
+        return getClass().getSimpleName() + "{mapName=" + mapName + ", fieldPaths=" + fieldPaths + ", projects=" + projects
             + "indexName=" + indexName + ", indexFilter=" + indexFilter + ", remainderFilter=" + filter
             + ", partitionCount=" + parts.size() + '}';
     }

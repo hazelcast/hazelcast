@@ -20,7 +20,7 @@ import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.sql.support.ModelGenerator;
-import com.hazelcast.sql.support.SqlTestSupport;
+import com.hazelcast.sql.support.CalciteSqlTestSupport;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -38,7 +38,7 @@ import static junit.framework.TestCase.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class JoinSqlClientTest extends SqlTestSupport {
+public class JoinSqlClientTest extends CalciteSqlTestSupport {
     /** Make sure that we fetch several pages. */
     private static final int PERSON_CNT = SqlQuery.DEFAULT_PAGE_SIZE * 2;
 

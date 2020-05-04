@@ -14,45 +14,44 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.calcite.schema;
-
-import com.hazelcast.config.IndexType;
+package com.hazelcast.sql.impl.schema;
 
 import java.util.List;
 
 /**
- * Index descriptor.
+ * Generic table metadata.
  */
-public class HazelcastTableIndex {
-    /** Name. */
+public abstract class Table {
+    private final String schemaName;
     private final String name;
+    private final List<TableField> fields;
+    private final TableStatistics statistics;
 
-    /** Type. */
-    private final IndexType type;
-
-    /** Attributes. */
-    private final List<String> attributes;
-
-    public HazelcastTableIndex(String name, IndexType type, List<String> attributes) {
+    protected Table(String schemaName, String name, List<TableField> fields, TableStatistics statistics) {
+        this.schemaName = schemaName;
         this.name = name;
-        this.type = type;
-        this.attributes = attributes;
+        this.fields = fields;
+        this.statistics = statistics;
+    }
+
+    public String getSchemaName() {
+        return schemaName;
     }
 
     public String getName() {
         return name;
     }
 
-    public IndexType getType() {
-        return type;
+    public int getFieldCount() {
+        return fields.size();
     }
 
-    public List<String> getAttributes() {
-        return attributes;
+    @SuppressWarnings("unchecked")
+    public <T extends TableField> T getField(int index) {
+        return (T) fields.get(index);
     }
 
-    @Override
-    public String toString() {
-        return getClass().getSimpleName() + "{name=" + name + ", type=" + type + ", attributes=" + attributes + '}';
+    public TableStatistics getStatistics() {
+        return statistics;
     }
 }

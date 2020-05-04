@@ -18,7 +18,8 @@ package com.hazelcast.sql.impl.calcite.opt;
 
 import com.hazelcast.sql.impl.calcite.opt.distribution.DistributionTrait;
 import com.hazelcast.sql.impl.calcite.opt.distribution.DistributionTraitDef;
-import com.hazelcast.sql.impl.calcite.schema.AbstractMapTable;
+import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
+import com.hazelcast.sql.impl.schema.map.AbstractMapTable;
 import org.apache.calcite.plan.Convention;
 import org.apache.calcite.plan.ConventionTraitDef;
 import org.apache.calcite.plan.RelOptCluster;
@@ -294,6 +295,8 @@ public final class OptUtils {
     }
 
     public static boolean isProjectableFilterable(TableScan scan) {
-        return scan.getTable().unwrap(AbstractMapTable.class) != null;
+        HazelcastTable table = scan.getTable().unwrap(HazelcastTable.class);
+
+        return table != null && table.getTarget() instanceof AbstractMapTable;
     }
 }

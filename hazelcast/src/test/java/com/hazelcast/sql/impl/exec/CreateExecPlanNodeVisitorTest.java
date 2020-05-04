@@ -26,6 +26,7 @@ import com.hazelcast.sql.impl.NodeServiceProviderImpl;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.LoggingQueryOperationHandler;
 import com.hazelcast.sql.impl.QueryId;
+import com.hazelcast.sql.impl.SqlTestSupport;
 import com.hazelcast.sql.impl.exec.io.Inbox;
 import com.hazelcast.sql.impl.exec.io.Outbox;
 import com.hazelcast.sql.impl.exec.io.ReceiveExec;
@@ -79,7 +80,7 @@ import static org.junit.Assert.assertSame;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class CreateExecPlanNodeVisitorTest {
+public class CreateExecPlanNodeVisitorTest extends SqlTestSupport {
 
     private static final String MAP_NAME = "map";
 
@@ -347,7 +348,7 @@ public class CreateExecPlanNodeVisitorTest {
             mapName,
             GenericQueryTargetDescriptor.INSTANCE,
             GenericQueryTargetDescriptor.INSTANCE,
-            Arrays.asList("field1", "field2"),
+            Arrays.asList(valuePath("field1"), valuePath("field2")),
             Arrays.asList(QueryDataType.INT, QueryDataType.VARCHAR),
             Arrays.asList(0, 1),
             new ConstantPredicateExpression(true)
@@ -388,7 +389,7 @@ public class CreateExecPlanNodeVisitorTest {
             assertEquals(scanNode.getMapName(), scanExec.getMap().getName());
             assertEquals(scanNode.getKeyDescriptor(), scanExec.getKeyDescriptor());
             assertEquals(scanNode.getValueDescriptor(), scanExec.getValueDescriptor());
-            assertEquals(scanNode.getFieldNames(), scanExec.getFieldNames());
+            assertEquals(scanNode.getFieldPaths(), scanExec.getFieldPaths());
             assertEquals(scanNode.getFieldTypes(), scanExec.getFieldTypes());
             assertEquals(scanNode.getProjects(), scanExec.getProjects());
             assertEquals(scanNode.getFilter(), scanExec.getFilter());

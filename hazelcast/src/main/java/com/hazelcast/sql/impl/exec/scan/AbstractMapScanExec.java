@@ -19,6 +19,7 @@ package com.hazelcast.sql.impl.exec.scan;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.sql.impl.exec.AbstractExec;
+import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.extract.QueryTargetDescriptor;
 import com.hazelcast.sql.impl.worker.QueryFragmentContext;
 import com.hazelcast.sql.impl.expression.Expression;
@@ -35,7 +36,7 @@ public abstract class AbstractMapScanExec extends AbstractExec {
     protected final String mapName;
     protected final QueryTargetDescriptor keyDescriptor;
     protected final QueryTargetDescriptor valueDescriptor;
-    protected final List<String> fieldNames;
+    protected final List<QueryPath> fieldPaths;
     protected final List<QueryDataType> fieldTypes;
     protected final List<Integer> projects;
     protected final Expression<Boolean> filter;
@@ -47,7 +48,7 @@ public abstract class AbstractMapScanExec extends AbstractExec {
         String mapName,
         QueryTargetDescriptor keyDescriptor,
         QueryTargetDescriptor valueDescriptor,
-        List<String> fieldNames,
+        List<QueryPath> fieldPaths,
         List<QueryDataType> fieldTypes,
         List<Integer> projects,
         Expression<Boolean> filter,
@@ -58,7 +59,7 @@ public abstract class AbstractMapScanExec extends AbstractExec {
         this.mapName = mapName;
         this.keyDescriptor = keyDescriptor;
         this.valueDescriptor = valueDescriptor;
-        this.fieldNames = fieldNames;
+        this.fieldPaths = fieldPaths;
         this.fieldTypes = fieldTypes;
         this.projects = projects;
         this.filter = filter;
@@ -70,7 +71,7 @@ public abstract class AbstractMapScanExec extends AbstractExec {
         row = MapScanRow.create(
             keyDescriptor,
             valueDescriptor,
-            fieldNames,
+            fieldPaths,
             fieldTypes,
             createExtractors(),
             serializationService
@@ -132,8 +133,8 @@ public abstract class AbstractMapScanExec extends AbstractExec {
         return valueDescriptor;
     }
 
-    public List<String> getFieldNames() {
-        return fieldNames;
+    public List<QueryPath> getFieldPaths() {
+        return fieldPaths;
     }
 
     public List<QueryDataType> getFieldTypes() {

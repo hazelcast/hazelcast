@@ -19,10 +19,11 @@ package com.hazelcast.sql.support;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.sql.SqlCursor;
 import com.hazelcast.sql.SqlRow;
-import com.hazelcast.sql.impl.optimizer.OptimizationTask;
-import com.hazelcast.sql.impl.plan.Plan;
 import com.hazelcast.sql.impl.SqlCursorImpl;
 import com.hazelcast.sql.impl.SqlServiceImpl;
+import com.hazelcast.sql.impl.SqlTestSupport;
+import com.hazelcast.sql.impl.optimizer.OptimizationTask;
+import com.hazelcast.sql.impl.plan.Plan;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -30,7 +31,7 @@ import java.util.List;
 /**
  * Common infrastructure for SQL tests.
  */
-public class SqlTestSupport {
+public class CalciteSqlTestSupport extends SqlTestSupport {
     protected Plan getPlan(HazelcastInstance target, String sql) {
         SqlServiceImpl sqlService = (SqlServiceImpl) target.getSqlService();
 

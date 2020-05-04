@@ -21,7 +21,7 @@ import com.hazelcast.replicatedmap.ReplicatedMap;
 import com.hazelcast.sql.impl.plan.Plan;
 import com.hazelcast.sql.impl.SqlCursorImpl;
 import com.hazelcast.sql.support.ModelGenerator;
-import com.hazelcast.sql.support.SqlTestSupport;
+import com.hazelcast.sql.support.CalciteSqlTestSupport;
 import com.hazelcast.sql.support.model.person.City;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -46,7 +46,7 @@ import static org.junit.Assert.assertTrue;
  */
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class ReplicatedMapSqlTest extends SqlTestSupport {
+public class ReplicatedMapSqlTest extends CalciteSqlTestSupport {
     private static TestHazelcastInstanceFactory factory;
     private static HazelcastInstance member;
 

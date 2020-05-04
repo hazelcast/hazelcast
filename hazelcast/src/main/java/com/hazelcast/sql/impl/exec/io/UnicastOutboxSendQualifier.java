@@ -16,6 +16,7 @@
 
 package com.hazelcast.sql.impl.exec.io;
 
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.row.RowBatch;
 import com.hazelcast.sql.impl.partitioner.RowPartitioner;
@@ -28,6 +29,7 @@ public class UnicastOutboxSendQualifier implements OutboxSendQualifier {
 
     private final RowPartitioner partitioner;
     private final int[] partitionOutboxIndexes;
+    private final InternalSerializationService serializationService;
 
     private RowBatch batch;
     private int[] cachedPartitions;
@@ -36,9 +38,14 @@ public class UnicastOutboxSendQualifier implements OutboxSendQualifier {
     private int outboxIndex;
 
     @SuppressFBWarnings(value = "EI_EXPOSE_REP2", justification = "This is an internal class")
-    public UnicastOutboxSendQualifier(RowPartitioner partitioner, int[] partitionOutboxIndexes) {
+    public UnicastOutboxSendQualifier(
+        RowPartitioner partitioner,
+        int[] partitionOutboxIndexes,
+        InternalSerializationService serializationService
+    ) {
         this.partitioner = partitioner;
         this.partitionOutboxIndexes = partitionOutboxIndexes;
+        this.serializationService = serializationService;
     }
 
     public void setBatch(RowBatch batch) {
@@ -77,7 +84,7 @@ public class UnicastOutboxSendQualifier implements OutboxSendQualifier {
 
         Row row = batch.getRow(rowIndex);
 
-        int partition = partitioner.getPartition(row, partitionOutboxIndexes.length);
+        int partition = partitioner.getPartition(row, partitionOutboxIndexes.length, serializationService);
 
         cachedPartitions[rowIndex] = partition;
         cachePartitionFlags[rowIndex] = true;

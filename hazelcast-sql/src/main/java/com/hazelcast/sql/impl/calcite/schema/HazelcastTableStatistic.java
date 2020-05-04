@@ -14,42 +14,27 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.calcite.opt.distribution;
+package com.hazelcast.sql.impl.calcite.schema;
 
-public class DistributionField {
 
-    private final int index;
+/**
+ * Simple table statistics.
+ */
+public class HazelcastTableStatistic extends HazelcastTableStatisticAdapter {
+    /** Row count. */
+    private final Long rowCount;
 
-    public DistributionField(int index) {
-        this.index = index;
-    }
-
-    public int getIndex() {
-        return index;
-    }
-
-    @Override
-    public int hashCode() {
-        return Integer.hashCode(index);
+    public HazelcastTableStatistic(long rowCount) {
+        this.rowCount = rowCount;
     }
 
     @Override
-    public boolean equals(Object obj) {
-        if (this == obj) {
-            return true;
-        }
-
-        if (obj instanceof DistributionField) {
-            DistributionField other = (DistributionField) obj;
-
-            return index == other.index;
-        }
-
-        return false;
+    public Double getRowCount() {
+        return (double) rowCount;
     }
 
     @Override
     public String toString() {
-        return "DistributionField{index=" + index + '}';
+        return getClass().getSimpleName() + "{rowCount=" + rowCount + '}';
     }
 }

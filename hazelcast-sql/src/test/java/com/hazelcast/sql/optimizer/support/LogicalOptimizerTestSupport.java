@@ -17,7 +17,6 @@
 package com.hazelcast.sql.optimizer.support;
 
 import com.hazelcast.sql.impl.QueryParameterMetadata;
-import com.hazelcast.sql.impl.calcite.opt.physical.visitor.RexToExpressionVisitor;
 import com.hazelcast.sql.impl.calcite.opt.logical.AggregateLogicalRel;
 import com.hazelcast.sql.impl.calcite.opt.logical.JoinLogicalRel;
 import com.hazelcast.sql.impl.calcite.opt.logical.LogicalRel;
@@ -25,7 +24,7 @@ import com.hazelcast.sql.impl.calcite.opt.logical.MapScanLogicalRel;
 import com.hazelcast.sql.impl.calcite.opt.logical.ProjectLogicalRel;
 import com.hazelcast.sql.impl.calcite.opt.logical.RootLogicalRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.visitor.PlanCreateVisitor;
-import com.hazelcast.sql.impl.calcite.schema.AbstractMapTable;
+import com.hazelcast.sql.impl.calcite.opt.physical.visitor.RexToExpressionVisitor;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.aggregate.AggregateExpression;
 import com.hazelcast.sql.support.TestPlanNodeSchema;
@@ -125,7 +124,7 @@ public abstract class LogicalOptimizerTestSupport extends OptimizerTestSupport {
         MapScanLogicalRel scan = assertClass(node, MapScanLogicalRel.class);
 
         if (expMapName != null) {
-            assertEquals(expMapName, scan.getTable().unwrap(AbstractMapTable.class).getName());
+            assertEquals(expMapName, scan.getMap().getName());
         }
 
         assertFieldIndexes(expProjects, scan.getProjects());

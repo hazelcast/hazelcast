@@ -16,8 +16,8 @@
 
 package com.hazelcast.sql.impl.calcite.opt;
 
-import com.hazelcast.sql.impl.calcite.schema.AbstractMapTable;
-import com.hazelcast.sql.impl.calcite.schema.ReplicatedMapTable;
+import com.hazelcast.sql.impl.schema.map.AbstractMapTable;
+import com.hazelcast.sql.impl.schema.map.ReplicatedMapTable;
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelOptTable;
 import org.apache.calcite.plan.RelTraitSet;
@@ -55,11 +55,11 @@ public abstract class AbstractMapScanRel extends AbstractScanRel {
     }
 
     public AbstractMapTable getMap() {
-        return table.unwrap(AbstractMapTable.class);
+        return getTableUnwrapped().getTarget();
     }
 
     public boolean isReplicated() {
-        return table.unwrap(ReplicatedMapTable.class) != null;
+        return getMap() instanceof ReplicatedMapTable;
     }
 
     @Override

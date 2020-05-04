@@ -30,7 +30,6 @@ import org.apache.calcite.rel.RelCollationTraitDef;
 import org.apache.calcite.rel.RelCollations;
 import org.apache.calcite.rel.RelFieldCollation;
 import org.apache.calcite.rel.RelNode;
-import org.apache.calcite.rex.RexFieldAccess;
 import org.apache.calcite.rex.RexInputRef;
 import org.apache.calcite.rex.RexNode;
 
@@ -291,16 +290,6 @@ public final class ProjectPhysicalRule extends AbstractPhysicalRule {
                 RexInputRef node0 = (RexInputRef) node;
 
                 res.put(new DistributionField(node0.getIndex()), idx);
-            } else if (node instanceof RexFieldAccess) {
-                RexFieldAccess node0 = (RexFieldAccess) node;
-
-                if (node0.getReferenceExpr() instanceof RexInputRef) {
-                    RexInputRef nestedNode = (RexInputRef) node0.getReferenceExpr();
-
-                    String nestedFieldName = node0.getField().getName();
-
-                    res.put(new DistributionField(nestedNode.getIndex(), nestedFieldName), idx);
-                }
             }
 
             idx++;

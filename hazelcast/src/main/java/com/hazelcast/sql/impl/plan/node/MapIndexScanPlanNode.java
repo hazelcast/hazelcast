@@ -20,6 +20,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.sql.impl.exec.scan.index.IndexFilter;
 import com.hazelcast.sql.impl.expression.Expression;
+import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.extract.QueryTargetDescriptor;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
@@ -47,14 +48,14 @@ public class MapIndexScanPlanNode extends AbstractMapScanPlanNode {
         String mapName,
         QueryTargetDescriptor keyDescriptor,
         QueryTargetDescriptor valueDescriptor,
-        List<String> fieldNames,
+        List<QueryPath> fieldPaths,
         List<QueryDataType> fieldTypes,
         List<Integer> projects,
         String indexName,
         IndexFilter indexFilter,
         Expression<Boolean> remainderFilter
     ) {
-        super(id, mapName, keyDescriptor, valueDescriptor, fieldNames, fieldTypes, projects, remainderFilter);
+        super(id, mapName, keyDescriptor, valueDescriptor, fieldPaths, fieldTypes, projects, remainderFilter);
 
         this.indexName = indexName;
         this.indexFilter = indexFilter;
@@ -93,7 +94,7 @@ public class MapIndexScanPlanNode extends AbstractMapScanPlanNode {
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, mapName, fieldNames, projects, indexName, indexFilter, filter);
+        return Objects.hash(id, mapName, fieldPaths, projects, indexName, indexFilter, filter);
     }
 
     @Override
@@ -110,7 +111,7 @@ public class MapIndexScanPlanNode extends AbstractMapScanPlanNode {
 
         return id == that.id
             && mapName.equals(that.mapName)
-            && fieldNames.equals(that.fieldNames)
+            && fieldPaths.equals(that.fieldPaths)
             && projects.equals(that.projects)
             && indexName.equals(that.indexName)
             && indexFilter.equals(that.indexFilter)
@@ -119,7 +120,7 @@ public class MapIndexScanPlanNode extends AbstractMapScanPlanNode {
 
     @Override
     public String toString() {
-        return getClass().getSimpleName() + "{id=" + id + ", mapName=" + mapName + ", fieldNames=" + fieldNames
+        return getClass().getSimpleName() + "{id=" + id + ", mapName=" + mapName + ", fieldPaths=" + fieldPaths
             + ", projects=" + projects + ", indexName=" + indexName + ", indexFilter=" + indexFilter
             + ", remainderFilter=" + filter + '}';
     }

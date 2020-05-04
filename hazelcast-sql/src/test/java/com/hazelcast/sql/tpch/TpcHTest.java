@@ -28,7 +28,7 @@ import com.hazelcast.sql.impl.SqlCursorImpl;
 import com.hazelcast.sql.impl.calcite.OptimizerConfig;
 import com.hazelcast.sql.impl.calcite.OptimizerContext;
 import com.hazelcast.sql.impl.row.Row;
-import com.hazelcast.sql.support.SqlTestSupport;
+import com.hazelcast.sql.support.CalciteSqlTestSupport;
 import com.hazelcast.sql.tpch.model.ModelConfig;
 import com.hazelcast.sql.tpch.model.ModelLoader;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -55,7 +55,7 @@ import static junit.framework.TestCase.fail;
  * hazelcast-sql project. The directory could be overridden with a system property {@link #DATA_DIR_PROPERTY}.
  */
 @SuppressWarnings({"checkstyle:OperatorWrap", "unused"})
-public class TpcHTest extends SqlTestSupport {
+public class TpcHTest extends CalciteSqlTestSupport {
     private static final String DATA_DIR_PROPERTY = "hazelcast.sql.test.tpch_dir";
     private static final String DATA_DIR_DEFAULT = "tpch";
     private static final int DOWNSCALE = 10;
@@ -100,18 +100,25 @@ public class TpcHTest extends SqlTestSupport {
         config.addReplicatedMapConfig(new ReplicatedMapConfig("region"));
 
         // Customer-order
-        config.addMapConfig(new MapConfig("customer"));
+        config.addMapConfig(new MapConfig("customer").setPartitioningStrategyConfig(partitioning()));
         config.addMapConfig(new MapConfig("orders").setPartitioningStrategyConfig(partitioning("o_custkey")));
 
         // Part-supplier
         config.addReplicatedMapConfig(new ReplicatedMapConfig("supplier"));
-        config.addMapConfig(new MapConfig("part"));
+        config.addMapConfig(new MapConfig("part").setPartitioningStrategyConfig(partitioning()));
         config.addMapConfig(new MapConfig("partsupp").setPartitioningStrategyConfig(partitioning("ps_partkey")));
 
         // Line item
         config.addMapConfig(new MapConfig("lineitem").setPartitioningStrategyConfig(partitioning("l_partkey")));
 
         return config;
+    }
+
+    @SuppressWarnings("rawtypes")
+    private static PartitioningStrategyConfig partitioning() {
+        DeclarativePartitioningStrategy strategy = new DeclarativePartitioningStrategy();
+
+        return new PartitioningStrategyConfig().setPartitioningStrategy(strategy);
     }
 
     @SuppressWarnings("rawtypes")
@@ -129,7 +136,7 @@ public class TpcHTest extends SqlTestSupport {
     }
 
     @Test
-    public void testQ1() {
+    public void testQ01() {
         LocalDate date = LocalDate.parse("1998-12-01").minusDays(90);
 
         List<SqlRow> rows = execute(
@@ -159,12 +166,12 @@ public class TpcHTest extends SqlTestSupport {
 
     @Test
     @Ignore("VO: fails with empty result, investigate")
-    public void testQ2() {
+    public void testQ02() {
         int size = 15;
         String type = "BRASS";
         String region = "EUROPE";
 
-        // TODO: NLJ is generate at the moment because join order is [part, supplier, ...] and there is no condition
+        // TODO: NLJ is generated at the moment because join order is [part, supplier, ...] and there is no condition
         //  between them, hence we treat the relation as cross-join.
 
         // TODO: Notice broadcasts in the plan. This is because we do not have a cost model for exchanges yet, so the
@@ -225,7 +232,7 @@ public class TpcHTest extends SqlTestSupport {
     }
 
     @Test
-    public void testQ3() {
+    public void testQ03() {
         String segment = "BUILDING";
         LocalDate date = LocalDate.parse("1995-03-15");
 
@@ -256,7 +263,7 @@ public class TpcHTest extends SqlTestSupport {
     }
 
     @Test
-    public void testQ4() {
+    public void testQ04() {
         LocalDate date = LocalDate.parse("1993-07-01");
 
         List<SqlRow> rows = execute(
@@ -285,7 +292,7 @@ public class TpcHTest extends SqlTestSupport {
     }
 
     @Test
-    public void testQ5() {
+    public void testQ05() {
         String region = "ASIA";
         LocalDate date = LocalDate.parse("1994-01-01");
 
@@ -318,7 +325,7 @@ public class TpcHTest extends SqlTestSupport {
     }
 
     @Test
-    public void testQ6() {
+    public void testQ06() {
         LocalDate date = LocalDate.parse("1994-01-01");
         BigDecimal discount = new BigDecimal("0.06");
         BigDecimal quantity = new BigDecimal("24");
@@ -337,7 +344,7 @@ public class TpcHTest extends SqlTestSupport {
     }
 
     @Test
-    public void testQ7() {
+    public void testQ07() {
         String nation1 = "FRANCE";
         String nation2 = "GERMANY";
 
@@ -383,7 +390,7 @@ public class TpcHTest extends SqlTestSupport {
     }
 
     @Test
-    public void testQ8() {
+    public void testQ08() {
         String region = "AMERICA";
         String type = "ECONOMY ANODIZED STEEL";
 
@@ -429,7 +436,7 @@ public class TpcHTest extends SqlTestSupport {
     }
 
     @Test
-    public void testQ9() {
+    public void testQ09() {
         String color = "%green%";
 
         List<SqlRow> rows = execute(
@@ -626,13 +633,13 @@ public class TpcHTest extends SqlTestSupport {
         , -1, date, date.plusMonths(1));
     }
 
-    @Ignore
+    @Ignore("Require views")
     @Test
     public void testQ15() {
         fail("Require views");
     }
 
-    @Ignore
+    @Ignore("Requires COUNT(DISTINCT) aggregate support")
     @Test
     public void testQ16() {
         fail("Requires COUNT(DISTINCT) aggregate support");
@@ -704,7 +711,7 @@ public class TpcHTest extends SqlTestSupport {
         , 100, quantity);
     }
 
-    @Ignore
+    @Ignore("Requires OR-to-UNION, otherwise it is too long")
     @Test
     public void testQ19() {
         int quantity1 = 1;

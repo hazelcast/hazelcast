@@ -18,7 +18,7 @@ package com.hazelcast.sql;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
-import com.hazelcast.sql.support.SqlTestSupport;
+import com.hazelcast.sql.support.CalciteSqlTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -31,7 +31,7 @@ import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 
-public class SqlBackpressureTest extends SqlTestSupport {
+public class SqlBackpressureTest extends CalciteSqlTestSupport {
     /** Base query. */
     private static final String SQL_BASE =
         "SELECT l01, l02, l03, l04, l05, l06, l07, l08, l09, l10, l11, l12, l13, l14, l15, l16 FROM map ";
