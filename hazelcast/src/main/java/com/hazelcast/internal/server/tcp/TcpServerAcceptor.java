@@ -174,7 +174,7 @@ public class TcpServerAcceptor implements DynamicMetricsProvider {
             } catch (Throwable e) {
                 logger.severe(e.getClass().getName() + ": " + e.getMessage(), e);
             } finally {
-                closeSelector();
+                closeResource(selector);
             }
         }
 
@@ -226,7 +226,7 @@ public class TcpServerAcceptor implements DynamicMetricsProvider {
                 key.cancel();
             }
             selectionKeys.clear();
-            closeSelector();
+            closeResource(selector);
             Selector newSelector = Selector.open();
             selector = newSelector;
             for (ServerSocketRegistry.Pair entry : registry) {
@@ -258,22 +258,6 @@ public class TcpServerAcceptor implements DynamicMetricsProvider {
                         handleAcceptException(serverSocketChannel, e);
                     }
                 }
-            }
-        }
-
-        private void closeSelector() {
-            if (selector == null) {
-                return;
-            }
-
-            if (logger.isFinestEnabled()) {
-                logger.finest("Closing selector " + Thread.currentThread().getName());
-            }
-
-            try {
-                selector.close();
-            } catch (Exception e) {
-                logger.finest("Exception while closing selector", e);
             }
         }
 
