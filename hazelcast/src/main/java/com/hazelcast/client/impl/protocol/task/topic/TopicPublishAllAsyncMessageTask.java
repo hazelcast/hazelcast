@@ -17,20 +17,22 @@
 package com.hazelcast.client.impl.protocol.task.topic;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.codec.TopicPublishAsyncCodec;
+import com.hazelcast.client.impl.protocol.codec.TopicPublishAllAsyncCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.TopicPermission;
 import com.hazelcast.spi.impl.operationservice.Operation;
-import com.hazelcast.topic.impl.PublishAsyncOperation;
+import com.hazelcast.topic.impl.PublishAllAsyncOperation;
 import com.hazelcast.topic.impl.TopicService;
 
 import java.security.Permission;
+import java.util.List;
 
 public class TopicPublishAllAsyncMessageTask
-        extends AbstractPartitionMessageTask<TopicPublishAsyncCodec.RequestParameters> {
+        extends AbstractPartitionMessageTask<TopicPublishAllAsyncCodec.RequestParameters> {
 
     public TopicPublishAllAsyncMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -38,17 +40,17 @@ public class TopicPublishAllAsyncMessageTask
 
     @Override
     protected Operation prepareOperation() {
-        return new PublishAsyncOperation(parameters.name, parameters.message);
+        return new PublishAllAsyncOperation(parameters.name, items());
     }
 
     @Override
-    protected TopicPublishAsyncCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
-        return TopicPublishAsyncCodec.decodeRequest(clientMessage);
+    protected TopicPublishAllAsyncCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return TopicPublishAllAsyncCodec.decodeRequest(clientMessage);
     }
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return TopicPublishAsyncCodec.encodeResponse((Long) response);
+        return TopicPublishAllAsyncCodec.encodeResponse((Long) response);
     }
 
     @Override
@@ -73,6 +75,12 @@ public class TopicPublishAllAsyncMessageTask
 
     @Override
     public Object[] getParameters() {
-        return new Object[]{parameters.message};
+        return new Object[]{parameters.messages};
+    }
+
+    private Data[] items() {
+        List<Data> messageList = parameters.messages;
+        Data[] array = new Data[messageList.size()];
+        return messageList.toArray(array);
     }
 }

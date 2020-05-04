@@ -117,6 +117,7 @@ public class ClientTopicProxy<E> extends PartitionSpecificClientProxy implements
         checkNoNullInside(messages, NULL_MESSAGE_IS_NOT_ALLOWED);
 
         Collection<Data> dataCollection = objectToDataCollection(messages, getSerializationService());
+
         ClientMessage request = TopicPublishAllCodec.encodeRequest(name, dataCollection);
         invokeOnPartition(request);
     }

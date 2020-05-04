@@ -18,13 +18,15 @@ package com.hazelcast.client.topic;
 
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 import com.hazelcast.test.AssertTask;
-import com.hazelcast.topic.ITopic;
-import com.hazelcast.topic.Message;
-import com.hazelcast.topic.MessageListener;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.topic.ITopic;
+import com.hazelcast.topic.Message;
+import com.hazelcast.topic.MessageListener;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -49,6 +51,8 @@ import static org.junit.Assert.assertTrue;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class ClientTopicTest {
 
+    private ILogger logger;
+
     private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
 
     private HazelcastInstance client;
@@ -60,6 +64,7 @@ public class ClientTopicTest {
 
     @Before
     public void setup() {
+        logger = Logger.getLogger(getClass());
         hazelcastFactory.newHazelcastInstance();
         client = hazelcastFactory.newHazelcastClient();
     }
@@ -104,21 +109,25 @@ public class ClientTopicTest {
 
     @Test
     public void testPublish() throws InterruptedException {
+        String publishValue = "message";
         ITopic<String> topic = client.getTopic(randomString());
         final AtomicInteger count = new AtomicInteger(0);
+        final Collection<String> receivedValues = new ArrayList<>();
 
         topic.addMessageListener(new MessageListener<String>() {
 
             @Override
             public void onMessage(Message<String> message) {
                 count.incrementAndGet();
+                receivedValues.add(message.getMessageObject());
             }
         });
-        topic.publish("message");
+        topic.publish(publishValue);
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() {
                 assertEquals(1, count.get());
+                assertTrue(receivedValues.contains(publishValue));
             }
         });
     }
@@ -128,19 +137,23 @@ public class ClientTopicTest {
     public void testPublishAsync() throws InterruptedException {
         ITopic<String> topic = client.getTopic(randomString());
         final AtomicInteger count = new AtomicInteger(0);
+        final List<String> receivedValues = new ArrayList<>();
 
         topic.addMessageListener(new MessageListener<String>() {
 
             @Override
             public void onMessage(Message<String> message) {
                 count.incrementAndGet();
+                receivedValues.add(message.getMessageObject());
             }
         });
-        topic.publishAsync("message");
+        final String message = "message";
+        topic.publishAsync(message);
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() {
                 assertEquals(1, count.get());
+                assertEquals(Arrays.asList(message), receivedValues);
             }
         });
     }
@@ -149,12 +162,14 @@ public class ClientTopicTest {
     public void testPublishAll() throws InterruptedException {
         ITopic<String> topic = client.getTopic(randomString());
         final AtomicInteger count = new AtomicInteger(0);
+        final Collection<String> receivedValues = new ArrayList<>();
 
         topic.addMessageListener(new MessageListener<String>() {
 
             @Override
             public void onMessage(Message<String> message) {
                 count.incrementAndGet();
+                receivedValues.add(message.getMessageObject());
             }
         });
         final List<String> messages = Arrays.asList("message 1", "message 2", "message 3");
@@ -162,7 +177,8 @@ public class ClientTopicTest {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() {
-                assertEquals(1, count.get());
+                assertEquals(messages.size(), count.get());
+                assertTrue(messages.containsAll(receivedValues));
             }
         });
     }
@@ -171,12 +187,14 @@ public class ClientTopicTest {
     public void testPublishAllAsync() throws InterruptedException {
         ITopic<String> topic = client.getTopic(randomString());
         final AtomicInteger count = new AtomicInteger(0);
+        final Collection<String> receivedValues = new ArrayList<>();
 
         topic.addMessageListener(new MessageListener<String>() {
 
             @Override
             public void onMessage(Message<String> message) {
                 count.incrementAndGet();
+                receivedValues.add(message.getMessageObject());
             }
         });
 
@@ -186,7 +204,8 @@ public class ClientTopicTest {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() {
-                assertEquals(1, count.get());
+                assertEquals(messages.size(), count.get());
+                assertTrue(messages.containsAll(receivedValues));
             }
         });
     }
