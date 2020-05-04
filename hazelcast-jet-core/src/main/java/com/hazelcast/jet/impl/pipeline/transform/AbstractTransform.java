@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.impl.pipeline.transform;
 
+import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.core.Vertex;
 
 import javax.annotation.Nonnull;
@@ -26,22 +27,29 @@ import java.util.Objects;
 import static java.util.Collections.singletonList;
 
 public abstract class AbstractTransform implements Transform {
+
     @Nonnull
     private String name;
+
     @Nonnull
     private final List<Transform> upstream;
-    @Nonnull
-    private Optimization optimization = Optimization.NETWORK_TRAFFIC;
 
     private int localParallelism = Vertex.LOCAL_PARALLELISM_USE_DEFAULT;
 
+    private final boolean[] upstreamRebalancingFlags;
+
+    private final FunctionEx<?, ?>[] upstreamPartitionKeyFns;
+
     protected AbstractTransform(@Nonnull String name, @Nonnull List<Transform> upstream) {
         this.name = name;
+        // Planner updates this list to fuse the stateless transforms:
         this.upstream = new ArrayList<>(upstream);
+        this.upstreamRebalancingFlags = new boolean[upstream.size()];
+        this.upstreamPartitionKeyFns = new FunctionEx[upstream.size()];
     }
 
     protected AbstractTransform(String name, @Nonnull Transform upstream) {
-        this(name, new ArrayList<>(singletonList(upstream)));
+        this(name, singletonList(upstream));
     }
 
     @Nonnull @Override
@@ -69,9 +77,24 @@ public abstract class AbstractTransform implements Transform {
         return localParallelism;
     }
 
-    @Nonnull
-    Optimization getOptimization() {
-        return optimization;
+    @Override
+    public void setRebalanceInput(int ordinal, boolean value) {
+        upstreamRebalancingFlags[ordinal] = value;
+    }
+
+    @Override
+    public boolean shouldRebalanceInput(int ordinal) {
+        return upstreamRebalancingFlags[ordinal];
+    }
+
+    @Override
+    public void setPartitionKeyFnForInput(int ordinal, FunctionEx<?, ?> keyFn) {
+        upstreamPartitionKeyFns[ordinal] = keyFn;
+    }
+
+    @Override
+    public FunctionEx<?, ?> partitionKeyFnForInput(int ordinal) {
+        return upstreamPartitionKeyFns[ordinal];
     }
 
     @Override
@@ -84,8 +107,12 @@ public abstract class AbstractTransform implements Transform {
         return 0;
     }
 
-    public enum Optimization {
-        NETWORK_TRAFFIC,
-        MEMORY
+    protected final boolean shouldRebalanceAnyInput() {
+        for (boolean b : upstreamRebalancingFlags) {
+            if (b) {
+                return true;
+            }
+        }
+        return false;
     }
 }

@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.impl.pipeline.transform;
 
+import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.impl.pipeline.Planner;
 
 import javax.annotation.Nonnull;
@@ -43,6 +44,14 @@ public interface Transform {
     int localParallelism();
 
     void localParallelism(int localParallelism);
+
+    void setRebalanceInput(int ordinal, boolean value);
+
+    void setPartitionKeyFnForInput(int ordinal, FunctionEx<?, ?> keyFn);
+
+    boolean shouldRebalanceInput(int ordinal);
+
+    FunctionEx<?, ?> partitionKeyFnForInput(int ordinal);
 
     @Nonnull
     List<Transform> upstream();

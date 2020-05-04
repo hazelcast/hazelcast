@@ -526,9 +526,9 @@ public interface GeneralStage<T> extends Stage {
     );
 
     /**
-     * Attaches a mapping stage where for each item a lookup in the
-     * {@code ReplicatedMap} with the supplied name is performed and the
-     * result of the lookup is merged with the item and emitted.
+     * Attaches a mapping stage where for each item a lookup in the {@code
+     * ReplicatedMap} with the supplied name is performed and the result of the
+     * lookup is merged with the item and emitted.
      * <p>
      * If the result of the mapping is {@code null}, it emits nothing.
      * Therefore this stage can be used to implement filtering semantics as
@@ -552,8 +552,8 @@ public interface GeneralStage<T> extends Stage {
      * }</pre>
      *
      * @param mapName name of the {@code ReplicatedMap}
-     * @param lookupKeyFn a function which returns the key to look up in the
-     *          map. Must not return null
+     * @param lookupKeyFn a function which returns the key to look up in the map. Must not return
+     *                    null
      * @param mapFn the mapping function
      * @param <K> type of the key in the {@code ReplicatedMap}
      * @param <V> type of the value in the {@code ReplicatedMap}
@@ -572,12 +572,13 @@ public interface GeneralStage<T> extends Stage {
     }
 
     /**
-     * Attaches a mapping stage where for each item a lookup in the
-     * supplied {@code ReplicatedMap} is performed and the result of the
-     * lookup is merged with the item and emitted.
+     * Attaches a mapping stage where for each item a lookup in the supplied
+     * {@code ReplicatedMap} is performed and the result of the lookup is
+     * merged with the item and emitted.
      * <p>
      * If the result of the mapping is {@code null}, it emits nothing.
-     * Therefore this stage can be used to implement filtering semantics as well.
+     * Therefore this stage can be used to implement filtering semantics as
+     * well.
      * <p>
      * The mapping logic is equivalent to:
      * <pre>{@code
@@ -597,8 +598,8 @@ public interface GeneralStage<T> extends Stage {
      * }</pre>
      *
      * @param replicatedMap the {@code ReplicatedMap} to lookup from
-     * @param lookupKeyFn a function which returns the key to look up in the
-     *          map. Must not return null
+     * @param lookupKeyFn a function which returns the key to look up in the map. Must not return
+     *                    null.
      * @param mapFn the mapping function
      * @param <K> type of the key in the {@code ReplicatedMap}
      * @param <V> type of the value in the {@code ReplicatedMap}
@@ -615,16 +616,16 @@ public interface GeneralStage<T> extends Stage {
     }
 
     /**
-     * Attaches a mapping stage where for each item a lookup in the
-     * {@code IMap} with the supplied name is performed and the
-     * result of the lookup is merged with the item and emitted.
+     * Attaches a mapping stage where for each item a lookup in the {@code IMap}
+     * with the supplied name is performed and the result of the lookup is
+     * merged with the item and emitted.
      * <p>
      * If the result of the mapping is {@code null}, it emits nothing.
-     * Therefore this stage can be used to implement filtering semantics as well.
+     * Therefore this stage can be used to implement filtering semantics as
+     * well.
      * <p>
      * The mapping logic is equivalent to:
-     *
-     * <pre>{@code
+     *<pre>{@code
      * K key = lookupKeyFn.apply(item);
      * V value = map.get(key);
      * return mapFn.apply(item, value);
@@ -640,12 +641,12 @@ public interface GeneralStage<T> extends Stage {
      * )
      * }</pre>
      *
-     * See also {@link GeneralStageWithKey#mapUsingIMap} for a partitioned version of
-     * this operation.
+     * See also {@link GeneralStageWithKey#mapUsingIMap} for a partitioned
+     * version of this operation.
      *
      * @param mapName name of the {@code IMap}
-     * @param lookupKeyFn a function which returns the key to look up in the
-     *          map. Must not return null
+     * @param lookupKeyFn a function which returns the key to look up in the map. Must not return
+     *                    null
      * @param mapFn the mapping function
      * @param <K> type of the key in the {@code IMap}
      * @param <V> type of the value in the {@code IMap}
@@ -668,12 +669,13 @@ public interface GeneralStage<T> extends Stage {
     }
 
     /**
-     * Attaches a mapping stage where for each item a lookup in the
-     * supplied {@code IMap} is performed and the result of the
-     * lookup is merged with the item and emitted.
+     * Attaches a mapping stage where for each item a lookup in the supplied
+     * {@code IMap} is performed and the result of the lookup is merged with
+     * the item and emitted.
      * <p>
      * If the result of the mapping is {@code null}, it emits nothing.
-     * Therefore this stage can be used to implement filtering semantics as well.
+     * Therefore this stage can be used to implement filtering semantics as
+     * well.
      * <p>
      * The mapping logic is equivalent to:
      *
@@ -693,12 +695,12 @@ public interface GeneralStage<T> extends Stage {
      * )
      * }</pre>
      *
-     * See also {@link GeneralStageWithKey#mapUsingIMap} for a partitioned version of
-     * this operation.
+     * See also {@link GeneralStageWithKey#mapUsingIMap} for a partitioned
+     * version of this operation.
      *
      * @param iMap the {@code IMap} to lookup from
-     * @param lookupKeyFn a function which returns the key to look up in the
-     *          map. Must not return null
+     * @param lookupKeyFn a function which returns the key to look up in the map. Must not return
+     *                    null.
      * @param mapFn the mapping function
      * @param <K> type of the key in the {@code IMap}
      * @param <V> type of the value in the {@code IMap}
@@ -940,6 +942,127 @@ public interface GeneralStage<T> extends Stage {
      */
     @Nonnull
     <K> GeneralStageWithKey<T, K> groupingKey(@Nonnull FunctionEx<? super T, ? extends K> keyFn);
+
+    /**
+     * Returns a new stage that applies data rebalancing to the output of this
+     * stage. By default, Jet prefers to process the data locally, on the
+     * cluster member where it was originally received. This is generally a
+     * good option because it eliminates unneeded network traffic. However, if
+     * the data volume is highly skewed across members, for example when using
+     * a non-distributed data source, you can tell Jet to rebalance the data by
+     * sending some to the other members.
+     * <p>
+     * To implement rebalancing, Jet uses a <em>distributed unicast</em> data
+     * routing pattern on the DAG edge from this stage's vertex to the next one.
+     * It routes the data in a round-robin fashion, sending each item to the
+     * next member (member list includes the local one as well). If a given
+     * member's queue is overloaded and applying backpressure, it skips it and
+     * retries in the next round. With this scheme you get perfectly balanced
+     * item counts on each member under light load, but under heavier load it
+     * favors throughput: if the network becomes a bottleneck, most data may
+     * stay local.
+     * <p>
+     * These are some basic invariants:
+     * <ol><li>
+     *     The rebalancing stage does not transform data, it just changes the
+     *     physical layout of computation.
+     * </li><li>
+     *     If rebalancing is inapplicable due to the nature of the downstream
+     *     stage (for example, a non-parallelizable operation like stateful
+     *     mapping), the rebalancing stage is removed from the execution plan.
+     * </li><li>
+     *     If the downstream stage already does rebalancing for correctness (e.g.,
+     *     grouping by key implies partitioning by that key), this rebalancing
+     *     stage is optimized away.
+     * </li></ol>
+     * Aggregation is a special case because it is implemented with two
+     * vertices at the Core DAG level. The first vertex accumulates local
+     * partial results and the second one combines them globally. There are two
+     * cases:
+     * <ol><li>
+     *     {@code stage.rebalance().groupingKey(keyFn).aggregate(...)}: here Jet
+     *     removes the first (local) aggregation vertex and goes straight to
+     *     distributed aggregation without combining. The data is rebalanced
+     *     through partitioning.
+     * </li><li>
+     *     {@code stage.rebalance().aggregate(...)}: in this case the second vertex
+     *     is non-parallelizable and must execute on a single member. Therefore Jet
+     *     keeps both vertices and applies rebalancing before the first one.
+     * </li></ol>
+     *
+     * @return a new stage using the same transform as this one, only with a
+     *         rebalancing flag raised that will affect data routing into the next
+     *         stage.
+     * @since 4.2
+     */
+    @Nonnull
+    GeneralStage<T> rebalance();
+
+    /**
+     * Returns a new stage that applies data rebalancing to the output of this
+     * stage. By default, Jet prefers to process the data locally, on the
+     * cluster member where it was originally received. This is generally a
+     * good option because it eliminates unneeded network traffic. However, if
+     * the data volume is highly skewed across members, for example when using
+     * a non-distributed data source, you can tell Jet to rebalance the data by
+     * sending some to the other members.
+     * <p>
+     * With partitioned rebalancing, you supply your own function that decides
+     * (indirectly) where to send each data item. Jet first applies your
+     * partition key function to the data item and then its own partitioning
+     * function to the key. The result is that all items with the same key go
+     * to the same Jet processor and different keys are distributed
+     * pseudo-randomly across the processors.
+     * <p>
+     * Compared to non-partitioned balancing, partitioned balancing enforces
+     * the same data distribution across members regardless of any bottlenecks.
+     * If a given member is overloaded and applies backpressure, Jet doesn't
+     * reroute the data to other members, but propagates the backpressure to
+     * the upstream. If you choose a partitioning key that has a skewed
+     * distribution (some keys being much more frequent), this will result in
+     * an imbalanced data flow.
+     * <p>
+     * These are some basic invariants:
+     * <ol><li>
+     *     The rebalancing stage does not transform data, it just changes the
+     *     physical layout of computation.
+     * </li><li>
+     *     If rebalancing is inapplicable due to the nature of the downstream
+     *     stage (for example, a non-parallelizable operation like stateful
+     *     mapping), the rebalancing stage is removed from the execution plan.
+     * </li><li>
+     *     If the downstream stage already does rebalancing for correctness (e.g.,
+     *     grouping by key implies partitioning by that key), this rebalancing
+     *     stage is optimized away.
+     * </li></ol>
+     * Aggregation is a special case because it is implemented with two
+     * vertices at the Core DAG level. The first vertex accumulates local
+     * partial results and the second one combines them globally. There are two
+     * cases:
+     * <ol><li>
+     *     {@code stage.rebalance(rebalanceKeyFn).groupingKey(groupKeyFn).aggregate(...)}:
+     *     here Jet removes the first (local) aggregation vertex and goes straight
+     *     to distributed aggregation without combining. Grouped aggregation
+     *     requires the data to be partitioned by the grouping key and therefore
+     *     Jet must ignore the rebalancing key you supplied. We recommend that you
+     *     remove it and use the parameterless {@link #rebalance() stage.rebalance()}
+     *     because the end result is identical.
+     * </li><li>
+     *     {@code stage.rebalance().aggregate(...)}: in this case the second vertex
+     *     is non-parallelizable and must execute on a single member. Therefore Jet
+     *     keeps both vertices and applies partitioned rebalancing before the first
+     *     one.
+     * </li></ol>
+     *
+     * @param keyFn the partitioning key function
+     * @param <K> type of the key
+     * @return a new stage using the same transform as this one, only with a
+     *         rebalancing flag raised that will affect data routing into the next
+     *         stage.
+     * @since 4.2
+     */
+    @Nonnull
+    <K> GeneralStage<T> rebalance(@Nonnull FunctionEx<? super T, ? extends K> keyFn);
 
     /**
      * Adds a timestamp to each item in the stream using the supplied function

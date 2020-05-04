@@ -21,7 +21,6 @@ import com.hazelcast.function.BiPredicateEx;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.Traverser;
-import com.hazelcast.jet.Traversers;
 import com.hazelcast.jet.Util;
 import com.hazelcast.jet.aggregate.AggregateOperation1;
 import com.hazelcast.jet.aggregate.AggregateOperation2;
@@ -33,6 +32,7 @@ import com.hazelcast.jet.impl.pipeline.transform.DistinctTransform;
 import com.hazelcast.jet.impl.pipeline.transform.GroupTransform;
 import com.hazelcast.jet.pipeline.BatchStage;
 import com.hazelcast.jet.pipeline.BatchStageWithKey;
+import com.hazelcast.jet.pipeline.GeneralStage;
 import com.hazelcast.jet.pipeline.ServiceFactory;
 
 import javax.annotation.Nonnull;
@@ -41,7 +41,6 @@ import java.util.Map.Entry;
 import java.util.concurrent.CompletableFuture;
 
 import static com.hazelcast.jet.impl.pipeline.ComputeStageImplBase.DO_NOT_ADAPT;
-import static com.hazelcast.jet.impl.util.Util.toList;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 
@@ -98,8 +97,7 @@ public class BatchStageWithKeyImpl<T, K> extends StageWithGroupingBase<T, K> imp
             boolean preserveOrder,
             @Nonnull TriFunction<? super S, ? super K, ? super T, CompletableFuture<R>> mapAsyncFn
     ) {
-        return attachTransformUsingServiceAsync("map", serviceFactory, maxConcurrentOps, preserveOrder,
-                (s, k, t) -> mapAsyncFn.apply(s, k, t).thenApply(Traversers::singleton));
+        return attachMapUsingServiceAsync(serviceFactory, maxConcurrentOps, preserveOrder, mapAsyncFn);
     }
 
     @Nonnull @Override
@@ -108,20 +106,17 @@ public class BatchStageWithKeyImpl<T, K> extends StageWithGroupingBase<T, K> imp
             int maxBatchSize,
             @Nonnull BiFunctionEx<? super S, ? super List<T>, ? extends CompletableFuture<List<R>>> mapAsyncFn
     ) {
-        return attachTransformUsingServiceAsyncBatched("map", serviceFactory, maxBatchSize,
-                (s, items) -> mapAsyncFn.apply(s, items).thenApply(list -> toList(list, Traversers::singleton)));
+        return attachMapUsingServiceAsyncBatched(serviceFactory, maxBatchSize, mapAsyncFn);
     }
 
     @Nonnull @Override
     public <S, R> BatchStage<R> mapUsingServiceAsyncBatched(
             @Nonnull ServiceFactory<?, S> serviceFactory,
             int maxBatchSize,
-            @Nonnull TriFunction<? super S, ? super List<K>, ? super List<T>,
-                    ? extends CompletableFuture<List<R>>> mapAsyncFn
+            @Nonnull TriFunction<? super S, ? super List<K>, ? super List<T>, ? extends CompletableFuture<List<R>>>
+                    mapAsyncFn
     ) {
-        return attachTransformUsingServiceAsyncBatched("map", serviceFactory, maxBatchSize,
-                (s, keys, items) -> mapAsyncFn.apply(s, keys, items)
-                        .thenApply(list -> toList(list, Traversers::singleton)));
+        return attachMapUsingServiceAsyncBatched(serviceFactory, maxBatchSize, mapAsyncFn);
     }
 
     @Nonnull @Override
@@ -158,31 +153,39 @@ public class BatchStageWithKeyImpl<T, K> extends StageWithGroupingBase<T, K> imp
     }
 
     @Nonnull @Override
+    @SuppressWarnings("rawtypes")
     public <T1, R> BatchStage<Entry<K, R>> aggregate2(
             @Nonnull BatchStageWithKey<T1, ? extends K> stage1,
             @Nonnull AggregateOperation2<? super T, ? super T1, ?, R> aggrOp
     ) {
+        ComputeStageImplBase computeStage1 = ((StageWithGroupingBase) stage1).computeStage;
         return computeStage.attach(
                 new GroupTransform<>(
-                        asList(computeStage.transform, transformOf(stage1)),
+                        asList(computeStage.transform, computeStage1.transform),
                         asList(keyFn(), stage1.keyFn()),
                         aggrOp,
                         Util::entry
-                ), DO_NOT_ADAPT);
+                ),
+                singletonList((GeneralStage<?>) computeStage1),
+                DO_NOT_ADAPT);
     }
 
     @Nonnull @Override
+    @SuppressWarnings("rawtypes")
     public <T1, T2, R> BatchStage<Entry<K, R>> aggregate3(
             @Nonnull BatchStageWithKey<T1, ? extends K> stage1,
             @Nonnull BatchStageWithKey<T2, ? extends K> stage2,
             @Nonnull AggregateOperation3<? super T, ? super T1, ? super T2, ?, ? extends R> aggrOp
     ) {
+        ComputeStageImplBase computeStage1 = ((StageWithGroupingBase) stage1).computeStage;
+        ComputeStageImplBase computeStage2 = ((StageWithGroupingBase) stage2).computeStage;
         return computeStage.attach(
                 new GroupTransform<>(
-                        asList(computeStage.transform, transformOf(stage1), transformOf(stage2)),
+                        asList(computeStage.transform, computeStage1.transform, computeStage2.transform),
                         asList(keyFn(), stage1.keyFn(), stage2.keyFn()),
                         aggrOp,
                         Util::entry),
+                asList((GeneralStage<?>) computeStage1, (GeneralStage<?>) computeStage2),
                 DO_NOT_ADAPT);
     }
 }

@@ -54,7 +54,6 @@ public class FunctionAdapter {
         return keyFn;
     }
 
-    @SuppressWarnings("unused")
     @Nonnull
     <T> ToLongFunctionEx<?> adaptTimestampFn() {
         return t -> Long.MIN_VALUE;

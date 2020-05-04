@@ -41,13 +41,13 @@ import static com.hazelcast.jet.core.processor.Processors.aggregateToSessionWind
 import static com.hazelcast.jet.core.processor.Processors.aggregateToSlidingWindowP;
 import static com.hazelcast.jet.core.processor.Processors.combineToSlidingWindowP;
 import static com.hazelcast.jet.impl.JetEvent.jetEvent;
-import static com.hazelcast.jet.impl.pipeline.transform.AbstractTransform.Optimization.MEMORY;
 import static com.hazelcast.jet.impl.pipeline.transform.AggregateTransform.FIRST_STAGE_VERTEX_NAME_SUFFIX;
 import static java.util.Collections.nCopies;
 
 public class WindowAggregateTransform<A, R> extends AbstractTransform {
     private static final int MAX_WATERMARK_STRIDE = 100;
     private static final int MIN_WMS_PER_SESSION = 100;
+    @SuppressWarnings("rawtypes")
     private static final KeyedWindowResultFunction JET_EVENT_WINDOW_RESULT_FN =
             (start, end, ignoredKey, result, isEarly) ->
                     jetEvent(end - 1, new WindowResult<>(start, end, result, isEarly));
@@ -104,7 +104,7 @@ public class WindowAggregateTransform<A, R> extends AbstractTransform {
     public void addToDag(Planner p) {
         if (wDef instanceof SessionWindowDefinition) {
             addSessionWindow(p, (SessionWindowDefinition) wDef);
-        } else if (aggrOp.combineFn() == null || wDef.earlyResultsPeriod() > 0 || getOptimization() == MEMORY) {
+        } else if (aggrOp.combineFn() == null || wDef.earlyResultsPeriod() > 0) {
             addSlidingWindowSingleStage(p, (SlidingWindowDefinition) wDef);
         } else {
             addSlidingWindowTwoStage(p, (SlidingWindowDefinition) wDef);
@@ -127,7 +127,7 @@ public class WindowAggregateTransform<A, R> extends AbstractTransform {
         PlannerVertex pv = p.addVertex(this, name(), 1,
                 aggregateToSlidingWindowP(
                         nCopies(aggrOp.arity(), new ConstantFunctionEx<>(name().hashCode())),
-                        nCopies(aggrOp.arity(), (ToLongFunctionEx<JetEvent>) JetEvent::timestamp),
+                        nCopies(aggrOp.arity(), (ToLongFunctionEx<JetEvent<?>>) JetEvent::timestamp),
                         TimestampKind.EVENT,
                         slidingWinPolicy(wDef.windowSize(), wDef.slideBy()),
                         wDef.earlyResultsPeriod(),
@@ -158,7 +158,7 @@ public class WindowAggregateTransform<A, R> extends AbstractTransform {
         SlidingWindowPolicy winPolicy = slidingWinPolicy(wDef.windowSize(), wDef.slideBy());
         Vertex v1 = p.dag.newVertex(name() + FIRST_STAGE_VERTEX_NAME_SUFFIX, accumulateByFrameP(
                 nCopies(aggrOp.arity(), new ConstantFunctionEx<>(name().hashCode())),
-                nCopies(aggrOp.arity(), (ToLongFunctionEx<JetEvent>) JetEvent::timestamp),
+                nCopies(aggrOp.arity(), (ToLongFunctionEx<JetEvent<?>>) JetEvent::timestamp),
                 TimestampKind.EVENT,
                 winPolicy,
                 aggrOp
@@ -189,7 +189,7 @@ public class WindowAggregateTransform<A, R> extends AbstractTransform {
                 aggregateToSessionWindowP(
                         wDef.sessionTimeout(),
                         wDef.earlyResultsPeriod(),
-                        nCopies(aggrOp.arity(), (ToLongFunctionEx<JetEvent>) JetEvent::timestamp),
+                        nCopies(aggrOp.arity(), (ToLongFunctionEx<JetEvent<?>>) JetEvent::timestamp),
                         nCopies(aggrOp.arity(), new ConstantFunctionEx<>(name().hashCode())),
                         aggrOp,
                         jetEventOfWindowResultFn()));

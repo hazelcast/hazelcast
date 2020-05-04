@@ -1016,7 +1016,6 @@ public class BatchStageTest extends PipelineTestSupport {
         assertEquals(
                 streamToString(input.stream().map(i -> tuple2(i, prefix + i)), formatFn),
                 streamToString(sinkStreamOfEntry(), formatFn));
-
     }
 
     @Test

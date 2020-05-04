@@ -17,6 +17,7 @@
 package com.hazelcast.jet.impl.pipeline;
 
 import com.hazelcast.jet.core.DAG;
+import com.hazelcast.jet.impl.pipeline.transform.AbstractTransform;
 import com.hazelcast.jet.impl.pipeline.transform.BatchSourceTransform;
 import com.hazelcast.jet.impl.pipeline.transform.SinkTransform;
 import com.hazelcast.jet.impl.pipeline.transform.StreamSourceTransform;
@@ -33,7 +34,6 @@ import com.hazelcast.jet.pipeline.StreamSourceStage;
 import javax.annotation.Nonnull;
 import java.io.File;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -47,6 +47,8 @@ import java.util.stream.IntStream;
 import static com.hazelcast.jet.impl.pipeline.ComputeStageImplBase.ADAPT_TO_JET_EVENT;
 import static com.hazelcast.jet.impl.util.Util.addOrIncrementIndexInName;
 import static com.hazelcast.jet.impl.util.Util.escapeGraphviz;
+import static java.util.Arrays.asList;
+import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.toList;
 
 public class PipelineImpl implements Pipeline {
@@ -59,6 +61,7 @@ public class PipelineImpl implements Pipeline {
     public <T> BatchStage<T> readFrom(@Nonnull BatchSource<? extends T> source) {
         BatchSourceTransform<? extends T> xform = (BatchSourceTransform<? extends T>) source;
         xform.onAssignToStage();
+        register(xform);
         return new BatchStageImpl<>(xform, this);
     }
 
@@ -67,34 +70,35 @@ public class PipelineImpl implements Pipeline {
     public <T> StreamSourceStage<T> readFrom(@Nonnull StreamSource<? extends T> source) {
         StreamSourceTransform<T> xform = (StreamSourceTransform<T>) source;
         xform.onAssignToStage();
+        register(xform);
         return new StreamSourceStageImpl<>(xform, this);
     }
 
     @Nonnull @Override
-    @SuppressWarnings("rawtypes")
+    @SuppressWarnings({"rawtypes", "unchecked"})
     public <T> SinkStage writeTo(
             @Nonnull Sink<? super T> sink,
             @Nonnull GeneralStage<? extends T> stage0,
             @Nonnull GeneralStage<? extends T> stage1,
             @Nonnull GeneralStage<? extends T>... moreStages
     ) {
-        GeneralStage[] stages = new GeneralStage[2 + moreStages.length];
-        stages[0] = stage0;
-        stages[1] = stage1;
-        System.arraycopy(moreStages, 0, stages, 2, moreStages.length);
-        List<Transform> upstream = Arrays.stream(stages)
+        List<GeneralStage> stages = new ArrayList<>(asList(moreStages));
+        stages.add(0, stage0);
+        stages.add(1, stage1);
+        List<Transform> upstream = stages
+                .stream()
                 .map(s -> (AbstractStage) s)
                 .map(s -> s.transform)
                 .collect(toList());
         int[] ordinalsToAdapt = IntStream
-                .range(0, stages.length)
-                .filter(i -> ((ComputeStageImplBase) stages[i]).fnAdapter == ADAPT_TO_JET_EVENT)
+                .range(0, stages.size())
+                .filter(i -> ((ComputeStageImplBase) stages.get(i)).fnAdapter == ADAPT_TO_JET_EVENT)
                 .toArray();
         SinkImpl sinkImpl = (SinkImpl) sink;
         SinkTransform sinkTransform = new SinkTransform(sinkImpl, upstream, ordinalsToAdapt);
         SinkStageImpl sinkStage = new SinkStageImpl(sinkTransform, this);
         sinkImpl.onAssignToStage();
-        connect(upstream, sinkTransform);
+        connectGeneralStages(stages, sinkTransform);
         return sinkStage;
     }
 
@@ -103,12 +107,58 @@ public class PipelineImpl implements Pipeline {
         return new Planner(this).createDag();
     }
 
-    public void connect(Transform upstream, Transform downstream) {
-        adjacencyMap.get(upstream).add(downstream);
+    @SuppressWarnings("rawtypes")
+    public void connect(
+            @Nonnull List<ComputeStageImplBase> stages,
+            @Nonnull AbstractTransform transform
+    ) {
+        @SuppressWarnings("unchecked")
+        List<AbstractTransform> upstreamTransforms = (List<AbstractTransform>) (List) transform.upstream();
+        for (int i = 0; i < upstreamTransforms.size(); i++) {
+            ComputeStageImplBase us = stages.get(i);
+            transform.setRebalanceInput(i, us.isRebalanceOutput);
+            transform.setPartitionKeyFnForInput(i, us.rebalanceKeyFn);
+        }
+        upstreamTransforms.forEach(u -> adjacencyMap.get(u).add(transform));
+        register(transform);
     }
 
-    public void connect(List<Transform> upstream, Transform downstream) {
-        upstream.forEach(u -> connect(u, downstream));
+    @SuppressWarnings("rawtypes")
+    public void connect(
+            @Nonnull ComputeStageImplBase stage,
+            @Nonnull AbstractTransform toTransform
+    ) {
+        connect(singletonList(stage), toTransform);
+    }
+
+    @SuppressWarnings("rawtypes")
+    public void connect(
+            @Nonnull ComputeStageImplBase stage0,
+            @Nonnull List<? extends GeneralStage> moreStages,
+            @Nonnull AbstractTransform toTransform
+    ) {
+        List<ComputeStageImplBase> allStages =
+                moreStages.stream().map(ComputeStageImplBase.class::cast).collect(toList());
+        allStages.add(0, stage0);
+        connect(allStages, toTransform);
+    }
+
+    @SuppressWarnings("rawtypes")
+    public void connectGeneralStages(
+            @Nonnull List<? extends GeneralStage> stages,
+            @Nonnull AbstractTransform toTransform
+    ) {
+        List<ComputeStageImplBase> implStages = stages.stream().map(ComputeStageImplBase.class::cast).collect(toList());
+        connect(implStages, toTransform);
+    }
+
+    public void attachFiles(@Nonnull Map<String, File> filesToAttach) {
+        this.attachedFiles.putAll(filesToAttach);
+    }
+
+    @Nonnull
+    public Map<String, File> attachedFiles() {
+        return Collections.unmodifiableMap(attachedFiles);
     }
 
     @Override
@@ -145,11 +195,6 @@ public class PipelineImpl implements Pipeline {
         return safeCopy;
     }
 
-    void register(Transform stage, List<Transform> downstream) {
-        List<Transform> prev = adjacencyMap.put(stage, downstream);
-        assert prev == null : "Double registration of a Stage with this Pipeline: " + stage;
-    }
-
     void makeNamesUnique() {
         Set<String> usedNames = new HashSet<>();
         for (Transform transform : adjacencyMap.keySet()) {
@@ -160,12 +205,8 @@ public class PipelineImpl implements Pipeline {
         }
     }
 
-    public void attachFiles(@Nonnull Map<String, File> filesToAttach) {
-        this.attachedFiles.putAll(filesToAttach);
-    }
-
-    @Nonnull
-    public Map<String, File> attachedFiles() {
-        return Collections.unmodifiableMap(attachedFiles);
+    private void register(Transform stage) {
+        List<Transform> prev = adjacencyMap.putIfAbsent(stage, new ArrayList<>());
+        assert prev == null : "Double registration of a Stage with this Pipeline: " + stage;
     }
 }

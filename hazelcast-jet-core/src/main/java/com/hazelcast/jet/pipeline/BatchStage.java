@@ -61,6 +61,12 @@ public interface BatchStage<T> extends GeneralStage<T> {
     <K> BatchStageWithKey<T, K> groupingKey(@Nonnull FunctionEx<? super T, ? extends K> keyFn);
 
     @Nonnull @Override
+    <K> BatchStage<T> rebalance(@Nonnull FunctionEx<? super T, ? extends K> keyFn);
+
+    @Nonnull @Override
+    BatchStage<T> rebalance();
+
+    @Nonnull @Override
     <R> BatchStage<R> map(@Nonnull FunctionEx<? super T, ? extends R> mapFn);
 
     @Nonnull @Override

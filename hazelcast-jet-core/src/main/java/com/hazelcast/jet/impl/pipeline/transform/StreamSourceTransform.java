@@ -59,7 +59,7 @@ public class StreamSourceTransform<T> extends AbstractTransform implements Strea
 
     public void onAssignToStage() {
         if (isAssignedToStage) {
-            throw new IllegalStateException("Sink " + name() + " was already assigned to a sink stage");
+            throw new IllegalStateException("Source " + name() + " was already assigned to a source stage");
         }
         isAssignedToStage = true;
     }

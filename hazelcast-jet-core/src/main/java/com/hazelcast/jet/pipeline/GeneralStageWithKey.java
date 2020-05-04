@@ -243,6 +243,9 @@ public interface GeneralStageWithKey<T, K> {
      * @param serviceFactory the service factory
      * @param mapFn a stateless mapping function
      * @return the newly attached stage
+     *
+     * @deprecated Jet now has first-class support for data rebalancing, see
+     * {@link GeneralStage#rebalance()} and {@link GeneralStage#rebalance(FunctionEx)}.
      */
     @Nonnull
     <S, R> GeneralStage<R> mapUsingService(
@@ -280,6 +283,9 @@ public interface GeneralStageWithKey<T, K> {
      * @param mapAsyncFn a stateless mapping function. Can map to null (return
      *      a null future)
      * @return the newly attached stage
+     *
+     * @deprecated Jet now has first-class support for data rebalancing, see
+     * {@link GeneralStage#rebalance()} and {@link GeneralStage#rebalance(FunctionEx)}.
      */
     @Nonnull
     default <S, R> GeneralStage<R> mapUsingServiceAsync(
@@ -317,6 +323,9 @@ public interface GeneralStageWithKey<T, K> {
      * @param mapAsyncFn a stateless mapping function. Can map to null (return
      *      a null future)
      * @return the newly attached stage
+     *
+     * @deprecated Jet now has first-class support for data rebalancing, see
+     * {@link GeneralStage#rebalance()} and {@link GeneralStage#rebalance(FunctionEx)}.
      */
     @Nonnull
     <S, R> GeneralStage<R> mapUsingServiceAsync(
@@ -363,6 +372,9 @@ public interface GeneralStageWithKey<T, K> {
      * @param <R> the future result type of the mapping function
      * @return the newly attached stage
      * @since 4.0
+     *
+     * @deprecated Jet now has first-class support for data rebalancing, see
+     * {@link GeneralStage#rebalance()} and {@link GeneralStage#rebalance(FunctionEx)}.
      */
     @Nonnull
     <S, R> GeneralStage<R> mapUsingServiceAsyncBatched(
@@ -414,6 +426,9 @@ public interface GeneralStageWithKey<T, K> {
      * @param <R> the future result type of the mapping function
      * @return the newly attached stage
      * @since 4.0
+     *
+     * @deprecated Jet now has first-class support for data rebalancing, see
+     * {@link GeneralStage#rebalance()} and {@link GeneralStage#rebalance(FunctionEx)}.
      */
     @Nonnull
     <S, R> GeneralStage<R> mapUsingServiceAsyncBatched(
@@ -462,6 +477,9 @@ public interface GeneralStageWithKey<T, K> {
      * @param serviceFactory the service factory
      * @param filterFn a stateless filter predicate function
      * @return the newly attached stage
+     *
+     * @deprecated Jet now has first-class support for data rebalancing, see
+     * {@link GeneralStage#rebalance()} and {@link GeneralStage#rebalance(FunctionEx)}.
      */
     @Nonnull
     <S> GeneralStage<T> filterUsingService(
@@ -510,6 +528,9 @@ public interface GeneralStageWithKey<T, K> {
      *                 null traverser, but can return an {@linkplain
      *                 Traversers#empty() empty traverser}.
      * @return the newly attached stage
+     *
+     * @deprecated Jet now has first-class support for data rebalancing, see
+     * {@link GeneralStage#rebalance()} and {@link GeneralStage#rebalance(FunctionEx)}.
      */
     @Nonnull
     <S, R> GeneralStage<R> flatMapUsingService(

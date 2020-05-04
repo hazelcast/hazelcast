@@ -70,6 +70,12 @@ public interface StreamStage<T> extends GeneralStage<T> {
     <K> StreamStageWithKey<T, K> groupingKey(@Nonnull FunctionEx<? super T, ? extends K> keyFn);
 
     @Nonnull @Override
+    <K> StreamStage<T> rebalance(@Nonnull FunctionEx<? super T, ? extends K> keyFn);
+
+    @Nonnull @Override
+    StreamStage<T> rebalance();
+
+    @Nonnull @Override
     <R> StreamStage<R> map(@Nonnull FunctionEx<? super T, ? extends R> mapFn);
 
     @Nonnull @Override

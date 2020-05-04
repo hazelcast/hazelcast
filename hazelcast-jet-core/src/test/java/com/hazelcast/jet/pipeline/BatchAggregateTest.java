@@ -50,18 +50,18 @@ import static org.junit.Assert.assertEquals;
 
 public class BatchAggregateTest extends PipelineTestSupport {
 
+    static final FunctionEx<Entry<Integer, Long>, String> FORMAT_FN =
+            e -> String.format("(%04d: %04d)", e.getKey(), e.getValue());
+    static final BiFunctionEx<Integer, Tuple2<Long, Long>, String> FORMAT_FN_2 =
+            (key, t2) -> String.format("(%04d: %04d, %04d)", key, t2.f0(), t2.f1());
+    static final BiFunctionEx<Integer, Tuple3<Long, Long, Long>, String> FORMAT_FN_3 =
+            (key, t3) -> String.format("(%04d: %04d, %04d, %04d)", key, t3.f0(), t3.f1(), t3.f2());
+
     private static final AggregateOperation1<Integer, LongAccumulator, Long> SUMMING =
             AggregateOperations.summingLong(i -> i);
 
     private static final int FACTOR_1 = 1_000;
     private static final int FACTOR_2 = 1_000_000;
-
-    private static final FunctionEx<Entry<Integer, Long>, String> FORMAT_FN =
-            e -> String.format("(%04d: %04d)", e.getKey(), e.getValue());
-    private static final BiFunctionEx<Integer, Tuple2<Long, Long>, String> FORMAT_FN_2 =
-            (key, t2) -> String.format("(%04d: %04d, %04d)", key, t2.f0(), t2.f1());
-    private static final BiFunctionEx<Integer, Tuple3<Long, Long, Long>, String> FORMAT_FN_3 =
-            (key, t3) -> String.format("(%04d: %04d, %04d, %04d)", key, t3.f0(), t3.f1(), t3.f2());
 
     private List<Integer> input;
 
@@ -73,7 +73,7 @@ public class BatchAggregateTest extends PipelineTestSupport {
     @Test
     public void aggregate() {
         // When
-        BatchStage<Long> aggregated = sourceStageFromInput().aggregate(SUMMING);
+        BatchStage<Long> aggregated = batchStageFromInput().aggregate(SUMMING);
 
         // Then
         aggregated.writeTo(sink);
@@ -82,16 +82,15 @@ public class BatchAggregateTest extends PipelineTestSupport {
                 singletonList(input.stream().mapToLong(i -> i).sum()),
                 new ArrayList<>(sinkList)
         );
-
     }
 
     @Test
     public void aggregate2_withSeparateAggrOps() {
         // Given
-        BatchStage<Integer> stage = sourceStageFromInput();
+        BatchStage<Integer> stage = batchStageFromInput();
 
         // When
-        BatchStage<Tuple2<Long, Long>> aggregated = sourceStageFromInput()
+        BatchStage<Tuple2<Long, Long>> aggregated = batchStageFromInput()
                 .aggregate2(SUMMING, stage, SUMMING);
 
         // Then
@@ -107,8 +106,8 @@ public class BatchAggregateTest extends PipelineTestSupport {
     @Test
     public void aggregate2_withAggrOp2() {
         // When
-        BatchStage<Tuple2<Long, Long>> aggregated = sourceStageFromInput()
-                .aggregate2(sourceStageFromInput(), aggregateOperation2(SUMMING, SUMMING));
+        BatchStage<Tuple2<Long, Long>> aggregated = batchStageFromInput()
+                .aggregate2(batchStageFromInput(), aggregateOperation2(SUMMING, SUMMING));
 
         // Then
         aggregated.writeTo(sink);
@@ -126,8 +125,8 @@ public class BatchAggregateTest extends PipelineTestSupport {
         BiFunctionEx<Long, Long, Long> outputFn = (a, b) -> 10_000 * a + b;
 
         // When
-        BatchStage<Long> aggregated = sourceStageFromInput().aggregate2(
-                sourceStageFromInput(),
+        BatchStage<Long> aggregated = batchStageFromInput().aggregate2(
+                batchStageFromInput(),
                 aggregateOperation2(SUMMING, SUMMING, outputFn));
 
         // Then
@@ -143,10 +142,10 @@ public class BatchAggregateTest extends PipelineTestSupport {
     @Test
     public void aggregate3_withSeparateAggrOps() {
         // Given
-        BatchStage<Integer> stage11 = sourceStageFromInput();
+        BatchStage<Integer> stage11 = batchStageFromInput();
 
         // When
-        BatchStage<Tuple2<Long, Long>> aggregated = sourceStageFromInput()
+        BatchStage<Tuple2<Long, Long>> aggregated = batchStageFromInput()
                 .aggregate2(SUMMING, stage11, SUMMING);
 
         // Then
@@ -162,11 +161,11 @@ public class BatchAggregateTest extends PipelineTestSupport {
     @Test
     public void aggregate3_withAggrOp3() {
         // Given
-        BatchStage<Integer> stage1 = sourceStageFromInput();
-        BatchStage<Integer> stage2 = sourceStageFromInput();
+        BatchStage<Integer> stage1 = batchStageFromInput();
+        BatchStage<Integer> stage2 = batchStageFromInput();
 
         // When
-        BatchStage<Tuple3<Long, Long, Long>> aggregated = sourceStageFromInput().aggregate3(
+        BatchStage<Tuple3<Long, Long, Long>> aggregated = batchStageFromInput().aggregate3(
                 stage1, stage2, aggregateOperation3(SUMMING, SUMMING, SUMMING));
 
         // Then
@@ -182,9 +181,9 @@ public class BatchAggregateTest extends PipelineTestSupport {
     @Test
     public void aggregate3_withAggrOp3_withOutputFn() {
         // When
-        BatchStage<Long> aggregated = sourceStageFromInput().aggregate3(
-                sourceStageFromInput(),
-                sourceStageFromInput(),
+        BatchStage<Long> aggregated = batchStageFromInput().aggregate3(
+                batchStageFromInput(),
+                batchStageFromInput(),
                 aggregateOperation3(SUMMING, SUMMING, SUMMING, (r0, r1, r2) -> r0 + r1 + r2));
 
         // Then
@@ -199,8 +198,8 @@ public class BatchAggregateTest extends PipelineTestSupport {
         FunctionEx<Integer, Integer> mapFn1 = i -> FACTOR_1 * i;
         FunctionEx<Integer, Integer> mapFn2 = i -> FACTOR_2 * i;
 
-        BatchStage<Integer> stage1 = sourceStageFromInput().map(mapFn1);
-        BatchStage<Integer> stage2 = sourceStageFromInput().map(mapFn2);
+        BatchStage<Integer> stage1 = batchStageFromInput().map(mapFn1);
+        BatchStage<Integer> stage2 = batchStageFromInput().map(mapFn2);
     }
 
     @Test
@@ -209,7 +208,7 @@ public class BatchAggregateTest extends PipelineTestSupport {
         AggregateBuilderFixture fx = new AggregateBuilderFixture();
 
         // When
-        AggregateBuilder<Long> b = sourceStageFromInput().aggregateBuilder(SUMMING);
+        AggregateBuilder<Long> b = batchStageFromInput().aggregateBuilder(SUMMING);
         Tag<Long> tag0 = b.tag0();
         Tag<Long> tag1 = b.add(fx.stage1, SUMMING);
         Tag<Long> tag2 = b.add(fx.stage2, SUMMING);
@@ -231,7 +230,7 @@ public class BatchAggregateTest extends PipelineTestSupport {
         AggregateBuilderFixture fx = new AggregateBuilderFixture();
 
         // When
-        AggregateBuilder1<Integer> b = sourceStageFromInput().aggregateBuilder();
+        AggregateBuilder1<Integer> b = batchStageFromInput().aggregateBuilder();
         Tag<Integer> tag0_in = b.tag0();
         Tag<Integer> tag1_in = b.add(fx.stage1);
         Tag<Integer> tag2_in = b.add(fx.stage2);
@@ -258,11 +257,11 @@ public class BatchAggregateTest extends PipelineTestSupport {
     @SuppressWarnings("ConstantConditions")
     public void aggregateBuilder_withSeparateAggrOps_withOutputFn() {
         // Given
-        BatchStage<Integer> stage1 = sourceStageFromInput();
-        BatchStage<Integer> stage2 = sourceStageFromInput();
+        BatchStage<Integer> stage1 = batchStageFromInput();
+        BatchStage<Integer> stage2 = batchStageFromInput();
 
         // When
-        AggregateBuilder<Long> b = sourceStageFromInput().aggregateBuilder(SUMMING);
+        AggregateBuilder<Long> b = batchStageFromInput().aggregateBuilder(SUMMING);
         Tag<Long> tag0 = b.tag0();
         Tag<Long> tag1 = b.add(stage1, SUMMING);
         Tag<Long> tag2 = b.add(stage2, SUMMING);
@@ -281,11 +280,11 @@ public class BatchAggregateTest extends PipelineTestSupport {
     @SuppressWarnings("ConstantConditions")
     public void aggregateBuilder_with_complexAggrOp_withOutputFn() {
         // Given
-        BatchStage<Integer> stage1 = sourceStageFromInput();
-        BatchStage<Integer> stage2 = sourceStageFromInput();
+        BatchStage<Integer> stage1 = batchStageFromInput();
+        BatchStage<Integer> stage2 = batchStageFromInput();
 
         // When
-        AggregateBuilder1<Integer> b = sourceStageFromInput().aggregateBuilder();
+        AggregateBuilder1<Integer> b = batchStageFromInput().aggregateBuilder();
         Tag<Integer> tag0_in = b.tag0();
         Tag<Integer> tag1_in = b.add(stage1);
         Tag<Integer> tag2_in = b.add(stage2);
@@ -313,7 +312,7 @@ public class BatchAggregateTest extends PipelineTestSupport {
         FunctionEx<Integer, Integer> keyFn = i -> i % 5;
 
         // When
-        BatchStage<Entry<Integer, Long>> aggregated = sourceStageFromInput()
+        BatchStage<Entry<Integer, Long>> aggregated = batchStageFromInput()
                 .groupingKey(keyFn)
                 .aggregate(SUMMING);
 
@@ -339,16 +338,16 @@ public class BatchAggregateTest extends PipelineTestSupport {
             keyFn = i -> i % 10;
             mapFn1 = i -> i + offset;
             mapFn2 = i -> i + 2 * offset;
-            srcStage0 = sourceStageFromInput();
+            srcStage0 = batchStageFromInput();
             collectOp = summingLong(i -> i);
         }
 
         BatchStage<Integer> srcStage1() {
-            return sourceStageFromInput().map(mapFn1);
+            return batchStageFromInput().map(mapFn1);
         }
 
         BatchStage<Integer> srcStage2() {
-            return sourceStageFromInput().map(mapFn2);
+            return batchStageFromInput().map(mapFn2);
         }
     }
 
@@ -565,14 +564,7 @@ public class BatchAggregateTest extends PipelineTestSupport {
         );
     }
 
-    private BatchStage<Integer> sourceStageFromInput() {
-        List<Integer> input = this.input;
-        BatchSource<Integer> source = SourceBuilder
-                .batch("sequence", x -> null)
-                .<Integer>fillBufferFn((x, buf) -> {
-                    input.forEach(buf::add);
-                    buf.close();
-                }).build();
-        return p.readFrom(source);
+    private BatchStage<Integer> batchStageFromInput() {
+        return batchStageFromList(input);
     }
 }

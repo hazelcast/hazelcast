@@ -27,6 +27,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -220,9 +221,10 @@ public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
     }
 
     /**
-     * Returns the vertex with the given name.
+     * Returns the vertex with the given name, or {@code null} if there is no
+     * vertex with that name.
      */
-    @Nonnull
+    @Nullable
     public Vertex getVertex(@Nonnull String vertexName) {
         return nameToVertex.get(vertexName);
     }
@@ -230,8 +232,7 @@ public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
     /**
      * Returns an iterator over the DAG's vertices in topological order.
      */
-    @Override
-    @Nonnull
+    @Nonnull @Override
     public Iterator<Vertex> iterator() {
         return validate().iterator();
     }

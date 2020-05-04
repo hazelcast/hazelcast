@@ -23,22 +23,18 @@ import com.hazelcast.jet.pipeline.SinkStage;
 import com.hazelcast.jet.pipeline.Stage;
 
 import javax.annotation.Nonnull;
-import java.util.ArrayList;
-
-import static java.util.Collections.emptyList;
 
 public abstract class AbstractStage implements Stage {
 
     final PipelineImpl pipelineImpl;
     final Transform transform;
 
-    AbstractStage(Transform transform, boolean acceptsDownstream, PipelineImpl pipelineImpl) {
+    AbstractStage(Transform transform, PipelineImpl pipelineImpl) {
         this.transform = transform;
         this.pipelineImpl = pipelineImpl;
-        pipelineImpl.register(transform, acceptsDownstream ? new ArrayList<>() : emptyList());
     }
 
-    public static Transform transformOf(GeneralStage stage) {
+    public static Transform transformOf(GeneralStage<?> stage) {
         return ((AbstractStage) stage).transform;
     }
 

@@ -85,6 +85,7 @@ public class StageWithWindowImpl<T> implements StageWithWindow<T> {
     }
 
     @Nonnull @Override
+    @SuppressWarnings("rawtypes")
     public <T1, R> StreamStage<WindowResult<R>> aggregate2(
             @Nonnull StreamStage<T1> stage1,
             @Nonnull AggregateOperation2<? super T, ? super T1, ?, ? extends R> aggrOp
@@ -95,6 +96,7 @@ public class StageWithWindowImpl<T> implements StageWithWindow<T> {
     }
 
     // This method was extracted in order to capture the wildcard parameter A.
+    @SuppressWarnings("rawtypes")
     private <T1, A, R> StreamStage<WindowResult<R>> attachAggregate2(
             @Nonnull StreamStage<T1> stage1,
             @Nonnull AggregateOperation2<? super T, ? super T1, A, ? extends R> aggrOp
@@ -104,10 +106,12 @@ public class StageWithWindowImpl<T> implements StageWithWindow<T> {
                         wDef,
                         adaptAggregateOperation2(aggrOp)
                 ),
+                singletonList(stage1),
                 ADAPT_TO_JET_EVENT);
     }
 
     @Nonnull @Override
+    @SuppressWarnings("rawtypes")
     public <T1, T2, R> StreamStage<WindowResult<R>> aggregate3(
             @Nonnull StreamStage<T1> stage1,
             @Nonnull StreamStage<T2> stage2,
@@ -122,6 +126,7 @@ public class StageWithWindowImpl<T> implements StageWithWindow<T> {
     }
 
     // This method was extracted in order to capture the wildcard parameter A.
+    @SuppressWarnings("rawtypes")
     private <T1, T2, K, A, R> StreamStage<WindowResult<R>> attachAggregate3(
             @Nonnull StreamStage<T1> stage1,
             @Nonnull StreamStage<T2> stage2,
@@ -134,6 +139,7 @@ public class StageWithWindowImpl<T> implements StageWithWindow<T> {
                         wDef,
                         adaptAggregateOperation3(aggrOp)
                 ),
+                asList(stage1, stage2),
                 ADAPT_TO_JET_EVENT);
     }
 }

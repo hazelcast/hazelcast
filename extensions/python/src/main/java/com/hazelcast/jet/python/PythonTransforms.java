@@ -18,6 +18,7 @@ package com.hazelcast.jet.python;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.annotation.EvolvingApi;
 import com.hazelcast.jet.pipeline.BatchStage;
+import com.hazelcast.jet.pipeline.GeneralStage;
 import com.hazelcast.jet.pipeline.StreamStage;
 
 import javax.annotation.Nonnull;
@@ -62,7 +63,11 @@ public final class PythonTransforms {
      * Use it like this: {@code stage.apply(PythonService.mapUsingPython(keyFn,
      * pyConfig))}. See {@link com.hazelcast.jet.python.PythonServiceConfig}
      * for more details.
+     *
+     * @deprecated Jet now has first-class support for data rebalancing, see
+     * {@link GeneralStage#rebalance()} and {@link GeneralStage#rebalance(FunctionEx)}.
      */
+    @Deprecated
     @Nonnull
     public static <K> FunctionEx<StreamStage<String>, StreamStage<String>> mapUsingPython(
             @Nonnull FunctionEx<? super String, ? extends K> keyFn,

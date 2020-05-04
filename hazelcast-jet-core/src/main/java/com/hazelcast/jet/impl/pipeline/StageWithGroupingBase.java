@@ -22,8 +22,6 @@ import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.function.TriFunction;
 import com.hazelcast.jet.function.TriPredicate;
-import com.hazelcast.jet.impl.pipeline.transform.Transform;
-import com.hazelcast.jet.pipeline.GeneralStageWithKey;
 import com.hazelcast.jet.pipeline.ServiceFactory;
 
 import javax.annotation.Nonnull;
@@ -110,55 +108,46 @@ class StageWithGroupingBase<T, K> {
     }
 
     @Nonnull
-    <S, R, RET> RET attachTransformUsingServiceAsync(
-            @Nonnull String operationName,
+    <S, R, RET> RET attachMapUsingServiceAsync(
             @Nonnull ServiceFactory<?, S> serviceFactory,
             int maxConcurrentOps,
             boolean preserveOrder,
-            @Nonnull TriFunction<? super S, ? super K, ? super T, CompletableFuture<Traverser<R>>>
-                    flatMapAsyncFn
+            @Nonnull TriFunction<? super S, ? super K, ? super T, CompletableFuture<R>> mapAsyncFn
     ) {
         FunctionEx<? super T, ? extends K> keyFn = keyFn();
-        return computeStage.attachTransformUsingPartitionedServiceAsync(
-                operationName, serviceFactory, maxConcurrentOps, preserveOrder, keyFn,
+        return computeStage.attachMapUsingPartitionedServiceAsync(
+                serviceFactory, maxConcurrentOps, preserveOrder, keyFn,
                 (s, t) -> {
                     K k = keyFn.apply(t);
-                    return flatMapAsyncFn.apply(s, k, t);
+                    return mapAsyncFn.apply(s, k, t);
                 });
     }
 
     @Nonnull
-    <S, R, RET> RET attachTransformUsingServiceAsyncBatched(
-            @Nonnull String operationName,
+    <S, R, RET> RET attachMapUsingServiceAsyncBatched(
             @Nonnull ServiceFactory<?, S> serviceFactory,
             int maxBatchSize,
-            @Nonnull BiFunctionEx<? super S, ? super List<T>, CompletableFuture<List<Traverser<R>>>> flatMapAsyncFn
+            @Nonnull BiFunctionEx<? super S, ? super List<T>, ? extends CompletableFuture<List<R>>> mapAsyncFn
     ) {
-        FunctionEx<? super T, ? extends K> keyFn = keyFn();
-        return computeStage.attachTransformUsingPartitionedServiceAsyncBatched(
-                operationName, serviceFactory, maxBatchSize, keyFn, flatMapAsyncFn);
+        return computeStage.attachMapUsingPartitionedServiceAsyncBatched(
+                serviceFactory, maxBatchSize, keyFn(), mapAsyncFn);
     }
 
     @Nonnull
-    <S, R, RET> RET attachTransformUsingServiceAsyncBatched(
-            @Nonnull String operationName,
+    <S, R, RET> RET attachMapUsingServiceAsyncBatched(
             @Nonnull ServiceFactory<?, S> serviceFactory,
             int maxBatchSize,
-            @Nonnull TriFunction<? super S, ? super List<K>, ? super List<T>, CompletableFuture<List<Traverser<R>>>>
-                    flatMapAsyncFn
+            @Nonnull TriFunction<? super S, ? super List<K>, ? super List<T>, ? extends CompletableFuture<List<R>>>
+                    mapAsyncFn
     ) {
         FunctionEx<? super T, ? extends K> keyFn = keyFn();
-        return computeStage.attachTransformUsingPartitionedServiceAsyncBatched(
-                operationName, serviceFactory, maxBatchSize, keyFn,
+        return computeStage.attachMapUsingPartitionedServiceAsyncBatched(
+                serviceFactory, maxBatchSize, keyFn,
                 (s, items) -> {
                     List<K> keys = items.stream()
                             .map(t -> (K) keyFn.apply(t))
                             .collect(Collectors.toList());
-                    return flatMapAsyncFn.apply(s, keys, items);
+                    return mapAsyncFn.apply(s, keys, items);
                 });
-    }
-
-    static Transform transformOf(GeneralStageWithKey stage) {
-        return ((StageWithGroupingBase) stage).computeStage.transform;
     }
 }

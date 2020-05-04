@@ -18,6 +18,7 @@ package com.hazelcast.jet.impl.pipeline.transform;
 
 import com.hazelcast.function.BiFunctionEx;
 import com.hazelcast.function.FunctionEx;
+import com.hazelcast.jet.core.Edge;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.datamodel.ItemsByTag;
 import com.hazelcast.jet.datamodel.Tag;
@@ -33,9 +34,11 @@ import javax.annotation.Nullable;
 import java.util.List;
 
 import static com.hazelcast.jet.core.Edge.from;
+import static com.hazelcast.jet.impl.pipeline.Planner.applyRebalancing;
 import static com.hazelcast.jet.impl.pipeline.Planner.tailList;
 import static com.hazelcast.jet.impl.util.Util.toList;
 
+@SuppressWarnings("rawtypes")
 public class HashJoinTransform<T0, R> extends AbstractTransform {
     @Nonnull
     private final List<JoinClause<?, ? super T0, ?, ?>> clauses;
@@ -99,6 +102,7 @@ public class HashJoinTransform<T0, R> extends AbstractTransform {
     //             |                   v                     v
     //             |             -------------         -------------
     //             |            | collector-1 |       | collector-2 |
+    //             |            | localPara=1 |       | localPara=1 |
     //             |             -------------         -------------
     //             |                   |                     |
     //             |                 local                 local
@@ -126,17 +130,17 @@ public class HashJoinTransform<T0, R> extends AbstractTransform {
 
         Vertex joiner = p.addVertex(this, name() + "-joiner", localParallelism(),
                 () -> new HashJoinP<>(keyFns, tags, mapToOutputBiFn, mapToOutputTriFn, tupleToItems)).v;
-        p.dag.edge(from(primary.v, primary.nextAvailableOrdinal()).to(joiner, 0));
+        Edge edgeToJoiner = from(primary.v, primary.nextAvailableOrdinal()).to(joiner, 0);
+        applyRebalancing(edgeToJoiner, this);
+        p.dag.edge(edgeToJoiner);
 
         String collectorName = name() + "-collector";
         int collectorOrdinal = 1;
         for (Transform fromTransform : tailList(this.upstream())) {
             PlannerVertex fromPv = p.xform2vertex.get(fromTransform);
             JoinClause<?, ?, ?, ?> clause = this.clauses.get(collectorOrdinal - 1);
-            FunctionEx<Object, Object> getKeyFn =
-                    (FunctionEx<Object, Object>) clause.rightKeyFn();
-            FunctionEx<Object, Object> projectFn =
-                    (FunctionEx<Object, Object>) clause.rightProjectFn();
+            FunctionEx<Object, Object> getKeyFn = (FunctionEx<Object, Object>) clause.rightKeyFn();
+            FunctionEx<Object, Object> projectFn = (FunctionEx<Object, Object>) clause.rightProjectFn();
             Vertex collector = p.dag.newVertex(collectorName + collectorOrdinal,
                     () -> new HashJoinCollectP(getKeyFn, projectFn));
             collector.localParallelism(1);

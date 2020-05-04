@@ -360,8 +360,9 @@ public interface StreamStageWithKey<T, K> extends GeneralStageWithKey<T, K> {
     );
 
     @Nonnull @Override
-    default <R> StreamStage<R> customTransform(@Nonnull String stageName,
-                                               @Nonnull SupplierEx<Processor> procSupplier
+    default <R> StreamStage<R> customTransform(
+            @Nonnull String stageName,
+            @Nonnull SupplierEx<Processor> procSupplier
     ) {
         return customTransform(stageName, ProcessorMetaSupplier.of(procSupplier));
     }

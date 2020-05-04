@@ -76,11 +76,11 @@ public class Networking {
     }
 
     void handle(Packet packet) throws IOException {
-        if (!packet.isFlagRaised(FLAG_JET_FLOW_CONTROL)) {
+        if (packet.isFlagRaised(FLAG_JET_FLOW_CONTROL)) {
+            handleFlowControlPacket(packet.getConn().getEndPoint(), packet.toByteArray());
+        } else {
             handleStreamPacket(packet);
-            return;
         }
-        handleFlowControlPacket(packet.getConn().getEndPoint(), packet.toByteArray());
     }
 
     private void handleStreamPacket(Packet packet) {

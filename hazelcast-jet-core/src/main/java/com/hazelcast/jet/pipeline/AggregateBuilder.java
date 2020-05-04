@@ -40,7 +40,8 @@ import static com.hazelcast.jet.aggregate.AggregateOperations.coAggregateOperati
  * AggregateOperation}. If that's what you are looking for, go {@link
  * AggregateOperation#withCreate here}.
  *
- * @param <R0> type of the aggregation result for stream-0
+ * @param <R0> type of the result of the aggregate operation applied to stage-0
+ *            (the one you obtained this builder from)
  *
  * @since 3.0
  */
@@ -54,10 +55,9 @@ public class AggregateBuilder<R0> {
     }
 
     /**
-     * Returns the tag corresponding to the pipeline stage this builder
-     * was obtained from. Use this tag to refer to this stage when building
-     * the {@code AggregateOperation} that you'll pass to {@link #build
-     * build(aggrOp)}.
+     * Returns the tag corresponding to the pipeline stage this builder was
+     * obtained from. Use it to get the results for this stage from the
+     * {@code ItemsByTag} appearing in the output of the stage you are building.
      */
     @Nonnull
     public Tag<R0> tag0() {
@@ -66,9 +66,9 @@ public class AggregateBuilder<R0> {
 
     /**
      * Adds another stage that will contribute its data to the aggregate
-     * operation to be performed. Returns the tag you'll use to refer to this
-     * stage when building the {@code AggregateOperation} that you'll pass to
-     * {@link #build build()}.
+     * operation to be performed. Returns the tag you'll use to get the results
+     * for this stage from the {@code ItemsByTag} appearing in the output of
+     * the stage you are building.
      */
     @Nonnull
     public <T, R> Tag<R> add(

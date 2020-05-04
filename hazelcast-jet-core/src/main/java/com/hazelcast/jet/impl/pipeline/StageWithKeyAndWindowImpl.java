@@ -23,6 +23,7 @@ import com.hazelcast.jet.aggregate.AggregateOperation3;
 import com.hazelcast.jet.datamodel.KeyedWindowResult;
 import com.hazelcast.jet.impl.pipeline.transform.Transform;
 import com.hazelcast.jet.impl.pipeline.transform.WindowGroupTransform;
+import com.hazelcast.jet.pipeline.GeneralStage;
 import com.hazelcast.jet.pipeline.StageWithKeyAndWindow;
 import com.hazelcast.jet.pipeline.StreamStage;
 import com.hazelcast.jet.pipeline.StreamStageWithKey;
@@ -74,35 +75,39 @@ public class StageWithKeyAndWindowImpl<T, K>
     }
 
     @Nonnull @Override
+    @SuppressWarnings("rawtypes")
     public <T1, R> StreamStage<KeyedWindowResult<K, R>> aggregate2(
             @Nonnull StreamStageWithKey<T1, ? extends K> stage1,
             @Nonnull AggregateOperation2<? super T, ? super T1, ?, ? extends R> aggrOp
     ) {
         ensureJetEvents(computeStage, "This pipeline stage");
-        ensureJetEvents(((StageWithGroupingBase) stage1).computeStage, "stage1");
-        Transform upstream1 = ((StageWithGroupingBase) stage1).computeStage.transform;
+        ComputeStageImplBase computeStage1 = ((StageWithGroupingBase) stage1).computeStage;
+        ensureJetEvents(computeStage1, "stage1");
+        Transform upstream1 = computeStage1.transform;
         FunctionAdapter fnAdapter = ADAPT_TO_JET_EVENT;
-        return computeStage.attach(new WindowGroupTransform<K, R>(
-                        asList(computeStage.transform, upstream1),
+        return this.computeStage.attach(new WindowGroupTransform<K, R>(
+                        asList(this.computeStage.transform, upstream1),
                         wDef,
                         asList(fnAdapter.adaptKeyFn(keyFn()),
                                 fnAdapter.adaptKeyFn(stage1.keyFn())),
                         adaptAggregateOperation2(aggrOp)
                 ),
+                singletonList((GeneralStage<?>) computeStage1),
                 fnAdapter);
     }
 
     @Nonnull @Override
+    @SuppressWarnings("rawtypes")
     public <T1, T2, R> StreamStage<KeyedWindowResult<K, R>> aggregate3(
             @Nonnull StreamStageWithKey<T1, ? extends K> stage1,
             @Nonnull StreamStageWithKey<T2, ? extends K> stage2,
             @Nonnull AggregateOperation3<? super T, ? super T1, ? super T2, ?, ? extends R> aggrOp
     ) {
-        ComputeStageImplBase stageImpl1 = ((StageWithGroupingBase) stage1).computeStage;
-        ComputeStageImplBase stageImpl2 = ((StageWithGroupingBase) stage2).computeStage;
+        ComputeStageImplBase computeStage1 = ((StageWithGroupingBase) stage1).computeStage;
+        ComputeStageImplBase computeStage2 = ((StageWithGroupingBase) stage2).computeStage;
         ensureJetEvents(computeStage, "This pipeline stage");
-        ensureJetEvents(stageImpl1, "stage1");
-        ensureJetEvents(stageImpl2, "stage2");
+        ensureJetEvents(computeStage1, "stage1");
+        ensureJetEvents(computeStage2, "stage2");
         Transform transform1 = ((StageWithGroupingBase) stage1).computeStage.transform;
         Transform transform2 = ((StageWithGroupingBase) stage2).computeStage.transform;
         FunctionAdapter fnAdapter = ADAPT_TO_JET_EVENT;
@@ -114,6 +119,7 @@ public class StageWithKeyAndWindowImpl<T, K>
                                 fnAdapter.adaptKeyFn(stage2.keyFn())),
                         adaptAggregateOperation3(aggrOp)
                 ),
+                asList((GeneralStage<?>) computeStage1, (GeneralStage<?>) computeStage2),
                 fnAdapter);
     }
 

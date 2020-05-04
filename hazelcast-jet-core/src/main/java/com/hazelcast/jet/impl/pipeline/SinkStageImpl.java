@@ -24,7 +24,7 @@ import javax.annotation.Nonnull;
 class SinkStageImpl extends AbstractStage implements SinkStage {
 
     SinkStageImpl(SinkTransform transform, PipelineImpl pipeline) {
-        super(transform, false, pipeline);
+        super(transform, pipeline);
     }
 
     @Nonnull @Override

@@ -121,7 +121,7 @@ public class SinksTest extends PipelineTestSupport {
     }
 
     @Test
-    public void whenDrainToMultipleStagesToSingleSink_thenAllItemsShouldBeOnSink() {
+    public void when_writeToMultipleStagesToSingleSink_then_allItemsInSink() {
         // Given
         String secondSourceName = randomName();
         List<Integer> input = sequence(itemCount);

@@ -23,6 +23,7 @@ import com.hazelcast.function.PredicateEx;
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.function.ToLongFunctionEx;
 import com.hazelcast.jet.Traverser;
+import com.hazelcast.jet.Traversers;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.function.TriFunction;
 import com.hazelcast.jet.impl.pipeline.transform.AbstractTransform;
@@ -73,6 +74,7 @@ import static com.hazelcast.jet.impl.pipeline.transform.ProcessorTransform.flatM
 import static com.hazelcast.jet.impl.pipeline.transform.ProcessorTransform.flatMapUsingServiceTransform;
 import static com.hazelcast.jet.impl.pipeline.transform.ProcessorTransform.mapUsingServiceTransform;
 import static com.hazelcast.jet.impl.util.Util.checkSerializable;
+import static com.hazelcast.jet.impl.util.Util.toList;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
@@ -85,15 +87,36 @@ public abstract class ComputeStageImplBase<T> extends AbstractStage {
 
     @Nonnull
     public FunctionAdapter fnAdapter;
+    final boolean isRebalanceOutput;
+    final FunctionEx<? super T, ?> rebalanceKeyFn;
+
+    private ComputeStageImplBase(
+            @Nonnull Transform transform,
+            @Nonnull FunctionAdapter fnAdapter,
+            @Nonnull PipelineImpl pipelineImpl,
+            boolean rebalanceOutput,
+            FunctionEx<? super T, ?> rebalanceKeyFn
+    ) {
+        super(transform, pipelineImpl);
+        this.fnAdapter = fnAdapter;
+        this.isRebalanceOutput = rebalanceOutput;
+        this.rebalanceKeyFn = rebalanceKeyFn;
+    }
 
     ComputeStageImplBase(
             @Nonnull Transform transform,
             @Nonnull FunctionAdapter fnAdapter,
-            @Nonnull PipelineImpl pipelineImpl,
-            boolean acceptsDownstream
+            @Nonnull PipelineImpl pipelineImpl
     ) {
-        super(transform, acceptsDownstream, pipelineImpl);
-        this.fnAdapter = fnAdapter;
+        this(transform, fnAdapter, pipelineImpl, false, null);
+    }
+
+    ComputeStageImplBase(ComputeStageImplBase<T> toCopy, boolean rebalanceOutput) {
+        this(toCopy.transform, toCopy.fnAdapter, toCopy.pipelineImpl, rebalanceOutput, null);
+    }
+
+    ComputeStageImplBase(ComputeStageImplBase<T> toCopy, FunctionEx<? super T, ?> rebalanceKeyFn) {
+        this(toCopy.transform, toCopy.fnAdapter, toCopy.pipelineImpl, true, rebalanceKeyFn);
     }
 
     @Nonnull
@@ -106,7 +129,7 @@ public abstract class ComputeStageImplBase<T> extends AbstractStage {
                 limitingLag(allowedLateness),
                 0, 0, DEFAULT_IDLE_TIMEOUT
         ));
-        pipelineImpl.connect(transform, tsTransform);
+        pipelineImpl.connect(this, tsTransform);
         return new StreamStageImpl<>(tsTransform, ADAPT_TO_JET_EVENT, pipelineImpl);
     }
 
@@ -142,13 +165,13 @@ public abstract class ComputeStageImplBase<T> extends AbstractStage {
     ) {
         checkSerializable(createFn, "createFn");
         checkSerializable(mapFn, "mapFn");
-        GlobalMapStatefulTransform<T, S, R> transform = new GlobalMapStatefulTransform(
-                this.transform,
+        GlobalMapStatefulTransform<T, S, R> mapStatefulTransform = new GlobalMapStatefulTransform(
+                transform,
                 fnAdapter.adaptTimestampFn(),
                 createFn,
                 fnAdapter.<S, Object, T, R>adaptStatefulMapFn((s, k, t) -> mapFn.apply(s, t))
         );
-        return (RET) attach(transform, fnAdapter);
+        return (RET) attach(mapStatefulTransform, fnAdapter);
     }
 
     @Nonnull
@@ -159,13 +182,13 @@ public abstract class ComputeStageImplBase<T> extends AbstractStage {
     ) {
         checkSerializable(createFn, "createFn");
         checkSerializable(flatMapFn, "flatMapFn");
-        GlobalFlatMapStatefulTransform<T, S, R> transform = new GlobalFlatMapStatefulTransform(
-                this.transform,
+        GlobalFlatMapStatefulTransform<T, S, R> mapStatefulTransform = new GlobalFlatMapStatefulTransform(
+                transform,
                 fnAdapter.adaptTimestampFn(),
                 createFn,
                 fnAdapter.<S, Object, T, R>adaptStatefulFlatMapFn((s, k, t) -> flatMapFn.apply(s, t))
         );
-        return (RET) attach(transform, fnAdapter);
+        return (RET) attach(mapStatefulTransform, fnAdapter);
     }
 
     @Nonnull
@@ -183,15 +206,15 @@ public abstract class ComputeStageImplBase<T> extends AbstractStage {
         if (ttl > 0 && fnAdapter == DO_NOT_ADAPT) {
             throw new IllegalStateException("Cannot use time-to-live on a non-timestamped stream");
         }
-        MapStatefulTransform<T, K, S, R> transform = new MapStatefulTransform(
-                this.transform,
+        MapStatefulTransform<T, K, S, R> mapStatefulTransform = new MapStatefulTransform(
+                transform,
                 ttl,
                 fnAdapter.adaptKeyFn(keyFn),
                 fnAdapter.adaptTimestampFn(),
                 createFn,
                 fnAdapter.adaptStatefulMapFn(mapFn),
                 onEvictFn != null ? fnAdapter.adaptOnEvictFn(onEvictFn) : null);
-        return (RET) attach(transform, fnAdapter);
+        return (RET) attach(mapStatefulTransform, fnAdapter);
     }
 
     @Nonnull
@@ -209,15 +232,15 @@ public abstract class ComputeStageImplBase<T> extends AbstractStage {
         if (ttl > 0 && fnAdapter == DO_NOT_ADAPT) {
             throw new IllegalStateException("Cannot use time-to-live on a non-timestamped stream");
         }
-        FlatMapStatefulTransform<T, K, S, R> transform = new FlatMapStatefulTransform(
-                this.transform,
+        FlatMapStatefulTransform<T, K, S, R> flatMapStatefulTransform = new FlatMapStatefulTransform(
+                transform,
                 ttl,
                 fnAdapter.adaptKeyFn(keyFn),
                 fnAdapter.adaptTimestampFn(),
                 createFn,
                 fnAdapter.adaptStatefulFlatMapFn(flatMapFn),
                 onEvictFn != null ? fnAdapter.adaptOnEvictFlatMapFn(onEvictFn) : null);
-        return (RET) attach(transform, fnAdapter);
+        return (RET) attach(flatMapStatefulTransform, fnAdapter);
     }
 
     @Nonnull
@@ -264,31 +287,29 @@ public abstract class ComputeStageImplBase<T> extends AbstractStage {
 
     @Nonnull
     @SuppressWarnings({"unchecked", "rawtypes"})
-    <S, R, RET> RET attachFlatMapUsingServiceAsync(
-            @Nonnull String operationName,
+    <S, R, RET> RET attachMapUsingServiceAsync(
             @Nonnull ServiceFactory<?, S> serviceFactory,
             int maxConcurrentOps,
             boolean preserveOrder,
             @Nonnull BiFunctionEx<? super S, ? super T, ? extends CompletableFuture<Traverser<R>>> flatMapAsyncFn
     ) {
-        checkSerializable(flatMapAsyncFn, operationName + "AsyncFn");
+        checkSerializable(flatMapAsyncFn, "mapAsyncFn");
         serviceFactory = moveAttachedFilesToPipeline(serviceFactory);
         BiFunctionEx adaptedFlatMapFn = fnAdapter.adaptFlatMapUsingServiceAsyncFn(flatMapAsyncFn);
         ProcessorTransform processorTransform = flatMapUsingServiceAsyncTransform(
-                transform, operationName, serviceFactory, maxConcurrentOps, preserveOrder, adaptedFlatMapFn);
+                transform, "map", serviceFactory, maxConcurrentOps, preserveOrder, adaptedFlatMapFn);
         return (RET) attach(processorTransform, fnAdapter);
     }
 
     @Nonnull
     @SuppressWarnings({"unchecked", "rawtypes"})
-    <S, R, RET> RET attachFlatMapUsingServiceAsyncBatched(
-            @Nonnull String operationName,
+    <S, R, RET> RET attachMapUsingServiceAsyncBatched(
             @Nonnull ServiceFactory<?, S> serviceFactory,
             int maxBatchSize,
             @Nonnull BiFunctionEx<? super S, ? super List<T>,
                     ? extends CompletableFuture<List<Traverser<R>>>> flatMapAsyncBatchedFn
     ) {
-        checkSerializable(flatMapAsyncBatchedFn, operationName + "AsyncBatchedFn");
+        checkSerializable(flatMapAsyncBatchedFn, "mapAsyncBatchedFn");
         serviceFactory = moveAttachedFilesToPipeline(serviceFactory);
         BiFunctionEx adaptedFn = fnAdapter.adaptFlatMapUsingServiceAsyncBatchedFn(flatMapAsyncBatchedFn);
 
@@ -303,7 +324,7 @@ public abstract class ComputeStageImplBase<T> extends AbstractStage {
                 };
 
         ProcessorTransform processorTransform = flatMapUsingServiceAsyncBatchedTransform(
-                transform, operationName, serviceFactory, MAX_CONCURRENT_ASYNC_BATCHES, maxBatchSize, flattenedFn);
+                transform, "map", serviceFactory, MAX_CONCURRENT_ASYNC_BATCHES, maxBatchSize, flattenedFn);
         return (RET) attach(processorTransform, fnAdapter);
     }
 
@@ -362,22 +383,23 @@ public abstract class ComputeStageImplBase<T> extends AbstractStage {
 
     @Nonnull
     @SuppressWarnings({"unchecked", "rawtypes"})
-    <S, K, R, RET> RET attachTransformUsingPartitionedServiceAsync(
-            @Nonnull String operationName,
+    <S, K, R, RET> RET attachMapUsingPartitionedServiceAsync(
             @Nonnull ServiceFactory<?, S> serviceFactory,
             int maxConcurrentOps,
             boolean preserveOrder,
             @Nonnull FunctionEx<? super T, ? extends K> partitionKeyFn,
-            @Nonnull BiFunctionEx<? super S, ? super T, CompletableFuture<Traverser<R>>> flatMapAsyncFn
+            @Nonnull BiFunctionEx<? super S, ? super T, ? extends CompletableFuture<R>> mapAsyncFn
     ) {
-        checkSerializable(flatMapAsyncFn, operationName + "AsyncFn");
+        checkSerializable(mapAsyncFn, "mapAsyncFn");
         checkSerializable(partitionKeyFn, "partitionKeyFn");
         serviceFactory = moveAttachedFilesToPipeline(serviceFactory);
+        BiFunctionEx<? super S, ? super T, ? extends CompletableFuture<Traverser<R>>> flatMapAsyncFn =
+                (s, t) -> mapAsyncFn.apply(s, t).thenApply(Traversers::singleton);
         BiFunctionEx adaptedFlatMapFn = fnAdapter.adaptFlatMapUsingServiceAsyncFn(flatMapAsyncFn);
         FunctionEx adaptedPartitionKeyFn = fnAdapter.adaptKeyFn(partitionKeyFn);
         PartitionedProcessorTransform processorTransform = flatMapUsingServiceAsyncPartitionedTransform(
                 transform,
-                operationName,
+                "map",
                 serviceFactory,
                 maxConcurrentOps,
                 preserveOrder,
@@ -389,16 +411,17 @@ public abstract class ComputeStageImplBase<T> extends AbstractStage {
 
     @Nonnull
     @SuppressWarnings({"unchecked", "rawtypes"})
-    <S, K, R, RET> RET attachTransformUsingPartitionedServiceAsyncBatched(
-            @Nonnull String operationName,
+    <S, K, R, RET> RET attachMapUsingPartitionedServiceAsyncBatched(
             @Nonnull ServiceFactory<?, S> serviceFactory,
             int maxBatchSize,
             @Nonnull FunctionEx<? super T, ? extends K> partitionKeyFn,
-            @Nonnull BiFunctionEx<? super S, ? super List<T>, CompletableFuture<List<Traverser<R>>>> flatMapAsyncFn
+            @Nonnull BiFunctionEx<? super S, ? super List<T>, ? extends CompletableFuture<List<R>>> mapAsyncFn
     ) {
-        checkSerializable(flatMapAsyncFn, operationName + "AsyncFn");
+        checkSerializable(mapAsyncFn, "mapAsyncFn");
         checkSerializable(partitionKeyFn, "partitionKeyFn");
         serviceFactory = moveAttachedFilesToPipeline(serviceFactory);
+        BiFunctionEx<? super S, ? super List<T>, ? extends CompletableFuture<List<Traverser<R>>>> flatMapAsyncFn =
+                (s, items) -> mapAsyncFn.apply(s, items).thenApply(list -> toList(list, Traversers::singleton));
         BiFunctionEx adaptedFlatMapFn = fnAdapter.adaptFlatMapUsingServiceAsyncBatchedFn(flatMapAsyncFn);
         FunctionEx adaptedPartitionKeyFn = fnAdapter.adaptKeyFn(partitionKeyFn);
 
@@ -414,7 +437,7 @@ public abstract class ComputeStageImplBase<T> extends AbstractStage {
 
         PartitionedProcessorTransform processorTransform = flatMapUsingServiceAsyncBatchedPartitionedTransform(
                 transform,
-                operationName,
+                "map",
                 serviceFactory,
                 MAX_CONCURRENT_ASYNC_BATCHES,
                 maxBatchSize,
@@ -435,10 +458,11 @@ public abstract class ComputeStageImplBase<T> extends AbstractStage {
     <RET> RET attachMerge(@Nonnull GeneralStage<? extends T> other) {
         ComputeStageImplBase castOther = (ComputeStageImplBase) other;
         if (fnAdapter != castOther.fnAdapter) {
-            throw new IllegalArgumentException("The merged stages must both have or both not have " +
-                    "timestamp definitions");
+            throw new IllegalArgumentException(
+                    "The merged stages must either both have or both not have timestamp definitions");
         }
-        return attach(new MergeTransform<>(transform, castOther.transform), fnAdapter);
+        MergeTransform<Object> transform = new MergeTransform<>(this.transform, castOther.transform);
+        return attach(transform, singletonList(other), fnAdapter);
     }
 
     @Nonnull
@@ -449,11 +473,13 @@ public abstract class ComputeStageImplBase<T> extends AbstractStage {
     ) {
         checkSerializable(mapToOutputFn, "mapToOutputFn");
         return attach(new HashJoinTransform<>(
-                asList(transform, transformOf(stage1)),
-                singletonList(fnAdapter.adaptJoinClause(joinClause)),
-                emptyList(),
-                fnAdapter.adaptHashJoinOutputFn(mapToOutputFn)
-        ), fnAdapter);
+                        asList(transform, transformOf(stage1)),
+                        singletonList(fnAdapter.adaptJoinClause(joinClause)),
+                        emptyList(),
+                        fnAdapter.adaptHashJoinOutputFn(mapToOutputFn)
+                ),
+                singletonList(stage1),
+                fnAdapter);
     }
 
     @Nonnull
@@ -467,11 +493,13 @@ public abstract class ComputeStageImplBase<T> extends AbstractStage {
     ) {
         checkSerializable(mapToOutputFn, "mapToOutputFn");
         return attach(new HashJoinTransform(
-                asList(transform, transformOf(stage1), transformOf(stage2)),
-                asList(fnAdapter.adaptJoinClause(joinClause1), fnAdapter.adaptJoinClause(joinClause2)),
-                emptyList(),
-                fnAdapter.adaptHashJoinOutputFn(mapToOutputFn)
-        ), fnAdapter);
+                        asList(transform, transformOf(stage1), transformOf(stage2)),
+                        asList(fnAdapter.adaptJoinClause(joinClause1), fnAdapter.adaptJoinClause(joinClause2)),
+                        emptyList(),
+                        fnAdapter.adaptHashJoinOutputFn(mapToOutputFn)
+                ),
+                asList(stage1, stage2),
+                fnAdapter);
     }
 
     @Nonnull
@@ -515,12 +543,26 @@ public abstract class ComputeStageImplBase<T> extends AbstractStage {
         SinkTransform<T> sinkTransform = new SinkTransform(sinkImpl, transform, fnAdapter == ADAPT_TO_JET_EVENT);
         SinkStageImpl output = new SinkStageImpl(sinkTransform, pipelineImpl);
         sinkImpl.onAssignToStage();
-        pipelineImpl.connect(transform, sinkTransform);
+        pipelineImpl.connect(this, sinkTransform);
         return output;
     }
 
     @Nonnull
-    abstract <RET> RET attach(@Nonnull AbstractTransform transform, @Nonnull FunctionAdapter fnAdapter);
+    final <RET> RET attach(
+            @Nonnull AbstractTransform transform,
+            @Nonnull List<? extends GeneralStage<?>> moreInputStages,
+            @Nonnull FunctionAdapter fnAdapter
+    ) {
+        pipelineImpl.connect(this, moreInputStages, transform);
+        return newStage(transform, fnAdapter);
+    }
+
+    @Nonnull
+    final <RET> RET attach(@Nonnull AbstractTransform transform, @Nonnull FunctionAdapter fnAdapter) {
+        return attach(transform, emptyList(), fnAdapter);
+    }
+
+    abstract <RET> RET newStage(@Nonnull AbstractTransform transform, @Nonnull FunctionAdapter fnAdapter);
 
     @SuppressWarnings("rawtypes")
     static void ensureJetEvents(@Nonnull ComputeStageImplBase stage, @Nonnull String name) {
