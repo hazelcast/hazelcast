@@ -177,7 +177,7 @@ public abstract class AbstractChannelInitializer
                     if (logger.isLoggable(Level.FINEST)) {
                         logger.finest("Registering connection " + connection + " to address alias " + remoteAddressAlias);
                     }
-                    connectionManager.connectionsMap.putIfAbsent(remoteAddressAlias, connection);
+                    connectionManager.mappedConnections.putIfAbsent(remoteAddressAlias, connection);
                 }
             }
 
@@ -193,7 +193,7 @@ public abstract class AbstractChannelInitializer
                                 + ", new one is " + connection);
                     }
                     // todo probably it's already in activeConnections (ConnectTask , AcceptorIOThread)
-                    connectionManager.activeConnections.add(connection);
+                    connectionManager.connections.add(connection);
                 }
                 return true;
             }

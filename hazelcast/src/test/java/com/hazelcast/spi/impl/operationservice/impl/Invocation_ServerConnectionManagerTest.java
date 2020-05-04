@@ -41,7 +41,10 @@ import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
+import javax.annotation.Nonnull;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.function.Predicate;
 
 import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static com.hazelcast.test.Accessors.getSerializationService;
@@ -84,13 +87,13 @@ public class Invocation_ServerConnectionManagerTest
         }
 
         @Override
-        public Collection<ServerConnection> getConnections() {
-            return null;
+        public @Nonnull Collection<ServerConnection> getConnections() {
+            return Collections.emptyList();
         }
 
         @Override
-        public Collection<ServerConnection> getActiveConnections() {
-            return null;
+        public int connectionCount(Predicate<ServerConnection> predicate) {
+            return 0;
         }
 
         @Override
@@ -101,11 +104,6 @@ public class Invocation_ServerConnectionManagerTest
         @Override
         public ServerConnection get(Address address) {
             return null;
-        }
-
-        @Override
-        public ServerConnection getOrConnect(Address address) {
-            throw new UnsupportedOperationException(EXPECTED_MSG);
         }
 
         @Override

@@ -31,14 +31,14 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
 
-public class DefaultChannelInitializerProvider implements Function<EndpointQualifier, ChannelInitializer> {
+public class ChannelInitializerFunction implements Function<EndpointQualifier, ChannelInitializer> {
 
     protected final ServerContext serverContext;
     private final ChannelInitializer uniChannelInitializer;
     private final Config config;
     private volatile Map<EndpointQualifier, ChannelInitializer> initializerMap;
 
-    public DefaultChannelInitializerProvider(ServerContext serverContext, Config config) {
+    public ChannelInitializerFunction(ServerContext serverContext, Config config) {
         checkSslConfigAvailability(config);
         this.serverContext = serverContext;
         this.uniChannelInitializer = new UnifiedChannelInitializer(serverContext);
@@ -52,8 +52,7 @@ public class DefaultChannelInitializerProvider implements Function<EndpointQuali
 
     public void init() {
         AdvancedNetworkConfig advancedNetworkConfig = config.getAdvancedNetworkConfig();
-        if (!advancedNetworkConfig.isEnabled()
-                || advancedNetworkConfig.getEndpointConfigs().isEmpty()) {
+        if (!advancedNetworkConfig.isEnabled() || advancedNetworkConfig.getEndpointConfigs().isEmpty()) {
             initializerMap = Collections.emptyMap();
             return;
         }

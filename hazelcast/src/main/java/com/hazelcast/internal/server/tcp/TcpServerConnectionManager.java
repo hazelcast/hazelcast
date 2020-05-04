@@ -26,18 +26,17 @@ import com.hazelcast.internal.metrics.MetricsCollectionContext;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.networking.Channel;
 import com.hazelcast.internal.networking.ChannelInitializer;
-import com.hazelcast.internal.server.NetworkStats;
 import com.hazelcast.internal.networking.Networking;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.nio.ConnectionLifecycleListener;
 import com.hazelcast.internal.nio.ConnectionListener;
 import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.internal.nio.Packet;
-import com.hazelcast.internal.server.ServerContext;
+import com.hazelcast.internal.server.NetworkStats;
 import com.hazelcast.internal.server.ServerConnection;
 import com.hazelcast.internal.server.ServerConnectionManager;
+import com.hazelcast.internal.server.ServerContext;
 import com.hazelcast.internal.server.tcp.AbstractChannelInitializer.MemberHandshakeHandler;
-import com.hazelcast.internal.util.ConcurrencyUtil;
 import com.hazelcast.internal.util.ConstructorFunction;
 import com.hazelcast.internal.util.MutableLong;
 import com.hazelcast.internal.util.counters.MwCounter;
@@ -45,10 +44,10 @@ import com.hazelcast.internal.util.executor.StripedRunnable;
 import com.hazelcast.logging.ILogger;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
+import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.nio.channels.SocketChannel;
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -59,6 +58,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Predicate;
 
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.TCP_DISCRIMINATOR_BINDADDRESS;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.TCP_DISCRIMINATOR_ENDPOINT;
@@ -80,6 +80,7 @@ import static com.hazelcast.internal.nio.ConnectionType.MEMCACHE_CLIENT;
 import static com.hazelcast.internal.nio.ConnectionType.REST_CLIENT;
 import static com.hazelcast.internal.nio.IOUtil.close;
 import static com.hazelcast.internal.nio.IOUtil.setChannelOptions;
+import static com.hazelcast.internal.util.ConcurrencyUtil.getOrPutIfAbsent;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.counters.MwCounter.newMwCounter;
 import static java.util.Collections.newSetFromMap;
@@ -97,10 +98,10 @@ public class TcpServerConnectionManager
     final Set<Address> connectionsInProgress = newSetFromMap(new ConcurrentHashMap<>());
 
     @Probe(name = TCP_METRIC_ENDPOINT_MANAGER_COUNT, level = MANDATORY)
-    final ConcurrentHashMap<Address, TcpServerConnection> connectionsMap = new ConcurrentHashMap<>(100);
+    final ConcurrentHashMap<Address, TcpServerConnection> mappedConnections = new ConcurrentHashMap<>(100);
 
     @Probe(name = TCP_METRIC_ENDPOINT_MANAGER_ACTIVE_COUNT, level = MANDATORY)
-    final Set<TcpServerConnection> activeConnections = newSetFromMap(new ConcurrentHashMap<>());
+    final Set<TcpServerConnection> connections = newSetFromMap(new ConcurrentHashMap<>());
 
     @Probe(name = TCP_METRIC_ENDPOINT_MANAGER_ACCEPTED_SOCKET_COUNT, level = MANDATORY)
     final Set<Channel> acceptedChannels = newSetFromMap(new ConcurrentHashMap<>());
@@ -117,7 +118,7 @@ public class TcpServerConnectionManager
     private final TcpServerConnector connector;
     private final MemberHandshakeHandler memberHandshakeHandler;
     private final NetworkStatsImpl networkStats;
-    private final ConstructorFunction<Address, TcpServerConnectionErrorHandler> monitorConstructor =
+    private final ConstructorFunction<Address, TcpServerConnectionErrorHandler> errorHandlerConstructor =
             endpoint -> new TcpServerConnectionErrorHandler(TcpServerConnectionManager.this, endpoint);
 
     @Probe(name = TCP_METRIC_ENDPOINT_MANAGER_MONITOR_COUNT)
@@ -131,7 +132,7 @@ public class TcpServerConnectionManager
     @Probe(name = TCP_METRIC_ENDPOINT_MANAGER_CLOSED_COUNT)
     private final MwCounter closedCount = newMwCounter();
 
-    private final EndpointConnectionLifecycleListener connectionLifecycleListener = new EndpointConnectionLifecycleListener();
+    private final ConnectionLifecycleListenerImpl connectionLifecycleListener = new ConnectionLifecycleListenerImpl();
 
     TcpServerConnectionManager(TcpServer server,
                                EndpointConfig endpointConfig,
@@ -149,6 +150,7 @@ public class TcpServerConnectionManager
         this.networkStats = endpointQualifier == null ? null : new NetworkStatsImpl();
     }
 
+    @Override
     public TcpServer getServer() {
         return server;
     }
@@ -158,11 +160,21 @@ public class TcpServerConnectionManager
     }
 
     public Collection<ServerConnection> getActiveConnections() {
-        return unmodifiableSet(activeConnections);
+        return unmodifiableSet(connections);
     }
 
-    public Collection<ServerConnection> getConnections() {
-        return unmodifiableCollection(new HashSet<>(connectionsMap.values()));
+    @Override
+    public int connectionCount(Predicate<ServerConnection> predicate) {
+        if (predicate == null) {
+            return connections.size();
+        } else {
+            return (int) connections.stream().filter(predicate).count();
+        }
+    }
+
+    @Override
+    public @Nonnull Collection<ServerConnection> getConnections() {
+        return unmodifiableCollection(connections);
     }
 
     @Override
@@ -178,17 +190,12 @@ public class TcpServerConnectionManager
 
     @Override
     public ServerConnection get(Address address) {
-        return connectionsMap.get(address);
-    }
-
-    @Override
-    public ServerConnection getOrConnect(Address address) {
-        return getOrConnect(address, false);
+        return mappedConnections.get(address);
     }
 
     @Override
     public ServerConnection getOrConnect(final Address address, final boolean silent) {
-        TcpServerConnection connection = connectionsMap.get(address);
+        TcpServerConnection connection = mappedConnections.get(address);
         if (connection == null && server.isLive()) {
             if (connectionsInProgress.add(address)) {
                 connector.asyncConnect(address, silent);
@@ -221,7 +228,7 @@ public class TcpServerConnectionManager
             if (!connection.isClient()) {
                 connection.setErrorHandler(getErrorHandler(remoteAddress, true));
             }
-            connectionsMap.put(remoteAddress, connection);
+            mappedConnections.put(remoteAddress, connection);
 
             serverContext.getEventService().executeEventCallback(new StripedRunnable() {
                 @Override
@@ -258,13 +265,13 @@ public class TcpServerConnectionManager
 
     public synchronized void reset(boolean cleanListeners) {
         acceptedChannels.forEach(IOUtil::closeResource);
-        connectionsMap.values().forEach(conn -> close(conn, "EndpointManager is stopping"));
-        activeConnections.forEach(conn -> close(conn, "EndpointManager is stopping"));
+        mappedConnections.values().forEach(conn -> close(conn, "TcpServerConnectionManager is stopping"));
+        connections.forEach(conn -> close(conn, "TcpServerConnectionManager is stopping"));
         acceptedChannels.clear();
         connectionsInProgress.clear();
-        connectionsMap.clear();
+        mappedConnections.clear();
         monitors.clear();
-        activeConnections.clear();
+        connections.clear();
 
         if (cleanListeners) {
             connectionListeners.clear();
@@ -296,11 +303,11 @@ public class TcpServerConnectionManager
     }
 
     private TcpServerConnectionErrorHandler getErrorHandler(Address endpoint, boolean reset) {
-        TcpServerConnectionErrorHandler monitor = ConcurrencyUtil.getOrPutIfAbsent(monitors, endpoint, monitorConstructor);
+        TcpServerConnectionErrorHandler handler = getOrPutIfAbsent(monitors, endpoint, errorHandlerConstructor);
         if (reset) {
-            monitor.reset();
+            handler.reset();
         }
-        return monitor;
+        return handler;
     }
 
     Channel newChannel(SocketChannel socketChannel, boolean clientMode) throws IOException {
@@ -328,7 +335,7 @@ public class TcpServerConnectionManager
         }
     }
 
-    synchronized TcpServerConnection newConnection(Channel channel, Address endpoint) {
+    synchronized TcpServerConnection newConnection(Channel channel, Address remoteAddress) {
         try {
             if (!server.isLive()) {
                 throw new IllegalStateException("connection manager is not live!");
@@ -337,8 +344,8 @@ public class TcpServerConnectionManager
             TcpServerConnection connection = new TcpServerConnection(this, connectionLifecycleListener,
                     connectionIdGen.incrementAndGet(), channel);
 
-            connection.setRemoteAddress(endpoint);
-            activeConnections.add(connection);
+            connection.setRemoteAddress(remoteAddress);
+            connections.add(connection);
 
             if (logger.isFineEnabled()) {
                 logger.fine("Established socket connection between " + channel.localSocketAddress() + " and " + channel
@@ -386,7 +393,7 @@ public class TcpServerConnectionManager
     public String toString() {
         return "TcpServerConnectionManager{"
                 + "endpointQualifier=" + endpointQualifier
-                + ", connectionsMap=" + connectionsMap + '}';
+                + ", mappedConnections=" + mappedConnections + '}';
     }
 
     @Override
@@ -400,7 +407,7 @@ public class TcpServerConnectionManager
                     .withDiscriminator(TCP_DISCRIMINATOR_ENDPOINT, endpointQualifier.toMetricsPrefixString()), this);
         }
 
-        for (TcpServerConnection connection : activeConnections) {
+        for (TcpServerConnection connection : connections) {
             if (connection.getRemoteAddress() != null) {
                 context.collect(rootDescriptor
                         .copy()
@@ -410,7 +417,7 @@ public class TcpServerConnectionManager
 
         int clientCount = 0;
         int textCount = 0;
-        for (Map.Entry<Address, TcpServerConnection> entry : connectionsMap.entrySet()) {
+        for (Map.Entry<Address, TcpServerConnection> entry : mappedConnections.entrySet()) {
             Address bindAddress = entry.getKey();
             TcpServerConnection connection = entry.getValue();
             if (connection.isClient()) {
@@ -456,30 +463,30 @@ public class TcpServerConnectionManager
         }
     }
 
-    public final class EndpointConnectionLifecycleListener implements ConnectionLifecycleListener<TcpServerConnection> {
+    public final class ConnectionLifecycleListenerImpl implements ConnectionLifecycleListener<TcpServerConnection> {
 
         @Override
-        public void onConnectionClose(TcpServerConnection connection, Throwable t, boolean silent) {
+        public void onConnectionClose(TcpServerConnection connection, Throwable cause, boolean silent) {
             closedCount.inc();
 
-            activeConnections.remove(connection);
+            connections.remove(connection);
 
             if (networkStats != null) {
                 // Note: this call must happen after activeConnections.remove
                 networkStats.onConnectionClose(connection);
             }
 
-            Address endPoint = connection.getRemoteAddress();
-            if (endPoint != null) {
-                connectionsInProgress.remove(endPoint);
-                connectionsMap.remove(endPoint, connection);
-                fireConnectionRemovedEvent(connection, endPoint);
+            Address remoteAddress = connection.getRemoteAddress();
+            if (remoteAddress != null) {
+                connectionsInProgress.remove(remoteAddress);
+                mappedConnections.remove(remoteAddress, connection);
+                fireConnectionRemovedEvent(connection, remoteAddress);
             }
 
-            if (t != null) {
-                serverContext.onFailedConnection(endPoint);
+            if (cause != null) {
+                serverContext.onFailedConnection(remoteAddress);
                 if (!silent) {
-                    getErrorHandler(endPoint, false).onError(t);
+                    getErrorHandler(remoteAddress, false).onError(cause);
                 }
             }
         }
@@ -504,7 +511,7 @@ public class TcpServerConnectionManager
         void refresh() {
             MutableLong totalReceived = MutableLong.valueOf(bytesReceivedOnClosed.get());
             MutableLong totalSent = MutableLong.valueOf(bytesSentOnClosed.get());
-            activeConnections.forEach(conn -> {
+            connections.forEach(conn -> {
                 totalReceived.value += conn.getChannel().bytesRead();
                 totalSent.value += conn.getChannel().bytesWritten();
             });
