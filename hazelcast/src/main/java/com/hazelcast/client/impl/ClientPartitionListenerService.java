@@ -24,31 +24,46 @@ import com.hazelcast.internal.partition.PartitionTableView;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.util.scheduler.CoalescingDelayedTrigger;
 
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static com.hazelcast.instance.EndpointQualifier.CLIENT;
 
 public class ClientPartitionListenerService {
 
+    private static final long UPDATE_DELAY_MS = 100;
+    private static final long UPDATE_MAX_DELAY_MS = 500;
+
     private final Map<ClientEndpoint, Long> partitionListeningEndpoints = new ConcurrentHashMap<ClientEndpoint, Long>();
     private final NodeEngineImpl nodeEngine;
     private final boolean advancedNetworkConfigEnabled;
+    private final CoalescingDelayedTrigger delayedPartitionUpdateTrigger;
 
     ClientPartitionListenerService(NodeEngineImpl nodeEngine) {
         this.nodeEngine = nodeEngine;
         this.advancedNetworkConfigEnabled = nodeEngine.getConfig().getAdvancedNetworkConfig().isEnabled();
+        this.delayedPartitionUpdateTrigger = new CoalescingDelayedTrigger(nodeEngine.getExecutionService(),
+                UPDATE_DELAY_MS, UPDATE_MAX_DELAY_MS, new PushPartitionTableUpdate());
     }
 
     public void onPartitionStateChange() {
+        delayedPartitionUpdateTrigger.executeWithDelay();
+    }
 
-        for (Map.Entry<ClientEndpoint, Long> entry : partitionListeningEndpoints.entrySet()) {
-            ClientMessage clientMessage = getPartitionsMessage();
+    private void pushPartitionStateChange() {
+        PartitionTableView partitionTableView = nodeEngine.getPartitionService().createPartitionTableView();
+        Collection<Entry<Address, List<Integer>>> partitions = getPartitions(partitionTableView);
+        int partitionStateVersion = partitionTableView.getVersion();
+
+        for (Entry<ClientEndpoint, Long> entry : partitionListeningEndpoints.entrySet()) {
+            ClientMessage clientMessage = getPartitionsMessage(partitions, partitionStateVersion);
             Long correlationId = entry.getValue();
             clientMessage.setCorrelationId(correlationId);
 
@@ -58,10 +73,7 @@ public class ClientPartitionListenerService {
         }
     }
 
-    private ClientMessage getPartitionsMessage() {
-        PartitionTableView partitionTableView = nodeEngine.getPartitionService().createPartitionTableView();
-        Collection<Map.Entry<Address, List<Integer>>> partitions = getPartitions(partitionTableView);
-        int partitionStateVersion = partitionTableView.getVersion();
+    private ClientMessage getPartitionsMessage(Collection<Entry<Address, List<Integer>>> partitions, int partitionStateVersion) {
         ClientMessage clientMessage = ClientAddPartitionListenerCodec.encodePartitionsEvent(partitions, partitionStateVersion);
         clientMessage.addFlag(ClientMessage.BEGIN_AND_END_FLAGS);
         clientMessage.setVersion(ClientMessage.VERSION);
@@ -71,7 +83,11 @@ public class ClientPartitionListenerService {
     public void registerPartitionListener(ClientEndpoint clientEndpoint, long correlationId) {
         partitionListeningEndpoints.put(clientEndpoint, correlationId);
 
-        ClientMessage clientMessage = getPartitionsMessage();
+        PartitionTableView partitionTableView = nodeEngine.getPartitionService().createPartitionTableView();
+        Collection<Map.Entry<Address, List<Integer>>> partitions = getPartitions(partitionTableView);
+        int partitionStateVersion = partitionTableView.getVersion();
+
+        ClientMessage clientMessage = getPartitionsMessage(partitions, partitionStateVersion);
         clientMessage.setCorrelationId(correlationId);
         clientEndpoint.getConnection().write(clientMessage);
     }
@@ -128,5 +144,12 @@ public class ClientPartitionListenerService {
     //for test purpose only
     public Map<ClientEndpoint, Long> getPartitionListeningEndpoints() {
         return partitionListeningEndpoints;
+    }
+
+    private class PushPartitionTableUpdate implements Runnable {
+        @Override
+        public void run() {
+            pushPartitionStateChange();
+        }
     }
 }
