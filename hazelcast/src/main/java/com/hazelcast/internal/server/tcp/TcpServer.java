@@ -98,7 +98,7 @@ public final class TcpServer implements Server {
         this.registry = registry;
         this.logger = context.getLoggingService().getLogger(TcpServer.class);
         this.scheduler = new ScheduledThreadPoolExecutor(SCHEDULER_POOL_SIZE,
-                new ThreadFactoryImpl(createThreadPoolName(context.getHazelcastName(), "TcpIpNetworkingService")));
+                new ThreadFactoryImpl(createThreadPoolName(context.getHazelcastName(), "TcpServer")));
 
         if (registry.holdsUnifiedSocket()) {
             unifiedConnectionManager = new TcpServerConnectionManager(
@@ -140,7 +140,7 @@ public final class TcpServer implements Server {
         }
 
         live = true;
-        logger.finest("Starting TCPServer.");
+        logger.finest("Starting TcpServer.");
 
         networking.restart();
         startAcceptor();
@@ -157,7 +157,7 @@ public final class TcpServer implements Server {
             return;
         }
         live = false;
-        logger.finest("Stopping TCPServer");
+        logger.finest("Stopping TcpServer");
 
         if (refreshStatsFuture != null) {
             refreshStatsFuture.cancel(false);
