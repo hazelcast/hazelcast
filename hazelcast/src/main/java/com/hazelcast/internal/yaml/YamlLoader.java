@@ -16,12 +16,14 @@
 
 package com.hazelcast.internal.yaml;
 
+import org.snakeyaml.engine.v1.api.ConstructNode;
 import org.snakeyaml.engine.v1.api.Load;
 import org.snakeyaml.engine.v1.api.LoadSettings;
 import org.snakeyaml.engine.v1.api.LoadSettingsBuilder;
 
 import java.io.InputStream;
 import java.io.Reader;
+import java.util.Optional;
 
 /**
  * YAML loader that can load, parse YAML documents and can build a tree
@@ -50,7 +52,22 @@ public final class YamlLoader {
      */
     public static YamlNode load(InputStream inputStream, String rootName) {
         try {
+            //            ConstructNode blah = new ConstructNode() {
+            //                @Override
+            //                public Object construct(Node node) {
+            //                    if (node.getNodeType() == NodeType.MAPPING) {
+            //                        MappingNode mappingNode = (MappingNode) node;
+            //                        NodeTuple rootNodeTuple = mappingNode.getValue().get(0);
+            //                        ScalarNode rootNameNode = (ScalarNode) rootNodeTuple.getKeyNode();
+            //                        String rootTagName = rootNameNode.getValue();
+            //                        System.out.println("***** " + rootTagName + " " + (rootTagName.equalsIgnoreCase(rootName)));
+            //                    }
+            //                    throw new YamlException("Terminate parsing");
+            //                }
+            //            };
+
             Object document = getLoad().loadFromInputStream(inputStream);
+            //            Object document = getLoad(blah).loadFromInputStream(inputStream);
             return buildDom(rootName, document);
         } catch (Exception ex) {
             throw new YamlException("An error occurred while loading and parsing the YAML stream", ex);
@@ -144,7 +161,14 @@ public final class YamlLoader {
     }
 
     private static Load getLoad() {
-        LoadSettings settings = new LoadSettingsBuilder().build();
+        return getLoad(null);
+    }
+
+    private static Load getLoad(ConstructNode constructNode) {
+        LoadSettingsBuilder settingsBuilder = new LoadSettingsBuilder();
+        settingsBuilder.setRootConstructNode(Optional.ofNullable(constructNode));
+        //        settingsBuilder.setTagConstructors(null);
+        LoadSettings settings = settingsBuilder.build();
         return new Load(settings);
     }
 
