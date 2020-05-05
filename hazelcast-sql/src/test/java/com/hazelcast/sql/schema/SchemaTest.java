@@ -5,6 +5,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlCursor;
 import com.hazelcast.sql.SqlRow;
+import com.hazelcast.sql.schema.model.AllTypesValue;
 import com.hazelcast.sql.support.CalciteSqlTestSupport;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -143,8 +144,8 @@ public class SchemaTest extends CalciteSqlTestSupport {
         assertEquals(allTypes.getShort0(), ((short) rows.get(0).getObject(5)));
         assertEquals(allTypes.getInt0(), ((int) rows.get(0).getObject(6)));
         assertEquals(allTypes.getLong0(), ((long) rows.get(0).getObject(7)));
-        assertEquals(allTypes.getFloat0(), ((float) rows.get(0).getObject(8)), 0);
-        assertEquals(allTypes.getDouble0(), ((double) rows.get(0).getObject(9)), 0);
+        assertEquals(allTypes.getFloat0(), rows.get(0).getObject(8), 0);
+        assertEquals(allTypes.getDouble0(), rows.get(0).getObject(9), 0);
         assertEquals(allTypes.getBigDecimal(), rows.get(0).getObject(10));
         assertEquals(allTypes.getBigInteger(), rows.get(0).getObject(11));
         assertEquals(allTypes.getLocalTime(), rows.get(0).getObject(12));

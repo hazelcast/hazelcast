@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.schema;
+package com.hazelcast.sql.schema.model;
 
 import java.io.Serializable;
 import java.math.BigDecimal;
