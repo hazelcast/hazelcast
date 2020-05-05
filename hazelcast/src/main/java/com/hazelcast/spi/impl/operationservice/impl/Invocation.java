@@ -210,7 +210,7 @@ public abstract class Invocation<T> extends BaseInvocation implements OperationR
         this.tryPauseMillis = tryPauseMillis;
         this.callTimeoutMillis = getCallTimeoutMillis(callTimeoutMillis);
         this.future = new InvocationFuture(this, deserialize);
-        this.connectionManager = getEndpointManager(connectionManager);
+        this.connectionManager = getConnectionManager(connectionManager);
     }
 
     @Override
@@ -610,7 +610,7 @@ public abstract class Invocation<T> extends BaseInvocation implements OperationR
         return "Packet not sent to -> " + targetAddress + " over " + connection;
     }
 
-    private ServerConnectionManager getEndpointManager(ServerConnectionManager connectionManager) {
+    private ServerConnectionManager getConnectionManager(ServerConnectionManager connectionManager) {
         return connectionManager != null ? connectionManager : context.defaultServerConnectionManager;
     }
 
