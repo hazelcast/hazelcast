@@ -16,8 +16,8 @@
 
 package com.hazelcast.sql.optimizer.support;
 
-import com.hazelcast.sql.impl.calcite.OptimizerConfig;
-import com.hazelcast.sql.impl.calcite.OptimizerContext;
+import com.hazelcast.sql.impl.calcite.ExecutionConfig;
+import com.hazelcast.sql.impl.calcite.ExecutionContext;
 import com.hazelcast.sql.impl.calcite.opt.logical.LogicalRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.PhysicalRel;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastSchema;
@@ -84,18 +84,18 @@ public abstract class OptimizerTestSupport {
     /**
      * Optimize with the given schema.
      *
-     * @param sql SQL.
+     * @param sql    SQL.
      * @param schema Schema.
      * @return Result.
      */
     protected Result optimize(String sql, HazelcastSchema schema) {
-        OptimizerConfig config = OptimizerConfig.builder().build();
+        ExecutionConfig config = ExecutionConfig.builder().build();
 
-        OptimizerContext context = OptimizerContext.create(
-            OptimizerContext.createCatalog(schema),
-            SchemaUtils.prepareSearchPaths(null, null),
-            1,
-            config
+        ExecutionContext context = ExecutionContext.create(
+                ExecutionContext.createCatalog(schema),
+                SchemaUtils.prepareSearchPaths(null, null),
+                1,
+                config
         );
 
         return optimize(sql, context);
@@ -104,17 +104,18 @@ public abstract class OptimizerTestSupport {
     /**
      * Optimize with the given context.
      *
-     * @param sql SQL.
+     * @param sql     SQL.
      * @param context Context.
      * @return Result.
      */
-    protected Result optimize(String sql, OptimizerContext context) {
+    protected Result optimize(String sql, ExecutionContext context) {
         SqlNode node = context.parse(sql);
-        RelNode converted = context.convert(node);
+        SqlNode validated = context.validate(node);
+        RelNode converted = context.convert(validated);
         LogicalRel logical = context.optimizeLogical(converted);
         PhysicalRel physical = isOptimizePhysical() ? context.optimizePhysical(logical, null) : null;
 
-        Result res = new Result(node, converted, logical, physical);
+        Result res = new Result(validated, converted, logical, physical);
 
         last = res;
 
@@ -198,7 +199,7 @@ public abstract class OptimizerTestSupport {
         return ColumnExpression.create(col, QueryDataType.VARCHAR);
     }
 
-    protected static List<TableField> fields(Object ... namesAndTypes) {
+    protected static List<TableField> fields(Object... namesAndTypes) {
         assert namesAndTypes.length % 2 == 0;
 
         List<TableField> res = new ArrayList<>();

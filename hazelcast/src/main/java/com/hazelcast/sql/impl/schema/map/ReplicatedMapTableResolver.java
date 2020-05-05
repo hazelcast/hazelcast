@@ -22,6 +22,7 @@ import com.hazelcast.replicatedmap.impl.record.ReplicatedRecord;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.QueryException;
+import com.hazelcast.sql.impl.schema.Catalog;
 import com.hazelcast.sql.impl.schema.ConstantTableStatistics;
 import com.hazelcast.sql.impl.schema.SchemaUtils;
 import com.hazelcast.sql.impl.schema.Table;
@@ -64,6 +65,10 @@ public class ReplicatedMapTableResolver implements TableResolver {
 
         for (String mapName : mapService.getPartitionContainer(0).getStores().keySet()) {
             ReplicatedMapTable table;
+
+            if (mapName.equalsIgnoreCase(Catalog.CATALOG_MAP_NAME)) { // TODO:
+                continue;
+            }
 
             try {
                 table = createTable(mapService, mapName);

@@ -23,10 +23,10 @@ import com.hazelcast.config.ReplicatedMapConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.partition.strategy.DeclarativePartitioningStrategy;
 import com.hazelcast.sql.SqlRow;
+import com.hazelcast.sql.impl.calcite.ExecutionConfig;
+import com.hazelcast.sql.impl.calcite.ExecutionContext;
 import com.hazelcast.sql.impl.plan.Plan;
 import com.hazelcast.sql.impl.SqlCursorImpl;
-import com.hazelcast.sql.impl.calcite.OptimizerConfig;
-import com.hazelcast.sql.impl.calcite.OptimizerContext;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.support.CalciteSqlTestSupport;
 import com.hazelcast.sql.tpch.model.ModelConfig;
@@ -910,7 +910,7 @@ public class TpcHTest extends CalciteSqlTestSupport {
             rowCount = 100;
         }
 
-        OptimizerContext.setOptimizerConfig(OptimizerConfig.builder().setStatisticsEnabled(true).build());
+        ExecutionContext.setExecutionConfig(ExecutionConfig.builder().setStatisticsEnabled(true).build());
 
         SqlCursorImpl res = (SqlCursorImpl) member.getSqlService().query(sql, args);
         Plan plan = res.getPlan();

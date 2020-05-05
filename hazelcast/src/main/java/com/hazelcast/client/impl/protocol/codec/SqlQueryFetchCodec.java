@@ -116,5 +116,4 @@ public final class SqlQueryFetchCodec {
         response.rows = ListMultiFrameCodec.decode(iterator, DataCodec::decode);
         return response;
     }
-
 }

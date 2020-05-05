@@ -95,5 +95,4 @@ public final class SqlQueryCloseCodec {
         iterator.next();
         return response;
     }
-
 }

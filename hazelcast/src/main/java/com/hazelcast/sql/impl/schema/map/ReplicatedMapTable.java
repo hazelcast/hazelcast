@@ -26,6 +26,7 @@ import java.util.List;
 import static com.hazelcast.sql.impl.schema.SchemaUtils.SCHEMA_NAME_REPLICATED;
 
 public class ReplicatedMapTable extends AbstractMapTable {
+
     public ReplicatedMapTable(
         String name,
         List<TableField> fields,
@@ -33,7 +34,18 @@ public class ReplicatedMapTable extends AbstractMapTable {
         QueryTargetDescriptor keyDescriptor,
         QueryTargetDescriptor valueDescriptor
     ) {
-        super(SCHEMA_NAME_REPLICATED, name, fields, statistics, keyDescriptor, valueDescriptor);
+        this(SCHEMA_NAME_REPLICATED, name, fields, statistics, keyDescriptor, valueDescriptor);
+    }
+
+    public ReplicatedMapTable(
+            String schemaName,
+            String name,
+            List<TableField> fields,
+            TableStatistics statistics,
+            QueryTargetDescriptor keyDescriptor,
+            QueryTargetDescriptor valueDescriptor
+    ) {
+        super(schemaName, name, fields, statistics, keyDescriptor, valueDescriptor);
     }
 
     public ReplicatedMapTable(String name, QueryException exception) {

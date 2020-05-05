@@ -24,6 +24,7 @@ SqlCreate SqlCreateTable(Span span, boolean replace) :
     SqlIdentifier name;
     boolean ifNotExists = false;
     SqlNodeList columns = SqlNodeList.EMPTY;
+    SqlIdentifier type;
     SqlNodeList sqlOptions = SqlNodeList.EMPTY;
 }
 {
@@ -31,8 +32,10 @@ SqlCreate SqlCreateTable(Span span, boolean replace) :
     [
         <IF> <NOT> <EXISTS> { ifNotExists = true; }
     ]
-    name = CompoundIdentifier()
+    name = SimpleIdentifier()
     columns = TableColumns()
+    <TYPE>
+    type = SimpleIdentifier()
     [
         <OPTIONS>
         sqlOptions = SqlOptions()
@@ -41,6 +44,7 @@ SqlCreate SqlCreateTable(Span span, boolean replace) :
         return new SqlCreateTable(
             name,
             columns,
+            type,
             sqlOptions,
             replace,
             ifNotExists,
@@ -301,7 +305,7 @@ SqlDrop SqlDropTable(Span span, boolean replace) :
     [
         <IF> <EXISTS> { ifExists = true; }
     ]
-    name = CompoundIdentifier()
+    name = SimpleIdentifier()
     {
         return new SqlDropTable(name, ifExists, startPos.plus(getPos()));
     }

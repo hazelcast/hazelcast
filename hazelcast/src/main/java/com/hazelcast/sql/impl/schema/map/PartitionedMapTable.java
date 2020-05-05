@@ -25,7 +25,7 @@ import java.util.List;
 
 import static com.hazelcast.sql.impl.schema.SchemaUtils.SCHEMA_NAME_PARTITIONED;
 
-public class PartitionedMapTable  extends AbstractMapTable {
+public class PartitionedMapTable extends AbstractMapTable {
 
     public static final int DISTRIBUTION_FIELD_ORDINAL_NONE = -1;
 
@@ -41,7 +41,20 @@ public class PartitionedMapTable  extends AbstractMapTable {
         List<MapTableIndex> indexes,
         int distributionFieldOrdinal
     ) {
-        super(SCHEMA_NAME_PARTITIONED, name, fields, statistics, keyDescriptor, valueDescriptor);
+        this(SCHEMA_NAME_PARTITIONED, name, fields, statistics, keyDescriptor, valueDescriptor, indexes, distributionFieldOrdinal);
+    }
+
+    public PartitionedMapTable(
+            String schemaName,
+            String name,
+            List<TableField> fields,
+            TableStatistics statistics,
+            QueryTargetDescriptor keyDescriptor,
+            QueryTargetDescriptor valueDescriptor,
+            List<MapTableIndex> indexes,
+            int distributionFieldOrdinal
+    ) {
+        super(schemaName, name, fields, statistics, keyDescriptor, valueDescriptor);
 
         this.indexes = indexes;
         this.distributionFieldIndex = distributionFieldOrdinal;

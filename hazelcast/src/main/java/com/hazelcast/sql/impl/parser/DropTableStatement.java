@@ -14,17 +14,28 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.optimizer;
+package com.hazelcast.sql.impl.parser;
 
-import com.hazelcast.sql.impl.QueryException;
-import com.hazelcast.sql.impl.plan.Plan;
+import com.hazelcast.sql.impl.schema.Catalog;
 
 /**
- * No-op optimizer.
+ * 'DROP TABLE' DDL statement.
  */
-public class NoOpSqlOptimizer implements SqlOptimizer {
+public class DropTableStatement implements DdlStatement {
+
+    private final String name;
+
+    private final boolean ifExists;
+
+    public DropTableStatement(String name,
+                              boolean ifExists) {
+        this.name = name;
+
+        this.ifExists = ifExists;
+    }
+
     @Override
-    public Plan prepare(OptimizationTask task) {
-        throw QueryException.error("Cannot execute SQL query because \"hazelcast-sql\" module is not in the classpath.");
+    public void execute(Catalog catalog) {
+        catalog.removeTable(name, ifExists);
     }
 }

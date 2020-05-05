@@ -14,76 +14,49 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.calcite;
+package com.hazelcast.sql.impl.calcite.opt;
 
-import com.hazelcast.cluster.memberselector.MemberSelectors;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.partition.Partition;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
+import com.hazelcast.sql.impl.calcite.ExecutionContext;
 import com.hazelcast.sql.impl.calcite.opt.logical.LogicalRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.PhysicalRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.visitor.NodeIdVisitor;
 import com.hazelcast.sql.impl.calcite.opt.physical.visitor.PlanCreateVisitor;
 import com.hazelcast.sql.impl.calcite.opt.physical.visitor.SqlToQueryType;
-import com.hazelcast.sql.impl.optimizer.OptimizationTask;
 import com.hazelcast.sql.impl.optimizer.OptimizerRuleCallTracker;
 import com.hazelcast.sql.impl.optimizer.OptimizerStatistics;
-import com.hazelcast.sql.impl.optimizer.SqlOptimizer;
 import com.hazelcast.sql.impl.plan.Plan;
-import com.hazelcast.sql.impl.schema.TableResolver;
-import com.hazelcast.sql.impl.schema.map.PartitionedMapTableResolver;
-import com.hazelcast.sql.impl.schema.map.ReplicatedMapTableResolver;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.sql.SqlNode;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-/**
- * Calcite-based SQL optimizer.
- */
-@SuppressWarnings("checkstyle:ClassDataAbstractionCoupling")
-public class CalciteSqlOptimizer implements SqlOptimizer {
+public class SqlOptimizer {
+
     /** Node engine. */
     private final NodeEngine nodeEngine;
 
-    public CalciteSqlOptimizer(NodeEngine nodeEngine) {
+    public SqlOptimizer(NodeEngine nodeEngine) {
         this.nodeEngine = nodeEngine;
     }
 
-    @Override
-    public Plan prepare(OptimizationTask task) {
-        // 1. Prepare context.
-        List<TableResolver> tableResolvers = new ArrayList<>(2);
-        tableResolvers.add(new PartitionedMapTableResolver(nodeEngine));
-        tableResolvers.add(new ReplicatedMapTableResolver(nodeEngine));
-
-        int memberCount = nodeEngine.getClusterService().getSize(MemberSelectors.DATA_MEMBER_SELECTOR);
-
-        OptimizerContext context = OptimizerContext.create(
-            tableResolvers,
-            task.getSearchPaths(),
-            memberCount
-        );
-
-        // 2. Parse SQL string and validate it.
-        SqlNode node = context.parse(task.getSql());
-        RelDataType parameterRowType = context.getParameterRowType(node);
-
-        // 3. Convert to REL.
+    public Plan optimize(String sql, SqlNode node, ExecutionContext context) {
+        // 1. Convert to REL.
         RelNode rel = context.convert(node);
 
-        // 4. Perform logical optimization.
+        // 2. Perform logical optimization.
         LogicalRel logicalRel = context.optimizeLogical(rel);
 
-        // 5. Perform physical optimization.
+        // 3. Perform physical optimization.
         long start = System.currentTimeMillis();
 
         boolean statsEnabled = context.getConfig().isStatisticsEnabled();
@@ -91,12 +64,13 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         OptimizerRuleCallTracker physicalRuleCallTracker = statsEnabled ? new OptimizerRuleCallTracker() : null;
         PhysicalRel physicalRel = context.optimizePhysical(logicalRel, physicalRuleCallTracker);
 
-        // 6. Create plan.
+        // 4. Create plan.
         long dur = System.currentTimeMillis() - start;
 
+        RelDataType parameterRowType = context.getParameterRowType(node);
         OptimizerStatistics stats = statsEnabled ? new OptimizerStatistics(dur, physicalRuleCallTracker) : null;
 
-        return doCreatePlan(task.getSql(), parameterRowType, physicalRel, stats);
+        return doCreatePlan(sql, parameterRowType, physicalRel, stats);
     }
 
     /**

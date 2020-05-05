@@ -118,5 +118,4 @@ public final class SqlQueryExecuteCodec {
         response.queryId = DataCodec.decode(iterator);
         return response;
     }
-
 }

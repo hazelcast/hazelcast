@@ -40,10 +40,12 @@ public class SqlCreateTable extends SqlCreate {
 
     private final SqlIdentifier name;
     private final SqlNodeList columns;
+    private final SqlIdentifier type;
     private final SqlNodeList options;
 
     public SqlCreateTable(SqlIdentifier name,
                           SqlNodeList columns,
+                          SqlIdentifier type,
                           SqlNodeList options,
                           boolean replace,
                           boolean ifNotExists,
@@ -51,11 +53,12 @@ public class SqlCreateTable extends SqlCreate {
         super(OPERATOR, pos, replace, ifNotExists);
         this.name = requireNonNull(name, "Name should not be null");
         this.columns = requireNonNull(columns, "Columns should not be null");
+        this.type = requireNonNull(type, "Type should not be null");
         this.options = requireNonNull(options, "Options should not be null");
     }
 
     public String name() {
-        return name.toString(); // TODO:
+        return name.toString();
     }
 
     public boolean ifNotExists() {
@@ -64,6 +67,10 @@ public class SqlCreateTable extends SqlCreate {
 
     public Stream<SqlTableColumn> columns() {
         return columns.getList().stream().map(node -> (SqlTableColumn) node);
+    }
+
+    public String type() {
+        return type.toString();
     }
 
     public Stream<SqlOption> options() {
@@ -79,7 +86,7 @@ public class SqlCreateTable extends SqlCreate {
     @Override
     @Nonnull
     public List<SqlNode> getOperandList() {
-        return ImmutableNullableList.of(name, columns, options);
+        return ImmutableNullableList.of(name, columns, type, options);
     }
 
     @Override
@@ -109,6 +116,10 @@ public class SqlCreateTable extends SqlCreate {
         }
         writer.newlineAndIndent();
         writer.endList(frame);
+
+        printIndent(writer);
+        writer.keyword("TYPE");
+        type.unparse(writer, leftPrec, rightPrec);
 
         if (options.size() > 0) {
             writer.newlineAndIndent();

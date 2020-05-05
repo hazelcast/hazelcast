@@ -44,7 +44,7 @@ public class SqlDropTable extends SqlDrop {
     }
 
     public String name() {
-        return name.toString(); // TODO:
+        return name.toString();
     }
 
     public boolean ifExists() {

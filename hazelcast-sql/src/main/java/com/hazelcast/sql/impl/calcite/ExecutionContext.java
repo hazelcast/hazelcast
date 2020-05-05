@@ -17,20 +17,16 @@
 package com.hazelcast.sql.impl.calcite;
 
 import com.google.common.collect.ImmutableList;
-import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.SqlErrorCode;
+import com.hazelcast.sql.impl.QueryException;
+import com.hazelcast.sql.impl.calcite.opt.OptUtils;
 import com.hazelcast.sql.impl.calcite.opt.cost.CostFactory;
 import com.hazelcast.sql.impl.calcite.opt.distribution.DistributionTrait;
 import com.hazelcast.sql.impl.calcite.opt.distribution.DistributionTraitDef;
-import com.hazelcast.sql.impl.calcite.opt.metadata.HazelcastRelMdRowCount;
-import com.hazelcast.sql.impl.calcite.parser.HazelcastSqlParser;
-import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
-import com.hazelcast.sql.impl.calcite.schema.HazelcastTableStatistic;
-import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlOperatorTable;
-import com.hazelcast.sql.impl.calcite.opt.OptUtils;
 import com.hazelcast.sql.impl.calcite.opt.logical.LogicalRel;
 import com.hazelcast.sql.impl.calcite.opt.logical.LogicalRules;
 import com.hazelcast.sql.impl.calcite.opt.logical.RootLogicalRel;
+import com.hazelcast.sql.impl.calcite.opt.metadata.HazelcastRelMdRowCount;
 import com.hazelcast.sql.impl.calcite.opt.physical.FilterPhysicalRule;
 import com.hazelcast.sql.impl.calcite.opt.physical.MapScanPhysicalRule;
 import com.hazelcast.sql.impl.calcite.opt.physical.PhysicalRel;
@@ -39,9 +35,13 @@ import com.hazelcast.sql.impl.calcite.opt.physical.RootPhysicalRule;
 import com.hazelcast.sql.impl.calcite.opt.physical.SortPhysicalRule;
 import com.hazelcast.sql.impl.calcite.opt.physical.agg.AggregatePhysicalRule;
 import com.hazelcast.sql.impl.calcite.opt.physical.join.JoinPhysicalRule;
+import com.hazelcast.sql.impl.calcite.parser.HazelcastSqlParser;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastCalciteCatalogReader;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastSchema;
+import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
+import com.hazelcast.sql.impl.calcite.schema.HazelcastTableStatistic;
 import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlConformance;
+import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlOperatorTable;
 import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlValidator;
 import com.hazelcast.sql.impl.optimizer.OptimizerRuleCallTracker;
 import com.hazelcast.sql.impl.schema.SchemaUtils;
@@ -95,13 +95,13 @@ import java.util.Map;
 import java.util.Properties;
 
 /**
- * Optimizer context which holds the whole environment for the given optimization session.
+ * Execution context which holds the whole environment for the given execution session.
  */
 @SuppressWarnings({"checkstyle:ClassDataAbstractionCoupling", "checkstyle:ClassFanOutComplexity"})
-public final class OptimizerContext {
+public final class ExecutionContext {
     public static final RelMetadataProvider METADATA_PROVIDER = ChainedRelMetadataProvider.of(ImmutableList.of(
-        HazelcastRelMdRowCount.SOURCE,
-        DefaultRelMetadataProvider.INSTANCE
+            HazelcastRelMdRowCount.SOURCE,
+            DefaultRelMetadataProvider.INSTANCE
     ));
 
     /** Converter: whether to convert LogicalTableScan to some physical form immediately or not. We do not need this. */
@@ -120,11 +120,11 @@ public final class OptimizerContext {
     /** Converter: whether to trim unused fields. */
     private static final boolean CONVERTER_TRIM_UNUSED_FIELDS = true;
 
-    /** Thread-local optimizer config. */
-    private static final ThreadLocal<OptimizerConfig> OPTIMIZER_CONFIG = new ThreadLocal<>();
+    /** Thread-local execution config. */
+    private static final ThreadLocal<ExecutionConfig> EXECUTION_CONFIG = new ThreadLocal<>();
 
-    /** Optimizer config. */
-    private final OptimizerConfig config;
+    /** Execution config. */
+    private final ExecutionConfig config;
 
     /** Cluster. */
     private final HazelcastRelOptCluster cluster;
@@ -138,8 +138,8 @@ public final class OptimizerContext {
     /** SQL converter. */
     private final SqlToRelConverter sqlToRelConverter;
 
-    private OptimizerContext(
-        OptimizerConfig config,
+    private ExecutionContext(
+        ExecutionConfig config,
         SqlValidator validator,
         SqlToRelConverter sqlToRelConverter,
         HazelcastRelOptCluster cluster,
@@ -152,28 +152,28 @@ public final class OptimizerContext {
         this.planner = planner;
     }
 
-    public static OptimizerContext create(
+    public static ExecutionContext create(
         List<TableResolver> tableResolvers,
         List<List<String>> currentSearchPaths,
         int memberCount
     ) {
         // Prepare search paths.
-        List<List<String>> searchPaths0 = SchemaUtils.prepareSearchPaths(currentSearchPaths, tableResolvers);
+        List<List<String>> searchPaths = SchemaUtils.prepareSearchPaths(currentSearchPaths, tableResolvers);
 
         // Resolve tables.
         HazelcastSchema rootSchema = createRootSchema(tableResolvers);
 
-        return create(rootSchema, searchPaths0, memberCount, getOptimizerConfig());
+        return create(rootSchema, searchPaths, memberCount, getExecutionConfig());
     }
 
-    public static OptimizerContext create(
+    public static ExecutionContext create(
         HazelcastSchema rootSchema,
         List<List<String>> schemaPaths,
         int memberCount,
-        OptimizerConfig config
+        ExecutionConfig config
     ) {
         if (config == null) {
-            config = OptimizerConfig.builder().build();
+            config = ExecutionConfig.builder().build();
         }
 
         JavaTypeFactory typeFactory = new HazelcastTypeFactory();
@@ -184,7 +184,7 @@ public final class OptimizerContext {
         HazelcastRelOptCluster cluster = createCluster(planner, typeFactory, memberCount);
         SqlToRelConverter sqlToRelConverter = createSqlToRelConverter(catalogReader, validator, cluster);
 
-        return new OptimizerContext(config, validator, sqlToRelConverter, cluster, planner);
+        return new ExecutionContext(config, validator, sqlToRelConverter, cluster, planner);
     }
 
     /**
@@ -194,8 +194,6 @@ public final class OptimizerContext {
      * @return SQL tree.
      */
     public SqlNode parse(String sql) {
-        SqlNode node;
-
         try {
             SqlParser.ConfigBuilder parserConfig = SqlParser.configBuilder();
 
@@ -208,8 +206,17 @@ public final class OptimizerContext {
 
             SqlParser parser = SqlParser.create(sql, parserConfig.build());
 
-            node = parser.parseStmt();
+            return parser.parseStmt();
+        } catch (Exception e) {
+            throw QueryException.error(SqlErrorCode.PARSING, e.getMessage(), e);
+        }
+    }
 
+    /**
+     * Validate SQL node.
+     */
+    public SqlNode validate(SqlNode node) {
+        try {
             // TODO: Get column names through SqlSelect.selectList[i].toString() (and, possibly, origins?)
             return validator.validate(node);
         } catch (Exception e) {
@@ -334,7 +341,7 @@ public final class OptimizerContext {
         return validator.getParameterRowType(sqlNode);
     }
 
-    public OptimizerConfig getConfig() {
+    public ExecutionConfig getConfig() {
         return config;
     }
 
@@ -420,20 +427,20 @@ public final class OptimizerContext {
         );
     }
 
-    private static OptimizerConfig getOptimizerConfig() {
-        OptimizerConfig res = OPTIMIZER_CONFIG.get();
+    private static ExecutionConfig getExecutionConfig() {
+        ExecutionConfig res = EXECUTION_CONFIG.get();
 
         if (res != null) {
-            OPTIMIZER_CONFIG.remove();
+            EXECUTION_CONFIG.remove();
         } else {
-            res = OptimizerConfig.builder().build();
+            res = ExecutionConfig.builder().build();
         }
 
         return res;
     }
 
-    public static void setOptimizerConfig(OptimizerConfig optimizerConfig) {
-        OPTIMIZER_CONFIG.set(optimizerConfig);
+    public static void setExecutionConfig(ExecutionConfig executionConfig) {
+        EXECUTION_CONFIG.set(executionConfig);
     }
 
     /**
@@ -467,7 +474,7 @@ public final class OptimizerContext {
                     new HazelcastTableStatistic(table.getStatistics().getRowCount())
                 );
 
-                Map<String , HazelcastTable> schemaTableMap =
+                Map<String, HazelcastTable> schemaTableMap =
                     tableMap.computeIfAbsent(table.getSchemaName(), (k) -> new HashMap<>());
 
                 schemaTableMap.put(table.getName(), convertedTable);

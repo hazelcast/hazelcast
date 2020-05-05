@@ -19,11 +19,11 @@ package com.hazelcast.sql.impl.calcite;
 /**
  * Optimizer configuration.
  */
-public final class OptimizerConfig {
+public final class ExecutionConfig {
     /** Whether optimizer statistics should be collected. */
     private final boolean statisticsEnabled;
 
-    private OptimizerConfig(boolean statisticsEnabled) {
+    private ExecutionConfig(boolean statisticsEnabled) {
         this.statisticsEnabled = statisticsEnabled;
     }
 
@@ -48,8 +48,8 @@ public final class OptimizerConfig {
             return this;
         }
 
-        public OptimizerConfig build() {
-            return new OptimizerConfig(statisticsEnabled);
+        public ExecutionConfig build() {
+            return new ExecutionConfig(statisticsEnabled);
         }
     }
 }
