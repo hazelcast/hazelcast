@@ -18,6 +18,7 @@ package com.hazelcast.sql.impl.calcite.opt.physical;
 
 import com.hazelcast.sql.impl.calcite.opt.HazelcastConventions;
 import com.hazelcast.sql.impl.calcite.opt.distribution.DistributionTrait;
+import com.hazelcast.sql.impl.calcite.opt.distribution.DistributionTraitDef;
 import com.hazelcast.sql.impl.calcite.opt.distribution.DistributionType;
 import com.hazelcast.sql.impl.calcite.opt.OptUtils;
 import com.hazelcast.sql.impl.calcite.opt.logical.ProjectLogicalRel;
@@ -141,6 +142,7 @@ public final class ProjectPhysicalRule extends AbstractPhysicalRule {
     @SuppressWarnings("checkstyle:RegexpSingleline")
     private static DistributionTrait deriveDistribution(RelNode physicalInput, Map<Integer, Integer> projectFieldMap) {
         DistributionTrait physicalInputDist = OptUtils.getDistribution(physicalInput);
+        DistributionTraitDef distributionTraitDef = (DistributionTraitDef) physicalInputDist.getTraitDef();
 
         DistributionType type = physicalInputDist.getType();
 
@@ -172,7 +174,7 @@ public final class ProjectPhysicalRule extends AbstractPhysicalRule {
         // an input is partitioned by fields [a, b]. However, when one of this fields are lost during projection,
         // the input is no longer partitioned on any attribute. E.g MEMBER_1([a1, b1]), MEMBER_2([a1, b2]) becomes
         // MEMBER_1([a1]), MEMBER_2([a1]) after projection, so both members may contains the same value.
-        DistributionTrait.Builder builder = DistributionTrait.Builder.ofType(PARTITIONED);
+        List<List<Integer>> newFieldGroups = new ArrayList<>(1);
 
         for (List<Integer> fieldGroup : physicalInputDist.getFieldGroups()) {
             boolean valid = true;
@@ -193,11 +195,11 @@ public final class ProjectPhysicalRule extends AbstractPhysicalRule {
             }
 
             if (valid) {
-                builder.addFieldGroup(newFieldGroup);
+                newFieldGroups.add(newFieldGroup);
             }
         }
 
-        return builder.build();
+        return distributionTraitDef.createPartitionedTrait(newFieldGroups);
     }
 
     /**

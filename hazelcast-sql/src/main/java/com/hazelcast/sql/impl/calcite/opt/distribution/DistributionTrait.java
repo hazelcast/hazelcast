@@ -17,13 +17,10 @@
 package com.hazelcast.sql.impl.calcite.opt.distribution;
 
 import com.hazelcast.sql.impl.calcite.opt.physical.RootPhysicalRel;
-import org.apache.calcite.plan.HazelcastRelOptCluster;
 import org.apache.calcite.plan.RelOptPlanner;
 import org.apache.calcite.plan.RelTrait;
 import org.apache.calcite.plan.RelTraitDef;
 
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
@@ -50,17 +47,8 @@ import static com.hazelcast.sql.impl.calcite.opt.distribution.DistributionType.R
  */
 // TODO: Rework to RelMultipleTrait!!
 public class DistributionTrait implements RelTrait {
-    /** Data is distributed between nodes, but actual distribution column is unknown. */
-    public static final DistributionTrait PARTITIONED_UNKNOWN_DIST = Builder.ofType(PARTITIONED).build();
-
-    /** Data is distributed in replicated map. */
-    public static final DistributionTrait REPLICATED_DIST = Builder.ofType(REPLICATED).build();
-
-    /** Consume the whole stream on a single node. */
-    public static final DistributionTrait ROOT_DIST = Builder.ofType(ROOT).build();
-
-    /** Distribution without any restriction. */
-    public static final DistributionTrait ANY_DIST =  Builder.ofType(ANY).build();
+    /** Trait definition. */
+    private final DistributionTraitDef traitDef;
 
     /** Distribution type. */
     private final DistributionType type;
@@ -73,7 +61,8 @@ public class DistributionTrait implements RelTrait {
     //  planning complexity.
     private final List<List<Integer>> fieldGroups;
 
-    private DistributionTrait(DistributionType type, List<List<Integer>> fieldGroups) {
+    DistributionTrait(DistributionTraitDef traitDef, DistributionType type, List<List<Integer>> fieldGroups) {
+        this.traitDef = traitDef;
         this.type = type;
         this.fieldGroups = fieldGroups;
     }
@@ -90,10 +79,40 @@ public class DistributionTrait implements RelTrait {
         return !fieldGroups.isEmpty();
     }
 
+    public int getMemberCount() {
+        return traitDef.getMemberCount();
+    }
+
+    /**
+     * Check if the result set of the node having this trait is guaranteed to exist on all members that will execute a
+     * fragment with this node.
+     *
+     * @return {@code true} if the full result set exists on all participants of the fragment hosting this node.
+     */
+    @SuppressWarnings("RedundantIfStatement")
+    public boolean isFullResultSetOnAllParticipants() {
+        if (traitDef.getMemberCount() == 1) {
+            // If the plan is created for a single member, then the condition is true by definition.
+            return true;
+        }
+
+        if (type == ROOT) {
+            // Root fragment is always executed on a single member.
+            return true;
+        }
+
+        if (type == REPLICATED) {
+            // Replicated distribution assumes that the whole result set is available on all members.
+            return true;
+        }
+
+        return false;
+    }
+
     @SuppressWarnings("rawtypes")
     @Override
     public RelTraitDef getTraitDef() {
-        return DistributionTraitDef.INSTANCE;
+        return traitDef;
     }
 
     @SuppressWarnings("checkstyle:NPathComplexity")
@@ -104,7 +123,7 @@ public class DistributionTrait implements RelTrait {
         }
 
         // For single-member deployments all distributions satisfy each other.
-        if (HazelcastRelOptCluster.isSingleMember()) {
+        if (traitDef.getMemberCount() == 1) {
             return true;
         }
 
@@ -266,56 +285,13 @@ public class DistributionTrait implements RelTrait {
         return res.toString();
     }
 
-    public static final class Builder {
-        private final DistributionType type;
-        private List<List<Integer>> fieldGroups;
-
-        private Builder(DistributionType type) {
-            assert type != null;
-
-            this.type = type;
-        }
-
-        public static Builder ofType(DistributionType type) {
-            return new Builder(type);
-        }
-
-        public Builder addFieldGroup(List<Integer> fields) {
-            assert fields != null;
-            assert !fields.isEmpty();
-
-            if (fieldGroups == null) {
-                fieldGroups = new ArrayList<>(1);
-            }
-
-            fieldGroups.add(Collections.unmodifiableList(new ArrayList<>(fields)));
-
-            return this;
-        }
-
-        public DistributionTrait build() {
-            if (fieldGroups == null) {
-                return new DistributionTrait(type, Collections.emptyList());
-            } else {
-                assert !fieldGroups.isEmpty();
-
-                // Do not modify original list to allow for builder reuse.
-                ArrayList<List<Integer>> fieldGroups0 = new ArrayList<>(fieldGroups);
-
-                fieldGroups0.sort(FieldGroupComparator.INSTANCE);
-
-                return new DistributionTrait(type, Collections.unmodifiableList(fieldGroups0));
-            }
-        }
-    }
-
     /**
      * Field group comparator. Sorts several distribution groups in alphabetical order, so that distribution of
      * {a1, a2} + {b1, b2} is considered equal to {b1, b2} + {a1, a2}.
      */
-    private static final class FieldGroupComparator implements Comparator<List<Integer>> {
+    static final class FieldGroupComparator implements Comparator<List<Integer>> {
         /** Singleton instance. */
-        private static final FieldGroupComparator INSTANCE = new FieldGroupComparator();
+        static final FieldGroupComparator INSTANCE = new FieldGroupComparator();
 
         @Override
         public int compare(List<Integer> o1, List<Integer> o2) {

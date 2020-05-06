@@ -21,6 +21,7 @@ import com.hazelcast.internal.util.BiTuple;
 import com.hazelcast.sql.impl.calcite.opt.HazelcastConventions;
 import com.hazelcast.sql.impl.calcite.opt.distribution.DistributionTrait;
 import com.hazelcast.sql.impl.calcite.opt.OptUtils;
+import com.hazelcast.sql.impl.calcite.opt.distribution.DistributionTraitDef;
 import com.hazelcast.sql.impl.calcite.opt.logical.MapScanLogicalRel;
 import com.hazelcast.sql.impl.exec.scan.index.IndexFilter;
 import com.hazelcast.sql.impl.exec.scan.index.IndexFilterType;
@@ -48,8 +49,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static com.hazelcast.sql.impl.calcite.opt.distribution.DistributionType.PARTITIONED;
-
 /**
  * Convert logical map scan to either replicated or partitioned physical scan.
  */
@@ -70,7 +69,7 @@ public final class MapScanPhysicalRule extends AbstractPhysicalRule {
         if (scan.isReplicated()) {
             PhysicalRel newScan = new ReplicatedMapScanPhysicalRel(
                 scan.getCluster(),
-                OptUtils.toPhysicalConvention(scan.getTraitSet(), DistributionTrait.REPLICATED_DIST),
+                OptUtils.toPhysicalConvention(scan.getTraitSet(), OptUtils.getDistributionDef(scan).getTraitReplicated()),
                 scan.getTable(),
                 scan.getProjects(),
                 scan.getFilter()
@@ -80,7 +79,11 @@ public final class MapScanPhysicalRule extends AbstractPhysicalRule {
         } else {
             PartitionedMapTable table = (PartitionedMapTable) scan.getMap();
 
-            DistributionTrait distribution = getDistributionTrait(table, scan.getProjects());
+            DistributionTrait distribution = getDistributionTrait(
+                OptUtils.getDistributionDef(scan),
+                table,
+                scan.getProjects()
+            );
 
             List<RelNode> transforms = new ArrayList<>(1);
 
@@ -446,9 +449,13 @@ public final class MapScanPhysicalRule extends AbstractPhysicalRule {
      * @param projects Projects.
      * @return Distribution trait.
      */
-    private static DistributionTrait getDistributionTrait(PartitionedMapTable table, List<Integer> projects) {
+    private static DistributionTrait getDistributionTrait(
+        DistributionTraitDef distributionTraitDef,
+        PartitionedMapTable table,
+        List<Integer> projects
+    ) {
         if (!table.hasDistributionField()) {
-            return DistributionTrait.PARTITIONED_UNKNOWN_DIST;
+            return distributionTraitDef.getTraitPartitionedUnknown();
         }
 
         // TODO: Simplify, there is only one field here!
@@ -461,12 +468,12 @@ public final class MapScanPhysicalRule extends AbstractPhysicalRule {
             int projectIndex = projects.indexOf(distributionField);
 
             if (projectIndex == -1) {
-                return DistributionTrait.PARTITIONED_UNKNOWN_DIST;
+                return distributionTraitDef.getTraitPartitionedUnknown();
             }
 
             res.add(projectIndex);
         }
 
-        return DistributionTrait.Builder.ofType(PARTITIONED).addFieldGroup(res).build();
+        return distributionTraitDef.createPartitionedTrait(Collections.singletonList(res));
     }
 }

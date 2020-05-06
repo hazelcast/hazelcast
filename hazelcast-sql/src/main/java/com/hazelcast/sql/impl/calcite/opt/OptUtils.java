@@ -22,6 +22,7 @@ import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
 import com.hazelcast.sql.impl.schema.map.AbstractMapTable;
 import org.apache.calcite.plan.Convention;
 import org.apache.calcite.plan.ConventionTraitDef;
+import org.apache.calcite.plan.HazelcastRelOptCluster;
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelOptCost;
 import org.apache.calcite.plan.RelOptRule;
@@ -259,20 +260,6 @@ public final class OptUtils {
     }
 
     /**
-     * Get physical distribution of the given node.
-     *
-     * @param rel Rel node.
-     * @return Physical distribution.
-     */
-    public static DistributionTrait getDistribution(RelNode rel) {
-        return getDistribution(rel.getTraitSet());
-    }
-
-    public static DistributionTrait getDistribution(RelTraitSet traitSet) {
-        return traitSet.getTrait(DistributionTraitDef.INSTANCE);
-    }
-
-    /**
      * Get collation of the given node.
      *
      * @param rel Rel node.
@@ -298,5 +285,19 @@ public final class OptUtils {
         HazelcastTable table = scan.getTable().unwrap(HazelcastTable.class);
 
         return table != null && table.getTarget() instanceof AbstractMapTable;
+    }
+
+    public static HazelcastRelOptCluster getCluster(RelNode rel) {
+        assert rel.getCluster() instanceof HazelcastRelOptCluster;
+
+        return (HazelcastRelOptCluster) rel.getCluster();
+    }
+
+    public static DistributionTraitDef getDistributionDef(RelNode rel) {
+        return getCluster(rel).getDistributionTraitDef();
+    }
+
+    public static DistributionTrait getDistribution(RelNode rel) {
+        return rel.getTraitSet().getTrait(getDistributionDef(rel));
     }
 }

@@ -28,6 +28,7 @@ import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.rel.RelCollation;
 import org.apache.calcite.rel.RelNode;
 
+import java.util.Collections;
 import java.util.List;
 
 import static com.hazelcast.sql.impl.calcite.opt.distribution.DistributionType.ANY;
@@ -36,7 +37,45 @@ import static com.hazelcast.sql.impl.calcite.opt.distribution.DistributionType.R
 import static com.hazelcast.sql.impl.calcite.opt.distribution.DistributionType.ROOT;
 
 public class DistributionTraitDef extends RelTraitDef<DistributionTrait> {
-    public static final DistributionTraitDef INSTANCE = new DistributionTraitDef();
+    /** Partitioned trait with unknown partitioning columns. */
+    private final DistributionTrait traitPartitionedUnknown;
+
+    /** Data is distributed in replicated map. */
+    private final DistributionTrait traitReplicated;
+
+    /** Consume the whole stream on a single node. */
+    private final DistributionTrait traitRoot;
+
+    /** Distribution without any restriction. */
+    private final DistributionTrait traitAny;
+
+    /** Number of members. */
+    private final int memberCount;
+
+    public DistributionTraitDef(int memberCount) {
+        this.memberCount = memberCount;
+
+        traitPartitionedUnknown = createTrait(PARTITIONED);
+        traitReplicated = createTrait(REPLICATED);
+        traitRoot = createTrait(ROOT);
+        traitAny = createTrait(ANY);
+    }
+
+    public int getMemberCount() {
+        return memberCount;
+    }
+
+    public DistributionTrait getTraitPartitionedUnknown() {
+        return traitPartitionedUnknown;
+    }
+
+    public DistributionTrait getTraitReplicated() {
+        return traitReplicated;
+    }
+
+    public DistributionTrait getTraitRoot() {
+        return traitRoot;
+    }
 
     @Override
     public Class<DistributionTrait> getTraitClass() {
@@ -167,10 +206,10 @@ public class DistributionTraitDef extends RelTraitDef<DistributionTrait> {
      * @param currentTrait Current distribution trait.
      * @return Converted node.
      */
-    private static RelNode convertToReplicated(RelOptPlanner planner, RelNode rel, DistributionTrait currentTrait) {
+    private RelNode convertToReplicated(RelOptPlanner planner, RelNode rel, DistributionTrait currentTrait) {
         assert currentTrait.getType() == PARTITIONED || currentTrait.getType() == ROOT;
 
-        RelTraitSet traitSet = OptUtils.traitPlus(planner.emptyTraitSet(), DistributionTrait.REPLICATED_DIST);
+        RelTraitSet traitSet = OptUtils.traitPlus(planner.emptyTraitSet(), getTraitReplicated());
 
         return new BroadcastExchangePhysicalRel(
             rel.getCluster(),
@@ -188,11 +227,11 @@ public class DistributionTraitDef extends RelTraitDef<DistributionTrait> {
      * @param currentTrait Current distribution trait.
      * @return Converted node.
      */
-    private static RelNode convertToRoot(RelOptPlanner planner, RelNode rel, DistributionTrait currentTrait) {
+    private RelNode convertToRoot(RelOptPlanner planner, RelNode rel, DistributionTrait currentTrait) {
         // ANY already handler before, ROOT and REPLICATED do not require further conversions.
         assert currentTrait.getType() == PARTITIONED;
 
-        RelTraitSet traitSet = OptUtils.traitPlus(planner.emptyTraitSet(), DistributionTrait.ROOT_DIST);
+        RelTraitSet traitSet = OptUtils.traitPlus(planner.emptyTraitSet(), getTraitRoot());
 
         return new RootExchangePhysicalRel(
             rel.getCluster(),
@@ -212,6 +251,21 @@ public class DistributionTraitDef extends RelTraitDef<DistributionTrait> {
 
     @Override
     public DistributionTrait getDefault() {
-        return DistributionTrait.ANY_DIST;
+        return traitAny;
+    }
+
+    private DistributionTrait createTrait(DistributionType type) {
+        return new DistributionTrait(this, type, Collections.emptyList());
+    }
+
+    public DistributionTrait createPartitionedTrait(List<List<Integer>> fieldGroups) {
+        fieldGroups.sort(DistributionTrait.FieldGroupComparator.INSTANCE);
+
+        return new DistributionTrait(this, PARTITIONED, fieldGroups);
+    }
+
+    @Override
+    public String toString() {
+        return "DistributionTraitDef {memberCount=" + memberCount + '}';
     }
 }
