@@ -168,7 +168,7 @@
     <suppress checks="MagicNumber"
               files="com[\\/]hazelcast[\\/]client[\\/]impl[\\/]protocol[\\/]codec[\\/]builtin[\\/]FixedSizeTypesCodec"/>
     <suppress checks="MagicNumber"
-              files="com[\\/]hazelcast[\\/]client[\\/]impl[\\/]protocol[\\/]codec[\\/]builtin[\\/]CustomTypeFactory" />
+              files="com[\\/]hazelcast[\\/]client[\\/]impl[\\/]protocol[\\/]codec[\\/]builtin[\\/]CustomTypeFactory"/>
 
     <!-- Client Protocol (auto-generated) -->
     <suppress checks="Header|MethodCount|Length|ClassDataAbstractionCoupling|ClassFanOutComplexity|Whitespace|MethodParamPad"
@@ -241,10 +241,10 @@
     <suppress checks="MethodCount"
               files="com[\\/]hazelcast[\\/]internal[\\/]serialization[\\/]impl[\\/]ByteBufferObjectDataOutput"/>
     <suppress checks="MagicNumber" files="com[\\/]hazelcast[\\/]nio[\\/]CipherHelper"/>
-    <suppress checks="MagicNumber" files="com[\\/]hazelcast[\\/]internal[\\/]serialization[\\/]impl[\\/]DefaultPortableReader"/>
-    <suppress checks="MagicNumber" files="com[\\/]hazelcast[\\/]internal[\\/]serialization[\\/]impl[\\/]DefaultPortableWriter"/>
-    <suppress checks="MethodCount|MagicNumber" files="com[\\/]hazelcast[\\/]nio[\\/]DynamicByteBuffer"/>
-    <suppress checks="MethodCount" files="com[\\/]hazelcast[\\/]internal[\\/]serialization[\\/]impl[\\/]DefaultPortableReader"/>
+    <suppress checks="MagicNumber|MethodCount"
+              files="com[\\/]hazelcast[\\/]internal[\\/]serialization[\\/]impl[\\/]portable[\\/]DefaultPortableReader"/>
+    <suppress checks="MagicNumber"
+              files="com[\\/]hazelcast[\\/]internal[\\/]serialization[\\/]impl[\\/]portable[\\/]DefaultPortableWriter"/>
     <suppress checks="NPathComplexity" files="com[\\/]hazelcast[\\/]nio[\\/]tcp[\\/]nonblocking[\\/]NonBlockingSocketReader"/>
     <suppress checks="ClassFanOutComplexity|ClassDataAbstractionCoupling|MethodCount|ParameterNumber"
               files="com[\\/]hazelcast[\\/]internal[\\/]serialization[\\/]impl[\\/]AbstractSerializationService"/>
@@ -286,7 +286,8 @@
     <suppress checks="MethodCount" files="com[\\/]hazelcast[\\/]map[\\/]impl[\\/]operation[\\/]DefaultMapOperationProvider"/>
     <suppress checks="MethodCount" files="com[\\/]hazelcast[\\/]map[\\/]impl[\\/]MapContainer"/>
     <suppress checks="MethodCount" files="com[\\/]hazelcast[\\/]map[\\/]impl[\\/]proxy[\\/]NearCachedMapProxyImpl"/>
-    <suppress checks="MethodCount" files="com[\\/]hazelcast[\\/]client[\\/]map[\\/]impl[\\/]nearcache[\\/]NearCachedClientMapProxy"/>
+    <suppress checks="MethodCount"
+              files="com[\\/]hazelcast[\\/]client[\\/]map[\\/]impl[\\/]nearcache[\\/]NearCachedClientMapProxy"/>
     <suppress checks="MethodCount" files="com[\\/]hazelcast[\\/]map[\\/]impl[\\/]query[\\/]MapQueryEngineImpl"/>
     <suppress checks="MethodCount" files="com[\\/]hazelcast[\\/]map[\\/]impl[\\/]MapServiceContext"/>
     <suppress checks="MethodCount|ClassDataAbstractionCoupling"
@@ -339,7 +340,8 @@
     <suppress checks="LineLength|VisibilityModifier|AvoidStarImport|RegexpSingleline|ParameterNumber"
               files="src[\\/]main[\\/]java[\\/]com[\\/]hazelcast[\\/]internal[\\/]longregister[\\/]client[\\/]codec[\\/]"/>
     <suppress checks="" files="src[\\/]test[\\/]java[\\/]com[\\/]hazelcast[\\/]client[\\/]protocol[\\/]compatibility[\\/]"/>
-    <suppress checks="" files="src[\\/]test[\\/]java[\\/]com[\\/]hazelcast[\\/]nio[\\/]serialization[\\/]compatibility[\\/]"/>
+    <suppress checks=""
+              files="src[\\/]test[\\/]java[\\/]com[\\/]hazelcast[\\/]internal[\\/]serialization[\\/]impl[\\/]compatibility[\\/]"/>
 
     <!-- module-info.java -->
     <suppress checks="" files="[\\/]module-info"/>
