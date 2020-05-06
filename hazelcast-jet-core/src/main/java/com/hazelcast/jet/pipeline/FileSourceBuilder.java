@@ -19,13 +19,19 @@ package com.hazelcast.jet.pipeline;
 import com.hazelcast.function.BiFunctionEx;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.core.processor.SourceProcessors;
+import com.hazelcast.jet.json.JsonUtil;
 
 import javax.annotation.Nonnull;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.InputStreamReader;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Spliterator;
+import java.util.Spliterators;
 import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 import static com.hazelcast.jet.pipeline.Sources.batchFromProcessor;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -159,6 +165,30 @@ public final class FileSourceBuilder {
     public <T> BatchSource<T> build(@Nonnull FunctionEx<? super Path, ? extends Stream<T>> readFileFn) {
         return batchFromProcessor("filesSource(" + new File(directory, glob) + ')',
                 SourceProcessors.readFilesP(directory, glob, sharedFileSystem, readFileFn));
+    }
+
+    /**
+     * Builds a JSON file {@link BatchSource} with supplied components. The
+     * source expects a stream of JSON objects as the content of the file.
+     <p>
+     * The source does not save any state to snapshot. If the job is restarted,
+     * it will re-emit all entries.
+     * <p>
+     * Any {@code IOException} will cause the job to fail. The files must not
+     * change while being read; if they do, the behavior is unspecified.
+     * <p>
+     * The default local parallelism for this processor is 2 (or 1 if just 1
+     * CPU is available).
+     *
+     */
+    public <T> BatchSource<T> buildJson(@Nonnull Class<T> type) {
+        String charsetName = charset.name();
+        return build(path -> {
+            InputStreamReader reader = new InputStreamReader(new FileInputStream(path.toFile()), charsetName);
+            Spliterator<T> spliterator = Spliterators.spliteratorUnknownSize(JsonUtil.parseSequence(type, reader),
+                    Spliterator.ORDERED | Spliterator.NONNULL);
+            return StreamSupport.stream(spliterator, false);
+        });
     }
 
     /**

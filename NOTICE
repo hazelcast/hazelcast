@@ -10,3 +10,6 @@ from picocli project (https://github.com/remkop/picocli).
 The packages com.hazelcast.jet.io.github.classgraph and
 com.hazelcast.jet.nonapi.io.github.classgraph contain code originating
 from classgraph project (https://github.com/classgraph/classgraph).
+
+The package com.hazelcast.jet.com.fasterxml.jackson.jr contains code
+originating from jackson-jr project (https://github.com/FasterXML/jackson-jr).

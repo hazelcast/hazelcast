@@ -16,35 +16,21 @@
 
 package com.hazelcast.jet.examples.files;
 
-import com.google.gson.Gson;
-import com.google.gson.stream.JsonReader;
 import com.hazelcast.jet.Jet;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.aggregate.AggregateOperations;
-import com.hazelcast.jet.function.RunnableEx;
 import com.hazelcast.jet.pipeline.BatchSource;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.Sources;
 
-import java.io.IOException;
 import java.io.Serializable;
-import java.lang.reflect.Type;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.Iterator;
-import java.util.Spliterator;
-import java.util.Spliterators;
-import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
-
-import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
- * Demonstrates the usage of the file {@link Sources#filesBuilder sources}
- * in a job that reads a sales records in a JSON file, filters possible contactless
- * transactions, aggregates transaction counts per payment type and prints
- * the results to standard output.
+ * Demonstrates the usage of the file {@link Sources#filesBuilder
+ * sources} in a job that reads a sales records in a JSON file, filters
+ * higher priced records, aggregates record counts per payment type and
+ * prints the results to standard output.
  * <p>
  * The sample JSON file is in {@code {module.dir}/data/sales.json}.
  */
@@ -54,50 +40,15 @@ public class SalesJsonAnalyzer {
         Pipeline p = Pipeline.create();
 
         BatchSource<SalesRecord> source = Sources.filesBuilder(sourceDir)
-            .glob("*.json")
-            .build(path -> readJsonArray(path, SalesRecord.class));
+                                                 .glob("*.json")
+                                                 .buildJson(SalesRecord.class);
         p.readFrom(source)
-         .filter(record -> record.getPrice() < 30)
-         .groupingKey(SalesRecord::getPaymentType)
+         .filter(record -> record.price < 30)
+         .groupingKey(r -> r.paymentType)
          .aggregate(AggregateOperations.counting())
          .writeTo(Sinks.logger());
 
         return p;
-    }
-
-    /**
-     * Read a file denoted by the given {@code filePath} that contains a single
-     * JSON array of objects of type {@code type}. Returns the file contents as
-     * a {@code Stream}.
-     */
-    private static <T> Stream<T> readJsonArray(Path filePath, Type type) throws IOException {
-        Gson gson = new Gson();
-        JsonReader reader = new JsonReader(Files.newBufferedReader(filePath, UTF_8));
-        reader.beginArray();
-
-        // in java9+ you can use this simpler code
-//        return Stream.generate((SupplierEx<T>) () -> reader.hasNext() ? gson.fromJson(reader, type) : null)
-//                .takeWhile(Objects::nonNull)
-//                .onClose((RunnableEx) reader::close);
-
-        Iterator<T> iterator = new Iterator<T>() {
-            @Override
-            public boolean hasNext() {
-                try {
-                    return reader.hasNext();
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
-            }
-
-            @Override
-            public T next() {
-                return gson.fromJson(reader, type);
-            }
-        };
-
-        return StreamSupport.stream(Spliterators.spliteratorUnknownSize(iterator, Spliterator.NONNULL), false)
-                .onClose((RunnableEx) reader::close);
     }
 
     public static void main(String[] args) {
@@ -106,7 +57,7 @@ public class SalesJsonAnalyzer {
             System.err.println("  " + SalesJsonAnalyzer.class.getSimpleName() + " <sourceDir>");
             System.exit(1);
         }
-        final String sourceDir = args[0];
+        String sourceDir = args[0];
 
         Pipeline p = buildPipeline(sourceDir);
 
@@ -119,54 +70,18 @@ public class SalesJsonAnalyzer {
     }
 
     /**
-     * Immutable data transfer object mapping the sales transaction.
+     * Data transfer object mapping the sales transaction.
      */
     private static class SalesRecord implements Serializable {
-        private long time;
-        private String product;
-        private double price;
-        private String paymentType;
-        private String name;
-        private String address;
-        private String city;
-        private String state;
-        private String country;
-
-        public long getTime() {
-            return time;
-        }
-
-        public String getProduct() {
-            return product;
-        }
-
-        public double getPrice() {
-            return price;
-        }
-
-        public String getPaymentType() {
-            return paymentType;
-        }
-
-        public String getName() {
-            return name;
-        }
-
-        public String getCity() {
-            return city;
-        }
-
-        public String getState() {
-            return state;
-        }
-
-        public String getCountry() {
-            return country;
-        }
-
-        public String getAddress() {
-            return address;
-        }
+        public long time;
+        public String product;
+        public double price;
+        public String paymentType;
+        public String name;
+        public String address;
+        public String city;
+        public String state;
+        public String country;
 
         @Override
         public String toString() {

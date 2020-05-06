@@ -73,8 +73,20 @@
                             <include>com.hazelcast:*</include>
                             <include>info.picocli:picocli</include>
                             <include>io.github.classgraph:classgraph</include>
+                            <include>com.fasterxml.jackson.jr:jackson-jr-objects</include>
+                            <include>com.fasterxml.jackson.jr:jackson-jr-annotation-support</include>
+                            <include>com.fasterxml.jackson.core:jackson-core</include>
                         </includes>
                     </artifactSet>
+                    <filters>
+                        <filter>
+                            <artifact>com.hazelcast:hazelcast</artifact>
+                            <excludes>
+                                <exclude>com/hazelcast/com/fasterxml/**</exclude>
+                                <exclue>META-INF/services/com.hazelcast.com.fasterxml.jackson.core.JsonFactory</exclue>
+                            </excludes>
+                        </filter>
+                    </filters>
                     <relocations>
                         <relocation>
                             <pattern>picocli.</pattern>
@@ -87,6 +99,14 @@
                         <relocation>
                             <pattern>nonapi.io.github.classgraph.</pattern>
                             <shadedPattern>com.hazelcast.jet.nonapi.io.github.classgraph.</shadedPattern>
+                        </relocation>
+                        <relocation>
+                            <pattern>com.fasterxml.jackson.jr.</pattern>
+                            <shadedPattern>com.hazelcast.com.fasterxml.jackson.jr.</shadedPattern>
+                        </relocation>
+                        <relocation>
+                            <pattern>com.fasterxml.jackson.core.</pattern>
+                            <shadedPattern>com.hazelcast.com.fasterxml.jackson.core.</shadedPattern>
                         </relocation>
                     </relocations>
                     <transformers>

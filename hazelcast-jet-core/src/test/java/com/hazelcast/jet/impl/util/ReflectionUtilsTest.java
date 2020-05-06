@@ -29,7 +29,6 @@ import java.util.List;
 import static java.util.stream.Collectors.toList;
 import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.CoreMatchers.notNullValue;
-import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.hasSize;
@@ -99,13 +98,16 @@ public class ReflectionUtilsTest {
         ));
 
         List<URL> nonClasses = resources.nonClasses().collect(toList());
-        assertThat(nonClasses, contains(hasToString(containsString("package.properties"))));
+        assertThat(nonClasses, hasSize(2));
+        assertThat(nonClasses, hasItem(hasToString(containsString("file.json"))));
+        assertThat(nonClasses, hasItem(hasToString(containsString("package.properties"))));
     }
 
     private static ClassResource classResource(Class<?> clazz) {
         URL url = clazz.getClassLoader().getResource(clazz.getName().replace('.', '/') + ".class");
         return new ClassResource(clazz.getName(), url);
     }
+
 
     @Test
     public void when_loadClass_then_returnsClass() {

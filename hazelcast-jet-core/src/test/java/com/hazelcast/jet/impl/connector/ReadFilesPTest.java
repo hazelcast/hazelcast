@@ -27,9 +27,12 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.io.File;
+import java.io.IOException;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.stream.IntStream;
 
 import static com.hazelcast.jet.Util.entry;
@@ -40,6 +43,7 @@ public class ReadFilesPTest extends SimpleTestInClusterSupport {
 
     private File directory;
     private IList<Entry<String, String>> list;
+    private IList<TestPerson> listJson;
 
     @BeforeClass
     public static void beforeClass() {
@@ -50,11 +54,12 @@ public class ReadFilesPTest extends SimpleTestInClusterSupport {
     public void setup() throws Exception {
         directory = createTempDirectory();
         list = instance().getList("writer");
+        listJson = instance().getList("writerJson");
     }
 
     @Test
     public void test_smallFiles() throws Exception {
-        Pipeline p = buildDag(null);
+        Pipeline p = pipeline(null);
 
         File file1 = new File(directory, randomName());
         appendToFile(file1, "hello", "world");
@@ -70,7 +75,7 @@ public class ReadFilesPTest extends SimpleTestInClusterSupport {
 
     @Test
     public void test_largeFile() throws Exception {
-        Pipeline p = buildDag(null);
+        Pipeline p = pipeline(null);
 
         File file1 = new File(directory, randomName());
         final int listLength = 10000;
@@ -79,11 +84,13 @@ public class ReadFilesPTest extends SimpleTestInClusterSupport {
         instance().newJob(p).join();
 
         assertEquals(listLength, list.size());
+
+        finishDirectory(file1);
     }
 
     @Test
     public void when_glob_the_useGlob() throws Exception {
-        Pipeline p = buildDag("file2.*");
+        Pipeline p = pipeline("file2.*");
 
         File file1 = new File(directory, "file1.txt");
         appendToFile(file1, "hello", "world");
@@ -99,7 +106,7 @@ public class ReadFilesPTest extends SimpleTestInClusterSupport {
 
     @Test
     public void when_directory_then_ignore() {
-        Pipeline p = buildDag(null);
+        Pipeline p = pipeline(null);
 
         File file1 = new File(directory, randomName());
         assertTrue(file1.mkdir());
@@ -111,7 +118,27 @@ public class ReadFilesPTest extends SimpleTestInClusterSupport {
         finishDirectory(file1);
     }
 
-    private Pipeline buildDag(String glob) {
+    @Test
+    public void testJsonFiles_when_asObject_thenObjects() throws IOException {
+        Pipeline p = pipelineJson();
+
+        File file1 = new File(directory, randomName());
+        appendToFile(file1, "{\"name\": \"hello world\", \"age\": 5, \"status\": true}",
+                "{\"name\": \"hello world\", \"age\": 5, \"status\": true}");
+        File file2 = new File(directory, randomName());
+        appendToFile(file2, "{\"name\": \"hello jupiter\", \"age\": 8, \"status\": false}",
+                "{\"name\": \"hello jupiter\", \"age\": 8, \"status\": false}");
+
+        instance().newJob(p).join();
+
+        assertEquals(4, listJson.size());
+        TestPerson testPerson = (TestPerson) listJson.get(0);
+
+        assertTrue(testPerson.name.startsWith("hello"));
+        finishDirectory(file1, file2);
+    }
+
+    private Pipeline pipeline(String glob) {
         Pipeline p = Pipeline.create();
         p.readFrom(Sources.filesBuilder(directory.getPath())
                           .glob(glob == null ? "*" : glob)
@@ -121,10 +148,54 @@ public class ReadFilesPTest extends SimpleTestInClusterSupport {
         return p;
     }
 
-    private void finishDirectory(File ... files) {
+    private Pipeline pipelineJson() {
+        Pipeline p = Pipeline.create();
+        p.readFrom(Sources.filesBuilder(directory.getPath())
+                          .buildJson(TestPerson.class))
+         .writeTo(Sinks.list(listJson));
+
+        return p;
+    }
+
+    private void finishDirectory(File... files) {
         for (File file : files) {
             assertTrue(file.delete());
         }
         assertTrue(directory.delete());
+    }
+
+    public static class TestPerson implements Serializable {
+
+        public String name;
+        public int age;
+        public boolean status;
+
+        public TestPerson() {
+        }
+
+        public TestPerson(String name, int age, boolean status) {
+            this.name = name;
+            this.age = age;
+            this.status = status;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+            TestPerson that = (TestPerson) o;
+            return age == that.age &&
+                    status == that.status &&
+                    Objects.equals(name, that.name);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(name, age, status);
+        }
     }
 }

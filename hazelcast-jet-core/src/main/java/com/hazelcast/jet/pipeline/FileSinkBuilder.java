@@ -20,6 +20,7 @@ import com.hazelcast.function.FunctionEx;
 import com.hazelcast.internal.util.Preconditions;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.config.ProcessingGuarantee;
+import com.hazelcast.jet.json.JsonUtil;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -153,7 +154,23 @@ public final class FileSinkBuilder<T> {
      */
     @Nonnull
     public Sink<T> build() {
-        return Sinks.fromProcessor("filesSink(" + directoryName + ')',
+        return buildInternal("filesSink(" + directoryName + ')');
+    }
+
+    /**
+     * Creates and returns the JSON file {@link Sink} with the supplied
+     * components. The sink converts each item to a JSON string.
+     * <p>
+     * The call to {@link #toStringFn(FunctionEx)} will be ignored.
+     */
+    @Nonnull
+    public Sink<T> buildJson() {
+        toStringFn = JsonUtil::asString;
+        return buildInternal("filesJsonSink(" + directoryName + ')');
+    }
+
+    private Sink<T> buildInternal(String sinkName) {
+        return Sinks.fromProcessor(sinkName,
                 writeFileP(directoryName, charset, datePattern, maxFileSize, exactlyOnce, toStringFn));
     }
 }

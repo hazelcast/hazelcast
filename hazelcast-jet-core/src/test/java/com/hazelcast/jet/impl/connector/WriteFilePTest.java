@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.impl.connector;
 
+import com.fasterxml.jackson.jr.ob.JSON;
 import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.SimpleTestInClusterSupport;
@@ -25,6 +26,7 @@ import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.impl.JobProxy;
 import com.hazelcast.jet.impl.JobRepository;
+import com.hazelcast.jet.impl.connector.ReadFilesPTest.TestPerson;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.SourceBuilder;
@@ -38,6 +40,7 @@ import org.junit.runner.RunWith;
 
 import javax.annotation.Nonnull;
 import java.io.BufferedWriter;
+import java.io.IOException;
 import java.io.Serializable;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
@@ -219,8 +222,8 @@ public class WriteFilePTest extends SimpleTestInClusterSupport {
         Pipeline p = Pipeline.create();
         p.readFrom(TestSources.items(rangeIterable(1, 11)))
          .writeTo(Sinks.<Integer>filesBuilder(directory.toString())
-                       .toStringFn(val -> Integer.toString(val - 1))
-                       .build());
+                 .toStringFn(val -> Integer.toString(val - 1))
+                 .build());
 
         // When
         instance().newJob(p).join();
@@ -285,6 +288,28 @@ public class WriteFilePTest extends SimpleTestInClusterSupport {
         }
 
         job.join();
+    }
+
+    @Test
+    public void test_JsonFile() throws IOException {
+        // Given
+        Pipeline p = Pipeline.create();
+        TestPerson testPerson = new TestPerson("foo", 5, true);
+        p.readFrom(TestSources.items(testPerson))
+         .writeTo(Sinks.filesBuilder(directory.toString())
+                       .buildJson());
+
+        // When
+        instance().newJob(p).join();
+
+        // Then
+        List<String> lines = Files
+                .list(directory)
+                .flatMap(file -> uncheckCall(() -> Files.readAllLines(file).stream()))
+                .collect(Collectors.toList());
+        assertEquals(1, lines.size());
+        TestPerson actual = JSON.std.beanFrom(TestPerson.class, lines.get(0));
+        assertEquals(testPerson, actual);
     }
 
     @Test
@@ -389,6 +414,69 @@ public class WriteFilePTest extends SimpleTestInClusterSupport {
         checkFileContents(0, numItems, exactlyOnce, false, false);
     }
 
+    private void checkFileContents(int numFrom, int numTo, boolean exactlyOnce, boolean ignoreTempFiles,
+                                   boolean assertSorted
+    ) throws Exception {
+        List<Integer> actual = Files.list(directory)
+                                    .peek(f -> {
+                                        if (!ignoreTempFiles && f.getFileName().toString().endsWith(TEMP_FILE_SUFFIX)) {
+                                            throw new IllegalArgumentException("Temp file found: " + f);
+                                        }
+                                    })
+                                    .filter(f -> !f.toString().endsWith(TEMP_FILE_SUFFIX))
+                                    // sort by sequence number, if there is one
+                                    .sorted(Comparator.comparing(f -> f.getFileName().toString().length() == 1 ? 0
+                                            : Integer.parseInt(f.getFileName().toString().substring(2))))
+                                    .flatMap(file -> uncheckCall(() -> Files.readAllLines(file).stream()))
+                                    .map(Integer::parseInt)
+                                    .sorted(assertSorted ? (l, r) -> 0 : Comparator.naturalOrder())
+                                    .collect(Collectors.toList());
+
+        if (exactlyOnce) {
+            String expectedStr = IntStream.range(numFrom, numTo).mapToObj(Integer::toString).collect(joining("\n"));
+            String actualStr = actual.stream().map(Object::toString).collect(joining("\n"));
+            assertEquals(expectedStr, actualStr);
+        } else {
+            Map<Integer, Long> actualMap = actual.stream().collect(groupingBy(Function.identity(), Collectors.counting()));
+            for (int i = numFrom; i < numTo; i++) {
+                actualMap.putIfAbsent(i, 0L);
+            }
+            assertTrue("some items are missing: " + actualMap, actualMap.values().stream().allMatch(v -> v > 0));
+        }
+    }
+
+    private <T> Pipeline buildPipeline(Charset charset, Iterable<T> iterable) {
+        if (charset == null) {
+            charset = StandardCharsets.UTF_8;
+        }
+        Pipeline p = Pipeline.create();
+        p.readFrom(TestSources.items(iterable))
+         .writeTo(Sinks.filesBuilder(directory.toString())
+                       .toStringFn(Objects::toString)
+                       .charset(charset)
+                       .build());
+        return p;
+    }
+
+    private static Iterable<Integer> rangeIterable(int itemsFrom, int itemsTo) {
+        return (Iterable<Integer> & Serializable) () -> new Iterator<Integer>() {
+            int val = itemsFrom;
+
+            @Override
+            public boolean hasNext() {
+                return val < itemsTo;
+            }
+
+            @Override
+            public Integer next() {
+                if (!hasNext()) {
+                    throw new NoSuchElementException();
+                }
+                return val++;
+            }
+        };
+    }
+
     private static class SlowSourceP extends AbstractProcessor {
 
         private final Semaphore semaphore;
@@ -427,67 +515,5 @@ public class WriteFilePTest extends SimpleTestInClusterSupport {
             assertEquals("key", key);
             number = (int) value;
         }
-    }
-
-    private void checkFileContents(int numFrom, int numTo, boolean exactlyOnce, boolean ignoreTempFiles,
-                                   boolean assertSorted
-    ) throws Exception {
-        List<Integer> actual = Files.list(directory)
-                .peek(f -> {
-                    if (!ignoreTempFiles && f.getFileName().toString().endsWith(TEMP_FILE_SUFFIX)) {
-                        throw new IllegalArgumentException("Temp file found: " + f);
-                    }
-                })
-                .filter(f -> !f.toString().endsWith(TEMP_FILE_SUFFIX))
-                // sort by sequence number, if there is one
-                .sorted(Comparator.comparing(f -> f.getFileName().toString().length() == 1 ? 0
-                        : Integer.parseInt(f.getFileName().toString().substring(2))))
-                .flatMap(file -> uncheckCall(() -> Files.readAllLines(file).stream()))
-                .map(Integer::parseInt)
-                .sorted(assertSorted ? (l, r) -> 0 : Comparator.naturalOrder())
-                .collect(Collectors.toList());
-
-        if (exactlyOnce) {
-            String expectedStr = IntStream.range(numFrom, numTo).mapToObj(Integer::toString).collect(joining("\n"));
-            String actualStr = actual.stream().map(Object::toString).collect(joining("\n"));
-            assertEquals(expectedStr, actualStr);
-        } else {
-            Map<Integer, Long> actualMap = actual.stream().collect(groupingBy(Function.identity(), Collectors.counting()));
-            for (int i = numFrom; i < numTo; i++) {
-                actualMap.putIfAbsent(i, 0L);
-            }
-            assertTrue("some items are missing: " + actualMap, actualMap.values().stream().allMatch(v -> v > 0));
-        }
-    }
-
-    private <T> Pipeline buildPipeline(Charset charset, Iterable<T> iterable) {
-        if (charset == null) {
-            charset = StandardCharsets.UTF_8;
-        }
-        Pipeline p = Pipeline.create();
-        p.readFrom(TestSources.items(iterable))
-         .writeTo(Sinks.filesBuilder(directory.toString())
-                 .toStringFn(Objects::toString)
-                 .charset(charset)
-                 .build());
-        return p;
-    }
-
-    private static Iterable<Integer> rangeIterable(int itemsFrom, int itemsTo) {
-        return (Iterable<Integer> & Serializable) () -> new Iterator<Integer>() {
-            int val = itemsFrom;
-            @Override
-            public boolean hasNext() {
-                return val < itemsTo;
-            }
-
-            @Override
-            public Integer next() {
-                if (!hasNext()) {
-                    throw new NoSuchElementException();
-                }
-                return val++;
-            }
-        };
     }
 }
