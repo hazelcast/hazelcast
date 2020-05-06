@@ -219,12 +219,8 @@ public class Diagnostics {
             return;
         }
 
-        if (stdout) {
-            this.diagnosticsLog = new DiagnosticsStdout(this);
-        } else {
-            this.diagnosticsLog = new DiagnosticsLogFile(this);
-        }
-
+        this.diagnosticsLog = stdout ? new DiagnosticsStdout(this) :  new DiagnosticsLogFile(this);
+        
         this.scheduler = new ScheduledThreadPoolExecutor(1, new DiagnosticSchedulerThreadFactory());
 
         logger.info("Diagnostics started");
