@@ -18,8 +18,8 @@ package com.hazelcast.sql.impl.schema;
 
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.QueryException;
-import com.hazelcast.sql.impl.connector.Connector;
-import com.hazelcast.sql.impl.connector.ConnectorFactory;
+import com.hazelcast.sql.impl.connector.SqlConnector;
+import com.hazelcast.sql.impl.connector.SqlConnectorFactory;
 
 import java.util.Collection;
 import java.util.List;
@@ -77,7 +77,7 @@ public class Catalog implements TableResolver {
     }
 
     private static Table toTable(TableSchema schema) {
-        Connector connector = ConnectorFactory.from(schema.type());
+        SqlConnector connector = SqlConnectorFactory.from(schema.type());
         return connector.createTable("", schema.name(), schema.fields(), schema.options());
     }
 }

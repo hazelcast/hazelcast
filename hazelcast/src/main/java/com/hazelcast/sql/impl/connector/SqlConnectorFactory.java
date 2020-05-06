@@ -20,19 +20,19 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
-public class ConnectorFactory {
+public class SqlConnectorFactory {
 
-    // TODO: replace it with connector class and dynamic instantiation ??? (QueryDataType needs to be public then?)
-    private static final Map<String, Connector> CONNECTORS_BY_TYPE = prepareConnectors();
+    // TODO: replace it with connector class and its instantiation ??? (TableSchemaField and its dependencies need to be public then?)
+    private static final Map<String, SqlConnector> CONNECTORS_BY_TYPE = prepareConnectors();
 
-    private static Map<String, Connector> prepareConnectors() {
-        Map<String, Connector> connectors = new HashMap<>();
+    private static Map<String, SqlConnector> prepareConnectors() {
+        Map<String, SqlConnector> connectors = new HashMap<>();
         connectors.put("PARTITIONED", new PartitionedMapConnector());
         connectors.put("REPLICATED", new ReplicatedMapConnector());
         return connectors;
     }
 
-    public static Connector from(String type) {
+    public static SqlConnector from(String type) {
         return Objects.requireNonNull(CONNECTORS_BY_TYPE.get(type.toUpperCase()), "Unknown type - " + type);
     }
 }

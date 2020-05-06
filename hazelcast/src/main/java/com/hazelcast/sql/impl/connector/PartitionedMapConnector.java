@@ -21,32 +21,32 @@ import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.schema.ConstantTableStatistics;
 import com.hazelcast.sql.impl.schema.Table;
 import com.hazelcast.sql.impl.schema.TableField;
+import com.hazelcast.sql.impl.schema.TableSchema.Field;
 import com.hazelcast.sql.impl.schema.map.MapTableField;
 import com.hazelcast.sql.impl.schema.map.PartitionedMapTable;
-import com.hazelcast.sql.impl.type.QueryDataType;
 
 import java.util.List;
-import java.util.Map.Entry;
+import java.util.Map;
 
 import static com.hazelcast.sql.impl.schema.map.PartitionedMapTable.DISTRIBUTION_FIELD_ORDINAL_NONE;
 import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.toList;
 
 // TODO: do we want to keep it? maps are auto discovered...
-public class PartitionedMapConnector implements Connector {
+public class PartitionedMapConnector implements SqlConnector {
 
     @Override
     public Table createTable(String schemaName,
                              String name,
-                             List<Entry<String, QueryDataType>> fields,
-                             List<Entry<String, String>> options) {
+                             List<Field> fields,
+                             Map<String, String> options) {
         return new PartitionedMapTable(schemaName, name, toMapFields(fields), new ConstantTableStatistics(0),
                 new GenericQueryTargetDescriptor(), new GenericQueryTargetDescriptor(), emptyList(), DISTRIBUTION_FIELD_ORDINAL_NONE); // TODO: ???
     }
 
-    private static List<TableField> toMapFields(List<Entry<String, QueryDataType>> fields) {
+    private static List<TableField> toMapFields(List<Field> fields) {
         return fields.stream()
-                     .map(field -> new MapTableField(field.getKey(), field.getValue(), QueryPath.create(field.getKey()))) // TODO: ???
+                     .map(field -> new MapTableField(field.name(), field.type(), QueryPath.create(field.name()))) // TODO: ???
                      .collect(toList());
     }
 }

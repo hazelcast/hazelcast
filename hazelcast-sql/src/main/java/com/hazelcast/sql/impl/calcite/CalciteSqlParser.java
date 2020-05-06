@@ -21,6 +21,7 @@ import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.calcite.opt.SqlOptimizer;
 import com.hazelcast.sql.impl.calcite.parser.SqlCreateTable;
 import com.hazelcast.sql.impl.calcite.parser.SqlDropTable;
+import com.hazelcast.sql.impl.calcite.parser.SqlOption;
 import com.hazelcast.sql.impl.parser.CreateTableStatement;
 import com.hazelcast.sql.impl.parser.DqlStatement;
 import com.hazelcast.sql.impl.parser.DropTableStatement;
@@ -31,17 +32,17 @@ import com.hazelcast.sql.impl.plan.Plan;
 import com.hazelcast.sql.impl.schema.Catalog;
 import com.hazelcast.sql.impl.schema.TableResolver;
 import com.hazelcast.sql.impl.schema.TableSchema;
+import com.hazelcast.sql.impl.schema.TableSchema.Field;
 import com.hazelcast.sql.impl.schema.map.PartitionedMapTableResolver;
 import com.hazelcast.sql.impl.schema.map.ReplicatedMapTableResolver;
-import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.calcite.sql.SqlNode;
 
 import java.util.List;
-import java.util.Map.Entry;
+import java.util.Map;
 
-import static com.hazelcast.internal.util.MapUtil.entry;
 import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toMap;
 
 /**
  * Calcite-based SQL parser.
@@ -93,12 +94,11 @@ public class CalciteSqlParser implements SqlParser {
     }
 
     private Statement toCreateTableStatement(SqlCreateTable sqlCreateTable) {
-        List<Entry<String, QueryDataType>> fields = sqlCreateTable.columns()
-                                                                  .map(column -> entry(column.name(), column.type().type()))
-                                                                  .collect(toList());
-        List<Entry<String, String>> options = sqlCreateTable.options()
-                                                            .map(option -> entry(option.key(), option.value()))
-                                                            .collect(toList());
+        List<Field> fields = sqlCreateTable.columns()
+                                           .map(column -> new Field(column.name(), column.type().type()))
+                                           .collect(toList());
+        Map<String, String> options = sqlCreateTable.options()
+                                                    .collect(toMap(SqlOption::key, SqlOption::value));
         TableSchema schema = new TableSchema(sqlCreateTable.name(), sqlCreateTable.type(), fields, options);
 
         return new CreateTableStatement(

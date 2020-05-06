@@ -21,30 +21,30 @@ import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.schema.ConstantTableStatistics;
 import com.hazelcast.sql.impl.schema.Table;
 import com.hazelcast.sql.impl.schema.TableField;
+import com.hazelcast.sql.impl.schema.TableSchema.Field;
 import com.hazelcast.sql.impl.schema.map.MapTableField;
 import com.hazelcast.sql.impl.schema.map.ReplicatedMapTable;
-import com.hazelcast.sql.impl.type.QueryDataType;
 
 import java.util.List;
-import java.util.Map.Entry;
+import java.util.Map;
 
 import static java.util.stream.Collectors.toList;
 
 // TODO: do we want to keep it? maps are auto discovered...
-public class ReplicatedMapConnector implements Connector {
+public class ReplicatedMapConnector implements SqlConnector {
 
     @Override
     public Table createTable(String schemaName,
                              String name,
-                             List<Entry<String, QueryDataType>> fields,
-                             List<Entry<String, String>> options) {
+                             List<Field> fields,
+                             Map<String, String> options) {
         return new ReplicatedMapTable(schemaName, name, toMapFields(fields), new ConstantTableStatistics(0),
                 new GenericQueryTargetDescriptor(), new GenericQueryTargetDescriptor()); // TODO: ???
     }
 
-    private static List<TableField> toMapFields(List<Entry<String, QueryDataType>> fields) {
+    private static List<TableField> toMapFields(List<Field> fields) {
         return fields.stream()
-                     .map(field -> new MapTableField(field.getKey(), field.getValue(), QueryPath.create(field.getKey()))) // TODO: ???
+                     .map(field -> new MapTableField(field.name(), field.type(), QueryPath.create(field.name()))) // TODO: ???
                      .collect(toList());
     }
 }

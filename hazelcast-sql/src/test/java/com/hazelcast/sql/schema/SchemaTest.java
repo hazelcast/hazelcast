@@ -6,12 +6,12 @@ import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlCursor;
 import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.schema.model.AllTypesValue;
+import com.hazelcast.sql.schema.model.Person;
 import com.hazelcast.sql.support.CalciteSqlTestSupport;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import java.io.Serializable;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.time.Instant;
@@ -24,7 +24,6 @@ import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 
 import static java.lang.String.format;
 import static java.time.ZoneOffset.UTC;
@@ -154,7 +153,7 @@ public class SchemaTest extends CalciteSqlTestSupport {
         assertEquals(allTypes.getLocalDate(), rows.get(0).getObject(13));
         assertEquals(allTypes.getLocalDateTime(), rows.get(0).getObject(14));
         assertEquals(allTypes.getDate(), rows.get(0).getObject(15));
-        assertEquals(allTypes.getCalendar().toZonedDateTime().toOffsetDateTime(), rows.get(0).getObject(16));
+        assertEquals(allTypes.getCalendar().toZonedDateTime().toOffsetDateTime(), rows.get(0).getObject(16)); // TODO:
         assertEquals(allTypes.getInstant(), rows.get(0).getObject(17));
         assertEquals(allTypes.getZonedDateTime(), rows.get(0).getObject(18));
         assertEquals(allTypes.getOffsetDateTime(), rows.get(0).getObject(19));
@@ -168,54 +167,5 @@ public class SchemaTest extends CalciteSqlTestSupport {
 
         assertThatThrownBy(() -> executeQuery(member, format("SELECT name FROM %s", name)))
                 .isInstanceOf(HazelcastSqlException.class);
-    }
-
-    @SuppressWarnings("unused")
-    private static class Person implements Serializable {
-
-        private String name;
-        private BigInteger age;
-
-        public Person() {
-        }
-
-        private Person(String name, BigInteger age) {
-            this.name = name;
-            this.age = age;
-        }
-
-        public String getName() {
-            return name;
-        }
-
-        public void setName(String name) {
-            this.name = name;
-        }
-
-        public void setAge(BigInteger age) {
-            this.age = age;
-        }
-
-        public BigInteger getAge() {
-            return age;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) {
-                return true;
-            }
-            if (o == null || getClass() != o.getClass()) {
-                return false;
-            }
-            Person person = (Person) o;
-            return Objects.equals(name, person.name) &&
-                    Objects.equals(age, person.age);
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(name, age);
-        }
     }
 }

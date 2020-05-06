@@ -17,17 +17,17 @@
 package com.hazelcast.sql.impl.connector;
 
 import com.hazelcast.sql.impl.schema.Table;
-import com.hazelcast.sql.impl.type.QueryDataType;
+import com.hazelcast.sql.impl.schema.TableSchema.Field;
 
 import java.util.List;
-import java.util.Map.Entry;
+import java.util.Map;
 
-public interface Connector {
+public interface SqlConnector {
 
     Table createTable(
             String schemaName,
             String name,
-            List<Entry<String, QueryDataType>> fields,
-            List<Entry<String, String>> options
+            List<Field> fields,
+            Map<String, String> options
     );
 }
