@@ -94,6 +94,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
+import static com.hazelcast.sql.impl.schema.SchemaUtils.SCHEMA_NAME_DEFAULT;
+import static java.util.Collections.emptyMap;
+
 /**
  * Execution context which holds the whole environment for the given execution session.
  */
@@ -452,14 +455,15 @@ public final class ExecutionContext {
     public static HazelcastSchema createCatalog(Schema schema) {
         return new HazelcastSchema(
             Collections.singletonMap(SchemaUtils.CATALOG, schema),
-            Collections.emptyMap()
+            emptyMap()
         );
     }
 
     @SuppressWarnings({"unchecked", "rawtypes"})
     private static HazelcastSchema createRootSchema(List<TableResolver> tableResolvers) {
-        // Create tables.
-        Map<String, Map<String, HazelcastTable>> tableMap = new HashMap<>();
+        // Create and group tables.
+        Map<String, org.apache.calcite.schema.Table> rootTablesByName = new HashMap<>();
+        Map<String, Map<String, HazelcastTable>> tablesBySchema = new HashMap<>();
 
         for (TableResolver tableResolver : tableResolvers) {
             Collection<Table> tables = tableResolver.getTables();
@@ -470,30 +474,33 @@ public final class ExecutionContext {
 
             for (Table table : tables) {
                 HazelcastTable convertedTable = new HazelcastTable(
-                    table,
-                    new HazelcastTableStatistic(table.getStatistics().getRowCount())
+                        table,
+                        new HazelcastTableStatistic(table.getStatistics().getRowCount())
                 );
 
-                Map<String, HazelcastTable> schemaTableMap =
-                    tableMap.computeIfAbsent(table.getSchemaName(), (k) -> new HashMap<>());
+                if (SCHEMA_NAME_DEFAULT.equals(table.getSchemaName())) {
+                    rootTablesByName.put(table.getName(), convertedTable);
+                } else {
+                    Map<String, HazelcastTable> schemaTableMap =
+                        tablesBySchema.computeIfAbsent(table.getSchemaName(), (k) -> new HashMap<>());
 
-                schemaTableMap.put(table.getName(), convertedTable);
+                    schemaTableMap.put(table.getName(), convertedTable);
+                }
             }
         }
 
         // Create schemas.
-        Map<String, Schema> schemaMap = new HashMap<>();
-
-        for (Map.Entry<String, Map<String, HazelcastTable>> schemaEntry : tableMap.entrySet()) {
+        Map<String, Schema> schemasByName = new HashMap<>();
+        for (Map.Entry<String, Map<String, HazelcastTable>> schemaEntry : tablesBySchema.entrySet()) {
             String schemaName = schemaEntry.getKey();
             Map schemaTables = schemaEntry.getValue();
 
-            HazelcastSchema schema = new HazelcastSchema(Collections.emptyMap(), schemaTables);
+            HazelcastSchema schema = new HazelcastSchema(emptyMap(), schemaTables);
 
-            schemaMap.put(schemaName, schema);
+            schemasByName.put(schemaName, schema);
         }
 
-        HazelcastSchema rootSchema = new HazelcastSchema(schemaMap, Collections.emptyMap());
+        HazelcastSchema rootSchema = new HazelcastSchema(schemasByName, rootTablesByName);
 
         return createCatalog(rootSchema);
     }

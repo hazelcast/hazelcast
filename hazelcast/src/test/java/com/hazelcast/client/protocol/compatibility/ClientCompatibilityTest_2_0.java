@@ -6933,7 +6933,7 @@ public class ClientCompatibilityTest_2_0 {
     @Test
     public void test_SqlExecuteCodec_encodeRequest() {
         int fileClientMessageIndex = 825;
-        ClientMessage encoded = SqlQueryExecuteCodec.encodeRequest(aString, aListOfData);
+        ClientMessage encoded = SqlExecuteCodec.encodeRequest(aString, aListOfData);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }
@@ -6942,7 +6942,7 @@ public class ClientCompatibilityTest_2_0 {
     public void test_SqlExecuteCodec_decodeResponse() {
         int fileClientMessageIndex = 826;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        SqlQueryExecuteCodec.ResponseParameters parameters = SqlQueryExecuteCodec.decodeResponse(fromFile);
+        SqlExecuteCodec.ResponseParameters parameters = SqlExecuteCodec.decodeResponse(fromFile);
         assertTrue(isEqual(aData, parameters.queryId));
         assertTrue(isEqual(anInt, parameters.columnCount));
     }
@@ -6950,7 +6950,7 @@ public class ClientCompatibilityTest_2_0 {
     @Test
     public void test_SqlFetchCodec_encodeRequest() {
         int fileClientMessageIndex = 827;
-        ClientMessage encoded = SqlQueryFetchCodec.encodeRequest(aData, anInt);
+        ClientMessage encoded = SqlFetchCodec.encodeRequest(aData, anInt);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }
@@ -6959,7 +6959,7 @@ public class ClientCompatibilityTest_2_0 {
     public void test_SqlFetchCodec_decodeResponse() {
         int fileClientMessageIndex = 828;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        SqlQueryFetchCodec.ResponseParameters parameters = SqlQueryFetchCodec.decodeResponse(fromFile);
+        SqlFetchCodec.ResponseParameters parameters = SqlFetchCodec.decodeResponse(fromFile);
         assertTrue(isEqual(aListOfData, parameters.rows));
         assertTrue(isEqual(aBoolean, parameters.last));
     }
@@ -6967,7 +6967,7 @@ public class ClientCompatibilityTest_2_0 {
     @Test
     public void test_SqlCloseCodec_encodeRequest() {
         int fileClientMessageIndex = 829;
-        ClientMessage encoded = SqlQueryCloseCodec.encodeRequest(aData);
+        ClientMessage encoded = SqlCloseCodec.encodeRequest(aData);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }
@@ -6976,7 +6976,7 @@ public class ClientCompatibilityTest_2_0 {
     public void test_SqlCloseCodec_decodeResponse() {
         int fileClientMessageIndex = 830;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        SqlQueryCloseCodec.ResponseParameters parameters = SqlQueryCloseCodec.decodeResponse(fromFile);
+        SqlCloseCodec.ResponseParameters parameters = SqlCloseCodec.decodeResponse(fromFile);
     }
 
     private void compareClientMessages(ClientMessage binaryMessage, ClientMessage encodedMessage) {

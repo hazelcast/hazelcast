@@ -16,7 +16,7 @@ public class TableSchema implements DataSerializable {
 
     private String name;
     private String type;
-    private List<Entry<String, QueryDataType>> fields;
+    private List<Entry<String, QueryDataType>> fields; // TODO: support for NULL/NON NULL, DEFAULT, WATERMARK... evolution
     private List<Entry<String, String>> options;
 
     @SuppressWarnings("unused")

@@ -20,9 +20,9 @@ import com.hazelcast.client.impl.ClientDelegatingFuture;
 import com.hazelcast.client.impl.clientside.ClientMessageDecoder;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.codec.SqlQueryCloseCodec;
-import com.hazelcast.client.impl.protocol.codec.SqlQueryExecuteCodec;
-import com.hazelcast.client.impl.protocol.codec.SqlQueryFetchCodec;
+import com.hazelcast.client.impl.protocol.codec.SqlCloseCodec;
+import com.hazelcast.client.impl.protocol.codec.SqlExecuteCodec;
+import com.hazelcast.client.impl.protocol.codec.SqlFetchCodec;
 import com.hazelcast.client.impl.spi.impl.ClientInvocation;
 import com.hazelcast.client.impl.spi.impl.ClientInvocationFuture;
 import com.hazelcast.internal.nio.Connection;
@@ -52,21 +52,21 @@ public class SqlClientService implements SqlService {
     /** Decoder for execute request. */
     private static final ClientMessageDecoder<SqlClientExecuteResponse> EXECUTE_DECODER =
         clientMessage -> {
-            SqlQueryExecuteCodec.ResponseParameters response = SqlQueryExecuteCodec.decodeResponse(clientMessage);
+            SqlExecuteCodec.ResponseParameters response = SqlExecuteCodec.decodeResponse(clientMessage);
 
             return new SqlClientExecuteResponse(response.queryId, response.columnCount);
         };
 
     /** Decoder for fetch request. */
     private static final ClientMessageDecoder<BiTuple<List<Data>, Boolean>> FETCH_DECODER = clientMessage -> {
-        SqlQueryFetchCodec.ResponseParameters response = SqlQueryFetchCodec.decodeResponse(clientMessage);
+        SqlFetchCodec.ResponseParameters response = SqlFetchCodec.decodeResponse(clientMessage);
 
         return BiTuple.of(response.rows, response.last);
     };
 
     /** Decoder for close request. */
     private static final ClientMessageDecoder<Void> CLOSE_DECODER = clientMessage -> {
-        SqlQueryCloseCodec.decodeResponse(clientMessage);
+        SqlCloseCodec.decodeResponse(clientMessage);
 
         return null;
     };
@@ -93,7 +93,7 @@ public class SqlClientService implements SqlService {
             params0 = null;
         }
 
-        ClientMessage message = SqlQueryExecuteCodec.encodeRequest(query.getSql(), params0);
+        ClientMessage message = SqlExecuteCodec.encodeRequest(query.getSql(), params0);
 
         Connection connection = client.getConnectionManager().getRandomConnection();
 
@@ -112,7 +112,7 @@ public class SqlClientService implements SqlService {
      * @return Pair: fetched rows + last page flag.
      */
     public BiTuple<List<Row>, Boolean> fetch(Connection connection, QueryId queryId, int pageSize) {
-        ClientMessage message = SqlQueryFetchCodec.encodeRequest(toData(queryId), pageSize);
+        ClientMessage message = SqlFetchCodec.encodeRequest(toData(queryId), pageSize);
 
         BiTuple<List<Data>, Boolean> res = invoke(message, connection, FETCH_DECODER);
 
@@ -141,7 +141,7 @@ public class SqlClientService implements SqlService {
      * @param queryId Query ID.
      */
     void close(Connection conn, QueryId queryId) {
-        ClientMessage request = SqlQueryCloseCodec.encodeRequest(toData(queryId));
+        ClientMessage request = SqlCloseCodec.encodeRequest(toData(queryId));
 
         invoke(request, conn, CLOSE_DECODER);
     }

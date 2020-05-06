@@ -26,7 +26,7 @@ public final class SchemaUtils {
     public static final String CATALOG = "hazelcast";
 
     /** Name of the implicit schema containing user defined tables. */
-    public static final String SCHEMA_NAME_PUBLIC = "public";
+    public static final String SCHEMA_NAME_DEFAULT = "";
 
     /** Name of the implicit schema containing partitioned maps. */
     public static final String SCHEMA_NAME_PARTITIONED = "partitioned";

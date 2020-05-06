@@ -361,9 +361,9 @@ import com.hazelcast.client.impl.protocol.codec.SetIsEmptyCodec;
 import com.hazelcast.client.impl.protocol.codec.SetRemoveCodec;
 import com.hazelcast.client.impl.protocol.codec.SetRemoveListenerCodec;
 import com.hazelcast.client.impl.protocol.codec.SetSizeCodec;
-import com.hazelcast.client.impl.protocol.codec.SqlQueryCloseCodec;
-import com.hazelcast.client.impl.protocol.codec.SqlQueryExecuteCodec;
-import com.hazelcast.client.impl.protocol.codec.SqlQueryFetchCodec;
+import com.hazelcast.client.impl.protocol.codec.SqlCloseCodec;
+import com.hazelcast.client.impl.protocol.codec.SqlExecuteCodec;
+import com.hazelcast.client.impl.protocol.codec.SqlFetchCodec;
 import com.hazelcast.client.impl.protocol.codec.TopicAddMessageListenerCodec;
 import com.hazelcast.client.impl.protocol.codec.TopicPublishCodec;
 import com.hazelcast.client.impl.protocol.codec.TopicRemoveMessageListenerCodec;
@@ -825,9 +825,9 @@ import com.hazelcast.internal.longregister.client.task.LongRegisterSetMessageTas
 import com.hazelcast.internal.util.collection.Int2ObjectHashMap;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.sql.impl.client.SqlQueryCloseMessageTask;
-import com.hazelcast.sql.impl.client.SqlQueryExecuteMessageTask;
-import com.hazelcast.sql.impl.client.SqlQueryFetchMessageTask;
+import com.hazelcast.sql.impl.client.SqlCloseMessageTask;
+import com.hazelcast.sql.impl.client.SqlExecuteMessageTask;
+import com.hazelcast.sql.impl.client.SqlFetchMessageTask;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import static com.hazelcast.internal.util.MapUtil.createInt2ObjectHashMap;
@@ -1787,12 +1787,12 @@ public class DefaultMessageTaskFactoryProvider implements MessageTaskFactoryProv
                 (cm, con) -> new HotRestartInterruptBackupMessageTask(cm, node, con));
 
 // region ----------- REGISTRATION FOR SQL
-        factories.put(SqlQueryExecuteCodec.REQUEST_MESSAGE_TYPE,
-            (cm, con) -> new SqlQueryExecuteMessageTask(cm, node, con));
-        factories.put(SqlQueryFetchCodec.REQUEST_MESSAGE_TYPE,
-            (cm, con) -> new SqlQueryFetchMessageTask(cm, node, con));
-        factories.put(SqlQueryCloseCodec.REQUEST_MESSAGE_TYPE,
-            (cm, con) -> new SqlQueryCloseMessageTask(cm, node, con));
+        factories.put(SqlExecuteCodec.REQUEST_MESSAGE_TYPE,
+            (cm, con) -> new SqlExecuteMessageTask(cm, node, con));
+        factories.put(SqlFetchCodec.REQUEST_MESSAGE_TYPE,
+            (cm, con) -> new SqlFetchMessageTask(cm, node, con));
+        factories.put(SqlCloseCodec.REQUEST_MESSAGE_TYPE,
+            (cm, con) -> new SqlCloseMessageTask(cm, node, con));
 //endregion
     }
 

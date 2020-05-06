@@ -17,61 +17,43 @@
 package com.hazelcast.sql.impl.client;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.codec.SqlQueryFetchCodec;
+import com.hazelcast.client.impl.protocol.codec.SqlCloseCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.sql.SqlService;
 import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.SqlInternalService;
-import com.hazelcast.sql.impl.row.Row;
 
 import java.security.Permission;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
 
 /**
- * SQL query fetch task.
+ * SQL query close task.
  */
-public class SqlQueryFetchMessageTask extends AbstractCallableMessageTask<SqlQueryFetchCodec.RequestParameters> {
-    public SqlQueryFetchMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
+public class SqlCloseMessageTask extends AbstractCallableMessageTask<SqlCloseCodec.RequestParameters> {
+    public SqlCloseMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
     protected Object call() throws Exception {
         QueryId queryId = serializationService.toObject(parameters.queryId);
-        int pageSize = parameters.pageSize;
 
         SqlInternalService service = nodeEngine.getSqlService().getInternalService();
 
-        return service.getClientStateRegistry().fetch(endpoint.getUuid(), queryId, pageSize);
+        service.getClientStateRegistry().close(endpoint.getUuid(), queryId);
+
+        return null;
     }
 
     @Override
-    protected SqlQueryFetchCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
-        return SqlQueryFetchCodec.decodeRequest(clientMessage);
+    protected SqlCloseCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return SqlCloseCodec.decodeRequest(clientMessage);
     }
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        SqlClientPage page = ((SqlClientPage) response);
-
-        List<Data> rows;
-
-        if (page.getRows().isEmpty()) {
-            rows = Collections.emptyList();
-        } else {
-            rows = new ArrayList<>(page.getRows().size());
-
-            for (Row row : page.getRows()) {
-                rows.add(serializationService.toData(row));
-            }
-        }
-
-        return SqlQueryFetchCodec.encodeResponse(rows, page.isLast());
+        return SqlCloseCodec.encodeResponse();
     }
 
     @Override
@@ -86,13 +68,13 @@ public class SqlQueryFetchMessageTask extends AbstractCallableMessageTask<SqlQue
 
     @Override
     public String getMethodName() {
-        return "fetch";
+        return "close";
     }
 
     @Override
     public Object[] getParameters() {
         // TODO: Do we need it?
-        return new Object[] { parameters.queryId, parameters.pageSize } ;
+        return new Object[] { parameters.queryId } ;
     }
 
     @Override

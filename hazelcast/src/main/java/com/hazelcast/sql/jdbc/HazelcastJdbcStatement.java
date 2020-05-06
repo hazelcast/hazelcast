@@ -88,8 +88,7 @@ public class HazelcastJdbcStatement implements Statement {
 
     @Override
     public int executeUpdate(String sql) throws SQLException {
-        gateway.executeUpdate(sql);
-        return 0;
+        throw unsupportedUpdate();
     }
 
     @Override
@@ -132,7 +131,7 @@ public class HazelcastJdbcStatement implements Statement {
     /**
      * Core execution routine.
      *
-     * @param sql  SQL query.
+     * @param sql SQL query.
      * @param args Query arguments.
      */
     protected void execute0(String sql, List<Object> args) throws SQLException {
@@ -149,7 +148,7 @@ public class HazelcastJdbcStatement implements Statement {
 
         assert resultSet == null;
 
-        JdbcCursor page = gateway.executeQuery(sql, args, pageSize, queryTimeout * MILLIS_IN_SECOND);
+        JdbcCursor page = gateway.execute(sql, args, pageSize, queryTimeout * MILLIS_IN_SECOND);
 
         resultSet = new HazelcastJdbcResultSet(this, page, fetchDirection);
     }

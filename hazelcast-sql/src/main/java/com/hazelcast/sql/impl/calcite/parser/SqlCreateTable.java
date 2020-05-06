@@ -117,7 +117,7 @@ public class SqlCreateTable extends SqlCreate {
         writer.newlineAndIndent();
         writer.endList(frame);
 
-        printIndent(writer);
+        writer.newlineAndIndent();
         writer.keyword("TYPE");
         type.unparse(writer, leftPrec, rightPrec);
 

@@ -33,6 +33,8 @@ import static org.junit.Assert.assertEquals;
 
 public class SchemaTest extends CalciteSqlTestSupport {
 
+    private static final String TYPE = "PARTITIONED";
+
     private static HazelcastInstance member;
 
     @BeforeClass
@@ -48,7 +50,7 @@ public class SchemaTest extends CalciteSqlTestSupport {
     @Test
     public void testSelectFromAnEmptyMap() {
         String name = "empty_map";
-        executeUpdate(member, format("CREATE EXTERNAL TABLE %s (__key INT) TYPE partitioned", name));
+        executeUpdate(member, format("CREATE EXTERNAL TABLE %s (__key INT) TYPE %s", name, TYPE));
 
         SqlCursor sqlRows = executeQuery(member, format("SELECT __key FROM %s", name));
         List<SqlRow> rows = getQueryRows(sqlRows);
@@ -64,7 +66,7 @@ public class SchemaTest extends CalciteSqlTestSupport {
     @Test
     public void testSelectFromPredeclaredMap() {
         String name = "predeclared_map";
-        executeUpdate(member, format("CREATE EXTERNAL TABLE %s (\"__key.age\" INT, age INT) TYPE partitioned", name));
+        executeUpdate(member, format("CREATE EXTERNAL TABLE %s (\"__key.age\" INT, age INT) TYPE %s", name, TYPE));
 
         Map<Person, Person> map = member.getMap(name);
         map.put(new Person("Alice", BigInteger.valueOf(30)), new Person("Bob", BigInteger.valueOf(40)));
@@ -103,8 +105,8 @@ public class SchemaTest extends CalciteSqlTestSupport {
                         "offsetDateTime TIMESTAMP WITH TIME ZONE " +
                         /*"yearMonthInterval INTERVAL_YEAR_MONTH, " +
                         "offsetDateTime INTERVAL_DAY_SECOND, " +*/
-                        ") TYPE partitioned",
-                name
+                        ") TYPE %s",
+                name, TYPE
         ));
 
         AllTypesValue allTypes = new AllTypesValue(
@@ -161,7 +163,7 @@ public class SchemaTest extends CalciteSqlTestSupport {
     @Test
     public void testDropTable() {
         String name = "to_be_dropped_map";
-        executeUpdate(member, format("CREATE EXTERNAL TABLE %s (name VARCHAR) TYPE partitioned", name));
+        executeUpdate(member, format("CREATE EXTERNAL TABLE %s (name VARCHAR) TYPE %s", name, TYPE));
         executeUpdate(member, format("DROP EXTERNAL TABLE %s", name));
 
         assertThatThrownBy(() -> executeQuery(member, format("SELECT name FROM %s", name)))

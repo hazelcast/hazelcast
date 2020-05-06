@@ -19,6 +19,9 @@ package com.hazelcast.client.impl.protocol.codec;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.Generated;
 import com.hazelcast.client.impl.protocol.codec.builtin.*;
+import com.hazelcast.client.impl.protocol.codec.custom.*;
+
+import javax.annotation.Nullable;
 
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
@@ -31,55 +34,55 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  */
 
 /**
- * Fetches the next page.
+ * Starts execution of an SQL query.
  */
-@Generated("d5c2a0a98fefcb4397864299760f7e4e")
-public final class SqlQueryFetchCodec {
-    //hex: 0x210200
-    public static final int REQUEST_MESSAGE_TYPE = 2163200;
-    //hex: 0x210201
-    public static final int RESPONSE_MESSAGE_TYPE = 2163201;
-    private static final int REQUEST_PAGE_SIZE_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_PAGE_SIZE_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int RESPONSE_LAST_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
-    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_LAST_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
+@Generated("28884598c3fdacc0c86328ee1dea4ced")
+public final class SqlExecuteCodec {
+    //hex: 0x210100
+    public static final int REQUEST_MESSAGE_TYPE = 2162944;
+    //hex: 0x210101
+    public static final int RESPONSE_MESSAGE_TYPE = 2162945;
+    private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int RESPONSE_COLUMN_COUNT_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
+    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_COLUMN_COUNT_FIELD_OFFSET + INT_SIZE_IN_BYTES;
 
-    private SqlQueryFetchCodec() {
+    private SqlExecuteCodec() {
     }
 
     @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class RequestParameters {
 
         /**
-         * Query ID.
+         * Query to be executed.
          */
-        public com.hazelcast.internal.serialization.Data queryId;
+        public java.lang.String query;
 
         /**
-         * Page size.
+         * Query parameters.
          */
-        public int pageSize;
+        public @Nullable java.util.List<com.hazelcast.internal.serialization.Data> parameters;
     }
 
-    public static ClientMessage encodeRequest(com.hazelcast.internal.serialization.Data queryId, int pageSize) {
+    public static ClientMessage encodeRequest(java.lang.String query, @Nullable java.util.Collection<com.hazelcast.internal.serialization.Data> parameters) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
-        clientMessage.setOperationName("Sql.QueryFetch");
+        clientMessage.setOperationName("Sql.Execute");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
         encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
-        encodeInt(initialFrame.content, REQUEST_PAGE_SIZE_FIELD_OFFSET, pageSize);
         clientMessage.add(initialFrame);
-        DataCodec.encode(clientMessage, queryId);
+        StringCodec.encode(clientMessage, query);
+        ListMultiFrameCodec.encodeNullable(clientMessage, parameters, DataCodec::encode);
         return clientMessage;
     }
 
-    public static SqlQueryFetchCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
+    public static SqlExecuteCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         RequestParameters request = new RequestParameters();
-        ClientMessage.Frame initialFrame = iterator.next();
-        request.pageSize = decodeInt(initialFrame.content, REQUEST_PAGE_SIZE_FIELD_OFFSET);
-        request.queryId = DataCodec.decode(iterator);
+        //empty initial frame
+        iterator.next();
+        request.query = StringCodec.decode(iterator);
+        request.parameters = ListMultiFrameCodec.decodeNullable(iterator, DataCodec::decode);
         return request;
     }
 
@@ -87,33 +90,34 @@ public final class SqlQueryFetchCodec {
     public static class ResponseParameters {
 
         /**
-         * Rows.
+         * ID of the query which was started.
          */
-        public java.util.List<com.hazelcast.internal.serialization.Data> rows;
+        public com.hazelcast.internal.serialization.Data queryId;
 
         /**
-         * Whether this is the last page.
+         * Number of columns in the result.
          */
-        public boolean last;
+        public int columnCount;
     }
 
-    public static ClientMessage encodeResponse(java.util.Collection<com.hazelcast.internal.serialization.Data> rows, boolean last) {
+    public static ClientMessage encodeResponse(com.hazelcast.internal.serialization.Data queryId, int columnCount) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);
-        encodeBoolean(initialFrame.content, RESPONSE_LAST_FIELD_OFFSET, last);
+        encodeInt(initialFrame.content, RESPONSE_COLUMN_COUNT_FIELD_OFFSET, columnCount);
         clientMessage.add(initialFrame);
 
-        ListMultiFrameCodec.encode(clientMessage, rows, DataCodec::encode);
+        DataCodec.encode(clientMessage, queryId);
         return clientMessage;
     }
 
-    public static SqlQueryFetchCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
+    public static SqlExecuteCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         ResponseParameters response = new ResponseParameters();
         ClientMessage.Frame initialFrame = iterator.next();
-        response.last = decodeBoolean(initialFrame.content, RESPONSE_LAST_FIELD_OFFSET);
-        response.rows = ListMultiFrameCodec.decode(iterator, DataCodec::decode);
+        response.columnCount = decodeInt(initialFrame.content, RESPONSE_COLUMN_COUNT_FIELD_OFFSET);
+        response.queryId = DataCodec.decode(iterator);
         return response;
     }
+
 }
