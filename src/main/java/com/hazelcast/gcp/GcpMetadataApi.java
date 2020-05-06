@@ -17,6 +17,8 @@ package com.hazelcast.gcp;
 
 import com.hazelcast.internal.json.Json;
 
+import static com.hazelcast.gcp.Utils.lastPartOf;
+
 /**
  * Responsible for connecting to the Google Cloud Instance Metadata API.
  *
@@ -46,12 +48,12 @@ class GcpMetadataApi {
     String currentZone() {
         String urlString = String.format("%s/computeMetadata/v1/instance/zone", endpoint);
         String zoneResponse = callGet(urlString);
-        return lastPartOf(zoneResponse);
+        return lastPartOf(zoneResponse, "/");
     }
 
-    private static String lastPartOf(String string) {
-        String[] parts = string.split("/");
-        return parts[parts.length - 1];
+    String currentRegion() {
+        int index = currentZone().lastIndexOf("-");
+        return currentZone().substring(0, index);
     }
 
     String accessToken() {

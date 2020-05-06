@@ -33,4 +33,9 @@ final class Utils {
         }
         return asList(string.trim().split("\\s*,\\s*"));
     }
+
+    static String lastPartOf(String string, String separator) {
+        String[] parts = string.split(separator);
+        return parts[parts.length - 1];
+    }
 }

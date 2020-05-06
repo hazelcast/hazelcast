@@ -17,6 +17,7 @@ package com.hazelcast.gcp;
 
 import org.junit.Test;
 
+import static com.hazelcast.gcp.Utils.lastPartOf;
 import static com.hazelcast.gcp.Utils.splitByComma;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
@@ -29,5 +30,12 @@ public class UtilsTest {
         assertEquals(asList("project1", "project2"), splitByComma("    project1 ,  project2 "));
         assertEquals(asList("project1"), splitByComma("project1"));
         assertEquals(emptyList(), splitByComma(null));
+    }
+
+    @Test
+    public void lastPartOfTest() {
+        assertEquals("us-east1-a", lastPartOf("https://www.googleapis.com/compute/v1/projects/projectId/zones/us-east1-a", "/"));
+        assertEquals("", lastPartOf("", ""));
+        assertEquals("", lastPartOf("", "/"));
     }
 }

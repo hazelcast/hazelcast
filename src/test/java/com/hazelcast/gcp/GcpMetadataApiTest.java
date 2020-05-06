@@ -71,6 +71,20 @@ public class GcpMetadataApiTest {
         assertEquals(ZONE, result);
     }
 
+    @Test
+    public void currentRegion() {
+        // given
+        stubFor(get(urlEqualTo("/computeMetadata/v1/instance/zone"))
+                .withHeader("Metadata-Flavor", equalTo("Google"))
+                .willReturn(aResponse().withStatus(200).withBody(zoneResponse(ZONE))));
+
+        // when
+        String result = gcpMetadataApi.currentRegion();
+
+        // then
+        assertEquals("us-east1", result);
+    }
+
     private static String zoneResponse(String zone) {
         String sampleProjectId = "183928891381";
         return String.format("projects/%s/zones/%s", sampleProjectId, zone);

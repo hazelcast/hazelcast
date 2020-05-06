@@ -22,6 +22,8 @@ import com.hazelcast.internal.json.JsonValue;
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.hazelcast.gcp.Utils.lastPartOf;
+
 /**
  * Responsible for connecting to the Google Cloud Compute API.
  *
@@ -67,6 +69,22 @@ class GcpComputeApi {
         }
 
         return result;
+    }
+
+    List<String> zones(String project, String region, String accessToken) {
+        String url = String.format("%s/compute/v1/projects/%s/regions/%s?alt=json&fields=zones", endpoint, project, region);
+        String response = RestClient
+                .create(url)
+                .withHeader("Authorization", String.format("OAuth %s", accessToken))
+                .get();
+
+        JsonArray zoneUrls = toJsonArray(Json.parse(response).asObject().get("zones"));
+
+        List<String> zones = new ArrayList<>();
+        for (JsonValue value : zoneUrls) {
+            zones.add(lastPartOf(value.asString(), "/"));
+        }
+        return zones;
     }
 
     private String urlFor(String project, String zone, Label label) {

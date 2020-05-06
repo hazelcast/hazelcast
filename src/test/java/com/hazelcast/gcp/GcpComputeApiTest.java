@@ -34,6 +34,7 @@ import static org.junit.Assert.assertEquals;
 public class GcpComputeApiTest {
     private static final String PROJECT = "project1";
     private static final String ZONE = "us-east1-b";
+    private static final String REGION = "us-east1";
     private static final String LABEL_KEY = "application";
     private static final String LABEL_VALUE = "hazelcast";
     private static final String ACCESS_TOKEN = "ya29.c.Elr6BVAeC2CeahNthgBf6Nn8j66IfIfZV6eb0LTkDeoAzELseUL5pFmfq0K_ViJN8BaeVB6b16NNCiPB0YbWPnoHRC2I1ghmnknUTzL36t-79b_OitEF_q_C1GM";
@@ -71,6 +72,23 @@ public class GcpComputeApiTest {
         GcpAddress address1 = new GcpAddress(INSTANCE_1_PRIVATE_IP, INSTANCE_1_PUBLIC_IP);
         GcpAddress address2 = new GcpAddress(INSTANCE_2_PRIVATE_IP, INSTANCE_2_PUBLIC_IP);
         assertEquals(asList(address1, address2), result);
+    }
+
+    @Test
+    public void zones() {
+        // given
+        stubFor(get(urlEqualTo(
+                String.format("/compute/v1/projects/%s/regions/%s?alt=json&fields=zones", PROJECT, REGION)))
+                .withHeader("Authorization", equalTo(String.format("OAuth %s", ACCESS_TOKEN)))
+                .willReturn(aResponse().withStatus(200).withBody(regionResponse(PROJECT, REGION))));
+        // when
+        List<String> zones = gcpComputeApi.zones(PROJECT, REGION, ACCESS_TOKEN);
+
+        // then
+        String zoneA = REGION + "-a";
+        String zoneB = REGION + "-b";
+        String zoneC = REGION + "-c";
+        assertEquals(asList(zoneA, zoneB, zoneC), zones);
     }
 
     @Test
@@ -340,5 +358,17 @@ public class GcpComputeApiTest {
                         + "  \"selfLink\": \"https://www.googleapis.com/compute/v1/projects/hazelcast-33/zones/us-east1-b/instances\"\n"
                         + "}  ", INSTANCE_1_PRIVATE_IP, INSTANCE_1_PUBLIC_IP, INSTANCE_2_PRIVATE_IP, INSTANCE_2_PUBLIC_IP,
                 INSTANCE_3_PRIVATE_IP);
+    }
+
+    String regionResponse(String project, String region) {
+        return ("{\n"
+                + "  \"zones\": [\n"
+                + "    \"https://www.googleapis.com/compute/v1/projects/{PROJECT}/zones/{REGION}-a\",\n"
+                + "    \"https://www.googleapis.com/compute/v1/projects/{PROJECT}/zones/{REGION}-b\",\n"
+                + "    \"https://www.googleapis.com/compute/v1/projects/{PROJECT}/zones/{REGION}-c\"\n"
+                + "  ]\n"
+                + "}")
+                .replace("{PROJECT}", project)
+                .replace("{REGION}", region);
     }
 }

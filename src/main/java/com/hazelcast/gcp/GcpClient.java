@@ -49,7 +49,7 @@ class GcpClient {
 
         this.privateKeyPath = gcpConfig.getPrivateKeyPath();
         this.projects = projectFromConfigOrMetadataApi(gcpConfig);
-        this.zones = zonesFromConfigOrMetadataApi(gcpConfig);
+        this.zones = zonesFromConfigOrComputeApi(gcpConfig);
         this.label = gcpConfig.getLabel();
     }
 
@@ -66,17 +66,29 @@ class GcpClient {
         }, RETRIES));
     }
 
-    private List<String> zonesFromConfigOrMetadataApi(final GcpConfig gcpConfig) {
+    private List<String> zonesFromConfigOrComputeApi(final GcpConfig gcpConfig) {
+        if (gcpConfig.getRegion() != null) {
+            LOGGER.finest("Property 'region' configured, fetching GCP zones of the specified GCP region");
+            return RetryUtils.retry(new Callable<List<String>>() {
+                @Override
+                public List<String> call() {
+                    return fetchZones(gcpConfig.getRegion());
+                }
+            }, RETRIES);
+        }
+
         if (!gcpConfig.getZones().isEmpty()) {
             return gcpConfig.getZones();
         }
-        LOGGER.finest("Property 'zones' not configured, fetching the current GCP zone");
-        return singletonList(RetryUtils.retry(new Callable<String>() {
+
+        LOGGER.finest("Property 'zones' not configured, fetching GCP zones of the current GCP region");
+        return RetryUtils.retry(new Callable<List<String>>() {
             @Override
-            public String call() {
-                return gcpMetadataApi.currentZone();
+            public List<String> call() {
+                String region = gcpMetadataApi.currentRegion();
+                return fetchZones(region);
             }
-        }, RETRIES));
+        }, RETRIES);
     }
 
     List<GcpAddress> getAddresses() {
@@ -86,6 +98,15 @@ class GcpClient {
                 return fetchGcpAddresses();
             }
         }, RETRIES);
+    }
+
+    private List<String> fetchZones(String region) {
+        List<String> zones = new ArrayList<>();
+        String accessToken = fetchAccessToken();
+        for (String project : projects) {
+            zones.addAll(gcpComputeApi.zones(project, region, accessToken));
+        }
+        return zones;
     }
 
     private List<GcpAddress> fetchGcpAddresses() {

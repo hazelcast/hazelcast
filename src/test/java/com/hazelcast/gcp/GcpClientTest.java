@@ -24,8 +24,13 @@ import org.mockito.runners.MockitoJUnitRunner;
 import java.util.List;
 
 import static java.util.Arrays.asList;
+import static java.util.Collections.singletonList;
+import static java.util.Collections.unmodifiableList;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -36,6 +41,9 @@ public class GcpClientTest {
     private static final String CURRENT_ZONE = "us-east1-a";
     private static final String ZONE_1 = "us-east1-b";
     private static final String ZONE_2 = "us-east1-c";
+    private static final String CURRENT_REGION = "us-east1";
+    private static final String REGION = "us-east3";
+    private static final List<String> CURRENT_REGION_ZONES = unmodifiableList(asList(CURRENT_ZONE, ZONE_1, ZONE_2));
     private static final String ACCESS_TOKEN = "ya29.c.Elr6BVAeC2CeahNthgBf6Nn8j66IfIfZV6eb0LTkDeoAzELseUL5pFmfq0K_ViJN8BaeVB6b16NNCiPB0YbWPnoHRC2I1ghmnknUTzL36t-79b_OitEF_q_C1GM";
     private static final String PRIVATE_KEY_PATH = "/sample/filesystem/path";
 
@@ -56,7 +64,9 @@ public class GcpClientTest {
     public void setUp() {
         when(gcpMetadataApi.currentProject()).thenReturn(CURRENT_PROJECT);
         when(gcpMetadataApi.currentZone()).thenReturn(CURRENT_ZONE);
+        when(gcpMetadataApi.currentRegion()).thenReturn(CURRENT_REGION);
         when(gcpMetadataApi.accessToken()).thenReturn(ACCESS_TOKEN);
+        when(gcpComputeApi.zones(CURRENT_PROJECT, CURRENT_REGION, ACCESS_TOKEN)).thenReturn(CURRENT_REGION_ZONES);
     }
 
     @Test
@@ -95,10 +105,10 @@ public class GcpClientTest {
     public void getAddressesMultipleProjectsMultipleZones() {
         // given
         Label label = new Label("application=hazelcast");
-        given(gcpComputeApi.instances(PROJECT_1, ZONE_1, label, ACCESS_TOKEN)).willReturn(asList(ADDRESS_1));
-        given(gcpComputeApi.instances(PROJECT_1, ZONE_2, label, ACCESS_TOKEN)).willReturn(asList(ADDRESS_2));
-        given(gcpComputeApi.instances(PROJECT_2, ZONE_1, label, ACCESS_TOKEN)).willReturn(asList(ADDRESS_3));
-        given(gcpComputeApi.instances(PROJECT_2, ZONE_2, label, ACCESS_TOKEN)).willReturn(asList(ADDRESS_4));
+        given(gcpComputeApi.instances(PROJECT_1, ZONE_1, label, ACCESS_TOKEN)).willReturn(singletonList(ADDRESS_1));
+        given(gcpComputeApi.instances(PROJECT_1, ZONE_2, label, ACCESS_TOKEN)).willReturn(singletonList(ADDRESS_2));
+        given(gcpComputeApi.instances(PROJECT_2, ZONE_1, label, ACCESS_TOKEN)).willReturn(singletonList(ADDRESS_3));
+        given(gcpComputeApi.instances(PROJECT_2, ZONE_2, label, ACCESS_TOKEN)).willReturn(singletonList(ADDRESS_4));
 
         GcpConfig gcpConfig = GcpConfig.builder()
                                        .setProjects(asList(PROJECT_1, PROJECT_2))
@@ -145,4 +155,74 @@ public class GcpClientTest {
         assertEquals(ZONE_1, result);
     }
 
+    @Test
+    public void setZonesWhenRegionPropertySet() {
+        // given
+        GcpConfig gcpConfig = GcpConfig
+                .builder()
+                .setRegion(REGION)
+                .build();
+
+        // when
+        new GcpClient(gcpMetadataApi, gcpComputeApi, gcpAuthenticator, gcpConfig);
+
+        // then
+        verify(gcpComputeApi).zones(CURRENT_PROJECT, REGION, ACCESS_TOKEN);
+    }
+
+    @Test
+    public void setZonesWhenZonesPropertySet() {
+        // given
+        GcpConfig gcpConfig = GcpConfig.builder().setZones(asList(ZONE_1, ZONE_2)).build();
+
+        // when
+        new GcpClient(gcpMetadataApi, gcpComputeApi, gcpAuthenticator, gcpConfig);
+
+        // then
+        verify(gcpComputeApi, never()).zones(any(), any(), any());
+    }
+
+    @Test
+    public void setZonesFromCurrentRegionWhenRegionAndZonesPropertiesNotSet() {
+        // given
+        GcpConfig gcpConfig = GcpConfig.builder().build();
+
+        // when
+        new GcpClient(gcpMetadataApi, gcpComputeApi, gcpAuthenticator, gcpConfig);
+
+        // then
+        verify(gcpComputeApi).zones(CURRENT_PROJECT, CURRENT_REGION, ACCESS_TOKEN);
+    }
+
+    @Test
+    public void setZonesMultipleProjectsWhenRegionAndZonesPropertiesNotSet() {
+        // given
+        GcpConfig gcpConfig = GcpConfig.builder()
+                .setProjects(asList(PROJECT_1, PROJECT_2))
+                .build();
+
+        // then
+        new GcpClient(gcpMetadataApi, gcpComputeApi, gcpAuthenticator, gcpConfig);
+
+        // then
+        verify(gcpComputeApi).zones(PROJECT_1, CURRENT_REGION, ACCESS_TOKEN);
+        verify(gcpComputeApi).zones(PROJECT_2, CURRENT_REGION, ACCESS_TOKEN);
+    }
+
+
+    @Test
+    public void setZonesMultipleProjectsWhenRegionPropertySet() {
+        // given
+        GcpConfig gcpConfig = GcpConfig.builder()
+                .setRegion(REGION)
+                .setProjects(asList(PROJECT_1, PROJECT_2))
+                .build();
+
+        // then
+        new GcpClient(gcpMetadataApi, gcpComputeApi, gcpAuthenticator, gcpConfig);
+
+        // then
+        verify(gcpComputeApi).zones(PROJECT_1, REGION, ACCESS_TOKEN);
+        verify(gcpComputeApi).zones(PROJECT_2, REGION, ACCESS_TOKEN);
+    }
 }

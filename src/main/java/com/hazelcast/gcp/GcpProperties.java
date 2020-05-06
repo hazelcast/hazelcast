@@ -43,7 +43,7 @@ enum GcpProperties {
     /**
      * A list of GCP zones in the form of "zone1,zone2,zone3".
      * <p>
-     * If not specified, then the discovery takes place only in the current zone.
+     * If not specified, then the discovery takes place in all zones of the current region.
      */
     ZONES("zones", STRING, true),
 
@@ -59,7 +59,14 @@ enum GcpProperties {
      * <p>
      * The default value is "5701-5708".
      */
-    PORT("hz-port", STRING, true, "5701-5708");
+    PORT("hz-port", STRING, true, "5701-5708"),
+
+    /**
+     * A GCP region.
+     * <p>
+     * If not specified, then the discovery uses "zones" property.
+     */
+    REGION("region", STRING, true);
 
     private final PropertyDefinition propertyDefinition;
     private final Comparable defaultValue;

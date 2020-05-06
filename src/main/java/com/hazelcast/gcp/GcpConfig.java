@@ -28,13 +28,16 @@ final class GcpConfig {
     private final List<String> zones;
     private final Label label;
     private final PortRange hzPort;
+    private final String region;
 
-    private GcpConfig(String privateKeyPath, List<String> projects, List<String> zones, Label label, PortRange hzPort) {
+    private GcpConfig(String privateKeyPath, List<String> projects, List<String> zones,
+                      Label label, PortRange hzPort, String region) {
         this.privateKeyPath = privateKeyPath;
         this.projects = projects;
         this.zones = zones;
         this.label = label;
         this.hzPort = hzPort;
+        this.region = region;
     }
 
     String getPrivateKeyPath() {
@@ -57,6 +60,10 @@ final class GcpConfig {
         return hzPort;
     }
 
+    String getRegion() {
+        return region;
+    }
+
     static Builder builder() {
         return new Builder();
     }
@@ -67,6 +74,7 @@ final class GcpConfig {
         private List<String> zones = new ArrayList<String>();
         private Label label;
         private PortRange hzPort;
+        private String region;
 
         Builder setPrivateKeyPath(String privateKeyPath) {
             this.privateKeyPath = privateKeyPath;
@@ -93,8 +101,13 @@ final class GcpConfig {
             return this;
         }
 
+        Builder setRegion(String region) {
+            this.region = region;
+            return this;
+        }
+
         GcpConfig build() {
-            return new GcpConfig(privateKeyPath, projects, zones, label, hzPort);
+            return new GcpConfig(privateKeyPath, projects, zones, label, hzPort, region);
         }
     }
 }

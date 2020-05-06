@@ -28,11 +28,10 @@ import java.util.concurrent.Callable;
 final class RetryUtils {
     static final long INITIAL_BACKOFF_MS = 1500L;
     static final double BACKOFF_MULTIPLIER = 1.5;
-    private static final long MAX_BACKOFF_MS = 5 * 60 * 1000L;
-
-    private static final ILogger LOGGER = Logger.getLogger(RetryUtils.class);
 
     private static final long MS_IN_SECOND = 1000L;
+    private static final long MAX_BACKOFF_MS = 5 * 60 * MS_IN_SECOND;
+    private static final ILogger LOGGER = Logger.getLogger(RetryUtils.class);
 
     private RetryUtils() {
     }

@@ -36,6 +36,7 @@ import static com.hazelcast.gcp.GcpProperties.LABEL;
 import static com.hazelcast.gcp.GcpProperties.PORT;
 import static com.hazelcast.gcp.GcpProperties.PRIVATE_KEY_PATH;
 import static com.hazelcast.gcp.GcpProperties.PROJECTS;
+import static com.hazelcast.gcp.GcpProperties.REGION;
 import static com.hazelcast.gcp.GcpProperties.ZONES;
 import static com.hazelcast.gcp.Utils.splitByComma;
 
@@ -81,6 +82,7 @@ public class GcpDiscoveryStrategy
                         .setZones(splitByComma((getOrNull(ZONES))))
                         .setLabel(labelOrNull(LABEL))
                         .setHzPort(new PortRange((String) getOrDefault(PORT.getDefinition(), PORT.getDefaultValue())))
+                        .setRegion(getOrNull(REGION))
                         .build();
     }
 
