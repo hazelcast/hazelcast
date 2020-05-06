@@ -127,7 +127,7 @@ converted to the target type.
 
 *Table 4: Type conversions (I - implicit, E - explicit)*
 
-| From/To | VARCHAR | BOOLEAN | TINYINT | SMALLINT | INT | BINGINT | DECIMAL | REAL | DOUBLE | DATE | TIME | TIMESTAMP | TIMESTAMP W/ TZ | OBJECT |
+| From/To | VARCHAR | BOOLEAN | TINYINT | SMALLINT | INT | BIGINT | DECIMAL | REAL | DOUBLE | DATE | TIME | TIMESTAMP | TIMESTAMP W/ TZ | OBJECT |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
 | **VARCHAR** | `I` | `I` | `I` | `I` | `I` | `I` | `I` | `I` | `I` | `I` | `I` | `I` | `I` | `I` |
 | **BOOLEAN** | `E` | `I` |  |  |  |  |  |  |  |  |  |  |  | `I` |
