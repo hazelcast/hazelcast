@@ -27,8 +27,6 @@ import com.hazelcast.sql.impl.calcite.opt.physical.visitor.NodeIdVisitor;
 import com.hazelcast.sql.impl.calcite.opt.physical.visitor.PlanCreateVisitor;
 import com.hazelcast.sql.impl.calcite.opt.physical.visitor.SqlToQueryType;
 import com.hazelcast.sql.impl.optimizer.OptimizationTask;
-import com.hazelcast.sql.impl.optimizer.OptimizerRuleCallTracker;
-import com.hazelcast.sql.impl.optimizer.OptimizerStatistics;
 import com.hazelcast.sql.impl.optimizer.SqlOptimizer;
 import com.hazelcast.sql.impl.plan.Plan;
 import com.hazelcast.sql.impl.schema.TableResolver;
@@ -84,19 +82,10 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         LogicalRel logicalRel = context.optimizeLogical(rel);
 
         // 5. Perform physical optimization.
-        long start = System.currentTimeMillis();
-
-        boolean statsEnabled = context.getConfig().isStatisticsEnabled();
-
-        OptimizerRuleCallTracker physicalRuleCallTracker = statsEnabled ? new OptimizerRuleCallTracker() : null;
-        PhysicalRel physicalRel = context.optimizePhysical(logicalRel, physicalRuleCallTracker);
+        PhysicalRel physicalRel = context.optimizePhysical(logicalRel);
 
         // 6. Create plan.
-        long dur = System.currentTimeMillis() - start;
-
-        OptimizerStatistics stats = statsEnabled ? new OptimizerStatistics(dur, physicalRuleCallTracker) : null;
-
-        return doCreatePlan(task.getSql(), parameterRowType, physicalRel, stats);
+        return doCreatePlan(task.getSql(), parameterRowType, physicalRel);
     }
 
     /**
@@ -105,12 +94,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
      * @param rel Rel.
      * @return Plan.
      */
-    private Plan doCreatePlan(
-        String sql,
-        RelDataType parameterRowType,
-        PhysicalRel rel,
-        OptimizerStatistics stats
-    ) {
+    private Plan doCreatePlan(String sql, RelDataType parameterRowType, PhysicalRel rel) {
         // Get partition mapping.
         Collection<Partition> parts = nodeEngine.getHazelcastInstance().getPartitionService().getPartitions();
 
@@ -138,8 +122,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
             partMap,
             relIdMap,
             sql,
-            parameterMetadata,
-            stats
+            parameterMetadata
         );
 
         rel.visit(visitor);

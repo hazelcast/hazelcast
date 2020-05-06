@@ -504,7 +504,6 @@ public class QueryOperationHandlerTest extends SqlTestSupport {
             Collections.emptyMap(),
             null,
             null,
-            null,
             null
         );
 

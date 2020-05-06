@@ -42,7 +42,6 @@ import com.hazelcast.sql.impl.calcite.schema.HazelcastCalciteCatalogReader;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastSchema;
 import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlConformance;
 import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlValidator;
-import com.hazelcast.sql.impl.optimizer.OptimizerRuleCallTracker;
 import com.hazelcast.sql.impl.schema.SchemaUtils;
 import com.hazelcast.sql.impl.schema.Table;
 import com.hazelcast.sql.impl.schema.TableResolver;
@@ -103,9 +102,6 @@ public final class OptimizerContext {
         DefaultRelMetadataProvider.INSTANCE
     ));
 
-    /** Converter: whether to convert LogicalTableScan to some physical form immediately or not. We do not need this. */
-    private static final boolean CONVERTER_CONVERT_TABLE_ACCESS = false;
-
     /**
      * Converter: whether to expand subqueries. When set to {@code false}, subqueries are left as is in the form of
      * {@link org.apache.calcite.rex.RexSubQuery}. Otherwise they are expanded into {@link org.apache.calcite.rel.core.Correlate}
@@ -118,12 +114,6 @@ public final class OptimizerContext {
 
     /** Converter: whether to trim unused fields. */
     private static final boolean CONVERTER_TRIM_UNUSED_FIELDS = true;
-
-    /** Thread-local optimizer config. */
-    private static final ThreadLocal<OptimizerConfig> OPTIMIZER_CONFIG = new ThreadLocal<>();
-
-    /** Optimizer config. */
-    private final OptimizerConfig config;
 
     /** Cluster. */
     private final HazelcastRelOptCluster cluster;
@@ -138,13 +128,11 @@ public final class OptimizerContext {
     private final SqlToRelConverter sqlToRelConverter;
 
     private OptimizerContext(
-        OptimizerConfig config,
         SqlValidator validator,
         SqlToRelConverter sqlToRelConverter,
         HazelcastRelOptCluster cluster,
         VolcanoPlanner planner
     ) {
-        this.config = config;
         this.validator = validator;
         this.sqlToRelConverter = sqlToRelConverter;
         this.cluster = cluster;
@@ -162,19 +150,14 @@ public final class OptimizerContext {
         // Resolve tables.
         HazelcastSchema rootSchema = createRootSchema(tableResolvers);
 
-        return create(rootSchema, searchPaths0, memberCount, getOptimizerConfig());
+        return create(rootSchema, searchPaths0, memberCount);
     }
 
     public static OptimizerContext create(
         HazelcastSchema rootSchema,
         List<List<String>> schemaPaths,
-        int memberCount,
-        OptimizerConfig config
+        int memberCount
     ) {
-        if (config == null) {
-            config = OptimizerConfig.builder().build();
-        }
-
         JavaTypeFactory typeFactory = new HazelcastTypeFactory();
         CalciteConnectionConfig connectionConfig = createConnectionConfig();
         Prepare.CatalogReader catalogReader = createCatalogReader(typeFactory, connectionConfig, rootSchema, schemaPaths);
@@ -183,7 +166,7 @@ public final class OptimizerContext {
         HazelcastRelOptCluster cluster = createCluster(planner, typeFactory, memberCount);
         SqlToRelConverter sqlToRelConverter = createSqlToRelConverter(catalogReader, validator, cluster);
 
-        return new OptimizerContext(config, validator, sqlToRelConverter, cluster, planner);
+        return new OptimizerContext(validator, sqlToRelConverter, cluster, planner);
     }
 
     /**
@@ -288,7 +271,7 @@ public final class OptimizerContext {
      * @param rel Optimized logical tree.
      * @return Optimized physical tree.
      */
-    public PhysicalRel optimizePhysical(RelNode rel, OptimizerRuleCallTracker ruleCallTracker) {
+    public PhysicalRel optimizePhysical(RelNode rel) {
         RuleSet rules = RuleSets.ofList(
             SortPhysicalRule.INSTANCE,
             RootPhysicalRule.INSTANCE,
@@ -304,11 +287,7 @@ public final class OptimizerContext {
         Program program = Programs.of(rules);
 
         try {
-            cluster.startPhysicalOptimization(ruleCallTracker);
-
-            if (ruleCallTracker != null) {
-                ruleCallTracker.onStart();
-            }
+            cluster.startPhysicalOptimization();
 
             RelNode res = program.run(
                 planner,
@@ -318,10 +297,6 @@ public final class OptimizerContext {
                 ImmutableList.of()
             );
 
-            if (ruleCallTracker != null) {
-                ruleCallTracker.onDone();
-            }
-
             return (PhysicalRel) res;
         } finally {
             cluster.finishPhysicalOptimization();
@@ -330,10 +305,6 @@ public final class OptimizerContext {
 
     public RelDataType getParameterRowType(SqlNode sqlNode) {
         return validator.getParameterRowType(sqlNode);
-    }
-
-    public OptimizerConfig getConfig() {
-        return config;
     }
 
     private static CalciteConnectionConfig createConnectionConfig() {
@@ -416,22 +387,6 @@ public final class OptimizerContext {
             StandardConvertletTable.INSTANCE,
             sqlToRelConfigBuilder.build()
         );
-    }
-
-    private static OptimizerConfig getOptimizerConfig() {
-        OptimizerConfig res = OPTIMIZER_CONFIG.get();
-
-        if (res != null) {
-            OPTIMIZER_CONFIG.remove();
-        } else {
-            res = OptimizerConfig.builder().build();
-        }
-
-        return res;
-    }
-
-    public static void setOptimizerConfig(OptimizerConfig optimizerConfig) {
-        OPTIMIZER_CONFIG.set(optimizerConfig);
     }
 
     /**

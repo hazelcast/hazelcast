@@ -20,7 +20,6 @@ import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.sql.impl.QueryMetadata;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.explain.QueryExplain;
-import com.hazelcast.sql.impl.optimizer.OptimizerStatistics;
 import com.hazelcast.sql.impl.plan.node.PlanNode;
 
 import java.util.Collection;
@@ -58,9 +57,6 @@ public class Plan {
     /** Explain. */
     private final QueryExplain explain;
 
-    /** Optimizer statistics. */
-    private final OptimizerStatistics stats;
-
     public Plan(
         Map<UUID, PartitionIdSet> partMap,
         List<PlanNode> fragments,
@@ -70,8 +66,7 @@ public class Plan {
         Map<Integer, Integer> inboundEdgeMemberCountMap,
         QueryParameterMetadata parameterMetadata,
         QueryMetadata metadata,
-        QueryExplain explain,
-        OptimizerStatistics stats
+        QueryExplain explain
     ) {
         this.partMap = partMap;
         this.fragments = fragments;
@@ -82,7 +77,6 @@ public class Plan {
         this.parameterMetadata = parameterMetadata;
         this.metadata = metadata;
         this.explain = explain;
-        this.stats = stats;
     }
 
     public Map<UUID, PartitionIdSet> getPartitionMap() {
@@ -127,9 +121,5 @@ public class Plan {
 
     public QueryExplain getExplain() {
         return explain;
-    }
-
-    public OptimizerStatistics getStatistics() {
-        return stats;
     }
 }

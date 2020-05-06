@@ -53,7 +53,6 @@ import com.hazelcast.sql.impl.expression.aggregate.MinAggregateExpression;
 import com.hazelcast.sql.impl.expression.aggregate.SingleValueAggregateExpression;
 import com.hazelcast.sql.impl.expression.aggregate.SumAggregateExpression;
 import com.hazelcast.sql.impl.extract.QueryPath;
-import com.hazelcast.sql.impl.optimizer.OptimizerStatistics;
 import com.hazelcast.sql.impl.partitioner.AllFieldsRowPartitioner;
 import com.hazelcast.sql.impl.partitioner.FieldsRowPartitioner;
 import com.hazelcast.sql.impl.plan.Plan;
@@ -122,9 +121,6 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
 
     private final QueryParameterMetadata parameterMetadata;
 
-    /** Optimizer statistics. */
-    private final OptimizerStatistics stats;
-
     /** Prepared fragments. */
     private final List<PlanNode> fragments = new ArrayList<>();
 
@@ -154,15 +150,13 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
         Map<UUID, PartitionIdSet> partMap,
         Map<PhysicalRel, List<Integer>> relIdMap,
         String sql,
-        QueryParameterMetadata parameterMetadata,
-        OptimizerStatistics stats
+        QueryParameterMetadata parameterMetadata
     ) {
         this.localMemberId = localMemberId;
         this.partMap = partMap;
         this.relIdMap = relIdMap;
         this.sql = sql;
         this.parameterMetadata = parameterMetadata;
-        this.stats = stats;
 
         memberIds = new HashSet<>(partMap.keySet());
     }
@@ -206,8 +200,7 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
             inboundEdgeMemberCountMap,
             parameterMetadata,
             rootMetadata,
-            explain,
-            stats
+            explain
         );
     }
 

@@ -16,7 +16,6 @@
 
 package com.hazelcast.sql.optimizer.support;
 
-import com.hazelcast.sql.impl.calcite.OptimizerConfig;
 import com.hazelcast.sql.impl.calcite.OptimizerContext;
 import com.hazelcast.sql.impl.calcite.opt.logical.LogicalRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.PhysicalRel;
@@ -89,13 +88,10 @@ public abstract class OptimizerTestSupport {
      * @return Result.
      */
     protected Result optimize(String sql, HazelcastSchema schema) {
-        OptimizerConfig config = OptimizerConfig.builder().build();
-
         OptimizerContext context = OptimizerContext.create(
             OptimizerContext.createCatalog(schema),
             SchemaUtils.prepareSearchPaths(null, null),
-            1,
-            config
+            1
         );
 
         return optimize(sql, context);
@@ -112,7 +108,7 @@ public abstract class OptimizerTestSupport {
         SqlNode node = context.parse(sql);
         RelNode converted = context.convert(node);
         LogicalRel logical = context.optimizeLogical(converted);
-        PhysicalRel physical = isOptimizePhysical() ? context.optimizePhysical(logical, null) : null;
+        PhysicalRel physical = isOptimizePhysical() ? context.optimizePhysical(logical) : null;
 
         Result res = new Result(node, converted, logical, physical);
 
