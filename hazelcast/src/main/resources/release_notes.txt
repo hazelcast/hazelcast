@@ -1,5 +1,14 @@
 This document lists the new features, enhancements, fixed issues and, removed or deprecated features for Hazelcast IMDG 3.12.x release. The numbers in the square brackets refer to the issues in Hazelcast's GitHub repositories.
 
+==== 3.12.2 - VISA3 ====
+
+1. Fixes
+
+* When an update in the partition table is detected, a member sends
+the updated table to its clients. When there are a lot of clients
+(hundreds or more), this was causing migration latencies. This has been
+fixed with this release. [#16937]
+
 ==== 3.12.2 - VISA2 ====
 
 1. Fixes
