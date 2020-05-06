@@ -8,6 +8,7 @@ import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.schema.model.AllTypesValue;
 import com.hazelcast.sql.schema.model.Person;
 import com.hazelcast.sql.support.CalciteSqlTestSupport;
+import com.hazelcast.test.TestHazelcastInstanceFactory;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -167,5 +168,34 @@ public class SchemaTest extends CalciteSqlTestSupport {
 
         assertThatThrownBy(() -> executeQuery(member, format("SELECT name FROM %s", name)))
                 .isInstanceOf(HazelcastSqlException.class);
+    }
+
+    @Test
+    public void testSchemaDistribution() {
+        String name = "distributed_schema_map";
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+        try {
+            HazelcastInstance[] instances = factory.newInstances();
+            HazelcastInstance local = instances[0];
+            HazelcastInstance remote = instances[1];
+
+            // create table on local member then shut it down
+            executeUpdate(local, format("CREATE EXTERNAL TABLE %s (__key INT) TYPE %s", name, TYPE));
+            local.shutdown();
+
+            // execute query on remote member
+            SqlCursor sqlRows = executeQuery(remote, format("SELECT __key FROM %s", name));
+            List<SqlRow> rows = getQueryRows(sqlRows);
+
+            assertEquals(0, rows.size());
+
+            // TODO: it should be possible to SELECT value from an empty table
+            /*SqlCursor sqlRows = executeQuery(member, format("SELECT 13 FROM %s", name));
+            List<SqlRow> rows = getQueryRows(sqlRows);
+            assertEquals(1, rows.size());
+            assertEquals(13, (int) rows.get(0).getObject(0));*/
+        } finally {
+            factory.terminateAll();
+        }
     }
 }
