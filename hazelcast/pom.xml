@@ -240,6 +240,8 @@
                             <artifactSet>
                                 <includes>
                                     <include>com.fasterxml.jackson.core:jackson-core</include>
+                                    <include>com.fasterxml.jackson.jr:jackson-objects</include>
+                                    <include>com.fasterxml.jackson.jr:jackson-annotation-support</include>
                                     <include>org.snakeyaml:snakeyaml-engine</include>
                                 </includes>
                             </artifactSet>
@@ -318,6 +320,18 @@
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-core</artifactId>
+            <version>${jackson.version}</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.jr</groupId>
+            <artifactId>jackson-jr-objects</artifactId>
+            <version>${jackson.version}</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.jr</groupId>
+            <artifactId>jackson-jr-annotation-support</artifactId>
             <version>${jackson.version}</version>
             <scope>compile</scope>
         </dependency>
