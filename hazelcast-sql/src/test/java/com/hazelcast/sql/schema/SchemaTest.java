@@ -52,13 +52,8 @@ public class SchemaTest extends CalciteSqlTestSupport {
         executeUpdate(member, format("CREATE EXTERNAL TABLE %s (__key INT) TYPE %s", name, TYPE));
 
         List<SqlRow> rows = getQueryRows(member, format("SELECT __key FROM %s", name));
-        assertEquals(0, rows.size());
 
-        // TODO: it should be possible to SELECT value from an empty table
-        /*sqlRows = executeQuery(member, format("SELECT 13 FROM %s", name));
-        rows = getQueryRows(sqlRows);
-        assertEquals(1, rows.size());
-        assertEquals(13, (int) rows.get(0).getObject(0));*/
+        assertEquals(0, rows.size());
     }
 
     @Test
@@ -142,7 +137,7 @@ public class SchemaTest extends CalciteSqlTestSupport {
     }
 
     @Test
-    public void testSelectFromMapWithComplexKey() {
+    public void testSelectFromMapWithCompositeKey() {
         String name = "predeclared_map";
         executeUpdate(member, format("CREATE EXTERNAL TABLE %s (\"__key.age\" INT, age INT) TYPE %s", name, TYPE));
 
@@ -183,12 +178,6 @@ public class SchemaTest extends CalciteSqlTestSupport {
             List<SqlRow> rows = getQueryRows(remote, format("SELECT __key FROM %s", name));
 
             assertEquals(0, rows.size());
-
-            // TODO: it should be possible to SELECT value from an empty table
-            /*SqlCursor sqlRows = executeQuery(member, format("SELECT 13 FROM %s", name));
-            List<SqlRow> rows = getQueryRows(sqlRows);
-            assertEquals(1, rows.size());
-            assertEquals(13, (int) rows.get(0).getObject(0));*/
         } finally {
             factory.terminateAll();
         }
