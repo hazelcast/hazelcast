@@ -30,6 +30,7 @@ import com.hazelcast.sql.impl.parser.Statement;
 import com.hazelcast.sql.impl.plan.Plan;
 import com.hazelcast.sql.impl.schema.Catalog;
 import com.hazelcast.sql.impl.schema.TableResolver;
+import com.hazelcast.sql.impl.schema.TableSchema;
 import com.hazelcast.sql.impl.schema.map.PartitionedMapTableResolver;
 import com.hazelcast.sql.impl.schema.map.ReplicatedMapTableResolver;
 import com.hazelcast.sql.impl.type.QueryDataType;
@@ -98,12 +99,10 @@ public class CalciteSqlParser implements SqlParser {
         List<Entry<String, String>> options = sqlCreateTable.options()
                                                             .map(option -> entry(option.key(), option.value()))
                                                             .collect(toList());
+        TableSchema schema = new TableSchema(sqlCreateTable.name(), sqlCreateTable.type(), fields, options);
 
         return new CreateTableStatement(
-                sqlCreateTable.name(),
-                sqlCreateTable.type(),
-                fields,
-                options,
+                schema,
                 sqlCreateTable.getReplace(),
                 sqlCreateTable.ifNotExists()
         );

@@ -18,10 +18,6 @@ package com.hazelcast.sql.impl.parser;
 
 import com.hazelcast.sql.impl.schema.Catalog;
 import com.hazelcast.sql.impl.schema.TableSchema;
-import com.hazelcast.sql.impl.type.QueryDataType;
-
-import java.util.List;
-import java.util.Map.Entry;
 
 /**
  * 'CREATE TABLE' DDL statement.
@@ -33,13 +29,8 @@ public class CreateTableStatement implements DdlStatement {
     private final boolean replace;
     private final boolean ifNotExists;
 
-    public CreateTableStatement(String name,
-                                String type,
-                                List<Entry<String, QueryDataType>> fields,
-                                List<Entry<String, String>> options,
-                                boolean replace,
-                                boolean ifNotExists) {
-        this.schema = new TableSchema(name, type, fields, options);
+    public CreateTableStatement(TableSchema schema, boolean replace, boolean ifNotExists) {
+        this.schema = schema;
 
         this.replace = replace;
         this.ifNotExists = ifNotExists;
