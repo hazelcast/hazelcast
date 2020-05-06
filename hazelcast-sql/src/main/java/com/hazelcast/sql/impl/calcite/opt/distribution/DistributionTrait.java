@@ -71,9 +71,9 @@ public class DistributionTrait implements RelTrait {
     //  partitioned on [b1, b2]. IMO we should not encode the equality this way. Instead, it should be encoded inside
     //  physical operator itself, and distribution should be normalized to only a single list of columns. This will simplify
     //  planning complexity.
-    private final List<List<DistributionField>> fieldGroups;
+    private final List<List<Integer>> fieldGroups;
 
-    public DistributionTrait(DistributionType type, List<List<DistributionField>> fieldGroups) {
+    private DistributionTrait(DistributionType type, List<List<Integer>> fieldGroups) {
         this.type = type;
         this.fieldGroups = fieldGroups;
     }
@@ -82,7 +82,7 @@ public class DistributionTrait implements RelTrait {
         return type;
     }
 
-    public List<List<DistributionField>> getFieldGroups() {
+    public List<List<Integer>> getFieldGroups() {
         return fieldGroups;
     }
 
@@ -90,6 +90,7 @@ public class DistributionTrait implements RelTrait {
         return !fieldGroups.isEmpty();
     }
 
+    @SuppressWarnings("rawtypes")
     @Override
     public RelTraitDef getTraitDef() {
         return DistributionTraitDef.INSTANCE;
@@ -153,8 +154,8 @@ public class DistributionTrait implements RelTrait {
             return false;
         } else {
             // Otherwise compare every pair of source and target field group.
-            for (List<DistributionField> currentGroup : currentTrait.getFieldGroups()) {
-                for (List<DistributionField> targetGroup : targetTrait.getFieldGroups()) {
+            for (List<Integer> currentGroup : currentTrait.getFieldGroups()) {
+                for (List<Integer> targetGroup : targetTrait.getFieldGroups()) {
                     if (satisfiesPartitioned(currentGroup, targetGroup)) {
                         return true;
                     }
@@ -179,15 +180,12 @@ public class DistributionTrait implements RelTrait {
      *
      * @return {@code True} if satisfies, {@code false} otherwise.
      */
-    private static boolean satisfiesPartitioned(
-        List<DistributionField> currentFields,
-        List<DistributionField> targetFields
-    ) {
+    private static boolean satisfiesPartitioned(List<Integer> currentFields, List<Integer> targetFields) {
         if (currentFields.size() > targetFields.size()) {
             return false;
         }
 
-        for (DistributionField currentField : currentFields) {
+        for (Integer currentField : currentFields) {
             if (!targetFields.contains(currentField)) {
                 return false;
             }
@@ -244,7 +242,7 @@ public class DistributionTrait implements RelTrait {
         return res.toString();
     }
 
-    private static void appendFieldGroupToString(StringBuilder builder, List<DistributionField> fields) {
+    private static void appendFieldGroupToString(StringBuilder builder, List<Integer> fields) {
         builder.append("{");
 
         for (int i = 0; i < fields.size(); i++) {
@@ -252,15 +250,15 @@ public class DistributionTrait implements RelTrait {
                 builder.append(", ");
             }
 
-            DistributionField field = fields.get(i);
+            Integer field = fields.get(i);
 
-            builder.append("$").append(field.getIndex());
+            builder.append("$").append(field);
         }
 
         builder.append("}");
     }
 
-    private static String fieldGroupToString(List<DistributionField> fields) {
+    private static String fieldGroupToString(List<Integer> fields) {
         StringBuilder res = new StringBuilder();
 
         appendFieldGroupToString(res, fields);
@@ -270,7 +268,7 @@ public class DistributionTrait implements RelTrait {
 
     public static final class Builder {
         private final DistributionType type;
-        private List<List<DistributionField>> fieldGroups;
+        private List<List<Integer>> fieldGroups;
 
         private Builder(DistributionType type) {
             assert type != null;
@@ -282,15 +280,7 @@ public class DistributionTrait implements RelTrait {
             return new Builder(type);
         }
 
-        public Builder addFieldGroup(DistributionField field) {
-            ArrayList<DistributionField> fields = new ArrayList<>(1);
-
-            fields.add(field);
-
-            return addFieldGroup(fields);
-        }
-
-        public Builder addFieldGroup(List<DistributionField> fields) {
+        public Builder addFieldGroup(List<Integer> fields) {
             assert fields != null;
             assert !fields.isEmpty();
 
@@ -303,16 +293,6 @@ public class DistributionTrait implements RelTrait {
             return this;
         }
 
-        public Builder addFieldGroupPlain(List<Integer> fields) {
-            List<DistributionField> fields0 = new ArrayList<>();
-
-            for (Integer field : fields) {
-                fields0.add(new DistributionField(field));
-            }
-
-            return addFieldGroup(fields0);
-        }
-
         public DistributionTrait build() {
             if (fieldGroups == null) {
                 return new DistributionTrait(type, Collections.emptyList());
@@ -320,7 +300,7 @@ public class DistributionTrait implements RelTrait {
                 assert !fieldGroups.isEmpty();
 
                 // Do not modify original list to allow for builder reuse.
-                ArrayList<List<DistributionField>> fieldGroups0 = new ArrayList<>(fieldGroups);
+                ArrayList<List<Integer>> fieldGroups0 = new ArrayList<>(fieldGroups);
 
                 fieldGroups0.sort(FieldGroupComparator.INSTANCE);
 
@@ -333,12 +313,12 @@ public class DistributionTrait implements RelTrait {
      * Field group comparator. Sorts several distribution groups in alphabetical order, so that distribution of
      * {a1, a2} + {b1, b2} is considered equal to {b1, b2} + {a1, a2}.
      */
-    private static final class FieldGroupComparator implements Comparator<List<DistributionField>> {
+    private static final class FieldGroupComparator implements Comparator<List<Integer>> {
         /** Singleton instance. */
         private static final FieldGroupComparator INSTANCE = new FieldGroupComparator();
 
         @Override
-        public int compare(List<DistributionField> o1, List<DistributionField> o2) {
+        public int compare(List<Integer> o1, List<Integer> o2) {
             String str1 = fieldGroupToString(o1);
             String str2 = fieldGroupToString(o2);
 

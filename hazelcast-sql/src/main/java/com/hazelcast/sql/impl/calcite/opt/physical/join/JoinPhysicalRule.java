@@ -17,7 +17,6 @@
 package com.hazelcast.sql.impl.calcite.opt.physical.join;
 
 import com.hazelcast.sql.impl.calcite.opt.HazelcastConventions;
-import com.hazelcast.sql.impl.calcite.opt.distribution.DistributionField;
 import com.hazelcast.sql.impl.calcite.opt.distribution.DistributionTrait;
 import com.hazelcast.sql.impl.calcite.opt.distribution.DistributionType;
 import com.hazelcast.sql.impl.calcite.opt.OptUtils;
@@ -486,8 +485,8 @@ public final class JoinPhysicalRule extends AbstractPhysicalRule {
             default:
                 assert joinDistribution == JoinDistribution.PARTITIONED;
 
-                List<DistributionField> leftDistFields = prepareDistributionFieldsEquiJoin(leftJoinKeys, 0);
-                List<DistributionField> rightDistFields = prepareDistributionFieldsEquiJoin(rightJoinKeys, leftFieldCount);
+                List<Integer> leftDistFields = prepareDistributionFieldsEquiJoin(leftJoinKeys, 0);
+                List<Integer> rightDistFields = prepareDistributionFieldsEquiJoin(rightJoinKeys, leftFieldCount);
 
                 return DistributionTrait.Builder.ofType(DistributionType.PARTITIONED)
                     .addFieldGroup(leftDistFields)
@@ -503,10 +502,10 @@ public final class JoinPhysicalRule extends AbstractPhysicalRule {
      * @param offset Offset. Zero for the left input, [num of fields on the left input] for the right input.
      * @return Distribution fields.
      */
-    private static List<DistributionField> prepareDistributionFieldsEquiJoin(List<Integer> joinKeys, int offset) {
-        List<DistributionField> res = new ArrayList<>(joinKeys.size());
+    private static List<Integer> prepareDistributionFieldsEquiJoin(List<Integer> joinKeys, int offset) {
+        List<Integer> res = new ArrayList<>(joinKeys.size());
 
-        joinKeys.forEach((fieldIndex) -> res.add(new DistributionField(fieldIndex + offset)));
+        joinKeys.forEach((fieldIndex) -> res.add(fieldIndex + offset));
 
         return res;
     }
@@ -605,7 +604,7 @@ public final class JoinPhysicalRule extends AbstractPhysicalRule {
         // Deal with partitioned distribution. Try to find the matching group.
         assert type == DistributionType.PARTITIONED;
 
-        for (List<DistributionField> fields : dist.getFieldGroups()) {
+        for (List<Integer> fields : dist.getFieldGroups()) {
             List<Integer> mappedJoinKeys = mapPartitionedDistributionKeys(joinKeys, fields);
 
             if (mappedJoinKeys != null) {
@@ -631,11 +630,11 @@ public final class JoinPhysicalRule extends AbstractPhysicalRule {
      * @param fields Distribution fields.
      * @return Join keys BitSet.
      */
-    private static List<Integer> mapPartitionedDistributionKeys(List<Integer> joinKeys, List<DistributionField> fields) {
+    private static List<Integer> mapPartitionedDistributionKeys(List<Integer> joinKeys, List<Integer> fields) {
         List<Integer> res = new ArrayList<>(joinKeys.size());
 
-        for (DistributionField field : fields) {
-            int joinKeyIndex = joinKeys.indexOf(field.getIndex());
+        for (Integer field : fields) {
+            int joinKeyIndex = joinKeys.indexOf(field);
 
             if (joinKeyIndex == -1) {
                 return null;

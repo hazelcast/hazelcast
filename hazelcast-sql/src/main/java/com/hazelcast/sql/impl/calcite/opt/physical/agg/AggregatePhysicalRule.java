@@ -163,7 +163,7 @@ public final class AggregatePhysicalRule extends AbstractPhysicalRule {
             List<Integer> hashFields = localAgg.getGroupSet().toList();
 
             DistributionTrait distribution =
-                DistributionTrait.Builder.ofType(DistributionType.PARTITIONED).addFieldGroupPlain(hashFields).build();
+                DistributionTrait.Builder.ofType(DistributionType.PARTITIONED).addFieldGroup(hashFields).build();
 
             exchange = new UnicastExchangePhysicalRel(
                 cluster,

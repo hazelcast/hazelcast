@@ -17,7 +17,6 @@
 package com.hazelcast.sql.impl.calcite.opt.physical.agg;
 
 import com.hazelcast.sql.impl.calcite.opt.OptUtils;
-import com.hazelcast.sql.impl.calcite.opt.distribution.DistributionField;
 import com.hazelcast.sql.impl.calcite.opt.distribution.DistributionTrait;
 import com.hazelcast.sql.impl.calcite.opt.distribution.DistributionType;
 import com.hazelcast.sql.impl.calcite.opt.logical.AggregateLogicalRel;
@@ -79,9 +78,9 @@ public final class AggregateDistribution {
      */
     private static AggregateDistribution ofDistributed(
         ImmutableBitSet aggGroupSet,
-        List<List<DistributionField>> inputFieldGroups
+        List<List<Integer>> inputFieldGroups
     ) {
-        for (List<DistributionField> inputFieldGroup : inputFieldGroups) {
+        for (List<Integer> inputFieldGroup : inputFieldGroups) {
             if (isCollocated(aggGroupSet, inputFieldGroup)) {
                 DistributionTrait distribution =
                     DistributionTrait.Builder.ofType(DistributionType.PARTITIONED).addFieldGroup(inputFieldGroup).build();
@@ -102,7 +101,7 @@ public final class AggregateDistribution {
      * @param inputFieldGroup Field group.
      * @return {@code True} if this aggregate could be processed in collocated mode.
      */
-    private static boolean isCollocated(ImmutableBitSet aggGroupSet, List<DistributionField> inputFieldGroup) {
+    private static boolean isCollocated(ImmutableBitSet aggGroupSet, List<Integer> inputFieldGroup) {
         // If group set size is less than the number of input distribution fields, then dist fields could not be a
         // prefix of group by definition.
         if (aggGroupSet.length() < inputFieldGroup.size()) {

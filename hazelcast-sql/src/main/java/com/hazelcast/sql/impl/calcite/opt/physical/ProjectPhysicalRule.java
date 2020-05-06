@@ -17,7 +17,6 @@
 package com.hazelcast.sql.impl.calcite.opt.physical;
 
 import com.hazelcast.sql.impl.calcite.opt.HazelcastConventions;
-import com.hazelcast.sql.impl.calcite.opt.distribution.DistributionField;
 import com.hazelcast.sql.impl.calcite.opt.distribution.DistributionTrait;
 import com.hazelcast.sql.impl.calcite.opt.distribution.DistributionType;
 import com.hazelcast.sql.impl.calcite.opt.OptUtils;
@@ -90,7 +89,7 @@ public final class ProjectPhysicalRule extends AbstractPhysicalRule {
         List<InputAndTraitSet> res = new ArrayList<>(1);
 
         // Get mapping of project input fields to an index of related expression in the projection.
-        Map<DistributionField, Integer> candDistFields = getCandidateDistributionFields(logicalProject);
+        Map<Integer, Integer> candDistFields = getCandidateDistributionFields(logicalProject);
         Map<Integer, Integer> candCollationFields = getCandidateCollationFields(logicalProject);
 
         Collection<RelNode> physicalInputs = OptUtils.getPhysicalRelsFromSubset(convertedInput);
@@ -123,7 +122,7 @@ public final class ProjectPhysicalRule extends AbstractPhysicalRule {
      */
     private static RelTraitSet createPhysicalTraitSet(
         RelNode physicalInput,
-        Map<DistributionField, Integer> candDistFields,
+        Map<Integer, Integer> candDistFields,
         Map<Integer, Integer> candCollationFields
     ) {
         DistributionTrait finalDist = deriveDistribution(physicalInput, candDistFields);
@@ -140,8 +139,7 @@ public final class ProjectPhysicalRule extends AbstractPhysicalRule {
      * @return Distribution which should be used by project.
      */
     @SuppressWarnings("checkstyle:RegexpSingleline")
-    private static DistributionTrait deriveDistribution(RelNode physicalInput,
-        Map<DistributionField, Integer> projectFieldMap) {
+    private static DistributionTrait deriveDistribution(RelNode physicalInput, Map<Integer, Integer> projectFieldMap) {
         DistributionTrait physicalInputDist = OptUtils.getDistribution(physicalInput);
 
         DistributionType type = physicalInputDist.getType();
@@ -176,16 +174,16 @@ public final class ProjectPhysicalRule extends AbstractPhysicalRule {
         // MEMBER_1([a1]), MEMBER_2([a1]) after projection, so both members may contains the same value.
         DistributionTrait.Builder builder = DistributionTrait.Builder.ofType(PARTITIONED);
 
-        for (List<DistributionField> fieldGroup : physicalInputDist.getFieldGroups()) {
+        for (List<Integer> fieldGroup : physicalInputDist.getFieldGroups()) {
             boolean valid = true;
-            List<DistributionField> newFieldGroup = new ArrayList<>(fieldGroup.size());
+            List<Integer> newFieldGroup = new ArrayList<>(fieldGroup.size());
 
-            for (DistributionField field : fieldGroup) {
+            for (Integer field : fieldGroup) {
                 Integer idx = projectFieldMap.get(field);
 
                 if (idx != null) {
                     // The field is still in the project, continue.
-                    newFieldGroup.add(new DistributionField(idx));
+                    newFieldGroup.add(idx);
                 } else {
                     // Distribution field is not in the project. We cannot use this field group any more.
                     valid = false;
@@ -280,8 +278,8 @@ public final class ProjectPhysicalRule extends AbstractPhysicalRule {
      * @param project Projection.
      * @return Result.
      */
-    private static Map<DistributionField, Integer> getCandidateDistributionFields(ProjectLogicalRel project) {
-        Map<DistributionField, Integer> res = new HashMap<>();
+    private static Map<Integer, Integer> getCandidateDistributionFields(ProjectLogicalRel project) {
+        Map<Integer, Integer> res = new HashMap<>();
 
         int idx = 0;
 
@@ -289,7 +287,7 @@ public final class ProjectPhysicalRule extends AbstractPhysicalRule {
             if (node instanceof RexInputRef) {
                 RexInputRef node0 = (RexInputRef) node;
 
-                res.put(new DistributionField(node0.getIndex()), idx);
+                res.put(node0.getIndex(), idx);
             }
 
             idx++;

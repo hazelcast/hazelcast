@@ -19,7 +19,6 @@ package com.hazelcast.sql.impl.calcite.opt.physical;
 import com.hazelcast.config.IndexType;
 import com.hazelcast.internal.util.BiTuple;
 import com.hazelcast.sql.impl.calcite.opt.HazelcastConventions;
-import com.hazelcast.sql.impl.calcite.opt.distribution.DistributionField;
 import com.hazelcast.sql.impl.calcite.opt.distribution.DistributionTrait;
 import com.hazelcast.sql.impl.calcite.opt.OptUtils;
 import com.hazelcast.sql.impl.calcite.opt.logical.MapScanLogicalRel;
@@ -453,22 +452,19 @@ public final class MapScanPhysicalRule extends AbstractPhysicalRule {
         }
 
         // TODO: Simplify, there is only one field here!
-        List<DistributionField> distributionFields =
-            Collections.singletonList(new DistributionField(table.getDistributionFieldIndex()));
+        List<Integer> distributionFields = Collections.singletonList(table.getDistributionFieldIndex());
 
         // Remap internal scan distribution fields to projected fields.
-        List<DistributionField> res = new ArrayList<>(distributionFields.size());
+        List<Integer> res = new ArrayList<>(distributionFields.size());
 
-        for (DistributionField distributionField : distributionFields) {
-            int distributionFieldIndex = distributionField.getIndex();
-
-            int projectIndex = projects.indexOf(distributionFieldIndex);
+        for (Integer distributionField : distributionFields) {
+            int projectIndex = projects.indexOf(distributionField);
 
             if (projectIndex == -1) {
                 return DistributionTrait.PARTITIONED_UNKNOWN_DIST;
             }
 
-            res.add(new DistributionField(projectIndex));
+            res.add(projectIndex);
         }
 
         return DistributionTrait.Builder.ofType(PARTITIONED).addFieldGroup(res).build();

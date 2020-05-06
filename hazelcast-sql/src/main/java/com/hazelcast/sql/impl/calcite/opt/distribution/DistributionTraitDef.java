@@ -28,7 +28,6 @@ import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.rel.RelCollation;
 import org.apache.calcite.rel.RelNode;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import static com.hazelcast.sql.impl.calcite.opt.distribution.DistributionType.ANY;
@@ -151,17 +150,11 @@ public class DistributionTraitDef extends RelTraitDef<DistributionTrait> {
             return null;
         } else {
             // Pick fields from the first group. It is safe, since all the groups in the given trait are equivalent.
-            List<DistributionField> fields = targetTrait.getFieldGroups().get(0);
+            List<Integer> fields = targetTrait.getFieldGroups().get(0);
 
-            List<Integer> res = new ArrayList<>(fields.size());
+            assert fields.size() > 0;
 
-            for (DistributionField field : fields) {
-                res.add(field.getIndex());
-            }
-
-            assert res.size() > 0;
-
-            return res;
+            return fields;
         }
     }
 
