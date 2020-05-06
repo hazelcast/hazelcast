@@ -6,3 +6,4 @@
 
 **/client/**           @hazelcast/clients
 **/hazelcast-client**  @hazelcast/clients
+**/serialization**     @hazelcast/clients
