@@ -3,7 +3,6 @@ package com.hazelcast.sql.schema;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.sql.HazelcastSqlException;
-import com.hazelcast.sql.SqlCursor;
 import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.schema.model.AllTypesValue;
 import com.hazelcast.sql.schema.model.Person;
@@ -52,8 +51,7 @@ public class SchemaTest extends CalciteSqlTestSupport {
         String name = "empty_map";
         executeUpdate(member, format("CREATE EXTERNAL TABLE %s (__key INT) TYPE %s", name, TYPE));
 
-        SqlCursor sqlRows = executeQuery(member, format("SELECT __key FROM %s", name));
-        List<SqlRow> rows = getQueryRows(sqlRows);
+        List<SqlRow> rows = getQueryRows(member, format("SELECT __key FROM %s", name));
         assertEquals(0, rows.size());
 
         // TODO: it should be possible to SELECT value from an empty table
@@ -118,8 +116,7 @@ public class SchemaTest extends CalciteSqlTestSupport {
         Map<BigInteger, AllTypesValue> map = member.getMap(name);
         map.put(BigInteger.valueOf(13), allTypes);
 
-        SqlCursor sqlRows = executeQuery(member, format("SELECT * FROM %s", name));
-        List<SqlRow> rows = getQueryRows(sqlRows);
+        List<SqlRow> rows = getQueryRows(member, format("SELECT * FROM %s", name));
 
         assertEquals(1, rows.size());
         assertEquals(BigInteger.valueOf(13), rows.get(0).getObject(0));
@@ -152,8 +149,7 @@ public class SchemaTest extends CalciteSqlTestSupport {
         Map<Person, Person> map = member.getMap(name);
         map.put(new Person("Alice", BigInteger.valueOf(30)), new Person("Bob", BigInteger.valueOf(40)));
 
-        SqlCursor sqlRows = executeQuery(member, format("SELECT age, \"__key.age\" FROM %s", name));
-        List<SqlRow> rows = getQueryRows(sqlRows);
+        List<SqlRow> rows = getQueryRows(member, format("SELECT age, \"__key.age\" FROM %s", name));
 
         assertEquals(1, rows.size());
         assertEquals(40, ((Integer) rows.get(0).getObject(0)).intValue());
@@ -184,8 +180,7 @@ public class SchemaTest extends CalciteSqlTestSupport {
             local.shutdown();
 
             // execute query on remote member
-            SqlCursor sqlRows = executeQuery(remote, format("SELECT __key FROM %s", name));
-            List<SqlRow> rows = getQueryRows(sqlRows);
+            List<SqlRow> rows = getQueryRows(remote, format("SELECT __key FROM %s", name));
 
             assertEquals(0, rows.size());
 
