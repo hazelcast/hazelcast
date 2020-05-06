@@ -64,22 +64,6 @@ public class SchemaTest extends CalciteSqlTestSupport {
     }
 
     @Test
-    public void testSelectFromPredeclaredMap() {
-        String name = "predeclared_map";
-        executeUpdate(member, format("CREATE EXTERNAL TABLE %s (\"__key.age\" INT, age INT) TYPE %s", name, TYPE));
-
-        Map<Person, Person> map = member.getMap(name);
-        map.put(new Person("Alice", BigInteger.valueOf(30)), new Person("Bob", BigInteger.valueOf(40)));
-
-        SqlCursor sqlRows = executeQuery(member, format("SELECT age, \"__key.age\" FROM %s", name));
-        List<SqlRow> rows = getQueryRows(sqlRows);
-
-        assertEquals(1, rows.size());
-        assertEquals(40, ((Integer) rows.get(0).getObject(0)).intValue());
-        assertEquals(30, ((Integer) rows.get(0).getObject(1)).intValue());
-    }
-
-    @Test
     public void testSelectAllSupportedTypes() {
         String name = "all_fields_map";
         executeUpdate(member, format("CREATE EXTERNAL TABLE %s (" +
@@ -158,6 +142,22 @@ public class SchemaTest extends CalciteSqlTestSupport {
         assertEquals(allTypes.getInstant(), rows.get(0).getObject(17));
         assertEquals(allTypes.getZonedDateTime(), rows.get(0).getObject(18));
         assertEquals(allTypes.getOffsetDateTime(), rows.get(0).getObject(19));
+    }
+
+    @Test
+    public void testSelectFromMapWithComplexKey() {
+        String name = "predeclared_map";
+        executeUpdate(member, format("CREATE EXTERNAL TABLE %s (\"__key.age\" INT, age INT) TYPE %s", name, TYPE));
+
+        Map<Person, Person> map = member.getMap(name);
+        map.put(new Person("Alice", BigInteger.valueOf(30)), new Person("Bob", BigInteger.valueOf(40)));
+
+        SqlCursor sqlRows = executeQuery(member, format("SELECT age, \"__key.age\" FROM %s", name));
+        List<SqlRow> rows = getQueryRows(sqlRows);
+
+        assertEquals(1, rows.size());
+        assertEquals(40, ((Integer) rows.get(0).getObject(0)).intValue());
+        assertEquals(30, ((Integer) rows.get(0).getObject(1)).intValue());
     }
 
     @Test
