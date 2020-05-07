@@ -32,7 +32,6 @@ import com.hazelcast.internal.util.BiTuple;
 import com.hazelcast.sql.SqlCursor;
 import com.hazelcast.sql.SqlQuery;
 import com.hazelcast.sql.SqlService;
-import com.hazelcast.sql.SqlUpdate;
 import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.row.Row;
 
@@ -144,12 +143,6 @@ public class SqlClientService implements SqlService {
         ClientMessage request = SqlCloseCodec.encodeRequest(toData(queryId));
 
         invoke(request, conn, CLOSE_DECODER);
-    }
-
-    @Override
-    public void update(SqlUpdate update) {
-        // TODO: implement
-        throw new UnsupportedOperationException();
     }
 
     private <T> Data toData(T o) {

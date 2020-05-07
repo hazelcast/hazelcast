@@ -20,7 +20,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.impl.HazelcastInstanceProxy;
 import com.hazelcast.sql.impl.SqlServiceImpl;
 import com.hazelcast.sql.impl.SqlTestSupport;
-import com.hazelcast.sql.impl.parser.SqlParser;
+import com.hazelcast.sql.impl.optimizer.SqlOptimizer;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -35,7 +35,7 @@ import static org.junit.Assert.assertNotNull;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class ParserInstantiationTest extends SqlTestSupport {
+public class OptimizerInstantiationTest extends SqlTestSupport {
 
     private static final TestHazelcastInstanceFactory FACTORY = new TestHazelcastInstanceFactory(1);
 
@@ -50,9 +50,9 @@ public class ParserInstantiationTest extends SqlTestSupport {
 
         SqlServiceImpl service = ((HazelcastInstanceProxy) instance).getOriginal().node.getNodeEngine().getSqlService();
 
-        SqlParser parser = service.getParser();
+        SqlOptimizer optimizer = service.getOptimizer();
 
-        assertNotNull(parser);
-        assertEquals(CalciteSqlParser.class, parser.getClass());
+        assertNotNull(optimizer);
+        assertEquals(CalciteSqlOptimizer.class, optimizer.getClass());
     }
 }

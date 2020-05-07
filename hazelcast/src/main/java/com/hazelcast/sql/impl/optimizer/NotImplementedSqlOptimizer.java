@@ -14,30 +14,17 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.parser;
+package com.hazelcast.sql.impl.optimizer;
 
-import com.hazelcast.sql.impl.schema.Catalog;
-import com.hazelcast.sql.impl.schema.TableSchema;
+import com.hazelcast.sql.impl.QueryException;
+import com.hazelcast.sql.impl.plan.Plan;
 
 /**
- * 'CREATE TABLE' DDL statement.
+ * A not-implemented optimizer. Used when a real optimizer isn't available.
  */
-public class CreateTableStatement implements DdlStatement {
-
-    private final TableSchema schema;
-
-    private final boolean replace;
-    private final boolean ifNotExists;
-
-    public CreateTableStatement(TableSchema schema, boolean replace, boolean ifNotExists) {
-        this.schema = schema;
-
-        this.replace = replace;
-        this.ifNotExists = ifNotExists;
-    }
-
+public class NotImplementedSqlOptimizer implements SqlOptimizer {
     @Override
-    public void execute(Catalog catalog) {
-        catalog.createTable(schema, replace, ifNotExists);
+    public Plan prepare(OptimizationTask task) {
+        throw QueryException.error("Cannot execute SQL query because \"hazelcast-sql\" module is not in the classpath.");
     }
 }

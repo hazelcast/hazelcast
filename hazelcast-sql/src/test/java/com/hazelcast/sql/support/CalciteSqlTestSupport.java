@@ -22,8 +22,7 @@ import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.impl.SqlCursorImpl;
 import com.hazelcast.sql.impl.SqlServiceImpl;
 import com.hazelcast.sql.impl.SqlTestSupport;
-import com.hazelcast.sql.impl.parser.DqlStatement;
-import com.hazelcast.sql.impl.parser.SqlParseTask;
+import com.hazelcast.sql.impl.optimizer.OptimizationTask;
 import com.hazelcast.sql.impl.plan.Plan;
 import com.hazelcast.sql.impl.schema.Catalog;
 import com.hazelcast.sql.impl.schema.Table;
@@ -37,18 +36,15 @@ import java.util.List;
  * Common infrastructure for SQL tests.
  */
 public class CalciteSqlTestSupport extends SqlTestSupport {
-
     protected Plan getPlan(HazelcastInstance target, String sql) {
         SqlServiceImpl sqlService = (SqlServiceImpl) target.getSqlService();
-        DqlStatement operation = (DqlStatement) sqlService.getParser().parse(
-                new SqlParseTask.Builder(sql, new Catalog(null) {
-                    @Override
-                    public Collection<Table> getTables() {
-                        return Collections.emptyList();
-                    }
-                }).build()
-        );
-        return operation.getPlan();
+
+        return sqlService.getOptimizer().prepare(new OptimizationTask.Builder(sql, new Catalog(null) {
+            @Override
+            public Collection<Table> getTables() {
+                return Collections.emptyList();
+            }
+        }).build());
     }
 
     protected SqlCursor executeQuery(HazelcastInstance target, String sql) {
@@ -75,9 +71,5 @@ public class CalciteSqlTestSupport extends SqlTestSupport {
         } catch (Exception e) {
             throw new RuntimeException("Failed to execute query and get result set rows: " + sql, e);
         }
-    }
-
-    protected void executeUpdate(HazelcastInstance target, String sql) {
-        target.getSqlService().update(sql);
     }
 }

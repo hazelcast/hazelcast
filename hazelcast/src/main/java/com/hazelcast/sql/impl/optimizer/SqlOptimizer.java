@@ -14,18 +14,19 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.parser;
+package com.hazelcast.sql.impl.optimizer;
+
+import com.hazelcast.sql.impl.plan.Plan;
 
 /**
- * Parser responsible for conversion of SQL string to executable statement.
+ * Optimizer responsible for conversion of SQL string to executable plan.
  */
-public interface SqlParser {
-
+public interface SqlOptimizer {
     /**
-     * Parse SQL query.
+     * Prepare SQL query.
      *
-     * @param task Parse task containing all necessary context.
-     * @return Parsed statement.
+     * @param task Optimization task containing all necessary context.
+     * @return Prepared plan.
      */
-    Statement parse(SqlParseTask task);
+    Plan prepare(OptimizationTask task);
 }

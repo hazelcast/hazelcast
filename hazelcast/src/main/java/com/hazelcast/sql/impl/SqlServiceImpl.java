@@ -26,14 +26,12 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.sql.SqlCursor;
 import com.hazelcast.sql.SqlQuery;
 import com.hazelcast.sql.SqlService;
-import com.hazelcast.sql.SqlUpdate;
-import com.hazelcast.sql.impl.parser.DdlStatement;
-import com.hazelcast.sql.impl.parser.DqlStatement;
-import com.hazelcast.sql.impl.parser.NotImplementedSqlParser;
-import com.hazelcast.sql.impl.parser.SqlParseTask;
-import com.hazelcast.sql.impl.parser.SqlParser;
-import com.hazelcast.sql.impl.parser.Statement;
+import com.hazelcast.sql.impl.optimizer.NotImplementedSqlOptimizer;
+import com.hazelcast.sql.impl.optimizer.OptimizationTask;
+import com.hazelcast.sql.impl.optimizer.SqlOptimizer;
+import com.hazelcast.sql.impl.plan.Plan;
 import com.hazelcast.sql.impl.schema.Catalog;
+import com.hazelcast.sql.impl.state.QueryState;
 
 import java.lang.reflect.Constructor;
 import java.util.ArrayList;
@@ -43,7 +41,7 @@ import java.util.function.Consumer;
 import java.util.logging.Level;
 
 /**
- * Base SQL service implementation that bridges parser implementation, public and private APIs.
+ * Base SQL service implementation that bridges optimizer implementation, public and private APIs.
  */
 public class SqlServiceImpl implements SqlService, Consumer<Packet> {
     /** Outbox batch size in bytes. */
@@ -52,14 +50,12 @@ public class SqlServiceImpl implements SqlService, Consumer<Packet> {
     /** Default state check frequency. */
     private static final long STATE_CHECK_FREQUENCY = 10_000L;
 
-    private static final String PARSER_CLASS_PROPERTY_NAME = "hazelcast.sql.parserClass";
-    private static final String SQL_MODULE_PARSER_CLASS = "com.hazelcast.sql.impl.calcite.CalciteSqlParser";
+    private static final String OPTIMIZER_CLASS_PROPERTY_NAME = "hazelcast.sql.optimizerClass";
+    private static final String SQL_MODULE_OPTIMIZER_CLASS = "com.hazelcast.sql.impl.calcite.CalciteSqlOptimizer";
 
     private final Catalog catalog;
-    private final SqlParser parser;
-
+    private final SqlOptimizer optimizer;
     private final ILogger logger;
-
     private final boolean liteMember;
 
     private final NodeServiceProviderImpl nodeServiceProvider;
@@ -99,8 +95,7 @@ public class SqlServiceImpl implements SqlService, Consumer<Packet> {
         );
 
         catalog = new Catalog(nodeEngine);
-        parser = createParser(nodeEngine);
-
+        optimizer = createOptimizer(nodeEngine);
         liteMember = nodeEngine.getConfig().isLiteMember();
     }
 
@@ -127,8 +122,8 @@ public class SqlServiceImpl implements SqlService, Consumer<Packet> {
         this.internalService = internalService;
     }
 
-    public SqlParser getParser() {
-        return parser;
+    public SqlOptimizer getOptimizer() {
+        return optimizer;
     }
 
     @Override
@@ -172,6 +167,8 @@ public class SqlServiceImpl implements SqlService, Consumer<Packet> {
         }
 
         // Execute.
+        QueryState state;
+
         if (QueryUtils.isExplain(sql)) {
             String unwrappedSql = QueryUtils.unwrapExplain(sql);
 
@@ -179,61 +176,43 @@ public class SqlServiceImpl implements SqlService, Consumer<Packet> {
                 throw QueryException.error("SQL statement to be explained cannot be empty");
             }
 
-            DqlStatement operation = prepareQuery(unwrappedSql);
-            return operation.explain(internalService);
+            Plan plan = prepare(unwrappedSql);
+            if (plan == null) {
+                return new SingleValueSqlCursor(0);
+            }
+
+            state = internalService.executeExplain(plan);
         } else {
-            DqlStatement operation = prepareQuery(sql);
-            return operation.execute(internalService, params0, timeout, pageSize);
+            Plan plan = prepare(sql);
+            if (plan == null) {
+                return new SingleValueSqlCursor(0);
+            }
+
+            state = internalService.execute(
+                plan,
+                params0,
+                timeout,
+                pageSize
+            );
         }
+
+        return new SqlCursorImpl(state);
     }
 
-    private DqlStatement prepareQuery(String sql) {
-        Statement statement = parser.parse(new SqlParseTask.Builder(sql, catalog).build());
-        if (statement instanceof DqlStatement) {
-            return (DqlStatement) statement;
-        } else {
-            throw QueryException.error("Unsupported SQL statement!");
-        }
-    }
-
-    @Override
-    public void update(SqlUpdate update) {
-        if (liteMember) {
-            throw QueryException.error("SQL updates cannot be executed on lite members.");
-        }
-
-        try {
-            update0(update.getSql());
-        } catch (Exception e) {
-            throw QueryUtils.toPublicException(e, nodeServiceProvider.getLocalMemberId());
-        }
-    }
-
-    private void update0(String sql) {
-        // Validate and normalize.
-        if (sql == null || sql.isEmpty()) {
-            throw QueryException.error("SQL statement cannot be empty.");
-        }
-
-        // Execute.
-        Statement statement = parser.parse(new SqlParseTask.Builder(sql, catalog).build());
-        if (statement instanceof DdlStatement) {
-            ((DdlStatement) statement).execute(catalog);
-        } else {
-            throw QueryException.error("Unsupported SQL statement!");
-        }
+    private Plan prepare(String sql) {
+        return optimizer.prepare(new OptimizationTask.Builder(sql, catalog).build());
     }
 
     /**
-     * Create either normal or not-implemented parser instance.
+     * Create either normal or not-implemented optimizer instance.
      *
      * @param nodeEngine Node engine.
-     * @return SqlParser.
+     * @return Optimizer.
      */
     @SuppressWarnings({"unchecked", "rawtypes"})
-    private SqlParser createParser(NodeEngine nodeEngine) {
+    private SqlOptimizer createOptimizer(NodeEngine nodeEngine) {
         // 1. Resolve class name.
-        String className = System.getProperty(PARSER_CLASS_PROPERTY_NAME, SQL_MODULE_PARSER_CLASS);
+        String className = System.getProperty(OPTIMIZER_CLASS_PROPERTY_NAME, SQL_MODULE_OPTIMIZER_CLASS);
 
         // 2. Get the class.
         Class clazz;
@@ -241,29 +220,29 @@ public class SqlServiceImpl implements SqlService, Consumer<Packet> {
         try {
             clazz = Class.forName(className);
         } catch (ClassNotFoundException e) {
-            logger.log(SQL_MODULE_PARSER_CLASS.equals(className) ? Level.FINE : Level.WARNING,
-                    "Parser class \"" + className + "\" not found, falling back to "
-                            + NotImplementedSqlParser.class.getName());
-            return new NotImplementedSqlParser();
+            logger.log(SQL_MODULE_OPTIMIZER_CLASS.equals(className) ? Level.FINE : Level.WARNING,
+                    "Optimizer class \"" + className + "\" not found, falling back to "
+                            + NotImplementedSqlOptimizer.class.getName());
+            return new NotImplementedSqlOptimizer();
         } catch (Exception e) {
-            throw new HazelcastException("Failed to resolve parser class " + className + ": " + e.getMessage(), e);
+            throw new HazelcastException("Failed to resolve optimizer class " + className + ": " + e.getMessage(), e);
         }
 
         // 3. Get required constructor.
-        Constructor<SqlParser> constructor;
+        Constructor<SqlOptimizer> constructor;
 
         try {
             constructor = clazz.getConstructor(NodeEngine.class);
         } catch (ReflectiveOperationException e) {
-            throw new HazelcastException("Failed to get the constructor for the parser class "
-                    + className + ": " + e.getMessage(), e);
+            throw new HazelcastException("Failed to get the constructor for the optimizer class "
+                + className + ": " + e.getMessage(), e);
         }
 
         // 4. Finally, get the instance.
         try {
             return constructor.newInstance(nodeEngine);
         } catch (ReflectiveOperationException e) {
-            throw new HazelcastException("Failed to instantiate the parser class " + className + ": " + e.getMessage(), e);
+            throw new HazelcastException("Failed to instantiate the optimizer class " + className + ": " + e.getMessage(), e);
         }
     }
 }

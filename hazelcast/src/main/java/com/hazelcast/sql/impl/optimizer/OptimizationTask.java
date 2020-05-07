@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.parser;
+package com.hazelcast.sql.impl.optimizer;
 
 import com.hazelcast.sql.impl.schema.Catalog;
 
@@ -22,26 +22,19 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Encapsulates the parse task.
+ * Encapsulates the optimization task.
  */
-public final class SqlParseTask {
-
-    /**
-     * The query.
-     */
+public final class OptimizationTask {
+    /** The query. */
     private final String sql;
 
-    /**
-     * Catalog.
-     */
+    /** Catalog. */
     private final Catalog catalog;
 
-    /**
-     * The scopes for object lookup in addition to the default ones.
-     */
+    /** The scopes for object lookup in addition to the default ones. */
     private final List<List<String>> searchPaths;
 
-    private SqlParseTask(String sql, Catalog catalog, List<List<String>> searchPaths) {
+    private OptimizationTask(String sql, Catalog catalog, List<List<String>> searchPaths) {
         this.sql = sql;
         this.catalog = catalog;
         this.searchPaths = searchPaths;
@@ -80,8 +73,8 @@ public final class SqlParseTask {
             return this;
         }
 
-        public SqlParseTask build() {
-            return new SqlParseTask(sql, catalog, searchPaths);
+        public OptimizationTask build() {
+            return new OptimizationTask(sql, catalog, searchPaths);
         }
     }
 }

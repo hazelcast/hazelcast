@@ -76,11 +76,10 @@ import java.util.List;
 import java.util.Properties;
 
 /**
- * Execution context which holds the whole environment for the given execution session.
+ * Optimizer context which holds the whole environment for the given optimization session.
  */
 @SuppressWarnings({"checkstyle:ClassDataAbstractionCoupling", "checkstyle:ClassFanOutComplexity"})
-public final class ExecutionContext {
-
+public final class OptimizerContext {
     private static final RelMetadataProvider METADATA_PROVIDER = ChainedRelMetadataProvider.of(ImmutableList.of(
         HazelcastRelMdRowCount.SOURCE,
         DefaultRelMetadataProvider.INSTANCE
@@ -102,7 +101,7 @@ public final class ExecutionContext {
         CONNECTION_CONFIG = new CalciteConnectionConfigImpl(connectionProperties);
     }
 
-    private ExecutionContext(
+    private OptimizerContext(
         QueryParser parser,
         QueryConverter converter,
         VolcanoPlanner planner
@@ -112,7 +111,7 @@ public final class ExecutionContext {
         this.planner = planner;
     }
 
-    public static ExecutionContext create(
+    public static OptimizerContext create(
         List<TableResolver> tableResolvers,
         List<List<String>> currentSearchPaths,
         int memberCount
@@ -126,7 +125,7 @@ public final class ExecutionContext {
         return create(rootSchema, searchPaths, memberCount);
     }
 
-    public static ExecutionContext create(
+    public static OptimizerContext create(
         HazelcastSchema rootSchema,
         List<List<String>> schemaPaths,
         int memberCount
@@ -142,7 +141,7 @@ public final class ExecutionContext {
         QueryParser parser = new QueryParser(validator);
         QueryConverter converter = new QueryConverter(catalogReader, validator, cluster);
 
-        return new ExecutionContext(parser, converter, planner);
+        return new OptimizerContext(parser, converter, planner);
     }
 
     /**

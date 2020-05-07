@@ -17,6 +17,7 @@
 package com.hazelcast.sql.impl.calcite.parse;
 
 import org.apache.calcite.rel.type.RelDataType;
+import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlNode;
 
 /**
@@ -32,6 +33,10 @@ public class QueryParseResult {
         this.sql = sql;
         this.node = node;
         this.parameterRowType = parameterRowType;
+    }
+
+    public boolean isDdl() {
+        return node.getKind().belongsTo(SqlKind.DDL);
     }
 
     public String getSql() {

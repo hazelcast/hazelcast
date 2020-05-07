@@ -65,7 +65,7 @@ public class SchemaTest extends CalciteSqlTestSupport {
     @Test
     public void testSelectFromDeclaredTable() {
         String name = "predeclared_map";
-        executeUpdate(member, format("CREATE EXTERNAL TABLE %s (__key INT) TYPE %s", name, TYPE));
+        executeQuery(member, format("CREATE EXTERNAL TABLE %s (__key INT) TYPE %s", name, TYPE));
 
         List<SqlRow> rows = getQueryRows(member, format("SELECT __key FROM %s", name));
 
@@ -80,7 +80,7 @@ public class SchemaTest extends CalciteSqlTestSupport {
             HazelcastInstance[] instances = factory.newInstances();
 
             // create table on one member
-            executeUpdate(instances[0], format("CREATE EXTERNAL TABLE %s (__key INT) TYPE %s", name, TYPE));
+            executeQuery(instances[0], format("CREATE EXTERNAL TABLE %s (__key INT) TYPE %s", name, TYPE));
 
             // execute query on another one
             List<SqlRow> rows = getQueryRows(instances[1], format("SELECT __key FROM %s", name));
@@ -94,7 +94,7 @@ public class SchemaTest extends CalciteSqlTestSupport {
     @Test
     public void testPredeclaredTablePriority() {
         String name = "priority_map";
-        executeUpdate(member, format("CREATE EXTERNAL TABLE %s (\"__key.age\" INT, age INT) TYPE %s", name, TYPE));
+        executeQuery(member, format("CREATE EXTERNAL TABLE %s (\"__key.age\" INT, age INT) TYPE %s", name, TYPE));
 
         Map<Person, Person> map = member.getMap(name);
         map.put(new Person("Alice", BigInteger.valueOf(30)), new Person("Bob", BigInteger.valueOf(40)));
@@ -109,7 +109,7 @@ public class SchemaTest extends CalciteSqlTestSupport {
     @Test
     public void testSelectAllSupportedTypes() {
         String name = "all_fields_map";
-        executeUpdate(member, format("CREATE EXTERNAL TABLE %s ("
+        executeQuery(member, format("CREATE EXTERNAL TABLE %s ("
                         + "__key DECIMAL(10, 0), "
                         + "string VARCHAR,"
                         + "character0 CHAR, "
@@ -189,8 +189,8 @@ public class SchemaTest extends CalciteSqlTestSupport {
     @Test
     public void testDropTable() {
         String name = "to_be_dropped_map";
-        executeUpdate(member, format("CREATE EXTERNAL TABLE %s (name VARCHAR) TYPE %s", name, TYPE));
-        executeUpdate(member, format("DROP EXTERNAL TABLE %s", name));
+        executeQuery(member, format("CREATE EXTERNAL TABLE %s (name VARCHAR) TYPE %s", name, TYPE));
+        executeQuery(member, format("DROP EXTERNAL TABLE %s", name));
 
         assertThatThrownBy(() -> executeQuery(member, format("SELECT name FROM %s", name)))
                 .isInstanceOf(HazelcastSqlException.class);

@@ -20,7 +20,6 @@ package com.hazelcast.sql;
  * Service to query Hazelcast data with SQL.
  */
 public interface SqlService {
-
     /** Unique service name. */
     String SERVICE_NAME = "hz:impl:sqlService";
 
@@ -50,22 +49,4 @@ public interface SqlService {
      * @return Cursor.
      */
     SqlCursor query(SqlQuery query);
-
-    /**
-     * Execute update.
-     *
-     * @param sql SQL.
-     */
-    default void update(String sql) {
-        SqlUpdate update = new SqlUpdate(sql);
-
-        update(update);
-    }
-
-    /**
-     * Execute update.
-     *
-     * @param update Update.
-     */
-    void update(SqlUpdate update);
 }
