@@ -20,9 +20,9 @@ import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.plan.Plan;
 
 /**
- * No-op optimizer.
+ * A not-implemented optimizer. Used when a real optimizer isn't available.
  */
-public class NoOpSqlOptimizer implements SqlOptimizer {
+public class NotImplementedSqlOptimizer implements SqlOptimizer {
     @Override
     public Plan prepare(OptimizationTask task) {
         throw QueryException.error("Cannot execute SQL query because \"hazelcast-sql\" module is not in the classpath.");
