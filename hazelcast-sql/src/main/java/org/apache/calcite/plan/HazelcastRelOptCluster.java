@@ -16,7 +16,7 @@
 
 package org.apache.calcite.plan;
 
-import com.hazelcast.sql.impl.optimizer.OptimizerRuleCallTracker;
+import com.hazelcast.sql.impl.calcite.opt.distribution.DistributionTraitDef;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.type.RelDataTypeFactory;
 import org.apache.calcite.rex.RexBuilder;
@@ -29,14 +29,8 @@ import java.util.concurrent.atomic.AtomicInteger;
  * Extended RelOptCluster with Hazelcast-specific data.
  */
 public final class HazelcastRelOptCluster extends RelOptCluster {
-    /** Current cluster. */
-    private static final ThreadLocal<HazelcastRelOptCluster> CURRENT = new ThreadLocal<>();
-
-    /** Number of members. */
-    private final int memberCount;
-
-    /** Rule call tracker. */
-    private OptimizerRuleCallTracker ruleCallTracker;
+    /** Distribution trait definition that is used during query execution. */
+    private final DistributionTraitDef distributionTraitDef;
 
     private HazelcastRelOptCluster(
         RelOptPlanner planner,
@@ -44,68 +38,34 @@ public final class HazelcastRelOptCluster extends RelOptCluster {
         RexBuilder rexBuilder,
         AtomicInteger nextCorrel,
         Map<String, RelNode> mapCorrelToRel,
-        int memberCount
+        DistributionTraitDef distributionTraitDef
     ) {
         super(planner, typeFactory, rexBuilder, nextCorrel, mapCorrelToRel);
 
-        this.memberCount = memberCount;
+        this.distributionTraitDef = distributionTraitDef;
     }
 
-    public static HazelcastRelOptCluster create(RelOptPlanner planner, RexBuilder rexBuilder, int memberCount) {
+    public static HazelcastRelOptCluster create(
+        RelOptPlanner planner,
+        RexBuilder rexBuilder,
+        DistributionTraitDef distributionTraitDef
+    ) {
         return new HazelcastRelOptCluster(
             planner,
             rexBuilder.getTypeFactory(),
             rexBuilder,
             new AtomicInteger(0),
             new HashMap<>(),
-            memberCount
+            distributionTraitDef
         );
     }
 
-    public static HazelcastRelOptCluster tryCast(RelOptCluster cluster) {
-        if (cluster instanceof HazelcastRelOptCluster) {
-            return cast(cluster);
-        } else {
-            return null;
-        }
-    }
-
-    public static HazelcastRelOptCluster cast(RelOptCluster cluster) {
-        assert cluster instanceof HazelcastRelOptCluster;
-
-        return (HazelcastRelOptCluster) cluster;
-    }
-
-    public int getMemberCount() {
-        return memberCount;
-    }
-
-    public OptimizerRuleCallTracker getRuleCallTracker() {
-        return ruleCallTracker;
-    }
-
-    public void startPhysicalOptimization(OptimizerRuleCallTracker ruleCallTracker) {
-        assert CURRENT.get() == null;
-        CURRENT.set(this);
-
-        this.ruleCallTracker = ruleCallTracker;
-    }
-
-    public void finishPhysicalOptimization() {
-        assert CURRENT.get() == this;
-        CURRENT.set(null);
-
-        this.ruleCallTracker = null;
-    }
-
-    public static boolean isSingleMember() {
-        HazelcastRelOptCluster current = CURRENT.get();
-
-        return current != null && current.getMemberCount() == 1;
+    public DistributionTraitDef getDistributionTraitDef() {
+        return distributionTraitDef;
     }
 
     @Override
     public String toString() {
-        return getClass().getSimpleName() + "{memberCount=" + memberCount + '}';
+        return getClass().getSimpleName() + "{distributionTraitDef=" + distributionTraitDef + '}';
     }
 }

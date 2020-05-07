@@ -56,7 +56,6 @@ public class PlanTest extends SqlTestSupport {
             inboundEdgeMemberCountMap,
             null,
             null,
-            null,
             null
         );
 

@@ -41,12 +41,20 @@ public class HazelcastSqlValidator extends SqlValidatorImpl {
     }
 
     @Override
+    public SqlNode validate(SqlNode topNode) {
+        if (topNode.getKind().belongsTo(SqlKind.DDL)) {
+            return topNode;
+        }
+        return super.validate(topNode);
+    }
+
+    @Override
     protected void validateSelect(SqlSelect select, RelDataType targetRowType) {
         super.validateSelect(select, targetRowType);
 
         SqlNode from = select.getFrom();
 
-        if (from != null && from.getKind() == SqlKind.UNION)  {
+        if (from != null && from.getKind() == SqlKind.UNION) {
             throw newValidationError(from, HZ_RESOURCE.unionNotSupported());
         }
     }

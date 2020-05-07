@@ -22,12 +22,11 @@ import com.hazelcast.replicatedmap.impl.record.ReplicatedRecord;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.QueryException;
+import com.hazelcast.sql.impl.QueryUtils;
 import com.hazelcast.sql.impl.schema.Catalog;
 import com.hazelcast.sql.impl.schema.ConstantTableStatistics;
-import com.hazelcast.sql.impl.schema.SchemaUtils;
 import com.hazelcast.sql.impl.schema.Table;
 import com.hazelcast.sql.impl.schema.TableField;
-import com.hazelcast.sql.impl.schema.TableResolver;
 import com.hazelcast.sql.impl.schema.map.sample.MapSampleMetadata;
 import com.hazelcast.sql.impl.schema.map.sample.MapSampleMetadataResolver;
 
@@ -38,23 +37,15 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 
-import static com.hazelcast.sql.impl.schema.SchemaUtils.CATALOG;
-import static com.hazelcast.sql.impl.schema.SchemaUtils.SCHEMA_NAME_REPLICATED;
+import static com.hazelcast.sql.impl.QueryUtils.SCHEMA_NAME_REPLICATED;
 
-public class ReplicatedMapTableResolver implements TableResolver {
+public class ReplicatedMapTableResolver extends AbstractMapTableResolver {
 
     private static final List<List<String>> SEARCH_PATHS =
-        Collections.singletonList(Arrays.asList(CATALOG, SCHEMA_NAME_REPLICATED));
-
-    private final NodeEngine nodeEngine;
+        Collections.singletonList(Arrays.asList(QueryUtils.CATALOG, SCHEMA_NAME_REPLICATED));
 
     public ReplicatedMapTableResolver(NodeEngine nodeEngine) {
-        this.nodeEngine = nodeEngine;
-    }
-
-    @Override
-    public List<List<String>> getDefaultSearchPaths() {
-        return SEARCH_PATHS;
+        super(nodeEngine, SEARCH_PATHS);
     }
 
     @Override
@@ -111,7 +102,7 @@ public class ReplicatedMapTableResolver implements TableResolver {
                 MapSampleMetadata valueMetadata = MapSampleMetadataResolver.resolve(ss, value, false);
                 long estimatedRowCount = stores.size() * nodeEngine.getPartitionService().getPartitionCount();
 
-                List<TableField> fields = SchemaUtils.mergeMapFields(keyMetadata.getFields(), valueMetadata.getFields());
+                List<TableField> fields = mergeMapFields(keyMetadata.getFields(), valueMetadata.getFields());
 
                 return new ReplicatedMapTable(
                     mapName,

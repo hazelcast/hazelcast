@@ -18,12 +18,10 @@ package com.hazelcast.sql.impl.calcite.opt.physical;
 
 import com.hazelcast.sql.impl.calcite.opt.HazelcastConventions;
 import com.hazelcast.sql.impl.calcite.opt.distribution.DistributionTrait;
-import com.hazelcast.sql.impl.calcite.opt.distribution.DistributionType;
 import com.hazelcast.sql.impl.calcite.opt.OptUtils;
 import com.hazelcast.sql.impl.calcite.opt.logical.SortLogicalRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.exchange.SortMergeExchangePhysicalRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.exchange.UnicastExchangePhysicalRel;
-import org.apache.calcite.plan.HazelcastRelOptCluster;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.RelOptRuleCall;
 import org.apache.calcite.plan.RelTraitSet;
@@ -37,9 +35,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-
-import static com.hazelcast.sql.impl.calcite.opt.distribution.DistributionType.REPLICATED;
-import static com.hazelcast.sql.impl.calcite.opt.distribution.DistributionType.ROOT;
 
 /**
  * Rule which converts logical sort into its physical counterpart. There are several forms of physical implementations:
@@ -103,7 +98,7 @@ public final class SortPhysicalRule extends AbstractPhysicalRule {
             // Add merge phase if needed.
             DistributionTrait physicalInputDist = OptUtils.getDistribution(physicalInput);
 
-            if (requiresMerge(physicalInputDist)) {
+            if (!physicalInputDist.isFullResultSetOnAllParticipants()) {
                 rel = createMerge(rel, logicalSort);
             }
 
@@ -146,20 +141,6 @@ public final class SortPhysicalRule extends AbstractPhysicalRule {
         }
     }
 
-    /**
-     * Check if distributed sorting is needed for the given input. Not the case for inputs having the full data
-     * set readily available.
-     *
-     * @param inputDist Input distribution.
-     * @return {@code True} if distributed sorting is needed.
-     */
-    private static boolean requiresMerge(DistributionTrait inputDist) {
-        DistributionType inputDistType = inputDist.getType();
-
-        // TODO: Single member check should be generalized, taking in count pruning as well.
-        return !(inputDistType == ROOT || inputDistType == REPLICATED || HazelcastRelOptCluster.isSingleMember());
-    }
-
     private static SortPhysicalRel createLocalSort(SortLogicalRel logicalSort, RelNode physicalInput) {
         // Input traits are propagated, but new collation is used.
         RelTraitSet traitSet = OptUtils.traitPlus(physicalInput.getTraitSet(),
@@ -196,7 +177,7 @@ public final class SortPhysicalRule extends AbstractPhysicalRule {
         // TODO: Do not use root here? Instead, we should set either PARTITIONED with 1 node or possibly REPLICATED?
         RelTraitSet traitSet = OptUtils.traitPlus(physicalInput.getTraitSet(),
             logicalSort.getCollation(),
-            DistributionTrait.ROOT_DIST
+            OptUtils.getDistributionDef(physicalInput).getTraitRoot()
         );
 
         boolean fetchOnly = logicalSort.getCollation().getFieldCollations().isEmpty();

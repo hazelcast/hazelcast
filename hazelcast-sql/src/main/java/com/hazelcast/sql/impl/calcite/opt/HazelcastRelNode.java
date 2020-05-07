@@ -24,6 +24,10 @@ import org.apache.calcite.rel.RelNode;
  */
 public interface HazelcastRelNode extends RelNode {
     default HazelcastRelOptCluster getHazelcastCluster() {
-        return HazelcastRelOptCluster.cast(getCluster());
+        return OptUtils.getCluster(this);
+    }
+
+    default int getMemberCount() {
+        return getHazelcastCluster().getDistributionTraitDef().getMemberCount();
     }
 }

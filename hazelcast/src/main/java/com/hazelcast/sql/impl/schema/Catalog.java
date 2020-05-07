@@ -25,8 +25,8 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
-import static com.hazelcast.sql.impl.schema.SchemaUtils.CATALOG;
-import static com.hazelcast.sql.impl.schema.SchemaUtils.SCHEMA_NAME_DEFAULT;
+import static com.hazelcast.sql.impl.QueryUtils.CATALOG;
+import static com.hazelcast.sql.impl.QueryUtils.SCHEMA_NAME_DEFAULT;
 import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.toList;
 

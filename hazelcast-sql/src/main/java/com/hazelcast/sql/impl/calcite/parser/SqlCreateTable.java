@@ -36,7 +36,7 @@ import static java.util.Objects.requireNonNull;
 public class SqlCreateTable extends SqlCreate {
 
     private static final SqlSpecialOperator OPERATOR =
-            new SqlSpecialOperator("CREATE EXTERNAL TABLE", SqlKind.OTHER_DDL);
+            new SqlSpecialOperator("CREATE EXTERNAL TABLE", SqlKind.CREATE_TABLE);
 
     private final SqlIdentifier name;
     private final SqlNodeList columns;

@@ -34,7 +34,7 @@ import static java.util.Objects.requireNonNull;
 public class SqlDropTable extends SqlDrop {
 
     private static final SqlSpecialOperator OPERATOR =
-            new SqlSpecialOperator("DROP EXTERNAL TABLE", SqlKind.OTHER_DDL);
+            new SqlSpecialOperator("DROP EXTERNAL TABLE", SqlKind.DROP_TABLE);
 
     private final SqlIdentifier name;
 

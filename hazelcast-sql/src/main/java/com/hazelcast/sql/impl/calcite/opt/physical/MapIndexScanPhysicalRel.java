@@ -109,7 +109,7 @@ public class MapIndexScanPhysicalRel extends AbstractMapScanRel implements Physi
         RelOptCost scanCost = super.computeSelfCost(planner, mq);
 
         if (isReplicated()) {
-            scanCost = scanCost.multiplyBy(getHazelcastCluster().getMemberCount());
+            scanCost = scanCost.multiplyBy(getMemberCount());
         }
 
         // 2. Get cost of the project taking in count filter and number of expressions. Project never produces IO.

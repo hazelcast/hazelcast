@@ -23,8 +23,6 @@ import com.hazelcast.config.ReplicatedMapConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.partition.strategy.DeclarativePartitioningStrategy;
 import com.hazelcast.sql.SqlRow;
-import com.hazelcast.sql.impl.calcite.ExecutionConfig;
-import com.hazelcast.sql.impl.calcite.ExecutionContext;
 import com.hazelcast.sql.impl.plan.Plan;
 import com.hazelcast.sql.impl.SqlCursorImpl;
 import com.hazelcast.sql.impl.row.Row;
@@ -44,7 +42,6 @@ import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 import static junit.framework.TestCase.fail;
 
@@ -910,8 +907,6 @@ public class TpcHTest extends CalciteSqlTestSupport {
             rowCount = 100;
         }
 
-        ExecutionContext.setExecutionConfig(ExecutionConfig.builder().setStatisticsEnabled(true).build());
-
         SqlCursorImpl res = (SqlCursorImpl) member.getSqlService().query(sql, args);
         Plan plan = res.getPlan();
 
@@ -920,11 +915,6 @@ public class TpcHTest extends CalciteSqlTestSupport {
             System.out.println("\t" + explainRow.get(0));
         }
         System.out.println();
-
-        System.out.println("\n>>> Optimizer statistics (" + plan.getStatistics().getDuration() + " ms):");
-        for (Map.Entry<String, Integer> entry : plan.getStatistics().getPhysicalRuleCalls().getRuleCalls().entrySet()) {
-            System.out.println("\t" + entry.getKey() + " -> " + entry.getValue());
-        }
 
         List<SqlRow> rows = new ArrayList<>();
 

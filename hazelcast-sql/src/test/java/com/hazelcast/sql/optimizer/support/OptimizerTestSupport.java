@@ -16,13 +16,13 @@
 
 package com.hazelcast.sql.optimizer.support;
 
-import com.hazelcast.sql.impl.calcite.ExecutionConfig;
 import com.hazelcast.sql.impl.calcite.ExecutionContext;
 import com.hazelcast.sql.impl.calcite.opt.logical.LogicalRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.PhysicalRel;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastSchema;
+import com.hazelcast.sql.impl.calcite.schema.HazelcastSchemaUtils;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
-import com.hazelcast.sql.impl.calcite.schema.HazelcastTableStatistic;
+import com.hazelcast.sql.impl.calcite.schema.MapTableStatistic;
 import com.hazelcast.sql.impl.expression.ColumnExpression;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.Expression;
@@ -31,7 +31,6 @@ import com.hazelcast.sql.impl.expression.predicate.ComparisonMode;
 import com.hazelcast.sql.impl.expression.predicate.ComparisonPredicate;
 import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.schema.ConstantTableStatistics;
-import com.hazelcast.sql.impl.schema.SchemaUtils;
 import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.schema.map.MapTableField;
 import com.hazelcast.sql.impl.schema.map.MapTableIndex;
@@ -89,13 +88,10 @@ public abstract class OptimizerTestSupport {
      * @return Result.
      */
     protected Result optimize(String sql, HazelcastSchema schema) {
-        ExecutionConfig config = ExecutionConfig.builder().build();
-
         ExecutionContext context = ExecutionContext.create(
-                ExecutionContext.createCatalog(schema),
-                SchemaUtils.prepareSearchPaths(null, null),
-                1,
-                config
+            HazelcastSchemaUtils.createCatalog(schema),
+            HazelcastSchemaUtils.prepareSearchPaths(null, null),
+            1
         );
 
         return optimize(sql, context);
@@ -104,18 +100,17 @@ public abstract class OptimizerTestSupport {
     /**
      * Optimize with the given context.
      *
-     * @param sql     SQL.
+     * @param sql SQL.
      * @param context Context.
      * @return Result.
      */
     protected Result optimize(String sql, ExecutionContext context) {
-        SqlNode node = context.parse(sql);
-        SqlNode validated = context.validate(node);
-        RelNode converted = context.convert(validated);
+        SqlNode node = context.parse(sql).getNode();
+        RelNode converted = context.convert(node);
         LogicalRel logical = context.optimizeLogical(converted);
-        PhysicalRel physical = isOptimizePhysical() ? context.optimizePhysical(logical, null) : null;
+        PhysicalRel physical = isOptimizePhysical() ? context.optimizePhysical(logical) : null;
 
-        Result res = new Result(validated, converted, logical, physical);
+        Result res = new Result(node, converted, logical, physical);
 
         last = res;
 
@@ -138,7 +133,7 @@ public abstract class OptimizerTestSupport {
             PartitionedMapTable.DISTRIBUTION_FIELD_ORDINAL_NONE
         );
 
-        return new HazelcastTable(table, new HazelcastTableStatistic(rowCount));
+        return new HazelcastTable(table, new MapTableStatistic(rowCount));
     }
 
     /**

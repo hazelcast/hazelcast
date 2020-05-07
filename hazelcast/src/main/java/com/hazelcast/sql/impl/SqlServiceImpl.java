@@ -20,6 +20,7 @@ import com.hazelcast.config.SqlConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.sql.SqlCursor;
@@ -28,7 +29,7 @@ import com.hazelcast.sql.SqlService;
 import com.hazelcast.sql.SqlUpdate;
 import com.hazelcast.sql.impl.parser.DdlStatement;
 import com.hazelcast.sql.impl.parser.DqlStatement;
-import com.hazelcast.sql.impl.parser.NoOpSqlParser;
+import com.hazelcast.sql.impl.parser.NotImplementedSqlParser;
 import com.hazelcast.sql.impl.parser.SqlParseTask;
 import com.hazelcast.sql.impl.parser.SqlParser;
 import com.hazelcast.sql.impl.parser.Statement;
@@ -39,6 +40,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.function.Consumer;
+import java.util.logging.Level;
 
 /**
  * Base SQL service implementation that bridges parser implementation, public and private APIs.
@@ -51,10 +53,12 @@ public class SqlServiceImpl implements SqlService, Consumer<Packet> {
     private static final long STATE_CHECK_FREQUENCY = 10_000L;
 
     private static final String PARSER_CLASS_PROPERTY_NAME = "hazelcast.sql.parserClass";
-    private static final String PARSER_CLASS_DEFAULT = "com.hazelcast.sql.impl.calcite.CalciteSqlParser";
+    private static final String SQL_MODULE_PARSER_CLASS = "com.hazelcast.sql.impl.calcite.CalciteSqlParser";
 
     private final Catalog catalog;
     private final SqlParser parser;
+
+    private final ILogger logger;
 
     private final boolean liteMember;
 
@@ -63,6 +67,7 @@ public class SqlServiceImpl implements SqlService, Consumer<Packet> {
     private volatile SqlInternalService internalService;
 
     public SqlServiceImpl(NodeEngineImpl nodeEngine) {
+        logger = nodeEngine.getLogger(getClass());
         SqlConfig config = nodeEngine.getConfig().getSqlConfig();
 
         int operationThreadCount = config.getOperationThreadCount();
@@ -220,15 +225,15 @@ public class SqlServiceImpl implements SqlService, Consumer<Packet> {
     }
 
     /**
-     * Create either normal or no-op parser instance.
+     * Create either normal or not-implemented parser instance.
      *
      * @param nodeEngine Node engine.
      * @return SqlParser.
      */
     @SuppressWarnings({"unchecked", "rawtypes"})
-    private static SqlParser createParser(NodeEngine nodeEngine) {
+    private SqlParser createParser(NodeEngine nodeEngine) {
         // 1. Resolve class name.
-        String className = System.getProperty(PARSER_CLASS_PROPERTY_NAME, PARSER_CLASS_DEFAULT);
+        String className = System.getProperty(PARSER_CLASS_PROPERTY_NAME, SQL_MODULE_PARSER_CLASS);
 
         // 2. Get the class.
         Class clazz;
@@ -236,7 +241,10 @@ public class SqlServiceImpl implements SqlService, Consumer<Packet> {
         try {
             clazz = Class.forName(className);
         } catch (ClassNotFoundException e) {
-            return new NoOpSqlParser();
+            logger.log(SQL_MODULE_PARSER_CLASS.equals(className) ? Level.FINE : Level.WARNING,
+                    "Parser class \"" + className + "\" not found, falling back to "
+                            + NotImplementedSqlParser.class.getName());
+            return new NotImplementedSqlParser();
         } catch (Exception e) {
             throw new HazelcastException("Failed to resolve parser class " + className + ": " + e.getMessage(), e);
         }

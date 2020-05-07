@@ -16,39 +16,20 @@
 
 package com.hazelcast.sql.impl.calcite.opt.physical;
 
-import com.hazelcast.sql.impl.optimizer.OptimizerRuleCallTracker;
-import org.apache.calcite.plan.HazelcastRelOptCluster;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.RelOptRuleCall;
 import org.apache.calcite.plan.RelOptRuleOperand;
-import org.apache.calcite.tools.RelBuilderFactory;
 
 /**
  * Base class for physical rules.
  */
 public abstract class AbstractPhysicalRule extends RelOptRule {
-    protected AbstractPhysicalRule(RelOptRuleOperand operand) {
-        super(operand);
-    }
-
     protected AbstractPhysicalRule(RelOptRuleOperand operand, String description) {
         super(operand, description);
     }
 
-    protected AbstractPhysicalRule(RelOptRuleOperand operand, RelBuilderFactory relBuilderFactory, String description) {
-        super(operand, relBuilderFactory, description);
-    }
-
     @Override
     public final void onMatch(RelOptRuleCall call) {
-        HazelcastRelOptCluster cluster = (HazelcastRelOptCluster) call.getPlanner().getRoot().getCluster();
-
-        OptimizerRuleCallTracker ruleCallTracker = cluster.getRuleCallTracker();
-
-        if (ruleCallTracker != null) {
-            ruleCallTracker.onRuleCall(this.getClass().getSimpleName());
-        }
-
         onMatch0(call);
     }
 

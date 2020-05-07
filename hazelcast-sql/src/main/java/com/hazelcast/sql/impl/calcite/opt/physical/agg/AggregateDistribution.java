@@ -17,14 +17,14 @@
 package com.hazelcast.sql.impl.calcite.opt.physical.agg;
 
 import com.hazelcast.sql.impl.calcite.opt.OptUtils;
-import com.hazelcast.sql.impl.calcite.opt.distribution.DistributionField;
 import com.hazelcast.sql.impl.calcite.opt.distribution.DistributionTrait;
+import com.hazelcast.sql.impl.calcite.opt.distribution.DistributionTraitDef;
 import com.hazelcast.sql.impl.calcite.opt.distribution.DistributionType;
 import com.hazelcast.sql.impl.calcite.opt.logical.AggregateLogicalRel;
-import org.apache.calcite.plan.HazelcastRelOptCluster;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.util.ImmutableBitSet;
 
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -46,27 +46,30 @@ public final class AggregateDistribution {
         ImmutableBitSet groupSet = agg.getGroupSet();
         DistributionTrait inputDistribution = OptUtils.getDistribution(physicalInput);
 
-        return of(groupSet, inputDistribution);
+        return of(groupSet, inputDistribution, OptUtils.getDistributionDef(agg));
     }
 
-    public static AggregateDistribution of(ImmutableBitSet aggGroupSet, DistributionTrait inputDistribution) {
+    private static AggregateDistribution of(
+        ImmutableBitSet aggGroupSet,
+        DistributionTrait inputDistribution,
+        DistributionTraitDef distributionTraitDef) {
         switch (inputDistribution.getType()) {
             case ROOT:
                 // Always collocated for ROOT, since there is only one stream of data.
-                return new AggregateDistribution(true, DistributionTrait.ROOT_DIST);
+                return new AggregateDistribution(true, distributionTraitDef.getTraitRoot());
 
             case REPLICATED:
                 // Always collocated for REPLICATED, since the same stream is present on all members.
-                return new AggregateDistribution(true, DistributionTrait.REPLICATED_DIST);
+                return new AggregateDistribution(true, distributionTraitDef.getTraitReplicated());
 
             case PARTITIONED:
-                return ofDistributed(aggGroupSet, inputDistribution.getFieldGroups());
+                return ofDistributed(aggGroupSet, inputDistribution.getFieldGroups(), distributionTraitDef);
 
             default:
                 // Default (ANY) distribution - not collocated, output is distributed, but distribution columns are unknown.
                 assert inputDistribution.getType() == DistributionType.ANY;
 
-                return new AggregateDistribution(false, DistributionTrait.PARTITIONED_UNKNOWN_DIST);
+                return new AggregateDistribution(false, distributionTraitDef.getTraitPartitionedUnknown());
         }
     }
 
@@ -79,19 +82,21 @@ public final class AggregateDistribution {
      */
     private static AggregateDistribution ofDistributed(
         ImmutableBitSet aggGroupSet,
-        List<List<DistributionField>> inputFieldGroups
+        List<List<Integer>> inputFieldGroups,
+        DistributionTraitDef distributionTraitDef
     ) {
-        for (List<DistributionField> inputFieldGroup : inputFieldGroups) {
+        for (List<Integer> inputFieldGroup : inputFieldGroups) {
             if (isCollocated(aggGroupSet, inputFieldGroup)) {
-                DistributionTrait distribution =
-                    DistributionTrait.Builder.ofType(DistributionType.PARTITIONED).addFieldGroup(inputFieldGroup).build();
+                DistributionTrait distribution = distributionTraitDef.createPartitionedTrait(
+                    Collections.singletonList(inputFieldGroup)
+                );
 
                 return new AggregateDistribution(true, distribution);
             }
         }
 
         // No collocated inputs were found. Input distribution is lost.
-        return new AggregateDistribution(false, DistributionTrait.PARTITIONED_UNKNOWN_DIST);
+        return new AggregateDistribution(false, distributionTraitDef.getTraitPartitionedUnknown());
     }
 
     /**
@@ -102,7 +107,7 @@ public final class AggregateDistribution {
      * @param inputFieldGroup Field group.
      * @return {@code True} if this aggregate could be processed in collocated mode.
      */
-    private static boolean isCollocated(ImmutableBitSet aggGroupSet, List<DistributionField> inputFieldGroup) {
+    private static boolean isCollocated(ImmutableBitSet aggGroupSet, List<Integer> inputFieldGroup) {
         // If group set size is less than the number of input distribution fields, then dist fields could not be a
         // prefix of group by definition.
         if (aggGroupSet.length() < inputFieldGroup.size()) {
@@ -122,7 +127,7 @@ public final class AggregateDistribution {
     }
 
     public boolean isCollocated() {
-        return collocated || HazelcastRelOptCluster.isSingleMember();
+        return collocated || distribution.getMemberCount() == 1;
     }
 
     public DistributionTrait getDistribution() {

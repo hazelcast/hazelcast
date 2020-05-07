@@ -18,7 +18,10 @@ package com.hazelcast.sql.impl.parser;
 
 import com.hazelcast.sql.impl.QueryException;
 
-public class NoOpSqlParser implements SqlParser {
+/**
+ * A not-implemented parser. Used when a real parser isn't available.
+ */
+public class NotImplementedSqlParser implements SqlParser {
 
     @Override
     public Statement parse(SqlParseTask task) {

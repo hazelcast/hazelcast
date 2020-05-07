@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.calcite.opt;
+package com.hazelcast.sql.impl.calcite.optimizer;
 
 import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.partition.Partition;
@@ -26,13 +26,11 @@ import com.hazelcast.sql.impl.calcite.opt.physical.PhysicalRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.visitor.NodeIdVisitor;
 import com.hazelcast.sql.impl.calcite.opt.physical.visitor.PlanCreateVisitor;
 import com.hazelcast.sql.impl.calcite.opt.physical.visitor.SqlToQueryType;
-import com.hazelcast.sql.impl.optimizer.OptimizerRuleCallTracker;
-import com.hazelcast.sql.impl.optimizer.OptimizerStatistics;
+import com.hazelcast.sql.impl.calcite.parse.QueryParseResult;
 import com.hazelcast.sql.impl.plan.Plan;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.type.RelDataType;
-import org.apache.calcite.sql.SqlNode;
 
 import java.util.Collection;
 import java.util.LinkedHashMap;
@@ -41,7 +39,6 @@ import java.util.Map;
 import java.util.UUID;
 
 public class SqlOptimizer {
-
     /** Node engine. */
     private final NodeEngine nodeEngine;
 
@@ -49,28 +46,18 @@ public class SqlOptimizer {
         this.nodeEngine = nodeEngine;
     }
 
-    public Plan optimize(String sql, SqlNode node, ExecutionContext context) {
+    public Plan optimize(QueryParseResult parseResult, ExecutionContext context) {
         // 1. Convert to REL.
-        RelNode rel = context.convert(node);
+        RelNode rel = context.convert(parseResult.getNode());
 
         // 2. Perform logical optimization.
         LogicalRel logicalRel = context.optimizeLogical(rel);
 
         // 3. Perform physical optimization.
-        long start = System.currentTimeMillis();
-
-        boolean statsEnabled = context.getConfig().isStatisticsEnabled();
-
-        OptimizerRuleCallTracker physicalRuleCallTracker = statsEnabled ? new OptimizerRuleCallTracker() : null;
-        PhysicalRel physicalRel = context.optimizePhysical(logicalRel, physicalRuleCallTracker);
+        PhysicalRel physicalRel = context.optimizePhysical(logicalRel);
 
         // 4. Create plan.
-        long dur = System.currentTimeMillis() - start;
-
-        RelDataType parameterRowType = context.getParameterRowType(node);
-        OptimizerStatistics stats = statsEnabled ? new OptimizerStatistics(dur, physicalRuleCallTracker) : null;
-
-        return doCreatePlan(sql, parameterRowType, physicalRel, stats);
+        return doCreatePlan(parseResult.getSql(), parseResult.getParameterRowType(), physicalRel);
     }
 
     /**
@@ -79,12 +66,7 @@ public class SqlOptimizer {
      * @param rel Rel.
      * @return Plan.
      */
-    private Plan doCreatePlan(
-        String sql,
-        RelDataType parameterRowType,
-        PhysicalRel rel,
-        OptimizerStatistics stats
-    ) {
+    private Plan doCreatePlan(String sql, RelDataType parameterRowType, PhysicalRel rel) {
         // Get partition mapping.
         Collection<Partition> parts = nodeEngine.getHazelcastInstance().getPartitionService().getPartitions();
 
@@ -112,8 +94,7 @@ public class SqlOptimizer {
             partMap,
             relIdMap,
             sql,
-            parameterMetadata,
-            stats
+            parameterMetadata
         );
 
         rel.visit(visitor);

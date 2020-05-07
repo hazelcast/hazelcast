@@ -17,8 +17,8 @@
 package com.hazelcast.sql.impl.calcite.opt.physical.join;
 
 import com.hazelcast.sql.impl.calcite.opt.HazelcastConventions;
-import com.hazelcast.sql.impl.calcite.opt.distribution.DistributionField;
 import com.hazelcast.sql.impl.calcite.opt.distribution.DistributionTrait;
+import com.hazelcast.sql.impl.calcite.opt.distribution.DistributionTraitDef;
 import com.hazelcast.sql.impl.calcite.opt.distribution.DistributionType;
 import com.hazelcast.sql.impl.calcite.opt.OptUtils;
 import com.hazelcast.sql.impl.calcite.opt.logical.JoinLogicalRel;
@@ -27,7 +27,7 @@ import com.hazelcast.sql.impl.calcite.opt.physical.MaterializedInputPhysicalRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.ReplicatedToDistributedPhysicalRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.exchange.BroadcastExchangePhysicalRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.exchange.UnicastExchangePhysicalRel;
-import org.apache.calcite.plan.RelOptCluster;
+import org.apache.calcite.plan.HazelcastRelOptCluster;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.RelOptRuleCall;
 import org.apache.calcite.plan.RelTraitSet;
@@ -37,10 +37,8 @@ import org.apache.calcite.rel.core.JoinRelType;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
-
-import static com.hazelcast.sql.impl.calcite.opt.distribution.DistributionTrait.PARTITIONED_UNKNOWN_DIST;
-import static com.hazelcast.sql.impl.calcite.opt.distribution.DistributionTrait.REPLICATED_DIST;
 
 /**
  * General rule for join processing.
@@ -143,6 +141,7 @@ public final class JoinPhysicalRule extends AbstractPhysicalRule {
         JoinDistribution rightJoinDist = joinDistributionForNonEquiJoin(rightDist);
 
         List<JoinCollocationStrategy> strategies = JoinCollocationStrategy.resolve(
+            OptUtils.getDistributionDef(left).getMemberCount(),
             type,
             JoinConditionType.OTHER,
             leftJoinDist,
@@ -183,10 +182,11 @@ public final class JoinPhysicalRule extends AbstractPhysicalRule {
         RelNode rightCollocated = createCollocatedInputNonEquiJoin(right, strategy.getRightAction(), false);
 
         // Step 2: Create the join itself.
-        RelOptCluster cluster = left.getCluster();
+        HazelcastRelOptCluster cluster = OptUtils.getCluster(left);
+        DistributionTraitDef distributionTraitDef = cluster.getDistributionTraitDef();
 
         DistributionTrait distribution = strategy.getResultDistribution() == JoinDistribution.REPLICATED
-            ? REPLICATED_DIST : PARTITIONED_UNKNOWN_DIST;
+            ?  distributionTraitDef.getTraitReplicated() : distributionTraitDef.getTraitPartitionedUnknown();
 
         RelCollation collation = OptUtils.getCollation(leftCollocated);
 
@@ -237,8 +237,11 @@ public final class JoinPhysicalRule extends AbstractPhysicalRule {
             // Replicated input should not be broadcast further.
             assert OptUtils.getDistribution(input).getType() != DistributionType.REPLICATED;
 
-            RelOptCluster cluster = input.getCluster();
-            RelTraitSet traitSet = OptUtils.toPhysicalConvention(cluster.getPlanner().emptyTraitSet(), REPLICATED_DIST);
+            HazelcastRelOptCluster cluster = OptUtils.getCluster(input);
+            RelTraitSet traitSet = OptUtils.toPhysicalConvention(
+                cluster.getPlanner().emptyTraitSet(),
+                cluster.getDistributionTraitDef().getTraitReplicated()
+            );
 
             // Step 1: Broadcast data.
             BroadcastExchangePhysicalRel exchange = new BroadcastExchangePhysicalRel(cluster, traitSet, input);
@@ -282,6 +285,8 @@ public final class JoinPhysicalRule extends AbstractPhysicalRule {
         RelNode left,
         RelNode right
     ) {
+        int memberCount = OptUtils.getDistributionDef(left).getMemberCount();
+
         DistributionTrait leftDist = OptUtils.getDistribution(left);
         DistributionTrait rightDist = OptUtils.getDistribution(right);
 
@@ -297,6 +302,7 @@ public final class JoinPhysicalRule extends AbstractPhysicalRule {
             // Both inputs are collocated.
             // E.g. aDist={a1, a2}, bDist={b1, b2}, cond={a1=b1, a2=b2}.
             List<JoinCollocationStrategy> strategies = JoinCollocationStrategy.resolve(
+                memberCount,
                 type,
                 JoinConditionType.EQUI,
                 JoinDistribution.PARTITIONED,
@@ -322,6 +328,7 @@ public final class JoinPhysicalRule extends AbstractPhysicalRule {
             // 2) The opposite: leave right input where it is and move the left one to it
             if (leftInputDist.isPartitioned()) {
                 List<JoinCollocationStrategy> strategies = JoinCollocationStrategy.resolve(
+                    memberCount,
                     type,
                     JoinConditionType.EQUI,
                     JoinDistribution.PARTITIONED,
@@ -344,6 +351,7 @@ public final class JoinPhysicalRule extends AbstractPhysicalRule {
 
             if (rightInputDist.isPartitioned()) {
                 List<JoinCollocationStrategy> strategies = JoinCollocationStrategy.resolve(
+                    memberCount,
                     type,
                     JoinConditionType.EQUI,
                     leftInputDist.getDistributionPartitionedAsRandom(),
@@ -366,6 +374,7 @@ public final class JoinPhysicalRule extends AbstractPhysicalRule {
         } else {
             // Neither inputs are PARTITIONED with known distribution fields.
             List<JoinCollocationStrategy> strategies = JoinCollocationStrategy.resolve(
+                memberCount,
                 type,
                 JoinConditionType.EQUI,
                 leftInputDist.getDistribution(),
@@ -412,9 +421,10 @@ public final class JoinPhysicalRule extends AbstractPhysicalRule {
         RelNode rightCollocated = createCollocatedInputEquiJoin(right, strategy.getRightAction(), rightHashKeys);
 
         // Step 2: Create the join.
-        RelOptCluster cluster = left.getCluster();
+        HazelcastRelOptCluster cluster = OptUtils.getCluster(left);
 
         DistributionTrait distribution = prepareDistributionEquiJoin(
+            cluster.getDistributionTraitDef(),
             strategy.getResultDistribution(),
             leftHashKeys,
             rightHashKeys,
@@ -471,6 +481,7 @@ public final class JoinPhysicalRule extends AbstractPhysicalRule {
      * @return Distribution trait.
      */
     private static DistributionTrait prepareDistributionEquiJoin(
+        DistributionTraitDef distributionTraitDef,
         JoinDistribution joinDistribution,
         List<Integer> leftJoinKeys,
         List<Integer> rightJoinKeys,
@@ -478,21 +489,22 @@ public final class JoinPhysicalRule extends AbstractPhysicalRule {
     ) {
         switch (joinDistribution) {
             case REPLICATED:
-                return REPLICATED_DIST;
+                return distributionTraitDef.getTraitReplicated();
 
             case RANDOM:
-                return PARTITIONED_UNKNOWN_DIST;
+                return distributionTraitDef.getTraitPartitionedUnknown();
 
             default:
                 assert joinDistribution == JoinDistribution.PARTITIONED;
 
-                List<DistributionField> leftDistFields = prepareDistributionFieldsEquiJoin(leftJoinKeys, 0);
-                List<DistributionField> rightDistFields = prepareDistributionFieldsEquiJoin(rightJoinKeys, leftFieldCount);
+                List<Integer> leftGroups = prepareDistributionFieldsEquiJoin(leftJoinKeys, 0);
+                List<Integer> rightGroup = prepareDistributionFieldsEquiJoin(rightJoinKeys, leftFieldCount);
 
-                return DistributionTrait.Builder.ofType(DistributionType.PARTITIONED)
-                    .addFieldGroup(leftDistFields)
-                    .addFieldGroup(rightDistFields)
-                    .build();
+                List<List<Integer>> groups = new ArrayList<>(2);
+                groups.add(leftGroups);
+                groups.add(rightGroup);
+
+                return distributionTraitDef.createPartitionedTrait(groups);
         }
     }
 
@@ -503,10 +515,10 @@ public final class JoinPhysicalRule extends AbstractPhysicalRule {
      * @param offset Offset. Zero for the left input, [num of fields on the left input] for the right input.
      * @return Distribution fields.
      */
-    private static List<DistributionField> prepareDistributionFieldsEquiJoin(List<Integer> joinKeys, int offset) {
-        List<DistributionField> res = new ArrayList<>(joinKeys.size());
+    private static List<Integer> prepareDistributionFieldsEquiJoin(List<Integer> joinKeys, int offset) {
+        List<Integer> res = new ArrayList<>(joinKeys.size());
 
-        joinKeys.forEach((fieldIndex) -> res.add(new DistributionField(fieldIndex + offset)));
+        joinKeys.forEach((fieldIndex) -> res.add(fieldIndex + offset));
 
         return res;
     }
@@ -521,11 +533,12 @@ public final class JoinPhysicalRule extends AbstractPhysicalRule {
             return input;
         }
 
-        RelOptCluster cluster = input.getCluster();
+        HazelcastRelOptCluster cluster = OptUtils.getCluster(input);
+        DistributionTraitDef distributionTraitDef = cluster.getDistributionTraitDef();
 
-        DistributionTrait partitionedDistribution = DistributionTrait.Builder.ofType(DistributionType.PARTITIONED)
-            .addFieldGroup(prepareDistributionFieldsEquiJoin(hashFields, 0))
-            .build();
+        DistributionTrait partitionedDistribution = distributionTraitDef.createPartitionedTrait(
+            Collections.singletonList(prepareDistributionFieldsEquiJoin(hashFields, 0))
+        );
 
         if (action == JoinCollocationAction.REPLICATED_HASH) {
             // Hash replicated input to convert it to partitioned form.
@@ -548,7 +561,7 @@ public final class JoinPhysicalRule extends AbstractPhysicalRule {
             // Do broadcast. Distribution is changed to REPLICATED. Collation is lost.
             RelTraitSet broadcastTraitSet = OptUtils.toPhysicalConvention(
                 cluster.getPlanner().emptyTraitSet(),
-                REPLICATED_DIST
+                distributionTraitDef.getTraitReplicated()
             );
 
             return new BroadcastExchangePhysicalRel(
@@ -605,7 +618,7 @@ public final class JoinPhysicalRule extends AbstractPhysicalRule {
         // Deal with partitioned distribution. Try to find the matching group.
         assert type == DistributionType.PARTITIONED;
 
-        for (List<DistributionField> fields : dist.getFieldGroups()) {
+        for (List<Integer> fields : dist.getFieldGroups()) {
             List<Integer> mappedJoinKeys = mapPartitionedDistributionKeys(joinKeys, fields);
 
             if (mappedJoinKeys != null) {
@@ -631,11 +644,11 @@ public final class JoinPhysicalRule extends AbstractPhysicalRule {
      * @param fields Distribution fields.
      * @return Join keys BitSet.
      */
-    private static List<Integer> mapPartitionedDistributionKeys(List<Integer> joinKeys, List<DistributionField> fields) {
+    private static List<Integer> mapPartitionedDistributionKeys(List<Integer> joinKeys, List<Integer> fields) {
         List<Integer> res = new ArrayList<>(joinKeys.size());
 
-        for (DistributionField field : fields) {
-            int joinKeyIndex = joinKeys.indexOf(field.getIndex());
+        for (Integer field : fields) {
+            int joinKeyIndex = joinKeys.indexOf(field);
 
             if (joinKeyIndex == -1) {
                 return null;

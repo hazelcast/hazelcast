@@ -18,7 +18,8 @@ package com.hazelcast.sql.impl.calcite;
 
 import com.hazelcast.cluster.memberselector.MemberSelectors;
 import com.hazelcast.spi.impl.NodeEngine;
-import com.hazelcast.sql.impl.calcite.opt.SqlOptimizer;
+import com.hazelcast.sql.impl.calcite.optimizer.SqlOptimizer;
+import com.hazelcast.sql.impl.calcite.parse.QueryParseResult;
 import com.hazelcast.sql.impl.calcite.parser.SqlCreateTable;
 import com.hazelcast.sql.impl.calcite.parser.SqlDropTable;
 import com.hazelcast.sql.impl.calcite.parser.SqlOption;
@@ -63,7 +64,8 @@ public class CalciteSqlParser implements SqlParser {
         ExecutionContext context = createContext(task.getCatalog(), task.getSearchPaths());
 
         // 2. Parse SQL statement.
-        SqlNode node = context.parse(task.getSql());
+        QueryParseResult parseResult = context.parse(task.getSql());
+        SqlNode node = parseResult.getNode();
 
         // 3. Convert to an operation.
         if (node instanceof SqlCreateTable) {
@@ -71,8 +73,7 @@ public class CalciteSqlParser implements SqlParser {
         } else if (node instanceof SqlDropTable) {
             return toDropTableStatement((SqlDropTable) node);
         } else {
-            SqlNode validated = context.validate(node);
-            Plan plan = optimizer.optimize(task.getSql(), validated, context);
+            Plan plan = optimizer.optimize(parseResult, context);
             return new DqlStatement(plan);
         }
     }
