@@ -17,8 +17,12 @@
 package com.hazelcast.sql.optimizer.support;
 
 import com.hazelcast.sql.impl.calcite.OptimizerContext;
+import com.hazelcast.sql.impl.calcite.opt.OptUtils;
 import com.hazelcast.sql.impl.calcite.opt.logical.LogicalRel;
+import com.hazelcast.sql.impl.calcite.opt.logical.LogicalRules;
+import com.hazelcast.sql.impl.calcite.opt.logical.RootLogicalRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.PhysicalRel;
+import com.hazelcast.sql.impl.calcite.opt.physical.PhysicalRules;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastSchema;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastSchemaUtils;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
@@ -36,6 +40,7 @@ import com.hazelcast.sql.impl.schema.map.MapTableField;
 import com.hazelcast.sql.impl.schema.map.MapTableIndex;
 import com.hazelcast.sql.impl.schema.map.PartitionedMapTable;
 import com.hazelcast.sql.impl.type.QueryDataType;
+import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.schema.Table;
 import org.apache.calcite.sql.SqlNode;
@@ -107,14 +112,29 @@ public abstract class OptimizerTestSupport {
     protected Result optimize(String sql, OptimizerContext context) {
         SqlNode node = context.parse(sql).getNode();
         RelNode converted = context.convert(node);
-        LogicalRel logical = context.optimizeLogical(converted);
-        PhysicalRel physical = isOptimizePhysical() ? context.optimizePhysical(logical) : null;
+        LogicalRel logical = optimizeLogical(context, converted);
+        PhysicalRel physical = isOptimizePhysical() ? optimizePhysical(context, logical) : null;
 
         Result res = new Result(node, converted, logical, physical);
 
         last = res;
 
         return res;
+    }
+
+    private LogicalRel optimizeLogical(OptimizerContext context, RelNode node) {
+        RelNode logicalRel = context.optimize(node, LogicalRules.getRuleSet(), OptUtils.toLogicalConvention(node.getTraitSet()));
+
+        return new RootLogicalRel(logicalRel.getCluster(), logicalRel.getTraitSet(), logicalRel);
+    }
+
+    private PhysicalRel optimizePhysical(OptimizerContext context, RelNode node) {
+        RelTraitSet physicalTraitSet = OptUtils.toPhysicalConvention(
+            node.getTraitSet(),
+            OptUtils.getDistributionDef(node).getTraitRoot()
+        );
+
+        return (PhysicalRel) context.optimize(node, PhysicalRules.getRuleSet(), physicalTraitSet);
     }
 
     public static HazelcastTable partitionedTable(

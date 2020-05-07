@@ -21,8 +21,11 @@ import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.partition.Partition;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
-import com.hazelcast.sql.impl.calcite.opt.logical.LogicalRel;
+import com.hazelcast.sql.impl.calcite.opt.OptUtils;
+import com.hazelcast.sql.impl.calcite.opt.logical.LogicalRules;
+import com.hazelcast.sql.impl.calcite.opt.logical.RootLogicalRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.PhysicalRel;
+import com.hazelcast.sql.impl.calcite.opt.physical.PhysicalRules;
 import com.hazelcast.sql.impl.calcite.opt.physical.visitor.NodeIdVisitor;
 import com.hazelcast.sql.impl.calcite.opt.physical.visitor.PlanCreateVisitor;
 import com.hazelcast.sql.impl.calcite.opt.physical.visitor.SqlToQueryType;
@@ -34,6 +37,7 @@ import com.hazelcast.sql.impl.schema.TableResolver;
 import com.hazelcast.sql.impl.schema.map.PartitionedMapTableResolver;
 import com.hazelcast.sql.impl.schema.map.ReplicatedMapTableResolver;
 import com.hazelcast.sql.impl.type.QueryDataType;
+import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.type.RelDataType;
 
@@ -75,17 +79,29 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         // 2. Parse SQL string and validate it.
         QueryParseResult parseResult = context.parse(task.getSql());
 
-        // 3. Convert to REL.
+        // 3. Convert parse tree to relational tree.
         RelNode rel = context.convert(parseResult.getNode());
 
-        // 4. Perform logical optimization.
-        LogicalRel logicalRel = context.optimizeLogical(rel);
+        // 4. Perform optimization.
+        PhysicalRel physicalRel = optimize(context, rel);
 
-        // 5. Perform physical optimization.
-        PhysicalRel physicalRel = context.optimizePhysical(logicalRel);
-
-        // 6. Create plan.
+        // 5. Create plan.
         return doCreatePlan(task.getSql(), parseResult.getParameterRowType(), physicalRel);
+    }
+
+    private PhysicalRel optimize(OptimizerContext context, RelNode rel) {
+        // Logical part.
+        RelNode logicalRel = context.optimize(rel, LogicalRules.getRuleSet(), OptUtils.toLogicalConvention(rel.getTraitSet()));
+
+        RootLogicalRel logicalRootRel = new RootLogicalRel(logicalRel.getCluster(), logicalRel.getTraitSet(), logicalRel);
+
+        // Physical part.
+        RelTraitSet physicalTraitSet = OptUtils.toPhysicalConvention(
+            logicalRootRel.getTraitSet(),
+            OptUtils.getDistributionDef(logicalRootRel).getTraitRoot()
+        );
+
+        return (PhysicalRel) context.optimize(logicalRootRel, PhysicalRules.getRuleSet(), physicalTraitSet);
     }
 
     /**
