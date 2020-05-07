@@ -237,6 +237,8 @@
                 <configuration>
                     <spotbugsXmlOutput>true</spotbugsXmlOutput>
                     <xmlOutput>true</xmlOutput>
+                    <excludeFilterFile>${maven.multiModuleProjectDirectory}/spotbugs/spotbugs-exclude.xml</excludeFilterFile>
+                    <maxHeap>1024</maxHeap>
                 </configuration>
             </plugin>
 
