@@ -17,11 +17,11 @@
 package com.hazelcast.sql.impl.calcite;
 
 import com.google.common.collect.ImmutableList;
-import com.hazelcast.sql.impl.QueryException;
-import com.hazelcast.sql.SqlErrorCode;
 import com.hazelcast.sql.impl.calcite.opt.cost.CostFactory;
 import com.hazelcast.sql.impl.calcite.opt.distribution.DistributionTraitDef;
 import com.hazelcast.sql.impl.calcite.opt.metadata.HazelcastRelMdRowCount;
+import com.hazelcast.sql.impl.calcite.parse.QueryParseResult;
+import com.hazelcast.sql.impl.calcite.parse.QueryParser;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastSchemaUtils;
 import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlOperatorTable;
 import com.hazelcast.sql.impl.calcite.opt.OptUtils;
@@ -65,12 +65,10 @@ import org.apache.calcite.rel.metadata.DefaultRelMetadataProvider;
 import org.apache.calcite.rel.metadata.JaninoRelMetadataProvider;
 import org.apache.calcite.rel.metadata.RelMetadataProvider;
 import org.apache.calcite.rel.rules.SubQueryRemoveRule;
-import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rex.RexBuilder;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.SqlOperatorTable;
 import org.apache.calcite.sql.fun.SqlStdOperatorTable;
-import org.apache.calcite.sql.parser.SqlParser;
 import org.apache.calcite.sql.util.ChainedSqlOperatorTable;
 import org.apache.calcite.sql.validate.SqlValidator;
 import org.apache.calcite.sql2rel.SqlToRelConverter;
@@ -106,21 +104,16 @@ public final class OptimizerContext {
     /** Converter: whether to trim unused fields. */
     private static final boolean CONVERTER_TRIM_UNUSED_FIELDS = true;
 
-    /** Basic Calcite config. */
+    private final QueryParser parser;
+    private final SqlToRelConverter sqlToRelConverter;
     private final VolcanoPlanner planner;
 
-    /** SQL validator. */
-    private final SqlValidator validator;
-
-    /** SQL converter. */
-    private final SqlToRelConverter sqlToRelConverter;
-
     private OptimizerContext(
-        SqlValidator validator,
+        QueryParser parser,
         SqlToRelConverter sqlToRelConverter,
         VolcanoPlanner planner
     ) {
-        this.validator = validator;
+        this.parser = parser;
         this.sqlToRelConverter = sqlToRelConverter;
         this.planner = planner;
     }
@@ -154,7 +147,9 @@ public final class OptimizerContext {
         HazelcastRelOptCluster cluster = createCluster(planner, typeFactory, distributionTraitDef);
         SqlToRelConverter sqlToRelConverter = createSqlToRelConverter(catalogReader, validator, cluster);
 
-        return new OptimizerContext(validator, sqlToRelConverter, planner);
+        QueryParser parser = new QueryParser(validator);
+
+        return new OptimizerContext(parser, sqlToRelConverter, planner);
     }
 
     /**
@@ -163,27 +158,8 @@ public final class OptimizerContext {
      * @param sql SQL string.
      * @return SQL tree.
      */
-    public SqlNode parse(String sql) {
-        SqlNode node;
-
-        try {
-            SqlParser.ConfigBuilder parserConfig = SqlParser.configBuilder();
-
-            // TODO: Tests for it!
-            parserConfig.setCaseSensitive(true);
-            parserConfig.setUnquotedCasing(Casing.UNCHANGED);
-            parserConfig.setQuotedCasing(Casing.UNCHANGED);
-            parserConfig.setConformance(HazelcastSqlConformance.INSTANCE);
-
-            SqlParser parser = SqlParser.create(sql, parserConfig.build());
-
-            node = parser.parseStmt();
-
-            // TODO: Get column names through SqlSelect.selectList[i].toString() (and, possibly, origins?)
-            return validator.validate(node);
-        } catch (Exception e) {
-            throw QueryException.error(SqlErrorCode.PARSING, e.getMessage(), e);
-        }
+    public QueryParseResult parse(String sql) {
+        return parser.parse(sql);
     }
 
     /**
@@ -218,7 +194,7 @@ public final class OptimizerContext {
      * @param rel Initial relation.
      * @return Resulting relation.
      */
-    private RelNode rewriteSubqueries(RelNode rel) {
+    private static RelNode rewriteSubqueries(RelNode rel) {
         HepProgramBuilder hepPgmBldr = new HepProgramBuilder();
 
         hepPgmBldr.addRuleInstance(SubQueryRemoveRule.FILTER);
@@ -283,10 +259,6 @@ public final class OptimizerContext {
         );
 
         return (PhysicalRel) res;
-    }
-
-    public RelDataType getParameterRowType(SqlNode sqlNode) {
-        return validator.getParameterRowType(sqlNode);
     }
 
     private static CalciteConnectionConfig createConnectionConfig() {

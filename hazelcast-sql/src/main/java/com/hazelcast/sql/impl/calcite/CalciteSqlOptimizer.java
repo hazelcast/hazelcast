@@ -26,6 +26,7 @@ import com.hazelcast.sql.impl.calcite.opt.physical.PhysicalRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.visitor.NodeIdVisitor;
 import com.hazelcast.sql.impl.calcite.opt.physical.visitor.PlanCreateVisitor;
 import com.hazelcast.sql.impl.calcite.opt.physical.visitor.SqlToQueryType;
+import com.hazelcast.sql.impl.calcite.parse.QueryParseResult;
 import com.hazelcast.sql.impl.optimizer.OptimizationTask;
 import com.hazelcast.sql.impl.optimizer.SqlOptimizer;
 import com.hazelcast.sql.impl.plan.Plan;
@@ -35,7 +36,6 @@ import com.hazelcast.sql.impl.schema.map.ReplicatedMapTableResolver;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.type.RelDataType;
-import org.apache.calcite.sql.SqlNode;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -72,11 +72,10 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         );
 
         // 2. Parse SQL string and validate it.
-        SqlNode node = context.parse(task.getSql());
-        RelDataType parameterRowType = context.getParameterRowType(node);
+        QueryParseResult parseResult = context.parse(task.getSql());
 
         // 3. Convert to REL.
-        RelNode rel = context.convert(node);
+        RelNode rel = context.convert(parseResult.getNode());
 
         // 4. Perform logical optimization.
         LogicalRel logicalRel = context.optimizeLogical(rel);
@@ -85,7 +84,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         PhysicalRel physicalRel = context.optimizePhysical(logicalRel);
 
         // 6. Create plan.
-        return doCreatePlan(task.getSql(), parameterRowType, physicalRel);
+        return doCreatePlan(task.getSql(), parseResult.getParameterRowType(), physicalRel);
     }
 
     /**
