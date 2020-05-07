@@ -21,8 +21,11 @@ import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.partition.Partition;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
-import com.hazelcast.sql.impl.calcite.opt.logical.LogicalRel;
+import com.hazelcast.sql.impl.calcite.opt.OptUtils;
+import com.hazelcast.sql.impl.calcite.opt.logical.LogicalRules;
+import com.hazelcast.sql.impl.calcite.opt.logical.RootLogicalRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.PhysicalRel;
+import com.hazelcast.sql.impl.calcite.opt.physical.PhysicalRules;
 import com.hazelcast.sql.impl.calcite.opt.physical.visitor.NodeIdVisitor;
 import com.hazelcast.sql.impl.calcite.opt.physical.visitor.PlanCreateVisitor;
 import com.hazelcast.sql.impl.calcite.opt.physical.visitor.SqlToQueryType;
@@ -40,6 +43,7 @@ import com.hazelcast.sql.impl.schema.TableSchema.Field;
 import com.hazelcast.sql.impl.schema.map.PartitionedMapTableResolver;
 import com.hazelcast.sql.impl.schema.map.ReplicatedMapTableResolver;
 import com.hazelcast.sql.impl.type.QueryDataType;
+import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.sql.SqlNode;
@@ -62,18 +66,18 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
     /** Node engine. */
     private final NodeEngine nodeEngine;
 
+    /** Table resolvers used for schema resolution. */
+    private final List<TableResolver> tableResolvers;
+
     public CalciteSqlOptimizer(NodeEngine nodeEngine) {
         this.nodeEngine = nodeEngine;
+
+        tableResolvers = createTableResolvers(nodeEngine);
     }
 
     @Override
     public Plan prepare(OptimizationTask task) {
         // 1. Prepare context.
-        List<TableResolver> tableResolvers = new ArrayList<>(3);
-        tableResolvers.add(task.getCatalog());
-        tableResolvers.add(new PartitionedMapTableResolver(nodeEngine));
-        tableResolvers.add(new ReplicatedMapTableResolver(nodeEngine));
-
         int memberCount = nodeEngine.getClusterService().getSize(MemberSelectors.DATA_MEMBER_SELECTOR);
 
         OptimizerContext context = OptimizerContext.create(
@@ -89,16 +93,13 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
             return null;
         }
 
-        // 3. Convert to REL.
+        // 3. Convert parse tree to relational tree.
         RelNode rel = context.convert(parseResult.getNode());
 
-        // 4. Perform logical optimization.
-        LogicalRel logicalRel = context.optimizeLogical(rel);
+        // 4. Perform optimization.
+        PhysicalRel physicalRel = optimize(context, rel);
 
-        // 5. Perform physical optimization.
-        PhysicalRel physicalRel = context.optimizePhysical(logicalRel);
-
-        // 6. Create plan.
+        // 5. Create plan.
         return doCreatePlan(task.getSql(), parseResult.getParameterRowType(), physicalRel);
     }
 
@@ -125,6 +126,21 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
 
     private void doExecuteDropTableStatement(SqlDropTable sqlDropTable, Catalog catalog) {
         catalog.removeTable(sqlDropTable.name(), sqlDropTable.ifExists());
+    }
+
+    private PhysicalRel optimize(OptimizerContext context, RelNode rel) {
+        // Logical part.
+        RelNode logicalRel = context.optimize(rel, LogicalRules.getRuleSet(), OptUtils.toLogicalConvention(rel.getTraitSet()));
+
+        RootLogicalRel logicalRootRel = new RootLogicalRel(logicalRel.getCluster(), logicalRel.getTraitSet(), logicalRel);
+
+        // Physical part.
+        RelTraitSet physicalTraitSet = OptUtils.toPhysicalConvention(
+            logicalRootRel.getTraitSet(),
+            OptUtils.getDistributionDef(logicalRootRel).getTraitRoot()
+        );
+
+        return (PhysicalRel) context.optimize(logicalRootRel, PhysicalRules.getRuleSet(), physicalTraitSet);
     }
 
     /**
@@ -167,5 +183,16 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         rel.visit(visitor);
 
         return visitor.getPlan();
+    }
+
+    private static List<TableResolver> createTableResolvers(NodeEngine nodeEngine) {
+        List<TableResolver> res = new ArrayList<>(2);
+
+        res.add(new PartitionedMapTableResolver(nodeEngine));
+        res.add(new ReplicatedMapTableResolver(nodeEngine));
+
+        // TODO: Add Jet resolvers
+
+        return res;
     }
 }

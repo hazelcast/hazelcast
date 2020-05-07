@@ -37,7 +37,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Logical optimization rules for joins.
+ * Logical optimization rules.
  */
 public final class LogicalRules {
     /** Rule which attempts to push down the filter to a join condition. */
@@ -85,7 +85,6 @@ public final class LogicalRules {
     }
 
     public static RuleSet getRuleSet() {
-        // TODO: Use HEP instead?
         return RuleSets.ofList(
             // Join optimization rules.
             FILTER_PULL_RULE,

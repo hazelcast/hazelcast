@@ -17,21 +17,10 @@
 package com.hazelcast.sql.impl.calcite;
 
 import com.google.common.collect.ImmutableList;
-import com.hazelcast.sql.impl.calcite.opt.OptUtils;
+import com.hazelcast.sql.impl.calcite.opt.QueryPlanner;
 import com.hazelcast.sql.impl.calcite.opt.cost.CostFactory;
 import com.hazelcast.sql.impl.calcite.opt.distribution.DistributionTraitDef;
-import com.hazelcast.sql.impl.calcite.opt.logical.LogicalRel;
-import com.hazelcast.sql.impl.calcite.opt.logical.LogicalRules;
-import com.hazelcast.sql.impl.calcite.opt.logical.RootLogicalRel;
 import com.hazelcast.sql.impl.calcite.opt.metadata.HazelcastRelMdRowCount;
-import com.hazelcast.sql.impl.calcite.opt.physical.FilterPhysicalRule;
-import com.hazelcast.sql.impl.calcite.opt.physical.MapScanPhysicalRule;
-import com.hazelcast.sql.impl.calcite.opt.physical.PhysicalRel;
-import com.hazelcast.sql.impl.calcite.opt.physical.ProjectPhysicalRule;
-import com.hazelcast.sql.impl.calcite.opt.physical.RootPhysicalRule;
-import com.hazelcast.sql.impl.calcite.opt.physical.SortPhysicalRule;
-import com.hazelcast.sql.impl.calcite.opt.physical.agg.AggregatePhysicalRule;
-import com.hazelcast.sql.impl.calcite.opt.physical.join.JoinPhysicalRule;
 import com.hazelcast.sql.impl.calcite.parse.QueryConverter;
 import com.hazelcast.sql.impl.calcite.parse.QueryParseResult;
 import com.hazelcast.sql.impl.calcite.parse.QueryParser;
@@ -51,12 +40,11 @@ import org.apache.calcite.jdbc.HazelcastRootCalciteSchema;
 import org.apache.calcite.plan.Contexts;
 import org.apache.calcite.plan.ConventionTraitDef;
 import org.apache.calcite.plan.HazelcastRelOptCluster;
-import org.apache.calcite.plan.volcano.AbstractConverter;
+import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.plan.volcano.VolcanoPlanner;
 import org.apache.calcite.prepare.Prepare;
 import org.apache.calcite.rel.RelCollationTraitDef;
 import org.apache.calcite.rel.RelNode;
-import org.apache.calcite.rel.core.RelFactories;
 import org.apache.calcite.rel.metadata.ChainedRelMetadataProvider;
 import org.apache.calcite.rel.metadata.DefaultRelMetadataProvider;
 import org.apache.calcite.rel.metadata.JaninoRelMetadataProvider;
@@ -67,10 +55,7 @@ import org.apache.calcite.sql.SqlOperatorTable;
 import org.apache.calcite.sql.fun.SqlStdOperatorTable;
 import org.apache.calcite.sql.util.ChainedSqlOperatorTable;
 import org.apache.calcite.sql.validate.SqlValidator;
-import org.apache.calcite.tools.Program;
-import org.apache.calcite.tools.Programs;
 import org.apache.calcite.tools.RuleSet;
-import org.apache.calcite.tools.RuleSets;
 
 import java.util.List;
 import java.util.Properties;
@@ -89,7 +74,7 @@ public final class OptimizerContext {
 
     private final QueryParser parser;
     private final QueryConverter converter;
-    private final VolcanoPlanner planner;
+    private final QueryPlanner planner;
 
     static {
         Properties connectionProperties = new Properties();
@@ -104,7 +89,7 @@ public final class OptimizerContext {
     private OptimizerContext(
         QueryParser parser,
         QueryConverter converter,
-        VolcanoPlanner planner
+        QueryPlanner planner
     ) {
         this.parser = parser;
         this.converter = converter;
@@ -135,11 +120,12 @@ public final class OptimizerContext {
         JavaTypeFactory typeFactory = new HazelcastTypeFactory();
         Prepare.CatalogReader catalogReader = createCatalogReader(typeFactory, CONNECTION_CONFIG, rootSchema, schemaPaths);
         SqlValidator validator = createValidator(typeFactory, catalogReader);
-        VolcanoPlanner planner = createPlanner(CONNECTION_CONFIG, distributionTraitDef);
-        HazelcastRelOptCluster cluster = createCluster(planner, typeFactory, distributionTraitDef);
+        VolcanoPlanner volcanoPlanner = createPlanner(CONNECTION_CONFIG, distributionTraitDef);
+        HazelcastRelOptCluster cluster = createCluster(volcanoPlanner, typeFactory, distributionTraitDef);
 
         QueryParser parser = new QueryParser(validator);
         QueryConverter converter = new QueryConverter(catalogReader, validator, cluster);
+        QueryPlanner planner = new QueryPlanner(volcanoPlanner);
 
         return new OptimizerContext(parser, converter, planner);
     }
@@ -165,56 +151,15 @@ public final class OptimizerContext {
     }
 
     /**
-     * Perform logical optimization.
+     * Apply the given rules to the node.
      *
-     * @param rel Original logical tree.
-     * @return Optimized logical tree.
+     * @param node Node.
+     * @param rules Rules.
+     * @param traitSet Required trait set.
+     * @return Optimized node.
      */
-    public LogicalRel optimizeLogical(RelNode rel) {
-        RuleSet rules = LogicalRules.getRuleSet();
-        Program program = Programs.of(rules);
-
-        RelNode res = program.run(
-            planner,
-            rel,
-            OptUtils.toLogicalConvention(rel.getTraitSet()),
-            ImmutableList.of(),
-            ImmutableList.of()
-        );
-
-        return new RootLogicalRel(res.getCluster(), res.getTraitSet(), res);
-    }
-
-    /**
-     * Perform physical optimization. This is where proper access methods and algorithms for joins and aggregations are chosen.
-     *
-     * @param rel Optimized logical tree.
-     * @return Optimized physical tree.
-     */
-    public PhysicalRel optimizePhysical(RelNode rel) {
-        RuleSet rules = RuleSets.ofList(
-            SortPhysicalRule.INSTANCE,
-            RootPhysicalRule.INSTANCE,
-            FilterPhysicalRule.INSTANCE,
-            ProjectPhysicalRule.INSTANCE,
-            MapScanPhysicalRule.INSTANCE,
-            AggregatePhysicalRule.INSTANCE,
-            JoinPhysicalRule.INSTANCE,
-
-            new AbstractConverter.ExpandConversionRule(RelFactories.LOGICAL_BUILDER)
-        );
-
-        Program program = Programs.of(rules);
-
-        RelNode res = program.run(
-            planner,
-            rel,
-            OptUtils.toPhysicalConvention(rel.getTraitSet(), OptUtils.getDistributionDef(rel).getTraitRoot()),
-            ImmutableList.of(),
-            ImmutableList.of()
-        );
-
-        return (PhysicalRel) res;
+    public RelNode optimize(RelNode node, RuleSet rules, RelTraitSet traitSet) {
+        return planner.optimize(node, rules, traitSet);
     }
 
     private static Prepare.CatalogReader createCatalogReader(
