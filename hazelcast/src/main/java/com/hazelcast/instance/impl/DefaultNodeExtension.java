@@ -83,7 +83,7 @@ import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuil
 import com.hazelcast.internal.util.ByteArrayProcessor;
 import com.hazelcast.internal.util.ConstructorFunction;
 import com.hazelcast.internal.util.ExceptionUtil;
-import com.hazelcast.internal.util.PhoneHome;
+import com.hazelcast.internal.util.phonehome.PhoneHome;
 import com.hazelcast.internal.util.Preconditions;
 import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.logging.ILogger;
@@ -526,7 +526,7 @@ public class DefaultNodeExtension implements NodeExtension {
 
     @Override
     public void sendPhoneHome() {
-        phoneHome.check(node);
+        phoneHome.check();
     }
 
     @Override
