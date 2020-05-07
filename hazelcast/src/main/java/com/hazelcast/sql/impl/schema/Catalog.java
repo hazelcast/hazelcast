@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.Map;
 
 import static com.hazelcast.sql.impl.schema.SchemaUtils.CATALOG;
+import static com.hazelcast.sql.impl.schema.SchemaUtils.SCHEMA_NAME_DEFAULT;
 import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.toList;
 
@@ -78,6 +79,6 @@ public class Catalog implements TableResolver {
 
     private static Table toTable(TableSchema schema) {
         SqlConnector connector = SqlConnectorFactory.from(schema.type());
-        return connector.createTable("", schema.name(), schema.fields(), schema.options());
+        return connector.createTable(SCHEMA_NAME_DEFAULT, schema.name(), schema.fields(), schema.options());
     }
 }

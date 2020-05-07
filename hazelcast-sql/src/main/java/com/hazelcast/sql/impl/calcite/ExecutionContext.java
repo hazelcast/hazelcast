@@ -94,7 +94,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
-import static com.hazelcast.sql.impl.schema.SchemaUtils.SCHEMA_NAME_DEFAULT;
 import static java.util.Collections.emptyMap;
 
 /**
@@ -478,11 +477,11 @@ public final class ExecutionContext {
                         new HazelcastTableStatistic(table.getStatistics().getRowCount())
                 );
 
-                if (SCHEMA_NAME_DEFAULT.equals(table.getSchemaName())) {
+                if (table.getSchemaName() == null || table.getSchemaName().isEmpty()) {
                     rootTablesByName.put(table.getName(), convertedTable);
                 } else {
                     Map<String, HazelcastTable> schemaTableMap =
-                        tablesBySchema.computeIfAbsent(table.getSchemaName(), (k) -> new HashMap<>());
+                            tablesBySchema.computeIfAbsent(table.getSchemaName(), (k) -> new HashMap<>());
 
                     schemaTableMap.put(table.getName(), convertedTable);
                 }

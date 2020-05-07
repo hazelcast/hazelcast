@@ -22,7 +22,8 @@ import java.util.Objects;
 
 public class SqlConnectorFactory {
 
-    // TODO: replace it with connector class and its instantiation ??? (TableSchemaField and its dependencies need to be public then?)
+    // TODO: replace it with connector class and its instantiation ???
+    // (TableSchemaField, Table, TableField, QueryDataType etc. need to be public then?)
     private static final Map<String, SqlConnector> CONNECTORS_BY_TYPE = prepareConnectors();
 
     private static Map<String, SqlConnector> prepareConnectors() {

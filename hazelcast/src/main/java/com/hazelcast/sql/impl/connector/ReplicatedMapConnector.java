@@ -38,13 +38,14 @@ public class ReplicatedMapConnector implements SqlConnector {
                              String name,
                              List<Field> fields,
                              Map<String, String> options) {
+        // TODO: statistics, descriptors ???
         return new ReplicatedMapTable(schemaName, name, toMapFields(fields), new ConstantTableStatistics(0),
-                new GenericQueryTargetDescriptor(), new GenericQueryTargetDescriptor()); // TODO: ???
+                new GenericQueryTargetDescriptor(), new GenericQueryTargetDescriptor());
     }
 
     private static List<TableField> toMapFields(List<Field> fields) {
         return fields.stream()
-                     .map(field -> new MapTableField(field.name(), field.type(), QueryPath.create(field.name()))) // TODO: ???
+                     .map(field -> new MapTableField(field.name(), field.type(), QueryPath.create(field.name())))
                      .collect(toList());
     }
 }

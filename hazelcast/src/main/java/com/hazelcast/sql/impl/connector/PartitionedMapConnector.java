@@ -40,13 +40,15 @@ public class PartitionedMapConnector implements SqlConnector {
                              String name,
                              List<Field> fields,
                              Map<String, String> options) {
+        // TODO: statistics, descriptors ???
         return new PartitionedMapTable(schemaName, name, toMapFields(fields), new ConstantTableStatistics(0),
-                new GenericQueryTargetDescriptor(), new GenericQueryTargetDescriptor(), emptyList(), DISTRIBUTION_FIELD_ORDINAL_NONE); // TODO: ???
+                new GenericQueryTargetDescriptor(), new GenericQueryTargetDescriptor(), emptyList(),
+                DISTRIBUTION_FIELD_ORDINAL_NONE);
     }
 
     private static List<TableField> toMapFields(List<Field> fields) {
         return fields.stream()
-                     .map(field -> new MapTableField(field.name(), field.type(), QueryPath.create(field.name()))) // TODO: ???
+                     .map(field -> new MapTableField(field.name(), field.type(), QueryPath.create(field.name())))
                      .collect(toList());
     }
 }

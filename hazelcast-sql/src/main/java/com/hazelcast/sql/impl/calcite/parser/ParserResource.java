@@ -21,7 +21,6 @@ import org.apache.calcite.runtime.Resources;
 import org.apache.calcite.runtime.Resources.BaseMessage;
 import org.apache.calcite.runtime.Resources.ExInst;
 
-// TODO: use HZ exception ?
 public interface ParserResource {
 
     ParserResource RESOURCE = Resources.create(ParserResource.class);

@@ -47,13 +47,47 @@ public class SchemaTest extends CalciteSqlTestSupport {
     }
 
     @Test
-    public void testSelectFromAnEmptyMap() {
-        String name = "empty_map";
+    public void testSelectFromDeclaredTable() {
+        String name = "predeclared_map";
         executeUpdate(member, format("CREATE EXTERNAL TABLE %s (__key INT) TYPE %s", name, TYPE));
 
         List<SqlRow> rows = getQueryRows(member, format("SELECT __key FROM %s", name));
 
         assertEquals(0, rows.size());
+    }
+
+    @Test
+    public void testSchemaDistribution() {
+        String name = "distributed_schema_map";
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+        try {
+            HazelcastInstance[] instances = factory.newInstances();
+
+            // create table on one member
+            executeUpdate(instances[0], format("CREATE EXTERNAL TABLE %s (__key INT) TYPE %s", name, TYPE));
+
+            // execute query on another one
+            List<SqlRow> rows = getQueryRows(instances[1], format("SELECT __key FROM %s", name));
+
+            assertEquals(0, rows.size());
+        } finally {
+            factory.terminateAll();
+        }
+    }
+
+    @Test
+    public void testPredeclaredTablePriority() {
+        String name = "priority_map";
+        executeUpdate(member, format("CREATE EXTERNAL TABLE %s (\"__key.age\" INT, age INT) TYPE %s", name, TYPE));
+
+        Map<Person, Person> map = member.getMap(name);
+        map.put(new Person("Alice", BigInteger.valueOf(30)), new Person("Bob", BigInteger.valueOf(40)));
+
+        List<SqlRow> rows = getQueryRows(member, format("SELECT age, \"__key.age\" FROM %s", name));
+
+        assertEquals(1, rows.size());
+        assertEquals(40, ((Integer) rows.get(0).getObject(0)).intValue());
+        assertEquals(30, ((Integer) rows.get(0).getObject(1)).intValue());
     }
 
     @Test
@@ -137,21 +171,6 @@ public class SchemaTest extends CalciteSqlTestSupport {
     }
 
     @Test
-    public void testSelectFromMapWithCompositeKey() {
-        String name = "predeclared_map";
-        executeUpdate(member, format("CREATE EXTERNAL TABLE %s (\"__key.age\" INT, age INT) TYPE %s", name, TYPE));
-
-        Map<Person, Person> map = member.getMap(name);
-        map.put(new Person("Alice", BigInteger.valueOf(30)), new Person("Bob", BigInteger.valueOf(40)));
-
-        List<SqlRow> rows = getQueryRows(member, format("SELECT age, \"__key.age\" FROM %s", name));
-
-        assertEquals(1, rows.size());
-        assertEquals(40, ((Integer) rows.get(0).getObject(0)).intValue());
-        assertEquals(30, ((Integer) rows.get(0).getObject(1)).intValue());
-    }
-
-    @Test
     public void testDropTable() {
         String name = "to_be_dropped_map";
         executeUpdate(member, format("CREATE EXTERNAL TABLE %s (name VARCHAR) TYPE %s", name, TYPE));
@@ -159,27 +178,5 @@ public class SchemaTest extends CalciteSqlTestSupport {
 
         assertThatThrownBy(() -> executeQuery(member, format("SELECT name FROM %s", name)))
                 .isInstanceOf(HazelcastSqlException.class);
-    }
-
-    @Test
-    public void testSchemaDistribution() {
-        String name = "distributed_schema_map";
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
-        try {
-            HazelcastInstance[] instances = factory.newInstances();
-            HazelcastInstance local = instances[0];
-            HazelcastInstance remote = instances[1];
-
-            // create table on local member then shut it down
-            executeUpdate(local, format("CREATE EXTERNAL TABLE %s (__key INT) TYPE %s", name, TYPE));
-            local.shutdown();
-
-            // execute query on remote member
-            List<SqlRow> rows = getQueryRows(remote, format("SELECT __key FROM %s", name));
-
-            assertEquals(0, rows.size());
-        } finally {
-            factory.terminateAll();
-        }
     }
 }

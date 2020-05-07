@@ -41,7 +41,8 @@ public class PartitionedMapTable extends AbstractMapTable {
         List<MapTableIndex> indexes,
         int distributionFieldOrdinal
     ) {
-        this(SCHEMA_NAME_PARTITIONED, name, fields, statistics, keyDescriptor, valueDescriptor, indexes, distributionFieldOrdinal);
+        this(SCHEMA_NAME_PARTITIONED, name, fields, statistics, keyDescriptor, valueDescriptor, indexes,
+                distributionFieldOrdinal);
     }
 
     public PartitionedMapTable(
