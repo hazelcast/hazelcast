@@ -137,6 +137,31 @@ public class RebalanceBatchStageTest extends PipelineTestSupport {
     }
 
     @Test
+    public void when_mergeWithRebalancedByKey_thenOnlyRebalancedEdgePartitionedDistributed() {
+        // Given
+        Iterator<Integer> sequence = IntStream.iterate(0, i -> i + 1).boxed().iterator();
+        List<Integer> input0 = streamFromIterator(sequence).limit(itemCount).collect(toList());
+        List<Integer> input1 = streamFromIterator(sequence).limit(itemCount).collect(toList());
+        BatchStage<Integer> stage0 = batchStageFromList(input0);
+        BatchStage<Integer> stage1 = batchStageFromList(input1).rebalance(i -> i);
+
+        // When
+        BatchStage<Integer> merged = stage0.merge(stage1);
+
+        // Then
+        merged.writeTo(assertAnyOrder(IntStream.range(0, 2 * itemCount).boxed().collect(toList())));
+
+        DAG dag = p.toDag();
+        List<Edge> intoMerge = dag.getInboundEdges("merge");
+        assertFalse("Didn't rebalance this stage, why is its edge distributed?", intoMerge.get(0).isDistributed());
+        assertNull("Didn't rebalance by key, the edge must not be partitioned", intoMerge.get(0).getPartitioner());
+        assertTrue("Rebalancing should make the edge distributed", intoMerge.get(1).isDistributed());
+        assertNotNull("Rebalancing by key, the edge must be partitioned", intoMerge.get(1).getPartitioner());
+
+        execute();
+    }
+
+    @Test
     public void when_mergeRebalancedWithNonRebalanced_thenOnlyRebalancedEdgeDistributed() {
         // Given
         Iterator<Integer> sequence = IntStream.iterate(0, i -> i + 1).boxed().iterator();
@@ -213,6 +238,9 @@ public class RebalanceBatchStageTest extends PipelineTestSupport {
         Edge mapToJoin = dag.getInboundEdges("2-way hash-join-collector1").get(0);
         assertTrue("Edge into a hash-join collector vertex must be distributed", mapToJoin.isDistributed());
         assertNull("Didn't rebalance by key, the edge must not be partitioned", mapToJoin.getPartitioner());
+        Edge stage0ToJoin = dag.getInboundEdges("2-way hash-join-joiner").get(0);
+        assertFalse("Didn't rebalance this stage, why is its edge distributed?", stage0ToJoin.isDistributed());
+        assertNull("Didn't rebalance by key, the edge must not be partitioned", stage0ToJoin.getPartitioner());
         execute();
         Function<Entry<Integer, String>, String> formatFn =
                 e -> String.format("(%04d, %s)", e.getKey(), e.getValue());
@@ -328,7 +356,7 @@ public class RebalanceBatchStageTest extends PipelineTestSupport {
     }
 
     @Test
-    public void when_aggregate3WithRebalancedStage_then_singleStageAggregation() {
+    public void when_aggregate3WithRebalancedStage_then_twoStageAggregation() {
         // Given
         List<Integer> input = sequence(itemCount);
         BatchStage<Integer> srcStage1 = batchStageFromList(input);
