@@ -32,7 +32,8 @@ import static java.util.stream.Collectors.toList;
 
 public class Catalog implements TableResolver {
 
-    public static final String CATALOG_MAP_NAME = "__sql.catalog"; // TODO:
+    // TODO: is it the best/right name?
+    public static final String CATALOG_MAP_NAME = "__sql.catalog";
 
     private static final List<List<String>> SEARCH_PATHS = singletonList(singletonList(CATALOG));
 

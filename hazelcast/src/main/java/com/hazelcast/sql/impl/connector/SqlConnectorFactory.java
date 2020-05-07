@@ -33,6 +33,9 @@ public class SqlConnectorFactory {
         return connectors;
     }
 
+    private SqlConnectorFactory() {
+    }
+
     public static SqlConnector from(String type) {
         return Objects.requireNonNull(CONNECTORS_BY_TYPE.get(type.toUpperCase()), "Unknown type - " + type);
     }

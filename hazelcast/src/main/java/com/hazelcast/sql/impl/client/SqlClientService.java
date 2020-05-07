@@ -148,7 +148,8 @@ public class SqlClientService implements SqlService {
 
     @Override
     public void update(SqlUpdate update) {
-        throw new UnsupportedOperationException(); // TODO:
+        // TODO: implement
+        throw new UnsupportedOperationException();
     }
 
     private <T> Data toData(T o) {

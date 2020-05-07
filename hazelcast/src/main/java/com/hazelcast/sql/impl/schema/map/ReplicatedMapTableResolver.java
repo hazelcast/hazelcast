@@ -66,7 +66,8 @@ public class ReplicatedMapTableResolver implements TableResolver {
         for (String mapName : mapService.getPartitionContainer(0).getStores().keySet()) {
             ReplicatedMapTable table;
 
-            if (mapName.equalsIgnoreCase(Catalog.CATALOG_MAP_NAME)) { // skip catalog map
+            // skip catalog map
+            if (mapName.equalsIgnoreCase(Catalog.CATALOG_MAP_NAME)) {
                 continue;
             }
 
