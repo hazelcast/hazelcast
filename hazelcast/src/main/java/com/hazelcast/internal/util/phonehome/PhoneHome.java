@@ -1,20 +1,4 @@
-/*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
-package com.hazelcast.internal.util;
+package com.hazelcast.internal.util.phonehome;
 
 import com.hazelcast.instance.BuildInfo;
 import com.hazelcast.instance.BuildInfoProvider;
@@ -28,14 +12,11 @@ import com.hazelcast.spi.properties.ClusterProperty;
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
 import java.lang.management.ManagementFactory;
 import java.lang.management.OperatingSystemMXBean;
 import java.lang.management.RuntimeMXBean;
 import java.net.URL;
 import java.net.URLConnection;
-import java.net.URLEncoder;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.RejectedExecutionException;
@@ -44,12 +25,8 @@ import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.internal.nio.IOUtil.closeResource;
 import static com.hazelcast.internal.util.EmptyStatement.ignore;
-import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static java.lang.System.getenv;
 
-/**
- * Pings phone home server with cluster info daily.
- */
 public class PhoneHome {
 
     private static final int TIMEOUT = 1000;
@@ -71,12 +48,14 @@ public class PhoneHome {
     volatile ScheduledFuture<?> phoneHomeFuture;
     private final ILogger logger;
     private final BuildInfo buildInfo = BuildInfoProvider.getBuildInfo();
+    private final Node hazelcastNode;
 
-    public PhoneHome(Node hazelcastNode) {
-        logger = hazelcastNode.getLogger(PhoneHome.class);
+    public PhoneHome(Node node) {
+        hazelcastNode = node;
+        logger = hazelcastNode.getLogger(com.hazelcast.internal.util.phonehome.PhoneHome.class);
     }
 
-    public void check(final Node hazelcastNode) {
+    public void check() {
         if (!hazelcastNode.getProperties().getBoolean(ClusterProperty.PHONE_HOME_ENABLED)) {
             return;
         }
@@ -86,7 +65,7 @@ public class PhoneHome {
         try {
             phoneHomeFuture = hazelcastNode.nodeEngine.getExecutionService()
                     .scheduleWithRepetition("PhoneHome",
-                            () -> phoneHome(hazelcastNode, false), 0, 1, TimeUnit.DAYS);
+                            () -> phoneHome(false), 0, 1, TimeUnit.DAYS);
         } catch (RejectedExecutionException e) {
             logger.warning("Could not schedule phone home task! Most probably Hazelcast failed to start.");
         }
@@ -129,12 +108,11 @@ public class PhoneHome {
      * parameters. If {@code pretend} is {@code true}, only returns the parameters
      * without actually performing the request.
      *
-     * @param node    the node for which to make the phone home request
      * @param pretend if {@code true}, do not perform the request
      * @return the generated request parameters
      */
-    public Map<String, String> phoneHome(Node node, boolean pretend) {
-        PhoneHomeParameterCreator parameterCreator = createParameters(node);
+    public Map<String, String> phoneHome(boolean pretend) {
+        PhoneHomeParameterCreator parameterCreator = createParameters();
 
         if (!pretend) {
             String urlStr = BASE_PHONE_HOME_URL + parameterCreator.build();
@@ -144,7 +122,7 @@ public class PhoneHome {
         return parameterCreator.getParameters();
     }
 
-    public PhoneHomeParameterCreator createParameters(Node hazelcastNode) {
+    public PhoneHomeParameterCreator createParameters() {
         ClusterServiceImpl clusterService = hazelcastNode.getClusterService();
         int clusterSize = clusterService.getMembers().size();
         Long clusterUpTime = clusterService.getClusterClock().getClusterUpTime();
@@ -163,7 +141,7 @@ public class PhoneHome {
                 .addParam("jvmn", runtimeMxBean.getVmName())
                 .addParam("jvmv", System.getProperty("java.version"))
                 .addParam("jetv", jetBuildInfo == null ? "" : jetBuildInfo.getVersion());
-        addClientInfo(hazelcastNode, parameterCreator);
+        addClientInfo(parameterCreator);
         addOSInfo(parameterCreator);
 
         return parameterCreator;
@@ -218,7 +196,7 @@ public class PhoneHome {
         }
     }
 
-    private void addClientInfo(Node hazelcastNode, PhoneHomeParameterCreator parameterCreator) {
+    private void addClientInfo(PhoneHomeParameterCreator parameterCreator) {
         Map<String, Integer> clusterClientStats = hazelcastNode.clientEngine.getConnectedClientStats();
         parameterCreator
                 .addParam("ccpp", Integer.toString(clusterClientStats.getOrDefault(ConnectionType.CPP_CLIENT, 0)))
@@ -234,44 +212,6 @@ public class PhoneHome {
             parameterCreator.addParam("mclicense", "MC_LICENSE_NOT_REQUIRED");
         } else {
             parameterCreator.addParam("mclicense", "MC_LICENSE_REQUIRED_BUT_NOT_SET");
-        }
-    }
-
-    /**
-     * Util class for parameters of OS and EE PhoneHome pings.
-     */
-    public static class PhoneHomeParameterCreator {
-
-        private final StringBuilder builder;
-        private final Map<String, String> parameters = new HashMap<>();
-        private boolean hasParameterBefore;
-
-        public PhoneHomeParameterCreator() {
-            builder = new StringBuilder();
-            builder.append("?");
-        }
-
-        Map<String, String> getParameters() {
-            return parameters;
-        }
-
-        public PhoneHomeParameterCreator addParam(String key, String value) {
-            if (hasParameterBefore) {
-                builder.append("&");
-            } else {
-                hasParameterBefore = true;
-            }
-            try {
-                builder.append(key).append("=").append(URLEncoder.encode(value, "UTF-8"));
-            } catch (UnsupportedEncodingException e) {
-                throw rethrow(e);
-            }
-            parameters.put(key, value);
-            return this;
-        }
-
-        String build() {
-            return builder.toString();
         }
     }
 }
