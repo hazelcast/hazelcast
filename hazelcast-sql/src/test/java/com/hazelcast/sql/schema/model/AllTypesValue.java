@@ -58,6 +58,7 @@ public final class AllTypesValue implements Serializable {
     /*private SqlYearMonthInterval yearMonthInterval;
     private SqlDaySecondInterval daySecondInterval;*/
 
+    @SuppressWarnings("checkstyle:ParameterNumber")
     public AllTypesValue(String string, char character0, boolean boolean0, byte byte0, short short0, int int0, long long0,
                          float float0, double double0, BigDecimal bigDecimal, BigInteger bigInteger, LocalTime localTime,
                          LocalDate localDate, LocalDateTime localDateTime, Date date, GregorianCalendar calendar,

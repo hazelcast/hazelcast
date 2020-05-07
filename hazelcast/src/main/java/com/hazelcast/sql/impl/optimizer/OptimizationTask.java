@@ -16,8 +16,6 @@
 
 package com.hazelcast.sql.impl.optimizer;
 
-import com.hazelcast.sql.impl.schema.Catalog;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -28,24 +26,16 @@ public final class OptimizationTask {
     /** The query. */
     private final String sql;
 
-    /** Catalog. */
-    private final Catalog catalog;
-
     /** The scopes for object lookup in addition to the default ones. */
     private final List<List<String>> searchPaths;
 
-    private OptimizationTask(String sql, Catalog catalog, List<List<String>> searchPaths) {
+    private OptimizationTask(String sql, List<List<String>> searchPaths) {
         this.sql = sql;
-        this.catalog = catalog;
         this.searchPaths = searchPaths;
     }
 
     public String getSql() {
         return sql;
-    }
-
-    public Catalog getCatalog() {
-        return catalog;
     }
 
     public List<List<String>> getSearchPaths() {
@@ -55,12 +45,10 @@ public final class OptimizationTask {
     public static class Builder {
 
         private final String sql;
-        private final Catalog catalog;
         private List<List<String>> searchPaths;
 
-        public Builder(String sql, Catalog catalog) {
+        public Builder(String sql) {
             this.sql = sql;
-            this.catalog = catalog;
         }
 
         public Builder addSchemaPath(List<String> searchPath) {
@@ -74,7 +62,7 @@ public final class OptimizationTask {
         }
 
         public OptimizationTask build() {
-            return new OptimizationTask(sql, catalog, searchPaths);
+            return new OptimizationTask(sql, searchPaths);
         }
     }
 }

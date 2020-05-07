@@ -66,13 +66,17 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
     /** Node engine. */
     private final NodeEngine nodeEngine;
 
+    /** Catalog. */
+    private final Catalog catalog;
+
     /** Table resolvers used for schema resolution. */
     private final List<TableResolver> tableResolvers;
 
     public CalciteSqlOptimizer(NodeEngine nodeEngine) {
         this.nodeEngine = nodeEngine;
+        this.catalog = new Catalog(nodeEngine);
 
-        tableResolvers = createTableResolvers(nodeEngine);
+        tableResolvers = createTableResolvers(catalog, nodeEngine);
     }
 
     @Override
@@ -89,7 +93,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         // 2. Parse SQL string and validate it.
         QueryParseResult parseResult = context.parse(task.getSql());
         if (parseResult.isDdl()) {
-            doExecuteDdlStatement(parseResult.getNode(), task.getCatalog());
+            doExecuteDdlStatement(parseResult.getNode());
             return null;
         }
 
@@ -103,17 +107,17 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         return doCreatePlan(task.getSql(), parseResult.getParameterRowType(), physicalRel);
     }
 
-    public void doExecuteDdlStatement(SqlNode node, Catalog catalog) {
+    private void doExecuteDdlStatement(SqlNode node) {
         if (node instanceof SqlCreateTable) {
-            doExecuteCreateTableStatement((SqlCreateTable) node, catalog);
+            doExecuteCreateTableStatement((SqlCreateTable) node);
         } else if (node instanceof SqlDropTable) {
-            doExecuteDropTableStatement((SqlDropTable) node, catalog);
+            doExecuteDropTableStatement((SqlDropTable) node);
         } else {
             throw new IllegalArgumentException("Unsupported SQL statement - " + node);
         }
     }
 
-    private void doExecuteCreateTableStatement(SqlCreateTable sqlCreateTable, Catalog catalog) {
+    private void doExecuteCreateTableStatement(SqlCreateTable sqlCreateTable) {
         List<Field> fields = sqlCreateTable.columns()
                                            .map(column -> new Field(column.name(), column.type().type()))
                                            .collect(toList());
@@ -124,7 +128,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         catalog.createTable(schema, sqlCreateTable.getReplace(), sqlCreateTable.ifNotExists());
     }
 
-    private void doExecuteDropTableStatement(SqlDropTable sqlDropTable, Catalog catalog) {
+    private void doExecuteDropTableStatement(SqlDropTable sqlDropTable) {
         catalog.removeTable(sqlDropTable.name(), sqlDropTable.ifExists());
     }
 
@@ -185,9 +189,10 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         return visitor.getPlan();
     }
 
-    private static List<TableResolver> createTableResolvers(NodeEngine nodeEngine) {
-        List<TableResolver> res = new ArrayList<>(2);
+    private static List<TableResolver> createTableResolvers(Catalog catalog, NodeEngine nodeEngine) {
+        List<TableResolver> res = new ArrayList<>(3);
 
+        res.add(catalog);
         res.add(new PartitionedMapTableResolver(nodeEngine));
         res.add(new ReplicatedMapTableResolver(nodeEngine));
 

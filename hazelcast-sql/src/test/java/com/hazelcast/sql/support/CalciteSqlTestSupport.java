@@ -24,12 +24,8 @@ import com.hazelcast.sql.impl.SqlServiceImpl;
 import com.hazelcast.sql.impl.SqlTestSupport;
 import com.hazelcast.sql.impl.optimizer.OptimizationTask;
 import com.hazelcast.sql.impl.plan.Plan;
-import com.hazelcast.sql.impl.schema.Catalog;
-import com.hazelcast.sql.impl.schema.Table;
 
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 
 /**
@@ -39,12 +35,7 @@ public class CalciteSqlTestSupport extends SqlTestSupport {
     protected Plan getPlan(HazelcastInstance target, String sql) {
         SqlServiceImpl sqlService = (SqlServiceImpl) target.getSqlService();
 
-        return sqlService.getOptimizer().prepare(new OptimizationTask.Builder(sql, new Catalog(null) {
-            @Override
-            public Collection<Table> getTables() {
-                return Collections.emptyList();
-            }
-        }).build());
+        return sqlService.getOptimizer().prepare(new OptimizationTask.Builder(sql).build());
     }
 
     protected SqlCursor executeQuery(HazelcastInstance target, String sql) {

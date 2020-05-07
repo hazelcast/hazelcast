@@ -30,7 +30,6 @@ import com.hazelcast.sql.impl.optimizer.NotImplementedSqlOptimizer;
 import com.hazelcast.sql.impl.optimizer.OptimizationTask;
 import com.hazelcast.sql.impl.optimizer.SqlOptimizer;
 import com.hazelcast.sql.impl.plan.Plan;
-import com.hazelcast.sql.impl.schema.Catalog;
 import com.hazelcast.sql.impl.state.QueryState;
 
 import java.lang.reflect.Constructor;
@@ -53,7 +52,6 @@ public class SqlServiceImpl implements SqlService, Consumer<Packet> {
     private static final String OPTIMIZER_CLASS_PROPERTY_NAME = "hazelcast.sql.optimizerClass";
     private static final String SQL_MODULE_OPTIMIZER_CLASS = "com.hazelcast.sql.impl.calcite.CalciteSqlOptimizer";
 
-    private final Catalog catalog;
     private final SqlOptimizer optimizer;
     private final ILogger logger;
     private final boolean liteMember;
@@ -94,7 +92,6 @@ public class SqlServiceImpl implements SqlService, Consumer<Packet> {
             maxMemory
         );
 
-        catalog = new Catalog(nodeEngine);
         optimizer = createOptimizer(nodeEngine);
         liteMember = nodeEngine.getConfig().isLiteMember();
     }
@@ -200,7 +197,7 @@ public class SqlServiceImpl implements SqlService, Consumer<Packet> {
     }
 
     private Plan prepare(String sql) {
-        return optimizer.prepare(new OptimizationTask.Builder(sql, catalog).build());
+        return optimizer.prepare(new OptimizationTask.Builder(sql).build());
     }
 
     /**
