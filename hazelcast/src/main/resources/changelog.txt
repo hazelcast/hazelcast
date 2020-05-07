@@ -1,5 +1,26 @@
 You can also see the Release Notes document at http://docs.hazelcast.org/docs/release-notes/.
 
+Release 4.0
+
+- Added support for persistent memory, such as Intel® Optane™ DC.
+- Provided a framework and implementation to encrypt data in Hot Restart stores.
+- Added support for X.509 certificate authentication.
+- Introduced out of the box LDAP configuration module.
+- Implemented persistency for Hazelcast’s CP subsystem.
+- Introduced CP subsystem development mode.
+- Introduced bitmap indexes.
+- Separated the WAN replication configuration into built-in and custom WAN publishers.
+- Added tracking of WAN synchronization events.
+- Improved the JAAS authentication mechanism and security configuration.
+- Added Javadoc for Hazelcast IMDG Enterprise Edition.
+- Added HTTPS support for the cluster.sh and healthcheck.sh scripts.
+- Introduced custom time-to-live  for MapLoader.
+- Introduced friendly names (Moby naming) for the Hazelcast instances to be shown in the Hazelcast Management Center.
+- Improved the clients’ performance by eliminating the sync backup wait.
+- Introduced the ownerless client mechanism.
+- Added JSON support for REST API.
+- Breaking changes/removed features: See https://docs.hazelcast.org/docs/rn/
+
 Release 3.12
 
 - Support for JDK 6 and 7 has been dropped. The minimum Java version that Hazelcast supports now is Java 8.
