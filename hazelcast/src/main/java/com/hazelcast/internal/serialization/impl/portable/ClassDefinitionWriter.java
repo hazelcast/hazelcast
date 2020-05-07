@@ -16,7 +16,6 @@
 
 package com.hazelcast.internal.serialization.impl.portable;
 
-import com.hazelcast.internal.serialization.PortableContext;
 import com.hazelcast.internal.serialization.impl.SerializationUtil;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.ClassDefinition;

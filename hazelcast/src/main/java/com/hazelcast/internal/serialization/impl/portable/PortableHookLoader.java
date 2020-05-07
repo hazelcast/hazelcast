@@ -16,7 +16,6 @@
 
 package com.hazelcast.internal.serialization.impl.portable;
 
-import com.hazelcast.internal.serialization.PortableHook;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.PortableFactory;
