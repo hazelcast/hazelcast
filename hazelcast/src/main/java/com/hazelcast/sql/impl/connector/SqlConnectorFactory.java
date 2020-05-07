@@ -28,7 +28,7 @@ public final class SqlConnectorFactory {
 
     private SqlConnectorFactory() {
     }
-    
+
     private static Map<String, SqlConnector> prepareConnectors() {
         Map<String, SqlConnector> connectors = new HashMap<>();
         connectors.put("PARTITIONED", new PartitionedMapConnector());
