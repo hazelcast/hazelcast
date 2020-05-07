@@ -52,17 +52,18 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
     /** Node engine. */
     private final NodeEngine nodeEngine;
 
+    /** Table resolvers used for schema resolution. */
+    private final List<TableResolver> tableResolvers;
+
     public CalciteSqlOptimizer(NodeEngine nodeEngine) {
         this.nodeEngine = nodeEngine;
+
+        tableResolvers = createTableResolvers(nodeEngine);
     }
 
     @Override
     public Plan prepare(OptimizationTask task) {
         // 1. Prepare context.
-        List<TableResolver> tableResolvers = new ArrayList<>(2);
-        tableResolvers.add(new PartitionedMapTableResolver(nodeEngine));
-        tableResolvers.add(new ReplicatedMapTableResolver(nodeEngine));
-
         int memberCount = nodeEngine.getClusterService().getSize(MemberSelectors.DATA_MEMBER_SELECTOR);
 
         OptimizerContext context = OptimizerContext.create(
@@ -127,5 +128,16 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         rel.visit(visitor);
 
         return visitor.getPlan();
+    }
+
+    private static List<TableResolver> createTableResolvers(NodeEngine nodeEngine) {
+        List<TableResolver> res = new ArrayList<>(2);
+
+        res.add(new PartitionedMapTableResolver(nodeEngine));
+        res.add(new ReplicatedMapTableResolver(nodeEngine));
+
+        // TODO: Add Jet resolvers
+
+        return res;
     }
 }
