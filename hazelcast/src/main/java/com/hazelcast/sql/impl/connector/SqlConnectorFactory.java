@@ -20,20 +20,20 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
-public class SqlConnectorFactory {
+public final class SqlConnectorFactory {
 
     // TODO: replace it with connector class and its instantiation ???
     // (TableSchemaField, Table, TableField, QueryDataType etc. need to be public then?)
     private static final Map<String, SqlConnector> CONNECTORS_BY_TYPE = prepareConnectors();
 
+    private SqlConnectorFactory() {
+    }
+    
     private static Map<String, SqlConnector> prepareConnectors() {
         Map<String, SqlConnector> connectors = new HashMap<>();
         connectors.put("PARTITIONED", new PartitionedMapConnector());
         connectors.put("REPLICATED", new ReplicatedMapConnector());
         return connectors;
-    }
-
-    private SqlConnectorFactory() {
     }
 
     public static SqlConnector from(String type) {
