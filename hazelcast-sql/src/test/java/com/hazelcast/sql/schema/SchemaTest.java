@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.hazelcast.sql.schema;
 
 import com.hazelcast.core.Hazelcast;
@@ -93,30 +109,30 @@ public class SchemaTest extends CalciteSqlTestSupport {
     @Test
     public void testSelectAllSupportedTypes() {
         String name = "all_fields_map";
-        executeUpdate(member, format("CREATE EXTERNAL TABLE %s (" +
-                        "__key DECIMAL(10, 0), " +
-                        "string VARCHAR," +
-                        "character0 CHAR, " +
-                        "boolean0 BOOLEAN, " +
-                        "byte0 TINYINT, " +
-                        "short0 SMALLINT, " +
-                        "int0 INT, " +
-                        "long0 BIGINT, " +
-                        "float0 REAL, " +
-                        "double0 DOUBLE, " +
-                        "bigDecimal DEC(10, 1), " +
-                        "bigInteger NUMERIC(5, 0), " +
-                        "\"localTime\" TIME, " +
-                        "localDate DATE, " +
-                        "localDateTime TIMESTAMP, " +
-                        "\"date\" TIMESTAMP WITH LOCAL TIME ZONE (\"DATE\"), " +
-                        "calendar TIMESTAMP WITH TIME ZONE (\"CALENDAR\"), " +
-                        "instant TIMESTAMP WITH LOCAL TIME ZONE, " +
-                        "zonedDateTime TIMESTAMP WITH TIME ZONE (\"ZONED_DATE_TIME\"), " +
-                        "offsetDateTime TIMESTAMP WITH TIME ZONE " +
-                        /*"yearMonthInterval INTERVAL_YEAR_MONTH, " +
-                        "offsetDateTime INTERVAL_DAY_SECOND, " +*/
-                        ") TYPE %s",
+        executeUpdate(member, format("CREATE EXTERNAL TABLE %s ("
+                        + "__key DECIMAL(10, 0), "
+                        + "string VARCHAR,"
+                        + "character0 CHAR, "
+                        + "boolean0 BOOLEAN, "
+                        + "byte0 TINYINT, "
+                        + "short0 SMALLINT, "
+                        + "int0 INT, "
+                        + "long0 BIGINT, "
+                        + "float0 REAL, "
+                        + "double0 DOUBLE, "
+                        + "bigDecimal DEC(10, 1), "
+                        + "bigInteger NUMERIC(5, 0), "
+                        + "\"localTime\" TIME, "
+                        + "localDate DATE, "
+                        + "localDateTime TIMESTAMP, "
+                        + "\"date\" TIMESTAMP WITH LOCAL TIME ZONE (\"DATE\"), "
+                        + "calendar TIMESTAMP WITH TIME ZONE (\"CALENDAR\"), "
+                        + "instant TIMESTAMP WITH LOCAL TIME ZONE, "
+                        + "zonedDateTime TIMESTAMP WITH TIME ZONE (\"ZONED_DATE_TIME\"), "
+                        + "offsetDateTime TIMESTAMP WITH TIME ZONE "
+                        /* + "yearMonthInterval INTERVAL_YEAR_MONTH, "
+                        + "offsetDateTime INTERVAL_DAY_SECOND, "*/
+                        + ") TYPE %s",
                 name, TYPE
         ));
 

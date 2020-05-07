@@ -180,29 +180,29 @@ public final class AllTypesValue implements Serializable {
 
     @Override
     public String toString() {
-        return "AllTypesValue{" +
-                "string='" + string + '\'' +
-                ", character0=" + character0 +
-                ", boolean0=" + boolean0 +
-                ", byte0=" + byte0 +
-                ", short0=" + short0 +
-                ", int0=" + int0 +
-                ", long0=" + long0 +
-                ", float0=" + float0 +
-                ", double0=" + double0 +
-                ", bigDecimal=" + bigDecimal +
-                ", bigInteger=" + bigInteger +
-                ", localTime=" + localTime +
-                ", localDate=" + localDate +
-                ", localDateTime=" + localDateTime +
-                ", date=" + date +
-                ", calendar=" + calendar +
-                ", instant=" + instant +
-                ", zonedDateTime=" + zonedDateTime +
-                ", offsetDateTime=" + offsetDateTime +
-                //", yearMonthInterval=" + yearMonthInterval +
-                //", daySecondInterval=" + daySecondInterval +
-                '}';
+        return "AllTypesValue{"
+                + "string='" + string + '\''
+                + ", character0=" + character0
+                + ", boolean0=" + boolean0
+                + ", byte0=" + byte0
+                + ", short0=" + short0
+                + ", int0=" + int0
+                + ", long0=" + long0
+                + ", float0=" + float0
+                + ", double0=" + double0
+                + ", bigDecimal=" + bigDecimal
+                + ", bigInteger=" + bigInteger
+                + ", localTime=" + localTime
+                + ", localDate=" + localDate
+                + ", localDateTime=" + localDateTime
+                + ", date=" + date
+                + ", calendar=" + calendar
+                + ", instant=" + instant
+                + ", zonedDateTime=" + zonedDateTime
+                + ", offsetDateTime=" + offsetDateTime
+                //+ ", yearMonthInterval=" + yearMonthInterval
+                //+ ", daySecondInterval=" + daySecondInterval
+                + '}';
     }
 
     @Override
@@ -214,26 +214,26 @@ public final class AllTypesValue implements Serializable {
             return false;
         }
         AllTypesValue that = (AllTypesValue) o;
-        return character0 == that.character0 &&
-                boolean0 == that.boolean0 &&
-                byte0 == that.byte0 &&
-                short0 == that.short0 &&
-                int0 == that.int0 &&
-                long0 == that.long0 &&
-                Float.compare(that.float0, float0) == 0 &&
-                Double.compare(that.double0, double0) == 0 &&
-                Objects.equals(string, that.string) &&
-                Objects.equals(bigDecimal, that.bigDecimal) &&
-                Objects.equals(bigInteger, that.bigInteger) &&
-                Objects.equals(localTime, that.localTime) &&
-                Objects.equals(localDate, that.localDate) &&
-                Objects.equals(localDateTime, that.localDateTime) &&
-                Objects.equals(date, that.date) &&
-                Objects.equals(calendar, that.calendar) &&
-                Objects.equals(instant, that.instant) &&
-                Objects.equals(zonedDateTime, that.zonedDateTime) &&
-                Objects.equals(offsetDateTime, that.offsetDateTime) /*&&
-                Objects.equals(yearMonthInterval, that.yearMonthInterval) &&
-                Objects.equals(daySecondInterval, that.daySecondInterval)*/;
+        return character0 == that.character0
+                && boolean0 == that.boolean0
+                && byte0 == that.byte0
+                && short0 == that.short0
+                && int0 == that.int0
+                && long0 == that.long0
+                && Float.compare(that.float0, float0) == 0
+                && Double.compare(that.double0, double0) == 0
+                && Objects.equals(string, that.string)
+                && Objects.equals(bigDecimal, that.bigDecimal)
+                && Objects.equals(bigInteger, that.bigInteger)
+                && Objects.equals(localTime, that.localTime)
+                && Objects.equals(localDate, that.localDate)
+                && Objects.equals(localDateTime, that.localDateTime)
+                && Objects.equals(date, that.date)
+                && Objects.equals(calendar, that.calendar)
+                && Objects.equals(instant, that.instant)
+                && Objects.equals(zonedDateTime, that.zonedDateTime)
+                && Objects.equals(offsetDateTime, that.offsetDateTime) /*
+                && Objects.equals(yearMonthInterval, that.yearMonthInterval)
+                && Objects.equals(daySecondInterval, that.daySecondInterval)*/;
     }
 }
