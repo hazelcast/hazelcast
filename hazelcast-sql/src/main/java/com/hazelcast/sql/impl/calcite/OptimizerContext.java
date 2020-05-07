@@ -20,6 +20,7 @@ import com.google.common.collect.ImmutableList;
 import com.hazelcast.sql.impl.calcite.opt.cost.CostFactory;
 import com.hazelcast.sql.impl.calcite.opt.distribution.DistributionTraitDef;
 import com.hazelcast.sql.impl.calcite.opt.metadata.HazelcastRelMdRowCount;
+import com.hazelcast.sql.impl.calcite.parse.QueryConverter;
 import com.hazelcast.sql.impl.calcite.parse.QueryParseResult;
 import com.hazelcast.sql.impl.calcite.parse.QueryParser;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastSchemaUtils;
@@ -50,29 +51,22 @@ import org.apache.calcite.jdbc.HazelcastRootCalciteSchema;
 import org.apache.calcite.plan.Contexts;
 import org.apache.calcite.plan.ConventionTraitDef;
 import org.apache.calcite.plan.HazelcastRelOptCluster;
-import org.apache.calcite.plan.RelOptCostImpl;
-import org.apache.calcite.plan.hep.HepPlanner;
-import org.apache.calcite.plan.hep.HepProgramBuilder;
 import org.apache.calcite.plan.volcano.AbstractConverter;
 import org.apache.calcite.plan.volcano.VolcanoPlanner;
 import org.apache.calcite.prepare.Prepare;
 import org.apache.calcite.rel.RelCollationTraitDef;
 import org.apache.calcite.rel.RelNode;
-import org.apache.calcite.rel.RelRoot;
 import org.apache.calcite.rel.core.RelFactories;
 import org.apache.calcite.rel.metadata.ChainedRelMetadataProvider;
 import org.apache.calcite.rel.metadata.DefaultRelMetadataProvider;
 import org.apache.calcite.rel.metadata.JaninoRelMetadataProvider;
 import org.apache.calcite.rel.metadata.RelMetadataProvider;
-import org.apache.calcite.rel.rules.SubQueryRemoveRule;
 import org.apache.calcite.rex.RexBuilder;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.SqlOperatorTable;
 import org.apache.calcite.sql.fun.SqlStdOperatorTable;
 import org.apache.calcite.sql.util.ChainedSqlOperatorTable;
 import org.apache.calcite.sql.validate.SqlValidator;
-import org.apache.calcite.sql2rel.SqlToRelConverter;
-import org.apache.calcite.sql2rel.StandardConvertletTable;
 import org.apache.calcite.tools.Program;
 import org.apache.calcite.tools.Programs;
 import org.apache.calcite.tools.RuleSet;
@@ -91,30 +85,17 @@ public final class OptimizerContext {
         DefaultRelMetadataProvider.INSTANCE
     ));
 
-    /**
-     * Converter: whether to expand subqueries. When set to {@code false}, subqueries are left as is in the form of
-     * {@link org.apache.calcite.rex.RexSubQuery}. Otherwise they are expanded into {@link org.apache.calcite.rel.core.Correlate}
-     * instances.
-     * Do not enable this because you may run into https://issues.apache.org/jira/browse/CALCITE-3484. Instead, subquery
-     * elimination rules are executed during logical planning. In addition, resulting plans are slightly better that those
-     * produced by "expand" flag.
-     */
-    private static final boolean CONVERTER_EXPAND = false;
-
-    /** Converter: whether to trim unused fields. */
-    private static final boolean CONVERTER_TRIM_UNUSED_FIELDS = true;
-
     private final QueryParser parser;
-    private final SqlToRelConverter sqlToRelConverter;
+    private final QueryConverter converter;
     private final VolcanoPlanner planner;
 
     private OptimizerContext(
         QueryParser parser,
-        SqlToRelConverter sqlToRelConverter,
+        QueryConverter converter,
         VolcanoPlanner planner
     ) {
         this.parser = parser;
-        this.sqlToRelConverter = sqlToRelConverter;
+        this.converter = converter;
         this.planner = planner;
     }
 
@@ -145,11 +126,11 @@ public final class OptimizerContext {
         SqlValidator validator = createValidator(typeFactory, catalogReader);
         VolcanoPlanner planner = createPlanner(connectionConfig, distributionTraitDef);
         HazelcastRelOptCluster cluster = createCluster(planner, typeFactory, distributionTraitDef);
-        SqlToRelConverter sqlToRelConverter = createSqlToRelConverter(catalogReader, validator, cluster);
 
         QueryParser parser = new QueryParser(validator);
+        QueryConverter converter = new QueryConverter(catalogReader, validator, cluster);
 
-        return new OptimizerContext(parser, sqlToRelConverter, planner);
+        return new OptimizerContext(parser, converter, planner);
     }
 
     /**
@@ -169,43 +150,7 @@ public final class OptimizerContext {
      * @return Relational tree.
      */
     public RelNode convert(SqlNode node) {
-        // 1. Perform initial conversion.
-        RelRoot root = sqlToRelConverter.convertQuery(node, false, true);
-
-        // 2. Remove subquery expressions, converting them to Correlate nodes.
-        RelNode relNoSubqueries = rewriteSubqueries(root.rel);
-
-        // 3. Perform decorrelation, i.e. rewrite a nested loop where the right side depends on the value of the left side,
-        // to a variation of joins, semijoins and aggregations, which could be executed much more efficiently.
-        // See "Unnesting Arbitrary Queries", Thomas Neumann and Alfons Kemper.
-        RelNode relDecorrelated = sqlToRelConverter.decorrelate(node, relNoSubqueries);
-
-        // 4. The side effect of subquery rewrite and decorrelation in Apache Calcite is a number of unnecessary fields,
-        // primarily in projections. This steps removes unused fields from the tree.
-        RelNode relTrimmed = sqlToRelConverter.trimUnusedFields(true, relDecorrelated);
-
-        return relTrimmed;
-    }
-
-    /**
-     * Special substep of an initial query conversion which eliminates correlated subqueries, converting them to various forms
-     * of joins. It is used instead of "expand" flag due to bugs in Calcite (see {@link #CONVERTER_EXPAND}).
-     *
-     * @param rel Initial relation.
-     * @return Resulting relation.
-     */
-    private static RelNode rewriteSubqueries(RelNode rel) {
-        HepProgramBuilder hepPgmBldr = new HepProgramBuilder();
-
-        hepPgmBldr.addRuleInstance(SubQueryRemoveRule.FILTER);
-        hepPgmBldr.addRuleInstance(SubQueryRemoveRule.PROJECT);
-        hepPgmBldr.addRuleInstance(SubQueryRemoveRule.JOIN);
-
-        HepPlanner planner = new HepPlanner(hepPgmBldr.build(), Contexts.empty(), true, null, RelOptCostImpl.FACTORY);
-
-        planner.setRoot(rel);
-
-        return planner.findBestExp();
+        return converter.convert(node);
     }
 
     /**
@@ -330,24 +275,5 @@ public final class OptimizerContext {
         cluster.setMetadataProvider(relMetadataProvider);
 
         return cluster;
-    }
-
-    private static SqlToRelConverter createSqlToRelConverter(
-        Prepare.CatalogReader catalogReader,
-        SqlValidator validator,
-        HazelcastRelOptCluster cluster
-    ) {
-        SqlToRelConverter.ConfigBuilder sqlToRelConfigBuilder = SqlToRelConverter.configBuilder()
-            .withTrimUnusedFields(CONVERTER_TRIM_UNUSED_FIELDS)
-            .withExpand(CONVERTER_EXPAND);
-
-        return new SqlToRelConverter(
-            null,
-            validator,
-            catalogReader,
-            cluster,
-            StandardConvertletTable.INSTANCE,
-            sqlToRelConfigBuilder.build()
-        );
     }
 }

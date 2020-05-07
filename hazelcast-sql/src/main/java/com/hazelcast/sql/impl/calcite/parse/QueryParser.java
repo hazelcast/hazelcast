@@ -26,7 +26,7 @@ import org.apache.calcite.sql.parser.SqlParser;
 import org.apache.calcite.sql.validate.SqlValidator;
 
 /**
- * Performs syntactic and semantic validation of the query.
+ * Performs syntactic and semantic validation of the query, and converts the parse tree into a relational tree.
  */
 public class QueryParser {
 
