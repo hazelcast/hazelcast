@@ -39,7 +39,9 @@ data: {
     keywords: [
       "IF"
       "CALENDAR"
+      "INSTANT"
       "ZONED_DATE_TIME"
+      "OFFSET_DATE_TIME"
     ]
 
     # List of keywords from "keywords" section that are not reserved.

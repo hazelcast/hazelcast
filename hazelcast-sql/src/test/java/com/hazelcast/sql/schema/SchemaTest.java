@@ -111,7 +111,7 @@ public class SchemaTest extends CalciteSqlTestSupport {
                         "localDateTime TIMESTAMP, " +
                         "\"date\" TIMESTAMP WITH LOCAL TIME ZONE (\"DATE\"), " +
                         "\"calendar\" TIMESTAMP WITH TIME ZONE (\"CALENDAR\"), " +
-                        "instant TIMESTAMP WITH LOCAL TIME ZONE, " +
+                        "\"instant\" TIMESTAMP WITH LOCAL TIME ZONE, " +
                         "zonedDateTime TIMESTAMP WITH TIME ZONE (\"ZONED_DATE_TIME\"), " +
                         "offsetDateTime TIMESTAMP WITH TIME ZONE " +
                         /*"yearMonthInterval INTERVAL_YEAR_MONTH, " +

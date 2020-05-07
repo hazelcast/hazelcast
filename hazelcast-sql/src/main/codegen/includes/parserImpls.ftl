@@ -204,7 +204,7 @@ QueryDataType DateTimeType() :
                     <LPAREN> variant = SimpleIdentifier() <RPAREN>
                 ]
                 {
-                    if (variant == null) {
+                    if (variant == null || "OFFSET_DATE_TIME".equals(variant.getSimple())) {
                         type = QueryDataType.TIMESTAMP_WITH_TZ_OFFSET_DATE_TIME;
                     } else if ("ZONED_DATE_TIME".equalsIgnoreCase(variant.getSimple())) {
                         type = QueryDataType.TIMESTAMP_WITH_TZ_ZONED_DATE_TIME;
@@ -221,7 +221,7 @@ QueryDataType DateTimeType() :
                     <LPAREN> variant = SimpleIdentifier() <RPAREN>
                 ]
                 {
-                    if (variant == null) {
+                    if (variant == null || "INSTANT".equals(variant.getSimple())) {
                         type = QueryDataType.TIMESTAMP_WITH_TZ_INSTANT;
                     } else if ("DATE".equalsIgnoreCase(variant.getSimple())) {
                         type = QueryDataType.TIMESTAMP_WITH_TZ_DATE;
