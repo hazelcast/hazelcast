@@ -14,15 +14,15 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.serialization.impl.compatibility;
+package com.hazelcast.nio.serialization.compatibility;
 
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.config.SerializerConfig;
-import com.hazelcast.internal.serialization.Data;
-import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.ClassDefinitionBuilder;
+import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.serialization.SerializationService;
 
 import java.io.DataOutputStream;
 import java.io.FileOutputStream;

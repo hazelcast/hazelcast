@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.serialization.impl.compatibility;
+package com.hazelcast.nio.serialization.compatibility;
 
 public class CustomStreamSerializable {
 

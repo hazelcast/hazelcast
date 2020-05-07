@@ -14,17 +14,17 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.serialization.impl.compatibility;
+package com.hazelcast.nio.serialization.compatibility;
 
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.config.SerializerConfig;
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.ClassDefinitionBuilder;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.BeforeClass;
@@ -47,10 +47,9 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Map;
 
-
-import static com.hazelcast.internal.serialization.impl.compatibility.ReferenceObjects.IDENTIFIED_DATA_SERIALIZABLE_FACTORY_ID;
-import static com.hazelcast.internal.serialization.impl.compatibility.ReferenceObjects.INNER_PORTABLE_CLASS_ID;
-import static com.hazelcast.internal.serialization.impl.compatibility.ReferenceObjects.PORTABLE_FACTORY_ID;
+import static com.hazelcast.nio.serialization.compatibility.ReferenceObjects.IDENTIFIED_DATA_SERIALIZABLE_FACTORY_ID;
+import static com.hazelcast.nio.serialization.compatibility.ReferenceObjects.INNER_PORTABLE_CLASS_ID;
+import static com.hazelcast.nio.serialization.compatibility.ReferenceObjects.PORTABLE_FACTORY_ID;
 import static com.hazelcast.test.HazelcastTestSupport.assumeConfiguredByteOrder;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;

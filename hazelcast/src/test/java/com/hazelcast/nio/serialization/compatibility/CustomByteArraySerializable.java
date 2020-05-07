@@ -14,19 +14,14 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.serialization.impl.compatibility;
+package com.hazelcast.nio.serialization.compatibility;
 
-import java.io.Serializable;
-
-public class AJavaSerialiazable implements Serializable {
+public class CustomByteArraySerializable {
 
     int i;
     float f;
 
-    public AJavaSerialiazable() {
-    }
-
-    public AJavaSerialiazable(int anInt, float aFloat) {
+    public CustomByteArraySerializable(int anInt, float aFloat) {
         i = anInt;
         f = aFloat;
     }
@@ -40,8 +35,7 @@ public class AJavaSerialiazable implements Serializable {
             return false;
         }
 
-        AJavaSerialiazable that = (AJavaSerialiazable) o;
-
+        CustomByteArraySerializable that = (CustomByteArraySerializable) o;
         if (i != that.i) {
             return false;
         }
@@ -49,7 +43,14 @@ public class AJavaSerialiazable implements Serializable {
     }
 
     @Override
+    public int hashCode() {
+        int result = i;
+        result = 31 * result + (f != +0.0f ? Float.floatToIntBits(f) : 0);
+        return result;
+    }
+
+    @Override
     public String toString() {
-        return "AJavaSerializable";
+        return "CustomByteArraySerializable";
     }
 }
