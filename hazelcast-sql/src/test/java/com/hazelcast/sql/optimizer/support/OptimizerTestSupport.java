@@ -20,8 +20,9 @@ import com.hazelcast.sql.impl.calcite.OptimizerContext;
 import com.hazelcast.sql.impl.calcite.opt.logical.LogicalRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.PhysicalRel;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastSchema;
+import com.hazelcast.sql.impl.calcite.schema.HazelcastSchemaUtils;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
-import com.hazelcast.sql.impl.calcite.schema.HazelcastTableStatistic;
+import com.hazelcast.sql.impl.calcite.schema.MapTableStatistic;
 import com.hazelcast.sql.impl.expression.ColumnExpression;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.Expression;
@@ -30,7 +31,6 @@ import com.hazelcast.sql.impl.expression.predicate.ComparisonMode;
 import com.hazelcast.sql.impl.expression.predicate.ComparisonPredicate;
 import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.schema.ConstantTableStatistics;
-import com.hazelcast.sql.impl.schema.SchemaUtils;
 import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.schema.map.MapTableField;
 import com.hazelcast.sql.impl.schema.map.MapTableIndex;
@@ -89,8 +89,8 @@ public abstract class OptimizerTestSupport {
      */
     protected Result optimize(String sql, HazelcastSchema schema) {
         OptimizerContext context = OptimizerContext.create(
-            OptimizerContext.createCatalog(schema),
-            SchemaUtils.prepareSearchPaths(null, null),
+            HazelcastSchemaUtils.createCatalog(schema),
+            HazelcastSchemaUtils.prepareSearchPaths(null, null),
             1
         );
 
@@ -133,7 +133,7 @@ public abstract class OptimizerTestSupport {
             PartitionedMapTable.DISTRIBUTION_FIELD_ORDINAL_NONE
         );
 
-        return new HazelcastTable(table, new HazelcastTableStatistic(rowCount));
+        return new HazelcastTable(table, new MapTableStatistic(rowCount));
     }
 
     /**

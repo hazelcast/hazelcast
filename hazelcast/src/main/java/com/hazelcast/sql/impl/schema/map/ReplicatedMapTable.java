@@ -23,7 +23,7 @@ import com.hazelcast.sql.impl.schema.TableStatistics;
 
 import java.util.List;
 
-import static com.hazelcast.sql.impl.schema.SchemaUtils.SCHEMA_NAME_REPLICATED;
+import static com.hazelcast.sql.impl.QueryUtils.SCHEMA_NAME_REPLICATED;
 
 public class ReplicatedMapTable extends AbstractMapTable {
     public ReplicatedMapTable(

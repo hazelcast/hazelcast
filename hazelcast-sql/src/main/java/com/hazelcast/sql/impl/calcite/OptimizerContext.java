@@ -22,8 +22,7 @@ import com.hazelcast.sql.SqlErrorCode;
 import com.hazelcast.sql.impl.calcite.opt.cost.CostFactory;
 import com.hazelcast.sql.impl.calcite.opt.distribution.DistributionTraitDef;
 import com.hazelcast.sql.impl.calcite.opt.metadata.HazelcastRelMdRowCount;
-import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
-import com.hazelcast.sql.impl.calcite.schema.HazelcastTableStatistic;
+import com.hazelcast.sql.impl.calcite.schema.HazelcastSchemaUtils;
 import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlOperatorTable;
 import com.hazelcast.sql.impl.calcite.opt.OptUtils;
 import com.hazelcast.sql.impl.calcite.opt.logical.LogicalRel;
@@ -41,8 +40,6 @@ import com.hazelcast.sql.impl.calcite.schema.HazelcastCalciteCatalogReader;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastSchema;
 import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlConformance;
 import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlValidator;
-import com.hazelcast.sql.impl.schema.SchemaUtils;
-import com.hazelcast.sql.impl.schema.Table;
 import com.hazelcast.sql.impl.schema.TableResolver;
 import org.apache.calcite.adapter.java.JavaTypeFactory;
 import org.apache.calcite.avatica.util.Casing;
@@ -70,7 +67,6 @@ import org.apache.calcite.rel.metadata.RelMetadataProvider;
 import org.apache.calcite.rel.rules.SubQueryRemoveRule;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rex.RexBuilder;
-import org.apache.calcite.schema.Schema;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.SqlOperatorTable;
 import org.apache.calcite.sql.fun.SqlStdOperatorTable;
@@ -84,11 +80,7 @@ import org.apache.calcite.tools.Programs;
 import org.apache.calcite.tools.RuleSet;
 import org.apache.calcite.tools.RuleSets;
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Properties;
 
 /**
@@ -139,10 +131,10 @@ public final class OptimizerContext {
         int memberCount
     ) {
         // Prepare search paths.
-        List<List<String>> searchPaths0 = SchemaUtils.prepareSearchPaths(currentSearchPaths, tableResolvers);
+        List<List<String>> searchPaths0 = HazelcastSchemaUtils.prepareSearchPaths(currentSearchPaths, tableResolvers);
 
         // Resolve tables.
-        HazelcastSchema rootSchema = createRootSchema(tableResolvers);
+        HazelcastSchema rootSchema = HazelcastSchemaUtils.createRootSchema(tableResolvers);
 
         return create(rootSchema, searchPaths0, memberCount);
     }
@@ -374,7 +366,6 @@ public final class OptimizerContext {
         HazelcastRelOptCluster cluster
     ) {
         SqlToRelConverter.ConfigBuilder sqlToRelConfigBuilder = SqlToRelConverter.configBuilder()
-            //.withConvertTableAccess(CONVERTER_CONVERT_TABLE_ACCESS)
             .withTrimUnusedFields(CONVERTER_TRIM_UNUSED_FIELDS)
             .withExpand(CONVERTER_EXPAND);
 
@@ -386,60 +377,5 @@ public final class OptimizerContext {
             StandardConvertletTable.INSTANCE,
             sqlToRelConfigBuilder.build()
         );
-    }
-
-    /**
-     * Creates the top-level catalog containing the given child schema.
-     *
-     * @param schema Schema.
-     * @return Catalog.
-     */
-    public static HazelcastSchema createCatalog(Schema schema) {
-        return new HazelcastSchema(
-            Collections.singletonMap(SchemaUtils.CATALOG, schema),
-            Collections.emptyMap()
-        );
-    }
-
-    @SuppressWarnings({"unchecked", "rawtypes"})
-    private static HazelcastSchema createRootSchema(List<TableResolver> tableResolvers) {
-        // Create tables.
-        Map<String, Map<String, HazelcastTable>> tableMap = new HashMap<>();
-
-        for (TableResolver tableResolver : tableResolvers) {
-            Collection<Table> tables = tableResolver.getTables();
-
-            if (tables == null || tables.isEmpty()) {
-                continue;
-            }
-
-            for (Table table : tables) {
-                HazelcastTable convertedTable = new HazelcastTable(
-                    table,
-                    new HazelcastTableStatistic(table.getStatistics().getRowCount())
-                );
-
-                Map<String , HazelcastTable> schemaTableMap =
-                    tableMap.computeIfAbsent(table.getSchemaName(), (k) -> new HashMap<>());
-
-                schemaTableMap.put(table.getName(), convertedTable);
-            }
-        }
-
-        // Create schemas.
-        Map<String, Schema> schemaMap = new HashMap<>();
-
-        for (Map.Entry<String, Map<String, HazelcastTable>> schemaEntry : tableMap.entrySet()) {
-            String schemaName = schemaEntry.getKey();
-            Map schemaTables = schemaEntry.getValue();
-
-            HazelcastSchema schema = new HazelcastSchema(Collections.emptyMap(), schemaTables);
-
-            schemaMap.put(schemaName, schema);
-        }
-
-        HazelcastSchema rootSchema = new HazelcastSchema(schemaMap, Collections.emptyMap());
-
-        return createCatalog(rootSchema);
     }
 }

@@ -23,7 +23,7 @@ import com.hazelcast.sql.impl.schema.TableStatistics;
 
 import java.util.List;
 
-import static com.hazelcast.sql.impl.schema.SchemaUtils.SCHEMA_NAME_PARTITIONED;
+import static com.hazelcast.sql.impl.QueryUtils.SCHEMA_NAME_PARTITIONED;
 
 public class PartitionedMapTable  extends AbstractMapTable {
 
