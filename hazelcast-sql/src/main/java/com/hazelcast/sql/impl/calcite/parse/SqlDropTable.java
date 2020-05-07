@@ -14,45 +14,41 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.calcite.parser;
+package com.hazelcast.sql.impl.calcite.parse;
 
-import org.apache.calcite.sql.SqlCall;
+import org.apache.calcite.sql.SqlDrop;
 import org.apache.calcite.sql.SqlIdentifier;
 import org.apache.calcite.sql.SqlKind;
-import org.apache.calcite.sql.SqlLiteral;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.SqlOperator;
 import org.apache.calcite.sql.SqlSpecialOperator;
 import org.apache.calcite.sql.SqlWriter;
 import org.apache.calcite.sql.parser.SqlParserPos;
 import org.apache.calcite.util.ImmutableNullableList;
-import org.apache.calcite.util.NlsString;
 
 import javax.annotation.Nonnull;
 import java.util.List;
 
 import static java.util.Objects.requireNonNull;
 
-public class SqlOption extends SqlCall {
+public class SqlDropTable extends SqlDrop {
 
-    private static final SqlOperator OPERATOR =
-            new SqlSpecialOperator("OPTION DECLARATION", SqlKind.OTHER);
+    private static final SqlSpecialOperator OPERATOR =
+            new SqlSpecialOperator("DROP EXTERNAL TABLE", SqlKind.DROP_TABLE);
 
-    private final SqlIdentifier key;
-    private final SqlNode value;
+    private final SqlIdentifier name;
 
-    public SqlOption(SqlIdentifier key, SqlNode value, SqlParserPos pos) {
-        super(pos);
-        this.key = requireNonNull(key, "Option key is missing");
-        this.value = requireNonNull(value, "Option value is missing");
+    public SqlDropTable(SqlIdentifier name, boolean ifExists, SqlParserPos pos) {
+        super(OPERATOR, pos, ifExists);
+        this.name = requireNonNull(name, "Name should not be null");
     }
 
-    public String key() {
-        return key.getSimple();
+    public String name() {
+        return name.toString();
     }
 
-    public String value() {
-        return ((NlsString) SqlLiteral.value(value)).getValue();
+    public boolean ifExists() {
+        return ifExists;
     }
 
     @Override
@@ -64,13 +60,20 @@ public class SqlOption extends SqlCall {
     @Override
     @Nonnull
     public List<SqlNode> getOperandList() {
-        return ImmutableNullableList.of(key, value);
+        return ImmutableNullableList.of(name);
     }
 
     @Override
     public void unparse(SqlWriter writer, int leftPrec, int rightPrec) {
-        key.unparse(writer, leftPrec, rightPrec);
-        writer.keyword(" ");
-        value.unparse(writer, leftPrec, rightPrec);
+        writer.keyword("DROP");
+        writer.keyword("EXTERNAL");
+        writer.keyword("TABLE");
+
+        if (ifExists) {
+            writer.keyword("IF");
+            writer.keyword("EXISTS");
+        }
+
+        name.unparse(writer, leftPrec, rightPrec);
     }
 }

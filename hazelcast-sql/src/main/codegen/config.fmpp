@@ -26,12 +26,12 @@ data: {
       "org.apache.calcite.sql.SqlCreate"
       "org.apache.calcite.sql.SqlDrop"
       "com.hazelcast.sql.impl.type.QueryDataType"
-      "com.hazelcast.sql.impl.calcite.parser.SqlCreateTable"
-      "com.hazelcast.sql.impl.calcite.parser.SqlTableColumn"
-      "com.hazelcast.sql.impl.calcite.parser.SqlDataType"
-      "com.hazelcast.sql.impl.calcite.parser.SqlOption"
-      "com.hazelcast.sql.impl.calcite.parser.SqlDropTable"
-      "com.hazelcast.sql.impl.calcite.parser.ParserResource"
+      "com.hazelcast.sql.impl.calcite.parse.SqlCreateTable"
+      "com.hazelcast.sql.impl.calcite.parse.SqlTableColumn"
+      "com.hazelcast.sql.impl.calcite.parse.SqlDataType"
+      "com.hazelcast.sql.impl.calcite.parse.SqlOption"
+      "com.hazelcast.sql.impl.calcite.parse.SqlDropTable"
+      "com.hazelcast.sql.impl.calcite.parse.ParserResource"
     ]
 
     # List of new keywords. Example: "DATABASES", "TABLES". If the keyword is not a reserved

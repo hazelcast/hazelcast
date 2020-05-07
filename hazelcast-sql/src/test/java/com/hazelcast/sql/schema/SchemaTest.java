@@ -43,8 +43,8 @@ import java.util.Map;
 
 import static java.lang.String.format;
 import static java.time.ZoneOffset.UTC;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.junit.Assert.assertEquals;
 
 public class SchemaTest extends CalciteSqlTestSupport {
 
@@ -65,11 +65,12 @@ public class SchemaTest extends CalciteSqlTestSupport {
     @Test
     public void testSelectFromDeclaredTable() {
         String name = "predeclared_map";
-        executeQuery(member, format("CREATE EXTERNAL TABLE %s (__key INT) TYPE %s", name, TYPE));
+        List<SqlRow> updateRows = getQueryRows(member, format("CREATE EXTERNAL TABLE %s (__key INT) TYPE %s", name, TYPE));
+        assertThat(updateRows).hasSize(1);
+        assertThat((int) updateRows.get(0).getObject(0)).isEqualTo(0);
 
-        List<SqlRow> rows = getQueryRows(member, format("SELECT __key FROM %s", name));
-
-        assertEquals(0, rows.size());
+        List<SqlRow> queryRows = getQueryRows(member, format("SELECT __key FROM %s", name));
+        assertThat(queryRows).isEmpty();
     }
 
     @Test
@@ -85,7 +86,7 @@ public class SchemaTest extends CalciteSqlTestSupport {
             // execute query on another one
             List<SqlRow> rows = getQueryRows(instances[1], format("SELECT __key FROM %s", name));
 
-            assertEquals(0, rows.size());
+            assertThat(rows).isEmpty();
         } finally {
             factory.terminateAll();
         }
@@ -101,9 +102,9 @@ public class SchemaTest extends CalciteSqlTestSupport {
 
         List<SqlRow> rows = getQueryRows(member, format("SELECT age, \"__key.age\" FROM %s", name));
 
-        assertEquals(1, rows.size());
-        assertEquals(40, ((Integer) rows.get(0).getObject(0)).intValue());
-        assertEquals(30, ((Integer) rows.get(0).getObject(1)).intValue());
+        assertThat(rows).hasSize(1);
+        assertThat((int) rows.get(0).getObject(0)).isEqualTo(40);
+        assertThat((int) rows.get(0).getObject(1)).isEqualTo(30);
     }
 
     @Test
@@ -163,27 +164,28 @@ public class SchemaTest extends CalciteSqlTestSupport {
 
         List<SqlRow> rows = getQueryRows(member, format("SELECT * FROM %s", name));
 
-        assertEquals(1, rows.size());
-        assertEquals(BigInteger.valueOf(13), rows.get(0).getObject(0));
-        assertEquals(allTypes.getString(), rows.get(0).getObject(1));
-        assertEquals(allTypes.getCharacter0(), ((char) rows.get(0).getObject(2)));
-        assertEquals(allTypes.isBoolean0(), rows.get(0).getObject(3));
-        assertEquals(allTypes.getByte0(), ((byte) rows.get(0).getObject(4)));
-        assertEquals(allTypes.getShort0(), ((short) rows.get(0).getObject(5)));
-        assertEquals(allTypes.getInt0(), ((int) rows.get(0).getObject(6)));
-        assertEquals(allTypes.getLong0(), ((long) rows.get(0).getObject(7)));
-        assertEquals(allTypes.getFloat0(), rows.get(0).getObject(8), 0);
-        assertEquals(allTypes.getDouble0(), rows.get(0).getObject(9), 0);
-        assertEquals(allTypes.getBigDecimal(), rows.get(0).getObject(10));
-        assertEquals(allTypes.getBigInteger(), rows.get(0).getObject(11));
-        assertEquals(allTypes.getLocalTime(), rows.get(0).getObject(12));
-        assertEquals(allTypes.getLocalDate(), rows.get(0).getObject(13));
-        assertEquals(allTypes.getLocalDateTime(), rows.get(0).getObject(14));
-        assertEquals(allTypes.getDate(), rows.get(0).getObject(15));
-        assertEquals(allTypes.getCalendar().toZonedDateTime().toOffsetDateTime(), rows.get(0).getObject(16)); // TODO:
-        assertEquals(allTypes.getInstant(), rows.get(0).getObject(17));
-        assertEquals(allTypes.getZonedDateTime(), rows.get(0).getObject(18));
-        assertEquals(allTypes.getOffsetDateTime(), rows.get(0).getObject(19));
+        assertThat(rows).hasSize(1);
+        assertThat((BigInteger) rows.get(0).getObject(0)).isEqualTo(BigInteger.valueOf(13));
+        assertThat((String) rows.get(0).getObject(1)).isEqualTo(allTypes.getString());
+        assertThat((char) rows.get(0).getObject(2)).isEqualTo(allTypes.getCharacter0());
+        assertThat((boolean) rows.get(0).getObject(3)).isEqualTo(allTypes.isBoolean0());
+        assertThat((byte) rows.get(0).getObject(4)).isEqualTo(allTypes.getByte0());
+        assertThat((short) rows.get(0).getObject(5)).isEqualTo(allTypes.getShort0());
+        assertThat((int) rows.get(0).getObject(6)).isEqualTo(allTypes.getInt0());
+        assertThat((long) rows.get(0).getObject(7)).isEqualTo(allTypes.getLong0());
+        assertThat((float) rows.get(0).getObject(8)).isEqualTo(allTypes.getFloat0());
+        assertThat((double) rows.get(0).getObject(9)).isEqualTo(allTypes.getDouble0());
+        assertThat((BigDecimal) rows.get(0).getObject(10)).isEqualTo(allTypes.getBigDecimal());
+        assertThat((BigInteger) rows.get(0).getObject(11)).isEqualTo(allTypes.getBigInteger());
+        assertThat((LocalTime) rows.get(0).getObject(12)).isEqualTo(allTypes.getLocalTime());
+        assertThat((LocalDate) rows.get(0).getObject(13)).isEqualTo(allTypes.getLocalDate());
+        assertThat((LocalDateTime) rows.get(0).getObject(14)).isEqualTo(allTypes.getLocalDateTime());
+        assertThat((Date) rows.get(0).getObject(15)).isEqualTo(allTypes.getDate());
+        // TODO:
+        assertThat((OffsetDateTime) rows.get(0).getObject(16)).isEqualTo(allTypes.getCalendar().toZonedDateTime().toOffsetDateTime());
+        assertThat((Instant) rows.get(0).getObject(17)).isEqualTo(allTypes.getInstant());
+        assertThat((ZonedDateTime) rows.get(0).getObject(18)).isEqualTo(allTypes.getZonedDateTime());
+        assertThat((OffsetDateTime) rows.get(0).getObject(19)).isEqualTo(allTypes.getOffsetDateTime());
     }
 
     @Test

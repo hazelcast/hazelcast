@@ -27,9 +27,9 @@ import com.hazelcast.sql.impl.calcite.opt.physical.visitor.NodeIdVisitor;
 import com.hazelcast.sql.impl.calcite.opt.physical.visitor.PlanCreateVisitor;
 import com.hazelcast.sql.impl.calcite.opt.physical.visitor.SqlToQueryType;
 import com.hazelcast.sql.impl.calcite.parse.QueryParseResult;
-import com.hazelcast.sql.impl.calcite.parser.SqlCreateTable;
-import com.hazelcast.sql.impl.calcite.parser.SqlDropTable;
-import com.hazelcast.sql.impl.calcite.parser.SqlOption;
+import com.hazelcast.sql.impl.calcite.parse.SqlCreateTable;
+import com.hazelcast.sql.impl.calcite.parse.SqlDropTable;
+import com.hazelcast.sql.impl.calcite.parse.SqlOption;
 import com.hazelcast.sql.impl.optimizer.OptimizationTask;
 import com.hazelcast.sql.impl.optimizer.SqlOptimizer;
 import com.hazelcast.sql.impl.plan.Plan;
@@ -59,9 +59,7 @@ import static java.util.stream.Collectors.toMap;
  */
 @SuppressWarnings("checkstyle:ClassDataAbstractionCoupling")
 public class CalciteSqlOptimizer implements SqlOptimizer {
-    /**
-     * Node engine.
-     */
+    /** Node engine. */
     private final NodeEngine nodeEngine;
 
     public CalciteSqlOptimizer(NodeEngine nodeEngine) {
@@ -79,9 +77,9 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         int memberCount = nodeEngine.getClusterService().getSize(MemberSelectors.DATA_MEMBER_SELECTOR);
 
         OptimizerContext context = OptimizerContext.create(
-                tableResolvers,
-                task.getSearchPaths(),
-                memberCount
+            tableResolvers,
+            task.getSearchPaths(),
+            memberCount
         );
 
         // 2. Parse SQL string and validate it.
@@ -159,11 +157,11 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         QueryParameterMetadata parameterMetadata = new QueryParameterMetadata(mappedParameterRowType);
 
         PlanCreateVisitor visitor = new PlanCreateVisitor(
-                nodeEngine.getLocalMember().getUuid(),
-                partMap,
-                relIdMap,
-                sql,
-                parameterMetadata
+            nodeEngine.getLocalMember().getUuid(),
+            partMap,
+            relIdMap,
+            sql,
+            parameterMetadata
         );
 
         rel.visit(visitor);

@@ -65,12 +65,12 @@ public final class HazelcastSchemaUtils {
 
             for (Table table : tables) {
                 HazelcastTable convertedTable = new HazelcastTable(
-                        table,
-                        createTableStatistic(table)
+                    table,
+                    createTableStatistic(table)
                 );
 
                 Map<String , HazelcastTable> schemaTableMap =
-                        tableMap.computeIfAbsent(table.getSchemaName(), (k) -> new HashMap<>());
+                    tableMap.computeIfAbsent(table.getSchemaName(), (k) -> new HashMap<>());
 
                 schemaTableMap.put(table.getName(), convertedTable);
             }
