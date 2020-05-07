@@ -30,8 +30,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static java.util.Collections.emptyMap;
-
 /**
  * Utility methods for schema resolution.
  */
@@ -55,9 +53,8 @@ public final class HazelcastSchemaUtils {
 
     @SuppressWarnings({"unchecked", "rawtypes"})
     public static HazelcastSchema createRootSchema(List<TableResolver> tableResolvers) {
-        // Create and group tables.
-        Map<String, org.apache.calcite.schema.Table> rootTablesByName = new HashMap<>();
-        Map<String, Map<String, HazelcastTable>> tablesBySchema = new HashMap<>();
+        // Create tables.
+        Map<String, Map<String, HazelcastTable>> tableMap = new HashMap<>();
 
         for (TableResolver tableResolver : tableResolvers) {
             Collection<Table> tables = tableResolver.getTables();
@@ -72,29 +69,26 @@ public final class HazelcastSchemaUtils {
                         createTableStatistic(table)
                 );
 
-                if (table.getSchemaName() == null || table.getSchemaName().isEmpty()) {
-                    rootTablesByName.put(table.getName(), convertedTable);
-                } else {
-                    Map<String, HazelcastTable> schemaTableMap =
-                        tablesBySchema.computeIfAbsent(table.getSchemaName(), (k) -> new HashMap<>());
+                Map<String , HazelcastTable> schemaTableMap =
+                        tableMap.computeIfAbsent(table.getSchemaName(), (k) -> new HashMap<>());
 
-                    schemaTableMap.put(table.getName(), convertedTable);
-                }
+                schemaTableMap.put(table.getName(), convertedTable);
             }
         }
 
         // Create schemas.
-        Map<String, Schema> schemasByName = new HashMap<>();
-        for (Map.Entry<String, Map<String, HazelcastTable>> schemaEntry : tablesBySchema.entrySet()) {
+        Map<String, Schema> schemaMap = new HashMap<>();
+
+        for (Map.Entry<String, Map<String, HazelcastTable>> schemaEntry : tableMap.entrySet()) {
             String schemaName = schemaEntry.getKey();
             Map schemaTables = schemaEntry.getValue();
 
-            HazelcastSchema schema = new HazelcastSchema(emptyMap(), schemaTables);
+            HazelcastSchema schema = new HazelcastSchema(Collections.emptyMap(), schemaTables);
 
-            schemasByName.put(schemaName, schema);
+            schemaMap.put(schemaName, schema);
         }
 
-        HazelcastSchema rootSchema = new HazelcastSchema(schemasByName, rootTablesByName);
+        HazelcastSchema rootSchema = new HazelcastSchema(schemaMap, Collections.emptyMap());
 
         return createCatalog(rootSchema);
     }

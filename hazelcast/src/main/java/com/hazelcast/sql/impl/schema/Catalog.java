@@ -26,7 +26,8 @@ import java.util.List;
 import java.util.Map;
 
 import static com.hazelcast.sql.impl.QueryUtils.CATALOG;
-import static com.hazelcast.sql.impl.QueryUtils.SCHEMA_NAME_DEFAULT;
+import static com.hazelcast.sql.impl.QueryUtils.SCHEMA_NAME_PUBLIC;
+import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.toList;
 
@@ -35,7 +36,7 @@ public class Catalog implements TableResolver {
     // TODO: is it the best/right name?
     public static final String CATALOG_MAP_NAME = "__sql.catalog";
 
-    private static final List<List<String>> SEARCH_PATHS = singletonList(singletonList(CATALOG));
+    private static final List<List<String>> SEARCH_PATHS = singletonList(asList(CATALOG, SCHEMA_NAME_PUBLIC));
 
     private final NodeEngine nodeEngine;
 
@@ -80,6 +81,6 @@ public class Catalog implements TableResolver {
 
     private static Table toTable(TableSchema schema) {
         SqlConnector connector = SqlConnectorFactory.from(schema.type());
-        return connector.createTable(SCHEMA_NAME_DEFAULT, schema.name(), schema.fields(), schema.options());
+        return connector.createTable(SCHEMA_NAME_PUBLIC, schema.name(), schema.fields(), schema.options());
     }
 }
