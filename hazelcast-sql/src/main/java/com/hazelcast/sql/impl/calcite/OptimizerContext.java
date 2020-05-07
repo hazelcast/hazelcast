@@ -80,14 +80,26 @@ import java.util.Properties;
  */
 @SuppressWarnings({"checkstyle:ClassDataAbstractionCoupling", "checkstyle:ClassFanOutComplexity"})
 public final class OptimizerContext {
-    public static final RelMetadataProvider METADATA_PROVIDER = ChainedRelMetadataProvider.of(ImmutableList.of(
+    private static final RelMetadataProvider METADATA_PROVIDER = ChainedRelMetadataProvider.of(ImmutableList.of(
         HazelcastRelMdRowCount.SOURCE,
         DefaultRelMetadataProvider.INSTANCE
     ));
 
+    private static final CalciteConnectionConfig CONNECTION_CONFIG;
+
     private final QueryParser parser;
     private final QueryConverter converter;
     private final VolcanoPlanner planner;
+
+    static {
+        Properties connectionProperties = new Properties();
+
+        connectionProperties.put(CalciteConnectionProperty.CASE_SENSITIVE.camelName(), Boolean.TRUE.toString());
+        connectionProperties.put(CalciteConnectionProperty.UNQUOTED_CASING.camelName(), Casing.UNCHANGED.toString());
+        connectionProperties.put(CalciteConnectionProperty.QUOTED_CASING.camelName(), Casing.UNCHANGED.toString());
+
+        CONNECTION_CONFIG = new CalciteConnectionConfigImpl(connectionProperties);
+    }
 
     private OptimizerContext(
         QueryParser parser,
@@ -121,10 +133,9 @@ public final class OptimizerContext {
         DistributionTraitDef distributionTraitDef = new DistributionTraitDef(memberCount);
 
         JavaTypeFactory typeFactory = new HazelcastTypeFactory();
-        CalciteConnectionConfig connectionConfig = createConnectionConfig();
-        Prepare.CatalogReader catalogReader = createCatalogReader(typeFactory, connectionConfig, rootSchema, schemaPaths);
+        Prepare.CatalogReader catalogReader = createCatalogReader(typeFactory, CONNECTION_CONFIG, rootSchema, schemaPaths);
         SqlValidator validator = createValidator(typeFactory, catalogReader);
-        VolcanoPlanner planner = createPlanner(connectionConfig, distributionTraitDef);
+        VolcanoPlanner planner = createPlanner(CONNECTION_CONFIG, distributionTraitDef);
         HazelcastRelOptCluster cluster = createCluster(planner, typeFactory, distributionTraitDef);
 
         QueryParser parser = new QueryParser(validator);
@@ -204,16 +215,6 @@ public final class OptimizerContext {
         );
 
         return (PhysicalRel) res;
-    }
-
-    private static CalciteConnectionConfig createConnectionConfig() {
-        Properties properties = new Properties();
-
-        properties.put(CalciteConnectionProperty.CASE_SENSITIVE.camelName(), Boolean.TRUE.toString());
-        properties.put(CalciteConnectionProperty.UNQUOTED_CASING.camelName(), Casing.UNCHANGED.toString());
-        properties.put(CalciteConnectionProperty.QUOTED_CASING.camelName(), Casing.UNCHANGED.toString());
-
-        return new CalciteConnectionConfigImpl(properties);
     }
 
     private static Prepare.CatalogReader createCatalogReader(
