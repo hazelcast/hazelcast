@@ -356,6 +356,10 @@ data: {
       "XML"
       "YEARS"
       "ZONE"
+      "CALENDAR"
+      "INSTANT"
+      "ZONED_DATE_TIME"
+      "OFFSET_DATE_TIME"
     ]
 
     # List of non-reserved keywords to add;
