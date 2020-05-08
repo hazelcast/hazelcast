@@ -60,7 +60,6 @@ public class PhoneHome {
     private static final int J_INTERVAL = 600;
 
     private static final String BASE_PHONE_HOME_URL = "http://phonehome.hazelcast.com/ping";
-    private static final int CONNECTION_TIMEOUT_MILLIS = 3000;
     private static final String FALSE = "false";
 
     volatile ScheduledFuture<?> phoneHomeFuture;
@@ -223,13 +222,5 @@ public class PhoneHome {
                 .addParam("cnjs", Integer.toString(clusterClientStats.getOrDefault(ConnectionType.NODEJS_CLIENT, 0)))
                 .addParam("cpy", Integer.toString(clusterClientStats.getOrDefault(ConnectionType.PYTHON_CLIENT, 0)))
                 .addParam("cgo", Integer.toString(clusterClientStats.getOrDefault(ConnectionType.GO_CLIENT, 0)));
-    }
-
-    private void checkClusterSizeAndSetLicense(int clusterSize, PhoneHomeParameterCreator parameterCreator) {
-        if (clusterSize <= 2) {
-            parameterCreator.addParam("mclicense", "MC_LICENSE_NOT_REQUIRED");
-        } else {
-            parameterCreator.addParam("mclicense", "MC_LICENSE_REQUIRED_BUT_NOT_SET");
-        }
     }
 }
