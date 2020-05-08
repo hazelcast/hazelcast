@@ -21,6 +21,7 @@ import com.hazelcast.sql.impl.calcite.opt.QueryPlanner;
 import com.hazelcast.sql.impl.calcite.opt.cost.CostFactory;
 import com.hazelcast.sql.impl.calcite.opt.distribution.DistributionTraitDef;
 import com.hazelcast.sql.impl.calcite.opt.metadata.HazelcastRelMdRowCount;
+import com.hazelcast.sql.impl.calcite.parse.CasingConfiguration;
 import com.hazelcast.sql.impl.calcite.parse.QueryConverter;
 import com.hazelcast.sql.impl.calcite.parse.QueryParseResult;
 import com.hazelcast.sql.impl.calcite.parse.QueryParser;
@@ -32,10 +33,7 @@ import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlOperatorTable;
 import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlValidator;
 import com.hazelcast.sql.impl.schema.TableResolver;
 import org.apache.calcite.adapter.java.JavaTypeFactory;
-import org.apache.calcite.avatica.util.Casing;
 import org.apache.calcite.config.CalciteConnectionConfig;
-import org.apache.calcite.config.CalciteConnectionConfigImpl;
-import org.apache.calcite.config.CalciteConnectionProperty;
 import org.apache.calcite.jdbc.HazelcastRootCalciteSchema;
 import org.apache.calcite.plan.Contexts;
 import org.apache.calcite.plan.ConventionTraitDef;
@@ -58,7 +56,6 @@ import org.apache.calcite.sql.validate.SqlValidator;
 import org.apache.calcite.tools.RuleSet;
 
 import java.util.List;
-import java.util.Properties;
 
 /**
  * Optimizer context which holds the whole environment for the given optimization session.
@@ -70,21 +67,11 @@ public final class OptimizerContext {
         DefaultRelMetadataProvider.INSTANCE
     ));
 
-    private static final CalciteConnectionConfig CONNECTION_CONFIG;
+    private static final CalciteConnectionConfig CONNECTION_CONFIG = CasingConfiguration.DEFAULT.toConnectionConfig();
 
     private final QueryParser parser;
     private final QueryConverter converter;
     private final QueryPlanner planner;
-
-    static {
-        Properties connectionProperties = new Properties();
-
-        connectionProperties.put(CalciteConnectionProperty.CASE_SENSITIVE.camelName(), Boolean.TRUE.toString());
-        connectionProperties.put(CalciteConnectionProperty.UNQUOTED_CASING.camelName(), Casing.UNCHANGED.toString());
-        connectionProperties.put(CalciteConnectionProperty.QUOTED_CASING.camelName(), Casing.UNCHANGED.toString());
-
-        CONNECTION_CONFIG = new CalciteConnectionConfigImpl(connectionProperties);
-    }
 
     private OptimizerContext(
         QueryParser parser,

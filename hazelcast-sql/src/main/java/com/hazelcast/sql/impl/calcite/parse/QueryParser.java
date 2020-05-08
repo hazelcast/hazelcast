@@ -19,8 +19,6 @@ package com.hazelcast.sql.impl.calcite.parse;
 import com.hazelcast.sql.SqlErrorCode;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.calcite.parser.HazelcastSqlParser;
-import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlConformance;
-import org.apache.calcite.avatica.util.Casing;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.parser.SqlParser;
@@ -38,10 +36,8 @@ public class QueryParser {
         SqlParser.ConfigBuilder configBuilder = SqlParser.configBuilder();
 
         configBuilder.setParserFactory(HazelcastSqlParser.FACTORY);
-        configBuilder.setCaseSensitive(true);
-        configBuilder.setUnquotedCasing(Casing.UNCHANGED);
-        configBuilder.setQuotedCasing(Casing.UNCHANGED);
-        configBuilder.setConformance(HazelcastSqlConformance.INSTANCE);
+
+        CasingConfiguration.DEFAULT.toParserConfig(configBuilder);
 
         CONFIG = configBuilder.build();
     }
