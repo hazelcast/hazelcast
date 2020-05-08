@@ -122,13 +122,19 @@
 			<li><strong>/bin</strong>
 				<ul>
 				<li><strong>hazelcast.xml</strong> &mdash; the configuration file for Hazelcast IMDG.</li>
-				<li><strong>hazelcast-full-example.xml</strong> &mdash; It is the Hazelcast IMDG configuration file that includes all the configuration elements and attributes with their descriptions.</li>
+				<li><strong>hazelcast-full-example.xml</strong> &mdash; Complete Hazelcast IMDG XML configuration file that includes all the configuration elements and attributes with their descriptions.</li>
+				<li><strong>hazelcast-full-example.yaml</strong> &mdash; Complete Hazelcast IMDG YAML configuration file that includes all the configuration elements and attributes with their descriptions.</li>
+				<li><strong>hazelcast-client-full-example.xml</strong> &mdash; Complete Hazelcast IMDG Java client XML configuration file that includes all the configuration elements and attributes with their descriptions.</li>
+				<li><strong>hazelcast-client-full-example.yaml</strong> &mdash; Complete Hazelcast IMDG Java client YAML configuration file that includes all the configuration elements and attributes with their descriptions.</li>
+				<li><strong>hazelcast-client-failover-full-example.xml</strong> &mdash; Complete XML configuration file for Hazelcast IMDG Java client failover which includes all Hazelcast client failover configuration elements and attributes with their descriptions.</li>
+				<li><strong>hazelcast-client-failover-full-example.yaml</strong> &mdash; Complete YAML configuration file for Hazelcast IMDG Java client failover which includes all the configuration elements and attributes with their descriptions.</li>
 				<li><strong>start.bat</strong> &mdash; Starts a Hazelcast IMDG member for Windows users.</li>
 				<li><strong>start.sh</strong> &mdash;  Starts a Hazelcast IMDG member for Linux users.</li>
-                                      <li><strong>stop-all.bat</strong> &mdash; Stops all of the running Hazelcast IMDG member for Windows users.</li>
-                                      <li><strong>stop-all.sh</strong> &mdash; Stops all of the running Hazelcast IMDG member for Linux users.</li>
-                                      <li><strong>cluster.sh</strong> &mdash; Provides basic functionalities for cluster management such as getting and changing the cluster state, shutting down the cluster or forcing the cluster to clean its persisted data and make a fresh start.</li>
-                                      <li><strong>healthcheck.sh</strong> &mdash; Provides basic information about your cluster and member (on which you run this script) .</li>
+                                <li><strong>stop-all.bat</strong> &mdash; Stops all of the running Hazelcast IMDG member for Windows users.</li>
+                                <li><strong>stop-all.sh</strong> &mdash; Stops all of the running Hazelcast IMDG member for Linux users.</li>
+                                <li><strong>cp-subsystem.sh</strong> &mdash; Provides access to the CP subsystem management APIs using the REST interface.</li>
+                                <li><strong>cluster.sh</strong> &mdash; Provides basic functionalities for cluster management such as getting and changing the cluster state, shutting down the cluster or forcing the cluster to clean its persisted data and make a fresh start.</li>
+                                <li><strong>healthcheck.sh</strong> &mdash; Provides basic information about your cluster and member (on which you run this script) .</li>
 				</ul>
 			</li>
 
@@ -152,9 +158,8 @@
 
 			<li><strong>/lib</strong>
 				<ul>
-					<li><strong>hazelcast.jar</strong> &mdash; The core Hazelcast IMDG JAR.</li>
+					<li><strong>hazelcast.jar</strong> &mdash; The core Hazelcast IMDG JAR which also includes the Java native client library.</li>
 					<li><strong>hazelcast-all.jar</strong> &mdash; Includes all of the libraries here in one JAR file.</li>
-					<li><strong>hazelcast-client.jar</strong> &mdash; The Java native client library to be included on classpath for Hazelcast client. This library contains clients which use the new Hazelcast Binary Client Protocol, introduced in the Hazelcast 3.5 Release.</li>
 					<li><strong>hazelcast-spring.jar</strong> &mdash; This is the library to integrate Hazelcast with Spring based applications.</li>
 					<li><strong>further-modules.txt</strong> &mdash; This text file includes the list of other modules and plugins provided/supported by Hazelcast and the community, along with the information on how you can reach them.</li>
                 </ul>
@@ -171,7 +176,7 @@
 				<ul>
 					<li><strong>changelog.txt</strong> &mdash; Shows the main changes performed for each Hazelcast Management Center release.</li>
 					<li><strong>/docs</strong> &mdash; Includes the HTML and PDF versions of Hazelcast Management Center Reference Manual.</li>
-					<li><strong>hazelcast-management-center-4.0.war</strong> &mdash; File to be deployed when starting the tool.</li>
+					<li><strong>hazelcast-management-center-${project.version}.war</strong> &mdash; File to be deployed when starting the tool.</li>
 					<li><strong>license.txt</strong> &mdash; Hazelcast Management Center license.</li>
 					<li><strong>mc-conf.bat/mc-conf.sh</strong> &mdash; Command line tool that allows you to update certain parts of the Management Center configuration by using its built-in commands.</li>
 					<li><strong>release_notes.txt</strong> &mdash; Lists the new features, enhancements and fixes for this Hazelcast Management Center release.</li>
@@ -202,13 +207,13 @@
 		<p>All of the following clients and language APIs are open source and supported by Hazelcast. Click on a client or language, and you will be directed to its release page.</p>
                                 <ul>
 				<li><a href="http://hazelcast.org/clients/java/" target="_blank">Java Client ${project.version}</a></li>
-				<li><a href="http://hazelcast.org/clients/net/" target="_blank">.NET Client 3.12</a></li>
-				<li><a href="http://hazelcast.org/clients/cplusplus/" target="_blank">C++ Client 3.12</a></li>
-				<li><a href="http://hazelcast.org/clients/node-js/" target="_blank">Node.js Client 3.12.1</a></li>
-				<li><a href="http://hazelcast.org/clients/python/" target="_blank">Python Client 3.12.1</a></li>
-				<li><a href="http://hazelcast.org/clients/go/" target="_blank">Go Client 0.5</a></li>
-				<li><a href="http://hazelcast.org/clients/scala/" target="_blank">Scala Client Binding 3.12</a></li>
-				<li><a href="http://hazelcast.org/clients/scala/" target="_blank">Scala Member Binding 3.12</a></li>
+				<li><a href="http://hazelcast.org/clients/net/" target="_blank">.NET Client 3.12.2</a></li>
+				<li><a href="http://hazelcast.org/clients/cplusplus/" target="_blank">C++ Client 3.12.1</a></li>
+				<li><a href="http://hazelcast.org/clients/node-js/" target="_blank">Node.js Client 3.12.3</a></li>
+				<li><a href="http://hazelcast.org/clients/python/" target="_blank">Python Client 3.12.3</a></li>
+				<li><a href="http://hazelcast.org/clients/go/" target="_blank">Go Client 0.6.0</a></li>
+				<li><a href="http://hazelcast.org/clients/scala/" target="_blank">Scala Client Binding 3.12.1</a></li>
+				<li><a href="http://hazelcast.org/clients/scala/" target="_blank">Scala Member Binding 3.12.1</a></li>
 				</ul>
 
 		<p>See <a href="http://hazelcast.org/clients-languages/" target="_blank">Clients & Languages page</a> to see the client/language feature comparison table.</p>
