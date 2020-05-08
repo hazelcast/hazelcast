@@ -13,8 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-package com.hazelcast.internal.util;
+package com.hazelcast.internal.util.phonehome;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
@@ -56,7 +55,7 @@ public class PhoneHomeTest extends HazelcastTestSupport {
         PhoneHome phoneHome = new PhoneHome(node);
 
         sleepAtLeastMillis(1);
-        Map<String, String> parameters = phoneHome.phoneHome(node, true);
+        Map<String, String> parameters = phoneHome.phoneHome(true);
         RuntimeMXBean runtimeMxBean = ManagementFactory.getRuntimeMXBean();
         OperatingSystemMXBean osMxBean = ManagementFactory.getOperatingSystemMXBean();
         assertEquals(parameters.get("version"), BuildInfoProvider.getBuildInfo().getVersion());
@@ -94,7 +93,7 @@ public class PhoneHomeTest extends HazelcastTestSupport {
         Node node = getNode(hz);
 
         PhoneHome phoneHome = new PhoneHome(node);
-        phoneHome.check(node);
+        phoneHome.check();
         assertNull(phoneHome.phoneHomeFuture);
     }
 
@@ -109,7 +108,7 @@ public class PhoneHomeTest extends HazelcastTestSupport {
         Node node = getNode(hz);
 
         PhoneHome phoneHome = new PhoneHome(node);
-        phoneHome.check(node);
+        phoneHome.check();
         assertNotNull(phoneHome.phoneHomeFuture);
         assertFalse(phoneHome.phoneHomeFuture.isDone());
         assertFalse(phoneHome.phoneHomeFuture.isCancelled());
@@ -135,3 +134,4 @@ public class PhoneHomeTest extends HazelcastTestSupport {
         assertEquals("I", phoneHome.convertToLetter(1000));
     }
 }
+
