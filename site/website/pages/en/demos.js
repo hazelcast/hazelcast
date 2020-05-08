@@ -9,7 +9,7 @@ class Demos extends React.Component {
         const {config: siteConfig} = this.props;
         const Button = props => (
             <div className="pluginWrapper buttonWrapper">
-                <a className="button" href={props.href} target={props.target}>
+                <a className="button" href={props.href} target="_blank">
                     {props.children}
                 </a>
             </div>
