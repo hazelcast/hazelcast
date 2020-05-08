@@ -37,6 +37,7 @@ public class SqlDataType extends SqlIdentifier {
     @Override
     @SuppressWarnings("checkstyle:CyclomaticComplexity")
     public void unparse(SqlWriter writer, int leftPrec, int rightPrec) {
+        // TODO: add `name` to QueryDataType ?
         if (type == QueryDataType.BOOLEAN) {
             writer.keyword("BOOLEAN");
         } else if (type == QueryDataType.TINYINT) {
