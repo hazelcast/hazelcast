@@ -36,10 +36,10 @@ import com.hazelcast.sql.impl.calcite.parse.SqlOption;
 import com.hazelcast.sql.impl.optimizer.OptimizationTask;
 import com.hazelcast.sql.impl.optimizer.SqlOptimizer;
 import com.hazelcast.sql.impl.plan.Plan;
-import com.hazelcast.sql.impl.schema.Catalog;
+import com.hazelcast.sql.impl.schema.ExternalCatalog;
 import com.hazelcast.sql.impl.schema.TableResolver;
-import com.hazelcast.sql.impl.schema.TableSchema;
-import com.hazelcast.sql.impl.schema.TableSchema.Field;
+import com.hazelcast.sql.impl.schema.ExternalTableSchema;
+import com.hazelcast.sql.impl.schema.ExternalTableSchema.Field;
 import com.hazelcast.sql.impl.schema.map.PartitionedMapTableResolver;
 import com.hazelcast.sql.impl.schema.map.ReplicatedMapTableResolver;
 import com.hazelcast.sql.impl.type.QueryDataType;
@@ -67,14 +67,14 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
     private final NodeEngine nodeEngine;
 
     /** Catalog. */
-    private final Catalog catalog;
+    private final ExternalCatalog catalog;
 
     /** Table resolvers used for schema resolution. */
     private final List<TableResolver> tableResolvers;
 
     public CalciteSqlOptimizer(NodeEngine nodeEngine) {
         this.nodeEngine = nodeEngine;
-        this.catalog = new Catalog(nodeEngine);
+        this.catalog = new ExternalCatalog(nodeEngine);
 
         tableResolvers = createTableResolvers(catalog, nodeEngine);
     }
@@ -123,7 +123,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
                                            .collect(toList());
         Map<String, String> options = sqlCreateTable.options()
                                                     .collect(toMap(SqlOption::key, SqlOption::value));
-        TableSchema schema = new TableSchema(sqlCreateTable.name(), sqlCreateTable.type(), fields, options);
+        ExternalTableSchema schema = new ExternalTableSchema(sqlCreateTable.name(), sqlCreateTable.type(), fields, options);
 
         catalog.createTable(schema, sqlCreateTable.getReplace(), sqlCreateTable.ifNotExists());
     }
@@ -189,7 +189,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         return visitor.getPlan();
     }
 
-    private static List<TableResolver> createTableResolvers(Catalog catalog, NodeEngine nodeEngine) {
+    private static List<TableResolver> createTableResolvers(ExternalCatalog catalog, NodeEngine nodeEngine) {
         List<TableResolver> res = new ArrayList<>(3);
 
         res.add(catalog);

@@ -31,7 +31,7 @@ import java.util.Objects;
 /**
  * User defined table schema definition.
  */
-public class TableSchema implements DataSerializable {
+public class ExternalTableSchema implements DataSerializable {
 
     private String name;
     private String type;
@@ -39,13 +39,13 @@ public class TableSchema implements DataSerializable {
     private Map<String, String> options;
 
     @SuppressWarnings("unused")
-    private TableSchema() {
+    private ExternalTableSchema() {
     }
 
-    public TableSchema(String name,
-                       String type,
-                       List<Field> fields,
-                       Map<String, String> options) {
+    public ExternalTableSchema(String name,
+                               String type,
+                               List<Field> fields,
+                               Map<String, String> options) {
         this.name = name;
         this.type = type;
         this.fields = fields;

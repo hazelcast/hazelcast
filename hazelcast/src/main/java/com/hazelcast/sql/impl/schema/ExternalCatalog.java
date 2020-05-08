@@ -31,7 +31,7 @@ import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.toList;
 
-public class Catalog implements TableResolver {
+public class ExternalCatalog implements TableResolver {
 
     // TODO: is it the best/right name?
     public static final String CATALOG_MAP_NAME = "__sql.catalog";
@@ -40,12 +40,12 @@ public class Catalog implements TableResolver {
 
     private final NodeEngine nodeEngine;
 
-    public Catalog(NodeEngine nodeEngine) {
+    public ExternalCatalog(NodeEngine nodeEngine) {
         this.nodeEngine = nodeEngine;
     }
 
-    public void createTable(TableSchema schema, boolean replace, boolean ifNotExists) {
-        Map<String, TableSchema> tables = nodeEngine.getHazelcastInstance().getReplicatedMap(CATALOG_MAP_NAME);
+    public void createTable(ExternalTableSchema schema, boolean replace, boolean ifNotExists) {
+        Map<String, ExternalTableSchema> tables = nodeEngine.getHazelcastInstance().getReplicatedMap(CATALOG_MAP_NAME);
 
         String name = schema.name();
         if (ifNotExists) {
@@ -58,7 +58,7 @@ public class Catalog implements TableResolver {
     }
 
     public void removeTable(String name, boolean ifExists) {
-        Map<String, TableSchema> tables = nodeEngine.getHazelcastInstance().getReplicatedMap(CATALOG_MAP_NAME);
+        Map<String, ExternalTableSchema> tables = nodeEngine.getHazelcastInstance().getReplicatedMap(CATALOG_MAP_NAME);
 
         if (tables.remove(name) == null && !ifExists) {
             throw new IllegalArgumentException("'" + name + "' table does not exist");
@@ -72,14 +72,14 @@ public class Catalog implements TableResolver {
 
     @Override
     public Collection<Table> getTables() {
-        Map<String, TableSchema> tables = nodeEngine.getHazelcastInstance().getReplicatedMap(CATALOG_MAP_NAME);
+        Map<String, ExternalTableSchema> tables = nodeEngine.getHazelcastInstance().getReplicatedMap(CATALOG_MAP_NAME);
 
         return tables.values().stream()
-                     .map(Catalog::toTable)
+                     .map(ExternalCatalog::toTable)
                      .collect(toList());
     }
 
-    private static Table toTable(TableSchema schema) {
+    private static Table toTable(ExternalTableSchema schema) {
         SqlConnector connector = SqlConnectorFactory.from(schema.type());
         return connector.createTable(SCHEMA_NAME_PUBLIC, schema.name(), schema.fields(), schema.options());
     }

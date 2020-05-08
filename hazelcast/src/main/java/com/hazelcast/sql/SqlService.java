@@ -26,7 +26,7 @@ public interface SqlService {
     /**
      * Execute query.
      *
-     * @param sql    SQL.
+     * @param sql SQL.
      * @param params Parameters.
      * @return Cursor.
      */

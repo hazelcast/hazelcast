@@ -17,7 +17,7 @@
 package com.hazelcast.sql.impl.connector;
 
 import com.hazelcast.sql.impl.schema.Table;
-import com.hazelcast.sql.impl.schema.TableSchema.Field;
+import com.hazelcast.sql.impl.schema.ExternalTableSchema.Field;
 
 import java.util.List;
 import java.util.Map;
