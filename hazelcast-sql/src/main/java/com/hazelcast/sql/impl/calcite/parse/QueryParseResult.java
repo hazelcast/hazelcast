@@ -25,22 +25,16 @@ import org.apache.calcite.sql.SqlNode;
  */
 public class QueryParseResult {
 
-    private final String sql;
     private final SqlNode node;
     private final RelDataType parameterRowType;
 
-    public QueryParseResult(String sql, SqlNode node, RelDataType parameterRowType) {
-        this.sql = sql;
+    public QueryParseResult(SqlNode node, RelDataType parameterRowType) {
         this.node = node;
         this.parameterRowType = parameterRowType;
     }
 
     public boolean isDdl() {
         return node.getKind().belongsTo(SqlKind.DDL);
-    }
-
-    public String getSql() {
-        return sql;
     }
 
     public SqlNode getNode() {

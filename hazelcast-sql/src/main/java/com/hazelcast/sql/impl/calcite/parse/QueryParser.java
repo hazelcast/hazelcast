@@ -66,6 +66,6 @@ public class QueryParser {
             throw QueryException.error(SqlErrorCode.PARSING, e.getMessage(), e);
         }
 
-        return new QueryParseResult(sql, node, parameterRowType);
+        return new QueryParseResult(node, parameterRowType);
     }
 }
