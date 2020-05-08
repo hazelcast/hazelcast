@@ -68,7 +68,7 @@ public class SqlCursorImpl implements SqlCursor {
 
             return iterator0;
         } else {
-            throw QueryException.error("Iteartor can be requested only once.");
+            throw QueryException.error("Iterator can be requested only once.");
         }
     }
 

@@ -102,12 +102,12 @@ public final class OptimizerContext {
         int memberCount
     ) {
         // Prepare search paths.
-        List<List<String>> searchPaths0 = HazelcastSchemaUtils.prepareSearchPaths(currentSearchPaths, tableResolvers);
+        List<List<String>> searchPaths = HazelcastSchemaUtils.prepareSearchPaths(currentSearchPaths, tableResolvers);
 
         // Resolve tables.
         HazelcastSchema rootSchema = HazelcastSchemaUtils.createRootSchema(tableResolvers);
 
-        return create(rootSchema, searchPaths0, memberCount);
+        return create(rootSchema, searchPaths, memberCount);
     }
 
     public static OptimizerContext create(

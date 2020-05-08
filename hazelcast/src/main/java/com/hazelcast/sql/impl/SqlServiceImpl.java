@@ -16,19 +16,19 @@
 
 package com.hazelcast.sql.impl;
 
-import com.hazelcast.core.HazelcastException;
 import com.hazelcast.config.SqlConfig;
+import com.hazelcast.core.HazelcastException;
 import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.sql.impl.optimizer.NotImplementedSqlOptimizer;
-import com.hazelcast.sql.impl.optimizer.OptimizationTask;
-import com.hazelcast.sql.impl.optimizer.SqlOptimizer;
 import com.hazelcast.sql.SqlCursor;
 import com.hazelcast.sql.SqlQuery;
 import com.hazelcast.sql.SqlService;
+import com.hazelcast.sql.impl.optimizer.NotImplementedSqlOptimizer;
+import com.hazelcast.sql.impl.optimizer.OptimizationTask;
+import com.hazelcast.sql.impl.optimizer.SqlOptimizer;
 import com.hazelcast.sql.impl.plan.Plan;
 import com.hazelcast.sql.impl.state.QueryState;
 
@@ -156,7 +156,7 @@ public class SqlServiceImpl implements SqlService, Consumer<Packet> {
         }
 
         if (timeout < 0) {
-            throw QueryException.error("Timeout cannot be negative: " + pageSize);
+            throw QueryException.error("Timeout cannot be negative: " + timeout);
         }
 
         if (pageSize <= 0) {
@@ -174,10 +174,16 @@ public class SqlServiceImpl implements SqlService, Consumer<Packet> {
             }
 
             Plan plan = prepare(unwrappedSql);
+            if (plan == null) {
+                return new SingleValueSqlCursor(0);
+            }
 
             state = internalService.executeExplain(plan);
         } else {
             Plan plan = prepare(sql);
+            if (plan == null) {
+                return new SingleValueSqlCursor(0);
+            }
 
             state = internalService.execute(
                 plan,

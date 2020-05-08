@@ -88,7 +88,7 @@ public abstract class OptimizerTestSupport {
     /**
      * Optimize with the given schema.
      *
-     * @param sql SQL.
+     * @param sql    SQL.
      * @param schema Schema.
      * @return Result.
      */
@@ -214,7 +214,7 @@ public abstract class OptimizerTestSupport {
         return ColumnExpression.create(col, QueryDataType.VARCHAR);
     }
 
-    protected static List<TableField> fields(Object ... namesAndTypes) {
+    protected static List<TableField> fields(Object... namesAndTypes) {
         assert namesAndTypes.length % 2 == 0;
 
         List<TableField> res = new ArrayList<>();
