@@ -259,6 +259,7 @@ import com.hazelcast.client.impl.protocol.codec.MultiMapContainsValueCodec;
 import com.hazelcast.client.impl.protocol.codec.MultiMapDeleteCodec;
 import com.hazelcast.client.impl.protocol.codec.MultiMapEntrySetCodec;
 import com.hazelcast.client.impl.protocol.codec.MultiMapForceUnlockCodec;
+import com.hazelcast.client.impl.protocol.codec.MultiMapGetAllCodec;
 import com.hazelcast.client.impl.protocol.codec.MultiMapGetCodec;
 import com.hazelcast.client.impl.protocol.codec.MultiMapIsLockedCodec;
 import com.hazelcast.client.impl.protocol.codec.MultiMapKeySetCodec;
@@ -631,6 +632,7 @@ import com.hazelcast.client.impl.protocol.task.multimap.MultiMapContainsValueMes
 import com.hazelcast.client.impl.protocol.task.multimap.MultiMapDeleteMessageTask;
 import com.hazelcast.client.impl.protocol.task.multimap.MultiMapEntrySetMessageTask;
 import com.hazelcast.client.impl.protocol.task.multimap.MultiMapForceUnlockMessageTask;
+import com.hazelcast.client.impl.protocol.task.multimap.MultiMapGetAllMessageTask;
 import com.hazelcast.client.impl.protocol.task.multimap.MultiMapGetMessageTask;
 import com.hazelcast.client.impl.protocol.task.multimap.MultiMapIsLockedMessageTask;
 import com.hazelcast.client.impl.protocol.task.multimap.MultiMapKeySetMessageTask;
@@ -1166,6 +1168,8 @@ public class DefaultMessageTaskFactoryProvider implements MessageTaskFactoryProv
                 (cm, con) -> new MultiMapPutMessageTask(cm, node, con));
         factories.put(MultiMapPutAllCodec.REQUEST_MESSAGE_TYPE,
                 (cm, con) -> new MultiMapPutAllMessageTask(cm, node, con));
+        factories.put(MultiMapGetAllCodec.REQUEST_MESSAGE_TYPE,
+                (cm, con) -> new MultiMapGetAllMessageTask(cm, node, con));
         factories.put(MultiMapEntrySetCodec.REQUEST_MESSAGE_TYPE,
                 (cm, con) -> new MultiMapEntrySetMessageTask(cm, node, con));
         factories.put(MultiMapValueCountCodec.REQUEST_MESSAGE_TYPE,

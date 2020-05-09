@@ -38,6 +38,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
@@ -49,6 +50,8 @@ import static com.hazelcast.test.HazelcastTestSupport.assertOpenEventually;
 import static com.hazelcast.test.HazelcastTestSupport.randomString;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -110,10 +113,15 @@ public class ClientMultiMapTest {
                 .setName("testMultiMapSet")
                 .setValueCollectionType(MultiMapConfig.ValueCollectionType.SET)
                 .setBinary(false);
+        MultiMapConfig multiMapConfig3 = new MultiMapConfig()
+                .setName("testMultiMapGetAll")
+                .setValueCollectionType(MultiMapConfig.ValueCollectionType.LIST)
+                .setBinary(false);
 
         client.getConfig()
                 .addMultiMapConfig(multiMapConfig1)
-                .addMultiMapConfig(multiMapConfig2);
+                .addMultiMapConfig(multiMapConfig2)
+                .addMultiMapConfig(multiMapConfig3);
     }
 
     public void testMultiMapPutAllTemplate(Map<String, Collection<? extends Integer>> expectedMultiMap,
@@ -204,6 +212,37 @@ public class ClientMultiMapTest {
                     );
                 }
         );
+    }
+
+    @Test
+    public void testMultiMapGetAll() {
+        testMultiMapPutAllSetup();
+        MultiMap<String, Integer> multiMap1 = client.getMultiMap("testMultiMapGetAll");
+        Map<String, Collection<? extends Integer>> expectedMultiMap = new HashMap<>();
+        expectedMultiMap.put("A", new ArrayList<>(Arrays.asList(1, 1, 1, 1, 2)));
+        expectedMultiMap.put("B", new ArrayList<>(Arrays.asList(6, 6, 6, 9)));
+        expectedMultiMap.put("C", new ArrayList<>(Arrays.asList(10, 10, 10, 10, 10, 15)));
+        multiMap1.putAllAsync(expectedMultiMap).toCompletableFuture().join();
+
+        Set<String> keys = new HashSet<>(Arrays.asList("A", "C"));
+        Map<String, Collection<Integer>> multiMap2 = multiMap1.getAll(keys);
+
+        for (String key : keys) {
+            assertEquals(expectedMultiMap.get(key).size(), multiMap2.get(key).size());
+        }
+    }
+
+    @Test
+    public void testMultiMapGetAllNonExistent() {
+        testMultiMapPutAllSetup();
+        MultiMap<String, Integer> multiMap1 = client.getMultiMap("testMultiMapGetAll");
+        Set<String> keys = new HashSet<>(Arrays.asList("D", "E", "F"));
+
+        Map<String, Collection<Integer>> multiMap2 = multiMap1.getAll(keys);
+        assertNotNull(multiMap2);
+        for (String key : keys) {
+            assertNull(multiMap2.get(key));
+        }
     }
 
     @Test(expected = NullPointerException.class)

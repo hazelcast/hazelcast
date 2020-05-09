@@ -28,10 +28,12 @@ import com.hazelcast.multimap.impl.operations.DeleteBackupOperation;
 import com.hazelcast.multimap.impl.operations.DeleteOperation;
 import com.hazelcast.multimap.impl.operations.EntrySetOperation;
 import com.hazelcast.multimap.impl.operations.EntrySetResponse;
+import com.hazelcast.multimap.impl.operations.GetAllOperation;
 import com.hazelcast.multimap.impl.operations.GetOperation;
 import com.hazelcast.multimap.impl.operations.KeySetOperation;
 import com.hazelcast.multimap.impl.operations.MergeBackupOperation;
 import com.hazelcast.multimap.impl.operations.MergeOperation;
+import com.hazelcast.multimap.impl.operations.MultiMapGetAllOperationFactory;
 import com.hazelcast.multimap.impl.operations.MultiMapOperationFactory;
 import com.hazelcast.multimap.impl.operations.MultiMapPutAllOperationFactory;
 import com.hazelcast.multimap.impl.operations.MultiMapReplicationOperation;
@@ -128,6 +130,7 @@ public class MultiMapDataSerializerHook implements DataSerializerHook {
     public static final int PUT_ALL = 53;
     public static final int PUT_ALL_BACKUP = 54;
     public static final int PUT_ALL_PARTITION_AWARE_FACTORY = 55;
+    public static final int GET_ALL_PARTITION_AWARE_FACTORY = 56;
 
     public int getFactoryId() {
         return F_ID;
@@ -135,13 +138,14 @@ public class MultiMapDataSerializerHook implements DataSerializerHook {
 
     public DataSerializableFactory createFactory() {
         ConstructorFunction<Integer, IdentifiedDataSerializable>[] constructors
-                = new ConstructorFunction[PUT_ALL_PARTITION_AWARE_FACTORY + 1];
+                = new ConstructorFunction[GET_ALL_PARTITION_AWARE_FACTORY + 1];
         constructors[CLEAR_BACKUP] = arg -> new ClearBackupOperation();
         constructors[CLEAR] = arg -> new ClearOperation();
         constructors[CONTAINS_ENTRY] = arg -> new ContainsEntryOperation();
         constructors[COUNT] = arg -> new CountOperation();
         constructors[ENTRY_SET] = arg -> new EntrySetOperation();
         constructors[GET] = arg -> new GetOperation();
+        constructors[GET_ALL] = arg -> new GetAllOperation();
         constructors[KEY_SET] = arg -> new KeySetOperation();
         constructors[PUT_BACKUP] = arg -> new PutBackupOperation();
         constructors[PUT] = arg -> new PutOperation();
@@ -180,6 +184,7 @@ public class MultiMapDataSerializerHook implements DataSerializerHook {
         constructors[PUT_ALL] = arg -> new PutAllOperation();
         constructors[PUT_ALL_BACKUP] = arg -> new PutAllBackupOperation();
         constructors[PUT_ALL_PARTITION_AWARE_FACTORY] = arg -> new MultiMapPutAllOperationFactory();
+        constructors[GET_ALL_PARTITION_AWARE_FACTORY] = arg -> new MultiMapGetAllOperationFactory();
 
         return new ArrayDataSerializableFactory(constructors);
     }

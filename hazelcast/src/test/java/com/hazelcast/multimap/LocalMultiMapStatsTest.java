@@ -34,7 +34,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Consumer;
 
 import static org.junit.Assert.assertEquals;
@@ -168,6 +170,27 @@ public class LocalMultiMapStatsTest extends HazelcastTestSupport {
         LocalMapStats localMapStats = getMultiMapStats();
         assertEquals(100, localMapStats.getGetOperationCount());
         assertEquals(100, localMapStats.getHits());
+    }
+
+    @Test
+    public void testGetAllAndHitsGenerated() {
+        MultiMap<Integer, Integer> map = getMultiMap();
+        Set<Integer> keySet = new HashSet<>();
+        for (int i = 0; i < 100; i++) {
+            map.put(i, i);
+            if (i % 2 == 0) {
+                keySet.add(i);
+            }
+        }
+        map.getAll(keySet);
+        testGetAllAndHitsGeneratedVerify();
+    }
+
+    public void testGetAllAndHitsGeneratedVerify() {
+        LocalMapStats localMapStats = getMultiMapStats();
+        assertEquals(100, localMapStats.getOwnedEntryCount());
+        assertEquals(50, localMapStats.getGetOperationCount());
+        assertEquals(50, localMapStats.getHits());
     }
 
     @Test

@@ -37,7 +37,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static java.lang.String.format;
@@ -186,6 +188,36 @@ public class MultiMapContainerStatisticsTest extends HazelcastTestSupport {
         sleepMillis(10);
         multiMap.putAllAsync(key, expectedMultiMap.get(key)).toCompletableFuture().join();
         assertNewLastAccessTime();
+        assertSameLastUpdateTime();
+
+        // a clear and put operation updates the lastAccessTime and lastUpdateTime
+        sleepMillis(10);
+        multiMap.clear();
+        multiMap.put(key, "value");
+        assertNewLastAccessTime();
+        assertNewLastUpdateTime();
+
+        Set<String> keySet = new HashSet<>();
+        // a successful getAll operation updates the lastAccessTime, but not the lastUpdateTime
+        sleepMillis(10);
+        keySet.add(key);
+        multiMap.getAll(keySet);
+        assertNewLastAccessTime();
+        assertSameLastUpdateTime();
+
+        // a clear and put operation updates the lastAccessTime and lastUpdateTime
+        sleepMillis(10);
+        multiMap.clear();
+        multiMap.put(key, "value");
+        assertNewLastAccessTime();
+        assertNewLastUpdateTime();
+
+        // an unsuccessful getAll operation neither updates the lastAccessTime nor the lastUpdateTime
+        sleepMillis(10);
+        keySet.clear();
+        keySet.add("nokey");
+        multiMap.getAll(keySet);
+        assertSameLastAccessTimeOnBackup();
         assertSameLastUpdateTime();
 
         // no operation should update the lastAccessTime or lastUpdateTime on the backup container

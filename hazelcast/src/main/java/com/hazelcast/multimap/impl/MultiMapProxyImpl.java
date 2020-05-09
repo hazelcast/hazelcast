@@ -52,7 +52,6 @@ import java.util.UUID;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.internal.util.MapUtil.createHashMap;
 import static com.hazelcast.internal.util.Preconditions.checkInstanceOf;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.Preconditions.checkPositive;
@@ -140,32 +139,31 @@ public class MultiMapProxyImpl<K, V>
 
     @Override
     public Map<K, Collection<V>> getAll(@Nullable Set<K> keys) {
-//        if (CollectionUtil.isEmpty(keys)) {
-//            // Wrap emptyMap() into unmodifiableMap to make sure put/putAll methods throw UnsupportedOperationException
-//            return Collections.unmodifiableMap(emptyMap());
-//        }
-//
-//        int keysSize = keys.size();
-//        List<Data> dataKeys = new LinkedList<>();
-//        List<Object> resultingKeyValuePairs = new ArrayList<>(keysSize * 2);
-//        //getAllInternal(keys, dataKeys, resultingKeyValuePairs);
-//
-//        Map<K, V> result = createHashMap(keysSize);
-//        for (int i = 0; i < resultingKeyValuePairs.size(); ) {
-//            K key = toObject(resultingKeyValuePairs.get(i++));
-//            V value = toObject(resultingKeyValuePairs.get(i++));
-//            result.put(key, value);
-//        }
-//        return Collections.unmodifiableMap(result);
-
-        //simplistic
-        Map<K, Collection<V>> mmap = new HashMap<>();
-        for(K key:keys){
-            Collection<V> coll = get(key);
-            mmap.put(key, coll);
+        checkTrueUnsupportedOperation(isClusterVersionGreaterOrEqual(Versions.V4_1), MINIMUM_VERSION_ERROR_4_1);
+        if (CollectionUtil.isEmpty(keys)) {
+            // Wrap emptyMap() into unmodifiableMap to make sure put/putAll methods throw UnsupportedOperationException
+            return Collections.unmodifiableMap(emptyMap());
         }
-        return mmap;
 
+        NodeEngine nodeEngine = getNodeEngine();
+        List<Data> dataKeys = new LinkedList<>();
+        for (K key : keys) {
+            checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
+            dataKeys.add(toData(key));
+        }
+        Map<Data, List<Data>> resultingKeyValuePairs = new HashMap<>();
+        getAllInternal(dataKeys, resultingKeyValuePairs);
+
+        Map<K, Collection<V>> decodedResult = new HashMap<>();
+        for (Map.Entry<Data, List<Data>> entry : resultingKeyValuePairs.entrySet()) {
+            K key = nodeEngine.toObject(entry.getKey());
+            Collection<V> coll = new ArrayList<>();
+            for (Data d : entry.getValue()) {
+                coll.add(nodeEngine.toObject(d));
+            }
+            decodedResult.put(key, coll);
+        }
+        return Collections.unmodifiableMap(decodedResult);
     }
 
     @Override
@@ -186,7 +184,7 @@ public class MultiMapProxyImpl<K, V>
 
         NodeEngine nodeEngine = getNodeEngine();
         Data dataKey = nodeEngine.toData(key);
-        MultiMapResponse result = getAllInternal(dataKey);
+        MultiMapResponse result = getInternal(dataKey);
         return result.getObjectCollection(nodeEngine);
     }
 

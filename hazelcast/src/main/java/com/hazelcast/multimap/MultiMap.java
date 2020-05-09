@@ -102,7 +102,7 @@ public interface MultiMap<K, V> extends BaseMultiMap<K, V> {
     CompletionStage<Void> putAllAsync(@Nonnull K key, @Nonnull Collection<? extends V> value);
 
     /**
-     * Returns an immutable map of entries for the given keys.
+     * Returns an immutable map of collection of entries for the given keys.
      * <p>
      * <b>Warning 1:</b>
      * <p>
@@ -116,17 +116,10 @@ public interface MultiMap<K, V> extends BaseMultiMap<K, V> {
      * of the {@code keys}, not the actual implementations of {@code hashCode}
      * and {@code equals} defined in the {@code key}'s class.
      *
-     * <p><b>Interactions with the map store</b>
-     * <p>
-     * If any keys are not found in memory, {@link MapLoader#loadAll}
-     * is called with the missing keys. Exceptions thrown by
-     * loadAll fail the operation and are propagated to the caller.
-     *
      * @param keys keys to get (keys inside the collection cannot be null)
-     * @return an immutable map of entries
+     * @return an immutable map of collection of entries
      * @throws NullPointerException if any of the specified
-     *                              keys are null or if any key or any value returned
-     *                              from {@link MapLoader#loadAll} is {@code null}.
+     *                              keys are null
      */
     Map<K, Collection<V>> getAll(@Nullable Set<K> keys);
 
