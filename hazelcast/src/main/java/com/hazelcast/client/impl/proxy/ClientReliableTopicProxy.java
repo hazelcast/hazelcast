@@ -18,12 +18,9 @@ package com.hazelcast.client.impl.proxy;
 
 import com.hazelcast.client.config.ClientReliableTopicConfig;
 import com.hazelcast.client.impl.ClientDelegatingFuture;
-import com.hazelcast.client.impl.clientside.ClientMessageDecoder;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.codec.TopicPublishAllAsyncCodec;
 import com.hazelcast.client.impl.protocol.codec.TopicPublishAllCodec;
-import com.hazelcast.client.impl.protocol.codec.TopicPublishAsyncCodec;
 import com.hazelcast.client.impl.protocol.codec.TopicPublishCodec;
 import com.hazelcast.client.impl.spi.ClientContext;
 import com.hazelcast.client.impl.spi.ClientProxy;
@@ -35,6 +32,7 @@ import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.ringbuffer.OverflowPolicy;
 import com.hazelcast.ringbuffer.Ringbuffer;
+import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.topic.ITopic;
 import com.hazelcast.topic.LocalTopicStats;
 import com.hazelcast.topic.MessageListener;
@@ -48,7 +46,6 @@ import com.hazelcast.topic.impl.reliable.ReliableTopicMessage;
 import javax.annotation.Nonnull;
 import java.util.Collection;
 import java.util.UUID;
-import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executor;
@@ -77,12 +74,6 @@ public class ClientReliableTopicProxy<E> extends ClientProxy implements ITopic<E
     private static final String NULL_LISTENER_IS_NOT_ALLOWED = "Null listener is not allowed!";
     private static final int MAX_BACKOFF = 2000;
     private static final int INITIAL_BACKOFF_MS = 100;
-
-    private static final ClientMessageDecoder PUBLISH_ASYNC_RESPONSE_DECODER =
-            clientMessage -> TopicPublishAsyncCodec.decodeResponse(clientMessage).response;
-
-    private static final ClientMessageDecoder PUBLISH_ALL_ASYNC_RESPONSE_DECODER =
-            clientMessage -> TopicPublishAllAsyncCodec.decodeResponse(clientMessage).response;
 
     private final ILogger logger;
     private final ConcurrentMap<UUID, MessageRunner<E>> runnersMap = new ConcurrentHashMap<UUID, MessageRunner<E>>();
@@ -139,18 +130,12 @@ public class ClientReliableTopicProxy<E> extends ClientProxy implements ITopic<E
     }
 
     @Override
-    public CompletionStage<E> publishAsync(@Nonnull E message) {
+    public InternalCompletableFuture<E> publishAsync(@Nonnull E message) {
         checkNotNull(message, NULL_MESSAGE_IS_NOT_ALLOWED);
 
         Data element = toData(message);
         ClientMessage request = TopicPublishCodec.encodeRequest(name, element);
-        try {
-            ClientInvocationFuture invocationFuture = new ClientInvocation(getClient(), request, getName()).invoke();
-            return new ClientDelegatingFuture<>(invocationFuture, getSerializationService(),
-                    PUBLISH_ASYNC_RESPONSE_DECODER);
-        } catch (Exception e) {
-            throw rethrow(e);
-        }
+        return publishAsyncInternal(request);
     }
 
     private void addOrOverwrite(ReliableTopicMessage message) throws Exception {
@@ -244,16 +229,19 @@ public class ClientReliableTopicProxy<E> extends ClientProxy implements ITopic<E
     }
 
     @Override
-    public CompletionStage<E> publishAllAsync(@Nonnull Collection<? extends E> messages) {
+    public InternalCompletableFuture<E> publishAllAsync(@Nonnull Collection<? extends E> messages) {
         checkNotNull(messages, NULL_MESSAGE_IS_NOT_ALLOWED);
         checkNoNullInside(messages, NULL_MESSAGE_IS_NOT_ALLOWED);
 
         Collection<Data> dataCollection = objectToDataCollection(messages, getSerializationService());
         ClientMessage request = TopicPublishAllCodec.encodeRequest(name, dataCollection);
+        return publishAsyncInternal(request);
+    }
 
+    protected <T> InternalCompletableFuture<T> publishAsyncInternal(ClientMessage clientMessage) {
         try {
-            ClientInvocationFuture invocationFuture = new ClientInvocation(getClient(), request, getName()).invoke();
-            return new ClientDelegatingFuture<>(invocationFuture, getSerializationService(), PUBLISH_ALL_ASYNC_RESPONSE_DECODER);
+            final ClientInvocationFuture invocationFuture = new ClientInvocation(getClient(), clientMessage, getName()).invoke();
+            return new ClientDelegatingFuture<T>(invocationFuture, getSerializationService(), clientMessageDecoder -> null);
         } catch (Exception e) {
             throw rethrow(e);
         }

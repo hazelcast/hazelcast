@@ -19,6 +19,7 @@ package com.hazelcast.topic.impl;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.impl.InvocationFuture;
 import com.hazelcast.topic.ITopic;
 import com.hazelcast.topic.LocalTopicStats;
 import com.hazelcast.topic.MessageListener;
@@ -26,8 +27,8 @@ import com.hazelcast.topic.MessageListener;
 import javax.annotation.Nonnull;
 import java.util.Collection;
 import java.util.UUID;
-import java.util.concurrent.CompletionStage;
 
+import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.internal.util.Preconditions.checkNoNullInside;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
@@ -55,9 +56,9 @@ public class TopicProxy<E> extends TopicProxySupport implements ITopic<E> {
     }
 
     @Override
-    public CompletionStage<E> publishAsync(@Nonnull E message) {
+    public InvocationFuture<E> publishAsync(@Nonnull E message) {
         checkNotNull(message, NULL_MESSAGE_IS_NOT_ALLOWED);
-        Operation op = new PublishAsyncOperation(getName(), toData(message)).setPartitionId(partitionId);
+        Operation op = new PublishOperation(getName(), toData(message)).setPartitionId(partitionId);
         return invokeOnPartition(op);
     }
 
@@ -84,14 +85,19 @@ public class TopicProxy<E> extends TopicProxySupport implements ITopic<E> {
         checkNotNull(messages, NULL_MESSAGE_IS_NOT_ALLOWED);
         checkNoNullInside(messages, NULL_MESSAGE_IS_NOT_ALLOWED);
         Operation op = new PublishAllOperation(getName(), toDataArray(messages)).setPartitionId(partitionId);
-        invokeOnPartition(op);
+
+        try {
+            invokeOnPartition(op).get();
+        } catch (Exception e) {
+            throw rethrow(e);
+        }
     }
 
     @Override
-    public CompletionStage<E> publishAllAsync(@Nonnull Collection<? extends E> messages) {
+    public InvocationFuture<E> publishAllAsync(@Nonnull Collection<? extends E> messages) {
         checkNotNull(messages, NULL_MESSAGE_IS_NOT_ALLOWED);
         checkNoNullInside(messages, NULL_MESSAGE_IS_NOT_ALLOWED);
-        Operation op = new PublishAllAsyncOperation(getName(), toDataArray(messages)).setPartitionId(partitionId);
+        Operation op = new PublishAllOperation(getName(), toDataArray(messages)).setPartitionId(partitionId);
         return invokeOnPartition(op);
     }
 

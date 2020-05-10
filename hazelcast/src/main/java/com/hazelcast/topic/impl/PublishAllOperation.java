@@ -90,7 +90,7 @@ public class PublishAllOperation extends AbstractNamedOperation
 
     @Override
     public int getClassId() {
-        return TopicDataSerializerHook.PUBLISH;
+        return TopicDataSerializerHook.PUBLISH_ALL;
     }
 
     @Override

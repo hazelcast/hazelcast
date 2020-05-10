@@ -31,6 +31,7 @@ import com.hazelcast.ringbuffer.Ringbuffer;
 import com.hazelcast.spi.impl.AbstractDistributedObject;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.impl.InvocationFuture;
 import com.hazelcast.topic.ITopic;
 import com.hazelcast.topic.LocalTopicStats;
 import com.hazelcast.topic.MessageListener;
@@ -43,17 +44,19 @@ import com.hazelcast.topic.impl.PublishOperation;
 import javax.annotation.Nonnull;
 import java.util.Collection;
 import java.util.UUID;
-import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executor;
 
 import static com.hazelcast.internal.util.ExceptionUtil.peel;
+import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.internal.util.Preconditions.checkNoNullInside;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.ringbuffer.impl.RingbufferService.TOPIC_RB_PREFIX;
 import static com.hazelcast.spi.impl.executionservice.ExecutionService.ASYNC_EXECUTOR;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
+
+
 
 
 /**
@@ -191,9 +194,10 @@ public class ReliableTopicProxy<E> extends AbstractDistributedObject<ReliableTop
     }
 
     @Override
-    public CompletionStage<E> publishAsync(@Nonnull E message) {
+    public InvocationFuture<E> publishAsync(@Nonnull E message) {
         checkNotNull(message, NULL_MESSAGE_IS_NOT_ALLOWED);
-        Operation op = new PublishOperation(name, toData(message));
+        Data data = toData(message);
+        Operation op = new PublishOperation(name, data);
         return invokeOnPartition(op);
     }
 
@@ -276,11 +280,15 @@ public class ReliableTopicProxy<E> extends AbstractDistributedObject<ReliableTop
         checkNoNullInside(messages, NULL_MESSAGE_IS_NOT_ALLOWED);
 
         Operation op = new PublishAllOperation(name, toDataArray(messages));
-        invokeOnPartition(op);
+        try {
+            invokeOnPartition(op).get();
+        } catch (Exception e) {
+            throw rethrow(e);
+        }
     }
 
     @Override
-    public CompletionStage<E> publishAllAsync(@Nonnull Collection<? extends E> messages) {
+    public InvocationFuture<E> publishAllAsync(@Nonnull Collection<? extends E> messages) {
         checkNotNull(messages, NULL_MESSAGE_IS_NOT_ALLOWED);
         checkNoNullInside(messages, NULL_MESSAGE_IS_NOT_ALLOWED);
         Operation op = new PublishAllOperation(getName(), toDataArray(messages));
