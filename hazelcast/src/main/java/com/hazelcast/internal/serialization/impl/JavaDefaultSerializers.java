@@ -17,11 +17,12 @@
 package com.hazelcast.internal.serialization.impl;
 
 import com.hazelcast.core.HazelcastJsonValue;
+import com.hazelcast.internal.compatibility.serialization.impl.CompatibilitySerializationConstants;
 import com.hazelcast.internal.nio.BufferObjectDataInput;
 import com.hazelcast.internal.nio.ClassLoaderUtil;
-import com.hazelcast.nio.serialization.ClassNameFilter;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.ClassNameFilter;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.nio.serialization.StreamSerializer;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
@@ -38,14 +39,10 @@ import java.util.Date;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
+import static com.hazelcast.internal.nio.IOUtil.newObjectInputStream;
 import static com.hazelcast.internal.serialization.impl.SerializationConstants.JAVASCRIPT_JSON_SERIALIZATION_TYPE;
-import static com.hazelcast.internal.serialization.impl.SerializationConstants.JAVA_DEFAULT_TYPE_BIG_DECIMAL;
-import static com.hazelcast.internal.serialization.impl.SerializationConstants.JAVA_DEFAULT_TYPE_BIG_INTEGER;
-import static com.hazelcast.internal.serialization.impl.SerializationConstants.JAVA_DEFAULT_TYPE_CLASS;
-import static com.hazelcast.internal.serialization.impl.SerializationConstants.JAVA_DEFAULT_TYPE_DATE;
 import static com.hazelcast.internal.serialization.impl.SerializationConstants.JAVA_DEFAULT_TYPE_EXTERNALIZABLE;
 import static com.hazelcast.internal.serialization.impl.SerializationConstants.JAVA_DEFAULT_TYPE_SERIALIZABLE;
-import static com.hazelcast.internal.nio.IOUtil.newObjectInputStream;
 import static java.lang.Math.max;
 
 
@@ -211,10 +208,18 @@ public final class JavaDefaultSerializers {
     }
 
     public static final class BigIntegerSerializer extends SingletonSerializer<BigInteger> {
+        /** Determines if ser-de should conform the 3.x format */
+        private final boolean isCompatibility;
+
+        public BigIntegerSerializer(boolean isCompatibility) {
+            this.isCompatibility = isCompatibility;
+        }
 
         @Override
         public int getTypeId() {
-            return JAVA_DEFAULT_TYPE_BIG_INTEGER;
+            return isCompatibility
+                    ? CompatibilitySerializationConstants.JAVA_DEFAULT_TYPE_BIG_INTEGER
+                    : SerializationConstants.JAVA_DEFAULT_TYPE_BIG_INTEGER;
         }
 
         @Override
@@ -234,11 +239,20 @@ public final class JavaDefaultSerializers {
 
     public static final class BigDecimalSerializer extends SingletonSerializer<BigDecimal> {
 
-        final BigIntegerSerializer bigIntegerSerializer = new BigIntegerSerializer();
+        final BigIntegerSerializer bigIntegerSerializer;
+        /** Determines if ser-de should conform the 3.x format */
+        final boolean isCompatibility;
+
+        public BigDecimalSerializer(boolean isCompatibility) {
+            this.bigIntegerSerializer = new BigIntegerSerializer(isCompatibility);
+            this.isCompatibility = isCompatibility;
+        }
 
         @Override
         public int getTypeId() {
-            return JAVA_DEFAULT_TYPE_BIG_DECIMAL;
+            return isCompatibility
+                    ? CompatibilitySerializationConstants.JAVA_DEFAULT_TYPE_BIG_DECIMAL
+                    : SerializationConstants.JAVA_DEFAULT_TYPE_BIG_DECIMAL;
         }
 
         @Override
@@ -258,10 +272,18 @@ public final class JavaDefaultSerializers {
     }
 
     public static final class DateSerializer extends SingletonSerializer<Date> {
+        /** Determines if ser-de should conform the 3.x format */
+        private final boolean isCompatibility;
+
+        public DateSerializer(boolean isCompatibility) {
+            this.isCompatibility = isCompatibility;
+        }
 
         @Override
         public int getTypeId() {
-            return JAVA_DEFAULT_TYPE_DATE;
+            return isCompatibility
+                    ? CompatibilitySerializationConstants.JAVA_DEFAULT_TYPE_DATE
+                    : SerializationConstants.JAVA_DEFAULT_TYPE_DATE;
         }
 
         @Override
@@ -276,10 +298,18 @@ public final class JavaDefaultSerializers {
     }
 
     public static final class ClassSerializer extends SingletonSerializer<Class> {
+        /** Determines if ser-de should conform the 3.x format */
+        private final boolean isCompatibility;
+
+        public ClassSerializer(boolean isCompatibility) {
+            this.isCompatibility = isCompatibility;
+        }
 
         @Override
         public int getTypeId() {
-            return JAVA_DEFAULT_TYPE_CLASS;
+            return isCompatibility
+                    ? CompatibilitySerializationConstants.JAVA_DEFAULT_TYPE_CLASS
+                    : SerializationConstants.JAVA_DEFAULT_TYPE_CLASS;
         }
 
         @Override

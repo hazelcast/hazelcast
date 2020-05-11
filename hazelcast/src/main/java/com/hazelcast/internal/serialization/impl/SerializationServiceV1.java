@@ -116,8 +116,8 @@ public class SerializationServiceV1 extends AbstractSerializationService {
             portableContext.registerClassDefinition(cd);
         }
 
-        dataSerializerAdapter = createSerializerAdapter(
-                new DataSerializableSerializer(builder.dataSerializableFactories, builder.getClassLoader()));
+        dataSerializerAdapter = createSerializerAdapter(new DataSerializableSerializer(
+                builder.dataSerializableFactories, builder.getClassLoader(), builder.isCompatibility));
         portableSerializer = new PortableSerializer(portableContext, loader.getFactories());
         portableSerializerAdapter = createSerializerAdapter(portableSerializer);
 
@@ -125,8 +125,8 @@ public class SerializationServiceV1 extends AbstractSerializationService {
                 new JavaSerializer(builder.enableSharedObject, builder.enableCompression, builder.classNameFilter));
         javaExternalizableAdapter = createSerializerAdapter(
                 new JavaDefaultSerializers.ExternalizableSerializer(builder.enableCompression, builder.classNameFilter));
-        registerConstantSerializers();
-        registerJavaTypeSerializers();
+        registerConstantSerializers(builder.isCompatibility);
+        registerJavaTypeSerializers(builder.isCompatibility);
     }
 
     @Override
@@ -165,7 +165,7 @@ public class SerializationServiceV1 extends AbstractSerializationService {
         return portableContext;
     }
 
-    private void registerConstantSerializers() {
+    private void registerConstantSerializers(boolean isCompatibility) {
         registerConstant(null, nullSerializerAdapter);
         registerConstant(DataSerializable.class, dataSerializerAdapter);
         registerConstant(Portable.class, portableSerializerAdapter);
@@ -179,9 +179,13 @@ public class SerializationServiceV1 extends AbstractSerializationService {
         registerConstant(Float.class, new FloatSerializer());
         registerConstant(Double.class, new DoubleSerializer());
         registerConstant(String.class, new StringSerializer());
-        registerConstant(UUID.class, new UuidSerializer());
-        registerConstant(AbstractMap.SimpleEntry.class, new SimpleEntrySerializer());
-        registerConstant(AbstractMap.SimpleImmutableEntry.class, new ConstantSerializers.SimpleImmutableEntrySerializer());
+        if (!isCompatibility) {
+            // compatibility (3.x) members didn't have these serializers
+            registerConstant(UUID.class, new UuidSerializer());
+            registerConstant(AbstractMap.SimpleEntry.class, new SimpleEntrySerializer());
+            registerConstant(AbstractMap.SimpleImmutableEntry.class, new ConstantSerializers.SimpleImmutableEntrySerializer());
+        }
+
         //Arrays of primitives and String
         registerConstant(byte[].class, new TheByteArraySerializer());
         registerConstant(boolean[].class, new BooleanArraySerializer());
@@ -194,38 +198,44 @@ public class SerializationServiceV1 extends AbstractSerializationService {
         registerConstant(String[].class, new StringArraySerializer());
     }
 
-    private void registerJavaTypeSerializers() {
+    private void registerJavaTypeSerializers(boolean isCompatibility) {
         //Java extensions: more serializers
-        registerConstant(Class.class, new ClassSerializer());
-        registerConstant(Date.class, new DateSerializer());
-        registerConstant(BigInteger.class, new BigIntegerSerializer());
-        registerConstant(BigDecimal.class, new BigDecimalSerializer());
+        registerConstant(Class.class, new ClassSerializer(isCompatibility));
+        registerConstant(Date.class, new DateSerializer(isCompatibility));
+        registerConstant(BigInteger.class, new BigIntegerSerializer(isCompatibility));
+        registerConstant(BigDecimal.class, new BigDecimalSerializer(isCompatibility));
 
-        registerConstant(Object[].class, new ArrayStreamSerializer());
+        if (!isCompatibility) {
+            // compatibility (3.x) members didn't have this serializer
+            registerConstant(Object[].class, new ArrayStreamSerializer());
+        }
 
-        registerConstant(ArrayList.class, new ArrayListStreamSerializer());
-        registerConstant(LinkedList.class, new LinkedListStreamSerializer());
-        registerConstant(CopyOnWriteArrayList.class, new CopyOnWriteArrayListStreamSerializer());
+        registerConstant(ArrayList.class, new ArrayListStreamSerializer(isCompatibility));
+        registerConstant(LinkedList.class, new LinkedListStreamSerializer(isCompatibility));
+        if (!isCompatibility) {
+            // compatibility (3.x) members didn't have these serializers
+            registerConstant(CopyOnWriteArrayList.class, new CopyOnWriteArrayListStreamSerializer());
 
-        registerConstant(HashMap.class, new HashMapStreamSerializer());
-        registerConstant(ConcurrentSkipListMap.class, new ConcurrentSkipListMapStreamSerializer());
-        registerConstant(ConcurrentHashMap.class, new ConcurrentHashMapStreamSerializer());
-        registerConstant(LinkedHashMap.class, new LinkedHashMapStreamSerializer());
-        registerConstant(TreeMap.class, new TreeMapStreamSerializer());
+            registerConstant(HashMap.class, new HashMapStreamSerializer());
+            registerConstant(ConcurrentSkipListMap.class, new ConcurrentSkipListMapStreamSerializer());
+            registerConstant(ConcurrentHashMap.class, new ConcurrentHashMapStreamSerializer());
+            registerConstant(LinkedHashMap.class, new LinkedHashMapStreamSerializer());
+            registerConstant(TreeMap.class, new TreeMapStreamSerializer());
 
-        registerConstant(HashSet.class, new HashSetStreamSerializer());
-        registerConstant(TreeSet.class, new TreeSetStreamSerializer());
-        registerConstant(LinkedHashSet.class, new LinkedHashSetStreamSerializer());
-        registerConstant(CopyOnWriteArraySet.class, new CopyOnWriteArraySetStreamSerializer());
-        registerConstant(ConcurrentSkipListSet.class, new ConcurrentSkipListSetStreamSerializer());
-        registerConstant(ArrayDeque.class, new ArrayDequeStreamSerializer());
-        registerConstant(LinkedBlockingQueue.class, new LinkedBlockingQueueStreamSerializer());
-        registerConstant(ArrayBlockingQueue.class, new ArrayBlockingQueueStreamSerializer());
-        registerConstant(PriorityBlockingQueue.class, new PriorityBlockingQueueStreamSerializer());
-        registerConstant(PriorityQueue.class, new PriorityQueueStreamSerializer());
-        registerConstant(DelayQueue.class, new DelayQueueStreamSerializer());
-        registerConstant(SynchronousQueue.class, new SynchronousQueueStreamSerializer());
-        registerConstant(LinkedTransferQueue.class, new LinkedTransferQueueStreamSerializer());
+            registerConstant(HashSet.class, new HashSetStreamSerializer());
+            registerConstant(TreeSet.class, new TreeSetStreamSerializer());
+            registerConstant(LinkedHashSet.class, new LinkedHashSetStreamSerializer());
+            registerConstant(CopyOnWriteArraySet.class, new CopyOnWriteArraySetStreamSerializer());
+            registerConstant(ConcurrentSkipListSet.class, new ConcurrentSkipListSetStreamSerializer());
+            registerConstant(ArrayDeque.class, new ArrayDequeStreamSerializer());
+            registerConstant(LinkedBlockingQueue.class, new LinkedBlockingQueueStreamSerializer());
+            registerConstant(ArrayBlockingQueue.class, new ArrayBlockingQueueStreamSerializer());
+            registerConstant(PriorityBlockingQueue.class, new PriorityBlockingQueueStreamSerializer());
+            registerConstant(PriorityQueue.class, new PriorityQueueStreamSerializer());
+            registerConstant(DelayQueue.class, new DelayQueueStreamSerializer());
+            registerConstant(SynchronousQueue.class, new SynchronousQueueStreamSerializer());
+            registerConstant(LinkedTransferQueue.class, new LinkedTransferQueueStreamSerializer());
+        }
 
         safeRegister(Serializable.class, javaSerializerAdapter);
         safeRegister(Externalizable.class, javaExternalizableAdapter);
@@ -310,6 +320,7 @@ public class SerializationServiceV1 extends AbstractSerializationService {
         private boolean enableCompression;
         private boolean enableSharedObject;
         private ClassNameFilter classNameFilter;
+        private boolean isCompatibility;
 
         protected AbstractBuilder() {
         }
@@ -347,6 +358,27 @@ public class SerializationServiceV1 extends AbstractSerializationService {
         public final T withClassNameFilter(ClassNameFilter classNameFilter) {
             this.classNameFilter = classNameFilter;
             return self();
+        }
+
+        /**
+         * Sets whether the serialization service should (de)serialize in the
+         * compatibility (3.x) format.
+         *
+         * @param isCompatibility {@code true} if the serialized format should conform to the
+         *                        3.x serialization format, {@code false} otherwise
+         * @return this builder
+         */
+        public final T withCompatibility(boolean isCompatibility) {
+            this.isCompatibility = isCompatibility;
+            return self();
+        }
+
+        /**
+         * @return {@code true} if the serialized format of the serialization service should
+         * conform to the 3.x serialization format, {@code false} otherwise.
+         */
+        public boolean isCompatibility() {
+            return isCompatibility;
         }
     }
 

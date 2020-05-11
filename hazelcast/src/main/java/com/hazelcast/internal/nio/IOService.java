@@ -114,6 +114,11 @@ public interface IOService {
 
     InternalSerializationService getSerializationService();
 
+    /**
+     * Returns the serialization service capable of ser-de in 3.x format.
+     */
+    InternalSerializationService getCompatibilitySerializationService();
+
     MemberSocketInterceptor getSocketInterceptor(EndpointQualifier endpointQualifier);
 
     InboundHandler[] createInboundHandlers(EndpointQualifier qualifier, TcpIpConnection connection);

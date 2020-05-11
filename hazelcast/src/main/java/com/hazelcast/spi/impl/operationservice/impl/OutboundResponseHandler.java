@@ -16,29 +16,31 @@
 
 package com.hazelcast.spi.impl.operationservice.impl;
 
-import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.logging.ILogger;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.nio.EndpointManager;
 import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.spi.impl.SpiDataSerializerHook;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationResponseHandler;
-import com.hazelcast.spi.impl.SpiDataSerializerHook;
 import com.hazelcast.spi.impl.operationservice.impl.responses.CallTimeoutResponse;
 import com.hazelcast.spi.impl.operationservice.impl.responses.ErrorResponse;
 import com.hazelcast.spi.impl.operationservice.impl.responses.NormalResponse;
 import com.hazelcast.spi.impl.operationservice.impl.responses.Response;
 
-import static com.hazelcast.internal.serialization.impl.SerializationConstants.CONSTANT_TYPE_DATA_SERIALIZABLE;
-import static com.hazelcast.internal.serialization.impl.SerializationConstants.CONSTANT_TYPE_NULL;
 import static com.hazelcast.internal.nio.Bits.INT_SIZE_IN_BYTES;
 import static com.hazelcast.internal.nio.Bits.writeInt;
 import static com.hazelcast.internal.nio.Bits.writeIntB;
 import static com.hazelcast.internal.nio.Bits.writeLong;
+import static com.hazelcast.internal.nio.Packet.FLAG_4_0;
 import static com.hazelcast.internal.nio.Packet.FLAG_OP_RESPONSE;
 import static com.hazelcast.internal.nio.Packet.FLAG_URGENT;
 import static com.hazelcast.internal.nio.Packet.Type.OPERATION;
+import static com.hazelcast.internal.serialization.impl.SerializationConstants.CONSTANT_TYPE_DATA_SERIALIZABLE;
+import static com.hazelcast.internal.serialization.impl.SerializationConstants.CONSTANT_TYPE_NULL;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.spi.impl.SpiDataSerializerHook.BACKUP_ACK_RESPONSE;
 import static com.hazelcast.spi.impl.SpiDataSerializerHook.NORMAL_RESPONSE;
 import static com.hazelcast.spi.impl.operationservice.impl.responses.BackupAckResponse.BACKUP_RESPONSE_SIZE_IN_BYTES;
@@ -53,7 +55,6 @@ import static com.hazelcast.spi.impl.operationservice.impl.responses.Response.OF
 import static com.hazelcast.spi.impl.operationservice.impl.responses.Response.OFFSET_TYPE_FACTORY_ID;
 import static com.hazelcast.spi.impl.operationservice.impl.responses.Response.OFFSET_TYPE_ID;
 import static com.hazelcast.spi.impl.operationservice.impl.responses.Response.OFFSET_URGENT;
-import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static java.nio.ByteOrder.BIG_ENDIAN;
 
 /**
@@ -200,7 +201,7 @@ public final class OutboundResponseHandler implements OperationResponseHandler {
     private Packet newResponsePacket(byte[] bytes, boolean urgent) {
         Packet packet = new Packet(bytes, -1)
                 .setPacketType(OPERATION)
-                .raiseFlags(FLAG_OP_RESPONSE);
+                .raiseFlags(FLAG_4_0 | FLAG_OP_RESPONSE);
 
         if (urgent) {
             packet.raiseFlags(FLAG_URGENT);

@@ -18,9 +18,8 @@ package com.hazelcast.test.starter.constructor;
 
 import com.hazelcast.test.starter.HazelcastStarterConstructor;
 
-import static com.hazelcast.test.starter.ReflectionUtils.setFieldValueReflectively;
-
-@HazelcastStarterConstructor(classNames = {"com.hazelcast.config.CacheConfig", "com.hazelcast.cache.impl.PreJoinCacheConfig"})
+@HazelcastStarterConstructor(classNames = {"com.hazelcast.config.CacheConfig", "com.hazelcast.cache.impl.PreJoinCacheConfig",
+        "com.hazelcast.config.CacheSimpleConfig"})
 public class CacheConfigConstructor extends AbstractConfigConstructor {
 
     public CacheConfigConstructor(Class<?> targetClass) {
@@ -31,7 +30,7 @@ public class CacheConfigConstructor extends AbstractConfigConstructor {
     Object createNew0(Object delegate) throws Exception {
         ClassLoader classloader = targetClass.getClassLoader();
         Object otherConfig = cloneConfig(delegate, classloader);
-        setFieldValueReflectively(otherConfig, "classLoader", classloader);
+        //setFieldValueReflectively(otherConfig, "classLoader", classloader);
         return otherConfig;
     }
 }
