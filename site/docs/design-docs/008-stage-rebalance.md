@@ -1,5 +1,5 @@
 ---
-title: 008 Rebalance Data on a Pipeline Stage
+title: 008 - Rebalance Data on a Pipeline Stage
 description: Adds a stage.rebalance() method that results in a distributed DAG edge from this stage to the next one.
 ---
 
