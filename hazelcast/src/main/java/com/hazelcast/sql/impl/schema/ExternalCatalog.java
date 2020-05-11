@@ -45,22 +45,18 @@ public class ExternalCatalog implements TableResolver {
     }
 
     public void createTable(ExternalTableSchema schema, boolean replace, boolean ifNotExists) {
-        Map<String, ExternalTableSchema> tables = nodeEngine.getHazelcastInstance().getReplicatedMap(CATALOG_MAP_NAME);
-
         String name = schema.name();
         if (ifNotExists) {
-            tables.putIfAbsent(name, schema);
+            tables().putIfAbsent(name, schema);
         } else if (replace) {
-            tables.put(name, schema);
-        } else if (tables.putIfAbsent(name, schema) != null) {
+            tables().put(name, schema);
+        } else if (tables().putIfAbsent(name, schema) != null) {
             throw QueryException.error("'" + name + "' table already exists");
         }
     }
 
     public void removeTable(String name, boolean ifExists) {
-        Map<String, ExternalTableSchema> tables = nodeEngine.getHazelcastInstance().getReplicatedMap(CATALOG_MAP_NAME);
-
-        if (tables.remove(name) == null && !ifExists) {
+        if (tables().remove(name) == null && !ifExists) {
             throw new IllegalArgumentException("'" + name + "' table does not exist");
         }
     }
@@ -72,11 +68,13 @@ public class ExternalCatalog implements TableResolver {
 
     @Override
     public Collection<Table> getTables() {
-        Map<String, ExternalTableSchema> tables = nodeEngine.getHazelcastInstance().getReplicatedMap(CATALOG_MAP_NAME);
+        return tables().values().stream()
+                       .map(ExternalCatalog::toTable)
+                       .collect(toList());
+    }
 
-        return tables.values().stream()
-                     .map(ExternalCatalog::toTable)
-                     .collect(toList());
+    private Map<String, ExternalTableSchema> tables() {
+        return nodeEngine.getHazelcastInstance().getMap(CATALOG_MAP_NAME);
     }
 
     private static Table toTable(ExternalTableSchema schema) {

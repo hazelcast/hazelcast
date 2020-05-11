@@ -41,7 +41,6 @@ import java.util.GregorianCalendar;
 import java.util.List;
 import java.util.Map;
 
-import static com.hazelcast.sql.impl.schema.ExternalCatalog.CATALOG_MAP_NAME;
 import static java.lang.String.format;
 import static java.time.ZoneOffset.UTC;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -75,7 +74,7 @@ public class SchemaTest extends CalciteSqlTestSupport {
     }
 
     @Test
-    public void testSchemaDistribution() {
+    public void testSchemaAvailability() {
         String name = "distributed_schema_map";
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         HazelcastInstance[] instances = factory.newInstances();
@@ -84,8 +83,6 @@ public class SchemaTest extends CalciteSqlTestSupport {
         executeQuery(instances[0], format("CREATE EXTERNAL TABLE %s (__key INT) TYPE %s", name, TYPE));
 
         // execute query on another one
-        // TODO: fix it properly
-        assertSizeEventually(1, instances[1].getReplicatedMap(CATALOG_MAP_NAME), 5);
         List<SqlRow> rows = getQueryRows(instances[1], format("SELECT __key FROM %s", name));
 
         assertThat(rows).isEmpty();

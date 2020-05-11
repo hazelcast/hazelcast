@@ -33,6 +33,7 @@ import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.QueryUtils;
 import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.schema.ConstantTableStatistics;
+import com.hazelcast.sql.impl.schema.ExternalCatalog;
 import com.hazelcast.sql.impl.schema.Table;
 import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.schema.map.sample.MapSampleMetadata;
@@ -67,6 +68,11 @@ public class PartitionedMapTableResolver extends AbstractMapTableResolver {
 
         for (String mapName : context.getMapContainers().keySet()) {
             PartitionedMapTable table;
+
+            // TODO: skip all system tables, i.e. `__jet` prefixed
+            if (mapName.equalsIgnoreCase(ExternalCatalog.CATALOG_MAP_NAME)) {
+                continue;
+            }
 
             try {
                 table = createTable(context, mapName);
