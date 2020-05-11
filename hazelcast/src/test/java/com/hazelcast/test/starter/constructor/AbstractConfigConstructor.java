@@ -491,7 +491,7 @@ abstract class AbstractConfigConstructor extends AbstractStarterObjectConstructo
         try {
             quorumFunctionInterface = classLoader.loadClass("com.hazelcast.quorum.QuorumFunction");
         } catch (ClassNotFoundException e) {
-            // target classloader is 4.0
+            // target classloader is 4.x
             quorumFunctionInterface
                     = classLoader.loadClass("com.hazelcast.splitbrainprotection.SplitBrainProtectionFunction");
         }
