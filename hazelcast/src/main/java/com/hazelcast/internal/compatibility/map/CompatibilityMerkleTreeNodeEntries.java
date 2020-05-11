@@ -30,7 +30,6 @@ import java.util.Set;
  * A compatibility (4.x) version of {@link com.hazelcast.map.impl.MerkleTreeNodeEntries}.
  */
 public class CompatibilityMerkleTreeNodeEntries implements IdentifiedDataSerializable {
-    private int nodeOrder;
     private Set<CompatibilityWanMapEntryView<Object, Object>> nodeEntries = Collections.emptySet();
 
     public CompatibilityMerkleTreeNodeEntries() {
@@ -57,7 +56,8 @@ public class CompatibilityMerkleTreeNodeEntries implements IdentifiedDataSeriali
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        nodeOrder = in.readInt();
+        // node order is not needed
+        in.readInt();
         int entryCount = in.readInt();
         Builder<CompatibilityWanMapEntryView<Object, Object>> entries = InflatableSet.newBuilder(entryCount);
         for (int j = 0; j < entryCount; j++) {
