@@ -28,6 +28,18 @@ import java.util.Map;
 
 import static com.hazelcast.jet.impl.util.Util.uncheckCall;
 
+/**
+ * Util class to parse JSON formatted input to various object types or
+ * convert objects to JSON strings.
+ * <p>
+ * We use the lightweight JSON library `jackson-jr` to parse the given
+ * input or convert the given objects to JSON string. If
+ * `jackson-annotations` library present on the classpath, we register
+ * {@link JacksonAnnotationExtension} to so that the JSON conversion can
+ * make us of annotations.
+ *
+ * @since 4.2
+ */
 public final class JsonUtil {
 
     private static final JSON JSON_JR;

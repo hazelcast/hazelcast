@@ -121,7 +121,13 @@
             <property name="allowMissingReturnTag" value="true"/>
             <property name="validateThrows" value="false"/>
         </module>
+        <module name="MissingJavadocMethod">
+            <property name="scope" value="public"/>
+        </module>
         <module name="JavadocType">
+            <property name="scope" value="public"/>
+        </module>
+        <module name="MissingJavadocType">
             <property name="scope" value="public"/>
         </module>
         <module name="JavadocVariable">
