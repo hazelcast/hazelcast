@@ -56,9 +56,9 @@ public class CompatibilityOSWanDataSerializerHook implements DataSerializerHook 
             public IdentifiedDataSerializable create(int typeId) {
                 switch (typeId) {
                     case WAN_MAP_ENTRY_VIEW:
-                        return new CompatibilityWanMapEntryView<>();
+                        return new CompatibilityWanMapEntryView<Object, Object>();
                     case WAN_CACHE_ENTRY_VIEW:
-                        return new CompatibilityWanCacheEntryView<>();
+                        return new CompatibilityWanCacheEntryView<Object, Object>();
                     default:
                         throw new IllegalArgumentException("Unknown type-id: " + typeId);
                 }

@@ -25,6 +25,11 @@ import com.hazelcast.spi.merge.ExpirationTimeMergePolicy;
 import com.hazelcast.spi.merge.HigherHitsMergePolicy;
 import com.hazelcast.spi.merge.LatestAccessMergePolicy;
 import com.hazelcast.spi.merge.LatestUpdateMergePolicy;
+import com.hazelcast.spi.merge.MergingExpirationTime;
+import com.hazelcast.spi.merge.MergingHits;
+import com.hazelcast.spi.merge.MergingLastAccessTime;
+import com.hazelcast.spi.merge.MergingLastUpdateTime;
+import com.hazelcast.spi.merge.MergingValue;
 import com.hazelcast.spi.merge.PassThroughMergePolicy;
 import com.hazelcast.spi.merge.PutIfAbsentMergePolicy;
 
@@ -75,19 +80,19 @@ public final class CompatibilitySplitBrainDataSerializerHook implements DataSeri
             public IdentifiedDataSerializable create(int typeId) {
                 switch (typeId) {
                     case DISCARD:
-                        return new DiscardMergePolicy<>();
+                        return new DiscardMergePolicy<Object, MergingValue<Object>>();
                     case EXPIRATION_TIME:
-                        return new ExpirationTimeMergePolicy<>();
+                        return new ExpirationTimeMergePolicy<Object, MergingExpirationTime<Object>>();
                     case HIGHER_HITS:
-                        return new HigherHitsMergePolicy<>();
+                        return new HigherHitsMergePolicy<Object, MergingHits<Object>>();
                     case LATEST_ACCESS:
-                        return new LatestAccessMergePolicy<>();
+                        return new LatestAccessMergePolicy<Object, MergingLastAccessTime<Object>>();
                     case LATEST_UPDATE:
-                        return new LatestUpdateMergePolicy<>();
+                        return new LatestUpdateMergePolicy<Object, MergingLastUpdateTime<Object>>();
                     case PASS_THROUGH:
-                        return new PassThroughMergePolicy<>();
+                        return new PassThroughMergePolicy<Object, MergingValue<Object>>();
                     case PUT_IF_ABSENT:
-                        return new PutIfAbsentMergePolicy<>();
+                        return new PutIfAbsentMergePolicy<Object, MergingValue<Object>>();
                     default:
                         return null;
                 }

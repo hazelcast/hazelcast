@@ -61,7 +61,7 @@ public class CompatibilityMerkleTreeNodeEntries implements IdentifiedDataSeriali
         int entryCount = in.readInt();
         Builder<CompatibilityWanMapEntryView<Object, Object>> entries = InflatableSet.newBuilder(entryCount);
         for (int j = 0; j < entryCount; j++) {
-            entries.add(in.readObject());
+            entries.add(in.<CompatibilityWanMapEntryView<Object, Object>>readObject());
         }
         nodeEntries = entries.build();
     }

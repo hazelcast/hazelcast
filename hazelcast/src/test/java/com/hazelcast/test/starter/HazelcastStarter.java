@@ -165,7 +165,7 @@ public class HazelcastStarter {
                 instanceProxyClass = classloader.loadClass("com.hazelcast.instance.HazelcastInstanceProxy");
                 instanceImplClass = classloader.loadClass("com.hazelcast.instance.HazelcastInstanceImpl");
             } catch (ClassNotFoundException e) {
-                // target classloader is 4.0
+                // target classloader is 4.x
                 instanceProxyClass = classloader.loadClass("com.hazelcast.instance.impl.HazelcastInstanceProxy");
                 instanceImplClass = classloader.loadClass("com.hazelcast.instance.impl.HazelcastInstanceImpl");
             }

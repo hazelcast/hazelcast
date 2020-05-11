@@ -56,7 +56,7 @@ public class CompatibilityBindMessage
     public CompatibilityBindMessage(byte schemaVersion, Map<ProtocolType, Collection<Address>> localAddresses,
                                     Address targetAddress, boolean reply, UUID uuid) {
         this.schemaVersion = schemaVersion;
-        this.localAddresses = new EnumMap<>(localAddresses);
+        this.localAddresses = new EnumMap<ProtocolType, Collection<Address>>(localAddresses);
         this.targetAddress = targetAddress;
         this.reply = reply;
         this.uuid = uuid;
@@ -120,7 +120,8 @@ public class CompatibilityBindMessage
             localAddresses = Collections.emptyMap();
             return;
         }
-        Map<ProtocolType, Collection<Address>> addressesPerProtocolType = new EnumMap<>(ProtocolType.class);
+        Map<ProtocolType, Collection<Address>> addressesPerProtocolType
+                = new EnumMap<ProtocolType, Collection<Address>>(ProtocolType.class);
         for (int i = 0; i < size; i++) {
             ProtocolType protocolType = ProtocolType.valueOf(in.readInt());
             Collection<Address> addresses = readCollection(in);

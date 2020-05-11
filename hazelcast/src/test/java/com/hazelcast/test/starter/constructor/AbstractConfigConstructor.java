@@ -321,25 +321,19 @@ abstract class AbstractConfigConstructor extends AbstractStarterObjectConstructo
         } else {
             // transforming from 3.12 to 4.0
             mergePolicyClassName = getFieldValueReflectively(wanReplicationRef, "mergePolicy");
-            switch (mergePolicyClassName) {
-                case "com.hazelcast.map.merge.HigherHitsMapMergePolicy":
-                case "com.hazelcast.cache.merge.HigherHitsCacheMergePolicy":
-                    mergePolicyClassName = HigherHitsMergePolicy.class.getName();
-                    break;
-                case "com.hazelcast.map.merge.LatestUpdateMapMergePolicy":
-                    mergePolicyClassName = LatestUpdateMergePolicy.class.getName();
-                    break;
-                case "com.hazelcast.cache.merge.LatestAccessCacheMergePolicy":
-                    mergePolicyClassName = LatestAccessMergePolicy.class.getName();
-                    break;
-                case "com.hazelcast.map.merge.PassThroughMergePolicy":
-                case "com.hazelcast.cache.merge.PassThroughCacheMergePolicy":
-                    mergePolicyClassName = PassThroughMergePolicy.class.getName();
-                    break;
-                case "com.hazelcast.map.merge.PutIfAbsentMapMergePolicy":
-                case "com.hazelcast.cache.merge.PutIfAbsentCacheMergePolicy":
-                    mergePolicyClassName = PutIfAbsentMergePolicy.class.getName();
-                    break;
+            if ("com.hazelcast.map.merge.HigherHitsMapMergePolicy".equals(mergePolicyClassName)
+                    || "com.hazelcast.cache.merge.HigherHitsCacheMergePolicy".equals(mergePolicyClassName)) {
+                mergePolicyClassName = HigherHitsMergePolicy.class.getName();
+            } else if ("com.hazelcast.map.merge.LatestUpdateMapMergePolicy".equals(mergePolicyClassName)) {
+                mergePolicyClassName = LatestUpdateMergePolicy.class.getName();
+            } else if ("com.hazelcast.cache.merge.LatestAccessCacheMergePolicy".equals(mergePolicyClassName)) {
+                mergePolicyClassName = LatestAccessMergePolicy.class.getName();
+            } else if ("com.hazelcast.map.merge.PassThroughMergePolicy".equals(mergePolicyClassName)
+                    || "com.hazelcast.cache.merge.PassThroughCacheMergePolicy".equals(mergePolicyClassName)) {
+                mergePolicyClassName = PassThroughMergePolicy.class.getName();
+            } else if ("com.hazelcast.map.merge.PutIfAbsentMapMergePolicy".equals(mergePolicyClassName)
+                    || "com.hazelcast.cache.merge.PutIfAbsentCacheMergePolicy".equals(mergePolicyClassName)) {
+                mergePolicyClassName = PutIfAbsentMergePolicy.class.getName();
             }
         }
 
@@ -369,7 +363,7 @@ abstract class AbstractConfigConstructor extends AbstractStarterObjectConstructo
 
             List<Object> customPublisherConfigs = getFieldValueReflectively(wanReplicationConfig, "customPublisherConfigs");
             List<Object> batchPublisherConfigs = getFieldValueReflectively(wanReplicationConfig, "batchPublisherConfigs");
-            ArrayList<Object> convertedPublishers = new ArrayList<>(batchPublisherConfigs.size());
+            ArrayList<Object> convertedPublishers = new ArrayList<Object>(batchPublisherConfigs.size());
             for (Object publisherConfig : batchPublisherConfigs) {
                 // leftovers: publisherId, implementation
                 String clusterName = getFieldValueReflectively(publisherConfig, "clusterName");
@@ -403,7 +397,7 @@ abstract class AbstractConfigConstructor extends AbstractStarterObjectConstructo
                 updateConfig(getSetter(convertedPublisherConfig.getClass(), String.class, "setClassName"), convertedPublisherConfig,
                         "com.hazelcast.enterprise.wan.replication.WanBatchReplication");
 
-                HashMap<Object, Object> props = new HashMap<>();
+                HashMap<Object, Object> props = new HashMap<Object, Object>();
                 props.put("group.password", "dev-pass");
                 props.put("endpoints", targetEndpoints);
 
@@ -415,7 +409,7 @@ abstract class AbstractConfigConstructor extends AbstractStarterObjectConstructo
             // copying from 3.12 to 4.0
             Object consumerConfig = getFieldValueReflectively(wanReplicationConfig, "wanConsumerConfig");
             List<Object> wanPublisherConfigs = getFieldValueReflectively(wanReplicationConfig, "wanPublisherConfigs");
-            ArrayList<Object> convertedPublishers = new ArrayList<>(wanPublisherConfigs.size());
+            ArrayList<Object> convertedPublishers = new ArrayList<Object>(wanPublisherConfigs.size());
 
             if (consumerConfig != null) {
                 Object convertedConsumer = cloneConfig(consumerConfig, targetClass.getClassLoader());
@@ -523,7 +517,7 @@ abstract class AbstractConfigConstructor extends AbstractStarterObjectConstructo
         try {
             quorumFunctionInterface = classLoader.loadClass("com.hazelcast.quorum.QuorumFunction");
         } catch (ClassNotFoundException e) {
-            // target classloader is 4.0
+            // target classloader is 4.x
             quorumFunctionInterface
                     = classLoader.loadClass("com.hazelcast.splitbrainprotection.SplitBrainProtectionFunction");
         }

@@ -196,7 +196,7 @@ public final class CompatibilityMapDataSerializerHook implements DataSerializerH
             public IdentifiedDataSerializable create(int typeId) {
                 switch (typeId) {
                     case ENTRY_VIEW:
-                        return new CompatibilityWanMapEntryView<>();
+                        return new CompatibilityWanMapEntryView<Object, Object>();
                     case MERKLE_TREE_NODE_ENTRIES:
                         return new CompatibilityMerkleTreeNodeEntries();
                     default:
