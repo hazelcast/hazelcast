@@ -232,6 +232,60 @@ public abstract class MultiMapProxySupport extends AbstractDistributedObject<Mul
         }
     }
 
+    protected InternalCompletableFuture<Map<Data, List<Data>>> getAllInternalAsync(
+            List<Data> dataKeys,
+            Map<Data, List<Data>> resultingKeyValuePairs) {
+        if (dataKeys == null || dataKeys.isEmpty()) {
+            return null;
+        }
+
+        Map<Integer, Collection<Data>> partitionsMap = getPartitionMapForKeyCollection(dataKeys);
+        Collection<Integer> partitions = partitionsMap.keySet();
+
+        try {
+            Collection<List<Data>> entries = new ArrayList<>();
+            for (Collection<Data> value : partitionsMap.values()) {
+                entries.add(new ArrayList<>(value));
+            }
+
+            OperationFactory operationFactory = new MultiMapGetAllOperationFactory(
+                    name, partitionsMap.keySet(), entries);
+
+            long startTimeNanos = System.nanoTime();
+            CompletableFuture<Map<Integer, Object>> future =
+                    operationService.invokeOnPartitionsAsync(MultiMapService.SERVICE_NAME,
+                            operationFactory, partitions);
+            InternalCompletableFuture<Map<Data, List<Data>>> resultFuture = new InternalCompletableFuture<>();
+            future.whenCompleteAsync((responses, t) -> {
+                if (t == null) {
+                    for (Object response : responses.values()) {
+                        MapEntries mapEntries = getNodeEngine().toObject(response);
+                        if (mapEntries != null) {
+                            for (Map.Entry<Data, Data> entry : mapEntries.entries()) {
+                                Data value = entry.getValue();
+                                DataCollection coll = getNodeEngine().toObject(value);
+                                List<Data> listData = new ArrayList<>();
+                                for (Data data : coll.getCollection()) {
+                                    listData.add(data);
+                                }
+                                resultingKeyValuePairs.put(entry.getKey(), listData);
+                            }
+                        }
+                    }
+                    getService().getLocalMultiMapStatsImpl(name).incrementGetLatencyNanos(
+                            dataKeys.size(), System.nanoTime() - startTimeNanos);
+                    resultFuture.complete(resultingKeyValuePairs);
+                } else {
+                    resultFuture.completeExceptionally(t);
+                }
+            }, CALLER_RUNS);
+
+            return resultFuture;
+        } catch (Exception e) {
+            throw rethrow(e);
+        }
+    }
+
     protected void getAllInternal(List<Data> dataKeys, Map<Data, List<Data>> resultingKeyValuePairs) {
         if (dataKeys == null || dataKeys.isEmpty()) {
             return;

@@ -201,7 +201,7 @@ public class MultiMapContainerStatisticsTest extends HazelcastTestSupport {
         // a successful getAll operation updates the lastAccessTime, but not the lastUpdateTime
         sleepMillis(10);
         keySet.add(key);
-        multiMap.getAll(keySet);
+        multiMap.getAllAsync(keySet).toCompletableFuture().join();
         assertNewLastAccessTime();
         assertSameLastUpdateTime();
 
@@ -216,7 +216,7 @@ public class MultiMapContainerStatisticsTest extends HazelcastTestSupport {
         sleepMillis(10);
         keySet.clear();
         keySet.add("nokey");
-        multiMap.getAll(keySet);
+        multiMap.getAllAsync(keySet).toCompletableFuture().join();
         assertSameLastAccessTimeOnBackup();
         assertSameLastUpdateTime();
 

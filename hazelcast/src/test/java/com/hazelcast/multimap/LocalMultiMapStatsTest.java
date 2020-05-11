@@ -182,7 +182,7 @@ public class LocalMultiMapStatsTest extends HazelcastTestSupport {
                 keySet.add(i);
             }
         }
-        map.getAll(keySet);
+        map.getAllAsync(keySet).toCompletableFuture().join();
         testGetAllAndHitsGeneratedVerify();
     }
 

@@ -30,6 +30,7 @@ import com.hazelcast.multimap.LocalMultiMapStats;
 import com.hazelcast.multimap.MultiMap;
 import com.hazelcast.multimap.impl.operations.EntrySetResponse;
 import com.hazelcast.multimap.impl.operations.MultiMapResponse;
+import com.hazelcast.spi.impl.DelegatingCompletableFuture;
 import com.hazelcast.spi.impl.InitializingObject;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.NodeEngine;
@@ -53,10 +54,12 @@ import java.util.concurrent.CompletionStage;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.internal.util.Preconditions.checkInstanceOf;
+import static com.hazelcast.internal.util.Preconditions.checkNoNullInside;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.Preconditions.checkPositive;
 import static com.hazelcast.internal.util.Preconditions.checkTrueUnsupportedOperation;
 import static com.hazelcast.internal.util.SetUtil.createHashSet;
+import static com.hazelcast.spi.impl.InternalCompletableFuture.newCompletedFuture;
 import static java.util.Collections.emptyMap;
 
 @SuppressWarnings("checkstyle:methodcount")
@@ -164,6 +167,40 @@ public class MultiMapProxyImpl<K, V>
             decodedResult.put(key, coll);
         }
         return Collections.unmodifiableMap(decodedResult);
+    }
+
+    @Override
+    public CompletionStage<Map<K, Collection<V>>> getAllAsync(@Nonnull Set<K> keys) {
+        checkTrueUnsupportedOperation(isClusterVersionGreaterOrEqual(Versions.V4_1), MINIMUM_VERSION_ERROR_4_1);
+        checkNoNullInside(keys, "supplied key-set cannot contain null key");
+
+        if (CollectionUtil.isEmpty(keys)) {
+            return newCompletedFuture(Collections.EMPTY_MAP);
+        }
+
+        List<Data> dataKeys = new LinkedList<>();
+        for (K key : keys) {
+            dataKeys.add(toData(key));
+        }
+
+        Map<Data, List<Data>> resultingKeyValuePairs = new HashMap<>();
+        NodeEngine nodeEngine = getNodeEngine();
+        return new DelegatingCompletableFuture<>(getService().getSerializationService(),
+                getAllInternalAsync(dataKeys, resultingKeyValuePairs).handleAsync(
+                        (response, t) -> {
+                            Map<K, Collection<V>> decodedResult = new HashMap<>();
+                            for (Map.Entry<Data, List<Data>> entry : resultingKeyValuePairs.entrySet()) {
+                                K key = nodeEngine.toObject(entry.getKey());
+                                Collection<V> coll = new ArrayList<>();
+                                for (Data d : entry.getValue()) {
+                                    coll.add(nodeEngine.toObject(d));
+                                }
+                                decodedResult.put(key, coll);
+                            }
+                            return decodedResult;
+                        }
+                )
+        );
     }
 
     @Override

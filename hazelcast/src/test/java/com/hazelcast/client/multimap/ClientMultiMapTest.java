@@ -42,10 +42,13 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
 import java.util.function.Consumer;
 
+import static com.hazelcast.test.HazelcastTestSupport.assertCompletesEventually;
 import static com.hazelcast.test.HazelcastTestSupport.assertOpenEventually;
 import static com.hazelcast.test.HazelcastTestSupport.randomString;
 import static org.junit.Assert.assertEquals;
@@ -104,7 +107,7 @@ public class ClientMultiMapTest {
         };
     }
 
-    protected void testMultiMapPutAllSetup() {
+    protected void testMultiMapBulkSetup() {
         MultiMapConfig multiMapConfig1 = new MultiMapConfig()
                 .setName("testMultiMapList")
                 .setValueCollectionType(MultiMapConfig.ValueCollectionType.LIST)
@@ -184,7 +187,7 @@ public class ClientMultiMapTest {
 
     @Test
     public void testMultiMapPutAllAsyncMap() throws InterruptedException {
-        testMultiMapPutAllSetup();
+        testMultiMapBulkSetup();
         Map<String, Collection<? extends Integer>> expectedMultiMap = new HashMap<>();
         expectedMultiMap.put("A", new ArrayList<>(Arrays.asList(1, 1, 1, 1, 2)));
         expectedMultiMap.put("B", new ArrayList<>(Arrays.asList(6, 6, 6, 9)));
@@ -199,7 +202,7 @@ public class ClientMultiMapTest {
 
     @Test
     public void testMultiMapPutAllAsyncKey() throws InterruptedException {
-        testMultiMapPutAllSetup();
+        testMultiMapBulkSetup();
         Map<String, Collection<? extends Integer>> expectedMultiMap = new HashMap<>();
         expectedMultiMap.put("A", new ArrayList<>(Arrays.asList(1, 1, 1, 1, 2)));
         expectedMultiMap.put("B", new ArrayList<>(Arrays.asList(6, 6, 6, 9)));
@@ -216,7 +219,7 @@ public class ClientMultiMapTest {
 
     @Test
     public void testMultiMapGetAll() {
-        testMultiMapPutAllSetup();
+        testMultiMapBulkSetup();
         MultiMap<String, Integer> multiMap1 = client.getMultiMap("testMultiMapGetAll");
         Map<String, Collection<? extends Integer>> expectedMultiMap = new HashMap<>();
         expectedMultiMap.put("A", new ArrayList<>(Arrays.asList(1, 1, 1, 1, 2)));
@@ -233,12 +236,47 @@ public class ClientMultiMapTest {
     }
 
     @Test
+    public void testMultiMapGetAllAsync() throws Exception {
+        testMultiMapBulkSetup();
+        MultiMap<String, Integer> multiMap1 = client.getMultiMap("testMultiMapGetAll");
+        Map<String, Collection<? extends Integer>> expectedMultiMap = new HashMap<>();
+        expectedMultiMap.put("A", new ArrayList<>(Arrays.asList(1, 1, 1, 1, 2)));
+        expectedMultiMap.put("B", new ArrayList<>(Arrays.asList(6, 6, 6, 9)));
+        expectedMultiMap.put("C", new ArrayList<>(Arrays.asList(10, 10, 10, 10, 10, 15)));
+        multiMap1.putAllAsync(expectedMultiMap).toCompletableFuture().join();
+
+        Set<String> keys = new HashSet<>(Arrays.asList("A", "C"));
+        CompletableFuture<Map<String, Collection<Integer>>> completableFuture = multiMap1.getAllAsync(keys).toCompletableFuture();
+        assertCompletesEventually(completableFuture);
+        Map<String, Collection<Integer>> multiMap2 = completableFuture.get();
+        assertNotNull(multiMap2);
+        for (String key : keys) {
+            assertEquals(expectedMultiMap.get(key).size(), multiMap2.get(key).size());
+        }
+    }
+
+    @Test
     public void testMultiMapGetAllNonExistent() {
-        testMultiMapPutAllSetup();
+        testMultiMapBulkSetup();
         MultiMap<String, Integer> multiMap1 = client.getMultiMap("testMultiMapGetAll");
         Set<String> keys = new HashSet<>(Arrays.asList("D", "E", "F"));
 
         Map<String, Collection<Integer>> multiMap2 = multiMap1.getAll(keys);
+        assertNotNull(multiMap2);
+        for (String key : keys) {
+            assertNull(multiMap2.get(key));
+        }
+    }
+
+    @Test
+    public void testMultiMapGetAllAsyncNonExistent() throws ExecutionException, InterruptedException {
+        testMultiMapBulkSetup();
+        MultiMap<String, Integer> multiMap1 = client.getMultiMap("testMultiMapGetAll");
+        Set<String> keys = new HashSet<>(Arrays.asList("D", "E", "F"));
+
+        CompletableFuture<Map<String, Collection<Integer>>> completableFuture = multiMap1.getAllAsync(keys).toCompletableFuture();
+        assertCompletesEventually(completableFuture);
+        Map<String, Collection<Integer>> multiMap2 = completableFuture.get();
         assertNotNull(multiMap2);
         for (String key : keys) {
             assertNull(multiMap2.get(key));
@@ -343,6 +381,27 @@ public class ClientMultiMapTest {
         Collection resultSet = new TreeSet(mm.get(key));
 
         assertEquals(expected, resultSet);
+    }
+
+
+    @Test(expected = NullPointerException.class)
+    public void testGetAllAsync_whenKeysNull() {
+        testMultiMapBulkSetup();
+        MultiMap<String, Integer> multiMap = client.getMultiMap("testMultiMapGetAll");
+
+        multiMap.getAllAsync(new HashSet<>(Arrays.asList(null)));
+    }
+
+    @Test
+    public void testGetAllAsync_whenKeysEmpty() throws ExecutionException, InterruptedException {
+        testMultiMapBulkSetup();
+        MultiMap<String, Integer> multiMap1 = client.getMultiMap("testMultiMapGetAll");
+
+        CompletableFuture<Map<String, Collection<Integer>>> completableFuture = multiMap1.getAllAsync(Collections.EMPTY_SET).toCompletableFuture();
+        assertCompletesEventually(completableFuture);
+        Map<String, Collection<Integer>> multiMap2 = completableFuture.get();
+        assertNotNull(multiMap2);
+        assertTrue(multiMap2.isEmpty());
     }
 
     @Test

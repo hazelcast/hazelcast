@@ -83,9 +83,11 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
 
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
+import static com.hazelcast.internal.util.Preconditions.checkNoNullInside;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.Preconditions.checkPositive;
 import static com.hazelcast.map.impl.ListenerAdapters.createListenerAdapter;
+import static com.hazelcast.spi.impl.InternalCompletableFuture.newCompletedFuture;
 import static java.lang.Thread.currentThread;
 import static java.util.Collections.emptyMap;
 
@@ -212,12 +214,25 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
         return Collections.unmodifiableMap(decodedResult);
     }
 
+    @Override
+    public CompletionStage<Map<K, Collection<V>>> getAllAsync(@Nonnull Set<K> keys) {
+        checkNoNullInside(keys, "supplied key-set cannot contain null key");
+
+        if (CollectionUtil.isEmpty(keys)) {
+            return newCompletedFuture(Collections.EMPTY_MAP);
+        }
+
+        return getAllInternalAsync(keys);
+    }
+
     //NB: based from ClientMapProxy.getAllInternal
     protected void getAllInternal(Set<K> keys, Map<Integer, List<Data>> partitionToKeyData,
                                   Map<Data, List<Data>> resultingKeyValuePairs) {
         if (partitionToKeyData.isEmpty()) {
             fillPartitionToKeyData(keys, partitionToKeyData);
         }
+
+
         List<Future<ClientMessage>> futures = new ArrayList<>(partitionToKeyData.size());
         for (Map.Entry<Integer, List<Data>> entry : partitionToKeyData.entrySet()) {
             int partitionId = entry.getKey();
@@ -239,6 +254,50 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
                 throw rethrow(e);
             }
         }
+    }
+
+    //NB: based from ClientMapProxy.getAllInternal
+    protected CompletionStage<Map<K, Collection<V>>> getAllInternalAsync(Set<K> keys) {
+        InternalCompletableFuture<Map<K, Collection<V>>> resultFuture = new InternalCompletableFuture<>();
+        Map<Integer, List<Data>>partitionToKeyData = new HashMap<>();
+        fillPartitionToKeyData(keys, partitionToKeyData);
+
+        AtomicInteger counter = new AtomicInteger(partitionToKeyData.size());
+        Map<K, Collection<V>> decodedResult = new HashMap<>();
+        BiConsumer<ClientMessage, Throwable> callback = (response, t) -> {
+            if (t != null) {
+                resultFuture.completeExceptionally(t);
+            } else {
+                MultiMapGetAllCodec.ResponseParameters resultParameters = MultiMapGetAllCodec.decodeResponse(response);
+
+                for (Map.Entry<Data, List<Data>> entry : resultParameters.response) {
+                    K key = toObject(entry.getKey());
+                    Collection<V> coll = new ArrayList<>();
+                    for (Data d : entry.getValue()) {
+                        coll.add(getSerializationService().toObject(d));
+                    }
+                    decodedResult.put(key, coll);
+                }
+
+                if (counter.decrementAndGet() == 0) {
+                    if (!resultFuture.isDone()) {
+                        resultFuture.complete(decodedResult);
+                    }
+                }
+            }
+        };
+
+        for (Map.Entry<Integer, List<Data>> entry : partitionToKeyData.entrySet()) {
+            int partitionId = entry.getKey();
+            List<Data> keyList = entry.getValue();
+            if (!keyList.isEmpty()) {
+                ClientMessage request = MultiMapGetAllCodec.encodeRequest(name, keyList);
+                new ClientInvocation(getClient(), request, getName(), partitionId).invoke()
+                        .whenCompleteAsync(callback);
+            }
+        }
+
+        return resultFuture;
     }
 
     //NB: based from ClientMapProxy.fillPartitionToKeyData
