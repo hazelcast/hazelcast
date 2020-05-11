@@ -43,6 +43,9 @@ public final class JetFactoryIdHelper {
     public static final String JET_OBSERVER_DS_FACTORY = "hazelcast.serialization.ds.jet.observer";
     public static final int JET_OBSERVER_DS_FACTORY_ID = -10006;
 
+    public static final String JET_CDC_JSON_DS_FACTORY = "hazelcast.serialization.ds.jet.cdc.json";
+    public static final int JET_CDC_JSON_DS_FACTORY_ID = -10007;
+
     private JetFactoryIdHelper() {
     }
 }

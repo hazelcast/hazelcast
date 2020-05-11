@@ -34,6 +34,8 @@
 
     <modules>
         <module>avro</module>
+        <module>cdc-debezium</module>
+        <module>cdc-mysql</module>
         <module>grpc</module>
         <module>hadoop</module>
         <module>kafka</module>
@@ -61,6 +63,15 @@
             <artifactId>hazelcast-jet</artifactId>
             <version>${project.parent.version}</version>
             <scope>provided</scope>
+        </dependency>
+
+        <!-- TEST -->
+        <dependency>
+            <groupId>com.hazelcast.jet</groupId>
+            <artifactId>hazelcast-jet-core</artifactId>
+            <version>${project.parent.version}</version>
+            <scope>test</scope>
+            <classifier>tests</classifier>
         </dependency>
     </dependencies>
 

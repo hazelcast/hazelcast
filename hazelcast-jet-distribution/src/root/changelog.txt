@@ -1,3 +1,9 @@
+** Hazelcast Jet 4.2 **
+
+* Generic Debezium-Jet connector and its MySQL version have been wrapped
+  with a proprietary API to make them more convenient to use and more
+  production-ready.
+
 ** Hazelcast Jet 4.1 **
 
 * You can now use our JMS and JDBC sinks with the exactly-once guarantee.

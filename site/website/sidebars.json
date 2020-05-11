@@ -50,7 +50,8 @@
       "operations/job-management",
       "operations/kubernetes",
       "operations/monitoring",
-      "operations/version-compatibility"
+      "operations/version-compatibility",
+      "operations/cdc-deployment"
     ],
     "Architecture": [
       "architecture/distributed-computing",
@@ -68,6 +69,7 @@
       "design-docs/008-stage-rebalance",
       "design-docs/007-grpc-support",
       "design-docs/006-declarative-serialization",
+      "design-docs/005-cdc-sources",
       "design-docs/004-spring-boot-starter",
       "design-docs/002-job-level-serialization",
       "design-docs/001-code-deployment-improvements"

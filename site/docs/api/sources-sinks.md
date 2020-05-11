@@ -949,6 +949,74 @@ tests](https://github.com/hazelcast/hazelcast-jet-contrib/tree/master/xa-test)
 to get more information. This only applies to the JDBC sink, the source
 doesn't use XA transactions.
 
+### Change Data Capture (CDC)
+
+Change Data Capture (CDC) refers to the process of observing changes
+made to a database and extracting them in a form usable by other
+systems, for the purposes of replication, analysis and many many more.
+
+Change Data Capture is especially important to Jet, because it allows
+for the _integration with legacy systems_. Database changes form a
+stream of events which can be efficiently processed by Jet.
+
+Implementation of CDC in Jet is based on
+[Debezium](https://debezium.io/). Jet offers a generic Debezium source
+which can handle CDC events from [any database supported by
+Debezium](https://debezium.io/documentation/reference/1.1/connectors/index.html),
+but we're also striving to make CDC sources first class citizens in Jet.
+The one for MySQL is already one (since Jet version 4.2).
+
+Setting up a streaming source of CDC data is just the matter of pointing
+it at the right database via configuration:
+
+```java
+Pipeline pipeline = Pipeline.create();
+pipeline.readFrom(
+    MySqlCdcSources.mysql("customers")
+            .setDatabaseAddress("127.0.0.1")
+            .setDatabasePort(3306)
+            .setDatabaseUser("debezium")
+            .setDatabasePassword("dbz")
+            .setClusterName("dbserver1")
+            .setDatabaseWhitelist("inventory")
+            .setTableWhitelist("inventory.customers")
+            .build())
+    .withNativeTimestamps(0)
+    .writeTo(Sinks.logger());
+```
+
+(For an example of how to actually make use of CDC data see [our
+tutorial](../tutorials/cdc)).
+
+In order to make it work though, the databases need to be properly
+configured too, have features essential for CDC enabled. For details see
+the [CDC Deployment Guide](../operations/cdc-deployment.md).
+
+#### CDC Connectors
+
+As of Jet version 4.2 we have following types of CDC sources:
+
+* [DebeziumCdcSources](/javadoc/{jet-version}/com/hazelcast/jet/cdc/DebeziumCdcSources.html):
+  generic source for all databases supported by Debezium
+* [MySqlCdcSources](/javadoc/{jet-version}/com/hazelcast/jet/cdc/MySqlCdcSources.html):
+  specific, first class Jet CDC source for MySQL databases (also based
+  on Debezium, but benefiting the full range of convenience Jet can
+  additionally provide)
+
+#### CDC Fault Tolerance
+
+CDC sources offer at least-once processing guaranties. The source
+periodically saves the database write ahead log offset for which it had
+dispatched events and in case of a failure/restart it will replay all
+events since the last successfully saved offset.
+
+Unfortunately however there are no guaranties that the last saved offset
+is still in the database changelog. Such logs are always finite and
+depending on the DB configuration can be relatively short, so if the
+CDC source has to replay data for a long period of inactivity, then
+there can be loss. With careful management though we can say that
+at-least once guaranties can practially be provided.
+
 ### MongoDB
 
 >This connector is currently under incubation. For more

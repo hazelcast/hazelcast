@@ -149,13 +149,5 @@
             <artifactId>hazelcast-jet-grpc</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
-        <!-- Test Dependencies -->
-        <dependency>
-            <groupId>com.hazelcast.jet</groupId>
-            <artifactId>hazelcast-jet-core</artifactId>
-            <version>${project.parent.version}</version>
-            <scope>test</scope>
-            <classifier>tests</classifier>
-        </dependency>
     </dependencies>
 </project>

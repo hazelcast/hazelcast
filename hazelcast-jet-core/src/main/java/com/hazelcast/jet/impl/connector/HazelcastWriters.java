@@ -33,6 +33,7 @@ import com.hazelcast.jet.RestartableException;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
+import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.core.processor.SinkProcessors;
 import com.hazelcast.jet.impl.observer.ObservableImpl;
 import com.hazelcast.map.EntryProcessor;
@@ -100,14 +101,25 @@ public final class HazelcastWriters {
             @Nonnull String mapName,
             @Nullable ClientConfig clientConfig,
             @Nonnull FunctionEx<? super T, ? extends K> toKeyFn,
-            @Nonnull BiFunctionEx<? super V, ? super T, ? extends V> updateFn
+            @Nonnull BiFunctionEx<? super V, ? super T, ? extends V> updateFn,
+            int preferredLocalParallelism
     ) {
         checkSerializable(toKeyFn, "toKeyFn");
         checkSerializable(updateFn, "updateFn");
 
-        return ProcessorMetaSupplier.of(new UpdateMapP.Supplier<>(
+        return ProcessorMetaSupplier.of(preferredLocalParallelism, new UpdateMapP.Supplier<>(
                 asXmlString(clientConfig), mapName, toKeyFn, updateFn
         ));
+    }
+
+    @Nonnull
+    public static <T, K, V> ProcessorMetaSupplier updateMapSupplier(
+            @Nonnull String mapName,
+            @Nullable ClientConfig clientConfig,
+            @Nonnull FunctionEx<? super T, ? extends K> toKeyFn,
+            @Nonnull BiFunctionEx<? super V, ? super T, ? extends V> updateFn
+    ) {
+        return updateMapSupplier(mapName, clientConfig, toKeyFn, updateFn, Vertex.LOCAL_PARALLELISM_USE_DEFAULT);
     }
 
     @Nonnull

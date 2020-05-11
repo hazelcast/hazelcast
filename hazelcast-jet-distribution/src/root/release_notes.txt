@@ -71,6 +71,13 @@ Thank you for your valuable contributions!
                service calls per processor. Before: 256; now: 4. (#2204)
 
 
+** Hazelcast Jet 4.2 **
+
+1. New Features
+
+2. Enhancements
+[integration] Improve Debezium connector usability and production readiness (generic & MySQL versions) [#2142]
+
 ** Hazelcast Jet 4.0 **
 
 1. New Features

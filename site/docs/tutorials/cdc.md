@@ -4,38 +4,20 @@ description: How to monitor Change Data Capture data from a MySQL database in Je
 ---
 
 > NOTE: This feature is currently in incubating state, i.e. API,
-> configuration etc. most likely will change in future revisions.
+> configuration etc. might still change in future revisions.
 
-**Change data capture** refers to the process of **observing changes
-made to a database** and extracting them in a form usable by other
-systems, for the purposes of replication, analysis and many many more.
-
-Change Data Capture is especially important to Jet, because it allows
-for the **integration with legacy systems**. Database changes form a
-stream of events which can be efficiently processed by Jet.
-
-Implementation of CDC in Jet is based on
-[Debezium](https://debezium.io/), which is an open source distributed
-platform for change data capture. It provides Kafka Connect compatible
-CDC connectors for a
-[variety of popular databases](https://debezium.io/documentation/reference/1.0/connectors/index.html)
-.
-
-The [Kafka Connect API](http://kafka.apache.org/documentation.html#connect)
-is an interface developed for Kafka, that simplifies and automates the
-integration of a new data source (or sink) with your Kafka cluster.
-Since version 4.0 Jet includes a generic Kafka Connect Source,
-thus making the integration of Debezium's connectors easy.
+As we've seen in the [CDC section of our Sources and Sinks
+ guide](../api/sources-sinks.md#cdc) of our, change data capture is
+ especially important to Jet, because it allows for the **integration
+ with legacy systems**.
 
 Let's see an example, how to process change events from a MySQL database
 in Jet.
 
 ## 1. Install Docker
 
-This tutorial uses [Docker](https://www.docker.com/) and a Debezium
-[example Docker image](https://hub.docker.com/r/debezium/example-mysql)
-in order to simplify the setup of a MySQL database you can freely
-experiment on.
+This tutorial uses [Docker](https://www.docker.com/) to simplify the
+setup of a MySQL database, which you can freely experiment on.
 
 1. Follow Docker's [Get Started](https://www.docker.com/get-started)
    instructions and install it on your system.
@@ -54,15 +36,15 @@ inventory database:
 ```bash
 docker run -it --rm --name mysql -p 3306:3306 \
     -e MYSQL_ROOT_PASSWORD=debezium -e MYSQL_USER=mysqluser \
-    -e MYSQL_PASSWORD=mysqlpw debezium/example-mysql:1.0
+    -e MYSQL_PASSWORD=mysqlpw debezium/example-mysql:1.2
 ```
 
-This runs a new container using version `1.0` of the
-`debezium/example-mysql` image, which is based on the
-[mysql:5.7](https://hub.docker.com/_/mysql) image, defines and populates
-a sample "inventory" database, and creates a `debezium` user with
-password `dbz` that has the minimum privileges required by Debezium’s
-MySQL connector.
+This runs a new container using version `1.2` of the
+[debezium/example-mysql](https://hub.docker.com/r/debezium/example-mysql)
+image (based on [mysql:5.7](https://hub.docker.com/_/mysql)). It defines
+and populates a sample "inventory" database and creates a `debezium`
+user with password `dbz` that has the minimum privileges required by
+Debezium’s MySQL connector.
 
 The command assigns the name `mysql` to the container so that it can be
 easily referenced later. The `-it` flag makes the container interactive,
@@ -179,13 +161,20 @@ tar zxvf hazelcast-jet-{jet-version}.tar.gz
 cd hazelcast-jet-{jet-version}
 ```
 
-3. Start Jet:
+3. Activate the MySQL CDC plugin:
+
+```bash
+mv opt/hazelcast-jet-cdc-debezium-{jet-version}.jar lib; \
+mv opt/hazelcast-jet-cdc-mysql-{jet-version}.jar lib
+```
+
+4. Start Jet:
 
 ```bash
 bin/jet-start
 ```
 
-4. When you see output like this, Hazelcast Jet is up:
+5. When you see output like this, Hazelcast Jet is up:
 
 ```text
 Members {size:1, ver:1} [
@@ -215,8 +204,9 @@ repositories.mavenCentral()
 
 dependencies {
     compile 'com.hazelcast.jet:hazelcast-jet:{jet-version}'
-    compile 'com.hazelcast.jet.contrib:debezium:0.1'
-    compile 'io.debezium:debezium-connector-mysql:1.0.0.Final'
+    compile 'com.hazelcast.jet:hazelcast-jet-cdc-mysql:{jet-version}'
+    compile 'com.fasterxml.jackson.jr:jackson-jr-objects:2.11.0'
+    compile 'com.fasterxml.jackson.jr:jackson-jr-annotation-support:2.11.0'
 }
 
 jar {
@@ -256,14 +246,19 @@ shadowJar {
            <version>{jet-version}</version>
        </dependency>
        <dependency>
-           <groupId>com.hazelcast.jet.contrib</groupId>
-           <artifactId>debezium</artifactId>
-           <version>0.1</version>
+           <groupId>com.hazelcast.jet</groupId>
+           <artifactId>hazelcast-jet-cdc-mysql</artifactId>
+           <version>{jet-version}</version>
        </dependency>
        <dependency>
-           <groupId>io.debezium</groupId>
-           <artifactId>debezium-connector-mysql</artifactId>
-           <version>1.0.0.Final</version>
+           <groupId>com.fasterxml.jackson.jr</groupId>
+           <artifactId>jackson-jr-objects</artifactId>
+           <version>2.11.0</version>
+       </dependency>
+       <dependency>
+           <groupId>com.fasterxml.jackson.jr</groupId>
+           <artifactId>jackson-jr-annotation-support</artifactId>
+           <version>2.11.0</version>
        </dependency>
    </dependencies>
 
@@ -325,57 +320,31 @@ package org.example;
 
 import com.hazelcast.jet.Jet;
 import com.hazelcast.jet.Util;
+import com.hazelcast.jet.cdc.ChangeRecord;
+import com.hazelcast.jet.cdc.MySqlCdcSources;
 import com.hazelcast.jet.config.JobConfig;
-import com.hazelcast.jet.contrib.debezium.DebeziumSources;
 import com.hazelcast.jet.pipeline.Pipeline;
-import com.hazelcast.jet.pipeline.ServiceFactories;
-import com.hazelcast.jet.pipeline.ServiceFactory;
 import com.hazelcast.jet.pipeline.Sinks;
-import io.debezium.config.Configuration;
-import io.debezium.serde.DebeziumSerdes;
-import org.apache.kafka.common.serialization.Serde;
-import org.apache.kafka.connect.data.Values;
-
-import java.util.Collections;
+import com.hazelcast.jet.pipeline.StreamSource;
 
 public class JetJob {
 
     public static void main(String[] args) {
-        Configuration configuration = Configuration
-                .create()
-                .with("name", "mysql-inventory-connector")
-                .with("connector.class", "io.debezium.connector.mysql.MySqlConnector")
-                .with("database.hostname", "127.0.0.1")
-                .with("database.port", 3306)
-                .with("database.user", "debezium")
-                .with("database.password", "dbz")
-                .with("database.server.id", "184054")
-                .with("database.server.name", "dbserver1")
-                .with("database.whitelist", "inventory")
-                .with("table.whitelist", "inventory.customers")
-                .with("include.schema.changes", "false")
-                .with("database.history.hazelcast.list.name", "test")
+        StreamSource<ChangeRecord> source = MySqlCdcSources.mysql("source")
+                .setDatabaseAddress("127.0.0.1")
+                .setDatabasePort(3306)
+                .setDatabaseUser("debezium")
+                .setDatabasePassword("dbz")
+                .setClusterName("dbserver1")
+                .setDatabaseWhitelist("inventory")
+                .setTableWhitelist("inventory.customers")
                 .build();
 
-        ServiceFactory<?, Serde<Customer>> serdeFactory =
-            ServiceFactories.nonSharedService(cntx -> {
-                Serde<Customer> serde = DebeziumSerdes.payloadJson(Customer.class);
-                serde.configure(Collections.singletonMap("from.field", "after"), false);
-                return serde;
-            });
-
         Pipeline pipeline = Pipeline.create();
-        pipeline.readFrom(DebeziumSources.cdc(configuration))
+        pipeline.readFrom(source)
                 .withoutTimestamps()
-                .filter(r -> r.topic().equals("dbserver1.inventory.customers"))
-                .map(record -> Values.convertToString(record.valueSchema(), record.value()))
-                .mapUsingService(
-                        serdeFactory,
-                        (serde, json) -> {
-                            Customer customer = serde.deserializer()
-                                    .deserialize("topic", json.getBytes());
-                            return Util.entry(customer.id, customer);
-                        })
+                .map(record -> record.value().toObject(Customer.class))
+                .map(customer -> Util.entry(customer.id, customer))
                 .peek()
                 .writeTo(Sinks.map("customers"));
 
@@ -398,6 +367,8 @@ import java.io.Serializable;
 import java.util.Objects;
 
 public class Customer implements Serializable {
+
+    @JsonProperty("id")
     public int id;
 
     @JsonProperty("first_name")
@@ -406,6 +377,7 @@ public class Customer implements Serializable {
     @JsonProperty("last_name")
     public String lastName;
 
+    @JsonProperty("email")
     public String email;
 
     public Customer() {
