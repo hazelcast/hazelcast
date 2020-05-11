@@ -26,6 +26,8 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.io.IOException;
 
+import static com.hazelcast.util.Preconditions.checkNotNull;
+
 /**
  * WAN heap based implementation of {@link EntryView} for keeping
  * compatibility when sending to older (3.8+) clusters.
@@ -36,17 +38,23 @@ import java.io.IOException;
 @BinaryInterface
 public class WanMapEntryView<K, V> implements EntryView<K, V>, IdentifiedDataSerializable {
 
-    private final K key;
-    private final V value;
-    private final long cost;
-    private final long creationTime;
-    private final long expirationTime;
-    private final long hits;
-    private final long lastAccessTime;
-    private final long lastStoredTime;
-    private final long lastUpdateTime;
-    private final long version;
-    private final long ttl;
+    private K key;
+    private V value;
+    private long cost;
+    private long creationTime;
+    private long expirationTime;
+    private long hits;
+    private long lastAccessTime;
+    private long lastStoredTime;
+    private long lastUpdateTime;
+    private long version;
+    private long ttl;
+
+    public WanMapEntryView(K dataKey, V dataValue) {
+        checkNotNull(dataKey);
+        this.key = dataKey;
+        this.value = dataValue;
+    }
 
     public WanMapEntryView(EntryView<K, V> entryView) {
         this.key = entryView.getKey();
@@ -120,6 +128,51 @@ public class WanMapEntryView<K, V> implements EntryView<K, V>, IdentifiedDataSer
     @Override
     public Long getMaxIdle() {
         return null;
+    }
+
+    public WanMapEntryView<K, V> withCost(long cost) {
+        this.cost = cost;
+        return this;
+    }
+
+    public WanMapEntryView<K, V> withCreationTime(long creationTime) {
+        this.creationTime = creationTime;
+        return this;
+    }
+
+    public WanMapEntryView<K, V> withExpirationTime(long expirationTime) {
+        this.expirationTime = expirationTime;
+        return this;
+    }
+
+    public WanMapEntryView<K, V> withHits(long hits) {
+        this.hits = hits;
+        return this;
+    }
+
+    public WanMapEntryView<K, V> withLastAccessTime(long lastAccessTime) {
+        this.lastAccessTime = lastAccessTime;
+        return this;
+    }
+
+    public WanMapEntryView<K, V> withLastStoredTime(long lastStoredTime) {
+        this.lastStoredTime = lastStoredTime;
+        return this;
+    }
+
+    public WanMapEntryView<K, V> withLastUpdateTime(long lastUpdateTime) {
+        this.lastUpdateTime = lastUpdateTime;
+        return this;
+    }
+
+    public WanMapEntryView<K, V> withVersion(long version) {
+        this.version = version;
+        return this;
+    }
+
+    public WanMapEntryView<K, V> withTtl(long ttl) {
+        this.ttl = ttl;
+        return this;
     }
 
     @Override

@@ -30,7 +30,7 @@ import static com.hazelcast.test.starter.HazelcastStarterUtils.newCollectionFor;
 import static com.hazelcast.test.starter.HazelcastStarterUtils.rethrowGuardianException;
 import static com.hazelcast.test.starter.HazelcastStarterUtils.transferThrowable;
 
-class ProxyInvocationHandler implements InvocationHandler, Serializable {
+public class ProxyInvocationHandler implements InvocationHandler, Serializable {
 
     private final Object delegate;
 

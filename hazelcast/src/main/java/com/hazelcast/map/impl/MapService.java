@@ -17,8 +17,11 @@
 package com.hazelcast.map.impl;
 
 import com.hazelcast.cluster.ClusterState;
+import com.hazelcast.config.WanAcknowledgeType;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.internal.cluster.ClusterStateListener;
+import com.hazelcast.internal.compatibility.wan.CompatibilityInternalWanEvent;
+import com.hazelcast.internal.compatibility.wan.CompatibilityWanSupportingService;
 import com.hazelcast.map.impl.event.MapEventPublishingService;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.monitor.LocalMapStats;
@@ -75,11 +78,12 @@ import static com.hazelcast.core.EntryEventType.INVALIDATION;
  * @see MapClientAwareService
  * @see MapServiceContext
  */
+@SuppressWarnings("checkstyle:methodcount")
 public class MapService implements ManagedService, FragmentedMigrationAwareService,
         TransactionalService, RemoteService, EventPublishingService<Object, ListenerAdapter>,
         PostJoinAwareService, SplitBrainHandlerService, ReplicationSupportingService, StatisticsAwareService<LocalMapStats>,
         PartitionAwareService, ClientAwareService, QuorumAwareService, NotifiableEventListener, ClusterStateListener,
-        LockInterceptorService<Data> {
+        LockInterceptorService<Data>, CompatibilityWanSupportingService {
 
     public static final String SERVICE_NAME = "hz:impl:mapService";
 
@@ -91,6 +95,7 @@ public class MapService implements ManagedService, FragmentedMigrationAwareServi
     protected PostJoinAwareService postJoinAwareService;
     protected SplitBrainHandlerService splitBrainHandlerService;
     protected ReplicationSupportingService replicationSupportingService;
+    protected CompatibilityWanSupportingService compatibilityWanSupportingService;
     protected StatisticsAwareService statisticsAwareService;
     protected PartitionAwareService partitionAwareService;
     protected ClientAwareService clientAwareService;
@@ -175,6 +180,11 @@ public class MapService implements ManagedService, FragmentedMigrationAwareServi
     @Override
     public void onReplicationEvent(WanReplicationEvent replicationEvent) {
         replicationSupportingService.onReplicationEvent(replicationEvent);
+    }
+
+    @Override
+    public void onReplicationEvent(CompatibilityInternalWanEvent event, WanAcknowledgeType acknowledgeType) {
+        compatibilityWanSupportingService.onReplicationEvent(event, acknowledgeType);
     }
 
     @Override

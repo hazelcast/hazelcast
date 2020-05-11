@@ -20,11 +20,11 @@ import com.hazelcast.spi.impl.servicemanager.ServiceDescriptor;
 import com.hazelcast.spi.impl.servicemanager.ServiceDescriptorProvider;
 
 public class TestServiceDescriptorProvider implements ServiceDescriptorProvider {
-    private final ServiceDescriptor[] descriptors = new ServiceDescriptor[1];
+    private final ServiceDescriptor[] descriptors = new ServiceDescriptor[0];
 
     @Override
     public ServiceDescriptor[] createServiceDescriptors() {
-        this.descriptors[0] = new TestServiceDescriptor();
+        //this.descriptors[0] = new TestServiceDescriptor();
         return this.descriptors;
     }
 }

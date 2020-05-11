@@ -346,6 +346,11 @@ public class NodeIOService implements IOService {
     }
 
     @Override
+    public InternalSerializationService getCompatibilitySerializationService() {
+        return node.getCompatibilitySerializationService();
+    }
+
+    @Override
     public MemberSocketInterceptor getSocketInterceptor(EndpointQualifier endpointQualifier) {
         return node.getNodeExtension().getSocketInterceptor(endpointQualifier);
     }
@@ -358,6 +363,11 @@ public class NodeIOService implements IOService {
     @Override
     public OutboundHandler[] createOutboundHandlers(EndpointQualifier qualifier, TcpIpConnection connection) {
         return node.getNodeExtension().createOutboundHandlers(qualifier, connection, this);
+    }
+
+    @Override
+    public String getUuid() {
+        return node.getThisUuid();
     }
 
     @Override

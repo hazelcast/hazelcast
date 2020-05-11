@@ -19,6 +19,7 @@ package com.hazelcast.internal.serialization.impl;
 import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.internal.serialization.PortableContext;
+import com.hazelcast.internal.serialization.impl.AbstractSerializationService.Builder;
 import com.hazelcast.internal.serialization.impl.ConstantSerializers.BooleanSerializer;
 import com.hazelcast.internal.serialization.impl.ConstantSerializers.ByteSerializer;
 import com.hazelcast.internal.serialization.impl.ConstantSerializers.StringArraySerializer;
@@ -279,6 +280,7 @@ public class SerializationServiceV1 extends AbstractSerializationService {
         private boolean enableCompression;
         private boolean enableSharedObject;
         private ClassNameFilter classNameFilter;
+        private boolean isCompatibility;
 
         protected AbstractBuilder() {
         }
@@ -316,6 +318,26 @@ public class SerializationServiceV1 extends AbstractSerializationService {
         public final T withClassNameFilter(ClassNameFilter classNameFilter) {
             this.classNameFilter = classNameFilter;
             return self();
+        }
+
+        /**
+         * Sets whether the serialization service should (de)serialize in the
+         * compatibility (4.x) format.
+         *
+         * @param isCompatibility {@code true} if the serialized format should conform to the
+         *                        4.x serialization format, {@code false} otherwise
+         */
+        public final T withCompatibility(boolean isCompatibility) {
+            this.isCompatibility = isCompatibility;
+            return self();
+        }
+
+        /**
+         * @return {@code true} if the serialized format of the serialization service should
+         * conform to the 4.x serialization format, {@code false} otherwise.
+         */
+        public boolean isCompatibility() {
+            return isCompatibility;
         }
     }
 

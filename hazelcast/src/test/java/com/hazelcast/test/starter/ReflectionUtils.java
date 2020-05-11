@@ -129,7 +129,8 @@ public final class ReflectionUtils {
         return clazz.getName().equals(arg.getClass().getName());
     }
 
-    public static Object getFieldValueReflectively(Object arg, String fieldName) throws IllegalAccessException {
+    @SuppressWarnings("unchecked")
+    public static <T> T getFieldValueReflectively(Object arg, String fieldName) throws IllegalAccessException {
         checkNotNull(arg, "Argument cannot be null");
         checkHasText(fieldName, "Field name cannot be null");
 
@@ -141,7 +142,26 @@ public final class ReflectionUtils {
         }
 
         field.setAccessible(true);
-        return field.get(arg);
+        return (T) field.get(arg);
+    }
+
+    /**
+     * Copies the field values from the {@code source} object to the {@code target}
+     * object.
+     *
+     * @param source     the source object
+     * @param target     the target object
+     * @param fieldNames the fields to copy
+     * @throws IllegalAccessException   if this field is enforcing Java language access control and the
+     *                                  underlying field is either inaccessible or final
+     * @throws NullPointerException     if any of the provided objects is {@code null}
+     * @throws IllegalArgumentException if any of the field names is empty
+     */
+    public static void copyFieldValuesReflectively(Object source, Object target, String... fieldNames)
+            throws IllegalAccessException {
+        for (String fieldName : fieldNames) {
+            setFieldValueReflectively(target, fieldName, getFieldValueReflectively(source, fieldName));
+        }
     }
 
     public static void setFieldValueReflectively(Object arg, String fieldName, Object newValue) throws IllegalAccessException {
@@ -175,6 +195,33 @@ public final class ReflectionUtils {
         }
         return fields;
     }
+
+    /**
+     * Returns {@code true} if the provided {@code clazz} has a declared field
+     * with the provided {@code name}.
+     *
+     * @param clazz     the class to check
+     * @param fieldName the field name to check
+     * @return {@code true} if a declared field exists, {@code false} otherwise.
+     */
+    public static boolean hasField(Class<?> clazz, String fieldName) {
+        for (Field field : clazz.getDeclaredFields()) {
+            if (field.getName().equals(fieldName)) {
+                return true;
+            }
+        }
+        Class<?> superClass = clazz.getSuperclass();
+        while (superClass != null) {
+            for (Field field : superClass.getDeclaredFields()) {
+                if (field.getName().equals(fieldName)) {
+                    return true;
+                }
+            }
+            superClass = superClass.getSuperclass();
+        }
+        return false;
+    }
+
 
     public static Object getDelegateFromMock(Object mock) throws IllegalAccessException {
         Answer<?> defaultAnswer = mockingDetails(mock).getMockCreationSettings().getDefaultAnswer();

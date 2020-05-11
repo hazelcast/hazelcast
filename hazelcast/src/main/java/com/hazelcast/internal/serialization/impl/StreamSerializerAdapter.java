@@ -67,7 +67,13 @@ class StreamSerializerAdapter implements SerializerAdapter {
 
     @Override
     public void destroy() {
-        serializer.destroy();
+        try {
+            serializer.destroy();
+        } catch (Error e) {
+            System.out.println(serializer + " " + serializer.getClass());
+            e.printStackTrace();
+            throw e;
+        }
     }
 
     @Override
