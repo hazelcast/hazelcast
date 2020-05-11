@@ -77,19 +77,16 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletionStage;
-import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
 
-import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.internal.util.Preconditions.checkNoNullInside;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.Preconditions.checkPositive;
 import static com.hazelcast.map.impl.ListenerAdapters.createListenerAdapter;
 import static com.hazelcast.spi.impl.InternalCompletableFuture.newCompletedFuture;
 import static java.lang.Thread.currentThread;
-import static java.util.Collections.emptyMap;
 
 /**
  * Proxy implementation of {@link MultiMap}.
@@ -192,29 +189,6 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
     }
 
     @Override
-    public Map<K, Collection<V>> getAll(@Nullable Set<K> keys) {
-        if (CollectionUtil.isEmpty(keys)) {
-            // Wrap emptyMap() into unmodifiableMap to make sure put/putAll methods throw UnsupportedOperationException
-            return Collections.unmodifiableMap(emptyMap());
-        }
-
-        Map<Integer, List<Data>> partitionToKeyData = new HashMap<>();
-        Map<Data, List<Data>> resultingKeyValuePairs = new HashMap<>();
-        getAllInternal(keys, partitionToKeyData, resultingKeyValuePairs);
-        Map<K, Collection<V>> decodedResult = new HashMap<>();
-
-        for (Map.Entry<Data, List<Data>> entry : resultingKeyValuePairs.entrySet()) {
-            K key = toObject(entry.getKey());
-            Collection<V> coll = new ArrayList<>();
-            for (Data d : entry.getValue()) {
-                coll.add(getSerializationService().toObject(d));
-            }
-            decodedResult.put(key, coll);
-        }
-        return Collections.unmodifiableMap(decodedResult);
-    }
-
-    @Override
     public CompletionStage<Map<K, Collection<V>>> getAllAsync(@Nonnull Set<K> keys) {
         checkNoNullInside(keys, "supplied key-set cannot contain null key");
 
@@ -226,40 +200,9 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
     }
 
     //NB: based from ClientMapProxy.getAllInternal
-    protected void getAllInternal(Set<K> keys, Map<Integer, List<Data>> partitionToKeyData,
-                                  Map<Data, List<Data>> resultingKeyValuePairs) {
-        if (partitionToKeyData.isEmpty()) {
-            fillPartitionToKeyData(keys, partitionToKeyData);
-        }
-
-
-        List<Future<ClientMessage>> futures = new ArrayList<>(partitionToKeyData.size());
-        for (Map.Entry<Integer, List<Data>> entry : partitionToKeyData.entrySet()) {
-            int partitionId = entry.getKey();
-            List<Data> keyList = entry.getValue();
-            if (!keyList.isEmpty()) {
-                ClientMessage request = MultiMapGetAllCodec.encodeRequest(name, keyList);
-                futures.add(new ClientInvocation(getClient(), request, getName(), partitionId).invoke());
-            }
-        }
-
-        for (Future<ClientMessage> future : futures) {
-            try {
-                ClientMessage response = future.get();
-                MultiMapGetAllCodec.ResponseParameters resultParameters = MultiMapGetAllCodec.decodeResponse(response);
-                for (Map.Entry<Data, List<Data>> entry : resultParameters.response) {
-                    resultingKeyValuePairs.put(entry.getKey(), entry.getValue());
-                }
-            } catch (Exception e) {
-                throw rethrow(e);
-            }
-        }
-    }
-
-    //NB: based from ClientMapProxy.getAllInternal
     protected CompletionStage<Map<K, Collection<V>>> getAllInternalAsync(Set<K> keys) {
         InternalCompletableFuture<Map<K, Collection<V>>> resultFuture = new InternalCompletableFuture<>();
-        Map<Integer, List<Data>>partitionToKeyData = new HashMap<>();
+        Map<Integer, List<Data>> partitionToKeyData = new HashMap<>();
         fillPartitionToKeyData(keys, partitionToKeyData);
 
         AtomicInteger counter = new AtomicInteger(partitionToKeyData.size());

@@ -286,49 +286,6 @@ public abstract class MultiMapProxySupport extends AbstractDistributedObject<Mul
         }
     }
 
-    protected void getAllInternal(List<Data> dataKeys, Map<Data, List<Data>> resultingKeyValuePairs) {
-        if (dataKeys == null || dataKeys.isEmpty()) {
-            return;
-        }
-
-        Map<Integer, Collection<Data>> partitionsMap = getPartitionMapForKeyCollection(dataKeys);
-        Collection<Integer> partitions = partitionsMap.keySet();
-        Map<Integer, Object> responses;
-        try {
-            Collection<List<Data>> entries = new ArrayList<>();
-            for (Collection<Data> value : partitionsMap.values()) {
-                entries.add(new ArrayList<>(value));
-            }
-
-            OperationFactory operationFactory = new MultiMapGetAllOperationFactory(
-                    name, partitionsMap.keySet(), entries);
-
-            long startTimeNanos = System.nanoTime();
-            responses = operationService.invokeOnPartitions(MultiMapService.SERVICE_NAME,
-                    operationFactory, partitions);
-
-            for (Object response : responses.values()) {
-
-                MapEntries mapEntries = getNodeEngine().toObject(response);
-                if (mapEntries != null) {
-                    for (Map.Entry<Data, Data> entry : mapEntries.entries()) {
-                        Data value = entry.getValue();
-                        DataCollection coll = getNodeEngine().toObject(value);
-                        List<Data> listData = new ArrayList<>();
-                        for (Data data : coll.getCollection()) {
-                            listData.add(data);
-                        }
-                        resultingKeyValuePairs.put(entry.getKey(), listData);
-                    }
-                }
-            }
-            getService().getLocalMultiMapStatsImpl(name).incrementGetLatencyNanos(
-                    dataKeys.size(), System.nanoTime() - startTimeNanos);
-        } catch (Exception e) {
-            throw rethrow(e);
-        }
-    }
-
     private Map<Integer, Collection<Data>> getPartitionMapForKeyCollection(Collection<Data> keys) {
         Map<Integer, Collection<Data>> partitionIdsMap = new HashMap<>();
         for (Data key : keys) {

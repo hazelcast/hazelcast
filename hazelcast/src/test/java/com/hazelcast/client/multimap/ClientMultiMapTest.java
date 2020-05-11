@@ -218,24 +218,6 @@ public class ClientMultiMapTest {
     }
 
     @Test
-    public void testMultiMapGetAll() {
-        testMultiMapBulkSetup();
-        MultiMap<String, Integer> multiMap1 = client.getMultiMap("testMultiMapGetAll");
-        Map<String, Collection<? extends Integer>> expectedMultiMap = new HashMap<>();
-        expectedMultiMap.put("A", new ArrayList<>(Arrays.asList(1, 1, 1, 1, 2)));
-        expectedMultiMap.put("B", new ArrayList<>(Arrays.asList(6, 6, 6, 9)));
-        expectedMultiMap.put("C", new ArrayList<>(Arrays.asList(10, 10, 10, 10, 10, 15)));
-        multiMap1.putAllAsync(expectedMultiMap).toCompletableFuture().join();
-
-        Set<String> keys = new HashSet<>(Arrays.asList("A", "C"));
-        Map<String, Collection<Integer>> multiMap2 = multiMap1.getAll(keys);
-
-        for (String key : keys) {
-            assertEquals(expectedMultiMap.get(key).size(), multiMap2.get(key).size());
-        }
-    }
-
-    @Test
     public void testMultiMapGetAllAsync() throws Exception {
         testMultiMapBulkSetup();
         MultiMap<String, Integer> multiMap1 = client.getMultiMap("testMultiMapGetAll");
@@ -252,19 +234,6 @@ public class ClientMultiMapTest {
         assertNotNull(multiMap2);
         for (String key : keys) {
             assertEquals(expectedMultiMap.get(key).size(), multiMap2.get(key).size());
-        }
-    }
-
-    @Test
-    public void testMultiMapGetAllNonExistent() {
-        testMultiMapBulkSetup();
-        MultiMap<String, Integer> multiMap1 = client.getMultiMap("testMultiMapGetAll");
-        Set<String> keys = new HashSet<>(Arrays.asList("D", "E", "F"));
-
-        Map<String, Collection<Integer>> multiMap2 = multiMap1.getAll(keys);
-        assertNotNull(multiMap2);
-        for (String key : keys) {
-            assertNull(multiMap2.get(key));
         }
     }
 
@@ -382,7 +351,6 @@ public class ClientMultiMapTest {
 
         assertEquals(expected, resultSet);
     }
-
 
     @Test(expected = NullPointerException.class)
     public void testGetAllAsync_whenKeysNull() {

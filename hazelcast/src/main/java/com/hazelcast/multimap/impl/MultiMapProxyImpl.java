@@ -60,7 +60,6 @@ import static com.hazelcast.internal.util.Preconditions.checkPositive;
 import static com.hazelcast.internal.util.Preconditions.checkTrueUnsupportedOperation;
 import static com.hazelcast.internal.util.SetUtil.createHashSet;
 import static com.hazelcast.spi.impl.InternalCompletableFuture.newCompletedFuture;
-import static java.util.Collections.emptyMap;
 
 @SuppressWarnings("checkstyle:methodcount")
 public class MultiMapProxyImpl<K, V>
@@ -138,35 +137,6 @@ public class MultiMapProxyImpl<K, V>
 
         putAllInternal(dataMap, future);
         return future;
-    }
-
-    @Override
-    public Map<K, Collection<V>> getAll(@Nullable Set<K> keys) {
-        checkTrueUnsupportedOperation(isClusterVersionGreaterOrEqual(Versions.V4_1), MINIMUM_VERSION_ERROR_4_1);
-        if (CollectionUtil.isEmpty(keys)) {
-            // Wrap emptyMap() into unmodifiableMap to make sure put/putAll methods throw UnsupportedOperationException
-            return Collections.unmodifiableMap(emptyMap());
-        }
-
-        NodeEngine nodeEngine = getNodeEngine();
-        List<Data> dataKeys = new LinkedList<>();
-        for (K key : keys) {
-            checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
-            dataKeys.add(toData(key));
-        }
-        Map<Data, List<Data>> resultingKeyValuePairs = new HashMap<>();
-        getAllInternal(dataKeys, resultingKeyValuePairs);
-
-        Map<K, Collection<V>> decodedResult = new HashMap<>();
-        for (Map.Entry<Data, List<Data>> entry : resultingKeyValuePairs.entrySet()) {
-            K key = nodeEngine.toObject(entry.getKey());
-            Collection<V> coll = new ArrayList<>();
-            for (Data d : entry.getValue()) {
-                coll.add(nodeEngine.toObject(d));
-            }
-            decodedResult.put(key, coll);
-        }
-        return Collections.unmodifiableMap(decodedResult);
     }
 
     @Override
