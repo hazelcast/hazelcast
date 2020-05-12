@@ -16,7 +16,7 @@
 
 package com.hazelcast.sql.impl.calcite.opt.metadata;
 
-import org.apache.calcite.rel.core.TableScan;
+import com.hazelcast.sql.impl.calcite.opt.logical.MapScanLogicalRel;
 import org.apache.calcite.rel.metadata.ReflectiveRelMetadataProvider;
 import org.apache.calcite.rel.metadata.RelMdRowCount;
 import org.apache.calcite.rel.metadata.RelMetadataProvider;
@@ -35,8 +35,7 @@ public final class HazelcastRelMdRowCount extends RelMdRowCount {
         // No-op.
     }
 
-    @Override
-    public Double getRowCount(TableScan rel, RelMetadataQuery mq) {
+    public Double getRowCount(MapScanLogicalRel rel, RelMetadataQuery mq) {
         return super.getRowCount(rel, mq);
     }
 }
