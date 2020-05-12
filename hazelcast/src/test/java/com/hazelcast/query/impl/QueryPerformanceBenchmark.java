@@ -22,7 +22,7 @@ import com.hazelcast.config.AttributeConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.map.IMap;
 import com.hazelcast.instance.impl.HazelcastInstanceProxy;
-import com.hazelcast.nio.serialization.impl.DefaultPortableReaderQuickTest.TestPortableFactory;
+import com.hazelcast.internal.serialization.impl.portable.portablereader.DefaultPortableReaderQuickTest.TestPortableFactory;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.query.extractor.ValueCollector;
 import com.hazelcast.query.extractor.ValueExtractor;

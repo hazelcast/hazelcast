@@ -25,7 +25,6 @@ import com.hazelcast.internal.metrics.LongProbeFunction;
 import com.hazelcast.internal.metrics.MetricDescriptor;
 import com.hazelcast.internal.metrics.MetricsCollectionContext;
 import com.hazelcast.internal.metrics.MetricsRegistry;
-import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.networking.ChannelInitializer;
 import com.hazelcast.internal.networking.Networking;
 import com.hazelcast.internal.nio.ConnectionListener;
@@ -37,8 +36,8 @@ import com.hazelcast.internal.server.ServerContext;
 import com.hazelcast.internal.util.concurrent.ThreadFactoryImpl;
 import com.hazelcast.logging.ILogger;
 
+import javax.annotation.Nonnull;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -53,8 +52,10 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
+import java.util.function.Predicate;
 
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.TCP_PREFIX;
+import static com.hazelcast.internal.metrics.ProbeLevel.INFO;
 import static com.hazelcast.internal.util.ThreadUtil.createThreadPoolName;
 import static com.hazelcast.spi.properties.ClusterProperty.NETWORK_STATS_REFRESH_INTERVAL_SECONDS;
 import static java.util.Collections.emptyMap;
@@ -97,7 +98,7 @@ public final class TcpServer implements Server {
         this.registry = registry;
         this.logger = context.getLoggingService().getLogger(TcpServer.class);
         this.scheduler = new ScheduledThreadPoolExecutor(SCHEDULER_POOL_SIZE,
-                new ThreadFactoryImpl(createThreadPoolName(context.getHazelcastName(), "TcpIpNetworkingService")));
+                new ThreadFactoryImpl(createThreadPoolName(context.getHazelcastName(), "TcpServer")));
 
         if (registry.holdsUnifiedSocket()) {
             unifiedConnectionManager = new TcpServerConnectionManager(
@@ -139,14 +140,14 @@ public final class TcpServer implements Server {
         }
 
         live = true;
-        logger.finest("Starting TCPServer.");
+        logger.finest("Starting TcpServer.");
 
         networking.restart();
         startAcceptor();
 
         if (unifiedConnectionManager == null) {
             refreshStatsFuture = metricsRegistry
-                    .scheduleAtFixedRate(refreshStatsTask, refreshStatsIntervalSeconds, SECONDS, ProbeLevel.INFO);
+                    .scheduleAtFixedRate(refreshStatsTask, refreshStatsIntervalSeconds, SECONDS, INFO);
         }
     }
 
@@ -156,7 +157,7 @@ public final class TcpServer implements Server {
             return;
         }
         live = false;
-        logger.finest("Stopping TCPServer");
+        logger.finest("Stopping TcpServer");
 
         if (refreshStatsFuture != null) {
             refreshStatsFuture.cancel(false);
@@ -187,44 +188,28 @@ public final class TcpServer implements Server {
     }
 
     @Override
-    public Collection<ServerConnection> getConnections() {
+    public @Nonnull
+    Collection<ServerConnection> getConnections() {
         if (unifiedConnectionManager != null) {
             return unifiedConnectionManager.getConnections();
         }
 
-        Set<ServerConnection> connections = null;
+        Set<ServerConnection> connections = new HashSet<>();
         for (TcpServerConnectionManager connectionManager : connectionManagers.values()) {
-            Collection<ServerConnection> endpointConnections = connectionManager.getConnections();
-            if (endpointConnections != null && !endpointConnections.isEmpty()) {
-                if (connections == null) {
-                    connections = new HashSet<>();
-                }
-
-                connections.addAll(endpointConnections);
-            }
+            connections.addAll(connectionManager.getConnections());
         }
-
-        return connections == null ? Collections.emptySet() : connections;
+        return connections;
     }
 
     @Override
-    public Collection<ServerConnection> getActiveConnections() {
+    public int connectionCount(Predicate<ServerConnection> predicate) {
         if (unifiedConnectionManager != null) {
-            return unifiedConnectionManager.getActiveConnections();
+            return unifiedConnectionManager.connectionCount(predicate);
         }
-
-        Set<ServerConnection> connections = null;
-        for (TcpServerConnectionManager connectionManager : connectionManagers.values()) {
-            Collection<ServerConnection> endpointConnections = connectionManager.getActiveConnections();
-            if (endpointConnections != null && !endpointConnections.isEmpty()) {
-                if (connections == null) {
-                    connections = new HashSet<>();
-                }
-
-                connections.addAll(endpointConnections);
-            }
-        }
-        return connections == null ? Collections.emptySet() : connections;
+        return connectionManagers.values()
+                .stream()
+                .mapToInt(connectionManager -> connectionManager.connectionCount(predicate))
+                .sum();
     }
 
     @Override
@@ -233,22 +218,21 @@ public final class TcpServer implements Server {
             return emptyMap();
         }
 
-        Map<EndpointQualifier, NetworkStats> stats = null;
+        Map<EndpointQualifier, NetworkStats> stats = new HashMap<>();
         for (Map.Entry<EndpointQualifier, TcpServerConnectionManager> entry : connectionManagers.entrySet()) {
-            if (stats == null) {
-                stats = new HashMap<>();
-            }
             stats.put(entry.getKey(), entry.getValue().getNetworkStats());
         }
-        return stats == null ? emptyMap() : stats;
+        return stats;
     }
+
 
     @Override
     public void addConnectionListener(ConnectionListener<ServerConnection> listener) {
         if (unifiedConnectionManager != null) {
             unifiedConnectionManager.addConnectionListener(listener);
         } else {
-            connectionManagers.values().forEach(manager -> manager.addConnectionListener(listener));
+            connectionManagers.values()
+                    .forEach(manager -> manager.addConnectionListener(listener));
         }
     }
 
@@ -265,7 +249,7 @@ public final class TcpServer implements Server {
         return connectionManager;
     }
 
-    public void scheduleDeferred(Runnable task, long delay, TimeUnit unit) {
+    void scheduleDeferred(Runnable task, long delay, TimeUnit unit) {
         scheduler.schedule(task, delay, unit);
     }
 
@@ -315,9 +299,9 @@ public final class TcpServer implements Server {
 
         void registerMetrics(MetricsRegistry metricsRegistry) {
             for (ProtocolType type : ProtocolType.valuesAsSet()) {
-                metricsRegistry.registerStaticProbe(this, "tcp.bytesReceived." + type.name(), ProbeLevel.INFO,
+                metricsRegistry.registerStaticProbe(this, "tcp.bytesReceived." + type.name(), INFO,
                         (LongProbeFunction<RefreshNetworkStatsTask>) source -> bytesReceivedPerProtocol.get(type).get());
-                metricsRegistry.registerStaticProbe(this, "tcp.bytesSend." + type.name(), ProbeLevel.INFO,
+                metricsRegistry.registerStaticProbe(this, "tcp.bytesSend." + type.name(), INFO,
                         (LongProbeFunction<RefreshNetworkStatsTask>) source -> bytesSentPerProtocol.get(type).get());
             }
         }
@@ -356,8 +340,8 @@ public final class TcpServer implements Server {
             if (unifiedConnectionManager != null) {
                 unifiedConnectionManager.provideDynamicMetrics(descriptor.copy(), context);
             } else {
-                connectionManagers.values().forEach(
-                        manager -> manager.provideDynamicMetrics(descriptor.copy(), context));
+                connectionManagers.values()
+                        .forEach(manager -> manager.provideDynamicMetrics(descriptor.copy(), context));
             }
         }
     }

@@ -18,7 +18,6 @@ package com.hazelcast.internal.serialization.impl;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.SampleIdentifiedDataSerializable;
 import com.hazelcast.nio.serialization.Serializer;
 import com.hazelcast.nio.serialization.SerializerHook;
 import com.hazelcast.nio.serialization.StreamSerializer;

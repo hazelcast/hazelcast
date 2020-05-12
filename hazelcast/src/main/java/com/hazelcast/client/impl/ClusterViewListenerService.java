@@ -29,6 +29,7 @@ import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.PartitionReplica;
 import com.hazelcast.internal.partition.PartitionTableView;
 import com.hazelcast.internal.util.EmptyStatement;
+import com.hazelcast.internal.util.scheduler.CoalescingDelayedTrigger;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.executionservice.ExecutionService;
@@ -48,14 +49,20 @@ import static com.hazelcast.instance.EndpointQualifier.CLIENT;
 
 public class ClusterViewListenerService {
     private static final int PUSH_PERIOD_IN_SECONDS = 30;
-    private final Map<ClientEndpoint, Long> clusterListeningEndpoints = new ConcurrentHashMap<ClientEndpoint, Long>();
+    private static final long PARTITION_UPDATE_DELAY_MS = 100;
+    private static final long PARTITION_UPDATE_MAX_DELAY_MS = 500;
+
+    private final Map<ClientEndpoint, Long> clusterListeningEndpoints = new ConcurrentHashMap<>();
     private final NodeEngine nodeEngine;
     private final boolean advancedNetworkConfigEnabled;
-    private AtomicBoolean pushScheduled = new AtomicBoolean();
+    private final AtomicBoolean pushScheduled = new AtomicBoolean();
+    private final CoalescingDelayedTrigger delayedPartitionUpdateTrigger;
 
     ClusterViewListenerService(NodeEngineImpl nodeEngine) {
         this.nodeEngine = nodeEngine;
         this.advancedNetworkConfigEnabled = nodeEngine.getConfig().getAdvancedNetworkConfig().isEnabled();
+        this.delayedPartitionUpdateTrigger = new CoalescingDelayedTrigger(nodeEngine.getExecutionService(),
+                PARTITION_UPDATE_DELAY_MS, PARTITION_UPDATE_MAX_DELAY_MS, this::pushPartitionTableView);
     }
 
     private void schedulePeriodicPush() {
@@ -64,18 +71,19 @@ public class ClusterViewListenerService {
     }
 
     private void pushView() {
-        ClientMessage partitionViewMessage = getPartitionViewMessageOrNull();
-        if (partitionViewMessage != null) {
-            sendToListeningEndpoints(partitionViewMessage);
-        }
+        pushPartitionTableView();
         sendToListeningEndpoints(getMemberListViewMessage());
     }
 
-    public void onPartitionStateChange() {
+    private void pushPartitionTableView() {
         ClientMessage partitionViewMessage = getPartitionViewMessageOrNull();
         if (partitionViewMessage != null) {
             sendToListeningEndpoints(partitionViewMessage);
         }
+    }
+
+    public void onPartitionStateChange() {
+        delayedPartitionUpdateTrigger.executeWithDelay();
     }
 
     public void onMemberListChange() {
@@ -142,9 +150,8 @@ public class ClusterViewListenerService {
         ArrayList<MemberInfo> memberInfos = new ArrayList<>();
         for (MemberInfo member : members) {
             memberInfos.add(new MemberInfo(clientAddressOf(member.getAddress()), member.getUuid(), member.getAttributes(),
-                    member.isLiteMember(), member.getVersion()));
+                    member.isLiteMember(), member.getVersion(), member.getAddressMap()));
         }
-
         return ClientAddClusterViewListenerCodec.encodeMembersViewEvent(version, memberInfos);
     }
 

@@ -30,9 +30,10 @@ import com.hazelcast.internal.server.ServerContext;
 import com.hazelcast.test.HazelcastTestSupport;
 import org.junit.After;
 
+import javax.annotation.Nonnull;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public abstract class AbstractOutOfMemoryHandlerTest extends HazelcastTestSupport {
@@ -81,22 +82,12 @@ public abstract class AbstractOutOfMemoryHandlerTest extends HazelcastTestSuppor
             }
 
             @Override
-            public Set getActiveConnections() {
-                return null;
-            }
-
-            @Override
-            public Collection getConnections() {
-                return null;
+            public @Nonnull Collection getConnections() {
+                return Collections.emptyList();
             }
 
             @Override
             public ServerConnection get(Address address) {
-                return null;
-            }
-
-            @Override
-            public ServerConnection getOrConnect(Address address) {
                 return null;
             }
 
@@ -144,13 +135,8 @@ public abstract class AbstractOutOfMemoryHandlerTest extends HazelcastTestSuppor
         }
 
         @Override
-        public Collection<ServerConnection> getConnections() {
-            return null;
-        }
-
-        @Override
-        public Collection<ServerConnection> getActiveConnections() {
-            return null;
+        public @Nonnull Collection<ServerConnection> getConnections() {
+            return Collections.emptyList();
         }
 
         @Override

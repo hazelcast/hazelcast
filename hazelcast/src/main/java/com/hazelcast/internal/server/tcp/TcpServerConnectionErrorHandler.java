@@ -22,7 +22,7 @@ import com.hazelcast.logging.ILogger;
 
 import static java.lang.System.currentTimeMillis;
 
-public class TcpServerConnectionErrorHandler {
+class TcpServerConnectionErrorHandler {
 
     private final ILogger logger;
     private final ServerContext serverContext;
@@ -40,18 +40,14 @@ public class TcpServerConnectionErrorHandler {
         this.logger = serverContext.getLoggingService().getLogger(getClass());
     }
 
-    public Address getEndPoint() {
-        return endPoint;
-    }
-
-    public synchronized void onError(Throwable t) {
-        String errorMessage = "An error occurred on connection to " + endPoint + getCauseDescription(t);
+    synchronized void onError(Throwable cause) {
+        String errorMessage = "An error occurred on connection to " + endPoint + getCauseDescription(cause);
         logger.finest(errorMessage);
         final long now = currentTimeMillis();
         final long last = lastFaultTime;
         if (now - last > minInterval) {
             if (faults++ >= maxFaults) {
-                String removeEndpointMessage = "Removing connection to endpoint " + endPoint + getCauseDescription(t);
+                String removeEndpointMessage = "Removing connection to endpoint " + endPoint + getCauseDescription(cause);
                 logger.warning(removeEndpointMessage);
                 serverContext.removeEndpoint(endPoint);
             }
@@ -59,17 +55,17 @@ public class TcpServerConnectionErrorHandler {
         }
     }
 
-    public synchronized void reset() {
+    synchronized void reset() {
         String resetMessage = "Resetting connection monitor for endpoint " + endPoint;
         logger.finest(resetMessage);
         faults = 0;
         lastFaultTime = 0L;
     }
 
-    private String getCauseDescription(Throwable t) {
+    private String getCauseDescription(Throwable cause) {
         StringBuilder s = new StringBuilder(" Cause => ");
-        if (t != null) {
-            s.append(t.getClass().getName()).append(" {").append(t.getMessage()).append("}");
+        if (cause != null) {
+            s.append(cause.getClass().getName()).append(" {").append(cause.getMessage()).append("}");
         } else {
             s.append("Unknown");
         }

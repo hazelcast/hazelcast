@@ -72,7 +72,7 @@ import com.hazelcast.internal.networking.ChannelInitializer;
 import com.hazelcast.internal.networking.InboundHandler;
 import com.hazelcast.internal.networking.OutboundHandler;
 import com.hazelcast.internal.nio.ClassLoaderUtil;
-import com.hazelcast.internal.server.tcp.DefaultChannelInitializerProvider;
+import com.hazelcast.internal.server.tcp.ChannelInitializerFunction;
 import com.hazelcast.internal.server.ServerContext;
 import com.hazelcast.internal.server.tcp.PacketDecoder;
 import com.hazelcast.internal.server.tcp.PacketEncoder;
@@ -317,7 +317,7 @@ public class DefaultNodeExtension implements NodeExtension {
 
     @Override
     public Function<EndpointQualifier, ChannelInitializer> createChannelInitializerFn(ServerContext serverContext) {
-        DefaultChannelInitializerProvider provider = new DefaultChannelInitializerProvider(serverContext, node.getConfig());
+        ChannelInitializerFunction provider = new ChannelInitializerFunction(serverContext, node.getConfig());
         provider.init();
         return provider;
     }
