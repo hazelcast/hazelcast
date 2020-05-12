@@ -35,6 +35,7 @@ import com.hazelcast.sql.impl.calcite.parse.SqlDropTable;
 import com.hazelcast.sql.impl.calcite.parse.SqlOption;
 import com.hazelcast.sql.impl.optimizer.OptimizationTask;
 import com.hazelcast.sql.impl.optimizer.SqlOptimizer;
+import com.hazelcast.sql.impl.optimizer.SqlPlan;
 import com.hazelcast.sql.impl.plan.Plan;
 import com.hazelcast.sql.impl.schema.ExternalCatalog;
 import com.hazelcast.sql.impl.schema.TableResolver;
@@ -80,7 +81,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
     }
 
     @Override
-    public Plan prepare(OptimizationTask task) {
+    public SqlPlan prepare(OptimizationTask task) {
         // 1. Prepare context.
         int memberCount = nodeEngine.getClusterService().getSize(MemberSelectors.DATA_MEMBER_SELECTOR);
 
@@ -92,8 +93,11 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
 
         // 2. Parse SQL string and validate it.
         QueryParseResult parseResult = context.parse(task.getSql());
+
         if (parseResult.isDdl()) {
+            // TODO: VO: Handle it in a centralized manner on the upper level
             doExecuteDdlStatement(parseResult.getNode());
+
             return null;
         }
 
@@ -104,7 +108,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         PhysicalRel physicalRel = optimize(context, rel);
 
         // 5. Create plan.
-        return doCreatePlan(task.getSql(), parseResult.getParameterRowType(), physicalRel);
+        return createImdgPlan(task.getSql(), parseResult.getParameterRowType(), physicalRel);
     }
 
     private void doExecuteDdlStatement(SqlNode node) {
@@ -153,7 +157,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
      * @param rel Rel.
      * @return Plan.
      */
-    private Plan doCreatePlan(String sql, RelDataType parameterRowType, PhysicalRel rel) {
+    private Plan createImdgPlan(String sql, RelDataType parameterRowType, PhysicalRel rel) {
         // Get partition mapping.
         Collection<Partition> parts = nodeEngine.getHazelcastInstance().getPartitionService().getPartitions();
 

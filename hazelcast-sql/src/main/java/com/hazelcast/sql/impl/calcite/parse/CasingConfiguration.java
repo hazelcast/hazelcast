@@ -30,7 +30,7 @@ import java.util.Properties;
  */
 public final class CasingConfiguration {
 
-    public static CasingConfiguration DEFAULT =
+    public static final CasingConfiguration DEFAULT =
         new CasingConfiguration(true, Casing.UNCHANGED, Casing.UNCHANGED, Quoting.DOUBLE_QUOTE);
 
     private final boolean caseSensitive;

@@ -22,8 +22,6 @@ import com.hazelcast.sql.impl.client.QueryClientStateRegistry;
 import com.hazelcast.sql.impl.exec.io.flowcontrol.FlowControlFactory;
 import com.hazelcast.sql.impl.exec.io.flowcontrol.simple.SimpleFlowControlFactory;
 import com.hazelcast.sql.impl.exec.root.BlockingRootResultConsumer;
-import com.hazelcast.sql.impl.explain.QueryExplain;
-import com.hazelcast.sql.impl.explain.QueryExplainResultProducer;
 import com.hazelcast.sql.impl.memory.GlobalMemoryReservationManager;
 import com.hazelcast.sql.impl.memory.MemoryPressure;
 import com.hazelcast.sql.impl.operation.QueryExecuteOperation;
@@ -163,8 +161,7 @@ public class SqlInternalService {
             plan,
             plan.getMetadata(),
             consumer,
-            operationHandler,
-            true
+            operationHandler
         );
 
         try {
@@ -265,24 +262,6 @@ public class SqlInternalService {
             default:
                 throw new IllegalStateException("Invalid memory pressure: " + memoryPressure0);
         }
-    }
-
-    public QueryState executeExplain(Plan plan) {
-        QueryExplain explain = plan.getExplain();
-
-        QueryExplainResultProducer rowSource = new QueryExplainResultProducer(explain);
-
-        QueryState state = stateRegistry.onInitiatorQueryStarted(
-            nodeServiceProvider.getLocalMemberId(),
-            0,
-            plan,
-            QueryExplain.EXPLAIN_METADATA,
-            rowSource,
-            operationHandler,
-            false
-        );
-
-        return state;
     }
 
     public QueryStateRegistry getStateRegistry() {

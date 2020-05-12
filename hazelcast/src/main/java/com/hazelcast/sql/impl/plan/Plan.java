@@ -20,6 +20,8 @@ import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.sql.impl.QueryMetadata;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.explain.QueryExplain;
+import com.hazelcast.sql.impl.optimizer.SqlPlan;
+import com.hazelcast.sql.impl.optimizer.SqlPlanType;
 import com.hazelcast.sql.impl.plan.node.PlanNode;
 
 import java.util.Collection;
@@ -30,7 +32,7 @@ import java.util.UUID;
 /**
  * Query plan implementation.
  */
-public class Plan {
+public class Plan implements SqlPlan {
     /** Partition mapping. */
     private final Map<UUID, PartitionIdSet> partMap;
 
@@ -79,6 +81,16 @@ public class Plan {
         this.explain = explain;
     }
 
+    @Override
+    public SqlPlanType getType() {
+        return SqlPlanType.IMDG;
+    }
+
+    @Override
+    public QueryExplain getExplain() {
+        return explain;
+    }
+
     public Map<UUID, PartitionIdSet> getPartitionMap() {
         return partMap;
     }
@@ -117,9 +129,5 @@ public class Plan {
 
     public QueryMetadata getMetadata() {
         return metadata;
-    }
-
-    public QueryExplain getExplain() {
-        return explain;
     }
 }

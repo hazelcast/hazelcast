@@ -16,15 +16,19 @@
 
 package com.hazelcast.sql.impl.optimizer;
 
-import com.hazelcast.sql.impl.QueryException;
-import com.hazelcast.sql.impl.plan.Plan;
+import com.hazelcast.sql.impl.explain.QueryExplain;
 
 /**
- * A not-implemented optimizer. Used when a real optimizer isn't available.
+ * Abstraction over execution plan that allows for choosing an execution backend.
  */
-public class NotImplementedSqlOptimizer implements SqlOptimizer {
-    @Override
-    public Plan prepare(OptimizationTask task) {
-        throw QueryException.error("Cannot execute SQL query because \"hazelcast-sql\" module is not in the classpath.");
-    }
+public interface SqlPlan {
+    /**
+     * @return Type of the plan.
+     */
+    SqlPlanType getType();
+
+    /**
+     * @return Explain metadata.
+     */
+    QueryExplain getExplain();
 }

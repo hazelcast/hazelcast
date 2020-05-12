@@ -48,8 +48,6 @@ public class QueryStateRegistry {
      * @param initiatorMetadata Metadata.
      * @param initiatorResultProducer An object that will produce final query results.
      * @param completionCallback Callback that will be invoked when the query is completed.
-     * @param register Whether th query should be registered. {@code true} for distributed queries, {@code false} for queries
-     *                 that return predefined values, e.g. EXPLAIN.
      * @return Query state.
      */
     public QueryState onInitiatorQueryStarted(
@@ -58,8 +56,7 @@ public class QueryStateRegistry {
         Plan initiatorPlan,
         QueryMetadata initiatorMetadata,
         QueryResultProducer initiatorResultProducer,
-        QueryStateCompletionCallback completionCallback,
-        boolean register
+        QueryStateCompletionCallback completionCallback
     ) {
         QueryId queryId = QueryId.create(localMemberId);
 
@@ -74,9 +71,7 @@ public class QueryStateRegistry {
             clockProvider
         );
 
-        if (register) {
-            states.put(queryId, state);
-        }
+        states.put(queryId, state);
 
         return state;
     }

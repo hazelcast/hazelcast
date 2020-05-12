@@ -16,10 +16,9 @@
 
 package com.hazelcast.sql.impl.explain;
 
-import com.hazelcast.sql.impl.QueryMetadata;
+import com.hazelcast.sql.SqlRow;
+import com.hazelcast.sql.impl.SqlRowImpl;
 import com.hazelcast.sql.impl.row.HeapRow;
-import com.hazelcast.sql.impl.row.Row;
-import com.hazelcast.sql.impl.type.QueryDataType;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -28,16 +27,6 @@ import java.util.List;
  * Query plan descriptor.
  */
 public final class QueryExplain {
-    public static final QueryMetadata EXPLAIN_METADATA;
-
-    static {
-        List<QueryDataType> explainColumnTypes = new ArrayList<>(1);
-
-        explainColumnTypes.add(QueryDataType.VARCHAR);
-
-        EXPLAIN_METADATA = new QueryMetadata(explainColumnTypes);
-    }
-
     /** Original SQL. */
     private final String sql;
 
@@ -49,8 +38,8 @@ public final class QueryExplain {
         this.elements = elements;
     }
 
-    public List<Row> asRows() {
-        List<Row> rows = new ArrayList<>(elements.size());
+    public List<SqlRow> asRows() {
+        List<SqlRow> rows = new ArrayList<>(elements.size());
 
         for (QueryExplainElement element : elements) {
             String elementString = elementAsString(element);
@@ -58,7 +47,7 @@ public final class QueryExplain {
             HeapRow row = new HeapRow(1);
             row.set(0, elementString);
 
-            rows.add(row);
+            rows.add(new SqlRowImpl(row));
         }
 
         return rows;

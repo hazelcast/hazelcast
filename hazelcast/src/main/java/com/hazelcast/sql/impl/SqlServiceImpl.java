@@ -26,9 +26,12 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.sql.SqlCursor;
 import com.hazelcast.sql.SqlQuery;
 import com.hazelcast.sql.SqlService;
-import com.hazelcast.sql.impl.optimizer.NotImplementedSqlOptimizer;
+import com.hazelcast.sql.impl.explain.QueryExplainCursor;
+import com.hazelcast.sql.impl.optimizer.DisabledSqlOptimizer;
 import com.hazelcast.sql.impl.optimizer.OptimizationTask;
 import com.hazelcast.sql.impl.optimizer.SqlOptimizer;
+import com.hazelcast.sql.impl.optimizer.SqlPlan;
+import com.hazelcast.sql.impl.optimizer.SqlPlanType;
 import com.hazelcast.sql.impl.plan.Plan;
 import com.hazelcast.sql.impl.state.QueryState;
 
@@ -164,8 +167,6 @@ public class SqlServiceImpl implements SqlService, Consumer<Packet> {
         }
 
         // Execute.
-        QueryState state;
-
         if (QueryUtils.isExplain(sql)) {
             String unwrappedSql = QueryUtils.unwrapExplain(sql);
 
@@ -173,30 +174,48 @@ public class SqlServiceImpl implements SqlService, Consumer<Packet> {
                 throw QueryException.error("SQL statement to be explained cannot be empty");
             }
 
-            Plan plan = prepare(unwrappedSql);
+            SqlPlan plan = prepare(unwrappedSql);
+
+            // TODO: VO: We should never return an empty cursor here.
             if (plan == null) {
                 return new SingleValueSqlCursor(0);
             }
 
-            state = internalService.executeExplain(plan);
+            return new QueryExplainCursor(plan.getExplain().asRows());
         } else {
-            Plan plan = prepare(sql);
+            SqlPlan plan = prepare(sql);
+
+            // TODO: VO: We should never return an empty cursor here.
             if (plan == null) {
                 return new SingleValueSqlCursor(0);
             }
 
-            state = internalService.execute(
-                plan,
-                params0,
-                timeout,
-                pageSize
-            );
+            return execute(plan, params0, timeout, pageSize);
         }
+    }
+
+    private SqlCursor execute(SqlPlan plan, List<Object> params, long timeout, int pageSize) {
+        if (plan.getType() == SqlPlanType.IMDG) {
+            return executeImdg((Plan) plan, params, timeout, pageSize);
+        } else {
+            assert plan.getType() == SqlPlanType.JET;
+
+            return executeJet(plan, params, timeout, pageSize);
+        }
+    }
+
+    private SqlCursor executeImdg(Plan plan, List<Object> params, long timeout, int pageSize) {
+        QueryState state = internalService.execute(plan, params, timeout, pageSize);
 
         return new SqlCursorImpl(state);
     }
 
-    private Plan prepare(String sql) {
+    private SqlCursor executeJet(SqlPlan plan, List<Object> params, long timeout, int pageSize) {
+        // TODO: Implement
+        throw new UnsupportedOperationException("Implement me");
+    }
+
+    private SqlPlan prepare(String sql) {
         return optimizer.prepare(new OptimizationTask.Builder(sql).build());
     }
 
@@ -218,9 +237,9 @@ public class SqlServiceImpl implements SqlService, Consumer<Packet> {
             clazz = Class.forName(className);
         } catch (ClassNotFoundException e) {
             logger.log(SQL_MODULE_OPTIMIZER_CLASS.equals(className) ? Level.FINE : Level.WARNING,
-                    "Optimizer class \"" + className + "\" not found, falling back to "
-                            + NotImplementedSqlOptimizer.class.getName());
-            return new NotImplementedSqlOptimizer();
+                    "Optimizer class \"" + className + "\" not found, falling back to " + DisabledSqlOptimizer.class.getName());
+
+            return new DisabledSqlOptimizer();
         } catch (Exception e) {
             throw new HazelcastException("Failed to resolve optimizer class " + className + ": " + e.getMessage(), e);
         }

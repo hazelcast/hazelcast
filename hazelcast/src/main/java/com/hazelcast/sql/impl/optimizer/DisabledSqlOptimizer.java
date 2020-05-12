@@ -14,36 +14,16 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.explain;
+package com.hazelcast.sql.impl.optimizer;
 
 import com.hazelcast.sql.impl.QueryException;
-import com.hazelcast.sql.impl.QueryResultProducer;
-import com.hazelcast.sql.impl.row.Row;
-
-import java.util.Iterator;
 
 /**
- * Result producer for EXPLAIN statement.
+ * An optimizer that is instantiated when {@code hazelcast-sql} is not in the classpath.
  */
-// TODO: Remove this class.
-public class QueryExplainResultProducer implements QueryResultProducer {
-
-    private final QueryExplain explain;
-    private final Iterator<Row> iterator;
-
-    public QueryExplainResultProducer(QueryExplain explain) {
-        this.explain = explain;
-
-        iterator = explain.asRows().iterator();
-    }
-
+public class DisabledSqlOptimizer implements SqlOptimizer {
     @Override
-    public Iterator<Row> iterator() {
-        return iterator;
-    }
-
-    @Override
-    public void onError(QueryException error) {
-        // No-op.
+    public SqlPlan prepare(OptimizationTask task) {
+        throw QueryException.error("Cannot execute SQL query because \"hazelcast-sql\" module is not in the classpath.");
     }
 }

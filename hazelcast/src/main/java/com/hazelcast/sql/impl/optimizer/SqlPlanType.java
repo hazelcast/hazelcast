@@ -16,15 +16,10 @@
 
 package com.hazelcast.sql.impl.optimizer;
 
-/**
- * Optimizer responsible for conversion of SQL string to executable plan.
- */
-public interface SqlOptimizer {
-    /**
-     * Prepare SQL query.
-     *
-     * @param task Optimization task containing all necessary context.
-     * @return Prepared plan.
-     */
-    SqlPlan prepare(OptimizationTask task);
+public enum SqlPlanType {
+    /** IMDG plan. */
+    IMDG,
+
+    /** Streaming plan that should be executed by Jet. */
+    JET
 }

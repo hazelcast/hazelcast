@@ -23,7 +23,7 @@ import com.hazelcast.sql.impl.SqlCursorImpl;
 import com.hazelcast.sql.impl.SqlServiceImpl;
 import com.hazelcast.sql.impl.SqlTestSupport;
 import com.hazelcast.sql.impl.optimizer.OptimizationTask;
-import com.hazelcast.sql.impl.plan.Plan;
+import com.hazelcast.sql.impl.optimizer.SqlPlan;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -32,10 +32,11 @@ import java.util.List;
  * Common infrastructure for SQL tests.
  */
 public class CalciteSqlTestSupport extends SqlTestSupport {
-    protected Plan getPlan(HazelcastInstance target, String sql) {
+    @SuppressWarnings("unchecked")
+    protected <T extends SqlPlan> T getPlan(HazelcastInstance target, String sql) {
         SqlServiceImpl sqlService = (SqlServiceImpl) target.getSqlService();
 
-        return sqlService.getOptimizer().prepare(new OptimizationTask.Builder(sql).build());
+        return (T) sqlService.getOptimizer().prepare(new OptimizationTask.Builder(sql).build());
     }
 
     protected SqlCursor executeQuery(HazelcastInstance target, String sql) {
