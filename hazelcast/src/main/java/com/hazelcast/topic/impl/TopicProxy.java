@@ -17,9 +17,10 @@
 package com.hazelcast.topic.impl;
 
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.Operation;
-import com.hazelcast.spi.impl.operationservice.impl.InvocationFuture;
 import com.hazelcast.topic.ITopic;
 import com.hazelcast.topic.LocalTopicStats;
 import com.hazelcast.topic.MessageListener;
@@ -28,9 +29,9 @@ import javax.annotation.Nonnull;
 import java.util.Collection;
 import java.util.UUID;
 
-import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.internal.util.Preconditions.checkNoNullInside;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
+import static com.hazelcast.spi.impl.InternalCompletableFuture.newDelegatingFuture;
 
 /**
  * Topic proxy used when global ordering is disabled (nodes get
@@ -42,11 +43,11 @@ public class TopicProxy<E> extends TopicProxySupport implements ITopic<E> {
 
     protected static final String NULL_MESSAGE_IS_NOT_ALLOWED = "Null message is not allowed!";
     protected static final String NULL_LISTENER_IS_NOT_ALLOWED = "Null listener is not allowed!";
-    private final int partitionId;
+    private final SerializationService serializationService;
 
     public TopicProxy(String name, NodeEngine nodeEngine, TopicService service) {
         super(name, nodeEngine, service);
-        this.partitionId = nodeEngine.getPartitionService().getPartitionId(getNameAsPartitionAwareData());
+        this.serializationService = nodeEngine.getSerializationService();
     }
 
     @Override
@@ -56,10 +57,10 @@ public class TopicProxy<E> extends TopicProxySupport implements ITopic<E> {
     }
 
     @Override
-    public InvocationFuture<E> publishAsync(@Nonnull E message) {
+    public InternalCompletableFuture<E> publishAsync(@Nonnull E message) {
         checkNotNull(message, NULL_MESSAGE_IS_NOT_ALLOWED);
-        Operation op = new PublishOperation(getName(), toData(message)).setPartitionId(partitionId);
-        return invokeOnPartition(op);
+        Operation op = new PublishOperation(getName(), toData(message));
+        return newDelegatingFuture(serializationService, putAsyncInternal(op));
     }
 
     @Nonnull
@@ -84,21 +85,15 @@ public class TopicProxy<E> extends TopicProxySupport implements ITopic<E> {
     public void publishAll(@Nonnull Collection<? extends E> messages) {
         checkNotNull(messages, NULL_MESSAGE_IS_NOT_ALLOWED);
         checkNoNullInside(messages, NULL_MESSAGE_IS_NOT_ALLOWED);
-        Operation op = new PublishAllOperation(getName(), toDataArray(messages)).setPartitionId(partitionId);
-
-        try {
-            invokeOnPartition(op).get();
-        } catch (Exception e) {
-            throw rethrow(e);
-        }
+        messages.forEach(this::publishInternal);
     }
 
     @Override
-    public InvocationFuture<E> publishAllAsync(@Nonnull Collection<? extends E> messages) {
+    public InternalCompletableFuture<E> publishAllAsync(@Nonnull Collection<? extends E> messages) {
         checkNotNull(messages, NULL_MESSAGE_IS_NOT_ALLOWED);
         checkNoNullInside(messages, NULL_MESSAGE_IS_NOT_ALLOWED);
-        Operation op = new PublishAllOperation(getName(), toDataArray(messages)).setPartitionId(partitionId);
-        return invokeOnPartition(op);
+        Operation op = new PublishAllOperation(getName(), toDataArray(messages));
+        return newDelegatingFuture(serializationService, putAsyncInternal(op));
     }
 
 
