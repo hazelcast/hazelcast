@@ -23,6 +23,7 @@ import com.hazelcast.internal.nio.ConnectionListener;
 import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.internal.util.concurrent.ThreadFactoryImpl;
 
+import javax.annotation.Nonnull;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
@@ -67,12 +68,7 @@ public class FirewallingServer
     }
 
     @Override
-    public Collection getActiveConnections() {
-        return delegate.getActiveConnections();
-    }
-
-    @Override
-    public Collection getConnections() {
+    public @Nonnull Collection getConnections() {
         return delegate.getConnections();
     }
 
@@ -190,10 +186,6 @@ public class FirewallingServer
             delegate.accept(packet);
         }
 
-        @Override
-        public synchronized ServerConnection getOrConnect(Address address, boolean silent) {
-            return getOrConnect(address);
-        }
 
         public synchronized void blockNewConnection(Address address) {
             blockedAddresses.add(address);
@@ -285,13 +277,8 @@ public class FirewallingServer
         }
 
         @Override
-        public Collection<ServerConnection> getConnections() {
+        public @Nonnull Collection<ServerConnection> getConnections() {
             return delegate.getConnections();
-        }
-
-        @Override
-        public Collection<ServerConnection> getActiveConnections() {
-            return delegate.getActiveConnections();
         }
 
         @Override
@@ -300,7 +287,7 @@ public class FirewallingServer
         }
 
         @Override
-        public ServerConnection getOrConnect(Address address) {
+        public synchronized ServerConnection getOrConnect(Address address, boolean silent) {
             return delegate.getOrConnect(address);
         }
 

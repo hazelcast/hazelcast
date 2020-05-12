@@ -70,7 +70,7 @@ import static com.hazelcast.internal.util.UuidUtil.newUnsecureUUID;
 import static com.hazelcast.spi.properties.ClusterProperty.MEMBER_LIST_PUBLISH_INTERVAL_SECONDS;
 import static com.hazelcast.test.Accessors.getAddress;
 import static com.hazelcast.test.Accessors.getClusterService;
-import static com.hazelcast.test.Accessors.getConnectionManagerManager;
+import static com.hazelcast.test.Accessors.getConnectionManager;
 import static com.hazelcast.test.Accessors.getNode;
 import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static com.hazelcast.test.OverridePropertyRule.clear;
@@ -777,9 +777,9 @@ public class MembershipUpdateTest extends HazelcastTestSupport {
 
         assertClusterSizeEventually(2, hz1, hz3);
 
-        assertNull(getConnectionManagerManager(hz1).get(target));
+        assertNull(getConnectionManager(hz1).get(target));
 
-        ServerConnectionManager cm3 = getConnectionManagerManager(hz3);
+        ServerConnectionManager cm3 = getConnectionManager(hz3);
         assertTrueEventually(() -> assertNull(cm3.get(target)));
     }
 
@@ -798,10 +798,10 @@ public class MembershipUpdateTest extends HazelcastTestSupport {
         Address target = getAddress(hz3);
 
         ConnectionRemovedListener connListener1 = new ConnectionRemovedListener(target);
-        getConnectionManagerManager(hz1).addConnectionListener(connListener1);
+        getConnectionManager(hz1).addConnectionListener(connListener1);
 
         ConnectionRemovedListener connListener2 = new ConnectionRemovedListener(target);
-        getConnectionManagerManager(hz2).addConnectionListener(connListener2);
+        getConnectionManager(hz2).addConnectionListener(connListener2);
 
         dropOperationsBetween(hz3, hz1, F_ID, singletonList(HEARTBEAT));
         // Artificially suspect from hz3

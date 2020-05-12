@@ -16,6 +16,8 @@
 
 package com.hazelcast.internal.serialization.impl;
 
+import com.hazelcast.internal.serialization.impl.defaultserializers.ConstantSerializers;
+import com.hazelcast.internal.serialization.impl.defaultserializers.JavaDefaultSerializers;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;

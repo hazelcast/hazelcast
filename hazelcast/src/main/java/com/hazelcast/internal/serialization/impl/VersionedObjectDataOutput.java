@@ -29,7 +29,7 @@ import java.io.OutputStream;
  * If the serializer supports versioning it may set the version to use for
  * the serialization on this object.
  */
-abstract class VersionedObjectDataOutput extends OutputStream implements ObjectDataOutput, VersionAware {
+public abstract class VersionedObjectDataOutput extends OutputStream implements ObjectDataOutput, VersionAware {
     protected Version version = Version.UNKNOWN;
     protected Version wanProtocolVersion = Version.UNKNOWN;
 

@@ -166,7 +166,7 @@
             </xs:sequence>
         </xs:complexType>
     </xs:element>
-    <xs:element name="smart-routing" default="false">
+    <xs:element name="smart-routing" default="true">
         <xs:annotation>
             <xs:documentation>
                 If true, client will route the key based operations to owner of the key at

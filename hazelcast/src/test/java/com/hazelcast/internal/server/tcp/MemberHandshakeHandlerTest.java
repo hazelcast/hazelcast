@@ -188,7 +188,8 @@ public class MemberHandshakeHandlerTest {
     private void assertExpectedAddressesRegistered()
             throws IllegalAccessException {
         // inspect connections in TcpIpEndpointManager
-        ConcurrentHashMap<Address, TcpServerConnection> connectionsMap = getFieldValueReflectively(connectionManager, "connectionsMap");
+        ConcurrentHashMap<Address, TcpServerConnection> connectionsMap
+                = getFieldValueReflectively(connectionManager, "mappedConnections");
         try {
             for (Address address : expectedAddresses) {
                 assertTrue(connectionsMap.containsKey(address));

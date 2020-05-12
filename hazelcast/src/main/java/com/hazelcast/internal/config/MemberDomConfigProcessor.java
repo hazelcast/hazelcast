@@ -3032,6 +3032,10 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
                 ldapCfg.setSystemUserDn(getTextContent(child));
             } else if ("system-user-password".contentEquals(nodeName)) {
                 ldapCfg.setSystemUserPassword(getTextContent(child));
+            } else if ("system-authentication".contentEquals(nodeName)) {
+                ldapCfg.setSystemAuthentication(getTextContent(child));
+            } else if ("security-realm".contentEquals(nodeName)) {
+                ldapCfg.setSecurityRealm(getTextContent(child));
             } else if ("password-attribute".contentEquals(nodeName)) {
                 ldapCfg.setPasswordAttribute(getTextContent(child));
             } else if ("user-context".contentEquals(nodeName)) {

@@ -18,7 +18,7 @@ package com.hazelcast.internal.util;
 
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.internal.serialization.DataSerializerHook;
-import com.hazelcast.internal.serialization.PortableHook;
+import com.hazelcast.internal.serialization.impl.portable.PortableHook;
 import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.PortableFactory;

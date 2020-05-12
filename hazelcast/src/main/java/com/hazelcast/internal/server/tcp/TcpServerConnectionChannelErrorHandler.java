@@ -50,7 +50,7 @@ public class TcpServerConnectionChannelErrorHandler implements ChannelErrorHandl
                         : "Exception in " + connection + ", thread=" + Thread.currentThread().getName();
                 connection.close(closeReason, error);
             } else {
-                logger.warning("Channel error occured", error);
+                logger.warning("Channel error occurred", error);
             }
         }
     }

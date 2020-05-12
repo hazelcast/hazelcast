@@ -32,9 +32,10 @@ import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.json.Json;
 import com.hazelcast.internal.json.JsonArray;
 import com.hazelcast.internal.json.JsonObject;
-import com.hazelcast.internal.server.ServerConnectionManager;
-import com.hazelcast.internal.server.Server;
 import com.hazelcast.internal.partition.InternalPartitionService;
+import com.hazelcast.internal.server.Server;
+import com.hazelcast.internal.server.ServerConnection;
+import com.hazelcast.internal.server.ServerConnectionManager;
 import com.hazelcast.internal.util.StringUtil;
 
 import java.util.Collection;
@@ -207,25 +208,25 @@ public class HttpGetCommandProcessor extends HttpCommandProcessor<HttpGetCommand
         int i = uri.indexOf(URI_CP_SESSIONS_SUFFIX);
         String groupName = uri.substring(prefix.length(), i).trim();
         getCpSubsystem().getCPSessionManagementService()
-                        .getAllSessions(groupName)
-                        .whenCompleteAsync((sessions, t) -> {
-                            if (t == null) {
-                                JsonArray sessionsArr = new JsonArray();
-                                for (CPSession session : sessions) {
-                                    sessionsArr.add(toJson(session));
-                                }
-                                prepareResponse(command, sessionsArr);
-                                textCommandService.sendResponse(command);
-                            } else {
-                                if (peel(t) instanceof IllegalArgumentException) {
-                                    command.send404();
-                                } else {
-                                    command.send500();
-                                }
+                .getAllSessions(groupName)
+                .whenCompleteAsync((sessions, t) -> {
+                    if (t == null) {
+                        JsonArray sessionsArr = new JsonArray();
+                        for (CPSession session : sessions) {
+                            sessionsArr.add(toJson(session));
+                        }
+                        prepareResponse(command, sessionsArr);
+                        textCommandService.sendResponse(command);
+                    } else {
+                        if (peel(t) instanceof IllegalArgumentException) {
+                            command.send404();
+                        } else {
+                            command.send500();
+                        }
 
-                                textCommandService.sendResponse(command);
-                            }
-                        });
+                        textCommandService.sendResponse(command);
+                    }
+                });
     }
 
     private void handleGetCPGroupByName(final HttpGetCommand command) {
@@ -237,7 +238,7 @@ public class HttpGetCommandProcessor extends HttpCommandProcessor<HttpGetCommand
                 if (group != null) {
                     JsonObject json = new JsonObject();
                     json.add("id", toJson(group.id()))
-                        .add("status", group.status().name());
+                            .add("status", group.status().name());
 
                     JsonArray membersArr = new JsonArray();
                     for (CPMember member : group.members()) {
@@ -328,22 +329,23 @@ public class HttpGetCommandProcessor extends HttpCommandProcessor<HttpGetCommand
     private void handleCluster(HttpGetCommand command) {
         Node node = textCommandService.getNode();
         Server server = node.getServer();
-        ServerConnectionManager cm = server.getConnectionManager(CLIENT);
         ClusterServiceImpl clusterService = node.getClusterService();
         JsonArray membersArray = new JsonArray();
         clusterService.getMembers()
-                      .stream()
-                      .map(m -> new JsonObject()
-                              .add("address", m.getAddress().toString())
-                              .add("liteMember", m.isLiteMember())
-                              .add("localMember", m.localMember())
-                              .add("uuid", m.getUuid().toString())
-                              .add("memberVersion", m.getVersion().toString()))
-                      .forEach(membersArray::add);
+                .stream()
+                .map(m -> new JsonObject()
+                        .add("address", m.getAddress().toString())
+                        .add("liteMember", m.isLiteMember())
+                        .add("localMember", m.localMember())
+                        .add("uuid", m.getUuid().toString())
+                        .add("memberVersion", m.getVersion().toString()))
+                .forEach(membersArray::add);
+        ServerConnectionManager cm = server.getConnectionManager(CLIENT);
+        int clientCount = cm == null ? 0 : cm.connectionCount(ServerConnection::isClient);
         JsonObject response = new JsonObject()
                 .add("members", membersArray)
-                .add("connectionCount", cm == null ? 0 : cm.getActiveConnections().size())
-                .add("allConnectionCount", server.getActiveConnections().size());
+                .add("connectionCount", clientCount)
+                .add("allConnectionCount", server.connectionCount());
         prepareResponse(command, response);
     }
 

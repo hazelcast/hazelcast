@@ -23,6 +23,7 @@ import com.hazelcast.client.impl.connection.ClientConnectionManager;
 import com.hazelcast.client.impl.connection.tcp.TcpClientConnection;
 import com.hazelcast.client.impl.spi.ClientClusterService;
 import com.hazelcast.client.impl.spi.ClientPartitionService;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Cluster;
 import com.hazelcast.cluster.InitialMembershipEvent;
 import com.hazelcast.cluster.InitialMembershipListener;
@@ -31,6 +32,7 @@ import com.hazelcast.cluster.MemberSelector;
 import com.hazelcast.cluster.MembershipEvent;
 import com.hazelcast.cluster.MembershipListener;
 import com.hazelcast.cluster.impl.MemberImpl;
+import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.internal.cluster.MemberInfo;
 import com.hazelcast.internal.cluster.impl.MemberSelectingCollection;
 import com.hazelcast.internal.nio.Connection;
@@ -49,6 +51,7 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -57,6 +60,8 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static com.hazelcast.instance.EndpointQualifier.CLIENT;
+import static com.hazelcast.instance.EndpointQualifier.MEMBER;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.unmodifiableSet;
@@ -64,7 +69,8 @@ import static java.util.Collections.unmodifiableSet;
 /**
  * The {@link ClientClusterService}  and {@link ClientPartitionService} implementation.
  */
-public class ClientClusterServiceImpl implements ClientClusterService {
+public class ClientClusterServiceImpl
+        implements ClientClusterService {
 
     private static final int INITIAL_MEMBERS_TIMEOUT_SECONDS = 120;
 
@@ -178,7 +184,7 @@ public class ClientClusterServiceImpl implements ClientClusterService {
 
     public void start(Collection<EventListener> configuredListeners) {
         configuredListeners.stream().filter(listener -> listener instanceof MembershipListener)
-                           .forEach(listener -> addMembershipListener((MembershipListener) listener));
+                .forEach(listener -> addMembershipListener((MembershipListener) listener));
     }
 
     public void waitInitialMemberListFetched() {
@@ -233,12 +239,20 @@ public class ClientClusterServiceImpl implements ClientClusterService {
     private MemberListSnapshot createSnapshot(int memberListVersion, Collection<MemberInfo> memberInfos) {
         LinkedHashMap<UUID, Member> newMembers = new LinkedHashMap<>();
         for (MemberInfo memberInfo : memberInfos) {
-            MemberImpl member = new MemberImpl.Builder(memberInfo.getAddress()).version(memberInfo.getVersion())
+            MemberImpl.Builder memberBuilder;
+            Map<EndpointQualifier, Address> addressMap = memberInfo.getAddressMap();
+            if (addressMap == null || addressMap.isEmpty()) {
+                memberBuilder = new MemberImpl.Builder(memberInfo.getAddress());
+            } else {
+                memberBuilder = new MemberImpl.Builder(addressMap)
+                        .address(addressMap.getOrDefault(CLIENT, addressMap.get(MEMBER)));
+            }
+            memberBuilder.version(memberInfo.getVersion())
                     .uuid(memberInfo.getUuid())
                     .attributes(memberInfo.getAttributes())
                     .liteMember(memberInfo.isLiteMember())
                     .memberListJoinVersion(memberInfo.getMemberListJoinVersion()).build();
-            newMembers.put(memberInfo.getUuid(), member);
+            newMembers.put(memberInfo.getUuid(), memberBuilder.build());
         }
         return new MemberListSnapshot(memberListVersion, newMembers);
     }
