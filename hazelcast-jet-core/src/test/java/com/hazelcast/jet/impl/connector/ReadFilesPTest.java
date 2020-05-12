@@ -19,6 +19,7 @@ package com.hazelcast.jet.impl.connector;
 import com.hazelcast.collection.IList;
 import com.hazelcast.jet.SimpleTestInClusterSupport;
 import com.hazelcast.jet.Util;
+import com.hazelcast.jet.pipeline.BatchSource;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.Sources;
@@ -31,6 +32,7 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.stream.IntStream;
@@ -43,7 +45,7 @@ public class ReadFilesPTest extends SimpleTestInClusterSupport {
 
     private File directory;
     private IList<Entry<String, String>> list;
-    private IList<TestPerson> listJson;
+    private IList<Object> listJson;
 
     @BeforeClass
     public static void beforeClass() {
@@ -120,22 +122,40 @@ public class ReadFilesPTest extends SimpleTestInClusterSupport {
 
     @Test
     public void testJsonFiles_when_asObject_thenObjects() throws IOException {
-        Pipeline p = pipelineJson();
+        File[] jsonFiles = createJsonFiles();
 
-        File file1 = new File(directory, randomName());
-        appendToFile(file1, "{\"name\": \"hello world\", \"age\": 5, \"status\": true}",
-                "{\"name\": \"hello world\", \"age\": 5, \"status\": true}");
-        File file2 = new File(directory, randomName());
-        appendToFile(file2, "{\"name\": \"hello jupiter\", \"age\": 8, \"status\": false}",
-                "{\"name\": \"hello jupiter\", \"age\": 8, \"status\": false}");
-
+        Pipeline p = pipelineJson(false);
         instance().newJob(p).join();
 
         assertEquals(4, listJson.size());
         TestPerson testPerson = (TestPerson) listJson.get(0);
-
         assertTrue(testPerson.name.startsWith("hello"));
-        finishDirectory(file1, file2);
+
+        finishDirectory(jsonFiles);
+    }
+
+    @Test
+    public void testJsonFiles_when_asMap_thenMaps() throws IOException {
+        File[] jsonFiles = createJsonFiles();
+
+        Pipeline p = pipelineJson(true);
+        instance().newJob(p).join();
+
+        assertEquals(4, listJson.size());
+        Map<String, Object> testPersonMap = (Map) listJson.get(0);
+        assertTrue(testPersonMap.get("name").toString().startsWith("hello"));
+
+        finishDirectory(jsonFiles);
+    }
+
+    private File[] createJsonFiles() throws IOException {
+        File file1 = new File(directory, randomName() + ".json");
+        appendToFile(file1, "{\"name\": \"hello world\", \"age\": 5, \"status\": true}",
+                "{\"name\": \"hello world\", \"age\": 5, \"status\": true}");
+        File file2 = new File(directory, randomName() + ".json");
+        appendToFile(file2, "{\"name\": \"hello jupiter\", \"age\": 8, \"status\": false}",
+                "{\"name\": \"hello jupiter\", \"age\": 8, \"status\": false}");
+        return new File[]{file1, file2};
     }
 
     private Pipeline pipeline(String glob) {
@@ -148,10 +168,11 @@ public class ReadFilesPTest extends SimpleTestInClusterSupport {
         return p;
     }
 
-    private Pipeline pipelineJson() {
+    private Pipeline pipelineJson(boolean asMap) {
         Pipeline p = Pipeline.create();
-        p.readFrom(Sources.filesBuilder(directory.getPath())
-                          .buildJson(TestPerson.class))
+        BatchSource<?> source  = asMap ? Sources.json(directory.getPath()) :
+                Sources.json(directory.getPath(), TestPerson.class);
+        p.readFrom(source)
          .writeTo(Sinks.list(listJson));
 
         return p;

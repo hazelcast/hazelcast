@@ -19,24 +19,37 @@ package com.hazelcast.jet.json;
 import com.fasterxml.jackson.jr.annotationsupport.JacksonAnnotationExtension;
 import com.fasterxml.jackson.jr.ob.JSON;
 import com.hazelcast.core.HazelcastJsonValue;
+import com.hazelcast.function.FunctionEx;
+import com.hazelcast.jet.pipeline.FileSourceBuilder;
+import com.hazelcast.jet.pipeline.Sources;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.Reader;
+import java.nio.file.Path;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Spliterator;
+import java.util.Spliterators;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
-import static com.hazelcast.jet.impl.util.Util.uncheckCall;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * Util class to parse JSON formatted input to various object types or
  * convert objects to JSON strings.
  * <p>
  * We use the lightweight JSON library `jackson-jr` to parse the given
- * input or convert the given objects to JSON string. If
+ * input or to convert the given objects to JSON string. If
  * `jackson-annotations` library present on the classpath, we register
  * {@link JacksonAnnotationExtension} to so that the JSON conversion can
- * make us of annotations.
+ * make use of <a href="https://github.com/FasterXML/jackson-annotations/wiki/Jackson-Annotations">
+ * Jackson Annotations</a>.
  *
  * @since 4.2
  */
@@ -62,59 +75,67 @@ public final class JsonUtil {
      * string using {@link Object#toString()}.
      */
     @Nonnull
-    public static <T> HazelcastJsonValue hazelcastJsonValue(@Nonnull T object) {
+    public static HazelcastJsonValue hazelcastJsonValue(@Nonnull Object object) {
         return new HazelcastJsonValue(object.toString());
-    }
-
-    /**
-     * Creates a {@link HazelcastJsonValue} by converting the key of the given
-     * entry to string using {@link Object#toString()}.
-     */
-    @Nonnull
-    public static <K> HazelcastJsonValue asJsonKey(@Nonnull Map.Entry<K, ?> entry) {
-        return new HazelcastJsonValue(entry.getKey().toString());
-    }
-
-    /**
-     * Creates a {@link HazelcastJsonValue} by converting the value of the
-     * given entry to string using {@link Object#toString()}.
-     */
-    @Nonnull
-    public static <V> HazelcastJsonValue asJsonValue(@Nonnull Map.Entry<?, V> entry) {
-        return new HazelcastJsonValue(entry.getValue().toString());
     }
 
     /**
      * Converts a JSON string to a object of given type.
      */
-    @Nonnull
-    public static <T> T parse(@Nonnull Class<T> type, @Nonnull String jsonString) {
-        return uncheckCall(() -> JSON_JR.beanFrom(type, jsonString));
-    }
-
-    /**
-     * Converts the contents of the specified {@code reader} to a object of
-     * given type.
-     */
-    @Nonnull
-    public static <T> T parse(@Nonnull Class<T> type, @Nonnull Reader reader) {
-        return uncheckCall(() -> JSON_JR.beanFrom(type, reader));
+    @Nullable
+    public static <T> T mapFrom(@Nonnull Class<T> type, @Nonnull String jsonString) throws IOException {
+        return JSON_JR.beanFrom(type, jsonString);
     }
 
     /**
      * Converts a JSON string to a {@link Map}.
      */
-    @Nonnull
-    public static Map<String, Object> parse(@Nonnull String jsonString) {
-        return uncheckCall(() -> JSON_JR.mapFrom(jsonString));
+    @Nullable
+    public static Map<String, Object> mapFrom(@Nonnull String jsonString) throws IOException {
+        return JSON_JR.mapFrom(jsonString);
     }
 
     /**
-     * Converts the contents of the specified {@code reader} to a {@link Map}.
+     * Converts a JSON string to a {@link List} of given type.
+     */
+    @Nullable
+    public static <T> List<T> listFrom(@Nonnull Class<T> type, @Nonnull String jsonString) throws IOException {
+        return JSON_JR.listOfFrom(type, jsonString);
+    }
+
+    /**
+     * Converts a JSON string to a {@link List}.
+     */
+    @Nullable
+    public static List<Object> listFrom(@Nonnull String jsonString) throws IOException {
+        return JSON_JR.listFrom(jsonString);
+    }
+
+    /**
+     * Converts a JSON string to an Object. The returned object will differ
+     * according to the content of the string:
+     * <ul>
+     *     <li>content is a JSON object, returns a {@link Map}. See
+     *     {@link #mapFrom(String)}.</li>
+     *     <li>content is a JSON array, returns a {@link List}. See
+     *     {@link #listFrom(String)}.</li>
+     *     <li>content is a String, null or primitive, returns String, null or
+     *     primitive.</li>
+     * </ul>
+     */
+    @Nullable
+    public static Object anyFrom(@Nonnull String jsonString) throws IOException {
+        return JSON_JR.anyFrom(jsonString);
+    }
+
+    /**
+     * Returns an {@link Iterator} over the sequence of JSON objects parsed
+     * from given JSON string.
      */
     @Nonnull
-    public static Map<String, Object> parse(@Nonnull Reader reader) {
-        return uncheckCall(() -> JSON_JR.mapFrom(reader));
+    public static <T> Iterator<T> sequenceFrom(@Nonnull Class<T> type, @Nonnull String jsonString)
+            throws IOException {
+        return JSON_JR.beanSequenceFrom(type, jsonString);
     }
 
     /**
@@ -122,69 +143,38 @@ public final class JsonUtil {
      * from given {@code reader}.
      */
     @Nonnull
-    public static <T> Iterator<T> parseSequence(@Nonnull Class<T> type, @Nonnull Reader reader) {
-        return uncheckCall(() -> JSON_JR.beanSequenceFrom(type, reader));
+    public static <T> Iterator<T> sequenceFrom(@Nonnull Class<T> type, @Nonnull Reader reader)
+            throws IOException {
+        return JSON_JR.beanSequenceFrom(type, reader);
     }
 
     /**
-     * Extracts a string value from given JSON string. For extracting multiple
-     * values from a JSON string see {@link #parse(String)}.
+     * Returns a function which takes a file {@code Path} as input and
+     * returns a stream of objects with the given type. The content of the file
+     * is considered to have a sequence of JSON strings, each one can span
+     * multiple lines. The function is designed to be used with
+     * {@link FileSourceBuilder#build(FunctionEx)}.
+     * <p>
+     * See {@link Sources#json(String, Class)}.
      */
     @Nonnull
-    public static String getString(@Nonnull String jsonString, @Nonnull String key) {
-        return (String) parse(jsonString).get(key);
-    }
-
-    /**
-     * Extracts an integer value from given JSON string. For extracting
-     * multiple values from a JSON string see {@link #parse(String)}.
-     */
-    public static int getInt(@Nonnull String jsonString, @Nonnull String key) {
-        return (int) parse(jsonString).get(key);
-    }
-
-    /**
-     * Extracts a boolean value from given JSON string. For extracting
-     * multiple values from a JSON string see {@link #parse(String)}.
-     */
-    public static boolean getBoolean(@Nonnull String jsonString, @Nonnull String key) {
-        return (boolean) parse(jsonString).get(key);
-    }
-
-    /**
-     * Extracts an array value as a {@link List} from given JSON string. For
-     * extracting multiple values from a JSON string see {@link #parse(String)}.
-     */
-    @Nonnull
-    public static List<Object> getList(@Nonnull String jsonString, @Nonnull String key) {
-        return (List) parse(jsonString).get(key);
-    }
-
-    /**
-     * Extracts an array value as a {@link Object Object[]} from given JSON
-     * string. For extracting multiple values from a JSON string see
-     * {@link #parse(String)}.
-     */
-    @Nonnull
-    public static Object[] getArray(@Nonnull String jsonString, @Nonnull String key) {
-        return getList(jsonString, key).toArray();
-    }
-
-    /**
-     * Extracts an object as a {@link Map} from given JSON string. For
-     * extracting multiple values from a JSON string see {@link #parse(String)}.
-     */
-    @Nonnull
-    public static Map<String, Object> getObject(@Nonnull String jsonString, @Nonnull String key) {
-        return (Map<String, Object>) parse(jsonString).get(key);
+    public static <T> FunctionEx<? super Path, ? extends Stream<T>> asMultilineJson(
+            @Nonnull Class<T> type
+    ) {
+        return path -> {
+            InputStreamReader reader = new InputStreamReader(new FileInputStream(path.toFile()), UTF_8);
+            Spliterator<T> spliterator = Spliterators.spliteratorUnknownSize(JsonUtil.sequenceFrom(type, reader),
+                    Spliterator.ORDERED | Spliterator.NONNULL);
+            return StreamSupport.stream(spliterator, false);
+        };
     }
 
     /**
      * Creates a JSON string for the given object.
      */
     @Nonnull
-    public static <T> String asString(@Nonnull T object) {
-        return uncheckCall(() -> JSON_JR.asString(object));
+    public static String toJson(@Nonnull Object object) throws IOException {
+        return JSON_JR.asString(object);
     }
 
 }

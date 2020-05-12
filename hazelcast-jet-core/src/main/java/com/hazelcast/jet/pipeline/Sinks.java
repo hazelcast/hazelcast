@@ -29,6 +29,7 @@ import com.hazelcast.jet.Observable;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.processor.SinkProcessors;
 import com.hazelcast.jet.impl.pipeline.SinkImpl;
+import com.hazelcast.jet.json.JsonUtil;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.IMap;
 import com.hazelcast.topic.ITopic;
@@ -945,6 +946,16 @@ public final class Sinks {
     @Nonnull
     public static <T> Sink<T> files(@Nonnull String directoryName) {
         return Sinks.<T>filesBuilder(directoryName).build();
+    }
+
+    /**
+     * Convenience for {@link #filesBuilder} with the UTF-8 charset and with
+     * overwriting of existing files. The sink converts each item to a JSON
+     * string adds it to the file as a line.
+     */
+    @Nonnull
+    public static <T> Sink<T> json(@Nonnull String directoryName) {
+        return Sinks.<T>filesBuilder(directoryName).toStringFn(JsonUtil::toJson).build();
     }
 
     /**

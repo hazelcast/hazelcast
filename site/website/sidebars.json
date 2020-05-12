@@ -64,6 +64,7 @@
     ],
     "Design Documents": [
       "design-docs/index",
+      "design-docs/011-json-convenience",
       "design-docs/010-operator-framework",
       "design-docs/009-pulsar-connector",
       "design-docs/008-stage-rebalance",

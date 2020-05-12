@@ -98,8 +98,9 @@ public class ReflectionUtilsTest {
         ));
 
         List<URL> nonClasses = resources.nonClasses().collect(toList());
-        assertThat(nonClasses, hasSize(2));
+        assertThat(nonClasses, hasSize(3));
         assertThat(nonClasses, hasItem(hasToString(containsString("file.json"))));
+        assertThat(nonClasses, hasItem(hasToString(containsString("file_list.json"))));
         assertThat(nonClasses, hasItem(hasToString(containsString("package.properties"))));
     }
 

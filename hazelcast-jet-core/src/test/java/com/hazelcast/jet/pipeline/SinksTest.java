@@ -237,11 +237,10 @@ public class SinksTest extends PipelineTestSupport {
     @Test
     public void map_withJsonKeyValue() {
         // Given
-        BatchStage<Entry<Integer, String>> sourceStage = p.readFrom(TestSources.items(0, 1, 2, 3, 4))
-                .map(t -> entry(t, t.toString()));
+        BatchStage<Integer> sourceStage = p.readFrom(TestSources.items(0, 1, 2, 3, 4));
 
         // When
-        sourceStage.writeTo(Sinks.map(sinkName, JsonUtil::asJsonKey, JsonUtil::asJsonValue));
+        sourceStage.writeTo(Sinks.map(sinkName, JsonUtil::hazelcastJsonValue, JsonUtil::hazelcastJsonValue));
 
         // Then
         execute();

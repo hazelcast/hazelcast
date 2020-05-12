@@ -39,9 +39,7 @@ public class SalesJsonAnalyzer {
     private static Pipeline buildPipeline(String sourceDir) {
         Pipeline p = Pipeline.create();
 
-        BatchSource<SalesRecord> source = Sources.filesBuilder(sourceDir)
-                                                 .glob("*.json")
-                                                 .buildJson(SalesRecord.class);
+        BatchSource<SalesRecord> source = Sources.json(sourceDir, SalesRecord.class);
         p.readFrom(source)
          .filter(record -> record.price < 30)
          .groupingKey(r -> r.paymentType)

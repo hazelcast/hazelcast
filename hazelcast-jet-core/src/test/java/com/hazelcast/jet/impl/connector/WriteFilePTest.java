@@ -296,8 +296,7 @@ public class WriteFilePTest extends SimpleTestInClusterSupport {
         Pipeline p = Pipeline.create();
         TestPerson testPerson = new TestPerson("foo", 5, true);
         p.readFrom(TestSources.items(testPerson))
-         .writeTo(Sinks.filesBuilder(directory.toString())
-                       .buildJson());
+         .writeTo(Sinks.json(directory.toString()));
 
         // When
         instance().newJob(p).join();

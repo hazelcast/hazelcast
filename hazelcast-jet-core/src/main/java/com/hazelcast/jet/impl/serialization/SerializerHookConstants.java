@@ -54,6 +54,7 @@ public final class SerializerHookConstants {
     public static final int JET_EVENT = -324;
     public static final int TIMESTAMPED_ITEM = -325;
     public static final int QUERY_ENTRY = -326;
+    public static final int DEFERRED_MAP = -327;
 
 
     // reserved for hadoop module: -380 to -390

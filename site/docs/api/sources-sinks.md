@@ -14,7 +14,7 @@ Amazon S3 or Hadoop. Most file sources and sinks are batch oriented, but
 the sinks that support _rolling_ capability can also be used as sinks in
 streaming jobs.
 
-### Local Disk
+### Local Disk
 
 The simplest file source is designed to work with both local and network
 file systems. This source is text-oriented and reads the files line by
@@ -28,7 +28,65 @@ p.readFrom(Sources.files("/home/data/web-logs"))
  .writeTo(Sinks.logger());
 ```
 
-For CSV or JSON files it's possible to use the `filesBuilder` source:
+#### JSON Files
+
+For JSON files, the source expects each line contains a valid JSON
+string and converts it to the given object type or to a `Map` if no
+type is specified:
+
+```java
+Pipeline p = Pipeline.create();
+p.readFrom(Sources.json("/home/data/people", Person.class))
+ .filter(person -> person.location().equals("NYC"))
+ .writeTo(Sinks.logger());
+```
+
+If your JSON files contain JSON strings that span multiple
+lines, you can use `filesBuilder` source:
+
+```java
+Pipeline p = Pipeline.create();
+p.readFrom(Sources.filesBuilder(sourceDir)
+    .build(JsonUtil.asMultilineJson(Person.class)))
+ .filter(person -> person.location().equals("NYC"))
+ .writeTo(Sinks.logger());
+```
+
+Jet uses the lightweight JSON library `jackson-jr` to parse the given
+input or to convert the given objects to JSON string. You can use
+[Jackson Annotations](https://github.com/FasterXML/jackson-annotations/wiki/Jackson-Annotations)
+by adding `jackson-annotations` library to the classpath, for example:
+
+```java
+public class Person {
+
+    private long personId;
+    private String name;
+
+    @JsonGetter("id")
+    public long getPersonId() {
+      return this.personId;
+    }
+
+    @JsonSetter("id")
+    public void setPersonId(long personId) {
+      this.personId = personId;
+    }
+
+    public String getName() {
+       return name;
+    }
+
+    public void setName(String name) {
+      this.name = name;
+    }
+}
+```
+
+#### CSV
+
+For CSV files or for parsing files in other custom formats it's possible
+to use the `filesBuilder` source:
 
 ```java
 Pipeline p = Pipeline.create();
@@ -37,11 +95,14 @@ p.readFrom(Sources.filesBuilder(sourceDir).glob("*.csv").build(path ->
 ).writeTo(Sinks.logger());
 ```
 
+#### Data Locality for Files
+
 For a local file system, the sources expect to see on each node just the
 files that node should read. You can achieve the effect of a distributed
 source if you manually prepare a different set of files on each node.
 For shared file system, the sources can split the work so that each node
-will read a part of the files.
+will read a part of the files by configuring the option
+`FilesBuilder.sharedFileSystem()`.
 
 #### File Sink
 
@@ -57,6 +118,17 @@ p.readFrom(TestSources.itemStream(100))
  .writeTo(Sinks.filesBuilder("out")
  .rollByDate("YYYY-MM-dd.HH")
  .build());
+```
+
+To write JSON files, you can use `Sinks.json` or `Sinks.filesBuilder`
+with `JsonUtil.toJson` as `toStringFn`. Sink converts each item to JSON
+string and writes it as a new line to the file:
+
+```java
+Pipeline p = Pipeline.create();
+p.readFrom(TestSources.itemStream(100))
+ .withoutTimestamps()
+ .writeTo(Sinks.json("out"));
 ```
 
 Each node will write to a unique file with a numerical index. You can
@@ -75,6 +147,15 @@ ways, the behavior is undefined.
 ```java
 Pipeline p = Pipeline.create();
 p.readFrom(Sources.fileWatcher("/home/data"))
+ .withoutTimestamps()
+ .writeTo(Sinks.logger());
+```
+
+You can create streaming file source for JSON files too:
+
+```java
+Pipeline p = Pipeline.create();
+p.readFrom(Sources.jsonWatcher("/home/data", Person.class))
  .withoutTimestamps()
  .writeTo(Sinks.logger());
 ```
@@ -1251,6 +1332,8 @@ restarted in face of an intermittent failure.
 |`Sources.cacheJournal`|`hazelcast-jet`|stream|exactly-once|
 |`Sources.files`|`hazelcast-jet`|batch|N/A|
 |`Sources.fileWatcher`|`hazelcast-jet`|stream|none|
+|`Sources.json`|`hazelcast-jet`|batch|N/A|
+|`Sources.jsonWatcher`|`hazelcast-jet`|stream|none|
 |`Sources.jdbc`|`hazelcast-jet`|batch|N/A|
 |`Sources.jmsQueue`|`hazelcast-jet`|stream|exactly-once|
 |`Sources.list`|`hazelcast-jet`|batch|N/A|
@@ -1278,6 +1361,7 @@ processing even with at-least-once sinks.
 |`S3Sinks.s3`|`hazelcast-jet-s3`|no|N/A|
 |`Sinks.cache`|`hazelcast-jet`|yes|at-least-once|
 |`Sinks.files`|`hazelcast-jet`|yes|exactly-once|
+|`Sinks.json`|`hazelcast-jet`|yes|exactly-once|
 |`Sinks.jdbc`|`hazelcast-jet`|yes|exactly-once|
 |`Sinks.jmsQueue`|`hazelcast-jet`|yes|exactly-once|
 |`Sinks.list`|`hazelcast-jet`|no|N/A|

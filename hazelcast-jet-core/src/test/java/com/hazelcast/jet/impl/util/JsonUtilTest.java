@@ -23,22 +23,27 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import java.io.IOException;
+import java.io.StringReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
 import static java.util.stream.Collectors.toList;
-import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
 public class JsonUtilTest extends JetTestSupport {
 
     static String jsonString;
+    static String jsonStringList;
     static TestJsonObject testJsonObject;
 
     @BeforeClass
@@ -47,19 +52,137 @@ public class JsonUtilTest extends JetTestSupport {
         jsonString = Files.lines(file)
                           .collect(StringBuilder::new, StringBuilder::append, StringBuilder::append)
                           .toString();
+
+        Path fileList = Paths.get(JsonUtilTest.class.getResource("file_list.json").toURI());
+        jsonStringList = Files.lines(fileList)
+                              .collect(StringBuilder::new, StringBuilder::append, StringBuilder::append)
+                              .toString();
         testJsonObject = TestJsonObject.withDefaults();
     }
 
     @Test
-    public void testParseToObject() {
-        TestJsonObject jsonObject = JsonUtil.parse(TestJsonObject.class, jsonString);
+    public void when_inputString_then_parseToObject() throws IOException {
+        TestJsonObject jsonObject = JsonUtil.mapFrom(TestJsonObject.class, jsonString);
         assertEquals(testJsonObject, jsonObject);
     }
 
     @Test
-    public void testParseToMap() {
-        Map<String, Object> objectMap = JsonUtil.parse(jsonString);
+    public void when_inputString_then_parseToMap() throws IOException {
+        Map<String, Object> map = JsonUtil.mapFrom(jsonString);
+        assertTestObjectAsMap(map, testJsonObject);
+    }
 
+    @Test
+    public void when_inputString_then_parseToListOfObject() throws IOException {
+        List<TestJsonObject> list = JsonUtil.listFrom(TestJsonObject.class, jsonStringList);
+        assertListOfObjects(list);
+    }
+
+    @Test
+    public void when_inputString_then_parseToList() throws IOException {
+        List<Object> list = JsonUtil.listFrom(jsonStringList);
+        assertListOfMap(list);
+    }
+
+    @Test
+    public void when_inputString_and_contentObject_then_parseAny() throws IOException {
+        Object o = JsonUtil.anyFrom(jsonString);
+        assertTestObjectAsMap((Map) o, testJsonObject);
+    }
+
+    @Test
+    public void when_inputString_and_contentList_then_parseAny() throws IOException {
+        Object o = JsonUtil.anyFrom(jsonStringList);
+        assertListOfMap((List) o);
+    }
+
+    @Test
+    public void when_inputString_and_contentString_then_parseAny() throws IOException {
+        Object o = JsonUtil.anyFrom("\"abc\"");
+        assertEquals("abc", o);
+    }
+
+    @Test
+    public void when_inputString_and_contentInt_then_parseAny() throws IOException {
+        Object o = JsonUtil.anyFrom("10");
+        assertEquals(10, (int) o);
+    }
+
+    @Test
+    public void when_inputString_and_contentDouble_then_parseAny() throws IOException {
+        Object o = JsonUtil.anyFrom("10.5");
+        assertEquals(10.5, (double) o, 0.0);
+    }
+
+    @Test
+    public void when_inputString_and_contentBool_then_parseAny() throws IOException {
+        Object o = JsonUtil.anyFrom("true");
+        assertTrue((boolean) o);
+    }
+
+    @Test
+    public void when_inputString_and_contentNull_then_parseAny() throws IOException {
+        Object o = JsonUtil.anyFrom("null");
+        assertNull(o);
+    }
+
+    @Test
+    public void when_inputString_then_parseSequenceObject() throws IOException {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < 10; i++) {
+            sb.append(jsonString);
+        }
+        Iterator<TestJsonObject> iterator = JsonUtil.sequenceFrom(TestJsonObject.class, sb.toString());
+
+        assertIteratorObject(iterator, 10);
+    }
+
+    @Test
+    public void when_inputReader_then_parseSequenceObject() throws IOException {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < 20; i++) {
+            sb.append(jsonString);
+        }
+
+        Iterator<TestJsonObject> iterator = JsonUtil.sequenceFrom(TestJsonObject.class, new StringReader(sb.toString()));
+
+        assertIteratorObject(iterator, 20);
+    }
+
+    private void assertIteratorObject(Iterator<TestJsonObject> iterator, int expectedCount) {
+        int count = 0;
+        while (iterator.hasNext()) {
+            TestJsonObject next = iterator.next();
+            assertEquals(testJsonObject, next);
+            count++;
+        }
+        assertEquals(expectedCount, count);
+    }
+
+    @Test
+    public void testConvertToJsonString() throws IOException {
+        assertEquals(jsonString, JsonUtil.toJson(testJsonObject));
+    }
+
+    private void assertListOfObjects(List<TestJsonObject> list) {
+        assertEquals(2, list.size());
+        assertEquals(testJsonObject, list.get(0));
+        TestJsonObject testJsonObject = TestJsonObject.withDefaults();
+        testJsonObject.age = 2;
+        assertEquals(testJsonObject, list.get(1));
+    }
+
+    private void assertListOfMap(List<Object> list) {
+        assertEquals(2, list.size());
+        Map<String, Object> o1 = (Map) list.get(0);
+        assertTestObjectAsMap(o1, testJsonObject);
+        Map<String, Object> o2 = (Map) list.get(1);
+        TestJsonObject testJsonObject = TestJsonObject.withDefaults();
+        testJsonObject.age = 2;
+        assertTestObjectAsMap(o2, testJsonObject);
+    }
+
+    private void assertTestObjectAsMap(Map<String, Object> objectMap, TestJsonObject testJsonObject) {
         assertEquals(6, objectMap.size());
         assertEquals(testJsonObject.name, objectMap.get("name"));
         assertEquals(testJsonObject.age, objectMap.get("age"));
@@ -76,52 +199,10 @@ public class JsonUtilTest extends JetTestSupport {
         assertEquals(expectedValueList, valueList);
     }
 
-    @Test
-    public void testExtractString() {
-        String name = JsonUtil.getString(jsonString, "name");
-        assertEquals(testJsonObject.name, name);
-    }
-
-    @Test
-    public void testExtractInt() {
-        int age = JsonUtil.getInt(jsonString, "age");
-        assertEquals(testJsonObject.age, age);
-    }
-
-    @Test
-    public void testExtractBoolean() {
-        boolean status = JsonUtil.getBoolean(jsonString, "status");
-        assertEquals(testJsonObject.status, status);
-    }
-
-    @Test
-    public void testExtractList() {
-        List<Object> objects = JsonUtil.getList(jsonString, "stringArray");
-        assertEquals(Arrays.asList(testJsonObject.stringArray), objects);
-    }
-
-    @Test
-    public void testExtractArray() {
-        Object[] objects = JsonUtil.getArray(jsonString, "stringArray");
-        assertArrayEquals(testJsonObject.stringArray, objects);
-    }
-
-    @Test
-    public void testExtractObject() {
-        Map<String, Object> innerObject = JsonUtil.getObject(jsonString, "innerObject");
-        assertEquals(1, innerObject.size());
-        assertEquals(testJsonObject.innerObject.val, innerObject.get("val"));
-    }
-
-    @Test
-    public void testConvertToJsonString() {
-        assertEquals(jsonString, JsonUtil.asString(testJsonObject));
-    }
-
     public static class TestJsonObject {
 
         public String name;
-        public int age = 8;
+        public int age = 1;
         public boolean status;
         public String[] stringArray;
         public List<InnerTestJsonObject> objects;
@@ -133,7 +214,7 @@ public class JsonUtilTest extends JetTestSupport {
         public static TestJsonObject withDefaults() {
             TestJsonObject jsonObject = new TestJsonObject();
             jsonObject.name = "foo";
-            jsonObject.age = 8;
+            jsonObject.age = 1;
             jsonObject.status = true;
             jsonObject.stringArray = new String[]{"a", "b", "c", "d"};
             jsonObject.objects = Arrays.asList(new InnerTestJsonObject("x"), new InnerTestJsonObject("y"));
