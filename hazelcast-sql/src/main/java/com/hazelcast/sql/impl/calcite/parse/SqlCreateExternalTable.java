@@ -33,7 +33,7 @@ import java.util.stream.Stream;
 
 import static java.util.Objects.requireNonNull;
 
-public class SqlCreateTable extends SqlCreate {
+public class SqlCreateExternalTable extends SqlCreate {
 
     private static final SqlSpecialOperator OPERATOR =
             new SqlSpecialOperator("CREATE EXTERNAL TABLE", SqlKind.CREATE_TABLE);
@@ -43,13 +43,13 @@ public class SqlCreateTable extends SqlCreate {
     private final SqlIdentifier type;
     private final SqlNodeList options;
 
-    public SqlCreateTable(SqlIdentifier name,
-                          SqlNodeList columns,
-                          SqlIdentifier type,
-                          SqlNodeList options,
-                          boolean replace,
-                          boolean ifNotExists,
-                          SqlParserPos pos) {
+    public SqlCreateExternalTable(SqlIdentifier name,
+                                  SqlNodeList columns,
+                                  SqlIdentifier type,
+                                  SqlNodeList options,
+                                  boolean replace,
+                                  boolean ifNotExists,
+                                  SqlParserPos pos) {
         super(OPERATOR, pos, replace, ifNotExists);
         this.name = requireNonNull(name, "Name should not be null");
         this.columns = requireNonNull(columns, "Columns should not be null");

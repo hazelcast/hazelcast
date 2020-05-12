@@ -26,11 +26,11 @@ data: {
       "org.apache.calcite.sql.SqlCreate"
       "org.apache.calcite.sql.SqlDrop"
       "com.hazelcast.sql.impl.type.QueryDataType"
-      "com.hazelcast.sql.impl.calcite.parse.SqlCreateTable"
+      "com.hazelcast.sql.impl.calcite.parse.SqlCreateExternalTable"
       "com.hazelcast.sql.impl.calcite.parse.SqlTableColumn"
       "com.hazelcast.sql.impl.calcite.parse.SqlDataType"
       "com.hazelcast.sql.impl.calcite.parse.SqlOption"
-      "com.hazelcast.sql.impl.calcite.parse.SqlDropTable"
+      "com.hazelcast.sql.impl.calcite.parse.SqlDropExternalTable"
       "com.hazelcast.sql.impl.calcite.parse.ParserResource"
     ]
 
@@ -410,13 +410,13 @@ data: {
     # List of methods for parsing extensions to "CREATE [OR REPLACE]" calls.
     # Each must accept arguments "(SqlParserPos pos, boolean replace)".
     createStatementParserMethods: [
-      "SqlCreateTable"
+      "SqlCreateExternalTable"
     ]
 
     # List of methods for parsing extensions to "DROP" calls.
     # Each must accept arguments "(SqlParserPos pos)".
     dropStatementParserMethods: [
-      "SqlDropTable"
+      "SqlDropExternalTable"
     ]
 
     # Binary operators tokens

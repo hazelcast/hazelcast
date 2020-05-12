@@ -17,9 +17,13 @@
 package com.hazelcast.sql.impl.optimizer;
 
 public enum SqlPlanType {
+
+    /** Schema plan. */
+    SCHEMA,
+
     /** IMDG plan. */
     IMDG,
 
     /** Streaming plan that should be executed by Jet. */
-    JET
+    JET,
 }

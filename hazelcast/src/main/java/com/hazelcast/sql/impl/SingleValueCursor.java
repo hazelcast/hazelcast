@@ -27,12 +27,12 @@ import javax.annotation.Nonnull;
 import java.util.Collections;
 import java.util.Iterator;
 
-public class SingleValueSqlCursor implements SqlCursor {
+public class SingleValueCursor implements SqlCursor {
 
     private final SqlColumnMetadata metadata;
     private Iterator<SqlRow> iterator;
 
-    public <T> SingleValueSqlCursor(T value) {
+    public <T> SingleValueCursor(T value) {
         QueryDataType queryDataType = QueryDataTypeUtils.resolveTypeForClass(value.getClass());
         this.metadata = QueryUtils.getColumnMetadata(queryDataType);
 

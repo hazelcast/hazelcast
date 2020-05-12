@@ -30,17 +30,20 @@ import com.hazelcast.sql.impl.calcite.opt.physical.visitor.NodeIdVisitor;
 import com.hazelcast.sql.impl.calcite.opt.physical.visitor.PlanCreateVisitor;
 import com.hazelcast.sql.impl.calcite.opt.physical.visitor.SqlToQueryType;
 import com.hazelcast.sql.impl.calcite.parse.QueryParseResult;
-import com.hazelcast.sql.impl.calcite.parse.SqlCreateTable;
-import com.hazelcast.sql.impl.calcite.parse.SqlDropTable;
+import com.hazelcast.sql.impl.calcite.parse.SqlCreateExternalTable;
+import com.hazelcast.sql.impl.calcite.parse.SqlDropExternalTable;
 import com.hazelcast.sql.impl.calcite.parse.SqlOption;
 import com.hazelcast.sql.impl.optimizer.OptimizationTask;
 import com.hazelcast.sql.impl.optimizer.SqlOptimizer;
 import com.hazelcast.sql.impl.optimizer.SqlPlan;
 import com.hazelcast.sql.impl.plan.Plan;
 import com.hazelcast.sql.impl.schema.ExternalCatalog;
-import com.hazelcast.sql.impl.schema.TableResolver;
 import com.hazelcast.sql.impl.schema.ExternalTableSchema;
 import com.hazelcast.sql.impl.schema.ExternalTableSchema.Field;
+import com.hazelcast.sql.impl.schema.SchemaPlan;
+import com.hazelcast.sql.impl.schema.SchemaPlan.CreateExternalTablePlan;
+import com.hazelcast.sql.impl.schema.SchemaPlan.RemoveExternalTablePlan;
+import com.hazelcast.sql.impl.schema.TableResolver;
 import com.hazelcast.sql.impl.schema.map.PartitionedMapTableResolver;
 import com.hazelcast.sql.impl.schema.map.ReplicatedMapTableResolver;
 import com.hazelcast.sql.impl.type.QueryDataType;
@@ -95,10 +98,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         QueryParseResult parseResult = context.parse(task.getSql());
 
         if (parseResult.isDdl()) {
-            // TODO: VO: Handle it in a centralized manner on the upper level
-            doExecuteDdlStatement(parseResult.getNode());
-
-            return null;
+            return createSchemaPlan(parseResult.getNode());
         }
 
         // 3. Convert parse tree to relational tree.
@@ -111,29 +111,29 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         return createImdgPlan(task.getSql(), parseResult.getParameterRowType(), physicalRel);
     }
 
-    private void doExecuteDdlStatement(SqlNode node) {
-        if (node instanceof SqlCreateTable) {
-            doExecuteCreateTableStatement((SqlCreateTable) node);
-        } else if (node instanceof SqlDropTable) {
-            doExecuteDropTableStatement((SqlDropTable) node);
+    private SchemaPlan createSchemaPlan(SqlNode node) {
+        if (node instanceof SqlCreateExternalTable) {
+            return createCreateExternalTablePlan((SqlCreateExternalTable) node);
+        } else if (node instanceof SqlDropExternalTable) {
+            return createDropExternalTablePlan((SqlDropExternalTable) node);
         } else {
             throw new IllegalArgumentException("Unsupported SQL statement - " + node);
         }
     }
 
-    private void doExecuteCreateTableStatement(SqlCreateTable sqlCreateTable) {
+    private SchemaPlan createCreateExternalTablePlan(SqlCreateExternalTable sqlCreateTable) {
         List<Field> fields = sqlCreateTable.columns()
-                                           .map(column -> new Field(column.name(), column.type().type()))
-                                           .collect(toList());
+                                                   .map(column -> new Field(column.name(), column.type().type()))
+                                                   .collect(toList());
         Map<String, String> options = sqlCreateTable.options()
-                                                    .collect(toMap(SqlOption::key, SqlOption::value));
+                                                            .collect(toMap(SqlOption::key, SqlOption::value));
         ExternalTableSchema schema = new ExternalTableSchema(sqlCreateTable.name(), sqlCreateTable.type(), fields, options);
 
-        catalog.createTable(schema, sqlCreateTable.getReplace(), sqlCreateTable.ifNotExists());
+        return new CreateExternalTablePlan(catalog, schema, sqlCreateTable.getReplace(), sqlCreateTable.ifNotExists());
     }
 
-    private void doExecuteDropTableStatement(SqlDropTable sqlDropTable) {
-        catalog.removeTable(sqlDropTable.name(), sqlDropTable.ifExists());
+    private SchemaPlan createDropExternalTablePlan(SqlDropExternalTable sqlDropTable) {
+        return new RemoveExternalTablePlan(catalog, sqlDropTable.name(), sqlDropTable.ifExists());
     }
 
     private PhysicalRel optimize(OptimizerContext context, RelNode rel) {

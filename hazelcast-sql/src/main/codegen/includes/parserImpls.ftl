@@ -17,7 +17,7 @@
 /**
 * Parses CREATE EXTERNAL TABLE statement.
 */
-SqlCreate SqlCreateTable(Span span, boolean replace) :
+SqlCreate SqlCreateExternalTable(Span span, boolean replace) :
 {
     SqlParserPos startPos = span.pos();
 
@@ -41,7 +41,7 @@ SqlCreate SqlCreateTable(Span span, boolean replace) :
         sqlOptions = SqlOptions()
     ]
     {
-        return new SqlCreateTable(
+        return new SqlCreateExternalTable(
             name,
             columns,
             type,
@@ -293,7 +293,7 @@ SqlOption SqlOption() :
 /**
 * Parses DROP EXTERNAL TABLE statement.
 */
-SqlDrop SqlDropTable(Span span, boolean replace) :
+SqlDrop SqlDropExternalTable(Span span, boolean replace) :
 {
     SqlParserPos startPos = span.pos();
 
@@ -307,6 +307,6 @@ SqlDrop SqlDropTable(Span span, boolean replace) :
     ]
     name = SimpleIdentifier()
     {
-        return new SqlDropTable(name, ifExists, startPos.plus(getPos()));
+        return new SqlDropExternalTable(name, ifExists, startPos.plus(getPos()));
     }
 }

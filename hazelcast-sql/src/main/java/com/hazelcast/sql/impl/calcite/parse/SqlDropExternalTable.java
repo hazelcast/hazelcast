@@ -31,14 +31,14 @@ import java.util.List;
 
 import static java.util.Objects.requireNonNull;
 
-public class SqlDropTable extends SqlDrop {
+public class SqlDropExternalTable extends SqlDrop {
 
     private static final SqlSpecialOperator OPERATOR =
             new SqlSpecialOperator("DROP EXTERNAL TABLE", SqlKind.DROP_TABLE);
 
     private final SqlIdentifier name;
 
-    public SqlDropTable(SqlIdentifier name, boolean ifExists, SqlParserPos pos) {
+    public SqlDropExternalTable(SqlIdentifier name, boolean ifExists, SqlParserPos pos) {
         super(OPERATOR, pos, ifExists);
         this.name = requireNonNull(name, "Name should not be null");
     }

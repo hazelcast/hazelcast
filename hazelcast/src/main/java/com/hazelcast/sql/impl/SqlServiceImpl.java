@@ -31,8 +31,8 @@ import com.hazelcast.sql.impl.optimizer.DisabledSqlOptimizer;
 import com.hazelcast.sql.impl.optimizer.OptimizationTask;
 import com.hazelcast.sql.impl.optimizer.SqlOptimizer;
 import com.hazelcast.sql.impl.optimizer.SqlPlan;
-import com.hazelcast.sql.impl.optimizer.SqlPlanType;
 import com.hazelcast.sql.impl.plan.Plan;
+import com.hazelcast.sql.impl.schema.SchemaPlan;
 import com.hazelcast.sql.impl.state.QueryState;
 
 import java.lang.reflect.Constructor;
@@ -176,32 +176,31 @@ public class SqlServiceImpl implements SqlService, Consumer<Packet> {
 
             SqlPlan plan = prepare(unwrappedSql);
 
-            // TODO: VO: We should never return an empty cursor here.
-            if (plan == null) {
-                return new SingleValueSqlCursor(0);
-            }
-
             return new QueryExplainCursor(plan.getExplain().asRows());
         } else {
             SqlPlan plan = prepare(sql);
-
-            // TODO: VO: We should never return an empty cursor here.
-            if (plan == null) {
-                return new SingleValueSqlCursor(0);
-            }
 
             return execute(plan, params0, timeout, pageSize);
         }
     }
 
     private SqlCursor execute(SqlPlan plan, List<Object> params, long timeout, int pageSize) {
-        if (plan.getType() == SqlPlanType.IMDG) {
-            return executeImdg((Plan) plan, params, timeout, pageSize);
-        } else {
-            assert plan.getType() == SqlPlanType.JET;
-
-            return executeJet(plan, params, timeout, pageSize);
+        switch (plan.getType()) {
+            case SCHEMA:
+                return executeSchemaChange((SchemaPlan) plan);
+            case IMDG:
+                return executeImdg((Plan) plan, params, timeout, pageSize);
+            case JET:
+                return executeJet(plan, params, timeout, pageSize);
+            default:
+                throw new IllegalArgumentException("Unknown plan type - " + plan.getType());
         }
+    }
+
+    private SqlCursor executeSchemaChange(SchemaPlan plan) {
+        plan.execute();
+        
+        return new SingleValueCursor(0);
     }
 
     private SqlCursor executeImdg(Plan plan, List<Object> params, long timeout, int pageSize) {
