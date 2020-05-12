@@ -16,8 +16,8 @@
 
 package com.hazelcast.nio.serialization;
 
-import com.hazelcast.internal.serialization.impl.ClassDefinitionImpl;
-import com.hazelcast.internal.serialization.impl.FieldDefinitionImpl;
+import com.hazelcast.internal.serialization.impl.portable.ClassDefinitionImpl;
+import com.hazelcast.internal.serialization.impl.portable.FieldDefinitionImpl;
 
 import java.util.ArrayList;
 import java.util.List;

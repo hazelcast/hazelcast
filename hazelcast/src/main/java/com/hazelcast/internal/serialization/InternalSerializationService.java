@@ -17,13 +17,14 @@
 package com.hazelcast.internal.serialization;
 
 import com.hazelcast.config.SerializationConfig;
-import com.hazelcast.partition.PartitioningStrategy;
 import com.hazelcast.internal.nio.BufferObjectDataInput;
 import com.hazelcast.internal.nio.BufferObjectDataOutput;
 import com.hazelcast.internal.nio.Disposable;
+import com.hazelcast.internal.serialization.impl.portable.PortableContext;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.PortableReader;
+import com.hazelcast.partition.PartitioningStrategy;
 
 import java.io.IOException;
 import java.nio.ByteOrder;
