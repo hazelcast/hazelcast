@@ -74,7 +74,8 @@ public class ExternalCatalog implements TableResolver {
     }
 
     private Map<String, ExternalTableSchema> tables() {
-        return nodeEngine.getHazelcastInstance().getMap(CATALOG_MAP_NAME);
+        // TODO: use the right storage
+        return nodeEngine.getHazelcastInstance().getReplicatedMap(CATALOG_MAP_NAME);
     }
 
     private static Table toTable(ExternalTableSchema schema) {
