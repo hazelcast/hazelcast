@@ -19,6 +19,7 @@ package com.hazelcast.internal.compatibility.serialization.impl;
 /**
  * Serialization constants for compatibility with compatibility (3.x) members
  */
+@SuppressWarnings("unused")
 public final class CompatibilitySerializationConstants {
 
     // WARNING: DON'T CHANGE VALUES!
