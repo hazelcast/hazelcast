@@ -18,7 +18,7 @@ package com.hazelcast.sql.impl.extract;
 
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.internal.serialization.impl.DefaultPortableReader;
+import com.hazelcast.internal.serialization.impl.portable.DefaultPortableReader;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.type.QueryDataType;
 

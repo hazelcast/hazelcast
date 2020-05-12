@@ -6917,7 +6917,7 @@ public class ClientCompatibilityNullTest_2_0 {
 
     @Test
     public void test_SqlExecuteCodec_encodeRequest() {
-        int fileClientMessageIndex = 825;
+        int fileClientMessageIndex = 823;
         ClientMessage encoded = SqlExecuteCodec.encodeRequest(aString, null);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
@@ -6925,7 +6925,7 @@ public class ClientCompatibilityNullTest_2_0 {
 
     @Test
     public void test_SqlExecuteCodec_decodeResponse() {
-        int fileClientMessageIndex = 826;
+        int fileClientMessageIndex = 824;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         SqlExecuteCodec.ResponseParameters parameters = SqlExecuteCodec.decodeResponse(fromFile);
         assertTrue(isEqual(aData, parameters.queryId));
@@ -6934,7 +6934,7 @@ public class ClientCompatibilityNullTest_2_0 {
 
     @Test
     public void test_SqlFetchCodec_encodeRequest() {
-        int fileClientMessageIndex = 827;
+        int fileClientMessageIndex = 825;
         ClientMessage encoded = SqlFetchCodec.encodeRequest(aData, anInt);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
@@ -6942,7 +6942,7 @@ public class ClientCompatibilityNullTest_2_0 {
 
     @Test
     public void test_SqlFetchCodec_decodeResponse() {
-        int fileClientMessageIndex = 828;
+        int fileClientMessageIndex = 826;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         SqlFetchCodec.ResponseParameters parameters = SqlFetchCodec.decodeResponse(fromFile);
         assertTrue(isEqual(aListOfData, parameters.rows));
@@ -6951,7 +6951,7 @@ public class ClientCompatibilityNullTest_2_0 {
 
     @Test
     public void test_SqlCloseCodec_encodeRequest() {
-        int fileClientMessageIndex = 829;
+        int fileClientMessageIndex = 827;
         ClientMessage encoded = SqlCloseCodec.encodeRequest(aData);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
@@ -6959,7 +6959,7 @@ public class ClientCompatibilityNullTest_2_0 {
 
     @Test
     public void test_SqlCloseCodec_decodeResponse() {
-        int fileClientMessageIndex = 830;
+        int fileClientMessageIndex = 828;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         SqlCloseCodec.ResponseParameters parameters = SqlCloseCodec.decodeResponse(fromFile);
     }
