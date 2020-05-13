@@ -69,12 +69,6 @@
                 <zones>us-east1-b,us-east1-c</zones>
             </gcp>
             <azure enabled="false">
-                <client-id>CLIENT_ID</client-id>
-                <client-secret>CLIENT_SECRET</client-secret>
-                <tenant-id>TENANT_ID</tenant-id>
-                <subscription-id>SUB_ID</subscription-id>
-                <cluster-id>HZLCAST001</cluster-id>
-                <group-name>RESOURCE-GROUP-NAME</group-name>
             </azure>
             <kubernetes enabled="false">
                 <namespace>MY-KUBERNETES-NAMESPACE</namespace>

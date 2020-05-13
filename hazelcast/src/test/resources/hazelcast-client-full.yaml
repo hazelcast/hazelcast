@@ -102,12 +102,14 @@ hazelcast-client:
       zones: us-east1-b,us-east1-c
     azure:
       enabled: false
+      instance-metadata-available: false
       client-id: CLIENT_ID
-      client-secret: CLIENT_SECRET
       tenant-id: TENANT_ID
+      client-secret: CLIENT_SECRET
       subscription-id: SUB_ID
-      cluster-id: HZLCAST001
-      group-name: RESOURCE-GROUP-NAME
+      resource-group: RESOURCE-GROUP-NAME
+      scale-set: SCALE-SET-NAME
+      tag: TAG-NAME=HZLCAST001
     kubernetes:
       enabled: false
       namespace: MY-KUBERNETES-NAMESPACE
