@@ -310,3 +310,72 @@ SqlDrop SqlDropExternalTable(Span span, boolean replace) :
         return new SqlDropExternalTable(name, ifExists, startPos.plus(getPos()));
     }
 }
+
+/**
+* Parses an extended INSERT statement.
+*/
+SqlNode SqlExtendedInsert() :
+{
+    Span span;
+    SqlNode table;
+    SqlNode source;
+    List<SqlLiteral> keywords = new ArrayList<SqlLiteral>();
+    SqlNodeList keywordList;
+    List<SqlLiteral> extendedKeywords = new ArrayList<SqlLiteral>();
+    SqlNodeList extendedKeywordList;
+    SqlNodeList extendList = null;
+    SqlNodeList columnList = null;
+}
+{
+    (
+        <INSERT>
+    |
+        <UPSERT> { keywords.add(SqlInsertKeyword.UPSERT.symbol(getPos())); }
+    )
+    (
+        <INTO>
+    |
+        <OVERWRITE> {
+            if (SqlExtendedInsert.isUpsert(keywords)) {
+                throw SqlUtil.newContextException(getPos(),
+                    ParserResource.RESOURCE.overwriteIsOnlyUsedWithInsert());
+            }
+            extendedKeywords.add(SqlExtendedInsertKeyword.OVERWRITE.symbol(getPos()));
+        }
+    )
+    { span = span(); }
+    SqlInsertKeywords(keywords) {
+        keywordList = new SqlNodeList(keywords, span.addAll(keywords).pos());
+        extendedKeywordList = new SqlNodeList(extendedKeywords, span.addAll(extendedKeywords).pos());
+    }
+    table = TableRefWithHintsOpt()
+    [
+        LOOKAHEAD(5)
+        [ <EXTEND> ]
+        extendList = ExtendList() {
+            table = extend(table, extendList);
+        }
+    ]
+    [
+        LOOKAHEAD(2)
+        { Pair<SqlNodeList, SqlNodeList> p; }
+        p = ParenthesizedCompoundIdentifierList() {
+            if (p.right.size() > 0) {
+                table = extend(table, p.right);
+            }
+            if (p.left.size() > 0) {
+                columnList = p.left;
+            }
+        }
+    ]
+    source = OrderedQueryOrExpr(ExprContext.ACCEPT_QUERY) {
+        return new SqlExtendedInsert(
+            table,
+            source,
+            keywordList,
+            extendedKeywordList,
+            columnList,
+            span.end(source)
+        );
+    }
+}

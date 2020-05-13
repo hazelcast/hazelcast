@@ -33,4 +33,7 @@ public interface ParserResource {
 
     @BaseMessage("Unrecognized TIMESTAMP variant ''{0}''")
     ExInst<CalciteException> unknownTimestampVariant(String variant);
+
+    @BaseMessage("OVERWRITE expression is only used with INSERT statement.")
+    ExInst<CalciteException> overwriteIsOnlyUsedWithInsert();
 }

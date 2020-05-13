@@ -29,6 +29,7 @@ public interface SchemaPlan extends SqlPlan {
 
     @Override
     default QueryExplain getExplain() {
+        // TODO: implement
         throw new UnsupportedOperationException();
     }
 

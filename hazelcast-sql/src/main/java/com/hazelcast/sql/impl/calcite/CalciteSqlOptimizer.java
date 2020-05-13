@@ -115,7 +115,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         if (node instanceof SqlCreateExternalTable) {
             return createCreateExternalTablePlan((SqlCreateExternalTable) node);
         } else if (node instanceof SqlDropExternalTable) {
-            return createDropExternalTablePlan((SqlDropExternalTable) node);
+            return createRemoveExternalTablePlan((SqlDropExternalTable) node);
         } else {
             throw new IllegalArgumentException("Unsupported SQL statement - " + node);
         }
@@ -132,7 +132,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         return new CreateExternalTablePlan(catalog, schema, sqlCreateTable.getReplace(), sqlCreateTable.ifNotExists());
     }
 
-    private SchemaPlan createDropExternalTablePlan(SqlDropExternalTable sqlDropTable) {
+    private SchemaPlan createRemoveExternalTablePlan(SqlDropExternalTable sqlDropTable) {
         return new RemoveExternalTablePlan(catalog, sqlDropTable.name(), sqlDropTable.ifExists());
     }
 

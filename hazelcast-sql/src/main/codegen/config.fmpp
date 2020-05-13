@@ -31,6 +31,8 @@ data: {
       "com.hazelcast.sql.impl.calcite.parse.SqlDataType"
       "com.hazelcast.sql.impl.calcite.parse.SqlOption"
       "com.hazelcast.sql.impl.calcite.parse.SqlDropExternalTable"
+      "com.hazelcast.sql.impl.calcite.parse.SqlExtendedInsert"
+      "com.hazelcast.sql.impl.calcite.parse.SqlExtendedInsertKeyword"
       "com.hazelcast.sql.impl.calcite.parse.ParserResource"
     ]
 
@@ -40,8 +42,9 @@ data: {
       "IF"
       "CALENDAR"
       "INSTANT"
-      "ZONED_DATE_TIME"
       "OFFSET_DATE_TIME"
+      "ZONED_DATE_TIME"
+      "OVERWRITE"
     ]
 
     # List of keywords from "keywords" section that are not reserved.
@@ -358,8 +361,9 @@ data: {
       "ZONE"
       "CALENDAR"
       "INSTANT"
-      "ZONED_DATE_TIME"
       "OFFSET_DATE_TIME"
+      "ZONED_DATE_TIME"
+      "OVERWRITE"
     ]
 
     # List of non-reserved keywords to add;
@@ -381,6 +385,7 @@ data: {
     # Return type of method implementation should be 'SqlNode'.
     # Example: SqlShowDatabases(), SqlShowTables().
     statementParserMethods: [
+      "SqlExtendedInsert()"
     ]
 
     # List of methods for parsing custom literals.
