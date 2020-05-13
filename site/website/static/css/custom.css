@@ -93,14 +93,40 @@ a.button {
   max-width: 780px;
 }
 
-.card {
-  display: inline-block;
-  vertical-align: top;
-  border: 2px solid #e6e6e6;
-  max-width: 450px;
-  margin-top: 1em;
-  margin-bottom: 1em;
-  margin-right: 1em;
+@media only screen and (min-width: 800px) {
+  .card {
+    display: inline-block;
+    vertical-align: top;
+    border: 2px solid #e6e6e6;
+    max-width: 350px;
+    margin-top: 1em;
+    margin-bottom: 1em;
+    margin-right: 1em;
+  }
+}
+
+@media only screen and (min-width: 1024px) {
+  .card {
+    display: inline-block;
+    vertical-align: top;
+    border: 2px solid #e6e6e6;
+    max-width: 500px;
+    margin-top: 1em;
+    margin-bottom: 1em;
+    margin-right: 1em;
+  }
+}
+
+@media only screen and (min-width: 1360px) {
+  .card {
+    display: inline-block;
+    vertical-align: top;
+    border: 2px solid #e6e6e6;
+    max-width: 650px;
+    margin-top: 1em;
+    margin-bottom: 1em;
+    margin-right: 1em;
+  }
 }
 
 .card p {

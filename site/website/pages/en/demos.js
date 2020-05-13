@@ -22,8 +22,11 @@ class Demos extends React.Component {
                     <p>{props.children}</p>
                     { props.videoId && 
                       <p>
-                        <iframe width="400" height="300" src={`https://www.youtube.com/embed/${props.videoId}`} frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                        <iframe width="100%" height="300" src={`https://www.youtube.com/embed/${props.videoId}`} frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
                       </p>
+                    }
+                    { props.image && 
+                      <img width="100%" src={props.image}></img>
                     }
                     <Button href={props.link}>Learn More</Button>
                 </div>
@@ -40,7 +43,7 @@ class Demos extends React.Component {
                         The following are demo applications built using Hazelcast Jet. Each demo app 
                         is self-contained and showcase the data processing capabilities of Hazelcast Jet.
                     </MarkdownBlock>
-                    <Card title="Real-Time Flight Telemetry"
+                    <Card title="Real-Time Flight Telemetry" 
                                 link="https://github.com/hazelcast/hazelcast-jet-demos/tree/master/flight-telemetry">
                         An application to analyze the real-time telemetry data of commercial aircraft currently
                         airbone. It computes noise levels and estimated CO<sub>2</sub> emissions around
@@ -54,7 +57,7 @@ class Demos extends React.Component {
                         This example uses the Large Movie Reviews Dataset as provided by the TensorFlow Keras
                         Datasets and builds a model to predict whether a movie review is positive or negative.
                     </Card>
-                    <Card title="Train Collision Prevention" videoId="2RlmCZhhjMY"
+                    <Card title="Train Collision Prevention" videoId="2RlmCZhhjMY" 
                                 link="https://github.com/vladoschreiner/transport-tycoon-demo">
                         Extracts real-time vehicle data from the train simulation game (Open Transport
                         Tycoon Deluxe) and analyses it using Hazelcast Jet. The analytical
@@ -87,7 +90,7 @@ class Demos extends React.Component {
                         real-time model training and prediction into one Jet pipeline to predict traffic
                         patterns.
                     </Card>
-                    <Card title="Train Tracking"
+                    <Card title="Train Tracking" image="https://github.com/hazelcast/hazelcast-jet-demos/raw/master/train-track/src/site/markdown/images/Screenshot1.png"
                                 link="https://github.com/hazelcast/hazelcast-jet-demos/tree/master/train-track">
                         An application to track and visualize trains in real-time using Jet's Apache Beam Runner. 
                         The application receives a GPS point feed, enriches the stream with static data and 
