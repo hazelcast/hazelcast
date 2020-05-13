@@ -192,6 +192,8 @@ public class HazelcastStarterUtils {
         if (Set.class.isAssignableFrom(type)) {
             // original set might be ordered
             return new LinkedHashSet<Object>();
+        } else if (LinkedList.class.isAssignableFrom(type)) {
+            return new LinkedList<Object>();
         } else if (List.class.isAssignableFrom(type)) {
             return new ArrayList<Object>();
         } else if (Queue.class.isAssignableFrom(type)) {

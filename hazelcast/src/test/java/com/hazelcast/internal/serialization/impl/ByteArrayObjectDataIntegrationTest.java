@@ -36,6 +36,6 @@ public class ByteArrayObjectDataIntegrationTest
 
     @Override
     protected ByteArrayObjectDataInput getDataInputFromOutput() {
-        return new ByteArrayObjectDataInput(getWrittenBytes(), serializationService, byteOrder);
+        return new ByteArrayObjectDataInput(getWrittenBytes(), serializationService, byteOrder, false);
     }
 }

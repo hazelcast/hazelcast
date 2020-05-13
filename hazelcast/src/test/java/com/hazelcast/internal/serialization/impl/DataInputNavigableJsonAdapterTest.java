@@ -84,7 +84,7 @@ public class DataInputNavigableJsonAdapterTest {
     public void testSamplesWhenReadingOne()
             throws IOException {
         for (byte[] sample : SAMPLE_BYTES) {
-            input = new ByteArrayObjectDataInput(sample, serializationService, DEFAULT_BYTE_ORDER);
+            input = new ByteArrayObjectDataInput(sample, serializationService, DEFAULT_BYTE_ORDER, false);
             DataInputNavigableJsonAdapter.UTF8Reader reader = new DataInputNavigableJsonAdapter.UTF8Reader(input);
             assertReadOne(reader, sample);
         }
@@ -94,7 +94,7 @@ public class DataInputNavigableJsonAdapterTest {
     public void testSamples()
             throws IOException {
         for (byte[] sample : SAMPLE_BYTES) {
-            input = new ByteArrayObjectDataInput(sample, serializationService, DEFAULT_BYTE_ORDER);
+            input = new ByteArrayObjectDataInput(sample, serializationService, DEFAULT_BYTE_ORDER, false);
             DataInputNavigableJsonAdapter.UTF8Reader reader = new DataInputNavigableJsonAdapter.UTF8Reader(input);
             assertReadFully(reader, sample);
         }
@@ -104,7 +104,7 @@ public class DataInputNavigableJsonAdapterTest {
     public void testMalformedSamples()
             throws IOException {
         for (byte[] sample : MALFORMED_SAMPLE_BYTES) {
-            input = new ByteArrayObjectDataInput(sample, serializationService, DEFAULT_BYTE_ORDER);
+            input = new ByteArrayObjectDataInput(sample, serializationService, DEFAULT_BYTE_ORDER, false);
             DataInputNavigableJsonAdapter.UTF8Reader reader = new DataInputNavigableJsonAdapter.UTF8Reader(input);
             assertMalformed(reader);
         }
@@ -137,7 +137,7 @@ public class DataInputNavigableJsonAdapterTest {
                     latch.await();
                     for (byte[] sample : SAMPLE_BYTES) {
                         BufferObjectDataInput input =
-                                new ByteArrayObjectDataInput(sample, serializationService, DEFAULT_BYTE_ORDER);
+                                new ByteArrayObjectDataInput(sample, serializationService, DEFAULT_BYTE_ORDER, false);
                         DataInputNavigableJsonAdapter.UTF8Reader reader =
                                 new DataInputNavigableJsonAdapter.UTF8Reader(input);
                         assertReadFully(reader, sample);
@@ -183,7 +183,7 @@ public class DataInputNavigableJsonAdapterTest {
     private void assertReadMixed(byte[] sample, boolean singleReadFirst)
             throws IOException {
         String expected = new String(sample, UTF_8);
-        input = new ByteArrayObjectDataInput(sample, serializationService, DEFAULT_BYTE_ORDER);
+        input = new ByteArrayObjectDataInput(sample, serializationService, DEFAULT_BYTE_ORDER, false);
         DataInputNavigableJsonAdapter.UTF8Reader reader = new DataInputNavigableJsonAdapter.UTF8Reader(input);
         char[] chars = new char[expected.length()];
         int charsRead = 0;

@@ -49,7 +49,6 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 
-import static com.hazelcast.internal.serialization.impl.SerializationConstants.CONSTANT_SERIALIZERS_LENGTH;
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.EMPTY_PARTITIONING_STRATEGY;
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.createSerializerAdapter;
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.getInterfaces;
@@ -88,6 +87,7 @@ public abstract class AbstractSerializationService implements InternalSerializat
     private volatile boolean active = true;
     private final byte version;
     private final ILogger logger = Logger.getLogger(InternalSerializationService.class);
+    private boolean isCompatibility;
 
     AbstractSerializationService(Builder<?> builder) {
         this.inputOutputFactory = builder.inputOutputFactory;
@@ -106,6 +106,7 @@ public abstract class AbstractSerializationService implements InternalSerializat
         this.constantTypeIds = new SerializerAdapter[builder.isCompatibility
                 ? CompatibilitySerializationConstants.CONSTANT_SERIALIZERS_LENGTH
                 : SerializationConstants.CONSTANT_SERIALIZERS_LENGTH];
+        this.isCompatibility = builder.isCompatibility;
     }
 
     // used by jet
@@ -127,11 +128,17 @@ public abstract class AbstractSerializationService implements InternalSerializat
     //region Serialization Service
     @Override
     public final <B extends Data> B toData(Object obj) {
+        if (isCompatibility) {
+            throw new UnsupportedOperationException("Only deserialization is supported in compatibility mode");
+        }
         return toData(obj, globalPartitioningStrategy);
     }
 
     @Override
     public final <B extends Data> B toData(Object obj, PartitioningStrategy strategy) {
+        if (isCompatibility) {
+            throw new UnsupportedOperationException("Only deserialization is supported in compatibility mode");
+        }
         if (obj == null) {
             return null;
         }
@@ -326,17 +333,17 @@ public abstract class AbstractSerializationService implements InternalSerializat
 
     @Override
     public final BufferObjectDataInput createObjectDataInput(byte[] data) {
-        return inputOutputFactory.createInput(data, this);
+        return inputOutputFactory.createInput(data, this, isCompatibility);
     }
 
     @Override
     public final BufferObjectDataInput createObjectDataInput(byte[] data, int offset) {
-        return inputOutputFactory.createInput(data, offset, this);
+        return inputOutputFactory.createInput(data, offset, this, isCompatibility);
     }
 
     @Override
     public final BufferObjectDataInput createObjectDataInput(Data data) {
-        return inputOutputFactory.createInput(data, this);
+        return inputOutputFactory.createInput(data, this, isCompatibility);
     }
 
     @Override
