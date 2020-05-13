@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.serialization.impl;
 
+import com.hazelcast.internal.compatibility.serialization.impl.CompatibilitySerializationConstants;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.StreamSerializer;
@@ -30,6 +31,20 @@ import static com.hazelcast.nio.Bits.NULL_ARRAY_LENGTH;
  * The {@link java.util.LinkedList} serializer
  */
 public class LinkedListStreamSerializer implements StreamSerializer<LinkedList> {
+
+    /** Determines if ser-de should conform the 3.x format */
+    private final boolean isCompatibility;
+
+    public LinkedListStreamSerializer(boolean isCompatibility) {
+        this.isCompatibility = isCompatibility;
+    }
+
+    @Override
+    public int getTypeId() {
+        return isCompatibility
+                ? CompatibilitySerializationConstants.JAVA_DEFAULT_TYPE_LINKED_LIST
+                : SerializationConstants.JAVA_DEFAULT_TYPE_LINKED_LIST;
+    }
 
     @Override
     public void write(ObjectDataOutput out, LinkedList linkedList) throws IOException {
@@ -54,11 +69,6 @@ public class LinkedListStreamSerializer implements StreamSerializer<LinkedList> 
             }
         }
         return result;
-    }
-
-    @Override
-    public int getTypeId() {
-        return SerializationConstants.JAVA_DEFAULT_TYPE_LINKED_LIST;
     }
 
     @Override

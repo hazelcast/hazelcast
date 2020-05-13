@@ -19,7 +19,6 @@ package com.hazelcast.internal.serialization.impl;
 import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.internal.serialization.PortableContext;
-import com.hazelcast.internal.serialization.impl.AbstractSerializationService.Builder;
 import com.hazelcast.internal.serialization.impl.ConstantSerializers.BooleanSerializer;
 import com.hazelcast.internal.serialization.impl.ConstantSerializers.ByteSerializer;
 import com.hazelcast.internal.serialization.impl.ConstantSerializers.StringArraySerializer;
@@ -106,7 +105,7 @@ public class SerializationServiceV1 extends AbstractSerializationService {
         javaExternalizableAdapter = createSerializerAdapter(
                 new JavaDefaultSerializers.ExternalizableSerializer(builder.enableCompression, builder.classNameFilter), this);
         registerConstantSerializers();
-        registerJavaTypeSerializers();
+        registerJavaTypeSerializers(builder.isCompatibility());
     }
 
     @Override
@@ -171,15 +170,15 @@ public class SerializationServiceV1 extends AbstractSerializationService {
         registerConstant(String[].class, new StringArraySerializer());
     }
 
-    private void registerJavaTypeSerializers() {
+    private void registerJavaTypeSerializers(boolean isCompatibility) {
         //Java extensions: more serializers
-        registerConstant(Date.class, new DateSerializer());
-        registerConstant(BigInteger.class, new BigIntegerSerializer());
-        registerConstant(BigDecimal.class, new BigDecimalSerializer());
-        registerConstant(Class.class, new ClassSerializer());
+        registerConstant(Date.class, new DateSerializer(isCompatibility));
+        registerConstant(BigInteger.class, new BigIntegerSerializer(isCompatibility));
+        registerConstant(BigDecimal.class, new BigDecimalSerializer(isCompatibility));
+        registerConstant(Class.class, new ClassSerializer(isCompatibility));
         registerConstant(Enum.class, new EnumSerializer());
-        registerConstant(ArrayList.class, new ArrayListStreamSerializer());
-        registerConstant(LinkedList.class, new LinkedListStreamSerializer());
+        registerConstant(ArrayList.class, new ArrayListStreamSerializer(isCompatibility));
+        registerConstant(LinkedList.class, new LinkedListStreamSerializer(isCompatibility));
 
         safeRegister(Serializable.class, javaSerializerAdapter);
         safeRegister(Externalizable.class, javaExternalizableAdapter);
@@ -280,7 +279,6 @@ public class SerializationServiceV1 extends AbstractSerializationService {
         private boolean enableCompression;
         private boolean enableSharedObject;
         private ClassNameFilter classNameFilter;
-        private boolean isCompatibility;
 
         protected AbstractBuilder() {
         }
@@ -318,26 +316,6 @@ public class SerializationServiceV1 extends AbstractSerializationService {
         public final T withClassNameFilter(ClassNameFilter classNameFilter) {
             this.classNameFilter = classNameFilter;
             return self();
-        }
-
-        /**
-         * Sets whether the serialization service should (de)serialize in the
-         * compatibility (4.x) format.
-         *
-         * @param isCompatibility {@code true} if the serialized format should conform to the
-         *                        4.x serialization format, {@code false} otherwise
-         */
-        public final T withCompatibility(boolean isCompatibility) {
-            this.isCompatibility = isCompatibility;
-            return self();
-        }
-
-        /**
-         * @return {@code true} if the serialized format of the serialization service should
-         * conform to the 4.x serialization format, {@code false} otherwise.
-         */
-        public boolean isCompatibility() {
-            return isCompatibility;
         }
     }
 
