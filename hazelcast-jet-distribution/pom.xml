@@ -219,6 +219,11 @@
         </dependency>
         <dependency>
             <groupId>com.hazelcast.jet</groupId>
+            <artifactId>hazelcast-jet-core</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.hazelcast.jet</groupId>
             <artifactId>hazelcast-jet-avro</artifactId>
             <version>${project.version}</version>
             <classifier>jar-with-dependencies</classifier>
