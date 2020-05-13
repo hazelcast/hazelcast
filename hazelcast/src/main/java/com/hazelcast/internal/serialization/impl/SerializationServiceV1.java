@@ -117,7 +117,7 @@ public class SerializationServiceV1 extends AbstractSerializationService {
         }
 
         dataSerializerAdapter = createSerializerAdapter(new DataSerializableSerializer(
-                builder.dataSerializableFactories, builder.getClassLoader(), builder.isCompatibility));
+                builder.dataSerializableFactories, builder.getClassLoader(), builder.isCompatibility()));
         portableSerializer = new PortableSerializer(portableContext, loader.getFactories());
         portableSerializerAdapter = createSerializerAdapter(portableSerializer);
 
@@ -125,8 +125,8 @@ public class SerializationServiceV1 extends AbstractSerializationService {
                 new JavaSerializer(builder.enableSharedObject, builder.enableCompression, builder.classNameFilter));
         javaExternalizableAdapter = createSerializerAdapter(
                 new JavaDefaultSerializers.ExternalizableSerializer(builder.enableCompression, builder.classNameFilter));
-        registerConstantSerializers(builder.isCompatibility);
-        registerJavaTypeSerializers(builder.isCompatibility);
+        registerConstantSerializers(builder.isCompatibility());
+        registerJavaTypeSerializers(builder.isCompatibility());
     }
 
     @Override
@@ -320,7 +320,6 @@ public class SerializationServiceV1 extends AbstractSerializationService {
         private boolean enableCompression;
         private boolean enableSharedObject;
         private ClassNameFilter classNameFilter;
-        private boolean isCompatibility;
 
         protected AbstractBuilder() {
         }
@@ -358,27 +357,6 @@ public class SerializationServiceV1 extends AbstractSerializationService {
         public final T withClassNameFilter(ClassNameFilter classNameFilter) {
             this.classNameFilter = classNameFilter;
             return self();
-        }
-
-        /**
-         * Sets whether the serialization service should (de)serialize in the
-         * compatibility (3.x) format.
-         *
-         * @param isCompatibility {@code true} if the serialized format should conform to the
-         *                        3.x serialization format, {@code false} otherwise
-         * @return this builder
-         */
-        public final T withCompatibility(boolean isCompatibility) {
-            this.isCompatibility = isCompatibility;
-            return self();
-        }
-
-        /**
-         * @return {@code true} if the serialized format of the serialization service should
-         * conform to the 3.x serialization format, {@code false} otherwise.
-         */
-        public boolean isCompatibility() {
-            return isCompatibility;
         }
     }
 
