@@ -77,6 +77,7 @@ public abstract class AbstractSerializationService implements InternalSerializat
     private final ConcurrentMap<Class, SerializerAdapter> typeMap = new ConcurrentHashMap<Class, SerializerAdapter>();
     private final ConcurrentMap<Integer, SerializerAdapter> idMap = new ConcurrentHashMap<Integer, SerializerAdapter>();
     private final AtomicReference<SerializerAdapter> global = new AtomicReference<SerializerAdapter>();
+    private final boolean isCompatibility;
 
     //Global serializer may override Java Serialization or not
     private boolean overrideJavaSerialization;
@@ -103,16 +104,23 @@ public abstract class AbstractSerializationService implements InternalSerializat
         this.constantTypeIds = new SerializerAdapter[builder.isCompatibility
                 ? CompatibilitySerializationConstants.CONSTANT_SERIALIZERS_LENGTH
                 : SerializationConstants.CONSTANT_SERIALIZERS_LENGTH];
+        this.isCompatibility = builder.isCompatibility;
     }
 
     //region Serialization Service
     @Override
     public final <B extends Data> B toData(Object obj) {
+        if (isCompatibility) {
+            throw new UnsupportedOperationException("Only deserialization is supported in compatibility mode");
+        }
         return toData(obj, globalPartitioningStrategy);
     }
 
     @Override
     public final <B extends Data> B toData(Object obj, PartitioningStrategy strategy) {
+        if (isCompatibility) {
+            throw new UnsupportedOperationException("Only deserialization is supported in compatibility mode");
+        }
         if (obj == null) {
             return null;
         }
@@ -308,12 +316,12 @@ public abstract class AbstractSerializationService implements InternalSerializat
 
     @Override
     public final BufferObjectDataInput createObjectDataInput(byte[] data) {
-        return inputOutputFactory.createInput(data, this);
+        return inputOutputFactory.createInput(data, this, isCompatibility);
     }
 
     @Override
     public final BufferObjectDataInput createObjectDataInput(Data data) {
-        return inputOutputFactory.createInput(data, this);
+        return inputOutputFactory.createInput(data, this, isCompatibility);
     }
 
     @Override

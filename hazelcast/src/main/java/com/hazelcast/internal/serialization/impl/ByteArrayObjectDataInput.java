@@ -31,6 +31,7 @@ import static com.hazelcast.nio.Bits.INT_SIZE_IN_BYTES;
 import static com.hazelcast.nio.Bits.LONG_SIZE_IN_BYTES;
 import static com.hazelcast.nio.Bits.NULL_ARRAY_LENGTH;
 import static com.hazelcast.nio.Bits.SHORT_SIZE_IN_BYTES;
+import static com.hazelcast.nio.Bits.UTF_8;
 import static com.hazelcast.version.Version.UNKNOWN;
 
 class ByteArrayObjectDataInput extends VersionedObjectDataInput implements BufferObjectDataInput {
@@ -45,17 +46,25 @@ class ByteArrayObjectDataInput extends VersionedObjectDataInput implements Buffe
 
     private final InternalSerializationService service;
     private final boolean bigEndian;
+    private final boolean isCompatibility;
 
-    ByteArrayObjectDataInput(byte[] data, InternalSerializationService service, ByteOrder byteOrder) {
-        this(data, 0, service, byteOrder);
+    ByteArrayObjectDataInput(byte[] data,
+                             InternalSerializationService service,
+                             ByteOrder byteOrder,
+                             boolean isCompatibility) {
+        this(data, 0, service, byteOrder, isCompatibility);
     }
 
-    ByteArrayObjectDataInput(byte[] data, int offset, InternalSerializationService service, ByteOrder byteOrder) {
+    ByteArrayObjectDataInput(byte[] data, int offset,
+                             InternalSerializationService service,
+                             ByteOrder byteOrder,
+                             boolean isCompatibility) {
         this.data = data;
         this.size = data != null ? data.length : 0;
         this.pos = offset;
         this.service = service;
         this.bigEndian = byteOrder == ByteOrder.BIG_ENDIAN;
+        this.isCompatibility = isCompatibility;
     }
 
     @Override
@@ -550,23 +559,7 @@ class ByteArrayObjectDataInput extends VersionedObjectDataInput implements Buffe
      */
     @Override
     public final String readUTF() throws IOException {
-        int charCount = readInt();
-        if (charCount == NULL_ARRAY_LENGTH) {
-            return null;
-        }
-        if (charBuffer == null || charCount > charBuffer.length) {
-            charBuffer = new char[charCount];
-        }
-        byte b;
-        for (int i = 0; i < charCount; i++) {
-            b = readByte();
-            if (b < 0) {
-                charBuffer[i] = Bits.readUtf8Char(this, b);
-            } else {
-                charBuffer[i] = (char) b;
-            }
-        }
-        return new String(charBuffer, 0, charCount);
+        return isCompatibility ? readUTFInternalCompatibility() : readUTFInternal();
     }
 
     @Override
@@ -681,6 +674,37 @@ class ByteArrayObjectDataInput extends VersionedObjectDataInput implements Buffe
 
     public ByteOrder getByteOrder() {
         return bigEndian ? ByteOrder.BIG_ENDIAN : ByteOrder.LITTLE_ENDIAN;
+    }
+
+    private String readUTFInternalCompatibility() throws EOFException {
+        int numberOfBytes = readInt();
+        if (numberOfBytes == NULL_ARRAY_LENGTH) {
+            return null;
+        }
+
+        String result = new String(data, pos, numberOfBytes, UTF_8);
+        pos += numberOfBytes;
+        return result;
+    }
+
+    private String readUTFInternal() throws IOException {
+        int charCount = readInt();
+        if (charCount == NULL_ARRAY_LENGTH) {
+            return null;
+        }
+        if (charBuffer == null || charCount > charBuffer.length) {
+            charBuffer = new char[charCount];
+        }
+        byte b;
+        for (int i = 0; i < charCount; i++) {
+            b = readByte();
+            if (b < 0) {
+                charBuffer[i] = Bits.readUtf8Char(this, b);
+            } else {
+                charBuffer[i] = (char) b;
+            }
+        }
+        return new String(charBuffer, 0, charCount);
     }
 
     @Override
