@@ -27,7 +27,7 @@ import java.time.LocalTime;
  */
 public abstract class AbstractTimestampWithTimezoneConverter extends AbstractTemporalConverter {
     protected AbstractTimestampWithTimezoneConverter(int id) {
-        super(id, QueryDataTypeFamily.TIMESTAMP_WITH_TIMEZONE);
+        super(id, QueryDataTypeFamily.TIMESTAMP_WITH_TIME_ZONE);
     }
 
     @Override

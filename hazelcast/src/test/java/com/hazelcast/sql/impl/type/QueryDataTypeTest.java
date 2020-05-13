@@ -74,7 +74,7 @@ public class QueryDataTypeTest extends SqlTestSupport {
         checkType(QueryDataType.VARCHAR, StringConverter.INSTANCE);
         checkType(QueryDataType.VARCHAR_CHARACTER, CharacterConverter.INSTANCE);
 
-        checkType(QueryDataType.BIT, BooleanConverter.INSTANCE, QueryDataType.PRECISION_BIT);
+        checkType(QueryDataType.BOOLEAN, BooleanConverter.INSTANCE, QueryDataType.PRECISION_BOOLEAN);
         checkType(QueryDataType.TINYINT, ByteConverter.INSTANCE, QueryDataType.PRECISION_TINYINT);
         checkType(QueryDataType.SMALLINT, ShortConverter.INSTANCE, QueryDataType.PRECISION_SMALLINT);
         checkType(QueryDataType.INT, IntegerConverter.INSTANCE, QueryDataType.PRECISION_INT);
@@ -105,8 +105,8 @@ public class QueryDataTypeTest extends SqlTestSupport {
 
             assertEquals(i, precision);
 
-            if (precision <= QueryDataType.PRECISION_BIT) {
-                assertEquals(QueryDataTypeFamily.BIT, type.getTypeFamily());
+            if (precision <= QueryDataType.PRECISION_BOOLEAN) {
+                assertEquals(QueryDataTypeFamily.BOOLEAN, type.getTypeFamily());
             } else if (precision <= QueryDataType.PRECISION_TINYINT) {
                 assertEquals(QueryDataTypeFamily.TINYINT, type.getTypeFamily());
             } else if (precision <= QueryDataType.PRECISION_SMALLINT) {
@@ -136,7 +136,7 @@ public class QueryDataTypeTest extends SqlTestSupport {
         checkResolvedTypeForClass(QueryDataType.VARCHAR, String.class);
         checkResolvedTypeForClass(QueryDataType.VARCHAR_CHARACTER, char.class, Character.class);
 
-        checkResolvedTypeForClass(QueryDataType.BIT, boolean.class, Boolean.class);
+        checkResolvedTypeForClass(QueryDataType.BOOLEAN, boolean.class, Boolean.class);
         checkResolvedTypeForClass(QueryDataType.TINYINT, byte.class, Byte.class);
         checkResolvedTypeForClass(QueryDataType.SMALLINT, short.class, Short.class);
         checkResolvedTypeForClass(QueryDataType.INT, int.class, Integer.class);
@@ -162,7 +162,7 @@ public class QueryDataTypeTest extends SqlTestSupport {
     public void testTypeResolutionByFamily() {
         checkResolvedTypeForTypeFamily(QueryDataType.VARCHAR, QueryDataTypeFamily.VARCHAR);
 
-        checkResolvedTypeForTypeFamily(QueryDataType.BIT, QueryDataTypeFamily.BIT);
+        checkResolvedTypeForTypeFamily(QueryDataType.BOOLEAN, QueryDataTypeFamily.BOOLEAN);
         checkResolvedTypeForTypeFamily(QueryDataType.TINYINT, QueryDataTypeFamily.TINYINT);
         checkResolvedTypeForTypeFamily(QueryDataType.SMALLINT, QueryDataTypeFamily.SMALLINT);
         checkResolvedTypeForTypeFamily(QueryDataType.INT, QueryDataTypeFamily.INT);
@@ -175,7 +175,7 @@ public class QueryDataTypeTest extends SqlTestSupport {
         checkResolvedTypeForTypeFamily(QueryDataType.DATE, QueryDataTypeFamily.DATE);
         checkResolvedTypeForTypeFamily(QueryDataType.TIMESTAMP, QueryDataTypeFamily.TIMESTAMP);
         checkResolvedTypeForTypeFamily(QueryDataType.TIMESTAMP_WITH_TZ_OFFSET_DATE_TIME,
-            QueryDataTypeFamily.TIMESTAMP_WITH_TIMEZONE);
+            QueryDataTypeFamily.TIMESTAMP_WITH_TIME_ZONE);
 
         checkResolvedTypeForTypeFamily(QueryDataType.OBJECT, QueryDataTypeFamily.OBJECT);
     }
@@ -184,8 +184,8 @@ public class QueryDataTypeTest extends SqlTestSupport {
     public void testBigger() {
         checkPrecedence(QueryDataType.VARCHAR, QueryDataType.LATE);
 
-        checkPrecedence(QueryDataType.BIT, QueryDataType.VARCHAR);
-        checkPrecedence(QueryDataType.TINYINT, QueryDataType.BIT);
+        checkPrecedence(QueryDataType.BOOLEAN, QueryDataType.VARCHAR);
+        checkPrecedence(QueryDataType.TINYINT, QueryDataType.BOOLEAN);
         checkPrecedence(QueryDataType.SMALLINT, QueryDataType.TINYINT);
         checkPrecedence(QueryDataType.INT, QueryDataType.SMALLINT);
         checkPrecedence(QueryDataType.BIGINT, QueryDataType.INT);

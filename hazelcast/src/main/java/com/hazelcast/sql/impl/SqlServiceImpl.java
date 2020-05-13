@@ -21,7 +21,7 @@ import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.sql.impl.optimizer.NoOpSqlOptimizer;
+import com.hazelcast.sql.impl.optimizer.DisabledSqlOptimizer;
 import com.hazelcast.sql.impl.optimizer.SqlOptimizer;
 
 import java.lang.reflect.Constructor;
@@ -116,7 +116,7 @@ public class SqlServiceImpl implements Consumer<Packet> {
         try {
             clazz = Class.forName(className);
         } catch (ClassNotFoundException e) {
-            return new NoOpSqlOptimizer();
+            return new DisabledSqlOptimizer();
         } catch (Exception e) {
             throw new HazelcastException("Failed to resolve optimizer class " + className + ": " + e.getMessage(), e);
         }

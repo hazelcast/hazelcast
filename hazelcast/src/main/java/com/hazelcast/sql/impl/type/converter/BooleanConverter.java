@@ -29,7 +29,7 @@ public final class BooleanConverter extends Converter {
     protected static final String FALSE = "false";
 
     private BooleanConverter() {
-        super(ID_BOOLEAN, QueryDataTypeFamily.BIT);
+        super(ID_BOOLEAN, QueryDataTypeFamily.BOOLEAN);
     }
 
     @Override

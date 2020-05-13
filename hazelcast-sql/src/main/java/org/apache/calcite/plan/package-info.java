@@ -14,17 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.optimizer;
-
-import com.hazelcast.sql.impl.QueryException;
-import com.hazelcast.sql.impl.plan.Plan;
-
 /**
- * No-op optimizer.
+ * Contains Calcite-related classes.
  */
-public class NoOpSqlOptimizer implements SqlOptimizer {
-    @Override
-    public Plan prepare(String sql) {
-        throw QueryException.error("Cannot execute SQL query because \"hazelcast-sql\" module is not in the classpath.");
-    }
-}
+package org.apache.calcite.plan;
