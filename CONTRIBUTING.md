@@ -4,7 +4,7 @@ It makes you feel good...
 
 ## Issue Reports
 Thanks for reporting your issue.  Please share with us the following information, to help us resolve your issue quickly and efficiently.
-*	Hazelcast version that you use (e.g. 3.4, also specify whether it is a minor release or the latest snapshot).
+1.	Hazelcast version that you use (e.g. 4.0.1, also specify whether it is a minor release or the latest snapshot).
 2.	Cluster size, i.e. the number of Hazelcast cluster members.
 3.	Number of the clients.
 4.	Version of Java. It is also helpful to mention the JVM parameters.
@@ -16,8 +16,8 @@ Thanks for reporting your issue.  Please share with us the following information
 
 ## Pull Requests
 Thanks for creating your pull request (PR).
-*	Contributions are submitted, reviewed, and accepted using the pull requests on GitHub.
-2.	In order to merge your PR, please sign the [Contributor Agreement Form].
+1.	Contributions are submitted, reviewed, and accepted using the pull requests on GitHub.
+2.	Our bot will automatically ask you on the PR to sign the Hazelcast Contributor Agreement.
 3.	Try to make clean commits that are easily readable (including descriptive commit messages).
 4.	The latest changes are in the **master** branch.
 5.	Before you push, run the command `mvn clean package -P checkstyle,spotbugs` in your terminal and fix the CheckStyle and SpotBugs errors (if any). Push your PR once it is free of CheckStyle and SpotBugs errors.
