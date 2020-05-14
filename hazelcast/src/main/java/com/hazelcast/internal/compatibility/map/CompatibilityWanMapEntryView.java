@@ -21,6 +21,7 @@ import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.nio.serialization.impl.Versioned;
 
 import java.io.IOException;
 import java.util.Objects;
@@ -32,7 +33,7 @@ import java.util.Objects;
  * @param <K> the type of key.
  * @param <V> the type of value.
  */
-public class CompatibilityWanMapEntryView<K, V> implements EntryView<K, V>, IdentifiedDataSerializable {
+public class CompatibilityWanMapEntryView<K, V> implements EntryView<K, V>, IdentifiedDataSerializable, Versioned {
 
     private K key;
     private V value;
