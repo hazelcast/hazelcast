@@ -40,7 +40,7 @@ import static com.hazelcast.internal.compatibility.serialization.impl.Compatibil
  * Data serializer hook containing (de)serialization information for communicating
  * with 4.x members over WAN.
  */
-@SuppressWarnings("checkstyle:javadocvariable")
+@SuppressWarnings("unused")
 public final class CompatibilitySplitBrainDataSerializerHook implements DataSerializerHook {
 
     public static final int F_ID = CompatibilityFactoryIdHelper.getFactoryId(SPLIT_BRAIN_DS_FACTORY, SPLIT_BRAIN_DS_FACTORY_ID);

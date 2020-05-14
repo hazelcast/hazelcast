@@ -24,6 +24,7 @@ import java.lang.reflect.Method;
 
 import static com.hazelcast.test.starter.HazelcastProxyFactory.proxyObjectForStarter;
 import static com.hazelcast.test.starter.ReflectionUtils.getFieldValueReflectively;
+import static com.hazelcast.test.starter.ReflectionUtils.invokeSetter;
 
 @HazelcastStarterConstructor(classNames = {"com.hazelcast.internal.dynamicconfig.DynamicConfigurationAwareConfig"})
 public class DynamicConfigurationAwareConfigConstructor extends AbstractConfigConstructor {
@@ -48,14 +49,13 @@ public class DynamicConfigurationAwareConfigConstructor extends AbstractConfigCo
         Method setClassLoaderMethod = configClass.getMethod("setClassLoader", ClassLoader.class);
         setClassLoaderMethod.invoke(clonedConfig, classloader);
 
-        Object configurationService = getFieldValueReflectively(delegate, "configurationService");
-        Object proxiedConfigurationService = proxyObjectForStarter(classloader, configurationService);
-
         Object[] args = new Object[]{clonedConfig, clonedHazelcastProperties};
         Object dynamicConfig = constructor.newInstance(args);
 
-        Method setConfigurationServiceMethod = targetClass.getMethod("setConfigurationService", ConfigurationService.class);
-        setConfigurationServiceMethod.invoke(dynamicConfig, proxiedConfigurationService);
+        Object configurationService = getFieldValueReflectively(delegate, "configurationService");
+        Object proxiedConfigurationService = proxyObjectForStarter(classloader, configurationService);
+        invokeSetter(dynamicConfig, "setConfigurationService", ConfigurationService.class,
+                proxiedConfigurationService);
 
         return dynamicConfig;
     }

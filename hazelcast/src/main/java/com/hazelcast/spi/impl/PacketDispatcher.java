@@ -71,7 +71,7 @@ public final class PacketDispatcher implements Consumer<Packet> {
                     break;
                 case BIND:
                 case EXTENDED_BIND:
-                case BIND_4_x:
+                case COMPATIBILITY_BIND_MESSAGE:
                     Connection connection = packet.getConn();
                     EndpointManager endpointManager = connection.getEndpointManager();
                     endpointManager.accept(packet);

@@ -27,6 +27,7 @@ import com.hazelcast.version.Version;
  * Data serializer hook containing (de)serialization information for communicating
  * with 4.x members over WAN.
  */
+@SuppressWarnings("unused")
 public final class CompatibilityClusterDataSerializerHook implements DataSerializerHook {
 
     public static final int F_ID = 0;

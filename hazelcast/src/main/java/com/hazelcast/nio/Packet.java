@@ -24,11 +24,11 @@ import static com.hazelcast.nio.PacketIOHelper.HEADER_SIZE;
 
 /**
  * A Packet is a piece of data sent over the wire. The Packet is used for member to member communication.
- * <p>
+ *
  * The Packet extends HeapData instead of wrapping it. From a design point of view this is often
  * not the preferred solution (prefer composition over inheritance), but in this case that
  * would mean more object litter.
- * <p>
+ *
  * Since the Packet isn't used throughout the system, this design choice is visible locally.
  */
 @PrivateApi
@@ -350,7 +350,7 @@ public final class Packet extends HeapData implements OutboundFrame {
          * <p>
          * {@code ordinal = 4}
          */
-        BIND_4_x(4);
+        COMPATIBILITY_BIND_MESSAGE(4);
 
         final char headerEncoding;
 
@@ -367,7 +367,7 @@ public final class Packet extends HeapData implements OutboundFrame {
         public static Type fromFlags(int flags, boolean is4x) {
             int ordinal = headerDecode(flags);
             if (is4x && ordinal == BIND.ordinal()) {
-                return BIND_4_x;
+                return COMPATIBILITY_BIND_MESSAGE;
             }
             return VALUES[ordinal];
         }

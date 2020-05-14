@@ -29,6 +29,7 @@ import java.io.File;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -38,6 +39,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
+import static com.hazelcast.test.starter.HazelcastStarterUtils.debug;
 import static com.hazelcast.util.Preconditions.checkHasText;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 import static java.lang.reflect.Proxy.getInvocationHandler;
@@ -222,6 +224,32 @@ public final class ReflectionUtils {
         return false;
     }
 
+    public static Method getSetter(Class<?> otherConfigClass,
+                                    Class<?> parameterType, String setterName) {
+        try {
+            return otherConfigClass.getMethod(setterName, parameterType);
+        } catch (NoSuchMethodException e) {
+            return null;
+        }
+    }
+
+    public static void invokeSetter(Object object, String setterName,
+                                    Class<?> parameterClass, Object parameter) {
+        Method setter = getSetter(object.getClass(), parameterClass, setterName);
+        invokeMethod(setter, object, parameter);
+    }
+
+    public static void invokeMethod(Method method, Object methodObj, Object methodParam) {
+        try {
+            method.invoke(methodObj, methodParam);
+        } catch (IllegalAccessException e) {
+            debug("Could not update config via %s: %s", method.getName(), e.getMessage());
+        } catch (InvocationTargetException e) {
+            debug("Could not update config via %s: %s", method.getName(), e.getMessage());
+        } catch (IllegalArgumentException e) {
+            debug("Could not update config via %s: %s", method.getName(), e.getMessage());
+        }
+    }
 
     public static Object getDelegateFromMock(Object mock) throws IllegalAccessException {
         Answer<?> defaultAnswer = mockingDetails(mock).getMockCreationSettings().getDefaultAnswer();

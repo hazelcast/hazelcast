@@ -24,12 +24,12 @@ import com.hazelcast.spi.merge.PassThroughMergePolicy;
 import com.hazelcast.spi.merge.PutIfAbsentMergePolicy;
 
 import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -40,7 +40,10 @@ import static com.hazelcast.test.starter.HazelcastProxyFactory.proxyObjectForSta
 import static com.hazelcast.test.starter.HazelcastProxyFactory.shouldProxy;
 import static com.hazelcast.test.starter.HazelcastStarterUtils.debug;
 import static com.hazelcast.test.starter.ReflectionUtils.getFieldValueReflectively;
+import static com.hazelcast.test.starter.ReflectionUtils.getSetter;
 import static com.hazelcast.test.starter.ReflectionUtils.hasField;
+import static com.hazelcast.test.starter.ReflectionUtils.invokeMethod;
+import static com.hazelcast.test.starter.ReflectionUtils.invokeSetter;
 import static java.lang.reflect.Proxy.isProxyClass;
 
 /**
@@ -52,13 +55,12 @@ abstract class AbstractConfigConstructor extends AbstractStarterObjectConstructo
         super(targetClass);
     }
 
-    @SuppressWarnings("unchecked")
     static Object cloneConfig(Object thisConfigObject, ClassLoader classloader) throws Exception {
         if (thisConfigObject == null) {
             return null;
         }
 
-        Class thisConfigClass = thisConfigObject.getClass();
+        Class<?> thisConfigClass = thisConfigObject.getClass();
         if (shouldProxy(thisConfigClass, new Class[0]) == RETURN_SAME) {
             return thisConfigObject;
         }
@@ -90,7 +92,7 @@ abstract class AbstractConfigConstructor extends AbstractStarterObjectConstructo
             if (!isGetter(method)) {
                 continue;
             }
-            Class returnType = method.getReturnType();
+            Class<?> returnType = method.getReturnType();
             Class<?> otherReturnType;
             try {
                 otherReturnType = getOtherReturnType(classloader, returnType);
@@ -106,29 +108,30 @@ abstract class AbstractConfigConstructor extends AbstractStarterObjectConstructo
                 if (isMapStoreConfig(thisConfigClass) && method.getName().equals("getImplementation")) {
                     proxyMapStoreImplementations(thisConfigObject, otherConfigObject);
                 } else if (Properties.class.isAssignableFrom(returnType)) {
-                    Properties original = (Properties) method.invoke(thisConfigObject, null);
-                    updateConfig(setter, otherConfigObject, copy(original));
+                    Properties original = (Properties) method.invoke(thisConfigObject);
+                    invokeMethod(setter, otherConfigObject, copy(original));
                 } else if (Map.class.isAssignableFrom(returnType) || ConcurrentMap.class.isAssignableFrom(returnType)) {
-                    Map map = (Map) method.invoke(thisConfigObject, null);
-                    Map otherMap = ConcurrentMap.class.isAssignableFrom(returnType) ? new ConcurrentHashMap() : new HashMap();
+                    @SuppressWarnings("unchecked")
+                    Map<Object, Object> map = (Map<Object, Object>) method.invoke(thisConfigObject);
+                    Map<Object, Object> otherMap = ConcurrentMap.class.isAssignableFrom(returnType)
+                            ? new ConcurrentHashMap<Object, Object>() : new HashMap<Object, Object>();
                     copyMap(map, otherMap, classloader);
-                    updateConfig(setter, otherConfigObject, otherMap);
+                    invokeMethod(setter, otherConfigObject, otherMap);
                 } else if (returnType.equals(List.class)) {
-                    List list = (List) method.invoke(thisConfigObject, null);
-                    List otherList = new ArrayList();
+                    List<?> list = (List<?>) method.invoke(thisConfigObject);
+                    List<Object> otherList = new ArrayList<Object>();
                     for (Object item : list) {
                         Object otherItem = cloneConfig(item, classloader);
                         otherList.add(otherItem);
                     }
-                    updateConfig(setter, otherConfigObject, otherList);
+                    invokeMethod(setter, otherConfigObject, otherList);
                 } else if (returnType.isEnum()) {
-                    Enum thisSubConfigObject = (Enum) method.invoke(thisConfigObject, null);
-                    Class otherEnumClass = classloader.loadClass(thisSubConfigObject.getClass().getName());
-                    Object otherEnumValue = Enum.valueOf(otherEnumClass, thisSubConfigObject.name());
-                    updateConfig(setter, otherConfigObject, otherEnumValue);
+                    Enum<?> thisSubConfigObject = (Enum<?>) method.invoke(thisConfigObject);
+                    Object otherEnumValue = cloneEnum(classloader, thisSubConfigObject.getClass().getName(), thisSubConfigObject);
+                    invokeMethod(setter, otherConfigObject, otherEnumValue);
                 } else if (returnTypeName.startsWith("java") || returnType.isPrimitive()) {
-                    Object thisSubConfigObject = method.invoke(thisConfigObject, null);
-                    updateConfig(setter, otherConfigObject, thisSubConfigObject);
+                    Object thisSubConfigObject = method.invoke(thisConfigObject);
+                    invokeMethod(setter, otherConfigObject, thisSubConfigObject);
                 } else if (returnTypeName.equals("com.hazelcast.core.RingbufferStore")
                         || returnTypeName.equals("com.hazelcast.core.RingbufferStoreFactory")
                         || returnTypeName.equals("com.hazelcast.core.QueueStore")
@@ -137,21 +140,21 @@ abstract class AbstractConfigConstructor extends AbstractStarterObjectConstructo
                 } else if (returnTypeName.startsWith("com.hazelcast.memory.MemorySize")) {
                     // ignore
                 } else if (returnTypeName.startsWith("com.hazelcast")) {
-                    Object thisSubConfigObject = method.invoke(thisConfigObject, null);
+                    Object thisSubConfigObject = method.invoke(thisConfigObject);
                     Object otherSubConfig = cloneConfig(thisSubConfigObject, classloader);
-                    updateConfig(setter, otherConfigObject, otherSubConfig);
+                    invokeMethod(setter, otherConfigObject, otherSubConfig);
                 }
             }
         }
         return otherConfigObject;
     }
 
-    private static void copyMap(Map source, Map destination, ClassLoader classLoader) throws Exception {
-        for (Object entry : source.entrySet()) {
+    private static void copyMap(Map<Object, Object> source, Map<Object, Object> destination, ClassLoader classLoader) throws Exception {
+        for (Entry<Object, Object> entry : source.entrySet()) {
             // keys are either Strings or, since 3.12, EndpointQualifiers
-            Object key = ((Map.Entry) entry).getKey();
+            Object key = entry.getKey();
             Object mappedKey = proxyObjectForStarter(classLoader, key);
-            Object value = ((Map.Entry) entry).getValue();
+            Object value = entry.getValue();
             Object otherMapItem = cloneConfig(value, classLoader);
             destination.put(mappedKey, otherMapItem);
         }
@@ -167,7 +170,7 @@ abstract class AbstractConfigConstructor extends AbstractStarterObjectConstructo
         return !void.class.equals(method.getReturnType());
     }
 
-    private static Class<?> getOtherReturnType(ClassLoader classloader, Class returnType) throws Exception {
+    private static Class<?> getOtherReturnType(ClassLoader classloader, Class<?> returnType) throws Exception {
         String returnTypeName = returnType.getName();
         if (returnTypeName.startsWith("com.hazelcast")) {
             return classloader.loadClass(returnTypeName);
@@ -175,43 +178,27 @@ abstract class AbstractConfigConstructor extends AbstractStarterObjectConstructo
         return returnType;
     }
 
-    private static Method getSetter(Class<?> otherConfigClass, Class parameterType, String setterName) {
-        try {
-            return otherConfigClass.getMethod(setterName, parameterType);
-        } catch (NoSuchMethodException e) {
-            return null;
-        }
-    }
-
     /**
      * Creates a proxy class for a store implementation from the current
      * classloader for the proxied classloader.
      */
-    private static void cloneStoreInstance(ClassLoader classloader, Method method, Method setter, Object thisConfigObject,
-                                           Object otherConfigObject, String targetStoreClass) throws Exception {
-        Object thisStoreObject = method.invoke(thisConfigObject);
+    private static void cloneStoreInstance(ClassLoader targetClassLoader,
+                                           Method storeGetter,
+                                           Method targetStoreSetter,
+                                           Object thisConfigObject,
+                                           Object otherConfigObject,
+                                           String targetStoreClass) throws Exception {
+        Object thisStoreObject = storeGetter.invoke(thisConfigObject);
         if (thisStoreObject == null) {
             return;
         }
         Class<?> thisStoreClass = thisStoreObject.getClass();
-        if (isProxyClass(thisStoreClass) || classloader.equals(thisStoreClass.getClassLoader())) {
-            updateConfig(setter, otherConfigObject, thisStoreObject);
+        if (isProxyClass(thisStoreClass) || targetClassLoader.equals(thisStoreClass.getClassLoader())) {
+            invokeMethod(targetStoreSetter, otherConfigObject, thisStoreObject);
         } else {
-            Class<?> otherStoreClass = classloader.loadClass(targetStoreClass);
-            Object otherStoreObject = generateProxyForInterface(thisStoreObject, classloader, otherStoreClass);
-            updateConfig(setter, otherConfigObject, otherStoreObject);
-        }
-    }
-
-    private static void updateConfig(Method setterMethod, Object otherConfigObject, Object value) {
-        try {
-            setterMethod.invoke(otherConfigObject, value);
-        } catch (IllegalAccessException e) {
-            debug("Could not update config via %s: %s", setterMethod.getName(), e.getMessage());
-        } catch (InvocationTargetException e) {
-            debug("Could not update config via %s: %s", setterMethod.getName(), e.getMessage());
-        } catch (IllegalArgumentException e) {
-            debug("Could not update config via %s: %s", setterMethod.getName(), e.getMessage());
+            Class<?> otherStoreClass = targetClassLoader.loadClass(targetStoreClass);
+            Object otherStoreObject = generateProxyForInterface(thisStoreObject, targetClassLoader, otherStoreClass);
+            invokeMethod(targetStoreSetter, otherConfigObject, otherStoreObject);
         }
     }
 
@@ -241,13 +228,13 @@ abstract class AbstractConfigConstructor extends AbstractStarterObjectConstructo
      */
     private static Object cloneQuorumFunctionImplementation(Object quorumFunction, Class<?> targetClass) throws Exception {
         if (targetClass.getName().equals("com.hazelcast.quorum.impl.ProbabilisticQuorumFunction")) {
-            int size = (Integer) getFieldValueReflectively(quorumFunction, "quorumSize");
-            double suspicionThreshold = (Double) getFieldValueReflectively(quorumFunction, "suspicionThreshold");
-            int maxSampleSize = (Integer) getFieldValueReflectively(quorumFunction, "maxSampleSize");
-            long minStdDeviationMillis = (Long) getFieldValueReflectively(quorumFunction, "minStdDeviationMillis");
-            long acceptableHeartbeatPauseMillis = (Long) getFieldValueReflectively(quorumFunction,
+            int size = getFieldValueReflectively(quorumFunction, "quorumSize");
+            double suspicionThreshold = getFieldValueReflectively(quorumFunction, "suspicionThreshold");
+            int maxSampleSize = getFieldValueReflectively(quorumFunction, "maxSampleSize");
+            long minStdDeviationMillis = getFieldValueReflectively(quorumFunction, "minStdDeviationMillis");
+            long acceptableHeartbeatPauseMillis = getFieldValueReflectively(quorumFunction,
                     "acceptableHeartbeatPauseMillis");
-            long heartbeatIntervalMillis = (Long) getFieldValueReflectively(quorumFunction, "heartbeatIntervalMillis");
+            long heartbeatIntervalMillis = getFieldValueReflectively(quorumFunction, "heartbeatIntervalMillis");
 
             Constructor<?> constructor = targetClass.getConstructor(Integer.TYPE, Long.TYPE, Long.TYPE, Integer.TYPE, Long.TYPE,
                     Double.TYPE);
@@ -255,8 +242,8 @@ abstract class AbstractConfigConstructor extends AbstractStarterObjectConstructo
             return constructor.newInstance(size, heartbeatIntervalMillis, acceptableHeartbeatPauseMillis,
                     maxSampleSize, minStdDeviationMillis, suspicionThreshold);
         } else if (targetClass.getName().equals("com.hazelcast.quorum.impl.RecentlyActiveQuorumFunction")) {
-            int size = (Integer) getFieldValueReflectively(quorumFunction, "quorumSize");
-            int heartbeatToleranceMillis = (Integer) getFieldValueReflectively(quorumFunction, "heartbeatToleranceMillis");
+            int size = getFieldValueReflectively(quorumFunction, "quorumSize");
+            int heartbeatToleranceMillis = getFieldValueReflectively(quorumFunction, "heartbeatToleranceMillis");
 
             Constructor<?> constructor = targetClass.getConstructor(Integer.TYPE, Integer.TYPE);
             return constructor.newInstance(size, heartbeatToleranceMillis);
@@ -279,30 +266,29 @@ abstract class AbstractConfigConstructor extends AbstractStarterObjectConstructo
         Constructor<?> constructor = otherConfigClass.getConstructor();
         Object thatConfigObject = constructor.newInstance();
 
-        updateConfig(getSetter(thatConfigObject.getClass(), int.class, "setSize"), thatConfigObject, size);
-
-        Class otherMaxSizePolicyClass;
+        invokeSetter(thatConfigObject, "setSize", int.class, size);
+        boolean is4_x = !hasField(thisConfigObject.getClass(), "readOnly");
+        String otherMSPClassName;
         String methodName;
-        try {
-            // are we transferring from 3.12 to 4.0?
-            otherMaxSizePolicyClass = otherConfigClass.getClassLoader()
-                                                      .loadClass("com.hazelcast.config.MaxSizePolicy");
-            methodName = "setMaxSizePolicy";
-        } catch (ClassNotFoundException e) {
-            // we are transferring from 4.0 to 3.12
-            otherMaxSizePolicyClass
-                    = otherConfigClass.getClassLoader()
-                                      .loadClass("com.hazelcast.config.EvictionConfig$MaxSizePolicy");
+        if (is4_x) {
+            // transforming from 4.0 to 3.12
+            otherMSPClassName = "com.hazelcast.config.EvictionConfig$MaxSizePolicy";
             methodName = "setMaximumSizePolicy";
+        } else {
+            // transforming from 3.12 to 4.0
+            otherMSPClassName = "com.hazelcast.config.MaxSizePolicy";
+            methodName = "setMaxSizePolicy";
         }
-        Enum otherMaxSizePolicy = Enum.valueOf(otherMaxSizePolicyClass, maxSizePolicy.toString());
-        Method otherMaxSizePolicySetter = getSetter(thatConfigObject.getClass(), otherMaxSizePolicyClass, methodName);
-        updateConfig(otherMaxSizePolicySetter, thatConfigObject, otherMaxSizePolicy);
 
-        Class<?> otherEvictionPolicyClass = otherConfigClass.getClassLoader().loadClass(evictionPolicy.getClass().getName());
-        updateConfig(getSetter(thatConfigObject.getClass(), otherEvictionPolicyClass, "setEvictionPolicy"), thatConfigObject, evictionPolicy);
+        Enum<?> otherMSP = cloneEnum(otherConfigClass.getClassLoader(), otherMSPClassName, maxSizePolicy);
+        invokeSetter(thatConfigObject, methodName, otherMSP.getClass(), otherMSP);
 
-        updateConfig(getSetter(thatConfigObject.getClass(), String.class, "setComparatorClassName"), thatConfigObject, comparatorClassName);
+        Enum<?> otherEP = cloneEnum(otherConfigClass.getClassLoader(), evictionPolicy.getClass().getName(), evictionPolicy);
+        invokeSetter(thatConfigObject, "setEvictionPolicy", otherEP.getClass(), otherEP);
+
+        if (comparatorClassName != null) {
+            invokeSetter(thatConfigObject, "setComparatorClassName", String.class, comparatorClassName);
+        }
 
         return thatConfigObject;
     }
@@ -313,9 +299,9 @@ abstract class AbstractConfigConstructor extends AbstractStarterObjectConstructo
     private static Object cloneWanReplicationRef(Object wanReplicationRef, Class<?> targetClass) throws Exception {
         String name = getFieldValueReflectively(wanReplicationRef, "name");
         boolean republishingEnabled = getFieldValueReflectively(wanReplicationRef, "republishingEnabled");
-        boolean is4_0 = hasField(wanReplicationRef.getClass(), "mergePolicyClassName");
+        boolean is4_x = hasField(wanReplicationRef.getClass(), "mergePolicyClassName");
         String mergePolicyClassName;
-        if (is4_0) {
+        if (is4_x) {
             // transforming from 4.0 to 3.12
             mergePolicyClassName = getFieldValueReflectively(wanReplicationRef, "mergePolicyClassName");
         } else {
@@ -339,114 +325,106 @@ abstract class AbstractConfigConstructor extends AbstractStarterObjectConstructo
 
         List<String> filters = getFieldValueReflectively(wanReplicationRef, "filters");
         Constructor<?> constructor = targetClass.getConstructor(String.class, String.class, List.class, Boolean.TYPE);
-
         return constructor.newInstance(name, mergePolicyClassName, filters, republishingEnabled);
     }
 
     /**
-     * Clones the WanReplicationConfig configuration.
+     * Clones the WanReplicationConfig configuration to the target class and
+     * classloader.
      */
     private static Object cloneWanReplicationConfig(Object wanReplicationConfig, Class<?> targetClass) throws Exception {
         String name = getFieldValueReflectively(wanReplicationConfig, "name");
         Object otherConfig = ClassLoaderUtil.newInstance(targetClass.getClassLoader(), targetClass.getName());
-        updateConfig(getSetter(otherConfig.getClass(), String.class, "setName"), otherConfig, name);
-        boolean is4_0 = hasField(wanReplicationConfig.getClass(), "batchPublisherConfigs");
+        invokeSetter(otherConfig, "setName", String.class, name);
+        boolean is4_x = hasField(wanReplicationConfig.getClass(), "batchPublisherConfigs");
 
-        if (is4_0) {
+        if (is4_x) {
+            // copying from 4.0 to 3.12
+            // not supported: custom publisher configuration, publisher implementation
+            // responseTimeoutMillis, discoveryPeriodSeconds, maxTargetEndpoints
+            // useEndpointPrivateAddress, idleMinParkNs, idleMaxParkNs
+            // awsConfig, gcpConfig, azureConfig, kubernetesConfig, eurekaConfig, discoveryConfig
             Object consumerConfig = getFieldValueReflectively(wanReplicationConfig, "consumerConfig");
 
             if (consumerConfig != null) {
                 Object convertedConsumer = cloneConfig(consumerConfig, targetClass.getClassLoader());
-                Method setter = getSetter(otherConfig.getClass(), convertedConsumer.getClass(), "setWanConsumerConfig");
-                updateConfig(setter, otherConfig, convertedConsumer);
+                invokeSetter(otherConfig, "setWanConsumerConfig", convertedConsumer.getClass(), convertedConsumer);
             }
 
-            List<Object> customPublisherConfigs = getFieldValueReflectively(wanReplicationConfig, "customPublisherConfigs");
             List<Object> batchPublisherConfigs = getFieldValueReflectively(wanReplicationConfig, "batchPublisherConfigs");
             ArrayList<Object> convertedPublishers = new ArrayList<Object>(batchPublisherConfigs.size());
             for (Object publisherConfig : batchPublisherConfigs) {
-                // leftovers: publisherId, implementation
                 String clusterName = getFieldValueReflectively(publisherConfig, "clusterName");
                 boolean snapshotEnabled = getFieldValueReflectively(publisherConfig, "snapshotEnabled");
                 Object initialPublisherState = getFieldValueReflectively(publisherConfig, "initialPublisherState");
                 int queueCapacity = getFieldValueReflectively(publisherConfig, "queueCapacity");
                 int batchSize = getFieldValueReflectively(publisherConfig, "batchSize");
                 int batchMaxDelayMillis = getFieldValueReflectively(publisherConfig, "batchMaxDelayMillis");
-                int responseTimeoutMillis = getFieldValueReflectively(publisherConfig, "responseTimeoutMillis");
                 Object queueFullBehavior = getFieldValueReflectively(publisherConfig, "queueFullBehavior");
                 Object acknowledgeType = getFieldValueReflectively(publisherConfig, "acknowledgeType");
-                int discoveryPeriodSeconds = getFieldValueReflectively(publisherConfig, "discoveryPeriodSeconds");
-                int maxTargetEndpoints = getFieldValueReflectively(publisherConfig, "maxTargetEndpoints");
                 int maxConcurrentInvocations = getFieldValueReflectively(publisherConfig, "maxConcurrentInvocations");
-                boolean useEndpointPrivateAddress = getFieldValueReflectively(publisherConfig, "useEndpointPrivateAddress");
-                long idleMinParkNs = getFieldValueReflectively(publisherConfig, "idleMinParkNs");
-                long idleMaxParkNs = getFieldValueReflectively(publisherConfig, "idleMaxParkNs");
                 String targetEndpoints = getFieldValueReflectively(publisherConfig, "targetEndpoints");
-                Object awsConfig = getFieldValueReflectively(publisherConfig, "awsConfig");
-                Object gcpConfig = getFieldValueReflectively(publisherConfig, "gcpConfig");
-                Object azureConfig = getFieldValueReflectively(publisherConfig, "azureConfig");
-                Object kubernetesConfig = getFieldValueReflectively(publisherConfig, "kubernetesConfig");
-                Object eurekaConfig = getFieldValueReflectively(publisherConfig, "eurekaConfig");
-                Object discoveryConfig = getFieldValueReflectively(publisherConfig, "discoveryConfig");
                 Object syncConfig = getFieldValueReflectively(publisherConfig, "syncConfig");
+                Object consistencyCheckStrategy = getFieldValueReflectively(syncConfig, "consistencyCheckStrategy");
                 String endpoint = getFieldValueReflectively(publisherConfig, "endpoint");
+                String publisherId = getFieldValueReflectively(publisherConfig, "publisherId");
 
-                Object convertedPublisherConfig = ClassLoaderUtil.newInstance(targetClass.getClassLoader(), "com.hazelcast.config.WanPublisherConfig");
-                updateConfig(getSetter(convertedPublisherConfig.getClass(), String.class, "setGroupName"), convertedPublisherConfig, clusterName);
+                Object convertedConfig = ClassLoaderUtil.newInstance(targetClass.getClassLoader(), "com.hazelcast.config.WanPublisherConfig");
+                invokeSetter(convertedConfig, "setGroupName", String.class, clusterName);
+                invokeSetter(convertedConfig, "setClassName", String.class, "com.hazelcast.enterprise.wan.replication.WanBatchReplication");
+                invokeSetter(convertedConfig, "setEndpoint", String.class, endpoint);
+                invokeSetter(convertedConfig, "setQueueCapacity", int.class, queueCapacity);
+                invokeSetter(convertedConfig, "setPublisherId", String.class, publisherId);
 
-                updateConfig(getSetter(convertedPublisherConfig.getClass(), String.class, "setClassName"), convertedPublisherConfig,
-                        "com.hazelcast.enterprise.wan.replication.WanBatchReplication");
+                Enum<?> otherIPS = cloneEnum(targetClass.getClassLoader(), "com.hazelcast.config.WanPublisherState", initialPublisherState);
+                invokeSetter(convertedConfig, "setInitialPublisherState", otherIPS.getClass(), otherIPS);
+
+                Enum<?> otherQFB = cloneEnum(targetClass.getClassLoader(), "com.hazelcast.config.WANQueueFullBehavior", queueFullBehavior);
+                invokeSetter(convertedConfig, "setQueueFullBehavior", otherQFB.getClass(), otherQFB);
+
+                Object convertedSyncConfig = getFieldValueReflectively(convertedConfig, "wanSyncConfig");
+                Enum<?> otherCCS = cloneEnum(targetClass.getClassLoader(), "com.hazelcast.config.ConsistencyCheckStrategy", consistencyCheckStrategy);
+                invokeSetter(convertedSyncConfig, "setConsistencyCheckStrategy", otherCCS.getClass(), otherCCS);
 
                 HashMap<Object, Object> props = new HashMap<Object, Object>();
                 props.put("group.password", "dev-pass");
                 props.put("endpoints", targetEndpoints);
+                props.put("snapshot.enabled", snapshotEnabled);
+                props.put("batch.size", batchSize);
+                props.put("batch.max.delay.millis", batchMaxDelayMillis);
+                props.put("ack.type", acknowledgeType.toString());
+                props.put("max.concurrent.invocations", maxConcurrentInvocations);
 
-                updateConfig(getSetter(convertedPublisherConfig.getClass(), Map.class, "setProperties"), convertedPublisherConfig, props);
-                convertedPublishers.add(convertedPublisherConfig);
+                invokeSetter(convertedConfig, "setProperties", Map.class, props);
+                convertedPublishers.add(convertedConfig);
             }
-            updateConfig(getSetter(otherConfig.getClass(), List.class, "setWanPublisherConfigs"), otherConfig, convertedPublishers);
+            invokeSetter(otherConfig, "setWanPublisherConfigs", List.class, convertedPublishers);
         } else {
             // copying from 3.12 to 4.0
+            // not supported: custom publisher configuration, publisher implementation
+            // responseTimeoutMillis, discoveryPeriodSeconds, maxTargetEndpoints
+            // useEndpointPrivateAddress, idleMinParkNs, idleMaxParkNs
+            // awsConfig, gcpConfig, azureConfig, kubernetesConfig, eurekaConfig, discoveryConfig
             Object consumerConfig = getFieldValueReflectively(wanReplicationConfig, "wanConsumerConfig");
             List<Object> wanPublisherConfigs = getFieldValueReflectively(wanReplicationConfig, "wanPublisherConfigs");
             ArrayList<Object> convertedPublishers = new ArrayList<Object>(wanPublisherConfigs.size());
 
             if (consumerConfig != null) {
                 Object convertedConsumer = cloneConfig(consumerConfig, targetClass.getClassLoader());
-                Method setter = getSetter(otherConfig.getClass(), convertedConsumer.getClass(), "setConsumerConfig");
-                updateConfig(setter, otherConfig, convertedConsumer);
+                invokeSetter(otherConfig, "setConsumerConfig", convertedConsumer.getClass(), convertedConsumer);
             }
 
             for (Object publisherConfig : wanPublisherConfigs) {
-                // leftovers: implementation
                 String groupName = getFieldValueReflectively(publisherConfig, "groupName");
                 String publisherId = getFieldValueReflectively(publisherConfig, "publisherId");
                 int queueCapacity = getFieldValueReflectively(publisherConfig, "queueCapacity");
                 Object queueFullBehavior = getFieldValueReflectively(publisherConfig, "queueFullBehavior");
                 Object initialPublisherState = getFieldValueReflectively(publisherConfig, "initialPublisherState");
-                Map<String, Comparable> properties = getFieldValueReflectively(publisherConfig, "properties");
+                Map<String, Comparable<?>> properties = getFieldValueReflectively(publisherConfig, "properties");
                 String className = getFieldValueReflectively(publisherConfig, "className");
-                Object awsConfig = getFieldValueReflectively(publisherConfig, "awsConfig");
-                Object gcpConfig = getFieldValueReflectively(publisherConfig, "gcpConfig");
-                Object azureConfig = getFieldValueReflectively(publisherConfig, "azureConfig");
-                Object kubernetesConfig = getFieldValueReflectively(publisherConfig, "kubernetesConfig");
-                Object eurekaConfig = getFieldValueReflectively(publisherConfig, "eurekaConfig");
-                Object discoveryConfig = getFieldValueReflectively(publisherConfig, "discoveryConfig");
-                Object wanSyncConfig = getFieldValueReflectively(publisherConfig, "wanSyncConfig");
+                Object syncConfig = getFieldValueReflectively(publisherConfig, "wanSyncConfig");
+                Object consistencyCheckStrategy = getFieldValueReflectively(syncConfig, "consistencyCheckStrategy");
                 String endpoint = getFieldValueReflectively(publisherConfig, "endpoint");
-
-//                boolean snapshotEnabled = (boolean) getFieldValueReflectively(publisherConfig, "snapshotEnabled");
-//                int batchSize = (int) getFieldValueReflectively(publisherConfig, "batchSize");
-//                int batchMaxDelayMillis = (int) getFieldValueReflectively(publisherConfig, "batchMaxDelayMillis");
-//                int responseTimeoutMillis = (int) getFieldValueReflectively(publisherConfig, "responseTimeoutMillis");
-//                Object acknowledgeType = getFieldValueReflectively(publisherConfig, "acknowledgeType");
-//                int discoveryPeriodSeconds = (int) getFieldValueReflectively(publisherConfig, "discoveryPeriodSeconds");
-//                int maxTargetEndpoints = (int) getFieldValueReflectively(publisherConfig, "maxTargetEndpoints");
-//                int maxConcurrentInvocations = (int) getFieldValueReflectively(publisherConfig, "maxConcurrentInvocations");
-//                boolean useEndpointPrivateAddress = (boolean) getFieldValueReflectively(publisherConfig, "useEndpointPrivateAddress");
-//                long idleMinParkNs = (long) getFieldValueReflectively(publisherConfig, "idleMinParkNs");
-//                long idleMaxParkNs = (long) getFieldValueReflectively(publisherConfig, "idleMaxParkNs");
-//                String targetEndpoints = (String) getFieldValueReflectively(publisherConfig, "targetEndpoints");
 
                 if (!className.equals("com.hazelcast.enterprise.wan.replication.WanBatchReplication")) {
                     // not copying custom replication
@@ -455,60 +433,36 @@ abstract class AbstractConfigConstructor extends AbstractStarterObjectConstructo
 
                 Object convertedConfig = ClassLoaderUtil.newInstance(targetClass.getClassLoader(),
                         "com.hazelcast.config.WanBatchPublisherConfig");
-                updateConfig(getSetter(convertedConfig.getClass(), String.class, "setClusterName"), convertedConfig, groupName);
+                invokeSetter(convertedConfig, "setClusterName", String.class, groupName);
+                invokeSetter(convertedConfig, "setTargetEndpoints", String.class, properties.get("endpoints"));
+                invokeSetter(convertedConfig, "setSnapshotEnabled", boolean.class, properties.get("snapshot.enabled"));
+                invokeSetter(convertedConfig, "setEndpoint", String.class, endpoint);
+                invokeSetter(convertedConfig, "setPublisherId", String.class, publisherId);
+                invokeSetter(convertedConfig, "setQueueCapacity", int.class, queueCapacity);
+                invokeSetter(convertedConfig, "setBatchSize", int.class, properties.get("batch.size"));
+                invokeSetter(convertedConfig, "setBatchMaxDelayMillis", int.class, properties.get("batch.max.delay.millis"));
+                invokeSetter(convertedConfig, "setMaxConcurrentInvocations", int.class, properties.get("max.concurrent.invocations"));
 
-                updateConfig(getSetter(convertedConfig.getClass(), String.class, "setTargetEndpoints"),
-                        convertedConfig, properties.get("endpoints"));
+                Object ackType = properties.get("ack.type");
+                Enum<?> otherAT = cloneEnum(targetClass.getClassLoader(), "com.hazelcast.config.WanAcknowledgeType", ackType);
+                invokeSetter(convertedConfig, "setAcknowledgeType", otherAT.getClass(), otherAT);
+
+                Enum<?> otherIPS = cloneEnum(targetClass.getClassLoader(), "com.hazelcast.wan.WanPublisherState", initialPublisherState);
+                invokeSetter(convertedConfig, "setInitialPublisherState", otherIPS.getClass(), otherIPS);
+
+                Enum<?> otherQFB = cloneEnum(targetClass.getClassLoader(), "com.hazelcast.config.WanQueueFullBehavior", queueFullBehavior);
+                invokeSetter(convertedConfig, "setQueueFullBehavior", otherQFB.getClass(), otherQFB);
+
+                Object convertedSyncConfig = getFieldValueReflectively(convertedConfig, "syncConfig");
+                Enum<?> otherCCS = cloneEnum(targetClass.getClassLoader(), "com.hazelcast.config.ConsistencyCheckStrategy", consistencyCheckStrategy);
+                invokeSetter(convertedSyncConfig, "setConsistencyCheckStrategy", otherCCS.getClass(), otherCCS);
 
                 convertedPublishers.add(convertedConfig);
             }
-            updateConfig(getSetter(otherConfig.getClass(), List.class, "setBatchPublisherConfigs"), otherConfig, convertedPublishers);
+            invokeSetter(otherConfig, "setBatchPublisherConfigs", List.class, convertedPublishers);
         }
 
         return otherConfig;
-    }
-
-    /**
-     * TODO
-     *
-     * @param thisConfigObject
-     * @param otherConfigObject
-     * @throws Exception
-     */
-    private static void cloneGroupConfig(Object thisConfigObject, Object otherConfigObject)
-            throws Exception {
-        boolean is4_0 = hasField(thisConfigObject.getClass(), "clusterName");
-        if (is4_0) {
-            // copying from 4.0 to 3.12
-            String clusterName = getFieldValueReflectively(thisConfigObject, "clusterName");
-            Object groupConfig = getFieldValueReflectively(otherConfigObject, "groupConfig");
-            updateConfig(getSetter(groupConfig.getClass(), String.class, "setName"),
-                    groupConfig, clusterName);
-        } else {
-            // copying from 3.12 to 4.0
-            Object groupConfig = getFieldValueReflectively(thisConfigObject, "groupConfig");
-            String clusterName = getFieldValueReflectively(groupConfig, "name");
-            updateConfig(getSetter(otherConfigObject.getClass(), String.class, "setClusterName"),
-                    otherConfigObject, clusterName);
-        }
-    }
-
-    private static void proxyMapStoreImplementations(Object thisConfigObject, Object otherConfigObject) throws Exception {
-        Class<?> otherClass = otherConfigObject.getClass();
-        ClassLoader otherClassLoader = otherClass.getClassLoader();
-        Method getter = thisConfigObject.getClass().getMethod("getImplementation");
-        Class<?> returnType = getter.getReturnType();
-        Class<?> otherParameterType = getOtherReturnType(otherClassLoader, returnType);
-        cloneStoreInstance(otherClassLoader,
-                getter,
-                otherConfigObject.getClass().getMethod("setImplementation", otherParameterType),
-                thisConfigObject, otherConfigObject, "com.hazelcast.map.MapStore");
-    }
-
-    private static boolean isEvictionConfig(Class<?> klass) throws Exception {
-        ClassLoader classLoader = klass.getClassLoader();
-        Class<?> evictionConfigClass = classLoader.loadClass("com.hazelcast.config.EvictionConfig");
-        return evictionConfigClass.isAssignableFrom(klass);
     }
 
     private static boolean isQuorumFunctionImplementation(Class<?> klass) throws Exception {
@@ -524,28 +478,75 @@ abstract class AbstractConfigConstructor extends AbstractStarterObjectConstructo
         return quorumFunctionInterface.isAssignableFrom(klass);
     }
 
+    /**
+     * Copies group name/cluster name configuration between config objects.
+     *
+     * @param thisConfigObject  config object from which the group name is copied
+     * @param otherConfigObject config object to which the group name is copied
+     * @throws IllegalArgumentException if the specified object is not an
+     *                                  instance of the class or interface declaring the underlying
+     *                                  field (or a subclass or implementor thereof).
+     */
+    private static void cloneGroupConfig(Object thisConfigObject, Object otherConfigObject) throws IllegalAccessException {
+        boolean is4_x = hasField(thisConfigObject.getClass(), "clusterName");
+        if (is4_x) {
+            // copying from 4.0 to 3.12
+            String clusterName = getFieldValueReflectively(thisConfigObject, "clusterName");
+            Object groupConfig = getFieldValueReflectively(otherConfigObject, "groupConfig");
+            invokeSetter(groupConfig, "setName", String.class, clusterName);
+        } else {
+            // copying from 3.12 to 4.0
+            Object groupConfig = getFieldValueReflectively(thisConfigObject, "groupConfig");
+            String clusterName = getFieldValueReflectively(groupConfig, "name");
+            invokeSetter(otherConfigObject, "setClusterName", String.class, clusterName);
+        }
+    }
+
+    private static void proxyMapStoreImplementations(Object thisConfigObject, Object otherConfigObject) throws Exception {
+        Class<?> otherClass = otherConfigObject.getClass();
+        ClassLoader otherClassLoader = otherClass.getClassLoader();
+        Method getter = thisConfigObject.getClass().getMethod("getImplementation");
+        Class<?> returnType = getter.getReturnType();
+        Class<?> otherParameterType = getOtherReturnType(otherClassLoader, returnType);
+        boolean is4_x = !hasField(thisConfigObject.getClass(), "readOnly");
+        cloneStoreInstance(otherClassLoader,
+                getter,
+                otherConfigObject.getClass().getMethod("setImplementation", otherParameterType),
+                thisConfigObject, otherConfigObject,
+                is4_x ? "com.hazelcast.core.MapStore" : "com.hazelcast.map.MapStore");
+    }
+
+    private static boolean isEvictionConfig(Class<?> klass) throws Exception {
+        return isAssignableFrom(klass, "com.hazelcast.config.EvictionConfig");
+    }
+
     private static boolean isWanReplicationRef(Class<?> klass) throws Exception {
-        ClassLoader classLoader = klass.getClassLoader();
-        Class<?> wanReplicationRefClass = classLoader.loadClass("com.hazelcast.config.WanReplicationRef");
-        return wanReplicationRefClass.isAssignableFrom(klass);
+        return isAssignableFrom(klass, "com.hazelcast.config.WanReplicationRef");
     }
 
     private static boolean isWanReplicationConfig(Class<?> klass) throws Exception {
-        ClassLoader classLoader = klass.getClassLoader();
-        Class<?> wanReplicationConfigClass = classLoader.loadClass("com.hazelcast.config.WanReplicationConfig");
-        return wanReplicationConfigClass.isAssignableFrom(klass);
+        return isAssignableFrom(klass, "com.hazelcast.config.WanReplicationConfig");
     }
 
     private static boolean isConfig(Class<?> klass) throws Exception {
-        ClassLoader classLoader = klass.getClassLoader();
-        Class<?> configClass = classLoader.loadClass("com.hazelcast.config.Config");
-        return configClass.isAssignableFrom(klass);
+        return isAssignableFrom(klass, "com.hazelcast.config.Config");
     }
 
     private static boolean isMapStoreConfig(Class<?> klass) throws Exception {
+        return isAssignableFrom(klass, "com.hazelcast.config.MapStoreConfig");
+    }
+
+    private static boolean isAssignableFrom(Class<?> klass, String className)
+            throws ClassNotFoundException {
         ClassLoader classLoader = klass.getClassLoader();
-        Class<?> configClass = classLoader.loadClass("com.hazelcast.config.MapStoreConfig");
+        Class<?> configClass = classLoader.loadClass(className);
         return configClass.isAssignableFrom(klass);
     }
 
+    private static Enum<?> cloneEnum(ClassLoader targetClassLoader,
+                                     String targetClassName,
+                                     Object enumObject) throws ClassNotFoundException {
+        Class otherQueueFullBehaviourClass = targetClassLoader.loadClass(targetClassName);
+        return Enum.valueOf(otherQueueFullBehaviourClass, enumObject.toString());
+    }
 }
