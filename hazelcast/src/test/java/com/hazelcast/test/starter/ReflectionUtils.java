@@ -131,6 +131,7 @@ public final class ReflectionUtils {
         return clazz.getName().equals(arg.getClass().getName());
     }
 
+    @SuppressWarnings("unchecked")
     public static <T> T getFieldValueReflectively(Object arg, String fieldName) throws IllegalAccessException {
         checkNotNull(arg, "Argument cannot be null");
         checkHasText(fieldName, "Field name cannot be null");

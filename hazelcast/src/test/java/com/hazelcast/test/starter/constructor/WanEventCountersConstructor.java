@@ -62,7 +62,7 @@ public class WanEventCountersConstructor extends AbstractStarterObjectConstructo
         try {
             return targetClassLoader.loadClass(DistributedObjectWanEventCounters.class.getName());
         } catch (ClassNotFoundException e) {
-            // target classloader is 4.x
+            // target classloader is 3.x
             String className = "com.hazelcast.wan.impl.DistributedServiceWanEventCounters$DistributedObjectWanEventCounters";
             return targetClassLoader.loadClass(className);
         }
