@@ -17,6 +17,7 @@
 package com.hazelcast.nio.serialization;
 
 import com.hazelcast.nio.Packet;
+import com.hazelcast.nio.Packet.Type;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
@@ -47,7 +48,8 @@ public class PacketTest {
         Packet packet = new Packet();
         for (Packet.Type type : Packet.Type.values()) {
             packet.setPacketType(type);
-            assertSame(type, packet.getPacketType());
+            // COMPATIBILITY_BIND_MESSAGE occupies the same ordinal as BIND
+            assertSame(type == Type.COMPATIBILITY_BIND_MESSAGE ? Type.BIND : type, packet.getPacketType());
         }
     }
 
