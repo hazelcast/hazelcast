@@ -158,6 +158,9 @@ public class HazelcastProxyFactory {
         refactoredInterfaces.put("com.hazelcast.internal.nio.ConnectionListener", "com.hazelcast.nio.ConnectionListener");
         refactoredInterfaces.put("com.hazelcast.nio.ConnectionListener", "com.hazelcast.internal.nio.ConnectionListener");
 
+        refactoredInterfaces.put("com.hazelcast.nio.Address", "com.hazelcast.cluster.Address");
+        refactoredInterfaces.put("com.hazelcast.cluster.Address", "com.hazelcast.nio.Address");
+
         ignoredInterfaces.add("com.hazelcast.map.impl.LegacyAsyncMap");
         ignoredInterfaces.add("com.hazelcast.core.IEnterpriseMap");
         ignoredInterfaces.add("com.hazelcast.spi.merge.SplitBrainMergeTypeProvider");
