@@ -122,6 +122,7 @@
         <picocli.version>3.9.0</picocli.version>
         <classgraph.version>4.8.66</classgraph.version>
         <jackson.jr.version>2.11.0</jackson.jr.version>
+        <snakeyaml.engine.version>1.0</snakeyaml.engine.version>
 
         <!-- test dependencies -->
         <activemq.version>5.15.11</activemq.version>

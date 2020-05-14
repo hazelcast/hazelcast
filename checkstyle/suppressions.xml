@@ -68,4 +68,7 @@
 
     <!-- Suppress checks for auto-generated test classes -->
     <suppress checks="" files="generated-test-sources"/>
+
+    <!-- Suppress checks for properties files -->
+    <suppress checks="" files=".properties"/>
 </suppressions>

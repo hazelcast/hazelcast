@@ -3,13 +3,3 @@ derived from the Apache Tez project.
 
 The class com.hazelcast.jet.kafka.impl.ResumeTransactionUtil contains
 code derived from the Apache Flink project.
-
-The package com.hazelcast.jet.picocli contains code originating
-from picocli project (https://github.com/remkop/picocli).
-
-The packages com.hazelcast.jet.io.github.classgraph and
-com.hazelcast.jet.nonapi.io.github.classgraph contain code originating
-from classgraph project (https://github.com/classgraph/classgraph).
-
-The package com.hazelcast.jet.com.fasterxml.jackson.jr contains code
-originating from jackson-jr project (https://github.com/FasterXML/jackson-jr).
