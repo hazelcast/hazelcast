@@ -121,6 +121,14 @@ messages would be stored permanently unless any eviction mechanism
 exists. For the continuous processes, this may cause excessive storage
 usage.
 
+Note that: The Pulsar consumer source does not fail fast in the scenario
+that when the job reading Pulsar topic using the Pulsar consumer source
+is running and Pulsar broker is closed, the job doesn't fail, it just
+prints log at warn level. The reason for this is that the Pulsar Client
+tries to reconnect to the broker with exponential backoff in this case,
+and while doing this, we cannot notice the connection issue because it
+only prints logs without throwing an exception.
+
 #### The decision on Acknowledgement Design on Jet Connector
 
 It should be determined when the messages are acknowledged or whether
@@ -138,8 +146,8 @@ The design choices regarding the usage of Consumer API are listed below:
 
 1. Shared subscription mode is preferred.
 2. Receive messages in a synchronous batch manner.
-3. Immediately send an acknowledgment to a Pulsar broker after consuming
-   a message.
+3. Immediately send acknowledgments to a Pulsar broker after consuming
+   a batch of messages.
 
 ### The Source using Reader API
 
@@ -166,6 +174,14 @@ latest snapshot and reads from the stored `MessageId`.
 
 For further information about Reader API visit its
 [documentation](https://pulsar.apache.org/docs/en/concepts-clients/#reader-interface).
+
+Note that: The Pulsar reader source does not fail fast in the scenario
+that when the job reading Pulsar topic using the Pulsar reader source is
+running and Pulsar broker is closed, the job doesn't fail, it just
+prints logs at warn level. The reason for this is that the Pulsar Client
+tries to reconnect to the broker with exponential backoff in this case,
+and while doing this, we cannot notice the connection issue because it
+only prints logs without throwing an exception.
 
 ## The Sink
 
@@ -202,16 +218,23 @@ mechanism.
 For more information about Pulsar producers
 [look](https://pulsar.apache.org/docs/en/concepts-messaging/#producers).
 
-## Common Properties of Source and Sinks
+## Common Properties of Sources and Sink
 
+Both the source and sink creation APIs of the Pulsar connector implement
+the builder pattern. We get the required parameters in the constructor
+and other parameters in the setters. Configuration values are set to
+default values and these default values can be changed using setters. We
+have shown basic usage in all of the usage examples we provided, if you
+want to change the values of optional parameters, you can use the setter
+methods of the builder.
 Both creating sources or sink of the Pulsar requires some kind of
-projection functions from the user. These functions are used to
-transform the data format with respect to the data transfer direction.
-In the case of the source, we need to convert the received Pulsar
-message to a Jet-compatible serializable data, that is, emitting items.
-The Jet sources use `Event Time` of the Pulsar message object as a
-timestamp, if it exists. Otherwise, its `Publish Time` is used as a
-timestamp which always presents.
+projection functions from the user as a required parameter. These
+functions are used to transform the data format with respect to the data
+transfer direction. In the case of the source, we need to convert the
+received Pulsar message to a Jet-compatible serializable data, that is,
+emitting items. The Jet sources use `Event Time` of the Pulsar message
+object as a timestamp, if it exists. Otherwise, its `Publish Time` is
+used as a timestamp which always presents.
 
 In turn, converting the processed items to the Pulsar message form is
 required at the sink.
@@ -237,7 +260,7 @@ that reads from that topic. As the last step of the job,  we collect the
 items and check whether all of the messages are read. To test the Pulsar
 sink, we perform the steps above in reverse order.
 
-To check fault tolerance support of PulsarConsumer source, distributed
+To check fault tolerance support of PulsarReader source, distributed
 node failure recovery is simulated. Two Jet instances are created and
 the job is submitted to them. Once we make sure at least one snapshot is
 created for the job, we enforce the job to restart by killing one of the
@@ -294,22 +317,11 @@ public class PulsarConsumerDemo {
 
     public static void main(String[] args) {
         JetInstance jet = Jet.bootstrappedInstance();
-        Map<String, Object> consumerConfig = new HashMap<>();
-        consumerConfig.put("consumerName", "hazelcast-jet-consumer");
-        consumerConfig.put("subscriptionName", "hazelcast-jet-subscription");
-
-        final StreamSource<Integer> pulsarConsumerSource = PulsarSources.pulsarConsumer(
-                Collections.singletonList("hazelcast-demo-topic"),
-                2,
-                consumerConfig,
+        final StreamSource<Integer> pulsarConsumerSource = PulsarSources.pulsarConsumerBuilder(
+                "hazelcast-demo-topic",
                 () -> PulsarClient.builder().serviceUrl("pulsar://localhost:6650").build(),
                 () -> Schema.INT32,
-                () -> BatchReceivePolicy.builder()
-                                        .maxNumMessages(512)
-                                        .timeout(1000, TimeUnit.MILLISECONDS)
-                                        .build(),
-                Message::getValue);
-
+                Message::getValue).build();
         Pipeline pipeline = Pipeline.create();
         pipeline.readFrom(pulsarConsumerSource)
                 .withoutTimestamps()
@@ -318,6 +330,9 @@ public class PulsarConsumerDemo {
     }
 }
 ```
+
+The created source above uses default client configurations, you can
+change them by using builder methods.
 
 ### Pulsar Sink
 
@@ -348,10 +363,8 @@ public class PulsarProducerDemo {
     public static void main(String[] args) {
         JetInstance jet = Jet.bootstrappedInstance();
         Pipeline p = Pipeline.create();
-        Map<String, Object> producerConfig = new HashMap<>();
-
-        Sink<Integer> pulsarSink = PulsarSinks.builder("hazelcast-demo-topic",
-                producerConfig,
+        Sink<Integer> pulsarSink = PulsarSinks.builder(
+                "hazelcast-demo-topic",
                 () -> PulsarClient.builder()
                                   .serviceUrl("pulsar://localhost:6650")
                                   .build(),

@@ -316,15 +316,12 @@ public class JetJob {
 
     public static void main(String[] args) {
         String topicName = "hz-jet-topic";
-        Map<String, Object> readerConfig = readerConfig();
-        readerConfig.put("readerName", "hazelcast-jet-reader");
 
-        StreamSource<Event> source = PulsarSources.pulsarReader(
+        StreamSource<Event> source = PulsarSources.pulsarReaderBuilder(
                 topicName,
-                readerConfig,
                 () -> PulsarClient.builder().serviceUrl("pulsar://localhost:6650").build(),
                 () -> Schema.JSON(Event.class),
-                Message::getValue);
+                Message::getValue).build();
 
         Pipeline p = Pipeline.create();
         p.readFrom(source)
@@ -341,12 +338,6 @@ public class JetJob {
         JobConfig cfg = new JobConfig()
                 .setName("pulsar-message-counter");
         Jet.bootstrappedInstance().newJob(p, cfg);
-    }
-
-    private static Map<String, Object> readerConfig() {
-        Map<String, Object> readerConfig = new HashMap<>();
-        readerConfig.put("readerName", "hazelcast-jet-reader");
-        return readerConfig;
     }
 }
 ```
@@ -384,8 +375,8 @@ If `MessagePublisher` was running while you were following these steps,
 you'll now get a report on the whole history of the events and then a
 steady stream of real-time updates.
 
-Sample output:
-Between 12:44:30:000 - 12:45:30:000 Pulsar got 522 messages from user4.
+Sample output: 10:38:44.504 Between 10:32:00:00-10:32:30:000 Pulsar got
+508 messages from user4.
 
 ```text
 10:38:44.504  Between 10:32:00:00-10:32:30:000 Pulsar got 538 messages from user1.
