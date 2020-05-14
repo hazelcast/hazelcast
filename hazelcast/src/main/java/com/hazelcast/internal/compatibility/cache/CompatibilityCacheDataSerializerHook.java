@@ -28,6 +28,7 @@ import static com.hazelcast.internal.compatibility.serialization.impl.Compatibil
  * Data serializer hook containing (de)serialization information for
  * JCache-related classes used when communicating with 3.x members over WAN.
  */
+@SuppressWarnings("unused")
 public final class CompatibilityCacheDataSerializerHook
         implements DataSerializerHook {
 

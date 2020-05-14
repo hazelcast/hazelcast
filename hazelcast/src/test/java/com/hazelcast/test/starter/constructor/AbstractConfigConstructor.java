@@ -24,7 +24,6 @@ import com.hazelcast.spi.merge.PassThroughMergePolicy;
 import com.hazelcast.spi.merge.PutIfAbsentMergePolicy;
 
 import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -41,7 +40,10 @@ import static com.hazelcast.test.starter.HazelcastProxyFactory.proxyObjectForSta
 import static com.hazelcast.test.starter.HazelcastProxyFactory.shouldProxy;
 import static com.hazelcast.test.starter.HazelcastStarterUtils.debug;
 import static com.hazelcast.test.starter.ReflectionUtils.getFieldValueReflectively;
+import static com.hazelcast.test.starter.ReflectionUtils.getSetter;
 import static com.hazelcast.test.starter.ReflectionUtils.hasField;
+import static com.hazelcast.test.starter.ReflectionUtils.invokeMethod;
+import static com.hazelcast.test.starter.ReflectionUtils.invokeSetter;
 import static java.lang.reflect.Proxy.isProxyClass;
 
 /**
@@ -107,14 +109,14 @@ abstract class AbstractConfigConstructor extends AbstractStarterObjectConstructo
                     proxyMapStoreImplementations(thisConfigObject, otherConfigObject);
                 } else if (Properties.class.isAssignableFrom(returnType)) {
                     Properties original = (Properties) method.invoke(thisConfigObject);
-                    updateConfig(setter, otherConfigObject, copy(original));
+                    invokeMethod(setter, otherConfigObject, copy(original));
                 } else if (Map.class.isAssignableFrom(returnType) || ConcurrentMap.class.isAssignableFrom(returnType)) {
                     @SuppressWarnings("unchecked")
                     Map<Object, Object> map = (Map<Object, Object>) method.invoke(thisConfigObject);
                     Map<Object, Object> otherMap = ConcurrentMap.class.isAssignableFrom(returnType)
                             ? new ConcurrentHashMap<>() : new HashMap<>();
                     copyMap(map, otherMap, classloader);
-                    updateConfig(setter, otherConfigObject, otherMap);
+                    invokeMethod(setter, otherConfigObject, otherMap);
                 } else if (returnType.equals(List.class)) {
                     List<?> list = (List<?>) method.invoke(thisConfigObject);
                     List<Object> otherList = new ArrayList<>();
@@ -122,14 +124,14 @@ abstract class AbstractConfigConstructor extends AbstractStarterObjectConstructo
                         Object otherItem = cloneConfig(item, classloader);
                         otherList.add(otherItem);
                     }
-                    updateConfig(setter, otherConfigObject, otherList);
+                    invokeMethod(setter, otherConfigObject, otherList);
                 } else if (returnType.isEnum()) {
                     Enum<?> thisSubConfigObject = (Enum<?>) method.invoke(thisConfigObject);
                     Object otherEnumValue = cloneEnum(classloader, thisSubConfigObject.getClass().getName(), thisSubConfigObject);
-                    updateConfig(setter, otherConfigObject, otherEnumValue);
+                    invokeMethod(setter, otherConfigObject, otherEnumValue);
                 } else if (returnTypeName.startsWith("java") || returnType.isPrimitive()) {
                     Object thisSubConfigObject = method.invoke(thisConfigObject);
-                    updateConfig(setter, otherConfigObject, thisSubConfigObject);
+                    invokeMethod(setter, otherConfigObject, thisSubConfigObject);
                 } else if (returnTypeName.equals("com.hazelcast.ringbuffer.RingbufferStore")
                         || returnTypeName.equals("com.hazelcast.ringbuffer.RingbufferStoreFactory")
                         || returnTypeName.equals("com.hazelcast.collection.QueueStore")
@@ -140,7 +142,7 @@ abstract class AbstractConfigConstructor extends AbstractStarterObjectConstructo
                 } else if (returnTypeName.startsWith("com.hazelcast")) {
                     Object thisSubConfigObject = method.invoke(thisConfigObject);
                     Object otherSubConfig = cloneConfig(thisSubConfigObject, classloader);
-                    updateConfig(setter, otherConfigObject, otherSubConfig);
+                    invokeMethod(setter, otherConfigObject, otherSubConfig);
                 }
             }
         }
@@ -176,14 +178,6 @@ abstract class AbstractConfigConstructor extends AbstractStarterObjectConstructo
         return returnType;
     }
 
-    private static Method getSetter(Class<?> otherConfigClass, Class<?> parameterType, String setterName) {
-        try {
-            return otherConfigClass.getMethod(setterName, parameterType);
-        } catch (NoSuchMethodException e) {
-            return null;
-        }
-    }
-
     /**
      * Creates a proxy class for a store implementation from the current
      * classloader for the proxied classloader.
@@ -200,19 +194,11 @@ abstract class AbstractConfigConstructor extends AbstractStarterObjectConstructo
         }
         Class<?> thisStoreClass = thisStoreObject.getClass();
         if (isProxyClass(thisStoreClass) || targetClassLoader.equals(thisStoreClass.getClassLoader())) {
-            updateConfig(targetStoreSetter, otherConfigObject, thisStoreObject);
+            invokeMethod(targetStoreSetter, otherConfigObject, thisStoreObject);
         } else {
             Class<?> otherStoreClass = targetClassLoader.loadClass(targetStoreClass);
             Object otherStoreObject = generateProxyForInterface(thisStoreObject, targetClassLoader, otherStoreClass);
-            updateConfig(targetStoreSetter, otherConfigObject, otherStoreObject);
-        }
-    }
-
-    private static void updateConfig(Method setterMethod, Object otherConfigObject, Object value) {
-        try {
-            setterMethod.invoke(otherConfigObject, value);
-        } catch (IllegalAccessException | InvocationTargetException | IllegalArgumentException e) {
-            debug("Could not update config via %s: %s", setterMethod.getName(), e.getMessage());
+            invokeMethod(targetStoreSetter, otherConfigObject, otherStoreObject);
         }
     }
 
@@ -561,11 +547,6 @@ abstract class AbstractConfigConstructor extends AbstractStarterObjectConstructo
         ClassLoader classLoader = klass.getClassLoader();
         Class<?> configClass = classLoader.loadClass(className);
         return configClass.isAssignableFrom(klass);
-    }
-
-    private static void invokeSetter(Object object, String setterName, Class<?> parameterClass, Object parameter) {
-        Method setter = getSetter(object.getClass(), parameterClass, setterName);
-        updateConfig(setter, object, parameter);
     }
 
     private static Enum<?> cloneEnum(ClassLoader targetClassLoader,

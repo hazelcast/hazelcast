@@ -22,6 +22,7 @@ import com.hazelcast.logging.Logger;
 /**
  * Factory IDs for compatibility with compatibility (3.x) members
  */
+@SuppressWarnings("unused")
 public final class CompatibilityFactoryIdHelper {
 
     public static final String SPI_DS_FACTORY = "hazelcast.serialization.ds.spi";

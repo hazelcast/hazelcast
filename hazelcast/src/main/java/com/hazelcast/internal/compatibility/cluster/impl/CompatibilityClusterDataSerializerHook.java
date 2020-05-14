@@ -24,6 +24,7 @@ import com.hazelcast.nio.serialization.DataSerializableFactory;
  * Data serializer hook containing (de)serialization information for communicating
  * with 3.x members over WAN.
  */
+@SuppressWarnings("unused")
 public final class CompatibilityClusterDataSerializerHook implements DataSerializerHook {
 
     public static final int F_ID = 0;

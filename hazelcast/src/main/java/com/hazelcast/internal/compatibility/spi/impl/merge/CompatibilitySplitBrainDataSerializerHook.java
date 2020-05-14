@@ -32,6 +32,7 @@ import com.hazelcast.spi.merge.PutIfAbsentMergePolicy;
  * Data serializer hook containing (de)serialization information for communicating
  * with 3.x members over WAN.
  */
+@SuppressWarnings("unused")
 public final class CompatibilitySplitBrainDataSerializerHook implements DataSerializerHook {
 
     public static final int F_ID = FactoryIdHelper.getFactoryId(

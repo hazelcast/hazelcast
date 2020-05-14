@@ -56,14 +56,14 @@ public class HazelcastVersionLocator {
     }
 
     public static File[] locateVersion(String version, File target, boolean enterprise) {
-        File[] files = new File[enterprise ? 4 : 2];
+        File[] files = new File[enterprise ? 6 : 3];
         files[0] = locateMember(version, target, false);
         files[1] = locateMemberTests(version, target, false);
-        //files[2] = locateClient(version, target, false);
+        files[2] = locateClient(version, target, false);
         if (enterprise) {
-            files[2] = locateMember(version, target, true);
-            files[3] = locateMemberTests(version, target, true);
-            //files[4] = locateClient(version, target, true);
+            files[3] = locateMember(version, target, true);
+            files[4] = locateMemberTests(version, target, true);
+            files[5] = locateClient(version, target, true);
         }
         return files;
     }

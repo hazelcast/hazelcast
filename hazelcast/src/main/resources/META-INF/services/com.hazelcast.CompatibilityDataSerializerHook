@@ -14,11 +14,8 @@
 # limitations under the License.
 #
 
-
 com.hazelcast.internal.compatibility.cluster.impl.CompatibilityClusterDataSerializerHook
-#com.hazelcast.spi.impl.SpiDataSerializerHook
 com.hazelcast.internal.compatibility.map.CompatibilityMapDataSerializerHook
 com.hazelcast.internal.compatibility.cache.CompatibilityCacheDataSerializerHook
 com.hazelcast.internal.compatibility.wan.CompatibilityOSWanDataSerializerHook
-#com.hazelcast.internal.config.ConfigDataSerializerHook
 com.hazelcast.internal.compatibility.spi.impl.merge.CompatibilitySplitBrainDataSerializerHook
