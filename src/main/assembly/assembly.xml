@@ -73,7 +73,7 @@
             <outputDirectory>/license/</outputDirectory>
             <includes>
                 <include>*license.txt</include>
-                <include>notice.txt</include>
+                <include>NOTICE</include>
             </includes>
         </fileSet>
 

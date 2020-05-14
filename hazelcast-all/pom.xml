@@ -60,7 +60,6 @@
                     </archive>
                 </configuration>
             </plugin>
-
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-shade-plugin</artifactId>
@@ -134,6 +133,47 @@
                 </dependencies>
             </plugin>
             <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>license-maven-plugin</artifactId>
+                <version>1.19</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>add-third-party</goal>
+                        </goals>
+                        <phase>generate-resources</phase>
+                    </execution>
+                </executions>
+                <configuration>
+                    <outputDirectory>../src/main/resources/</outputDirectory>
+                    <fileTemplate>src/main/resources/NOTICE.ftl</fileTemplate>
+                    <thirdPartyFilename>NOTICE</thirdPartyFilename>
+                    <excludedGroups>com.hazelcast</excludedGroups>
+                    <excludedScopes>test,provided</excludedScopes>
+                    <failOnBlacklist>true</failOnBlacklist>
+                    <failOnMissing>true</failOnMissing>
+                    <includedLicenses>
+                        CC0|
+                        Apache License, Version 2.0|
+                        MIT License|
+                        Public Domain|
+                        EPL 2.0|
+                        BSD 3-Clause License|
+                        BSD 2-Clause License|
+                    </includedLicenses>
+                    <licenseMerges>
+                        <licenseMerge>
+                            Apache License, Version 2.0|
+                            Apache Software License 2.0|The Apache Software License, Version 2.0|
+                            Apache License, version 2.0|The Apache Software License, version 2.0|
+                            Apache 2|Apache 2.0|Apache-2.0|Apache License 2.0|The Apache License, Version 2.0
+                        </licenseMerge>
+                        <licenseMerge>MIT License|MIT|The MIT License|MIT license|The MIT License (MIT)</licenseMerge>
+                        <licenseMerge>BSD 3-Clause License|BSD License|BSD|BSD licence|The BSD License|3-Clause BSD License| New BSD License</licenseMerge>
+                    </licenseMerges>
+                </configuration>
+            </plugin>
+            <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-javadoc-plugin</artifactId>
                 <version>${maven.javadoc.plugin.version}</version>
@@ -201,6 +241,20 @@
             <artifactId>org.apache.felix.utils</artifactId>
             <version>${felix.utils.version}</version>
             <scope>test</scope>
+        </dependency>
+
+        <!-- shaded deps are required to be listed one by one for  correct NOTICE generation -->
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-core</artifactId>
+            <version>${jackson.version}</version>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>org.snakeyaml</groupId>
+            <artifactId>snakeyaml-engine</artifactId>
+            <version>${snakeyaml.engine.version}</version>
+            <optional>true</optional>
         </dependency>
     </dependencies>
 </project>
