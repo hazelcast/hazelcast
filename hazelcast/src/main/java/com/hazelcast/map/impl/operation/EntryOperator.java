@@ -250,7 +250,7 @@ public final class EntryOperator {
         mapOperation.evict(dataKey);
         return this;
     }
-    
+
     private void onAdded() {
         onAddedOrUpdated(UNSET);
     }
