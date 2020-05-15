@@ -22,7 +22,9 @@ class Demos extends React.Component {
                     <p>{props.children}</p>
                     { props.videoId && 
                       <p>
-                        <iframe width="100%" height="300" src={`https://www.youtube.com/embed/${props.videoId}`} frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                        <iframe width="100%" height="300" src={`https://www.youtube.com/embed/${props.videoId}`} 
+                        frameBorder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowFullScreen>
+                        </iframe>
                       </p>
                     }
                     { props.image && 
@@ -43,19 +45,21 @@ class Demos extends React.Component {
                         The following are demo applications built using Hazelcast Jet. Each demo app 
                         is self-contained and showcase the data processing capabilities of Hazelcast Jet.
                     </MarkdownBlock>
-                    <Card title="Real-Time Flight Telemetry" 
+                    <Card title="Real-Time Flight Telemetry"  videoId="WZ5cuZZX0TE"
                                 link="https://github.com/hazelcast/hazelcast-jet-demos/tree/master/flight-telemetry">
-                        An application to analyze the real-time telemetry data of commercial aircraft currently
-                        airbone. It computes noise levels and estimated CO<sub>2</sub> emissions around
-                        major airports and urban areas. The results are then written to Graphite and
+                        An application to analyze the real-time telemetry of commercial aircraft currently
+                        airbone using data from ADS-B transpoders. It computes noise levels and estimated CO<sub>2</sub> emissions around
+                        major airports and urban areas as well as detecting aircraft taking off and landing through 
+                        using a simple linear regression model. The results are then written to Graphite and
                         rendered in a dashboard in Grafana.
                     </Card>
-                    <Card title="TensorFlow"
-                                link="https://github.com/hazelcast/hazelcast-jet-demos/tree/master/tensorflow">
-                        TensorFlow is a popular library to train and use machine learning models. We integrate it
-                        with Jet to classify stream of events with the result of a TF model execution.
-                        This example uses the Large Movie Reviews Dataset as provided by the TensorFlow Keras
-                        Datasets and builds a model to predict whether a movie review is positive or negative.
+                    <Card title="Twitter Cryptocurrency Sentiment Analysis" videoId="GU6VZlfpcIU"
+                                link="https://github.com/hazelcast/hazelcast-jet-demos/tree/master/cryptocurrency-sentiment-analysis">
+                        An application to analyze tweet sentiments in real-time to compute cryptocurrency popularity trends.
+                        Tweets are streamed from Twitter and categorized by coin type(BTC, ETC, XRP, etc) and
+                        natural-language processing(NLP) sentiment analysis is applied to each Tweet to calculate
+                        the sentiment score. Jet aggregates scores from the last 30 seconds, last minute and last 5
+                        minutes and prints resulting ranking table.
                     </Card>
                     <Card title="Train Collision Prevention" videoId="2RlmCZhhjMY" 
                                 link="https://github.com/vladoschreiner/transport-tycoon-demo">
@@ -64,13 +68,12 @@ class Demos extends React.Component {
                         job predicts train collisions in real-time based on telemetry data supplied from the game.
                         The prediction is pushed back to the running OpenTTD game to stop the affected trains.
                     </Card>
-                    <Card title="Twitter Cryptocurrency Sentiment Analysis"
-                                link="https://github.com/hazelcast/hazelcast-jet-demos/tree/master/cryptocurrency-sentiment-analysis">
-                        An application to analyze tweet sentiments in real-time to compute cryptocurrency popularity trends.
-                        Tweets are streamed from Twitter and categorized by coin type(BTC, ETC, XRP, etc) and
-                        natural-language processing(NLP) sentiment analysis is applied to each Tweet to calculate
-                        the sentiment score. Jet aggregates scores from the last 30 seconds, last minute and last 5
-                        minutes and prints resulting ranking table.
+                    <Card title="TensorFlow"
+                                link="https://github.com/hazelcast/hazelcast-jet-demos/tree/master/tensorflow">
+                        TensorFlow is a popular library to train and use machine learning models. We integrate it
+                        with Jet to classify stream of events with the result of a TF model execution.
+                        This example uses the Large Movie Reviews Dataset as provided by the TensorFlow Keras
+                        Datasets and builds a model to predict whether a movie review is positive or negative.
                     </Card>
                     <Card title="Real-Time Image Recognition"
                                 link="https://github.com/hazelcast/hazelcast-jet-demos/tree/master/realtime-image-recognition">
