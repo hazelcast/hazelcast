@@ -224,10 +224,10 @@ public final class EntryOperator {
         switch (eventType) {
             case UPDATED:
                 onTouched();
-                onAddedOrUpdated();
+                onUpdated();
                 break;
             case ADDED:
-                onAddedOrUpdated();
+                onAdded();
                 break;
             case REMOVED:
                 onRemove();
@@ -250,14 +250,28 @@ public final class EntryOperator {
         mapOperation.evict(dataKey);
         return this;
     }
+    
+    private void onAdded() {
+        onAddedOrUpdated(UNSET);
+    }
+    
+    private void onUpdated() {
+        if (backup) {
+            onAddedOrUpdated(UNSET);
+        } else {
+            Record existingRecord = recordStore.getRecordOrNull(dataKey);
+            onAddedOrUpdated(
+                    existingRecord == null ? UNSET : existingRecord.getTtl());
+        }
+    }
 
-    private void onAddedOrUpdated() {
+    private void onAddedOrUpdated(long ttl) {
         Object newValue = inMemoryFormat == OBJECT
                 ? entry.getValue() : entry.getByPrioritizingDataValue();
         if (backup) {
             recordStore.putBackup(dataKey, newValue, NOT_WAN);
         } else {
-            recordStore.setWithUncountedAccess(dataKey, newValue, UNSET, UNSET);
+            recordStore.setWithUncountedAccess(dataKey, newValue, ttl, UNSET);
             if (mapOperation.isPostProcessing(recordStore)) {
                 Record record = recordStore.getRecord(dataKey);
                 newValue = record == null ? null : record.getValue();
