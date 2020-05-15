@@ -16,9 +16,9 @@
 
 package com.hazelcast.map.impl.record;
 
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.internal.serialization.Data;
 
 import java.io.IOException;
 
@@ -32,8 +32,8 @@ import static com.hazelcast.internal.nio.IOUtil.writeData;
 public enum RecordReaderWriter {
     DATA_RECORD_READER_WRITER(TypeId.DATA_RECORD_TYPE_ID) {
         @Override
-        void writeRecord(ObjectDataOutput out,
-                         Record record, Data dataValue) throws IOException {
+        public void writeRecord(ObjectDataOutput out,
+                                Record record, Data dataValue) throws IOException {
             writeData(out, dataValue);
             out.writeInt(record.getRawTtl());
             out.writeInt(record.getRawMaxIdle());
@@ -45,7 +45,7 @@ public enum RecordReaderWriter {
         }
 
         @Override
-        Record readRecord(ObjectDataInput in) throws IOException {
+        public Record readRecord(ObjectDataInput in) throws IOException {
             DataRecord record = new DataRecord();
             record.setValue(readData(in));
             record.setRawTtl(in.readInt());
@@ -61,8 +61,8 @@ public enum RecordReaderWriter {
 
     DATA_RECORD_WITH_STATS_READER_WRITER(TypeId.DATA_RECORD_WITH_STATS_TYPE_ID) {
         @Override
-        void writeRecord(ObjectDataOutput out,
-                         Record record, Data dataValue) throws IOException {
+        public void writeRecord(ObjectDataOutput out,
+                                Record record, Data dataValue) throws IOException {
             writeData(out, dataValue);
             out.writeInt(record.getRawTtl());
             out.writeInt(record.getRawMaxIdle());
@@ -76,7 +76,7 @@ public enum RecordReaderWriter {
         }
 
         @Override
-        Record readRecord(ObjectDataInput in) throws IOException {
+        public Record readRecord(ObjectDataInput in) throws IOException {
             DataRecordWithStats record = new DataRecordWithStats();
             record.setValue(readData(in));
             record.setRawTtl(in.readInt());
@@ -88,6 +88,31 @@ public enum RecordReaderWriter {
             record.setVersion(in.readLong());
             record.setRawLastStoredTime(in.readInt());
             record.setRawExpirationTime(in.readInt());
+            return record;
+        }
+    },
+
+    REPLICATION(TypeId.REPLICATION) {
+        @Override
+        public void writeRecord(ObjectDataOutput out,
+                                Record record, Data dataValue) throws IOException {
+            writeData(out, dataValue);
+            out.writeInt(record.getRawCreationTime());
+            out.writeInt(record.getRawLastAccessTime());
+            out.writeInt(record.getRawLastUpdateTime());
+            out.writeInt(record.getHits());
+            out.writeLong(record.getVersion());
+        }
+
+        @Override
+        public Record readRecord(ObjectDataInput in) throws IOException {
+            DataRecordWithStats record = new DataRecordWithStats();
+            record.setValue(readData(in));
+            record.setRawCreationTime(in.readInt());
+            record.setRawLastAccessTime(in.readInt());
+            record.setRawLastUpdateTime(in.readInt());
+            record.setHits(in.readInt());
+            record.setVersion(in.readLong());
             return record;
         }
     };
@@ -102,9 +127,10 @@ public enum RecordReaderWriter {
         return id;
     }
 
-    private static class TypeId {
-        private static final byte DATA_RECORD_TYPE_ID = 1;
-        private static final byte DATA_RECORD_WITH_STATS_TYPE_ID = 2;
+    public static class TypeId {
+        public static final byte DATA_RECORD_TYPE_ID = 1;
+        public static final byte DATA_RECORD_WITH_STATS_TYPE_ID = 2;
+        public static final byte REPLICATION = 3;
     }
 
     public static RecordReaderWriter getById(int id) {
@@ -113,13 +139,15 @@ public enum RecordReaderWriter {
                 return DATA_RECORD_READER_WRITER;
             case TypeId.DATA_RECORD_WITH_STATS_TYPE_ID:
                 return DATA_RECORD_WITH_STATS_READER_WRITER;
+            case TypeId.REPLICATION:
+                return REPLICATION;
             default:
                 throw new IllegalArgumentException();
         }
     }
 
-    abstract void writeRecord(ObjectDataOutput out,
-                              Record record, Data dataValue) throws IOException;
+    public abstract Record readRecord(ObjectDataInput in) throws IOException;
 
-    abstract Record readRecord(ObjectDataInput in) throws IOException;
+    public abstract void writeRecord(ObjectDataOutput out,
+                                     Record record, Data dataValue) throws IOException;
 }

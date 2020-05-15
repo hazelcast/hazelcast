@@ -19,6 +19,7 @@ package com.hazelcast.map.impl.operation;
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.internal.nio.IOUtil;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.services.ObjectNamespace;
 import com.hazelcast.internal.services.ServiceNamespace;
@@ -35,7 +36,6 @@ import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.map.impl.recordstore.RecordStoreAdapter;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.query.impl.Index;
 import com.hazelcast.query.impl.Indexes;
@@ -235,11 +235,19 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable {
             SerializationService ss = getSerializationService(operation.getRecordStore(mapName).getMapContainer());
             RecordStore<Record> recordStore = entry.getValue();
             out.writeInt(recordStore.size());
+
+            boolean expirable = recordStore.isExpirable();
+            out.writeBoolean(expirable);
             // No expiration should be done in forEach, since we have serialized size before.
             recordStore.forEach((dataKey, record) -> {
                 try {
                     IOUtil.writeData(out, dataKey);
-                    Records.writeRecord(out, record, ss.toData(record.getValue()));
+                    if (expirable) {
+                        Records.writeRecord(out, record, ss.toData(record.getValue()));
+                    } else {
+                        // TODO DataRecordWithStats vs DataRecord
+                        Records.writeRecordLess(out, record, ss.toData(record.getValue()));
+                    }
                 } catch (IOException e) {
                     throw ExceptionUtil.rethrow(e);
                 }
@@ -271,10 +279,14 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable {
         for (int i = 0; i < size; i++) {
             String name = in.readUTF();
             int numOfRecords = in.readInt();
+            boolean expirable = in.readBoolean();
             List keyRecord = new ArrayList<>(numOfRecords * 2);
             for (int j = 0; j < numOfRecords; j++) {
                 Data dataKey = IOUtil.readData(in);
-                Record record = Records.readRecord(in);
+                Record record = expirable ? Records.readRecord(in)
+                        // TODO DataRecordWithStats vs DataRecord
+                        // TODO Reset pruned fields to their default: ttl. maxIdle,storeTime...
+                        : Records.readRecordLess(in);
 
                 keyRecord.add(dataKey);
                 keyRecord.add(record);

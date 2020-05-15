@@ -16,10 +16,10 @@
 
 package com.hazelcast.map.impl.record;
 
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.internal.serialization.Data;
 
 import java.io.IOException;
 
@@ -42,6 +42,14 @@ public final class Records {
     public static Record readRecord(ObjectDataInput in) throws IOException {
         byte matchingDataRecordId = in.readByte();
         return getById(matchingDataRecordId).readRecord(in);
+    }
+
+    public static void writeRecordLess(ObjectDataOutput out, Record record, Data dataValue) throws IOException {
+        RecordReaderWriter.REPLICATION.writeRecord(out, record, dataValue);
+    }
+
+    public static Record readRecordLess(ObjectDataInput in) throws IOException {
+        return RecordReaderWriter.REPLICATION.readRecord(in);
     }
 
     /**
