@@ -254,7 +254,7 @@ public final class EntryOperator {
     private void onAdded() {
         onAddedOrUpdated(UNSET);
     }
-    
+
     private void onUpdated() {
         if (backup) {
             onAddedOrUpdated(UNSET);

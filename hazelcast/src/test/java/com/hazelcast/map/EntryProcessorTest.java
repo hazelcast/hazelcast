@@ -59,6 +59,7 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -1036,6 +1037,22 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         map.submitToKey(1, new IncrementorEntryProcessor<>()).thenRunAsync(latch::countDown);
         assertTrue(latch.await(5, TimeUnit.SECONDS));
         assertEquals(2, (int) map.get(1));
+    }
+    
+    @Test
+    public void testIssue16987() {
+        HazelcastInstance instance1 = createHazelcastInstance(getConfig());
+
+        IMap<Integer, Integer> map = instance1.getMap(MAP_NAME);
+        map.put(1, 1);
+        map.setTtl(1, 1337, TimeUnit.SECONDS);
+
+        assertEquals(1337000L, map.getEntryView(1).getTtl());
+
+        map.executeOnKey(1, new IncrementorEntryProcessor<>());
+        
+        assertEquals(2, map.get(1).intValue());
+        assertEquals(1337000L, map.getEntryView(1).getTtl());
     }
 
     @Test
