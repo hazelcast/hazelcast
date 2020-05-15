@@ -25,6 +25,7 @@ import com.hazelcast.sql.impl.SqlTestSupport;
 import com.hazelcast.sql.impl.expression.ConstantPredicateExpression;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.extract.GenericQueryTargetDescriptor;
+import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.extract.QueryTarget;
 import com.hazelcast.sql.impl.extract.QueryTargetDescriptor;
 import com.hazelcast.sql.impl.type.QueryDataType;
@@ -48,7 +49,7 @@ public class MapScanPlanNodeTest extends SqlTestSupport {
     public void testState() {
         int id = 1;
         String mapName = "map";
-        List<String> fieldNames = Collections.singletonList("field");
+        List<QueryPath> fieldPaths = Collections.singletonList(valuePath("field"));
         List<QueryDataType> fieldTypes = Collections.singletonList(QueryDataType.INT);
         List<Integer> projects = Collections.singletonList(0);
         Expression<Boolean> filter = new ConstantPredicateExpression(true);
@@ -58,7 +59,7 @@ public class MapScanPlanNodeTest extends SqlTestSupport {
             mapName,
             GenericQueryTargetDescriptor.INSTANCE,
             GenericQueryTargetDescriptor.INSTANCE,
-            fieldNames,
+            fieldPaths,
             fieldTypes,
             projects,
             filter
@@ -68,7 +69,7 @@ public class MapScanPlanNodeTest extends SqlTestSupport {
         assertEquals(mapName, node.getMapName());
         assertEquals(GenericQueryTargetDescriptor.INSTANCE, node.getKeyDescriptor());
         assertEquals(GenericQueryTargetDescriptor.INSTANCE, node.getValueDescriptor());
-        assertEquals(fieldNames, node.getFieldNames());
+        assertEquals(fieldPaths, node.getFieldPaths());
         assertEquals(fieldTypes, node.getFieldTypes());
         assertEquals(projects, node.getProjects());
         assertEquals(filter, node.getFilter());
@@ -82,8 +83,8 @@ public class MapScanPlanNodeTest extends SqlTestSupport {
         String mapName1 = "map1";
         String mapName2 = "map2";
 
-        List<String> fieldNames1 = Collections.singletonList("field1");
-        List<String> fieldNames2 = Collections.singletonList("field2");
+        List<QueryPath> fieldPaths1 = Collections.singletonList(valuePath("field1"));
+        List<QueryPath> fieldPaths2 = Collections.singletonList(valuePath("field2"));
 
         List<QueryDataType> fieldTypes1 = Collections.singletonList(QueryDataType.INT);
         List<QueryDataType> fieldTypes2 = Collections.singletonList(QueryDataType.BIGINT);
@@ -99,7 +100,7 @@ public class MapScanPlanNodeTest extends SqlTestSupport {
             mapName1,
             GenericQueryTargetDescriptor.INSTANCE,
             GenericQueryTargetDescriptor.INSTANCE,
-            fieldNames1,
+            fieldPaths1,
             fieldTypes1,
             projects1,
             filter1
@@ -112,7 +113,7 @@ public class MapScanPlanNodeTest extends SqlTestSupport {
                 mapName1,
                 GenericQueryTargetDescriptor.INSTANCE,
                 GenericQueryTargetDescriptor.INSTANCE,
-                fieldNames1,
+                fieldPaths1,
                 fieldTypes1,
                 projects1,
                 filter1
@@ -127,7 +128,7 @@ public class MapScanPlanNodeTest extends SqlTestSupport {
                 mapName1,
                 GenericQueryTargetDescriptor.INSTANCE,
                 GenericQueryTargetDescriptor.INSTANCE,
-                fieldNames1,
+                fieldPaths1,
                 fieldTypes1,
                 projects1,
                 filter1
@@ -142,7 +143,7 @@ public class MapScanPlanNodeTest extends SqlTestSupport {
                 mapName2,
                 GenericQueryTargetDescriptor.INSTANCE,
                 GenericQueryTargetDescriptor.INSTANCE,
-                fieldNames1,
+                fieldPaths1,
                 fieldTypes1,
                 projects1,
                 filter1
@@ -157,7 +158,7 @@ public class MapScanPlanNodeTest extends SqlTestSupport {
                 mapName1,
                 new TestTargetDescriptor(),
                 GenericQueryTargetDescriptor.INSTANCE,
-                fieldNames1,
+                fieldPaths1,
                 fieldTypes1,
                 projects1,
                 filter1
@@ -172,7 +173,7 @@ public class MapScanPlanNodeTest extends SqlTestSupport {
                 mapName1,
                 GenericQueryTargetDescriptor.INSTANCE,
                 new TestTargetDescriptor(),
-                fieldNames1,
+                fieldPaths1,
                 fieldTypes1,
                 projects1,
                 filter1
@@ -187,7 +188,7 @@ public class MapScanPlanNodeTest extends SqlTestSupport {
                 mapName1,
                 GenericQueryTargetDescriptor.INSTANCE,
                 GenericQueryTargetDescriptor.INSTANCE,
-                fieldNames2,
+                fieldPaths2,
                 fieldTypes1,
                 projects1,
                 filter1
@@ -202,7 +203,7 @@ public class MapScanPlanNodeTest extends SqlTestSupport {
                 mapName1,
                 GenericQueryTargetDescriptor.INSTANCE,
                 GenericQueryTargetDescriptor.INSTANCE,
-                fieldNames1,
+                fieldPaths1,
                 fieldTypes2,
                 projects1,
                 filter1
@@ -217,7 +218,7 @@ public class MapScanPlanNodeTest extends SqlTestSupport {
                 mapName1,
                 GenericQueryTargetDescriptor.INSTANCE,
                 GenericQueryTargetDescriptor.INSTANCE,
-                fieldNames1,
+                fieldPaths1,
                 fieldTypes2,
                 projects2,
                 filter1
@@ -232,7 +233,7 @@ public class MapScanPlanNodeTest extends SqlTestSupport {
                 mapName1,
                 GenericQueryTargetDescriptor.INSTANCE,
                 GenericQueryTargetDescriptor.INSTANCE,
-                fieldNames1,
+                fieldPaths1,
                 fieldTypes2,
                 projects1,
                 filter2
@@ -248,7 +249,7 @@ public class MapScanPlanNodeTest extends SqlTestSupport {
             "map",
             GenericQueryTargetDescriptor.INSTANCE,
             GenericQueryTargetDescriptor.INSTANCE,
-            Collections.singletonList("field"),
+            Collections.singletonList(valuePath("field")),
             Collections.singletonList(QueryDataType.INT),
             Collections.singletonList(0),
             new ConstantPredicateExpression(true)

@@ -45,7 +45,7 @@ public final class MapScanRow implements Row {
     public static MapScanRow create(
         QueryTargetDescriptor keyDescriptor,
         QueryTargetDescriptor valueDescriptor,
-        List<String> fieldPaths,
+        List<QueryPath> fieldPaths,
         List<QueryDataType> fieldTypes,
         Extractors extractors,
         InternalSerializationService serializationService
@@ -56,7 +56,7 @@ public final class MapScanRow implements Row {
         QueryExtractor[] fieldExtractors = new QueryExtractor[fieldPaths.size()];
 
         for (int i = 0; i < fieldPaths.size(); i++) {
-            String fieldPath = fieldPaths.get(i);
+            QueryPath fieldPath = fieldPaths.get(i);
             QueryDataType fieldType = fieldTypes.get(i);
 
             fieldExtractors[i] = createExtractor(keyTarget, valueTarget, fieldPath, fieldType);
@@ -90,13 +90,11 @@ public final class MapScanRow implements Row {
     private static QueryExtractor createExtractor(
         QueryTarget keyTarget,
         QueryTarget valueTarget,
-        String path,
+        QueryPath path,
         QueryDataType type
     ) {
-        QueryPath path0 = QueryPath.create(path);
+        QueryTarget target = path.isKey() ? keyTarget : valueTarget;
 
-        QueryTarget target = path0.isKey() ? keyTarget : valueTarget;
-
-        return target.createExtractor(path0.getPath(), type);
+        return target.createExtractor(path.getPath(), type);
     }
 }

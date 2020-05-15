@@ -20,6 +20,7 @@ import com.hazelcast.internal.serialization.impl.SerializationUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.sql.impl.expression.Expression;
+import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.extract.QueryTargetDescriptor;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
@@ -35,7 +36,7 @@ public abstract class AbstractMapScanPlanNode extends ZeroInputPlanNode {
     protected String mapName;
     protected QueryTargetDescriptor keyDescriptor;
     protected QueryTargetDescriptor valueDescriptor;
-    protected List<String> fieldNames;
+    protected List<QueryPath> fieldPaths;
     protected List<QueryDataType> fieldTypes;
     protected List<Integer> projects;
     protected Expression<Boolean> filter;
@@ -49,7 +50,7 @@ public abstract class AbstractMapScanPlanNode extends ZeroInputPlanNode {
         String mapName,
         QueryTargetDescriptor keyDescriptor,
         QueryTargetDescriptor valueDescriptor,
-        List<String> fieldNames,
+        List<QueryPath> fieldPaths,
         List<QueryDataType> fieldTypes,
         List<Integer> projects,
         Expression<Boolean> filter
@@ -59,7 +60,7 @@ public abstract class AbstractMapScanPlanNode extends ZeroInputPlanNode {
         this.mapName = mapName;
         this.keyDescriptor = keyDescriptor;
         this.valueDescriptor = valueDescriptor;
-        this.fieldNames = fieldNames;
+        this.fieldPaths = fieldPaths;
         this.fieldTypes = fieldTypes;
         this.projects = projects;
         this.filter = filter;
@@ -77,8 +78,8 @@ public abstract class AbstractMapScanPlanNode extends ZeroInputPlanNode {
         return valueDescriptor;
     }
 
-    public List<String> getFieldNames() {
-        return fieldNames;
+    public List<QueryPath> getFieldPaths() {
+        return fieldPaths;
     }
 
     public List<QueryDataType> getFieldTypes() {
@@ -109,7 +110,7 @@ public abstract class AbstractMapScanPlanNode extends ZeroInputPlanNode {
         out.writeUTF(mapName);
         out.writeObject(keyDescriptor);
         out.writeObject(valueDescriptor);
-        SerializationUtil.writeList(fieldNames, out);
+        SerializationUtil.writeList(fieldPaths, out);
         SerializationUtil.writeList(fieldTypes, out);
         SerializationUtil.writeList(projects, out);
         out.writeObject(filter);
@@ -120,7 +121,7 @@ public abstract class AbstractMapScanPlanNode extends ZeroInputPlanNode {
         mapName = in.readUTF();
         keyDescriptor = in.readObject();
         valueDescriptor = in.readObject();
-        fieldNames = SerializationUtil.readList(in);
+        fieldPaths = SerializationUtil.readList(in);
         fieldTypes = SerializationUtil.readList(in);
         projects = SerializationUtil.readList(in);
         filter = in.readObject();
