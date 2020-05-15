@@ -65,6 +65,8 @@ public class HazelcastTable extends AbstractTable {
         QUERY_TO_SQL_TYPE.put(QueryDataTypeFamily.DATE, SqlTypeName.DATE);
         QUERY_TO_SQL_TYPE.put(QueryDataTypeFamily.TIMESTAMP, SqlTypeName.TIMESTAMP);
         QUERY_TO_SQL_TYPE.put(QueryDataTypeFamily.TIMESTAMP_WITH_TIME_ZONE, SqlTypeName.TIMESTAMP_WITH_LOCAL_TIME_ZONE);
+
+        QUERY_TO_SQL_TYPE.put(QueryDataTypeFamily.OBJECT, SqlTypeName.ANY);
     }
 
     private final Table target;
