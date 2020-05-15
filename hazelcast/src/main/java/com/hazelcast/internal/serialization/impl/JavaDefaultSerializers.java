@@ -327,6 +327,35 @@ public final class JavaDefaultSerializers {
         }
     }
 
+    public static final class EnumSerializer extends SingletonSerializer<Enum> {
+
+        @Override
+        public int getTypeId() {
+            return CompatibilitySerializationConstants.JAVA_DEFAULT_TYPE_ENUM;
+        }
+
+        @Override
+        public void write(ObjectDataOutput out, Enum obj) throws IOException {
+            String name = obj.getDeclaringClass().getName();
+            out.writeUTF(name);
+            out.writeUTF(obj.name());
+        }
+
+        @Override
+        public Enum read(ObjectDataInput in) throws IOException {
+            String clazzName = in.readUTF();
+            Class clazz;
+            try {
+                clazz = ClassLoaderUtil.loadClass(in.getClassLoader(), clazzName);
+            } catch (ClassNotFoundException e) {
+                throw new HazelcastSerializationException("Failed to deserialize enum: " + clazzName, e);
+            }
+
+            String name = in.readUTF();
+            return Enum.valueOf(clazz, name);
+        }
+    }
+
     public static final class HazelcastJsonValueSerializer extends SingletonSerializer<HazelcastJsonValue> {
 
         @Override

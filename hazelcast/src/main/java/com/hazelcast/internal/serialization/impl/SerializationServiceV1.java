@@ -23,6 +23,7 @@ import com.hazelcast.internal.serialization.PortableContext;
 import com.hazelcast.internal.serialization.impl.ConstantSerializers.BooleanSerializer;
 import com.hazelcast.internal.serialization.impl.ConstantSerializers.ByteSerializer;
 import com.hazelcast.internal.serialization.impl.ConstantSerializers.StringArraySerializer;
+import com.hazelcast.internal.serialization.impl.JavaDefaultSerializers.EnumSerializer;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.ClassNameFilter;
@@ -235,6 +236,11 @@ public class SerializationServiceV1 extends AbstractSerializationService {
             registerConstant(DelayQueue.class, new DelayQueueStreamSerializer());
             registerConstant(SynchronousQueue.class, new SynchronousQueueStreamSerializer());
             registerConstant(LinkedTransferQueue.class, new LinkedTransferQueueStreamSerializer());
+        }
+
+        if (isCompatibility) {
+            // compatibility (3.x) members have these serializers
+            registerConstant(Enum.class, new EnumSerializer());
         }
 
         safeRegister(Serializable.class, javaSerializerAdapter);
