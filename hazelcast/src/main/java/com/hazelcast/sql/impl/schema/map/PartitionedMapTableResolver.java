@@ -43,6 +43,9 @@ import java.util.Map;
 
 import static com.hazelcast.sql.impl.QueryUtils.SCHEMA_NAME_PARTITIONED;
 
+// TODO: Error for empty map
+// TODO: Error for HD map
+// TODO: Proper field unwinding
 public class PartitionedMapTableResolver extends AbstractMapTableResolver {
 
     private static final List<List<String>> SEARCH_PATHS =
