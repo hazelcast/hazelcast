@@ -11,27 +11,27 @@
     },
     {
         "version": "3.2.2",
-        "manual": "https://docs.hazelcast.org/docs/jet/3.2.2/manual/",
+        "manual": "https://docs.hazelcast.org/docs/jet/3.2.2/manual/manual.html",
         "size" : 60.6
     },
     {
         "version": "3.2.1",
-        "manual": "https://docs.hazelcast.org/docs/jet/3.2.1/manual/",
+        "manual": "https://docs.hazelcast.org/docs/jet/3.2.1/manual/manual.html",
         "size" : 60.4
     },
     {
         "version": "3.2",
-        "manual": "https://docs.hazelcast.org/docs/jet/3.2/manual/",
+        "manual": "https://docs.hazelcast.org/docs/jet/3.2/manual/manual.html",
         "size" : 60.4
     },
     {
         "version": "3.1",
-        "manual": "https://docs.hazelcast.org/docs/jet/3.1/manual/",
+        "manual": "https://docs.hazelcast.org/docs/jet/3.1/manual/manual.html",
         "size" : 98.8
     },
     {
         "version": "3.0",
-        "manual": "https://docs.hazelcast.org/docs/jet/3.0/manual/",
+        "manual": "https://docs.hazelcast.org/docs/jet/3.0/manual/manual.html",
         "size" : 98.5
     }
 ]
