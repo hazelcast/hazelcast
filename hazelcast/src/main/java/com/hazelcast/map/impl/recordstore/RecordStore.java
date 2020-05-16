@@ -80,7 +80,7 @@ public interface RecordStore<R extends Record> {
      * @param provenance origin of call to this method.
      * @return current record after put.
      */
-    R putBackup(Data key, Object value, CallerProvenance provenance);
+    R putBackup(Data key, Object value, long ttl, long maxIdle, CallerProvenance provenance);
 
     /**
      * @return current record after put.
