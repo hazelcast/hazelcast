@@ -26,14 +26,25 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.PriorityQueue;
 import java.util.Queue;
 import java.util.Set;
+import java.util.TreeSet;
+import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.ConcurrentSkipListSet;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.PriorityBlockingQueue;
+import java.util.concurrent.SynchronousQueue;
 
 import static com.hazelcast.nio.IOUtil.closeResource;
 import static java.lang.String.format;
@@ -189,13 +200,38 @@ public class HazelcastStarterUtils {
      * @throws UnsupportedOperationException if the given interface is not implemented
      */
     public static Collection<Object> newCollectionFor(Class<?> type) {
-        if (Set.class.isAssignableFrom(type)) {
-            // original set might be ordered
+        if (LinkedHashSet.class.isAssignableFrom(type)) {
             return new LinkedHashSet<Object>();
+        } else if (ArrayBlockingQueue.class.isAssignableFrom(type)) {
+            // rough estimate about capacity
+            return new ArrayBlockingQueue<Object>(20);
+        } else if (ArrayDeque.class.isAssignableFrom(type)) {
+            return new ArrayDeque<Object>();
+        } else if (SynchronousQueue.class.isAssignableFrom(type)) {
+            return new SynchronousQueue<Object>();
+        } else if (PriorityQueue.class.isAssignableFrom(type)) {
+            return new PriorityQueue<Object>();
+        } else if (PriorityBlockingQueue.class.isAssignableFrom(type)) {
+            return new PriorityBlockingQueue<Object>();
+        } else if (LinkedBlockingQueue.class.isAssignableFrom(type)) {
+            return new LinkedBlockingQueue<Object>();
+        } else if (CopyOnWriteArraySet.class.isAssignableFrom(type)) {
+            return new CopyOnWriteArraySet<Object>();
+        } else if (ConcurrentSkipListSet.class.isAssignableFrom(type)) {
+            return new ConcurrentSkipListSet<Object>();
+        } else if (TreeSet.class.isAssignableFrom(type)) {
+            return new TreeSet<Object>();
+        } else if (HashSet.class.isAssignableFrom(type)) {
+            return new HashSet<Object>();
+        } else if (CopyOnWriteArrayList.class.isAssignableFrom(type)) {
+            return new CopyOnWriteArrayList<Object>();
         } else if (LinkedList.class.isAssignableFrom(type)) {
             return new LinkedList<Object>();
         } else if (List.class.isAssignableFrom(type)) {
             return new ArrayList<Object>();
+        } else if (Set.class.isAssignableFrom(type)) {
+            // original set might be ordered
+            return new LinkedHashSet<Object>();
         } else if (Queue.class.isAssignableFrom(type)) {
             return new ConcurrentLinkedQueue<Object>();
         } else if (Collection.class.isAssignableFrom(type)) {
