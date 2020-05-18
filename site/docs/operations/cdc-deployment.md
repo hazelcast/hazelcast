@@ -3,15 +3,15 @@ title: CDC Deployment
 description: Guide for deploying CDC connectors and target databases.
 ---
 
-# Database Setup
+## Database Setup
 
 When using [CDC data sources](../api/sources-sinks#cdc) in Jet, one must
 also take care that the source databases are set up correctly, meaning
 they have all the features required for change data capture enabled.
 
-## MySQL
+### MySQL
 
-### Database user must be set up correctly
+#### Database user must be set up correctly
 
 The MySQL CDC source needs a MySQL database user which will be used for
 connecting to the database. For how to create one, see the "CREATE USER
@@ -44,7 +44,7 @@ if missing. The needed permissions are following:
   ([5.7](https://dev.mysql.com/doc/refman/5.7/en/privileges-provided.html#priv_replication-client),
   [8.0](https://dev.mysql.com/doc/refman/8.0/en/privileges-provided.html#priv_replication-client))
 
-### Binlog must be enabled
+#### Binlog must be enabled
 
 Binary logging can be enabled by adding a couple of options to the MySQL
 config file. See MySQL Reference Manual on how to do that
@@ -91,7 +91,7 @@ from the names of the MySQL system variables they set. For example:
 SHOW VARIABLES LIKE 'server_id';
 ```
 
-### Session timeouts should be large enough
+#### Session timeouts should be large enough
 
 When an initial consistent snapshot is made for large databases, your
 established connection could timeout while the tables are being read.
@@ -107,7 +107,7 @@ On how to work with the MySQL config file consult the Reference Manual
 ([5.7](https://dev.mysql.com/doc/refman/5.7/en/option-files.html),
 [8.0](https://dev.mysql.com/doc/refman/8.0/en/option-files.html)).
 
-## Other Databases
+### Other Databases
 
 Streaming CDC data from other databases supported by Debezium is
 possible in Jet by using the [generic Debezium
@@ -124,9 +124,9 @@ documentation:
 * [Db2](https://debezium.io/documentation/reference/1.1/connectors/db2.html#setting-up-Db2)
 * [Cassandra](https://debezium.io/documentation/reference/1.1/connectors/cassandra.html#setting-up-cassandra)
 
-## Connector Deployment
+### Connector Deployment
 
-### CDC from replica
+#### CDC from replica
 
 Enabling the features needed for the MySQL CDC connector (in particular
 the binlog) has a performance impact on the database. From our
@@ -145,7 +145,7 @@ starts can take a significant amount of time and will put heavy load on
 the database during that period. This might affect the performance of
 other transactions.
 
-### GTID in multi-member clusters
+#### GTID in multi-member clusters
 
 When using a replica for the CDC source and in general when the MySQL
 server cluster has multiple member it's a good idea to give yourself the
