@@ -517,7 +517,8 @@ public class EventServiceImpl implements InternalEventService, MetricsProvider {
             }
         } else {
             Packet packet = new Packet(serializationService.toBytes(eventEnvelope), orderKey)
-                    .setPacketType(Packet.Type.EVENT);
+                    .setPacketType(Packet.Type.EVENT)
+                    .raiseFlags(Packet.FLAG_3_12);
 
             EndpointManager em = nodeEngine.getNode().getNetworkingService().getEndpointManager(MEMBER);
             if (!em.transmit(packet, subscriber)) {

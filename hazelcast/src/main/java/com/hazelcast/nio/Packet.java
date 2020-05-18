@@ -45,6 +45,8 @@ public final class Packet extends HeapData implements OutboundFrame {
     // 1. URGENT (bit 4)
     // 2. Packet type (bits 0, 2, 5)
     // 3. Flags specific to a given packet type (bits 1, 6)
+    // 4. 4.x flag (bit 7)
+    // 5. 3.x flag (bit 8)
 
 
     // 1. URGENT flag
@@ -97,6 +99,20 @@ public final class Packet extends HeapData implements OutboundFrame {
      * Marks a Jet packet as Flow control
      */
     public static final int FLAG_JET_FLOW_CONTROL = 1 << 1;
+
+    /**
+     * Reserved for 4.x member compatibility code to mark packets as being sent
+     * by a 4.x member. The absence of this flag does not mean the packet was
+     * not sent by a 4.x member, though as it is only set on special
+     * compatibility releases. Instead, check for the presence of the
+     * {@link #FLAG_3_12} which should be set by 3.12.x compatibility releases.
+     */
+    public static final int FLAG_4_0 = 1 << 7;
+
+    /**
+     * Marks a packet as sent by a 3.12 member
+     */
+    public static final int FLAG_3_12 = 1 << 8;
 
 
     //            END OF HEADER FLAG SECTION

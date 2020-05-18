@@ -62,12 +62,14 @@ public class BindRequest {
         // logging a serialization exception because they cannot deserialize the
         // ExtendedBindMessage
         // instead, a SEVERE entry about undefined packet type will be logged
-        Packet packet = new Packet(bytes).setPacketType(Packet.Type.EXTENDED_BIND);
+        Packet packet = new Packet(bytes).setPacketType(Packet.Type.EXTENDED_BIND)
+                                         .raiseFlags(Packet.FLAG_3_12);
         connection.write(packet);
 
         BindMessage oldbind = new BindMessage(ioService.getThisAddress(), remoteEndPoint, reply);
         bytes = ioService.getSerializationService().toBytes(oldbind);
-        packet = new Packet(bytes).setPacketType(Packet.Type.BIND);
+        packet = new Packet(bytes).setPacketType(Packet.Type.BIND)
+                                  .raiseFlags(Packet.FLAG_3_12);
         connection.write(packet);
         //now you can send anything...
     }
