@@ -83,7 +83,7 @@ public final class JsonUtil {
      * Converts a JSON string to a object of given type.
      */
     @Nullable
-    public static <T> T mapFrom(@Nonnull Class<T> type, @Nonnull String jsonString) throws IOException {
+    public static <T> T beanFrom(@Nonnull Class<T> type, @Nonnull String jsonString) throws IOException {
         return JSON_JR.beanFrom(type, jsonString);
     }
 

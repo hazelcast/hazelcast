@@ -62,7 +62,7 @@ public class JsonUtilTest extends JetTestSupport {
 
     @Test
     public void when_inputString_then_parseToObject() throws IOException {
-        TestJsonObject jsonObject = JsonUtil.mapFrom(TestJsonObject.class, jsonString);
+        TestJsonObject jsonObject = JsonUtil.beanFrom(TestJsonObject.class, jsonString);
         assertEquals(testJsonObject, jsonObject);
     }
 

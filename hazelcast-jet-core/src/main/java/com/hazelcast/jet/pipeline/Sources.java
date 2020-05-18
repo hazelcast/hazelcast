@@ -1014,7 +1014,7 @@ public final class Sources {
     public static <T> BatchSource<T> json(@Nonnull String directory, @Nonnull Class<T> type) {
         return filesBuilder(directory)
                 .glob("*.json")
-                .build((fileName, line) -> JsonUtil.mapFrom(type, line));
+                .build((fileName, line) -> JsonUtil.beanFrom(type, line));
     }
 
     /**
@@ -1087,7 +1087,7 @@ public final class Sources {
     public static <T> StreamSource<T> jsonWatcher(@Nonnull String watchedDirectory, @Nonnull Class<T> type) {
         return filesBuilder(watchedDirectory)
                 .glob("*.json")
-                .buildWatcher((fileName, line) -> JsonUtil.mapFrom(type, line));
+                .buildWatcher((fileName, line) -> JsonUtil.beanFrom(type, line));
     }
 
     /**
