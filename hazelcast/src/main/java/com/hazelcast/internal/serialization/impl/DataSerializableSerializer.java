@@ -17,12 +17,9 @@
 package com.hazelcast.internal.serialization.impl;
 
 import com.hazelcast.instance.BuildInfoProvider;
-import com.hazelcast.internal.nio.ClassLoaderUtil;
 import com.hazelcast.internal.serialization.DataSerializerHook;
-import com.hazelcast.internal.util.ExceptionUtil;
-import com.hazelcast.internal.util.ServiceLoader;
-import com.hazelcast.internal.util.collection.Int2ObjectHashMap;
 import com.hazelcast.logging.Logger;
+import com.hazelcast.internal.nio.ClassLoaderUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
@@ -32,6 +29,9 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.nio.serialization.StreamSerializer;
 import com.hazelcast.nio.serialization.TypedDataSerializable;
 import com.hazelcast.nio.serialization.TypedStreamDeserializer;
+import com.hazelcast.internal.util.ExceptionUtil;
+import com.hazelcast.internal.util.ServiceLoader;
+import com.hazelcast.internal.util.collection.Int2ObjectHashMap;
 import com.hazelcast.version.Version;
 
 import java.io.IOException;
@@ -55,17 +55,14 @@ final class DataSerializableSerializer implements StreamSerializer<DataSerializa
     public static final byte EE_FLAG = 1 << 1;
 
     private static final String FACTORY_ID = "com.hazelcast.DataSerializerHook";
-    private static final String COMPATIBILITY_FACTORY_ID = "com.hazelcast.CompatibilityDataSerializerHook";
 
     private final Version version = Version.of(BuildInfoProvider.getBuildInfo().getVersion());
     private final Int2ObjectHashMap<DataSerializableFactory> factories = new Int2ObjectHashMap<>();
 
     DataSerializableSerializer(Map<Integer, ? extends DataSerializableFactory> dataSerializableFactories,
-                               ClassLoader classLoader,
-                               boolean isCompatibility) {
+                               ClassLoader classLoader) {
         try {
-            String factoryId = isCompatibility ? COMPATIBILITY_FACTORY_ID : FACTORY_ID;
-            final Iterator<DataSerializerHook> hooks = ServiceLoader.iterator(DataSerializerHook.class, factoryId, classLoader);
+            final Iterator<DataSerializerHook> hooks = ServiceLoader.iterator(DataSerializerHook.class, FACTORY_ID, classLoader);
             while (hooks.hasNext()) {
                 DataSerializerHook hook = hooks.next();
                 final DataSerializableFactory factory = hook.createFactory();

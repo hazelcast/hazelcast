@@ -16,9 +16,9 @@
 
 package com.hazelcast.test.starter;
 
-import com.hazelcast.test.starter.constructor.EnumConstructor;
 import com.hazelcast.internal.util.ConcurrentReferenceHashMap;
 import com.hazelcast.internal.util.ConstructorFunction;
+import com.hazelcast.test.starter.constructor.EnumConstructor;
 import net.bytebuddy.ByteBuddy;
 import net.bytebuddy.description.method.MethodDescription;
 import net.bytebuddy.description.method.MethodList;
@@ -45,16 +45,16 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 
 import static com.hazelcast.internal.nio.ClassLoaderUtil.getAllInterfaces;
+import static com.hazelcast.internal.util.ConcurrentReferenceHashMap.ReferenceType.STRONG;
 import static com.hazelcast.test.starter.HazelcastAPIDelegatingClassloader.DELEGATION_WHITE_LIST;
 import static com.hazelcast.test.starter.HazelcastProxyFactory.ProxyPolicy.RETURN_SAME;
 import static com.hazelcast.test.starter.HazelcastStarterUtils.debug;
 import static com.hazelcast.test.starter.HazelcastStarterUtils.newCollectionFor;
+import static com.hazelcast.test.starter.HazelcastStarterUtils.newMapFor;
 import static com.hazelcast.test.starter.ReflectionUtils.getConstructor;
 import static com.hazelcast.test.starter.ReflectionUtils.getReflectionsForTestPackage;
-import static com.hazelcast.internal.util.ConcurrentReferenceHashMap.ReferenceType.STRONG;
 import static java.lang.System.arraycopy;
 import static java.util.Arrays.asList;
 import static net.bytebuddy.jar.asm.Opcodes.ACC_PUBLIC;
@@ -241,7 +241,7 @@ public class HazelcastProxyFactory {
             }
             return targetCollection;
         } else if (isJDKClass(arg.getClass()) && Map.class.isAssignableFrom(arg.getClass())) {
-            Map<Object, Object> targetMap = new ConcurrentHashMap<Object, Object>();
+            Map<Object, Object> targetMap = newMapFor(arg.getClass());
             Map mapArg = (Map) arg;
             for (Object entry : mapArg.entrySet()) {
                 Object key = proxyObjectForStarter(targetClassLoader, ((Map.Entry) entry).getKey());

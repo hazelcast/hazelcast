@@ -118,7 +118,7 @@ public class SerializationServiceV1 extends AbstractSerializationService {
         }
 
         dataSerializerAdapter = createSerializerAdapter(new DataSerializableSerializer(
-                builder.dataSerializableFactories, builder.getClassLoader(), builder.isCompatibility()));
+                builder.dataSerializableFactories, builder.getClassLoader()));
         portableSerializer = new PortableSerializer(portableContext, loader.getFactories());
         portableSerializerAdapter = createSerializerAdapter(portableSerializer);
 
