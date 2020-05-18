@@ -24,24 +24,23 @@ We will use the ticker to lookup the full company name in a replicated map.
 
 ## 1. Start Hazelcast Jet
 
-1. [Download](https://github.com/hazelcast/hazelcast-jet/releases/download/v{jet-version}/hazelcast-jet-{jet-version}.tar.gz)
-  Hazelcast Jet
-
-2. Unzip it:
+1. Download Hazelcast Jet
 
 ```bash
-cd <where_you_downloaded_it>
-tar zxvf hazelcast-jet-{jet-version}.tar.gz
-cd hazelcast-jet-{jet-version}
+wget https://github.com/hazelcast/hazelcast-jet/releases/download/v{jet-version}/hazelcast-jet-{jet-version}.tar.gz
+tar zxvf hazelcast-jet-{jet-version}.tar.gz && cd hazelcast-jet-{jet-version}
 ```
 
-3. Start Jet:
+If you already have Jet and you skipped the above steps, make sure to
+follow from here on.
+
+2. Start Jet:
 
 ```bash
 bin/jet-start
 ```
 
-4. When you see output like this, Hazelcast Jet is up:
+3. When you see output like this, Hazelcast Jet is up:
 
 ```text
 Members {size:1, ver:1} [

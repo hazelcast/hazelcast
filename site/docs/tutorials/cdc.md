@@ -150,31 +150,30 @@ mysql> SELECT * FROM customers;
 
 ## 4. Start Hazelcast Jet
 
-1. [Download](https://github.com/hazelcast/hazelcast-jet/releases/download/v{jet-version}/hazelcast-jet-{jet-version}.tar.gz)
-  Hazelcast Jet
-
-2. Unzip it:
+1. Download Hazelcast Jet
 
 ```bash
-cd <where_you_downloaded_it>
-tar zxvf hazelcast-jet-{jet-version}.tar.gz
-cd hazelcast-jet-{jet-version}
+wget https://github.com/hazelcast/hazelcast-jet/releases/download/v{jet-version}/hazelcast-jet-{jet-version}.tar.gz
+tar zxvf hazelcast-jet-{jet-version}.tar.gz && cd hazelcast-jet-{jet-version}
 ```
 
-3. Activate the MySQL CDC plugin:
+If you already have Jet and you skipped the above steps, make sure to
+follow from here on.
+
+2. Activate the MySQL CDC plugin:
 
 ```bash
 mv opt/hazelcast-jet-cdc-debezium-{jet-version}.jar lib; \
 mv opt/hazelcast-jet-cdc-mysql-{jet-version}.jar lib
 ```
 
-4. Start Jet:
+3. Start Jet:
 
 ```bash
 bin/jet-start
 ```
 
-5. When you see output like this, Hazelcast Jet is up:
+4. When you see output like this, Hazelcast Jet is up:
 
 ```text
 Members {size:1, ver:1} [
