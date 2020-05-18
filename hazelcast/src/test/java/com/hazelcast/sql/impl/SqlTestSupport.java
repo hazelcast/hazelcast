@@ -16,9 +16,12 @@
 
 package com.hazelcast.sql.impl;
 
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.instance.impl.HazelcastInstanceProxy;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.plan.Plan;
 import com.hazelcast.sql.impl.row.HeapRow;
@@ -144,5 +147,9 @@ public class SqlTestSupport extends HazelcastTestSupport {
 
     public static QueryPath path(String path, boolean key) {
         return new QueryPath(path, key);
+    }
+
+    public static NodeEngineImpl nodeEngine(HazelcastInstance instance) {
+        return ((HazelcastInstanceProxy) instance).getOriginal().node.nodeEngine;
     }
 }
