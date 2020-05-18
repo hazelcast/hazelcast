@@ -28,8 +28,11 @@ import com.hazelcast.sql.impl.schema.map.MapTableField;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.sql.impl.type.QueryDataTypeUtils;
 
+import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.util.LinkedHashMap;
+import java.util.TreeMap;
 
 /**
  * Helper class that resolves a map-backed table from a key/value sample.
@@ -81,7 +84,7 @@ public final class MapSampleMetadataResolver {
      * @return Metadata.
      */
     private static MapSampleMetadata resolvePortable(ClassDefinition clazz, boolean isKey) {
-        LinkedHashMap<String, TableField> fields = new LinkedHashMap<>();
+        TreeMap<String, TableField> fields = new TreeMap<>();
 
         // Add top-level object.
         String topName = isKey ? QueryPath.KEY : QueryPath.VALUE;
@@ -97,7 +100,7 @@ public final class MapSampleMetadataResolver {
             fields.putIfAbsent(name, new MapTableField(name, type, new QueryPath(name, isKey)));
         }
 
-        return new MapSampleMetadata(GenericQueryTargetDescriptor.INSTANCE, fields);
+        return new MapSampleMetadata(GenericQueryTargetDescriptor.INSTANCE, new LinkedHashMap<>(fields));
     }
 
     @SuppressWarnings("checkstyle:ReturnCount")
@@ -134,7 +137,7 @@ public final class MapSampleMetadataResolver {
     }
 
     private static MapSampleMetadata resolveClass(Class<?> clazz, boolean isKey) {
-        LinkedHashMap<String, TableField> fields = new LinkedHashMap<>();
+        TreeMap<String, TableField> fields = new TreeMap<>();
 
         // Add top-level object.
         String topName = isKey ? QueryPath.KEY : QueryPath.VALUE;
@@ -142,32 +145,69 @@ public final class MapSampleMetadataResolver {
         QueryDataType topType = QueryDataTypeUtils.resolveTypeForClass(clazz);
         fields.put(topName, new MapTableField(topName, topType, topPath));
 
-        // Add regular fields.
-        for (Method method : clazz.getMethods()) {
-            Class<?> returnType = method.getReturnType();
+        // Extract fields from non-primitive type.
+        if (topType == QueryDataType.OBJECT) {
+            // Add public getters.
+            for (Method method : clazz.getMethods()) {
+                String methodName = extractAttributeNameFromMethod(method);
 
-            if (returnType == void.class || returnType == Void.class) {
-                continue;
+                if (methodName == null) {
+                    continue;
+                }
+
+                QueryDataType methodType = QueryDataTypeUtils.resolveTypeForClass(method.getReturnType());
+
+                fields.putIfAbsent(methodName, new MapTableField(methodName, methodType, new QueryPath(methodName, isKey)));
             }
 
-            String name = extractAttributeNameFromMethod(method);
+            // Add public fields.
+            Class<?> currentClass = clazz;
 
-            if (name == null) {
-                continue;
+            while (currentClass != Object.class) {
+                for (Field field : currentClass.getDeclaredFields()) {
+                    if (!Modifier.isPublic(field.getModifiers())) {
+                        continue;
+                    }
+
+                    String fieldName = field.getName();
+                    QueryDataType fieldType = QueryDataTypeUtils.resolveTypeForClass(field.getType());
+
+                    fields.putIfAbsent(fieldName, new MapTableField(fieldName, fieldType, new QueryPath(fieldName, isKey)));
+                }
+
+                currentClass = currentClass.getSuperclass();
             }
-
-            QueryDataType type = QueryDataTypeUtils.resolveTypeForClass(returnType);
-
-            fields.putIfAbsent(name, new MapTableField(name, type, new QueryPath(name, isKey)));
         }
 
-        return new MapSampleMetadata(GenericQueryTargetDescriptor.INSTANCE, fields);
+        return new MapSampleMetadata(GenericQueryTargetDescriptor.INSTANCE, new LinkedHashMap<>(fields));
     }
 
     private static String extractAttributeNameFromMethod(Method method) {
+        // Exclude non-public getters.
+        if (!Modifier.isPublic(method.getModifiers())) {
+            return null;
+        }
+
+        // Exclude static getters.
+        if (Modifier.isStatic(method.getModifiers())) {
+            return null;
+        }
+
+        // Exclude void return type.
+        Class<?> returnType = method.getReturnType();
+
+        if (returnType == void.class || returnType == Void.class) {
+            return null;
+        }
+
         String methodName = method.getName();
 
-        // Skip "getClass"
+        // Skip methods with parameters.
+        if (method.getParameterCount() != 0) {
+            return null;
+        }
+
+        // Skip "Object.getClass"
         if (methodName.equals(METHOD_GET_CLASS)) {
             return null;
         }
@@ -177,6 +217,11 @@ public final class MapSampleMetadataResolver {
         if (methodName.startsWith(METHOD_PREFIX_GET) && methodName.length() > METHOD_PREFIX_GET.length()) {
             fieldNameWithWrongCase = methodName.substring(METHOD_PREFIX_GET.length());
         } else if (methodName.startsWith(METHOD_PREFIX_IS) && methodName.length() > METHOD_PREFIX_IS.length()) {
+            // Skip getters that do not return primitive boolean.
+            if (method.getReturnType() != boolean.class) {
+                return null;
+            }
+
             fieldNameWithWrongCase = methodName.substring(METHOD_PREFIX_IS.length());
         } else {
             return null;

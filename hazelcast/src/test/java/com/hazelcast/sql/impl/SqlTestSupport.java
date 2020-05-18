@@ -56,10 +56,14 @@ public class SqlTestSupport extends HazelcastTestSupport {
         }
     }
 
-    public static <T> T serialize(Object original) {
-        InternalSerializationService ss = new DefaultSerializationServiceBuilder().build();
+    public static InternalSerializationService getSerializationService() {
+        return new DefaultSerializationServiceBuilder().build();
+    }
 
-        return ss.toObject(ss.toData(original));
+    public static <T> T serialize(Object original) {
+        InternalSerializationService ss = getSerializationService();
+
+        return getSerializationService().toObject(ss.toData(original));
     }
 
     public static <T> T serializeAndCheck(IdentifiedDataSerializable original, int expectedClassId) {
