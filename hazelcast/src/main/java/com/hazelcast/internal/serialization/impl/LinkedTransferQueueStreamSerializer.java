@@ -21,6 +21,7 @@ import com.hazelcast.internal.compatibility.serialization.impl.CompatibilitySeri
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.StreamSerializer;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
 import java.lang.reflect.Constructor;
@@ -29,6 +30,7 @@ import java.lang.reflect.Method;
 /**
  * The {@code java.util.concurrent.LinkedTransferQueue} serializer
  */
+@SuppressFBWarnings("REC_CATCH_EXCEPTION")
 public class LinkedTransferQueueStreamSerializer<E> implements StreamSerializer<Object> {
 
     private final Constructor<?> defaultConstructor;
