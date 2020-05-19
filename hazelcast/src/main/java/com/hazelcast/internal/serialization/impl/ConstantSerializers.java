@@ -413,6 +413,7 @@ public final class ConstantSerializers {
         }
     }
 
+    @SuppressWarnings("checkstyle:illegaltype")
     public static final class SimpleEntrySerializer extends SingletonSerializer<AbstractMap.SimpleEntry> {
 
         @Override
@@ -432,6 +433,7 @@ public final class ConstantSerializers {
         }
     }
 
+    @SuppressWarnings("checkstyle:illegaltype")
     public static final class SimpleImmutableEntrySerializer extends SingletonSerializer<AbstractMap.SimpleImmutableEntry> {
 
         @Override

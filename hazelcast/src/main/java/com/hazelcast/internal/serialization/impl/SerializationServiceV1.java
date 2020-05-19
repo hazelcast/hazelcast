@@ -38,6 +38,7 @@ import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableFactory;
 import com.hazelcast.nio.serialization.PortableReader;
+import com.hazelcast.util.EmptyStatement;
 
 import java.io.Externalizable;
 import java.io.IOException;
@@ -238,6 +239,7 @@ public class SerializationServiceV1 extends AbstractSerializationService {
                 registerConstant(Class.forName("java.util.concurrent.LinkedTransferQueue"),
                         new LinkedTransferQueueStreamSerializer());
             } catch (ClassNotFoundException e) {
+                EmptyStatement.ignore(e);
                 // running on JDK6, continue
             }
         }
