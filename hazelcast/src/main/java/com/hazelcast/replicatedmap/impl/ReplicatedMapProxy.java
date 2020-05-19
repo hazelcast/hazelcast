@@ -53,6 +53,7 @@ import com.hazelcast.splitbrainprotection.SplitBrainProtectionOn;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.ArrayList;
+import java.util.BitSet;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
@@ -78,7 +79,7 @@ import static java.lang.Thread.currentThread;
  * @param <K> key type
  * @param <V> value type
  */
-@SuppressWarnings({"checkstyle:methodcount", "checkstyle:ClassFanOutComplexity"})
+@SuppressWarnings({"checkstyle:methodcount", "checkstyle:classfanoutcomplexity"})
 public class ReplicatedMapProxy<K, V> extends AbstractDistributedObject<ReplicatedMapService>
         implements ReplicatedMap<K, V>, InitializingObject {
 
@@ -92,6 +93,7 @@ public class ReplicatedMapProxy<K, V> extends AbstractDistributedObject<Replicat
     private static final int RETRY_INTERVAL_COUNT = 3;
     private static final int KEY_SET_MIN_SIZE = 16;
     private static final int KEY_SET_STORE_MULTIPLE = 4;
+    private static final int PARALLEL_INIT_REQUESTS_LIMIT = 100;
 
     private static final LocalReplicatedMapStats EMPTY_LOCAL_MAP_STATS = new EmptyLocalReplicatedMapStats();
 
@@ -103,8 +105,6 @@ public class ReplicatedMapProxy<K, V> extends AbstractDistributedObject<Replicat
     private final InternalPartitionServiceImpl partitionService;
     private final ReplicatedMapConfig config;
     private final Extractors extractors;
-
-    private int retryCount;
 
     ReplicatedMapProxy(NodeEngine nodeEngine, String name, ReplicatedMapService service, ReplicatedMapConfig config) {
         super(nodeEngine, service);
@@ -130,18 +130,38 @@ public class ReplicatedMapProxy<K, V> extends AbstractDistributedObject<Replicat
         }
         fireMapDataLoadingTasks();
         if (!config.isAsyncFillup()) {
-            for (int i = 0; i < nodeEngine.getPartitionService().getPartitionCount(); i++) {
-                ReplicatedRecordStore store = service.getReplicatedRecordStore(name, false, i);
-                while (store == null || !store.isLoaded()) {
-                    if ((retryCount++) % RETRY_INTERVAL_COUNT == 0) {
-                        requestDataForPartition(i);
+            syncFill();
+        }
+    }
+
+    private void syncFill() {
+        int partitionCount = nodeEngine.getPartitionService().getPartitionCount();
+        BitSet nonLoadedStores = new BitSet(partitionCount);
+        int[] retryCount = new int[partitionCount];
+        for (int i = 0; i < partitionCount; i++) {
+            nonLoadedStores.set(i);
+        }
+        while (true) {
+            int remainingParallelRequests = PARALLEL_INIT_REQUESTS_LIMIT;
+            for (int nonLoadedPartition = nonLoadedStores.nextSetBit(0);
+                 nonLoadedPartition >= 0 && remainingParallelRequests > 0;
+                 nonLoadedPartition = nonLoadedStores.nextSetBit(nonLoadedPartition + 1)) {
+
+                ReplicatedRecordStore store = service.getReplicatedRecordStore(name, false, nonLoadedPartition);
+                if (store == null || !store.isLoaded()) {
+                    if ((retryCount[nonLoadedPartition]++) % RETRY_INTERVAL_COUNT == 0) {
+                        requestDataForPartition(nonLoadedPartition);
+                        remainingParallelRequests--;
                     }
-                    sleep();
-                    if (store == null) {
-                        store = service.getReplicatedRecordStore(name, false, i);
-                    }
+                } else {
+                    nonLoadedStores.clear(nonLoadedPartition);
                 }
             }
+
+            if (nonLoadedStores.isEmpty()) {
+                break;
+            }
+            sleep();
         }
     }
 
