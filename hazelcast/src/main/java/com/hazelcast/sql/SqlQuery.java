@@ -51,10 +51,10 @@ public class SqlQuery {
      * Copying constructor.
      */
     private SqlQuery(String sql, List<Object> parameters, long timeout, int pageSize) {
-        this.sql = sql;
-        this.parameters = parameters;
-        this.timeout = timeout;
-        this.pageSize = pageSize;
+        setSql(sql);
+        setParameters(parameters);
+        setTimeout(timeout);
+        setPageSize(pageSize);
     }
 
     public String getSql() {
@@ -105,6 +105,9 @@ public class SqlQuery {
         return timeout;
     }
 
+    /**
+     * The query timeout in milliseconds or 0 for no timeout.
+     */
     public SqlQuery setTimeout(long timeout) {
         if (timeout < 0) {
             throw new IllegalArgumentException("Timeout cannot be negative: " + timeout);

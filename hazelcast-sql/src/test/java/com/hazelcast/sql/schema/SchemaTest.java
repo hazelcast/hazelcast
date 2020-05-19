@@ -16,10 +16,10 @@
 
 package com.hazelcast.sql.schema;
 
-import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlRow;
+import com.hazelcast.sql.impl.connector.LocalPartitionedMapConnector;
 import com.hazelcast.sql.schema.model.AllTypesValue;
 import com.hazelcast.sql.schema.model.Person;
 import com.hazelcast.sql.support.CalciteSqlTestSupport;
@@ -49,24 +49,25 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class SchemaTest extends CalciteSqlTestSupport {
 
-    private static final String TYPE = "PARTITIONED";
-
+    private static TestHazelcastInstanceFactory factory = new TestHazelcastInstanceFactory();
     private static HazelcastInstance member;
 
     @BeforeClass
     public static void beforeClass() {
-        member = Hazelcast.newHazelcastInstance();
+        member = factory.newHazelcastInstance();
     }
 
     @AfterClass
     public static void afterClass() {
-        Hazelcast.shutdownAll();
+        factory.shutdownAll();
     }
 
     @Test
     public void testSelectFromDeclaredTable() {
         String name = "predeclared_map";
-        List<SqlRow> updateRows = getQueryRows(member, format("CREATE EXTERNAL TABLE %s (__key INT) TYPE %s", name, TYPE));
+        List<SqlRow> updateRows = getQueryRows(member, format("CREATE EXTERNAL TABLE %s (__key INT) TYPE \"%s\"",
+                name,
+                LocalPartitionedMapConnector.TYPE_NAME));
         assertThat(updateRows).hasSize(1);
         assertThat((int) updateRows.get(0).getObject(0)).isEqualTo(0);
 
@@ -81,7 +82,8 @@ public class SchemaTest extends CalciteSqlTestSupport {
         HazelcastInstance[] instances = factory.newInstances();
 
         // create table on one member
-        executeQuery(instances[0], format("CREATE EXTERNAL TABLE %s (__key INT) TYPE %s", name, TYPE));
+        executeQuery(instances[0], format("CREATE EXTERNAL TABLE %s (__key INT) TYPE \"%s\"", name,
+                LocalPartitionedMapConnector.TYPE_NAME));
 
         // execute query on another one
         // TODO: fix it properly - sticky client, different catalog storage, ???
@@ -94,7 +96,8 @@ public class SchemaTest extends CalciteSqlTestSupport {
     @Test
     public void testPredeclaredTablePriority() {
         String name = "priority_map";
-        executeQuery(member, format("CREATE EXTERNAL TABLE %s (\"__key.age\" INT, age INT) TYPE %s", name, TYPE));
+        executeQuery(member, format("CREATE EXTERNAL TABLE %s (\"__key.age\" INT, age INT) TYPE \"%s\"",
+                name, LocalPartitionedMapConnector.TYPE_NAME));
 
         Map<Person, Person> map = member.getMap(name);
         map.put(new Person("Alice", BigInteger.valueOf(30)), new Person("Bob", BigInteger.valueOf(40)));
@@ -132,8 +135,8 @@ public class SchemaTest extends CalciteSqlTestSupport {
                         + "offsetDateTime TIMESTAMP WITH TIME ZONE "
                         /* + "yearMonthInterval INTERVAL_YEAR_MONTH, "
                         + "offsetDateTime INTERVAL_DAY_SECOND, "*/
-                        + ") TYPE %s",
-                name, TYPE
+                        + ") TYPE \"%s\"",
+                name, LocalPartitionedMapConnector.TYPE_NAME
         ));
 
         AllTypesValue allTypes = new AllTypesValue(
@@ -190,7 +193,7 @@ public class SchemaTest extends CalciteSqlTestSupport {
     @Test
     public void testDropTable() {
         String name = "to_be_dropped_map";
-        executeQuery(member, format("CREATE EXTERNAL TABLE %s (name VARCHAR) TYPE %s", name, TYPE));
+        executeQuery(member, format("CREATE EXTERNAL TABLE %s (name VARCHAR) TYPE \"%s\"", name, LocalPartitionedMapConnector.TYPE_NAME));
         executeQuery(member, format("DROP EXTERNAL TABLE %s", name));
 
         assertThatThrownBy(() -> executeQuery(member, format("SELECT name FROM %s", name)))

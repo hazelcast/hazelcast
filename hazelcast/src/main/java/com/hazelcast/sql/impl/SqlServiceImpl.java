@@ -21,6 +21,7 @@ import com.hazelcast.core.HazelcastException;
 import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.spi.exception.ServiceNotFoundException;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.sql.SqlCursor;
@@ -55,15 +56,18 @@ public class SqlServiceImpl implements SqlService, Consumer<Packet> {
     private static final String OPTIMIZER_CLASS_PROPERTY_NAME = "hazelcast.sql.optimizerClass";
     private static final String SQL_MODULE_OPTIMIZER_CLASS = "com.hazelcast.sql.impl.calcite.CalciteSqlOptimizer";
 
-    private final SqlOptimizer optimizer;
+    private SqlOptimizer optimizer;
     private final ILogger logger;
+    private final NodeEngineImpl nodeEngine;
     private final boolean liteMember;
 
     private final NodeServiceProviderImpl nodeServiceProvider;
 
     private volatile SqlInternalService internalService;
+    private JetSqlBackend jetSqlBackend;
 
     public SqlServiceImpl(NodeEngineImpl nodeEngine) {
+        this.nodeEngine = nodeEngine;
         logger = nodeEngine.getLogger(getClass());
         SqlConfig config = nodeEngine.getConfig().getSqlConfig();
 
@@ -95,11 +99,23 @@ public class SqlServiceImpl implements SqlService, Consumer<Packet> {
             maxMemory
         );
 
-        optimizer = createOptimizer(nodeEngine);
         liteMember = nodeEngine.getConfig().isLiteMember();
     }
 
     public void start() {
+        JetSqlBackend jetSqlBackendTmp;
+        try {
+            jetSqlBackendTmp = nodeEngine.getService(JetSqlBackend.SERVICE_NAME);
+        } catch (HazelcastException e) {
+            if (e.getCause() instanceof ServiceNotFoundException) {
+                jetSqlBackendTmp = null;
+            } else {
+                throw e;
+            }
+        }
+        jetSqlBackend = jetSqlBackendTmp;
+        optimizer = createOptimizer(nodeEngine);
+
         internalService.start();
     }
 
@@ -210,8 +226,7 @@ public class SqlServiceImpl implements SqlService, Consumer<Packet> {
     }
 
     private SqlCursor executeJet(SqlPlan plan, List<Object> params, long timeout, int pageSize) {
-        // TODO: Implement
-        throw new UnsupportedOperationException("Implement me");
+        return jetSqlBackend.execute(plan, params, timeout, pageSize);
     }
 
     private SqlPlan prepare(String sql) {
@@ -247,7 +262,7 @@ public class SqlServiceImpl implements SqlService, Consumer<Packet> {
         Constructor<SqlOptimizer> constructor;
 
         try {
-            constructor = clazz.getConstructor(NodeEngine.class);
+            constructor = clazz.getConstructor(NodeEngine.class, JetSqlBackend.class);
         } catch (ReflectiveOperationException e) {
             throw new HazelcastException("Failed to get the constructor for the optimizer class "
                 + className + ": " + e.getMessage(), e);
@@ -255,7 +270,7 @@ public class SqlServiceImpl implements SqlService, Consumer<Packet> {
 
         // 4. Finally, get the instance.
         try {
-            return constructor.newInstance(nodeEngine);
+            return constructor.newInstance(nodeEngine, jetSqlBackend);
         } catch (ReflectiveOperationException e) {
             throw new HazelcastException("Failed to instantiate the optimizer class " + className + ": " + e.getMessage(), e);
         }

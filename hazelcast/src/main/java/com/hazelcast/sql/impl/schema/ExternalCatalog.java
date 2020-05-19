@@ -19,8 +19,9 @@ package com.hazelcast.sql.impl.schema;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.connector.SqlConnector;
-import com.hazelcast.sql.impl.connector.SqlConnectorFactory;
+import com.hazelcast.sql.impl.connector.SqlConnectorCache;
 
+import javax.annotation.Nonnull;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -39,18 +40,20 @@ public class ExternalCatalog implements TableResolver {
     private static final List<List<String>> SEARCH_PATHS = singletonList(asList(CATALOG, SCHEMA_NAME_PUBLIC));
 
     private final NodeEngine nodeEngine;
+    private final SqlConnectorCache sqlConnectorCache;
 
     public ExternalCatalog(NodeEngine nodeEngine) {
         this.nodeEngine = nodeEngine;
+        this.sqlConnectorCache = new SqlConnectorCache(nodeEngine);
     }
 
-    public void createTable(ExternalTableSchema schema, boolean replace, boolean ifNotExists) {
-        String name = schema.name();
+    public void createTable(ExternalTable table, boolean replace, boolean ifNotExists) {
+        String name = table.name();
         if (ifNotExists) {
-            tables().putIfAbsent(name, schema);
+            tables().putIfAbsent(name, table);
         } else if (replace) {
-            tables().put(name, schema);
-        } else if (tables().putIfAbsent(name, schema) != null) {
+            tables().put(name, table);
+        } else if (tables().putIfAbsent(name, table) != null) {
             throw QueryException.error("'" + name + "' table already exists");
         }
     }
@@ -66,20 +69,20 @@ public class ExternalCatalog implements TableResolver {
         return SEARCH_PATHS;
     }
 
-    @Override
+    @Override @Nonnull
     public Collection<Table> getTables() {
         return tables().values().stream()
-                       .map(ExternalCatalog::toTable)
+                       .map(this::toTable)
                        .collect(toList());
     }
 
-    private Map<String, ExternalTableSchema> tables() {
+    private Map<String, ExternalTable> tables() {
         // TODO: use the right storage
         return nodeEngine.getHazelcastInstance().getReplicatedMap(CATALOG_MAP_NAME);
     }
 
-    private static Table toTable(ExternalTableSchema schema) {
-        SqlConnector connector = SqlConnectorFactory.from(schema.type());
-        return connector.createTable(SCHEMA_NAME_PUBLIC, schema.name(), schema.fields(), schema.options());
+    private Table toTable(ExternalTable extTable) {
+        SqlConnector connector = sqlConnectorCache.forType(extTable.type());
+        return connector.createTable(nodeEngine, SCHEMA_NAME_PUBLIC, extTable.name(), extTable.fields(), extTable.options());
     }
 }

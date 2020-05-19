@@ -21,7 +21,7 @@ import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.query.impl.getters.Extractors;
 
 /**
- * Descriptor of the target object (key of value from map record). Used to generate the proper attribute extraction strategy
+ * Descriptor of the target object (key or value from map record). Used to generate the proper attribute extraction strategy
  * and to impose additional restrictions on data that is used for compilation. For example, expected class name or expected
  * portable class ID.
  * <p>

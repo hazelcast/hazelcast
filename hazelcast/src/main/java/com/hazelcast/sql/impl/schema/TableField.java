@@ -16,17 +16,23 @@
 
 package com.hazelcast.sql.impl.schema;
 
+import com.hazelcast.sql.impl.schema.ExternalTable.ExternalField;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
 /**
- * Base class for all table field. Different backends may have additional metadata associated with the field.
+ * Base class for all table field. Different backends may have additional
+ * metadata associated with the field.
  */
-public abstract class TableField {
+public class TableField {
 
     private final String name;
     private final QueryDataType type;
 
-    protected TableField(String name, QueryDataType type) {
+    public TableField(ExternalField externalField) {
+        this(externalField.name(), externalField.type());
+    }
+
+    public TableField(String name, QueryDataType type) {
         this.name = name;
         this.type = type;
     }

@@ -23,6 +23,8 @@ import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.QueryUtils;
+import com.hazelcast.sql.impl.extract.GenericQueryTargetDescriptor;
+import com.hazelcast.sql.impl.extract.QueryTargetDescriptor;
 import com.hazelcast.sql.impl.schema.ConstantTableStatistics;
 import com.hazelcast.sql.impl.schema.ExternalCatalog;
 import com.hazelcast.sql.impl.schema.Table;
@@ -30,14 +32,18 @@ import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.schema.map.sample.MapSampleMetadata;
 import com.hazelcast.sql.impl.schema.map.sample.MapSampleMetadataResolver;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
 import static com.hazelcast.sql.impl.QueryUtils.SCHEMA_NAME_REPLICATED;
+import static java.util.Collections.emptyMap;
 
 public class ReplicatedMapTableResolver extends AbstractMapTableResolver {
 
@@ -48,7 +54,7 @@ public class ReplicatedMapTableResolver extends AbstractMapTableResolver {
         super(nodeEngine, SEARCH_PATHS);
     }
 
-    @Override
+    @Override @Nonnull
     public Collection<Table> getTables() {
         ReplicatedMapService mapService = nodeEngine.getService(ReplicatedMapService.SERVICE_NAME);
 
@@ -63,7 +69,7 @@ public class ReplicatedMapTableResolver extends AbstractMapTableResolver {
             }
 
             try {
-                table = createTable(mapService, mapName);
+                table = createTable(nodeEngine, mapService, SCHEMA_NAME_REPLICATED, mapName, null, emptyMap());
             } catch (QueryException e) {
                 table = new ReplicatedMapTable(mapName, e);
             }
@@ -79,9 +85,20 @@ public class ReplicatedMapTableResolver extends AbstractMapTableResolver {
     }
 
     @SuppressWarnings("rawtypes")
-    private ReplicatedMapTable createTable(ReplicatedMapService mapService, String mapName) {
+    public static ReplicatedMapTable createTable(
+            @Nonnull NodeEngine nodeEngine,
+            @Nonnull ReplicatedMapService mapService,
+            @Nonnull String schemaName,
+            @Nonnull String mapName,
+            @Nullable List<TableField> fields,
+            @Nonnull Map<String, String> ddlOptions
+    ) {
         try {
             Collection<ReplicatedRecordStore> stores = mapService.getAllReplicatedRecordStores(mapName);
+
+            long estimatedRowCount = 0;
+            QueryTargetDescriptor keyDescriptor = null;
+            QueryTargetDescriptor valueDescriptor = null;
 
             // Iterate over stores trying to get the sample.
             for (ReplicatedRecordStore store : stores) {
@@ -100,20 +117,37 @@ public class ReplicatedMapTableResolver extends AbstractMapTableResolver {
 
                 MapSampleMetadata keyMetadata = MapSampleMetadataResolver.resolve(ss, key, true);
                 MapSampleMetadata valueMetadata = MapSampleMetadataResolver.resolve(ss, value, false);
-                long estimatedRowCount = stores.size() * nodeEngine.getPartitionService().getPartitionCount();
+                keyDescriptor = keyMetadata.getDescriptor();
+                valueDescriptor = valueMetadata.getDescriptor();
+                estimatedRowCount = stores.size() * nodeEngine.getPartitionService().getPartitionCount();
 
-                List<TableField> fields = mergeMapFields(keyMetadata.getFields(), valueMetadata.getFields());
+                if (fields == null) {
+                    fields = mergeMapFields(keyMetadata.getFields(), valueMetadata.getFields());
+                }
+                break;
+            }
 
-                return new ReplicatedMapTable(
+            // TODO: Throw an error here instead so that the user knows that resolution failed due to empty map.
+            if (fields == null) {
+                return null;
+            }
+
+            if (keyDescriptor == null) {
+                keyDescriptor = new GenericQueryTargetDescriptor();
+            }
+            if (valueDescriptor == null) {
+                valueDescriptor = new GenericQueryTargetDescriptor();
+            }
+
+            return new ReplicatedMapTable(
+                    schemaName,
                     mapName,
                     fields,
                     new ConstantTableStatistics(estimatedRowCount),
-                    keyMetadata.getDescriptor(),
-                    valueMetadata.getDescriptor()
-                );
-            }
-
-            return null;
+                    keyDescriptor,
+                    valueDescriptor,
+                    ddlOptions
+            );
         } catch (QueryException e) {
             throw e;
         } catch (Exception e) {

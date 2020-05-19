@@ -31,7 +31,9 @@ import com.hazelcast.partition.strategy.DeclarativePartitioningStrategy;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.QueryUtils;
+import com.hazelcast.sql.impl.extract.GenericQueryTargetDescriptor;
 import com.hazelcast.sql.impl.extract.QueryPath;
+import com.hazelcast.sql.impl.extract.QueryTargetDescriptor;
 import com.hazelcast.sql.impl.schema.ConstantTableStatistics;
 import com.hazelcast.sql.impl.schema.ExternalCatalog;
 import com.hazelcast.sql.impl.schema.Table;
@@ -39,6 +41,8 @@ import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.schema.map.sample.MapSampleMetadata;
 import com.hazelcast.sql.impl.schema.map.sample.MapSampleMetadataResolver;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -49,6 +53,7 @@ import java.util.List;
 import java.util.Map;
 
 import static com.hazelcast.sql.impl.QueryUtils.SCHEMA_NAME_PARTITIONED;
+import static java.util.Collections.emptyMap;
 
 public class PartitionedMapTableResolver extends AbstractMapTableResolver {
 
@@ -59,7 +64,7 @@ public class PartitionedMapTableResolver extends AbstractMapTableResolver {
         super(nodeEngine, SEARCH_PATHS);
     }
 
-    @Override
+    @Override @Nonnull
     public Collection<Table> getTables() {
         MapService mapService = nodeEngine.getService(MapService.SERVICE_NAME);
         MapServiceContext context = mapService.getMapServiceContext();
@@ -75,7 +80,7 @@ public class PartitionedMapTableResolver extends AbstractMapTableResolver {
             }
 
             try {
-                table = createTable(context, mapName);
+                table = createTable(SCHEMA_NAME_PARTITIONED, nodeEngine, context, mapName, null, emptyMap());
             } catch (QueryException e) {
                 table = new PartitionedMapTable(mapName, e);
             }
@@ -91,13 +96,21 @@ public class PartitionedMapTableResolver extends AbstractMapTableResolver {
     }
 
     @SuppressWarnings({"rawtypes", "checkstyle:MethodLength", "checkstyle:CyclomaticComplexity", "checkstyle:NPathComplexity"})
-    private PartitionedMapTable createTable(MapServiceContext context, String mapName) {
+    public static PartitionedMapTable createTable(
+            @Nonnull String schemaName,
+            @Nonnull NodeEngine nodeEngine,
+            @Nonnull MapServiceContext context,
+            @Nonnull String mapName,
+            @Nullable List<TableField> fields,
+            @Nonnull Map<String, String> ddlOptions
+    ) {
         try {
             MapContainer mapContainer = context.getMapContainer(mapName);
+            assert mapContainer != null : "null mapContainer";
 
-            if (mapContainer == null) {
-                return null;
-            }
+            int estimatedRowCount = 0;
+            QueryTargetDescriptor keyDescriptor = null;
+            QueryTargetDescriptor valueDescriptor = null;
 
             for (PartitionContainer partitionContainer : context.getPartitionContainers()) {
                 // Resolve sample.
@@ -119,76 +132,94 @@ public class PartitionedMapTableResolver extends AbstractMapTableResolver {
 
                 MapSampleMetadata keyMetadata = MapSampleMetadataResolver.resolve(ss, entry.getKey(), true);
                 MapSampleMetadata valueMetadata = MapSampleMetadataResolver.resolve(ss, entry.getValue().getValue(), false);
-                long estimatedRowCount = recordStore.size() * nodeEngine.getPartitionService().getPartitionCount();
+                keyDescriptor = keyMetadata.getDescriptor();
+                valueDescriptor = valueMetadata.getDescriptor();
 
-                List<TableField> fields = mergeMapFields(keyMetadata.getFields(), valueMetadata.getFields());
+                estimatedRowCount = recordStore.size() * nodeEngine.getPartitionService().getPartitionCount();
 
-                // Map fields to ordinals.
-                Map<QueryPath, Integer> pathToOrdinalMap = new HashMap<>();
-
-                for (int i = 0; i < fields.size(); i++) {
-                    pathToOrdinalMap.put(((MapTableField) fields.get(i)).getPath(), i);
+                if (fields == null) {
+                    fields = mergeMapFields(keyMetadata.getFields(), valueMetadata.getFields());
                 }
 
-                // Resolve indexes.
-                List<MapTableIndex> indexes = new ArrayList<>(mapContainer.getIndexDefinitions().size());
+                break;
+            }
 
-                for (IndexConfig indexConfig : mapContainer.getIndexDefinitions().values()) {
-                    List<Integer> indexFieldOrdinals = new ArrayList<>(indexConfig.getAttributes().size());
+            if (fields == null) {
+                // TODO: Throw an error here instead so that the user knows that resolution failed due to empty map.
+                return null;
+            }
 
-                    for (String attribute : indexConfig.getAttributes()) {
-                         QueryPath attributePath = QueryPath.create(attribute);
+            if (keyDescriptor == null) {
+                keyDescriptor = new GenericQueryTargetDescriptor();
+            }
+            if (valueDescriptor == null) {
+                valueDescriptor = new GenericQueryTargetDescriptor();
+            }
 
-                         Integer ordinal = pathToOrdinalMap.get(attributePath);
+            // Map fields to ordinals.
+            Map<QueryPath, Integer> pathToOrdinalMap = new HashMap<>();
 
-                         if (ordinal == null) {
-                             // No mapping for the field. Stop.
-                             break;
-                         }
+            for (int i = 0; i < fields.size(); i++) {
+                pathToOrdinalMap.put(((MapTableField) fields.get(i)).getPath(), i);
+            }
 
-                         indexFieldOrdinals.add(ordinal);
-                    }
+            // Resolve indexes.
+            List<MapTableIndex> indexes = new ArrayList<>(mapContainer.getIndexDefinitions().size());
 
-                    if (indexFieldOrdinals.isEmpty()) {
-                        // Failed to resolve a prefix of the index, so it cannot be used in any query => skip.
+            for (IndexConfig indexConfig : mapContainer.getIndexDefinitions().values()) {
+                List<Integer> indexFieldOrdinals = new ArrayList<>(indexConfig.getAttributes().size());
+
+                for (String attribute : indexConfig.getAttributes()) {
+                    QueryPath attributePath = QueryPath.create(attribute);
+
+                    Integer ordinal = pathToOrdinalMap.get(attributePath);
+
+                    if (ordinal == null) {
+                        // No mapping for the field. Stop.
                         break;
                     }
 
-                    indexes.add(new MapTableIndex(mapName, indexConfig.getType(), indexFieldOrdinals));
+                    indexFieldOrdinals.add(ordinal);
                 }
 
-                // Resolve distribution field ordinal.
-                int distributionFieldOrdinal = PartitionedMapTable.DISTRIBUTION_FIELD_ORDINAL_NONE;
+                if (indexFieldOrdinals.isEmpty()) {
+                    // Failed to resolve a prefix of the index, so it cannot be used in any query => skip.
+                    break;
+                }
 
-                MapConfig mapConfig = mapContainer.getMapConfig();
+                indexes.add(new MapTableIndex(mapName, indexConfig.getType(), indexFieldOrdinals));
+            }
 
-                PartitioningStrategy partitioningStrategy =
+            // Resolve distribution field ordinal.
+            int distributionFieldOrdinal = PartitionedMapTable.DISTRIBUTION_FIELD_ORDINAL_NONE;
+
+            MapConfig mapConfig = mapContainer.getMapConfig();
+
+            PartitioningStrategy partitioningStrategy =
                     context.getPartitioningStrategy(mapConfig.getName(), mapConfig.getPartitioningStrategyConfig());
 
-                if (partitioningStrategy instanceof DeclarativePartitioningStrategy) {
-                    String field = ((DeclarativePartitioningStrategy) partitioningStrategy).getField();
-                    QueryPath fieldPath = new QueryPath(field, true);
-                    Integer fieldOrdinal = pathToOrdinalMap.get(fieldPath);
+            if (partitioningStrategy instanceof DeclarativePartitioningStrategy) {
+                String field = ((DeclarativePartitioningStrategy) partitioningStrategy).getField();
+                QueryPath fieldPath = new QueryPath(field, true);
+                Integer fieldOrdinal = pathToOrdinalMap.get(fieldPath);
 
-                    if (fieldOrdinal != null) {
-                        distributionFieldOrdinal = fieldOrdinal;
-                    }
+                if (fieldOrdinal != null) {
+                    distributionFieldOrdinal = fieldOrdinal;
                 }
+            }
 
-                // Done.
-                return new PartitionedMapTable(
+            // Done.
+            return new PartitionedMapTable(
+                    schemaName,
                     mapName,
                     fields,
                     new ConstantTableStatistics(estimatedRowCount),
-                    keyMetadata.getDescriptor(),
-                    valueMetadata.getDescriptor(),
+                    keyDescriptor,
+                    valueDescriptor,
                     indexes,
-                    distributionFieldOrdinal
-                );
-            }
-
-            // TODO: Throw and error here instead so that the user knows that resolution failed due to empty map.
-            return null;
+                    distributionFieldOrdinal,
+                    ddlOptions
+            );
         } catch (QueryException e) {
             throw e;
         } catch (Exception e) {

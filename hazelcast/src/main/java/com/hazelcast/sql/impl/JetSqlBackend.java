@@ -14,27 +14,28 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.schema;
+package com.hazelcast.sql.impl;
 
-import javax.annotation.Nonnull;
-import java.util.Collection;
+import com.hazelcast.sql.SqlCursor;
+import com.hazelcast.sql.impl.optimizer.SqlPlan;
+
 import java.util.List;
 
 /**
- * Generic interface that resolves tables belonging to a particular backend.
- * <p>
- * At the moment the interface does exactly what we need - provides tables and registers default search paths.
- * In future, if we have more objects to expose, it might be expanded or reworked completely.
+ * A service to optimize a RelNode and execute the SqlPlan implemented by Jet.
  */
-public interface TableResolver {
-    /**
-     * @return Search paths to be added for object resolution.
-     */
-    List<List<String>> getDefaultSearchPaths();
+public interface JetSqlBackend {
+
+    String SERVICE_NAME = "hz:impl:jetSqlService";
 
     /**
-     * @return Collection of tables to be registered.
+     * @param context Actual type is com.hazelcast.sql.impl.calcite.OptimizerContext
+     * @param inputRel Actual type is org.apache.calcite.rel.RelNode
      */
-    @Nonnull
-    Collection<Table> getTables();
+    SqlPlan optimizeAndCreatePlan(Object context, Object inputRel);
+
+    /**
+     * Execute the SqlPlan.
+     */
+    SqlCursor execute(SqlPlan plan, List<Object> params, long timeout, int pageSize);
 }

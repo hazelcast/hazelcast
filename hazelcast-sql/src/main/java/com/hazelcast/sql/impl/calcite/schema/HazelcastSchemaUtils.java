@@ -24,7 +24,6 @@ import org.apache.calcite.schema.Schema;
 import org.apache.calcite.schema.Statistic;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -57,22 +56,10 @@ public final class HazelcastSchemaUtils {
         Map<String, Map<String, HazelcastTable>> tableMap = new HashMap<>();
 
         for (TableResolver tableResolver : tableResolvers) {
-            Collection<Table> tables = tableResolver.getTables();
-
-            if (tables == null || tables.isEmpty()) {
-                continue;
-            }
-
-            for (Table table : tables) {
-                HazelcastTable convertedTable = new HazelcastTable(
-                    table,
-                    createTableStatistic(table)
-                );
-
-                Map<String , HazelcastTable> schemaTableMap =
-                    tableMap.computeIfAbsent(table.getSchemaName(), (k) -> new HashMap<>());
-
-                schemaTableMap.put(table.getName(), convertedTable);
+            for (Table table : tableResolver.getTables()) {
+                tableMap
+                        .computeIfAbsent(table.getSchemaName(), k -> new HashMap<>())
+                        .computeIfAbsent(table.getName(), k -> new HazelcastTable(table, createTableStatistic(table)));
             }
         }
 

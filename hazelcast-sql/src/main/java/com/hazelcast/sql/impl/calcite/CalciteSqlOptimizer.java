@@ -20,6 +20,7 @@ import com.hazelcast.cluster.memberselector.MemberSelectors;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.partition.Partition;
 import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.sql.impl.JetSqlBackend;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.calcite.opt.OptUtils;
 import com.hazelcast.sql.impl.calcite.opt.logical.LogicalRules;
@@ -33,22 +34,27 @@ import com.hazelcast.sql.impl.calcite.parse.QueryParseResult;
 import com.hazelcast.sql.impl.calcite.parse.SqlCreateExternalTable;
 import com.hazelcast.sql.impl.calcite.parse.SqlDropExternalTable;
 import com.hazelcast.sql.impl.calcite.parse.SqlOption;
+import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
 import com.hazelcast.sql.impl.optimizer.OptimizationTask;
 import com.hazelcast.sql.impl.optimizer.SqlOptimizer;
 import com.hazelcast.sql.impl.optimizer.SqlPlan;
 import com.hazelcast.sql.impl.plan.Plan;
 import com.hazelcast.sql.impl.schema.ExternalCatalog;
-import com.hazelcast.sql.impl.schema.ExternalTableSchema;
-import com.hazelcast.sql.impl.schema.ExternalTableSchema.Field;
+import com.hazelcast.sql.impl.schema.ExternalTable;
+import com.hazelcast.sql.impl.schema.ExternalTable.ExternalField;
 import com.hazelcast.sql.impl.schema.SchemaPlan;
 import com.hazelcast.sql.impl.schema.SchemaPlan.CreateExternalTablePlan;
 import com.hazelcast.sql.impl.schema.SchemaPlan.RemoveExternalTablePlan;
 import com.hazelcast.sql.impl.schema.TableResolver;
+import com.hazelcast.sql.impl.schema.map.AbstractMapTable;
 import com.hazelcast.sql.impl.schema.map.PartitionedMapTableResolver;
 import com.hazelcast.sql.impl.schema.map.ReplicatedMapTableResolver;
 import com.hazelcast.sql.impl.type.QueryDataType;
+import org.apache.calcite.plan.RelOptTable;
 import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.rel.RelNode;
+import org.apache.calcite.rel.RelVisitor;
+import org.apache.calcite.rel.core.TableModify;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.sql.SqlNode;
 
@@ -76,11 +82,15 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
     /** Table resolvers used for schema resolution. */
     private final List<TableResolver> tableResolvers;
 
-    public CalciteSqlOptimizer(NodeEngine nodeEngine) {
+    private final JetSqlBackend jetSqlBackend;
+
+    public CalciteSqlOptimizer(NodeEngine nodeEngine, JetSqlBackend jetSqlBackend) {
         this.nodeEngine = nodeEngine;
         this.catalog = new ExternalCatalog(nodeEngine);
 
         tableResolvers = createTableResolvers(catalog, nodeEngine);
+
+        this.jetSqlBackend = jetSqlBackend;
     }
 
     @Override
@@ -104,11 +114,53 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         // 3. Convert parse tree to relational tree.
         RelNode rel = context.convert(parseResult.getNode());
 
-        // 4. Perform optimization.
-        PhysicalRel physicalRel = optimize(context, rel);
+        // 4. Determine if Jet is needed to execute the query.
+        boolean isImdg = isImdgOnly(rel);
 
-        // 5. Create plan.
-        return createImdgPlan(task.getSql(), parseResult.getParameterRowType(), physicalRel);
+        if (isImdg) {
+            // 5. Perform optimization.
+            PhysicalRel physicalRel = optimize(context, rel);
+
+            // 6. Create plan.
+            return createImdgPlan(task.getSql(), parseResult.getParameterRowType(), physicalRel);
+        } else {
+            return jetSqlBackend.optimizeAndCreatePlan(context, rel);
+        }
+    }
+
+    private boolean isImdgOnly(RelNode rel) {
+        if (jetSqlBackend == null) {
+            // Jet not present on classpath - all queries are IMDG only
+            return true;
+        }
+
+        boolean[] imdgOnly = {true};
+
+        RelVisitor visitor = new RelVisitor() {
+            public void visit(RelNode p, int ordinal, RelNode parent) {
+                super.visit(p, ordinal, parent);
+                // DML is only supported by Jet for now, even though only local maps are involved
+                if (p instanceof TableModify) {
+                    imdgOnly[0] = false;
+                }
+
+                RelOptTable table = p.getTable();
+                if (table == null) {
+                    return;
+                }
+                HazelcastTable table1 = table.unwrap(HazelcastTable.class);
+                if (table1 == null) {
+                    return;
+                }
+                // If there's any object other than IMap or ReplicatedMap involved, it runs on Jet
+                if (!(table1.getTarget() instanceof AbstractMapTable)) {
+                    imdgOnly[0] = false;
+                }
+            }
+        };
+
+        visitor.go(rel);
+        return imdgOnly[0];
     }
 
     private SchemaPlan createSchemaPlan(SqlNode node) {
@@ -122,12 +174,12 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
     }
 
     private SchemaPlan createCreateExternalTablePlan(SqlCreateExternalTable sqlCreateTable) {
-        List<Field> fields = sqlCreateTable.columns()
-                                                   .map(column -> new Field(column.name(), column.type().type()))
-                                                   .collect(toList());
+        List<ExternalField> externalFields = sqlCreateTable.columns()
+                                                           .map(column -> new ExternalField(column.name(), column.type().type()))
+                                                           .collect(toList());
         Map<String, String> options = sqlCreateTable.options()
                                                             .collect(toMap(SqlOption::key, SqlOption::value));
-        ExternalTableSchema schema = new ExternalTableSchema(sqlCreateTable.name(), sqlCreateTable.type(), fields, options);
+        ExternalTable schema = new ExternalTable(sqlCreateTable.name(), sqlCreateTable.type(), externalFields, options);
 
         return new CreateExternalTablePlan(catalog, schema, sqlCreateTable.getReplace(), sqlCreateTable.ifNotExists());
     }

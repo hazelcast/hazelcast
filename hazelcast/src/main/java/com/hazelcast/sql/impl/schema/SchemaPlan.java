@@ -40,13 +40,13 @@ public interface SchemaPlan extends SqlPlan {
         // TODO: should it be provided from the outside to execute()?
         private final ExternalCatalog catalog;
 
-        private final ExternalTableSchema schema;
+        private final ExternalTable schema;
 
         private final boolean replace;
         private final boolean ifNotExists;
 
         public CreateExternalTablePlan(ExternalCatalog catalog,
-                                       ExternalTableSchema schema, boolean replace, boolean ifNotExists) {
+                                       ExternalTable schema, boolean replace, boolean ifNotExists) {
             this.catalog = catalog;
             this.schema = schema;
             this.replace = replace;

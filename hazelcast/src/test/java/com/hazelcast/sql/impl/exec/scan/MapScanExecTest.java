@@ -354,8 +354,8 @@ public class MapScanExecTest extends SqlTestSupport {
 
     /**
      * Simulates the case when partitions are migrated during query execution. Tp achieve this we load keys into local
-     * paritions in a way that iteration stops before the first partition is read. Then we start the new member, that
-     * chagnes the migration stamp. Then we try to read the remaining data.
+     * partitions in a way that iteration stops before the first partition is read. Then we start the new member, that
+     * changes the migration stamp. Then we try to read the remaining data.
      */
     @Test
     public void testConcurrentMigration() {

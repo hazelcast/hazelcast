@@ -22,6 +22,7 @@ import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -29,26 +30,26 @@ import java.util.Map;
 import java.util.Objects;
 
 /**
- * User defined table schema definition.
+ * User-defined table schema definition.
  */
-public class ExternalTableSchema implements DataSerializable {
+public class ExternalTable implements DataSerializable {
 
     private String name;
     private String type;
-    private List<Field> fields;
+    private List<ExternalField> externalFields;
     private Map<String, String> options;
 
     @SuppressWarnings("unused")
-    private ExternalTableSchema() {
+    private ExternalTable() {
     }
 
-    public ExternalTableSchema(String name,
-                               String type,
-                               List<Field> fields,
-                               Map<String, String> options) {
+    public ExternalTable(String name,
+                         String type,
+                         List<ExternalField> externalFields,
+                         Map<String, String> options) {
         this.name = name;
         this.type = type;
-        this.fields = fields;
+        this.externalFields = externalFields;
         this.options = options;
     }
 
@@ -60,8 +61,8 @@ public class ExternalTableSchema implements DataSerializable {
         return type;
     }
 
-    public List<Field> fields() {
-        return Collections.unmodifiableList(fields);
+    public List<ExternalField> fields() {
+        return Collections.unmodifiableList(externalFields);
     }
 
     public Map<String, String> options() {
@@ -72,7 +73,7 @@ public class ExternalTableSchema implements DataSerializable {
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeUTF(name);
         out.writeUTF(type);
-        out.writeObject(fields);
+        out.writeObject(externalFields);
         out.writeObject(options);
     }
 
@@ -80,22 +81,26 @@ public class ExternalTableSchema implements DataSerializable {
     public void readData(ObjectDataInput in) throws IOException {
         name = in.readUTF();
         type = in.readUTF();
-        fields = in.readObject();
+        externalFields = in.readObject();
         options = in.readObject();
     }
 
-    public static class Field implements DataSerializable {
+    // Serializable implemented because it's sent as a part of Jet job and that uses java serialization
+    public static class ExternalField implements DataSerializable, Serializable {
 
         private static final String NAME = "name";
         private static final String TYPE = "type";
 
+        // This generic structure is used to have binary compatibility if more fields are added in
+        // the future, like nullability, watermark info etc. Instances are stored as a part of the
+        // persisted schema.
         private Map<String, Object> properties;
 
-        @SuppressWarnings("unused")
-        private Field() {
+        @SuppressWarnings("unused") // used when deserializing
+        private ExternalField() {
         }
 
-        public Field(String name, QueryDataType type) {
+        public ExternalField(String name, QueryDataType type) {
             this.properties = new HashMap<>();
             this.properties.put(NAME, name);
             this.properties.put(TYPE, type);

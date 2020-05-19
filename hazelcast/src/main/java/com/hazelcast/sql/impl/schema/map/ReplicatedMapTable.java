@@ -22,20 +22,12 @@ import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.schema.TableStatistics;
 
 import java.util.List;
+import java.util.Map;
 
 import static com.hazelcast.sql.impl.QueryUtils.SCHEMA_NAME_REPLICATED;
+import static java.util.Collections.emptyMap;
 
 public class ReplicatedMapTable extends AbstractMapTable {
-
-    public ReplicatedMapTable(
-        String name,
-        List<TableField> fields,
-        TableStatistics statistics,
-        QueryTargetDescriptor keyDescriptor,
-        QueryTargetDescriptor valueDescriptor
-    ) {
-        this(SCHEMA_NAME_REPLICATED, name, fields, statistics, keyDescriptor, valueDescriptor);
-    }
 
     public ReplicatedMapTable(
             String schemaName,
@@ -43,12 +35,13 @@ public class ReplicatedMapTable extends AbstractMapTable {
             List<TableField> fields,
             TableStatistics statistics,
             QueryTargetDescriptor keyDescriptor,
-            QueryTargetDescriptor valueDescriptor
+            QueryTargetDescriptor valueDescriptor,
+            Map<String, String> ddlOptions
     ) {
-        super(schemaName, name, fields, statistics, keyDescriptor, valueDescriptor);
+        super(schemaName, name, fields, statistics, keyDescriptor, valueDescriptor, ddlOptions);
     }
 
     public ReplicatedMapTable(String name, QueryException exception) {
-        super(SCHEMA_NAME_REPLICATED, name, exception);
+        super(SCHEMA_NAME_REPLICATED, name, exception, emptyMap());
     }
 }

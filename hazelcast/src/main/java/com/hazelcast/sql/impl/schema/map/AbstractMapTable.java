@@ -23,6 +23,7 @@ import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.schema.TableStatistics;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * Table backed by IMap or ReplicatedMap.
@@ -39,9 +40,10 @@ public abstract class AbstractMapTable extends Table {
         List<TableField> fields,
         TableStatistics statistics,
         QueryTargetDescriptor keyDescriptor,
-        QueryTargetDescriptor valueDescriptor
+        QueryTargetDescriptor valueDescriptor,
+        Map<String, String> ddlOptions
     ) {
-        super(schemaName, name, fields, statistics);
+        super(schemaName, name, fields, statistics, ddlOptions);
 
         this.keyDescriptor = keyDescriptor;
         this.valueDescriptor = valueDescriptor;
@@ -49,8 +51,8 @@ public abstract class AbstractMapTable extends Table {
         exception = null;
     }
 
-    protected AbstractMapTable(String schemaName, String name, QueryException exception) {
-        super(schemaName, name, null, null);
+    protected AbstractMapTable(String schemaName, String name, QueryException exception, Map<String, String> ddlOptions) {
+        super(schemaName, name, null, null, ddlOptions);
 
         this.keyDescriptor = null;
         this.valueDescriptor = null;
