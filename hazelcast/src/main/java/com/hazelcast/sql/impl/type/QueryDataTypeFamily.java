@@ -27,7 +27,7 @@ import static com.hazelcast.sql.impl.type.QueryDataTypeUtils.TYPE_LEN_VARCHAR;
 public enum QueryDataTypeFamily {
     LATE(false, 0, TYPE_LEN_OBJECT),
     VARCHAR(false, 100, TYPE_LEN_VARCHAR),
-    BIT(false, 200, 1),
+    BOOLEAN(false, 200, 1),
     TINYINT(false, 300, 1),
     SMALLINT(false, 400, 2),
     INT(false, 500, 4),
@@ -38,7 +38,7 @@ public enum QueryDataTypeFamily {
     TIME(true, 1000, TYPE_LEN_TIME),
     DATE(true, 1100, TYPE_LEN_DATE),
     TIMESTAMP(true, 1200, TYPE_LEN_TIMESTAMP),
-    TIMESTAMP_WITH_TIMEZONE(true, 1300, TYPE_LEN_TIMESTAMP_WITH_OFFSET),
+    TIMESTAMP_WITH_TIME_ZONE(true, 1300, TYPE_LEN_TIMESTAMP_WITH_OFFSET),
     OBJECT(false, 1400, TYPE_LEN_OBJECT);
 
     private final boolean temporal;

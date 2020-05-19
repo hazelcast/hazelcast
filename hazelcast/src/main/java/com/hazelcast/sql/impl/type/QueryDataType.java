@@ -50,7 +50,7 @@ import java.io.IOException;
  * Data type represents a type of concrete expression which is based on some basic data type.
  */
 public class QueryDataType implements IdentifiedDataSerializable {
-    public static final int PRECISION_BIT = 1;
+    public static final int PRECISION_BOOLEAN = 1;
     public static final int PRECISION_TINYINT = 4;
     public static final int PRECISION_SMALLINT = 7;
     public static final int PRECISION_INT = 11;
@@ -62,7 +62,7 @@ public class QueryDataType implements IdentifiedDataSerializable {
     public static final QueryDataType VARCHAR = new QueryDataType(StringConverter.INSTANCE);
     public static final QueryDataType VARCHAR_CHARACTER = new QueryDataType(CharacterConverter.INSTANCE);
 
-    public static final QueryDataType BIT = new QueryDataType(BooleanConverter.INSTANCE, PRECISION_BIT);
+    public static final QueryDataType BOOLEAN = new QueryDataType(BooleanConverter.INSTANCE, PRECISION_BOOLEAN);
     public static final QueryDataType TINYINT = new QueryDataType(ByteConverter.INSTANCE, PRECISION_TINYINT);
     public static final QueryDataType SMALLINT = new QueryDataType(ShortConverter.INSTANCE, PRECISION_SMALLINT);
     public static final QueryDataType INT = new QueryDataType(IntegerConverter.INSTANCE, PRECISION_INT);

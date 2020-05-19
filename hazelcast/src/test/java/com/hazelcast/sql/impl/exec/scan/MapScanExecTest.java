@@ -177,7 +177,7 @@ public class MapScanExecTest extends SqlTestSupport {
         int id = 1;
         MapContainer mapContainer = mapProxy.getService().getMapServiceContext().getMapContainer(mapProxy.getName());
         List<String> fieldNames = Arrays.asList(QueryPath.KEY + ".val1", "val2", "val3");
-        List<QueryDataType> fieldTypes = Arrays.asList(QueryDataType.INT, QueryDataType.BIGINT, QueryDataType.BIT);
+        List<QueryDataType> fieldTypes = Arrays.asList(QueryDataType.INT, QueryDataType.BIGINT, QueryDataType.BOOLEAN);
         List<Integer> projects = Arrays.asList(0, 1);
         InternalSerializationService serializationService =
             (InternalSerializationService) mapProxy.getNodeEngine().getSerializationService();
@@ -616,7 +616,7 @@ public class MapScanExecTest extends SqlTestSupport {
 
         @Override
         public QueryDataType getType() {
-            return QueryDataType.BIT;
+            return QueryDataType.BOOLEAN;
         }
 
         @Override

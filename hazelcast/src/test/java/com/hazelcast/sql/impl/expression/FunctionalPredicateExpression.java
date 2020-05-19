@@ -42,7 +42,7 @@ public class FunctionalPredicateExpression implements Expression<Boolean> {
 
     @Override
     public QueryDataType getType() {
-        return QueryDataType.BIT;
+        return QueryDataType.BOOLEAN;
     }
 
     @Override

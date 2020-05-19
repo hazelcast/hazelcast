@@ -47,6 +47,9 @@ public final class SqlErrorCode {
     /** Map loading is not finished yet. */
     public static final int MAP_LOADING_IN_PROGRESS = 1007;
 
+    /** Generic parsing error. */
+    public static final int PARSING = 1008;
+
     /** An error with data conversion or transformation. */
     public static final int DATA_EXCEPTION = 2000;
 

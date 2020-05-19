@@ -24,7 +24,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.BIGINT;
-import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.BIT;
+import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.BOOLEAN;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.DATE;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.DECIMAL;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.DOUBLE;
@@ -35,7 +35,7 @@ import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.REAL;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.SMALLINT;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.TIME;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.TIMESTAMP;
-import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.TIMESTAMP_WITH_TIMEZONE;
+import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.TIMESTAMP_WITH_TIME_ZONE;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.TINYINT;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.VARCHAR;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.values;
@@ -52,7 +52,7 @@ public class QueryDataTypeFamilyTest {
                 case TIME:
                 case DATE:
                 case TIMESTAMP:
-                case TIMESTAMP_WITH_TIMEZONE:
+                case TIMESTAMP_WITH_TIME_ZONE:
                     assertTrue(typeFamily.isTemporal());
 
                     break;
@@ -65,7 +65,7 @@ public class QueryDataTypeFamilyTest {
 
     @Test
     public void testEstimatedSize() {
-        assertTrue(BIT.getEstimatedSize() <= TINYINT.getEstimatedSize());
+        assertTrue(BOOLEAN.getEstimatedSize() <= TINYINT.getEstimatedSize());
         assertTrue(TINYINT.getEstimatedSize() < SMALLINT.getEstimatedSize());
         assertTrue(SMALLINT.getEstimatedSize() < INT.getEstimatedSize());
         assertTrue(INT.getEstimatedSize() < BIGINT.getEstimatedSize());
@@ -76,8 +76,8 @@ public class QueryDataTypeFamilyTest {
     @Test
     public void testPrecedence() {
         assertTrue(LATE.getPrecedence() < VARCHAR.getPrecedence());
-        assertTrue(VARCHAR.getPrecedence() < BIT.getPrecedence());
-        assertTrue(BIT.getPrecedence() < TINYINT.getPrecedence());
+        assertTrue(VARCHAR.getPrecedence() < BOOLEAN.getPrecedence());
+        assertTrue(BOOLEAN.getPrecedence() < TINYINT.getPrecedence());
         assertTrue(TINYINT.getPrecedence() < SMALLINT.getPrecedence());
         assertTrue(SMALLINT.getPrecedence() < INT.getPrecedence());
         assertTrue(INT.getPrecedence() < BIGINT.getPrecedence());
@@ -87,7 +87,7 @@ public class QueryDataTypeFamilyTest {
         assertTrue(DOUBLE.getPrecedence() < TIME.getPrecedence());
         assertTrue(TIME.getPrecedence() < DATE.getPrecedence());
         assertTrue(DATE.getPrecedence() < TIMESTAMP.getPrecedence());
-        assertTrue(TIMESTAMP.getPrecedence() < TIMESTAMP_WITH_TIMEZONE.getPrecedence());
-        assertTrue(TIMESTAMP_WITH_TIMEZONE.getPrecedence() < OBJECT.getPrecedence());
+        assertTrue(TIMESTAMP.getPrecedence() < TIMESTAMP_WITH_TIME_ZONE.getPrecedence());
+        assertTrue(TIMESTAMP_WITH_TIME_ZONE.getPrecedence() < OBJECT.getPrecedence());
     }
 }
