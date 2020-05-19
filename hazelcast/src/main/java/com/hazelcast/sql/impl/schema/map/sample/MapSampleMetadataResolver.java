@@ -20,6 +20,8 @@ import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.FieldType;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.extract.GenericQueryTargetDescriptor;
 import com.hazelcast.sql.impl.extract.QueryPath;
@@ -41,7 +43,8 @@ public final class MapSampleMetadataResolver {
 
     private static final String METHOD_PREFIX_GET = "get";
     private static final String METHOD_PREFIX_IS = "is";
-    private static final String METHOD_GET_CLASS = "getClass";
+    private static final String METHOD_GET_FACTORY_ID = "getFactoryId";
+    private static final String METHOD_GET_CLASS_ID = "getClassId";
 
     private MapSampleMetadataResolver() {
         // No-op.
@@ -149,7 +152,7 @@ public final class MapSampleMetadataResolver {
         if (topType == QueryDataType.OBJECT) {
             // Add public getters.
             for (Method method : clazz.getMethods()) {
-                String methodName = extractAttributeNameFromMethod(method);
+                String methodName = extractAttributeNameFromMethod(clazz, method);
 
                 if (methodName == null) {
                     continue;
@@ -182,7 +185,7 @@ public final class MapSampleMetadataResolver {
         return new MapSampleMetadata(GenericQueryTargetDescriptor.INSTANCE, new LinkedHashMap<>(fields));
     }
 
-    private static String extractAttributeNameFromMethod(Method method) {
+    private static String extractAttributeNameFromMethod(Class<?> clazz, Method method) {
         // Exclude non-public getters.
         if (!Modifier.isPublic(method.getModifiers())) {
             return null;
@@ -207,9 +210,16 @@ public final class MapSampleMetadataResolver {
             return null;
         }
 
-        // Skip "Object.getClass"
-        if (methodName.equals(METHOD_GET_CLASS)) {
+        // Skip "getClass"
+        if (method.getDeclaringClass() == Object.class) {
             return null;
+        }
+
+        // Skip getFactoryId() and getClassId() from Portable and IdentifiedDataSerializable.
+        if (methodName.equals(METHOD_GET_FACTORY_ID) || methodName.equals(METHOD_GET_CLASS_ID)) {
+            if (IdentifiedDataSerializable.class.isAssignableFrom(clazz) || Portable.class.isAssignableFrom(clazz)) {
+                return null;
+            }
         }
 
         String fieldNameWithWrongCase;

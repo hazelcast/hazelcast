@@ -27,6 +27,7 @@ import com.hazelcast.sql.impl.SqlTestSupport;
 import com.hazelcast.sql.impl.extract.GenericQueryTargetDescriptor;
 import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.schema.TableField;
+import com.hazelcast.sql.impl.schema.map.MapSchemaTestSupport;
 import com.hazelcast.sql.impl.schema.map.MapTableField;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -66,7 +67,7 @@ import static org.junit.Assert.assertTrue;
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 @SuppressWarnings("unused")
-public class MapSampleMetadataResolverTest extends SqlTestSupport {
+public class MapSampleMetadataResolverTest extends MapSchemaTestSupport {
 
     private static final String PORTABLE_BOOLEAN = "_boolean";
     private static final String PORTABLE_BYTE = "_byte";
@@ -360,12 +361,6 @@ public class MapSampleMetadataResolverTest extends SqlTestSupport {
 
         assertEquals(new ArrayList<>(expectedFieldMap0.keySet()), new ArrayList<>(metadata.getFields().keySet()));
         assertEquals(expectedFieldMap0, metadata.getFields());
-    }
-
-    private static MapTableField field(String name, QueryDataType type, boolean key) {
-        QueryPath path = name.equals(KEY) && key ? KEY_PATH : name.equals(VALUE) && !key ? VALUE_PATH : new QueryPath(name, key);
-
-        return new MapTableField(name, type, path);
     }
 
     private void checkJavaTypes(Object object) {

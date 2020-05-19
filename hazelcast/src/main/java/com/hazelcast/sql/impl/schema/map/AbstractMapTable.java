@@ -80,15 +80,15 @@ public abstract class AbstractMapTable extends Table {
     }
 
     public QueryTargetDescriptor getKeyDescriptor() {
-        checkException();
-
         return keyDescriptor;
     }
 
     public QueryTargetDescriptor getValueDescriptor() {
-        checkException();
-
         return valueDescriptor;
+    }
+
+    public QueryException getException() {
+        return exception;
     }
 
     protected void checkException() {

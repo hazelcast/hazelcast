@@ -46,7 +46,10 @@ public abstract class AbstractMapTableResolver implements TableResolver {
     protected static List<TableField> mergeMapFields(Map<String, TableField> keyFields, Map<String, TableField> valueFields) {
         LinkedHashMap<String, TableField> res = new LinkedHashMap<>(keyFields);
 
-        res.putAll(valueFields);
+        // Value fields do not override key fields.
+        for (Map.Entry<String, TableField> valueFieldEntry : valueFields.entrySet()) {
+            res.putIfAbsent(valueFieldEntry.getKey(), valueFieldEntry.getValue());
+        }
 
         return new ArrayList<>(res.values());
     }
