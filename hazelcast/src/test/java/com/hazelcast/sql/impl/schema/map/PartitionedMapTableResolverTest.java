@@ -336,11 +336,11 @@ public class PartitionedMapTableResolverTest extends MapSchemaTestSupport {
         public int field1;
         public int field2;
 
-        public SerializableKey() {
+        private SerializableKey() {
             // No-op.
         }
 
-        public SerializableKey(int field1, int field2) {
+        private SerializableKey(int field1, int field2) {
             this.field1 = field1;
             this.field2 = field2;
         }
@@ -352,11 +352,11 @@ public class PartitionedMapTableResolverTest extends MapSchemaTestSupport {
         public long field2;
         public int field3;
 
-        public SerializableValue() {
+        private SerializableValue() {
             // No-op.
         }
 
-        public SerializableValue(long field2, int field3) {
+        private SerializableValue(long field2, int field3) {
             this.field2 = field2;
             this.field3 = field3;
         }
@@ -367,11 +367,11 @@ public class PartitionedMapTableResolverTest extends MapSchemaTestSupport {
         public int field1;
         public int field2;
 
-        public PortableKey() {
+        private PortableKey() {
             // No-op.
         }
 
-        public PortableKey(int field1, int field2) {
+        private PortableKey(int field1, int field2) {
             this.field1 = field1;
             this.field2 = field2;
         }
@@ -404,11 +404,11 @@ public class PartitionedMapTableResolverTest extends MapSchemaTestSupport {
         public long field2;
         public int field3;
 
-        public PortableValue() {
+        private PortableValue() {
             // No-op.
         }
 
-        public PortableValue(long field2, int field3) {
+        private PortableValue(long field2, int field3) {
             this.field2 = field2;
             this.field3 = field3;
         }

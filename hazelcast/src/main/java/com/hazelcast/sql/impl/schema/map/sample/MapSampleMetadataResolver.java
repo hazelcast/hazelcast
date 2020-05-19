@@ -186,41 +186,11 @@ public final class MapSampleMetadataResolver {
     }
 
     private static String extractAttributeNameFromMethod(Class<?> clazz, Method method) {
-        // Exclude non-public getters.
-        if (!Modifier.isPublic(method.getModifiers())) {
-            return null;
-        }
-
-        // Exclude static getters.
-        if (Modifier.isStatic(method.getModifiers())) {
-            return null;
-        }
-
-        // Exclude void return type.
-        Class<?> returnType = method.getReturnType();
-
-        if (returnType == void.class || returnType == Void.class) {
+        if (skipMethod(clazz, method)) {
             return null;
         }
 
         String methodName = method.getName();
-
-        // Skip methods with parameters.
-        if (method.getParameterCount() != 0) {
-            return null;
-        }
-
-        // Skip "getClass"
-        if (method.getDeclaringClass() == Object.class) {
-            return null;
-        }
-
-        // Skip getFactoryId() and getClassId() from Portable and IdentifiedDataSerializable.
-        if (methodName.equals(METHOD_GET_FACTORY_ID) || methodName.equals(METHOD_GET_CLASS_ID)) {
-            if (IdentifiedDataSerializable.class.isAssignableFrom(clazz) || Portable.class.isAssignableFrom(clazz)) {
-                return null;
-            }
-        }
 
         String fieldNameWithWrongCase;
 
@@ -238,5 +208,45 @@ public final class MapSampleMetadataResolver {
         }
 
         return Character.toLowerCase(fieldNameWithWrongCase.charAt(0)) + fieldNameWithWrongCase.substring(1);
+    }
+
+    private static boolean skipMethod(Class<?> clazz, Method method) {
+        // Exclude non-public getters.
+        if (!Modifier.isPublic(method.getModifiers())) {
+            return true;
+        }
+
+        // Exclude static getters.
+        if (Modifier.isStatic(method.getModifiers())) {
+            return true;
+        }
+
+        // Exclude void return type.
+        Class<?> returnType = method.getReturnType();
+
+        if (returnType == void.class || returnType == Void.class) {
+            return true;
+        }
+
+        String methodName = method.getName();
+
+        // Skip methods with parameters.
+        if (method.getParameterCount() != 0) {
+            return true;
+        }
+
+        // Skip "getClass"
+        if (method.getDeclaringClass() == Object.class) {
+            return true;
+        }
+
+        // Skip getFactoryId() and getClassId() from Portable and IdentifiedDataSerializable.
+        if (methodName.equals(METHOD_GET_FACTORY_ID) || methodName.equals(METHOD_GET_CLASS_ID)) {
+            if (IdentifiedDataSerializable.class.isAssignableFrom(clazz) || Portable.class.isAssignableFrom(clazz)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

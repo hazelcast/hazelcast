@@ -23,9 +23,7 @@ import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.sql.SqlErrorCode;
 import com.hazelcast.sql.impl.QueryException;
-import com.hazelcast.sql.impl.SqlTestSupport;
 import com.hazelcast.sql.impl.extract.GenericQueryTargetDescriptor;
-import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.schema.map.MapSchemaTestSupport;
 import com.hazelcast.sql.impl.schema.map.MapTableField;
@@ -54,9 +52,7 @@ import java.util.LinkedHashMap;
 import java.util.TreeMap;
 
 import static com.hazelcast.sql.impl.extract.QueryPath.KEY;
-import static com.hazelcast.sql.impl.extract.QueryPath.KEY_PATH;
 import static com.hazelcast.sql.impl.extract.QueryPath.VALUE;
-import static com.hazelcast.sql.impl.extract.QueryPath.VALUE_PATH;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
@@ -565,9 +561,10 @@ public class MapSampleMetadataResolverTest extends MapSchemaTestSupport {
             return (short) 0;
         }
 
-        public Short getFShortBoxed () {
+        public Short getFShortBoxed() {
             return null;
         }
+
         public int getFInt() {
             return 0;
         }
