@@ -234,7 +234,12 @@ public class SerializationServiceV1 extends AbstractSerializationService {
             registerConstant(PriorityQueue.class, new PriorityQueueStreamSerializer());
             registerConstant(DelayQueue.class, new DelayQueueStreamSerializer());
             registerConstant(SynchronousQueue.class, new SynchronousQueueStreamSerializer());
-            //registerConstant(LinkedTransferQueue.class, new LinkedTransferQueueStreamSerializer());
+            try {
+                registerConstant(Class.forName("java.util.concurrent.LinkedTransferQueue"),
+                        new LinkedTransferQueueStreamSerializer());
+            } catch (ClassNotFoundException e) {
+                // running on JDK6, continue
+            }
         }
 
         if (!isCompatibility) {
