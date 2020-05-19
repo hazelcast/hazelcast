@@ -78,6 +78,7 @@ Apache License, Version 2.0
   Jackson:1.9.13
   Data Mapper for Jackson:1.9.13
   LZ4 and xxHash:1.5.0
+  SnakeYAML Engine:1.0
   snappy-java:1.1.1.3
   AWS Java SDK :: Annotations:2.8.3
   AWS Java SDK :: HTTP Clients :: Apache:2.8.3
