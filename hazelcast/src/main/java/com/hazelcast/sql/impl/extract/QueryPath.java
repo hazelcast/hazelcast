@@ -18,8 +18,9 @@ package com.hazelcast.sql.impl.extract;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.sql.impl.QueryException;
+import com.hazelcast.sql.impl.SqlDataSerializerHook;
 
 import java.io.IOException;
 
@@ -29,7 +30,7 @@ import static com.hazelcast.query.QueryConstants.THIS_ATTRIBUTE_NAME;
 /**
  * Represent a path to the attribute within a key-value pair.
  */
-public final class QueryPath implements DataSerializable {
+public final class QueryPath implements IdentifiedDataSerializable {
 
     public static final String KEY = KEY_ATTRIBUTE_NAME.value();
     public static final String VALUE = THIS_ATTRIBUTE_NAME.value();
@@ -102,6 +103,16 @@ public final class QueryPath implements DataSerializable {
 
     private static QueryException badPathException(String path) {
         throw QueryException.error("Field cannot be empty: " + path);
+    }
+
+    @Override
+    public int getFactoryId() {
+        return SqlDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getClassId() {
+        return SqlDataSerializerHook.QUERY_PATH;
     }
 
     @Override
