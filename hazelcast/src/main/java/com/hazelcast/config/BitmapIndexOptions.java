@@ -16,6 +16,7 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.internal.JavaDocDefine;
 import com.hazelcast.internal.config.ConfigDataSerializerHook;
 import com.hazelcast.internal.util.StringUtil;
 import com.hazelcast.nio.ObjectDataInput;
@@ -108,6 +109,7 @@ public class BitmapIndexOptions implements IdentifiedDataSerializable {
             throw new IllegalArgumentException("unexpected unique key transformation: " + name);
         }
 
+        @JavaDocDefine
         public static UniqueKeyTransformation fromId(int id) {
             for (UniqueKeyTransformation transformation : UniqueKeyTransformation.values()) {
                 if (transformation.id == id) {

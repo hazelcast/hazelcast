@@ -16,6 +16,8 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.internal.JavaDocClear;
+
 /**
  * Commons for split brain protection config builders.
  */
@@ -31,11 +33,13 @@ public abstract class SplitBrainProtectionConfigBuilder {
      */
     protected boolean enabled = true;
 
+    @JavaDocClear
     public SplitBrainProtectionConfigBuilder enabled(boolean enabled) {
         this.enabled = enabled;
         return this;
     }
 
+    @JavaDocClear
     public SplitBrainProtectionConfigBuilder withSplitBrainProtectionSize(int minimumClusterSize) {
         this.minimumClusterSize = minimumClusterSize;
         return this;

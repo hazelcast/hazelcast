@@ -30,8 +30,6 @@ import com.hazelcast.config.CacheSimpleEntryListenerConfig;
 import com.hazelcast.config.CardinalityEstimatorConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.CredentialsFactoryConfig;
-import com.hazelcast.config.WanBatchPublisherConfig;
-import com.hazelcast.config.WanCustomPublisherConfig;
 import com.hazelcast.config.DurableExecutorConfig;
 import com.hazelcast.config.EncryptionAtRestConfig;
 import com.hazelcast.config.EndpointConfig;
@@ -103,7 +101,9 @@ import com.hazelcast.config.SymmetricEncryptionConfig;
 import com.hazelcast.config.TcpIpConfig;
 import com.hazelcast.config.TopicConfig;
 import com.hazelcast.config.VaultSecureStoreConfig;
+import com.hazelcast.config.WanBatchPublisherConfig;
 import com.hazelcast.config.WanConsumerConfig;
+import com.hazelcast.config.WanCustomPublisherConfig;
 import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.config.WanReplicationRef;
 import com.hazelcast.config.WanSyncConfig;
@@ -187,6 +187,7 @@ import static org.springframework.util.Assert.isTrue;
         "WeakerAccess"})
 public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDefinitionParser {
 
+    @Override
     public AbstractBeanDefinition parseInternal(Element element, ParserContext parserContext) {
         SpringXmlConfigBuilder springXmlConfigBuilder = new SpringXmlConfigBuilder(parserContext);
         springXmlConfigBuilder.handleConfig(element);

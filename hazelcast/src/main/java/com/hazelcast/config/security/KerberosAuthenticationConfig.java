@@ -16,12 +16,14 @@
 
 package com.hazelcast.config.security;
 
+import com.hazelcast.config.LoginModuleConfig;
+import com.hazelcast.config.LoginModuleConfig.LoginModuleUsage;
+import com.hazelcast.internal.JavaDocDefine;
+
 import java.util.Objects;
 import java.util.Properties;
 
-import com.hazelcast.config.LoginModuleConfig;
-import com.hazelcast.config.LoginModuleConfig.LoginModuleUsage;
-
+@JavaDocDefine
 public class KerberosAuthenticationConfig extends AbstractClusterLoginConfig<KerberosAuthenticationConfig> {
 
     private Boolean relaxFlagsCheck;

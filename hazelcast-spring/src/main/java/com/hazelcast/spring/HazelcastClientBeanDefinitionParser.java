@@ -141,7 +141,7 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
             configBuilder.addPropertyValue("reliableTopicConfigMap", reliableTopicConfigMap);
         }
 
-        public AbstractBeanDefinition handleClient(Node rootNode) {
+        private AbstractBeanDefinition handleClient(Node rootNode) {
             AbstractBeanDefinition configBean = createConfigBean(rootNode);
             builder.addConstructorArgValue(configBean);
             return builder.getBeanDefinition();

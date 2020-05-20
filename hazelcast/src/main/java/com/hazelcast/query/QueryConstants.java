@@ -16,6 +16,8 @@
 
 package com.hazelcast.query;
 
+import com.hazelcast.internal.JavaDocClear;
+
 /**
  * Contains constants for Query.
  */
@@ -37,6 +39,7 @@ public enum QueryConstants {
         this.value = value;
     }
 
+    @JavaDocClear
     public String value() {
         return value;
     }

@@ -30,6 +30,7 @@ import com.hazelcast.cp.CPGroupId;
 import com.hazelcast.cp.internal.RaftGroupId;
 import com.hazelcast.cp.internal.session.AbstractProxySessionManager;
 import com.hazelcast.cp.internal.session.SessionResponse;
+import com.hazelcast.internal.JavaDocClear;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 
@@ -95,6 +96,7 @@ public class ClientProxySessionManager extends AbstractProxySessionManager {
         return new ClientDelegatingFuture<>(future, client.getSerializationService(), CLOSE_SESSION_RESPONSE_DECODER);
     }
 
+    @JavaDocClear
     public void shutdownAndAwait() {
         Map<RaftGroupId, InternalCompletableFuture<Object>> futures = super.shutdown();
 

@@ -37,7 +37,7 @@ public class ExportPackageViewer {
         String data = reader.readLine();
 
         List<String> strings = ElementParser.parseDelimitedString(data, ',');
-        Set<String> packages = new HashSet<String>();
+        Set<String> packages = new HashSet<>();
         for (String entry : strings) {
             int usesIndex = entry.indexOf(";");
             if (usesIndex != -1) {

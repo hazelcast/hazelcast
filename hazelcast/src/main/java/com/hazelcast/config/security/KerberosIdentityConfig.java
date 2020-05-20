@@ -16,11 +16,13 @@
 
 package com.hazelcast.config.security;
 
-import java.util.Objects;
-
 import com.hazelcast.config.CredentialsFactoryConfig;
+import com.hazelcast.internal.JavaDocDefine;
 import com.hazelcast.security.ICredentialsFactory;
 
+import java.util.Objects;
+
+@JavaDocDefine
 public class KerberosIdentityConfig implements IdentityConfig {
 
     private final CredentialsFactoryConfig factoryConfig = new CredentialsFactoryConfig(
@@ -70,7 +72,7 @@ public class KerberosIdentityConfig implements IdentityConfig {
     @Override
     public IdentityConfig copy() {
         return new KerberosIdentityConfig().setRealm(getRealm()).setSecurityRealm(getSecurityRealm())
-                .setServiceNamePrefix(getServiceNamePrefix()).setSpn(getSpn());
+                                           .setServiceNamePrefix(getServiceNamePrefix()).setSpn(getSpn());
     }
 
     @Override

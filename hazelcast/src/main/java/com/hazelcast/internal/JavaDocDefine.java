@@ -14,29 +14,26 @@
  * limitations under the License.
  */
 
-package com.hazelcast.spring.context;
+package com.hazelcast.internal;
 
-import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
-import java.lang.annotation.Inherited;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Annotates a class for injection of Spring dependencies.
+ * Annotation to be used to relax checkstyle until the proper JavaDoc is
+ * added to the annotated places.
+ * <p/>
+ * NOTE: This annotation is introduced only to enable turning on checks
+ * for missing method annotations. This annotation is planned to be
+ * removed eventually. If you see this annotation in a class you're
+ * touching, please add the proper JavaDoc and remove the annotation.
+ * <p/>
+ * DO NOT ADD THIS ANNOTATION TO ANY METHOD OR TYPE
+ * <p/>
+ * For straightforward JavaDoc, consider using {@link JavaDocClear}.
+ *
+ * @see JavaDocClear
  */
-@Target(ElementType.TYPE)
-@Retention(RetentionPolicy.RUNTIME)
-@Inherited
-@Documented
-public @interface SpringAware {
-
-    /**
-     * Returns the name of the bean with which the annotated bean will
-     * be autowired.
-     *
-     * @return the name of the bean
-     */
-    String beanName() default "";
+@Target({ElementType.TYPE, ElementType.METHOD})
+public @interface JavaDocDefine {
 }

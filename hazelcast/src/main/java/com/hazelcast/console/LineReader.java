@@ -16,10 +16,13 @@
 
 package com.hazelcast.console;
 
+import com.hazelcast.internal.JavaDocClear;
+
 /**
  * Reads a line of input.
  */
 public interface LineReader {
 
+    @JavaDocClear
     String readLine() throws Exception;
 }

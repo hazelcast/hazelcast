@@ -32,6 +32,7 @@ import com.hazelcast.config.security.RealmConfig;
 import com.hazelcast.config.security.TlsAuthenticationConfig;
 import com.hazelcast.config.security.TokenIdentityConfig;
 import com.hazelcast.config.security.UsernamePasswordIdentityConfig;
+import com.hazelcast.internal.JavaDocClear;
 import com.hazelcast.internal.config.AliasedDiscoveryConfigUtils;
 import com.hazelcast.internal.util.CollectionUtil;
 import com.hazelcast.internal.util.MapUtil;
@@ -1769,17 +1770,20 @@ public class ConfigXmlGenerator {
             this.xml = xml;
         }
 
+        @JavaDocClear
         public XmlGenerator open(String name, Object... attributes) {
             appendOpenNode(xml, name, attributes);
             openNodes.addLast(name);
             return this;
         }
 
+        @JavaDocClear
         public XmlGenerator node(String name, Object contents, Object... attributes) {
             appendNode(xml, name, contents, attributes);
             return this;
         }
 
+        @JavaDocClear
         public XmlGenerator nodeIfContents(String name, Object contents, Object... attributes) {
             if (contents != null) {
                 appendNode(xml, name, contents, attributes);
@@ -1787,11 +1791,13 @@ public class ConfigXmlGenerator {
             return this;
         }
 
+        @JavaDocClear
         public XmlGenerator close() {
             appendCloseNode(xml, openNodes.pollLast());
             return this;
         }
 
+        @JavaDocClear
         public XmlGenerator appendLabels(Set<String> labels) {
             if (!labels.isEmpty()) {
                 open("client-labels");
@@ -1803,6 +1809,7 @@ public class ConfigXmlGenerator {
             return this;
         }
 
+        @JavaDocClear
         public XmlGenerator appendProperties(Properties props) {
             if (!props.isEmpty()) {
                 open("properties");
@@ -1815,6 +1822,7 @@ public class ConfigXmlGenerator {
             return this;
         }
 
+        @JavaDocClear
         public XmlGenerator appendProperties(Map<String, ? extends Comparable> props) {
             if (!MapUtil.isNullOrEmpty(props)) {
                 open("properties");

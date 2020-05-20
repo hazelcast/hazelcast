@@ -16,12 +16,12 @@
 
 package com.hazelcast.spring.cache;
 
-import com.hazelcast.map.IMap;
 import com.hazelcast.core.OperationTimeoutException;
+import com.hazelcast.internal.util.ExceptionUtil;
+import com.hazelcast.map.IMap;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
-import com.hazelcast.internal.util.ExceptionUtil;
 import org.springframework.cache.Cache;
 import org.springframework.cache.support.SimpleValueWrapper;
 
@@ -141,6 +141,7 @@ public class HazelcastCache implements Cache {
         map.clear();
     }
 
+    @Override
     public ValueWrapper putIfAbsent(Object key, Object value) {
         Object result = map.putIfAbsent(key, toStoreValue(value));
         return result != null ? new SimpleValueWrapper(fromStoreValue(result)) : null;

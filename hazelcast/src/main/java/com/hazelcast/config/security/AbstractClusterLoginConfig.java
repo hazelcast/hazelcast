@@ -16,11 +16,14 @@
 
 package com.hazelcast.config.security;
 
-import static com.hazelcast.internal.util.StringUtil.isNullOrEmpty;
+import com.hazelcast.internal.JavaDocDefine;
 
 import java.util.Objects;
 import java.util.Properties;
 
+import static com.hazelcast.internal.util.StringUtil.isNullOrEmpty;
+
+@JavaDocDefine
 public abstract class AbstractClusterLoginConfig<T extends AbstractClusterLoginConfig<T>> implements AuthenticationConfig {
 
     private Boolean skipIdentity;

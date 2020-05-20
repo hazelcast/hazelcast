@@ -252,6 +252,7 @@ public class TopicConfig implements IdentifiedDataSerializable, NamedConfig {
         return result;
     }
 
+    @Override
     public String toString() {
         return "TopicConfig [name=" + name + ", globalOrderingEnabled=" + globalOrderingEnabled
                 + ", multiThreadingEnabled=" + multiThreadingEnabled + ", statisticsEnabled="
