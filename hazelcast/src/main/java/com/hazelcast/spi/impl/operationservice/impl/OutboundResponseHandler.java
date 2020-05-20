@@ -36,7 +36,6 @@ import static com.hazelcast.nio.Bits.INT_SIZE_IN_BYTES;
 import static com.hazelcast.nio.Bits.writeInt;
 import static com.hazelcast.nio.Bits.writeIntB;
 import static com.hazelcast.nio.Bits.writeLong;
-import static com.hazelcast.nio.Packet.FLAG_3_12;
 import static com.hazelcast.nio.Packet.FLAG_OP_RESPONSE;
 import static com.hazelcast.nio.Packet.FLAG_URGENT;
 import static com.hazelcast.nio.Packet.Type.OPERATION;
@@ -201,7 +200,7 @@ public final class OutboundResponseHandler implements OperationResponseHandler {
     private Packet newResponsePacket(byte[] bytes, boolean urgent) {
         Packet packet = new Packet(bytes, -1)
                 .setPacketType(OPERATION)
-                .raiseFlags(FLAG_3_12 | FLAG_OP_RESPONSE);
+                .raiseFlags(FLAG_OP_RESPONSE);
 
         if (urgent) {
             packet.raiseFlags(FLAG_URGENT);
