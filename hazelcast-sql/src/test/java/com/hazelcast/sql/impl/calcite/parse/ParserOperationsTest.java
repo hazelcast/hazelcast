@@ -25,7 +25,6 @@ import com.hazelcast.sql.impl.schema.TableResolver;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -39,7 +38,6 @@ import static org.junit.Assert.fail;
 /**
  * Tests for unsupported operations in parser.
  */
-@Ignore
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class ParserOperationsTest {
@@ -73,54 +71,6 @@ public class ParserOperationsTest {
         checkSuccess("SELECT a, b FROM t WHERE a < b");
         checkSuccess("SELECT a, b FROM t WHERE a <= b");
         checkSuccess("SELECT a, b FROM t WHERE a IN (1, 2)");
-    }
-
-    @Test
-    public void testUnsupportedSelectScalar() {
-        checkFailure(
-            "SELECT (SELECT a FROM t) FROM t",
-            "SCALAR QUERY is not supported"
-        );
-    }
-
-    @Test
-    public void testUnsupportedWhereScalar() {
-        checkFailure(
-            "SELECT a, b FROM t WHERE a > (SELECT a FROM t)",
-            "SCALAR QUERY is not supported"
-        );
-    }
-
-    @Test
-    public void testUnsupportedOrderBy() {
-        checkFailure(
-            "SELECT a FROM t ORDER BY a",
-            "ORDER BY is not supported"
-        );
-    }
-
-    @Test
-    public void testUnsupportedGroupBy() {
-        checkFailure(
-            "SELECT a FROM t GROUP BY a",
-            "GROUP BY is not supported"
-        );
-    }
-
-    @Test
-    public void testUnsupportedAggregate() {
-        checkFailure(
-            "SELECT SUM(a) FROM t",
-            "SUM is not supported"
-        );
-    }
-
-    @Test
-    public void testUnsupportedJoin() {
-        checkFailure(
-            "SELECT t1.a, t2.a FROM t t1 JOIN t t2 ON t1.a = t2.a",
-            "JOIN is not supported"
-        );
     }
 
     private static void checkSuccess(String sql) {

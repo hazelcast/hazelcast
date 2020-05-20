@@ -16,6 +16,7 @@
 
 package com.hazelcast.sql.impl.calcite.parse;
 
+import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlOperatorTable;
 import org.apache.calcite.runtime.CalciteContextException;
 import org.apache.calcite.runtime.Resources;
 import org.apache.calcite.sql.SqlCall;
@@ -27,19 +28,143 @@ import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlLiteral;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.SqlNodeList;
+import org.apache.calcite.sql.SqlOperator;
 import org.apache.calcite.sql.SqlSelect;
 import org.apache.calcite.sql.SqlUtil;
+import org.apache.calcite.sql.fun.SqlStdOperatorTable;
 import org.apache.calcite.sql.type.SqlTypeName;
 import org.apache.calcite.sql.util.SqlVisitor;
 import org.apache.calcite.sql.validate.SqlValidatorException;
 
+import java.util.HashSet;
+import java.util.Set;
+
 /**
  * Visitor that throws exceptions for unsupported SQL features.
  */
+@SuppressWarnings("checkstyle:ExecutableStatementCount")
 public final class UnsupportedOperationVisitor implements SqlVisitor<Void> {
 
     public static final UnsupportedOperationVisitor INSTANCE = new UnsupportedOperationVisitor();
+
+    /** Error messages. */
     private static final Resource RESOURCE = Resources.create(Resource.class);
+
+    /** A set of {@link SqlKind} values that are supported without any additional validation. */
+    private static final Set<SqlKind> SUPPORTED_KINDS;
+
+    /** A set of supported operators for functions. */
+    private static final Set<SqlOperator> SUPPORTED_OPERATORS;
+
+    static {
+        // We define all supported features explicitly instead of getting them from predefined sets of SqlKind class.
+        // This is needed to ensure that we do not miss any unsupported features when something is added to a new version
+        // of Apache Calcite.
+        SUPPORTED_KINDS = new HashSet<>();
+
+        // Arithmetics
+        SUPPORTED_KINDS.add(SqlKind.PLUS);
+        SUPPORTED_KINDS.add(SqlKind.MINUS);
+        SUPPORTED_KINDS.add(SqlKind.TIMES);
+        SUPPORTED_KINDS.add(SqlKind.DIVIDE);
+        SUPPORTED_KINDS.add(SqlKind.MOD);
+        SUPPORTED_KINDS.add(SqlKind.MINUS_PREFIX);
+
+        // Boolean logic predicates
+        SUPPORTED_KINDS.add(SqlKind.AND);
+        SUPPORTED_KINDS.add(SqlKind.OR);
+        SUPPORTED_KINDS.add(SqlKind.NOT);
+
+        // "IS" predicates
+        SUPPORTED_KINDS.add(SqlKind.IS_NULL);
+        SUPPORTED_KINDS.add(SqlKind.IS_NOT_NULL);
+        SUPPORTED_KINDS.add(SqlKind.IS_FALSE);
+        SUPPORTED_KINDS.add(SqlKind.IS_NOT_FALSE);
+        SUPPORTED_KINDS.add(SqlKind.IS_TRUE);
+        SUPPORTED_KINDS.add(SqlKind.IS_NOT_TRUE);
+
+        // Comparisons predicates
+        SUPPORTED_KINDS.add(SqlKind.EQUALS);
+        SUPPORTED_KINDS.add(SqlKind.NOT_EQUALS);
+        SUPPORTED_KINDS.add(SqlKind.LESS_THAN);
+        SUPPORTED_KINDS.add(SqlKind.GREATER_THAN);
+        SUPPORTED_KINDS.add(SqlKind.GREATER_THAN_OR_EQUAL);
+        SUPPORTED_KINDS.add(SqlKind.LESS_THAN_OR_EQUAL);
+
+        // Existential scalar subqueries
+        SUPPORTED_KINDS.add(SqlKind.EXISTS);
+        SUPPORTED_KINDS.add(SqlKind.SOME);
+        SUPPORTED_KINDS.add(SqlKind.ALL);
+        SUPPORTED_KINDS.add(SqlKind.IN);
+        SUPPORTED_KINDS.add(SqlKind.NOT_IN);
+
+        // Aggregates
+        SUPPORTED_KINDS.add(SqlKind.SUM);
+        SUPPORTED_KINDS.add(SqlKind.COUNT);
+        SUPPORTED_KINDS.add(SqlKind.MIN);
+        SUPPORTED_KINDS.add(SqlKind.MAX);
+        SUPPORTED_KINDS.add(SqlKind.AVG);
+        SUPPORTED_KINDS.add(SqlKind.SINGLE_VALUE);
+
+        // Miscellaneous
+        SUPPORTED_KINDS.add(SqlKind.AS);
+        SUPPORTED_KINDS.add(SqlKind.BETWEEN);
+        SUPPORTED_KINDS.add(SqlKind.CASE);
+        SUPPORTED_KINDS.add(SqlKind.CAST);
+        SUPPORTED_KINDS.add(SqlKind.CEIL);
+        SUPPORTED_KINDS.add(SqlKind.DESCENDING);
+        SUPPORTED_KINDS.add(SqlKind.EXTRACT);
+        SUPPORTED_KINDS.add(SqlKind.FLOOR);
+        SUPPORTED_KINDS.add(SqlKind.LIKE);
+        SUPPORTED_KINDS.add(SqlKind.POSITION);
+        SUPPORTED_KINDS.add(SqlKind.TIMESTAMP_ADD);
+
+        // Supported operators
+        SUPPORTED_OPERATORS = new HashSet<>();
+
+        // Concat
+        SUPPORTED_OPERATORS.add(SqlStdOperatorTable.CONCAT);
+
+        // Math
+        SUPPORTED_OPERATORS.add(SqlStdOperatorTable.COS);
+        SUPPORTED_OPERATORS.add(SqlStdOperatorTable.SIN);
+        SUPPORTED_OPERATORS.add(SqlStdOperatorTable.TAN);
+        SUPPORTED_OPERATORS.add(SqlStdOperatorTable.COT);
+        SUPPORTED_OPERATORS.add(SqlStdOperatorTable.ACOS);
+        SUPPORTED_OPERATORS.add(SqlStdOperatorTable.ASIN);
+        SUPPORTED_OPERATORS.add(SqlStdOperatorTable.ATAN);
+        SUPPORTED_OPERATORS.add(SqlStdOperatorTable.ATAN2);
+        SUPPORTED_OPERATORS.add(SqlStdOperatorTable.SQRT);
+        SUPPORTED_OPERATORS.add(SqlStdOperatorTable.EXP);
+        SUPPORTED_OPERATORS.add(SqlStdOperatorTable.LN);
+        SUPPORTED_OPERATORS.add(SqlStdOperatorTable.LOG10);
+        SUPPORTED_OPERATORS.add(SqlStdOperatorTable.RAND);
+        SUPPORTED_OPERATORS.add(SqlStdOperatorTable.ABS);
+        SUPPORTED_OPERATORS.add(SqlStdOperatorTable.PI);
+        SUPPORTED_OPERATORS.add(SqlStdOperatorTable.SIGN);
+        SUPPORTED_OPERATORS.add(SqlStdOperatorTable.POWER);
+        SUPPORTED_OPERATORS.add(SqlStdOperatorTable.DEGREES);
+        SUPPORTED_OPERATORS.add(SqlStdOperatorTable.RADIANS);
+        SUPPORTED_OPERATORS.add(SqlStdOperatorTable.ROUND);
+        SUPPORTED_OPERATORS.add(SqlStdOperatorTable.TRUNCATE);
+
+        // Strings
+        SUPPORTED_OPERATORS.add(SqlStdOperatorTable.CHAR_LENGTH);
+        SUPPORTED_OPERATORS.add(SqlStdOperatorTable.CHARACTER_LENGTH);
+        SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.LENGTH);
+        SUPPORTED_OPERATORS.add(SqlStdOperatorTable.UPPER);
+        SUPPORTED_OPERATORS.add(SqlStdOperatorTable.LOWER);
+        SUPPORTED_OPERATORS.add(SqlStdOperatorTable.INITCAP);
+        SUPPORTED_OPERATORS.add(SqlStdOperatorTable.ASCII);
+        SUPPORTED_OPERATORS.add(SqlStdOperatorTable.REPLACE);
+        SUPPORTED_OPERATORS.add(SqlStdOperatorTable.SUBSTRING);
+
+        // Dates
+        SUPPORTED_OPERATORS.add(SqlStdOperatorTable.CURRENT_DATE);
+        SUPPORTED_OPERATORS.add(SqlStdOperatorTable.CURRENT_TIMESTAMP);
+        SUPPORTED_OPERATORS.add(SqlStdOperatorTable.LOCALTIMESTAMP);
+        SUPPORTED_OPERATORS.add(SqlStdOperatorTable.LOCALTIME);
+    }
 
     private UnsupportedOperationVisitor() {
         // No-op.
@@ -81,19 +206,46 @@ public final class UnsupportedOperationVisitor implements SqlVisitor<Void> {
 
     @Override
     public Void visit(SqlDynamicParam param) {
-        throw error(param, RESOURCE.custom("Parameters are not supported"));
+        return null;
     }
 
+    @SuppressWarnings("checkstyle:CyclomaticComplexity")
     @Override
     public Void visit(SqlLiteral literal) {
         SqlTypeName typeName = literal.getTypeName();
 
         switch (typeName) {
+            case BOOLEAN:
             case TINYINT:
             case SMALLINT:
             case INTEGER:
             case BIGINT:
             case DECIMAL:
+            case REAL:
+            case FLOAT:
+            case DOUBLE:
+            case CHAR:
+            case VARCHAR:
+            case DATE:
+            case TIME:
+            case TIME_WITH_LOCAL_TIME_ZONE:
+            case TIMESTAMP:
+            case TIMESTAMP_WITH_LOCAL_TIME_ZONE:
+            case INTERVAL_YEAR:
+            case INTERVAL_MONTH:
+            case INTERVAL_YEAR_MONTH:
+            case INTERVAL_DAY:
+            case INTERVAL_DAY_HOUR:
+            case INTERVAL_DAY_MINUTE:
+            case INTERVAL_DAY_SECOND:
+            case INTERVAL_HOUR:
+            case INTERVAL_HOUR_MINUTE:
+            case INTERVAL_HOUR_SECOND:
+            case INTERVAL_MINUTE:
+            case INTERVAL_MINUTE_SECOND:
+            case INTERVAL_SECOND:
+            case SYMBOL:
+            case NULL:
                 return null;
 
             default:
@@ -109,7 +261,7 @@ public final class UnsupportedOperationVisitor implements SqlVisitor<Void> {
     private void processCall(SqlCall call) {
         SqlKind kind = call.getKind();
 
-        if (SqlKind.COMPARISON.contains(kind)) {
+        if (SUPPORTED_KINDS.contains(kind)) {
             return;
         }
 
@@ -119,7 +271,29 @@ public final class UnsupportedOperationVisitor implements SqlVisitor<Void> {
 
                 return;
 
-            case AS:
+            case SCALAR_QUERY:
+                // TODO: Perhaps we may add it to SUPPORTED_KINDS since we always decorrelate. Double-check it when working
+                //  on subqueries.
+                return;
+
+            case JOIN:
+                // TODO: Proper validation for JOIN (e.g. outer, theta, etc)!
+                return;
+
+            case CREATE_TABLE:
+            case COLUMN_DECL:
+            case DROP_TABLE:
+                // TODO: Proper validation for DDL
+                return;
+
+            case INSERT:
+                // TODO: Proper validation for DML
+                return;
+
+            case OTHER:
+            case OTHER_FUNCTION:
+                processOther(call);
+
                 return;
 
             default:
@@ -127,14 +301,25 @@ public final class UnsupportedOperationVisitor implements SqlVisitor<Void> {
         }
     }
 
+    @SuppressWarnings("checkstyle:EmptyBlock")
     private void processSelect(SqlSelect select) {
         if (select.hasOrderBy()) {
-            throw unsupported(select.getOrderList(), SqlKind.ORDER_BY);
+            // TODO: Proper validation for ORDER BY (i.e. LIMIT/OFFSET)
         }
 
         if (select.getGroup() != null && select.getGroup().size() > 0) {
-            throw unsupported(select.getGroup(), "GROUP BY");
+            // TODO: Proper validation for GROUP BY (i.e. grouping sets, etc).
         }
+    }
+
+    private void processOther(SqlCall call) {
+        SqlOperator operator = call.getOperator();
+
+        if (SUPPORTED_OPERATORS.contains(operator)) {
+            return;
+        }
+
+        throw unsupported(call, operator.getName());
     }
 
     private CalciteContextException unsupported(SqlNode node, SqlKind kind) {
