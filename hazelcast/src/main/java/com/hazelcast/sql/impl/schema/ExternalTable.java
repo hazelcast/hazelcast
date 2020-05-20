@@ -96,7 +96,7 @@ public class ExternalTable implements DataSerializable {
         // persisted schema.
         private Map<String, Object> properties;
 
-        @SuppressWarnings("unused") // used when deserializing
+        @SuppressWarnings("unused")
         private ExternalField() {
         }
 

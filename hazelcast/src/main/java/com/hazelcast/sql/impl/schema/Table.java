@@ -31,7 +31,13 @@ public abstract class Table {
     private final TableStatistics statistics;
     private final Map<String, String> ddlOptions;
 
-    protected Table(String schemaName, String name, List<TableField> fields, TableStatistics statistics, Map<String, String> ddlOptions) {
+    protected Table(
+        String schemaName,
+        String name,
+        List<TableField> fields,
+        TableStatistics statistics,
+        Map<String, String> ddlOptions
+    ) {
         this.schemaName = schemaName;
         this.name = name;
         this.fields = Collections.unmodifiableList(fields);

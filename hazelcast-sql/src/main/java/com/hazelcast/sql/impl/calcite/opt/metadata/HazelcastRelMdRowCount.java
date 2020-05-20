@@ -33,9 +33,6 @@ public final class HazelcastRelMdRowCount extends RelMdRowCount {
         // No-op.
     }
 
-    public Double getRowCount(MapScanLogicalRel rel, RelMetadataQuery mq) {
-        return super.getRowCount(rel, mq);
-    }
     // Empty at the moment, will be extended in the future.
     // Now it serves as an example of how to wire up a metadata handler into Calcite.
 }

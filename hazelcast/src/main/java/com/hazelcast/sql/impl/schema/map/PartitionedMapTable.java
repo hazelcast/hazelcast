@@ -25,7 +25,6 @@ import java.util.List;
 import java.util.Map;
 
 import static com.hazelcast.sql.impl.QueryUtils.SCHEMA_NAME_PARTITIONED;
-import static java.util.Collections.emptyMap;
 
 public class PartitionedMapTable extends AbstractMapTable {
 
@@ -52,7 +51,7 @@ public class PartitionedMapTable extends AbstractMapTable {
     }
 
     public PartitionedMapTable(String name, QueryException exception) {
-        super(SCHEMA_NAME_PARTITIONED, name, exception, emptyMap());
+        super(SCHEMA_NAME_PARTITIONED, name, exception);
 
         this.indexes = null;
         this.distributionFieldIndex = DISTRIBUTION_FIELD_ORDINAL_NONE;

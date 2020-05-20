@@ -25,7 +25,6 @@ import java.util.List;
 import java.util.Map;
 
 import static com.hazelcast.sql.impl.QueryUtils.SCHEMA_NAME_REPLICATED;
-import static java.util.Collections.emptyMap;
 
 public class ReplicatedMapTable extends AbstractMapTable {
 
@@ -42,6 +41,6 @@ public class ReplicatedMapTable extends AbstractMapTable {
     }
 
     public ReplicatedMapTable(String name, QueryException exception) {
-        super(SCHEMA_NAME_REPLICATED, name, exception, emptyMap());
+        super(SCHEMA_NAME_REPLICATED, name, exception);
     }
 }

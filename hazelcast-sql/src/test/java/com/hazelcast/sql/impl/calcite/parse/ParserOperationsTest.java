@@ -25,6 +25,7 @@ import com.hazelcast.sql.impl.schema.TableResolver;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -38,6 +39,7 @@ import static org.junit.Assert.fail;
 /**
  * Tests for unsupported operations in parser.
  */
+@Ignore
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class ParserOperationsTest {

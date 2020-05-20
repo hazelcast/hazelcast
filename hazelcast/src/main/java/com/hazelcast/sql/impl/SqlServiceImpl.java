@@ -215,7 +215,7 @@ public class SqlServiceImpl implements SqlService, Consumer<Packet> {
 
     private SqlCursor executeSchemaChange(SchemaPlan plan) {
         plan.execute();
-        
+
         return new SingleValueCursor(0);
     }
 

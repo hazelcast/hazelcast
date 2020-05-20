@@ -22,6 +22,7 @@ import com.hazelcast.sql.impl.schema.Table;
 import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.schema.TableStatistics;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -51,8 +52,8 @@ public abstract class AbstractMapTable extends Table {
         exception = null;
     }
 
-    protected AbstractMapTable(String schemaName, String name, QueryException exception, Map<String, String> ddlOptions) {
-        super(schemaName, name, null, null, ddlOptions);
+    protected AbstractMapTable(String schemaName, String name, QueryException exception) {
+        super(schemaName, name, Collections.emptyList(), null, Collections.emptyMap());
 
         this.keyDescriptor = null;
         this.valueDescriptor = null;

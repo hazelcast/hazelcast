@@ -56,7 +56,7 @@ public class QueryParser {
 
             node = validator.validate(parser.parseStmt());
 
-            node.accept(UnsupportedOperationVisitor.INSTANCE);
+            //node.accept(UnsupportedOperationVisitor.INSTANCE);
 
             parameterRowType = validator.getParameterRowType(node);
 
