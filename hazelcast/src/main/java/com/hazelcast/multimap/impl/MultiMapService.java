@@ -491,7 +491,7 @@ public class MultiMapService implements ManagedService, RemoteService, Fragmente
 
         for (int i = 0; i < partitionContainers.length; i++) {
             MultiMapPartitionContainer container = partitionContainers[i];
-            if (container.containerMap.isEmpty()) {
+            if (container == null || container.containerMap.isEmpty()) {
                 continue;
             }
 
