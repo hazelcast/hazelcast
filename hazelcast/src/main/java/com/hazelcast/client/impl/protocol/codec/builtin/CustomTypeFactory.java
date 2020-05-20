@@ -190,11 +190,11 @@ public final class CustomTypeFactory {
         return new ClientBwListEntryDTO(entryType, value);
     }
 
-    public static EndpointQualifier createEndpointQualifier(ProtocolType type, String identifier) {
-        return EndpointQualifier.resolve(type, identifier);
-    }
-
-    public static ProtocolType createProtocolType(int ordinal) {
-        return ProtocolType.valueOf(ordinal);
+    public static EndpointQualifier createEndpointQualifier(int type, String identifier) {
+        ProtocolType protocolType = ProtocolType.getById(type);
+        if (protocolType == null) {
+            throw new HazelcastException("Unexpected protocol type = [" + type + "]");
+        }
+        return EndpointQualifier.resolve(protocolType, identifier);
     }
 }
