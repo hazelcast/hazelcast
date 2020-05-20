@@ -179,6 +179,7 @@ public class ParserNameResolutionTest {
             searchPath != null ? Collections.singletonList(Arrays.asList(CATALOG, searchPath)) : null;
 
         return OptimizerContext.create(
+            null,
             Arrays.asList(resolverWithoutSearchPath, resolverWithSearchPath),
             searchPaths,
             1

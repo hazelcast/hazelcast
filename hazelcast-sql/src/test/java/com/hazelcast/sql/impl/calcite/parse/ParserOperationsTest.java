@@ -146,6 +146,7 @@ public class ParserOperationsTest {
         );
 
         return OptimizerContext.create(
+            null,
             Collections.singletonList(resolver),
             null,
             1
