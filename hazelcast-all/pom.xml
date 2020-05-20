@@ -178,7 +178,6 @@
             <groupId>com.hazelcast</groupId>
             <artifactId>hazelcast-sql</artifactId>
             <version>${project.version}</version>
-            <classifier>jar-with-dependencies</classifier>
         </dependency>
         <dependency>
             <groupId>com.hazelcast</groupId>
