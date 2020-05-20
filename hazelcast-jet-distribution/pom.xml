@@ -64,6 +64,7 @@
                         EPL 2.0|
                         BSD 3-Clause License|
                         BSD 2-Clause License|
+                        The GNU General Public License, v2 with FOSS exception|
                     </includedLicenses>
                     <licenseMerges>
                         <licenseMerge>
@@ -280,13 +281,7 @@
             <groupId>com.hazelcast.jet</groupId>
             <artifactId>hazelcast-jet-cdc-mysql</artifactId>
             <version>${project.version}</version>
-            <exclusions>
-                <!-- Excluded due to license -->
-                <exclusion>
-                    <groupId>mysql</groupId>
-                    <artifactId>mysql-connector-java</artifactId>
-                </exclusion>
-            </exclusions>
+            <classifier>jar-with-dependencies</classifier>
         </dependency>
 
         <dependency>

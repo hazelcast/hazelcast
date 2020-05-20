@@ -1113,11 +1113,6 @@ at-least once guaranties can practially be provided.
 >This connector is currently under incubation. For more
 >information and examples, please visit the [GitHub repository](https://github.com/hazelcast/hazelcast-jet-contrib/tree/master/elasticsearch).
 
-### Debezium
-
->This connector is currently under incubation. For more
->information and examples, please visit the [GitHub repository](https://github.com/hazelcast/hazelcast-jet-contrib/tree/master/debezium).
-
 ### Redis
 
 >This connector is currently under incubation. For more
@@ -1325,6 +1320,8 @@ restarted in face of an intermittent failure.
 |source|module|batch/stream|guarantee|
 |:-----|:---- |:-----------|:--------|
 |`AvroSources.files`|`hazelcast-jet-avro`|batch|N/A|
+|`DebeziumCdcSources.debezium`|`hazelcast-jet-cdc-debezium`|stream|at-least-once|
+|`MySqlCdcSources.mysql`|`hazelcast-jet-cdc-mysql`|stream|at-least-once|
 |`HadoopSources.inputFormat`|`hazelcast-jet-hadoop`|batch|N/A|
 |`KafkaSources.kafka`|`hazelcast-jet-kafka`|stream|exactly-once|
 |`S3Sources.s3`|`hazelcast-jet-s3`|batch|N/A|

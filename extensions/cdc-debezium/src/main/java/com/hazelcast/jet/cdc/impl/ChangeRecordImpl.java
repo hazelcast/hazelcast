@@ -1,15 +1,15 @@
 /*
- * Copyright 2020 Hazelcast Inc.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
- * Licensed under the Hazelcast Community License (the "License");
+ * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://hazelcast.com/hazelcast-community-license
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OF ANY KIND, either express or implied.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
@@ -17,31 +17,24 @@
 package com.hazelcast.jet.cdc.impl;
 
 import com.hazelcast.jet.cdc.ChangeRecord;
-import com.hazelcast.jet.cdc.RecordPart;
 import com.hazelcast.jet.cdc.Operation;
 import com.hazelcast.jet.cdc.ParsingException;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.jet.cdc.RecordPart;
 
 import javax.annotation.Nonnull;
-import java.io.IOException;
 import java.util.Map;
 import java.util.Objects;
 
-public class ChangeRecordImpl implements ChangeRecord, IdentifiedDataSerializable {
+public class ChangeRecordImpl implements ChangeRecord {
 
-    private String keyJson;
-    private String valueJson;
+    private final String keyJson;
+    private final String valueJson;
 
     private String json;
     private Long timestamp;
     private Operation operation;
     private RecordPart key;
     private RecordPart value;
-
-    ChangeRecordImpl() { //needed for deserialization
-    }
 
     public ChangeRecordImpl(@Nonnull String keyJson, @Nonnull String valueJson) {
         this.keyJson = Objects.requireNonNull(keyJson, "keyJson");
@@ -97,31 +90,17 @@ public class ChangeRecordImpl implements ChangeRecord, IdentifiedDataSerializabl
         return json;
     }
 
+    public String getKeyJson() {
+        return keyJson;
+    }
+
+    public String getValueJson() {
+        return valueJson;
+    }
+
     @Override
     public String toString() {
         return toJson();
-    }
-
-    @Override
-    public int getFactoryId() {
-        return CdcJsonDataSerializerHook.FACTORY_ID;
-    }
-
-    @Override
-    public int getClassId() {
-        return CdcJsonDataSerializerHook.CHANGE_RECORD;
-    }
-
-    @Override
-    public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeUTF(keyJson);
-        out.writeUTF(valueJson);
-    }
-
-    @Override
-    public void readData(ObjectDataInput in) throws IOException {
-        keyJson = in.readUTF();
-        valueJson = in.readUTF();
     }
 
     private static <T> T get(Map<String, Object> map, String key, Class<T> clazz) {

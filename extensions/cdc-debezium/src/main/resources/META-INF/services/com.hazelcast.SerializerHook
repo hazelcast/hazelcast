@@ -14,4 +14,6 @@
 # limitations under the License.
 #
 
-com.hazelcast.jet.cdc.impl.CdcJsonDataSerializerHook
+com.hazelcast.jet.cdc.impl.CdcSerializerHooks$ChangeRecordImplHook
+com.hazelcast.jet.cdc.impl.CdcSerializerHooks$RecordPartImplHook
+com.hazelcast.jet.cdc.impl.CdcSerializerHooks$CdcSourceStateHook

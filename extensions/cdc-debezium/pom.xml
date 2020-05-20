@@ -34,11 +34,21 @@
 
     <properties>
         <debezium.version>1.1.0.Final</debezium.version>
-        <jackson.jr.version>2.11.0</jackson.jr.version>
         <kafka.connect.version>2.3.1</kafka.connect.version>
         <testcontainers.version>1.13.0</testcontainers.version>
         <log4j2.slf4j.binding.version>2.13.2</log4j2.slf4j.binding.version>
+
+        <!-- needed for CheckStyle -->
+        <checkstyle.headerLocation>${maven.multiModuleProjectDirectory}/checkstyle/ClassHeaderApache.txt</checkstyle.headerLocation>
     </properties>
+
+    <licenses>
+        <license>
+            <name>The Apache Software License, Version 2.0</name>
+            <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
 
     <build>
         <plugins>
@@ -99,6 +109,12 @@
             <groupId>io.debezium</groupId>
             <artifactId>debezium-core</artifactId>
             <version>${debezium.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-annotations</artifactId>
+            <version>${jackson.jr.version}</version>
         </dependency>
 
         <!-- TEST -->

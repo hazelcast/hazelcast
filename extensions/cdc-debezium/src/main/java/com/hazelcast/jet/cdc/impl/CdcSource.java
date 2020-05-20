@@ -1,15 +1,15 @@
 /*
- * Copyright 2020 Hazelcast Inc.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
- * Licensed under the Hazelcast Community License (the "License");
+ * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://hazelcast.com/hazelcast-community-license
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OF ANY KIND, either express or implied.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
@@ -18,9 +18,6 @@ package com.hazelcast.jet.cdc.impl;
 
 import com.hazelcast.jet.cdc.ChangeRecord;
 import com.hazelcast.jet.pipeline.SourceBuilder;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import io.debezium.document.Document;
 import io.debezium.document.DocumentReader;
 import io.debezium.document.DocumentWriter;
@@ -203,7 +200,7 @@ public class CdcSource {
         }
     }
 
-    public static final class State implements IdentifiedDataSerializable {
+    public static final class State {
 
         /**
          * Key represents the partition which the record originated from. Value
@@ -212,7 +209,7 @@ public class CdcSource {
          * stored as map.
          * See {@link SourceRecord} for more information regarding the format.
          */
-        private final Map<Map<String, ?>, Map<String, ?>> partitionsToOffset = new HashMap<>();
+        private final Map<Map<String, ?>, Map<String, ?>> partitionsToOffset;
 
         /**
          * We use a copy-on-write-list because it will be written on a
@@ -224,7 +221,16 @@ public class CdcSource {
          * since this list will be written rarely after the initial snapshot,
          * only on table schema changes.
          */
-        private final List<byte[]> historyRecords = new CopyOnWriteArrayList<>();
+        private final List<byte[]> historyRecords;
+
+        State() {
+            this(new HashMap<>(), new CopyOnWriteArrayList<>());
+        }
+
+        State(Map<Map<String, ?>, Map<String, ?>> partitionsToOffset, CopyOnWriteArrayList<byte[]> historyRecords) {
+            this.partitionsToOffset = partitionsToOffset;
+            this.historyRecords = historyRecords;
+        }
 
         public Map<String, ?> getOffset(Map<String, ?> partition) {
             return partitionsToOffset.get(partition);
@@ -234,26 +240,12 @@ public class CdcSource {
             partitionsToOffset.put(partition, offset);
         }
 
-        @Override
-        public int getFactoryId() {
-            return CdcJsonDataSerializerHook.FACTORY_ID;
+        Map<Map<String, ?>, Map<String, ?>> getPartitionsToOffset() {
+            return partitionsToOffset;
         }
 
-        @Override
-        public int getClassId() {
-            return CdcJsonDataSerializerHook.SOURCE_STATE;
-        }
-
-        @Override
-        public void writeData(ObjectDataOutput out) throws IOException {
-            out.writeObject(partitionsToOffset);
-            out.writeObject(historyRecords);
-        }
-
-        @Override
-        public void readData(ObjectDataInput in) throws IOException {
-            partitionsToOffset.putAll(in.readObject());
-            historyRecords.addAll(in.readObject());
+        List<byte[]> getHistoryRecords() {
+            return historyRecords;
         }
     }
 

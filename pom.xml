@@ -96,7 +96,7 @@
         <maven.surefire.plugin.version>3.0.0-M3</maven.surefire.plugin.version>
         <maven.spotbugs.plugin.version>3.1.12.2</maven.spotbugs.plugin.version>
         <maven.checkstyle.plugin.version>3.1.0</maven.checkstyle.plugin.version>
-        <checkstyle.headerLocation>${maven.multiModuleProjectDirectory}/checkstyle/ClassHeader.txt</checkstyle.headerLocation>
+        <checkstyle.headerLocation>${maven.multiModuleProjectDirectory}/checkstyle/ClassHeaderApache.txt</checkstyle.headerLocation>
         <maven.sonar.plugin.version>3.6.0.1398</maven.sonar.plugin.version>
         <maven.jacoco.plugin.version>0.8.4</maven.jacoco.plugin.version>
         <maven.builder.helper.version>3.1.0</maven.builder.helper.version>
@@ -149,6 +149,7 @@
             <distribution>repo</distribution>
         </license>
     </licenses>
+
     <scm>
         <connection>scm:git:git://github.com/hazelcast/hazelcast.git</connection>
         <developerConnection>scm:git:git@github.com:hazelcast/hazelcast.git</developerConnection>
