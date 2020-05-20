@@ -33,7 +33,9 @@ import java.lang.annotation.Target;
  * For straightforward JavaDoc, consider using {@link JavaDocClear}.
  *
  * @see JavaDocClear
+ * @deprecated It's better to write the JavaDoc.
  */
+@Deprecated
 @Target({ElementType.TYPE, ElementType.METHOD})
 public @interface JavaDocDefine {
 }

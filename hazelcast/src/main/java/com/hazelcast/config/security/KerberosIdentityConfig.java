@@ -17,12 +17,29 @@
 package com.hazelcast.config.security;
 
 import com.hazelcast.config.CredentialsFactoryConfig;
-import com.hazelcast.internal.JavaDocDefine;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.security.ICredentialsFactory;
 
 import java.util.Objects;
 
-@JavaDocDefine
+/**
+ * {@link IdentityConfig} implementation for Kerberos identities. In this class you can configure Service Principal Name (SPN)
+ * of Hazelcast member(s). The SPN is the name of target service (Hazelcast member) for which the Kerberos ticket should be
+ * retrieved. The principal name is either generated from the target member address (default) or it's defined explicitly by
+ * setting the {@code spn} field.
+ * <p>
+ * The genarated name is in form {@code "[serviceNamePrefix][targetIpAddress]@[realm]"}. The default value of the
+ * {@code serviceNamePrefix} is {@code "hz/"}. Example:
+ *
+ * <pre>
+ * KerberosIdentityConfig identityConfig = new KerberosIdentityConfig().setRealm("ACME.COM");
+ * </pre>
+ *
+ * When a {@link HazelcastInstance} with this config connects to a member address {@code 10.0.0.1}, then SPN
+ * {@code "hz/10.0.0.1@ACME.COM"} is used for retrieving service ticket from Kerberos server (KDC).
+ * <p>
+ * The explicit SPN configuration should only be used when all Hazelcast cluster members share one Kerberos identity.
+ */
 public class KerberosIdentityConfig implements IdentityConfig {
 
     private final CredentialsFactoryConfig factoryConfig = new CredentialsFactoryConfig(

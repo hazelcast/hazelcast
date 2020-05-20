@@ -16,14 +16,19 @@
 
 package com.hazelcast.config.security;
 
-import com.hazelcast.internal.JavaDocDefine;
-
 import java.util.Objects;
 import java.util.Properties;
 
+import javax.security.auth.Subject;
+
 import static com.hazelcast.internal.util.StringUtil.isNullOrEmpty;
 
-@JavaDocDefine
+/**
+ * Abstract authentication configuration for types which configures login modules based on Hazelcast {@code ClusterLoginModule}
+ *
+ * @param <T> concrete authentication config type extending this one. It's used to return proper type in the fluent API setter
+ *        methods.
+ */
 public abstract class AbstractClusterLoginConfig<T extends AbstractClusterLoginConfig<T>> implements AuthenticationConfig {
 
     private Boolean skipIdentity;
@@ -34,6 +39,10 @@ public abstract class AbstractClusterLoginConfig<T extends AbstractClusterLoginC
         return skipIdentity;
     }
 
+    /**
+     * If set to {@code true} then {@code ClusterIdentityPrincipal} instances are not added to JAAS {@link Subject} during
+     * authentication.
+     */
     public T setSkipIdentity(Boolean skipIdentity) {
         this.skipIdentity = skipIdentity;
         return self();
@@ -43,6 +52,10 @@ public abstract class AbstractClusterLoginConfig<T extends AbstractClusterLoginC
         return skipEndpoint;
     }
 
+    /**
+     * If set to {@code true} then {@code ClusterEndpointPrincipal} instances are not added to JAAS {@link Subject} during
+     * authentication.
+     */
     public T setSkipEndpoint(Boolean skipEndpoint) {
         this.skipEndpoint = skipEndpoint;
         return self();
@@ -52,6 +65,10 @@ public abstract class AbstractClusterLoginConfig<T extends AbstractClusterLoginC
         return skipRole;
     }
 
+    /**
+     * If set to {@code true} then {@code ClusterRolePrincipal} instances are not added to JAAS {@link Subject} during
+     * authentication.
+     */
     public T setSkipRole(Boolean skipRole) {
         this.skipRole = skipRole;
         return self();
@@ -101,7 +118,7 @@ public abstract class AbstractClusterLoginConfig<T extends AbstractClusterLoginC
         if (getClass() != obj.getClass()) {
             return false;
         }
-        AbstractClusterLoginConfig other = (AbstractClusterLoginConfig) obj;
+        AbstractClusterLoginConfig<?> other = (AbstractClusterLoginConfig<?>) obj;
         return Objects.equals(skipEndpoint, other.skipEndpoint) && Objects.equals(skipIdentity, other.skipIdentity)
                 && Objects.equals(skipRole, other.skipRole);
     }
