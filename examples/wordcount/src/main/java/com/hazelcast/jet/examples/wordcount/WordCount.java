@@ -18,7 +18,6 @@ package com.hazelcast.jet.examples.wordcount;
 
 import com.hazelcast.jet.Jet;
 import com.hazelcast.jet.JetInstance;
-import com.hazelcast.jet.Observable;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.Sources;
@@ -29,8 +28,6 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Map.Entry;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 
@@ -38,7 +35,6 @@ import static com.hazelcast.function.Functions.wholeItem;
 import static com.hazelcast.jet.Traversers.traverseArray;
 import static com.hazelcast.jet.aggregate.AggregateOperations.counting;
 import static java.util.Comparator.comparingLong;
-import static java.util.stream.Collectors.toMap;
 
 /**
  * Demonstrates a simple Word Count job in the Pipeline API. Inserts the
@@ -62,7 +58,7 @@ public class WordCount {
          .filter(word -> !word.isEmpty())
          .groupingKey(wholeItem())
          .aggregate(counting())
-         .writeTo(Sinks.observable(COUNTS));
+         .writeTo(Sinks.map(COUNTS));
         return p;
     }
 
@@ -73,18 +69,15 @@ public class WordCount {
     /**
      * This code illustrates a few more things about Jet, new in 0.5. See comments.
      */
-    private void go() throws Exception {
+    private void go() {
         try {
             setup();
             System.out.println("\nCounting words... ");
             long start = System.nanoTime();
             Pipeline p = buildPipeline();
-            Observable<Entry<String, Long>> observable = jet.getObservable(COUNTS);
-            CompletableFuture<Map<String, Long>> f
-                    = observable.toFuture(s -> s.collect(toMap(Entry::getKey, Entry::getValue)));
             jet.newJob(p).join();
             System.out.println("done in " + TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start) + " milliseconds.");
-            Map<String, Long> results = f.get();
+            Map<String, Long> results = jet.getMap(COUNTS);
             checkResults(results);
             printResults(results);
         } finally {
