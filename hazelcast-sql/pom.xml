@@ -173,7 +173,8 @@
                             <goal>shade</goal>
                         </goals>
                         <configuration>
-                            <finalName>${project.build.finalName}</finalName>
+                            <shadedClassifierName>jar-with-dependencies</shadedClassifierName>
+                            <shadedArtifactAttached>true</shadedArtifactAttached>
                             <createSourcesJar>true</createSourcesJar>
                             <shadeSourcesContent>true</shadeSourcesContent>
                             <shadeTestJar>true</shadeTestJar>
@@ -188,6 +189,7 @@
                                     <include>org.codehaus.janino:commons-compiler</include>
                                     <include>org.codehaus.janino:janino</include>
                                     <include>org.slf4j:slf4j-api</include>
+                                    <include>commons-codec:commons-codec</include>
                                 </includes>
                             </artifactSet>
                             <relocations>
@@ -276,10 +278,6 @@
             <version>${calcite.version}</version>
             <exclusions>
                 <!-- Exclusions for Calcite. -->
-                <exclusion>
-                    <groupId>commons-codec</groupId>
-                    <artifactId>commons-codec</artifactId>
-                </exclusion>
                 <exclusion>
                     <groupId>commons-io</groupId>
                     <artifactId>commons-io</artifactId>
