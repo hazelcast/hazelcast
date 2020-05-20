@@ -25,7 +25,7 @@
     <parent>
         <groupId>com.hazelcast</groupId>
         <artifactId>hazelcast-root</artifactId>
-        <version>3.12.7</version>
+        <version>3.12.8-migration</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
