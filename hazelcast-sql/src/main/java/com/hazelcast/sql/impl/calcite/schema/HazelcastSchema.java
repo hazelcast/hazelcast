@@ -21,16 +21,15 @@ import org.apache.calcite.schema.SchemaVersion;
 import org.apache.calcite.schema.Table;
 import org.apache.calcite.schema.impl.AbstractSchema;
 
+import java.util.Collections;
 import java.util.Map;
 
 /**
- * Schema operating on either partitioned or replicated maps.
+ * Implementation of a schema, exposing sub schemas and tables.
  */
 public class HazelcastSchema extends AbstractSchema {
-    /** Child schema map. */
-    private final Map<String, Schema> subSchemaMap;
 
-    /** Tables in the schema. */
+    private final Map<String, Schema> subSchemaMap;
     private final Map<String, Table> tableMap;
 
     public HazelcastSchema(Map<String, Table> tableMap) {
@@ -38,13 +37,13 @@ public class HazelcastSchema extends AbstractSchema {
     }
 
     public HazelcastSchema(Map<String, Schema> subSchemaMap, Map<String, Table> tableMap) {
-        this.subSchemaMap = subSchemaMap;
-        this.tableMap = tableMap;
+        this.subSchemaMap = subSchemaMap != null ? subSchemaMap : Collections.emptyMap();
+        this.tableMap = tableMap != null ? tableMap : Collections.emptyMap();
     }
 
     @Override
     protected Map<String, Schema> getSubSchemaMap() {
-        return subSchemaMap != null ? subSchemaMap : super.getSubSchemaMap();
+        return subSchemaMap;
     }
 
     @Override

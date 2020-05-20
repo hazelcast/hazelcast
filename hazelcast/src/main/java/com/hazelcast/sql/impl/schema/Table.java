@@ -24,6 +24,7 @@ import java.util.Map;
  * Generic table metadata.
  */
 public abstract class Table {
+
     private final String schemaName;
     private final String name;
     private final List<TableField> fields;

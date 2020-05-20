@@ -16,18 +16,16 @@
 
 package com.hazelcast.sql.impl.calcite.opt.metadata;
 
-import com.hazelcast.sql.impl.calcite.opt.logical.MapScanLogicalRel;
 import org.apache.calcite.rel.metadata.ReflectiveRelMetadataProvider;
 import org.apache.calcite.rel.metadata.RelMdRowCount;
 import org.apache.calcite.rel.metadata.RelMetadataProvider;
-import org.apache.calcite.rel.metadata.RelMetadataQuery;
 import org.apache.calcite.util.BuiltInMethod;
 
 /**
  * Metadata which provides row count estimates.
  */
 public final class HazelcastRelMdRowCount extends RelMdRowCount {
-    /** Provider to be registered in Calcite. */
+    /** Do not change the name (see {@code RelMetadataQueryBase} JavaDoc). */
     public static final RelMetadataProvider SOURCE =
         ReflectiveRelMetadataProvider.reflectiveSource(BuiltInMethod.ROW_COUNT.method, new HazelcastRelMdRowCount());
 
@@ -38,4 +36,6 @@ public final class HazelcastRelMdRowCount extends RelMdRowCount {
     public Double getRowCount(MapScanLogicalRel rel, RelMetadataQuery mq) {
         return super.getRowCount(rel, mq);
     }
+    // Empty at the moment, will be extended in the future.
+    // Now it serves as an example of how to wire up a metadata handler into Calcite.
 }

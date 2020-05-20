@@ -27,6 +27,9 @@ import java.util.Properties;
 
 /**
  * Casing configuration.
+ * <p>
+ * At the moment we do only case-sensitive identifier comparison. It violates SQL standard and negatively affects usability.
+ * Case insensitive processing is going to be implemented in future.
  */
 public final class CasingConfiguration {
 

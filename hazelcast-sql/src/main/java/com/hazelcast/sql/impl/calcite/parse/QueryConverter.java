@@ -31,7 +31,7 @@ import org.apache.calcite.sql2rel.SqlToRelConverter;
 import org.apache.calcite.sql2rel.StandardConvertletTable;
 
 /**
- * Converts parse tree into a relational tree.
+ * Converts a parse tree into a relational tree.
  */
 public class QueryConverter {
     /**

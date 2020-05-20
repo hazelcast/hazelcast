@@ -36,8 +36,11 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Base class for all tables in the Calcite integration. Exposes table and schema names in order to form the complete
- * schema for optimization.
+ * Base class for all tables in the Calcite integration:
+ * <ul>
+ *     <li>Maps field types defined in the {@code core} module to Calcite types</li>
+ *     <li>Provides access to the underlying table and statistics</li>
+ * </ul>
  */
 public class HazelcastTable extends AbstractTable {
 
@@ -104,7 +107,7 @@ public class HazelcastTable extends AbstractTable {
             SqlTypeName sqlTypeName = QUERY_TO_SQL_TYPE.get(fieldTypeFamily);
 
             if (sqlTypeName == null) {
-                throw new IllegalStateException("unexpected type family: " + fieldTypeFamily);
+                throw new IllegalStateException("Unexpected type family: " + fieldTypeFamily);
             }
 
             RelDataType relDataType = typeFactory.createSqlType(sqlTypeName);

@@ -16,7 +16,6 @@
 
 package com.hazelcast.sql.impl.calcite.schema;
 
-
 import org.apache.calcite.rel.RelCollation;
 import org.apache.calcite.rel.RelDistribution;
 import org.apache.calcite.rel.RelDistributionTraitDef;
@@ -26,7 +25,6 @@ import org.apache.calcite.util.ImmutableBitSet;
 
 import java.util.Collections;
 import java.util.List;
-
 
 /**
  * Simple table statistics for IMap and ReplicatedMap.

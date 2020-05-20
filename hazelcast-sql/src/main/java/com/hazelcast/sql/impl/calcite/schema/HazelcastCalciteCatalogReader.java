@@ -29,6 +29,9 @@ import org.apache.calcite.sql.validate.SqlNameMatchers;
 
 import java.util.List;
 
+/**
+ * Catalog reader that allows for setting predefined schema paths.
+ */
 public class HazelcastCalciteCatalogReader extends CalciteCatalogReader {
     public HazelcastCalciteCatalogReader(
         CalciteSchema rootSchema,
@@ -36,6 +39,7 @@ public class HazelcastCalciteCatalogReader extends CalciteCatalogReader {
         RelDataTypeFactory typeFactory,
         CalciteConnectionConfig config
     ) {
+        // Call the protected constructor that is not visible otherwise.
         super(
             rootSchema,
             SqlNameMatchers.withCaseSensitive(config != null && config.caseSensitive()),
@@ -43,11 +47,5 @@ public class HazelcastCalciteCatalogReader extends CalciteCatalogReader {
             typeFactory,
             config
         );
-    }
-
-    @Override
-    public void lookupOperatorOverloads(SqlIdentifier opName, SqlFunctionCategory category, SqlSyntax syntax,
-        List<SqlOperator> operatorList, SqlNameMatcher nameMatcher) {
-        super.lookupOperatorOverloads(opName, category, syntax, operatorList, nameMatcher);
     }
 }

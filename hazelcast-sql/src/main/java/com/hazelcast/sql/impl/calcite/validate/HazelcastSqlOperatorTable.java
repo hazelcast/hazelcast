@@ -26,7 +26,7 @@ import org.apache.calcite.sql.type.ReturnTypes;
 import org.apache.calcite.sql.util.ReflectiveSqlOperatorTable;
 
 /**
- * Custom functions.
+ * An additional functions that are resolved during query parsing/validation.
  */
 public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable {
     public static final SqlFunction LENGTH =

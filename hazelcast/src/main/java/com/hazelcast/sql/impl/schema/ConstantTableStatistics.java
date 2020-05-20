@@ -16,6 +16,9 @@
 
 package com.hazelcast.sql.impl.schema;
 
+/**
+ * Table statistics with predefined values.
+ */
 public class ConstantTableStatistics implements TableStatistics {
 
     private final long rowCount;

@@ -27,9 +27,10 @@ import org.apache.calcite.sql.validate.SqlConformance;
 import org.apache.calcite.sql.validate.SqlValidatorCatalogReader;
 import org.apache.calcite.sql.validate.SqlValidatorImpl;
 
+/**
+ * Hazelcast-specific SQL validator.
+ */
 public class HazelcastSqlValidator extends SqlValidatorImpl {
-    private static final HazelcastSqlValidatorResource HZ_RESOURCE = Resources.create(HazelcastSqlValidatorResource.class);
-
     public HazelcastSqlValidator(
         SqlOperatorTable opTab,
         SqlValidatorCatalogReader catalogReader,
@@ -37,6 +38,7 @@ public class HazelcastSqlValidator extends SqlValidatorImpl {
         SqlConformance conformance
     ) {
         super(opTab, catalogReader, typeFactory, conformance);
+
         setTypeCoercion(new HazelcastTypeCoercion(this));
     }
 
@@ -45,17 +47,7 @@ public class HazelcastSqlValidator extends SqlValidatorImpl {
         if (topNode.getKind().belongsTo(SqlKind.DDL)) {
             return topNode;
         }
+
         return super.validate(topNode);
-    }
-
-    @Override
-    protected void validateSelect(SqlSelect select, RelDataType targetRowType) {
-        super.validateSelect(select, targetRowType);
-
-        SqlNode from = select.getFrom();
-
-        if (from != null && from.getKind() == SqlKind.UNION) {
-            throw newValidationError(from, HZ_RESOURCE.unionNotSupported());
-        }
     }
 }

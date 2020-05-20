@@ -502,7 +502,22 @@ public class ConvertersTest {
         StringConverter c = StringConverter.INSTANCE;
 
         checkConverter(c, Converter.ID_STRING, VARCHAR, String.class);
-        checkConverterConversions(c, BOOLEAN, TINYINT, SMALLINT, INT, BIGINT, DECIMAL, REAL, DOUBLE, TIME, DATE, TIMESTAMP, TIMESTAMP_WITH_TIME_ZONE, OBJECT);
+        checkConverterConversions(
+            c,
+            BOOLEAN,
+            TINYINT,
+            SMALLINT,
+            INT,
+            BIGINT,
+            DECIMAL,
+            REAL,
+            DOUBLE,
+            TIME,
+            DATE,
+            TIMESTAMP,
+            TIMESTAMP_WITH_TIME_ZONE,
+            OBJECT
+        );
 
         // Boolean
         assertEquals(false, c.asBoolean("false"));
@@ -581,7 +596,22 @@ public class ConvertersTest {
         CharacterConverter c = CharacterConverter.INSTANCE;
 
         checkConverter(c, Converter.ID_CHARACTER, VARCHAR, Character.class);
-        checkConverterConversions(c, BOOLEAN, TINYINT, SMALLINT, INT, BIGINT, DECIMAL, REAL, DOUBLE, TIME, DATE, TIMESTAMP, TIMESTAMP_WITH_TIME_ZONE, OBJECT);
+        checkConverterConversions(
+            c,
+            BOOLEAN,
+            TINYINT,
+            SMALLINT,
+            INT,
+            BIGINT,
+            DECIMAL,
+            REAL,
+            DOUBLE,
+            TIME,
+            DATE,
+            TIMESTAMP,
+            TIMESTAMP_WITH_TIME_ZONE,
+            OBJECT
+        );
 
         char invalid = 'c';
 
@@ -616,7 +646,22 @@ public class ConvertersTest {
         ObjectConverter c = ObjectConverter.INSTANCE;
 
         checkConverter(c, Converter.ID_OBJECT, OBJECT, Object.class);
-        checkConverterConversions(c, BOOLEAN, TINYINT, SMALLINT, INT, BIGINT, DECIMAL, REAL, DOUBLE, TIME, DATE, TIMESTAMP, TIMESTAMP_WITH_TIME_ZONE, VARCHAR);
+        checkConverterConversions(
+            c,
+            BOOLEAN,
+            TINYINT,
+            SMALLINT,
+            INT,
+            BIGINT,
+            DECIMAL,
+            REAL,
+            DOUBLE,
+            TIME,
+            DATE,
+            TIMESTAMP,
+            TIMESTAMP_WITH_TIME_ZONE,
+            VARCHAR
+        );
 
         checkObjectConverter(c);
 

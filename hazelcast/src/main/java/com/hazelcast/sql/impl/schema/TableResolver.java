@@ -28,7 +28,18 @@ import java.util.List;
  */
 public interface TableResolver {
     /**
-     * @return Search paths to be added for object resolution.
+     * Gets the list of search paths for object resolution.
+     * <p>
+     * A single search path consists of two elements: predefined catalog (see {@link com.hazelcast.sql.impl.QueryUtils#CATALOG}
+     * and schema name. For example {@code {"hazelcast", "schema"}}. In this case the "schema" will be added to a search paths,
+     * so that a table {@code schema.table} could be referred as {@code table} in SQL scripts: {@code SELECT * FROM table}.
+     * <p>
+     * Order of search paths is important. If several search paths are defined, then the first path will be searched first, etc.
+     * For example if a table with the same name is defined in {@code schema1} and {@code schema2}, and the following search
+     * paths are provided {@code {"hazelcast", "schema1"}, {"hazelcast", "schema1"}}, then {@code SELECT * FROM table} will pick
+     * the table from the {@code schema1}.
+     *
+     * @return The list of search paths for object resolution.
      */
     List<List<String>> getDefaultSearchPaths();
 

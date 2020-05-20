@@ -50,6 +50,16 @@ public final class HazelcastSchemaUtils {
         );
     }
 
+    /**
+     * Construct a schema from the given table resolvers.
+     * <p>
+     * Currently we assume that all tables are resolved upfront by querying a table resolver. It works well for predefined
+     * objects such as IMap and ReplicatedMap as well as external tables created by Jet. This approach will not work well
+     * should we need a relaxed/dynamic object resolution at some point in future.
+     *
+     * @param tableResolvers Table resolver to be used to get the list of existing tables.
+     * @return Top-level schema.
+     */
     @SuppressWarnings({"unchecked", "rawtypes"})
     public static HazelcastSchema createRootSchema(List<TableResolver> tableResolvers) {
         // Create tables.
@@ -57,9 +67,16 @@ public final class HazelcastSchemaUtils {
 
         for (TableResolver tableResolver : tableResolvers) {
             for (Table table : tableResolver.getTables()) {
-                tableMap
-                        .computeIfAbsent(table.getSchemaName(), k -> new HashMap<>())
-                        .computeIfAbsent(table.getName(), k -> new HazelcastTable(table, createTableStatistic(table)));
+                HazelcastTable convertedTable = new HazelcastTable(
+                    table,
+                    createTableStatistic(table)
+                );
+
+                Map<String , HazelcastTable> schemaTableMap =
+                    tableMap.computeIfAbsent(table.getSchemaName(), (k) -> new HashMap<>());
+
+                // TODO: Throw error or log warn on conflict?
+                schemaTableMap.putIfAbsent(table.getName(), convertedTable);
             }
         }
 
@@ -80,6 +97,15 @@ public final class HazelcastSchemaUtils {
         return createCatalog(rootSchema);
     }
 
+    /**
+     * Create Calcite {@link Statistic} object for the given table.
+     * <p>
+     * As neither IMDG core, nor Jet has dependency on the SQL module, we cannot get that object from the outside. Instead,
+     * it should be created in the SQL module through {@code instanceof} checks (or similar).
+     *
+     * @param table Target table.
+     * @return Statistics for the table.
+     */
     private static Statistic createTableStatistic(Table table) {
         if (table instanceof AbstractMapTable) {
             return new MapTableStatistic(table.getStatistics().getRowCount());

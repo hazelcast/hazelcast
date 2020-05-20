@@ -26,7 +26,9 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * Extended RelOptCluster with Hazelcast-specific data.
+ * Extended {@link RelOptCluster} with Hazelcast-specific data.
+ * <p>
+ * Located in the Calcite package because the required super constructor is package-private.
  */
 public final class HazelcastRelOptCluster extends RelOptCluster {
     /** Distribution trait definition that is used during query execution. */

@@ -59,9 +59,11 @@ import java.util.List;
 
 /**
  * Optimizer context which holds the whole environment for the given optimization session.
+ * Should not be re-used between optimization sessions.
  */
 @SuppressWarnings({"checkstyle:ClassDataAbstractionCoupling", "checkstyle:ClassFanOutComplexity"})
 public final class OptimizerContext {
+
     private static final RelMetadataProvider METADATA_PROVIDER = ChainedRelMetadataProvider.of(ImmutableList.of(
         HazelcastRelMdRowCount.SOURCE,
         DefaultRelMetadataProvider.INSTANCE
@@ -83,6 +85,14 @@ public final class OptimizerContext {
         this.planner = planner;
     }
 
+    /**
+     * Create the optimization context.
+     *
+     * @param tableResolvers Resolver to collect information about tables.
+     * @param currentSearchPaths Search paths to support "current schema" feature.
+     * @param memberCount Number of member that is important for distribution-related rules and converters.
+     * @return Context.
+     */
     public static OptimizerContext create(
         List<TableResolver> tableResolvers,
         List<List<String>> currentSearchPaths,
@@ -196,16 +206,14 @@ public final class OptimizerContext {
         JavaTypeFactory typeFactory,
         DistributionTraitDef distributionTraitDef
     ) {
-        // TODO: Use CachingRelMetadataProvider instead?
-        RelMetadataProvider relMetadataProvider = JaninoRelMetadataProvider.of(METADATA_PROVIDER);
-
         HazelcastRelOptCluster cluster = HazelcastRelOptCluster.create(
             planner,
             new RexBuilder(typeFactory),
             distributionTraitDef
         );
 
-        cluster.setMetadataProvider(relMetadataProvider);
+        // Wire up custom metadata providers.
+        cluster.setMetadataProvider(JaninoRelMetadataProvider.of(METADATA_PROVIDER));
 
         return cluster;
     }

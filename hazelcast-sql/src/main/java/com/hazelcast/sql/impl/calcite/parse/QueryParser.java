@@ -19,6 +19,7 @@ package com.hazelcast.sql.impl.calcite.parse;
 import com.hazelcast.sql.SqlErrorCode;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.calcite.parser.HazelcastSqlParser;
+import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlConformance;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.parser.SqlParser;
@@ -35,9 +36,9 @@ public class QueryParser {
     static {
         SqlParser.ConfigBuilder configBuilder = SqlParser.configBuilder();
 
-        configBuilder.setParserFactory(HazelcastSqlParser.FACTORY);
-
         CasingConfiguration.DEFAULT.toParserConfig(configBuilder);
+        configBuilder.setConformance(HazelcastSqlConformance.INSTANCE);
+        configBuilder.setParserFactory(HazelcastSqlParser.FACTORY);
 
         CONFIG = configBuilder.build();
     }
@@ -53,11 +54,13 @@ public class QueryParser {
         try {
             SqlParser parser = SqlParser.create(sql, CONFIG);
 
-            node = parser.parseStmt();
+            node = validator.validate(parser.parseStmt());
 
-            // TODO: Get column names through SqlSelect.selectList[i].toString() (and, possibly, origins?)
-            node = validator.validate(node);
+            node.accept(UnsupportedOperationVisitor.INSTANCE);
+
             parameterRowType = validator.getParameterRowType(node);
+
+            // TODO: Get column names through SqlSelect.selectList[i].toString() (and, possibly, origins?)?
         } catch (Exception e) {
             throw QueryException.error(SqlErrorCode.PARSING, e.getMessage(), e);
         }

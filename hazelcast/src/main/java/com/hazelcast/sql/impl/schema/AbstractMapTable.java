@@ -14,17 +14,15 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.calcite;
+package com.hazelcast.sql.impl.schema;
 
-import org.apache.calcite.jdbc.JavaTypeFactoryImpl;
-import org.apache.calcite.util.ConversionUtil;
+import java.util.List;
 
-import java.nio.charset.Charset;
-
-public class HazelcastTypeFactory extends JavaTypeFactoryImpl {
-    @Override
-    public Charset getDefaultCharset() {
-        // Calcite uses Latin-1 by default (see {@code CalciteSystemProperty.DEFAULT_CHARSET}). We use unicode.
-        return Charset.forName(ConversionUtil.NATIVE_UTF16_CHARSET_NAME);
+/**
+ * A table that is backed by a Hazelcast map.
+ */
+public abstract class AbstractMapTable extends Table {
+    public AbstractMapTable(String schemaName, String name, List<TableField> fields, TableStatistics statistics) {
+        super(schemaName, name, fields, statistics);
     }
 }
