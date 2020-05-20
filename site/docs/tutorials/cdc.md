@@ -3,9 +3,6 @@ title: Change Data Capture from MySQL
 description: How to monitor Change Data Capture data from a MySQL database in Jet.
 ---
 
-> NOTE: This feature is currently in incubating state, i.e. API,
-> configuration etc. might still change in future revisions.
-
 As we've seen in the [CDC section of our Sources and Sinks
  guide](../api/sources-sinks.md#cdc) of our, change data capture is
  especially important to Jet, because it allows for the **integration
