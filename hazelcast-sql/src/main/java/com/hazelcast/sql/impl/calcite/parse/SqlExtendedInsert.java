@@ -16,6 +16,7 @@
 
 package com.hazelcast.sql.impl.calcite.parse;
 
+import com.google.common.collect.ImmutableList;
 import org.apache.calcite.sql.SqlIdentifier;
 import org.apache.calcite.sql.SqlInsert;
 import org.apache.calcite.sql.SqlInsertKeyword;
@@ -30,7 +31,7 @@ import java.util.List;
 
 public class SqlExtendedInsert extends SqlInsert {
 
-    private final String tableName;
+    private final ImmutableList<String> tableNames;
     private final SqlNodeList extendedKeywords;
 
     public SqlExtendedInsert(SqlNode table,
@@ -42,15 +43,15 @@ public class SqlExtendedInsert extends SqlInsert {
         super(pos, keywords, table, source, columns);
         if (table instanceof SqlTableRef) {
             SqlTableRef tableRef = (SqlTableRef) table;
-            this.tableName = ((SqlIdentifier) tableRef.operand(0)).getSimple();
+            this.tableNames = ((SqlIdentifier) tableRef.operand(0)).names;
         } else {
-            this.tableName = ((SqlIdentifier) table).getSimple();
+            this.tableNames = ((SqlIdentifier) table).names;
         }
         this.extendedKeywords = extendedKeywords;
     }
 
-    public String tableName() {
-        return tableName;
+    public ImmutableList<String> tableNames() {
+        return tableNames;
     }
 
     @Override

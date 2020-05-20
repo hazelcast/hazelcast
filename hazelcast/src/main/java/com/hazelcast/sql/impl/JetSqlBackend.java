@@ -29,6 +29,16 @@ public interface JetSqlBackend {
     String SERVICE_NAME = "hz:impl:jetSqlService";
 
     /**
+     *
+     * @param opTab Actual type is org.apache.calcite.sql.SqlOperatorTable
+     * @param catalogReader Actual type is org.apache.calcite.sql.validate.SqlValidatorCatalogReader
+     * @param typeFactory Actual type is org.apache.calcite.rel.type.RelDataTypeFactory
+     * @param conformance Actual type is org.apache.calcite.sql.validate.SqlConformance
+     * @return Actual returned type is com.hazelcast.sql.impl.calcite.validate.HazelcastSqlValidator
+     */
+    Object createValidator(Object opTab, Object catalogReader, Object typeFactory, Object conformance);
+
+    /**
      * @param context Actual type is com.hazelcast.sql.impl.calcite.OptimizerContext
      * @param inputRel Actual type is org.apache.calcite.rel.RelNode
      */

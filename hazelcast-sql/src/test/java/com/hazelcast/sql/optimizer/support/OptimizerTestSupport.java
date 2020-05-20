@@ -96,6 +96,7 @@ public abstract class OptimizerTestSupport {
      */
     protected Result optimize(String sql, HazelcastSchema schema) {
         OptimizerContext context = OptimizerContext.create(
+            null,
             HazelcastSchemaUtils.createCatalog(schema),
             HazelcastSchemaUtils.prepareSearchPaths(null, null),
             1

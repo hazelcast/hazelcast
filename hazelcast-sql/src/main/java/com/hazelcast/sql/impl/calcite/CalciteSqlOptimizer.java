@@ -99,6 +99,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         int memberCount = nodeEngine.getClusterService().getSize(MemberSelectors.DATA_MEMBER_SELECTOR);
 
         OptimizerContext context = OptimizerContext.create(
+            jetSqlBackend,
             tableResolvers,
             task.getSearchPaths(),
             memberCount

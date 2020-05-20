@@ -17,6 +17,7 @@
 package com.hazelcast.sql.impl.calcite;
 
 import com.google.common.collect.ImmutableList;
+import com.hazelcast.sql.impl.JetSqlBackend;
 import com.hazelcast.sql.impl.calcite.opt.QueryPlanner;
 import com.hazelcast.sql.impl.calcite.opt.cost.CostFactory;
 import com.hazelcast.sql.impl.calcite.opt.distribution.DistributionTraitDef;
@@ -41,6 +42,7 @@ import org.apache.calcite.plan.HazelcastRelOptCluster;
 import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.plan.volcano.VolcanoPlanner;
 import org.apache.calcite.prepare.Prepare;
+import org.apache.calcite.prepare.Prepare.CatalogReader;
 import org.apache.calcite.rel.RelCollationTraitDef;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.metadata.ChainedRelMetadataProvider;
@@ -55,6 +57,7 @@ import org.apache.calcite.sql.util.ChainedSqlOperatorTable;
 import org.apache.calcite.sql.validate.SqlValidator;
 import org.apache.calcite.tools.RuleSet;
 
+import javax.annotation.Nullable;
 import java.util.List;
 
 /**
@@ -94,6 +97,7 @@ public final class OptimizerContext {
      * @return Context.
      */
     public static OptimizerContext create(
+        JetSqlBackend jetSqlBackend,
         List<TableResolver> tableResolvers,
         List<List<String>> currentSearchPaths,
         int memberCount
@@ -104,10 +108,11 @@ public final class OptimizerContext {
         // Resolve tables.
         HazelcastSchema rootSchema = HazelcastSchemaUtils.createRootSchema(tableResolvers);
 
-        return create(rootSchema, searchPaths, memberCount);
+        return create(jetSqlBackend, rootSchema, searchPaths, memberCount);
     }
 
     public static OptimizerContext create(
+        @Nullable JetSqlBackend jetSqlBackend,
         HazelcastSchema rootSchema,
         List<List<String>> schemaPaths,
         int memberCount
@@ -116,7 +121,7 @@ public final class OptimizerContext {
 
         JavaTypeFactory typeFactory = new HazelcastTypeFactory();
         Prepare.CatalogReader catalogReader = createCatalogReader(typeFactory, CONNECTION_CONFIG, rootSchema, schemaPaths);
-        SqlValidator validator = createValidator(typeFactory, catalogReader);
+        SqlValidator validator = createValidator(jetSqlBackend, typeFactory, catalogReader);
         VolcanoPlanner volcanoPlanner = createPlanner(CONNECTION_CONFIG, distributionTraitDef);
         HazelcastRelOptCluster cluster = createCluster(volcanoPlanner, typeFactory, distributionTraitDef);
 
@@ -173,18 +178,28 @@ public final class OptimizerContext {
         );
     }
 
-    private static SqlValidator createValidator(JavaTypeFactory typeFactory, Prepare.CatalogReader catalogReader) {
+    private static SqlValidator createValidator(JetSqlBackend jetSqlBackend, JavaTypeFactory typeFactory,
+                                                CatalogReader catalogReader) {
         SqlOperatorTable opTab = ChainedSqlOperatorTable.of(
             HazelcastSqlOperatorTable.instance(),
             SqlStdOperatorTable.instance()
         );
 
-        return new HazelcastSqlValidator(
-            opTab,
-            catalogReader,
-            typeFactory,
-            HazelcastSqlConformance.INSTANCE
-        );
+        if (jetSqlBackend != null) {
+            return (SqlValidator) jetSqlBackend.createValidator(
+                opTab,
+                catalogReader,
+                typeFactory,
+                HazelcastSqlConformance.INSTANCE
+            );
+        } else {
+            return new HazelcastSqlValidator(
+                opTab,
+                catalogReader,
+                typeFactory,
+                HazelcastSqlConformance.INSTANCE
+            );
+        }
     }
 
     private static VolcanoPlanner createPlanner(CalciteConnectionConfig config, DistributionTraitDef distributionTraitDef) {
