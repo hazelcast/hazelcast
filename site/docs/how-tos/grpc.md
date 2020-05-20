@@ -246,6 +246,17 @@ stage.mapUsingServiceAsyncBatched(bidiService,
 })
 ```
 
-See the [grpc
-example](https://github.com/hazelcast/hazelcast-jet/tree/master/examples/grpc)
+If your batch takes more than ~0.8 seconds (including the network
+overhead), you should increase the value of the following properties
+so that the clean shutdown succeeds:
+
+```text
+jet.grpc.destroy.timeout.seconds
+jet.grpc.shutdown.timeout.seconds
+```
+
+The [GrpcProperties](/javadoc/{jet-version}/com/hazelcast/jet/grpc/GrpcProperties.html)
+JavaDoc provides more details about these properties.
+
+See the [grpc example](https://github.com/hazelcast/hazelcast-jet/tree/master/examples/grpc)
 module for a complete code example.

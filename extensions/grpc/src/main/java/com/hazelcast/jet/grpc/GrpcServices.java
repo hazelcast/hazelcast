@@ -21,9 +21,9 @@ import com.hazelcast.function.BiFunctionEx;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.grpc.impl.BidirectionalStreamingService;
-import com.hazelcast.jet.grpc.impl.GrpcUtil;
 import com.hazelcast.jet.grpc.impl.UnaryService;
 import com.hazelcast.jet.pipeline.GeneralStage;
+import com.hazelcast.jet.pipeline.ServiceFactories;
 import com.hazelcast.jet.pipeline.ServiceFactory;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
@@ -31,8 +31,7 @@ import io.grpc.stub.StreamObserver;
 
 import javax.annotation.Nonnull;
 import java.util.concurrent.CompletableFuture;
-
-import static com.hazelcast.jet.datamodel.Tuple2.tuple2;
+import java.util.concurrent.ForkJoinPool;
 
 /**
  * Provides {@link ServiceFactory} implementations for calling gRPC
@@ -93,8 +92,7 @@ public final class GrpcServices {
      * will be completed with that exception. To catch and handle it, use the
      * {@code CompletableFuture} API.
      *
-     * @param channelFn creates the channel builder. A single channel is created per Jet member
-     *                  and shared among the processor instances.
+     * @param channelFn creates the channel builder. A single channel is created per processor instance.
      * @param callStubFn a function which, given a channel, creates the stub and returns a
      *                   function that calls the stub given the input item and the observer.
      *                   It will be called once per input item.
@@ -106,11 +104,10 @@ public final class GrpcServices {
             @Nonnull SupplierEx<? extends ManagedChannelBuilder<?>> channelFn,
             @Nonnull FunctionEx<? super ManagedChannel, ? extends BiConsumerEx<T, StreamObserver<R>>> callStubFn
     ) {
-        return ServiceFactory
-                .withCreateContextFn(ctx -> tuple2(channelFn.get().build(), ctx.logger()))
-                .withCreateServiceFn((ctx, tuple) -> new UnaryService<>(tuple.f0(), callStubFn))
-                .withDestroyServiceFn(UnaryService::destroy)
-                .withDestroyContextFn(tuple -> GrpcUtil.shutdownChannel(tuple.f0(), tuple.f1()));
+        return ServiceFactories.nonSharedService(
+                ctx -> new UnaryService<>(ctx, channelFn.get().executor(ForkJoinPool.commonPool()).build(), callStubFn),
+                UnaryService::destroy
+        );
     }
 
     /**
@@ -156,8 +153,7 @@ public final class GrpcServices {
      * will be completed with that exception. To catch and handle it, use the
      * {@code CompletableFuture} API.
      *
-     * @param channelFn creates the channel builder. A single channel is created per Jet member
-     *                  and shared among the processor instances.
+     * @param channelFn creates the channel builder. A single channel is created per processor instance.
      * @param callStubFn a function which, given a channel, creates the stub and returns a
      *                   function that calls the stub given the input item and the observer.
      *                   It will be called once per input item.
@@ -170,10 +166,13 @@ public final class GrpcServices {
             @Nonnull FunctionEx<? super ManagedChannel, ? extends FunctionEx<StreamObserver<R>, StreamObserver<T>>>
                     callStubFn
     ) {
-        return ServiceFactory
-                .withCreateContextFn(ctx -> tuple2(channelFn.get().build(), ctx.logger()))
-                .withCreateServiceFn((ctx, tuple) -> new BidirectionalStreamingService<>(ctx, tuple.f0(), callStubFn))
-                .withDestroyServiceFn(BidirectionalStreamingService::destroy)
-                .withDestroyContextFn(tuple -> GrpcUtil.shutdownChannel(tuple.f0(), tuple.f1()));
+        return ServiceFactories.nonSharedService(
+                ctx -> new BidirectionalStreamingService<>(
+                        ctx,
+                        channelFn.get().executor(ForkJoinPool.commonPool()).build(),
+                        callStubFn
+                ),
+                BidirectionalStreamingService::destroy
+        );
     }
 }

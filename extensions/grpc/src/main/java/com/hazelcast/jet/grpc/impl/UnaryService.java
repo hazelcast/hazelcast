@@ -18,7 +18,11 @@ package com.hazelcast.jet.grpc.impl;
 
 import com.hazelcast.function.BiConsumerEx;
 import com.hazelcast.function.FunctionEx;
+import com.hazelcast.jet.core.Processor.Context;
+import com.hazelcast.jet.grpc.GrpcProperties;
 import com.hazelcast.jet.grpc.GrpcService;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.spi.properties.HazelcastProperties;
 import io.grpc.ManagedChannel;
 import io.grpc.stub.StreamObserver;
 
@@ -28,12 +32,21 @@ import java.util.concurrent.CompletableFuture;
 public final class UnaryService<T, R> implements GrpcService<T, R> {
 
     private final BiConsumerEx<? super T, ? super StreamObserver<R>> callFn;
+    private final ManagedChannel channel;
+    private final ILogger logger;
+    private final long shutdownTimeout;
 
     public UnaryService(
+            @Nonnull Context context,
             @Nonnull ManagedChannel channel,
             @Nonnull FunctionEx<? super ManagedChannel, ? extends BiConsumerEx<T, StreamObserver<R>>> callStubFn
     ) {
+        this.logger = context.logger();
+        this.channel = channel;
         callFn = callStubFn.apply(channel);
+
+        HazelcastProperties properties = new HazelcastProperties(context.jetInstance().getConfig().getProperties());
+        shutdownTimeout = properties.getSeconds(GrpcProperties.SHUTDOWN_TIMEOUT);
     }
 
     @Override @Nonnull
@@ -43,7 +56,8 @@ public final class UnaryService<T, R> implements GrpcService<T, R> {
         return o.future;
     }
 
-    public void destroy() {
+    public void destroy() throws InterruptedException {
+        GrpcUtil.shutdownChannel(channel, logger, shutdownTimeout);
     }
 
     private static class Observer<R> implements StreamObserver<R> {

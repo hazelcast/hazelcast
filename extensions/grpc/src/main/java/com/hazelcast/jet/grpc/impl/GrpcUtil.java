@@ -47,14 +47,15 @@ public final class GrpcUtil {
     }
 
     /**
-     * Shutdowns {@link ManagedChannel}
+     * Shuts down a {@link ManagedChannel}
      * <p>
      * Tries orderly shutdown first {@link ManagedChannel#shutdown()}, then forceful shutdown
      * {@link ManagedChannel#shutdownNow()}.
      */
-    public static void shutdownChannel(ManagedChannel channel, ILogger logger) throws InterruptedException {
-        if (!channel.shutdown().awaitTermination(1, SECONDS)) {
-            logger.info("gRPC client has not shut down on time");
+    public static void shutdownChannel(ManagedChannel channel, ILogger logger, long timeout) throws InterruptedException {
+        if (!channel.shutdown().awaitTermination(timeout, SECONDS)) {
+            logger.info("gRPC client has not shut down within " + timeout + " seconds, you can override the timeout " +
+                    "by setting the `jet.grpc.shutdown.timeout.seconds` system property");
 
             if (!channel.shutdownNow().awaitTermination(1, SECONDS)) {
                 logger.info("gRPC client has not shut down on time, even after forceful shutdown");
