@@ -56,8 +56,7 @@ public class BindRequest {
         }
         BindMessage bind = new BindMessage((byte) 1, getConfiguredLocalAddresses(), remoteEndPoint, reply, ioService.getUuid());
         byte[] bytes = ioService.getSerializationService().toBytes(bind);
-        Packet packet = new Packet(bytes).setPacketType(Packet.Type.BIND)
-                                         .raiseFlags(Packet.FLAG_4_0);
+        Packet packet = new Packet(bytes).setPacketType(Packet.Type.BIND);
         connection.write(packet);
         //now you can send anything...
     }

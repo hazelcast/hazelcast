@@ -62,7 +62,6 @@ import static com.hazelcast.internal.metrics.MetricDescriptorConstants.OPERATION
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.OPERATION_PREFIX_INVOCATIONS;
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
 import static com.hazelcast.internal.metrics.ProbeUnit.MS;
-import static com.hazelcast.internal.nio.Packet.FLAG_4_0;
 import static com.hazelcast.internal.nio.Packet.FLAG_OP_CONTROL;
 import static com.hazelcast.internal.nio.Packet.FLAG_URGENT;
 import static com.hazelcast.internal.util.ThreadUtil.createThreadName;
@@ -538,7 +537,7 @@ public class InvocationMonitor implements Consumer<Packet>, StaticMetricsProvide
             } else {
                 Packet packet = new Packet(serializationService.toBytes(opControl))
                         .setPacketType(Packet.Type.OPERATION)
-                        .raiseFlags(FLAG_4_0 | FLAG_OP_CONTROL | FLAG_URGENT);
+                        .raiseFlags(FLAG_OP_CONTROL | FLAG_URGENT);
                 nodeEngine.getNode().getNetworkingService().getEndpointManager(MEMBER).transmit(packet, address);
             }
         }
