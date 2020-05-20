@@ -150,7 +150,7 @@ public class ClusterViewListenerService {
         ArrayList<MemberInfo> memberInfos = new ArrayList<>();
         for (MemberInfo member : members) {
             memberInfos.add(new MemberInfo(clientAddressOf(member.getAddress()), member.getUuid(), member.getAttributes(),
-                    member.isLiteMember(), member.getVersion()));
+                    member.isLiteMember(), member.getVersion(), member.getAddressMap()));
         }
 
         return ClientAddClusterViewListenerCodec.encodeMembersViewEvent(version, memberInfos);

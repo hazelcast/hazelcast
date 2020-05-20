@@ -63,6 +63,11 @@ public class MemberInfo implements IdentifiedDataSerializable {
     }
 
     public MemberInfo(Address address, UUID uuid, Map<String, String> attributes, boolean liteMember, MemberVersion version,
+                      boolean isAddressMapExists, Map<EndpointQualifier, Address> addressMap) {
+        this(address, uuid, attributes, liteMember, version, NA_MEMBER_LIST_JOIN_VERSION, addressMap);
+    }
+
+    public MemberInfo(Address address, UUID uuid, Map<String, String> attributes, boolean liteMember, MemberVersion version,
                       int memberListJoinVersion, Map<EndpointQualifier, Address> addressMap) {
         this.address = address;
         this.uuid = uuid;

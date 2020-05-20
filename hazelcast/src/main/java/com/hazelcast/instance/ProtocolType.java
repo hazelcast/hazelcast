@@ -41,11 +41,11 @@ public enum ProtocolType {
      *
      * Note: names of this enum are used for metrics sent to Management Center, do not rename.
      */
-    MEMBER(1, Protocols.CLUSTER),
-    CLIENT(1, Protocols.CLIENT_BINARY),
-    WAN(Integer.MAX_VALUE, Protocols.CLUSTER),
-    REST(1, Protocols.REST),
-    MEMCACHE(1, Protocols.MEMCACHE);
+    MEMBER(0, 1, Protocols.CLUSTER),
+    CLIENT(1, 1, Protocols.CLIENT_BINARY),
+    WAN(2, Integer.MAX_VALUE, Protocols.CLUSTER),
+    REST(3, 1, Protocols.REST),
+    MEMCACHE(4, 1, Protocols.MEMCACHE);
 
     private static final Set<ProtocolType> PROTOCOL_TYPES_SET;
     private static final ProtocolType[] PROTOCOL_TYPES;
@@ -56,10 +56,12 @@ public enum ProtocolType {
         PROTOCOL_TYPES = ProtocolType.values();
     }
 
+    private final int id;
     private final int serverSocketCardinality;
     private final String descriptor;
 
-    ProtocolType(int serverSocketCardinality, String descriptor) {
+    ProtocolType(int id, int serverSocketCardinality, String descriptor) {
+        this.id = id;
         this.serverSocketCardinality = serverSocketCardinality;
         this.descriptor = descriptor;
     }
@@ -78,5 +80,18 @@ public enum ProtocolType {
 
     public String getDescriptor() {
         return descriptor;
+    }
+
+    public int getId() {
+        return id;
+    }
+
+    public static ProtocolType getById(final int id) {
+        for (ProtocolType type: values()) {
+            if (type.id == id) {
+                return type;
+            }
+        }
+        return null;
     }
 }
