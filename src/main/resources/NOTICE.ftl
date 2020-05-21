@@ -26,6 +26,38 @@ derived from this software without prior written permission.
 
 Copyright (c) 2008-2020 Hazelcast, Inc. All rights reserved.
 
+The packages:
+
+com.hazelcast.internal.util.collection
+com.hazelcast.internal.util.concurrent
+
+and the classes:
+
+com.hazelcast.internal.util.QuickMath
+com.hazelcast.client.impl.protocol.util.UnsafeBuffer
+com.hazelcast.client.impl.protocol.util.BufferBuilder
+
+contain code originating from the Agrona project
+(https://github.com/real-logic/Agrona).
+
+The class com.hazelcast.internal.util.HashUtil contains code originating
+from the Koloboke project (https://github.com/OpenHFT/Koloboke).
+
+The class classloading.ThreadLocalLeakTestUtils contains code originating
+from the Tomcat project (https://github.com/apache/tomcat).
+
+com.hazelcast.internal.cluster.fd.PhiAccrualFailureDetector contains code originating
+from the Akka project (https://github.com/akka/akka/).
+
+The package com.hazelcast.internal.json contains code originating
+from minimal-json project (https://github.com/ralfstx/minimal-json).
+
+The class com.hazelcast.instance.impl.MobyNames contains code originating
+from The Moby Project (https://github.com/moby/moby).
+
+The class com.hazelcast.internal.util.graph.BronKerboschCliqueFinder contains code
+originating from The JGraphT Project (https://github.com/jgrapht/jgrapht).
+
 This product includes the following libraries with the following licenses:
 
 <#list licenseMap as e>
