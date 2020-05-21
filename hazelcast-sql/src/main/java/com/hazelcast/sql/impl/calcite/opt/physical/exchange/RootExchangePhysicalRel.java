@@ -35,7 +35,7 @@ public class RootExchangePhysicalRel extends AbstractExchangePhysicalRel {
 
     @Override
     public RelNode copy(RelTraitSet traitSet, List<RelNode> inputs) {
-        return new BroadcastExchangePhysicalRel(getCluster(), traitSet, sole(inputs));
+        return new RootExchangePhysicalRel(getCluster(), traitSet, sole(inputs));
     }
 
     @Override

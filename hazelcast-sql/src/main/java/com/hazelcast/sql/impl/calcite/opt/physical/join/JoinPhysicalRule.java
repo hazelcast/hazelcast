@@ -17,12 +17,11 @@
 package com.hazelcast.sql.impl.calcite.opt.physical.join;
 
 import com.hazelcast.sql.impl.calcite.opt.HazelcastConventions;
+import com.hazelcast.sql.impl.calcite.opt.OptUtils;
 import com.hazelcast.sql.impl.calcite.opt.distribution.DistributionTrait;
 import com.hazelcast.sql.impl.calcite.opt.distribution.DistributionTraitDef;
 import com.hazelcast.sql.impl.calcite.opt.distribution.DistributionType;
-import com.hazelcast.sql.impl.calcite.opt.OptUtils;
 import com.hazelcast.sql.impl.calcite.opt.logical.JoinLogicalRel;
-import com.hazelcast.sql.impl.calcite.opt.physical.AbstractPhysicalRule;
 import com.hazelcast.sql.impl.calcite.opt.physical.MaterializedInputPhysicalRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.ReplicatedToDistributedPhysicalRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.exchange.BroadcastExchangePhysicalRel;
@@ -43,7 +42,7 @@ import java.util.List;
 /**
  * General rule for join processing.
  */
-public final class JoinPhysicalRule extends AbstractPhysicalRule {
+public final class JoinPhysicalRule extends RelOptRule {
     public static final RelOptRule INSTANCE = new JoinPhysicalRule();
 
     private JoinPhysicalRule() {
@@ -54,7 +53,7 @@ public final class JoinPhysicalRule extends AbstractPhysicalRule {
     }
 
     @Override
-    public void onMatch0(RelOptRuleCall call) {
+    public void onMatch(RelOptRuleCall call) {
         JoinLogicalRel logicalJoin = call.rel(0);
 
         JoinType type = getJoinType(logicalJoin.getJoinType());

@@ -26,7 +26,7 @@ import org.apache.calcite.rel.RelNode;
 /**
  * Rule to convert the logical root node to physical root node.
  */
-public final class RootPhysicalRule extends AbstractPhysicalRule {
+public final class RootPhysicalRule extends RelOptRule {
     public static final RelOptRule INSTANCE = new RootPhysicalRule();
 
     private RootPhysicalRule() {
@@ -37,7 +37,7 @@ public final class RootPhysicalRule extends AbstractPhysicalRule {
     }
 
     @Override
-    public void onMatch0(RelOptRuleCall call) {
+    public void onMatch(RelOptRuleCall call) {
         RootLogicalRel logicalRoot = call.rel(0);
         RelNode input = call.rel(1);
 

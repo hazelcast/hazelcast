@@ -19,8 +19,8 @@ package com.hazelcast.sql.impl.calcite.opt.physical;
 import com.hazelcast.config.IndexType;
 import com.hazelcast.internal.util.BiTuple;
 import com.hazelcast.sql.impl.calcite.opt.HazelcastConventions;
-import com.hazelcast.sql.impl.calcite.opt.distribution.DistributionTrait;
 import com.hazelcast.sql.impl.calcite.opt.OptUtils;
+import com.hazelcast.sql.impl.calcite.opt.distribution.DistributionTrait;
 import com.hazelcast.sql.impl.calcite.opt.distribution.DistributionTraitDef;
 import com.hazelcast.sql.impl.calcite.opt.logical.MapScanLogicalRel;
 import com.hazelcast.sql.impl.exec.scan.index.IndexFilter;
@@ -52,7 +52,7 @@ import java.util.Map;
 /**
  * Convert logical map scan to either replicated or partitioned physical scan.
  */
-public final class MapScanPhysicalRule extends AbstractPhysicalRule {
+public final class MapScanPhysicalRule extends RelOptRule {
     public static final RelOptRule INSTANCE = new MapScanPhysicalRule();
 
     private MapScanPhysicalRule() {
@@ -63,7 +63,7 @@ public final class MapScanPhysicalRule extends AbstractPhysicalRule {
     }
 
     @Override
-    public void onMatch0(RelOptRuleCall call) {
+    public void onMatch(RelOptRuleCall call) {
         MapScanLogicalRel scan = call.rel(0);
 
         if (scan.isReplicated()) {

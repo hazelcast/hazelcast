@@ -17,10 +17,10 @@
 package com.hazelcast.sql.impl.calcite.opt.physical;
 
 import com.hazelcast.sql.impl.calcite.opt.HazelcastConventions;
+import com.hazelcast.sql.impl.calcite.opt.OptUtils;
 import com.hazelcast.sql.impl.calcite.opt.distribution.DistributionTrait;
 import com.hazelcast.sql.impl.calcite.opt.distribution.DistributionTraitDef;
 import com.hazelcast.sql.impl.calcite.opt.distribution.DistributionType;
-import com.hazelcast.sql.impl.calcite.opt.OptUtils;
 import com.hazelcast.sql.impl.calcite.opt.logical.ProjectLogicalRel;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.RelOptRuleCall;
@@ -46,7 +46,7 @@ import static com.hazelcast.sql.impl.calcite.opt.distribution.DistributionType.P
  * This rule converts logical projection into physical projection. Physical projection inherits distribution of the
  * underlying operator.
  */
-public final class ProjectPhysicalRule extends AbstractPhysicalRule {
+public final class ProjectPhysicalRule extends RelOptRule {
     public static final RelOptRule INSTANCE = new ProjectPhysicalRule();
 
     private ProjectPhysicalRule() {
@@ -57,7 +57,7 @@ public final class ProjectPhysicalRule extends AbstractPhysicalRule {
     }
 
     @Override
-    public void onMatch0(RelOptRuleCall call) {
+    public void onMatch(RelOptRuleCall call) {
         ProjectLogicalRel logicalProject = call.rel(0);
         RelNode input = logicalProject.getInput();
 
