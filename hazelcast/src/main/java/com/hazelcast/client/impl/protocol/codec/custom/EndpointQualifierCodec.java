@@ -24,8 +24,10 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastFor
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
-@Generated("bdeb8df1a9b3f099b77389e88628194a")
+@Generated("2ef402bf764a8ab929c01684a9b742a3")
 public final class EndpointQualifierCodec {
+    private static final int TYPE_FIELD_OFFSET = 0;
+    private static final int INITIAL_FRAME_SIZE = TYPE_FIELD_OFFSET + INT_SIZE_IN_BYTES;
 
     private EndpointQualifierCodec() {
     }
@@ -33,7 +35,10 @@ public final class EndpointQualifierCodec {
     public static void encode(ClientMessage clientMessage, com.hazelcast.instance.EndpointQualifier endpointQualifier) {
         clientMessage.add(BEGIN_FRAME.copy());
 
-        ProtocolTypeCodec.encode(clientMessage, endpointQualifier.getType());
+        ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[INITIAL_FRAME_SIZE]);
+        encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, endpointQualifier.getType());
+        clientMessage.add(initialFrame);
+
         CodecUtil.encodeNullable(clientMessage, endpointQualifier.getIdentifier(), StringCodec::encode);
 
         clientMessage.add(END_FRAME.copy());
@@ -43,7 +48,9 @@ public final class EndpointQualifierCodec {
         // begin frame
         iterator.next();
 
-        com.hazelcast.instance.ProtocolType type = ProtocolTypeCodec.decode(iterator);
+        ClientMessage.Frame initialFrame = iterator.next();
+        int type = decodeInt(initialFrame.content, TYPE_FIELD_OFFSET);
+
         java.lang.String identifier = CodecUtil.decodeNullable(iterator, StringCodec::decode);
 
         fastForwardToEndFrame(iterator);

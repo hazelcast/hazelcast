@@ -20,6 +20,7 @@ import com.hazelcast.cache.CacheEventType;
 import com.hazelcast.config.BitmapIndexOptions.UniqueKeyTransformation;
 import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig.ExpiryPolicyType;
 import com.hazelcast.config.IndexType;
+import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.internal.management.dto.ClientBwListEntryDTO;
 import com.hazelcast.internal.nio.Bits;
 
@@ -59,6 +60,10 @@ public final class FixedSizeTypesCodec {
 
     public static void encodeInt(byte[] buffer, int pos, ExpiryPolicyType expiryPolicyType) {
         encodeInt(buffer, pos, expiryPolicyType.getId());
+    }
+
+    public static void encodeInt(byte[] buffer, int pos, ProtocolType protocolType) {
+        encodeInt(buffer, pos, protocolType.getId());
     }
 
     public static void encodeInt(byte[] buffer, int pos, TimeUnit timeUnit) {
