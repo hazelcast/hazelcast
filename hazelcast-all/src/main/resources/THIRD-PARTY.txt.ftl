@@ -1,3 +1,12 @@
+<#-- To render the third-party file.
+ Available context :
+ - dependencyMap a collection of Map.Entry with
+   key are dependencies (as a MavenProject) (from the maven project)
+   values are licenses of each dependency (array of string)
+ - licenseMap a collection of Map.Entry with
+   key are licenses of each dependency (array of string)
+   values are all dependencies using this license
+-->
 **
 **  NOTICE file corresponding to the section 4 (d) of the Apache License,
 **  Version 2.0, in this case for the Hazelcast distribution.
@@ -22,11 +31,7 @@ The packages:
 com.hazelcast.internal.util.collection
 com.hazelcast.internal.util.concurrent
 
-and the classes:
-
-com.hazelcast.internal.util.QuickMath
-com.hazelcast.client.impl.protocol.util.UnsafeBuffer
-com.hazelcast.client.impl.protocol.util.BufferBuilder
+and the class com.hazelcast.internal.util.QuickMath
 
 contain code originating from the Agrona project
 (https://github.com/real-logic/Agrona).
@@ -51,19 +56,12 @@ originating from The JGraphT Project (https://github.com/jgrapht/jgrapht).
 
 This product includes the following libraries with the following licenses:
 
-Apache License, Version 2.0
-  Jackson-core:2.9.7
-  Guava: Google Core Libraries for Java:19.0
-  project ':json-path':2.4.0
-  Calcite Core:1.22.0
-  Calcite Linq4j:1.22.0
-  Apache Calcite Avatica:1.16.0
-  SnakeYAML Engine:1.0
-BSD 3-Clause License
-  commons-compiler:3.0.11
-  janino:3.0.11
-MIT License
-  SLF4J API Module:1.7.25
+<#list licenseMap as e>
+${e.getKey()}
+<#list e.getValue() as a>
+  ${a.name + ":" + a.version?trim}
+</#list>
+</#list>
 
 -----
 

@@ -145,9 +145,8 @@
                     </execution>
                 </executions>
                 <configuration>
-                    <outputDirectory>../src/main/resources/</outputDirectory>
-                    <fileTemplate>src/main/resources/NOTICE.ftl</fileTemplate>
-                    <thirdPartyFilename>NOTICE</thirdPartyFilename>
+                    <outputDirectory>${project.build.directory}</outputDirectory>
+                    <fileTemplate>${project.basedir}/src/main/resources/ThirdParty.txt.ftl</fileTemplate>
                     <excludedGroups>com.hazelcast</excludedGroups>
                     <excludedScopes>test,provided</excludedScopes>
                     <failOnBlacklist>true</failOnBlacklist>
@@ -241,20 +240,6 @@
             <artifactId>org.apache.felix.utils</artifactId>
             <version>${felix.utils.version}</version>
             <scope>test</scope>
-        </dependency>
-
-        <!-- shaded deps are required to be listed one by one for  correct NOTICE generation -->
-        <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>jackson-core</artifactId>
-            <version>${jackson.version}</version>
-            <optional>true</optional>
-        </dependency>
-        <dependency>
-            <groupId>org.snakeyaml</groupId>
-            <artifactId>snakeyaml-engine</artifactId>
-            <version>${snakeyaml.engine.version}</version>
-            <optional>true</optional>
         </dependency>
     </dependencies>
 </project>
