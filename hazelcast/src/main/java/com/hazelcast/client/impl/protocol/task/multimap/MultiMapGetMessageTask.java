@@ -22,7 +22,7 @@ import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.multimap.impl.MultiMapRecord;
 import com.hazelcast.multimap.impl.MultiMapService;
-import com.hazelcast.multimap.impl.operations.GetAllOperation;
+import com.hazelcast.multimap.impl.operations.GetOperation;
 import com.hazelcast.multimap.impl.operations.MultiMapResponse;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.serialization.Data;
@@ -48,7 +48,7 @@ public class MultiMapGetMessageTask
 
     @Override
     protected Operation prepareOperation() {
-        GetAllOperation operation = new GetAllOperation(parameters.name, parameters.key);
+        GetOperation operation = new GetOperation(parameters.name, parameters.key);
         operation.setThreadId(parameters.threadId);
         return operation;
     }

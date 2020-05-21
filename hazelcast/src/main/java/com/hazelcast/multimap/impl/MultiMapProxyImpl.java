@@ -30,6 +30,7 @@ import com.hazelcast.multimap.LocalMultiMapStats;
 import com.hazelcast.multimap.MultiMap;
 import com.hazelcast.multimap.impl.operations.EntrySetResponse;
 import com.hazelcast.multimap.impl.operations.MultiMapResponse;
+import com.hazelcast.spi.impl.DelegatingCompletableFuture;
 import com.hazelcast.spi.impl.InitializingObject;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.NodeEngine;
@@ -38,7 +39,9 @@ import com.hazelcast.splitbrainprotection.SplitBrainProtectionOn;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.text.MessageFormat;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.EventListener;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -51,10 +54,12 @@ import java.util.concurrent.CompletionStage;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.internal.util.Preconditions.checkInstanceOf;
+import static com.hazelcast.internal.util.Preconditions.checkNoNullInside;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.Preconditions.checkPositive;
 import static com.hazelcast.internal.util.Preconditions.checkTrueUnsupportedOperation;
 import static com.hazelcast.internal.util.SetUtil.createHashSet;
+import static com.hazelcast.spi.impl.InternalCompletableFuture.newCompletedFuture;
 
 @SuppressWarnings("checkstyle:methodcount")
 public class MultiMapProxyImpl<K, V>
@@ -135,6 +140,40 @@ public class MultiMapProxyImpl<K, V>
     }
 
     @Override
+    public CompletionStage<Map<K, Collection<V>>> getAllAsync(@Nonnull Set<K> keys) {
+        checkTrueUnsupportedOperation(isClusterVersionGreaterOrEqual(Versions.V4_1), MINIMUM_VERSION_ERROR_4_1);
+        checkNoNullInside(keys, "supplied key-set cannot contain null key");
+
+        if (CollectionUtil.isEmpty(keys)) {
+            return newCompletedFuture(Collections.EMPTY_MAP);
+        }
+
+        List<Data> dataKeys = new LinkedList<>();
+        for (K key : keys) {
+            dataKeys.add(toData(key));
+        }
+
+        Map<Data, List<Data>> resultingKeyValuePairs = new HashMap<>();
+        NodeEngine nodeEngine = getNodeEngine();
+        return new DelegatingCompletableFuture<>(getService().getSerializationService(),
+                getAllInternalAsync(dataKeys, resultingKeyValuePairs).handleAsync(
+                        (response, t) -> {
+                            Map<K, Collection<V>> decodedResult = new HashMap<>();
+                            for (Map.Entry<Data, List<Data>> entry : resultingKeyValuePairs.entrySet()) {
+                                K key = nodeEngine.toObject(entry.getKey());
+                                Collection<V> coll = new ArrayList<>();
+                                for (Data d : entry.getValue()) {
+                                    coll.add(nodeEngine.toObject(d));
+                                }
+                                decodedResult.put(key, coll);
+                            }
+                            return decodedResult;
+                        }
+                )
+        );
+    }
+
+    @Override
     public boolean put(@Nonnull K key, @Nonnull V value) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         checkNotNull(value, NULL_VALUE_IS_NOT_ALLOWED);
@@ -152,7 +191,7 @@ public class MultiMapProxyImpl<K, V>
 
         NodeEngine nodeEngine = getNodeEngine();
         Data dataKey = nodeEngine.toData(key);
-        MultiMapResponse result = getAllInternal(dataKey);
+        MultiMapResponse result = getInternal(dataKey);
         return result.getObjectCollection(nodeEngine);
     }
 

@@ -37,20 +37,24 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -137,7 +141,7 @@ public class MultiMapTest extends HazelcastTestSupport {
         };
     }
 
-    protected HazelcastInstance testMultiMapPutAllSetup() {
+    protected HazelcastInstance testMultiMapBulkSetup() {
         MultiMapConfig multiMapConfig1 = new MultiMapConfig()
                 .setName("testMultiMapPutAllMapList")
                 .setValueCollectionType(MultiMapConfig.ValueCollectionType.LIST)
@@ -146,9 +150,14 @@ public class MultiMapTest extends HazelcastTestSupport {
                 .setName("testMultiMapPutAllMapSet")
                 .setValueCollectionType(MultiMapConfig.ValueCollectionType.SET)
                 .setBinary(false);
+        MultiMapConfig multiMapConfig3 = new MultiMapConfig()
+                .setName("testMultiMapGetAll")
+                .setValueCollectionType(MultiMapConfig.ValueCollectionType.LIST)
+                .setBinary(false);
         Config cfg = smallInstanceConfig()
                 .addMultiMapConfig(multiMapConfig1)
-                .addMultiMapConfig(multiMapConfig2);
+                .addMultiMapConfig(multiMapConfig2)
+                .addMultiMapConfig(multiMapConfig3);
         HazelcastInstance hz = createHazelcastInstanceFactory(1)
                 .newInstances(cfg)[0];
 
@@ -224,7 +233,7 @@ public class MultiMapTest extends HazelcastTestSupport {
         expectedMultiMap.put("B", new ArrayList<>(Arrays.asList(6, 6, 6, 9)));
         expectedMultiMap.put("C", new ArrayList<>(Arrays.asList(10, 10, 10, 10, 10, 15)));
 
-        testMultiMapPutAllTemplate(testMultiMapPutAllSetup(),
+        testMultiMapPutAllTemplate(testMultiMapBulkSetup(),
                 expectedMultiMap,
                 (o) -> {
                     o.putAllAsync(expectedMultiMap);
@@ -239,7 +248,7 @@ public class MultiMapTest extends HazelcastTestSupport {
         expectedMultiMap.put("B", new ArrayList<>(Arrays.asList(6, 6, 6, 9)));
         expectedMultiMap.put("C", new ArrayList<>(Arrays.asList(10, 10, 10, 10, 10, 15)));
 
-        testMultiMapPutAllTemplate(testMultiMapPutAllSetup(),
+        testMultiMapPutAllTemplate(testMultiMapBulkSetup(),
                 expectedMultiMap,
                 (o) -> {
                     expectedMultiMap.keySet().forEach(
@@ -247,6 +256,42 @@ public class MultiMapTest extends HazelcastTestSupport {
                     );
                 }
         );
+    }
+
+    @Test
+    public void testMultiMapGetAllAsync() throws ExecutionException, InterruptedException {
+        HazelcastInstance instance = testMultiMapBulkSetup();
+        MultiMap<String, Integer> multiMap1 = instance.getMultiMap("testMultiMapGetAll");
+        Map<String, Collection<? extends Integer>> expectedMultiMap = new HashMap<>();
+        expectedMultiMap.put("A", new ArrayList<>(Arrays.asList(1, 1, 1, 1, 2)));
+        expectedMultiMap.put("B", new ArrayList<>(Arrays.asList(6, 6, 6, 9)));
+        expectedMultiMap.put("C", new ArrayList<>(Arrays.asList(10, 10, 10, 10, 10, 15)));
+        multiMap1.putAllAsync(expectedMultiMap).toCompletableFuture().join();
+
+        Set<String> keys = new HashSet<>(Arrays.asList("A", "C"));
+
+        CompletableFuture<Map<String, Collection<Integer>>> completableFuture = multiMap1.getAllAsync(keys).toCompletableFuture();
+        assertCompletesEventually(completableFuture);
+        Map<String, Collection<Integer>> multiMap2 = completableFuture.get();
+        assertNotNull(multiMap2);
+        for (String key : keys) {
+            assertEquals(expectedMultiMap.get(key).size(), multiMap2.get(key).size());
+        }
+    }
+
+    @Test
+    public void testMultiMapGetAllAsyncNonExistent() throws ExecutionException, InterruptedException {
+        HazelcastInstance instance = testMultiMapBulkSetup();
+        MultiMap<String, Integer> multiMap1 = instance.getMultiMap("testMultiMapGetAll");
+        Set<String> keys = new HashSet<>(Arrays.asList("D", "E", "F"));
+
+        CompletableFuture<Map<String, Collection<Integer>>> completableFuture = multiMap1.getAllAsync(keys).toCompletableFuture();
+        assertCompletesEventually(completableFuture);
+        Map<String, Collection<Integer>> multiMap2 = completableFuture.get();
+        assertNotNull(multiMap2);
+        for (String key : keys) {
+            assertNull(multiMap2.get(key));
+        }
     }
 
     @Test
@@ -597,6 +642,26 @@ public class MultiMapTest extends HazelcastTestSupport {
         MultiMap<Object, Object> multiMap = getMultiMap(factory.newInstances(), randomString());
 
         multiMap.get(null);
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void testGetAllAsync_whenKeysNull() {
+        HazelcastInstance instance = testMultiMapBulkSetup();
+        MultiMap<String, Integer> multiMap = instance.getMultiMap("testMultiMapGetAll");
+
+        multiMap.getAllAsync(new HashSet<>(Arrays.asList(null)));
+    }
+
+    @Test
+    public void testGetAllAsync_whenKeysEmpty() throws ExecutionException, InterruptedException {
+        HazelcastInstance instance = testMultiMapBulkSetup();
+        MultiMap<String, Integer> multiMap1 = instance.getMultiMap("testMultiMapGetAll");
+
+        CompletableFuture<Map<String, Collection<Integer>>> completableFuture = multiMap1.getAllAsync(Collections.EMPTY_SET).toCompletableFuture();
+        assertCompletesEventually(completableFuture);
+        Map<String, Collection<Integer>> multiMap2 = completableFuture.get();
+        assertNotNull(multiMap2);
+        assertTrue(multiMap2.isEmpty());
     }
 
     @Test(expected = NullPointerException.class)

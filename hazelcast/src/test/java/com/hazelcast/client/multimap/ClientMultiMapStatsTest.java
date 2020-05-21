@@ -76,6 +76,12 @@ public class ClientMultiMapStatsTest extends LocalMultiMapStatsTest {
         assertEquals(100, localMapStats2.getHits());
     }
 
+    public void testGetAllAndHitsGeneratedVerify() {
+        LocalMapStats localMapStats = getMultiMapStats();
+        assertEquals(100, localMapStats.getOwnedEntryCount());
+        assertEquals(50, localMapStats.getHits());
+    }
+
     @Override
     protected LocalMultiMapStats getMultiMapStats() {
         return getMultiMapStats(mapName);

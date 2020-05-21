@@ -27,6 +27,7 @@ import com.hazelcast.client.impl.protocol.codec.MultiMapContainsValueCodec;
 import com.hazelcast.client.impl.protocol.codec.MultiMapDeleteCodec;
 import com.hazelcast.client.impl.protocol.codec.MultiMapEntrySetCodec;
 import com.hazelcast.client.impl.protocol.codec.MultiMapForceUnlockCodec;
+import com.hazelcast.client.impl.protocol.codec.MultiMapGetAllCodec;
 import com.hazelcast.client.impl.protocol.codec.MultiMapGetCodec;
 import com.hazelcast.client.impl.protocol.codec.MultiMapIsLockedCodec;
 import com.hazelcast.client.impl.protocol.codec.MultiMapKeySetCodec;
@@ -69,7 +70,9 @@ import javax.annotation.Nullable;
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -78,9 +81,11 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
 
+import static com.hazelcast.internal.util.Preconditions.checkNoNullInside;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.Preconditions.checkPositive;
 import static com.hazelcast.map.impl.ListenerAdapters.createListenerAdapter;
+import static com.hazelcast.spi.impl.InternalCompletableFuture.newCompletedFuture;
 import static java.lang.Thread.currentThread;
 
 /**
@@ -129,7 +134,6 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
         putAllInternal(dataMap, future);
         return future;
     }
-
 
     @SuppressWarnings({"checkstyle:cyclomaticcomplexity", "checkstyle:npathcomplexity", "checkstyle:methodlength"})
     private void putAllInternal(@Nonnull Map<Data, Collection<Data>> map,
@@ -181,6 +185,77 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
             new ClientInvocation(getClient(), request, getName(), partitionId)
                     .invoke()
                     .whenCompleteAsync(callback);
+        }
+    }
+
+    @Override
+    public CompletionStage<Map<K, Collection<V>>> getAllAsync(@Nonnull Set<K> keys) {
+        checkNoNullInside(keys, "supplied key-set cannot contain null key");
+
+        if (CollectionUtil.isEmpty(keys)) {
+            return newCompletedFuture(Collections.EMPTY_MAP);
+        }
+
+        return getAllInternalAsync(keys);
+    }
+
+    //NB: based from ClientMapProxy.getAllInternal
+    protected CompletionStage<Map<K, Collection<V>>> getAllInternalAsync(Set<K> keys) {
+        InternalCompletableFuture<Map<K, Collection<V>>> resultFuture = new InternalCompletableFuture<>();
+        Map<Integer, List<Data>> partitionToKeyData = new HashMap<>();
+        fillPartitionToKeyData(keys, partitionToKeyData);
+
+        AtomicInteger counter = new AtomicInteger(partitionToKeyData.size());
+        Map<K, Collection<V>> decodedResult = new HashMap<>();
+        BiConsumer<ClientMessage, Throwable> callback = (response, t) -> {
+            if (t != null) {
+                resultFuture.completeExceptionally(t);
+            } else {
+                MultiMapGetAllCodec.ResponseParameters resultParameters = MultiMapGetAllCodec.decodeResponse(response);
+
+                for (Map.Entry<Data, List<Data>> entry : resultParameters.response) {
+                    K key = toObject(entry.getKey());
+                    Collection<V> coll = new ArrayList<>();
+                    for (Data d : entry.getValue()) {
+                        coll.add(getSerializationService().toObject(d));
+                    }
+                    decodedResult.put(key, coll);
+                }
+
+                if (counter.decrementAndGet() == 0) {
+                    if (!resultFuture.isDone()) {
+                        resultFuture.complete(decodedResult);
+                    }
+                }
+            }
+        };
+
+        for (Map.Entry<Integer, List<Data>> entry : partitionToKeyData.entrySet()) {
+            int partitionId = entry.getKey();
+            List<Data> keyList = entry.getValue();
+            if (!keyList.isEmpty()) {
+                ClientMessage request = MultiMapGetAllCodec.encodeRequest(name, keyList);
+                new ClientInvocation(getClient(), request, getName(), partitionId).invoke()
+                        .whenCompleteAsync(callback);
+            }
+        }
+
+        return resultFuture;
+    }
+
+    //NB: based from ClientMapProxy.fillPartitionToKeyData
+    protected void fillPartitionToKeyData(Set<K> keys,
+                                          Map<Integer, List<Data>> partitionToKeyData) {
+        ClientPartitionService partitionService = getContext().getPartitionService();
+        for (K key : keys) {
+            Data keyData = toData(key);
+            int partitionId = partitionService.getPartitionId(keyData);
+            List<Data> keyList = partitionToKeyData.get(partitionId);
+            if (keyList == null) {
+                keyList = new ArrayList<>();
+                partitionToKeyData.put(partitionId, keyList);
+            }
+            keyList.add(keyData);
         }
     }
 

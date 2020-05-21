@@ -16,40 +16,93 @@
 
 package com.hazelcast.multimap.impl.operations;
 
-import com.hazelcast.internal.locksupport.LockWaitNotifyKey;
 import com.hazelcast.core.OperationTimeoutException;
+import com.hazelcast.internal.locksupport.LockWaitNotifyKeySet;
+import com.hazelcast.internal.nio.IOUtil;
+import com.hazelcast.internal.partition.IPartitionService;
+import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.services.DistributedObjectNamespace;
+import com.hazelcast.map.impl.DataCollection;
+import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.multimap.impl.MultiMapContainer;
 import com.hazelcast.multimap.impl.MultiMapDataSerializerHook;
 import com.hazelcast.multimap.impl.MultiMapRecord;
 import com.hazelcast.multimap.impl.MultiMapService;
 import com.hazelcast.multimap.impl.MultiMapValue;
-import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.impl.operationservice.BlockingOperation;
-import com.hazelcast.internal.services.DistributedObjectNamespace;
+import com.hazelcast.spi.impl.operationservice.PartitionAwareOperation;
 import com.hazelcast.spi.impl.operationservice.ReadonlyOperation;
 import com.hazelcast.spi.impl.operationservice.WaitNotifyKey;
 
+import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collection;
 
-public class GetAllOperation extends AbstractKeyBasedMultiMapOperation implements BlockingOperation, ReadonlyOperation {
+public class GetAllOperation extends AbstractMultiMapOperation implements PartitionAwareOperation,
+        BlockingOperation, ReadonlyOperation {
+    private Collection<Data> keys = new ArrayList<>();
 
     public GetAllOperation() {
     }
 
-    public GetAllOperation(String name, Data dataKey) {
-        super(name, dataKey);
+    public GetAllOperation(String name, Collection<Data> keys) {
+        super(name);
+        this.keys = keys;
     }
 
+    //NB: generally based on Map.GetAllOperation#runInternal
     @Override
     public void run() throws Exception {
         MultiMapContainer container = getOrCreateContainer();
-        MultiMapValue multiMapValue = container.getMultiMapValueOrNull(dataKey);
-        Collection<MultiMapRecord> coll = null;
-        if (multiMapValue != null) {
-            multiMapValue.incrementHit();
-            coll = multiMapValue.getCollection(executedLocally());
+        IPartitionService partitionService = getNodeEngine().getPartitionService();
+        int partitionId = getPartitionId();
+        MapEntries entries = new MapEntries(1);
+        for (Data key : keys) {
+            //FIXME: do we actually need this extra partition check?
+            if (partitionId == partitionService.getPartitionId(key)) {
+                MultiMapValue multiMapValue = container.getMultiMapValueOrNull(key);
+
+                if (multiMapValue != null) {
+                    multiMapValue.incrementHit();
+
+                    Collection<MultiMapRecord> coll = multiMapValue.getCollection(executedLocally());
+                    Collection<Data> objColl = new ArrayList<>();
+                    //strip the MMR
+                    for (MultiMapRecord mmr : coll) {
+                        Data d = isBinary() ? (Data) mmr.getObject() : toData(mmr.getObject());
+                        objColl.add(d);
+                    }
+                    entries.add(toData(key), toData(new DataCollection(objColl)));
+                }
+                //TODO: add debug or flag notification on the else?
+            }
+            //TODO: add debug or flag notification on the else?
         }
-        response = new MultiMapResponse(coll, getValueCollectionType(container));
+        response = entries;
+    }
+
+    @Override
+    public WaitNotifyKey getWaitKey() {
+        return new LockWaitNotifyKeySet(new DistributedObjectNamespace(MultiMapService.SERVICE_NAME, name), keys);
+    }
+
+    @Override
+    public boolean shouldWait() {
+        MultiMapContainer container = getOrCreateContainer();
+        for (Data dataKey : keys) {
+            if (container.isTransactionallyLocked(dataKey)) {
+                //FIXME: unsure about this
+                return !container.canAcquireLock(dataKey, getCallerUuid(), -1);
+            }
+        }
+        return false;
+    }
+
+    @Override
+    public void onWaitExpire() {
+        sendResponse(new OperationTimeoutException("Cannot read transactionally locked entry!"));
     }
 
     @Override
@@ -58,21 +111,27 @@ public class GetAllOperation extends AbstractKeyBasedMultiMapOperation implement
     }
 
     @Override
-    public WaitNotifyKey getWaitKey() {
-        return new LockWaitNotifyKey(new DistributedObjectNamespace(MultiMapService.SERVICE_NAME, name), dataKey);
-    }
-
-    @Override
-    public boolean shouldWait() {
-        MultiMapContainer container = getOrCreateContainer();
-        if (container.isTransactionallyLocked(dataKey)) {
-            return !container.canAcquireLock(dataKey, getCallerUuid(), threadId);
+    protected void writeInternal(ObjectDataOutput out) throws IOException {
+        super.writeInternal(out);
+        if (keys == null) {
+            out.writeInt(-1);
+        } else {
+            out.writeInt(keys.size());
+            for (Data key : keys) {
+                IOUtil.writeData(out, key);
+            }
         }
-        return false;
     }
 
     @Override
-    public void onWaitExpire() {
-        sendResponse(new OperationTimeoutException("Cannot read transactionally locked entry!"));
+    protected void readInternal(ObjectDataInput in) throws IOException {
+        super.readInternal(in);
+        int size = in.readInt();
+        if (size > -1) {
+            for (int i = 0; i < size; i++) {
+                Data data = IOUtil.readData(in);
+                keys.add(data);
+            }
+        }
     }
 }
