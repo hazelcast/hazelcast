@@ -29,15 +29,18 @@ import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.Sources;
 import com.hazelcast.jet.pipeline.StreamStage;
 import io.grpc.ManagedChannelBuilder;
+import io.grpc.Server;
 import io.grpc.ServerBuilder;
 
 import java.io.BufferedReader;
+import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.CancellationException;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.stream.Stream;
 
@@ -128,8 +131,7 @@ public final class GRPCEnrichment {
     private void go() throws Exception {
         EventGenerator eventGenerator = new EventGenerator(jet.getMap(TRADES));
         eventGenerator.start();
-        try {
-            startGRPCServer();
+        try (Closeable server = startGRPCServer()) {
             Pipeline p = enrichUsingGRPC();
             Job job = jet.newJob(p);
             eventGenerator.generateEventsForFiveSeconds();
@@ -144,19 +146,25 @@ public final class GRPCEnrichment {
         }
     }
 
-    private static void startGRPCServer() throws IOException {
+    private static Closeable startGRPCServer() throws IOException {
         Map<Integer, Product> productMap = readLines("products.txt")
                 .collect(toMap(Entry::getKey, e -> new Product(e.getKey(), e.getValue())));
         Map<Integer, Broker> brokerMap = readLines("brokers.txt")
                 .collect(toMap(Entry::getKey, e -> new Broker(e.getKey(), e.getValue())));
 
-        ServerBuilder.forPort(PORT)
-                     .executor(Executors.newFixedThreadPool(4))
-                     .addService(new ProductServiceImpl(productMap))
-                     .addService(new BrokerServiceImpl(brokerMap))
-                     .build()
-                     .start();
+        ExecutorService executor = Executors.newFixedThreadPool(4);
+        Server server = ServerBuilder.forPort(PORT)
+                                     .executor(executor)
+                                     .addService(new ProductServiceImpl(productMap))
+                                     .addService(new BrokerServiceImpl(brokerMap))
+                                     .build()
+                                     .start();
         System.out.println("*** Server started, listening on " + PORT);
+
+        return () -> {
+            server.shutdown();
+            executor.shutdown();
+        };
     }
 
     private static Stream<Map.Entry<Integer, String>> readLines(String file) {
