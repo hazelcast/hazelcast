@@ -68,8 +68,7 @@ public class ConsoleAppTest extends HazelcastTestSupport {
     private PrintStream createAppConsole() {
         try {
             return new PrintStream(applicationOutput, true, "UTF-8");
-        }
-        catch (UnsupportedEncodingException e) {
+        } catch (UnsupportedEncodingException e) {
             throw ExceptionUtil.rethrow(e);
         }
     }
@@ -115,7 +114,7 @@ public class ConsoleAppTest extends HazelcastTestSupport {
         String fileName = "script";
         File script = folder.newFile(fileName);
         new FileWriter(script).append("echo true").close();
-        consoleApp.handleCommand("@"+script.getAbsolutePath());
+        consoleApp.handleCommand("@" + script.getAbsolutePath());
         assertTextInApplicationSystemOut("echo: true");
     }
 
@@ -219,105 +218,105 @@ public class ConsoleAppTest extends HazelcastTestSupport {
 
     // @formatter:off
     private static final String HELP_MESSAGE =
-            "Commands:\n" +
-            "-- General commands\n" +
-            "echo true|false                      //turns on/off echo of commands (default false)\n" +
-            "silent true|false                    //turns on/off silent of command output (default false)\n" +
-            "#<number> <command>                  //repeats <number> time <command>, replace $i in <command> with current iteration (0..<number-1>)\n" +
-            "&<number> <command>                  //forks <number> threads to execute <command>, replace $t in <command> with current thread number (0..<number-1>\n" +
-            "     When using #x or &x, is is advised to use silent true as well.\n" +
-            "     When using &x with m.putmany and m.removemany, each thread will get a different share of keys unless a start key index is specified\n" +
-            "jvm                                  //displays info about the runtime\n" +
-            "who                                  //displays info about the cluster\n" +
-            "whoami                               //displays info about this cluster member\n" +
-            "ns <string>                          //switch the namespace for using the distributed data structure name  <string> (e.g. queue/map/set/list name; defaults to \"default\")\n" +
-            "@<file>                              //executes the given <file> script. Use '//' for comments in the script\n" +
-            "\n" +
-            "-- Queue commands\n" +
-            "q.offer <string>                     //adds a string object to the queue\n" +
-            "q.poll                               //takes an object from the queue\n" +
-            "q.offermany <number> [<size>]        //adds indicated number of string objects to the queue ('obj<i>' or byte[<size>]) \n" +
-            "q.pollmany <number>                  //takes indicated number of objects from the queue\n" +
-            "q.iterator [remove]                  //iterates the queue, remove if specified\n" +
-            "q.size                               //size of the queue\n" +
-            "q.clear                              //clears the queue\n" +
-            "\n" +
-            "-- Set commands\n" +
-            "s.add <string>                       //adds a string object to the set\n" +
-            "s.remove <string>                    //removes the string object from the set\n" +
-            "s.addmany <number>                   //adds indicated number of string objects to the set ('obj<i>')\n" +
-            "s.removemany <number>                //takes indicated number of objects from the set\n" +
-            "s.iterator [remove]                  //iterates the set, removes if specified\n" +
-            "s.size                               //size of the set\n" +
-            "s.clear                              //clears the set\n" +
-            "\n" +
-            "-- Lock commands\n" +
-            "lock <key>                           //same as Hazelcast.getCPSubsystem().getLock(key).lock()\n" +
-            "tryLock <key>                        //same as Hazelcast.getCPSubsystem().getLock(key).tryLock()\n" +
-            "tryLock <key> <time>                 //same as tryLock <key> with timeout in seconds\n" +
-            "unlock <key>                         //same as Hazelcast.getCPSubsystem().getLock(key).unlock()\n" +
-            "\n" +
-            "-- Map commands\n" +
-            "m.put <key> <value>                  //puts an entry to the map\n" +
-            "m.remove <key>                       //removes the entry of given key from the map\n" +
-            "m.get <key>                          //returns the value of given key from the map\n" +
-            "m.putmany <number> [<size>] [<index>]//puts indicated number of entries to the map ('key<i>':byte[<size>], <index>+(0..<number>)\n" +
-            "m.removemany <number> [<index>]      //removes indicated number of entries from the map ('key<i>', <index>+(0..<number>)\n" +
-            "     When using &x with m.putmany and m.removemany, each thread will get a different share of keys unless a start key <index> is specified\n" +
-            "m.keys                               //iterates the keys of the map\n" +
-            "m.values                             //iterates the values of the map\n" +
-            "m.entries                            //iterates the entries of the map\n" +
-            "m.iterator [remove]                  //iterates the keys of the map, remove if specified\n" +
-            "m.size                               //size of the map\n" +
-            "m.localSize                          //local size of the map\n" +
-            "m.clear                              //clears the map\n" +
-            "m.destroy                            //destroys the map\n" +
-            "m.lock <key>                         //locks the key\n" +
-            "m.tryLock <key>                      //tries to lock the key and returns immediately\n" +
-            "m.tryLock <key> <time>               //tries to lock the key within given seconds\n" +
-            "m.unlock <key>                       //unlocks the key\n" +
-            "m.stats                              //shows the local stats of the map\n" +
-            "\n" +
-            "-- MultiMap commands\n" +
-            "mm.put <key> <value>                  //puts an entry to the multimap\n" +
-            "mm.get <key>                          //returns the value of given key from the multimap\n" +
-            "mm.remove <key>                       //removes the entry of given key from the multimap\n" +
-            "mm.size                               //size of the multimap\n" +
-            "mm.clear                              //clears the multimap\n" +
-            "mm.destroy                            //destroys the multimap\n" +
-            "mm.iterator [remove]                  //iterates the keys of the multimap, remove if specified\n" +
-            "mm.keys                               //iterates the keys of the multimap\n" +
-            "mm.values                             //iterates the values of the multimap\n" +
-            "mm.entries                            //iterates the entries of the multimap\n" +
-            "mm.lock <key>                         //locks the key\n" +
-            "mm.tryLock <key>                      //tries to lock the key and returns immediately\n" +
-            "mm.tryLock <key> <time>               //tries to lock the key within given seconds\n" +
-            "mm.unlock <key>                       //unlocks the key\n" +
-            "mm.stats                              //shows the local stats of the multimap\n" +
-            "\n" +
-            "-- List commands:\n" +
-            "l.add <string>                        //adds a string object to the list\n" +
-            "l.add <index> <string>                //adds a string object as an item with given index in the list\n" +
-            "l.contains <string>                   //checks if the list contains a string object\n" +
-            "l.remove <string>                     //removes a string object from the list\n" +
-            "l.remove <index>                      //removes the item with given index from the list\n" +
-            "l.set <index> <string>                //sets a string object to the item with given index in the list\n" +
-            "l.iterator [remove]                   //iterates the list, remove if specified\n" +
-            "l.size                                //size of the list\n" +
-            "l.clear                               //clears the list\n" +
-            "\n" +
-            "-- IAtomicLong commands:\n" +
-            "a.get                                 //returns the value of the atomic long\n" +
-            "a.set <long>                          //sets a value to the atomic long\n" +
-            "a.inc                                 //increments the value of the atomic long by one\n" +
-            "a.dec                                 //decrements the value of the atomic long by one\n" +
-            "\n" +
-            "-- Executor Service commands:\n" +
-            "execute <echo-input>                                     //executes an echo task on random member\n" +
-            "executeOnKey <echo-input> <key>                          //executes an echo task on the member that owns the given key\n" +
-            "executeOnMember <echo-input> <memberIndex>               //executes an echo task on the member with given index\n" +
-            "executeOnMembers <echo-input>                            //executes an echo task on all of the members\n" +
-            "e<threadcount>.simulateLoad <task-count> <delaySeconds>  //simulates load on executor with given number of thread (e1..e16)\n" +
-            "\n";
+            "Commands:\n"
+                    + "-- General commands\n"
+                    + "echo true|false                      //turns on/off echo of commands (default false)\n"
+                    + "silent true|false                    //turns on/off silent of command output (default false)\n"
+                    + "#<number> <command>                  //repeats <number> time <command>, replace $i in <command> with current iteration (0..<number-1>)\n"
+                    + "&<number> <command>                  //forks <number> threads to execute <command>, replace $t in <command> with current thread number (0..<number-1>\n"
+                    + "     When using #x or &x, is is advised to use silent true as well.\n"
+                    + "     When using &x with m.putmany and m.removemany, each thread will get a different share of keys unless a start key index is specified\n"
+                    + "jvm                                  //displays info about the runtime\n"
+                    + "who                                  //displays info about the cluster\n"
+                    + "whoami                               //displays info about this cluster member\n"
+                    + "ns <string>                          //switch the namespace for using the distributed data structure name  <string> (e.g. queue/map/set/list name; defaults to \"default\")\n"
+                    + "@<file>                              //executes the given <file> script. Use '//' for comments in the script\n"
+                    + "\n"
+                    + "-- Queue commands\n"
+                    + "q.offer <string>                     //adds a string object to the queue\n"
+                    + "q.poll                               //takes an object from the queue\n"
+                    + "q.offermany <number> [<size>]        //adds indicated number of string objects to the queue ('obj<i>' or byte[<size>]) \n"
+                    + "q.pollmany <number>                  //takes indicated number of objects from the queue\n"
+                    + "q.iterator [remove]                  //iterates the queue, remove if specified\n"
+                    + "q.size                               //size of the queue\n"
+                    + "q.clear                              //clears the queue\n"
+                    + "\n"
+                    + "-- Set commands\n"
+                    + "s.add <string>                       //adds a string object to the set\n"
+                    + "s.remove <string>                    //removes the string object from the set\n"
+                    + "s.addmany <number>                   //adds indicated number of string objects to the set ('obj<i>')\n"
+                    + "s.removemany <number>                //takes indicated number of objects from the set\n"
+                    + "s.iterator [remove]                  //iterates the set, removes if specified\n"
+                    + "s.size                               //size of the set\n"
+                    + "s.clear                              //clears the set\n"
+                    + "\n"
+                    + "-- Lock commands\n"
+                    + "lock <key>                           //same as Hazelcast.getCPSubsystem().getLock(key).lock()\n"
+                    + "tryLock <key>                        //same as Hazelcast.getCPSubsystem().getLock(key).tryLock()\n"
+                    + "tryLock <key> <time>                 //same as tryLock <key> with timeout in seconds\n"
+                    + "unlock <key>                         //same as Hazelcast.getCPSubsystem().getLock(key).unlock()\n"
+                    + "\n"
+                    + "-- Map commands\n"
+                    + "m.put <key> <value>                  //puts an entry to the map\n"
+                    + "m.remove <key>                       //removes the entry of given key from the map\n"
+                    + "m.get <key>                          //returns the value of given key from the map\n"
+                    + "m.putmany <number> [<size>] [<index>]//puts indicated number of entries to the map ('key<i>':byte[<size>], <index>+(0..<number>)\n"
+                    + "m.removemany <number> [<index>]      //removes indicated number of entries from the map ('key<i>', <index>+(0..<number>)\n"
+                    + "     When using &x with m.putmany and m.removemany, each thread will get a different share of keys unless a start key <index> is specified\n"
+                    + "m.keys                               //iterates the keys of the map\n"
+                    + "m.values                             //iterates the values of the map\n"
+                    + "m.entries                            //iterates the entries of the map\n"
+                    + "m.iterator [remove]                  //iterates the keys of the map, remove if specified\n"
+                    + "m.size                               //size of the map\n"
+                    + "m.localSize                          //local size of the map\n"
+                    + "m.clear                              //clears the map\n"
+                    + "m.destroy                            //destroys the map\n"
+                    + "m.lock <key>                         //locks the key\n"
+                    + "m.tryLock <key>                      //tries to lock the key and returns immediately\n"
+                    + "m.tryLock <key> <time>               //tries to lock the key within given seconds\n"
+                    + "m.unlock <key>                       //unlocks the key\n"
+                    + "m.stats                              //shows the local stats of the map\n"
+                    + "\n"
+                    + "-- MultiMap commands\n"
+                    + "mm.put <key> <value>                  //puts an entry to the multimap\n"
+                    + "mm.get <key>                          //returns the value of given key from the multimap\n"
+                    + "mm.remove <key>                       //removes the entry of given key from the multimap\n"
+                    + "mm.size                               //size of the multimap\n"
+                    + "mm.clear                              //clears the multimap\n"
+                    + "mm.destroy                            //destroys the multimap\n"
+                    + "mm.iterator [remove]                  //iterates the keys of the multimap, remove if specified\n"
+                    + "mm.keys                               //iterates the keys of the multimap\n"
+                    + "mm.values                             //iterates the values of the multimap\n"
+                    + "mm.entries                            //iterates the entries of the multimap\n"
+                    + "mm.lock <key>                         //locks the key\n"
+                    + "mm.tryLock <key>                      //tries to lock the key and returns immediately\n"
+                    + "mm.tryLock <key> <time>               //tries to lock the key within given seconds\n"
+                    + "mm.unlock <key>                       //unlocks the key\n"
+                    + "mm.stats                              //shows the local stats of the multimap\n"
+                    + "\n"
+                    + "-- List commands:\n"
+                    + "l.add <string>                        //adds a string object to the list\n"
+                    + "l.add <index> <string>                //adds a string object as an item with given index in the list\n"
+                    + "l.contains <string>                   //checks if the list contains a string object\n"
+                    + "l.remove <string>                     //removes a string object from the list\n"
+                    + "l.remove <index>                      //removes the item with given index from the list\n"
+                    + "l.set <index> <string>                //sets a string object to the item with given index in the list\n"
+                    + "l.iterator [remove]                   //iterates the list, remove if specified\n"
+                    + "l.size                                //size of the list\n"
+                    + "l.clear                               //clears the list\n"
+                    + "\n"
+                    + "-- IAtomicLong commands:\n"
+                    + "a.get                                 //returns the value of the atomic long\n"
+                    + "a.set <long>                          //sets a value to the atomic long\n"
+                    + "a.inc                                 //increments the value of the atomic long by one\n"
+                    + "a.dec                                 //decrements the value of the atomic long by one\n"
+                    + "\n"
+                    + "-- Executor Service commands:\n"
+                    + "execute <echo-input>                                     //executes an echo task on random member\n"
+                    + "executeOnKey <echo-input> <key>                          //executes an echo task on the member that owns the given key\n"
+                    + "executeOnMember <echo-input> <memberIndex>               //executes an echo task on the member with given index\n"
+                    + "executeOnMembers <echo-input>                            //executes an echo task on all of the members\n"
+                    + "e<threadcount>.simulateLoad <task-count> <delaySeconds>  //simulates load on executor with given number of thread (e1..e16)\n"
+                    + "\n";
     // @formatter:on
 }
