@@ -16,15 +16,11 @@
 
 package com.hazelcast.sql.impl.calcite.opt.physical;
 
-import com.hazelcast.sql.impl.calcite.opt.cost.CostUtils;
 import com.hazelcast.sql.impl.calcite.opt.physical.visitor.PhysicalRelVisitor;
 import org.apache.calcite.plan.RelOptCluster;
-import org.apache.calcite.plan.RelOptCost;
-import org.apache.calcite.plan.RelOptPlanner;
 import org.apache.calcite.plan.RelOptTable;
 import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.rel.RelNode;
-import org.apache.calcite.rel.metadata.RelMetadataQuery;
 import org.apache.calcite.rex.RexNode;
 
 import java.util.List;
@@ -57,38 +53,5 @@ public class MapScanPhysicalRel extends AbstractMapScanPhysicalRel {
     @Override
     public void visit(PhysicalRelVisitor visitor) {
         visitor.onMapScan(this);
-    }
-
-    // TODO: Dedup with logical scan
-    @Override
-    public RelOptCost computeSelfCost(RelOptPlanner planner, RelMetadataQuery mq) {
-        // 1. Get cost of the scan itself. For replicated map cost is multiplied by the number of nodes.
-        RelOptCost scanCost = super.computeSelfCost(planner, mq);
-
-        if (isReplicated()) {
-            scanCost = scanCost.multiplyBy(getMemberCount());
-        }
-
-        // 2. Get cost of the project taking in count filter and number of expressions. Project never produces IO.
-        double filterRowCount = scanCost.getRows();
-
-        if (filter != null) {
-            double filterSelectivity = mq.getSelectivity(this, filter);
-
-            filterRowCount = filterRowCount * filterSelectivity;
-        }
-
-        int expressionCount = getProjects().size();
-
-        double projectCpu = CostUtils.adjustProjectCpu(filterRowCount * expressionCount, true);
-
-        // 3. Finally, return sum of both scan and project.
-        RelOptCost totalCost = planner.getCostFactory().makeCost(
-            filterRowCount,
-            scanCost.getCpu() + projectCpu,
-            scanCost.getIo()
-        );
-
-        return totalCost;
     }
 }

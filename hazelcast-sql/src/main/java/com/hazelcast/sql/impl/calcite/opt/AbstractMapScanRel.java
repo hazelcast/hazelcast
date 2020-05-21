@@ -16,9 +16,12 @@
 
 package com.hazelcast.sql.impl.calcite.opt;
 
+import com.hazelcast.sql.impl.calcite.opt.cost.CostUtils;
 import com.hazelcast.sql.impl.schema.map.AbstractMapTable;
 import com.hazelcast.sql.impl.schema.map.ReplicatedMapTable;
 import org.apache.calcite.plan.RelOptCluster;
+import org.apache.calcite.plan.RelOptCost;
+import org.apache.calcite.plan.RelOptPlanner;
 import org.apache.calcite.plan.RelOptTable;
 import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.rel.RelWriter;
@@ -30,7 +33,7 @@ import java.util.List;
 /**
  * Base class for map scans.
  */
-public abstract class AbstractMapScanRel extends AbstractScanRel {
+public abstract class AbstractMapScanRel extends AbstractScanRel implements HazelcastRelNode {
     /** Filter. */
     protected final RexNode filter;
 
@@ -79,5 +82,37 @@ public abstract class AbstractMapScanRel extends AbstractScanRel {
         }
 
         return rowCount;
+    }
+
+    @Override
+    public RelOptCost computeSelfCost(RelOptPlanner planner, RelMetadataQuery mq) {
+        // 1. Get cost of the scan itself. For replicated map cost is multiplied by the number of nodes.
+        RelOptCost scanCost = super.computeSelfCost(planner, mq);
+
+        if (isReplicated()) {
+            scanCost = scanCost.multiplyBy(getMemberCount());
+        }
+
+        // 2. Get cost of the project taking in count filter and number of expressions. Project never produces IO.
+        double filterRowCount = scanCost.getRows();
+
+        if (filter != null) {
+            double filterSelectivity = mq.getSelectivity(this, filter);
+
+            filterRowCount = filterRowCount * filterSelectivity;
+        }
+
+        int expressionCount = getProjects().size();
+
+        double projectCpu = CostUtils.adjustProjectCpu(filterRowCount * expressionCount, true);
+
+        // 3. Finally, return sum of both scan and project.
+        RelOptCost totalCost = planner.getCostFactory().makeCost(
+            filterRowCount,
+            scanCost.getCpu() + projectCpu,
+            scanCost.getIo()
+        );
+
+        return totalCost;
     }
 }
