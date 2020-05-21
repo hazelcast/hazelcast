@@ -106,6 +106,7 @@ import static com.hazelcast.client.properties.ClientProperty.IO_WRITE_THROUGH_EN
 import static com.hazelcast.client.properties.ClientProperty.SHUFFLE_MEMBER_LIST;
 import static com.hazelcast.core.LifecycleEvent.LifecycleState.CLIENT_CHANGED_CLUSTER;
 import static com.hazelcast.internal.nio.IOUtil.closeResource;
+import static com.hazelcast.internal.util.ThreadAffinity.newSystemThreadAffinity;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.stream.Collectors.toList;
@@ -270,10 +271,13 @@ public class TcpClientConnectionManager implements ClientConnectionManager {
                         .threadNamePrefix(client.getName())
                         .errorHandler(new ClientConnectionChannelErrorHandler())
                         .inputThreadCount(inputThreads)
+                        .inputThreadAffinity(newSystemThreadAffinity("hazelcast.client.io.input.thread.affinity"))
                         .outputThreadCount(outputThreads)
+                        .outputThreadAffinity(newSystemThreadAffinity("hazelcast.client.io.output.thread.affinity"))
                         .balancerIntervalSeconds(properties.getInteger(IO_BALANCER_INTERVAL_SECONDS))
                         .writeThroughEnabled(properties.getBoolean(IO_WRITE_THROUGH_ENABLED))
-                        .concurrencyDetection(client.getConcurrencyDetection()));
+                        .concurrencyDetection(client.getConcurrencyDetection())
+        );
     }
 
     private WaitStrategy initializeWaitStrategy(ClientConfig clientConfig) {

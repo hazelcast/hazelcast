@@ -41,6 +41,7 @@ import java.util.List;
 import java.util.Properties;
 
 import static com.hazelcast.config.ConfigAccessor.getActiveMemberNetworkConfig;
+import static com.hazelcast.internal.util.ThreadAffinity.newSystemThreadAffinity;
 import static com.hazelcast.spi.properties.ClusterProperty.IO_BALANCER_INTERVAL_SECONDS;
 import static com.hazelcast.spi.properties.ClusterProperty.IO_INPUT_THREAD_COUNT;
 import static com.hazelcast.spi.properties.ClusterProperty.IO_OUTPUT_THREAD_COUNT;
@@ -169,9 +170,12 @@ public class DefaultNodeContext implements NodeContext {
                         .threadNamePrefix(node.hazelcastInstance.getName())
                         .errorHandler(errorHandler)
                         .inputThreadCount(props.getInteger(IO_INPUT_THREAD_COUNT))
+                        .inputThreadAffinity(newSystemThreadAffinity("hazelcast.io.input.thread.affinity"))
                         .outputThreadCount(props.getInteger(IO_OUTPUT_THREAD_COUNT))
+                        .outputThreadAffinity(newSystemThreadAffinity("hazelcast.io.output.thread.affinity"))
                         .balancerIntervalSeconds(props.getInteger(IO_BALANCER_INTERVAL_SECONDS))
                         .writeThroughEnabled(props.getBoolean(IO_WRITE_THROUGH_ENABLED))
-                        .concurrencyDetection(node.nodeEngine.getConcurrencyDetection()));
+                        .concurrencyDetection(node.nodeEngine.getConcurrencyDetection())
+        );
     }
 }
