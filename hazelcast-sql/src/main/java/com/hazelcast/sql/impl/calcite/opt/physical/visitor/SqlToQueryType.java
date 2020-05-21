@@ -17,6 +17,7 @@
 package com.hazelcast.sql.impl.calcite.opt.physical.visitor;
 
 import com.hazelcast.sql.impl.type.QueryDataType;
+import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeField;
 import org.apache.calcite.sql.type.SqlTypeName;
@@ -31,44 +32,67 @@ import java.util.Map;
  */
 public final class SqlToQueryType {
 
-    private static final Map<SqlTypeName, QueryDataType> SQL_TO_QUERY_TYPE = new HashMap<>();
+    private static final Map<SqlTypeName, QueryDataType> CALCITE_TO_HZ = new HashMap<>();
+    private static final Map<QueryDataTypeFamily, SqlTypeName> HZ_TO_CALCITE = new HashMap<>();
 
     static {
-        SQL_TO_QUERY_TYPE.put(SqlTypeName.VARCHAR, QueryDataType.VARCHAR);
-        SQL_TO_QUERY_TYPE.put(SqlTypeName.CHAR, QueryDataType.VARCHAR);
+        HZ_TO_CALCITE.put(QueryDataTypeFamily.VARCHAR, SqlTypeName.VARCHAR);
+        CALCITE_TO_HZ.put(SqlTypeName.VARCHAR, QueryDataType.VARCHAR);
+        CALCITE_TO_HZ.put(SqlTypeName.CHAR, QueryDataType.VARCHAR);
 
-        SQL_TO_QUERY_TYPE.put(SqlTypeName.BOOLEAN, QueryDataType.BOOLEAN);
+        HZ_TO_CALCITE.put(QueryDataTypeFamily.BOOLEAN, SqlTypeName.BOOLEAN);
+        CALCITE_TO_HZ.put(SqlTypeName.BOOLEAN, QueryDataType.BOOLEAN);
 
-        SQL_TO_QUERY_TYPE.put(SqlTypeName.TINYINT, QueryDataType.TINYINT);
-        SQL_TO_QUERY_TYPE.put(SqlTypeName.SMALLINT, QueryDataType.SMALLINT);
-        SQL_TO_QUERY_TYPE.put(SqlTypeName.INTEGER, QueryDataType.INT);
-        SQL_TO_QUERY_TYPE.put(SqlTypeName.BIGINT, QueryDataType.BIGINT);
+        HZ_TO_CALCITE.put(QueryDataTypeFamily.TINYINT, SqlTypeName.TINYINT);
+        HZ_TO_CALCITE.put(QueryDataTypeFamily.SMALLINT, SqlTypeName.SMALLINT);
+        HZ_TO_CALCITE.put(QueryDataTypeFamily.INT, SqlTypeName.INTEGER);
+        HZ_TO_CALCITE.put(QueryDataTypeFamily.BIGINT, SqlTypeName.BIGINT);
+        CALCITE_TO_HZ.put(SqlTypeName.TINYINT, QueryDataType.TINYINT);
+        CALCITE_TO_HZ.put(SqlTypeName.SMALLINT, QueryDataType.SMALLINT);
+        CALCITE_TO_HZ.put(SqlTypeName.INTEGER, QueryDataType.INT);
+        CALCITE_TO_HZ.put(SqlTypeName.BIGINT, QueryDataType.BIGINT);
 
-        SQL_TO_QUERY_TYPE.put(SqlTypeName.DECIMAL, QueryDataType.DECIMAL);
+        HZ_TO_CALCITE.put(QueryDataTypeFamily.DECIMAL, SqlTypeName.DECIMAL);
+        CALCITE_TO_HZ.put(SqlTypeName.DECIMAL, QueryDataType.DECIMAL);
 
-        SQL_TO_QUERY_TYPE.put(SqlTypeName.REAL, QueryDataType.REAL);
-        SQL_TO_QUERY_TYPE.put(SqlTypeName.DOUBLE, QueryDataType.DOUBLE);
+        HZ_TO_CALCITE.put(QueryDataTypeFamily.REAL, SqlTypeName.REAL);
+        HZ_TO_CALCITE.put(QueryDataTypeFamily.DOUBLE, SqlTypeName.DOUBLE);
+        CALCITE_TO_HZ.put(SqlTypeName.REAL, QueryDataType.REAL);
+        CALCITE_TO_HZ.put(SqlTypeName.DOUBLE, QueryDataType.DOUBLE);
 
-        SQL_TO_QUERY_TYPE.put(SqlTypeName.TIME, QueryDataType.TIME);
-        SQL_TO_QUERY_TYPE.put(SqlTypeName.DATE, QueryDataType.DATE);
-        SQL_TO_QUERY_TYPE.put(SqlTypeName.TIMESTAMP, QueryDataType.TIMESTAMP);
-        SQL_TO_QUERY_TYPE.put(SqlTypeName.TIMESTAMP_WITH_LOCAL_TIME_ZONE, QueryDataType.TIMESTAMP_WITH_TZ_OFFSET_DATE_TIME);
-        SQL_TO_QUERY_TYPE.put(SqlTypeName.INTERVAL_YEAR_MONTH, QueryDataType.INTERVAL_YEAR_MONTH);
-        SQL_TO_QUERY_TYPE.put(SqlTypeName.INTERVAL_DAY_SECOND, QueryDataType.INTERVAL_DAY_SECOND);
+        HZ_TO_CALCITE.put(QueryDataTypeFamily.TIME, SqlTypeName.TIME);
+        HZ_TO_CALCITE.put(QueryDataTypeFamily.DATE, SqlTypeName.DATE);
+        HZ_TO_CALCITE.put(QueryDataTypeFamily.TIMESTAMP, SqlTypeName.TIMESTAMP);
+        HZ_TO_CALCITE.put(QueryDataTypeFamily.TIMESTAMP_WITH_TIME_ZONE, SqlTypeName.TIMESTAMP_WITH_LOCAL_TIME_ZONE);
+        HZ_TO_CALCITE.put(QueryDataTypeFamily.INTERVAL_YEAR_MONTH, SqlTypeName.INTERVAL_YEAR_MONTH);
+        HZ_TO_CALCITE.put(QueryDataTypeFamily.INTERVAL_DAY_SECOND, SqlTypeName.INTERVAL_DAY_SECOND);
+        CALCITE_TO_HZ.put(SqlTypeName.TIME, QueryDataType.TIME);
+        CALCITE_TO_HZ.put(SqlTypeName.DATE, QueryDataType.DATE);
+        CALCITE_TO_HZ.put(SqlTypeName.TIMESTAMP, QueryDataType.TIMESTAMP);
+        CALCITE_TO_HZ.put(SqlTypeName.TIMESTAMP_WITH_LOCAL_TIME_ZONE, QueryDataType.TIMESTAMP_WITH_TZ_OFFSET_DATE_TIME);
+        CALCITE_TO_HZ.put(SqlTypeName.INTERVAL_YEAR_MONTH, QueryDataType.INTERVAL_YEAR_MONTH);
+        CALCITE_TO_HZ.put(SqlTypeName.INTERVAL_DAY_SECOND, QueryDataType.INTERVAL_DAY_SECOND);
 
-        SQL_TO_QUERY_TYPE.put(SqlTypeName.ANY, QueryDataType.OBJECT);
+        // TODO: VO: Object type should be very restrictive, but currently all check for it are skipped. Use "STRUCTURED"?
+        HZ_TO_CALCITE.put(QueryDataTypeFamily.OBJECT, SqlTypeName.ANY);
+        CALCITE_TO_HZ.put(SqlTypeName.ANY, QueryDataType.OBJECT);
 
-        SQL_TO_QUERY_TYPE.put(SqlTypeName.NULL, QueryDataType.NULL);
+        HZ_TO_CALCITE.put(QueryDataTypeFamily.NULL, SqlTypeName.NULL);
+        CALCITE_TO_HZ.put(SqlTypeName.NULL, QueryDataType.NULL);
     }
 
     private SqlToQueryType() {
+    }
+
+    public static SqlTypeName map(QueryDataTypeFamily family) {
+        return HZ_TO_CALCITE.get(family);
     }
 
     /**
      * Maps the given {@link SqlTypeName} to {@link QueryDataType}.
      */
     public static QueryDataType map(SqlTypeName sqlTypeName) {
-        QueryDataType queryDataType = SQL_TO_QUERY_TYPE.get(sqlTypeName);
+        QueryDataType queryDataType = CALCITE_TO_HZ.get(sqlTypeName);
         if (queryDataType == null) {
             throw new IllegalArgumentException("unexpected SQL type: " + sqlTypeName);
         }
