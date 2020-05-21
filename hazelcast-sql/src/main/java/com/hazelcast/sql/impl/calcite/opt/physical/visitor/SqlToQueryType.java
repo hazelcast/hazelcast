@@ -30,6 +30,7 @@ import java.util.Map;
  * Provides utilities to map from Calcite's {@link SqlTypeName} to {@link
  * QueryDataType}.
  */
+@SuppressWarnings("checkstyle:ExecutableStatementCount")
 public final class SqlToQueryType {
 
     private static final Map<SqlTypeName, QueryDataType> CALCITE_TO_HZ = new HashMap<>();
