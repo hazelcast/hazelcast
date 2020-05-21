@@ -50,6 +50,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.PrintStream;
 import java.lang.management.ManagementFactory;
 import java.util.Collection;
 import java.util.HashMap;
@@ -99,12 +100,18 @@ public class ConsoleApp implements EntryListener<Object, Object>, ItemListener<O
     private boolean silent;
     private boolean echo;
 
+    private final PrintStream systemOut;
     private volatile HazelcastInstance hazelcast;
     private volatile LineReader lineReader;
     private volatile boolean running;
 
-    public ConsoleApp(HazelcastInstance hazelcast) {
+    ConsoleApp(HazelcastInstance hazelcast, PrintStream systemOut) {
         this.hazelcast = hazelcast;
+        this.systemOut = systemOut;
+    }
+
+    public ConsoleApp(HazelcastInstance hazelcast) {
+        this(hazelcast, System.out);
     }
 
     public IQueue<Object> getQueue() {
@@ -196,8 +203,9 @@ public class ConsoleApp implements EntryListener<Object, Object>, ItemListener<O
             return;
         }
         if (command.contains("__")) {
-            namespace = command.split("__")[0];
-            command = command.substring(command.indexOf("__") + 2);
+            int indexOf = command.lastIndexOf("__");
+            namespace = command.substring(0, indexOf);
+            command = command.substring(indexOf + 2);
         }
         if (echo) {
             handleEcho(command);
@@ -1529,13 +1537,13 @@ public class ConsoleApp implements EntryListener<Object, Object>, ItemListener<O
 
     public void println(Object obj) {
         if (!silent) {
-            System.out.println(obj);
+            systemOut.println(obj);
         }
     }
 
     public void print(Object obj) {
         if (!silent) {
-            System.out.print(obj);
+            systemOut.print(obj);
         }
     }
 
