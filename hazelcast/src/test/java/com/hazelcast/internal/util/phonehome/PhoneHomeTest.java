@@ -53,7 +53,6 @@ public class PhoneHomeTest extends HazelcastTestSupport {
         HazelcastInstance hz = createHazelcastInstance();
         Node node = getNode(hz);
         PhoneHome phoneHome = new PhoneHome(node);
-
         sleepAtLeastMillis(1);
         Map<String, String> parameters = phoneHome.phoneHome(true);
         RuntimeMXBean runtimeMxBean = ManagementFactory.getRuntimeMXBean();
@@ -132,6 +131,24 @@ public class PhoneHomeTest extends HazelcastTestSupport {
         assertEquals("H", phoneHome.convertToLetter(299));
         assertEquals("J", phoneHome.convertToLetter(599));
         assertEquals("I", phoneHome.convertToLetter(1000));
+    }
+
+    @Test
+    public void testMapCount() {
+        HazelcastInstance hz = createHazelcastInstance();
+        Node node = getNode(hz);
+        PhoneHome phoneHome = new PhoneHome(node);
+        Map<String, String> parameters = phoneHome.phoneHome(true);
+        assertEquals(parameters.get("mpct"), "0");
+        Map<String, String> map1 = hz.getMap("hazelcast");
+        Map<String, String> map2 = hz.getMap("phonehome");
+        parameters.clear();
+        parameters = phoneHome.phoneHome(true);
+        assertEquals(parameters.get("mpct"), "2");
+        Map<String, String> map3 = hz.getMap("maps");
+        parameters.clear();
+        parameters = phoneHome.phoneHome(true);
+        assertEquals(parameters.get("mpct"), "3");
     }
 }
 

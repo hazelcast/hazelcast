@@ -21,6 +21,7 @@ import com.hazelcast.instance.JetBuildInfo;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.nio.ConnectionType;
+import com.hazelcast.internal.util.phonehome.metrics.MapMetrics;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.properties.ClusterProperty;
 
@@ -140,26 +141,14 @@ public class PhoneHome {
     }
 
     public PhoneHomeParameterCreator createParameters() {
-        ClusterServiceImpl clusterService = hazelcastNode.getClusterService();
-        int clusterSize = clusterService.getMembers().size();
-        Long clusterUpTime = clusterService.getClusterClock().getClusterUpTime();
-        RuntimeMXBean runtimeMxBean = ManagementFactory.getRuntimeMXBean();
-        JetBuildInfo jetBuildInfo = hazelcastNode.getBuildInfo().getJetBuildInfo();
 
-        PhoneHomeParameterCreator parameterCreator = new PhoneHomeParameterCreator()
-                .addParam("version", buildInfo.getVersion())
-                .addParam("m", hazelcastNode.getThisUuid().toString())
-                .addParam("p", getDownloadId())
-                .addParam("c", clusterService.getClusterId().toString())
-                .addParam("crsz", convertToLetter(clusterSize))
-                .addParam("cssz", convertToLetter(hazelcastNode.clientEngine.getClientEndpointCount()))
-                .addParam("cuptm", Long.toString(clusterUpTime))
-                .addParam("nuptm", Long.toString(runtimeMxBean.getUptime()))
-                .addParam("jvmn", runtimeMxBean.getVmName())
-                .addParam("jvmv", System.getProperty("java.version"))
-                .addParam("jetv", jetBuildInfo == null ? "" : jetBuildInfo.getVersion());
+        PhoneHomeParameterCreator parameterCreator = new PhoneHomeParameterCreator();
+
+        addBuildInfo(parameterCreator);
+        addClusterInfo(parameterCreator);
         addClientInfo(parameterCreator);
         addOSInfo(parameterCreator);
+        addMapInfo(parameterCreator);
 
         return parameterCreator;
     }
@@ -198,6 +187,32 @@ public class PhoneHome {
         }
     }
 
+    private void addBuildInfo(PhoneHomeParameterCreator parameterCreator) {
+        JetBuildInfo jetBuildInfo = hazelcastNode.getBuildInfo().getJetBuildInfo();
+        parameterCreator
+                .addParam("p", getDownloadId())
+                .addParam("cssz", convertToLetter(hazelcastNode.clientEngine.getClientEndpointCount()))
+                .addParam("jvmv", System.getProperty("java.version"))
+                .addParam("version", buildInfo.getVersion())
+                .addParam("jetv", jetBuildInfo == null ? "" : jetBuildInfo.getVersion());
+
+    }
+
+    private void addClusterInfo(PhoneHomeParameterCreator parameterCreator) {
+        ClusterServiceImpl clusterService = hazelcastNode.getClusterService();
+        int clusterSize = clusterService.getMembers().size();
+        long clusterUpTime = clusterService.getClusterClock().getClusterUpTime();
+        RuntimeMXBean runtimeMxBean = ManagementFactory.getRuntimeMXBean();
+        parameterCreator
+                .addParam("m", hazelcastNode.getThisUuid().toString())
+                .addParam("c", clusterService.getClusterId().toString())
+                .addParam("crsz", convertToLetter(clusterSize))
+                .addParam("cuptm", Long.toString(clusterUpTime))
+                .addParam("nuptm", Long.toString(runtimeMxBean.getUptime()))
+                .addParam("jvmn", runtimeMxBean.getVmName());
+
+    }
+
     private void addOSInfo(PhoneHomeParameterCreator parameterCreator) {
         OperatingSystemMXBean osMxBean = ManagementFactory.getOperatingSystemMXBean();
         try {
@@ -223,4 +238,12 @@ public class PhoneHome {
                 .addParam("cpy", Integer.toString(clusterClientStats.getOrDefault(ConnectionType.PYTHON_CLIENT, 0)))
                 .addParam("cgo", Integer.toString(clusterClientStats.getOrDefault(ConnectionType.GO_CLIENT, 0)));
     }
+
+    private void addMapInfo(PhoneHomeParameterCreator parameterCreator) {
+        MapMetrics mapmetrics = new MapMetrics(hazelcastNode);
+        parameterCreator.addParam("mpct", String.valueOf(mapmetrics.getMapCount()));
+
+    }
+
+
 }
