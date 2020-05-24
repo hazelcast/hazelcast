@@ -104,7 +104,7 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
     private static final Object NULL_OBJECT = new Object();
 
     private final ConcurrentMap<String, QueueContainer> containerMap = new ConcurrentHashMap<>();
-    private final ConcurrentMap<String, LocalQueueStatsImpl> statsMap = MapUtil.createConcurrentHashMap(10);
+    private final ConcurrentMap<String, LocalQueueStatsImpl> statsMap;
     private final ConstructorFunction<String, LocalQueueStatsImpl> localQueueStatsConstructorFunction =
         key -> new LocalQueueStatsImpl();
 
@@ -134,6 +134,8 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
         TaskScheduler globalScheduler = nodeEngine.getExecutionService().getGlobalTaskScheduler();
         QueueEvictionProcessor entryProcessor = new QueueEvictionProcessor(nodeEngine);
         this.queueEvictionScheduler = EntryTaskSchedulerFactory.newScheduler(globalScheduler, entryProcessor, POSTPONE);
+        int approxQueueCount = nodeEngine.getConfig().getQueueConfigs().size();
+        this.statsMap = MapUtil.createConcurrentHashMap(approxQueueCount);
     }
 
     public void scheduleEviction(String name, long delay) {

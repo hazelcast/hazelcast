@@ -45,7 +45,6 @@ import com.hazelcast.spi.impl.NodeEngine;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.config.InMemoryFormat.NATIVE;
@@ -71,7 +70,7 @@ public class LocalMapStatsProvider {
     private final MapServiceContext mapServiceContext;
     private final MapNearCacheManager mapNearCacheManager;
     private final IPartitionService partitionService;
-    private final ConcurrentMap<String, LocalMapStatsImpl> statsMap = MapUtil.createConcurrentHashMap(10);
+    private final ConcurrentMap<String, LocalMapStatsImpl> statsMap;
     private final ConstructorFunction<String, LocalMapStatsImpl> constructorFunction =
             key -> new LocalMapStatsImpl();
 
@@ -83,6 +82,7 @@ public class LocalMapStatsProvider {
         this.clusterService = nodeEngine.getClusterService();
         this.partitionService = nodeEngine.getPartitionService();
         this.localAddress = clusterService.getThisAddress();
+        this.statsMap = MapUtil.createConcurrentHashMap(nodeEngine.getConfig().getMapConfigs().size());
     }
 
     protected MapServiceContext getMapServiceContext() {
