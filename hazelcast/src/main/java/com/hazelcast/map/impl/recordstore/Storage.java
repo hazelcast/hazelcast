@@ -27,6 +27,7 @@ import com.hazelcast.map.impl.record.Record;
 import javax.annotation.Nonnull;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.function.Consumer;
 
 /**
  * Represents actual storage layer behind a {@link RecordStore}.
@@ -135,4 +136,6 @@ public interface Storage<K, R> {
     Data extractDataKeyFromLazy(EntryView entryView);
 
     Data toBackingDataKeyFormat(Data key);
+
+    void forEachKeyWithHashCodeBetween(int minHash, int maxHash, Consumer<Object> consumer);
 }

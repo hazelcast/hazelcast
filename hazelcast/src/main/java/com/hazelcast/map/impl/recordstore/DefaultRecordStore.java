@@ -67,6 +67,7 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Future;
 import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 
 import static com.hazelcast.config.NativeMemoryConfig.MemoryAllocatorType.POOLED;
 import static com.hazelcast.core.EntryEventType.ADDED;
@@ -255,6 +256,11 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     @Override
     public MapEntriesWithCursor fetchEntries(IterationPointer[] pointers, int size) {
         return storage.fetchEntries(pointers, size);
+    }
+
+    @Override
+    public void forEachKeyWithHashCodeBetween(int minHash, int maxHash, Consumer<Object> consumer) {
+        storage.forEachKeyWithHashCodeBetween(minHash, maxHash, consumer);
     }
 
     /**

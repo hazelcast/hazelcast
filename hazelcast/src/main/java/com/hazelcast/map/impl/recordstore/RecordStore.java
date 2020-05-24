@@ -45,6 +45,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 
 /**
  * Defines a record-store.
@@ -341,6 +342,8 @@ public interface RecordStore<R extends Record> {
      * @return fetched entries and the new iteration state
      */
     MapEntriesWithCursor fetchEntries(IterationPointer[] pointers, int size);
+
+    void forEachKeyWithHashCodeBetween(int minHash, int maxHash, Consumer<Object> consumer);
 
     int size();
 
