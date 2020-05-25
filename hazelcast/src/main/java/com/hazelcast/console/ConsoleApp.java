@@ -24,7 +24,6 @@ import com.hazelcast.collection.ItemEvent;
 import com.hazelcast.collection.ItemListener;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ExecutorConfig;
-import com.hazelcast.config.FileSystemXmlConfig;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
@@ -44,13 +43,12 @@ import com.hazelcast.topic.Message;
 import com.hazelcast.topic.MessageListener;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
+import java.io.FileInputStream;
+import java.io.File;
+import java.io.BufferedReader;
+import java.io.IOException;
 import java.lang.management.ManagementFactory;
 import java.util.Collection;
 import java.util.HashMap;
@@ -100,18 +98,15 @@ public class ConsoleApp implements EntryListener<Object, Object>, ItemListener<O
     private boolean silent;
     private boolean echo;
 
-    private final PrintStream systemOut;
-    private volatile HazelcastInstance hazelcast;
     private volatile LineReader lineReader;
     private volatile boolean running;
 
-    ConsoleApp(HazelcastInstance hazelcast, PrintStream systemOut) {
-        this.hazelcast = hazelcast;
-        this.systemOut = systemOut;
-    }
+    private final PrintStream outOrig;
+    private final HazelcastInstance hazelcast;
 
-    public ConsoleApp(HazelcastInstance hazelcast) {
-        this(hazelcast, System.out);
+    public ConsoleApp(HazelcastInstance hazelcast, PrintStream outOrig) {
+        this.hazelcast = hazelcast;
+        this.outOrig = outOrig;
     }
 
     public IQueue<Object> getQueue() {
@@ -147,15 +142,6 @@ public class ConsoleApp implements EntryListener<Object, Object>, ItemListener<O
     public IList<Object> getList() {
         list = hazelcast.getList(namespace);
         return list;
-    }
-
-    public void setHazelcast(HazelcastInstance hazelcast) {
-        this.hazelcast = hazelcast;
-        map = null;
-        list = null;
-        set = null;
-        queue = null;
-        topic = null;
     }
 
     public void stop() {
@@ -1537,34 +1523,31 @@ public class ConsoleApp implements EntryListener<Object, Object>, ItemListener<O
 
     public void println(Object obj) {
         if (!silent) {
-            systemOut.println(obj);
+            outOrig.println(obj);
         }
     }
 
     public void print(Object obj) {
         if (!silent) {
-            systemOut.print(obj);
+            outOrig.print(obj);
         }
     }
 
     /**
      * Starts the test application.
      * <p>
-     * Loads the config from classpath hazelcast.xml, if it fails to load, will use default config.
+     * It loads the Hazelcast member configuration using the resolution logic as described in
+     * {@link com.hazelcast.core.Hazelcast#newHazelcastInstance()}.
+     *
      * @throws Exception in case of any exceptional case
      */
     public static void main(String[] args) throws Exception {
-        Config config;
-        try {
-            config = new FileSystemXmlConfig("hazelcast.xml");
-        } catch (FileNotFoundException e) {
-            config = new Config();
-        }
+        Config config = Config.load();
         for (int i = 1; i <= LOAD_EXECUTORS_COUNT; i++) {
             config.addExecutorConfig(new ExecutorConfig(EXECUTOR_NAMESPACE + " " + i).setPoolSize(i));
         }
 
-        ConsoleApp consoleApp = new ConsoleApp(Hazelcast.newHazelcastInstance(config));
+        ConsoleApp consoleApp = new ConsoleApp(Hazelcast.newHazelcastInstance(config), System.out);
         consoleApp.start();
     }
 }
