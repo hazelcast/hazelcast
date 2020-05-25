@@ -118,6 +118,8 @@ public final class UnsupportedOperationVisitor implements SqlVisitor<Void> {
         SUPPORTED_KINDS.add(SqlKind.LIKE);
         SUPPORTED_KINDS.add(SqlKind.POSITION);
         SUPPORTED_KINDS.add(SqlKind.TIMESTAMP_ADD);
+        SUPPORTED_KINDS.add(SqlKind.ROW);
+        SUPPORTED_KINDS.add(SqlKind.VALUES);
 
         // Supported operators
         SUPPORTED_OPERATORS = new HashSet<>();
@@ -204,7 +206,8 @@ public final class UnsupportedOperationVisitor implements SqlVisitor<Void> {
 
     @Override
     public Void visit(SqlDataTypeSpec type) {
-        throw error(type, RESOURCE.custom("Type specification is not supported"));
+        // TODO: proper validation for types - do we need second (in addition to DDL) validation ?
+        return null;
     }
 
     @Override
