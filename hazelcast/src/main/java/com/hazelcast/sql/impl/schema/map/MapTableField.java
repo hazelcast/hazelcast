@@ -61,4 +61,9 @@ public class MapTableField extends TableField {
 
         return result;
     }
+
+    @Override
+    public String toString() {
+        return "MapTableField{name=" + name + ", type=" + type + ", path=" + path + '}';
+    }
 }

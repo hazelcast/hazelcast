@@ -55,27 +55,33 @@ public final class MapSampleMetadataResolver {
      *
      * @param ss Serialization service.
      * @param target Target to be analyzed.
-     * @param isKey Whether the is the key or the value.
+     * @param binary Whether map objects are stored in binary form.
+     * @param key Whether passed target is key or value.
      * @return Sample metadata.
      * @throws QueryException If metadata cannot be resolved.
      */
-    public static MapSampleMetadata resolve(InternalSerializationService ss, Object target, boolean isKey) {
+    public static MapSampleMetadata resolve(
+        InternalSerializationService ss,
+        Object target,
+        boolean binary,
+        boolean key
+    ) {
         try {
             if (target instanceof Data) {
                 Data data = (Data) target;
 
-                if (data.isPortable()) {
-                    return resolvePortable(ss.getPortableContext().lookupClassDefinition(data), isKey);
+                if (data.isPortable() && binary) {
+                    return resolvePortable(ss.getPortableContext().lookupClassDefinition(data), key);
                 } else if (data.isJson()) {
                     throw new UnsupportedOperationException("JSON objects are not supported.");
                 } else {
-                    return resolveClass(ss.toObject(data).getClass(), isKey);
+                    return resolveClass(ss.toObject(data).getClass(), key);
                 }
             } else {
-                return resolveClass(target.getClass(), isKey);
+                return resolveClass(target.getClass(), key);
             }
         } catch (Exception e) {
-            throw QueryException.error("Failed to resolve " + (isKey ? "key" : "value") + " metadata: " + e.getMessage(), e);
+            throw QueryException.error("Failed to resolve " + (key ? "key" : "value") + " metadata: " + e.getMessage(), e);
         }
     }
 
@@ -119,6 +125,8 @@ public final class MapSampleMetadataResolver {
                 return QueryDataType.SMALLINT;
 
             case CHAR:
+                return QueryDataType.VARCHAR_CHARACTER;
+
             case UTF:
                 return QueryDataType.VARCHAR;
 
@@ -210,6 +218,7 @@ public final class MapSampleMetadataResolver {
         return Character.toLowerCase(fieldNameWithWrongCase.charAt(0)) + fieldNameWithWrongCase.substring(1);
     }
 
+    @SuppressWarnings("RedundantIfStatement")
     private static boolean skipMethod(Class<?> clazz, Method method) {
         // Exclude non-public getters.
         if (!Modifier.isPublic(method.getModifiers())) {
