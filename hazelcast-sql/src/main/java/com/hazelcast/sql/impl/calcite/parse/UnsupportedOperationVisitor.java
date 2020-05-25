@@ -164,6 +164,9 @@ public final class UnsupportedOperationVisitor implements SqlVisitor<Void> {
         SUPPORTED_OPERATORS.add(SqlStdOperatorTable.CURRENT_TIMESTAMP);
         SUPPORTED_OPERATORS.add(SqlStdOperatorTable.LOCALTIMESTAMP);
         SUPPORTED_OPERATORS.add(SqlStdOperatorTable.LOCALTIME);
+
+        // Other/Extensions
+        SUPPORTED_OPERATORS.add(SqlOption.OPERATOR);
     }
 
     private UnsupportedOperationVisitor() {

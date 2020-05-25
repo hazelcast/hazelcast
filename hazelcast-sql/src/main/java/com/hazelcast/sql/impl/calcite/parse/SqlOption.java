@@ -35,7 +35,7 @@ import static java.util.Objects.requireNonNull;
 
 public class SqlOption extends SqlCall {
 
-    private static final SqlOperator OPERATOR =
+    public static final SqlOperator OPERATOR =
             new SqlSpecialOperator("OPTION DECLARATION", SqlKind.OTHER);
 
     private final SqlIdentifier key;
