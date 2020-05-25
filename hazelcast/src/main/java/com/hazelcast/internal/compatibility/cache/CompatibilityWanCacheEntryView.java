@@ -25,8 +25,6 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.spi.serialization.SerializationServiceAware;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.io.IOException;
 
 /**
@@ -50,22 +48,6 @@ public class CompatibilityWanCacheEntryView<K, V> implements CacheEntryView<K, V
     private long hits;
 
     public CompatibilityWanCacheEntryView() {
-    }
-
-    public CompatibilityWanCacheEntryView(@Nonnull Data dataKey,
-                                          @Nullable Data dataValue,
-                                          long creationTime,
-                                          long expirationTime,
-                                          long lastAccessTime,
-                                          long hits,
-                                          @Nonnull SerializationService serializationService) {
-        this.dataKey = dataKey;
-        this.dataValue = dataValue;
-        this.creationTime = creationTime;
-        this.expirationTime = expirationTime;
-        this.lastAccessTime = lastAccessTime;
-        this.hits = hits;
-        this.serializationService = serializationService;
     }
 
     @Override

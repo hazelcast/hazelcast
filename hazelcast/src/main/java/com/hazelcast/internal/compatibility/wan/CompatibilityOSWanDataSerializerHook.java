@@ -32,17 +32,13 @@ import static com.hazelcast.internal.compatibility.serialization.impl.Compatibil
  * with 4.x members over WAN. Compatibility WAN replication is only supported
  * for EE so support for OS classes here is lacking.
  */
-@SuppressWarnings("unused")
 public class CompatibilityOSWanDataSerializerHook implements DataSerializerHook {
 
     public static final int F_ID = CompatibilityFactoryIdHelper.getFactoryId(
             WAN_REPLICATION_DS_FACTORY, WAN_REPLICATION_DS_FACTORY_ID);
 
-    public static final int MAP_REPLICATION_UPDATE = 0;
-    public static final int MAP_REPLICATION_REMOVE = 1;
     public static final int WAN_MAP_ENTRY_VIEW = 2;
     public static final int WAN_CACHE_ENTRY_VIEW = 3;
-    public static final int WAN_EVENT_CONTAINER_REPLICATION_OPERATION = 4;
 
     @Override
     public int getFactoryId() {

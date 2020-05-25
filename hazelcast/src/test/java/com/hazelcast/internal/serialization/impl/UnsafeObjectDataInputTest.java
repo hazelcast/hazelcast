@@ -42,7 +42,7 @@ public class UnsafeObjectDataInputTest extends ByteArrayObjectDataInputTest {
 
     @Override
     protected ByteArrayObjectDataInput createDataInput(ByteOrder bo) {
-        return new UnsafeObjectDataInput(INIT_DATA, 0, mockSerializationService, false);
+        return new UnsafeObjectDataInput(INIT_DATA, 0, mockSerializationService);
     }
 
     @Test

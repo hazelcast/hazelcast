@@ -54,6 +54,6 @@ public class UnsafeObjectDataInputIntegrationTest
 
     @Override
     protected UnsafeObjectDataInput getDataInputFromOutput() {
-        return new UnsafeObjectDataInput(getWrittenBytes(), serializationService, false);
+        return new UnsafeObjectDataInput(getWrittenBytes(), serializationService);
     }
 }

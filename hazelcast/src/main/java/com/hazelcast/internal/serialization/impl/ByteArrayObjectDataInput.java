@@ -50,6 +50,12 @@ class ByteArrayObjectDataInput extends VersionedObjectDataInput implements Buffe
 
     ByteArrayObjectDataInput(byte[] data,
                              InternalSerializationService service,
+                             ByteOrder byteOrder) {
+        this(data, 0, service, byteOrder, false);
+    }
+
+    ByteArrayObjectDataInput(byte[] data,
+                             InternalSerializationService service,
                              ByteOrder byteOrder,
                              boolean isCompatibility) {
         this(data, 0, service, byteOrder, isCompatibility);

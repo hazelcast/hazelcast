@@ -61,7 +61,7 @@ public class StreamSerializerAdapterTest {
         int[] testIn = new int[]{1, 2, 3};
 
         ByteArrayObjectDataOutput out = new ByteArrayObjectDataOutput(100, mockSerializationService, ByteOrder.BIG_ENDIAN);
-        ByteArrayObjectDataInput in = new ByteArrayObjectDataInput(out.buffer, mockSerializationService, ByteOrder.BIG_ENDIAN, false);
+        ByteArrayObjectDataInput in = new ByteArrayObjectDataInput(out.buffer, mockSerializationService, ByteOrder.BIG_ENDIAN);
         adapter.write(out, testIn);
         int[] read = (int[]) adapter.read(in);
 

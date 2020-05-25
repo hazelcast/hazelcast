@@ -125,6 +125,7 @@ public final class Packet extends HeapData implements OutboundFrame {
     private transient Connection conn;
 
     public Packet() {
+        raiseFlags(FLAG_3_12);
     }
 
     public Packet(byte[] payload) {
@@ -134,6 +135,7 @@ public final class Packet extends HeapData implements OutboundFrame {
     public Packet(byte[] payload, int partitionId) {
         super(payload);
         this.partitionId = partitionId;
+        raiseFlags(FLAG_3_12);
     }
 
     /**

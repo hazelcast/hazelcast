@@ -40,33 +40,17 @@ import static com.hazelcast.internal.compatibility.serialization.impl.Compatibil
  * Data serializer hook containing (de)serialization information for communicating
  * with 4.x members over WAN.
  */
-@SuppressWarnings("unused")
 public final class CompatibilitySplitBrainDataSerializerHook implements DataSerializerHook {
 
     public static final int F_ID = CompatibilityFactoryIdHelper.getFactoryId(SPLIT_BRAIN_DS_FACTORY, SPLIT_BRAIN_DS_FACTORY_ID);
 
-    public static final int COLLECTION_MERGING_VALUE = 0;
-    public static final int QUEUE_MERGING_VALUE = 1;
-    public static final int ATOMIC_LONG_MERGING_VALUE = 2;
-    public static final int ATOMIC_REFERENCE_MERGING_VALUE = 3;
-    public static final int MAP_MERGING_ENTRY = 4;
-    public static final int CACHE_MERGING_ENTRY = 5;
-    public static final int MULTI_MAP_MERGING_ENTRY = 6;
-    public static final int REPLICATED_MAP_MERGING_ENTRY = 7;
-    public static final int RINGBUFFER_MERGING_ENTRY = 8;
-    public static final int CARDINALITY_ESTIMATOR_MERGING_ENTRY = 9;
-    public static final int SCHEDULED_EXECUTOR_MERGING_ENTRY = 10;
-
     public static final int DISCARD = 11;
     public static final int EXPIRATION_TIME = 12;
     public static final int HIGHER_HITS = 13;
-    public static final int HYPER_LOG_LOG = 14;
     public static final int LATEST_ACCESS = 15;
     public static final int LATEST_UPDATE = 16;
     public static final int PASS_THROUGH = 17;
     public static final int PUT_IF_ABSENT = 18;
-
-    private static final int LEN = PUT_IF_ABSENT + 1;
 
     @Override
     public int getFactoryId() {

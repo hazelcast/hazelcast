@@ -103,7 +103,7 @@ public class BoundsCheckTest {
     public void testByteArrayObjectDataInputBoundsTooBig() throws EOFException {
         byte[] data = new byte[100];
         InternalSerializationService mockSerializationService = mock(InternalSerializationService.class);
-        ByteArrayObjectDataInput dataInput = new ByteArrayObjectDataInput(data, mockSerializationService, ByteOrder.BIG_ENDIAN, false);
+        ByteArrayObjectDataInput dataInput = new ByteArrayObjectDataInput(data, mockSerializationService, ByteOrder.BIG_ENDIAN);
         byte[] dest = new byte[10];
         dataInput.read(dest, 10, Integer.MAX_VALUE);
     }
@@ -112,7 +112,7 @@ public class BoundsCheckTest {
     public void testByteArrayObjectDataInputBoundsTooSMall() throws EOFException {
         byte[] data = new byte[10];
         InternalSerializationService mockSerializationService = mock(InternalSerializationService.class);
-        ByteArrayObjectDataInput dataInput = new ByteArrayObjectDataInput(data, mockSerializationService, ByteOrder.BIG_ENDIAN, false);
+        ByteArrayObjectDataInput dataInput = new ByteArrayObjectDataInput(data, mockSerializationService, ByteOrder.BIG_ENDIAN);
         byte[] dest = new byte[10];
         dataInput.read(dest, 10, Integer.MIN_VALUE);
     }
