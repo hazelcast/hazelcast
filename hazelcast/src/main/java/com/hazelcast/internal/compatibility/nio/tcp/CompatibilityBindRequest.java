@@ -32,6 +32,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static com.hazelcast.internal.nio.Packet.FLAG_3_12;
+import static com.hazelcast.internal.nio.Packet.FLAG_4_0;
 
 /**
  * Compatibility bind request (sent from a 3.x member) that is, for all
@@ -74,6 +75,8 @@ public class CompatibilityBindRequest {
         byte[] bytes = ioService.getSerializationService().toBytes(bind);
         Packet packet = new Packet(bytes).setPacketType(Type.COMPATIBILITY_EXTENDED_BIND)
                                          .raiseFlags(FLAG_3_12);
+        // unset 4_0 flag
+        packet.resetFlagsTo(packet.getFlags() & ~FLAG_4_0);
         connection.write(packet);
 
         //now you can send anything...

@@ -61,7 +61,7 @@ public class ByteArraySerializerAdapterTest {
         byte[] testByteArray = new byte[]{1, 2, 3};
 
         ByteArrayObjectDataOutput out = new ByteArrayObjectDataOutput(10, mockSerializationService, ByteOrder.BIG_ENDIAN);
-        ByteArrayObjectDataInput in = new ByteArrayObjectDataInput(out.buffer, mockSerializationService, ByteOrder.BIG_ENDIAN, false);
+        ByteArrayObjectDataInput in = new ByteArrayObjectDataInput(out.buffer, mockSerializationService, ByteOrder.BIG_ENDIAN);
         adapter.write(out, testByteArray);
         byte[] read = (byte[]) adapter.read(in);
 

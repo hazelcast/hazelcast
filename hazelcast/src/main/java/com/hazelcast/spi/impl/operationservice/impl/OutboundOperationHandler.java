@@ -55,8 +55,7 @@ public class OutboundOperationHandler {
     public boolean send(Operation op, Connection connection) {
         byte[] bytes = serializationService.toBytes(op);
         int partitionId = op.getPartitionId();
-        Packet packet = new Packet(bytes, partitionId).setPacketType(Packet.Type.OPERATION)
-                                                      .raiseFlags(Packet.FLAG_4_0);
+        Packet packet = new Packet(bytes, partitionId).setPacketType(Packet.Type.OPERATION);
 
         if (op.isUrgent()) {
             packet.raiseFlags(FLAG_URGENT);

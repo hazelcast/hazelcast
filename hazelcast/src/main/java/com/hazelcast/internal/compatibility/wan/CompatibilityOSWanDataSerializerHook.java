@@ -25,7 +25,6 @@ import com.hazelcast.nio.serialization.DataSerializableFactory;
  * with 3.x members over WAN. Compatibility WAN replication is only supported
  * for EE so support for OS classes here is lacking.
  */
-@SuppressWarnings("unused")
 public class CompatibilityOSWanDataSerializerHook implements DataSerializerHook {
 
     public static final int F_ID = CompatibilityFactoryIdHelper.getFactoryId(
@@ -33,8 +32,6 @@ public class CompatibilityOSWanDataSerializerHook implements DataSerializerHook 
             CompatibilityFactoryIdHelper.WAN_REPLICATION_DS_FACTORY_ID);
 
     public static final int WAN_REPLICATION_EVENT = 0;
-    public static final int MAP_REPLICATION_UPDATE = 1;
-    public static final int MAP_REPLICATION_REMOVE = 2;
 
     @Override
     public int getFactoryId() {

@@ -583,8 +583,7 @@ public class EventServiceImpl implements EventService, StaticMetricsProvider {
             }
         } else {
             Packet packet = new Packet(serializationService.toBytes(eventEnvelope), orderKey)
-                    .setPacketType(Packet.Type.EVENT)
-                    .raiseFlags(Packet.FLAG_4_0);
+                    .setPacketType(Packet.Type.EVENT);
 
             EndpointManager em = nodeEngine.getNode().getNetworkingService().getEndpointManager(MEMBER);
             if (!em.transmit(packet, subscriber)) {

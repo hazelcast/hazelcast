@@ -243,7 +243,7 @@ public final class ReflectionUtils {
         try {
             method.invoke(methodObj, methodParam);
         } catch (IllegalAccessException | InvocationTargetException | IllegalArgumentException e) {
-            debug("Could not update config via %s: %s", method.getName(), e.getMessage());
+            debug("Could not invoke method %s: %s", method.getName(), e.getMessage());
         }
     }
 

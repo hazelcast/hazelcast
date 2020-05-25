@@ -75,7 +75,7 @@ public class ByteArrayObjectDataInputTest extends HazelcastTestSupport {
     }
 
     protected ByteArrayObjectDataInput createDataInput(ByteOrder bo) {
-        return new ByteArrayObjectDataInput(INIT_DATA, mockSerializationService, bo, false);
+        return new ByteArrayObjectDataInput(INIT_DATA, mockSerializationService, bo);
     }
 
     @Test

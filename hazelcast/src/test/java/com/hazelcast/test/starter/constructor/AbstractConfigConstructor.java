@@ -254,7 +254,7 @@ abstract class AbstractConfigConstructor extends AbstractStarterObjectConstructo
     }
 
     /**
-     * Clones the built-in QuorumFunction implementations.
+     * Clones EvictionConfig.
      */
     private static Object cloneEvictionConfig(Object thisConfigObject, Class<?> otherConfigClass) throws Exception {
         // doesn't support comparator instances
