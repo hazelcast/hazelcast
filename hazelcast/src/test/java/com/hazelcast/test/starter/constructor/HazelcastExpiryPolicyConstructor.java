@@ -18,6 +18,7 @@ package com.hazelcast.test.starter.constructor;
 
 import com.hazelcast.test.starter.HazelcastStarterConstructor;
 
+import javax.cache.expiry.Duration;
 import java.lang.reflect.Constructor;
 
 import static com.hazelcast.test.starter.ReflectionUtils.getFieldValueReflectively;
@@ -41,14 +42,6 @@ public class HazelcastExpiryPolicyConstructor extends AbstractStarterObjectConst
                 create.getTimeUnit().toMillis(create.getDurationAmount()),
                 access.getTimeUnit().toMillis(access.getDurationAmount()),
                 update.getTimeUnit().toMillis(update.getDurationAmount()),
-        };
-        Object access = getFieldValueReflectively(delegate, "access");
-        Object update = getFieldValueReflectively(delegate, "update");
-
-        Object[] args = new Object[]{
-                getFieldValueReflectively(create, "durationAmount"),
-                getFieldValueReflectively(access, "durationAmount"),
-                getFieldValueReflectively(update, "durationAmount")
         };
 
         return constructor.newInstance(args);
