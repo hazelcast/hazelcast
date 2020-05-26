@@ -37,7 +37,7 @@ public final class CompatibilityTestUtils {
      */
     public static final String COMPATIBILITY_TEST_OTHER_VERSION = "hazelcast.test.compatibility.otherVersion";
 
-    private static final String DEFAULT_OTHER_VERSION = "3.12.8-migration-SNAPSHOT";
+    private static final String DEFAULT_OTHER_VERSION = "3.12.8-migration";
 
     // When running a compatibility test, all com.hazelcast.* classes are transformed so that none are
     // loaded with final modifier to allow subclass proxying.
