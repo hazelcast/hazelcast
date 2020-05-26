@@ -120,17 +120,18 @@ public class PhoneHomeTest extends HazelcastTestSupport {
     public void testConvertToLetter() {
         HazelcastInstance hz = createHazelcastInstance();
         Node node = getNode(hz);
-        PhoneHome phoneHome = new PhoneHome(node);
-        assertEquals("A", phoneHome.convertToLetter(4));
-        assertEquals("B", phoneHome.convertToLetter(9));
-        assertEquals("C", phoneHome.convertToLetter(19));
-        assertEquals("D", phoneHome.convertToLetter(39));
-        assertEquals("E", phoneHome.convertToLetter(59));
-        assertEquals("F", phoneHome.convertToLetter(99));
-        assertEquals("G", phoneHome.convertToLetter(149));
-        assertEquals("H", phoneHome.convertToLetter(299));
-        assertEquals("J", phoneHome.convertToLetter(599));
-        assertEquals("I", phoneHome.convertToLetter(1000));
+//        PhoneHome phoneHome = new PhoneHome(node);
+        MetricsCollectorImpl metricsCollector=new MetricsCollectorImpl(node);
+        assertEquals("A", metricsCollector.convertToLetter(4));
+        assertEquals("B", metricsCollector.convertToLetter(9));
+        assertEquals("C", metricsCollector.convertToLetter(19));
+        assertEquals("D", metricsCollector.convertToLetter(39));
+        assertEquals("E", metricsCollector.convertToLetter(59));
+        assertEquals("F", metricsCollector.convertToLetter(99));
+        assertEquals("G", metricsCollector.convertToLetter(149));
+        assertEquals("H", metricsCollector.convertToLetter(299));
+        assertEquals("J", metricsCollector.convertToLetter(599));
+        assertEquals("I", metricsCollector.convertToLetter(1000));
     }
 
     @Test
@@ -142,11 +143,9 @@ public class PhoneHomeTest extends HazelcastTestSupport {
         assertEquals(parameters.get("mpct"), "0");
         Map<String, String> map1 = hz.getMap("hazelcast");
         Map<String, String> map2 = hz.getMap("phonehome");
-        parameters.clear();
         parameters = phoneHome.phoneHome(true);
         assertEquals(parameters.get("mpct"), "2");
         Map<String, String> map3 = hz.getMap("maps");
-        parameters.clear();
         parameters = phoneHome.phoneHome(true);
         assertEquals(parameters.get("mpct"), "3");
     }

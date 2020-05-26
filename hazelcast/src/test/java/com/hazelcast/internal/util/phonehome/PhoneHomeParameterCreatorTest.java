@@ -15,6 +15,7 @@
  */
 package com.hazelcast.internal.util.phonehome;
 
+import com.google.common.collect.ImmutableMap;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -22,7 +23,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.util.HashMap;
+import java.util.Collections;
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
@@ -39,10 +40,9 @@ public class PhoneHomeParameterCreatorTest {
         phoneHomeParameterCreator.addParam("1", "hazelcast");
         phoneHomeParameterCreator.addParam("2", "phonehome");
         Map<String, String> map = phoneHomeParameterCreator.getParameters();
-        assertEquals(phoneHomeParameterCreator.build(), "?1=hazelcast&2=phonehome");
+        assertEquals("?1=hazelcast&2=phonehome", phoneHomeParameterCreator.build());
         assertNotNull(map);
-        assertEquals(map.get("1"), "hazelcast");
-        assertEquals(map.get("2"), "phonehome");
+        assertEquals(ImmutableMap.of("1", "hazelcast", "2", "phonehome"), map);
         assertNull(map.get("3"));
     }
 
@@ -50,8 +50,7 @@ public class PhoneHomeParameterCreatorTest {
     public void testEmptyParameter() {
         PhoneHomeParameterCreator phoneHomeParameterCreator = new PhoneHomeParameterCreator();
         Map<String, String> map = phoneHomeParameterCreator.getParameters();
-        assertNotNull(map);
-        assertEquals(map, new HashMap<>());
+        assertEquals(Collections.EMPTY_MAP, map);
         assertEquals(phoneHomeParameterCreator.build(), "?");
     }
 }

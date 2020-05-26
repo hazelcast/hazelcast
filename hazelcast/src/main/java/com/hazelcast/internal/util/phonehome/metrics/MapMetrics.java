@@ -18,8 +18,10 @@ package com.hazelcast.internal.util.phonehome.metrics;
 import com.hazelcast.core.DistributedObject;
 
 import java.util.Collection;
+import java.util.stream.Collectors;
 
 import com.hazelcast.instance.impl.Node;
+import com.hazelcast.map.impl.MapService;
 
 public class MapMetrics {
 
@@ -32,13 +34,8 @@ public class MapMetrics {
     }
 
     private void findMaps() {
-        maps = hazelcastNode.hazelcastInstance.getDistributedObjects();
-        for (DistributedObject distributedObject : maps) {
-            String serviceName = distributedObject.getServiceName();
-            if (!serviceName.endsWith("mapService")) {
-                maps.remove(distributedObject);
-            }
-        }
+        Collection<DistributedObject> distributedObjects = hazelcastNode.hazelcastInstance.getDistributedObjects();
+        maps = distributedObjects.stream().filter(distributedObject -> distributedObject.getServiceName().equals(MapService.SERVICE_NAME)).collect(Collectors.toList());
 
     }
 
