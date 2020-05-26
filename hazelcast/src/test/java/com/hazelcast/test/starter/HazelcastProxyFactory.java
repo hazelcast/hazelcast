@@ -53,6 +53,7 @@ import static com.hazelcast.test.starter.HazelcastAPIDelegatingClassloader.DELEG
 import static com.hazelcast.test.starter.HazelcastProxyFactory.ProxyPolicy.RETURN_SAME;
 import static com.hazelcast.test.starter.HazelcastStarterUtils.debug;
 import static com.hazelcast.test.starter.HazelcastStarterUtils.newCollectionFor;
+import static com.hazelcast.test.starter.HazelcastStarterUtils.newMapFor;
 import static com.hazelcast.test.starter.ReflectionUtils.getConstructor;
 import static com.hazelcast.test.starter.ReflectionUtils.getReflectionsForTestPackage;
 import static com.hazelcast.util.ConcurrentReferenceHashMap.ReferenceType.STRONG;
@@ -242,7 +243,7 @@ public class HazelcastProxyFactory {
             }
             return targetCollection;
         } else if (isJDKClass(arg.getClass()) && Map.class.isAssignableFrom(arg.getClass())) {
-            Map<Object, Object> targetMap = new ConcurrentHashMap<Object, Object>();
+            Map<Object, Object> targetMap = newMapFor(arg.getClass());
             Map mapArg = (Map) arg;
             for (Object entry : mapArg.entrySet()) {
                 Object key = proxyObjectForStarter(targetClassLoader, ((Map.Entry) entry).getKey());

@@ -29,16 +29,22 @@ import java.lang.reflect.Method;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.PriorityQueue;
 import java.util.Queue;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CopyOnWriteArraySet;
@@ -236,6 +242,24 @@ public class HazelcastStarterUtils {
             return new ConcurrentLinkedQueue<Object>();
         } else if (Collection.class.isAssignableFrom(type)) {
             return new LinkedList<Object>();
+        } else {
+            throw new UnsupportedOperationException("Cannot locate collection type for " + type);
+        }
+    }
+
+    public static Map<Object, Object> newMapFor(Class<?> type) {
+        if (LinkedHashMap.class.isAssignableFrom(type)) {
+            return new LinkedHashMap<Object, Object>();
+        } else if (ConcurrentSkipListMap.class.isAssignableFrom(type)) {
+            return new ConcurrentSkipListMap<Object, Object>();
+        } else if (ConcurrentHashMap.class.isAssignableFrom(type)) {
+            return new ConcurrentHashMap<Object, Object>();
+        } else if (TreeMap.class.isAssignableFrom(type)) {
+            return new TreeMap<Object, Object>();
+        } else if (HashMap.class.isAssignableFrom(type)) {
+            return new HashMap<Object, Object>();
+        } else if (Map.class.isAssignableFrom(type)) {
+            return new ConcurrentHashMap<Object, Object>();
         } else {
             throw new UnsupportedOperationException("Cannot locate collection type for " + type);
         }
