@@ -121,7 +121,7 @@ public class PhoneHomeTest extends HazelcastTestSupport {
         HazelcastInstance hz = createHazelcastInstance();
         Node node = getNode(hz);
 //        PhoneHome phoneHome = new PhoneHome(node);
-        MetricsCollectorImpl metricsCollector=new MetricsCollectorImpl(node);
+        MetricsCollectorImpl metricsCollector = new MetricsCollectorImpl(node);
         assertEquals("A", metricsCollector.convertToLetter(4));
         assertEquals("B", metricsCollector.convertToLetter(9));
         assertEquals("C", metricsCollector.convertToLetter(19));

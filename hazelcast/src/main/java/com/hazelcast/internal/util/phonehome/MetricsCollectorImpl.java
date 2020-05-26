@@ -36,9 +36,6 @@ import static com.hazelcast.internal.util.EmptyStatement.ignore;
 
 public class MetricsCollectorImpl implements MetricsCollector {
 
-    PhoneHomeParameterCreator parameterCreator;
-    private final Node hazelcastNode;
-
     private static final int A_INTERVAL = 5;
     private static final int B_INTERVAL = 10;
     private static final int C_INTERVAL = 20;
@@ -48,6 +45,9 @@ public class MetricsCollectorImpl implements MetricsCollector {
     private static final int G_INTERVAL = 150;
     private static final int H_INTERVAL = 300;
     private static final int J_INTERVAL = 600;
+
+    PhoneHomeParameterCreator parameterCreator;
+    private final Node hazelcastNode;
 
     private final BuildInfo buildInfo = BuildInfoProvider.getBuildInfo();
 

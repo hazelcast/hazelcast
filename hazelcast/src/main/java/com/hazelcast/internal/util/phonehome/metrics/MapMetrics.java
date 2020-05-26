@@ -35,7 +35,8 @@ public class MapMetrics {
 
     private void findMaps() {
         Collection<DistributedObject> distributedObjects = hazelcastNode.hazelcastInstance.getDistributedObjects();
-        maps = distributedObjects.stream().filter(distributedObject -> distributedObject.getServiceName().equals(MapService.SERVICE_NAME)).collect(Collectors.toList());
+        maps = distributedObjects.stream().filter(distributedObject -> distributedObject.getServiceName().
+                equals(MapService.SERVICE_NAME)).collect(Collectors.toList());
 
     }
 
