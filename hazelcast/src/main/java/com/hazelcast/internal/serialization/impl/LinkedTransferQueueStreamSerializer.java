@@ -44,7 +44,7 @@ public class LinkedTransferQueueStreamSerializer<E> implements StreamSerializer<
             this.addMethod = ltqClass.getMethod("add", Object.class);
             this.sizeMethod = ltqClass.getMethod("size");
         } catch (Exception e) {
-            throw new HazelcastException("Cannot find LinkedTransferQueue. Are you running with JDK8?");
+            throw new HazelcastException("Cannot find LinkedTransferQueue. Are you running with JDK8?", e);
         }
     }
 
@@ -64,11 +64,12 @@ public class LinkedTransferQueueStreamSerializer<E> implements StreamSerializer<
             int size = in.readInt();
             Object collection = defaultConstructor.newInstance();
             for (int i = 0; i < size; i++) {
-                addMethod.invoke(collection, in.readObject());
+                Object item = in.readObject();
+                addMethod.invoke(collection, item);
             }
             return collection;
         } catch (Exception e) {
-            throw new HazelcastException("Cannot instantiate LinkedTransferQueue. Are you running with JDK8?");
+            throw new HazelcastException("Cannot instantiate LinkedTransferQueue. Are you running with JDK8?", e);
         }
     }
 
