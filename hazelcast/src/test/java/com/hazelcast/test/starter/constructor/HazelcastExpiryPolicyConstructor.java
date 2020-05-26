@@ -33,7 +33,15 @@ public class HazelcastExpiryPolicyConstructor extends AbstractStarterObjectConst
     Object createNew0(Object delegate) throws Exception {
         Constructor<?> constructor = targetClass.getConstructor(Long.TYPE, Long.TYPE, Long.TYPE);
 
-        Object create = getFieldValueReflectively(delegate, "create");
+        Duration create = getFieldValueReflectively(delegate, "create");
+        Duration access = getFieldValueReflectively(delegate, "access");
+        Duration update = getFieldValueReflectively(delegate, "update");
+
+        Object[] args = new Object[]{
+                create.getTimeUnit().toMillis(create.getDurationAmount()),
+                access.getTimeUnit().toMillis(access.getDurationAmount()),
+                update.getTimeUnit().toMillis(update.getDurationAmount()),
+        };
         Object access = getFieldValueReflectively(delegate, "access");
         Object update = getFieldValueReflectively(delegate, "update");
 
