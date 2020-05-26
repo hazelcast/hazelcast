@@ -148,7 +148,7 @@ public final class QueryPath implements IdentifiedDataSerializable {
 
     @Override
     public int hashCode() {
-        int result = (key ? 1 : 0);
+        int result = key ? 1 : 0;
 
         result = 31 * result + (path != null ? path.hashCode() : 0);
 

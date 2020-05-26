@@ -68,13 +68,7 @@ public class PartitionedMapTableResolver extends AbstractMapTableResolver {
 
         // Get started maps.
         for (String mapName : context.getMapContainers().keySet()) {
-            PartitionedMapTable table;
-
-            try {
-                table = createTable(context, mapName);
-            } catch (QueryException e) {
-                table = new PartitionedMapTable(mapName, e);
-            }
+            PartitionedMapTable table = createTable(context, mapName);
 
             if (table == null) {
                 continue;
@@ -167,9 +161,11 @@ public class PartitionedMapTableResolver extends AbstractMapTableResolver {
 
             return emptyMap(name);
         } catch (QueryException e) {
-            throw e;
+            return new PartitionedMapTable(name, e);
         } catch (Exception e) {
-            throw QueryException.error("Failed to get metadata for IMap " + name + ": " + e.getMessage(), e);
+            QueryException e0 = QueryException.error("Failed to get metadata for IMap " + name + ": " + e.getMessage(), e);
+
+            return new PartitionedMapTable(name, e0);
         }
     }
 
