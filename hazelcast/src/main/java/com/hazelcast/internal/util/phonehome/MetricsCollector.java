@@ -15,17 +15,13 @@
  */
 package com.hazelcast.internal.util.phonehome;
 
+import com.hazelcast.instance.impl.Node;
+
+import java.util.Map;
+
 public interface MetricsCollector {
 
-    void addBuildInfo();
-
-    void addClusterInfo();
-
-    void addOSInfo();
-
-    void addClientInfo();
-
-    void addMapInfo();
+    Map<String, String> computeMetrics(Node hazelcastNode);
 
 
 }

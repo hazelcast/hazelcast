@@ -18,26 +18,29 @@ package com.hazelcast.internal.util.phonehome.metrics;
 import com.hazelcast.core.DistributedObject;
 
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import com.hazelcast.instance.impl.Node;
+import com.hazelcast.internal.util.phonehome.MetricsCollector;
 import com.hazelcast.map.impl.MapService;
 
-public class MapMetrics {
+public class MapInfoCollector implements MetricsCollector {
 
-    Node hazelcastNode;
     Collection<DistributedObject> maps;
 
-    public MapMetrics(Node node) {
-        hazelcastNode = node;
-        findMaps();
-    }
+    @Override
+    public Map<String, String> computeMetrics(Node hazelcastNode) {
 
-    private void findMaps() {
         Collection<DistributedObject> distributedObjects = hazelcastNode.hazelcastInstance.getDistributedObjects();
         maps = distributedObjects.stream().filter(distributedObject -> distributedObject.getServiceName().
                 equals(MapService.SERVICE_NAME)).collect(Collectors.toList());
+        Map<String, String> mapInfo = new HashMap<>();
 
+        mapInfo.put("mpct", String.valueOf(getMapCount()));
+
+        return mapInfo;
     }
 
     public int getMapCount() {

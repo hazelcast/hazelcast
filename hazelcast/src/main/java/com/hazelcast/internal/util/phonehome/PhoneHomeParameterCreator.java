@@ -41,7 +41,7 @@ public class PhoneHomeParameterCreator {
         return parameters;
     }
 
-    public PhoneHomeParameterCreator addParam(String key, String value) {
+    public void addParam(String key, String value) {
 
         if (hasParameterBefore) {
             builder.append("&");
@@ -54,11 +54,15 @@ public class PhoneHomeParameterCreator {
             throw rethrow(e);
         }
         parameters.put(key, value);
-        return this;
     }
 
     String build() {
         return builder.toString();
+    }
+
+    public void addMap(Map<String, String> map) {
+        map.forEach(this::addParam);
+
     }
 }
 

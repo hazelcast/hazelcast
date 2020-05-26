@@ -16,17 +16,21 @@
 package com.hazelcast.internal.util.phonehome;
 
 import com.hazelcast.instance.impl.Node;
+import com.hazelcast.internal.util.phonehome.metrics.BuildInfoCollector;
+import com.hazelcast.internal.util.phonehome.metrics.ClientInfoCollector;
+import com.hazelcast.internal.util.phonehome.metrics.ClusterInfoCollector;
+import com.hazelcast.internal.util.phonehome.metrics.MapInfoCollector;
+import com.hazelcast.internal.util.phonehome.metrics.OSInfoCollector;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.properties.ClusterProperty;
 
 import java.io.BufferedInputStream;
-
 import java.io.InputStream;
-
 import java.net.URL;
 import java.net.URLConnection;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
-
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
@@ -100,8 +104,18 @@ public class PhoneHome {
 
     public PhoneHomeParameterCreator createParameters() {
 
-        MetricsCollectorImpl metricsCollector = new MetricsCollectorImpl(hazelcastNode);
-        return metricsCollector.parameterCreator;
+        PhoneHomeParameterCreator parameterCreator = new PhoneHomeParameterCreator();
+        List<MetricsCollector> metricsCollectorList = new ArrayList<>();
+        metricsCollectorList.add(new BuildInfoCollector());
+        metricsCollectorList.add(new ClusterInfoCollector());
+        metricsCollectorList.add(new ClientInfoCollector());
+        metricsCollectorList.add(new MapInfoCollector());
+        metricsCollectorList.add(new OSInfoCollector());
+
+        metricsCollectorList.forEach((metricsCollector -> parameterCreator.
+                addMap(metricsCollector.computeMetrics(hazelcastNode))));
+
+        return parameterCreator;
     }
 
 
