@@ -20,7 +20,8 @@ import com.hazelcast.core.DistributedObject;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.stream.Collectors;
+
+import static java.util.stream.Collectors.toList;
 
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.util.phonehome.MetricsCollector;
@@ -35,7 +36,7 @@ public class MapInfoCollector implements MetricsCollector {
 
         Collection<DistributedObject> distributedObjects = hazelcastNode.hazelcastInstance.getDistributedObjects();
         maps = distributedObjects.stream().filter(distributedObject -> distributedObject.getServiceName().
-                equals(MapService.SERVICE_NAME)).collect(Collectors.toList());
+                equals(MapService.SERVICE_NAME)).collect(toList());
         Map<String, String> mapInfo = new HashMap<>();
 
         mapInfo.put("mpct", String.valueOf(getMapCount()));

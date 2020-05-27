@@ -21,7 +21,43 @@ import java.util.Map;
 
 public interface MetricsCollector {
 
+    int A_INTERVAL = 5;
+    int B_INTERVAL = 10;
+    int C_INTERVAL = 20;
+    int D_INTERVAL = 40;
+    int E_INTERVAL = 60;
+    int F_INTERVAL = 100;
+    int G_INTERVAL = 150;
+    int H_INTERVAL = 300;
+    int J_INTERVAL = 600;
+
     Map<String, String> computeMetrics(Node hazelcastNode);
+
+    static String convertToLetter(int size) {
+        String letter;
+        if (size < A_INTERVAL) {
+            letter = "A";
+        } else if (size < B_INTERVAL) {
+            letter = "B";
+        } else if (size < C_INTERVAL) {
+            letter = "C";
+        } else if (size < D_INTERVAL) {
+            letter = "D";
+        } else if (size < E_INTERVAL) {
+            letter = "E";
+        } else if (size < F_INTERVAL) {
+            letter = "F";
+        } else if (size < G_INTERVAL) {
+            letter = "G";
+        } else if (size < H_INTERVAL) {
+            letter = "H";
+        } else if (size < J_INTERVAL) {
+            letter = "J";
+        } else {
+            letter = "I";
+        }
+        return letter;
+    }
 
 
 }

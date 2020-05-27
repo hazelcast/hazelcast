@@ -43,6 +43,10 @@ public class PhoneHomeParameterCreator {
 
     public void addParam(String key, String value) {
 
+        if (parameters.containsKey(key)) {
+            throw new IllegalArgumentException();
+        }
+
         if (hasParameterBefore) {
             builder.append("&");
         } else {

@@ -27,8 +27,6 @@ import java.util.Collections;
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -41,16 +39,22 @@ public class PhoneHomeParameterCreatorTest {
         phoneHomeParameterCreator.addParam("2", "phonehome");
         Map<String, String> map = phoneHomeParameterCreator.getParameters();
         assertEquals("?1=hazelcast&2=phonehome", phoneHomeParameterCreator.build());
-        assertNotNull(map);
         assertEquals(ImmutableMap.of("1", "hazelcast", "2", "phonehome"), map);
-        assertNull(map.get("3"));
     }
 
     @Test
     public void testEmptyParameter() {
         PhoneHomeParameterCreator phoneHomeParameterCreator = new PhoneHomeParameterCreator();
         Map<String, String> map = phoneHomeParameterCreator.getParameters();
-        assertEquals(Collections.EMPTY_MAP, map);
+        assertEquals(Collections.emptyMap(), map);
         assertEquals(phoneHomeParameterCreator.build(), "?");
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void checkDuplicateKey() {
+        PhoneHomeParameterCreator phoneHomeParameterCreator = new PhoneHomeParameterCreator();
+        phoneHomeParameterCreator.addParam("1", "hazelcast");
+        phoneHomeParameterCreator.addParam("1", "phonehome");
+
     }
 }

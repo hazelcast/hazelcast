@@ -118,20 +118,16 @@ public class PhoneHomeTest extends HazelcastTestSupport {
 
     @Test
     public void testConvertToLetter() {
-        HazelcastInstance hz = createHazelcastInstance();
-        Node node = getNode(hz);
-//        PhoneHome phoneHome = new PhoneHome(node);
-//        MetricsCollectorImpl metricsCollector = new MetricsCollectorImpl(node);
-//        assertEquals("A", metricsCollector.convertToLetter(4));
-//        assertEquals("B", metricsCollector.convertToLetter(9));
-//        assertEquals("C", metricsCollector.convertToLetter(19));
-//        assertEquals("D", metricsCollector.convertToLetter(39));
-//        assertEquals("E", metricsCollector.convertToLetter(59));
-//        assertEquals("F", metricsCollector.convertToLetter(99));
-//        assertEquals("G", metricsCollector.convertToLetter(149));
-//        assertEquals("H", metricsCollector.convertToLetter(299));
-//        assertEquals("J", metricsCollector.convertToLetter(599));
-//        assertEquals("I", metricsCollector.convertToLetter(1000));
+        assertEquals("A", MetricsCollector.convertToLetter(4));
+        assertEquals("B", MetricsCollector.convertToLetter(9));
+        assertEquals("C", MetricsCollector.convertToLetter(19));
+        assertEquals("D", MetricsCollector.convertToLetter(39));
+        assertEquals("E", MetricsCollector.convertToLetter(59));
+        assertEquals("F", MetricsCollector.convertToLetter(99));
+        assertEquals("G", MetricsCollector.convertToLetter(149));
+        assertEquals("H", MetricsCollector.convertToLetter(299));
+        assertEquals("J", MetricsCollector.convertToLetter(599));
+        assertEquals("I", MetricsCollector.convertToLetter(1000));
     }
 
     @Test

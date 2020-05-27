@@ -28,7 +28,7 @@ import java.io.BufferedInputStream;
 import java.io.InputStream;
 import java.net.URL;
 import java.net.URLConnection;
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.RejectedExecutionException;
@@ -105,12 +105,11 @@ public class PhoneHome {
     public PhoneHomeParameterCreator createParameters() {
 
         PhoneHomeParameterCreator parameterCreator = new PhoneHomeParameterCreator();
-        List<MetricsCollector> metricsCollectorList = new ArrayList<>();
-        metricsCollectorList.add(new BuildInfoCollector());
-        metricsCollectorList.add(new ClusterInfoCollector());
-        metricsCollectorList.add(new ClientInfoCollector());
-        metricsCollectorList.add(new MapInfoCollector());
-        metricsCollectorList.add(new OSInfoCollector());
+
+        MetricsCollector[] metricsCollectorArray = new MetricsCollector[]{new BuildInfoCollector(),
+                new ClusterInfoCollector(), new ClientInfoCollector(), new MapInfoCollector(), new OSInfoCollector()};
+
+        List<MetricsCollector> metricsCollectorList = Arrays.asList(metricsCollectorArray);
 
         metricsCollectorList.forEach((metricsCollector -> parameterCreator.
                 addMap(metricsCollector.computeMetrics(hazelcastNode))));

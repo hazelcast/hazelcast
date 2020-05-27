@@ -32,42 +32,6 @@ import static com.hazelcast.internal.util.EmptyStatement.ignore;
 
 public class BuildInfoCollector implements MetricsCollector {
 
-    private static final int A_INTERVAL = 5;
-    private static final int B_INTERVAL = 10;
-    private static final int C_INTERVAL = 20;
-    private static final int D_INTERVAL = 40;
-    private static final int E_INTERVAL = 60;
-    private static final int F_INTERVAL = 100;
-    private static final int G_INTERVAL = 150;
-    private static final int H_INTERVAL = 300;
-    private static final int J_INTERVAL = 600;
-
-    public String convertToLetter(int size) {
-        String letter;
-        if (size < A_INTERVAL) {
-            letter = "A";
-        } else if (size < B_INTERVAL) {
-            letter = "B";
-        } else if (size < C_INTERVAL) {
-            letter = "C";
-        } else if (size < D_INTERVAL) {
-            letter = "D";
-        } else if (size < E_INTERVAL) {
-            letter = "E";
-        } else if (size < F_INTERVAL) {
-            letter = "F";
-        } else if (size < G_INTERVAL) {
-            letter = "G";
-        } else if (size < H_INTERVAL) {
-            letter = "H";
-        } else if (size < J_INTERVAL) {
-            letter = "J";
-        } else {
-            letter = "I";
-        }
-        return letter;
-    }
-
     private String getDownloadId() {
         String downloadId = "source";
         InputStream is = null;
@@ -93,7 +57,7 @@ public class BuildInfoCollector implements MetricsCollector {
         Map<String, String> buildInfo = new HashMap<>();
         JetBuildInfo jetBuildInfo = hazelcastNode.getBuildInfo().getJetBuildInfo();
         buildInfo.put("p", getDownloadId());
-        buildInfo.put("cssz", convertToLetter(hazelcastNode.clientEngine.getClientEndpointCount()));
+        buildInfo.put("cssz", MetricsCollector.convertToLetter(hazelcastNode.clientEngine.getClientEndpointCount()));
         buildInfo.put("jvmv", System.getProperty("java.version"));
         buildInfo.put("version", build.getVersion());
         buildInfo.put("jetv", jetBuildInfo == null ? "" : jetBuildInfo.getVersion());

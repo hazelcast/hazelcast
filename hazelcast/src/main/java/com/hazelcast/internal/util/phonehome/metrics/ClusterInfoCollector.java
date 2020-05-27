@@ -26,41 +26,6 @@ import java.util.Map;
 
 public class ClusterInfoCollector implements MetricsCollector {
 
-    private static final int A_INTERVAL = 5;
-    private static final int B_INTERVAL = 10;
-    private static final int C_INTERVAL = 20;
-    private static final int D_INTERVAL = 40;
-    private static final int E_INTERVAL = 60;
-    private static final int F_INTERVAL = 100;
-    private static final int G_INTERVAL = 150;
-    private static final int H_INTERVAL = 300;
-    private static final int J_INTERVAL = 600;
-
-    public String convertToLetter(int size) {
-        String letter;
-        if (size < A_INTERVAL) {
-            letter = "A";
-        } else if (size < B_INTERVAL) {
-            letter = "B";
-        } else if (size < C_INTERVAL) {
-            letter = "C";
-        } else if (size < D_INTERVAL) {
-            letter = "D";
-        } else if (size < E_INTERVAL) {
-            letter = "E";
-        } else if (size < F_INTERVAL) {
-            letter = "F";
-        } else if (size < G_INTERVAL) {
-            letter = "G";
-        } else if (size < H_INTERVAL) {
-            letter = "H";
-        } else if (size < J_INTERVAL) {
-            letter = "J";
-        } else {
-            letter = "I";
-        }
-        return letter;
-    }
 
     @Override
     public Map<String, String> computeMetrics(Node hazelcastNode) {
@@ -71,11 +36,11 @@ public class ClusterInfoCollector implements MetricsCollector {
         RuntimeMXBean runtimeMxBean = ManagementFactory.getRuntimeMXBean();
         parameters.put("m", hazelcastNode.getThisUuid().toString());
         parameters.put("c", clusterService.getClusterId().toString());
-        parameters.put("crsz", convertToLetter(clusterSize));
+        parameters.put("crsz", MetricsCollector.convertToLetter(clusterSize));
         parameters.put("cuptm", Long.toString(clusterUpTime));
         parameters.put("nuptm", Long.toString(runtimeMxBean.getUptime()));
         parameters.put("jvmn", runtimeMxBean.getVmName());
-        return parameters;
 
+        return parameters;
     }
 }
