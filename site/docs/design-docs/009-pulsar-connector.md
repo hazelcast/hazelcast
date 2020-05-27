@@ -82,14 +82,14 @@ the result of the async calls should not be performed by creating new
 threads. This requirement conflicts with the usual practice of async
 processing. That is why I did not prefer async policies.
 
-I preferred to use batch receive assuming that it is better in
+We prefer to use batch receive assuming that it is better in
 performance. The batch receiving of Pulsar consumer assures that “the
 batch receive will be completed as long as anyone of the conditions(has
 enough number of messages, has enough of the size of messages in terms
-of bytes and number, wait for a timeout) is met”.  To create a Pulsar
-consumer source, users should supply a specific `BatchReceivePolicy`.
-
-The design of the receiving policy should be revisited.
+of bytes and number, wait for a timeout) is met”. As the default batch
+receive policy, we set timeout to 1000 ms and max number of messages to
+512 messages. Since the batch receive policy of the consumer is more
+likely to change, a separate builder setter is created for it.
 
 #### Consumer API’s acknowledgment mechanism
 

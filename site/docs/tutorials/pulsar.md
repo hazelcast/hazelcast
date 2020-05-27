@@ -86,7 +86,7 @@ repositories {
 
 dependencies {
     compile 'com.hazelcast.jet:hazelcast-jet:{jet-version}'
-    compile 'com.hazelcast.jet-contrib:pulsar:0.1-SNAPSHOT'
+    compile 'com.hazelcast.jet-contrib:pulsar:0.1'
     compile 'org.apache.pulsar:pulsar-client:2.5.0'
 }
 
@@ -129,7 +129,7 @@ shadowJar {
         <dependency>
             <groupId>com.hazelcast.jet.contrib</groupId>
             <artifactId>pulsar</artifactId>
-            <version>0.1-SNAPSHOT</version>
+            <version>0.1</version>
         </dependency>
         <dependency>
             <groupId>org.apache.pulsar</groupId>
@@ -192,7 +192,7 @@ shadowJar {
 ## 4. Publish messages to a Pulsar topic
 
 The program below connects the previously started pulsar cluster located
-at "pulsar://localhost:6650". And then, it iteratively picks a user
+at `pulsar://localhost:6650`. And then, it iteratively picks a user
 uniformly at random, then creates event on behalf of this user, and
 sends this event as a message to the Pulsar topic named `hz-jet-topic`.
 

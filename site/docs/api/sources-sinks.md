@@ -685,7 +685,8 @@ for details.
 
 ### Apache Pulsar
 
->This connector is under incubation.
+>This connector is currently under incubation. For more
+>information and examples, please visit the [GitHub repository](https://github.com/hazelcast/hazelcast-jet-contrib/tree/master/pulsar).
 
 ## In-memory Data Structures
 
@@ -1324,6 +1325,8 @@ restarted in face of an intermittent failure.
 |`MySqlCdcSources.mysql`|`hazelcast-jet-cdc-mysql`|stream|at-least-once|
 |`HadoopSources.inputFormat`|`hazelcast-jet-hadoop`|batch|N/A|
 |`KafkaSources.kafka`|`hazelcast-jet-kafka`|stream|exactly-once|
+|`PulsarSources.pulsarConsumer`|`hazelcast-jet-contrib-pulsar`|stream|N/A|
+|`PulsarSources.pulsarReader`|`hazelcast-jet-contrib-pulsar`|stream|exactly-once|
 |`S3Sources.s3`|`hazelcast-jet-s3`|batch|N/A|
 |`Sources.cache`|`hazelcast-jet`|batch|N/A|
 |`Sources.cacheJournal`|`hazelcast-jet`|stream|exactly-once|
@@ -1355,6 +1358,7 @@ processing even with at-least-once sinks.
 |`AvroSinks.files`|`hazelcast-jet-avro`|no|N/A|
 |`HadoopSinks.outputFormat`|`hazelcast-jet-hadoop`|no|N/A|
 |`KafkaSinks.kafka`|`hazelcast-jet-kafka`|yes|exactly-once|
+|`PulsarSources.pulsarSink`|`hazelcast-jet-contrib-pulsar`|yes|at-least-once|
 |`S3Sinks.s3`|`hazelcast-jet-s3`|no|N/A|
 |`Sinks.cache`|`hazelcast-jet`|yes|at-least-once|
 |`Sinks.files`|`hazelcast-jet`|yes|exactly-once|
