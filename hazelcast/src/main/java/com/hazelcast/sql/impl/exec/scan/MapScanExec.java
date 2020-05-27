@@ -24,6 +24,7 @@ import com.hazelcast.sql.SqlErrorCode;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.exec.IterationResult;
 import com.hazelcast.sql.impl.expression.Expression;
+import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.extract.QueryTargetDescriptor;
 import com.hazelcast.sql.impl.row.HeapRow;
 import com.hazelcast.sql.impl.row.ListRowBatch;
@@ -56,13 +57,13 @@ public class MapScanExec extends AbstractMapScanExec {
         PartitionIdSet partitions,
         QueryTargetDescriptor keyDescriptor,
         QueryTargetDescriptor valueDescriptor,
-        List<String> fieldNames,
+        List<QueryPath> fieldPaths,
         List<QueryDataType> fieldTypes,
         List<Integer> projects,
         Expression<Boolean> filter,
         InternalSerializationService serializationService
     ) {
-        super(id, map.getName(), keyDescriptor, valueDescriptor, fieldNames, fieldTypes, projects, filter, serializationService);
+        super(id, map.getName(), keyDescriptor, valueDescriptor, fieldPaths, fieldTypes, projects, filter, serializationService);
 
         this.map = map;
         this.partitions = partitions;

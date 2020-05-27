@@ -23,8 +23,8 @@ import com.hazelcast.sql.impl.type.QueryDataType;
  */
 public abstract class TableField {
 
-    private final String name;
-    private final QueryDataType type;
+    protected final String name;
+    protected final QueryDataType type;
 
     protected TableField(String name, QueryDataType type) {
         this.name = name;

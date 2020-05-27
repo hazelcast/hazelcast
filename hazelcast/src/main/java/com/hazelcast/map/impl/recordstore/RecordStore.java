@@ -39,7 +39,9 @@ import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes.MapMergeTypes;
 import com.hazelcast.wan.impl.CallerProvenance;
 
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.function.BiConsumer;
@@ -291,6 +293,8 @@ public interface RecordStore<R extends Record> {
     void forEach(BiConsumer<Data, R> consumer, boolean backup);
 
     void forEach(BiConsumer<Data, Record> consumer, boolean backup, boolean includeExpiredRecords);
+
+    Iterator<Map.Entry<Data, Record>> iterator();
 
     /**
      * Iterates over record store entries but first waits map store to

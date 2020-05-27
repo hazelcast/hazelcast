@@ -22,6 +22,7 @@ package com.hazelcast.sql.impl;
 public final class QueryUtils {
 
     public static final String CATALOG = "hazelcast";
+    public static final String SCHEMA_NAME_PARTITIONED = "partitioned";
 
     public static final String WORKER_TYPE_OPERATION = "query-operation-thread";
     public static final String WORKER_TYPE_FRAGMENT = "query-fragment-thread";

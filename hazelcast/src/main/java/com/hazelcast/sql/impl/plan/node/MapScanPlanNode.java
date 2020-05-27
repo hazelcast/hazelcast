@@ -19,6 +19,7 @@ package com.hazelcast.sql.impl.plan.node;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.sql.impl.SqlDataSerializerHook;
 import com.hazelcast.sql.impl.expression.Expression;
+import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.extract.QueryTargetDescriptor;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
@@ -38,12 +39,12 @@ public class MapScanPlanNode extends AbstractMapScanPlanNode implements Identifi
         String mapName,
         QueryTargetDescriptor keyDescriptor,
         QueryTargetDescriptor valueDescriptor,
-        List<String> fieldNames,
+        List<QueryPath> fieldPaths,
         List<QueryDataType> fieldTypes,
         List<Integer> projects,
         Expression<Boolean> filter
     ) {
-        super(id, mapName, keyDescriptor, valueDescriptor, fieldNames, fieldTypes, projects, filter);
+        super(id, mapName, keyDescriptor, valueDescriptor, fieldPaths, fieldTypes, projects, filter);
     }
 
     @Override
@@ -53,7 +54,7 @@ public class MapScanPlanNode extends AbstractMapScanPlanNode implements Identifi
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, mapName, fieldNames, fieldTypes, projects, filter, keyDescriptor, valueDescriptor);
+        return Objects.hash(id, mapName, fieldPaths, fieldTypes, projects, filter, keyDescriptor, valueDescriptor);
     }
 
     @Override
@@ -70,7 +71,7 @@ public class MapScanPlanNode extends AbstractMapScanPlanNode implements Identifi
 
         return id == that.id
             && mapName.equals(that.mapName)
-            && fieldNames.equals(that.fieldNames)
+            && fieldPaths.equals(that.fieldPaths)
             && fieldTypes.equals(that.fieldTypes)
             && projects.equals(that.projects)
             && Objects.equals(filter, that.filter)
@@ -90,7 +91,7 @@ public class MapScanPlanNode extends AbstractMapScanPlanNode implements Identifi
 
     @Override
     public String toString() {
-        return getClass().getSimpleName() + "{id=" + id + ", mapName=" + mapName + ", fieldNames=" + fieldNames
+        return getClass().getSimpleName() + "{id=" + id + ", mapName=" + mapName + ", fieldPaths=" + fieldPaths
             + ", projects=" + projects + ", filter=" + filter + '}';
     }
 }

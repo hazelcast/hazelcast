@@ -243,7 +243,7 @@ public class CreateExecPlanNodeVisitor implements PlanNodeVisitor {
                     localParts,
                     node.getKeyDescriptor(),
                     node.getValueDescriptor(),
-                    node.getFieldNames(),
+                    node.getFieldPaths(),
                     node.getFieldTypes(),
                     node.getProjects(),
                     node.getFilter(),

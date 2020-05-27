@@ -176,7 +176,7 @@ public class MapScanExecTest extends SqlTestSupport {
     ) {
         int id = 1;
         MapContainer mapContainer = mapProxy.getService().getMapServiceContext().getMapContainer(mapProxy.getName());
-        List<String> fieldNames = Arrays.asList(QueryPath.KEY + ".val1", "val2", "val3");
+        List<QueryPath> fieldPaths = Arrays.asList(keyPath("val1"), valuePath("val2"), valuePath("val3"));
         List<QueryDataType> fieldTypes = Arrays.asList(QueryDataType.INT, QueryDataType.BIGINT, QueryDataType.BOOLEAN);
         List<Integer> projects = Arrays.asList(0, 1);
         InternalSerializationService serializationService =
@@ -188,7 +188,7 @@ public class MapScanExecTest extends SqlTestSupport {
             parts,
             GenericQueryTargetDescriptor.INSTANCE,
             GenericQueryTargetDescriptor.INSTANCE,
-            fieldNames,
+            fieldPaths,
             fieldTypes,
             projects,
             filter,
@@ -200,7 +200,7 @@ public class MapScanExecTest extends SqlTestSupport {
         assertEquals(parts, exec.getPartitions());
         assertEquals(GenericQueryTargetDescriptor.INSTANCE, exec.getKeyDescriptor());
         assertEquals(GenericQueryTargetDescriptor.INSTANCE, exec.getValueDescriptor());
-        assertEquals(fieldNames, exec.getFieldNames());
+        assertEquals(fieldPaths, exec.getFieldPaths());
         assertEquals(fieldTypes, exec.getFieldTypes());
         assertEquals(projects, exec.getProjects());
         assertEquals(filter, exec.getFilter());
@@ -271,7 +271,7 @@ public class MapScanExecTest extends SqlTestSupport {
             partitionIdSet,
             GenericQueryTargetDescriptor.INSTANCE,
             GenericQueryTargetDescriptor.INSTANCE,
-            Collections.singletonList("val2"),
+            Collections.singletonList(valuePath("val2")),
             Collections.singletonList(QueryDataType.BIGINT),
             Collections.singletonList(0),
             null,
@@ -303,7 +303,7 @@ public class MapScanExecTest extends SqlTestSupport {
             partitionIdSet,
             GenericQueryTargetDescriptor.INSTANCE,
             GenericQueryTargetDescriptor.INSTANCE,
-            Collections.singletonList("val2"),
+            Collections.singletonList(valuePath("val2")),
             Collections.singletonList(QueryDataType.TIMESTAMP),
             Collections.singletonList(0),
             null,
@@ -341,7 +341,7 @@ public class MapScanExecTest extends SqlTestSupport {
             partitionIdSet,
             GenericQueryTargetDescriptor.INSTANCE,
             GenericQueryTargetDescriptor.INSTANCE,
-            Collections.singletonList("val2"),
+            Collections.singletonList(valuePath("val2")),
             Collections.singletonList(QueryDataType.TIMESTAMP),
             Collections.singletonList(0),
             null,
@@ -405,7 +405,7 @@ public class MapScanExecTest extends SqlTestSupport {
             partitionIdSet,
             GenericQueryTargetDescriptor.INSTANCE,
             GenericQueryTargetDescriptor.INSTANCE,
-            Collections.singletonList("val2"),
+            Collections.singletonList(valuePath("val2")),
             Collections.singletonList(QueryDataType.BIGINT),
             Collections.singletonList(0),
             null,
@@ -475,7 +475,7 @@ public class MapScanExecTest extends SqlTestSupport {
             partitionIdSet,
             GenericQueryTargetDescriptor.INSTANCE,
             GenericQueryTargetDescriptor.INSTANCE,
-            Collections.singletonList("val2"),
+            Collections.singletonList(valuePath("val2")),
             Collections.singletonList(QueryDataType.BIGINT),
             Collections.singletonList(0),
             null,
@@ -512,7 +512,7 @@ public class MapScanExecTest extends SqlTestSupport {
             partitionIdSet,
             GenericQueryTargetDescriptor.INSTANCE,
             GenericQueryTargetDescriptor.INSTANCE,
-            Collections.singletonList("val2"),
+            Collections.singletonList(valuePath("val2")),
             Collections.singletonList(QueryDataType.BIGINT),
             Collections.singletonList(0),
             null,

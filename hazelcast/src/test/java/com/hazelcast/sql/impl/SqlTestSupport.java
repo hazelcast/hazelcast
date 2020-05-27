@@ -16,9 +16,13 @@
 
 package com.hazelcast.sql.impl;
 
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.instance.impl.HazelcastInstanceProxy;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.plan.Plan;
 import com.hazelcast.sql.impl.row.HeapRow;
 import com.hazelcast.sql.impl.row.ListRowBatch;
@@ -55,10 +59,14 @@ public class SqlTestSupport extends HazelcastTestSupport {
         }
     }
 
-    public static <T> T serialize(Object original) {
-        InternalSerializationService ss = new DefaultSerializationServiceBuilder().build();
+    public static InternalSerializationService getSerializationService() {
+        return new DefaultSerializationServiceBuilder().build();
+    }
 
-        return ss.toObject(ss.toData(original));
+    public static <T> T serialize(Object original) {
+        InternalSerializationService ss = getSerializationService();
+
+        return getSerializationService().toObject(ss.toData(original));
     }
 
     public static <T> T serializeAndCheck(IdentifiedDataSerializable original, int expectedClassId) {
@@ -127,5 +135,21 @@ public class SqlTestSupport extends HazelcastTestSupport {
             Collections.emptyMap(),
             Collections.emptyMap()
         );
+    }
+
+    public static QueryPath keyPath(String path) {
+        return path(path, true);
+    }
+
+    public static QueryPath valuePath(String path) {
+        return path(path, false);
+    }
+
+    public static QueryPath path(String path, boolean key) {
+        return new QueryPath(path, key);
+    }
+
+    public static NodeEngineImpl nodeEngine(HazelcastInstance instance) {
+        return ((HazelcastInstanceProxy) instance).getOriginal().node.nodeEngine;
     }
 }
