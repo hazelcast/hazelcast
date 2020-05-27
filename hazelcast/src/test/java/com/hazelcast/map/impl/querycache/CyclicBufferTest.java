@@ -187,7 +187,7 @@ public class CyclicBufferTest {
         int maxCapacity = nextPowerOfTwo(10);
         CyclicBuffer<TestSequenced> buffer = new DefaultCyclicBuffer<TestSequenced>(maxCapacity);
 
-        for (int i = 0; i < 1; i++) {
+        for (int i = 1; i < 2; i++) {
             buffer.add(new TestSequenced(i));
         }
 

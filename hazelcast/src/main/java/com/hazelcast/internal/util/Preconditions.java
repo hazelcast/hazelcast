@@ -170,6 +170,13 @@ public final class Preconditions {
         return value;
     }
 
+    public static long checkPositive(String paramName, long value) {
+        if (value <= 0) {
+            throw new IllegalArgumentException(paramName + " is " + value + " but must be > 0");
+        }
+        return value;
+    }
+
     /**
      * Tests if a {@code value} is positive, that is strictly larger than 0 (value &gt; 0).
      *

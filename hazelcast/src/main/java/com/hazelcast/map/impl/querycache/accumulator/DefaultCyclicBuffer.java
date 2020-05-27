@@ -33,7 +33,7 @@ import static com.hazelcast.internal.util.QuickMath.nextPowerOfTwo;
  */
 public class DefaultCyclicBuffer<E extends Sequenced> implements CyclicBuffer<E> {
 
-    private static final long UNAVAILABLE = -1L;
+    private static final long UNSET = -1L;
 
     private int capacity;
     private E[] buffer;
@@ -41,21 +41,22 @@ public class DefaultCyclicBuffer<E extends Sequenced> implements CyclicBuffer<E>
     private AtomicLong tailSequence;
 
     public DefaultCyclicBuffer(int capacity) throws IllegalArgumentException {
-        checkPositive(capacity, "capacity");
+        checkPositive("capacity", capacity);
 
         init(capacity);
     }
 
-    private void init(int maxSize) {
+    private synchronized void init(int maxSize) {
         this.capacity = nextPowerOfTwo(maxSize);
         this.buffer = (E[]) new Sequenced[capacity];
-        this.tailSequence = new AtomicLong(UNAVAILABLE);
-        this.headSequence = new AtomicLong(UNAVAILABLE);
+        this.tailSequence = new AtomicLong(UNSET);
+        this.headSequence = new AtomicLong(UNSET);
     }
 
     @Override
-    public void add(E event) {
+    public synchronized void add(E event) {
         checkNotNull(event, "event cannot be null");
+        checkPositive("sequence", event.getSequence());
 
         long sequence = event.getSequence();
         int tailIndex = findIndex(sequence);
@@ -63,7 +64,7 @@ public class DefaultCyclicBuffer<E extends Sequenced> implements CyclicBuffer<E>
         tailSequence.set(sequence);
 
         long head = headSequence.get();
-        if (head == UNAVAILABLE) {
+        if (head == UNSET) {
             headSequence.set(sequence);
         } else {
             if (head != sequence) {
@@ -84,8 +85,8 @@ public class DefaultCyclicBuffer<E extends Sequenced> implements CyclicBuffer<E>
     }
 
     @Override
-    public E get(long sequence) {
-        checkPositive(sequence, "sequence");
+    public synchronized E get(long sequence) {
+        checkPositive("sequence", sequence);
 
         int index = findIndex(sequence);
         E e = buffer[index];
@@ -96,8 +97,8 @@ public class DefaultCyclicBuffer<E extends Sequenced> implements CyclicBuffer<E>
     }
 
     @Override
-    public boolean setHead(long sequence) {
-        checkPositive(sequence, "sequence");
+    public synchronized boolean setHead(long sequence) {
+        checkPositive("sequence", sequence);
 
         E e = get(sequence);
         if (e == null) {
@@ -109,11 +110,11 @@ public class DefaultCyclicBuffer<E extends Sequenced> implements CyclicBuffer<E>
     }
 
     @Override
-    public E getAndAdvance() {
+    public synchronized E getAndAdvance() {
         long head = headSequence.get();
         long tail = tailSequence.get();
 
-        if (tail == UNAVAILABLE || head > tail) {
+        if (tail == UNSET || head > tail) {
             return null;
         }
 
@@ -127,17 +128,17 @@ public class DefaultCyclicBuffer<E extends Sequenced> implements CyclicBuffer<E>
     }
 
     @Override
-    public void reset() {
+    public synchronized void reset() {
         init(this.capacity);
     }
 
 
     @Override
-    public int size() {
+    public synchronized int size() {
         long head = headSequence.get();
         long tail = tailSequence.get();
 
-        if (tail == UNAVAILABLE) {
+        if (tail == UNSET) {
             return 0;
         }
 
@@ -150,7 +151,7 @@ public class DefaultCyclicBuffer<E extends Sequenced> implements CyclicBuffer<E>
     }
 
     @Override
-    public long getHeadSequence() {
+    public synchronized long getHeadSequence() {
         return headSequence.get();
     }
 
