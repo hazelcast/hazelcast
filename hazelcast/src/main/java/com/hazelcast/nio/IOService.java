@@ -122,7 +122,7 @@ public interface IOService {
     OutboundHandler[] createOutboundHandlers(EndpointQualifier qualifier, TcpIpConnection connection);
 
     /**
-     * Return the current this nodes' UUID.
+     * Return this node's UUID
      */
     String getUuid();
 }
