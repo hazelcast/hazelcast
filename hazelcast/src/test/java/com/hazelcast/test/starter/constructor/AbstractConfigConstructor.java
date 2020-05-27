@@ -44,6 +44,7 @@ import static com.hazelcast.test.starter.ReflectionUtils.getSetter;
 import static com.hazelcast.test.starter.ReflectionUtils.hasField;
 import static com.hazelcast.test.starter.ReflectionUtils.invokeMethod;
 import static com.hazelcast.test.starter.ReflectionUtils.invokeSetter;
+import static com.hazelcast.test.starter.ReflectionUtils.setFieldValueReflectively;
 import static java.lang.reflect.Proxy.isProxyClass;
 
 /**
@@ -83,10 +84,6 @@ abstract class AbstractConfigConstructor extends AbstractStarterObjectConstructo
         }
 
         Object otherConfigObject = ClassLoaderUtil.newInstance(otherConfigClass.getClassLoader(), otherConfigClass.getName());
-
-        if (isConfig(thisConfigClass)) {
-            cloneGroupConfig(thisConfigObject, otherConfigObject);
-        }
 
         for (Method method : thisConfigClass.getMethods()) {
             if (!isGetter(method)) {
@@ -146,7 +143,53 @@ abstract class AbstractConfigConstructor extends AbstractStarterObjectConstructo
                 }
             }
         }
+
+        if (isConfig(thisConfigClass)) {
+            cloneGroupConfig(thisConfigObject, otherConfigObject);
+            cloneMerkleTreeConfig(thisConfigObject, otherConfigObject);
+        }
+
         return otherConfigObject;
+    }
+
+    private static void cloneMerkleTreeConfig(Object thisConfigObject, Object otherConfigObject) throws Exception {
+        boolean is4_x = !hasField(thisConfigObject.getClass(), "mapMerkleTreeConfigs");
+        if (is4_x) {
+            // copying from 4.0 to 3.12
+            Map<String, Object> mapConfigs = getFieldValueReflectively(thisConfigObject, "mapConfigs");
+            Map<String, Object> merkleTreeConfigs = getFieldValueReflectively(otherConfigObject, "mapMerkleTreeConfigs");
+
+            for (Entry<String, Object> mapConfigEntry : mapConfigs.entrySet()) {
+                String mapName = mapConfigEntry.getKey();
+                Object mapConfig = mapConfigEntry.getValue();
+                Object merkleTreeConfig = getFieldValueReflectively(mapConfig, "merkleTreeConfig");
+                boolean isEnabled = getFieldValueReflectively(merkleTreeConfig, "enabled");
+                int depth = getFieldValueReflectively(merkleTreeConfig, "depth");
+
+                Object otherMerkleTree = ClassLoaderUtil.newInstance(otherConfigObject.getClass().getClassLoader(),
+                        "com.hazelcast.config.MerkleTreeConfig");
+                setFieldValueReflectively(otherMerkleTree, "enabled", isEnabled);
+                setFieldValueReflectively(otherMerkleTree, "depth", depth);
+                setFieldValueReflectively(otherMerkleTree, "mapName", mapName);
+                merkleTreeConfigs.put(mapName, otherMerkleTree);
+            }
+        } else {
+            // copying from 3.12 to 4.0
+            Map<String, Object> merkleTreeConfigs = getFieldValueReflectively(thisConfigObject, "mapMerkleTreeConfigs");
+
+            for (Entry<String, Object> merkleTreeEntry : merkleTreeConfigs.entrySet()) {
+                String mapName = merkleTreeEntry.getKey();
+                Object merkleTreeConfig = merkleTreeEntry.getValue();
+                boolean isEnabled = getFieldValueReflectively(merkleTreeConfig, "enabled");
+                int depth = getFieldValueReflectively(merkleTreeConfig, "depth");
+
+                Method getMapConfigMethod = otherConfigObject.getClass().getMethod("getMapConfig", String.class);
+                Object mapConfig = invokeMethod(getMapConfigMethod, otherConfigObject, mapName);
+                Object otherMerkleTree = getFieldValueReflectively(mapConfig, "merkleTreeConfig");
+                setFieldValueReflectively(otherMerkleTree, "enabled", isEnabled);
+                setFieldValueReflectively(otherMerkleTree, "depth", depth);
+            }
+        }
     }
 
     private static void copyMap(Map<Object, Object> source, Map<Object, Object> destination, ClassLoader classLoader) throws Exception {
