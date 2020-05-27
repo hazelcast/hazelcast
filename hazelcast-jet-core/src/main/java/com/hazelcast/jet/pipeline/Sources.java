@@ -50,6 +50,7 @@ import javax.jms.Message;
 import java.nio.charset.Charset;
 import java.sql.Connection;
 import java.sql.ResultSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.function.Function;
@@ -987,24 +988,24 @@ public final class Sources {
 
     /**
      * A source to read all files with a `.json` extension in a directory in a
-     * batch way. The source treats each line as a JSON string and converts
-     * each line to an object of given type.
+     * batch way. The source expects the content of the files as
+     * <a href="https://en.wikipedia.org/wiki/JSON_streaming">streaming JSON</a>
+     * content, where each JSON string is separated by a new-line. The JSON
+     * string itself can span on multiple lines. The source converts each JSON
+     * string to an object of given type.
      * <p>
      * This method is a shortcut for: <pre>{@code
      *   filesBuilder(directory)
      *      .charset(UTF_8)
      *      .glob(GLOB_WILDCARD)
      *      .sharedFileSystem(false)
-     *      .build(JsonUtil.asJson(type))
+     *      .build(path -> JsonUtil.beanSequenceFrom(path, type))
      * }</pre>
      * <p>
      * If files are appended to while being read, the addition might or might
      * not be emitted or part of a line can be emitted. If files are modified
      * in more complex ways, the behavior is undefined.
      * <p>
-     * If file contains a multi-line JSON string, you can use
-     * {@link #filesBuilder(String)} along with
-     * {@link JsonUtil#asMultilineJson(Class)}.
      *
      * See {@link #filesBuilder(String)}, {@link #files(String)}.
      *
@@ -1014,12 +1015,14 @@ public final class Sources {
     public static <T> BatchSource<T> json(@Nonnull String directory, @Nonnull Class<T> type) {
         return filesBuilder(directory)
                 .glob("*.json")
-                .build((fileName, line) -> JsonUtil.beanFrom(type, line));
+                .build(path -> JsonUtil.beanSequenceFrom(path, type));
     }
 
     /**
      * Convenience for {@link #json(String, Class)} which converts each
-     * line to the {@link Map} representation of the JSON string.
+     * JSON string to a {@link Map}. It will throw {@link ClassCastException}
+     * if JSON string is just primitive ({@link String}, {@link Number},
+     * {@link Boolean}) or JSON array ({@link List}).
      *
      * @since 4.2
      */
@@ -1027,7 +1030,7 @@ public final class Sources {
     public static BatchSource<Map<String, Object>> json(@Nonnull String directory) {
         return filesBuilder(directory)
                 .glob("*.json")
-                .build((fileName, line) -> JsonUtil.mapFrom(line));
+                .build(path -> JsonUtil.mapSequenceFrom(path));
     }
 
 
@@ -1069,7 +1072,7 @@ public final class Sources {
      *      .charset(UTF_8)
      *      .glob(GLOB_WILDCARD)
      *      .sharedFileSystem(false)
-     *      .buildWatcher((JsonUtil.asJson(type))
+     *      .buildWatcher((fileName, line) -> JsonUtil.beanFrom(line, type))
      * }</pre>
      *
      * <h3>Appending lines using an text editor</h3>
@@ -1087,7 +1090,7 @@ public final class Sources {
     public static <T> StreamSource<T> jsonWatcher(@Nonnull String watchedDirectory, @Nonnull Class<T> type) {
         return filesBuilder(watchedDirectory)
                 .glob("*.json")
-                .buildWatcher((fileName, line) -> JsonUtil.beanFrom(type, line));
+                .buildWatcher((fileName, line) -> JsonUtil.beanFrom(line, type));
     }
 
     /**

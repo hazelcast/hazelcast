@@ -19,8 +19,6 @@ package com.hazelcast.jet.json;
 import com.fasterxml.jackson.jr.annotationsupport.JacksonAnnotationExtension;
 import com.fasterxml.jackson.jr.ob.JSON;
 import com.hazelcast.core.HazelcastJsonValue;
-import com.hazelcast.function.FunctionEx;
-import com.hazelcast.jet.pipeline.FileSourceBuilder;
 import com.hazelcast.jet.pipeline.Sources;
 
 import javax.annotation.Nonnull;
@@ -83,7 +81,7 @@ public final class JsonUtil {
      * Converts a JSON string to a object of given type.
      */
     @Nullable
-    public static <T> T beanFrom(@Nonnull Class<T> type, @Nonnull String jsonString) throws IOException {
+    public static <T> T beanFrom(@Nonnull String jsonString, @Nonnull Class<T> type) throws IOException {
         return JSON_JR.beanFrom(type, jsonString);
     }
 
@@ -99,7 +97,7 @@ public final class JsonUtil {
      * Converts a JSON string to a {@link List} of given type.
      */
     @Nullable
-    public static <T> List<T> listFrom(@Nonnull Class<T> type, @Nonnull String jsonString) throws IOException {
+    public static <T> List<T> listFrom(@Nonnull String jsonString, @Nonnull Class<T> type) throws IOException {
         return JSON_JR.listOfFrom(type, jsonString);
     }
 
@@ -130,43 +128,61 @@ public final class JsonUtil {
 
     /**
      * Returns an {@link Iterator} over the sequence of JSON objects parsed
-     * from given JSON string.
+     * from given {@code reader}. Each object is converted to the given
+     * {@code type}.
      */
     @Nonnull
-    public static <T> Iterator<T> sequenceFrom(@Nonnull Class<T> type, @Nonnull String jsonString)
-            throws IOException {
-        return JSON_JR.beanSequenceFrom(type, jsonString);
-    }
-
-    /**
-     * Returns an {@link Iterator} over the sequence of JSON objects parsed
-     * from given {@code reader}.
-     */
-    @Nonnull
-    public static <T> Iterator<T> sequenceFrom(@Nonnull Class<T> type, @Nonnull Reader reader)
+    public static <T> Iterator<T> beanSequenceFrom(@Nonnull Reader reader, @Nonnull Class<T> type)
             throws IOException {
         return JSON_JR.beanSequenceFrom(type, reader);
     }
 
     /**
-     * Returns a function which takes a file {@code Path} as input and
-     * returns a stream of objects with the given type. The content of the file
-     * is considered to have a sequence of JSON strings, each one can span
-     * multiple lines. The function is designed to be used with
-     * {@link FileSourceBuilder#build(FunctionEx)}.
+     * Returns an {@link Iterator} over the sequence of JSON objects parsed
+     * from given {@code reader}. Each object is converted to a {@link Map}.
+     * It will throw {@link ClassCastException} if JSON objects are just
+     * primitives ({@link String}, {@link Number}, {@link Boolean}) or JSON
+     * arrays ({@link List}).
+     */
+    @Nonnull
+    public static Iterator<Map<String, Object>> mapSequenceFrom(@Nonnull Reader reader)
+            throws IOException {
+        return (Iterator) JSON_JR.anySequenceFrom(reader);
+    }
+
+    /**
+     * Parses the file and returns a stream of objects with the given type.
+     * The file is considered to have a
+     * <a href="https://en.wikipedia.org/wiki/JSON_streaming">streaming JSON</a>
+     * content, where each JSON string is separated by a new-line. The JSON
+     * string itself can span on multiple lines.
      * <p>
      * See {@link Sources#json(String, Class)}.
      */
     @Nonnull
-    public static <T> FunctionEx<? super Path, ? extends Stream<T>> asMultilineJson(
-            @Nonnull Class<T> type
-    ) {
-        return path -> {
+    public static <T> Stream<T> beanSequenceFrom(Path path, @Nonnull Class<T> type) throws IOException {
+        InputStreamReader reader = new InputStreamReader(new FileInputStream(path.toFile()), UTF_8);
+        Spliterator<T> spliterator = Spliterators.spliteratorUnknownSize(JsonUtil.beanSequenceFrom(reader, type),
+                Spliterator.ORDERED | Spliterator.NONNULL);
+        return StreamSupport.stream(spliterator, false);
+    }
+
+    /**
+     * Parses the file and returns a stream of {@link Map}. The file is
+     * considered to have a
+     * <a href="https://en.wikipedia.org/wiki/JSON_streaming">streaming JSON</a>
+     * content, where each JSON string is separated by a new-line. The JSON
+     * string itself can span on multiple lines.
+     * <p>
+     * See {@link Sources#json(String, Class)}.
+     */
+    @Nonnull
+    public static Stream<Map<String, Object>> mapSequenceFrom(Path path) throws IOException {
             InputStreamReader reader = new InputStreamReader(new FileInputStream(path.toFile()), UTF_8);
-            Spliterator<T> spliterator = Spliterators.spliteratorUnknownSize(JsonUtil.sequenceFrom(type, reader),
+            Spliterator<Map<String, Object>> spliterator =
+                    Spliterators.spliteratorUnknownSize(JsonUtil.mapSequenceFrom(reader),
                     Spliterator.ORDERED | Spliterator.NONNULL);
             return StreamSupport.stream(spliterator, false);
-        };
     }
 
     /**

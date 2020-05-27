@@ -44,5 +44,11 @@
             <artifactId>hazelcast-jet-examples-wordcount</artifactId>
             <version>${project.version}</version>
         </dependency>
+
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-annotations</artifactId>
+            <version>${jackson.jr.version}</version>
+        </dependency>
     </dependencies>
 </project>

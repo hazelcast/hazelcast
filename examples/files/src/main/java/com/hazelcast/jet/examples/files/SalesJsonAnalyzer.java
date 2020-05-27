@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.examples.files;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hazelcast.jet.Jet;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.aggregate.AggregateOperations;
@@ -68,13 +69,19 @@ public class SalesJsonAnalyzer {
     }
 
     /**
-     * Data transfer object mapping the sales transaction.
+     * Data transfer object mapping the sales transaction. See that
+     * {@code paymentType} field is mapped to `payment_type` using
+     * <a href="https://github.com/FasterXML/jackson-annotations/wiki/Jackson-Annotations">
+     * Jackson Annotations</a>
      */
     private static class SalesRecord implements Serializable {
+
+        @JsonProperty(value = "payment_type")
+        public String paymentType;
+
         public long time;
         public String product;
         public double price;
-        public String paymentType;
         public String name;
         public String address;
         public String city;
