@@ -239,9 +239,9 @@ public final class ReflectionUtils {
         invokeMethod(setter, object, parameter);
     }
 
-    public static void invokeMethod(Method method, Object methodObj, Object methodParam) {
+    public static Object invokeMethod(Method method, Object methodObj, Object methodParam) {
         try {
-            method.invoke(methodObj, methodParam);
+            return method.invoke(methodObj, methodParam);
         } catch (IllegalAccessException e) {
             debug("Could not invoke method %s: %s", method.getName(), e.getMessage());
         } catch (InvocationTargetException e) {
@@ -249,6 +249,7 @@ public final class ReflectionUtils {
         } catch (IllegalArgumentException e) {
             debug("Could not invoke method %s: %s", method.getName(), e.getMessage());
         }
+        return null;
     }
 
     public static Object getDelegateFromMock(Object mock) throws IllegalAccessException {
