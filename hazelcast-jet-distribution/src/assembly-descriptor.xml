@@ -40,6 +40,7 @@
                 <include>com.hazelcast.jet:hazelcast-jet-avro</include>
                 <include>com.hazelcast.jet:hazelcast-jet-cdc-debezium</include>
                 <include>com.hazelcast.jet:hazelcast-jet-cdc-mysql</include>
+                <include>com.hazelcast.jet:hazelcast-jet-elasticsearch-7</include>
                 <include>com.hazelcast.jet:hazelcast-jet-grpc</include>
                 <include>com.hazelcast.jet:hazelcast-jet-protobuf</include>
                 <include>com.hazelcast.jet:hazelcast-jet-spring</include>

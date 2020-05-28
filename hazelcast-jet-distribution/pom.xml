@@ -58,6 +58,7 @@
                     <failOnMissing>true</failOnMissing>
                     <includedLicenses>
                         CC0|
+                        Public Domain, per Creative Commons CC0|
                         Apache License, Version 2.0|
                         MIT License|
                         Public Domain|
@@ -283,7 +284,12 @@
             <version>${project.version}</version>
             <classifier>jar-with-dependencies</classifier>
         </dependency>
-
+        <dependency>
+            <groupId>com.hazelcast.jet</groupId>
+            <artifactId>hazelcast-jet-elasticsearch-7</artifactId>
+            <version>4.2-SNAPSHOT</version>
+            <classifier>jar-with-dependencies</classifier>
+        </dependency>
         <dependency>
             <groupId>com.hazelcast.jet</groupId>
             <artifactId>hazelcast-jet-protobuf</artifactId>

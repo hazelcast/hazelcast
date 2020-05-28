@@ -1099,6 +1099,97 @@ CDC source has to replay data for a long period of inactivity, then
 there can be loss. With careful management though we can say that
 at-least once guaranties can practially be provided.
 
+### Elasticsearch
+
+Elasticsearch is a popular fulltext search engine. Hazelcast Jet can
+use it both as a source and a sink.
+
+#### Source
+
+The Elasticsearch connector source provides a builder and several
+convenience factory methods. Most commonly one needs to provide:
+
+* A client supplier function, which returns a configured instance of
+ RestClientBuilder (see [Elasticsearch documentation](https://www.elastic.co/guide/en/elasticsearch/client/java-rest/current/java-rest-low-usage-initialization.html#java-rest-low-usage-initialization)),
+* A search request supplier specifying a query to Elasticsearch,
+* A mapping function from `SearchHit` to a desired type.
+
+Example using a factory method:
+
+```java
+BatchSource<String> elasticSource = ElasticSources.elasticsearch(
+    () -> client("user", "password", "host", 9200),
+    () -> new SearchRequest("my-index"),
+    hit -> (String) hit.getSourceAsMap().get("name")
+);
+```
+
+For all configuration options use the builder:
+
+```java
+BatchSource<String> elasticSource = new ElasticSourceBuilder<String>()
+        .name("elastic-source")
+        .clientFn(() -> RestClient.builder(new HttpHost(
+                "localhost", 9200
+        )))
+        .searchRequestFn(() -> new SearchRequest("my-index"))
+        .optionsFn(request -> RequestOptions.DEFAULT)
+        .mapToItemFn(hit -> hit.getSourceAsString())
+        .slicing(true)
+        .build();
+```
+
+By default, the connector uses a single scroll to read data from
+Elasticsearch - there is only a single reader on a single node in the
+whole cluster.
+
+Slicing can be used to parallelize reading from an index with more
+shards. Number of slices equals to globalParallelism.
+
+If Hazelcast Jet nodes and Elasticsearch nodes are located on the same
+machines then the connector will use co-located reading, avoiding the
+overhead of physical network.
+
+#### Sink
+
+The Elasticsearch connector sink provides a builder and several
+convenience factory methods. Most commonly you need to provide:
+
+* A client supplier, which returns a configured instance of
+ RestHighLevelClient (see
+ [Elasticsearch documentation](https://www.elastic.co/guide/en/elasticsearch/client/java-rest/current/java-rest-low-usage-initialization.html#java-rest-low-usage-initialization)),
+
+* A mapping function to map items from the pipeline to an instance of
+ one of `IndexRequest`, `UpdateRequest` or `DeleteRequest`.
+
+* Suppose type of the items in the pipeline is `Map<String, Object>`, the
+ sink can be created using
+
+```java
+Sink<Map<String, Object>> elasticSink = ElasticSinks.elasticsearch(
+    () -> client("user", "password", "host", 9200),
+    item -> new IndexRequest("my-index").source(item)
+);
+```
+
+For all configuration options use the builder:
+
+```java
+Sink<Map<String, Object>> elasticSink = new ElasticSinkBuilder<Map<String, Object>>()
+    .name("elastic-sink")
+    .clientFn(() -> RestClient.builder(new HttpHost(
+            "localhost", 9200
+    )))
+    .bulkRequestSupplier(BulkRequest::new)
+    .mapToRequestFn((map) -> new IndexRequest("my-index").source(map))
+    .optionsFn(request -> RequestOptions.DEFAULT)
+    .build();
+```
+
+The Elasticsearch sink doesn't implement co-located writing. To achieve
+maximum write throughput provide all nodes to the `RestClient`
+and configure parallelism.
+
 ### MongoDB
 
 >This connector is currently under incubation. For more
@@ -1108,11 +1199,6 @@ at-least once guaranties can practially be provided.
 
 >This connector is currently under incubation. For more
 >information and examples, please visit the [GitHub repository](https://github.com/hazelcast/hazelcast-jet-contrib/tree/master/influxdb).
-
-### Elasticsearch
-
->This connector is currently under incubation. For more
->information and examples, please visit the [GitHub repository](https://github.com/hazelcast/hazelcast-jet-contrib/tree/master/elasticsearch).
 
 ### Redis
 
@@ -1322,6 +1408,7 @@ restarted in face of an intermittent failure.
 |:-----|:---- |:-----------|:--------|
 |`AvroSources.files`|`hazelcast-jet-avro`|batch|N/A|
 |`DebeziumCdcSources.debezium`|`hazelcast-jet-cdc-debezium`|stream|at-least-once|
+|`ElasticSources.elastic`|`hazelcast-jet-elasticsearch-7`|batch|N/A|
 |`MySqlCdcSources.mysql`|`hazelcast-jet-cdc-mysql`|stream|at-least-once|
 |`HadoopSources.inputFormat`|`hazelcast-jet-hadoop`|batch|N/A|
 |`KafkaSources.kafka`|`hazelcast-jet-kafka`|stream|exactly-once|
@@ -1356,6 +1443,7 @@ processing even with at-least-once sinks.
 |sink|module|streaming support|guarantee|
 |:---|:-----|:--------------|:-------------------|
 |`AvroSinks.files`|`hazelcast-jet-avro`|no|N/A|
+|`ElasticSinks.elastic`|`hazelcast-jet-elasticsearch-7`|no|N/A|
 |`HadoopSinks.outputFormat`|`hazelcast-jet-hadoop`|no|N/A|
 |`KafkaSinks.kafka`|`hazelcast-jet-kafka`|yes|exactly-once|
 |`PulsarSources.pulsarSink`|`hazelcast-jet-contrib-pulsar`|yes|at-least-once|

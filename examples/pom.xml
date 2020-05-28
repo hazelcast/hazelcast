@@ -36,6 +36,7 @@
     <modules>
         <module>co-group</module>
         <module>early-window-results</module>
+        <module>elastic</module>
         <module>enrichment</module>
         <module>event-journal</module>
         <module>fault-tolerance</module>
