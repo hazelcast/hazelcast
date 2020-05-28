@@ -181,12 +181,16 @@ public interface WanReplicationService extends CoreService, StatisticsAwareServi
     void removeWanEvents(String wanReplicationName, String wanPublisherId);
 
     /**
-     * Adds a new {@link WanReplicationConfig} to this member and creates the
-     * {@link WanPublisher}s specified in the config.
+     * Adds a new {@link WanReplicationConfig} to this member or appends to an
+     * existing config and initializes any {@link WanPublisher}s that were added
+     * as part of this config.
      * This method can also accept WAN configs with an existing WAN replication
      * name. Such configs will be merged into the existing WAN replication
      * config by adding publishers with publisher IDs which are not already part
      * of the existing configuration.
+     * Publishers with IDs which already exist in the configuration are ignored.
+     * In this sense, calling this method with the exact same config is thread-safe
+     * and idempotent.
      *
      * @throws UnsupportedOperationException if invoked on OS
      */
