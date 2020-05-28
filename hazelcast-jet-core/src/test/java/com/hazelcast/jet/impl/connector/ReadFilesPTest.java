@@ -121,8 +121,27 @@ public class ReadFilesPTest extends SimpleTestInClusterSupport {
     }
 
     @Test
-    public void testJsonFiles_when_asObject_thenObjects() throws IOException {
-        File[] jsonFiles = createJsonFiles();
+    public void testJsonFilesOneLineItems_when_asObject_thenObjects() throws IOException {
+        testJsonFiles_when_asObject_thenObjects(false);
+    }
+
+    @Test
+    public void testJsonFilesMultilineItems_when_asObject_thenObjects() throws IOException {
+        testJsonFiles_when_asObject_thenObjects(true);
+    }
+
+    @Test
+    public void testJsonFilesOneLineItems_when_asMap_thenMaps() throws IOException {
+        testJsonFiles_when_asMap_thenMaps(false);
+    }
+
+    @Test
+    public void testJsonFilesMultilineItems_when_asMap_thenMaps() throws IOException {
+        testJsonFiles_when_asMap_thenMaps(true);
+    }
+
+    private void testJsonFiles_when_asObject_thenObjects(boolean prettyPrinted) throws IOException {
+        File[] jsonFiles = createJsonFiles(prettyPrinted);
 
         Pipeline p = pipelineJson(false);
         instance().newJob(p).join();
@@ -134,9 +153,8 @@ public class ReadFilesPTest extends SimpleTestInClusterSupport {
         finishDirectory(jsonFiles);
     }
 
-    @Test
-    public void testJsonFiles_when_asMap_thenMaps() throws IOException {
-        File[] jsonFiles = createJsonFiles();
+    private void testJsonFiles_when_asMap_thenMaps(boolean prettyPrinted) throws IOException {
+        File[] jsonFiles = createJsonFiles(prettyPrinted);
 
         Pipeline p = pipelineJson(true);
         instance().newJob(p).join();
@@ -148,13 +166,25 @@ public class ReadFilesPTest extends SimpleTestInClusterSupport {
         finishDirectory(jsonFiles);
     }
 
-    private File[] createJsonFiles() throws IOException {
+    private File[] createJsonFiles(boolean prettyPrinted) throws IOException {
         File file1 = new File(directory, randomName() + ".json");
-        appendToFile(file1, "{\"name\": \"hello world\", \"age\": 5, \"status\": true}",
-                "{\"name\": \"hello world\", \"age\": 5, \"status\": true}");
+        String jsonItem1 = prettyPrinted
+                ? "{\n"
+                + "    \"name\": \"hello world\",\n"
+                + "    \"age\": 5,\n"
+                + "    \"status\": true\n"
+                + "}"
+                : "{\"name\": \"hello world\", \"age\": 5, \"status\": true}";
+        String jsonItem2 = prettyPrinted
+                ? "{\n"
+                + "    \"name\": \"hello jupiter\",\n"
+                + "    \"age\": 8,\n"
+                + "    \"status\": false\n"
+                + "}"
+                : "{\"name\": \"hello jupiter\", \"age\": 8, \"status\": false}";
+        appendToFile(file1, jsonItem1, jsonItem1);
         File file2 = new File(directory, randomName() + ".json");
-        appendToFile(file2, "{\"name\": \"hello jupiter\", \"age\": 8, \"status\": false}",
-                "{\"name\": \"hello jupiter\", \"age\": 8, \"status\": false}");
+        appendToFile(file2, jsonItem2, jsonItem2);
         return new File[]{file1, file2};
     }
 
