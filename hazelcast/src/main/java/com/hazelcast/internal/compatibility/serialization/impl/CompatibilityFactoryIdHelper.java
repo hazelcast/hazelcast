@@ -23,19 +23,20 @@ import com.hazelcast.logging.Logger;
  */
 public final class CompatibilityFactoryIdHelper {
 
-    public static final String MAP_DS_FACTORY = "hazelcast.serialization.ds.map";
+    public static final String MAP_DS_FACTORY = "hazelcast.serialization.compatibility.ds.map";
     public static final int MAP_DS_FACTORY_ID = -4;
 
-    public static final String CACHE_DS_FACTORY = "hazelcast.serialization.ds.cache";
+    public static final String CACHE_DS_FACTORY = "hazelcast.serialization.compatibility.ds.cache";
     public static final int CACHE_DS_FACTORY_ID = -13;
 
-    public static final String ENTERPRISE_WAN_REPLICATION_DS_FACTORY = "hazelcast.serialization.ds.enterprise.wan_replication";
+    public static final String ENTERPRISE_WAN_REPLICATION_DS_FACTORY
+            = "hazelcast.serialization.compatibility.ds.enterprise.wan_replication";
     public static final int ENTERPRISE_WAN_REPLICATION_DS_FACTORY_ID = -16;
 
-    public static final String WAN_REPLICATION_DS_FACTORY = "hazelcast.serialization.ds.wan_replication";
+    public static final String WAN_REPLICATION_DS_FACTORY = "hazelcast.serialization.compatibility.ds.wan_replication";
     public static final int WAN_REPLICATION_DS_FACTORY_ID = -19;
 
-    public static final String SPLIT_BRAIN_DS_FACTORY = "hazelcast.serialization.ds.split_brain";
+    public static final String SPLIT_BRAIN_DS_FACTORY = "hazelcast.serialization.compatibility.ds.split_brain";
     public static final int SPLIT_BRAIN_DS_FACTORY_ID = -35;
 
     // factory ID 0 is reserved for Cluster objects (Data, Address, Member etc)...
