@@ -37,6 +37,7 @@ import static com.hazelcast.cluster.impl.MemberImpl.NA_MEMBER_LIST_JOIN_VERSION;
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.readMap;
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.writeMap;
 import static com.hazelcast.internal.util.MapUtil.createHashMap;
+import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonMap;
 
 public class MemberInfo implements IdentifiedDataSerializable {
@@ -54,7 +55,7 @@ public class MemberInfo implements IdentifiedDataSerializable {
     }
 
     public MemberInfo(Address address, UUID uuid, Map<String, String> attributes, boolean liteMember, MemberVersion version) {
-        this(address, uuid, attributes, liteMember, version, NA_MEMBER_LIST_JOIN_VERSION, Collections.emptyMap());
+        this(address, uuid, attributes, liteMember, version, NA_MEMBER_LIST_JOIN_VERSION, emptyMap());
     }
 
     public MemberInfo(Address address, UUID uuid, Map<String, String> attributes, boolean liteMember, MemberVersion version,
@@ -64,14 +65,17 @@ public class MemberInfo implements IdentifiedDataSerializable {
 
     public MemberInfo(Address address, UUID uuid, Map<String, String> attributes, boolean liteMember, MemberVersion version,
                       boolean isAddressMapExists, Map<EndpointQualifier, Address> addressMap) {
-        this(address, uuid, attributes, liteMember, version, NA_MEMBER_LIST_JOIN_VERSION, addressMap);
+        this(address, uuid, attributes, liteMember, version, NA_MEMBER_LIST_JOIN_VERSION,
+                // isAddressMapExists is false when the MemberInfo is sent by an old server with client-protocol 2.0
+                // if isAddressMapExists is true, then addressMap is not null
+                isAddressMapExists ? addressMap : emptyMap());
     }
 
     public MemberInfo(Address address, UUID uuid, Map<String, String> attributes, boolean liteMember, MemberVersion version,
                       int memberListJoinVersion, Map<EndpointQualifier, Address> addressMap) {
         this.address = address;
         this.uuid = uuid;
-        this.attributes = attributes == null || attributes.isEmpty() ? Collections.emptyMap() : new HashMap<>(attributes);
+        this.attributes = attributes == null || attributes.isEmpty() ? emptyMap() : new HashMap<>(attributes);
         this.liteMember = liteMember;
         this.version = version;
         this.memberListJoinVersion = memberListJoinVersion;

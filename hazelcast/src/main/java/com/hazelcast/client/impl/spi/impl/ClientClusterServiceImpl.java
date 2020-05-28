@@ -240,7 +240,7 @@ public class ClientClusterServiceImpl implements ClientClusterService {
         for (MemberInfo memberInfo : memberInfos) {
             MemberImpl.Builder memberBuilder;
             Map<EndpointQualifier, Address> addressMap = memberInfo.getAddressMap();
-            if (addressMap == null || addressMap.isEmpty()) {
+            if (addressMap.isEmpty()) {
                 memberBuilder = new MemberImpl.Builder(memberInfo.getAddress());
             } else {
                 memberBuilder = new MemberImpl.Builder(addressMap)
