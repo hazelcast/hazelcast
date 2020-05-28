@@ -76,7 +76,7 @@ public class HazelcastProxyFactory {
     private static final Map<String, String> REFACTORED_INTERFACES;
 
     // interfaces that have been removed in the current version
-    // and should be skippped when proxying
+    // and should be skipped when proxying
     private static final Set<String> IGNORED_INTERFACES;
 
     // <Class toProxy, ClassLoader targetClassLoader> -> Class<?> proxy mapping for subclass proxies
