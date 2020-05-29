@@ -51,7 +51,7 @@ function Downloads(props) {
                 </td>
                 <td>
                   <a
-                    href={`/javadoc/${latest.version}`} target="_blank">
+                    href={`/javadoc/${latest.version}`} target="_blank" rel="noreferrer noopener">
                     Javadoc
                   </a>
                 </td>
@@ -91,7 +91,7 @@ function Downloads(props) {
                       </td>
                       <td>
                         <a
-                          href={`/javadoc/${current.version}`} target="_blank">
+                          href={`/javadoc/${current.version}`} target="_blank" rel="noreferrer noopener">
                           Javadoc
                         </a>
                       </td>

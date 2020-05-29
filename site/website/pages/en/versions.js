@@ -49,7 +49,7 @@ function Versions(props) {
                   </a>
                 </td>
                 <td>
-                  <a href={`/javadoc/${latest.version}`} target="_blank">Javadoc</a>
+                  <a href={`/javadoc/${latest.version}`} target="_blank" rel="noreferrer noopener">Javadoc</a>
                 </td>
               </tr>
             </tbody>
@@ -71,7 +71,7 @@ function Versions(props) {
                   </a>
                 </td>
                 <td>
-                  <a href={repoUrl} target="_blank">Source Code</a>
+                  <a href={repoUrl} target="_blank" rel="noreferrer noopener">Source Code</a>
                 </td>
               </tr>
             </tbody>
@@ -102,7 +102,7 @@ function Versions(props) {
                       </a>
                       </td>
                       <td>
-                        <a href={`/javadoc/${current.version}`} target="_blank">Javadoc</a>
+                        <a href={`/javadoc/${current.version}`} target="_blank" rel="noreferrer noopener">Javadoc</a>
                       </td>
                     </tr>
                   )
