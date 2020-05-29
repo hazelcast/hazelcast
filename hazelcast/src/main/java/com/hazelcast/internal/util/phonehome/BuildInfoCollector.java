@@ -13,13 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hazelcast.internal.util.phonehome.metrics;
+package com.hazelcast.internal.util.phonehome;
 
 import com.hazelcast.instance.BuildInfo;
 import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.instance.JetBuildInfo;
 import com.hazelcast.instance.impl.Node;
-import com.hazelcast.internal.util.phonehome.MetricsCollector;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -30,7 +29,7 @@ import java.util.Properties;
 import static com.hazelcast.internal.nio.IOUtil.closeResource;
 import static com.hazelcast.internal.util.EmptyStatement.ignore;
 
-public class BuildInfoCollector implements MetricsCollector {
+class BuildInfoCollector implements MetricsCollector {
 
     private String getDownloadId() {
         String downloadId = "source";

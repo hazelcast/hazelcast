@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hazelcast.internal.util.phonehome.metrics;
+package com.hazelcast.internal.util.phonehome;
 
 import com.hazelcast.core.DistributedObject;
 
@@ -24,10 +24,9 @@ import java.util.Map;
 import static java.util.stream.Collectors.toList;
 
 import com.hazelcast.instance.impl.Node;
-import com.hazelcast.internal.util.phonehome.MetricsCollector;
 import com.hazelcast.map.impl.MapService;
 
-public class MapInfoCollector implements MetricsCollector {
+class MapInfoCollector implements MetricsCollector {
 
     Collection<DistributedObject> maps;
 
@@ -39,12 +38,8 @@ public class MapInfoCollector implements MetricsCollector {
                 equals(MapService.SERVICE_NAME)).collect(toList());
         Map<String, String> mapInfo = new HashMap<>();
 
-        mapInfo.put("mpct", String.valueOf(getMapCount()));
+        mapInfo.put("mpct", String.valueOf(maps.size()));
 
         return mapInfo;
-    }
-
-    public int getMapCount() {
-        return maps.size();
     }
 }

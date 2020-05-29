@@ -19,7 +19,7 @@ import com.hazelcast.instance.impl.Node;
 
 import java.util.Map;
 
-public interface MetricsCollector {
+interface MetricsCollector {
 
     int A_INTERVAL = 5;
     int B_INTERVAL = 10;

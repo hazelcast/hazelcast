@@ -16,11 +16,6 @@
 package com.hazelcast.internal.util.phonehome;
 
 import com.hazelcast.instance.impl.Node;
-import com.hazelcast.internal.util.phonehome.metrics.BuildInfoCollector;
-import com.hazelcast.internal.util.phonehome.metrics.ClientInfoCollector;
-import com.hazelcast.internal.util.phonehome.metrics.ClusterInfoCollector;
-import com.hazelcast.internal.util.phonehome.metrics.MapInfoCollector;
-import com.hazelcast.internal.util.phonehome.metrics.OSInfoCollector;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.properties.ClusterProperty;
 
@@ -54,6 +49,7 @@ public class PhoneHome {
     private final ILogger logger;
 
     private final Node hazelcastNode;
+    private List<MetricsCollector> metricsCollectorList;
 
     public PhoneHome(Node node) {
         hazelcastNode = node;
@@ -106,10 +102,8 @@ public class PhoneHome {
 
         PhoneHomeParameterCreator parameterCreator = new PhoneHomeParameterCreator();
 
-        MetricsCollector[] metricsCollectorArray = new MetricsCollector[]{new BuildInfoCollector(),
-                new ClusterInfoCollector(), new ClientInfoCollector(), new MapInfoCollector(), new OSInfoCollector()};
-
-        List<MetricsCollector> metricsCollectorList = Arrays.asList(metricsCollectorArray);
+        metricsCollectorList = Arrays.asList(new BuildInfoCollector(),
+                new ClusterInfoCollector(), new ClientInfoCollector(), new MapInfoCollector(), new OSInfoCollector());
 
         metricsCollectorList.forEach((metricsCollector -> parameterCreator.
                 addMap(metricsCollector.computeMetrics(hazelcastNode))));

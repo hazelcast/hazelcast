@@ -13,17 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hazelcast.internal.util.phonehome.metrics;
+package com.hazelcast.internal.util.phonehome;
 
 import com.hazelcast.instance.impl.Node;
-import com.hazelcast.internal.util.phonehome.MetricsCollector;
 
 import java.lang.management.ManagementFactory;
 import java.lang.management.OperatingSystemMXBean;
 import java.util.HashMap;
 import java.util.Map;
 
-public class OSInfoCollector implements MetricsCollector {
+class OSInfoCollector implements MetricsCollector {
 
     @Override
     public Map<String, String> computeMetrics(Node hazelcastNode) {
