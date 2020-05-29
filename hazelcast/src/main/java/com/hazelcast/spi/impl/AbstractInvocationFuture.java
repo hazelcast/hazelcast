@@ -650,7 +650,7 @@ public abstract class AbstractInvocationFuture<V> extends InternalCompletableFut
 
     @Override
     public V getNow(V valueIfAbsent) {
-        return (state == UNRESOLVED) ? valueIfAbsent : join();
+        return isDone() ? join() : valueIfAbsent;
     }
 
     @Override
@@ -1203,7 +1203,11 @@ public abstract class AbstractInvocationFuture<V> extends InternalCompletableFut
     }
 
     protected void onComplete() {
-
+        if (state instanceof ExceptionalResult) {
+            super.completeExceptionally(((ExceptionalResult) state).getCause());
+        } else {
+            super.complete((V) state);
+        }
     }
 
     // it can be that this future is already completed, e.g. when an invocation already

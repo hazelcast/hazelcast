@@ -54,14 +54,18 @@ public class ClientDelegatingFuture<V> extends DelegatingCompletableFuture<V> {
 
     final boolean deserializeResponse;
     private final ClientMessageDecoder clientMessageDecoder;
-    private volatile Object decodedResponse = VOID;
+    private volatile Object decodedResponse;
 
     public ClientDelegatingFuture(ClientInvocationFuture clientInvocationFuture,
                                   SerializationService serializationService,
                                   ClientMessageDecoder clientMessageDecoder, V defaultValue, boolean deserializeResponse) {
-        super(serializationService, clientInvocationFuture, defaultValue);
+        super(serializationService, clientInvocationFuture, defaultValue, false);
+        this.decodedResponse = VOID;
         this.clientMessageDecoder = clientMessageDecoder;
         this.deserializeResponse = deserializeResponse;
+        this.future.whenComplete((v, t) -> {
+            completeSuper(v, (Throwable) t);
+        });
     }
 
     public ClientDelegatingFuture(ClientInvocationFuture clientInvocationFuture,
@@ -385,7 +389,7 @@ public class ClientDelegatingFuture<V> extends DelegatingCompletableFuture<V> {
 
     @Override
     public String toString() {
-        return future.toString();
+        return "ClientDelegatingFuture{future=" + future.toString() + "}";
     }
 
     @SuppressWarnings("unchecked")
