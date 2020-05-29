@@ -49,6 +49,7 @@
       "operations/discovery",
       "operations/cluster-sizing",
       "operations/job-management",
+      "operations/docker",
       "operations/kubernetes",
       "operations/monitoring",
       "operations/version-compatibility",

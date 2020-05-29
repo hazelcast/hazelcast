@@ -46,6 +46,7 @@
       "version-4.1-operations/discovery",
       "version-4.1-operations/cluster-sizing",
       "version-4.1-operations/job-management",
+      "version-4.1-operations/docker",
       "version-4.1-operations/kubernetes",
       "version-4.1-operations/monitoring",
       "version-4.1-operations/version-compatibility"
