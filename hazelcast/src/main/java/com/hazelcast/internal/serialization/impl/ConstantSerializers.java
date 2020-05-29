@@ -16,12 +16,15 @@
 
 package com.hazelcast.internal.serialization.impl;
 
+import com.hazelcast.internal.compatibility.serialization.impl.CompatibilitySerializationConstants;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.ByteArraySerializer;
 import com.hazelcast.nio.serialization.StreamSerializer;
 
 import java.io.IOException;
+import java.util.AbstractMap;
+import java.util.UUID;
 
 import static com.hazelcast.internal.serialization.impl.SerializationConstants.CONSTANT_TYPE_BOOLEAN;
 import static com.hazelcast.internal.serialization.impl.SerializationConstants.CONSTANT_TYPE_BOOLEAN_ARRAY;
@@ -388,6 +391,65 @@ public final class ConstantSerializers {
         @Override
         public void write(final ObjectDataOutput out, final String[] obj) throws IOException {
             out.writeUTFArray(obj);
+        }
+    }
+
+    public static final class UuidSerializer extends SingletonSerializer<UUID> {
+
+        @Override
+        public int getTypeId() {
+            return CompatibilitySerializationConstants.CONSTANT_TYPE_UUID;
+        }
+
+        @Override
+        public UUID read(final ObjectDataInput in) throws IOException {
+            return new UUID(in.readLong(), in.readLong());
+        }
+
+        @Override
+        public void write(final ObjectDataOutput out, final UUID uuid) throws IOException {
+            out.writeLong(uuid.getMostSignificantBits());
+            out.writeLong(uuid.getLeastSignificantBits());
+        }
+    }
+
+    @SuppressWarnings("checkstyle:illegaltype")
+    public static final class SimpleEntrySerializer extends SingletonSerializer<AbstractMap.SimpleEntry> {
+
+        @Override
+        public int getTypeId() {
+            return CompatibilitySerializationConstants.CONSTANT_TYPE_SIMPLE_ENTRY;
+        }
+
+        @Override
+        public AbstractMap.SimpleEntry read(final ObjectDataInput in) throws IOException {
+            return new AbstractMap.SimpleEntry(in.readObject(), in.readObject());
+        }
+
+        @Override
+        public void write(final ObjectDataOutput out, final AbstractMap.SimpleEntry entry) throws IOException {
+            out.writeObject(entry.getKey());
+            out.writeObject(entry.getValue());
+        }
+    }
+
+    @SuppressWarnings("checkstyle:illegaltype")
+    public static final class SimpleImmutableEntrySerializer extends SingletonSerializer<AbstractMap.SimpleImmutableEntry> {
+
+        @Override
+        public int getTypeId() {
+            return CompatibilitySerializationConstants.CONSTANT_TYPE_SIMPLE_IMMUTABLE_ENTRY;
+        }
+
+        @Override
+        public AbstractMap.SimpleImmutableEntry read(final ObjectDataInput in) throws IOException {
+            return new AbstractMap.SimpleImmutableEntry(in.readObject(), in.readObject());
+        }
+
+        @Override
+        public void write(final ObjectDataOutput out, final AbstractMap.SimpleImmutableEntry entry) throws IOException {
+            out.writeObject(entry.getKey());
+            out.writeObject(entry.getValue());
         }
     }
 

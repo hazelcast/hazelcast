@@ -16,9 +16,9 @@
 
 package com.hazelcast.nio.tcp;
 
+import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.internal.cluster.impl.BindMessage;
-import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.internal.cluster.impl.ExtendedBindMessage;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;

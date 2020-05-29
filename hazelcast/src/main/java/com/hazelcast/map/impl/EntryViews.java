@@ -17,7 +17,9 @@
 package com.hazelcast.map.impl;
 
 import com.hazelcast.core.EntryView;
+import com.hazelcast.internal.compatibility.map.CompatibilityWanMapEntryView;
 import com.hazelcast.map.impl.record.Record;
+import com.hazelcast.map.impl.wan.WanMapEntryView;
 import com.hazelcast.map.merge.MapMergePolicy;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.serialization.SerializationService;
@@ -104,5 +106,20 @@ public final class EntryViews {
                 .setHits(entryView.getHits())
                 .setExpirationTime(entryView.getExpirationTime())
                 .setLastStoredTime(entryView.getLastStoredTime());
+    }
+
+    public static <K, V> WanMapEntryView<K, V> createWanEntryView(
+            K key, V value,
+            CompatibilityWanMapEntryView<Object, Object> compatibilityView) {
+        return new WanMapEntryView<K, V>(key, value)
+                .withCost(compatibilityView.getCost())
+                .withVersion(compatibilityView.getVersion())
+                .withHits(compatibilityView.getHits())
+                .withLastAccessTime(compatibilityView.getLastAccessTime())
+                .withLastUpdateTime(compatibilityView.getLastUpdateTime())
+                .withTtl(compatibilityView.getTtl())
+                .withCreationTime(compatibilityView.getCreationTime())
+                .withExpirationTime(compatibilityView.getExpirationTime())
+                .withLastStoredTime(compatibilityView.getLastStoredTime());
     }
 }
