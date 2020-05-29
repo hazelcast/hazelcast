@@ -17,6 +17,7 @@
 package com.hazelcast.nio.serialization;
 
 import com.hazelcast.internal.nio.Packet;
+import com.hazelcast.internal.nio.Packet.Type;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -61,7 +62,12 @@ public class PacketTest {
         Packet packet = new Packet();
         for (Packet.Type type : Packet.Type.values()) {
             packet.setPacketType(type);
-            assertSame(type, packet.getPacketType());
+            // COMPATIBILITY_BIND_MESSAGE occupies the same ordinal as BIND
+            // and COMPATIBILITY_EXTENDED_BIND occupies the same ordinal as UNDEFINED5
+            Type expected = type == Type.COMPATIBILITY_BIND_MESSAGE ? Type.BIND
+                    : type == Type.COMPATIBILITY_EXTENDED_BIND ? Type.UNDEFINED5
+                    : type;
+            assertSame(expected, packet.getPacketType());
         }
     }
 

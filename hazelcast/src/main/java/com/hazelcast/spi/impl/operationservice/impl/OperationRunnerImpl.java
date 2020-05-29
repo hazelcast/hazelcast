@@ -36,6 +36,7 @@ import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.partition.PartitionReplica;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.SerializationServiceV1;
 import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.internal.util.counters.Counter;
@@ -404,7 +405,13 @@ class OperationRunnerImpl extends OperationRunner implements StaticMetricsProvid
         Connection connection = packet.getConn();
         Address caller = connection.getEndPoint();
         try {
-            Object object = nodeEngine.toObject(packet);
+            // deserialize with compatibility serialization service
+            // if sent from 3.x member
+            boolean isCompatibility = packet.isFlagRaised(Packet.FLAG_3_12);
+            InternalSerializationService serializationService = isCompatibility
+                    ? nodeEngine.getNode().getCompatibilitySerializationService()
+                    : nodeEngine.getNode().getSerializationService();
+            Object object = serializationService.toObject(packet);
             Operation op = (Operation) object;
             op.setNodeEngine(nodeEngine);
             setCallerAddress(op, caller);

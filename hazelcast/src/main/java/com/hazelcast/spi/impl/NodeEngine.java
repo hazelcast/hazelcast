@@ -94,6 +94,12 @@ public interface NodeEngine {
     SerializationService getSerializationService();
 
     /**
+     * Gets the compatibility serialization service for (de)serializing objects in a
+     * format conforming with 3.x.
+     */
+    SerializationService getCompatibilitySerializationService();
+
+    /**
      * Gets the ProxyService.
      *
      * @return the ProxyService

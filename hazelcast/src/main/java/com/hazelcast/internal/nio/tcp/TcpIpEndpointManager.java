@@ -106,6 +106,7 @@ public class TcpIpEndpointManager
     private final NetworkingService networkingService;
     private final TcpIpConnector connector;
     private final BindHandler bindHandler;
+    private final CompatibilityBindHandler compatibilityBindHandler;
     private final NetworkStatsImpl networkStats;
 
     @Probe(name = TCP_METRIC_ENDPOINT_MANAGER_CONNECTION_LISTENER_COUNT)
@@ -144,6 +145,7 @@ public class TcpIpEndpointManager
 
         boolean spoofingChecks = properties != null && properties.getBoolean(ClusterProperty.BIND_SPOOFING_CHECKS);
         this.bindHandler = new BindHandler(this, ioService, logger, spoofingChecks, supportedProtocolTypes);
+        this.compatibilityBindHandler = new CompatibilityBindHandler(this, ioService, logger, supportedProtocolTypes);
 
         if (endpointQualifier == null) {
             networkStats = null;
@@ -176,7 +178,12 @@ public class TcpIpEndpointManager
 
     @Override
     public synchronized void accept(Packet packet) {
-        bindHandler.process(packet);
+        boolean isCompatibility = packet.isFlagRaised(Packet.FLAG_3_12);
+        if (isCompatibility) {
+            compatibilityBindHandler.process(packet);
+        } else {
+            bindHandler.process(packet);
+        }
     }
 
     @Override
