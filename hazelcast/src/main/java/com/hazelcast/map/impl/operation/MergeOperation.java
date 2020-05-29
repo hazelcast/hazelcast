@@ -104,8 +104,11 @@ public class MergeOperation extends MapOperation implements PartitionAwareOperat
                 publishWanUpdate(dataKey, dataValue);
             }
             if (hasBackups) {
-                mapEntries.add(dataKey, dataValue);
-                backupRecordInfos.add(buildRecordInfo(recordStore.getRecord(dataKey)));
+                Record record = recordStore.getRecord(dataKey);
+                if (record != null) {
+                    mapEntries.add(dataKey, dataValue);
+                    backupRecordInfos.add(buildRecordInfo(record));
+                }
             }
             evict(dataKey);
             if (hasInvalidation) {

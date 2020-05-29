@@ -252,6 +252,12 @@
               files="com[\\/]hazelcast[\\/]internal[\\/]serialization[\\/]impl[\\/]ArrayListStreamSerializer"/>
     <suppress checks="IllegalType"
               files="com[\\/]hazelcast[\\/]internal[\\/]serialization[\\/]impl[\\/]LinkedListStreamSerializer"/>
+    <suppress checks="IllegalType"
+              files="com[\\/]hazelcast[\\/]internal[\\/]serialization[\\/]impl[\\/]HashMapStreamSerializer"/>
+    <suppress checks="IllegalType"
+              files="com[\\/]hazelcast[\\/]internal[\\/]serialization[\\/]impl[\\/]LinkedHashMapStreamSerializer"/>
+    <suppress checks="IllegalType"
+              files="com[\\/]hazelcast[\\/]internal[\\/]serialization[\\/]impl[\\/]TreeMapStreamSerializer"/>
 
     <!-- Spring -->
     <suppress checks="FileLength" files="com[\\/]hazelcast[\\/]spring[\\/]HazelcastConfigBeanDefinitionParser"/>

@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.impl;
 
+import com.hazelcast.internal.compatibility.wan.CompatibilityWanSupportingService;
 import com.hazelcast.spi.ClientAwareService;
 import com.hazelcast.spi.EventPublishingService;
 import com.hazelcast.spi.ManagedService;
@@ -106,6 +107,11 @@ abstract class AbstractMapServiceFactory implements MapServiceFactory {
     abstract ReplicationSupportingService createReplicationSupportingService();
 
     /**
+     * Creates a new {@link CompatibilityWanSupportingService} for {@link MapService}.
+     */
+    abstract CompatibilityWanSupportingService createCompatibilityReplicationSupportingService();
+
+    /**
      * Creates a new {@link StatisticsAwareService} for {@link MapService}.
      *
      * @return Creates a new {@link StatisticsAwareService} implementation.
@@ -157,6 +163,7 @@ abstract class AbstractMapServiceFactory implements MapServiceFactory {
         PostJoinAwareService postJoinAwareService = createPostJoinAwareService();
         SplitBrainHandlerService splitBrainHandlerService = createSplitBrainHandlerService();
         ReplicationSupportingService replicationSupportingService = createReplicationSupportingService();
+        CompatibilityWanSupportingService compatibilityWanSupportingService = createCompatibilityReplicationSupportingService();
         StatisticsAwareService statisticsAwareService = createStatisticsAwareService();
         PartitionAwareService partitionAwareService = createPartitionAwareService();
         MapQuorumAwareService quorumAwareService = createQuorumAwareService();
@@ -172,6 +179,7 @@ abstract class AbstractMapServiceFactory implements MapServiceFactory {
         checkNotNull(postJoinAwareService, "postJoinAwareService should not be null");
         checkNotNull(splitBrainHandlerService, "splitBrainHandlerService should not be null");
         checkNotNull(replicationSupportingService, "replicationSupportingService should not be null");
+        checkNotNull(compatibilityWanSupportingService, "compatibilityWanSupportingService should not be null");
         checkNotNull(statisticsAwareService, "statisticsAwareService should not be null");
         checkNotNull(partitionAwareService, "partitionAwareService should not be null");
         checkNotNull(quorumAwareService, "quorumAwareService should not be null");
@@ -186,6 +194,7 @@ abstract class AbstractMapServiceFactory implements MapServiceFactory {
         mapService.postJoinAwareService = postJoinAwareService;
         mapService.splitBrainHandlerService = splitBrainHandlerService;
         mapService.replicationSupportingService = replicationSupportingService;
+        mapService.compatibilityWanSupportingService = compatibilityWanSupportingService;
         mapService.statisticsAwareService = statisticsAwareService;
         mapService.mapServiceContext = mapServiceContext;
         mapService.partitionAwareService = partitionAwareService;

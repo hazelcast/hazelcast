@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.serialization.impl;
 
+import com.hazelcast.internal.compatibility.serialization.impl.CompatibilitySerializationConstants;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.StreamSerializer;
@@ -29,6 +30,13 @@ import static com.hazelcast.nio.Bits.NULL_ARRAY_LENGTH;
  * The {@link java.util.ArrayList} serializer
  */
 public class ArrayListStreamSerializer implements StreamSerializer<ArrayList> {
+
+    /** Determines if ser-de should conform the 4.x format */
+    private final boolean isCompatibility;
+
+    public ArrayListStreamSerializer(boolean isCompatibility) {
+        this.isCompatibility = isCompatibility;
+    }
 
     @Override
     public void write(ObjectDataOutput out, ArrayList arrayList) throws IOException {
@@ -54,7 +62,9 @@ public class ArrayListStreamSerializer implements StreamSerializer<ArrayList> {
 
     @Override
     public int getTypeId() {
-        return SerializationConstants.JAVA_DEFAULT_TYPE_ARRAY_LIST;
+        return isCompatibility
+                ? CompatibilitySerializationConstants.JAVA_DEFAULT_TYPE_ARRAY_LIST
+                : SerializationConstants.JAVA_DEFAULT_TYPE_ARRAY_LIST;
     }
 
     @Override

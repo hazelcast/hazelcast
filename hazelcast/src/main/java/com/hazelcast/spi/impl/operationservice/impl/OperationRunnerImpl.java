@@ -30,6 +30,7 @@ import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.partition.PartitionReplica;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.SerializationServiceV1;
 import com.hazelcast.internal.util.counters.Counter;
 import com.hazelcast.logging.ILogger;
@@ -394,7 +395,13 @@ class OperationRunnerImpl extends OperationRunner implements MetricsProvider {
         Connection connection = packet.getConn();
         Address caller = connection.getEndPoint();
         try {
-            Object object = nodeEngine.toObject(packet);
+            // deserialize with compatibility serialization service
+            // if sent from 4.x member
+            boolean isCompatibility = packet.isFlagRaised(Packet.FLAG_4_0);
+            InternalSerializationService serializationService = isCompatibility
+                    ? nodeEngine.getNode().getCompatibilitySerializationService()
+                    : nodeEngine.getNode().getSerializationService();
+            Object object = serializationService.toObject(packet);
             Operation op = (Operation) object;
             op.setNodeEngine(nodeEngine);
             setCallerAddress(op, caller);

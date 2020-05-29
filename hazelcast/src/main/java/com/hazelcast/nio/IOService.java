@@ -110,9 +110,19 @@ public interface IOService {
 
     InternalSerializationService getSerializationService();
 
+    /**
+     * Returns the serialization service capable of ser-de in 4.x format.
+     */
+    InternalSerializationService getCompatibilitySerializationService();
+
     MemberSocketInterceptor getSocketInterceptor(EndpointQualifier endpointQualifier);
 
     InboundHandler[] createInboundHandlers(EndpointQualifier qualifier, TcpIpConnection connection);
 
     OutboundHandler[] createOutboundHandlers(EndpointQualifier qualifier, TcpIpConnection connection);
+
+    /**
+     * Return this node's UUID
+     */
+    String getUuid();
 }

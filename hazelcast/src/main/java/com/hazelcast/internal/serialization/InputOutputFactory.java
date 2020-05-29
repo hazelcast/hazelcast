@@ -24,9 +24,13 @@ import java.nio.ByteOrder;
 
 public interface InputOutputFactory {
 
-    BufferObjectDataInput createInput(Data data, InternalSerializationService service);
+    BufferObjectDataInput createInput(Data data,
+                                      InternalSerializationService service,
+                                      boolean isCompatibility);
 
-    BufferObjectDataInput createInput(byte[] buffer, InternalSerializationService service);
+    BufferObjectDataInput createInput(byte[] buffer,
+                                      InternalSerializationService service,
+                                      boolean isCompatibility);
 
     BufferObjectDataOutput createOutput(int size, InternalSerializationService service);
 
