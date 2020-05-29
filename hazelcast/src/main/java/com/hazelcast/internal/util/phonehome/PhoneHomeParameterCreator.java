@@ -44,7 +44,7 @@ public class PhoneHomeParameterCreator {
     public void addParam(String key, String value) {
 
         if (parameters.containsKey(key)) {
-            throw new IllegalArgumentException("Duplicate key found");
+            throw new IllegalArgumentException("Parameter" + key + "is already added");
         }
 
         if (hasParameterBefore) {

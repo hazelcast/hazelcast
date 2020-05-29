@@ -49,7 +49,8 @@ public class PhoneHome {
     private final ILogger logger;
 
     private final Node hazelcastNode;
-    private List<MetricsCollector> metricsCollectorList;
+    private final List<MetricsCollector> metricsCollectorList = Arrays.asList(new BuildInfoCollector(),
+            new ClusterInfoCollector(), new ClientInfoCollector(), new MapInfoCollector(), new OSInfoCollector());
 
     public PhoneHome(Node node) {
         hazelcastNode = node;
@@ -101,9 +102,6 @@ public class PhoneHome {
     public PhoneHomeParameterCreator createParameters() {
 
         PhoneHomeParameterCreator parameterCreator = new PhoneHomeParameterCreator();
-
-        metricsCollectorList = Arrays.asList(new BuildInfoCollector(),
-                new ClusterInfoCollector(), new ClientInfoCollector(), new MapInfoCollector(), new OSInfoCollector());
 
         metricsCollectorList.forEach((metricsCollector -> parameterCreator.
                 addMap(metricsCollector.computeMetrics(hazelcastNode))));
