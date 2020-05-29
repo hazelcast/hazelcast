@@ -159,7 +159,8 @@ public final class ClassLocator {
                 } else if (ThreadLocalClassCache.getFromCache(mainClassName) != null) {
                     classSource = ThreadLocalClassCache.getFromCache(mainClassName);
                 } else {
-                    classSource = new ClassSource(parent, this, Collections.EMPTY_MAP);
+                    classSource = doPrivileged(
+                            (PrivilegedAction<ClassSource>) () -> new ClassSource(parent, this, Collections.emptyMap()));
                 }
                 ClassData classData = fetchBytecodeFromRemote(name);
                 if (classData == null) {
