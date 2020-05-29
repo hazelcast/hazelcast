@@ -1443,7 +1443,7 @@ processing even with at-least-once sinks.
 |sink|module|streaming support|guarantee|
 |:---|:-----|:--------------|:-------------------|
 |`AvroSinks.files`|`hazelcast-jet-avro`|no|N/A|
-|`ElasticSinks.elastic`|`hazelcast-jet-elasticsearch-7`|no|N/A|
+|`ElasticSinks.elastic`|`hazelcast-jet-elasticsearch-7`|yes|at-least-once|
 |`HadoopSinks.outputFormat`|`hazelcast-jet-hadoop`|no|N/A|
 |`KafkaSinks.kafka`|`hazelcast-jet-kafka`|yes|exactly-once|
 |`PulsarSources.pulsarSink`|`hazelcast-jet-contrib-pulsar`|yes|at-least-once|
