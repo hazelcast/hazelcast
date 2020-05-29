@@ -16,6 +16,8 @@
 
 package com.hazelcast.map.impl;
 
+import com.hazelcast.internal.compatibility.wan.CompatibilityWanSupportingService;
+import com.hazelcast.internal.compatibility.wan.NoopCompatibilityWanMapSupportingService;
 import com.hazelcast.map.impl.event.MapEventPublishingService;
 import com.hazelcast.internal.services.ClientAwareService;
 import com.hazelcast.spi.impl.eventservice.EventPublishingService;
@@ -94,6 +96,11 @@ class DefaultMapServiceFactory extends AbstractMapServiceFactory {
     @Override
     WanSupportingService createReplicationSupportingService() {
         return new WanMapSupportingService(mapServiceContext);
+    }
+
+    @Override
+    CompatibilityWanSupportingService createCompatibilityReplicationSupportingService() {
+        return new NoopCompatibilityWanMapSupportingService(mapServiceContext);
     }
 
     @Override

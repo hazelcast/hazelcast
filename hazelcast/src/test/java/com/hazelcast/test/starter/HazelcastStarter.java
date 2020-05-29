@@ -159,8 +159,17 @@ public class HazelcastStarter {
         if (isProxyClass(hazelcastInstance.getClass())) {
             InvocationHandler invocationHandler = Proxy.getInvocationHandler(hazelcastInstance);
             Object delegate = getFieldValueReflectively(invocationHandler, "delegate");
-            Class<?> instanceProxyClass = classloader.loadClass("com.hazelcast.instance.impl.HazelcastInstanceProxy");
-            Class<?> instanceImplClass = classloader.loadClass("com.hazelcast.instance.impl.HazelcastInstanceImpl");
+            Class<?> instanceProxyClass;
+            Class<?> instanceImplClass;
+            try {
+                instanceProxyClass = classloader.loadClass("com.hazelcast.instance.HazelcastInstanceProxy");
+                instanceImplClass = classloader.loadClass("com.hazelcast.instance.HazelcastInstanceImpl");
+            } catch (ClassNotFoundException e) {
+                // target classloader is 4.x
+                instanceProxyClass = classloader.loadClass("com.hazelcast.instance.impl.HazelcastInstanceProxy");
+                instanceImplClass = classloader.loadClass("com.hazelcast.instance.impl.HazelcastInstanceImpl");
+            }
+
             if (instanceProxyClass.isAssignableFrom(delegate.getClass())) {
                 Object instanceProxy = instanceProxyClass.cast(delegate);
                 return instanceImplClass.cast(getFieldValueReflectively(instanceProxy, "original"));

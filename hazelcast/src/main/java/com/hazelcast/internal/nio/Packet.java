@@ -43,6 +43,8 @@ public final class Packet extends HeapData implements OutboundFrame {
     // 1. URGENT (bit 4)
     // 2. Packet type (bits 0, 2, 5)
     // 3. Flags specific to a given packet type (bits 1, 6)
+    // 4. 4.x flag (bit 7)
+    // 5. 3.x flag (bit 8)
 
 
     // 1. URGENT flag
@@ -96,6 +98,16 @@ public final class Packet extends HeapData implements OutboundFrame {
      */
     public static final int FLAG_JET_FLOW_CONTROL = 1 << 1;
 
+    /**
+     * Marks a packet as sent by a 4.x member
+     */
+    public static final int FLAG_4_0 = 1 << 7;
+
+    /**
+     * Marks a packet as sent by a 3.12 member
+     */
+    public static final int FLAG_3_12 = 1 << 8;
+
 
     //            END OF HEADER FLAG SECTION
 
@@ -107,6 +119,7 @@ public final class Packet extends HeapData implements OutboundFrame {
     private transient Connection conn;
 
     public Packet() {
+        raiseFlags(FLAG_4_0);
     }
 
     public Packet(byte[] payload) {
@@ -116,6 +129,7 @@ public final class Packet extends HeapData implements OutboundFrame {
     public Packet(byte[] payload, int partitionId) {
         super(payload);
         this.partitionId = partitionId;
+        raiseFlags(FLAG_4_0);
     }
 
     /**
@@ -142,7 +156,8 @@ public final class Packet extends HeapData implements OutboundFrame {
     }
 
     public Type getPacketType() {
-        return Type.fromFlags(flags);
+        boolean isCompatibility = isFlagRaised(FLAG_3_12);
+        return Type.fromFlags(flags, isCompatibility);
     }
 
     /**
@@ -324,18 +339,45 @@ public final class Packet extends HeapData implements OutboundFrame {
          * <p>
          * {@code ordinal = 7}
          */
-        UNDEFINED7;
+        UNDEFINED7,
+        /**
+         * Type reserved for compatibility (3.x) bind messages. The appropriate
+         * type conversion will happen in {@link #fromFlags(int, boolean)}.
+         * <p>
+         * {@code ordinal = 4}
+         */
+        COMPATIBILITY_BIND_MESSAGE(4),
+        /**
+         * Type reserved for compatibility (3.x) extended bind messages. The appropriate
+         * type conversion will happen in {@link #fromFlags(int, boolean)}.
+         * <p>
+         * {@code ordinal = 5}
+         */
+        COMPATIBILITY_EXTENDED_BIND(5);
 
         final char headerEncoding;
 
         private static final Type[] VALUES = values();
 
         Type() {
-            headerEncoding = (char) encodeOrdinal();
+            headerEncoding = (char) encodeHeader(ordinal());
         }
 
-        public static Type fromFlags(int flags) {
-            return VALUES[headerDecode(flags)];
+        Type(int ordinal) {
+            headerEncoding = (char) encodeHeader(ordinal);
+        }
+
+        public static Type fromFlags(int flags, boolean isCompatibility) {
+            int ordinal = headerDecode(flags);
+            if (isCompatibility) {
+                if (ordinal == UNDEFINED5.ordinal()) {
+                    return COMPATIBILITY_EXTENDED_BIND;
+                }
+                if (ordinal == BIND.ordinal()) {
+                    return COMPATIBILITY_BIND_MESSAGE;
+                }
+            }
+            return VALUES[ordinal];
         }
 
         public String describeFlags(char flags) {
@@ -343,8 +385,7 @@ public final class Packet extends HeapData implements OutboundFrame {
         }
 
         @SuppressWarnings("checkstyle:booleanexpressioncomplexity")
-        private int encodeOrdinal() {
-            final int ordinal = ordinal();
+        private int encodeHeader(int ordinal) {
             assert ordinal < 8 : "Ordinal out of range for member " + name() + ": " + ordinal;
             return (ordinal & 0x01)
                     | (ordinal & 0x02) << 1

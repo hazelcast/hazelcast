@@ -36,7 +36,7 @@ public class TreeSetStreamSerializer<E> extends AbstractCollectionStreamSerializ
     }
 
     @SuppressFBWarnings(value = "BC_BAD_CAST_TO_CONCRETE_COLLECTION",
-            justification = "The map is guaranteed to be of type TreeSet when this nethod is called.")
+            justification = "The map is guaranteed to be of type TreeSet when this method is called.")
     @Override
     public void write(ObjectDataOutput out, Set<E> collection) throws IOException {
         out.writeObject(((TreeSet<E>) collection).comparator());

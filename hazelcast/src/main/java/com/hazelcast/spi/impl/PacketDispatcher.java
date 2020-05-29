@@ -73,6 +73,8 @@ public final class PacketDispatcher implements Consumer<Packet> {
                     eventService.accept(packet);
                     break;
                 case BIND:
+                case COMPATIBILITY_BIND_MESSAGE:
+                case COMPATIBILITY_EXTENDED_BIND:
                     Connection connection = packet.getConn();
                     EndpointManager endpointManager = connection.getEndpointManager();
                     endpointManager.accept(packet);

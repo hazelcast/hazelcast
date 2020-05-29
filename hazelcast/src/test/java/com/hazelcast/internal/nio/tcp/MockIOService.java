@@ -363,6 +363,12 @@ public class MockIOService implements IOService {
     }
 
     @Override
+    public InternalSerializationService getCompatibilitySerializationService() {
+        // not needed for the test
+        return null;
+    }
+
+    @Override
     public MemberSocketInterceptor getSocketInterceptor(EndpointQualifier endpointQualifier) {
         return null;
     }

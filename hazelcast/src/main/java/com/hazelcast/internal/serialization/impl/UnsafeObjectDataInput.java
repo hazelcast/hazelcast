@@ -49,12 +49,28 @@ import static com.hazelcast.internal.nio.Bits.SHORT_SIZE_IN_BYTES;
 
 class UnsafeObjectDataInput extends ByteArrayObjectDataInput {
 
-    UnsafeObjectDataInput(byte[] buffer, InternalSerializationService service) {
-        super(buffer, service, ByteOrder.nativeOrder());
+    UnsafeObjectDataInput(byte[] buffer,
+                          InternalSerializationService service) {
+        super(buffer, service, ByteOrder.nativeOrder(), false);
     }
 
-    UnsafeObjectDataInput(byte[] buffer, int offset, InternalSerializationService service) {
-        super(buffer, offset, service, ByteOrder.nativeOrder());
+    UnsafeObjectDataInput(byte[] buffer,
+                          InternalSerializationService service,
+                          boolean isCompatibility) {
+        super(buffer, service, ByteOrder.nativeOrder(), isCompatibility);
+    }
+
+    UnsafeObjectDataInput(byte[] buffer,
+                          int offset,
+                          InternalSerializationService service) {
+        super(buffer, offset, service, ByteOrder.nativeOrder(), false);
+    }
+
+    UnsafeObjectDataInput(byte[] buffer,
+                          int offset,
+                          InternalSerializationService service,
+                          boolean isCompatibility) {
+        super(buffer, offset, service, ByteOrder.nativeOrder(), isCompatibility);
     }
 
     @Override

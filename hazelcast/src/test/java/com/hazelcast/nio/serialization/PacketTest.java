@@ -17,12 +17,15 @@
 package com.hazelcast.nio.serialization;
 
 import com.hazelcast.internal.nio.Packet;
-import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.internal.nio.Packet.Type;
+import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static com.hazelcast.internal.nio.Packet.FLAG_4_0;
 import static com.hazelcast.internal.nio.Packet.FLAG_OP_CONTROL;
 import static com.hazelcast.internal.nio.Packet.FLAG_URGENT;
 import static org.junit.Assert.assertEquals;
@@ -30,16 +33,28 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
-@RunWith(HazelcastSerialClassRunner.class)
-@Category(QuickTest.class)
+@RunWith(HazelcastParallelClassRunner.class)
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class PacketTest {
+
+    @Test
+    public void isFlag_4_xSet() {
+        byte[] payload = {};
+        Packet packet = new Packet();
+        Packet packet2 = new Packet(payload);
+        Packet packet3 = new Packet(payload, 1);
+
+        assertTrue(packet.isFlagRaised(FLAG_4_0));
+        assertTrue(packet2.isFlagRaised(FLAG_4_0));
+        assertTrue(packet3.isFlagRaised(FLAG_4_0));
+    }
 
     @Test
     public void raiseFlags() {
         Packet packet = new Packet();
         packet.raiseFlags(FLAG_URGENT);
 
-        assertEquals(FLAG_URGENT, packet.getFlags());
+        assertEquals(FLAG_4_0 | FLAG_URGENT, packet.getFlags());
     }
 
     @Test
@@ -47,7 +62,12 @@ public class PacketTest {
         Packet packet = new Packet();
         for (Packet.Type type : Packet.Type.values()) {
             packet.setPacketType(type);
-            assertSame(type, packet.getPacketType());
+            // COMPATIBILITY_BIND_MESSAGE occupies the same ordinal as BIND
+            // and COMPATIBILITY_EXTENDED_BIND occupies the same ordinal as UNDEFINED5
+            Type expected = type == Type.COMPATIBILITY_BIND_MESSAGE ? Type.BIND
+                    : type == Type.COMPATIBILITY_EXTENDED_BIND ? Type.UNDEFINED5
+                    : type;
+            assertSame(expected, packet.getPacketType());
         }
     }
 

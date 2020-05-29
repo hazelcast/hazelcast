@@ -25,7 +25,7 @@ import java.util.LinkedHashMap;
 /**
  * The {@link LinkedHashMap} serializer
  *
- * Important Note: The ConcurrentHashMap 'loadfactor' is not serialized.
+ * Important Note: The LinkedHashMap 'loadfactor' is not serialized.
  *
  */
 public class LinkedHashMapStreamSerializer<K, V> extends AbstractMapStreamSerializer<LinkedHashMap<K, V>> {

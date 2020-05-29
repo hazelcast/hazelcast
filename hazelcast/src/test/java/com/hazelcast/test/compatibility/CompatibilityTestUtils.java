@@ -28,6 +28,17 @@ import java.lang.instrument.Instrumentation;
 
 public final class CompatibilityTestUtils {
 
+    /**
+     * System property to override the other hazelcast version to be used by
+     * compatibility tests running with other releases.
+     * <p>
+     * Set this system property to a single version,
+     * e.g. {@code -Dhazelcast.test.compatibility.otherVersion=4.0}.
+     */
+    public static final String COMPATIBILITY_TEST_OTHER_VERSION = "hazelcast.test.compatibility.otherVersion";
+
+    private static final String DEFAULT_OTHER_VERSION = "3.12.8-migration";
+
     // When running a compatibility test, all com.hazelcast.* classes are transformed so that none are
     // loaded with final modifier to allow subclass proxying.
     public static void attachFinalRemovalAgent() {
@@ -52,5 +63,18 @@ public final class CompatibilityTestUtils {
                     }
                 })
                 .installOn(instrumentation);
+    }
+
+    /**
+     * Resolves which version will be used for compatibility tests using the next
+     * Hazelcast release.
+     * <ol>
+     * <li>look for system property override</li>
+     * <li>fallback to 4.0</li>
+     * </ol>
+     */
+    public static String resolveOtherVersion() {
+        String systemPropertyOverride = System.getProperty(COMPATIBILITY_TEST_OTHER_VERSION);
+        return systemPropertyOverride != null ? systemPropertyOverride : DEFAULT_OTHER_VERSION;
     }
 }
