@@ -75,7 +75,7 @@ public class DistributedExecutorService implements ManagedService, RemoteService
 
     private NodeEngine nodeEngine;
     private ExecutionService executionService;
-    private final ConcurrentMap<UUID, Processor> submittedTasks = new ConcurrentHashMap<>(100);
+    private final ConcurrentMap<UUID, Processor> submittedTasks = new ConcurrentHashMap<>();
     private final Set<String> shutdownExecutors
             = Collections.newSetFromMap(new ConcurrentHashMap<>());
     private final ConcurrentHashMap<String, LocalExecutorStatsImpl> statsMap = new ConcurrentHashMap<>();
