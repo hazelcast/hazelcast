@@ -131,6 +131,9 @@ public final class ClassLocator {
                     classSource = doPrivileged((PrivilegedAction<ClassSource>) ()
                             -> new ClassSource(parent, ClassLocator.this, bundledClassDefinitions));
                     clientClassSourceMap.put(mainClassName, classSource);
+                    for (String budledName : bundledClassDefinitions.keySet()) {
+                        clientClassSourceMap.put(budledName, classSource);
+                    }
                 }
                 return classSource.define(name, classDef);
             }
@@ -162,16 +165,14 @@ public final class ClassLocator {
                     classSource = doPrivileged(
                             (PrivilegedAction<ClassSource>) () -> new ClassSource(parent, this, Collections.emptyMap()));
                 }
-                ClassData classData = fetchBytecodeFromRemote(mainClassName);
+                ClassData classData = fetchBytecodeFromRemote(name);
                 if (classData == null) {
                     throw new ClassNotFoundException("Failed to load class " + name + " from other members");
                 }
 
                 Map<String, byte[]> innerClassDefinitions = classData.getInnerClassDefinitions();
-                classSource.define(mainClassName, classData.getMainClassDefinition());
-                for (Map.Entry<String, byte[]> entry : innerClassDefinitions.entrySet()) {
-                    classSource.define(entry.getKey(), entry.getValue());
-                }
+                classSource.setUndefinedClasses(innerClassDefinitions);
+                classSource.define(name, classData.getMainClassDefinition());
                 cacheClass(classSource, mainClassName);
                 return classSource.getClazz(name);
             }

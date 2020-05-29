@@ -16,21 +16,10 @@
 
 package usercodedeployment;
 
-import java.util.Map;
-
 /**
- * This test class is intentionally in its own package
- * as Hazelcast has special rules for loading classes
- * from the {@code com.hazelcast.*} package.
+ * This interface allows to test the user code deployment behavior in situations where a parent class of some deployed class is
+ * package private.
  */
-public class IncrementingEntryProcessor extends AbstractProtectedEntryProcessor {
+interface PublicInterface extends ProtectedParentInterface {
 
-    @Override
-    public Integer process(Map.Entry<Integer, Integer> entry) {
-        Integer origValue = entry.getValue();
-        Integer newValue = origValue + 1;
-        entry.setValue(newValue);
-
-        return newValue;
-    }
 }

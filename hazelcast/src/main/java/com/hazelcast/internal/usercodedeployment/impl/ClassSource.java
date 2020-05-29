@@ -40,6 +40,7 @@ public final class ClassSource extends ClassLoader {
     private final Map<String, Class> classes = new ConcurrentHashMap<String, Class>();
     private final Map<String, byte[]> classDefinitions = new ConcurrentHashMap<String, byte[]>();
     private final Map<String, byte[]> bundledClassDefinitions;
+    private final Map<String, byte[]> undefinedClasses = new ConcurrentHashMap<String, byte[]>();
     private final ClassLocator classLocator;
 
     public ClassSource(ClassLoader parent, ClassLocator classLocator, Map<String, byte[]> bundledClassDefinitions) {
@@ -49,7 +50,7 @@ public final class ClassSource extends ClassLoader {
     }
 
     public Class<?> define(String name, byte[] bytecode) {
-        Class clazz = defineClass(name, bytecode, 0, bytecode.length);
+        Class<?> clazz = defineClass(name, bytecode, 0, bytecode.length);
         classDefinitions.put(name, bytecode);
         classes.put(name, clazz);
         return clazz;
@@ -57,11 +58,22 @@ public final class ClassSource extends ClassLoader {
 
     @Override
     protected Class<?> findClass(String name) throws ClassNotFoundException {
+        Class cl = classes.get(name);
+        if (cl != null) {
+            return cl;
+        }
         byte[] classDefinition = bundledClassDefinitions.get(name);
         if (classDefinition != null) {
-            return classLocator.defineClassFromClient(name, classDefinition, bundledClassDefinitions);
+            return define(name, classDefinition);
+//            return classLocator.defineClassFromClient(name, classDefinition, bundledClassDefinitions);
         } else {
             return super.findClass(name);
+        }
+    }
+
+    public void setUndefinedClasses(Map<String, byte[]> undefinedEnvironmentClasses) {
+        if (undefinedEnvironmentClasses != null) {
+            this.undefinedClasses.putAll(undefinedEnvironmentClasses);
         }
     }
 
@@ -70,6 +82,12 @@ public final class ClassSource extends ClassLoader {
         Class aClass = classes.get(name);
         if (aClass != null) {
             return aClass;
+        }
+        if (undefinedClasses.containsKey(name)) {
+            aClass = define(name, undefinedClasses.remove(name));
+            if (aClass != null) {
+                return aClass;
+            }
         }
         try {
             return super.loadClass(name, resolve);

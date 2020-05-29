@@ -22,8 +22,11 @@ import com.hazelcast.internal.nio.IOUtil;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.reflect.Modifier;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.internal.nio.IOUtil.toByteArray;
@@ -54,6 +57,9 @@ public final class ClassDataProvider {
     }
 
     public ClassData getClassDataOrNull(String className) {
+        if (logger.isFinestEnabled()) {
+            logger.finest("Searching ClassData for " + className);
+        }
         ClassData classData = loadBytecodesFromClientCache(className);
         if (classData != null) {
             return classData;
@@ -90,11 +96,11 @@ public final class ClassDataProvider {
             return null;
         }
 
-        Map<String, byte[]> innerClassDefinitions = loadInnerClasses(className);
-        innerClassDefinitions = loadAnonymousClasses(className, innerClassDefinitions);
+        Map<String, byte[]> innerClassDefinitions = new HashMap<String, byte[]>();
+        loadInnerClasses(className, innerClassDefinitions);
 
         ClassData classData = new ClassData();
-        if (innerClassDefinitions != null) {
+        if (! innerClassDefinitions.isEmpty()) {
             classData.setInnerClassDefinitions(innerClassDefinitions);
         }
         classData.setMainClassDefinition(mainClassDefinition);
@@ -106,12 +112,9 @@ public final class ClassDataProvider {
         while (true) {
             try {
                 String innerClassName = className + "$" + i;
-                parent.loadClass(innerClassName);
-                byte[] innerByteCode = loadBytecodeFromParent(innerClassName);
-                if (innerClassDefinitions == null) {
-                    innerClassDefinitions = new HashMap<String, byte[]>();
-                }
-                innerClassDefinitions.put(innerClassName, innerByteCode);
+                Class<?> anonClass = parent.loadClass(innerClassName);
+                addInnerClass(innerClassDefinitions, innerClassName);
+                loadProtectedParents(anonClass, innerClassDefinitions);
                 i++;
             } catch (ClassNotFoundException e) {
                 break;
@@ -120,18 +123,54 @@ public final class ClassDataProvider {
         return innerClassDefinitions;
     }
 
-    private Map<String, byte[]> loadInnerClasses(String className) {
-        Map<String, byte[]> innerClassDefinitions = null;
+    private Map<String, byte[]> loadProtectedParents(Class<?> clazz, Map<String, byte[]> innerClassDefinitions) {
+        Class<?> parentClass = clazz.getSuperclass();
+        while (parentClass != null && !Modifier.isPublic(parentClass.getModifiers())) {
+            String name = parentClass.getName();
+            addInnerClass(innerClassDefinitions, name);
+            loadInnerClasses(name, innerClassDefinitions);
+            parentClass = parentClass.getSuperclass();
+        }
+        for (Class<?> ifaceClass : getInterfaces(clazz, new HashSet<>())) {
+            if (!Modifier.isPublic(ifaceClass.getModifiers())) {
+                String name = ifaceClass.getName();
+                addInnerClass(innerClassDefinitions, name);
+                loadInnerClasses(name, innerClassDefinitions);
+            }
+        }
+        return innerClassDefinitions;
+    }
+
+    protected void addInnerClass(Map<String, byte[]> innerClassDefinitions, String name) {
+        if (!innerClassDefinitions.containsKey(name)) {
+            byte[] byteCode = loadBytecodeFromParent(name);
+            innerClassDefinitions.put(name, byteCode);
+        }
+    }
+
+    private Set<Class<?>> getInterfaces(Class<?> clazz, Set<Class<?>> ifSet) {
+        while (clazz != null) {
+            for (Class<?> declaredIf : clazz.getInterfaces()) {
+                if (ifSet.add(declaredIf)) {
+                    getInterfaces(declaredIf, ifSet);
+                }
+            }
+            clazz = clazz.getSuperclass();
+        }
+        return ifSet;
+    }
+
+    private Map<String, byte[]> loadInnerClasses(String className, Map<String, byte[]> innerClassDefinitions) {
         try {
             Class<?> aClass = parent.loadClass(className);
+            innerClassDefinitions = loadProtectedParents(aClass, innerClassDefinitions);
+            loadAnonymousClasses(className, innerClassDefinitions);
             Class<?>[] declaredClasses = aClass.getDeclaredClasses();
             for (Class<?> declaredClass : declaredClasses) {
-                String innerClassName = declaredClass.getName();
-                byte[] innerByteCode = loadBytecodeFromParent(innerClassName);
-                if (innerClassDefinitions == null) {
-                    innerClassDefinitions = new HashMap<String, byte[]>();
-                }
-                innerClassDefinitions.put(innerClassName, innerByteCode);
+                String name = declaredClass.getName();
+                addInnerClass(innerClassDefinitions, name);
+                loadProtectedParents(declaredClass, innerClassDefinitions);
+                loadInnerClasses(name, innerClassDefinitions);
             }
         } catch (ClassNotFoundException e) {
             ignore(e);

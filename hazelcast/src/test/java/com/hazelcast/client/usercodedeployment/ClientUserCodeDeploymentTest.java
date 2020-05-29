@@ -98,6 +98,10 @@ public class ClientUserCodeDeploymentTest extends ClientTestSupport {
         ClientConfig config = new ClientConfig();
         ClientUserCodeDeploymentConfig clientUserCodeDeploymentConfig = new ClientUserCodeDeploymentConfig();
         clientUserCodeDeploymentConfig.addClass("usercodedeployment.IncrementingEntryProcessor");
+        clientUserCodeDeploymentConfig.addClass("usercodedeployment.AbstractProtectedEntryProcessor");
+        clientUserCodeDeploymentConfig.addClass("usercodedeployment.PublicInterface");
+        clientUserCodeDeploymentConfig.addClass("usercodedeployment.ProtectedInterface");
+        clientUserCodeDeploymentConfig.addClass("usercodedeployment.ProtectedParentInterface");
         config.setUserCodeDeploymentConfig(clientUserCodeDeploymentConfig.setEnabled(true));
         config.getConnectionStrategyConfig().getConnectionRetryConfig().setClusterConnectTimeoutMillis(Long.MAX_VALUE);
         return config;
