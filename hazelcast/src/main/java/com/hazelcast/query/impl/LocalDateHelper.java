@@ -15,47 +15,59 @@
  */
 package com.hazelcast.query.impl;
 
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
+import static java.time.format.DateTimeFormatter.BASIC_ISO_DATE;
+import static java.time.format.DateTimeFormatter.ISO_DATE;
+import static java.time.format.DateTimeFormatter.ISO_DATE_TIME;
+import static java.time.format.DateTimeFormatter.ISO_INSTANT;
+import static java.time.format.DateTimeFormatter.ISO_LOCAL_DATE;
+import static java.time.format.DateTimeFormatter.ISO_LOCAL_DATE_TIME;
+import static java.time.format.DateTimeFormatter.ISO_OFFSET_DATE;
+import static java.time.format.DateTimeFormatter.ISO_OFFSET_DATE_TIME;
+import static java.time.format.DateTimeFormatter.ISO_ZONED_DATE_TIME;
+import static java.time.format.DateTimeFormatter.RFC_1123_DATE_TIME;
+import static java.time.format.DateTimeFormatter.ofLocalizedDate;
+
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.Calendar;
-import java.util.Date;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
+import java.time.format.FormatStyle;
+import java.time.temporal.TemporalAccessor;
 
 public final class LocalDateHelper {
 
-    private static final String[] DATE_FORMATS = new String[] { "yyyy-MM-dd", "yyyy/MM/dd", "yyyy-MM-dd hh:mm:ss",
-            "yyyy-MM-dd hh:mm", "dd MMM yyyy", "dd MMM yyyy hh:mm", "dd MMM yyyy HH:mm", "dd MMM yyyy hh:mm:ss",
-            "dd MMM yyyy HH:mm:ss", "MM/yy", "dd MMM yyyy, hh:mm:ss", "E MMM dd HH:mm:ss Z yyyy", "dd mmm yyyy, hh:mm a",
-            "yyyy-MM-dd'T'hh:mm:ss" };
+    private static final FormatStyle[] FORMAT_STYLES = FormatStyle.values();
+
+    private static final DateTimeFormatter[] DATETIME_FORMATTERS = { ISO_LOCAL_DATE, ISO_OFFSET_DATE, ISO_DATE,
+            ISO_LOCAL_DATE_TIME, ISO_OFFSET_DATE_TIME, ISO_DATE_TIME, ISO_ZONED_DATE_TIME, ISO_INSTANT, BASIC_ISO_DATE,
+            RFC_1123_DATE_TIME };
 
     private LocalDateHelper() {
     }
 
-    public static Date toDate(String dateAsString) {
-        for (String format : DATE_FORMATS) {
-            try {
-                return new SimpleDateFormat(format).parse(dateAsString);
-            } catch (ParseException ignore) {
-                // DO NOTHING
-            }
-        }
-        throw new RuntimeException("Unable to parse date from value: '" + dateAsString + "' ! ");
-    }
-
     public static LocalDate toLocalDate(String dateAsString) {
-        Date d = toDate(dateAsString);
-        Calendar calendar = Calendar.getInstance();
-        calendar.setTime(d);
-        return LocalDate.of(calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH) + 1, calendar.get(Calendar.DATE));
+        return LocalDate.from(getFormatter(dateAsString));
     }
 
     public static LocalDateTime toLocalDateTime(String dateAsString) {
-        Date d = toDate(dateAsString);
-        Calendar calendar = Calendar.getInstance();
-        calendar.setTime(d);
-        return LocalDateTime.of(calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH) + 1, calendar.get(Calendar.DATE),
-                calendar.get(Calendar.HOUR), calendar.get(Calendar.MINUTE), calendar.get(Calendar.SECOND));
+        return LocalDateTime.from(getFormatter(dateAsString));
+    }
+
+    private static TemporalAccessor getFormatter(String dateAsString) {
+        for (DateTimeFormatter formatter : DATETIME_FORMATTERS) {
+            try {
+                return formatter.parse(dateAsString);
+            } catch (DateTimeParseException ignore) {
+            }
+        }
+        for (FormatStyle formatStyle : FORMAT_STYLES) {
+            DateTimeFormatter formatter = ofLocalizedDate(formatStyle);
+            try {
+                return formatter.parse(dateAsString);
+            } catch (DateTimeParseException ignore) {
+            }
+        }
+        throw new RuntimeException("Unable to parse date from value: '" + dateAsString + "' ! ");
     }
 
 }
