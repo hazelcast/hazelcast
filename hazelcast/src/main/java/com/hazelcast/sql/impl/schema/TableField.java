@@ -25,8 +25,8 @@ import com.hazelcast.sql.impl.type.QueryDataType;
  */
 public class TableField {
 
-    private final String name;
-    private final QueryDataType type;
+    protected final String name;
+    protected final QueryDataType type;
 
     public TableField(ExternalField externalField) {
         this(externalField.name(), externalField.type());

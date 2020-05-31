@@ -81,6 +81,8 @@ public class ReplicatedMapTableResolver extends AbstractMapTableResolver {
             res.add(table);
         }
 
+        // TODO: Add pre-configured, but not started maps.
+
         return res;
     }
 
@@ -115,8 +117,11 @@ public class ReplicatedMapTableResolver extends AbstractMapTableResolver {
 
                 InternalSerializationService ss = (InternalSerializationService) nodeEngine.getSerializationService();
 
-                MapSampleMetadata keyMetadata = MapSampleMetadataResolver.resolve(ss, key, true);
-                MapSampleMetadata valueMetadata = MapSampleMetadataResolver.resolve(ss, value, false);
+                // TODO: Resolve the flag properly (config.getInMemoryFormat() == InMemoryFormat.BINARY).
+                boolean binary = false;
+
+                MapSampleMetadata keyMetadata = MapSampleMetadataResolver.resolve(ss, key, binary, true);
+                MapSampleMetadata valueMetadata = MapSampleMetadataResolver.resolve(ss, value, binary, false);
                 keyDescriptor = keyMetadata.getDescriptor();
                 valueDescriptor = valueMetadata.getDescriptor();
                 estimatedRowCount = stores.size() * nodeEngine.getPartitionService().getPartitionCount();

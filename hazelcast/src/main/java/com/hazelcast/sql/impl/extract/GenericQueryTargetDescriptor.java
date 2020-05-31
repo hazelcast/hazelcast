@@ -60,4 +60,14 @@ public class GenericQueryTargetDescriptor implements QueryTargetDescriptor, Iden
     public void readData(ObjectDataInput in) throws IOException {
         // No-op.
     }
+
+    @Override
+    public int hashCode() {
+        return 0;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        return obj instanceof GenericQueryTargetDescriptor;
+    }
 }

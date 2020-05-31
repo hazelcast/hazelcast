@@ -71,7 +71,7 @@ public class SchemaTest extends CalciteSqlTestSupport {
         assertThat(updateRows).hasSize(1);
         assertThat((int) updateRows.get(0).getObject(0)).isEqualTo(0);
 
-        List<SqlRow> queryRows = getQueryRows(member, format("SELECT __key FROM %s", name));
+        List<SqlRow> queryRows = getQueryRows(member, format("SELECT __key FROM public.%s", name));
         assertThat(queryRows).isEmpty();
     }
 

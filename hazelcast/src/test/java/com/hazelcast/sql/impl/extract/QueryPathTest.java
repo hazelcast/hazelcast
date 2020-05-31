@@ -17,6 +17,7 @@
 package com.hazelcast.sql.impl.extract;
 
 import com.hazelcast.sql.impl.QueryException;
+import com.hazelcast.sql.impl.SqlDataSerializerHook;
 import com.hazelcast.sql.impl.SqlTestSupport;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -53,6 +54,15 @@ public class QueryPathTest extends SqlTestSupport {
         checkFails("");
         checkFails(KEY + ".");
         checkFails(VALUE + ".");
+    }
+
+    @Test
+    public void testSerialization() {
+        QueryPath original = new QueryPath("test", true);
+        QueryPath restored = serializeAndCheck(original, SqlDataSerializerHook.QUERY_PATH);
+
+        assertEquals(original.getPath(), restored.getPath());
+        assertEquals(original.isKey(), restored.isKey());
     }
 
     private void checkFails(String path) {

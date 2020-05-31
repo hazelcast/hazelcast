@@ -18,8 +18,9 @@ package com.hazelcast.sql.impl.extract;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.sql.impl.QueryException;
+import com.hazelcast.sql.impl.SqlDataSerializerHook;
 
 import java.io.IOException;
 
@@ -29,7 +30,7 @@ import static com.hazelcast.query.QueryConstants.THIS_ATTRIBUTE_NAME;
 /**
  * Represent a path to the attribute within a key-value pair.
  */
-public final class QueryPath implements DataSerializable {
+public final class QueryPath implements IdentifiedDataSerializable {
 
     public static final String KEY = KEY_ATTRIBUTE_NAME.value();
     public static final String VALUE = THIS_ATTRIBUTE_NAME.value();
@@ -105,6 +106,16 @@ public final class QueryPath implements DataSerializable {
     }
 
     @Override
+    public int getFactoryId() {
+        return SqlDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getClassId() {
+        return SqlDataSerializerHook.QUERY_PATH;
+    }
+
+    @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeBoolean(key);
         out.writeUTF(path);
@@ -137,10 +148,15 @@ public final class QueryPath implements DataSerializable {
 
     @Override
     public int hashCode() {
-        int result = (key ? 1 : 0);
+        int result = key ? 1 : 0;
 
         result = 31 * result + (path != null ? path.hashCode() : 0);
 
         return result;
+    }
+
+    @Override
+    public String toString() {
+        return (key ? KEY : VALUE) + (path != null ? "." + path : "");
     }
 }

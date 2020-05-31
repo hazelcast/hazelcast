@@ -17,6 +17,7 @@
 package com.hazelcast.sql.impl.calcite.parse;
 
 import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlOperatorTable;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.apache.calcite.runtime.CalciteContextException;
 import org.apache.calcite.runtime.Resources;
 import org.apache.calcite.sql.SqlCall;
@@ -307,7 +308,8 @@ public final class UnsupportedOperationVisitor implements SqlVisitor<Void> {
         }
     }
 
-    @SuppressWarnings("checkstyle:EmptyBlock")
+    @SuppressFBWarnings(value = "UC_USELESS_VOID_METHOD", justification = "Not fully implemented yet")
+    @SuppressWarnings({"checkstyle:EmptyBlock", })
     private void processSelect(SqlSelect select) {
         if (select.hasOrderBy()) {
             // TODO: Proper validation for ORDER BY (i.e. LIMIT/OFFSET)

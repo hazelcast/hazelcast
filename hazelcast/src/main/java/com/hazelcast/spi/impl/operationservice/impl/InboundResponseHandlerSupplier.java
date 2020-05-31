@@ -20,11 +20,13 @@ import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.metrics.StaticMetricsProvider;
 import com.hazelcast.internal.nio.Packet;
+import com.hazelcast.internal.util.ThreadAffinity;
 import com.hazelcast.internal.util.MutableInteger;
 import com.hazelcast.internal.util.concurrent.BackoffIdleStrategy;
 import com.hazelcast.internal.util.concurrent.BusySpinIdleStrategy;
 import com.hazelcast.internal.util.concurrent.IdleStrategy;
 import com.hazelcast.internal.util.concurrent.MPSCQueue;
+import com.hazelcast.internal.util.executor.HazelcastManagedThread;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationexecutor.OperationHostileThread;
@@ -45,6 +47,7 @@ import static com.hazelcast.internal.metrics.MetricDescriptorConstants.OPERATION
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.OPERATION_METRIC_INBOUND_RESPONSE_HANDLER_RESPONSE_QUEUE_SIZE;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.OPERATION_PREFIX;
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
+import static com.hazelcast.internal.util.ThreadAffinity.newSystemThreadAffinity;
 import static com.hazelcast.internal.util.EmptyStatement.ignore;
 import static com.hazelcast.internal.util.HashUtil.hashToIndex;
 import static com.hazelcast.internal.util.ThreadUtil.createThreadName;
@@ -98,7 +101,9 @@ public class InboundResponseHandlerSupplier implements StaticMetricsProvider, Su
     private final NodeEngine nodeEngine;
     private final InvocationRegistry invocationRegistry;
     private final HazelcastProperties properties;
+    private final ThreadAffinity threadAffinity = newSystemThreadAffinity("hazelcast.operation.response.thread.affinity");
 
+    @SuppressWarnings("checkstyle:executablestatementcount")
     InboundResponseHandlerSupplier(ClassLoader classLoader,
                                    InvocationRegistry invocationRegistry,
                                    String hzName,
@@ -108,6 +113,9 @@ public class InboundResponseHandlerSupplier implements StaticMetricsProvider, Su
         this.logger = nodeEngine.getLogger(InboundResponseHandlerSupplier.class);
         this.properties = nodeEngine.getProperties();
         int responseThreadCount = properties.getInteger(RESPONSE_THREAD_COUNT);
+        if (threadAffinity.isEnabled()) {
+            responseThreadCount = threadAffinity.getThreadCount();
+        }
         if (responseThreadCount < 0) {
             throw new IllegalArgumentException(RESPONSE_THREAD_COUNT.getName() + " can't be smaller than 0");
         }
@@ -257,7 +265,7 @@ public class InboundResponseHandlerSupplier implements StaticMetricsProvider, Su
      * The ResponseThread needs to implement the OperationHostileThread interface to make sure that the OperationExecutor
      * is not going to schedule any operations on this task due to retry.
      */
-    private final class ResponseThread extends Thread implements OperationHostileThread {
+    private final class ResponseThread extends HazelcastManagedThread implements OperationHostileThread {
 
         private final BlockingQueue<Packet> responseQueue;
         private final InboundResponseHandler inboundResponseHandler;
@@ -267,10 +275,11 @@ public class InboundResponseHandlerSupplier implements StaticMetricsProvider, Su
             super(createThreadName(hzName, "response-" + threadIndex));
             this.inboundResponseHandler = new InboundResponseHandler(invocationRegistry, nodeEngine);
             this.responseQueue = new MPSCQueue<>(this, getIdleStrategy(properties, IDLE_STRATEGY));
+            this.setThreadAffinity(threadAffinity);
         }
 
         @Override
-        public void run() {
+        public void executeRun() {
             try {
                 doRun();
             } catch (InterruptedException e) {

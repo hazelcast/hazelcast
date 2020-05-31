@@ -25,6 +25,7 @@ import com.hazelcast.internal.services.ServiceNamespace;
 import com.hazelcast.internal.util.ConcurrencyUtil;
 import com.hazelcast.internal.util.ConstructorFunction;
 import com.hazelcast.internal.util.ContextMutexFactory;
+import com.hazelcast.internal.util.MapUtil;
 import com.hazelcast.map.impl.operation.MapClearExpiredOperation;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.query.impl.Indexes;
@@ -48,8 +49,8 @@ public class PartitionContainer {
     private final int partitionId;
     private final MapService mapService;
     private final ContextMutexFactory contextMutexFactory = new ContextMutexFactory();
-    private final ConcurrentMap<String, RecordStore> maps = new ConcurrentHashMap<>(1000);
-    private final ConcurrentMap<String, Indexes> indexes = new ConcurrentHashMap<>(10);
+    private final ConcurrentMap<String, RecordStore> maps;
+    private final ConcurrentMap<String, Indexes> indexes = new ConcurrentHashMap<>();
     private final ConstructorFunction<String, RecordStore> recordStoreConstructor
             = name -> {
         RecordStore recordStore = createRecordStore(name);
@@ -80,6 +81,8 @@ public class PartitionContainer {
     public PartitionContainer(final MapService mapService, final int partitionId) {
         this.mapService = mapService;
         this.partitionId = partitionId;
+        int approxMapCount = mapService.mapServiceContext.getNodeEngine().getConfig().getMapConfigs().size();
+        this.maps  = MapUtil.createConcurrentHashMap(approxMapCount);
     }
 
     private RecordStore createRecordStore(String name) {

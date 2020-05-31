@@ -16,6 +16,8 @@
 
 package com.hazelcast.sql.impl.extract;
 
+import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.type.QueryDataType;
@@ -23,37 +25,31 @@ import com.hazelcast.sql.impl.type.QueryDataType;
 public class JavaClassQueryTarget implements QueryTarget, GenericTargetAccessor {
 
     private final String clazzName;
+    private final InternalSerializationService serializationService;
     private final Extractors extractors;
     private final boolean isKey;
 
     private Class<?> clazz;
-    private Object target;
 
-    public JavaClassQueryTarget(String clazzName, Extractors extractors, boolean isKey) {
+    private Object target;
+    private Object preparedTarget;
+
+    public JavaClassQueryTarget(
+        String clazzName,
+        InternalSerializationService serializationService,
+        Extractors extractors,
+        boolean isKey
+    ) {
         this.clazzName = clazzName;
+        this.serializationService = serializationService;
         this.extractors = extractors;
         this.isKey = isKey;
     }
 
     @Override
     public void setTarget(Object target) {
-        if (clazz == null) {
-            Class<?> clazz0 = target.getClass();
-
-            if (clazz0.getName().equals(clazzName)) {
-                clazz = clazz0;
-            } else {
-                throw QueryException.dataException("Unexpected value class [expected=" + clazzName
-                    + ", actual=" + clazz0.getName() + ']');
-            }
-        } else {
-            if (target.getClass() != clazz) {
-                throw QueryException.dataException("Unexpected value class [expected=" + clazzName
-                    + ", actual=" + target.getClass().getName() + ']');
-            }
-        }
-
         this.target = target;
+        this.preparedTarget = null;
     }
 
     @Override
@@ -67,6 +63,41 @@ public class JavaClassQueryTarget implements QueryTarget, GenericTargetAccessor 
 
     @Override
     public Object getTarget() {
-        return target;
+        if (preparedTarget == null) {
+            preparedTarget = prepareTarget(target);
+        }
+
+        return preparedTarget;
+    }
+
+    private Object prepareTarget(Object rawTarget) {
+        // Deserialize object if needed.
+        Object preparedTarget;
+
+        if (rawTarget instanceof Data) {
+            preparedTarget = serializationService.toObject(rawTarget);
+        } else {
+            preparedTarget = rawTarget;
+        }
+
+        // Verify expected class.
+        if (clazz == null) {
+            Class<?> clazz0 = preparedTarget.getClass();
+
+            if (clazz0.getName().equals(clazzName)) {
+                clazz = clazz0;
+            } else {
+                throw QueryException.dataException("Unexpected value class [expected=" + clazzName
+                    + ", actual=" + clazz0.getName() + ']');
+            }
+        } else {
+            if (preparedTarget.getClass() != clazz) {
+                throw QueryException.dataException("Unexpected value class [expected=" + clazzName
+                    + ", actual=" + preparedTarget.getClass().getName() + ']');
+            }
+        }
+
+        // Done
+        return preparedTarget;
     }
 }

@@ -24,6 +24,7 @@ import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.sql.impl.expression.ColumnExpression;
 import com.hazelcast.sql.impl.extract.GenericQueryTargetDescriptor;
+import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.operation.QueryBatchExchangeOperation;
 import com.hazelcast.sql.impl.operation.QueryCancelOperation;
 import com.hazelcast.sql.impl.operation.QueryCheckOperation;
@@ -81,7 +82,9 @@ public class SqlDataSerializerHook implements DataSerializerHook {
 
     public static final int TARGET_DESCRIPTOR_GENERIC = 20;
 
-    public static final int LEN = TARGET_DESCRIPTOR_GENERIC + 1;
+    public static final int QUERY_PATH = 21;
+
+    public static final int LEN = QUERY_PATH + 1;
 
     @Override
     public int getFactoryId() {
@@ -120,6 +123,8 @@ public class SqlDataSerializerHook implements DataSerializerHook {
         constructors[EXPRESSION_COLUMN] = arg -> new ColumnExpression<>();
 
         constructors[TARGET_DESCRIPTOR_GENERIC] = arg -> GenericQueryTargetDescriptor.INSTANCE;
+
+        constructors[QUERY_PATH] = arg -> new QueryPath();
 
         return new ArrayDataSerializableFactory(constructors);
     }

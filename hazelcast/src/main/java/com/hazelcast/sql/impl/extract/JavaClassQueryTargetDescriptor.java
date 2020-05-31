@@ -41,7 +41,7 @@ public class JavaClassQueryTargetDescriptor implements QueryTargetDescriptor {
 
     @Override
     public QueryTarget create(InternalSerializationService serializationService, Extractors extractors, boolean isKey) {
-        return new JavaClassQueryTarget(className, extractors, isKey);
+        return new JavaClassQueryTarget(className, serializationService, extractors, isKey);
     }
 
     @Override
@@ -52,5 +52,30 @@ public class JavaClassQueryTargetDescriptor implements QueryTargetDescriptor {
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         className = in.readUTF();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        JavaClassQueryTargetDescriptor that = (JavaClassQueryTargetDescriptor) o;
+
+        return className.equals(that.className);
+    }
+
+    @Override
+    public int hashCode() {
+        return className.hashCode();
+    }
+
+    @Override
+    public String toString() {
+        return "JavaClassQueryTargetDescriptor{className=" + className + '}';
     }
 }

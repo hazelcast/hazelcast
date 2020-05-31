@@ -113,12 +113,14 @@ public class TestClientNetworkConfig {
     public void smokeAzureConfig() {
         AzureConfig azure = client.getClientConfig().getNetworkConfig().getAzureConfig();
         assertFalse(azure.isEnabled());
+        assertEquals("false", azure.getProperty("instance-metadata-available"));
         assertEquals("CLIENT_ID", azure.getProperty("client-id"));
         assertEquals("CLIENT_SECRET", azure.getProperty("client-secret"));
         assertEquals("TENANT_ID", azure.getProperty("tenant-id"));
         assertEquals("SUB_ID", azure.getProperty("subscription-id"));
-        assertEquals("HZLCAST001", azure.getProperty("cluster-id"));
-        assertEquals("RESOURCE-GROUP-NAME", azure.getProperty("group-name"));
+        assertEquals("RESOURCE-GROUP-NAME", azure.getProperty("resource-group"));
+        assertEquals("SCALE-SET", azure.getProperty("scale-set"));
+        assertEquals("TAG-NAME=HZLCAST001", azure.getProperty("tag"));
     }
 
     @Test

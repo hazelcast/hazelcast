@@ -36,4 +36,34 @@ public class MapTableField extends TableField {
     public QueryPath getPath() {
         return path;
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        MapTableField field = (MapTableField) o;
+
+        return name.equals(field.name) && type.equals(field.type) && path.equals(field.path);
+    }
+
+    @Override
+    public int hashCode() {
+        int result = name.hashCode();
+
+        result = 31 * result + type.hashCode();
+        result = 31 * result + path.hashCode();
+
+        return result;
+    }
+
+    @Override
+    public String toString() {
+        return "MapTableField{name=" + name + ", type=" + type + ", path=" + path + '}';
+    }
 }

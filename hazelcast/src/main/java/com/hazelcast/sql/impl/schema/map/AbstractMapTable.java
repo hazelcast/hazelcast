@@ -18,6 +18,7 @@ package com.hazelcast.sql.impl.schema.map;
 
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.extract.QueryTargetDescriptor;
+import com.hazelcast.sql.impl.schema.ConstantTableStatistics;
 import com.hazelcast.sql.impl.schema.Table;
 import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.schema.TableStatistics;
@@ -53,7 +54,7 @@ public abstract class AbstractMapTable extends Table {
     }
 
     protected AbstractMapTable(String schemaName, String name, QueryException exception) {
-        super(schemaName, name, Collections.emptyList(), null, Collections.emptyMap());
+        super(schemaName, name, Collections.emptyList(), new ConstantTableStatistics(0), Collections.emptyMap());
 
         this.keyDescriptor = null;
         this.valueDescriptor = null;
@@ -75,23 +76,16 @@ public abstract class AbstractMapTable extends Table {
         return super.getField(index);
     }
 
-    @Override
-    public TableStatistics getStatistics() {
-        checkException();
-
-        return super.getStatistics();
-    }
-
     public QueryTargetDescriptor getKeyDescriptor() {
-        checkException();
-
         return keyDescriptor;
     }
 
     public QueryTargetDescriptor getValueDescriptor() {
-        checkException();
-
         return valueDescriptor;
+    }
+
+    public QueryException getException() {
+        return exception;
     }
 
     protected void checkException() {

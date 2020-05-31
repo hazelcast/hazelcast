@@ -78,6 +78,9 @@ public final class SqlToQueryType {
         HZ_TO_CALCITE.put(QueryDataTypeFamily.OBJECT, SqlTypeName.ANY);
         CALCITE_TO_HZ.put(SqlTypeName.ANY, QueryDataType.OBJECT);
 
+        HZ_TO_CALCITE.put(QueryDataTypeFamily.OBJECT, SqlTypeName.ANY);
+        CALCITE_TO_HZ.put(SqlTypeName.ANY, QueryDataType.OBJECT);
+
         HZ_TO_CALCITE.put(QueryDataTypeFamily.NULL, SqlTypeName.NULL);
         CALCITE_TO_HZ.put(SqlTypeName.NULL, QueryDataType.NULL);
     }

@@ -16,7 +16,7 @@
 
 package com.hazelcast.sql.impl.schema.map;
 
-import com.hazelcast.config.IndexConfig;
+import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
@@ -26,14 +26,10 @@ import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.PartitionContainer;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.recordstore.RecordStore;
-import com.hazelcast.partition.PartitioningStrategy;
-import com.hazelcast.partition.strategy.DeclarativePartitioningStrategy;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.QueryUtils;
-import com.hazelcast.sql.impl.extract.GenericQueryTargetDescriptor;
 import com.hazelcast.sql.impl.extract.QueryPath;
-import com.hazelcast.sql.impl.extract.QueryTargetDescriptor;
 import com.hazelcast.sql.impl.schema.ConstantTableStatistics;
 import com.hazelcast.sql.impl.schema.ExternalCatalog;
 import com.hazelcast.sql.impl.schema.Table;
@@ -42,18 +38,17 @@ import com.hazelcast.sql.impl.schema.map.sample.MapSampleMetadata;
 import com.hazelcast.sql.impl.schema.map.sample.MapSampleMetadataResolver;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static com.hazelcast.sql.impl.QueryUtils.SCHEMA_NAME_PARTITIONED;
-import static java.util.Collections.emptyMap;
 
 public class PartitionedMapTableResolver extends AbstractMapTableResolver {
 
@@ -70,51 +65,69 @@ public class PartitionedMapTableResolver extends AbstractMapTableResolver {
         MapServiceContext context = mapService.getMapServiceContext();
 
         List<Table> res = new ArrayList<>();
+        Set<String> knownNames = new HashSet<>();
 
+        // Get started maps.
         for (String mapName : context.getMapContainers().keySet()) {
-            PartitionedMapTable table;
-
             // TODO: skip all system tables, i.e. `__jet` prefixed
             if (mapName.equalsIgnoreCase(ExternalCatalog.CATALOG_MAP_NAME)) {
                 continue;
             }
 
-            try {
-                table = createTable(SCHEMA_NAME_PARTITIONED, nodeEngine, context, mapName, null, emptyMap());
-            } catch (QueryException e) {
-                table = new PartitionedMapTable(mapName, e);
-            }
+            PartitionedMapTable table = createTable(nodeEngine, context, mapName);
 
             if (table == null) {
                 continue;
             }
 
             res.add(table);
+            knownNames.add(mapName);
+        }
+
+        // Get maps that are not started locally yet.
+        for (Map.Entry<String, MapConfig> configEntry : nodeEngine.getConfig().getMapConfigs().entrySet()) {
+            String configMapName = configEntry.getKey();
+
+            // Skip templates.
+            if (configMapName.contains("*")) {
+                continue;
+            }
+
+            if (knownNames.add(configMapName)) {
+                res.add(emptyMap(configMapName));
+            }
         }
 
         return res;
     }
 
+    // TODO: VO: Abstract out Jet stuff in a clean way.
     @SuppressWarnings({"rawtypes", "checkstyle:MethodLength", "checkstyle:CyclomaticComplexity", "checkstyle:NPathComplexity"})
     public static PartitionedMapTable createTable(
-            @Nonnull String schemaName,
-            @Nonnull NodeEngine nodeEngine,
-            @Nonnull MapServiceContext context,
-            @Nonnull String mapName,
-            @Nullable List<TableField> fields,
-            @Nonnull Map<String, String> ddlOptions
+        NodeEngine nodeEngine,
+        MapServiceContext context,
+        String name
     ) {
         try {
-            MapContainer mapContainer = context.getMapContainer(mapName);
-            assert mapContainer != null : "null mapContainer";
+            MapContainer mapContainer = context.getMapContainer(name);
 
-            int estimatedRowCount = 0;
-            QueryTargetDescriptor keyDescriptor = null;
-            QueryTargetDescriptor valueDescriptor = null;
+            // Handle concurrent map destroy.
+            if (mapContainer == null) {
+                return null;
+            }
+
+            MapConfig config = mapContainer.getMapConfig();
+
+            // HD maps are not supported at the moment.
+            if (config.getInMemoryFormat() == InMemoryFormat.NATIVE) {
+                throw QueryException.error("IMap with InMemoryFormat.NATIVE is not supported: " + name);
+            }
+
+            boolean binary = config.getInMemoryFormat() == InMemoryFormat.BINARY;
 
             for (PartitionContainer partitionContainer : context.getPartitionContainers()) {
                 // Resolve sample.
-                RecordStore<?> recordStore = partitionContainer.getExistingRecordStore(mapName);
+                RecordStore<?> recordStore = partitionContainer.getExistingRecordStore(name);
 
                 if (recordStore == null) {
                     continue;
@@ -130,100 +143,63 @@ public class PartitionedMapTableResolver extends AbstractMapTableResolver {
 
                 InternalSerializationService ss = (InternalSerializationService) nodeEngine.getSerializationService();
 
-                MapSampleMetadata keyMetadata = MapSampleMetadataResolver.resolve(ss, entry.getKey(), true);
-                MapSampleMetadata valueMetadata = MapSampleMetadataResolver.resolve(ss, entry.getValue().getValue(), false);
-                keyDescriptor = keyMetadata.getDescriptor();
-                valueDescriptor = valueMetadata.getDescriptor();
+                MapSampleMetadata keyMetadata = MapSampleMetadataResolver.resolve(
+                    ss,
+                    entry.getKey(),
+                    binary,
+                    true
+                );
 
-                estimatedRowCount = recordStore.size() * nodeEngine.getPartitionService().getPartitionCount();
+                MapSampleMetadata valueMetadata = MapSampleMetadataResolver.resolve(
+                    ss,
+                    entry.getValue().getValue(),
+                    binary,
+                    false
+                );
 
-                if (fields == null) {
-                    fields = mergeMapFields(keyMetadata.getFields(), valueMetadata.getFields());
-                }
+                List<TableField> fields = mergeMapFields(keyMetadata.getFields(), valueMetadata.getFields());
 
-                break;
-            }
+                long estimatedRowCount = MapTableUtils.estimatePartitionedMapRowCount(nodeEngine, context, name);
 
-            if (fields == null) {
-                // TODO: Throw an error here instead so that the user knows that resolution failed due to empty map.
-                return null;
-            }
+                // Map fields to ordinals.
+                Map<QueryPath, Integer> pathToOrdinalMap = MapTableUtils.mapPathsToOrdinals(fields);
 
-            if (keyDescriptor == null) {
-                keyDescriptor = new GenericQueryTargetDescriptor();
-            }
-            if (valueDescriptor == null) {
-                valueDescriptor = new GenericQueryTargetDescriptor();
-            }
+                // Resolve indexes.
+                List<MapTableIndex> indexes = MapTableUtils.getPartitionedMapIndexes(mapContainer, name, pathToOrdinalMap);
 
-            // Map fields to ordinals.
-            Map<QueryPath, Integer> pathToOrdinalMap = new HashMap<>();
+                // Resolve distribution field ordinal.
+                int distributionFieldOrdinal =
+                    MapTableUtils.getPartitionedMapDistributionField(mapContainer, context, pathToOrdinalMap);
 
-            for (int i = 0; i < fields.size(); i++) {
-                pathToOrdinalMap.put(((MapTableField) fields.get(i)).getPath(), i);
-            }
-
-            // Resolve indexes.
-            List<MapTableIndex> indexes = new ArrayList<>(mapContainer.getIndexDefinitions().size());
-
-            for (IndexConfig indexConfig : mapContainer.getIndexDefinitions().values()) {
-                List<Integer> indexFieldOrdinals = new ArrayList<>(indexConfig.getAttributes().size());
-
-                for (String attribute : indexConfig.getAttributes()) {
-                    QueryPath attributePath = QueryPath.create(attribute);
-
-                    Integer ordinal = pathToOrdinalMap.get(attributePath);
-
-                    if (ordinal == null) {
-                        // No mapping for the field. Stop.
-                        break;
-                    }
-
-                    indexFieldOrdinals.add(ordinal);
-                }
-
-                if (indexFieldOrdinals.isEmpty()) {
-                    // Failed to resolve a prefix of the index, so it cannot be used in any query => skip.
-                    break;
-                }
-
-                indexes.add(new MapTableIndex(mapName, indexConfig.getType(), indexFieldOrdinals));
-            }
-
-            // Resolve distribution field ordinal.
-            int distributionFieldOrdinal = PartitionedMapTable.DISTRIBUTION_FIELD_ORDINAL_NONE;
-
-            MapConfig mapConfig = mapContainer.getMapConfig();
-
-            PartitioningStrategy partitioningStrategy =
-                    context.getPartitioningStrategy(mapConfig.getName(), mapConfig.getPartitioningStrategyConfig());
-
-            if (partitioningStrategy instanceof DeclarativePartitioningStrategy) {
-                String field = ((DeclarativePartitioningStrategy) partitioningStrategy).getField();
-                QueryPath fieldPath = new QueryPath(field, true);
-                Integer fieldOrdinal = pathToOrdinalMap.get(fieldPath);
-
-                if (fieldOrdinal != null) {
-                    distributionFieldOrdinal = fieldOrdinal;
-                }
-            }
-
-            // Done.
-            return new PartitionedMapTable(
-                    schemaName,
-                    mapName,
+                // Done.
+                return new PartitionedMapTable(
+                    SCHEMA_NAME_PARTITIONED,
+                    name,
                     fields,
                     new ConstantTableStatistics(estimatedRowCount),
-                    keyDescriptor,
-                    valueDescriptor,
+                    keyMetadata.getDescriptor(),
+                    valueMetadata.getDescriptor(),
                     indexes,
                     distributionFieldOrdinal,
-                    ddlOptions
-            );
+                    Collections.emptyMap()
+                );
+            }
+
+            return emptyMap(name);
         } catch (QueryException e) {
-            throw e;
+            return new PartitionedMapTable(name, e);
         } catch (Exception e) {
-            throw QueryException.error("Failed to get metadata for IMap " + mapName + ": " + e.getMessage(), e);
+            QueryException e0 = QueryException.error("Failed to get metadata for IMap " + name + ": " + e.getMessage(), e);
+
+            return new PartitionedMapTable(name, e0);
         }
+    }
+
+    private static PartitionedMapTable emptyMap(String mapName) {
+        QueryException error = QueryException.error(
+            "Cannot resolve IMap schema because it doesn't have entries on the local member: " + mapName
+        );
+
+        return new PartitionedMapTable(mapName, error);
     }
 }
