@@ -27,6 +27,7 @@ import com.hazelcast.logging.Logger;
 
 import javax.annotation.CheckReturnValue;
 import javax.annotation.Nonnull;
+import java.util.Objects;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -39,7 +40,7 @@ import static com.hazelcast.jet.impl.util.Util.tryIncrement;
 
 public abstract class AsyncHazelcastWriterP implements Processor {
 
-    static final int MAX_PARALLEL_ASYNC_OPS_DEFAULT = 1000;
+    protected static final int MAX_PARALLEL_ASYNC_OPS_DEFAULT = 1000;
 
     private final ILogger logger = Logger.getLogger(AsyncHazelcastWriterP.class);
     private final int maxParallelAsyncOps;
@@ -55,8 +56,8 @@ public abstract class AsyncHazelcastWriterP implements Processor {
         }
     });
 
-    AsyncHazelcastWriterP(HazelcastInstance instance, int maxParallelAsyncOps) {
-        this.instance = instance;
+    AsyncHazelcastWriterP(@Nonnull HazelcastInstance instance, int maxParallelAsyncOps) {
+        this.instance = Objects.requireNonNull(instance, "instance");
         this.maxParallelAsyncOps = maxParallelAsyncOps;
         this.isLocal = ImdgUtil.isMemberInstance(instance);
     }
@@ -83,7 +84,7 @@ public abstract class AsyncHazelcastWriterP implements Processor {
     }
 
     @Override
-    public final boolean saveToSnapshot() {
+    public boolean saveToSnapshot() {
         return flush() && asyncCallsDone();
     }
 

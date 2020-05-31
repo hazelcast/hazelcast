@@ -105,9 +105,10 @@ public final class HazelcastWriters {
         checkSerializable(toKeyFn, "toKeyFn");
         checkSerializable(updateFn, "updateFn");
 
-        return ProcessorMetaSupplier.of(new UpdateMapP.Supplier<>(
-                asXmlString(clientConfig), mapName, toKeyFn, updateFn
-        ));
+        return ProcessorMetaSupplier.of(
+                AbstractHazelcastConnectorSupplier.of(
+                        asXmlString(clientConfig),
+                        instance -> new UpdateMapP<>(instance, mapName, toKeyFn, updateFn)));
     }
 
     @Nonnull
@@ -120,9 +121,8 @@ public final class HazelcastWriters {
         checkSerializable(toKeyFn, "toKeyFn");
         checkSerializable(toEntryProcessorFn, "toEntryProcessorFn");
 
-        return ProcessorMetaSupplier.of(new UpdateMapWithEntryProcessorP.Supplier<>(
-                name, asXmlString(clientConfig), toKeyFn, toEntryProcessorFn
-        ));
+        return ProcessorMetaSupplier.of(AbstractHazelcastConnectorSupplier.of(asXmlString(clientConfig),
+                instance -> new UpdateMapWithEntryProcessorP<>(instance, name, toKeyFn, toEntryProcessorFn)));
     }
 
     @Nonnull

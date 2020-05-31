@@ -27,41 +27,48 @@ import java.util.List;
 
 import static com.hazelcast.jet.impl.pipeline.ComputeStageImplBase.ADAPT_TO_JET_EVENT;
 import static com.hazelcast.jet.impl.pipeline.FunctionAdapter.adaptingMetaSupplier;
+import static com.hazelcast.jet.impl.pipeline.SinkImpl.Type.TOTAL_PARALLELISM_ONE;
 import static com.hazelcast.jet.impl.util.Util.arrayIndexOf;
 
 public class SinkTransform<T> extends AbstractTransform {
     private static final int[] EMPTY_ORDINALS = new int[0];
 
-    private final SinkImpl sink;
+    private final SinkImpl<T> sink;
     private final int[] ordinalsToAdapt;
 
-    public SinkTransform(@Nonnull SinkImpl sink, @Nonnull List<Transform> upstream, @Nonnull int[] ordinalsToAdapt) {
+    public SinkTransform(@Nonnull SinkImpl<T> sink, @Nonnull List<Transform> upstream, @Nonnull int[] ordinalsToAdapt) {
         super(sink.name(), upstream);
         this.sink = sink;
         this.ordinalsToAdapt = ordinalsToAdapt;
     }
 
-    public SinkTransform(@Nonnull SinkImpl sink, @Nonnull Transform upstream, boolean adaptToJetEvents) {
+    public SinkTransform(@Nonnull SinkImpl<T> sink, @Nonnull Transform upstream, boolean adaptToJetEvents) {
         super(sink.name(), upstream);
         this.sink = sink;
         this.ordinalsToAdapt = adaptToJetEvents ? new int[] {0} : EMPTY_ORDINALS;
     }
 
     @Override
+    @SuppressWarnings({"rawtypes", "unchecked"})
     public void addToDag(Planner p) {
         PlannerVertex pv = p.addVertex(this, name(), localParallelism(),
                 adaptingMetaSupplier(sink.metaSupplier(), ordinalsToAdapt));
         p.addEdges(this, pv.v, (e, ord) -> {
             // note: have to use an all-to-one edge for the assertion sink.
             // all the items will be routed to the member with the partition key
-            if (sink.isTotalParallelismOne()) {
+            if (sink.getType() == TOTAL_PARALLELISM_ONE) {
                 e.allToOne(sink.name()).distributed();
-            } else if (sink.inputPartitionKeyFunction() != null) {
-                FunctionEx keyFn = sink.inputPartitionKeyFunction();
-                if (arrayIndexOf(ord, ordinalsToAdapt) >= 0) {
-                    keyFn = ADAPT_TO_JET_EVENT.adaptKeyFn(keyFn);
+            } else {
+                if (sink.getType().isPartitioned()) {
+                    FunctionEx keyFn = sink.partitionKeyFunction();
+                    if (arrayIndexOf(ord, ordinalsToAdapt) >= 0) {
+                        keyFn = ADAPT_TO_JET_EVENT.adaptKeyFn(keyFn);
+                    }
+                    e.partitioned(keyFn, Partitioner.defaultPartitioner());
                 }
-                e.partitioned(keyFn, Partitioner.defaultPartitioner());
+                if (sink.getType().isDistributed()) {
+                    e.distributed();
+                }
             }
         });
     }

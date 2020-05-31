@@ -49,9 +49,13 @@ import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 
 public class CdcSource {
 
+    public static final String CONNECTOR_CLASS_PROPERTY = "connector.class";
+    public static final String SEQUENCE_EXTRACTOR_CLASS_PROPERTY = "sequence.extractor.class";
+
     private static final ThreadLocal<List<byte[]>> THREAD_LOCAL_HISTORY = new ThreadLocal<>();
 
     private final SourceConnector connector;
+    private final SequenceExtractor sequenceExtractor;
     private final SourceTask task;
     private final Map<String, String> taskConfig;
     private final ExtractNewRecordState<SourceRecord> transform;
@@ -61,11 +65,11 @@ public class CdcSource {
 
     CdcSource(Properties properties) {
         try {
-            String connectorClazz = properties.getProperty("connector.class");
-            Class<?> connectorClass = Thread.currentThread().getContextClassLoader().loadClass(connectorClazz);
-            connector = (SourceConnector) connectorClass.getConstructor().newInstance();
+            connector = newInstance(properties, CONNECTOR_CLASS_PROPERTY);
             connector.initialize(new JetConnectorContext());
             connector.start((Map) properties);
+
+            sequenceExtractor = newInstance(properties, SEQUENCE_EXTRACTOR_CLASS_PROPERTY);
 
             transform = initTransform();
 
@@ -99,7 +103,9 @@ public class CdcSource {
             for (SourceRecord record : records) {
                 boolean added = addToBuffer(record, buf);
                 if (added) {
-                    state.setOffset(record.sourcePartition(), record.sourceOffset());
+                    Map<String, ?> partition = record.sourcePartition();
+                    Map<String, ?> offset = record.sourceOffset();
+                    state.setOffset(partition, offset);
                 }
             }
         } catch (InterruptedException e) {
@@ -134,6 +140,14 @@ public class CdcSource {
         this.state = snapshots.get(0);
     }
 
+    private ChangeRecord toChangeRecord(SourceRecord record) {
+        long sequenceSource = sequenceExtractor.source(record.sourcePartition(), record.sourceOffset());
+        long sequenceValue = sequenceExtractor.sequence(record.sourceOffset());
+        String keyJson = Values.convertToString(record.keySchema(), record.key());
+        String valueJson = Values.convertToString(record.valueSchema(), record.value());
+        return new ChangeRecordImpl(sequenceSource, sequenceValue, keyJson, valueJson);
+    }
+
     private static ExtractNewRecordState<SourceRecord> initTransform() {
         ExtractNewRecordState<SourceRecord> transform = new ExtractNewRecordState<>();
 
@@ -145,18 +159,18 @@ public class CdcSource {
         return transform;
     }
 
-    private static ChangeRecord toChangeRecord(SourceRecord record) {
-        String keyJson = Values.convertToString(record.keySchema(), record.key());
-        String valueJson = Values.convertToString(record.valueSchema(), record.value());
-        return new ChangeRecordImpl(keyJson, valueJson);
-    }
-
     private static long extractTimestamp(SourceRecord record) {
         if (record.valueSchema().field("__ts_ms") == null) {
             return 0L;
         } else {
             return ((Struct) record.value()).getInt64("__ts_ms");
         }
+    }
+
+    private static <T> T newInstance(Properties properties, String classNameProperty) throws Exception {
+        String className = properties.getProperty(classNameProperty);
+        Class<?> clazz = Thread.currentThread().getContextClassLoader().loadClass(className);
+        return (T) clazz.getConstructor().newInstance();
     }
 
     private class JetSourceTaskContext implements SourceTaskContext {

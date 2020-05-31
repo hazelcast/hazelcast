@@ -27,23 +27,51 @@ public class SinkImpl<T> implements Sink<T> {
 
     private final String name;
     private final ProcessorMetaSupplier metaSupplier;
-    private final boolean isTotalParallelismOne;
-    private final FunctionEx<? super T, ?> inputPartitionKeyFunction;
-    private boolean isAssignedToStage;
+    private boolean assignedToStage;
+
+    private final Type type;
+    private final FunctionEx<? super T, ?> partitionKeyFunction;
+
+    public SinkImpl(
+            @Nonnull String name,
+            @Nonnull ProcessorMetaSupplier metaSupplier
+    ) {
+        this(name, metaSupplier, Type.DEFAULT, null);
+    }
 
     public SinkImpl(
             @Nonnull String name,
             @Nonnull ProcessorMetaSupplier metaSupplier,
-            boolean isTotalParallelismOne,
-            @Nullable FunctionEx<? super T, ?> inputPartitionKeyFunction
+            @Nullable FunctionEx<? super T, ?> partitionKeyFn
     ) {
-        if (inputPartitionKeyFunction != null && isTotalParallelismOne) {
-            throw new IllegalArgumentException();
+        this(name, metaSupplier, Type.PARTITIONED, partitionKeyFn);
+    }
+
+    public SinkImpl(
+            @Nonnull String name,
+            @Nonnull ProcessorMetaSupplier metaSupplier,
+            @Nonnull Type type
+    ) {
+        this(name, metaSupplier, type, null);
+    }
+
+    public SinkImpl(
+            @Nonnull String name,
+            @Nonnull ProcessorMetaSupplier metaSupplier,
+            @Nonnull Type type,
+            @Nullable FunctionEx<? super T, ?> partitionKeyFn
+    ) {
+        if (type.isPartitioned() && partitionKeyFn == null) {
+            throw new IllegalArgumentException("Partitioned type " + type + " needs a partition key function");
         }
+        if (!type.isPartitioned() && partitionKeyFn != null) {
+            throw new IllegalArgumentException("Non partitioned type " + type + " can't have a partition key function");
+        }
+
         this.name = name;
         this.metaSupplier = metaSupplier;
-        this.isTotalParallelismOne = isTotalParallelismOne;
-        this.inputPartitionKeyFunction = inputPartitionKeyFunction;
+        this.type = type;
+        this.partitionKeyFunction = partitionKeyFn;
     }
 
     @Nonnull
@@ -51,23 +79,46 @@ public class SinkImpl<T> implements Sink<T> {
         return metaSupplier;
     }
 
-    public boolean isTotalParallelismOne() {
-        return isTotalParallelismOne;
-    }
-
-    public FunctionEx<? super T, ?> inputPartitionKeyFunction() {
-        return inputPartitionKeyFunction;
-    }
-
     @Override
     public String name() {
         return name;
     }
 
+    public Type getType() {
+        return type;
+    }
+
+    public FunctionEx<? super T, ?> partitionKeyFunction() {
+        return partitionKeyFunction;
+    }
+
     void onAssignToStage() {
-        if (isAssignedToStage) {
+        if (assignedToStage) {
             throw new IllegalStateException("Sink " + name + " was already assigned to a sink stage");
         }
-        isAssignedToStage = true;
+        assignedToStage = true;
+    }
+
+    public enum Type {
+        DEFAULT(false, false),
+        PARTITIONED(true, false),
+        DISTRIBUTED_PARTITIONED(true, true),
+        TOTAL_PARALLELISM_ONE(false, true);
+
+        boolean partitioned;
+        boolean distributed;
+
+        Type(boolean partitioned, boolean distributed) {
+            this.partitioned = partitioned;
+            this.distributed = distributed;
+        }
+
+        public boolean isPartitioned() {
+            return partitioned;
+        }
+
+        public boolean isDistributed() {
+            return distributed;
+        }
     }
 }

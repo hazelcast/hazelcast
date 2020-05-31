@@ -98,7 +98,7 @@ public class UpdateMapPTest extends JetTestSupport {
     }
 
     private SupplierEx<Processor> updateMap(HazelcastInstance instance) {
-        return () -> new UpdateMapP<Integer, String, Integer, Void>(
+        return () -> new UpdateMapP<Integer, String, Integer>(
             instance,
             asyncLimit,
             sinkMap.getName(),

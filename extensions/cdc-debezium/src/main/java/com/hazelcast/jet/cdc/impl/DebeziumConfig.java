@@ -32,7 +32,7 @@ public class DebeziumConfig {
         Objects.requireNonNull(connectorClass, "connectorClass");
 
         properties.put("name", name);
-        properties.put("connector.class", connectorClass);
+        properties.put(CdcSource.CONNECTOR_CLASS_PROPERTY, connectorClass);
         properties.put("database.history", CdcSource.DatabaseHistoryImpl.class.getName());
         properties.put("tombstones.on.delete", "false");
     }

@@ -14,12 +14,18 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.cdc;
+package com.hazelcast.jet.cdc.mysql;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.accumulator.LongAccumulator;
+import com.hazelcast.jet.cdc.AbstractIntegrationTest;
+import com.hazelcast.jet.cdc.CdcSinks;
+import com.hazelcast.jet.cdc.ChangeRecord;
+import com.hazelcast.jet.cdc.Operation;
+import com.hazelcast.jet.cdc.ParsingException;
+import com.hazelcast.jet.cdc.RecordPart;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.config.ProcessingGuarantee;
 import com.hazelcast.jet.core.JetTestSupport;
@@ -50,16 +56,6 @@ public class MySqlIntegrationTest extends AbstractIntegrationTest {
     public MySQLContainer<?> mysql = new MySQLContainer<>("debezium/example-mysql:1.2")
             .withUsername("mysqluser")
             .withPassword("mysqlpw");
-
-    private static int getOrderNumber(ChangeRecord record) throws ParsingException {
-        //pick random method for extracting ID in order to test all code paths
-        boolean primitive = ThreadLocalRandom.current().nextBoolean();
-        if (primitive) {
-            return (Integer) record.key().toMap().get("order_number");
-        } else {
-            return record.key().toObject(OrderPrimaryKey.class).id;
-        }
-    }
 
     @Test
     public void customers() throws Exception {
@@ -233,6 +229,73 @@ public class MySqlIntegrationTest extends AbstractIntegrationTest {
         }
     }
 
+    @Test
+    public void cdcMapSink() throws Exception {
+        // given
+        Pipeline pipeline = Pipeline.create();
+        pipeline.readFrom(source("customers"))
+                .withNativeTimestamps(0)
+                .writeTo(CdcSinks.map("cache",
+                        r -> r.key().toMap().get("id"),
+                        r -> r.value().toObject(Customer.class).toString()));
+
+
+        // when
+        JetInstance jet = createJetMembers(2)[0];
+        JobConfig jobConfig = new JobConfig().setProcessingGuarantee(ProcessingGuarantee.AT_LEAST_ONCE);
+        Job job = jet.newJob(pipeline, jobConfig);
+        JetTestSupport.assertJobStatusEventually(job, JobStatus.RUNNING);
+        //then
+        assertEqualsEventually(() -> mapResultsToSortedList(jet.getMap("cache")),
+                Arrays.asList(
+                        "1001:Customer {id=1001, firstName=Sally, lastName=Thomas, email=sally.thomas@acme.com}",
+                        "1002:Customer {id=1002, firstName=George, lastName=Bailey, email=gbailey@foobar.com}",
+                        "1003:Customer {id=1003, firstName=Edward, lastName=Walker, email=ed@walker.com}",
+                        "1004:Customer {id=1004, firstName=Anne, lastName=Kretchmar, email=annek@noanswer.org}"
+                )
+        );
+
+        //when
+        job.restart();
+        JetTestSupport.assertJobStatusEventually(job, JobStatus.RUNNING);
+        try (Connection connection = DriverManager.getConnection(mysql.withDatabaseName("inventory").getJdbcUrl(),
+                mysql.getUsername(), mysql.getPassword())) {
+            connection
+                    .prepareStatement("UPDATE customers SET first_name='Anne Marie' WHERE id=1004")
+                    .executeUpdate();
+            connection
+                    .prepareStatement("INSERT INTO customers VALUES (1005, 'Jason', 'Bourne', 'jason@bourne.org')")
+                    .executeUpdate();
+        }
+        //then
+        assertEqualsEventually(() -> mapResultsToSortedList(jet.getMap("cache")),
+                Arrays.asList(
+                        "1001:Customer {id=1001, firstName=Sally, lastName=Thomas, email=sally.thomas@acme.com}",
+                        "1002:Customer {id=1002, firstName=George, lastName=Bailey, email=gbailey@foobar.com}",
+                        "1003:Customer {id=1003, firstName=Edward, lastName=Walker, email=ed@walker.com}",
+                        "1004:Customer {id=1004, firstName=Anne Marie, lastName=Kretchmar, email=annek@noanswer.org}",
+                        "1005:Customer {id=1005, firstName=Jason, lastName=Bourne, email=jason@bourne.org}"
+                )
+        );
+
+        //when
+        try (Connection connection = DriverManager.getConnection(mysql.withDatabaseName("inventory").getJdbcUrl(),
+                mysql.getUsername(), mysql.getPassword())) {
+            connection
+                    .prepareStatement("DELETE FROM customers WHERE id=1005")
+                    .executeUpdate();
+        }
+        //then
+        assertEqualsEventually(() -> mapResultsToSortedList(jet.getMap("cache")),
+                Arrays.asList(
+                        "1001:Customer {id=1001, firstName=Sally, lastName=Thomas, email=sally.thomas@acme.com}",
+                        "1002:Customer {id=1002, firstName=George, lastName=Bailey, email=gbailey@foobar.com}",
+                        "1003:Customer {id=1003, firstName=Edward, lastName=Walker, email=ed@walker.com}",
+                        "1004:Customer {id=1004, firstName=Anne Marie, lastName=Kretchmar, email=annek@noanswer.org}"
+                )
+        );
+    }
+
     @Nonnull
     private StreamSource<ChangeRecord> source(String tableName) {
         return MySqlCdcSources.mysql(tableName)
@@ -244,6 +307,16 @@ public class MySqlIntegrationTest extends AbstractIntegrationTest {
                 .setDatabaseWhitelist("inventory")
                 .setTableWhitelist("inventory." + tableName)
                 .build();
+    }
+
+    private static int getOrderNumber(ChangeRecord record) throws ParsingException {
+        //pick random method for extracting ID in order to test all code paths
+        boolean primitive = ThreadLocalRandom.current().nextBoolean();
+        if (primitive) {
+            return (Integer) record.key().toMap().get("order_number");
+        } else {
+            return record.key().toObject(OrderPrimaryKey.class).id;
+        }
     }
 
     private static class Customer {

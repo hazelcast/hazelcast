@@ -1099,6 +1099,35 @@ CDC source has to replay data for a long period of inactivity, then
 there can be loss. With careful management though we can say that
 at-least once guaranties can practially be provided.
 
+#### CDC Sinks
+
+Change data capture is a source-side functionality in Jet, but we also
+offer some specialized sinks that simplify applying CDC events to an
+IMap, which gives you the ability to reconstruct the contents of the
+original database table. The sinks expect to receive `ChangeRecord`
+objects and apply your custom functions to them that extract the key and
+the value that will be applied to the target IMap.
+
+For example, a sink mapping CDC data to a `Customer` class and
+maintaining a map view of latest known email addresses per customer
+(identified by ID) would look like this:
+
+```java
+Pipeline p = Pipeline.create();
+p.readFrom(source)
+ .withoutTimestamps()
+ .writeTo(CdcSinks.map("customers",
+    r -> r.key().toMap().get("id"),
+    r -> r.value().toObject(Customer.class).email));
+```
+
+> NOTE: The key and value functions have certain limitations. They can
+> be used to map only to objects which the IMDG backend can deserialize,
+> which unfortunately doesn't include user code submitted as a part of
+> the Jet job. So in the above example it's OK to have `String` email
+> values, but we wouldn't be able to use `Customer` directly. Hopefully
+> future Jet versions will address this problem.
+
 ### Elasticsearch
 
 Elasticsearch is a popular fulltext search engine. Hazelcast Jet can
@@ -1409,9 +1438,9 @@ restarted in face of an intermittent failure.
 |`AvroSources.files`|`hazelcast-jet-avro`|batch|N/A|
 |`DebeziumCdcSources.debezium`|`hazelcast-jet-cdc-debezium`|stream|at-least-once|
 |`ElasticSources.elastic`|`hazelcast-jet-elasticsearch-7`|batch|N/A|
-|`MySqlCdcSources.mysql`|`hazelcast-jet-cdc-mysql`|stream|at-least-once|
 |`HadoopSources.inputFormat`|`hazelcast-jet-hadoop`|batch|N/A|
 |`KafkaSources.kafka`|`hazelcast-jet-kafka`|stream|exactly-once|
+|`MySqlCdcSources.mysql`|`hazelcast-jet-cdc-mysql`|stream|at-least-once|
 |`PulsarSources.pulsarConsumer`|`hazelcast-jet-contrib-pulsar`|stream|N/A|
 |`PulsarSources.pulsarReader`|`hazelcast-jet-contrib-pulsar`|stream|exactly-once|
 |`S3Sources.s3`|`hazelcast-jet-s3`|batch|N/A|
@@ -1443,6 +1472,7 @@ processing even with at-least-once sinks.
 |sink|module|streaming support|guarantee|
 |:---|:-----|:--------------|:-------------------|
 |`AvroSinks.files`|`hazelcast-jet-avro`|no|N/A|
+|`CdcSinks.map`|`hazelcast-jet-cdc-debezium`|yes|at-least-once|
 |`ElasticSinks.elastic`|`hazelcast-jet-elasticsearch-7`|yes|at-least-once|
 |`HadoopSinks.outputFormat`|`hazelcast-jet-hadoop`|no|N/A|
 |`KafkaSinks.kafka`|`hazelcast-jet-kafka`|yes|exactly-once|

@@ -27,6 +27,8 @@ import java.util.Objects;
 
 public class ChangeRecordImpl implements ChangeRecord {
 
+    private final long sequenceSource;
+    private final long sequenceValue;
     private final String keyJson;
     private final String valueJson;
 
@@ -36,7 +38,14 @@ public class ChangeRecordImpl implements ChangeRecord {
     private RecordPart key;
     private RecordPart value;
 
-    public ChangeRecordImpl(@Nonnull String keyJson, @Nonnull String valueJson) {
+    public ChangeRecordImpl(
+            long sequenceSource,
+            long sequenceValue,
+            @Nonnull String keyJson,
+            @Nonnull String valueJson
+    ) {
+        this.sequenceSource = sequenceSource;
+        this.sequenceValue = sequenceValue;
         this.keyJson = Objects.requireNonNull(keyJson, "keyJson");
         this.valueJson = Objects.requireNonNull(valueJson, "valueJson");
     }
@@ -90,6 +99,14 @@ public class ChangeRecordImpl implements ChangeRecord {
         return json;
     }
 
+    public long getSequenceSource() {
+        return sequenceSource;
+    }
+
+    public long getSequenceValue() {
+        return sequenceValue;
+    }
+
     public String getKeyJson() {
         return keyJson;
     }
@@ -103,9 +120,10 @@ public class ChangeRecordImpl implements ChangeRecord {
         return toJson();
     }
 
+    @SuppressWarnings("unchecked")
     private static <T> T get(Map<String, Object> map, String key, Class<T> clazz) {
         Object obj = map.get(key);
-        if (obj != null && clazz.isInstance(obj)) {
+        if (clazz.isInstance(obj)) {
             return (T) obj;
         }
         return null;

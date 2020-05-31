@@ -15,8 +15,7 @@
  */
 
 /**
- * Contains source/sink connectors that deal with Change Data Capture (CDC)
- * events from various databases as well as a generic connector for Debezium
- * CDC sources.
+ * Contains connectors for change data capture events from MySQL
+ * databases.
  */
-package com.hazelcast.jet.cdc;
+package com.hazelcast.jet.cdc.mysql;

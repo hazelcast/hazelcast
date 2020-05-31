@@ -18,6 +18,7 @@ package com.hazelcast.jet.impl.connector;
 
 import com.hazelcast.client.impl.clientside.HazelcastClientProxy;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.function.FunctionEx;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorSupplier;
@@ -41,6 +42,18 @@ public abstract class AbstractHazelcastConnectorSupplier implements ProcessorSup
 
     AbstractHazelcastConnectorSupplier(@Nullable String clientXml) {
         this.clientXml = clientXml;
+    }
+
+    public static ProcessorSupplier of(
+            @Nullable String clientXml,
+            @Nonnull FunctionEx<HazelcastInstance, Processor> procFn
+    ) {
+        return new AbstractHazelcastConnectorSupplier(clientXml) {
+            @Override
+            protected Processor createProcessor(HazelcastInstance instance, SerializationService serializationService) {
+                return procFn.apply(instance);
+            }
+        };
     }
 
     @Override

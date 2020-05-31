@@ -704,7 +704,7 @@ public class MasterJobContext {
         sb.append("\n\t").append("Start time: ").append(Util.toLocalDateTime(executionStartTime));
         sb.append("\n\t").append("Duration: ").append(String.format("%,d ms", executionEndTime - executionStartTime));
         if (jobMetrics.stream().noneMatch(rjm -> rjm.getBlob() != null)) {
-            sb.append("\n\tFor further details enable JobConfig.storeMetricsAfterJobCompletion");
+            sb.append("\n\tTo see additional job metrics enable JobConfig.storeMetricsAfterJobCompletion");
         } else {
             JobMetrics jobMetrics = JobMetricsUtil.toJobMetrics(this.jobMetrics);
 

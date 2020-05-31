@@ -285,12 +285,11 @@ This is how the code doing this looks like:
 package org.example;
 
 import com.hazelcast.jet.Jet;
-import com.hazelcast.jet.Util;
+import com.hazelcast.jet.cdc.CdcSinks;
 import com.hazelcast.jet.cdc.ChangeRecord;
-import com.hazelcast.jet.cdc.MySqlCdcSources;
+import com.hazelcast.jet.cdc.mysql.MySqlCdcSources;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.pipeline.Pipeline;
-import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.StreamSource;
 
 public class JetJob {
@@ -309,10 +308,10 @@ public class JetJob {
         Pipeline pipeline = Pipeline.create();
         pipeline.readFrom(source)
                 .withoutTimestamps()
-                .map(record -> record.value().toObject(Customer.class))
-                .map(customer -> Util.entry(customer.id, customer))
                 .peek()
-                .writeTo(Sinks.map("customers"));
+                .writeTo(CdcSinks.map("customers",
+                        r -> r.key().toMap().get("id"),
+                        r -> r.value().toObject(Customer.class).toString()));
 
         JobConfig cfg = new JobConfig().setName("mysql-monitor");
         Jet.bootstrappedInstance().newJob(pipeline, cfg);

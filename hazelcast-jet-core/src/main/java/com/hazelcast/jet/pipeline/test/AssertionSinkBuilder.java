@@ -21,11 +21,12 @@ import com.hazelcast.function.ConsumerEx;
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.internal.util.Preconditions;
 import com.hazelcast.jet.impl.pipeline.SinkImpl;
-import com.hazelcast.jet.impl.pipeline.test.AssertionP;
 import com.hazelcast.jet.pipeline.Sink;
 
 import javax.annotation.Nonnull;
 
+import static com.hazelcast.jet.impl.pipeline.SinkImpl.Type.TOTAL_PARALLELISM_ONE;
+import static com.hazelcast.jet.impl.pipeline.test.AssertionP.assertionP;
 import static com.hazelcast.jet.impl.util.Util.checkSerializable;
 
 /**
@@ -156,6 +157,6 @@ public final class AssertionSinkBuilder<S, T> {
     @Nonnull
     public Sink<T> build() {
         Preconditions.checkNotNull(receiveFn, "receiveFn must be set");
-        return new SinkImpl<>(name, AssertionP.assertionP(name, createFn, receiveFn, timerFn, completeFn), true, null);
+        return new SinkImpl<>(name, assertionP(name, createFn, receiveFn, timerFn, completeFn), TOTAL_PARALLELISM_ONE);
     }
 }

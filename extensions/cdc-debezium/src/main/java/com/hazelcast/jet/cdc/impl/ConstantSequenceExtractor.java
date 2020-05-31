@@ -14,8 +14,19 @@
  * limitations under the License.
  */
 
-/**
- * Contains connectors for change data capture events from MySQL
- * databases.
- */
-package com.hazelcast.jet.cdc;
+package com.hazelcast.jet.cdc.impl;
+
+import java.util.Map;
+
+public class ConstantSequenceExtractor implements SequenceExtractor {
+
+    @Override
+    public long source(Map<String, ?> debeziumPartition, Map<String, ?> debeziumOffset) {
+        return 0;
+    }
+
+    @Override
+    public long sequence(Map<String, ?> debeziumOffset) {
+        return 0;
+    }
+}

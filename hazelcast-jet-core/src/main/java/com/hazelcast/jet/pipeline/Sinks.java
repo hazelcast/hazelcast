@@ -94,7 +94,7 @@ public final class Sinks {
             @Nonnull String sinkName,
             @Nonnull ProcessorMetaSupplier metaSupplier
     ) {
-        return new SinkImpl<>(sinkName, metaSupplier, false, null);
+        return new SinkImpl<>(sinkName, metaSupplier);
     }
 
     /**
@@ -157,7 +157,7 @@ public final class Sinks {
 
     ) {
         return new SinkImpl<>("mapSink(" + mapName + ')',
-                writeMapP(mapName, toKeyFn, toValueFn), false, toKeyFn);
+                writeMapP(mapName, toKeyFn, toValueFn), toKeyFn);
     }
 
     /**
@@ -280,7 +280,7 @@ public final class Sinks {
             @Nonnull BinaryOperatorEx<V> mergeFn
     ) {
         return new SinkImpl<>("mapWithMergingSink(" + mapName + ')',
-                mergeMapP(mapName, toKeyFn, toValueFn,  mergeFn), false, toKeyFn);
+                mergeMapP(mapName, toKeyFn, toValueFn,  mergeFn), toKeyFn);
     }
 
     /**
@@ -344,7 +344,7 @@ public final class Sinks {
      * but for a map in a remote Hazelcast cluster identified by the supplied
      * {@code ClientConfig}.
      * <p>
-     * Due to the used API, the remote cluster must be at least 3.11.
+     * Due to the used API, the remote cluster must be at least version 4.0.
      */
     @Nonnull
     public static <T, K, V> Sink<T> remoteMapWithMerging(
@@ -440,7 +440,7 @@ public final class Sinks {
             @Nonnull BiFunctionEx<? super V, ? super T, ? extends V> updateFn
     ) {
         return new SinkImpl<>("mapWithUpdatingSink(" + mapName + ')',
-                updateMapP(mapName, toKeyFn, updateFn), false, toKeyFn);
+                updateMapP(mapName, toKeyFn, updateFn), toKeyFn);
     }
 
     /**
@@ -498,7 +498,7 @@ public final class Sinks {
      * in a remote Hazelcast cluster identified by the supplied {@code
      * ClientConfig}.
      * <p>
-     * Due to the used API, the remote cluster must be at least 3.11.
+     * Due to the used API, the remote cluster must be at least version 4.0.
      */
     @Nonnull
     public static <T, K, V> Sink<T> remoteMapWithUpdating(
@@ -679,7 +679,7 @@ public final class Sinks {
     @Nonnull
     public static <T extends Entry> Sink<T> cache(@Nonnull String cacheName) {
         //noinspection Convert2MethodRef (provokes a javac 9 bug)
-        return new SinkImpl<>("cacheSink(" + cacheName + ')', writeCacheP(cacheName), false, en -> en.getKey());
+        return new SinkImpl<>("cacheSink(" + cacheName + ')', writeCacheP(cacheName), en -> en.getKey());
     }
 
     /**

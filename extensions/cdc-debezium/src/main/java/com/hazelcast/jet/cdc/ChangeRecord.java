@@ -24,29 +24,24 @@ import javax.annotation.Nonnull;
  * Information pertaining to a single data change event (insertion,
  * delete or update), affecting a single database record.
  * <p>
- * Each event has a <i>key</i>, which identifies the particular record
- * being affected, and a <i>value</i>, which describes the actual change
- * itself.
+ * Each event has a <em>key</em>, identifying the affected record, and a
+ * <em>value</em>, describing the change to that record.
  * <p>
- * Most events have an <i>operation</i> associated with them which
- * specifies the type of change being described (insertion, delete or
- * update). Only some special events, like heartbeats don't have an
- * operation value. (Heartbeat events are not something we encourage the
- * usage of, but since no functionality of the underlying Debezium
- * connectors is disabled they are still theoretically possible to
- * enable and be observed in Jet.)
+ * Most events have an <em>operation</em> which specifies the type of
+ * change (insertion, delete or update). Events without an operation
+ * have specialized usage, for example heartbeats, and aren't supposed
+ * to affect the data model. You can observe and act upon them in a Jet
+ * CDC sink, but we discourage such usage.
  * <p>
- * There is also a <i>timestamp</i> which specifies the moment in time
- * when the event happened. This timestamp is actual event time. It
- * originates in the database change-log, so it's not "processing time",
- * ie. not the moment when the event was observed by our system. Keep in
- * mind though that not all events come from the change-log. The
- * change-log goes back in time only to a limited extent, all older
- * events are parts of a database snapshot constructed when we start
- * monitoring the database and their timestamps are accordingly
- * artificial. Identifying snapshot events is possible most of the time,
- * because their operation will be {@link Operation#SYNC} instead of
- * {@link Operation#INSERT} (one notable exception being MySQL).
+ * All events have a <em>timestamp</em> specifying the moment when the
+ * change event occurred in the database. Normally this is the timestamp
+ * recorded in the database's change log, but since it has a finite size,
+ * the change stream begins with virtual events that reproduce the state of
+ * the table at the start of the change log. These events have an
+ * artificial timestamp. In principle, it should be easy to identify them
+ * because they have a separate {@code SYNC} operation instead of {@code
+ * INSERT}, however some databases emit {@code INSERT} events in both
+ * cases (a notable example is MySQL).
  *
  * @since 4.2
  */
@@ -54,55 +49,51 @@ import javax.annotation.Nonnull;
 public interface ChangeRecord {
 
     /**
-     * Specifies the moment in time when the event happened. This
-     * timestamp is actual event time. It originates in the database
-     * change-log, so it's not "processing time", ie. not the moment
-     * when the event was observed by our system. Keep in mind though
-     * that not all events come from the change-log. The change-log goes
-     * back in time only to a limited extent, all older events are parts
-     * of a database snapshot constructed when we start monitoring the
-     * database and their timestamps are accordingly artificial.
-     * Identifying snapshot events is possible most of the time, because
-     * their operation will be {@link Operation#SYNC} instead of
-     * {@link Operation#INSERT} (one notable exception being MySQL).
+     * Specifies the moment when the change event occurred in the database.
+     * Normally this is the timestamp recorded in the database's change log,
+     * but since it has a finite size, the change stream begins with virtual
+     * events that reproduce the state of the table at the start of the change
+     * log. These events have an artificial timestamp. In principle, it should
+     * be easy to identify them because they have a separate {@code SYNC}
+     * operation instead of {@code INSERT}, however some databases emit {@code
+     * INSERT} events in both cases (a notable example is MySQL).
      *
-     * @throws ParsingException if no parsable timestamp field present
+     * @throws ParsingException if the timestamp field isn't present or is unparsable
      */
     long timestamp() throws ParsingException;
 
     /**
-     * Specifies the type of change being described (insertion, delete or
-     * update). Only some special events, like heartbeats don't have an
-     * operation value.
+     * Returns the type of change this record describes (insert, delete or
+     * update). Some special events, like heartbeats, don't have an operation
+     * value.
      *
      * @return {@link Operation#UNSPECIFIED} if this {@code ChangeRecord}
-     * doesn't have an operation field or appropriate {@link Operation}
-     * that matches what's found in the operation field
-     * @throws ParsingException if there is an operation field, but it's
-     *                          value is not among the handled ones.
+     * doesn't have an operation field, otherwise the appropriate {@link
+     * Operation} that matches the CDC record's operation field
+     * @throws ParsingException if there is an operation field, but its value is not among the handled
+     *                         ones.
      */
     @Nonnull
     Operation operation() throws ParsingException;
 
     /**
-     * Identifies the particular record being affected by the change
-     * event.
+     * Returns the key part of the CDC event. It identifies the affected record.
      */
     @Nonnull
     RecordPart key();
 
     /**
-     * Describes the actual change affected on the record by the change
-     * event.
+     * Returns the value part of the CDC event. It includes fields like the
+     * timestamp, operation, and database record data.
      */
     @Nonnull
     RecordPart value();
 
     /**
-     * Returns raw JSON string which the content of this event is
-     * based on. Mean to be used when higher level parsing (see other
-     * methods) fails for some reason (for example on some untested
-     * DB-connector version combination).
+     * Returns the raw JSON string from the CDC event underlying this {@code
+     * ChangeRecord}. You can use it if higher-level parsing (see other
+     * methods) fails for some reason (for example on some untested combination
+     * of database connector and version).
      */
     @Nonnull
     String toJson();

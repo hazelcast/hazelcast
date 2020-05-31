@@ -17,13 +17,20 @@
 package com.hazelcast.jet.cdc;
 
 import com.hazelcast.jet.annotation.EvolvingApi;
+import com.hazelcast.jet.cdc.impl.CdcSource;
+import com.hazelcast.jet.cdc.impl.ConstantSequenceExtractor;
 import com.hazelcast.jet.cdc.impl.DebeziumConfig;
 import com.hazelcast.jet.pipeline.StreamSource;
 
 import javax.annotation.Nonnull;
 
 /**
- * Contains factory methods for creating change data capture sources
+ * Contains factory methods for creating Change Data Capture (CDC) sources.
+ * <p>
+ * Note: It is better to use first-class CDC sources than this generic one
+ * because it has less functionality. For example, these sources lack
+ * sequence numbers, so functionality based on them (like reordering
+ * protection in {@link CdcSinks}) is disabled.
  *
  * @since 4.2
  */
@@ -34,13 +41,12 @@ public final class DebeziumCdcSources {
     }
 
     /**
-     * Creates a CDC source that streams change data from your Debezium
-     * supported database to the Hazelcast Jet pipeline.
+     * Creates a CDC source that streams change data from a
+     * Debezium-supported database to a Hazelcast Jet pipeline.
      *
-     * @param name       name of this source, needs to be unique, will be
-     *                   passed to the underlying Kafka Connect source
-     * @return builder that can be used to set source properties and also
-     * to construct the source once configuration is done
+     * @param name the name of this source, must unique, will be passed to the underlying
+     *             Kafka Connect source
+     * @return a builder you can use to set the source's properties and then construct it
      */
     @Nonnull
     public static Builder debezium(@Nonnull String name, @Nonnull String connectorClass) {
@@ -48,26 +54,25 @@ public final class DebeziumCdcSources {
     }
 
     /**
-     * Builder for configuring a CDC source that streams change data
-     * from any Debezium supported database to Hazelcast Jet.
+     * A builder to configure a CDC source that streams the change data from
+     * a Debezium-supported database to Hazelcast Jet.
      */
     public static final class Builder {
 
         private final DebeziumConfig config;
 
         /**
-         * @param name           name of the source, needs to be unique,
-         *                       will be passed to the underlying Kafka
-         *                       Connect source
-         * @param connectorClass name of the Java class for the connector,
-         *                       hardcoded for each type of DB
+         * @param name name of the source, needs to be unique, will be passed to the underlying
+         *             Kafka Connect source
+         * @param connectorClass name of the Java class for the connector, hardcoded for each type of DB
          */
         private Builder(String name, String connectorClass) {
             config = new DebeziumConfig(name, connectorClass);
+            config.setProperty(CdcSource.SEQUENCE_EXTRACTOR_CLASS_PROPERTY, ConstantSequenceExtractor.class.getName());
         }
 
         /**
-         * Can be used to set any property supported by Debezium.
+         * Sets a source property. These properties are passed to Debezium.
          */
         @Nonnull
         public Builder setProperty(@Nonnull String key, @Nonnull String value) {
@@ -76,7 +81,7 @@ public final class DebeziumCdcSources {
         }
 
         /**
-         * Returns an actual source based on the properties set so far.
+         * Returns the CDC source based on the properties set.
          */
         @Nonnull
         public StreamSource<ChangeRecord> build() {
