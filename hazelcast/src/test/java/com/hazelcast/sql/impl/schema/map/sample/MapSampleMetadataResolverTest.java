@@ -25,7 +25,7 @@ import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.sql.SqlErrorCode;
 import com.hazelcast.sql.impl.QueryException;
-import com.hazelcast.sql.impl.extract.JavaClassQueryTargetDescriptor;
+import com.hazelcast.sql.impl.extract.GenericQueryTargetDescriptor;
 import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.schema.map.MapSchemaTestSupport;
 import com.hazelcast.sql.impl.schema.map.MapTableField;
@@ -432,7 +432,7 @@ public class MapSampleMetadataResolverTest extends MapSchemaTestSupport {
 
         MapSampleMetadata metadata = MapSampleMetadataResolver.resolve(getSerializationService(), object, false, key);
 
-        assertEquals(new JavaClassQueryTargetDescriptor(expectedClass.getName()), metadata.getDescriptor());
+        assertEquals(GenericQueryTargetDescriptor.INSTANCE, metadata.getDescriptor());
 
         checkFields(
             metadata,

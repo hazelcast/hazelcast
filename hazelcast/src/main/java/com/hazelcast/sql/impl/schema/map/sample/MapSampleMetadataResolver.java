@@ -24,10 +24,7 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.extract.GenericQueryTargetDescriptor;
-import com.hazelcast.sql.impl.extract.JavaClassQueryTargetDescriptor;
-import com.hazelcast.sql.impl.extract.PortableQueryTargetDescriptor;
 import com.hazelcast.sql.impl.extract.QueryPath;
-import com.hazelcast.sql.impl.extract.QueryTargetDescriptor;
 import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.schema.map.MapTableField;
 import com.hazelcast.sql.impl.type.QueryDataType;
@@ -78,10 +75,10 @@ public final class MapSampleMetadataResolver {
                 } else if (data.isJson()) {
                     throw new UnsupportedOperationException("JSON objects are not supported.");
                 } else {
-                    return resolveClass(ss.toObject(data).getClass(), key, binary);
+                    return resolveClass(ss.toObject(data).getClass(), key);
                 }
             } else {
-                return resolveClass(target.getClass(), key, binary);
+                return resolveClass(target.getClass(), key);
             }
         } catch (Exception e) {
             throw QueryException.error("Failed to resolve " + (key ? "key" : "value") + " metadata: " + e.getMessage(), e);
@@ -112,9 +109,7 @@ public final class MapSampleMetadataResolver {
             fields.putIfAbsent(name, new MapTableField(name, type, new QueryPath(name, isKey)));
         }
 
-        QueryTargetDescriptor descriptor = new PortableQueryTargetDescriptor(clazz.getFactoryId(), clazz.getClassId());
-
-        return new MapSampleMetadata(descriptor, new LinkedHashMap<>(fields));
+        return new MapSampleMetadata(GenericQueryTargetDescriptor.INSTANCE, new LinkedHashMap<>(fields));
     }
 
     @SuppressWarnings("checkstyle:ReturnCount")
@@ -152,7 +147,7 @@ public final class MapSampleMetadataResolver {
         }
     }
 
-    private static MapSampleMetadata resolveClass(Class<?> clazz, boolean isKey, boolean binary) {
+    private static MapSampleMetadata resolveClass(Class<?> clazz, boolean isKey) {
         TreeMap<String, TableField> fields = new TreeMap<>();
 
         // Add top-level object.
@@ -195,10 +190,7 @@ public final class MapSampleMetadataResolver {
             }
         }
 
-        QueryTargetDescriptor descriptor =
-            binary ? new GenericQueryTargetDescriptor() : new JavaClassQueryTargetDescriptor(clazz.getName());
-
-        return new MapSampleMetadata(descriptor, new LinkedHashMap<>(fields));
+        return new MapSampleMetadata(GenericQueryTargetDescriptor.INSTANCE, new LinkedHashMap<>(fields));
     }
 
     private static String extractAttributeNameFromMethod(Class<?> clazz, Method method) {
