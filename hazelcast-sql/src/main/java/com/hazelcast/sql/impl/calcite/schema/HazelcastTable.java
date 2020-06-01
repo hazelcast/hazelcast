@@ -32,7 +32,9 @@ import org.apache.calcite.schema.impl.AbstractTable;
 import org.apache.calcite.sql.type.SqlTypeName;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Base class for all tables in the Calcite integration:
@@ -47,6 +49,7 @@ public class HazelcastTable extends AbstractTable {
     private final Statistic statistic;
 
     private RelDataType rowType;
+    private Set<String> hiddenFieldNames;
 
     public HazelcastTable(Table target, Statistic statistic) {
         this.target = target;
@@ -63,6 +66,8 @@ public class HazelcastTable extends AbstractTable {
         if (rowType != null) {
             return rowType;
         }
+
+        hiddenFieldNames = new HashSet<>();
 
         List<RelDataTypeField> convertedFields = new ArrayList<>(target.getFieldCount());
 
@@ -84,6 +89,10 @@ public class HazelcastTable extends AbstractTable {
 
             RelDataTypeField convertedField = new RelDataTypeFieldImpl(fieldName, convertedFields.size(), nullableRelDataType);
             convertedFields.add(convertedField);
+
+            if (field.isHidden()) {
+                hiddenFieldNames.add(fieldName);
+            }
         }
 
         rowType = new RelRecordType(StructKind.PEEK_FIELDS, convertedFields, false);
@@ -94,5 +103,11 @@ public class HazelcastTable extends AbstractTable {
     @Override
     public Statistic getStatistic() {
         return statistic;
+    }
+
+    public boolean isHidden(String fieldName) {
+        assert hiddenFieldNames != null;
+
+        return hiddenFieldNames.contains(fieldName);
     }
 }

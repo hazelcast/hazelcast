@@ -91,7 +91,7 @@ public class LocalPartitionedMapConnector extends SqlKeyValueConnector {
 
     private static List<TableField> toMapTableFields(List<ExternalField> externalFields) {
         return externalFields.stream()
-                             .map(field -> new MapTableField(field.name(), field.type(), QueryPath.create(field.name())))
+                             .map(field -> new MapTableField(field.name(), field.type(), false, QueryPath.create(field.name())))
                              .collect(toList());
     }
 }

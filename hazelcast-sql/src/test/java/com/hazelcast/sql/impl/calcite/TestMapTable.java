@@ -47,16 +47,24 @@ public class TestMapTable extends AbstractMapTable {
     }
 
     public static TableField field(String name) {
-        return field(name, QueryDataType.INT);
+        return field(name, false);
+    }
+
+    public static TableField field(String name, boolean hidden) {
+        return field(name, QueryDataType.INT, hidden);
     }
 
     public static TableField field(String name, QueryDataType type) {
-        return new Field(name, type);
+        return field(name, type, false);
+    }
+
+    public static TableField field(String name, QueryDataType type, boolean hidden) {
+        return new Field(name, type, hidden);
     }
 
     private static class Field extends TableField {
-        private Field(String name, QueryDataType type) {
-            super(name, type);
+        private Field(String name, QueryDataType type, boolean hidden) {
+            super(name, type, hidden);
         }
     }
 }

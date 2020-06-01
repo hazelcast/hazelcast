@@ -18,6 +18,7 @@ package com.hazelcast.sql.impl.calcite.opt;
 
 import com.hazelcast.sql.impl.SqlTestSupport;
 import com.hazelcast.sql.impl.calcite.OptimizerContext;
+import com.hazelcast.sql.impl.calcite.TestMapTable;
 import com.hazelcast.sql.impl.calcite.opt.logical.LogicalRel;
 import com.hazelcast.sql.impl.calcite.opt.logical.LogicalRules;
 import com.hazelcast.sql.impl.calcite.opt.logical.RootLogicalRel;
@@ -27,10 +28,8 @@ import com.hazelcast.sql.impl.calcite.schema.HazelcastSchema;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastSchemaUtils;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
 import com.hazelcast.sql.impl.calcite.schema.MapTableStatistic;
-import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.schema.ConstantTableStatistics;
 import com.hazelcast.sql.impl.schema.TableField;
-import com.hazelcast.sql.impl.schema.map.MapTableField;
 import com.hazelcast.sql.impl.schema.map.MapTableIndex;
 import com.hazelcast.sql.impl.schema.map.PartitionedMapTable;
 import com.hazelcast.sql.impl.type.QueryDataType;
@@ -58,7 +57,6 @@ import static junit.framework.TestCase.assertEquals;
  * Base class to test optimizers.
  */
 public abstract class OptimizerTestSupport extends SqlTestSupport {
-
     protected RelNode optimizeLogical(String sql) {
         return optimize(sql, 1, false).getLogical();
     }
@@ -75,12 +73,6 @@ public abstract class OptimizerTestSupport extends SqlTestSupport {
         return optimize(sql, nodeCount, true).getPhysical();
     }
 
-    /**
-     * Optimize with the default schema.
-     *
-     * @param sql SQL.
-     * @return Context.
-     */
     private Result optimize(String sql, int nodeCount, boolean physical) {
         HazelcastSchema schema = createDefaultSchema();
 
@@ -184,7 +176,7 @@ public abstract class OptimizerTestSupport extends SqlTestSupport {
             String fieldName = (String) namesAndTypes[i * 2];
             QueryDataType fieldType = (QueryDataType) namesAndTypes[i * 2 + 1];
 
-            MapTableField field = new MapTableField(fieldName, fieldType, new QueryPath(fieldName, false));
+            TableField field = TestMapTable.field(fieldName, fieldType, false);
 
             res.add(field);
         }

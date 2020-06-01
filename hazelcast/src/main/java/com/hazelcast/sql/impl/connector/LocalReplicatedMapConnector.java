@@ -58,7 +58,7 @@ public class LocalReplicatedMapConnector extends SqlKeyValueConnector {
 
     private static List<TableField> toMapFields(List<ExternalField> externalFields) {
         return externalFields.stream()
-                             .map(field -> new MapTableField(field.name(), field.type(), QueryPath.create(field.name())))
+                             .map(field -> new MapTableField(field.name(), field.type(), false, QueryPath.create(field.name())))
                              .collect(toList());
     }
 }
