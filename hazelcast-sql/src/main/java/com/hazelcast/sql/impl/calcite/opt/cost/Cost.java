@@ -196,7 +196,7 @@ public class Cost implements RelOptCost {
         } else if (equals(ZERO)) {
             content = "zero";
         } else {
-            content = "rows=" + rows + ", cpu=" + cpu + ", io=" + network;
+            content = "rows=" + rows + ", cpu=" + cpu + ", network=" + network;
         }
 
         return getClass().getSimpleName() + '{' + content + '}';

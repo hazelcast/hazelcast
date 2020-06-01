@@ -14,13 +14,11 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.optimizer.logical;
+package com.hazelcast.sql.impl.calcite.opt.logical;
 
-import com.hazelcast.sql.impl.calcite.opt.logical.JoinLogicalRel;
-import com.hazelcast.sql.impl.calcite.opt.logical.ProjectLogicalRel;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastSchema;
 import com.hazelcast.sql.impl.expression.predicate.ComparisonMode;
-import com.hazelcast.sql.optimizer.OptimizerTestSupport;
+import com.hazelcast.sql.impl.calcite.opt.OptimizerTestSupport;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -42,7 +40,7 @@ import static com.hazelcast.sql.impl.type.QueryDataType.INT;
 // TODO: More tests with different join types and different expressions and permutations
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class LogicalOptimizerJoinFilterTest extends LogicalOptimizerTestSupport {
+public class LogicalJoinFilterTest extends LogicalOptimizerTestSupport {
     @Override
     protected HazelcastSchema createDefaultSchema() {
         Map<String, Table> tableMap = new HashMap<>();

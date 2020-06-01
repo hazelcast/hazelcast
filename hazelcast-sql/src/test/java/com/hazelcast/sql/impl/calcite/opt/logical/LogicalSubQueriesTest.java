@@ -14,15 +14,12 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.optimizer.logical;
+package com.hazelcast.sql.impl.calcite.opt.logical;
 
-import com.hazelcast.sql.impl.calcite.opt.logical.AggregateLogicalRel;
-import com.hazelcast.sql.impl.calcite.opt.logical.JoinLogicalRel;
-import com.hazelcast.sql.impl.calcite.opt.logical.ProjectLogicalRel;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastSchema;
 import com.hazelcast.sql.impl.expression.predicate.ComparisonMode;
 import com.hazelcast.sql.impl.expression.predicate.IsNotNullPredicate;
-import com.hazelcast.sql.optimizer.OptimizerTestSupport;
+import com.hazelcast.sql.impl.calcite.opt.OptimizerTestSupport;
 import org.apache.calcite.plan.RelOptUtil;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.core.JoinRelType;
@@ -36,7 +33,7 @@ import java.util.Map;
 import static com.hazelcast.sql.impl.type.QueryDataType.INT;
 
 // TODO: Tests with SINGLE_VALUE decorrelations (i.e. when the subquery is in the SELECT or WHERE, etc)
-public class LogicalOptimizerSubQueriesTest extends LogicalOptimizerTestSupport {
+public class LogicalSubQueriesTest extends LogicalOptimizerTestSupport {
     @Override
     protected HazelcastSchema createDefaultSchema() {
         Map<String, Table> tableMap = new HashMap<>();

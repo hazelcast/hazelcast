@@ -14,20 +14,14 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.optimizer.logical;
+package com.hazelcast.sql.impl.calcite.opt.logical;
 
 import com.hazelcast.sql.impl.QueryParameterMetadata;
-import com.hazelcast.sql.impl.calcite.opt.logical.AggregateLogicalRel;
-import com.hazelcast.sql.impl.calcite.opt.logical.JoinLogicalRel;
-import com.hazelcast.sql.impl.calcite.opt.logical.LogicalRel;
-import com.hazelcast.sql.impl.calcite.opt.logical.MapScanLogicalRel;
-import com.hazelcast.sql.impl.calcite.opt.logical.ProjectLogicalRel;
-import com.hazelcast.sql.impl.calcite.opt.logical.RootLogicalRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.visitor.PlanCreateVisitor;
 import com.hazelcast.sql.impl.calcite.opt.physical.visitor.RexToExpressionVisitor;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.aggregate.AggregateExpression;
-import com.hazelcast.sql.optimizer.OptimizerTestSupport;
+import com.hazelcast.sql.impl.calcite.opt.OptimizerTestSupport;
 import com.hazelcast.sql.support.TestPlanNodeSchema;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.core.AggregateCall;
@@ -43,11 +37,6 @@ import static junit.framework.TestCase.assertEquals;
  * Utility methods for logical optimizer tests.
  */
 public abstract class LogicalOptimizerTestSupport extends OptimizerTestSupport {
-    @Override
-    protected final boolean isOptimizePhysical() {
-        return false;
-    }
-
     /**
      * Perform logical optimization.
      *
@@ -55,11 +44,15 @@ public abstract class LogicalOptimizerTestSupport extends OptimizerTestSupport {
      * @return Input of the root node
      */
     protected RelNode optimizeLogical(String sql) {
-        LogicalRel rel = optimize(sql).getLogical();
+        LogicalRel rel = optimize(sql, true).getLogical();
 
         RootLogicalRel root = assertRoot(rel);
 
         return root.getInput();
+    }
+
+    protected RelNode optimizeLogical1(String sql) {
+        return optimize(sql, true).getLogical();
     }
 
     protected static RootLogicalRel assertRoot(RelNode node) {

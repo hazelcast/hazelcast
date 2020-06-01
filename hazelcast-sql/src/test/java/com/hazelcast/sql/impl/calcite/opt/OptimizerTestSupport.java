@@ -14,11 +14,10 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.optimizer;
+package com.hazelcast.sql.impl.calcite.opt;
 
 import com.hazelcast.sql.impl.SqlTestSupport;
 import com.hazelcast.sql.impl.calcite.OptimizerContext;
-import com.hazelcast.sql.impl.calcite.opt.OptUtils;
 import com.hazelcast.sql.impl.calcite.opt.logical.LogicalRel;
 import com.hazelcast.sql.impl.calcite.opt.logical.LogicalRules;
 import com.hazelcast.sql.impl.calcite.opt.logical.RootLogicalRel;
@@ -80,9 +79,14 @@ public abstract class OptimizerTestSupport extends SqlTestSupport {
     }
 
     /**
-     * @return {code True} if physical optimization should be performed.
+     * Perform physical optimization.
+     *
+     * @param sql SQL.
+     * @return Input of the root node.
      */
-    protected abstract boolean isOptimizePhysical();
+    protected RelNode optimizePhysical(String sql) {
+        return optimize(sql, true).getPhysical();
+    }
 
     /**
      * Optimize with the default schema.
@@ -90,10 +94,10 @@ public abstract class OptimizerTestSupport extends SqlTestSupport {
      * @param sql SQL.
      * @return Context.
      */
-    protected Result optimize(String sql) {
+    protected Result optimize(String sql, boolean physical) {
         HazelcastSchema schema = createDefaultSchema();
 
-        return optimize(sql, schema);
+        return optimize(sql, schema, physical);
     }
 
     /**
@@ -103,7 +107,7 @@ public abstract class OptimizerTestSupport extends SqlTestSupport {
      * @param schema Schema.
      * @return Result.
      */
-    protected Result optimize(String sql, HazelcastSchema schema) {
+    protected Result optimize(String sql, HazelcastSchema schema, boolean physical) {
         OptimizerContext context = OptimizerContext.create(
             null,
             HazelcastSchemaUtils.createCatalog(schema),
@@ -111,7 +115,7 @@ public abstract class OptimizerTestSupport extends SqlTestSupport {
             1
         );
 
-        return optimize(sql, context);
+        return optimize(sql, context, physical);
     }
 
     /**
@@ -121,13 +125,13 @@ public abstract class OptimizerTestSupport extends SqlTestSupport {
      * @param context Context.
      * @return Result.
      */
-    protected Result optimize(String sql, OptimizerContext context) {
+    protected Result optimize(String sql, OptimizerContext context, boolean physical) {
         SqlNode node = context.parse(sql).getNode();
-        RelNode converted = context.convert(node);
-        LogicalRel logical = optimizeLogical(context, converted);
-        PhysicalRel physical = isOptimizePhysical() ? optimizePhysical(context, logical) : null;
+        RelNode convertedRel = context.convert(node);
+        LogicalRel logicalRel = optimizeLogical(context, convertedRel);
+        PhysicalRel physicalRel = physical ? optimizePhysical(context, logicalRel) : null;
 
-        Result res = new Result(node, converted, logical, physical);
+        Result res = new Result(node, convertedRel, logicalRel, physicalRel);
 
         last = res;
 
@@ -285,7 +289,9 @@ public abstract class OptimizerTestSupport extends SqlTestSupport {
         return res;
     }
 
-    public static void assertPlans(PlanRows expected, PlanRows actual) {
+    public static void assertPlan(RelNode rel, PlanRows expected) {
+        PlanRows actual = plan(rel);
+
         int expectedRowCount = expected.getRowCount();
         int actualRowCount = actual.getRowCount();
 
@@ -297,16 +303,19 @@ public abstract class OptimizerTestSupport extends SqlTestSupport {
 
             assertEquals(
                 planErrorMessage(
-                    "Plan rows are different:\n>>> EXPECTED: " + expected + "\n>>> ACTUAL: " + actual + "\n", expected, actual
+                    "Plan rows are different at " + (i + 1), expected, actual
                 ),
                 expectedRow,
                 actualRow
             );
         }
+
+        System.out.println(">>> VERIFIED PLAN:");
+        System.out.println(actual);
     }
 
     private static String planErrorMessage(String message, PlanRows expected, PlanRows actual) {
-        return message + "\n>>> EXPECTED PLAN:" + expected + "\n>>> ACTUAL PLAN:" + actual;
+        return message + "\n\n>>> EXPECTED PLAN:\n" + expected + "\n>>> ACTUAL PLAN:\n" + actual;
     }
 
     /**

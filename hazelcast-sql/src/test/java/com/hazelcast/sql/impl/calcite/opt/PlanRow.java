@@ -14,9 +14,10 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.optimizer;
+package com.hazelcast.sql.impl.calcite.opt;
 
 import com.hazelcast.sql.impl.calcite.opt.cost.Cost;
+import org.apache.calcite.rel.RelNode;
 
 import java.text.DecimalFormat;
 
@@ -30,16 +31,16 @@ public class PlanRow {
     private final Double rowCount;
     private final String cost;
 
-    public PlanRow(int level, String node, String signature) {
-        this(level, node, signature, null, (String) null);
+    public PlanRow(int level, Class<? extends RelNode> nodeClass, String signature) {
+        this(level, nodeClass.getSimpleName(), signature, null, null);
     }
 
-    public PlanRow(int level, String node, String signature, Double rowCount) {
-        this(level, node, signature, rowCount, (String) null);
+    public PlanRow(int level, Class<? extends RelNode> nodeClass, String signature, Double rowCount) {
+        this(level, nodeClass.getSimpleName(), signature, rowCount, null);
     }
 
-    public PlanRow(int level, String node, String signature, Double rowCount, Cost cost) {
-        this(level, node, signature, rowCount, cost.toString());
+    public PlanRow(int level, Class<? extends RelNode> nodeClass, String signature, Double rowCount, Cost cost) {
+        this(level, nodeClass.getSimpleName(), signature, rowCount, cost.toString());
     }
 
     public PlanRow(int level, String node, String signature, Double rowCount, String cost) {
@@ -79,11 +80,18 @@ public class PlanRow {
         }
 
         // Get node and signature
-        int signatureOpen = input.indexOf('(');
-        int signatureClose = input.contains(":") ? input.indexOf(":") - 1 : input.lastIndexOf(")");
+        String nodeAndSignature = input.substring(0, input.indexOf(":")).trim();
 
-        String node = input.substring(level * 2, signatureOpen);
-        String signature = input.substring(signatureOpen + 1, signatureClose);
+        String node;
+        String signature;
+
+        if (input.contains("(")) {
+            node = nodeAndSignature.substring(0, nodeAndSignature.indexOf('('));
+            signature = nodeAndSignature.substring(nodeAndSignature.indexOf('(') + 1, nodeAndSignature.length() - 1);
+        } else {
+            node = nodeAndSignature;
+            signature = "";
+        }
 
         // Get row count
         int rowCountPos = input.indexOf("rowcount = ");
@@ -94,9 +102,52 @@ public class PlanRow {
         // Get cost
         int costPos = input.indexOf("Cost");
 
-        String cost = costPos != -1 ? input.substring(costPos, input.indexOf("}", costPos)) : null;
+        String cost = costPos != -1 ? input.substring(costPos, input.indexOf("}", costPos) + 1) : null;
 
         return new PlanRow(level, node, signature, rowCount, cost);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        PlanRow planRow = (PlanRow) o;
+
+        if (level != planRow.level) {
+            return false;
+        }
+
+        if (!node.equals(planRow.node)) {
+            return false;
+        }
+
+        if (!signature.equals(planRow.signature)) {
+            return false;
+        }
+
+        if (rowCount != null && planRow.rowCount != null && !FORMAT.format(rowCount).equals(FORMAT.format(planRow.rowCount))) {
+            return false;
+        }
+
+        return cost == null || planRow.cost == null || cost.equals(planRow.cost);
+    }
+
+    @Override
+    public int hashCode() {
+        int result = level;
+
+        result = 31 * result + node.hashCode();
+        result = 31 * result + signature.hashCode();
+        result = 31 * result + rowCount.hashCode();
+        result = 31 * result + cost.hashCode();
+
+        return result;
     }
 
     @Override
@@ -107,7 +158,11 @@ public class PlanRow {
             res.append("  ");
         }
 
-        res.append(node).append("(").append(signature).append(")");
+        res.append(node);
+
+        if (signature.length() != 0) {
+            res.append("(").append(signature).append(")");
+        }
 
         if (rowCount != null) {
             res.append(": rowCount = ").append(FORMAT.format(rowCount));

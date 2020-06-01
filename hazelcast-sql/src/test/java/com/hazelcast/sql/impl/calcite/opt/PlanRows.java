@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.optimizer;
+package com.hazelcast.sql.impl.calcite.opt;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -42,8 +42,10 @@ public class PlanRows {
     public String toString() {
         StringBuilder res = new StringBuilder();
 
+        int i = 1;
+
         for (PlanRow row : rows) {
-            res.append(row).append("\n");
+            res.append(String.format("%02d", i++)).append(": ").append(row).append("\n");
         }
 
         return res.toString();

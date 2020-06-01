@@ -116,6 +116,10 @@ public final class MapScanPhysicalRule extends RelOptRule {
         List<MapTableIndex> indexes,
         List<RelNode> transforms
     ) {
+        if (indexes == null || indexes.isEmpty()) {
+            return;
+        }
+
         RexNode filter = scan.getFilter();
 
         if (filter == null) {

@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.optimizer.logical;
+package com.hazelcast.sql.impl.calcite.opt.logical;
 
-import com.hazelcast.sql.impl.calcite.opt.logical.ProjectLogicalRel;
+import com.hazelcast.sql.impl.calcite.opt.PlanRow;
 import com.hazelcast.sql.impl.expression.math.PlusFunction;
 import com.hazelcast.sql.impl.expression.predicate.AndPredicate;
 import com.hazelcast.sql.impl.expression.predicate.ComparisonMode;
-import com.hazelcast.sql.optimizer.OptimizerTestSupport;
+import com.hazelcast.sql.impl.calcite.opt.OptimizerTestSupport;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -34,16 +34,20 @@ import org.junit.runner.RunWith;
  */
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class LogicalOptimizerProjectFilterTest extends LogicalOptimizerTestSupport {
+public class LogicalProjectFilterTest extends LogicalOptimizerTestSupport {
     /**
      * Before: Project <- Scan
      * After : Scan(Project)
      */
     @Test
     public void testProjectIntoScan() {
-        RelNode rootInput = optimizeLogical("SELECT f1, f2 FROM p");
-
-        assertScan(rootInput, OptimizerTestSupport.list(0, 1), null);
+        assertPlan(
+            optimizeLogical1("SELECT f1, f2 FROM p"),
+            plan(
+                new PlanRow(0, RootLogicalRel.class, "", 100d),
+                new PlanRow(1, MapScanLogicalRel.class, "table=[[hazelcast, p]], projects=[[0, 1]]", 100d)
+            )
+        );
     }
 
     /**

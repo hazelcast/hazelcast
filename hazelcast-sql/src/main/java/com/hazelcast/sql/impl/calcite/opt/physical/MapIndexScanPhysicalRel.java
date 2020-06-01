@@ -97,7 +97,7 @@ public class MapIndexScanPhysicalRel extends AbstractMapScanRel implements Physi
     @Override
     public RelWriter explainTerms(RelWriter pw) {
         return super.explainTerms(pw)
-           .item("index", index)
+           .item("index", index.getName())
            .item("indexExp", indexExp)
            .item("remainderExp", remainderExp);
     }

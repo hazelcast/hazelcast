@@ -14,33 +14,29 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.optimizer.physical;
+package com.hazelcast.sql.impl.calcite.opt.physical;
 
-import org.apache.calcite.rel.RelNode;
+import com.hazelcast.sql.impl.calcite.opt.OptimizerTestSupport;
+import com.hazelcast.sql.impl.calcite.opt.PlanRow;
 import org.junit.Test;
 
 /**
  * Tests for physical optimizer project/filter stuff.
  */
-public class PhysicalOptimizerProjectFilterTest extends PhysicalOptimizerTestSupport {
+public class PhysicalProjectFilterTest extends OptimizerTestSupport {
     /**
      * Before: Project2(expression) <- Project1 <- Scan
      * After : Project2 <- Scan(Project2)
      */
     @Test
     public void testProjectExpressionProjectIntoScan() {
-        RelNode rootInput = optimizePhysical("SELECT f1 + f2, f3 FROM (SELECT f1, f2, f3, f4 FROM p)");
-
-        System.out.println("Done");
-
-//        ProjectLogicalRel project = assertProject(
-//            rootInput,
-//            list(
-//                new PlusMinusFunction(new ColumnExpression(0), new ColumnExpression(1), false),
-//                new ColumnExpression(2)
-//            )
-//        );
-//
-//        assertScan(project.getInput(), list("f1", "f2", "f3", "f4"), list(0, 1, 2), null);
+        assertPlan(
+            optimizePhysical("SELECT f1 + f2, f3 FROM (SELECT f1, f2, f3, f4 FROM p)"),
+            plan(
+                new PlanRow(0, RootPhysicalRel.class, "", 100d),
+                new PlanRow(1, ProjectPhysicalRel.class, "EXPR$0=[+($0, $1)], f3=[$2]", 100d),
+                new PlanRow(2, MapScanPhysicalRel.class, "table=[[hazelcast, p]], projects=[[0, 1, 2]]", 100d)
+            )
+        );
     }
 }
