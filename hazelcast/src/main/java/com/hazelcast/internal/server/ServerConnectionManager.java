@@ -84,14 +84,19 @@ public interface ServerConnectionManager
     ServerConnection get(Address address);
 
     /**
-     * Gets the existing connection for a given address or connects. This call is silent.
+     * Gets the existing connection for a given address or connects.
+     * <p>
+     * Default implementation is equivalent to calling:
+     * <pre>{@code
+     * getOrConnect(address, false)
+     * }</pre>
      *
      * @param address the address to connect to
      * @return the found connection, or {@code null} if no connection exists
      * @see #getOrConnect(Address, boolean)
      */
     default ServerConnection getOrConnect(Address address) {
-        return getOrConnect(address, true);
+        return getOrConnect(address, false);
     }
 
     /**
@@ -102,7 +107,8 @@ public interface ServerConnectionManager
      * {@link #get(Address)}.
      *
      * @param address the address to connect to
-     * @param silent  if logging should be done on debug level ({@code silent=true}) or on info level ({@code silent=false})
+     * @param silent   connection errors are reported to error handler and logged on info level when {@code false},
+     *                 otherwise errors are not reported and logged on debug level
      * @return the existing connection
      */
     ServerConnection getOrConnect(Address address, boolean silent);
@@ -130,7 +136,7 @@ public interface ServerConnectionManager
      * @param target The address of the target machine where the Packet should be transmitted.
      * @return true if the transmit was a success, false if a failure.
      * @throws NullPointerException if packet or target is null.
-     * @see #transmit(Packet, Connection)
+     * @see #transmit(Packet, ServerConnection)
      */
     boolean transmit(Packet packet, Address target);
 
