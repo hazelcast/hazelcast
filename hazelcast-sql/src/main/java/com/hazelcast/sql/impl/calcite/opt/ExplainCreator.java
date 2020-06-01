@@ -111,9 +111,9 @@ public final class ExplainCreator {
             nodeId,
             node.getRelTypeName(),
             getExplain(node, nodeId),
-            cost.getRows(),
-            cost.getCpu(),
-            cost.getIo(),
+            cost.getRowsInternal(),
+            cost.getCputInternal(),
+            cost.getNetworkInternal(),
             level
         );
     }

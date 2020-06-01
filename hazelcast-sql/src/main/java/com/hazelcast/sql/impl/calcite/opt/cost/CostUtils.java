@@ -16,31 +16,73 @@
 
 package com.hazelcast.sql.impl.calcite.opt.cost;
 
+import com.hazelcast.sql.impl.calcite.opt.physical.visitor.SqlToQueryType;
+import org.apache.calcite.rel.RelNode;
+import org.apache.calcite.rel.type.RelDataTypeField;
+
 /**
  * Utility methods for cost estimation.
  */
 public final class CostUtils {
-    /** Multiplier to be applied to a CPU cost a project outside a scan operator. */
-    public static final double CPU_PROJECT_OUTSIDE_MULTIPLIER = 1.0d;
+    /** CPU multiplier applied to a project/filter inside a scan operator. */
+    public static final double CONSTRAINED_SCAN_CPU_MULTIPLIER = 0.8d;
 
-    /** Multiplier to be applied to a CPU cost a project inside a scan operator. */
-    public static final double CPU_PROJECT_INSIDE_MULTIPLIER = 0.8d;
+    /** CPU multiplier applied to normal scan. */
+    public static final double TABLE_SCAN_CPU_MULTIPLIER = 1.0d;
+
+    /** CPU multiplier applied to index scan. */
+    public static final double INDEX_SCAN_CPU_MULTIPLIER = 1.1d;
+
+    /** Multiplier for CPU part of the cost. Assumes 1ns per CPU item. */
+    public static final double CPU_COST_MULTIPLIER = 1.0d;
+
+    /** Multiplier for network part of the cost. Assume ~10mcs per 1Kb that results in ~10ns per byte. */
+    public static final double NETWORK_COST_MULTIPLIER = CPU_COST_MULTIPLIER * 10;
+
+    /** Replacement value if filter selectivity cannot be determined.  */
+    private static final double UNKNOWN_SELECTIVITY = 0.1d;
 
     private CostUtils() {
         // No-op.
     }
 
     /**
-     * Adjust cost of a project operation based on whether it is located in a separate project operator, or inlined into scan.
-     * Outside project is more expensive.
+     * Adjust cost of a CPU-related operation (project, filter) located inside a scan. This allows optimzier to prefer
+     * filters and projects inlined into the scan.
      *
      * @param cpu CPU.
-     * @param inside {@code True} if project is located inside scan.
      * @return Adjusted cost.
      */
-    public static double adjustProjectCpu(double cpu, boolean inside) {
-        double multiplier = inside ? CPU_PROJECT_INSIDE_MULTIPLIER : CPU_PROJECT_OUTSIDE_MULTIPLIER;
+    public static double adjustCpuForConstrainedScan(double cpu) {
+        return cpu * CONSTRAINED_SCAN_CPU_MULTIPLIER;
+    }
 
-        return cpu * multiplier;
+    /**
+     * Adjust row count based on filter selectivity.
+     *
+     * @param rowCount Row count.
+     * @param selectivity Selectivity.
+     * @return New row count.
+     */
+    public static double adjustFilteredRowCount(double rowCount, Double selectivity) {
+        if (selectivity == null) {
+            selectivity = UNKNOWN_SELECTIVITY;
+        }
+
+        return rowCount * selectivity;
+    }
+
+    public static double getProjectCpu(double rowCount, int expressionCount) {
+        return rowCount * expressionCount;
+    }
+
+    public static int getEstimatedRowWidth(RelNode rel) {
+        int res = 0;
+
+        for (RelDataTypeField field : rel.getRowType().getFieldList()) {
+            res += SqlToQueryType.map(field.getType().getSqlTypeName()).getTypeFamily().getEstimatedSize();
+        }
+
+        return res;
     }
 }

@@ -16,15 +16,12 @@
 
 package com.hazelcast.sql.impl.calcite.opt.physical;
 
+import com.hazelcast.sql.impl.calcite.opt.AbstractFilterRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.visitor.PhysicalRelVisitor;
 import org.apache.calcite.plan.RelOptCluster;
-import org.apache.calcite.plan.RelOptCost;
-import org.apache.calcite.plan.RelOptPlanner;
 import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.rel.RelNode;
-import org.apache.calcite.rel.RelWriter;
 import org.apache.calcite.rel.core.Filter;
-import org.apache.calcite.rel.metadata.RelMetadataQuery;
 import org.apache.calcite.rex.RexNode;
 
 /**
@@ -36,7 +33,7 @@ import org.apache.calcite.rex.RexNode;
  *     <li><b>Distribution</b>: inherited form the input</li>
  * </ul>
  */
-public class FilterPhysicalRel extends Filter implements PhysicalRel {
+public class FilterPhysicalRel extends AbstractFilterRel implements PhysicalRel {
     public FilterPhysicalRel(
         RelOptCluster cluster,
         RelTraitSet traits,
@@ -52,19 +49,9 @@ public class FilterPhysicalRel extends Filter implements PhysicalRel {
     }
 
     @Override
-    public final RelWriter explainTerms(RelWriter pw) {
-        return super.explainTerms(pw);
-    }
-
-    @Override
     public void visit(PhysicalRelVisitor visitor) {
         ((PhysicalRel) input).visit(visitor);
 
         visitor.onFilter(this);
-    }
-
-    @Override
-    public RelOptCost computeSelfCost(RelOptPlanner planner, RelMetadataQuery mq) {
-        return super.computeSelfCost(planner, mq);
     }
 }

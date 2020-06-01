@@ -14,9 +14,8 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.optimizer;
+package com.hazelcast.sql.optimizer.physical;
 
-import com.hazelcast.sql.optimizer.support.PhysicalOptimizerTestSupport;
 import org.apache.calcite.rel.RelNode;
 import org.junit.Test;
 

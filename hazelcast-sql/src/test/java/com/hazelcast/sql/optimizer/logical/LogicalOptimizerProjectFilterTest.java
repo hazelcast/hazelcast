@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.optimizer;
+package com.hazelcast.sql.optimizer.logical;
 
 import com.hazelcast.sql.impl.calcite.opt.logical.ProjectLogicalRel;
 import com.hazelcast.sql.impl.expression.math.PlusFunction;
 import com.hazelcast.sql.impl.expression.predicate.AndPredicate;
 import com.hazelcast.sql.impl.expression.predicate.ComparisonMode;
-import com.hazelcast.sql.optimizer.support.LogicalOptimizerTestSupport;
+import com.hazelcast.sql.optimizer.OptimizerTestSupport;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -43,7 +43,7 @@ public class LogicalOptimizerProjectFilterTest extends LogicalOptimizerTestSuppo
     public void testProjectIntoScan() {
         RelNode rootInput = optimizeLogical("SELECT f1, f2 FROM p");
 
-        assertScan(rootInput, list(0, 1), null);
+        assertScan(rootInput, OptimizerTestSupport.list(0, 1), null);
     }
 
     /**
@@ -56,13 +56,13 @@ public class LogicalOptimizerProjectFilterTest extends LogicalOptimizerTestSuppo
 
         ProjectLogicalRel project = assertProject(
             rootInput,
-            list(
-                PlusFunction.create(column(0), column(1)),
-                column(2)
+            OptimizerTestSupport.list(
+                PlusFunction.create(OptimizerTestSupport.column(0), OptimizerTestSupport.column(1)),
+                OptimizerTestSupport.column(2)
             )
         );
 
-        assertScan(project.getInput(), list(0, 1, 2), null);
+        assertScan(project.getInput(), OptimizerTestSupport.list(0, 1, 2), null);
     }
 
     /**
@@ -75,10 +75,10 @@ public class LogicalOptimizerProjectFilterTest extends LogicalOptimizerTestSuppo
 
         assertScan(
             rootInput,
-            list(0, 1),
-            compare(
-                column(2),
-                constant(1),
+            OptimizerTestSupport.list(0, 1),
+            OptimizerTestSupport.compare(
+                OptimizerTestSupport.column(2),
+                OptimizerTestSupport.constant(1),
                 ComparisonMode.GREATER_THAN
             )
         );
@@ -92,18 +92,20 @@ public class LogicalOptimizerProjectFilterTest extends LogicalOptimizerTestSuppo
     public void testProjectExpressionFilterScan() {
         RelNode rootInput = optimizeLogical("SELECT f1 + f2, f3 FROM p WHERE f4 > 1");
 
+        OptimizerTestSupport.dump(rootInput);
+
         ProjectLogicalRel project = assertProject(
             rootInput,
-            list(
-                PlusFunction.create(column(0), column(1)),
-                column(2)
+            OptimizerTestSupport.list(
+                PlusFunction.create(OptimizerTestSupport.column(0), OptimizerTestSupport.column(1)),
+                OptimizerTestSupport.column(2)
             )
         );
 
         assertScan(
             project.getInput(),
-            list(0, 1, 2),
-            compare(column(3), constant(1), ComparisonMode.GREATER_THAN)
+            OptimizerTestSupport.list(0, 1, 2),
+            OptimizerTestSupport.compare(OptimizerTestSupport.column(3), OptimizerTestSupport.constant(1), ComparisonMode.GREATER_THAN)
         );
     }
 
@@ -115,7 +117,7 @@ public class LogicalOptimizerProjectFilterTest extends LogicalOptimizerTestSuppo
     public void testProjectProjectIntoScan() {
         RelNode rootInput = optimizeLogical("SELECT f1 FROM (SELECT f1, f2 FROM p)");
 
-        assertScan(rootInput, list(0), null);
+        assertScan(rootInput, OptimizerTestSupport.list(0), null);
     }
 
     /**
@@ -128,13 +130,13 @@ public class LogicalOptimizerProjectFilterTest extends LogicalOptimizerTestSuppo
 
         ProjectLogicalRel project = assertProject(
             rootInput,
-            list(
-                PlusFunction.create(column(0), column(1)),
-                column(2)
+            OptimizerTestSupport.list(
+                PlusFunction.create(OptimizerTestSupport.column(0), OptimizerTestSupport.column(1)),
+                OptimizerTestSupport.column(2)
             )
         );
 
-        assertScan(project.getInput(), list(0, 1, 2), null);
+        assertScan(project.getInput(), OptimizerTestSupport.list(0, 1, 2), null);
     }
 
     /**
@@ -147,13 +149,13 @@ public class LogicalOptimizerProjectFilterTest extends LogicalOptimizerTestSuppo
 
         ProjectLogicalRel project = assertProject(
             rootInput,
-            list(
-                PlusFunction.create(column(0), column(1)),
-                column(2)
+            OptimizerTestSupport.list(
+                PlusFunction.create(OptimizerTestSupport.column(0), OptimizerTestSupport.column(1)),
+                OptimizerTestSupport.column(2)
             )
         );
 
-        assertScan(project.getInput(), list(0, 1, 2), null);
+        assertScan(project.getInput(), OptimizerTestSupport.list(0, 1, 2), null);
     }
 
     /**
@@ -166,15 +168,15 @@ public class LogicalOptimizerProjectFilterTest extends LogicalOptimizerTestSuppo
 
         ProjectLogicalRel project = assertProject(
             rootInput,
-            list(
+            OptimizerTestSupport.list(
                 PlusFunction.create(
-                    PlusFunction.create(column(0), column(1)),
-                    column(2)
+                    PlusFunction.create(OptimizerTestSupport.column(0), OptimizerTestSupport.column(1)),
+                    OptimizerTestSupport.column(2)
                 )
             )
         );
 
-        assertScan(project.getInput(), list(0, 1, 2), null);
+        assertScan(project.getInput(), OptimizerTestSupport.list(0, 1, 2), null);
     }
 
     /**
@@ -187,8 +189,8 @@ public class LogicalOptimizerProjectFilterTest extends LogicalOptimizerTestSuppo
 
         assertScan(
             rootInput,
-            list(0),
-            compare(column(2), constant(1), ComparisonMode.GREATER_THAN)
+            OptimizerTestSupport.list(0),
+            OptimizerTestSupport.compare(OptimizerTestSupport.column(2), OptimizerTestSupport.constant(1), ComparisonMode.GREATER_THAN)
         );
     }
 
@@ -202,16 +204,16 @@ public class LogicalOptimizerProjectFilterTest extends LogicalOptimizerTestSuppo
 
         ProjectLogicalRel project = assertProject(
             rootInput,
-            list(
-                PlusFunction.create(column(0), column(1)),
-                column(2)
+            OptimizerTestSupport.list(
+                PlusFunction.create(OptimizerTestSupport.column(0), OptimizerTestSupport.column(1)),
+                OptimizerTestSupport.column(2)
             )
         );
 
         assertScan(
             project.getInput(),
-            list(0, 1, 2),
-            compare(column(4), constant(1), ComparisonMode.GREATER_THAN)
+            OptimizerTestSupport.list(0, 1, 2),
+            OptimizerTestSupport.compare(OptimizerTestSupport.column(4), OptimizerTestSupport.constant(1), ComparisonMode.GREATER_THAN)
         );
     }
 
@@ -225,15 +227,15 @@ public class LogicalOptimizerProjectFilterTest extends LogicalOptimizerTestSuppo
 
         ProjectLogicalRel project = assertProject(
             rootInput,
-            list(
-                PlusFunction.create(column(0), column(1))
+            OptimizerTestSupport.list(
+                PlusFunction.create(OptimizerTestSupport.column(0), OptimizerTestSupport.column(1))
             )
         );
 
         assertScan(
             project.getInput(),
-            list(0, 1),
-            compare(column(2), constant(1), ComparisonMode.GREATER_THAN)
+            OptimizerTestSupport.list(0, 1),
+            OptimizerTestSupport.compare(OptimizerTestSupport.column(2), OptimizerTestSupport.constant(1), ComparisonMode.GREATER_THAN)
         );
     }
 
@@ -247,18 +249,18 @@ public class LogicalOptimizerProjectFilterTest extends LogicalOptimizerTestSuppo
 
         ProjectLogicalRel project = assertProject(
             rootInput,
-            list(
+            OptimizerTestSupport.list(
                 PlusFunction.create(
-                    PlusFunction.create(column(0), column(1)),
-                    column(2)
+                    PlusFunction.create(OptimizerTestSupport.column(0), OptimizerTestSupport.column(1)),
+                    OptimizerTestSupport.column(2)
                 )
             )
         );
 
         assertScan(
             project.getInput(),
-            list(0, 1, 2),
-            compare(column(4), constant(1), ComparisonMode.GREATER_THAN)
+            OptimizerTestSupport.list(0, 1, 2),
+            OptimizerTestSupport.compare(OptimizerTestSupport.column(4), OptimizerTestSupport.constant(1), ComparisonMode.GREATER_THAN)
         );
     }
 
@@ -272,8 +274,8 @@ public class LogicalOptimizerProjectFilterTest extends LogicalOptimizerTestSuppo
 
         assertScan(
             rootInput,
-            list(0),
-            compare(column(1), constant(1), ComparisonMode.GREATER_THAN)
+            OptimizerTestSupport.list(0),
+            OptimizerTestSupport.compare(OptimizerTestSupport.column(1), OptimizerTestSupport.constant(1), ComparisonMode.GREATER_THAN)
         );
     }
 
@@ -289,25 +291,25 @@ public class LogicalOptimizerProjectFilterTest extends LogicalOptimizerTestSuppo
         // TODO: Two projects cannot be merged together because ProjectMergeRule is disabled. Implement or fail this test intentionally.
         ProjectLogicalRel topProject = assertProject(
             rootInput,
-            list(
-                column(0),
-                column(1)
+            OptimizerTestSupport.list(
+                OptimizerTestSupport.column(0),
+                OptimizerTestSupport.column(1)
             )
         );
 
         ProjectLogicalRel bottomProject = assertProject(
             topProject.getInput(),
-            list(
-                PlusFunction.create(column(0), column(1)),
-                column(2),
-                column(3)
+            OptimizerTestSupport.list(
+                PlusFunction.create(OptimizerTestSupport.column(0), OptimizerTestSupport.column(1)),
+                OptimizerTestSupport.column(2),
+                OptimizerTestSupport.column(3)
             )
         );
 
         assertScan(
             bottomProject.getInput(),
-            list(0, 1, 2, 3),
-            compare(column(3), constant(1), ComparisonMode.GREATER_THAN)
+            OptimizerTestSupport.list(0, 1, 2, 3),
+            OptimizerTestSupport.compare(OptimizerTestSupport.column(3), OptimizerTestSupport.constant(1), ComparisonMode.GREATER_THAN)
         );
     }
 
@@ -322,15 +324,15 @@ public class LogicalOptimizerProjectFilterTest extends LogicalOptimizerTestSuppo
 
         ProjectLogicalRel project = assertProject(
             rootInput,
-            list(
-                PlusFunction.create(column(0), column(1))
+            OptimizerTestSupport.list(
+                PlusFunction.create(OptimizerTestSupport.column(0), OptimizerTestSupport.column(1))
             )
         );
 
         assertScan(
             project.getInput(),
-            list(0, 1),
-            compare(column(2), constant(1), ComparisonMode.GREATER_THAN)
+            OptimizerTestSupport.list(0, 1),
+            OptimizerTestSupport.compare(OptimizerTestSupport.column(2), OptimizerTestSupport.constant(1), ComparisonMode.GREATER_THAN)
         );
     }
 
@@ -346,24 +348,24 @@ public class LogicalOptimizerProjectFilterTest extends LogicalOptimizerTestSuppo
         // TODO: Two projects cannot be merged together because ProjectMergeRule is disabled. Implement or fail this test intentionally.
         ProjectLogicalRel topProject = assertProject(
             rootInput,
-            list(
-                PlusFunction.create(column(0), column(1))
+            OptimizerTestSupport.list(
+                PlusFunction.create(OptimizerTestSupport.column(0), OptimizerTestSupport.column(1))
             )
         );
 
         ProjectLogicalRel bottomProject = assertProject(
             topProject.getInput(),
-            list(
-                PlusFunction.create(column(0), column(1)),
-                column(2),
-                column(3)
+            OptimizerTestSupport.list(
+                PlusFunction.create(OptimizerTestSupport.column(0), OptimizerTestSupport.column(1)),
+                OptimizerTestSupport.column(2),
+                OptimizerTestSupport.column(3)
             )
         );
 
         assertScan(
             bottomProject.getInput(),
-            list(0, 1, 2, 3),
-            compare(column(3), constant(1), ComparisonMode.GREATER_THAN)
+            OptimizerTestSupport.list(0, 1, 2, 3),
+            OptimizerTestSupport.compare(OptimizerTestSupport.column(3), OptimizerTestSupport.constant(1), ComparisonMode.GREATER_THAN)
         );
     }
 
@@ -377,10 +379,10 @@ public class LogicalOptimizerProjectFilterTest extends LogicalOptimizerTestSuppo
 
         assertScan(
             rootInput,
-            list(0),
+            OptimizerTestSupport.list(0),
             AndPredicate.create(
-                compare(column(3), constant(1), ComparisonMode.GREATER_THAN),
-                compare(column(1), constant(1), ComparisonMode.GREATER_THAN)
+                OptimizerTestSupport.compare(OptimizerTestSupport.column(3), OptimizerTestSupport.constant(1), ComparisonMode.GREATER_THAN),
+                OptimizerTestSupport.compare(OptimizerTestSupport.column(1), OptimizerTestSupport.constant(1), ComparisonMode.GREATER_THAN)
             )
         );
     }
@@ -395,18 +397,18 @@ public class LogicalOptimizerProjectFilterTest extends LogicalOptimizerTestSuppo
 
         ProjectLogicalRel project = assertProject(
             rootInput,
-            list(
-                PlusFunction.create(column(0), column(1)),
-                column(2)
+            OptimizerTestSupport.list(
+                PlusFunction.create(OptimizerTestSupport.column(0), OptimizerTestSupport.column(1)),
+                OptimizerTestSupport.column(2)
             )
         );
 
         assertScan(
             project.getInput(),
-            list(0, 1, 2),
+            OptimizerTestSupport.list(0, 1, 2),
             AndPredicate.create(
-                compare(column(3), constant(1), ComparisonMode.GREATER_THAN),
-                compare(column(2), constant(2), ComparisonMode.GREATER_THAN)
+                OptimizerTestSupport.compare(OptimizerTestSupport.column(3), OptimizerTestSupport.constant(1), ComparisonMode.GREATER_THAN),
+                OptimizerTestSupport.compare(OptimizerTestSupport.column(2), OptimizerTestSupport.constant(2), ComparisonMode.GREATER_THAN)
             )
         );
     }
@@ -421,17 +423,17 @@ public class LogicalOptimizerProjectFilterTest extends LogicalOptimizerTestSuppo
 
         ProjectLogicalRel project = assertProject(
             rootInput,
-            list(
-                PlusFunction.create(column(0), column(1))
+            OptimizerTestSupport.list(
+                PlusFunction.create(OptimizerTestSupport.column(0), OptimizerTestSupport.column(1))
             )
         );
 
         assertScan(
             project.getInput(),
-            list(0, 1),
+            OptimizerTestSupport.list(0, 1),
             AndPredicate.create(
-                compare(column(3), constant(1), ComparisonMode.GREATER_THAN),
-                compare(column(2), constant(1), ComparisonMode.GREATER_THAN)
+                OptimizerTestSupport.compare(OptimizerTestSupport.column(3), OptimizerTestSupport.constant(1), ComparisonMode.GREATER_THAN),
+                OptimizerTestSupport.compare(OptimizerTestSupport.column(2), OptimizerTestSupport.constant(1), ComparisonMode.GREATER_THAN)
             )
         );
     }
@@ -447,25 +449,25 @@ public class LogicalOptimizerProjectFilterTest extends LogicalOptimizerTestSuppo
         // TODO: Two projects cannot be merged together because ProjectMergeRule is disabled. Implement or fail this test intentionally.
         ProjectLogicalRel topProject = assertProject(
             rootInput,
-            list(
-                PlusFunction.create(column(0), column(1))
+            OptimizerTestSupport.list(
+                PlusFunction.create(OptimizerTestSupport.column(0), OptimizerTestSupport.column(1))
             )
         );
 
         ProjectLogicalRel bottomProject = assertProject(
             topProject.getInput(),
-            list(
-                PlusFunction.create(column(0), column(1)),
-                column(2)
+            OptimizerTestSupport.list(
+                PlusFunction.create(OptimizerTestSupport.column(0), OptimizerTestSupport.column(1)),
+                OptimizerTestSupport.column(2)
             )
         );
 
         assertScan(
             bottomProject.getInput(),
-            list(0, 1, 2),
+            OptimizerTestSupport.list(0, 1, 2),
             AndPredicate.create(
-                compare(column(3), constant(1), ComparisonMode.GREATER_THAN),
-                compare(column(2), constant(2), ComparisonMode.GREATER_THAN)
+                OptimizerTestSupport.compare(OptimizerTestSupport.column(3), OptimizerTestSupport.constant(1), ComparisonMode.GREATER_THAN),
+                OptimizerTestSupport.compare(OptimizerTestSupport.column(2), OptimizerTestSupport.constant(2), ComparisonMode.GREATER_THAN)
             )
         );
     }

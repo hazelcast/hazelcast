@@ -16,12 +16,11 @@
 
 package com.hazelcast.sql.impl.calcite.opt.physical;
 
+import com.hazelcast.sql.impl.calcite.opt.AbstractRootRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.visitor.PhysicalRelVisitor;
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.rel.RelNode;
-import org.apache.calcite.rel.RelWriter;
-import org.apache.calcite.rel.SingleRel;
 
 import java.util.List;
 
@@ -34,7 +33,7 @@ import java.util.List;
  *     <li><b>Distribution</b>: always ROOT, since there is only one node consuming the input</li>
  * </ul>
  */
-public class RootPhysicalRel extends SingleRel implements PhysicalRel {
+public class RootPhysicalRel extends AbstractRootRel implements PhysicalRel {
     public RootPhysicalRel(RelOptCluster cluster, RelTraitSet traits, RelNode input) {
         super(cluster, traits, input);
     }
@@ -42,11 +41,6 @@ public class RootPhysicalRel extends SingleRel implements PhysicalRel {
     @Override
     public final RelNode copy(RelTraitSet traitSet, List<RelNode> inputs) {
         return new RootPhysicalRel(this.getCluster(), traitSet, sole(inputs));
-    }
-
-    @Override
-    public final RelWriter explainTerms(RelWriter pw) {
-        return super.explainTerms(pw);
     }
 
     @Override

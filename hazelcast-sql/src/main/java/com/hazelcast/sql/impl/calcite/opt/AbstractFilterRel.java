@@ -14,17 +14,21 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.calcite.opt.logical;
+package com.hazelcast.sql.impl.calcite.opt;
 
-import com.hazelcast.sql.impl.calcite.opt.AbstractFilterRel;
+import com.hazelcast.sql.impl.calcite.opt.cost.CostUtils;
 import org.apache.calcite.plan.RelOptCluster;
+import org.apache.calcite.plan.RelOptCost;
+import org.apache.calcite.plan.RelOptPlanner;
 import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.rel.RelNode;
+import org.apache.calcite.rel.RelWriter;
 import org.apache.calcite.rel.core.Filter;
+import org.apache.calcite.rel.metadata.RelMetadataQuery;
 import org.apache.calcite.rex.RexNode;
 
-public class FilterLogicalRel extends AbstractFilterRel implements LogicalRel {
-    public FilterLogicalRel(
+public abstract class AbstractFilterRel extends Filter {
+    public AbstractFilterRel(
         RelOptCluster cluster,
         RelTraitSet traits,
         RelNode input,
@@ -34,7 +38,17 @@ public class FilterLogicalRel extends AbstractFilterRel implements LogicalRel {
     }
 
     @Override
-    public final Filter copy(RelTraitSet traitSet, RelNode input, RexNode condition) {
-        return new FilterLogicalRel(getCluster(), traitSet, input, condition);
+    public final RelWriter explainTerms(RelWriter pw) {
+        return super.explainTerms(pw);
+    }
+
+    @Override
+    public final RelOptCost computeSelfCost(RelOptPlanner planner, RelMetadataQuery mq) {
+        double inputRows = mq.getRowCount(getInput());
+
+        double rows = CostUtils.adjustFilteredRowCount(inputRows, mq.getSelectivity(this, condition));
+        double cpu = inputRows + 1;
+
+        return planner.getCostFactory().makeCost(rows, cpu, 0);
     }
 }

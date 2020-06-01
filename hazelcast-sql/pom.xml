@@ -36,7 +36,7 @@
         <!-- Needed for CheckStyle -->
         <main.basedir>${project.parent.basedir}</main.basedir>
 
-        <calcite.version>1.22.0</calcite.version>
+        <calcite.version>1.23.0</calcite.version>
         <guava.version>19.0</guava.version>
     </properties>
 

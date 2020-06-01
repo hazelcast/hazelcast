@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.optimizer;
+package com.hazelcast.sql.optimizer.physical;
 
 import com.hazelcast.config.IndexType;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastSchema;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
 import com.hazelcast.sql.impl.schema.map.MapTableIndex;
-import com.hazelcast.sql.optimizer.support.PhysicalOptimizerTestSupport;
+import com.hazelcast.sql.optimizer.OptimizerTestSupport;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.schema.Table;
 import org.junit.Test;
@@ -39,10 +39,10 @@ public class PhysicalOptimizerIndexScanTest extends PhysicalOptimizerTestSupport
     protected HazelcastSchema createDefaultSchema() {
         Map<String, Table> tableMap = new HashMap<>();
 
-        HazelcastTable pTable = partitionedTable(
+        HazelcastTable pTable = OptimizerTestSupport.partitionedTable(
             "p",
-            fields("f1", INT, "f2", INT, "f3", INT),
-            Collections.singletonList(new MapTableIndex("idx1", IndexType.SORTED, list(0))),
+            OptimizerTestSupport.fields("f1", INT, "f2", INT, "f3", INT),
+            Collections.singletonList(new MapTableIndex("idx1", IndexType.SORTED, OptimizerTestSupport.list(0))),
             100
         );
 

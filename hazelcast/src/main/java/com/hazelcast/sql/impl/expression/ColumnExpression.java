@@ -100,4 +100,9 @@ public class ColumnExpression<T> implements Expression<T>, IdentifiedDataSeriali
 
         return index == that.index && type.equals(that.type);
     }
+
+    @Override
+    public String toString() {
+        return "ColumnExpression{index=" + index + '}';
+    }
 }

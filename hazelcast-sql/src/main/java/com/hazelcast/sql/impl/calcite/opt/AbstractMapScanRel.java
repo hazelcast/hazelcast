@@ -86,33 +86,51 @@ public abstract class AbstractMapScanRel extends AbstractScanRel implements Haze
 
     @Override
     public RelOptCost computeSelfCost(RelOptPlanner planner, RelMetadataQuery mq) {
+        return computeSelfCost(
+            planner,
+            mq,
+            table.getRowCount(),
+            filter,
+            getProjects().size(),
+            CostUtils.TABLE_SCAN_CPU_MULTIPLIER
+        );
+    }
+
+    protected RelOptCost computeSelfCost(
+        RelOptPlanner planner,
+        RelMetadataQuery mq,
+        double scanRowCount,
+        RexNode filter,
+        int projectCount,
+        double costMultiplier
+    ) {
         // 1. Get cost of the scan itself. For replicated map cost is multiplied by the number of nodes.
-        RelOptCost scanCost = super.computeSelfCost(planner, mq);
+        double scanCpu = scanRowCount + 1;
 
         if (isReplicated()) {
-            scanCost = scanCost.multiplyBy(getMemberCount());
+            scanCpu = scanCpu * getMemberCount();
         }
 
-        // 2. Get cost of the project taking in count filter and number of expressions. Project never produces IO.
-        double filterRowCount = scanCost.getRows();
+        // 2. Get cost of the filter, if any.
+        double filterRowCount;
+        double filterCpu;
 
         if (filter != null) {
-            double filterSelectivity = mq.getSelectivity(this, filter);
-
-            filterRowCount = filterRowCount * filterSelectivity;
+            filterRowCount = CostUtils.adjustFilteredRowCount(scanRowCount, mq.getSelectivity(this, filter));
+            filterCpu = CostUtils.adjustCpuForConstrainedScan(scanCpu);
+        } else {
+            filterRowCount = scanRowCount;
+            filterCpu = 0;
         }
 
-        int expressionCount = getProjects().size();
+        // 3. Get cost of the project taking in count filter and number of expressions. Project never produces IO.
+        double projectCpu = CostUtils.adjustCpuForConstrainedScan(CostUtils.getProjectCpu(filterRowCount, projectCount));
 
-        double projectCpu = CostUtils.adjustProjectCpu(filterRowCount * expressionCount, true);
-
-        // 3. Finally, return sum of both scan and project.
-        RelOptCost totalCost = planner.getCostFactory().makeCost(
+        // 4. Finally, return sum of both scan and project.
+        return planner.getCostFactory().makeCost(
             filterRowCount,
-            scanCost.getCpu() + projectCpu,
-            scanCost.getIo()
+            (scanCpu + filterCpu + projectCpu) * costMultiplier,
+            0
         );
-
-        return totalCost;
     }
 }

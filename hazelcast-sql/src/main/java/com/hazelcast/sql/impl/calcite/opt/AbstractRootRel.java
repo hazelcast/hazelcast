@@ -14,39 +14,20 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.calcite.opt.physical.exchange;
+package com.hazelcast.sql.impl.calcite.opt;
 
-import com.hazelcast.sql.impl.calcite.opt.cost.CostUtils;
-import com.hazelcast.sql.impl.calcite.opt.physical.PhysicalRel;
-import com.hazelcast.sql.impl.calcite.opt.physical.visitor.PhysicalRelVisitor;
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelOptCost;
 import org.apache.calcite.plan.RelOptPlanner;
 import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.RelWriter;
+import org.apache.calcite.rel.SingleRel;
 import org.apache.calcite.rel.metadata.RelMetadataQuery;
 
-import java.util.List;
-
-/**
- * Exchange for root node.
- */
-public class RootExchangePhysicalRel extends AbstractExchangePhysicalRel {
-    public RootExchangePhysicalRel(RelOptCluster cluster, RelTraitSet traits, RelNode input) {
+public class AbstractRootRel extends SingleRel {
+    public AbstractRootRel(RelOptCluster cluster, RelTraitSet traits, RelNode input) {
         super(cluster, traits, input);
-    }
-
-    @Override
-    public RelNode copy(RelTraitSet traitSet, List<RelNode> inputs) {
-        return new RootExchangePhysicalRel(getCluster(), traitSet, sole(inputs));
-    }
-
-    @Override
-    public void visit(PhysicalRelVisitor visitor) {
-        ((PhysicalRel) input).visit(visitor);
-
-        visitor.onRootExchange(this);
     }
 
     @Override
@@ -55,11 +36,10 @@ public class RootExchangePhysicalRel extends AbstractExchangePhysicalRel {
     }
 
     @Override
-    public RelOptCost computeSelfCost(RelOptPlanner planner, RelMetadataQuery mq) {
+    public final RelOptCost computeSelfCost(RelOptPlanner planner, RelMetadataQuery mq) {
         double rows = mq.getRowCount(getInput());
         double cpu = rows + 1;
-        double network = rows * CostUtils.getEstimatedRowWidth(getInput());
 
-        return planner.getCostFactory().makeCost(rows, cpu, network);
+        return planner.getCostFactory().makeCost(rows, cpu, 0);
     }
 }

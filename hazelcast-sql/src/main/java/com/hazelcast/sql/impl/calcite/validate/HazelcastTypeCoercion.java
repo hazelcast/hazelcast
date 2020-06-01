@@ -17,13 +17,14 @@
 package com.hazelcast.sql.impl.calcite.validate;
 
 import org.apache.calcite.rel.type.RelDataType;
+import org.apache.calcite.rel.type.RelDataTypeFactory;
 import org.apache.calcite.sql.SqlCallBinding;
 import org.apache.calcite.sql.validate.implicit.TypeCoercionImpl;
 
 public final class HazelcastTypeCoercion extends TypeCoercionImpl {
 
-    public HazelcastTypeCoercion(HazelcastSqlValidator validator) {
-        super(validator);
+    public HazelcastTypeCoercion(RelDataTypeFactory typeFactory, HazelcastSqlValidator validator) {
+        super(typeFactory, validator);
     }
 
     @Override

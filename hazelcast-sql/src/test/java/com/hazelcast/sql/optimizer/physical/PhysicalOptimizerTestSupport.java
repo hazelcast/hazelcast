@@ -14,10 +14,11 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.optimizer.support;
+package com.hazelcast.sql.optimizer.physical;
 
 import com.hazelcast.sql.impl.calcite.opt.physical.PhysicalRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.RootPhysicalRel;
+import com.hazelcast.sql.optimizer.OptimizerTestSupport;
 import org.apache.calcite.rel.RelNode;
 
 import static junit.framework.TestCase.assertEquals;

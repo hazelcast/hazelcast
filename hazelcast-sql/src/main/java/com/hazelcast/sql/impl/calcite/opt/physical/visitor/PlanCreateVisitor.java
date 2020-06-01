@@ -256,7 +256,7 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
             rel.getProjects(),
             rel.getIndex().getName(),
             rel.getIndexFilter(),
-            convertFilter(schemaBefore, rel.getRemainderFilter())
+            convertFilter(schemaBefore, rel.getRemainderExp())
         );
 
         pushUpstream(scanNode);

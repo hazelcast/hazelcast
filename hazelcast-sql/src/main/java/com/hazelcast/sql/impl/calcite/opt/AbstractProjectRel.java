@@ -14,30 +14,27 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.calcite.opt.physical;
+package com.hazelcast.sql.impl.calcite.opt;
 
-import com.hazelcast.sql.impl.calcite.opt.AbstractProjectRel;
-import com.hazelcast.sql.impl.calcite.opt.physical.visitor.PhysicalRelVisitor;
+import com.hazelcast.sql.impl.calcite.opt.cost.CostUtils;
 import org.apache.calcite.plan.RelOptCluster;
+import org.apache.calcite.plan.RelOptCost;
+import org.apache.calcite.plan.RelOptPlanner;
 import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.rel.RelNode;
+import org.apache.calcite.rel.RelWriter;
 import org.apache.calcite.rel.core.Project;
+import org.apache.calcite.rel.metadata.RelMetadataQuery;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rex.RexNode;
 
 import java.util.List;
 
 /**
- * Physical projection.
- * <p>
- * Traits:
- * <ul>
- *     <li><b>Collation</b>: propagated from input if prefix of sort fields are still there; destroyed otherwise</li>
- *     <li><b>Distribution</b>: derived from input if all distribution fields are still there; destroyed otherwise</li>
- * </ul>
+ * Base class for projections.
  */
-public class ProjectPhysicalRel extends AbstractProjectRel implements PhysicalRel {
-    public ProjectPhysicalRel(
+public abstract class AbstractProjectRel extends Project {
+    public AbstractProjectRel(
         RelOptCluster cluster,
         RelTraitSet traits,
         RelNode input,
@@ -48,14 +45,15 @@ public class ProjectPhysicalRel extends AbstractProjectRel implements PhysicalRe
     }
 
     @Override
-    public final Project copy(RelTraitSet traitSet, RelNode input, List<RexNode> projects, RelDataType rowType) {
-        return new ProjectPhysicalRel(getCluster(), traitSet, input, projects, rowType);
+    public final RelWriter explainTerms(RelWriter pw) {
+        return super.explainTerms(pw);
     }
 
     @Override
-    public void visit(PhysicalRelVisitor visitor) {
-        ((PhysicalRel) input).visit(visitor);
+    public RelOptCost computeSelfCost(RelOptPlanner planner, RelMetadataQuery mq) {
+        double rows = mq.getRowCount(getInput());
+        double cpu = CostUtils.getProjectCpu(rows + 1, exps.size());
 
-        visitor.onProject(this);
+        return planner.getCostFactory().makeCost(rows, cpu, 0);
     }
 }

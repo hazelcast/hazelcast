@@ -14,8 +14,9 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.optimizer.support;
+package com.hazelcast.sql.optimizer;
 
+import com.hazelcast.sql.impl.SqlTestSupport;
 import com.hazelcast.sql.impl.calcite.OptimizerContext;
 import com.hazelcast.sql.impl.calcite.opt.OptUtils;
 import com.hazelcast.sql.impl.calcite.opt.logical.LogicalRel;
@@ -40,12 +41,20 @@ import com.hazelcast.sql.impl.schema.map.MapTableField;
 import com.hazelcast.sql.impl.schema.map.MapTableIndex;
 import com.hazelcast.sql.impl.schema.map.PartitionedMapTable;
 import com.hazelcast.sql.impl.type.QueryDataType;
+import org.apache.calcite.plan.RelOptUtil;
 import org.apache.calcite.plan.RelTraitSet;
+import org.apache.calcite.plan.volcano.VolcanoPlanner;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.schema.Table;
+import org.apache.calcite.sql.SqlExplainLevel;
 import org.apache.calcite.sql.SqlNode;
 import org.junit.After;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringReader;
+import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -61,7 +70,7 @@ import static junit.framework.TestCase.assertEquals;
 /**
  * Base class to test optimizers.
  */
-public abstract class OptimizerTestSupport {
+public abstract class OptimizerTestSupport extends SqlTestSupport {
     /** Last result. */
     protected Result last;
 
@@ -234,6 +243,70 @@ public abstract class OptimizerTestSupport {
         }
 
         return res;
+    }
+
+    public static void dump(RelNode node) {
+        VolcanoPlanner planner = (VolcanoPlanner) node.getCluster().getPlanner();
+
+        StringWriter sw = new StringWriter();
+
+        planner.dump(new PrintWriter(sw));
+
+        System.out.println(sw);
+    }
+
+    public static PlanRows plan(PlanRow... rows) {
+        PlanRows res = new PlanRows();
+
+        for (PlanRow row : rows) {
+            res.add(row);
+        }
+
+        return res;
+    }
+
+    public static PlanRows plan(RelNode rel) {
+        PlanRows res = new PlanRows();
+
+        BufferedReader br = new BufferedReader(new StringReader(RelOptUtil.toString(rel, SqlExplainLevel.ALL_ATTRIBUTES)));
+
+        String line;
+
+        try {
+            while ((line = br.readLine()) != null) {
+                PlanRow row = PlanRow.parse(line);
+
+                res.add(row);
+            }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
+        return res;
+    }
+
+    public static void assertPlans(PlanRows expected, PlanRows actual) {
+        int expectedRowCount = expected.getRowCount();
+        int actualRowCount = actual.getRowCount();
+
+        assertEquals(planErrorMessage("Plan are different", expected, actual), expectedRowCount, actualRowCount);
+
+        for (int i = 0; i < expectedRowCount; i++) {
+            PlanRow expectedRow = expected.getRow(i);
+            PlanRow actualRow = actual.getRow(i);
+
+            assertEquals(
+                planErrorMessage(
+                    "Plan rows are different:\n>>> EXPECTED: " + expected + "\n>>> ACTUAL: " + actual + "\n", expected, actual
+                ),
+                expectedRow,
+                actualRow
+            );
+        }
+    }
+
+    private static String planErrorMessage(String message, PlanRows expected, PlanRows actual) {
+        return message + "\n>>> EXPECTED PLAN:" + expected + "\n>>> ACTUAL PLAN:" + actual;
     }
 
     /**

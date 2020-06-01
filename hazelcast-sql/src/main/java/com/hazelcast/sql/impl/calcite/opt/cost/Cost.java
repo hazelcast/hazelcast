@@ -19,69 +19,59 @@ package com.hazelcast.sql.impl.calcite.opt.cost;
 import org.apache.calcite.plan.RelOptCost;
 import org.apache.calcite.plan.RelOptUtil;
 
-import java.util.Objects;
-
 /**
  * Cost of relational operator.
  */
 public class Cost implements RelOptCost {
-    /** Zero cost. */
-    public static final Cost ZERO = new Cost(
-        0.0d, 0.0d, 0.0d
-    );
 
-    /** Tiny cost. */
-    public static final Cost TINY = new Cost(
-        1.0d, 1.0d, 0.0d
-    );
+    public static final Cost ZERO = new Cost(0.0d, 0.0d, 0.0d);
+    public static final Cost TINY = new Cost(1.0d, 1.0d, 0.0d);
+    public static final Cost HUGE = new Cost(Double.MAX_VALUE, Double.MAX_VALUE, Double.MAX_VALUE);
+    public static final Cost INFINITY = new Cost(Double.MAX_VALUE, Double.POSITIVE_INFINITY, Double.POSITIVE_INFINITY);
 
-    /** Huge cost. */
-    public static final Cost HUGE = new Cost(
-        Double.MAX_VALUE, Double.MAX_VALUE, Double.MAX_VALUE
-    );
-
-    /** Infinite cost. */
-    public static final Cost INFINITY = new Cost(
-        Double.POSITIVE_INFINITY, Double.POSITIVE_INFINITY, Double.POSITIVE_INFINITY
-    );
-
-    /** Number of rows returned. */
     private final double rows;
-
-    /** CPU cycles. */
     private final double cpu;
+    private final double network;
 
-    /** Amount of data transferred over network. */
-    private final double io;
-
-    Cost(double rows, double cpu, double io) {
+    Cost(double rows, double cpu, double network) {
         this.rows = rows;
         this.cpu = cpu;
-        this.io = io;
+        this.network = network;
+    }
+
+    public double getRowsInternal() {
+        return rows;
+    }
+
+    public double getCputInternal() {
+        return cpu;
+    }
+
+    public double getNetworkInternal() {
+        return network;
     }
 
     @Override
     public double getRows() {
-        return rows;
+        // Make sure that Calcite doesn't rely on our values.
+        throw new UnsupportedOperationException("Should not be called.");
     }
 
     @Override
     public double getCpu() {
-        return cpu;
+        // Make sure that Calcite doesn't rely on our values.
+        throw new UnsupportedOperationException("Should not be called.");
     }
 
     @Override
     public double getIo() {
-        return io;
+        // Make sure that Calcite doesn't rely on our values.
+        throw new UnsupportedOperationException("Should not be called.");
     }
 
     @Override
     public boolean isInfinite() {
-        // Cost is considered infinite if any of its components is infinite.
-        return this == INFINITY
-            || rows == Double.POSITIVE_INFINITY
-            || cpu == Double.POSITIVE_INFINITY
-            || io == Double.POSITIVE_INFINITY;
+        return cpu == Double.POSITIVE_INFINITY || network == Double.POSITIVE_INFINITY;
     }
 
     @Override
@@ -96,9 +86,11 @@ public class Cost implements RelOptCost {
             return true;
         }
 
-        return Math.abs(rows - other0.rows) < RelOptUtil.EPSILON
-            && Math.abs(cpu - other0.cpu) < RelOptUtil.EPSILON
-            && Math.abs(io - other0.io) < RelOptUtil.EPSILON;
+        if (isInfinite() || other0.isInfinite()) {
+            return false;
+        }
+
+        return Math.abs(getValue() - other0.getValue()) < RelOptUtil.EPSILON;
     }
 
     @Override
@@ -109,9 +101,7 @@ public class Cost implements RelOptCost {
             return true;
         }
 
-        return (rows <= other0.rows)
-            && (cpu <= other0.cpu)
-            && (io <= other0.io);
+        return getValue() <= other0.getValue();
     }
 
     @Override
@@ -123,80 +113,48 @@ public class Cost implements RelOptCost {
     public RelOptCost plus(RelOptCost other) {
         Cost other0 = (Cost) other;
 
-        if ((this == INFINITY) || (other0 == INFINITY)) {
+        if (isInfinite() || other.isInfinite()) {
             return INFINITY;
         }
 
-        return new Cost(
-            rows + other0.rows,
-            cpu + other0.cpu,
-            io + other0.io
-        );
+        return new Cost(rows + other0.rows, cpu + other0.cpu, network + other0.network);
     }
 
     @Override
     public RelOptCost minus(RelOptCost other) {
-        if (this == INFINITY) {
-            return this;
-        }
-
-        Cost other0 = (Cost) other;
-
-        return new Cost(
-            rows - other0.rows,
-            cpu - other0.cpu,
-            io - other0.io
-        );
+        throw new UnsupportedOperationException("Should not be called.");
     }
 
     @Override
     public RelOptCost multiplyBy(double factor) {
-        if ((this == INFINITY)) {
+        if (isInfinite()) {
             return INFINITY;
         }
 
-        return new Cost(
-            rows * factor,
-            cpu * factor,
-            io * factor
-        );
+        return new Cost(rows * factor, cpu * factor, network * factor);
     }
 
     @Override
     public double divideBy(RelOptCost cost) {
-        // Use the same approach as in Calcite's VolcanoCost.
-        Cost that = (Cost) cost;
-
-        double d = 1;
-        double n = 0;
-
-        if (qualifiesForDivide(rows, that.rows)) {
-            d *= rows / that.rows;
-            n++;
-        }
-        if (qualifiesForDivide(cpu, that.cpu)) {
-            d *= cpu / that.cpu;
-            n++;
-        }
-        if (qualifiesForDivide(io, that.io)) {
-            d *= io / that.io;
-            n++;
-        }
-
-        if (n == 0) {
-            return 1.0;
-        }
-
-        return Math.pow(d, 1 / n);
+        throw new UnsupportedOperationException("Should not be called.");
     }
 
-    private static boolean qualifiesForDivide(double first, double second) {
-        return first != 0 && !Double.isInfinite(first) && (second != 0) && !Double.isInfinite(second);
+    private double getValue() {
+        if (isInfinite()) {
+            return Double.POSITIVE_INFINITY;
+        }
+
+        return cpu * CostUtils.CPU_COST_MULTIPLIER + network * CostUtils.NETWORK_COST_MULTIPLIER;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(rows, cpu, io);
+        int res = Double.hashCode(rows);
+
+        res += 31 * Double.hashCode(cpu);
+        res += 31 * Double.hashCode(network);
+
+        return res;
     }
 
     @Override
@@ -222,7 +180,7 @@ public class Cost implements RelOptCost {
 
         return Double.compare(other0.rows, rows) == 0
             && Double.compare(other0.cpu, cpu) == 0
-            && Double.compare(other0.io, io) == 0;
+            && Double.compare(other0.network, network) == 0;
     }
 
     @Override
@@ -238,7 +196,7 @@ public class Cost implements RelOptCost {
         } else if (equals(ZERO)) {
             content = "zero";
         } else {
-            content = "rows=" + rows + ", cpu=" + cpu + ", io=" + io;
+            content = "rows=" + rows + ", cpu=" + cpu + ", io=" + network;
         }
 
         return getClass().getSimpleName() + '{' + content + '}';

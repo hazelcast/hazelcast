@@ -163,14 +163,14 @@ public final class MapScanPhysicalRule extends RelOptRule {
             return null;
         }
 
-        BiTuple<IndexFilter, RexNode> filter = tryCreateIndexFilter(
+        IndexFilterDescriptor indexFilterDescriptor = tryCreateIndexFilter(
             index.getType(),
             indexFieldOrdinals,
             exp,
             scan.getCluster().getRexBuilder()
         );
 
-        if (filter == null) {
+        if (indexFilterDescriptor == null) {
             return null;
         }
 
@@ -186,8 +186,9 @@ public final class MapScanPhysicalRule extends RelOptRule {
             scan.getTable(),
             scan.getProjects(),
             index,
-            filter.element1(),
-            filter.element2(),
+            indexFilterDescriptor.getIndexFilter(),
+            indexFilterDescriptor.getIndexExp(),
+            indexFilterDescriptor.getRemainderExp(),
             scan.getFilter()
         );
     }
@@ -200,7 +201,7 @@ public final class MapScanPhysicalRule extends RelOptRule {
      * @param baseExp Base conjunctive expression.
      * @return Index filter or {@code null} if an expression cannot be used with the given index.
      */
-    private BiTuple<IndexFilter, RexNode> tryCreateIndexFilter(
+    private IndexFilterDescriptor tryCreateIndexFilter(
         IndexType indexType,
         List<Integer> indexAttributes,
         RexNode baseExp,
@@ -224,6 +225,7 @@ public final class MapScanPhysicalRule extends RelOptRule {
             indexFilters.add(null);
         }
 
+        List<RexNode> filterExps = new ArrayList<>(Math.min(exps.size() - 1, 1));
         List<RexNode> remainderExps = new ArrayList<>(Math.min(exps.size() - 1, 1));
 
         for (RexNode exp : exps) {
@@ -253,6 +255,8 @@ public final class MapScanPhysicalRule extends RelOptRule {
 
             if (remainder) {
                 remainderExps.add(exp);
+            } else {
+                filterExps.add(exp);
             }
         }
 
@@ -263,9 +267,10 @@ public final class MapScanPhysicalRule extends RelOptRule {
             return null;
         }
 
+        RexNode finalIndexExp = RexUtil.composeConjunction(rexBuilder, filterExps);
         RexNode finalRemainderExp = RexUtil.composeConjunction(rexBuilder, remainderExps);
 
-        return BiTuple.of(finalIndexFilter, finalRemainderExp);
+        return new IndexFilterDescriptor(finalIndexFilter, finalIndexExp, finalRemainderExp);
     }
 
     private static IndexFilter composeIndexConditions(List<IndexFilter> indexFilters) {
@@ -475,5 +480,29 @@ public final class MapScanPhysicalRule extends RelOptRule {
         }
 
         return distributionTraitDef.createPartitionedTrait(Collections.singletonList(res));
+    }
+
+    private static final class IndexFilterDescriptor {
+        private final IndexFilter indexFilter;
+        private final RexNode indexExp;
+        private final RexNode remainderExp;
+
+        private IndexFilterDescriptor(IndexFilter indexFilter, RexNode indexExp, RexNode remainderExp) {
+            this.indexFilter = indexFilter;
+            this.indexExp = indexExp;
+            this.remainderExp = remainderExp;
+        }
+
+        public IndexFilter getIndexFilter() {
+            return indexFilter;
+        }
+
+        public RexNode getIndexExp() {
+            return indexExp;
+        }
+
+        public RexNode getRemainderExp() {
+            return remainderExp;
+        }
     }
 }

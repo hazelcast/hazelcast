@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.optimizer;
+package com.hazelcast.sql.optimizer.logical;
 
 import com.hazelcast.sql.impl.calcite.opt.logical.AggregateLogicalRel;
 import com.hazelcast.sql.impl.calcite.opt.logical.JoinLogicalRel;
@@ -22,11 +22,12 @@ import com.hazelcast.sql.impl.calcite.opt.logical.ProjectLogicalRel;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastSchema;
 import com.hazelcast.sql.impl.expression.predicate.ComparisonMode;
 import com.hazelcast.sql.impl.expression.predicate.IsNotNullPredicate;
-import com.hazelcast.sql.optimizer.support.LogicalOptimizerTestSupport;
+import com.hazelcast.sql.optimizer.OptimizerTestSupport;
 import org.apache.calcite.plan.RelOptUtil;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.core.JoinRelType;
 import org.apache.calcite.schema.Table;
+import org.apache.calcite.sql.SqlExplainLevel;
 import org.junit.Test;
 
 import java.util.HashMap;
@@ -40,8 +41,8 @@ public class LogicalOptimizerSubQueriesTest extends LogicalOptimizerTestSupport 
     protected HazelcastSchema createDefaultSchema() {
         Map<String, Table> tableMap = new HashMap<>();
 
-        tableMap.put("r", partitionedTable("r", fields("r", INT, "r1", INT, "r2", INT, "r3", INT), null, 100));
-        tableMap.put("s", partitionedTable("s", fields("s", INT, "s1", INT, "s2", INT, "s3", INT), null, 100));
+        tableMap.put("r", OptimizerTestSupport.partitionedTable("r", OptimizerTestSupport.fields("r", INT, "r1", INT, "r2", INT, "r3", INT), null, 100));
+        tableMap.put("s", OptimizerTestSupport.partitionedTable("s", OptimizerTestSupport.fields("s", INT, "s1", INT, "s2", INT, "s3", INT), null, 100));
 
         return new HazelcastSchema(tableMap);
     }
@@ -59,36 +60,36 @@ public class LogicalOptimizerSubQueriesTest extends LogicalOptimizerTestSupport 
 
         ProjectLogicalRel project = assertProject(
             rootNode,
-            list(column(2))
+            OptimizerTestSupport.list(OptimizerTestSupport.column(2))
         );
 
         JoinLogicalRel join = assertJoin(
             project.getInput(),
             JoinRelType.INNER,
-            and(
-                compareColumnsEquals(1, 4), // r2=s2
-                compareColumnsEquals(0, 3)  // r1=s1
+            OptimizerTestSupport.and(
+                OptimizerTestSupport.compareColumnsEquals(1, 4), // r2=s2
+                OptimizerTestSupport.compareColumnsEquals(0, 3)  // r1=s1
             )
         );
 
         assertScan(
             join.getLeft(),
             "r",
-            list(1, 2, 3),
+            OptimizerTestSupport.list(1, 2, 3),
             null
         );
 
         AggregateLogicalRel rightAgg = assertAggregate(
             join.getRight(),
-            list(0, 1),
-            list()
+            OptimizerTestSupport.list(0, 1),
+            OptimizerTestSupport.list()
         );
 
         assertScan(
             rightAgg.getInput(),
             "s",
-            list(1, 2),
-            IsNotNullPredicate.create(column(2))
+            OptimizerTestSupport.list(1, 2),
+            IsNotNullPredicate.create(OptimizerTestSupport.column(2))
         );
     }
 
@@ -101,29 +102,31 @@ public class LogicalOptimizerSubQueriesTest extends LogicalOptimizerTestSupport 
             "SELECT r.r2 FROM r WHERE r.r1 IN (SELECT s.s1 FROM s WHERE s.s2 < 50)"
         );
 
+        OptimizerTestSupport.dump(rootNode);
+
         ProjectLogicalRel project = assertProject(
             rootNode,
-            list(column(1))
+            OptimizerTestSupport.list(OptimizerTestSupport.column(1))
         );
 
         JoinLogicalRel join = assertJoin(
             project.getInput(),
             JoinRelType.SEMI,
-            compareColumnsEquals(0, 2)
+            OptimizerTestSupport.compareColumnsEquals(0, 2)
         );
 
         assertScan(
             join.getLeft(),
             "r",
-            list(1, 2),
+            OptimizerTestSupport.list(1, 2),
             null
         );
 
         assertScan(
             join.getRight(),
             "s",
-            list(1),
-            compare(column(2), constant(50), ComparisonMode.LESS_THAN)
+            OptimizerTestSupport.list(1),
+            OptimizerTestSupport.compare(OptimizerTestSupport.column(2), OptimizerTestSupport.constant(50), ComparisonMode.LESS_THAN)
         );
 
         System.out.println(RelOptUtil.toString(rootNode));
@@ -204,6 +207,6 @@ public class LogicalOptimizerSubQueriesTest extends LogicalOptimizerTestSupport 
         // TODO: Implemented in the same way as correlated NOT EXISTS: dedup S, then do r LEFT OUTER JOIN s. The problem is that
         //  this is a cross join! Are there any better strategies to handle this?
 
-        System.out.println(RelOptUtil.toString(rel));
+        System.out.println(RelOptUtil.toString(rel, SqlExplainLevel.ALL_ATTRIBUTES));
     }
 }

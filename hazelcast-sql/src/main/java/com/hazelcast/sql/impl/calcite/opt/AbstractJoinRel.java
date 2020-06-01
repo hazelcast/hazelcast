@@ -17,10 +17,13 @@
 package com.hazelcast.sql.impl.calcite.opt;
 
 import org.apache.calcite.plan.RelOptCluster;
+import org.apache.calcite.plan.RelOptCost;
+import org.apache.calcite.plan.RelOptPlanner;
 import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.core.Join;
 import org.apache.calcite.rel.core.JoinRelType;
+import org.apache.calcite.rel.metadata.RelMetadataQuery;
 import org.apache.calcite.rex.RexNode;
 
 import java.util.Collections;
@@ -62,5 +65,18 @@ public abstract class AbstractJoinRel extends Join {
 
     public boolean hasEquiJoinKeys() {
         return !leftKeys.isEmpty();
+    }
+
+    // TODO: VO: Revisit this carefully when it is time to implement join. For now it is just copied from Calcite with the
+    //  exception to CPU that is adjusted to row count.
+    @Override public RelOptCost computeSelfCost(RelOptPlanner planner, RelMetadataQuery mq) {
+        if (isSemiJoin()) {
+            return planner.getCostFactory().makeTinyCost();
+        }
+
+        double rowCount = mq.getRowCount(this);
+        double cpu = rowCount;
+
+        return planner.getCostFactory().makeCost(rowCount, cpu, 0);
     }
 }

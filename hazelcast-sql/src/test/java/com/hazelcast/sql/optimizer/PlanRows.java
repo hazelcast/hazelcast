@@ -14,22 +14,38 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.calcite.opt.logical;
+package com.hazelcast.sql.optimizer;
 
-import com.hazelcast.sql.impl.calcite.opt.AbstractRootRel;
-import org.apache.calcite.plan.RelOptCluster;
-import org.apache.calcite.plan.RelTraitSet;
-import org.apache.calcite.rel.RelNode;
-
+import java.util.ArrayList;
 import java.util.List;
 
-public class RootLogicalRel extends AbstractRootRel implements LogicalRel {
-    public RootLogicalRel(RelOptCluster cluster, RelTraitSet traits, RelNode input) {
-        super(cluster, traits, input);
+/**
+ * Rows that constitute the plan.
+ */
+public class PlanRows {
+
+    private final List<PlanRow> rows = new ArrayList<>();
+
+    public void add(PlanRow row) {
+        rows.add(row);
+    }
+
+    public PlanRow getRow(int index) {
+        return rows.get(index);
+    }
+
+    public int getRowCount() {
+        return rows.size();
     }
 
     @Override
-    public final RelNode copy(RelTraitSet traitSet, List<RelNode> inputs) {
-        return new RootLogicalRel(getCluster(), traitSet, sole(inputs));
+    public String toString() {
+        StringBuilder res = new StringBuilder();
+
+        for (PlanRow row : rows) {
+            res.append(row).append("\n");
+        }
+
+        return res.toString();
     }
 }

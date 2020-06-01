@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.optimizer;
+package com.hazelcast.sql.optimizer.logical;
 
 import com.hazelcast.sql.impl.calcite.opt.logical.JoinLogicalRel;
 import com.hazelcast.sql.impl.calcite.opt.logical.ProjectLogicalRel;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastSchema;
 import com.hazelcast.sql.impl.expression.predicate.ComparisonMode;
-import com.hazelcast.sql.optimizer.support.LogicalOptimizerTestSupport;
+import com.hazelcast.sql.optimizer.OptimizerTestSupport;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -46,8 +46,8 @@ public class LogicalOptimizerJoinFilterTest extends LogicalOptimizerTestSupport 
     @Override
     protected HazelcastSchema createDefaultSchema() {
         Map<String, Table> tableMap = new HashMap<>();
-        tableMap.put("r", partitionedTable("r", fields("r_f1", INT, "r_f2", INT, "r_f3", INT), null, 100));
-        tableMap.put("s", partitionedTable("s", fields("s_f1", INT, "s_f2", INT, "s_f3", INT), null, 100));
+        tableMap.put("r", OptimizerTestSupport.partitionedTable("r", OptimizerTestSupport.fields("r_f1", INT, "r_f2", INT, "r_f3", INT), null, 100));
+        tableMap.put("s", OptimizerTestSupport.partitionedTable("s", OptimizerTestSupport.fields("s_f1", INT, "s_f2", INT, "s_f3", INT), null, 100));
 
         return new HazelcastSchema(tableMap);
     }
@@ -85,30 +85,30 @@ public class LogicalOptimizerJoinFilterTest extends LogicalOptimizerTestSupport 
     private void checkJoinFilterPush(RelNode rootInput) {
         ProjectLogicalRel project = assertProject(
             rootInput,
-            list(
-                column(0),
-                column(2)
+            OptimizerTestSupport.list(
+                OptimizerTestSupport.column(0),
+                OptimizerTestSupport.column(2)
             )
         );
 
         JoinLogicalRel join = assertJoin(
             project.getInput(),
             JoinRelType.INNER,
-            compare(column(1), column(3), ComparisonMode.EQUALS)
+            OptimizerTestSupport.compare(OptimizerTestSupport.column(1), OptimizerTestSupport.column(3), ComparisonMode.EQUALS)
         );
 
         assertScan(
             join.getLeft(),
             "r",
-            list(0, 1),
-            compare(column(2), constant(1), ComparisonMode.EQUALS)
+            OptimizerTestSupport.list(0, 1),
+            OptimizerTestSupport.compare(OptimizerTestSupport.column(2), OptimizerTestSupport.constant(1), ComparisonMode.EQUALS)
         );
 
         assertScan(
             join.getRight(),
             "s",
-            list(0, 1),
-            compare(column(2), constant(2), ComparisonMode.EQUALS)
+            OptimizerTestSupport.list(0, 1),
+            OptimizerTestSupport.compare(OptimizerTestSupport.column(2), OptimizerTestSupport.constant(2), ComparisonMode.EQUALS)
         );
     }
 }
