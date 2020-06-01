@@ -16,7 +16,7 @@
 
 package com.hazelcast.sql.impl.calcite.opt.cost;
 
-import com.hazelcast.sql.impl.calcite.opt.physical.visitor.SqlToQueryType;
+import com.hazelcast.sql.impl.calcite.SqlToQueryType;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.type.RelDataTypeField;
 
