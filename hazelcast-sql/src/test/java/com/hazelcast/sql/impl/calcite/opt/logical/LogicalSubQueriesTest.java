@@ -16,13 +16,11 @@
 
 package com.hazelcast.sql.impl.calcite.opt.logical;
 
-import com.hazelcast.sql.impl.calcite.schema.HazelcastSchema;
-import com.hazelcast.sql.impl.expression.predicate.ComparisonMode;
-import com.hazelcast.sql.impl.expression.predicate.IsNotNullPredicate;
 import com.hazelcast.sql.impl.calcite.opt.OptimizerTestSupport;
+import com.hazelcast.sql.impl.calcite.opt.PlanRow;
+import com.hazelcast.sql.impl.calcite.schema.HazelcastSchema;
 import org.apache.calcite.plan.RelOptUtil;
 import org.apache.calcite.rel.RelNode;
-import org.apache.calcite.rel.core.JoinRelType;
 import org.apache.calcite.schema.Table;
 import org.apache.calcite.sql.SqlExplainLevel;
 import org.junit.Test;
@@ -33,7 +31,7 @@ import java.util.Map;
 import static com.hazelcast.sql.impl.type.QueryDataType.INT;
 
 // TODO: Tests with SINGLE_VALUE decorrelations (i.e. when the subquery is in the SELECT or WHERE, etc)
-public class LogicalSubQueriesTest extends LogicalOptimizerTestSupport {
+public class LogicalSubQueriesTest extends OptimizerTestSupport {
     @Override
     protected HazelcastSchema createDefaultSchema() {
         Map<String, Table> tableMap = new HashMap<>();
@@ -51,42 +49,16 @@ public class LogicalSubQueriesTest extends LogicalOptimizerTestSupport {
      */
     @Test
     public void testInCorrelated() {
-        RelNode rootNode = optimizeLogical(
-            "SELECT r.r3 FROM r WHERE r.r1 IN (SELECT s.s1 FROM s WHERE s.s2 = r.r2)"
-        );
-
-        ProjectLogicalRel project = assertProject(
-            rootNode,
-            OptimizerTestSupport.list(OptimizerTestSupport.column(2))
-        );
-
-        JoinLogicalRel join = assertJoin(
-            project.getInput(),
-            JoinRelType.INNER,
-            OptimizerTestSupport.and(
-                OptimizerTestSupport.compareColumnsEquals(1, 4), // r2=s2
-                OptimizerTestSupport.compareColumnsEquals(0, 3)  // r1=s1
+        assertPlan(
+            optimizeLogical("SELECT r.r3 FROM r WHERE r.r1 IN (SELECT s.s1 FROM s WHERE s.s2 = r.r2)"),
+            plan(
+                new PlanRow(0, RootLogicalRel.class, "", 20.2d),
+                new PlanRow(1, ProjectLogicalRel.class, "r3=[$2]", 20.2),
+                new PlanRow(2, JoinLogicalRel.class, "condition=[AND(=($1, $4), =($0, $3))], joinType=[inner]", 20.2d),
+                new PlanRow(3, MapScanLogicalRel.class, "table=[[hazelcast, r]], projects=[[1, 2, 3]]", 100d),
+                new PlanRow(3, AggregateLogicalRel.class, "group=[{0, 1}]", 9d),
+                new PlanRow(4, MapScanLogicalRel.class, "table=[[hazelcast, s]], projects=[[1, 2]], filter=[IS NOT NULL($2)]", 90d)
             )
-        );
-
-        assertScan(
-            join.getLeft(),
-            "r",
-            OptimizerTestSupport.list(1, 2, 3),
-            null
-        );
-
-        AggregateLogicalRel rightAgg = assertAggregate(
-            join.getRight(),
-            OptimizerTestSupport.list(0, 1),
-            OptimizerTestSupport.list()
-        );
-
-        assertScan(
-            rightAgg.getInput(),
-            "s",
-            OptimizerTestSupport.list(1, 2),
-            IsNotNullPredicate.create(OptimizerTestSupport.column(2))
         );
     }
 
@@ -95,38 +67,16 @@ public class LogicalSubQueriesTest extends LogicalOptimizerTestSupport {
      */
     @Test
     public void testInNotCorrelated() {
-        RelNode rootNode = optimizeLogical(
-            "SELECT r.r2 FROM r WHERE r.r1 IN (SELECT s.s1 FROM s WHERE s.s2 < 50)"
+        assertPlan(
+            optimizeLogical("SELECT r.r2 FROM r WHERE r.r1 IN (SELECT s.s1 FROM s WHERE s.s2 < 50)"),
+            plan(
+                new PlanRow(0, RootLogicalRel.class, "", 100d),
+                new PlanRow(1, ProjectLogicalRel.class, "r2=[$1]", 100d),
+                new PlanRow(2, JoinLogicalRel.class, "condition=[=($0, $2)], joinType=[semi]", 100d),
+                new PlanRow(3, MapScanLogicalRel.class, "table=[[hazelcast, r]], projects=[[1, 2]]", 100d),
+                new PlanRow(3, MapScanLogicalRel.class, "table=[[hazelcast, s]], projects=[[1]], filter=[<($2, 50)]", 50d)
+            )
         );
-
-        OptimizerTestSupport.dump(rootNode);
-
-        ProjectLogicalRel project = assertProject(
-            rootNode,
-            OptimizerTestSupport.list(OptimizerTestSupport.column(1))
-        );
-
-        JoinLogicalRel join = assertJoin(
-            project.getInput(),
-            JoinRelType.SEMI,
-            OptimizerTestSupport.compareColumnsEquals(0, 2)
-        );
-
-        assertScan(
-            join.getLeft(),
-            "r",
-            OptimizerTestSupport.list(1, 2),
-            null
-        );
-
-        assertScan(
-            join.getRight(),
-            "s",
-            OptimizerTestSupport.list(1),
-            OptimizerTestSupport.compare(OptimizerTestSupport.column(2), OptimizerTestSupport.constant(50), ComparisonMode.LESS_THAN)
-        );
-
-        System.out.println(RelOptUtil.toString(rootNode));
     }
 
     @Test

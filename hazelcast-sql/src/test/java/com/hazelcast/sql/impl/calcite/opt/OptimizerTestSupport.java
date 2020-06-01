@@ -78,12 +78,10 @@ public abstract class OptimizerTestSupport extends SqlTestSupport {
         last = null;
     }
 
-    /**
-     * Perform physical optimization.
-     *
-     * @param sql SQL.
-     * @return Input of the root node.
-     */
+    protected RelNode optimizeLogical(String sql) {
+        return optimize(sql, false).getLogical();
+    }
+
     protected RelNode optimizePhysical(String sql) {
         return optimize(sql, true).getPhysical();
     }

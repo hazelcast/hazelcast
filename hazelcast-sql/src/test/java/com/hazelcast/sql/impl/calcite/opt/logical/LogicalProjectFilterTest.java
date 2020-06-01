@@ -16,15 +16,11 @@
 
 package com.hazelcast.sql.impl.calcite.opt.logical;
 
-import com.hazelcast.sql.impl.calcite.opt.PlanRow;
-import com.hazelcast.sql.impl.expression.math.PlusFunction;
-import com.hazelcast.sql.impl.expression.predicate.AndPredicate;
-import com.hazelcast.sql.impl.expression.predicate.ComparisonMode;
 import com.hazelcast.sql.impl.calcite.opt.OptimizerTestSupport;
+import com.hazelcast.sql.impl.calcite.opt.PlanRow;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.apache.calcite.rel.RelNode;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -34,7 +30,7 @@ import org.junit.runner.RunWith;
  */
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class LogicalProjectFilterTest extends LogicalOptimizerTestSupport {
+public class LogicalProjectFilterTest extends OptimizerTestSupport {
     /**
      * Before: Project <- Scan
      * After : Scan(Project)
@@ -42,7 +38,7 @@ public class LogicalProjectFilterTest extends LogicalOptimizerTestSupport {
     @Test
     public void testProjectIntoScan() {
         assertPlan(
-            optimizeLogical1("SELECT f1, f2 FROM p"),
+            optimizeLogical("SELECT f1, f2 FROM p"),
             plan(
                 new PlanRow(0, RootLogicalRel.class, "", 100d),
                 new PlanRow(1, MapScanLogicalRel.class, "table=[[hazelcast, p]], projects=[[0, 1]]", 100d)
@@ -56,17 +52,14 @@ public class LogicalProjectFilterTest extends LogicalOptimizerTestSupport {
      */
     @Test
     public void testProjectExpressionIntoScan() {
-        RelNode rootInput = optimizeLogical("SELECT f1 + f2, f3 FROM p");
-
-        ProjectLogicalRel project = assertProject(
-            rootInput,
-            OptimizerTestSupport.list(
-                PlusFunction.create(OptimizerTestSupport.column(0), OptimizerTestSupport.column(1)),
-                OptimizerTestSupport.column(2)
+        assertPlan(
+            optimizeLogical("SELECT f1 + f2, f3 FROM p"),
+            plan(
+                new PlanRow(0, RootLogicalRel.class, "", 100d),
+                new PlanRow(1, ProjectLogicalRel.class, "EXPR$0=[+($0, $1)], f3=[$2]", 100d),
+                new PlanRow(2, MapScanLogicalRel.class, "table=[[hazelcast, p]], projects=[[0, 1, 2]]", 100d)
             )
         );
-
-        assertScan(project.getInput(), OptimizerTestSupport.list(0, 1, 2), null);
     }
 
     /**
@@ -75,15 +68,11 @@ public class LogicalProjectFilterTest extends LogicalOptimizerTestSupport {
      */
     @Test
     public void testProjectFilterIntoScan() {
-        RelNode rootInput = optimizeLogical("SELECT f1, f2 FROM p WHERE f3 > 1");
-
-        assertScan(
-            rootInput,
-            OptimizerTestSupport.list(0, 1),
-            OptimizerTestSupport.compare(
-                OptimizerTestSupport.column(2),
-                OptimizerTestSupport.constant(1),
-                ComparisonMode.GREATER_THAN
+        assertPlan(
+            optimizeLogical("SELECT f1, f2 FROM p WHERE f3 > 1"),
+            plan(
+                new PlanRow(0, RootLogicalRel.class, "", 50d),
+                new PlanRow(1, MapScanLogicalRel.class, "table=[[hazelcast, p]], projects=[[0, 1]], filter=[>($2, 1)]", 50d)
             )
         );
     }
@@ -94,22 +83,13 @@ public class LogicalProjectFilterTest extends LogicalOptimizerTestSupport {
      */
     @Test
     public void testProjectExpressionFilterScan() {
-        RelNode rootInput = optimizeLogical("SELECT f1 + f2, f3 FROM p WHERE f4 > 1");
-
-        OptimizerTestSupport.dump(rootInput);
-
-        ProjectLogicalRel project = assertProject(
-            rootInput,
-            OptimizerTestSupport.list(
-                PlusFunction.create(OptimizerTestSupport.column(0), OptimizerTestSupport.column(1)),
-                OptimizerTestSupport.column(2)
+        assertPlan(
+            optimizeLogical("SELECT f1 + f2, f3 FROM p WHERE f4 > 1"),
+            plan(
+                new PlanRow(0, RootLogicalRel.class, "", 50d),
+                new PlanRow(1, ProjectLogicalRel.class, "EXPR$0=[+($0, $1)], f3=[$2]", 50d),
+                new PlanRow(2, MapScanLogicalRel.class, "table=[[hazelcast, p]], projects=[[0, 1, 2]], filter=[>($3, 1)]", 50d)
             )
-        );
-
-        assertScan(
-            project.getInput(),
-            OptimizerTestSupport.list(0, 1, 2),
-            OptimizerTestSupport.compare(OptimizerTestSupport.column(3), OptimizerTestSupport.constant(1), ComparisonMode.GREATER_THAN)
         );
     }
 
@@ -119,9 +99,13 @@ public class LogicalProjectFilterTest extends LogicalOptimizerTestSupport {
      */
     @Test
     public void testProjectProjectIntoScan() {
-        RelNode rootInput = optimizeLogical("SELECT f1 FROM (SELECT f1, f2 FROM p)");
-
-        assertScan(rootInput, OptimizerTestSupport.list(0), null);
+        assertPlan(
+            optimizeLogical("SELECT f1 FROM (SELECT f1, f2 FROM p)"),
+            plan(
+                new PlanRow(0, RootLogicalRel.class, "", 100d),
+                new PlanRow(1, MapScanLogicalRel.class, "table=[[hazelcast, p]], projects=[[0]]", 100d)
+            )
+        );
     }
 
     /**
@@ -130,17 +114,14 @@ public class LogicalProjectFilterTest extends LogicalOptimizerTestSupport {
      */
     @Test
     public void testProjectProjectExpressionIntoScan() {
-        RelNode rootInput = optimizeLogical("SELECT d1, f3 FROM (SELECT f1 + f2 d1, f3, f4 FROM p)");
-
-        ProjectLogicalRel project = assertProject(
-            rootInput,
-            OptimizerTestSupport.list(
-                PlusFunction.create(OptimizerTestSupport.column(0), OptimizerTestSupport.column(1)),
-                OptimizerTestSupport.column(2)
+        assertPlan(
+            optimizeLogical("SELECT d1, f3 FROM (SELECT f1 + f2 d1, f3, f4 FROM p)"),
+            plan(
+                new PlanRow(0, RootLogicalRel.class, "", 100d),
+                new PlanRow(1, ProjectLogicalRel.class, "d1=[+($0, $1)], f3=[$2]", 100d),
+                new PlanRow(2, MapScanLogicalRel.class, "table=[[hazelcast, p]], projects=[[0, 1, 2]]", 100d)
             )
         );
-
-        assertScan(project.getInput(), OptimizerTestSupport.list(0, 1, 2), null);
     }
 
     /**
@@ -149,17 +130,14 @@ public class LogicalProjectFilterTest extends LogicalOptimizerTestSupport {
      */
     @Test
     public void testProjectExpressionProjectIntoScan() {
-        RelNode rootInput = optimizeLogical("SELECT f1 + f2, f3 FROM (SELECT f1, f2, f3, f4 FROM p)");
-
-        ProjectLogicalRel project = assertProject(
-            rootInput,
-            OptimizerTestSupport.list(
-                PlusFunction.create(OptimizerTestSupport.column(0), OptimizerTestSupport.column(1)),
-                OptimizerTestSupport.column(2)
+        assertPlan(
+            optimizeLogical("SELECT f1 + f2, f3 FROM (SELECT f1, f2, f3, f4 FROM p)"),
+            plan(
+                new PlanRow(0, RootLogicalRel.class, "", 100d),
+                new PlanRow(1, ProjectLogicalRel.class, "EXPR$0=[+($0, $1)], f3=[$2]", 100d),
+                new PlanRow(2, MapScanLogicalRel.class, "table=[[hazelcast, p]], projects=[[0, 1, 2]]", 100d)
             )
         );
-
-        assertScan(project.getInput(), OptimizerTestSupport.list(0, 1, 2), null);
     }
 
     /**
@@ -168,19 +146,14 @@ public class LogicalProjectFilterTest extends LogicalOptimizerTestSupport {
      */
     @Test
     public void testProjectExpressionProjectExpressionIntoScan() {
-        RelNode rootInput = optimizeLogical("SELECT d1 + f3 FROM (SELECT f1 + f2 d1, f3, f4 FROM p)");
-
-        ProjectLogicalRel project = assertProject(
-            rootInput,
-            OptimizerTestSupport.list(
-                PlusFunction.create(
-                    PlusFunction.create(OptimizerTestSupport.column(0), OptimizerTestSupport.column(1)),
-                    OptimizerTestSupport.column(2)
-                )
+        assertPlan(
+            optimizeLogical("SELECT d1 + f3 FROM (SELECT f1 + f2 d1, f3, f4 FROM p)"),
+            plan(
+                new PlanRow(0, RootLogicalRel.class, "", 100d),
+                new PlanRow(1, ProjectLogicalRel.class, "EXPR$0=[+(+($0, $1), $2)]", 100d),
+                new PlanRow(2, MapScanLogicalRel.class, "table=[[hazelcast, p]], projects=[[0, 1, 2]]", 100d)
             )
         );
-
-        assertScan(project.getInput(), OptimizerTestSupport.list(0, 1, 2), null);
     }
 
     /**
@@ -189,12 +162,12 @@ public class LogicalProjectFilterTest extends LogicalOptimizerTestSupport {
      */
     @Test
     public void testProjectProjectFilterIntoScan() {
-        RelNode rootInput = optimizeLogical("SELECT f1 FROM (SELECT f1, f2 FROM p WHERE f3 > 1)");
-
-        assertScan(
-            rootInput,
-            OptimizerTestSupport.list(0),
-            OptimizerTestSupport.compare(OptimizerTestSupport.column(2), OptimizerTestSupport.constant(1), ComparisonMode.GREATER_THAN)
+        assertPlan(
+            optimizeLogical("SELECT f1 FROM (SELECT f1, f2 FROM p WHERE f3 > 1)"),
+            plan(
+                new PlanRow(0, RootLogicalRel.class, "", 50d),
+                new PlanRow(1, MapScanLogicalRel.class, "table=[[hazelcast, p]], projects=[[0]], filter=[>($2, 1)]", 50d)
+            )
         );
     }
 
@@ -204,20 +177,13 @@ public class LogicalProjectFilterTest extends LogicalOptimizerTestSupport {
      */
     @Test
     public void testProjectProjectExpressionFilterIntoScan() {
-        RelNode rootInput = optimizeLogical("SELECT d1, f3 FROM (SELECT f1 + f2 d1, f3, f4 FROM p WHERE f5 > 1)");
-
-        ProjectLogicalRel project = assertProject(
-            rootInput,
-            OptimizerTestSupport.list(
-                PlusFunction.create(OptimizerTestSupport.column(0), OptimizerTestSupport.column(1)),
-                OptimizerTestSupport.column(2)
+        assertPlan(
+            optimizeLogical("SELECT d1, f3 FROM (SELECT f1 + f2 d1, f3, f4 FROM p WHERE f5 > 1)"),
+            plan(
+                new PlanRow(0, RootLogicalRel.class, "", 50d),
+                new PlanRow(1, ProjectLogicalRel.class, "d1=[+($0, $1)], f3=[$2]", 50d),
+                new PlanRow(2, MapScanLogicalRel.class, "table=[[hazelcast, p]], projects=[[0, 1, 2]], filter=[>($4, 1)]", 50d)
             )
-        );
-
-        assertScan(
-            project.getInput(),
-            OptimizerTestSupport.list(0, 1, 2),
-            OptimizerTestSupport.compare(OptimizerTestSupport.column(4), OptimizerTestSupport.constant(1), ComparisonMode.GREATER_THAN)
         );
     }
 
@@ -227,19 +193,13 @@ public class LogicalProjectFilterTest extends LogicalOptimizerTestSupport {
      */
     @Test
     public void testProjectExpressionProjectFilterIntoScan() {
-        RelNode rootInput = optimizeLogical("SELECT f1 + f2 FROM (SELECT f1, f2, f3, f4 FROM p WHERE f3 > 1)");
-
-        ProjectLogicalRel project = assertProject(
-            rootInput,
-            OptimizerTestSupport.list(
-                PlusFunction.create(OptimizerTestSupport.column(0), OptimizerTestSupport.column(1))
+        assertPlan(
+            optimizeLogical("SELECT f1 + f2 FROM (SELECT f1, f2, f3, f4 FROM p WHERE f3 > 1)"),
+            plan(
+                new PlanRow(0, RootLogicalRel.class, "", 50d),
+                new PlanRow(1, ProjectLogicalRel.class, "EXPR$0=[+($0, $1)]", 50d),
+                new PlanRow(2, MapScanLogicalRel.class, "table=[[hazelcast, p]], projects=[[0, 1]], filter=[>($2, 1)]", 50d)
             )
-        );
-
-        assertScan(
-            project.getInput(),
-            OptimizerTestSupport.list(0, 1),
-            OptimizerTestSupport.compare(OptimizerTestSupport.column(2), OptimizerTestSupport.constant(1), ComparisonMode.GREATER_THAN)
         );
     }
 
@@ -249,22 +209,13 @@ public class LogicalProjectFilterTest extends LogicalOptimizerTestSupport {
      */
     @Test
     public void testProjectExpressionProjectExpressionFilterIntoScan() {
-        RelNode rootInput = optimizeLogical("SELECT d1 + f3 FROM (SELECT f1 + f2 d1, f3, f4 FROM p WHERE f5 > 1)");
-
-        ProjectLogicalRel project = assertProject(
-            rootInput,
-            OptimizerTestSupport.list(
-                PlusFunction.create(
-                    PlusFunction.create(OptimizerTestSupport.column(0), OptimizerTestSupport.column(1)),
-                    OptimizerTestSupport.column(2)
-                )
+        assertPlan(
+            optimizeLogical("SELECT d1 + f3 FROM (SELECT f1 + f2 d1, f3, f4 FROM p WHERE f5 > 1)"),
+            plan(
+                new PlanRow(0, RootLogicalRel.class, "", 50d),
+                new PlanRow(1, ProjectLogicalRel.class, "EXPR$0=[+(+($0, $1), $2)]", 50d),
+                new PlanRow(2, MapScanLogicalRel.class, "table=[[hazelcast, p]], projects=[[0, 1, 2]], filter=[>($4, 1)]", 50d)
             )
-        );
-
-        assertScan(
-            project.getInput(),
-            OptimizerTestSupport.list(0, 1, 2),
-            OptimizerTestSupport.compare(OptimizerTestSupport.column(4), OptimizerTestSupport.constant(1), ComparisonMode.GREATER_THAN)
         );
     }
 
@@ -274,12 +225,12 @@ public class LogicalProjectFilterTest extends LogicalOptimizerTestSupport {
      */
     @Test
     public void testProjectFilterProjectIntoScan() {
-        RelNode rootInput = optimizeLogical("SELECT f1 FROM (SELECT f1, f2, f3 FROM p) WHERE f2 > 1");
-
-        assertScan(
-            rootInput,
-            OptimizerTestSupport.list(0),
-            OptimizerTestSupport.compare(OptimizerTestSupport.column(1), OptimizerTestSupport.constant(1), ComparisonMode.GREATER_THAN)
+        assertPlan(
+            optimizeLogical("SELECT f1 FROM (SELECT f1, f2, f3 FROM p) WHERE f2 > 1"),
+            plan(
+                new PlanRow(0, RootLogicalRel.class, "", 50d),
+                new PlanRow(1, MapScanLogicalRel.class, "table=[[hazelcast, p]], projects=[[0]], filter=[>($1, 1)]", 50d)
+            )
         );
     }
 
@@ -290,30 +241,15 @@ public class LogicalProjectFilterTest extends LogicalOptimizerTestSupport {
      */
     @Test
     public void testProjectFilterProjectExpressionIntoScan() {
-        RelNode rootInput = optimizeLogical("SELECT d1, f3 FROM (SELECT f1 + f2 d1, f3, f4, f5 FROM p) WHERE f4 > 1");
-
         // TODO: Two projects cannot be merged together because ProjectMergeRule is disabled. Implement or fail this test intentionally.
-        ProjectLogicalRel topProject = assertProject(
-            rootInput,
-            OptimizerTestSupport.list(
-                OptimizerTestSupport.column(0),
-                OptimizerTestSupport.column(1)
+        assertPlan(
+            optimizeLogical("SELECT d1, f3 FROM (SELECT f1 + f2 d1, f3, f4, f5 FROM p) WHERE f4 > 1"),
+            plan(
+                new PlanRow(0, RootLogicalRel.class, "", 50d),
+                new PlanRow(1, ProjectLogicalRel.class, "d1=[$0], f3=[$1]", 50d),
+                new PlanRow(2, ProjectLogicalRel.class, "d1=[+($0, $1)], f3=[$2], f4=[$3]", 50d),
+                new PlanRow(3, MapScanLogicalRel.class, "table=[[hazelcast, p]], projects=[[0, 1, 2, 3]], filter=[>($3, 1)]", 50d)
             )
-        );
-
-        ProjectLogicalRel bottomProject = assertProject(
-            topProject.getInput(),
-            OptimizerTestSupport.list(
-                PlusFunction.create(OptimizerTestSupport.column(0), OptimizerTestSupport.column(1)),
-                OptimizerTestSupport.column(2),
-                OptimizerTestSupport.column(3)
-            )
-        );
-
-        assertScan(
-            bottomProject.getInput(),
-            OptimizerTestSupport.list(0, 1, 2, 3),
-            OptimizerTestSupport.compare(OptimizerTestSupport.column(3), OptimizerTestSupport.constant(1), ComparisonMode.GREATER_THAN)
         );
     }
 
@@ -324,19 +260,13 @@ public class LogicalProjectFilterTest extends LogicalOptimizerTestSupport {
      */
     @Test
     public void testProjectExpressionFilterProjectIntoScan() {
-        RelNode rootInput = optimizeLogical("SELECT f1 + f2 FROM (SELECT f1, f2, f3, f4 FROM p) WHERE f3 > 1");
-
-        ProjectLogicalRel project = assertProject(
-            rootInput,
-            OptimizerTestSupport.list(
-                PlusFunction.create(OptimizerTestSupport.column(0), OptimizerTestSupport.column(1))
+        assertPlan(
+            optimizeLogical("SELECT f1 + f2 FROM (SELECT f1, f2, f3, f4 FROM p) WHERE f3 > 1"),
+            plan(
+                new PlanRow(0, RootLogicalRel.class, "", 50d),
+                new PlanRow(1, ProjectLogicalRel.class, "EXPR$0=[+($0, $1)]", 50d),
+                new PlanRow(2, MapScanLogicalRel.class, "table=[[hazelcast, p]], projects=[[0, 1]], filter=[>($2, 1)]", 50d)
             )
-        );
-
-        assertScan(
-            project.getInput(),
-            OptimizerTestSupport.list(0, 1),
-            OptimizerTestSupport.compare(OptimizerTestSupport.column(2), OptimizerTestSupport.constant(1), ComparisonMode.GREATER_THAN)
         );
     }
 
@@ -347,29 +277,15 @@ public class LogicalProjectFilterTest extends LogicalOptimizerTestSupport {
      */
     @Test
     public void testProjectExpressionFilterProjectExpressionIntoScan() {
-        RelNode rootInput = optimizeLogical("SELECT d1 + f3 FROM (SELECT f1 + f2 d1, f3, f4, f5 FROM p) WHERE f4 > 1");
-
         // TODO: Two projects cannot be merged together because ProjectMergeRule is disabled. Implement or fail this test intentionally.
-        ProjectLogicalRel topProject = assertProject(
-            rootInput,
-            OptimizerTestSupport.list(
-                PlusFunction.create(OptimizerTestSupport.column(0), OptimizerTestSupport.column(1))
+        assertPlan(
+            optimizeLogical("SELECT d1 + f3 FROM (SELECT f1 + f2 d1, f3, f4, f5 FROM p) WHERE f4 > 1"),
+            plan(
+                new PlanRow(0, RootLogicalRel.class, "", 50d),
+                new PlanRow(1, ProjectLogicalRel.class, "EXPR$0=[+($0, $1)]", 50d),
+                new PlanRow(2, ProjectLogicalRel.class, "d1=[+($0, $1)], f3=[$2], f4=[$3]", 50d),
+                new PlanRow(3, MapScanLogicalRel.class, "table=[[hazelcast, p]], projects=[[0, 1, 2, 3]], filter=[>($3, 1)]", 50d)
             )
-        );
-
-        ProjectLogicalRel bottomProject = assertProject(
-            topProject.getInput(),
-            OptimizerTestSupport.list(
-                PlusFunction.create(OptimizerTestSupport.column(0), OptimizerTestSupport.column(1)),
-                OptimizerTestSupport.column(2),
-                OptimizerTestSupport.column(3)
-            )
-        );
-
-        assertScan(
-            bottomProject.getInput(),
-            OptimizerTestSupport.list(0, 1, 2, 3),
-            OptimizerTestSupport.compare(OptimizerTestSupport.column(3), OptimizerTestSupport.constant(1), ComparisonMode.GREATER_THAN)
         );
     }
 
@@ -379,14 +295,11 @@ public class LogicalProjectFilterTest extends LogicalOptimizerTestSupport {
      */
     @Test
     public void testProjectFilterProjectFilterIntoScan() {
-        RelNode rootInput = optimizeLogical("SELECT f1 FROM (SELECT f1, f2, f3 FROM p WHERE f4 > 1) WHERE f2 > 1");
-
-        assertScan(
-            rootInput,
-            OptimizerTestSupport.list(0),
-            AndPredicate.create(
-                OptimizerTestSupport.compare(OptimizerTestSupport.column(3), OptimizerTestSupport.constant(1), ComparisonMode.GREATER_THAN),
-                OptimizerTestSupport.compare(OptimizerTestSupport.column(1), OptimizerTestSupport.constant(1), ComparisonMode.GREATER_THAN)
+        assertPlan(
+            optimizeLogical("SELECT f1 FROM (SELECT f1, f2, f3 FROM p WHERE f4 > 1) WHERE f2 > 1"),
+            plan(
+                new PlanRow(0, RootLogicalRel.class, "", 25d),
+                new PlanRow(1, MapScanLogicalRel.class, "table=[[hazelcast, p]], projects=[[0]], filter=[AND(>($3, 1), >($1, 1))]", 25d)
             )
         );
     }
@@ -397,22 +310,12 @@ public class LogicalProjectFilterTest extends LogicalOptimizerTestSupport {
      */
     @Test
     public void testProjectFilterProjectExpressionFilterIntoScan() {
-        RelNode rootInput = optimizeLogical("SELECT d1, f3 FROM (SELECT f1 + f2 d1, f3, f4, f5 FROM p WHERE f4 > 1) WHERE f3 > 2");
-
-        ProjectLogicalRel project = assertProject(
-            rootInput,
-            OptimizerTestSupport.list(
-                PlusFunction.create(OptimizerTestSupport.column(0), OptimizerTestSupport.column(1)),
-                OptimizerTestSupport.column(2)
-            )
-        );
-
-        assertScan(
-            project.getInput(),
-            OptimizerTestSupport.list(0, 1, 2),
-            AndPredicate.create(
-                OptimizerTestSupport.compare(OptimizerTestSupport.column(3), OptimizerTestSupport.constant(1), ComparisonMode.GREATER_THAN),
-                OptimizerTestSupport.compare(OptimizerTestSupport.column(2), OptimizerTestSupport.constant(2), ComparisonMode.GREATER_THAN)
+        assertPlan(
+            optimizeLogical("SELECT d1, f3 FROM (SELECT f1 + f2 d1, f3, f4, f5 FROM p WHERE f4 > 1) WHERE f3 > 2"),
+            plan(
+                new PlanRow(0, RootLogicalRel.class, "", 25d),
+                new PlanRow(1, ProjectLogicalRel.class, "d1=[+($0, $1)], f3=[$2]", 25d),
+                new PlanRow(2, MapScanLogicalRel.class, "table=[[hazelcast, p]], projects=[[0, 1, 2]], filter=[AND(>($3, 1), >($2, 2))]", 25d)
             )
         );
     }
@@ -423,21 +326,12 @@ public class LogicalProjectFilterTest extends LogicalOptimizerTestSupport {
      */
     @Test
     public void testProjectExpressionFilterProjectFilterIntoScan() {
-        RelNode rootInput = optimizeLogical("SELECT f1 + f2 FROM (SELECT f1, f2, f3, f4 FROM p WHERE f4 > 1) WHERE f3 > 1");
-
-        ProjectLogicalRel project = assertProject(
-            rootInput,
-            OptimizerTestSupport.list(
-                PlusFunction.create(OptimizerTestSupport.column(0), OptimizerTestSupport.column(1))
-            )
-        );
-
-        assertScan(
-            project.getInput(),
-            OptimizerTestSupport.list(0, 1),
-            AndPredicate.create(
-                OptimizerTestSupport.compare(OptimizerTestSupport.column(3), OptimizerTestSupport.constant(1), ComparisonMode.GREATER_THAN),
-                OptimizerTestSupport.compare(OptimizerTestSupport.column(2), OptimizerTestSupport.constant(1), ComparisonMode.GREATER_THAN)
+        assertPlan(
+            optimizeLogical("SELECT f1 + f2 FROM (SELECT f1, f2, f3, f4 FROM p WHERE f4 > 1) WHERE f3 > 1"),
+            plan(
+                new PlanRow(0, RootLogicalRel.class, "", 25d),
+                new PlanRow(1, ProjectLogicalRel.class, "EXPR$0=[+($0, $1)]", 25d),
+                new PlanRow(2, MapScanLogicalRel.class, "table=[[hazelcast, p]], projects=[[0, 1]], filter=[AND(>($3, 1), >($2, 1))]", 25d)
             )
         );
     }
@@ -448,30 +342,14 @@ public class LogicalProjectFilterTest extends LogicalOptimizerTestSupport {
      */
     @Test
     public void testProjectExpressionFilterProjectExpressionFilterIntoScan() {
-        RelNode rootInput = optimizeLogical("SELECT d1 + f3 FROM (SELECT f1 + f2 d1, f3, f4, f5 FROM p WHERE f4 > 1) WHERE f3 > 2");
-
         // TODO: Two projects cannot be merged together because ProjectMergeRule is disabled. Implement or fail this test intentionally.
-        ProjectLogicalRel topProject = assertProject(
-            rootInput,
-            OptimizerTestSupport.list(
-                PlusFunction.create(OptimizerTestSupport.column(0), OptimizerTestSupport.column(1))
-            )
-        );
-
-        ProjectLogicalRel bottomProject = assertProject(
-            topProject.getInput(),
-            OptimizerTestSupport.list(
-                PlusFunction.create(OptimizerTestSupport.column(0), OptimizerTestSupport.column(1)),
-                OptimizerTestSupport.column(2)
-            )
-        );
-
-        assertScan(
-            bottomProject.getInput(),
-            OptimizerTestSupport.list(0, 1, 2),
-            AndPredicate.create(
-                OptimizerTestSupport.compare(OptimizerTestSupport.column(3), OptimizerTestSupport.constant(1), ComparisonMode.GREATER_THAN),
-                OptimizerTestSupport.compare(OptimizerTestSupport.column(2), OptimizerTestSupport.constant(2), ComparisonMode.GREATER_THAN)
+        assertPlan(
+            optimizeLogical("SELECT d1 + f3 FROM (SELECT f1 + f2 d1, f3, f4, f5 FROM p WHERE f4 > 1) WHERE f3 > 2"),
+            plan(
+                new PlanRow(0, RootLogicalRel.class, "", 25d),
+                new PlanRow(1, ProjectLogicalRel.class, "EXPR$0=[+($0, $1)]", 25d),
+                new PlanRow(2, ProjectLogicalRel.class, "d1=[+($0, $1)], f3=[$2]", 25d),
+                new PlanRow(3, MapScanLogicalRel.class, "table=[[hazelcast, p]], projects=[[0, 1, 2]], filter=[AND(>($3, 1), >($2, 2))]", 25d)
             )
         );
     }

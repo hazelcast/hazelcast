@@ -16,14 +16,12 @@
 
 package com.hazelcast.sql.impl.calcite.opt.logical;
 
-import com.hazelcast.sql.impl.calcite.schema.HazelcastSchema;
-import com.hazelcast.sql.impl.expression.predicate.ComparisonMode;
 import com.hazelcast.sql.impl.calcite.opt.OptimizerTestSupport;
+import com.hazelcast.sql.impl.calcite.opt.PlanRow;
+import com.hazelcast.sql.impl.calcite.schema.HazelcastSchema;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.apache.calcite.rel.RelNode;
-import org.apache.calcite.rel.core.JoinRelType;
 import org.apache.calcite.schema.Table;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -40,7 +38,7 @@ import static com.hazelcast.sql.impl.type.QueryDataType.INT;
 // TODO: More tests with different join types and different expressions and permutations
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class LogicalJoinFilterTest extends LogicalOptimizerTestSupport {
+public class LogicalJoinFilterTest extends OptimizerTestSupport {
     @Override
     protected HazelcastSchema createDefaultSchema() {
         Map<String, Table> tableMap = new HashMap<>();
@@ -55,58 +53,29 @@ public class LogicalJoinFilterTest extends LogicalOptimizerTestSupport {
      */
     @Test
     public void testJoinOnFilterPush() {
-        RelNode rootInput = optimizeLogical(
-            "SELECT r.r_f1, s.s_f1 FROM r INNER JOIN s ON r.r_f2 = s.s_f2 AND r.r_f3 = 1 AND s.s_f3 = 2"
-        );
-
-        checkJoinFilterPush(rootInput);
+        checkJoinFilterPush("SELECT r.r_f1, s.s_f1 FROM r INNER JOIN s ON r.r_f2 = s.s_f2 AND r.r_f3 = 1 AND s.s_f3 = 2");
     }
 
     @Test
     public void testJoinWhereFilterPush() {
-        RelNode rootInput = optimizeLogical(
-            "SELECT r.r_f1, s.s_f1 FROM r, s WHERE r.r_f2 = s.s_f2 AND r.r_f3 = 1 AND s.s_f3 = 2"
-        );
-
-        checkJoinFilterPush(rootInput);
+        checkJoinFilterPush("SELECT r.r_f1, s.s_f1 FROM r, s WHERE r.r_f2 = s.s_f2 AND r.r_f3 = 1 AND s.s_f3 = 2");
     }
 
     @Test
     public void testJoinOnAndWhereFilterPush() {
-        RelNode rootInput = optimizeLogical(
-            "SELECT r.r_f1, s.s_f1 FROM r INNER JOIN s ON r.r_f2 = s.s_f2 AND r.r_f3 = 1 WHERE s.s_f3 = 2"
-        );
-
-        checkJoinFilterPush(rootInput);
+        checkJoinFilterPush("SELECT r.r_f1, s.s_f1 FROM r INNER JOIN s ON r.r_f2 = s.s_f2 AND r.r_f3 = 1 WHERE s.s_f3 = 2");
     }
 
-    private void checkJoinFilterPush(RelNode rootInput) {
-        ProjectLogicalRel project = assertProject(
-            rootInput,
-            OptimizerTestSupport.list(
-                OptimizerTestSupport.column(0),
-                OptimizerTestSupport.column(2)
+    private void checkJoinFilterPush(String sql) {
+        assertPlan(
+            optimizeLogical(sql),
+            plan(
+                new PlanRow(0, RootLogicalRel.class, "", 33.8d),
+                new PlanRow(1, ProjectLogicalRel.class, "r_f1=[$0], s_f1=[$2]", 33.8d),
+                new PlanRow(2, JoinLogicalRel.class, "condition=[=($1, $3)], joinType=[inner]", 33.8d),
+                new PlanRow(3, MapScanLogicalRel.class, "table=[[hazelcast, r]], projects=[[0, 1]], filter=[=($2, 1)]", 15d),
+                new PlanRow(3, MapScanLogicalRel.class, "table=[[hazelcast, s]], projects=[[0, 1]], filter=[=($2, 2)]", 15d)
             )
-        );
-
-        JoinLogicalRel join = assertJoin(
-            project.getInput(),
-            JoinRelType.INNER,
-            OptimizerTestSupport.compare(OptimizerTestSupport.column(1), OptimizerTestSupport.column(3), ComparisonMode.EQUALS)
-        );
-
-        assertScan(
-            join.getLeft(),
-            "r",
-            OptimizerTestSupport.list(0, 1),
-            OptimizerTestSupport.compare(OptimizerTestSupport.column(2), OptimizerTestSupport.constant(1), ComparisonMode.EQUALS)
-        );
-
-        assertScan(
-            join.getRight(),
-            "s",
-            OptimizerTestSupport.list(0, 1),
-            OptimizerTestSupport.compare(OptimizerTestSupport.column(2), OptimizerTestSupport.constant(2), ComparisonMode.EQUALS)
         );
     }
 }
