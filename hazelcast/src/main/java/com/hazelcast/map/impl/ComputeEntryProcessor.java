@@ -65,7 +65,7 @@ public class ComputeEntryProcessor<K, V> implements EntryProcessor<K, V, V>, Ide
 
     @Override
     public int getClassId() {
-        return MapDataSerializerHook.COMPUTE_IF_PRESENT_PROCESSOR;
+        return MapDataSerializerHook.COMPUTE_MAP_OPERATION_PROCESSOR;
     }
 
     @Override
