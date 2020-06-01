@@ -40,7 +40,6 @@ import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.schema.Table;
 import org.apache.calcite.sql.SqlExplainLevel;
 import org.apache.calcite.sql.SqlNode;
-import org.junit.After;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -59,20 +58,21 @@ import static junit.framework.TestCase.assertEquals;
  * Base class to test optimizers.
  */
 public abstract class OptimizerTestSupport extends SqlTestSupport {
-    /** Last result. */
-    protected Result last;
 
-    @After
-    public void after() {
-        last = null;
+    protected static RelNode optimizeLogical(String sql) {
+        return optimize(sql, 1, false).getLogical();
     }
 
-    protected RelNode optimizeLogical(String sql) {
-        return optimize(sql, false).getLogical();
+    protected static RelNode optimizePhysical(String sql) {
+        return optimize(sql, 1, true).getPhysical();
     }
 
-    protected RelNode optimizePhysical(String sql) {
-        return optimize(sql, true).getPhysical();
+    protected static RelNode optimizeLogical(String sql, int nodeCount) {
+        return optimize(sql, nodeCount, false).getLogical();
+    }
+
+    protected static RelNode optimizePhysical(String sql, int nodeCount) {
+        return optimize(sql, nodeCount, true).getPhysical();
     }
 
     /**
@@ -81,10 +81,10 @@ public abstract class OptimizerTestSupport extends SqlTestSupport {
      * @param sql SQL.
      * @return Context.
      */
-    private Result optimize(String sql, boolean physical) {
+    private static Result optimize(String sql, int nodeCount, boolean physical) {
         HazelcastSchema schema = createDefaultSchema();
 
-        return optimize(sql, schema, physical);
+        return optimize(sql, schema, nodeCount, physical);
     }
 
     /**
@@ -94,12 +94,12 @@ public abstract class OptimizerTestSupport extends SqlTestSupport {
      * @param schema Schema.
      * @return Result.
      */
-    private Result optimize(String sql, HazelcastSchema schema, boolean physical) {
+    protected static Result optimize(String sql, HazelcastSchema schema, int nodeCount, boolean physical) {
         OptimizerContext context = OptimizerContext.create(
             null,
             HazelcastSchemaUtils.createCatalog(schema),
             HazelcastSchemaUtils.prepareSearchPaths(null, null),
-            1
+                nodeCount
         );
 
         return optimize(sql, context, physical);
@@ -112,26 +112,22 @@ public abstract class OptimizerTestSupport extends SqlTestSupport {
      * @param context Context.
      * @return Result.
      */
-    private Result optimize(String sql, OptimizerContext context, boolean physical) {
+    private static Result optimize(String sql, OptimizerContext context, boolean physical) {
         SqlNode node = context.parse(sql).getNode();
         RelNode convertedRel = context.convert(node);
         LogicalRel logicalRel = optimizeLogicalInternal(context, convertedRel);
         PhysicalRel physicalRel = physical ? optimizePhysicalInternal(context, logicalRel) : null;
 
-        Result res = new Result(node, convertedRel, logicalRel, physicalRel);
-
-        last = res;
-
-        return res;
+        return new Result(node, convertedRel, logicalRel, physicalRel);
     }
 
-    private LogicalRel optimizeLogicalInternal(OptimizerContext context, RelNode node) {
+    private static LogicalRel optimizeLogicalInternal(OptimizerContext context, RelNode node) {
         RelNode logicalRel = context.optimize(node, LogicalRules.getRuleSet(), OptUtils.toLogicalConvention(node.getTraitSet()));
 
         return new RootLogicalRel(logicalRel.getCluster(), logicalRel.getTraitSet(), logicalRel);
     }
 
-    private PhysicalRel optimizePhysicalInternal(OptimizerContext context, RelNode node) {
+    private static PhysicalRel optimizePhysicalInternal(OptimizerContext context, RelNode node) {
         RelTraitSet physicalTraitSet = OptUtils.toPhysicalConvention(
             node.getTraitSet(),
             OptUtils.getDistributionDef(node).getTraitRoot()
@@ -166,7 +162,7 @@ public abstract class OptimizerTestSupport extends SqlTestSupport {
      *
      * @return Default schema.
      */
-    protected HazelcastSchema createDefaultSchema() {
+    protected static HazelcastSchema createDefaultSchema() {
         Map<String, Table> tableMap = new HashMap<>();
 
         tableMap.put("p", partitionedTable(
@@ -259,16 +255,10 @@ public abstract class OptimizerTestSupport extends SqlTestSupport {
      * Optimization result with all steps recorded.
      */
     protected static class Result {
-        /** SQL node. */
+
         private final SqlNode sql;
-
-        /** Original rel. */
         private final RelNode original;
-
-        /** Optimized logical rel. */
         private final LogicalRel logical;
-
-        /** Optimized physical rel. */
         private final PhysicalRel physical;
 
         public Result(SqlNode sql, RelNode original, LogicalRel logical, PhysicalRel physical) {
