@@ -59,19 +59,19 @@ import static junit.framework.TestCase.assertEquals;
  */
 public abstract class OptimizerTestSupport extends SqlTestSupport {
 
-    protected static RelNode optimizeLogical(String sql) {
+    protected RelNode optimizeLogical(String sql) {
         return optimize(sql, 1, false).getLogical();
     }
 
-    protected static RelNode optimizePhysical(String sql) {
+    protected RelNode optimizePhysical(String sql) {
         return optimize(sql, 1, true).getPhysical();
     }
 
-    protected static RelNode optimizeLogical(String sql, int nodeCount) {
+    protected RelNode optimizeLogical(String sql, int nodeCount) {
         return optimize(sql, nodeCount, false).getLogical();
     }
 
-    protected static RelNode optimizePhysical(String sql, int nodeCount) {
+    protected RelNode optimizePhysical(String sql, int nodeCount) {
         return optimize(sql, nodeCount, true).getPhysical();
     }
 
@@ -81,7 +81,7 @@ public abstract class OptimizerTestSupport extends SqlTestSupport {
      * @param sql SQL.
      * @return Context.
      */
-    private static Result optimize(String sql, int nodeCount, boolean physical) {
+    private Result optimize(String sql, int nodeCount, boolean physical) {
         HazelcastSchema schema = createDefaultSchema();
 
         return optimize(sql, schema, nodeCount, physical);
@@ -162,7 +162,7 @@ public abstract class OptimizerTestSupport extends SqlTestSupport {
      *
      * @return Default schema.
      */
-    protected static HazelcastSchema createDefaultSchema() {
+    protected HazelcastSchema createDefaultSchema() {
         Map<String, Table> tableMap = new HashMap<>();
 
         tableMap.put("p", partitionedTable(
