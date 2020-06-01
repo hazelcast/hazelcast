@@ -17,11 +17,11 @@
 package com.hazelcast.sql.impl.calcite.opt.physical;
 
 import com.hazelcast.config.IndexType;
+import com.hazelcast.sql.impl.calcite.opt.OptimizerTestSupport;
 import com.hazelcast.sql.impl.calcite.opt.PlanRow;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastSchema;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
 import com.hazelcast.sql.impl.schema.map.MapTableIndex;
-import com.hazelcast.sql.impl.calcite.opt.OptimizerTestSupport;
 import org.apache.calcite.schema.Table;
 import org.junit.Test;
 
@@ -42,7 +42,7 @@ public class PhysicalIndexScanTest extends OptimizerTestSupport {
         HazelcastTable pTable = OptimizerTestSupport.partitionedTable(
             "p",
             OptimizerTestSupport.fields("f1", INT, "f2", INT, "f3", INT),
-            Collections.singletonList(new MapTableIndex("idx1", IndexType.SORTED, OptimizerTestSupport.list(0))),
+            Collections.singletonList(new MapTableIndex("idx1", IndexType.SORTED, Collections.singletonList(0))),
             100
         );
 

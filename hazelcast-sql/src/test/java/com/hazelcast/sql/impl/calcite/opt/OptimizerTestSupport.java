@@ -27,12 +27,6 @@ import com.hazelcast.sql.impl.calcite.schema.HazelcastSchema;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastSchemaUtils;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
 import com.hazelcast.sql.impl.calcite.schema.MapTableStatistic;
-import com.hazelcast.sql.impl.expression.ColumnExpression;
-import com.hazelcast.sql.impl.expression.ConstantExpression;
-import com.hazelcast.sql.impl.expression.Expression;
-import com.hazelcast.sql.impl.expression.predicate.AndPredicate;
-import com.hazelcast.sql.impl.expression.predicate.ComparisonMode;
-import com.hazelcast.sql.impl.expression.predicate.ComparisonPredicate;
 import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.schema.ConstantTableStatistics;
 import com.hazelcast.sql.impl.schema.TableField;
@@ -42,7 +36,6 @@ import com.hazelcast.sql.impl.schema.map.PartitionedMapTable;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.calcite.plan.RelOptUtil;
 import org.apache.calcite.plan.RelTraitSet;
-import org.apache.calcite.plan.volcano.VolcanoPlanner;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.schema.Table;
 import org.apache.calcite.sql.SqlExplainLevel;
@@ -51,18 +44,14 @@ import org.junit.After;
 
 import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.PrintWriter;
 import java.io.StringReader;
-import java.io.StringWriter;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import static com.hazelcast.sql.impl.QueryUtils.SCHEMA_NAME_REPLICATED;
 import static com.hazelcast.sql.impl.type.QueryDataType.INT;
-import static com.hazelcast.sql.impl.type.QueryDataTypeUtils.resolveTypeForClass;
 import static java.util.Collections.emptyMap;
 import static junit.framework.TestCase.assertEquals;
 
@@ -92,7 +81,7 @@ public abstract class OptimizerTestSupport extends SqlTestSupport {
      * @param sql SQL.
      * @return Context.
      */
-    protected Result optimize(String sql, boolean physical) {
+    private Result optimize(String sql, boolean physical) {
         HazelcastSchema schema = createDefaultSchema();
 
         return optimize(sql, schema, physical);
@@ -105,7 +94,7 @@ public abstract class OptimizerTestSupport extends SqlTestSupport {
      * @param schema Schema.
      * @return Result.
      */
-    protected Result optimize(String sql, HazelcastSchema schema, boolean physical) {
+    private Result optimize(String sql, HazelcastSchema schema, boolean physical) {
         OptimizerContext context = OptimizerContext.create(
             null,
             HazelcastSchemaUtils.createCatalog(schema),
@@ -123,11 +112,11 @@ public abstract class OptimizerTestSupport extends SqlTestSupport {
      * @param context Context.
      * @return Result.
      */
-    protected Result optimize(String sql, OptimizerContext context, boolean physical) {
+    private Result optimize(String sql, OptimizerContext context, boolean physical) {
         SqlNode node = context.parse(sql).getNode();
         RelNode convertedRel = context.convert(node);
-        LogicalRel logicalRel = optimizeLogical(context, convertedRel);
-        PhysicalRel physicalRel = physical ? optimizePhysical(context, logicalRel) : null;
+        LogicalRel logicalRel = optimizeLogicalInternal(context, convertedRel);
+        PhysicalRel physicalRel = physical ? optimizePhysicalInternal(context, logicalRel) : null;
 
         Result res = new Result(node, convertedRel, logicalRel, physicalRel);
 
@@ -136,13 +125,13 @@ public abstract class OptimizerTestSupport extends SqlTestSupport {
         return res;
     }
 
-    private LogicalRel optimizeLogical(OptimizerContext context, RelNode node) {
+    private LogicalRel optimizeLogicalInternal(OptimizerContext context, RelNode node) {
         RelNode logicalRel = context.optimize(node, LogicalRules.getRuleSet(), OptUtils.toLogicalConvention(node.getTraitSet()));
 
         return new RootLogicalRel(logicalRel.getCluster(), logicalRel.getTraitSet(), logicalRel);
     }
 
-    private PhysicalRel optimizePhysical(OptimizerContext context, RelNode node) {
+    private PhysicalRel optimizePhysicalInternal(OptimizerContext context, RelNode node) {
         RelTraitSet physicalTraitSet = OptUtils.toPhysicalConvention(
             node.getTraitSet(),
             OptUtils.getDistributionDef(node).getTraitRoot()
@@ -151,7 +140,7 @@ public abstract class OptimizerTestSupport extends SqlTestSupport {
         return (PhysicalRel) context.optimize(node, PhysicalRules.getRuleSet(), physicalTraitSet);
     }
 
-    public static HazelcastTable partitionedTable(
+    protected static HazelcastTable partitionedTable(
         String name,
         List<TableField> fields,
         List<MapTableIndex> indexes,
@@ -190,46 +179,6 @@ public abstract class OptimizerTestSupport extends SqlTestSupport {
         return new HazelcastSchema(tableMap);
     }
 
-    @SuppressWarnings("unchecked")
-    protected static <T> List<T> list(T... vals) {
-        if (vals == null) {
-            return new ArrayList<>();
-        } else {
-            return new ArrayList<>(Arrays.asList(vals));
-        }
-    }
-
-    protected static void assertFieldIndexes(List<Integer> expProjects, List<Integer> projects) {
-        if (projects == null) {
-            projects = new ArrayList<>();
-        } else {
-            projects = new ArrayList<>(projects);
-        }
-
-        assertEquals(expProjects, projects);
-    }
-
-    protected static Expression<?> constant(Object val) {
-        QueryDataType type = resolveTypeForClass(val == null ? void.class : val.getClass());
-        return ConstantExpression.create(type, val);
-    }
-
-    protected static Expression<?> compare(Expression<?> first, Expression<?> second, ComparisonMode type) {
-        return ComparisonPredicate.create(first, second, type);
-    }
-
-    protected static Expression<?> compareColumnsEquals(int col1, int col2) {
-        return compare(column(col1), column(col2), ComparisonMode.EQUALS);
-    }
-
-    protected static Expression<?> and(Expression<?>... operands) {
-        return AndPredicate.create(operands);
-    }
-
-    protected static Expression<?> column(int col) {
-        return ColumnExpression.create(col, QueryDataType.VARCHAR);
-    }
-
     protected static List<TableField> fields(Object... namesAndTypes) {
         assert namesAndTypes.length % 2 == 0;
 
@@ -245,16 +194,6 @@ public abstract class OptimizerTestSupport extends SqlTestSupport {
         }
 
         return res;
-    }
-
-    public static void dump(RelNode node) {
-        VolcanoPlanner planner = (VolcanoPlanner) node.getCluster().getPlanner();
-
-        StringWriter sw = new StringWriter();
-
-        planner.dump(new PrintWriter(sw));
-
-        System.out.println(sw);
     }
 
     public static PlanRows plan(PlanRow... rows) {
