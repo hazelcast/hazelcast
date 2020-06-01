@@ -162,8 +162,12 @@ public final class Packet extends HeapData implements OutboundFrame {
     }
 
     public Type getPacketType() {
-        boolean is4x = isFlagRaised(FLAG_4_0);
-        return Type.fromFlags(flags, is4x);
+        // the packet was sent from 4.0 if the 3_12 flag is missing
+        // 3.12.0-3.12.7 members do not set this flag
+        // so this member should not be a part of a cluster
+        // with those members
+        boolean isCompatibility = !isFlagRaised(FLAG_3_12);
+        return Type.fromFlags(flags, isCompatibility);
     }
 
     /**
