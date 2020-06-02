@@ -49,43 +49,52 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class SchemaTest extends CalciteSqlTestSupport {
 
-    private static TestHazelcastInstanceFactory factory = new TestHazelcastInstanceFactory();
+    private static final TestHazelcastInstanceFactory FACTORY = new TestHazelcastInstanceFactory();
+
     private static HazelcastInstance member;
 
     @BeforeClass
     public static void beforeClass() {
-        member = factory.newHazelcastInstance();
+        member = FACTORY.newHazelcastInstance();
     }
 
     @AfterClass
     public static void afterClass() {
-        factory.shutdownAll();
+        FACTORY.shutdownAll();
     }
 
     @Test
     public void testSelectFromDeclaredTable() {
+        // given
         String name = "predeclared_map";
+
+        // when
         List<SqlRow> updateRows = getQueryRows(member, format("CREATE EXTERNAL TABLE %s (__key INT) TYPE \"%s\"",
-                name,
-                LocalPartitionedMapConnector.TYPE_NAME));
+                name, LocalPartitionedMapConnector.TYPE_NAME));
+
+        // then
         assertThat(updateRows).hasSize(1);
         assertThat((int) updateRows.get(0).getObject(0)).isEqualTo(0);
 
+        // when
         List<SqlRow> queryRows = getQueryRows(member, format("SELECT __key FROM public.%s", name));
+
+        // then
         assertThat(queryRows).isEmpty();
     }
 
     @Test
     public void testSchemaAvailability() {
+        // given
         String name = "distributed_schema_map";
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         HazelcastInstance[] instances = factory.newInstances();
 
-        // create table on one member
+        // when create table is executed on one member
         executeQuery(instances[0], format("CREATE EXTERNAL TABLE %s (__key INT) TYPE \"%s\"", name,
                 LocalPartitionedMapConnector.TYPE_NAME));
 
-        // execute query on another one
+        // then schema is available on another one
         // TODO: fix it properly - sticky client, different catalog storage, ???
         assertTrueEventually("Table is not available on the second node", () -> {
             assertThatCode(() -> getQueryRows(instances[1], format("SELECT __key FROM %s", name)))
@@ -95,6 +104,7 @@ public class SchemaTest extends CalciteSqlTestSupport {
 
     @Test
     public void testPredeclaredTablePriority() {
+        // given
         String name = "priority_map";
         executeQuery(member, format("CREATE EXTERNAL TABLE %s (\"__key.age\" INT, age INT) TYPE \"%s\"",
                 name, LocalPartitionedMapConnector.TYPE_NAME));
@@ -102,8 +112,10 @@ public class SchemaTest extends CalciteSqlTestSupport {
         Map<Person, Person> map = member.getMap(name);
         map.put(new Person("Alice", BigInteger.valueOf(30)), new Person("Bob", BigInteger.valueOf(40)));
 
+        // when
         List<SqlRow> rows = getQueryRows(member, format("SELECT age, \"__key.age\" FROM %s", name));
 
+        // then
         assertThat(rows).hasSize(1);
         assertThat((int) rows.get(0).getObject(0)).isEqualTo(40);
         assertThat((int) rows.get(0).getObject(1)).isEqualTo(30);
@@ -111,6 +123,7 @@ public class SchemaTest extends CalciteSqlTestSupport {
 
     @Test
     public void testSelectAllSupportedTypes() {
+        // given
         String name = "all_fields_map";
         executeQuery(member, format("CREATE EXTERNAL TABLE %s ("
                         + "__key DECIMAL(10, 0), "
@@ -164,8 +177,10 @@ public class SchemaTest extends CalciteSqlTestSupport {
         Map<BigInteger, AllTypesValue> map = member.getMap(name);
         map.put(BigInteger.valueOf(13), allTypes);
 
+        // when
         List<SqlRow> rows = getQueryRows(member, format("SELECT * FROM %s", name));
 
+        // then
         assertThat(rows).hasSize(1);
         assertThat((BigInteger) rows.get(0).getObject(0)).isEqualTo(BigInteger.valueOf(13));
         assertThat((String) rows.get(0).getObject(1)).isEqualTo(allTypes.getString());
@@ -192,10 +207,14 @@ public class SchemaTest extends CalciteSqlTestSupport {
 
     @Test
     public void testDropTable() {
+        // given
         String name = "to_be_dropped_map";
         executeQuery(member, format("CREATE EXTERNAL TABLE %s (name VARCHAR) TYPE \"%s\"", name, LocalPartitionedMapConnector.TYPE_NAME));
+
+        // when
         executeQuery(member, format("DROP EXTERNAL TABLE %s", name));
 
+        // then
         assertThatThrownBy(() -> executeQuery(member, format("SELECT name FROM %s", name)))
                 .isInstanceOf(HazelcastSqlException.class);
     }

@@ -60,7 +60,7 @@ public class ExternalCatalog implements TableResolver {
 
     public void removeTable(String name, boolean ifExists) {
         if (tables().remove(name) == null && !ifExists) {
-            throw new IllegalArgumentException("'" + name + "' table does not exist");
+            throw QueryException.error("'" + name + "' table does not exist");
         }
     }
 
