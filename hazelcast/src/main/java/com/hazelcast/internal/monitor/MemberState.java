@@ -95,6 +95,4 @@ public interface MemberState extends JsonSerializable {
     HotRestartState getHotRestartState();
 
     ClusterHotRestartStatusDTO getClusterHotRestartStatus();
-
-    WanSyncState getWanSyncState();
 }

@@ -35,7 +35,6 @@ import com.hazelcast.internal.monitor.LocalWanStats;
 import com.hazelcast.internal.monitor.MemberPartitionState;
 import com.hazelcast.internal.monitor.MemberState;
 import com.hazelcast.internal.monitor.NodeState;
-import com.hazelcast.internal.monitor.WanSyncState;
 import com.hazelcast.json.internal.JsonSerializable;
 import com.hazelcast.map.LocalMapStats;
 import com.hazelcast.multimap.LocalMultiMapStats;
@@ -59,6 +58,7 @@ import static com.hazelcast.internal.util.JsonUtil.getString;
         "checkstyle:classfanoutcomplexity",
         "checkstyle:methodcount"})
 public class MemberStateImpl implements MemberState {
+
     private String address;
     private UUID uuid;
     private UUID cpMemberUuid;
@@ -76,7 +76,6 @@ public class MemberStateImpl implements MemberState {
     private Map<String, LocalCacheStats> cacheStats = new HashMap<>();
     private Map<String, LocalFlakeIdGeneratorStats> flakeIdGeneratorStats = new HashMap<>();
 
-    // TODO remove internal fields
     private Map<String, LocalWanStats> wanStats = new HashMap<>();
     private Collection<ClientEndPointDTO> clients = new HashSet<>();
     private Map<UUID, String> clientStats = new HashMap<>();
@@ -85,9 +84,6 @@ public class MemberStateImpl implements MemberState {
     private NodeState nodeState = new NodeStateImpl();
     private HotRestartState hotRestartState = new HotRestartStateImpl();
     private ClusterHotRestartStatusDTO clusterHotRestartStatus = new ClusterHotRestartStatusDTO();
-    // ???
-    @Deprecated
-    private WanSyncState wanSyncState = new WanSyncStateImpl();
 
     public MemberStateImpl() {
     }
@@ -284,15 +280,6 @@ public class MemberStateImpl implements MemberState {
         this.clusterHotRestartStatus = clusterHotRestartStatus;
     }
 
-    @Override
-    public WanSyncState getWanSyncState() {
-        return wanSyncState;
-    }
-
-    public void setWanSyncState(WanSyncState wanSyncState) {
-        this.wanSyncState = wanSyncState;
-    }
-
     public Map<UUID, String> getClientStats() {
         return clientStats;
     }
@@ -351,7 +338,6 @@ public class MemberStateImpl implements MemberState {
         root.add("nodeState", nodeState.toJson());
         root.add("hotRestartState", hotRestartState.toJson());
         root.add("clusterHotRestartStatus", clusterHotRestartStatus.toJson());
-        addJsonIfSerializable(root, "wanSyncState", wanSyncState);
 
         JsonObject clientStatsObject = new JsonObject();
         for (Map.Entry<UUID, String> entry : clientStats.entrySet()) {
@@ -504,10 +490,6 @@ public class MemberStateImpl implements MemberState {
             clusterHotRestartStatus = new ClusterHotRestartStatusDTO();
             clusterHotRestartStatus.fromJson(jsonClusterHotRestartStatus);
         }
-        JsonObject jsonWanSyncState = getObject(json, "wanSyncState", null);
-        if (jsonWanSyncState != null) {
-            wanSyncState = readJsonIfDeserializable(jsonWanSyncState, new WanSyncStateImpl());
-        }
         for (JsonObject.Member next : getObject(json, "clientStats")) {
             clientStats.put(UUID.fromString(next.getName()), next.getValue().asString());
         }
@@ -534,7 +516,6 @@ public class MemberStateImpl implements MemberState {
                 + ", nodeState=" + nodeState
                 + ", hotRestartState=" + hotRestartState
                 + ", clusterHotRestartStatus=" + clusterHotRestartStatus
-                + ", wanSyncState=" + wanSyncState
                 + ", flakeIdStats=" + flakeIdGeneratorStats
                 + ", clientStats=" + clientStats
                 + '}';
