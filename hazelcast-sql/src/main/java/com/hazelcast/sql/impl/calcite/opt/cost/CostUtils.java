@@ -47,7 +47,7 @@ public final class CostUtils {
     }
 
     /**
-     * Adjust cost of a CPU-related operation (project, filter) located inside a scan. This allows optimzier to prefer
+     * Adjust cost of a CPU-related operation (project, filter) located inside a scan. This allows optimizer to prefer
      * filters and projects inlined into the scan.
      *
      * @param cpu CPU.
