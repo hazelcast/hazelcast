@@ -34,8 +34,10 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
+import org.elasticsearch.ElasticsearchException;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.elasticsearch.client.RequestOptions.DEFAULT;
 
 public abstract class CommonElasticSinksTest extends BaseElasticTest {
@@ -138,6 +140,48 @@ public abstract class CommonElasticSinksTest extends BaseElasticTest {
         refreshIndex();
 
         assertNoDocuments("my-index");
+    }
+
+    /**
+     * Regression test for checking that behavior was not unexpectedly changed.
+     * It is possible that behavior will be changed in any of future version
+     * since failing job based on unsuccessful delete/update leads to problems
+     * when job are restarted.
+     */
+    @Test
+    public void given_documentNotInIndex_whenWriteToElasticSinkUpdateRequest_then_jobShouldFail() throws Exception {
+        Sink<TestItem> elasticSink = ElasticSinks.elastic(
+                elasticClientSupplier(),
+                item -> new UpdateRequest("my-index", item.id).doc(item.asMap())
+        );
+
+        Pipeline p = Pipeline.create();
+        p.readFrom(TestSources.items(new TestItem("notExist", "Frantisek")))
+                .writeTo(elasticSink);
+
+        assertThatThrownBy(() -> submitJob(p))
+                .hasRootCauseInstanceOf(ElasticsearchException.class);
+    }
+
+    /**
+     * Regression test for checking that behavior was not unexpectedly changed.
+     * It is possible that behavior will be changed in any of future version
+     * since failing job based on unsuccessful delete/update leads to problems
+     * when job are restarted.
+     */
+    @Test
+    public void given_documentNotInIndex_whenWriteToElasticSinkDeleteRequest_then_jobShouldFail() throws Exception {
+        Sink<String> elasticSink = ElasticSinks.elastic(
+                elasticClientSupplier(),
+                (item) -> new DeleteRequest("my-index", item)
+        );
+
+        Pipeline p = Pipeline.create();
+        p.readFrom(TestSources.items("notExist"))
+                .writeTo(elasticSink);
+
+        assertThatThrownBy(() -> submitJob(p))
+                .hasRootCauseInstanceOf(ElasticsearchException.class);
     }
 
     private void refreshIndex() throws IOException {
