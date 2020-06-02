@@ -24,7 +24,6 @@ import org.apache.calcite.plan.RelOptRuleCall;
 import org.apache.calcite.rel.RelNode;
 
 import java.util.Collection;
-import java.util.Collections;
 
 /**
  * Convert logical filter to physical filter.
@@ -67,12 +66,6 @@ public final class FilterPhysicalRule extends RelOptRule {
      * @return Inputs which should be used for transformation.
      */
     private Collection<RelNode> getInputTransforms(RelNode convertedInput) {
-        Collection<RelNode> res = OptUtils.getPhysicalRelsFromSubset(convertedInput);
-
-        if (res.isEmpty()) {
-            res = Collections.singletonList(convertedInput);
-        }
-
-        return res;
+        return OptUtils.getPhysicalRelsFromSubset(convertedInput);
     }
 }
