@@ -17,7 +17,6 @@
 package com.hazelcast.internal.monitor.impl;
 
 import com.hazelcast.cache.CacheStatistics;
-import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.nearcache.NearCacheStats;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -58,7 +57,7 @@ public class LocalCacheStatsImplTest {
     }
 
     @Test
-    public void testSerialization() {
+    public void testCacheStatisticsConstructor() {
         CacheStatistics cacheStatistics = new CacheStatistics() {
             @Override
             public long getCreationTime() {
@@ -143,26 +142,22 @@ public class LocalCacheStatsImplTest {
 
         LocalCacheStatsImpl localCacheStats = new LocalCacheStatsImpl(cacheStatistics);
 
-        JsonObject serialized = localCacheStats.toJson();
-        LocalCacheStatsImpl deserialized = new LocalCacheStatsImpl();
-        deserialized.fromJson(serialized);
-
-        assertEquals(1986, deserialized.getCreationTime());
-        assertEquals(2014, deserialized.getLastUpdateTime());
-        assertEquals(2015, deserialized.getLastAccessTime());
-        assertEquals(1000, deserialized.getOwnedEntryCount());
-        assertEquals(127, deserialized.getCacheHits());
-        assertEquals(12.5f, deserialized.getCacheHitPercentage(), 0.0001);
-        assertEquals(5, deserialized.getCacheMisses());
-        assertEquals(11.4f, deserialized.getCacheMissPercentage(), 0.0001);
-        assertEquals(6, deserialized.getCacheGets());
-        assertEquals(7, deserialized.getCachePuts());
-        assertEquals(8, deserialized.getCacheRemovals());
-        assertEquals(9, deserialized.getCacheEvictions());
-        assertEquals(23.42f, deserialized.getAverageGetTime(), 0.0001);
-        assertEquals(42.23f, deserialized.getAveragePutTime(), 0.0001);
-        assertEquals(127.45f, deserialized.getAverageRemoveTime(), 0.0001);
-        assertTrue(deserialized.getCreationTime() > 0);
-        assertNotNull(deserialized.toString());
+        assertEquals(1986, localCacheStats.getCreationTime());
+        assertEquals(2014, localCacheStats.getLastUpdateTime());
+        assertEquals(2015, localCacheStats.getLastAccessTime());
+        assertEquals(1000, localCacheStats.getOwnedEntryCount());
+        assertEquals(127, localCacheStats.getCacheHits());
+        assertEquals(12.5f, localCacheStats.getCacheHitPercentage(), 0.0001);
+        assertEquals(5, localCacheStats.getCacheMisses());
+        assertEquals(11.4f, localCacheStats.getCacheMissPercentage(), 0.0001);
+        assertEquals(6, localCacheStats.getCacheGets());
+        assertEquals(7, localCacheStats.getCachePuts());
+        assertEquals(8, localCacheStats.getCacheRemovals());
+        assertEquals(9, localCacheStats.getCacheEvictions());
+        assertEquals(23.42f, localCacheStats.getAverageGetTime(), 0.0001);
+        assertEquals(42.23f, localCacheStats.getAveragePutTime(), 0.0001);
+        assertEquals(127.45f, localCacheStats.getAverageRemoveTime(), 0.0001);
+        assertTrue(localCacheStats.getCreationTime() > 0);
+        assertNotNull(localCacheStats.toString());
     }
 }

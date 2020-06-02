@@ -16,11 +16,9 @@
 
 package com.hazelcast.internal.monitor.impl;
 
-import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.monitor.LocalPNCounterStats;
 import com.hazelcast.internal.util.Clock;
-import com.hazelcast.json.internal.JsonSerializable;
 
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 
@@ -29,19 +27,20 @@ import static com.hazelcast.internal.metrics.MetricDescriptorConstants.PNCOUNTER
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.PNCOUNTER_METRIC_TOTAL_INCREMENT_OPERATION_COUNT;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.PNCOUNTER_METRIC_VALUE;
 import static com.hazelcast.internal.metrics.ProbeUnit.MS;
-import static com.hazelcast.internal.util.JsonUtil.getLong;
 import static java.util.concurrent.atomic.AtomicLongFieldUpdater.newUpdater;
 
 /**
  * Local PN counter statistics thread safe implementation
  */
-public class LocalPNCounterStatsImpl implements LocalPNCounterStats, JsonSerializable {
+public class LocalPNCounterStatsImpl implements LocalPNCounterStats {
+
     private static final AtomicLongFieldUpdater<LocalPNCounterStatsImpl> TOTAL_INCREMENT_OPERATION_COUNT =
             newUpdater(LocalPNCounterStatsImpl.class, "totalIncrementOperationCount");
     private static final AtomicLongFieldUpdater<LocalPNCounterStatsImpl> TOTAL_DECREMENT_OPERATION_COUNT =
             newUpdater(LocalPNCounterStatsImpl.class, "totalDecrementOperationCount");
+
     @Probe(name = PNCOUNTER_METRIC_CREATION_TIME, unit = MS)
-    private long creationTime;
+    private final long creationTime;
     @Probe(name = PNCOUNTER_METRIC_VALUE)
     private volatile long value;
     @Probe(name = PNCOUNTER_METRIC_TOTAL_INCREMENT_OPERATION_COUNT)
@@ -96,24 +95,6 @@ public class LocalPNCounterStatsImpl implements LocalPNCounterStats, JsonSeriali
      */
     public void incrementDecrementOperationCount() {
         TOTAL_DECREMENT_OPERATION_COUNT.incrementAndGet(this);
-    }
-
-    @Override
-    public JsonObject toJson() {
-        JsonObject root = new JsonObject();
-        root.add("creationTime", creationTime);
-        root.add("value", value);
-        root.add("totalIncrementOperationCount", totalIncrementOperationCount);
-        root.add("totalDecrementOperationCount", totalDecrementOperationCount);
-        return root;
-    }
-
-    @Override
-    public void fromJson(JsonObject json) {
-        creationTime = getLong(json, "creationTime", -1L);
-        value = getLong(json, "value", -1L);
-        totalIncrementOperationCount = getLong(json, "totalIncrementOperationCount", -1L);
-        totalDecrementOperationCount = getLong(json, "totalDecrementOperationCount", -1L);
     }
 
     @Override

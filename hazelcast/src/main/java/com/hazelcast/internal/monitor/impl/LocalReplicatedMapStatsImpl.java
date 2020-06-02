@@ -16,10 +16,8 @@
 
 package com.hazelcast.internal.monitor.impl;
 
-import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.util.Clock;
-import com.hazelcast.json.internal.JsonSerializable;
 import com.hazelcast.query.LocalIndexStats;
 import com.hazelcast.replicatedmap.LocalReplicatedMapStats;
 
@@ -47,8 +45,6 @@ import static com.hazelcast.internal.metrics.MetricDescriptorConstants.REPLICATE
 import static com.hazelcast.internal.metrics.ProbeUnit.BYTES;
 import static com.hazelcast.internal.metrics.ProbeUnit.MS;
 import static com.hazelcast.internal.util.ConcurrencyUtil.setMax;
-import static com.hazelcast.internal.util.JsonUtil.getLong;
-import static com.hazelcast.internal.util.TimeUtil.convertMillisToNanos;
 import static com.hazelcast.internal.util.TimeUtil.convertNanosToMillis;
 import static java.util.concurrent.atomic.AtomicLongFieldUpdater.newUpdater;
 
@@ -57,7 +53,7 @@ import static java.util.concurrent.atomic.AtomicLongFieldUpdater.newUpdater;
  * able to transform those between wire format and instance view.
  */
 @SuppressWarnings("checkstyle:methodcount")
-public class LocalReplicatedMapStatsImpl implements LocalReplicatedMapStats, JsonSerializable {
+public class LocalReplicatedMapStatsImpl implements LocalReplicatedMapStats {
 
     private static final AtomicLongFieldUpdater<LocalReplicatedMapStatsImpl> LAST_ACCESS_TIME =
             newUpdater(LocalReplicatedMapStatsImpl.class, "lastAccessTime");
@@ -116,7 +112,7 @@ public class LocalReplicatedMapStatsImpl implements LocalReplicatedMapStats, Jso
     private volatile long maxRemoveLatencyNanos;
 
     @Probe(name = REPLICATED_MAP_CREATION_TIME, unit = MS)
-    private volatile long creationTime;
+    private final long creationTime;
     @Probe(name = REPLICATED_MAP_OWNED_ENTRY_COUNT)
     private volatile long ownedEntryCount;
     @Probe(name = REPLICATED_MAP_OWNED_ENTRY_MEMORY_COST, unit = BYTES)
@@ -365,50 +361,6 @@ public class LocalReplicatedMapStatsImpl implements LocalReplicatedMapStats, Jso
     @Override
     public long getMaxSetLatency() {
         throw new UnsupportedOperationException("Set operation on replicated maps is not supported.");
-    }
-
-    @Override
-    public JsonObject toJson() {
-        JsonObject root = new JsonObject();
-        root.add("getCount", getCount);
-        root.add("putCount", putCount);
-        root.add("removeCount", removeCount);
-        root.add("numberOfOtherOperations", numberOfOtherOperations);
-        root.add("numberOfEvents", numberOfEvents);
-        root.add("lastAccessTime", lastAccessTime);
-        root.add("lastUpdateTime", lastUpdateTime);
-        root.add("hits", hits);
-        root.add("ownedEntryCount", ownedEntryCount);
-        root.add("ownedEntryMemoryCost", ownedEntryMemoryCost);
-        root.add("creationTime", creationTime);
-        root.add("totalGetLatencies", convertNanosToMillis(totalGetLatenciesNanos));
-        root.add("totalPutLatencies", convertNanosToMillis(totalPutLatenciesNanos));
-        root.add("totalRemoveLatencies", convertNanosToMillis(totalRemoveLatenciesNanos));
-        root.add("maxGetLatency", convertNanosToMillis(maxGetLatencyNanos));
-        root.add("maxPutLatency", convertNanosToMillis(maxPutLatencyNanos));
-        root.add("maxRemoveLatency", convertNanosToMillis(maxRemoveLatencyNanos));
-        return root;
-    }
-
-    @Override
-    public void fromJson(JsonObject json) {
-        getCount = getLong(json, "getCount", -1L);
-        putCount = getLong(json, "putCount", -1L);
-        removeCount = getLong(json, "removeCount", -1L);
-        numberOfOtherOperations = getLong(json, "numberOfOtherOperations", -1L);
-        numberOfEvents = getLong(json, "numberOfEvents", -1L);
-        lastAccessTime = getLong(json, "lastAccessTime", -1L);
-        lastUpdateTime = getLong(json, "lastUpdateTime", -1L);
-        hits = getLong(json, "hits", -1L);
-        ownedEntryCount = getLong(json, "ownedEntryCount", -1L);
-        ownedEntryMemoryCost = getLong(json, "ownedEntryMemoryCost", -1L);
-        creationTime = getLong(json, "creationTime", -1L);
-        totalGetLatenciesNanos = convertMillisToNanos(getLong(json, "totalGetLatencies", -1L));
-        totalPutLatenciesNanos = convertMillisToNanos(getLong(json, "totalPutLatencies", -1L));
-        totalRemoveLatenciesNanos = convertMillisToNanos(getLong(json, "totalRemoveLatencies", -1L));
-        maxGetLatencyNanos = convertMillisToNanos(getLong(json, "maxGetLatency", -1L));
-        maxPutLatencyNanos = convertMillisToNanos(getLong(json, "maxPutLatency", -1L));
-        maxRemoveLatencyNanos = convertMillisToNanos(getLong(json, "maxRemoveLatency", -1L));
     }
 
     @Override

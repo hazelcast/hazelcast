@@ -225,176 +225,151 @@ public class TimedMemberStateFactory {
 
     private void createMemState(MemberStateImpl memberState,
                                 Collection<StatisticsAwareService> services) {
-        int count = 0;
         Config config = instance.getConfig();
         for (StatisticsAwareService service : services) {
             if (service instanceof MapService) {
-                count = handleMap(memberState, count, config, ((MapService) service).getStats());
+                handleMap(memberState, config, ((MapService) service).getStats());
             } else if (service instanceof MultiMapService) {
-                count = handleMultimap(memberState, count, config, ((MultiMapService) service).getStats());
+                handleMultiMap(memberState, config, ((MultiMapService) service).getStats());
             } else if (service instanceof QueueService) {
-                count = handleQueue(memberState, count, config, ((QueueService) service).getStats());
+                handleQueue(memberState, config, ((QueueService) service).getStats());
             } else if (service instanceof TopicService) {
-                count = handleTopic(memberState, count, config, ((TopicService) service).getStats());
+                handleTopic(memberState, config, ((TopicService) service).getStats());
             } else if (service instanceof ReliableTopicService) {
-                count = handleReliableTopic(memberState, count, config,
-                        ((ReliableTopicService) service).getStats());
+                handleReliableTopic(memberState, config, ((ReliableTopicService) service).getStats());
             } else if (service instanceof DistributedExecutorService) {
-                count = handleExecutorService(memberState, count, config,
-                        ((DistributedExecutorService) service).getStats());
+                handleExecutorService(memberState, config, ((DistributedExecutorService) service).getStats());
             } else if (service instanceof ReplicatedMapService) {
-                count = handleReplicatedMap(memberState, count, config, ((ReplicatedMapService) service).getStats());
+                handleReplicatedMap(memberState, config, ((ReplicatedMapService) service).getStats());
             } else if (service instanceof PNCounterService) {
-                count = handlePNCounter(memberState, count, config, ((PNCounterService) service).getStats());
+                handlePNCounter(memberState, config, ((PNCounterService) service).getStats());
             } else if (service instanceof FlakeIdGeneratorService) {
-                count = handleFlakeIdGenerator(memberState, count, config,
-                        ((FlakeIdGeneratorService) service).getStats());
+                handleFlakeIdGenerator(memberState, config, ((FlakeIdGeneratorService) service).getStats());
             } else if (service instanceof CacheService) {
-                count = handleCache(memberState, count, (CacheService) service);
+                handleCache(memberState, (CacheService) service);
             }
         }
 
         WanReplicationService wanReplicationService = instance.node.nodeEngine.getWanReplicationService();
         Map<String, LocalWanStats> wanStats = wanReplicationService.getStats();
         if (wanStats != null) {
-            count = handleWan(memberState, count, wanStats);
+            handleWan(memberState, wanStats);
         }
     }
 
-    private int handleFlakeIdGenerator(MemberStateImpl memberState, int count, Config config,
-                                       Map<String, LocalFlakeIdGeneratorStats> flakeIdstats) {
-        for (Map.Entry<String, LocalFlakeIdGeneratorStats> entry : flakeIdstats.entrySet()) {
-            String name = entry.getKey();
+    private void handleFlakeIdGenerator(MemberStateImpl memberState, Config config,
+                                        Map<String, LocalFlakeIdGeneratorStats> flakeIdStats) {
+        Set<String> flakeIdGeneratorsWithStats = createHashSet(flakeIdStats.size());
+        for (String name : flakeIdStats.keySet()) {
             if (config.findFlakeIdGeneratorConfig(name).isStatisticsEnabled()) {
-                LocalFlakeIdGeneratorStats stats = entry.getValue();
-                memberState.putLocalFlakeIdStats(name, stats);
-                ++count;
+                flakeIdGeneratorsWithStats.add(name);
             }
         }
-        return count;
+        memberState.setFlakeIdGeneratorsWithStats(flakeIdGeneratorsWithStats);
     }
 
-    private int handleExecutorService(MemberStateImpl memberState, int count, Config config,
-                                      Map<String, LocalExecutorStats> executorServices) {
-
-        for (Map.Entry<String, LocalExecutorStats> entry : executorServices.entrySet()) {
-            String name = entry.getKey();
+    private void handleExecutorService(MemberStateImpl memberState, Config config,
+                                       Map<String, LocalExecutorStats> executorServices) {
+        Set<String> executorsWithStats = createHashSet(executorServices.size());
+        for (String name : executorServices.keySet()) {
             if (config.findExecutorConfig(name).isStatisticsEnabled()) {
-                LocalExecutorStats stats = entry.getValue();
-                memberState.putLocalExecutorStats(name, stats);
-                ++count;
+                executorsWithStats.add(name);
             }
         }
-        return count;
+        memberState.setExecutorsWithStats(executorsWithStats);
     }
 
-    private int handleMultimap(MemberStateImpl memberState, int count, Config config, Map<String, LocalMultiMapStats> multiMaps) {
-        for (Map.Entry<String, LocalMultiMapStats> entry : multiMaps.entrySet()) {
-            String name = entry.getKey();
+    private void handleMultiMap(MemberStateImpl memberState, Config config,
+                                Map<String, LocalMultiMapStats> multiMaps) {
+        Set<String> mapsWithStats = createHashSet(multiMaps.size());
+        for (String name : multiMaps.keySet()) {
             if (config.findMultiMapConfig(name).isStatisticsEnabled()) {
-                LocalMultiMapStats stats = entry.getValue();
-                memberState.putLocalMultiMapStats(name, stats);
-                ++count;
+                mapsWithStats.add(name);
             }
         }
-        return count;
+        memberState.setMultiMapsWithStats(mapsWithStats);
     }
 
-    private int handleReplicatedMap(MemberStateImpl memberState, int count, Config
-            config, Map<String, LocalReplicatedMapStats> replicatedMaps) {
-        for (Map.Entry<String, LocalReplicatedMapStats> entry : replicatedMaps.entrySet()) {
-            String name = entry.getKey();
+    private void handleReplicatedMap(MemberStateImpl memberState, Config config,
+                                     Map<String, LocalReplicatedMapStats> replicatedMaps) {
+        Set<String> mapsWithStats = createHashSet(replicatedMaps.size());
+        for (String name : replicatedMaps.keySet()) {
             if (config.findReplicatedMapConfig(name).isStatisticsEnabled()) {
-                LocalReplicatedMapStats stats = entry.getValue();
-                memberState.putLocalReplicatedMapStats(name, stats);
-                ++count;
+                mapsWithStats.add(name);
             }
         }
-        return count;
+        memberState.setReplicatedMapsWithStats(mapsWithStats);
     }
 
-    private int handlePNCounter(MemberStateImpl memberState, int count, Config config,
-                                Map<String, LocalPNCounterStats> counters) {
-        for (Map.Entry<String, LocalPNCounterStats> entry : counters.entrySet()) {
-            String name = entry.getKey();
+    private void handlePNCounter(MemberStateImpl memberState, Config config,
+                                 Map<String, LocalPNCounterStats> counters) {
+        Set<String> countersWithStats = createHashSet(counters.size());
+        for (String name : counters.keySet()) {
             if (config.findPNCounterConfig(name).isStatisticsEnabled()) {
-                LocalPNCounterStats stats = entry.getValue();
-                memberState.putLocalPNCounterStats(name, stats);
-                ++count;
+                countersWithStats.add(name);
             }
         }
-        return count;
+        memberState.setPNCountersWithStats(countersWithStats);
     }
 
-    private int handleReliableTopic(MemberStateImpl memberState, int count, Config config, Map<String, LocalTopicStats> topics) {
-        for (Map.Entry<String, LocalTopicStats> entry : topics.entrySet()) {
-            String name = entry.getKey();
+    private void handleReliableTopic(MemberStateImpl memberState, Config config,
+                                     Map<String, LocalTopicStats> topics) {
+        Set<String> topicsWithStats = createHashSet(topics.size());
+        for (String name : topics.keySet()) {
             if (config.findReliableTopicConfig(name).isStatisticsEnabled()) {
-                LocalTopicStats stats = entry.getValue();
-                memberState.putLocalReliableTopicStats(name, stats);
-                ++count;
+                topicsWithStats.add(name);
             }
         }
-        return count;
+        memberState.setReliableTopicsWithStats(topicsWithStats);
     }
 
-    private int handleTopic(MemberStateImpl memberState, int count, Config config, Map<String, LocalTopicStats> topics) {
-        for (Map.Entry<String, LocalTopicStats> entry : topics.entrySet()) {
-            String name = entry.getKey();
+    private void handleTopic(MemberStateImpl memberState, Config config, Map<String, LocalTopicStats> topics) {
+        Set<String> topicsWithStats = createHashSet(topics.size());
+        for (String name : topics.keySet()) {
             if (config.findTopicConfig(name).isStatisticsEnabled()) {
-                LocalTopicStats stats = entry.getValue();
-                memberState.putLocalTopicStats(name, stats);
-                ++count;
+                topicsWithStats.add(name);
             }
         }
-        return count;
+        memberState.setTopicsWithStats(topicsWithStats);
     }
 
-    private int handleQueue(MemberStateImpl memberState, int count, Config config, Map<String, LocalQueueStats> queues) {
-        for (Map.Entry<String, LocalQueueStats> entry : queues.entrySet()) {
-            String name = entry.getKey();
+    private void handleQueue(MemberStateImpl memberState, Config config, Map<String, LocalQueueStats> queues) {
+        Set<String> mapsWithStats = createHashSet(queues.size());
+        for (String name : queues.keySet()) {
             if (config.findQueueConfig(name).isStatisticsEnabled()) {
-                LocalQueueStats stats = entry.getValue();
-                memberState.putLocalQueueStats(name, stats);
-                ++count;
+                mapsWithStats.add(name);
             }
         }
-        return count;
+        memberState.setQueuesWithStats(mapsWithStats);
     }
 
-    private int handleMap(MemberStateImpl memberState, int count, Config config, Map<String, LocalMapStats> maps) {
-        for (Map.Entry<String, LocalMapStats> entry : maps.entrySet()) {
-            String name = entry.getKey();
+    private void handleMap(MemberStateImpl memberState, Config config, Map<String, LocalMapStats> maps) {
+        Set<String> queuesWithStats = createHashSet(maps.size());
+        for (String name : maps.keySet()) {
             if (config.findMapConfig(name).isStatisticsEnabled()) {
-                LocalMapStats stats = entry.getValue();
-                memberState.putLocalMapStats(name, stats);
-                ++count;
+                queuesWithStats.add(name);
             }
         }
-        return count;
+        memberState.setMapsWithStats(queuesWithStats);
     }
 
-    private int handleCache(MemberStateImpl memberState, int count, CacheService cacheService) {
+    private void handleCache(MemberStateImpl memberState, CacheService cacheService) {
         Map<String, LocalCacheStats> map = cacheService.getStats();
-        for (Map.Entry<String, LocalCacheStats> entry : map.entrySet()) {
-            String name = entry.getKey();
-            CacheConfig cacheConfig = cacheService.getCacheConfig(entry.getKey());
+        Set<String> cachesWithStats = createHashSet(map.size());
+        for (String name : map.keySet()) {
+            CacheConfig cacheConfig = cacheService.getCacheConfig(name);
             if (cacheConfig != null && cacheConfig.isStatisticsEnabled()) {
-                LocalCacheStats stats = entry.getValue();
-                memberState.putLocalCacheStats(name, stats);
-                ++count;
+                cachesWithStats.add(name);
             }
         }
-        return count;
+        memberState.setCachesWithStats(cachesWithStats);
     }
 
-    private int handleWan(MemberStateImpl memberState, int count, Map<String, LocalWanStats> wans) {
+    private void handleWan(MemberStateImpl memberState, Map<String, LocalWanStats> wans) {
         for (Map.Entry<String, LocalWanStats> entry : wans.entrySet()) {
             String schemeName = entry.getKey();
             LocalWanStats stats = entry.getValue();
             memberState.putLocalWanStats(schemeName, stats);
-            count++;
         }
-        return count;
     }
 }

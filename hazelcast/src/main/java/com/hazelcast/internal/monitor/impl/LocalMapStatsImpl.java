@@ -16,18 +16,13 @@
 
 package com.hazelcast.internal.monitor.impl;
 
-import com.hazelcast.internal.json.JsonObject;
-import com.hazelcast.internal.json.JsonObject.Member;
-import com.hazelcast.internal.json.JsonValue;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.util.Clock;
-import com.hazelcast.json.internal.JsonSerializable;
 import com.hazelcast.map.LocalMapStats;
 import com.hazelcast.nearcache.NearCacheStats;
 import com.hazelcast.query.LocalIndexStats;
 
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -65,10 +60,6 @@ import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MAP_METRI
 import static com.hazelcast.internal.metrics.ProbeUnit.BYTES;
 import static com.hazelcast.internal.metrics.ProbeUnit.MS;
 import static com.hazelcast.internal.util.ConcurrencyUtil.setMax;
-import static com.hazelcast.internal.util.JsonUtil.getInt;
-import static com.hazelcast.internal.util.JsonUtil.getLong;
-import static com.hazelcast.internal.util.JsonUtil.getObject;
-import static com.hazelcast.internal.util.TimeUtil.convertMillisToNanos;
 import static com.hazelcast.internal.util.TimeUtil.convertNanosToMillis;
 import static java.util.concurrent.atomic.AtomicLongFieldUpdater.newUpdater;
 
@@ -76,7 +67,7 @@ import static java.util.concurrent.atomic.AtomicLongFieldUpdater.newUpdater;
  * Default implementation of {@link LocalMapStats}
  */
 @SuppressWarnings({"checkstyle:methodcount"})
-public class LocalMapStatsImpl implements LocalMapStats, JsonSerializable {
+public class LocalMapStatsImpl implements LocalMapStats {
 
     private static final AtomicLongFieldUpdater<LocalMapStatsImpl> LAST_ACCESS_TIME =
             newUpdater(LocalMapStatsImpl.class, "lastAccessTime");
@@ -145,7 +136,7 @@ public class LocalMapStatsImpl implements LocalMapStats, JsonSerializable {
     private volatile long maxSetLatency;
     private volatile long maxRemoveLatency;
     @Probe(name = MAP_METRIC_CREATION_TIME, unit = MS)
-    private volatile long creationTime;
+    private final long creationTime;
     @Probe(name = MAP_METRIC_OWNED_ENTRY_COUNT)
     private volatile long ownedEntryCount;
     @Probe(name = MAP_METRIC_BACKUP_ENTRY_COUNT)
@@ -491,111 +482,6 @@ public class LocalMapStatsImpl implements LocalMapStats, JsonSerializable {
             } else {
                 indexStats.setAllFrom(freshIndexEntry.getValue());
             }
-        }
-    }
-
-    @Override
-    public JsonObject toJson() {
-        JsonObject root = new JsonObject();
-        root.add("getCount", getCount);
-        root.add("putCount", putCount);
-        root.add("setCount", setCount);
-        root.add("removeCount", removeCount);
-        root.add("numberOfOtherOperations", numberOfOtherOperations);
-        root.add("numberOfEvents", numberOfEvents);
-        root.add("lastAccessTime", lastAccessTime);
-        root.add("lastUpdateTime", lastUpdateTime);
-        root.add("hits", hits);
-        root.add("ownedEntryCount", ownedEntryCount);
-        root.add("backupEntryCount", backupEntryCount);
-        root.add("backupCount", backupCount);
-        root.add("ownedEntryMemoryCost", ownedEntryMemoryCost);
-        root.add("backupEntryMemoryCost", backupEntryMemoryCost);
-        root.add("creationTime", creationTime);
-        root.add("lockedEntryCount", lockedEntryCount);
-        root.add("dirtyEntryCount", dirtyEntryCount);
-
-        // keep the contract as milliseconds for latencies sent using Json
-        root.add("totalGetLatencies", convertNanosToMillis(totalGetLatenciesNanos));
-        root.add("totalPutLatencies", convertNanosToMillis(totalPutLatenciesNanos));
-        root.add("totalSetLatencies", convertNanosToMillis(totalSetLatenciesNanos));
-        root.add("totalRemoveLatencies", convertNanosToMillis(totalRemoveLatenciesNanos));
-        root.add("maxGetLatency", convertNanosToMillis(maxGetLatency));
-        root.add("maxPutLatency", convertNanosToMillis(maxPutLatency));
-        root.add("maxSetLatency", convertNanosToMillis(maxSetLatency));
-        root.add("maxRemoveLatency", convertNanosToMillis(maxRemoveLatency));
-
-        root.add("heapCost", heapCost);
-        root.add("merkleTreesCost", merkleTreesCost);
-        if (nearCacheStats != null) {
-            root.add("nearCacheStats", ((JsonSerializable) nearCacheStats).toJson());
-        }
-
-        root.add("queryCount", queryCount);
-        root.add("indexedQueryCount", indexedQueryCount);
-        Map<String, LocalIndexStats> localIndexStats = indexStats;
-        if (!localIndexStats.isEmpty()) {
-            JsonObject indexes = new JsonObject();
-            for (Map.Entry<String, LocalIndexStats> indexEntry : localIndexStats.entrySet()) {
-                indexes.add(indexEntry.getKey(), ((JsonSerializable) indexEntry.getValue()).toJson());
-            }
-            root.add("indexStats", indexes);
-        }
-
-        return root;
-    }
-
-    @Override
-    public void fromJson(JsonObject json) {
-        getCount = getLong(json, "getCount", -1L);
-        putCount = getLong(json, "putCount", -1L);
-        setCount = getLong(json, "setCount", -1L);
-        removeCount = getLong(json, "removeCount", -1L);
-        numberOfOtherOperations = getLong(json, "numberOfOtherOperations", -1L);
-        numberOfEvents = getLong(json, "numberOfEvents", -1L);
-        lastAccessTime = getLong(json, "lastAccessTime", -1L);
-        lastUpdateTime = getLong(json, "lastUpdateTime", -1L);
-
-        // Json uses milliseconds but we keep latencies in nanoseconds internally
-        totalGetLatenciesNanos = convertMillisToNanos(getLong(json, "totalGetLatencies", -1L));
-        totalPutLatenciesNanos = convertMillisToNanos(getLong(json, "totalPutLatencies", -1L));
-        totalSetLatenciesNanos = convertMillisToNanos(getLong(json, "totalSetLatencies", -1L));
-        totalRemoveLatenciesNanos = convertMillisToNanos(getLong(json, "totalRemoveLatencies", -1L));
-        maxGetLatency = convertMillisToNanos(getLong(json, "maxGetLatency", -1L));
-        maxPutLatency = convertMillisToNanos(getLong(json, "maxPutLatency", -1L));
-        maxSetLatency = convertMillisToNanos(getLong(json, "maxSetLatency", -1L));
-        maxRemoveLatency = convertMillisToNanos(getLong(json, "maxRemoveLatency", -1L));
-
-        hits = getLong(json, "hits", -1L);
-        ownedEntryCount = getLong(json, "ownedEntryCount", -1L);
-        backupEntryCount = getLong(json, "backupEntryCount", -1L);
-        backupCount = getInt(json, "backupCount", -1);
-        ownedEntryMemoryCost = getLong(json, "ownedEntryMemoryCost", -1L);
-        backupEntryMemoryCost = getLong(json, "backupEntryMemoryCost", -1L);
-        creationTime = getLong(json, "creationTime", -1L);
-        lockedEntryCount = getLong(json, "lockedEntryCount", -1L);
-        dirtyEntryCount = getLong(json, "dirtyEntryCount", -1L);
-        heapCost = getLong(json, "heapCost", -1L);
-        merkleTreesCost = getLong(json, "merkleTreesCost", -1L);
-        JsonValue jsonNearCacheStats = json.get("nearCacheStats");
-        if (jsonNearCacheStats != null) {
-            nearCacheStats = new NearCacheStatsImpl();
-            ((JsonSerializable) nearCacheStats).fromJson(jsonNearCacheStats.asObject());
-        }
-
-        queryCount = getLong(json, "queryCount", -1L);
-        indexedQueryCount = getLong(json, "indexedQueryCount", -1L);
-        JsonObject indexes = getObject(json, "indexStats", null);
-        if (indexes != null && !indexes.isEmpty()) {
-            Map<String, LocalIndexStatsImpl> localIndexStats = new HashMap<String, LocalIndexStatsImpl>();
-            for (Member member : indexes) {
-                LocalIndexStatsImpl indexStats = new LocalIndexStatsImpl();
-                indexStats.fromJson(member.getValue().asObject());
-                localIndexStats.put(member.getName(), indexStats);
-            }
-            setIndexStats(localIndexStats);
-        } else {
-            setIndexStats(null);
         }
     }
 

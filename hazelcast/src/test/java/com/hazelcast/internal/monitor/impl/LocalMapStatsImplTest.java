@@ -16,7 +16,6 @@
 
 package com.hazelcast.internal.monitor.impl;
 
-import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -119,50 +118,6 @@ public class LocalMapStatsImplTest {
         assertEquals(5, localMapStats.getIndexedQueryCount());
         assertNotNull(localMapStats.getIndexStats());
         assertEquals(1, localMapStats.getIndexStats().size());
-    }
-
-    @Test
-    public void testSerialization() {
-        JsonObject serialized = localMapStats.toJson();
-        LocalMapStatsImpl deserialized = new LocalMapStatsImpl();
-        deserialized.fromJson(serialized);
-
-        assertTrue(deserialized.getCreationTime() > 0);
-        assertEquals(5, deserialized.getOwnedEntryCount());
-        assertEquals(3, deserialized.getBackupEntryCount());
-        assertEquals(4, deserialized.getBackupCount());
-        assertEquals(1234, deserialized.getOwnedEntryMemoryCost());
-        assertEquals(4321, deserialized.getBackupEntryMemoryCost());
-        assertEquals(1231241512, deserialized.getLastAccessTime());
-        assertEquals(1341412343, deserialized.getLastUpdateTime());
-        assertEquals(12314, deserialized.getHits());
-        assertEquals(1231, deserialized.getLockedEntryCount());
-        assertEquals(4252, deserialized.getDirtyEntryCount());
-
-        assertEquals(11, deserialized.total());
-        assertEquals(2, deserialized.getPutOperationCount());
-        assertEquals(2, deserialized.getSetOperationCount());
-        assertEquals(3, deserialized.getGetOperationCount());
-        assertEquals(1, deserialized.getRemoveOperationCount());
-        assertEquals(5632, deserialized.getTotalPutLatency());
-        assertEquals(8722, deserialized.getTotalSetLatency());
-        assertEquals(1247, deserialized.getTotalGetLatency());
-        assertEquals(1238, deserialized.getTotalRemoveLatency());
-        assertEquals(5631, deserialized.getMaxPutLatency());
-        assertEquals(8721, deserialized.getMaxSetLatency());
-        assertEquals(1233, deserialized.getMaxGetLatency());
-        assertEquals(1238, deserialized.getMaxRemoveLatency());
-        assertEquals(5, deserialized.getOtherOperationCount());
-        assertEquals(2, deserialized.getEventOperationCount());
-
-        assertEquals(7461762, deserialized.getHeapCost());
-        assertNotNull(deserialized.getNearCacheStats());
-        assertNotNull(deserialized.toString());
-
-        assertEquals(10, deserialized.getQueryCount());
-        assertEquals(5, deserialized.getIndexedQueryCount());
-        assertNotNull(deserialized.getIndexStats());
-        assertEquals(1, deserialized.getIndexStats().size());
     }
 
     @Test

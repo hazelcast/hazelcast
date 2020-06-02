@@ -68,24 +68,4 @@ public class LocalIndexStatsImplTest {
         assertNotNull(stats.toString());
     }
 
-    @Test
-    public void testSerialization() {
-        LocalIndexStatsImpl deserialized = new LocalIndexStatsImpl();
-        deserialized.fromJson(stats.toJson());
-
-        assertEquals(1234, deserialized.getCreationTime());
-        assertEquals(20, deserialized.getHitCount());
-        assertEquals(11, deserialized.getQueryCount());
-        assertEquals(0.5, deserialized.getAverageHitSelectivity(), 0.01);
-        assertEquals(81273, deserialized.getAverageHitLatency());
-        assertEquals(91238, deserialized.getInsertCount());
-        assertEquals(83912, deserialized.getTotalInsertLatency());
-        assertEquals(712639, deserialized.getUpdateCount());
-        assertEquals(34623, deserialized.getTotalUpdateLatency());
-        assertEquals(749274, deserialized.getRemoveCount());
-        assertEquals(1454957, deserialized.getTotalRemoveLatency());
-        assertEquals(2345, deserialized.getMemoryCost());
-        assertNotNull(deserialized.toString());
-    }
-
 }
