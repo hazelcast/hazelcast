@@ -22,13 +22,13 @@ import com.hazelcast.sql.impl.type.QueryDataType;
  * Base class for all table field. Different backends may have additional
  * metadata associated with the field.
  */
-public abstract class TableField {
+public class TableField {
 
     protected final String name;
     protected final QueryDataType type;
     protected final boolean hidden;
 
-    protected TableField(String name, QueryDataType type, boolean hidden) {
+    public TableField(String name, QueryDataType type, boolean hidden) {
         this.name = name;
         this.type = type;
         this.hidden = hidden;
