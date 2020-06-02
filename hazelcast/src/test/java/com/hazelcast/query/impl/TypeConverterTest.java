@@ -387,7 +387,7 @@ public class TypeConverterTest {
 
     @Test
     public void testLocalDateTimeConverter_whenNumberPassed() {
-        SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd", Locale.ENGLISH);
+        SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.ENGLISH);
         String format = formatter.format(new Date());
         Comparable actual = TypeConverters.LOCALDATE_TIME_CONVERTER.convert(format);
 
