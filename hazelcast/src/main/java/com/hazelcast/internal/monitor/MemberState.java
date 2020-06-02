@@ -27,7 +27,6 @@ import com.hazelcast.replicatedmap.LocalReplicatedMapStats;
 import com.hazelcast.topic.LocalTopicStats;
 
 import java.util.Collection;
-import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -58,8 +57,6 @@ public interface MemberState extends JsonSerializable {
      */
     String getName();
 
-    Map<String, Long> getRuntimeProps();
-
     LocalMapStats getLocalMapStats(String mapName);
 
     LocalMultiMapStats getLocalMultiMapStats(String mapName);
@@ -83,8 +80,6 @@ public interface MemberState extends JsonSerializable {
     LocalFlakeIdGeneratorStats getLocalFlakeIdGeneratorStats(String flakeIdName);
 
     Collection<ClientEndPointDTO> getClients();
-
-    LocalMemoryStats getLocalMemoryStats();
 
     /**
      * Returns the local operation statistics.

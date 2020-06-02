@@ -34,31 +34,25 @@ import com.hazelcast.executor.LocalExecutorStats;
 import com.hazelcast.executor.impl.DistributedExecutorService;
 import com.hazelcast.flakeidgen.impl.FlakeIdGeneratorService;
 import com.hazelcast.hotrestart.HotRestartService;
-import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.instance.impl.HazelcastInstanceImpl;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.crdt.pncounter.PNCounterService;
-import com.hazelcast.internal.management.dto.AdvancedNetworkStatsDTO;
 import com.hazelcast.internal.management.dto.ClientEndPointDTO;
 import com.hazelcast.internal.management.dto.ClusterHotRestartStatusDTO;
 import com.hazelcast.internal.monitor.LocalCacheStats;
 import com.hazelcast.internal.monitor.LocalFlakeIdGeneratorStats;
-import com.hazelcast.internal.monitor.LocalMemoryStats;
 import com.hazelcast.internal.monitor.LocalOperationStats;
 import com.hazelcast.internal.monitor.LocalPNCounterStats;
 import com.hazelcast.internal.monitor.LocalWanStats;
 import com.hazelcast.internal.monitor.WanSyncState;
 import com.hazelcast.internal.monitor.impl.HotRestartStateImpl;
-import com.hazelcast.internal.monitor.impl.LocalMemoryStatsImpl;
 import com.hazelcast.internal.monitor.impl.LocalOperationStatsImpl;
 import com.hazelcast.internal.monitor.impl.MemberPartitionStateImpl;
 import com.hazelcast.internal.monitor.impl.MemberStateImpl;
 import com.hazelcast.internal.monitor.impl.NodeStateImpl;
 import com.hazelcast.internal.partition.IPartition;
 import com.hazelcast.internal.partition.InternalPartitionService;
-import com.hazelcast.internal.server.NetworkStats;
-import com.hazelcast.internal.server.Server;
 import com.hazelcast.internal.services.StatisticsAwareService;
 import com.hazelcast.map.LocalMapStats;
 import com.hazelcast.map.impl.MapService;
@@ -79,7 +73,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
-import java.util.function.ToLongFunction;
 
 import static com.hazelcast.config.ConfigAccessor.getActiveMemberNetworkConfig;
 import static com.hazelcast.internal.util.MapUtil.createHashMap;
@@ -144,10 +137,6 @@ public class TimedMemberStateFactory {
         return timedMemberState;
     }
 
-    protected LocalMemoryStats getMemoryStats() {
-        return new LocalMemoryStatsImpl(instance.getMemoryStats());
-    }
-
     private LocalOperationStats getOperationStats() {
         return new LocalOperationStatsImpl(instance.node);
     }
@@ -189,9 +178,7 @@ public class TimedMemberStateFactory {
         memberPartitionState.setMigrationQueueSize(partitionService.getMigrationQueueSize());
         memberPartitionState.setMemberStateSafe(memberStateSafe);
 
-        memberState.setLocalMemoryStats(getMemoryStats());
         memberState.setOperationStats(getOperationStats());
-        TimedMemberStateFactoryHelper.createRuntimeProps(memberState);
         createMemState(memberState, services);
 
         createNodeState(memberState);
@@ -200,12 +187,6 @@ public class TimedMemberStateFactory {
         createWanSyncState(memberState);
 
         memberState.setClientStats(getClientAttributes(node.getClientEngine().getClientStatistics()));
-
-        Server server = node.getServer();
-        memberState.setInboundNetworkStats(createAdvancedNetworkStats(server.getNetworkStats(),
-                NetworkStats::getBytesReceived));
-        memberState.setOutboundNetworkStats(createAdvancedNetworkStats(server.getNetworkStats(),
-                NetworkStats::getBytesSent));
     }
 
     private Map<UUID, String> getClientAttributes(Map<UUID, ClientStatistics> allClientStatistics) {
@@ -425,14 +406,5 @@ public class TimedMemberStateFactory {
             count++;
         }
         return count;
-    }
-
-    private AdvancedNetworkStatsDTO createAdvancedNetworkStats(Map<EndpointQualifier, NetworkStats> stats,
-                                                               ToLongFunction<NetworkStats> getBytesFn) {
-        AdvancedNetworkStatsDTO statsDTO = new AdvancedNetworkStatsDTO();
-        for (Map.Entry<EndpointQualifier, NetworkStats> entry : stats.entrySet()) {
-            statsDTO.incBytesTransceived(entry.getKey().getType(), getBytesFn.applyAsLong(entry.getValue()));
-        }
-        return statsDTO;
     }
 }

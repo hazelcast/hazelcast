@@ -37,6 +37,7 @@ public class MemberPartitionStateImpl implements MemberPartitionState {
 
     List<Integer> partitions = new ArrayList<Integer>(DEFAULT_PARTITION_COUNT);
     boolean memberStateSafe;
+    @Deprecated
     long migrationQueueSize;
 
     @Override

@@ -47,12 +47,14 @@ public class LocalWanPublisherStatsImpl implements LocalWanPublisherStats {
 
     private volatile boolean connected;
     private volatile WanPublisherState state;
+    // TODO remove from JSON (3 fields)
     @Probe(name = WAN_METRIC_OUTBOUND_QUEUE_SIZE)
     private volatile int outboundQueueSize;
     @Probe(name = WAN_METRIC_TOTAL_PUBLISH_LATENCY, unit = MS)
     private volatile long totalPublishLatency;
     @Probe(name = WAN_METRIC_TOTAL_PUBLISHED_EVENT_COUNT)
     private volatile long totalPublishedEventCount;
+    // TODO these probes don't seen to be working properly
     private volatile Map<String, DistributedObjectWanEventCounters> sentMapEventCounter;
     private volatile Map<String, DistributedObjectWanEventCounters> sentCacheEventCounter;
     private volatile Map<String, ConsistencyCheckResult> lastConsistencyCheckResults;

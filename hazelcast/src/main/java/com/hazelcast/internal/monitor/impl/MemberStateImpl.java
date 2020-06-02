@@ -24,13 +24,11 @@ import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.internal.json.JsonArray;
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.json.JsonValue;
-import com.hazelcast.internal.management.dto.AdvancedNetworkStatsDTO;
 import com.hazelcast.internal.management.dto.ClientEndPointDTO;
 import com.hazelcast.internal.management.dto.ClusterHotRestartStatusDTO;
 import com.hazelcast.internal.monitor.HotRestartState;
 import com.hazelcast.internal.monitor.LocalCacheStats;
 import com.hazelcast.internal.monitor.LocalFlakeIdGeneratorStats;
-import com.hazelcast.internal.monitor.LocalMemoryStats;
 import com.hazelcast.internal.monitor.LocalOperationStats;
 import com.hazelcast.internal.monitor.LocalPNCounterStats;
 import com.hazelcast.internal.monitor.LocalWanStats;
@@ -66,7 +64,7 @@ public class MemberStateImpl implements MemberState {
     private UUID cpMemberUuid;
     private String name;
     private Map<EndpointQualifier, Address> endpoints = new HashMap<>();
-    private Map<String, Long> runtimeProps = new HashMap<>();
+    // TODO reduce to empty JSON objects
     private Map<String, LocalMapStats> mapStats = new HashMap<>();
     private Map<String, LocalMultiMapStats> multiMapStats = new HashMap<>();
     private Map<String, LocalQueueStats> queueStats = new HashMap<>();
@@ -76,30 +74,22 @@ public class MemberStateImpl implements MemberState {
     private Map<String, LocalExecutorStats> executorStats = new HashMap<>();
     private Map<String, LocalReplicatedMapStats> replicatedMapStats = new HashMap<>();
     private Map<String, LocalCacheStats> cacheStats = new HashMap<>();
-    private Map<String, LocalWanStats> wanStats = new HashMap<>();
     private Map<String, LocalFlakeIdGeneratorStats> flakeIdGeneratorStats = new HashMap<>();
+
+    // TODO remove internal fields
+    private Map<String, LocalWanStats> wanStats = new HashMap<>();
     private Collection<ClientEndPointDTO> clients = new HashSet<>();
     private Map<UUID, String> clientStats = new HashMap<>();
-    private LocalMemoryStats memoryStats = new LocalMemoryStatsImpl();
     private MemberPartitionState memberPartitionState = new MemberPartitionStateImpl();
     private LocalOperationStats operationStats = new LocalOperationStatsImpl();
     private NodeState nodeState = new NodeStateImpl();
     private HotRestartState hotRestartState = new HotRestartStateImpl();
     private ClusterHotRestartStatusDTO clusterHotRestartStatus = new ClusterHotRestartStatusDTO();
+    // ???
+    @Deprecated
     private WanSyncState wanSyncState = new WanSyncStateImpl();
-    private AdvancedNetworkStatsDTO inboundNetworkStats = new AdvancedNetworkStatsDTO();
-    private AdvancedNetworkStatsDTO outboundNetworkStats = new AdvancedNetworkStatsDTO();
 
     public MemberStateImpl() {
-    }
-
-    @Override
-    public Map<String, Long> getRuntimeProps() {
-        return runtimeProps;
-    }
-
-    public void setRuntimeProps(Map<String, Long> runtimeProps) {
-        this.runtimeProps = runtimeProps;
     }
 
     @Override
@@ -254,15 +244,6 @@ public class MemberStateImpl implements MemberState {
     }
 
     @Override
-    public LocalMemoryStats getLocalMemoryStats() {
-        return memoryStats;
-    }
-
-    public void setLocalMemoryStats(LocalMemoryStats memoryStats) {
-        this.memoryStats = memoryStats;
-    }
-
-    @Override
     public LocalOperationStats getOperationStats() {
         return operationStats;
     }
@@ -320,24 +301,7 @@ public class MemberStateImpl implements MemberState {
         this.clientStats = clientStats;
     }
 
-    public AdvancedNetworkStatsDTO getInboundNetworkStats() {
-        return inboundNetworkStats;
-    }
-
-    public void setInboundNetworkStats(AdvancedNetworkStatsDTO inboundNetworkStats) {
-        this.inboundNetworkStats = inboundNetworkStats;
-    }
-
-    public AdvancedNetworkStatsDTO getOutboundNetworkStats() {
-        return outboundNetworkStats;
-    }
-
-    public void setOutboundNetworkStats(AdvancedNetworkStatsDTO outboundNetworkStats) {
-        this.outboundNetworkStats = outboundNetworkStats;
-    }
-
     @Override
-    @SuppressWarnings("unchecked")
     public JsonObject toJson() {
         final JsonObject root = new JsonObject();
         root.add("address", address);
@@ -377,18 +341,11 @@ public class MemberStateImpl implements MemberState {
         serializeMap(root, "wanStats", wanStats);
         serializeMap(root, "flakeIdStats", flakeIdGeneratorStats);
 
-        final JsonObject runtimePropsObject = new JsonObject();
-        for (Map.Entry<String, Long> entry : runtimeProps.entrySet()) {
-            runtimePropsObject.add(entry.getKey(), entry.getValue());
-        }
-        root.add("runtimeProps", runtimePropsObject);
-
         final JsonArray clientsArray = new JsonArray();
         for (ClientEndPointDTO client : clients) {
             clientsArray.add(client.toJson());
         }
         root.add("clients", clientsArray);
-        addJsonIfSerializable(root, "memoryStats", memoryStats);
         addJsonIfSerializable(root, "operationStats", operationStats);
         root.add("memberPartitionState", memberPartitionState.toJson());
         root.add("nodeState", nodeState.toJson());
@@ -401,8 +358,6 @@ public class MemberStateImpl implements MemberState {
             clientStatsObject.add(entry.getKey().toString(), entry.getValue());
         }
         root.add("clientStats", clientStatsObject);
-        root.add("inboundNetworkStats", inboundNetworkStats.toJson());
-        root.add("outboundNetworkStats", outboundNetworkStats.toJson());
         return root;
     }
 
@@ -519,18 +474,11 @@ public class MemberStateImpl implements MemberState {
             putDeserializedIfSerializable(flakeIdGeneratorStats, next.getName(), next.getValue().asObject(),
                     new LocalFlakeIdGeneratorStatsImpl());
         }
-        for (JsonObject.Member next : getObject(json, "runtimeProps")) {
-            runtimeProps.put(next.getName(), next.getValue().asLong());
-        }
         final JsonArray jsonClients = getArray(json, "clients");
         for (JsonValue jsonClient : jsonClients) {
             final ClientEndPointDTO client = new ClientEndPointDTO();
             client.fromJson(jsonClient.asObject());
             clients.add(client);
-        }
-        JsonObject jsonMemoryStats = getObject(json, "memoryStats", null);
-        if (jsonMemoryStats != null) {
-            memoryStats = readJsonIfDeserializable(jsonMemoryStats, memoryStats);
         }
         JsonObject jsonOperationStats = getObject(json, "operationStats", null);
         if (jsonOperationStats != null) {
@@ -563,16 +511,6 @@ public class MemberStateImpl implements MemberState {
         for (JsonObject.Member next : getObject(json, "clientStats")) {
             clientStats.put(UUID.fromString(next.getName()), next.getValue().asString());
         }
-        JsonObject jsonInboundNetworkStats = getObject(json, "inboundNetworkStats", null);
-        if (jsonInboundNetworkStats != null) {
-            inboundNetworkStats = new AdvancedNetworkStatsDTO();
-            inboundNetworkStats.fromJson(jsonInboundNetworkStats);
-        }
-        JsonObject jsonOutboundNetworkStats = getObject(json, "outboundNetworkStats", null);
-        if (jsonOutboundNetworkStats != null) {
-            outboundNetworkStats = new AdvancedNetworkStatsDTO();
-            outboundNetworkStats.fromJson(jsonOutboundNetworkStats);
-        }
     }
 
     @Override
@@ -582,7 +520,6 @@ public class MemberStateImpl implements MemberState {
                 + ", uuid=" + uuid
                 + ", cpMemberUuid=" + cpMemberUuid
                 + ", name=" + name
-                + ", runtimeProps=" + runtimeProps
                 + ", mapStats=" + mapStats
                 + ", multiMapStats=" + multiMapStats
                 + ", replicatedMapStats=" + replicatedMapStats
@@ -592,7 +529,6 @@ public class MemberStateImpl implements MemberState {
                 + ", pnCounterStats=" + pnCounterStats
                 + ", executorStats=" + executorStats
                 + ", cacheStats=" + cacheStats
-                + ", memoryStats=" + memoryStats
                 + ", operationStats=" + operationStats
                 + ", memberPartitionState=" + memberPartitionState
                 + ", nodeState=" + nodeState
@@ -601,8 +537,6 @@ public class MemberStateImpl implements MemberState {
                 + ", wanSyncState=" + wanSyncState
                 + ", flakeIdStats=" + flakeIdGeneratorStats
                 + ", clientStats=" + clientStats
-                + ", inboundNetworkStats=" + inboundNetworkStats
-                + ", outboundNetworkStats=" + outboundNetworkStats
                 + '}';
     }
 }

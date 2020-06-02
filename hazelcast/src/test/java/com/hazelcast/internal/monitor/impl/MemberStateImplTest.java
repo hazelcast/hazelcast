@@ -26,7 +26,6 @@ import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.internal.management.TimedMemberState;
 import com.hazelcast.internal.management.TimedMemberStateFactory;
-import com.hazelcast.internal.management.dto.AdvancedNetworkStatsDTO;
 import com.hazelcast.internal.management.dto.ClientEndPointDTO;
 import com.hazelcast.internal.management.dto.ClusterHotRestartStatusDTO;
 import com.hazelcast.internal.monitor.HotRestartState;
@@ -92,9 +91,6 @@ public class MemberStateImplTest extends HazelcastTestSupport {
         client.canonicalHostName = "ip-10-176-167-34.ec2.internal";
         clients.add(client);
 
-        Map<String, Long> runtimeProps = new HashMap<>();
-        runtimeProps.put("prop1", 598123L);
-
         ClusterState clusterState = ClusterState.ACTIVE;
         com.hazelcast.instance.impl.NodeState nodeState = com.hazelcast.instance.impl.NodeState.PASSIVE;
         Version clusterVersion = Version.of("3.9.0");
@@ -107,11 +103,6 @@ public class MemberStateImplTest extends HazelcastTestSupport {
 
         Map<UUID, String> clientStats = new HashMap<>();
         clientStats.put(clientUuid, "someStats");
-
-        AdvancedNetworkStatsDTO inboundNetworkStats = new AdvancedNetworkStatsDTO();
-        inboundNetworkStats.incBytesTransceived(ProtocolType.MEMBER, 42);
-        AdvancedNetworkStatsDTO outboundNetworkStats = new AdvancedNetworkStatsDTO();
-        outboundNetworkStats.incBytesTransceived(ProtocolType.MEMBER, 24);
 
         Map<EndpointQualifier, Address> endpoints = new HashMap<>();
         endpoints.put(EndpointQualifier.MEMBER, new Address("127.0.0.1", 5701));
@@ -137,16 +128,12 @@ public class MemberStateImplTest extends HazelcastTestSupport {
         memberState.putLocalReplicatedMapStats("replicatedMapStats", replicatedMapStats);
         memberState.putLocalCacheStats("cacheStats", new LocalCacheStatsImpl(cacheStatistics));
         memberState.putLocalFlakeIdStats("flakeIdStats", new LocalFlakeIdGeneratorStatsImpl());
-        memberState.setRuntimeProps(runtimeProps);
-        memberState.setLocalMemoryStats(new LocalMemoryStatsImpl());
         memberState.setOperationStats(new LocalOperationStatsImpl());
         memberState.setClients(clients);
         memberState.setNodeState(state);
         memberState.setHotRestartState(hotRestartState);
         memberState.setWanSyncState(wanSyncState);
         memberState.setClientStats(clientStats);
-        memberState.setInboundNetworkStats(inboundNetworkStats);
-        memberState.setOutboundNetworkStats(outboundNetworkStats);
 
         MemberStateImpl deserialized = new MemberStateImpl();
         deserialized.fromJson(memberState.toJson());
@@ -171,9 +158,6 @@ public class MemberStateImplTest extends HazelcastTestSupport {
         assertNotNull(deserialized.getLocalCacheStats("cacheStats").toString());
         assertNotNull(deserialized.getLocalFlakeIdGeneratorStats("flakeIdStats").toString());
         assertEquals(5, deserialized.getLocalCacheStats("cacheStats").getCacheHits());
-        assertNotNull(deserialized.getRuntimeProps());
-        assertEquals(Long.valueOf(598123L), deserialized.getRuntimeProps().get("prop1"));
-        assertNotNull(deserialized.getLocalMemoryStats());
         assertNotNull(deserialized.getOperationStats());
 
         client = deserialized.getClients().iterator().next();
@@ -211,10 +195,5 @@ public class MemberStateImplTest extends HazelcastTestSupport {
 
         Map<UUID, String> deserializedClientStats = deserialized.getClientStats();
         assertEquals("someStats", deserializedClientStats.get(clientUuid));
-
-        assertNotNull(deserialized.getInboundNetworkStats());
-        assertEquals(42, deserialized.getInboundNetworkStats().getBytesTransceived(ProtocolType.MEMBER));
-        assertNotNull(deserialized.getOutboundNetworkStats());
-        assertEquals(24, deserialized.getOutboundNetworkStats().getBytesTransceived(ProtocolType.MEMBER));
     }
 }
