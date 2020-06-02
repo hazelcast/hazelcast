@@ -174,7 +174,6 @@ public class TimedMemberStateFactory {
                 partitionList.add(partition.getPartitionId());
             }
         }
-        memberPartitionState.setMigrationQueueSize(partitionService.getMigrationQueueSize());
         memberPartitionState.setMemberStateSafe(memberStateSafe);
 
         memberState.setOperationStats(getOperationStats());
