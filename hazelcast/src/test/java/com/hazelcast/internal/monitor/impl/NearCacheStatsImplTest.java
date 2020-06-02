@@ -16,7 +16,6 @@
 
 package com.hazelcast.internal.monitor.impl;
 
-import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -26,7 +25,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.io.FileNotFoundException;
 import java.util.concurrent.CountDownLatch;
 
 import static org.junit.Assert.assertEquals;
@@ -91,27 +89,6 @@ public class NearCacheStatsImplTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testSerialization() {
-        NearCacheStatsImpl deserialized = serializeAndDeserializeNearCacheStats(nearCacheStats);
-
-        assertNearCacheStats(deserialized, 1, 200, 300, 400, false);
-    }
-
-    @Test
-    public void testSerialization_withPersistenceFailure() {
-        Throwable throwable = new FileNotFoundException("expected exception");
-        nearCacheStats.addPersistenceFailure(throwable);
-
-        NearCacheStatsImpl deserialized = serializeAndDeserializeNearCacheStats(nearCacheStats);
-
-        assertNearCacheStats(deserialized, 2, 0, 0, 0, true);
-
-        String lastPersistenceFailure = deserialized.getLastPersistenceFailure();
-        assertContains(lastPersistenceFailure, throwable.getClass().getSimpleName());
-        assertContains(lastPersistenceFailure, "expected exception");
-    }
-
-    @Test
     public void testGetRatio_NaN() {
         NearCacheStatsImpl nearCacheStats = new NearCacheStatsImpl();
         assertEquals(Double.NaN, nearCacheStats.getRatio(), 0.0001);
@@ -165,14 +142,6 @@ public class NearCacheStatsImplTest extends HazelcastTestSupport {
         assertEquals(decCount, nearCacheStats.getMisses());
         assertEquals(incCount, nearCacheStats.getEvictions());
         assertEquals(incCount, nearCacheStats.getExpirations());
-    }
-
-    private static NearCacheStatsImpl serializeAndDeserializeNearCacheStats(NearCacheStatsImpl original) {
-        JsonObject serialized = original.toJson();
-
-        NearCacheStatsImpl deserialized = new NearCacheStatsImpl();
-        deserialized.fromJson(serialized);
-        return deserialized;
     }
 
     private static void assertNearCacheStats(NearCacheStatsImpl stats, long expectedPersistenceCount, long expectedDuration,

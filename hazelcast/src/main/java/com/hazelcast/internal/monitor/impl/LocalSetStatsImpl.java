@@ -16,12 +16,11 @@
 
 package com.hazelcast.internal.monitor.impl;
 
-import java.util.concurrent.atomic.AtomicLongFieldUpdater;
-
 import com.hazelcast.collection.LocalSetStats;
-import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.util.Clock;
+
+import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.SET_METRIC_CREATION_TIME;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.SET_METRIC_LAST_ACCESS_TIME;
@@ -42,7 +41,7 @@ public class LocalSetStatsImpl extends AbstractLocalCollectionStats implements L
     @Probe(name = SET_METRIC_LAST_UPDATE_TIME, unit = MS)
     protected volatile long lastUpdateTime;
     @Probe(name = SET_METRIC_CREATION_TIME, unit = MS)
-    protected volatile long creationTime;
+    protected final long creationTime;
 
     public LocalSetStatsImpl() {
         creationTime = Clock.currentTimeMillis();
@@ -71,22 +70,6 @@ public class LocalSetStatsImpl extends AbstractLocalCollectionStats implements L
     @Override
     public long getCreationTime() {
         return creationTime;
-    }
-
-    @Override
-    public JsonObject toJson() {
-        JsonObject root = new JsonObject();
-        root.add(LAST_ACCESS_TIME, lastAccessTime);
-        root.add(LAST_UPDATE_TIME, lastUpdateTime);
-        root.add(CREATION_TIME, creationTime);
-        return root;
-    }
-
-    @Override
-    public void fromJson(JsonObject json) {
-        LAST_ACCESS_TIME_UPDATER.set(this, json.getLong(LAST_ACCESS_TIME, -1));
-        LAST_UPDATE_TIME_UPDATER.set(this, json.getLong(LAST_UPDATE_TIME, -1));
-        creationTime = json.getLong(CREATION_TIME, -1);
     }
 
     @Override

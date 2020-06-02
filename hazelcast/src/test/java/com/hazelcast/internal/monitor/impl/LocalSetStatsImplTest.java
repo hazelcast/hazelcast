@@ -16,7 +16,6 @@
 
 package com.hazelcast.internal.monitor.impl;
 
-import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.util.Clock;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -49,19 +48,6 @@ public class LocalSetStatsImplTest {
         long afterCreationTime = Clock.currentTimeMillis();
 
         assertBetween("creationTime", localSetStats.getCreationTime(), beforeCreationTime, afterCreationTime);
-    }
-
-    @Test
-    public void testSerialization() {
-        LocalSetStatsImpl localSetStats = createTestStats();
-
-        JsonObject serialized = localSetStats.toJson();
-        LocalSetStatsImpl deserialized = new LocalSetStatsImpl();
-        deserialized.fromJson(serialized);
-
-        assertTrue(deserialized.getCreationTime() > 0);
-        assertEquals(123456, deserialized.getLastUpdateTime());
-        assertEquals(654321, deserialized.getLastAccessTime());
     }
 
     private LocalSetStatsImpl createTestStats() {
