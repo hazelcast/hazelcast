@@ -323,23 +323,14 @@ SqlNode SqlExtendedInsert() :
     SqlNodeList keywordList;
     List<SqlLiteral> extendedKeywords = new ArrayList<SqlLiteral>();
     SqlNodeList extendedKeywordList;
-    SqlNodeList extendList = null;
-    SqlNodeList columnList = null;
+    SqlNodeList columns = null;
 }
 {
-    (
-        <INSERT>
-    |
-        <UPSERT> { keywords.add(SqlInsertKeyword.UPSERT.symbol(getPos())); }
-    )
+    <INSERT>
     (
         <INTO>
     |
         <OVERWRITE> {
-            if (SqlExtendedInsert.isUpsert(keywords)) {
-                throw SqlUtil.newContextException(getPos(),
-                    ParserResource.RESOURCE.overwriteIsOnlyUsedWithInsert());
-            }
             extendedKeywords.add(SqlExtendedInsertKeyword.OVERWRITE.symbol(getPos()));
         }
     )
@@ -348,14 +339,7 @@ SqlNode SqlExtendedInsert() :
         keywordList = new SqlNodeList(keywords, span.addAll(keywords).pos());
         extendedKeywordList = new SqlNodeList(extendedKeywords, span.addAll(extendedKeywords).pos());
     }
-    table = TableRefWithHintsOpt()
-    [
-        LOOKAHEAD(5)
-        [ <EXTEND> ]
-        extendList = ExtendList() {
-            table = extend(table, extendList);
-        }
-    ]
+    table = CompoundIdentifier()
     [
         LOOKAHEAD(2)
         { Pair<SqlNodeList, SqlNodeList> p; }
@@ -364,7 +348,7 @@ SqlNode SqlExtendedInsert() :
                 table = extend(table, p.right);
             }
             if (p.left.size() > 0) {
-                columnList = p.left;
+                columns = p.left;
             }
         }
     ]
@@ -374,7 +358,7 @@ SqlNode SqlExtendedInsert() :
             source,
             keywordList,
             extendedKeywordList,
-            columnList,
+            columns,
             span.end(source)
         );
     }

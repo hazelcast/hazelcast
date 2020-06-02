@@ -19,19 +19,14 @@ package com.hazelcast.sql.impl.calcite.parse;
 import com.google.common.collect.ImmutableList;
 import org.apache.calcite.sql.SqlIdentifier;
 import org.apache.calcite.sql.SqlInsert;
-import org.apache.calcite.sql.SqlInsertKeyword;
 import org.apache.calcite.sql.SqlLiteral;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.SqlNodeList;
-import org.apache.calcite.sql.SqlTableRef;
 import org.apache.calcite.sql.SqlWriter;
 import org.apache.calcite.sql.parser.SqlParserPos;
 
-import java.util.List;
-
 public class SqlExtendedInsert extends SqlInsert {
 
-    private final ImmutableList<String> tableNames;
     private final SqlNodeList extendedKeywords;
 
     public SqlExtendedInsert(SqlNode table,
@@ -41,26 +36,19 @@ public class SqlExtendedInsert extends SqlInsert {
                              SqlNodeList columns,
                              SqlParserPos pos) {
         super(pos, keywords, table, source, columns);
-        if (table instanceof SqlTableRef) {
-            SqlTableRef tableRef = (SqlTableRef) table;
-            this.tableNames = ((SqlIdentifier) tableRef.operand(0)).names;
-        } else {
-            this.tableNames = ((SqlIdentifier) table).names;
-        }
+
         this.extendedKeywords = extendedKeywords;
     }
 
     public ImmutableList<String> tableNames() {
-        return tableNames;
+        return ((SqlIdentifier) getTargetTable()).names;
     }
 
     @Override
     public void unparse(SqlWriter writer, int leftPrec, int rightPrec) {
         writer.startList(SqlWriter.FrameTypeEnum.SELECT);
         String insertKeyword = "INSERT INTO";
-        if (isUpsert()) {
-            insertKeyword = "UPSERT INTO";
-        } else if (isOverwrite()) {
+        if (isOverwrite()) {
             insertKeyword = "INSERT OVERWRITE";
         }
         writer.sep(insertKeyword);
@@ -72,15 +60,6 @@ public class SqlExtendedInsert extends SqlInsert {
         }
         writer.newlineAndIndent();
         getSource().unparse(writer, 0, 0);
-    }
-
-    public static boolean isUpsert(List<SqlLiteral> keywords) {
-        for (SqlNode keyword : keywords) {
-            if (((SqlLiteral) keyword).symbolValue(SqlInsertKeyword.class) == SqlInsertKeyword.UPSERT) {
-                return true;
-            }
-        }
-        return false;
     }
 
     public boolean isOverwrite() {
