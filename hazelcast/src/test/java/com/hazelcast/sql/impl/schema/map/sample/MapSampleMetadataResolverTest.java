@@ -17,7 +17,6 @@
 package com.hazelcast.sql.impl.schema.map.sample;
 
 import com.hazelcast.core.HazelcastJsonValue;
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.nio.serialization.Portable;
