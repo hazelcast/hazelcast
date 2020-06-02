@@ -470,12 +470,12 @@ public class ConvertersTest {
             BOOLEAN, TINYINT, SMALLINT, INT, BIGINT, DECIMAL, REAL, DOUBLE, TIME, DATE, TIMESTAMP, TIMESTAMP_WITH_TIME_ZONE, OBJECT);
 
         // Boolean
-        assertEquals(false, c.asBit("false"));
-        assertEquals(false, c.asBit("False"));
-        assertEquals(true, c.asBit("true"));
-        assertEquals(true, c.asBit("True"));
-        checkDataException(() -> c.asBit("0"));
-        checkDataException(() -> c.asBit("1"));
+        assertEquals(false, c.asBoolean("false"));
+        assertEquals(false, c.asBoolean("False"));
+        assertEquals(true, c.asBoolean("true"));
+        assertEquals(true, c.asBoolean("True"));
+        checkDataException(() -> c.asBoolean("0"));
+        checkDataException(() -> c.asBoolean("1"));
 
         // Numeric
         String invalid = "invalid";
@@ -630,13 +630,13 @@ public class ConvertersTest {
 
     private void checkObjectConverter(Converter c) {
         // Boolean
-        assertEquals(true, c.asBit(true));
-        assertEquals(true, c.asBit("true"));
-        assertEquals(false, c.asBit(false));
-        assertEquals(false, c.asBit("false"));
-        checkDataException(() -> c.asBit("1"));
-        checkDataException(() -> c.asBit(1));
-        checkDataException(() -> c.asBit(new Object()));
+        assertEquals(true, c.asBoolean(true));
+        assertEquals(true, c.asBoolean("true"));
+        assertEquals(false, c.asBoolean(false));
+        assertEquals(false, c.asBoolean("false"));
+        checkDataException(() -> c.asBoolean("1"));
+        checkDataException(() -> c.asBoolean(1));
+        checkDataException(() -> c.asBoolean(new Object()));
 
         // Numeric
         String invalid = "invalid";
@@ -749,7 +749,7 @@ public class ConvertersTest {
                 break;
 
             case BOOLEAN:
-                assertEquals(expected, converter.canConvertToBit());
+                assertEquals(expected, converter.canConvertToBoolean());
 
                 break;
 
@@ -830,7 +830,7 @@ public class ConvertersTest {
                     break;
 
                 case BOOLEAN:
-                    converter.asBit(val);
+                    converter.asBoolean(val);
 
                     break;
 
@@ -927,7 +927,7 @@ public class ConvertersTest {
         }
 
         @Override
-        public boolean asBit(Object val) {
+        public boolean asBoolean(Object val) {
             invoked = BOOLEAN;
 
             return true;

@@ -17,6 +17,8 @@
 package com.hazelcast.sql.impl.plan;
 
 import com.hazelcast.internal.util.collection.PartitionIdSet;
+import com.hazelcast.sql.impl.optimizer.SqlPlan;
+import com.hazelcast.sql.impl.optimizer.SqlPlanType;
 import com.hazelcast.sql.impl.plan.node.PlanNode;
 
 import java.util.Collection;
@@ -27,7 +29,7 @@ import java.util.UUID;
 /**
  * Query plan implementation.
  */
-public class Plan {
+public class Plan implements SqlPlan {
     /** Partition mapping. */
     private final Map<UUID, PartitionIdSet> partMap;
 
@@ -60,6 +62,11 @@ public class Plan {
         this.outboundEdgeMap = outboundEdgeMap;
         this.inboundEdgeMap = inboundEdgeMap;
         this.inboundEdgeMemberCountMap = inboundEdgeMemberCountMap;
+    }
+
+    @Override
+    public SqlPlanType getType() {
+        return SqlPlanType.IMDG;
     }
 
     public Map<UUID, PartitionIdSet> getPartitionMap() {

@@ -18,6 +18,8 @@ package com.hazelcast.sql.impl.calcite;
 
 import com.google.common.collect.ImmutableList;
 import com.hazelcast.sql.impl.calcite.opt.QueryPlanner;
+import com.hazelcast.sql.impl.calcite.opt.cost.CostFactory;
+import com.hazelcast.sql.impl.calcite.opt.distribution.DistributionTraitDef;
 import com.hazelcast.sql.impl.calcite.opt.metadata.HazelcastRelMdRowCount;
 import com.hazelcast.sql.impl.calcite.parse.CasingConfiguration;
 import com.hazelcast.sql.impl.calcite.parse.QueryConverter;
@@ -39,7 +41,6 @@ import org.apache.calcite.plan.HazelcastRelOptCluster;
 import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.plan.volcano.VolcanoPlanner;
 import org.apache.calcite.prepare.Prepare;
-import org.apache.calcite.rel.RelCollationTraitDef;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.metadata.ChainedRelMetadataProvider;
 import org.apache.calcite.rel.metadata.DefaultRelMetadataProvider;
@@ -110,11 +111,13 @@ public final class OptimizerContext {
         List<List<String>> schemaPaths,
         int memberCount
     ) {
+        DistributionTraitDef distributionTraitDef = new DistributionTraitDef(memberCount);
+
         JavaTypeFactory typeFactory = new HazelcastTypeFactory();
         Prepare.CatalogReader catalogReader = createCatalogReader(typeFactory, CONNECTION_CONFIG, rootSchema, schemaPaths);
         SqlValidator validator = createValidator(typeFactory, catalogReader);
-        VolcanoPlanner volcanoPlanner = createPlanner(CONNECTION_CONFIG);
-        HazelcastRelOptCluster cluster = createCluster(volcanoPlanner, typeFactory);
+        VolcanoPlanner volcanoPlanner = createPlanner(CONNECTION_CONFIG, distributionTraitDef);
+        HazelcastRelOptCluster cluster = createCluster(volcanoPlanner, typeFactory, distributionTraitDef);
 
         QueryParser parser = new QueryParser(validator);
         QueryConverter converter = new QueryConverter(catalogReader, validator, cluster);
@@ -183,26 +186,28 @@ public final class OptimizerContext {
         );
     }
 
-    private static VolcanoPlanner createPlanner(CalciteConnectionConfig config) {
+    private static VolcanoPlanner createPlanner(CalciteConnectionConfig config, DistributionTraitDef distributionTraitDef) {
         VolcanoPlanner planner = new VolcanoPlanner(
-            null,
+            CostFactory.INSTANCE,
             Contexts.of(config)
         );
 
         planner.clearRelTraitDefs();
         planner.addRelTraitDef(ConventionTraitDef.INSTANCE);
-        planner.addRelTraitDef(RelCollationTraitDef.INSTANCE);
+        planner.addRelTraitDef(distributionTraitDef);
 
         return planner;
     }
 
     private static HazelcastRelOptCluster createCluster(
         VolcanoPlanner planner,
-        JavaTypeFactory typeFactory
+        JavaTypeFactory typeFactory,
+        DistributionTraitDef distributionTraitDef
     ) {
         HazelcastRelOptCluster cluster = HazelcastRelOptCluster.create(
             planner,
-            new RexBuilder(typeFactory)
+            new RexBuilder(typeFactory),
+            distributionTraitDef
         );
 
         // Wire up custom metadata providers.

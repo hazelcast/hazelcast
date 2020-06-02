@@ -31,8 +31,16 @@ public class MapSchemaTestSupport extends SqlTestSupport {
     }
 
     public static MapTableField field(String name, QueryDataType type, boolean key) {
+        return field0(name, type, key, false);
+    }
+
+    public static MapTableField hiddenField(String name, QueryDataType type, boolean key) {
+        return field0(name, type, key, true);
+    }
+
+    private static MapTableField field0(String name, QueryDataType type, boolean key, boolean hidden) {
         QueryPath path = name.equals(KEY) && key ? KEY_PATH : name.equals(VALUE) && !key ? VALUE_PATH : new QueryPath(name, key);
 
-        return new MapTableField(name, type, path);
+        return new MapTableField(name, type, hidden, path);
     }
 }

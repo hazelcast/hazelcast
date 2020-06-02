@@ -95,19 +95,19 @@ public final class MapSampleMetadataResolver {
     private static MapSampleMetadata resolvePortable(ClassDefinition clazz, boolean isKey) {
         TreeMap<String, TableField> fields = new TreeMap<>();
 
-        // Add top-level object.
-        String topName = isKey ? QueryPath.KEY : QueryPath.VALUE;
-        QueryPath topPath = isKey ? QueryPath.KEY_PATH : QueryPath.VALUE_PATH;
-        fields.put(topName, new MapTableField(topName, QueryDataType.OBJECT, topPath));
-
         // Add regular fields.
         for (String name : clazz.getFieldNames()) {
             FieldType portableType = clazz.getFieldType(name);
 
             QueryDataType type = resolvePortableType(portableType);
 
-            fields.putIfAbsent(name, new MapTableField(name, type, new QueryPath(name, isKey)));
+            fields.putIfAbsent(name, new MapTableField(name, type, false, new QueryPath(name, isKey)));
         }
+
+        // Add top-level object.
+        String topName = isKey ? QueryPath.KEY : QueryPath.VALUE;
+        QueryPath topPath = isKey ? QueryPath.KEY_PATH : QueryPath.VALUE_PATH;
+        fields.put(topName, new MapTableField(topName, QueryDataType.OBJECT, !fields.isEmpty(), topPath));
 
         return new MapSampleMetadata(GenericQueryTargetDescriptor.INSTANCE, new LinkedHashMap<>(fields));
     }
@@ -150,13 +150,9 @@ public final class MapSampleMetadataResolver {
     private static MapSampleMetadata resolveClass(Class<?> clazz, boolean isKey) {
         TreeMap<String, TableField> fields = new TreeMap<>();
 
-        // Add top-level object.
-        String topName = isKey ? QueryPath.KEY : QueryPath.VALUE;
-        QueryPath topPath = isKey ? QueryPath.KEY_PATH : QueryPath.VALUE_PATH;
-        QueryDataType topType = QueryDataTypeUtils.resolveTypeForClass(clazz);
-        fields.put(topName, new MapTableField(topName, topType, topPath));
-
         // Extract fields from non-primitive type.
+        QueryDataType topType = QueryDataTypeUtils.resolveTypeForClass(clazz);
+
         if (topType == QueryDataType.OBJECT) {
             // Add public getters.
             for (Method method : clazz.getMethods()) {
@@ -168,7 +164,10 @@ public final class MapSampleMetadataResolver {
 
                 QueryDataType methodType = QueryDataTypeUtils.resolveTypeForClass(method.getReturnType());
 
-                fields.putIfAbsent(methodName, new MapTableField(methodName, methodType, new QueryPath(methodName, isKey)));
+                fields.putIfAbsent(
+                    methodName,
+                    new MapTableField(methodName, methodType, false, new QueryPath(methodName, isKey))
+                );
             }
 
             // Add public fields.
@@ -183,12 +182,20 @@ public final class MapSampleMetadataResolver {
                     String fieldName = field.getName();
                     QueryDataType fieldType = QueryDataTypeUtils.resolveTypeForClass(field.getType());
 
-                    fields.putIfAbsent(fieldName, new MapTableField(fieldName, fieldType, new QueryPath(fieldName, isKey)));
+                    fields.putIfAbsent(
+                        fieldName,
+                        new MapTableField(fieldName, fieldType, false, new QueryPath(fieldName, isKey))
+                    );
                 }
 
                 currentClass = currentClass.getSuperclass();
             }
         }
+
+        // Add top-level object.
+        String topName = isKey ? QueryPath.KEY : QueryPath.VALUE;
+        QueryPath topPath = isKey ? QueryPath.KEY_PATH : QueryPath.VALUE_PATH;
+        fields.put(topName, new MapTableField(topName, topType, !fields.isEmpty(), topPath));
 
         return new MapSampleMetadata(GenericQueryTargetDescriptor.INSTANCE, new LinkedHashMap<>(fields));
     }

@@ -16,11 +16,24 @@
 
 package com.hazelcast.sql.impl.calcite.validate;
 
+import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
+import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeFactory;
+import org.apache.calcite.sql.SqlCall;
+import org.apache.calcite.sql.SqlIdentifier;
+import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.SqlOperatorTable;
+import org.apache.calcite.sql.validate.SelectScope;
 import org.apache.calcite.sql.validate.SqlConformance;
+import org.apache.calcite.sql.validate.SqlQualified;
 import org.apache.calcite.sql.validate.SqlValidatorCatalogReader;
 import org.apache.calcite.sql.validate.SqlValidatorImpl;
+import org.apache.calcite.sql.validate.SqlValidatorTable;
+import org.apache.calcite.util.Util;
+
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Hazelcast-specific SQL validator.
@@ -33,5 +46,67 @@ public class HazelcastSqlValidator extends SqlValidatorImpl {
         SqlConformance conformance
     ) {
         super(opTab, catalogReader, typeFactory, conformance);
+    }
+
+    @Override
+    protected void addToSelectList(
+        List<SqlNode> list,
+        Set<String> aliases,
+        List<Map.Entry<String, RelDataType>> fieldList,
+        SqlNode exp,
+        SelectScope scope,
+        boolean includeSystemVars
+    ) {
+        if (isHiddenColumn(exp, scope)) {
+            return;
+        }
+
+        super.addToSelectList(list, aliases, fieldList, exp, scope, includeSystemVars);
+    }
+
+    private boolean isHiddenColumn(SqlNode node, SelectScope scope) {
+        if (!(node instanceof SqlIdentifier)) {
+            return false;
+        }
+
+        SqlIdentifier identifier = (SqlIdentifier) node;
+
+        String fieldName = extractFieldName(identifier, scope);
+
+        if (fieldName == null) {
+            return false;
+        }
+
+        SqlValidatorTable table = scope.fullyQualify(identifier).namespace.getTable();
+
+        if (table == null) {
+            return false;
+        }
+
+        HazelcastTable unwrappedTable = table.unwrap(HazelcastTable.class);
+
+        if (unwrappedTable == null) {
+            return false;
+        }
+
+        return unwrappedTable.isHidden(fieldName);
+    }
+
+    private String extractFieldName(SqlIdentifier identifier, SelectScope scope) {
+        SqlCall call = makeNullaryCall(identifier);
+
+        if (call != null) {
+            return null;
+        }
+
+        SqlQualified qualified = scope.fullyQualify(identifier);
+
+        List<String> names = qualified.identifier.names;
+
+        if (names.size() < 2) {
+            return null;
+        }
+
+        return Util.last(names);
     }
 }

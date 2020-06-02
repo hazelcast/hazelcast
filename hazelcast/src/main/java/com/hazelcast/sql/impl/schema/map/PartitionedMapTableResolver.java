@@ -16,12 +16,10 @@
 
 package com.hazelcast.sql.impl.schema.map;
 
-import com.hazelcast.cluster.memberselector.MemberSelectors;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
@@ -37,6 +35,7 @@ import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.schema.map.sample.MapSampleMetadata;
 import com.hazelcast.sql.impl.schema.map.sample.MapSampleMetadataResolver;
 
+import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -58,7 +57,7 @@ public class PartitionedMapTableResolver extends AbstractMapTableResolver {
         super(nodeEngine, SEARCH_PATHS);
     }
 
-    @Override
+    @Override @Nonnull
     public Collection<Table> getTables() {
         MapService mapService = nodeEngine.getService(MapService.SERVICE_NAME);
         MapServiceContext context = mapService.getMapServiceContext();
@@ -68,7 +67,7 @@ public class PartitionedMapTableResolver extends AbstractMapTableResolver {
 
         // Get started maps.
         for (String mapName : context.getMapContainers().keySet()) {
-            PartitionedMapTable table = createTable(context, mapName);
+            PartitionedMapTable table = createTable(nodeEngine, context, mapName);
 
             if (table == null) {
                 continue;
@@ -96,7 +95,11 @@ public class PartitionedMapTableResolver extends AbstractMapTableResolver {
     }
 
     @SuppressWarnings({"rawtypes", "checkstyle:MethodLength", "checkstyle:CyclomaticComplexity", "checkstyle:NPathComplexity"})
-    private PartitionedMapTable createTable(MapServiceContext context, String name) {
+    public static PartitionedMapTable createTable(
+        NodeEngine nodeEngine,
+        MapServiceContext context,
+        String name
+    ) {
         try {
             MapContainer mapContainer = context.getMapContainer(name);
 
@@ -138,6 +141,7 @@ public class PartitionedMapTableResolver extends AbstractMapTableResolver {
                     binary,
                     true
                 );
+
                 MapSampleMetadata valueMetadata = MapSampleMetadataResolver.resolve(
                     ss,
                     entry.getValue().getValue(),
@@ -147,7 +151,7 @@ public class PartitionedMapTableResolver extends AbstractMapTableResolver {
 
                 List<TableField> fields = mergeMapFields(keyMetadata.getFields(), valueMetadata.getFields());
 
-                long estimatedRowCount = getEstimatedRowCount(name, context);
+                long estimatedRowCount = MapTableUtils.estimatePartitionedMapRowCount(nodeEngine, context, name);
 
                 // Done.
                 return new PartitionedMapTable(
@@ -167,30 +171,6 @@ public class PartitionedMapTableResolver extends AbstractMapTableResolver {
 
             return new PartitionedMapTable(name, e0);
         }
-    }
-
-    private long getEstimatedRowCount(String name, MapServiceContext context) {
-        long entryCount = 0L;
-
-        PartitionIdSet ownerPartitions = context.getOwnedPartitions();
-
-        for (PartitionContainer partitionContainer : context.getPartitionContainers()) {
-            if (!ownerPartitions.contains(partitionContainer.getPartitionId())) {
-                continue;
-            }
-
-            RecordStore<?> recordStore = partitionContainer.getExistingRecordStore(name);
-
-            if (recordStore == null) {
-                continue;
-            }
-
-            entryCount += recordStore.size();
-        }
-
-        int memberCount = nodeEngine.getClusterService().getMembers(MemberSelectors.DATA_MEMBER_SELECTOR).size();
-
-        return entryCount * memberCount;
     }
 
     private static PartitionedMapTable emptyMap(String mapName) {

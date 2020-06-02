@@ -33,8 +33,8 @@ public abstract class AbstractObjectConverter extends Converter {
     }
 
     @Override
-    public boolean asBit(Object val) {
-        return resolveConverter(val, QueryDataTypeFamily.BOOLEAN).asBit(val);
+    public boolean asBoolean(Object val) {
+        return resolveConverter(val, QueryDataTypeFamily.BOOLEAN).asBoolean(val);
     }
 
     @Override

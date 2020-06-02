@@ -36,7 +36,7 @@ public abstract class AbstractStringConverter extends Converter {
     }
 
     @Override
-    public final boolean asBit(Object val) {
+    public final boolean asBoolean(Object val) {
         String val0 = cast(val);
 
         if (val0.equalsIgnoreCase(BooleanConverter.TRUE)) {

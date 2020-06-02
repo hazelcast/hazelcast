@@ -14,15 +14,25 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.schema;
-
-import java.util.List;
+package com.hazelcast.sql.impl.calcite.opt.distribution;
 
 /**
- * A table that is backed by a Hazelcast map.
+ * Type of physical data distribution.
  */
-public abstract class AbstractMapTable extends Table {
-    public AbstractMapTable(String schemaName, String name, List<TableField> fields, TableStatistics statistics) {
-        super(schemaName, name, fields, statistics);
-    }
+public enum DistributionType {
+    /**
+     * Abstract unknown distribution. Rel nodes start in this mode, but must be converted to specific distribution
+     * during physical planning.
+     */
+    ANY,
+
+    /**
+     * Data set is partitioned between nodes. Each tuple is located on exactly one node.
+     */
+    PARTITIONED,
+
+    /**
+     * Data set is localed on the root node.
+     */
+    ROOT
 }

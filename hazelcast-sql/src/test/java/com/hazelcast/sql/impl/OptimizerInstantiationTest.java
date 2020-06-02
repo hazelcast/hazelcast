@@ -14,12 +14,11 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.calcite;
+package com.hazelcast.sql.impl;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.impl.HazelcastInstanceProxy;
-import com.hazelcast.sql.impl.SqlServiceImpl;
-import com.hazelcast.sql.impl.SqlTestSupport;
+import com.hazelcast.sql.impl.calcite.CalciteSqlOptimizer;
 import com.hazelcast.sql.impl.optimizer.SqlOptimizer;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;

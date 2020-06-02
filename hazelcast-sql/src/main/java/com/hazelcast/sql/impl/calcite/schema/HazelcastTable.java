@@ -16,6 +16,7 @@
 
 package com.hazelcast.sql.impl.calcite.schema;
 
+import com.hazelcast.sql.impl.calcite.SqlToQueryType;
 import com.hazelcast.sql.impl.schema.Table;
 import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.type.QueryDataType;
@@ -31,9 +32,9 @@ import org.apache.calcite.schema.impl.AbstractTable;
 import org.apache.calcite.sql.type.SqlTypeName;
 
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
+import java.util.Set;
 
 /**
  * Base class for all tables in the Calcite integration:
@@ -44,39 +45,20 @@ import java.util.Map;
  */
 public class HazelcastTable extends AbstractTable {
 
-    private static final Map<QueryDataTypeFamily, SqlTypeName> QUERY_TO_SQL_TYPE = new HashMap<>();
-
-    static {
-        QUERY_TO_SQL_TYPE.put(QueryDataTypeFamily.VARCHAR, SqlTypeName.VARCHAR);
-
-        QUERY_TO_SQL_TYPE.put(QueryDataTypeFamily.BOOLEAN, SqlTypeName.BOOLEAN);
-
-        QUERY_TO_SQL_TYPE.put(QueryDataTypeFamily.TINYINT, SqlTypeName.TINYINT);
-        QUERY_TO_SQL_TYPE.put(QueryDataTypeFamily.SMALLINT, SqlTypeName.SMALLINT);
-        QUERY_TO_SQL_TYPE.put(QueryDataTypeFamily.INT, SqlTypeName.INTEGER);
-        QUERY_TO_SQL_TYPE.put(QueryDataTypeFamily.BIGINT, SqlTypeName.BIGINT);
-
-        QUERY_TO_SQL_TYPE.put(QueryDataTypeFamily.DECIMAL, SqlTypeName.DECIMAL);
-
-        QUERY_TO_SQL_TYPE.put(QueryDataTypeFamily.REAL, SqlTypeName.REAL);
-        QUERY_TO_SQL_TYPE.put(QueryDataTypeFamily.DOUBLE, SqlTypeName.DOUBLE);
-
-        QUERY_TO_SQL_TYPE.put(QueryDataTypeFamily.TIME, SqlTypeName.TIME);
-        QUERY_TO_SQL_TYPE.put(QueryDataTypeFamily.DATE, SqlTypeName.DATE);
-        QUERY_TO_SQL_TYPE.put(QueryDataTypeFamily.TIMESTAMP, SqlTypeName.TIMESTAMP);
-        QUERY_TO_SQL_TYPE.put(QueryDataTypeFamily.TIMESTAMP_WITH_TIME_ZONE, SqlTypeName.TIMESTAMP_WITH_LOCAL_TIME_ZONE);
-
-        QUERY_TO_SQL_TYPE.put(QueryDataTypeFamily.OBJECT, SqlTypeName.ANY);
-    }
-
     private final Table target;
     private final Statistic statistic;
 
     private RelDataType rowType;
+    private Set<String> hiddenFieldNames;
 
     public HazelcastTable(Table target, Statistic statistic) {
         this.target = target;
         this.statistic = statistic;
+    }
+
+    @SuppressWarnings("unchecked")
+    public <T extends Table> T getTarget() {
+        return (T) target;
     }
 
     @Override
@@ -84,6 +66,8 @@ public class HazelcastTable extends AbstractTable {
         if (rowType != null) {
             return rowType;
         }
+
+        hiddenFieldNames = new HashSet<>();
 
         List<RelDataTypeField> convertedFields = new ArrayList<>(target.getFieldCount());
 
@@ -94,7 +78,7 @@ public class HazelcastTable extends AbstractTable {
             QueryDataType fieldType = field.getType();
             QueryDataTypeFamily fieldTypeFamily = fieldType.getTypeFamily();
 
-            SqlTypeName sqlTypeName = QUERY_TO_SQL_TYPE.get(fieldTypeFamily);
+            SqlTypeName sqlTypeName = SqlToQueryType.map(fieldTypeFamily);
 
             if (sqlTypeName == null) {
                 throw new IllegalStateException("Unexpected type family: " + fieldTypeFamily);
@@ -105,6 +89,10 @@ public class HazelcastTable extends AbstractTable {
 
             RelDataTypeField convertedField = new RelDataTypeFieldImpl(fieldName, convertedFields.size(), nullableRelDataType);
             convertedFields.add(convertedField);
+
+            if (field.isHidden()) {
+                hiddenFieldNames.add(fieldName);
+            }
         }
 
         rowType = new RelRecordType(StructKind.PEEK_FIELDS, convertedFields, false);
@@ -115,5 +103,11 @@ public class HazelcastTable extends AbstractTable {
     @Override
     public Statistic getStatistic() {
         return statistic;
+    }
+
+    public boolean isHidden(String fieldName) {
+        assert hiddenFieldNames != null;
+
+        return hiddenFieldNames.contains(fieldName);
     }
 }

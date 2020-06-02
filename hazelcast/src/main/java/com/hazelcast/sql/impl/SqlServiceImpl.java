@@ -19,13 +19,20 @@ package com.hazelcast.sql.impl;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.sql.impl.optimizer.DisabledSqlOptimizer;
+import com.hazelcast.sql.impl.optimizer.OptimizationTask;
 import com.hazelcast.sql.impl.optimizer.SqlOptimizer;
+import com.hazelcast.sql.impl.optimizer.SqlPlan;
+import com.hazelcast.sql.impl.plan.Plan;
+import com.hazelcast.sql.impl.state.QueryState;
 
 import java.lang.reflect.Constructor;
+import java.util.List;
 import java.util.function.Consumer;
+import java.util.logging.Level;
 
 /**
  * Base SQL service implementation that bridges optimizer implementation, public and private APIs.
@@ -38,13 +45,18 @@ public class SqlServiceImpl implements Consumer<Packet> {
     private static final long STATE_CHECK_FREQUENCY = 10_000L;
 
     private static final String OPTIMIZER_CLASS_PROPERTY_NAME = "hazelcast.sql.optimizerClass";
-    private static final String OPTIMIZER_CLASS_DEFAULT = "com.hazelcast.sql.impl.calcite.CalciteSqlOptimizer";
+    private static final String SQL_MODULE_OPTIMIZER_CLASS = "com.hazelcast.sql.impl.calcite.CalciteSqlOptimizer";
 
-    private final SqlOptimizer optimizer;
+    private SqlOptimizer optimizer;
+    private final ILogger logger;
+    private final NodeEngineImpl nodeEngine;
 
     private volatile SqlInternalService internalService;
 
     public SqlServiceImpl(NodeEngineImpl nodeEngine) {
+        this.nodeEngine = nodeEngine;
+        logger = nodeEngine.getLogger(getClass());
+
         // These two parameters will be taken from the config, when public API is ready.
         int operationThreadCount = Runtime.getRuntime().availableProcessors();
         int fragmentThreadCount = Runtime.getRuntime().availableProcessors();
@@ -68,6 +80,8 @@ public class SqlServiceImpl implements Consumer<Packet> {
     }
 
     public void start() {
+        optimizer = createOptimizer(nodeEngine);
+
         internalService.start();
     }
 
@@ -90,13 +104,21 @@ public class SqlServiceImpl implements Consumer<Packet> {
         this.internalService = internalService;
     }
 
-    public SqlOptimizer getOptimizer() {
+    SqlOptimizer getOptimizer() {
         return optimizer;
     }
 
     @Override
     public void accept(Packet packet) {
         internalService.onPacket(packet);
+    }
+
+    QueryState executeImdg(Plan plan, List<Object> params, long timeout, int pageSize) {
+        return internalService.execute(plan, params, timeout, pageSize);
+    }
+
+    SqlPlan prepare(String sql) {
+        return optimizer.prepare(new OptimizationTask.Builder(sql).build());
     }
 
     /**
@@ -106,9 +128,9 @@ public class SqlServiceImpl implements Consumer<Packet> {
      * @return Optimizer.
      */
     @SuppressWarnings({"unchecked", "rawtypes"})
-    private static SqlOptimizer createOptimizer(NodeEngine nodeEngine) {
+    private SqlOptimizer createOptimizer(NodeEngine nodeEngine) {
         // 1. Resolve class name.
-        String className = System.getProperty(OPTIMIZER_CLASS_PROPERTY_NAME, OPTIMIZER_CLASS_DEFAULT);
+        String className = System.getProperty(OPTIMIZER_CLASS_PROPERTY_NAME, SQL_MODULE_OPTIMIZER_CLASS);
 
         // 2. Get the class.
         Class clazz;
@@ -116,6 +138,9 @@ public class SqlServiceImpl implements Consumer<Packet> {
         try {
             clazz = Class.forName(className);
         } catch (ClassNotFoundException e) {
+            logger.log(SQL_MODULE_OPTIMIZER_CLASS.equals(className) ? Level.FINE : Level.WARNING,
+                "Optimizer class \"" + className + "\" not found, falling back to " + DisabledSqlOptimizer.class.getName());
+
             return new DisabledSqlOptimizer();
         } catch (Exception e) {
             throw new HazelcastException("Failed to resolve optimizer class " + className + ": " + e.getMessage(), e);
