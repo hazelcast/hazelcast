@@ -212,11 +212,11 @@ public class PartitionedMapTableResolverTest extends MapSchemaTestSupport {
 
         // Check serializable maps. They all should have the same schema.
         MapTableField[] expectedFields = new MapTableField[] {
-            field(KEY, QueryDataType.OBJECT, true),
+            hiddenField(KEY, QueryDataType.OBJECT, true),
             field("field1", QueryDataType.INT, true),
             field("field2", QueryDataType.INT, true),
             field("field3", QueryDataType.INT, false),
-            field(VALUE, QueryDataType.OBJECT, false)
+            hiddenField(VALUE, QueryDataType.OBJECT, false)
         };
 
         checkFields(getExistingTable(tables, MAP_SERIALIZABLE_OBJECT), expectedFields);
@@ -226,21 +226,21 @@ public class PartitionedMapTableResolverTest extends MapSchemaTestSupport {
         // Check portable in the OBJECT mode. Both key and value are processed as object.
         checkFields(
             getExistingTable(tables, MAP_PORTABLE_OBJECT),
-            field(KEY, QueryDataType.OBJECT, true),
+            hiddenField(KEY, QueryDataType.OBJECT, true),
             field("field1", QueryDataType.INT, true),
             field("field2", QueryDataType.INT, true),
             field("field3", QueryDataType.INT, false),
-            field(VALUE, QueryDataType.OBJECT, false)
+            hiddenField(VALUE, QueryDataType.OBJECT, false)
         );
 
         // Check portable in the BINARY mode. Both key and value are processed as portable.
         checkFields(
             getExistingTable(tables, MAP_PORTABLE_BINARY),
-            field(KEY, QueryDataType.OBJECT, true),
+            hiddenField(KEY, QueryDataType.OBJECT, true),
             field("portableField1", QueryDataType.INT, true),
             field("portableField2", QueryDataType.INT, true),
             field("portableField3", QueryDataType.INT, false),
-            field(VALUE, QueryDataType.OBJECT, false)
+            hiddenField(VALUE, QueryDataType.OBJECT, false)
         );
 
         // Destroy a dynamic map and ensure that it is no longer shown.
