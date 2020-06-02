@@ -23,6 +23,11 @@ import com.hazelcast.config.cp.RaftAlgorithmConfig;
 import com.hazelcast.cp.CPGroup;
 import com.hazelcast.cp.CPGroupId;
 import com.hazelcast.cp.CPMember;
+import com.hazelcast.cp.event.CPGroupAvailabilityEvent;
+import com.hazelcast.cp.event.CPGroupAvailabilityListener;
+import com.hazelcast.cp.event.CPMembershipEvent;
+import com.hazelcast.cp.event.CPMembershipListener;
+import com.hazelcast.cp.event.impl.CPGroupAvailabilityEventImpl;
 import com.hazelcast.cp.exception.CPGroupDestroyedException;
 import com.hazelcast.cp.internal.datastructures.spi.RaftManagedService;
 import com.hazelcast.cp.internal.datastructures.spi.RaftRemoteService;
@@ -62,6 +67,7 @@ import com.hazelcast.cp.internal.raftop.metadata.GetRaftGroupOp;
 import com.hazelcast.cp.internal.raftop.metadata.RaftServicePreJoinOp;
 import com.hazelcast.cp.internal.raftop.metadata.RemoveCPMemberOp;
 import com.hazelcast.internal.cluster.ClusterService;
+import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.diagnostics.MetricsPlugin;
 import com.hazelcast.internal.metrics.DynamicMetricsProvider;
 import com.hazelcast.internal.metrics.MetricDescriptor;
@@ -89,6 +95,7 @@ import com.hazelcast.spi.exception.ResponseAlreadySentException;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.impl.eventservice.EventPublishingService;
 import com.hazelcast.spi.impl.executionservice.ExecutionService;
 import com.hazelcast.spi.impl.operationexecutor.impl.PartitionOperationThread;
 import com.hazelcast.spi.impl.operationservice.Operation;
@@ -98,7 +105,9 @@ import com.hazelcast.spi.impl.servicemanager.ServiceInfo;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.EventListener;
 import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Properties;
 import java.util.Set;
@@ -148,15 +157,18 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 @SuppressWarnings({"checkstyle:methodcount", "checkstyle:classfanoutcomplexity", "checkstyle:classdataabstractioncoupling"})
 public class RaftService implements ManagedService, SnapshotAwareService<MetadataRaftGroupSnapshot>, GracefulShutdownAwareService,
                                     MembershipAwareService, PreJoinAwareService, RaftNodeLifecycleAwareService,
-                                    MigrationAwareService, DynamicMetricsProvider {
+                                    MigrationAwareService, DynamicMetricsProvider,
+                                    EventPublishingService<Object, EventListener> {
 
     public static final String SERVICE_NAME = "hz:core:raft";
 
+    public static final String EVENT_TOPIC_MEMBERSHIP = "membership";
+    public static final String EVENT_TOPIC_AVAILABILITY = "availability";
     public static final String CP_SUBSYSTEM_EXECUTOR = "hz:cpSubsystem";
     static final String CP_SUBSYSTEM_MANAGEMENT_EXECUTOR = "hz:cpSubsystemManagement";
-
     private static final long REMOVE_MISSING_MEMBER_TASK_PERIOD_SECONDS = 1;
     private static final int AWAIT_DISCOVERY_STEP_MILLIS = 10;
+    private static final long AVAILABILITY_EVENTS_DEDUPLICATION_PERIOD = TimeUnit.MINUTES.toMillis(1);
 
     private final ReadWriteLock nodeLock = new ReentrantReadWriteLock();
     @Probe(name = CP_METRIC_RAFT_SERVICE_NODES)
@@ -176,6 +188,7 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
     private final int metricsPeriod;
     private final boolean cpSubsystemEnabled;
     private final UnsafeModePartitionState[] unsafeModeStates;
+    private final Map<CPGroupAvailabilityEventKey, Long> recentAvailabilityEvents = new ConcurrentHashMap<>();
 
     public RaftService(NodeEngine nodeEngine) {
         this.nodeEngine = (NodeEngineImpl) nodeEngine;
@@ -569,7 +582,38 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
 
     @Override
     public void memberRemoved(MembershipServiceEvent event) {
+        publishGroupAvailabilityEvents(event.getMember());
         updateMissingMembers();
+    }
+
+    private void publishGroupAvailabilityEvents(MemberImpl removedMember) {
+        ClusterService clusterService = nodeEngine.getClusterService();
+        if (clusterService.getClusterVersion().isUnknownOrLessThan(Versions.V4_1)) {
+            return;
+        }
+
+        // since only the Metadata CP group members keep the CP groups,
+        // they will be the ones that keep track of unreachable CP members.
+        for (CPGroupId groupId : metadataGroupManager.getActiveGroupIds()) {
+            CPGroupSummary group = metadataGroupManager.getGroup(groupId);
+            Collection<CPMember> missing = new ArrayList<>();
+            boolean availabilityDecreased = false;
+            for (CPMember member : group.members()) {
+                if (member.getAddress().equals(removedMember.getAddress())) {
+                    // Group's availability decreased because of this removed member
+                    availabilityDecreased = true;
+                    missing.add(member);
+                } else if (clusterService.getMember(member.getAddress()) == null) {
+                    missing.add(member);
+                }
+            }
+
+            if (availabilityDecreased) {
+                CPGroupAvailabilityEvent e = new CPGroupAvailabilityEventImpl(group.id(), group.members(), missing);
+                nodeEngine.getEventService().publishEvent(SERVICE_NAME, EVENT_TOPIC_AVAILABILITY, e,
+                        EVENT_TOPIC_AVAILABILITY.hashCode());
+            }
+        }
     }
 
     void updateMissingMembers() {
@@ -1334,6 +1378,59 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
     public void applyUnsafeModeState(int partitionId, UnsafeModePartitionState state) {
         assert !cpSubsystemEnabled;
         unsafeModeStates[partitionId].apply(state);
+    }
+
+    public UUID registerMembershipListener(CPMembershipListener listener) {
+        return nodeEngine.getEventService().registerListener(SERVICE_NAME, EVENT_TOPIC_MEMBERSHIP, listener).getId();
+    }
+
+    public boolean removeMembershipListener(UUID id) {
+        return nodeEngine.getEventService().deregisterListener(SERVICE_NAME, EVENT_TOPIC_MEMBERSHIP, id);
+    }
+
+    public UUID registerAvailabilityListener(CPGroupAvailabilityListener listener) {
+        return nodeEngine.getEventService().registerListener(SERVICE_NAME, EVENT_TOPIC_AVAILABILITY, listener).getId();
+    }
+
+    public boolean removeAvailabilityListener(UUID id) {
+        return nodeEngine.getEventService().deregisterListener(SERVICE_NAME, EVENT_TOPIC_AVAILABILITY, id);
+    }
+
+    @Override
+    public void dispatchEvent(Object e, EventListener l) {
+        long now = Clock.currentTimeMillis();
+        recentAvailabilityEvents.values().removeIf(expirationTime -> expirationTime < now);
+
+        if (e instanceof CPMembershipEvent) {
+            CPMembershipEvent event = (CPMembershipEvent) e;
+            CPMembershipListener listener = (CPMembershipListener) l;
+            switch (event.getType()) {
+                case ADDED:
+                    listener.memberAdded(event);
+                    break;
+                case REMOVED:
+                    listener.memberRemoved(event);
+                    break;
+                default:
+                    throw new IllegalArgumentException("Unhandled event: " + event);
+            }
+            return;
+        }
+        if (e instanceof CPGroupAvailabilityEvent) {
+            CPGroupAvailabilityEvent event = (CPGroupAvailabilityEvent) e;
+            if (recentAvailabilityEvents.putIfAbsent(new CPGroupAvailabilityEventKey(event, l),
+                    now + AVAILABILITY_EVENTS_DEDUPLICATION_PERIOD) != null) {
+                return;
+            }
+            CPGroupAvailabilityListener listener = (CPGroupAvailabilityListener) l;
+            if (event.isMajorityAvailable()) {
+                listener.availabilityDecreased(event);
+            } else {
+                listener.majorityLost(event);
+            }
+            return;
+        }
+        throw new IllegalArgumentException("Unhandled event: " + e);
     }
 
     private class InitializeRaftNodeTask implements Runnable {

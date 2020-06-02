@@ -21,6 +21,8 @@ import com.hazelcast.core.HazelcastException;
 import com.hazelcast.cp.CPGroup;
 import com.hazelcast.cp.CPGroupId;
 import com.hazelcast.cp.CPMember;
+import com.hazelcast.cp.event.CPGroupAvailabilityListener;
+import com.hazelcast.cp.event.CPMembershipListener;
 import com.hazelcast.cp.CPSubsystem;
 import com.hazelcast.cp.CPSubsystemManagementService;
 import com.hazelcast.cp.IAtomicLong;
@@ -139,6 +141,30 @@ public class CPSubsystemImpl implements CPSubsystem {
     private <T extends DistributedObject> T createProxy(String serviceName, String name) {
         RaftRemoteService service = getService(serviceName);
         return service.createProxy(name);
+    }
+
+    @Override
+    public UUID addMembershipListener(CPMembershipListener listener) {
+        RaftService raftService = getService(RaftService.SERVICE_NAME);
+        return raftService.registerMembershipListener(listener);
+    }
+
+    @Override
+    public boolean removeMembershipListener(UUID id) {
+        RaftService raftService = getService(RaftService.SERVICE_NAME);
+        return raftService.removeMembershipListener(id);
+    }
+
+    @Override
+    public UUID addGroupAvailabilityListener(CPGroupAvailabilityListener listener) {
+        RaftService raftService = getService(RaftService.SERVICE_NAME);
+        return raftService.registerAvailabilityListener(listener);
+    }
+
+    @Override
+    public boolean removeGroupAvailabilityListener(UUID id) {
+        RaftService raftService = getService(RaftService.SERVICE_NAME);
+        return raftService.removeAvailabilityListener(id);
     }
 
     private static class CPSubsystemManagementServiceImpl implements CPSubsystemManagementService {

@@ -45,6 +45,8 @@ import com.hazelcast.config.MergePolicyConfig;
 import com.hazelcast.config.MerkleTreeConfig;
 import com.hazelcast.config.NearCachePreloaderConfig;
 import com.hazelcast.config.WanReplicationRef;
+import com.hazelcast.cp.CPMember;
+import com.hazelcast.cp.internal.CPMemberInfo;
 import com.hazelcast.cp.internal.RaftGroupId;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.instance.ProtocolType;
@@ -643,6 +645,8 @@ public class ReferenceObjects {
     public static List<Long> aListOfLongs = Collections.singletonList(aLong);
     public static List<UUID> aListOfUUIDs = Collections.singletonList(aUUID);
     public static Address anAddress;
+    public static CPMember aCpMember;
+    public static List<CPMember> aListOfCpMembers;
 
     static {
         try {
@@ -650,6 +654,8 @@ public class ReferenceObjects {
         } catch (UnknownHostException e) {
             e.printStackTrace();
         }
+        aCpMember = new CPMemberInfo(aUUID, anAddress);
+        aListOfCpMembers = Collections.singletonList(aCpMember);
     }
 
     public static List<Map.Entry<UUID, List<Integer>>> aListOfUUIDToListOfIntegers
