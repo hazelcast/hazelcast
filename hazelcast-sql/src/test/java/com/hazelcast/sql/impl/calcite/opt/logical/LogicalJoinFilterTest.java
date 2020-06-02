@@ -17,7 +17,6 @@
 package com.hazelcast.sql.impl.calcite.opt.logical;
 
 import com.hazelcast.sql.impl.calcite.opt.OptimizerTestSupport;
-import com.hazelcast.sql.impl.calcite.opt.PlanRow;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastSchema;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -70,11 +69,11 @@ public class LogicalJoinFilterTest extends OptimizerTestSupport {
         assertPlan(
             optimizeLogical(sql),
             plan(
-                new PlanRow(0, RootLogicalRel.class, "", 33.8d),
-                new PlanRow(1, ProjectLogicalRel.class, "r_f1=[$0], s_f1=[$2]", 33.8d),
-                new PlanRow(2, JoinLogicalRel.class, "condition=[=($1, $3)], joinType=[inner]", 33.8d),
-                new PlanRow(3, MapScanLogicalRel.class, "table=[[hazelcast, r]], projects=[[0, 1]], filter=[=($2, 1)]", 15d),
-                new PlanRow(3, MapScanLogicalRel.class, "table=[[hazelcast, s]], projects=[[0, 1]], filter=[=($2, 2)]", 15d)
+                planRow(0, RootLogicalRel.class, "", 33.8d),
+                planRow(1, ProjectLogicalRel.class, "r_f1=[$0], s_f1=[$2]", 33.8d),
+                planRow(2, JoinLogicalRel.class, "condition=[=($1, $3)], joinType=[inner]", 33.8d),
+                planRow(3, MapScanLogicalRel.class, "table=[[hazelcast, r]], projects=[[0, 1]], filter=[=($2, 1)]", 15d),
+                planRow(3, MapScanLogicalRel.class, "table=[[hazelcast, s]], projects=[[0, 1]], filter=[=($2, 2)]", 15d)
             )
         );
     }

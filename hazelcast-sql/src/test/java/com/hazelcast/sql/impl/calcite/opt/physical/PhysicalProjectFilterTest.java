@@ -17,7 +17,6 @@
 package com.hazelcast.sql.impl.calcite.opt.physical;
 
 import com.hazelcast.sql.impl.calcite.opt.OptimizerTestSupport;
-import com.hazelcast.sql.impl.calcite.opt.PlanRow;
 import org.junit.Test;
 
 /**
@@ -33,9 +32,9 @@ public class PhysicalProjectFilterTest extends OptimizerTestSupport {
         assertPlan(
             optimizePhysical("SELECT f1 + f2, f3 FROM (SELECT f1, f2, f3, f4 FROM p)"),
             plan(
-                new PlanRow(0, RootPhysicalRel.class, "", 100d),
-                new PlanRow(1, ProjectPhysicalRel.class, "EXPR$0=[+($0, $1)], f3=[$2]", 100d),
-                new PlanRow(2, MapScanPhysicalRel.class, "table=[[hazelcast, p]], projects=[[0, 1, 2]]", 100d)
+                planRow(0, RootPhysicalRel.class, "", 100d),
+                planRow(1, ProjectPhysicalRel.class, "EXPR$0=[+($0, $1)], f3=[$2]", 100d),
+                planRow(2, MapScanPhysicalRel.class, "table=[[hazelcast, p]], projects=[[0, 1, 2]]", 100d)
             )
         );
     }

@@ -18,7 +18,6 @@ package com.hazelcast.sql.impl.calcite.opt.physical;
 
 import com.hazelcast.config.IndexType;
 import com.hazelcast.sql.impl.calcite.opt.OptimizerTestSupport;
-import com.hazelcast.sql.impl.calcite.opt.PlanRow;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastSchema;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
 import com.hazelcast.sql.impl.schema.map.MapTableIndex;
@@ -56,8 +55,8 @@ public class PhysicalIndexScanTest extends OptimizerTestSupport {
         assertPlan(
             optimizePhysical("SELECT f1, f2 FROM p WHERE 1 < f1 AND f2 < 3 AND f3 = 5"),
             plan(
-                new PlanRow(0, RootPhysicalRel.class, "", 3.8),
-                new PlanRow(1, MapIndexScanPhysicalRel.class, "table=[[hazelcast, p]], projects=[[0, 1]], filter=[AND(<(1, $0), <($1, 3), =($2, 5))], index=[idx1], indexExp=[<(1, $0)], remainderExp=[AND(<($1, 3), =($2, 5))]", 3.8)
+                planRow(0, RootPhysicalRel.class, "", 3.8),
+                planRow(1, MapIndexScanPhysicalRel.class, "table=[[hazelcast, p]], projects=[[0, 1]], filter=[AND(<(1, $0), <($1, 3), =($2, 5))], index=[idx1], indexExp=[<(1, $0)], remainderExp=[AND(<($1, 3), =($2, 5))]", 3.8)
             )
         );
     }

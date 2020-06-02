@@ -17,7 +17,6 @@
 package com.hazelcast.sql.impl.calcite.opt.logical;
 
 import com.hazelcast.sql.impl.calcite.opt.OptimizerTestSupport;
-import com.hazelcast.sql.impl.calcite.opt.PlanRow;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -40,8 +39,8 @@ public class LogicalProjectFilterTest extends OptimizerTestSupport {
         assertPlan(
             optimizeLogical("SELECT f1, f2 FROM p"),
             plan(
-                new PlanRow(0, RootLogicalRel.class, "", 100d),
-                new PlanRow(1, MapScanLogicalRel.class, "table=[[hazelcast, p]], projects=[[0, 1]]", 100d)
+                planRow(0, RootLogicalRel.class, "", 100d),
+                planRow(1, MapScanLogicalRel.class, "table=[[hazelcast, p]], projects=[[0, 1]]", 100d)
             )
         );
     }
@@ -55,9 +54,9 @@ public class LogicalProjectFilterTest extends OptimizerTestSupport {
         assertPlan(
             optimizeLogical("SELECT f1 + f2, f3 FROM p"),
             plan(
-                new PlanRow(0, RootLogicalRel.class, "", 100d),
-                new PlanRow(1, ProjectLogicalRel.class, "EXPR$0=[+($0, $1)], f3=[$2]", 100d),
-                new PlanRow(2, MapScanLogicalRel.class, "table=[[hazelcast, p]], projects=[[0, 1, 2]]", 100d)
+                planRow(0, RootLogicalRel.class, "", 100d),
+                planRow(1, ProjectLogicalRel.class, "EXPR$0=[+($0, $1)], f3=[$2]", 100d),
+                planRow(2, MapScanLogicalRel.class, "table=[[hazelcast, p]], projects=[[0, 1, 2]]", 100d)
             )
         );
     }
@@ -71,8 +70,8 @@ public class LogicalProjectFilterTest extends OptimizerTestSupport {
         assertPlan(
             optimizeLogical("SELECT f1, f2 FROM p WHERE f3 > 1"),
             plan(
-                new PlanRow(0, RootLogicalRel.class, "", 50d),
-                new PlanRow(1, MapScanLogicalRel.class, "table=[[hazelcast, p]], projects=[[0, 1]], filter=[>($2, 1)]", 50d)
+                planRow(0, RootLogicalRel.class, "", 50d),
+                planRow(1, MapScanLogicalRel.class, "table=[[hazelcast, p]], projects=[[0, 1]], filter=[>($2, 1)]", 50d)
             )
         );
     }
@@ -86,9 +85,9 @@ public class LogicalProjectFilterTest extends OptimizerTestSupport {
         assertPlan(
             optimizeLogical("SELECT f1 + f2, f3 FROM p WHERE f4 > 1"),
             plan(
-                new PlanRow(0, RootLogicalRel.class, "", 50d),
-                new PlanRow(1, ProjectLogicalRel.class, "EXPR$0=[+($0, $1)], f3=[$2]", 50d),
-                new PlanRow(2, MapScanLogicalRel.class, "table=[[hazelcast, p]], projects=[[0, 1, 2]], filter=[>($3, 1)]", 50d)
+                planRow(0, RootLogicalRel.class, "", 50d),
+                planRow(1, ProjectLogicalRel.class, "EXPR$0=[+($0, $1)], f3=[$2]", 50d),
+                planRow(2, MapScanLogicalRel.class, "table=[[hazelcast, p]], projects=[[0, 1, 2]], filter=[>($3, 1)]", 50d)
             )
         );
     }
@@ -102,8 +101,8 @@ public class LogicalProjectFilterTest extends OptimizerTestSupport {
         assertPlan(
             optimizeLogical("SELECT f1 FROM (SELECT f1, f2 FROM p)"),
             plan(
-                new PlanRow(0, RootLogicalRel.class, "", 100d),
-                new PlanRow(1, MapScanLogicalRel.class, "table=[[hazelcast, p]], projects=[[0]]", 100d)
+                planRow(0, RootLogicalRel.class, "", 100d),
+                planRow(1, MapScanLogicalRel.class, "table=[[hazelcast, p]], projects=[[0]]", 100d)
             )
         );
     }
@@ -117,9 +116,9 @@ public class LogicalProjectFilterTest extends OptimizerTestSupport {
         assertPlan(
             optimizeLogical("SELECT d1, f3 FROM (SELECT f1 + f2 d1, f3, f4 FROM p)"),
             plan(
-                new PlanRow(0, RootLogicalRel.class, "", 100d),
-                new PlanRow(1, ProjectLogicalRel.class, "d1=[+($0, $1)], f3=[$2]", 100d),
-                new PlanRow(2, MapScanLogicalRel.class, "table=[[hazelcast, p]], projects=[[0, 1, 2]]", 100d)
+                planRow(0, RootLogicalRel.class, "", 100d),
+                planRow(1, ProjectLogicalRel.class, "d1=[+($0, $1)], f3=[$2]", 100d),
+                planRow(2, MapScanLogicalRel.class, "table=[[hazelcast, p]], projects=[[0, 1, 2]]", 100d)
             )
         );
     }
@@ -133,9 +132,9 @@ public class LogicalProjectFilterTest extends OptimizerTestSupport {
         assertPlan(
             optimizeLogical("SELECT f1 + f2, f3 FROM (SELECT f1, f2, f3, f4 FROM p)"),
             plan(
-                new PlanRow(0, RootLogicalRel.class, "", 100d),
-                new PlanRow(1, ProjectLogicalRel.class, "EXPR$0=[+($0, $1)], f3=[$2]", 100d),
-                new PlanRow(2, MapScanLogicalRel.class, "table=[[hazelcast, p]], projects=[[0, 1, 2]]", 100d)
+                planRow(0, RootLogicalRel.class, "", 100d),
+                planRow(1, ProjectLogicalRel.class, "EXPR$0=[+($0, $1)], f3=[$2]", 100d),
+                planRow(2, MapScanLogicalRel.class, "table=[[hazelcast, p]], projects=[[0, 1, 2]]", 100d)
             )
         );
     }
@@ -149,9 +148,9 @@ public class LogicalProjectFilterTest extends OptimizerTestSupport {
         assertPlan(
             optimizeLogical("SELECT d1 + f3 FROM (SELECT f1 + f2 d1, f3, f4 FROM p)"),
             plan(
-                new PlanRow(0, RootLogicalRel.class, "", 100d),
-                new PlanRow(1, ProjectLogicalRel.class, "EXPR$0=[+(+($0, $1), $2)]", 100d),
-                new PlanRow(2, MapScanLogicalRel.class, "table=[[hazelcast, p]], projects=[[0, 1, 2]]", 100d)
+                planRow(0, RootLogicalRel.class, "", 100d),
+                planRow(1, ProjectLogicalRel.class, "EXPR$0=[+(+($0, $1), $2)]", 100d),
+                planRow(2, MapScanLogicalRel.class, "table=[[hazelcast, p]], projects=[[0, 1, 2]]", 100d)
             )
         );
     }
@@ -165,8 +164,8 @@ public class LogicalProjectFilterTest extends OptimizerTestSupport {
         assertPlan(
             optimizeLogical("SELECT f1 FROM (SELECT f1, f2 FROM p WHERE f3 > 1)"),
             plan(
-                new PlanRow(0, RootLogicalRel.class, "", 50d),
-                new PlanRow(1, MapScanLogicalRel.class, "table=[[hazelcast, p]], projects=[[0]], filter=[>($2, 1)]", 50d)
+                planRow(0, RootLogicalRel.class, "", 50d),
+                planRow(1, MapScanLogicalRel.class, "table=[[hazelcast, p]], projects=[[0]], filter=[>($2, 1)]", 50d)
             )
         );
     }
@@ -180,9 +179,9 @@ public class LogicalProjectFilterTest extends OptimizerTestSupport {
         assertPlan(
             optimizeLogical("SELECT d1, f3 FROM (SELECT f1 + f2 d1, f3, f4 FROM p WHERE f5 > 1)"),
             plan(
-                new PlanRow(0, RootLogicalRel.class, "", 50d),
-                new PlanRow(1, ProjectLogicalRel.class, "d1=[+($0, $1)], f3=[$2]", 50d),
-                new PlanRow(2, MapScanLogicalRel.class, "table=[[hazelcast, p]], projects=[[0, 1, 2]], filter=[>($4, 1)]", 50d)
+                planRow(0, RootLogicalRel.class, "", 50d),
+                planRow(1, ProjectLogicalRel.class, "d1=[+($0, $1)], f3=[$2]", 50d),
+                planRow(2, MapScanLogicalRel.class, "table=[[hazelcast, p]], projects=[[0, 1, 2]], filter=[>($4, 1)]", 50d)
             )
         );
     }
@@ -196,9 +195,9 @@ public class LogicalProjectFilterTest extends OptimizerTestSupport {
         assertPlan(
             optimizeLogical("SELECT f1 + f2 FROM (SELECT f1, f2, f3, f4 FROM p WHERE f3 > 1)"),
             plan(
-                new PlanRow(0, RootLogicalRel.class, "", 50d),
-                new PlanRow(1, ProjectLogicalRel.class, "EXPR$0=[+($0, $1)]", 50d),
-                new PlanRow(2, MapScanLogicalRel.class, "table=[[hazelcast, p]], projects=[[0, 1]], filter=[>($2, 1)]", 50d)
+                planRow(0, RootLogicalRel.class, "", 50d),
+                planRow(1, ProjectLogicalRel.class, "EXPR$0=[+($0, $1)]", 50d),
+                planRow(2, MapScanLogicalRel.class, "table=[[hazelcast, p]], projects=[[0, 1]], filter=[>($2, 1)]", 50d)
             )
         );
     }
@@ -212,9 +211,9 @@ public class LogicalProjectFilterTest extends OptimizerTestSupport {
         assertPlan(
             optimizeLogical("SELECT d1 + f3 FROM (SELECT f1 + f2 d1, f3, f4 FROM p WHERE f5 > 1)"),
             plan(
-                new PlanRow(0, RootLogicalRel.class, "", 50d),
-                new PlanRow(1, ProjectLogicalRel.class, "EXPR$0=[+(+($0, $1), $2)]", 50d),
-                new PlanRow(2, MapScanLogicalRel.class, "table=[[hazelcast, p]], projects=[[0, 1, 2]], filter=[>($4, 1)]", 50d)
+                planRow(0, RootLogicalRel.class, "", 50d),
+                planRow(1, ProjectLogicalRel.class, "EXPR$0=[+(+($0, $1), $2)]", 50d),
+                planRow(2, MapScanLogicalRel.class, "table=[[hazelcast, p]], projects=[[0, 1, 2]], filter=[>($4, 1)]", 50d)
             )
         );
     }
@@ -228,8 +227,8 @@ public class LogicalProjectFilterTest extends OptimizerTestSupport {
         assertPlan(
             optimizeLogical("SELECT f1 FROM (SELECT f1, f2, f3 FROM p) WHERE f2 > 1"),
             plan(
-                new PlanRow(0, RootLogicalRel.class, "", 50d),
-                new PlanRow(1, MapScanLogicalRel.class, "table=[[hazelcast, p]], projects=[[0]], filter=[>($1, 1)]", 50d)
+                planRow(0, RootLogicalRel.class, "", 50d),
+                planRow(1, MapScanLogicalRel.class, "table=[[hazelcast, p]], projects=[[0]], filter=[>($1, 1)]", 50d)
             )
         );
     }
@@ -245,10 +244,10 @@ public class LogicalProjectFilterTest extends OptimizerTestSupport {
         assertPlan(
             optimizeLogical("SELECT d1, f3 FROM (SELECT f1 + f2 d1, f3, f4, f5 FROM p) WHERE f4 > 1"),
             plan(
-                new PlanRow(0, RootLogicalRel.class, "", 50d),
-                new PlanRow(1, ProjectLogicalRel.class, "d1=[$0], f3=[$1]", 50d),
-                new PlanRow(2, ProjectLogicalRel.class, "d1=[+($0, $1)], f3=[$2], f4=[$3]", 50d),
-                new PlanRow(3, MapScanLogicalRel.class, "table=[[hazelcast, p]], projects=[[0, 1, 2, 3]], filter=[>($3, 1)]", 50d)
+                planRow(0, RootLogicalRel.class, "", 50d),
+                planRow(1, ProjectLogicalRel.class, "d1=[$0], f3=[$1]", 50d),
+                planRow(2, ProjectLogicalRel.class, "d1=[+($0, $1)], f3=[$2], f4=[$3]", 50d),
+                planRow(3, MapScanLogicalRel.class, "table=[[hazelcast, p]], projects=[[0, 1, 2, 3]], filter=[>($3, 1)]", 50d)
             )
         );
     }
@@ -263,9 +262,9 @@ public class LogicalProjectFilterTest extends OptimizerTestSupport {
         assertPlan(
             optimizeLogical("SELECT f1 + f2 FROM (SELECT f1, f2, f3, f4 FROM p) WHERE f3 > 1"),
             plan(
-                new PlanRow(0, RootLogicalRel.class, "", 50d),
-                new PlanRow(1, ProjectLogicalRel.class, "EXPR$0=[+($0, $1)]", 50d),
-                new PlanRow(2, MapScanLogicalRel.class, "table=[[hazelcast, p]], projects=[[0, 1]], filter=[>($2, 1)]", 50d)
+                planRow(0, RootLogicalRel.class, "", 50d),
+                planRow(1, ProjectLogicalRel.class, "EXPR$0=[+($0, $1)]", 50d),
+                planRow(2, MapScanLogicalRel.class, "table=[[hazelcast, p]], projects=[[0, 1]], filter=[>($2, 1)]", 50d)
             )
         );
     }
@@ -281,10 +280,10 @@ public class LogicalProjectFilterTest extends OptimizerTestSupport {
         assertPlan(
             optimizeLogical("SELECT d1 + f3 FROM (SELECT f1 + f2 d1, f3, f4, f5 FROM p) WHERE f4 > 1"),
             plan(
-                new PlanRow(0, RootLogicalRel.class, "", 50d),
-                new PlanRow(1, ProjectLogicalRel.class, "EXPR$0=[+($0, $1)]", 50d),
-                new PlanRow(2, ProjectLogicalRel.class, "d1=[+($0, $1)], f3=[$2], f4=[$3]", 50d),
-                new PlanRow(3, MapScanLogicalRel.class, "table=[[hazelcast, p]], projects=[[0, 1, 2, 3]], filter=[>($3, 1)]", 50d)
+                planRow(0, RootLogicalRel.class, "", 50d),
+                planRow(1, ProjectLogicalRel.class, "EXPR$0=[+($0, $1)]", 50d),
+                planRow(2, ProjectLogicalRel.class, "d1=[+($0, $1)], f3=[$2], f4=[$3]", 50d),
+                planRow(3, MapScanLogicalRel.class, "table=[[hazelcast, p]], projects=[[0, 1, 2, 3]], filter=[>($3, 1)]", 50d)
             )
         );
     }
@@ -298,8 +297,8 @@ public class LogicalProjectFilterTest extends OptimizerTestSupport {
         assertPlan(
             optimizeLogical("SELECT f1 FROM (SELECT f1, f2, f3 FROM p WHERE f4 > 1) WHERE f2 > 1"),
             plan(
-                new PlanRow(0, RootLogicalRel.class, "", 25d),
-                new PlanRow(1, MapScanLogicalRel.class, "table=[[hazelcast, p]], projects=[[0]], filter=[AND(>($3, 1), >($1, 1))]", 25d)
+                planRow(0, RootLogicalRel.class, "", 25d),
+                planRow(1, MapScanLogicalRel.class, "table=[[hazelcast, p]], projects=[[0]], filter=[AND(>($3, 1), >($1, 1))]", 25d)
             )
         );
     }
@@ -313,9 +312,9 @@ public class LogicalProjectFilterTest extends OptimizerTestSupport {
         assertPlan(
             optimizeLogical("SELECT d1, f3 FROM (SELECT f1 + f2 d1, f3, f4, f5 FROM p WHERE f4 > 1) WHERE f3 > 2"),
             plan(
-                new PlanRow(0, RootLogicalRel.class, "", 25d),
-                new PlanRow(1, ProjectLogicalRel.class, "d1=[+($0, $1)], f3=[$2]", 25d),
-                new PlanRow(2, MapScanLogicalRel.class, "table=[[hazelcast, p]], projects=[[0, 1, 2]], filter=[AND(>($3, 1), >($2, 2))]", 25d)
+                planRow(0, RootLogicalRel.class, "", 25d),
+                planRow(1, ProjectLogicalRel.class, "d1=[+($0, $1)], f3=[$2]", 25d),
+                planRow(2, MapScanLogicalRel.class, "table=[[hazelcast, p]], projects=[[0, 1, 2]], filter=[AND(>($3, 1), >($2, 2))]", 25d)
             )
         );
     }
@@ -329,9 +328,9 @@ public class LogicalProjectFilterTest extends OptimizerTestSupport {
         assertPlan(
             optimizeLogical("SELECT f1 + f2 FROM (SELECT f1, f2, f3, f4 FROM p WHERE f4 > 1) WHERE f3 > 1"),
             plan(
-                new PlanRow(0, RootLogicalRel.class, "", 25d),
-                new PlanRow(1, ProjectLogicalRel.class, "EXPR$0=[+($0, $1)]", 25d),
-                new PlanRow(2, MapScanLogicalRel.class, "table=[[hazelcast, p]], projects=[[0, 1]], filter=[AND(>($3, 1), >($2, 1))]", 25d)
+                planRow(0, RootLogicalRel.class, "", 25d),
+                planRow(1, ProjectLogicalRel.class, "EXPR$0=[+($0, $1)]", 25d),
+                planRow(2, MapScanLogicalRel.class, "table=[[hazelcast, p]], projects=[[0, 1]], filter=[AND(>($3, 1), >($2, 1))]", 25d)
             )
         );
     }
@@ -346,10 +345,10 @@ public class LogicalProjectFilterTest extends OptimizerTestSupport {
         assertPlan(
             optimizeLogical("SELECT d1 + f3 FROM (SELECT f1 + f2 d1, f3, f4, f5 FROM p WHERE f4 > 1) WHERE f3 > 2"),
             plan(
-                new PlanRow(0, RootLogicalRel.class, "", 25d),
-                new PlanRow(1, ProjectLogicalRel.class, "EXPR$0=[+($0, $1)]", 25d),
-                new PlanRow(2, ProjectLogicalRel.class, "d1=[+($0, $1)], f3=[$2]", 25d),
-                new PlanRow(3, MapScanLogicalRel.class, "table=[[hazelcast, p]], projects=[[0, 1, 2]], filter=[AND(>($3, 1), >($2, 2))]", 25d)
+                planRow(0, RootLogicalRel.class, "", 25d),
+                planRow(1, ProjectLogicalRel.class, "EXPR$0=[+($0, $1)]", 25d),
+                planRow(2, ProjectLogicalRel.class, "d1=[+($0, $1)], f3=[$2]", 25d),
+                planRow(3, MapScanLogicalRel.class, "table=[[hazelcast, p]], projects=[[0, 1, 2]], filter=[AND(>($3, 1), >($2, 2))]", 25d)
             )
         );
     }

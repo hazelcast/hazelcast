@@ -19,6 +19,8 @@ package com.hazelcast.sql.impl.calcite.opt;
 import com.hazelcast.sql.impl.SqlTestSupport;
 import com.hazelcast.sql.impl.calcite.OptimizerContext;
 import com.hazelcast.sql.impl.calcite.TestMapTable;
+import com.hazelcast.sql.impl.calcite.opt.cost.Cost;
+import com.hazelcast.sql.impl.calcite.opt.cost.CostFactory;
 import com.hazelcast.sql.impl.calcite.opt.logical.LogicalRel;
 import com.hazelcast.sql.impl.calcite.opt.logical.LogicalRules;
 import com.hazelcast.sql.impl.calcite.opt.logical.RootLogicalRel;
@@ -33,6 +35,7 @@ import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.schema.map.MapTableIndex;
 import com.hazelcast.sql.impl.schema.map.PartitionedMapTable;
 import com.hazelcast.sql.impl.type.QueryDataType;
+import org.apache.calcite.plan.RelOptCost;
 import org.apache.calcite.plan.RelOptUtil;
 import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.rel.RelNode;
@@ -91,7 +94,7 @@ public abstract class OptimizerTestSupport extends SqlTestSupport {
             null,
             HazelcastSchemaUtils.createCatalog(schema),
             HazelcastSchemaUtils.prepareSearchPaths(null, null),
-                nodeCount
+            nodeCount
         );
 
         return optimize(sql, context, physical);
@@ -237,6 +240,22 @@ public abstract class OptimizerTestSupport extends SqlTestSupport {
 
         System.out.println(">>> VERIFIED PLAN:");
         System.out.println(actual);
+    }
+
+    public static PlanRow planRow(int level, Class<? extends RelNode> node, String signature) {
+        return new PlanRow(level, node, signature);
+    }
+
+    public static PlanRow planRow(int level, Class<? extends RelNode> node, String signature, Double rows) {
+        return new PlanRow(level, node, signature, rows);
+    }
+
+    public static PlanRow planRow(int level, Class<? extends RelNode> node, String signature, Double rows, RelOptCost cost) {
+        return new PlanRow(level, node, signature, rows, (Cost) cost);
+    }
+
+    public static Cost cost(double rows, double cpu, double network) {
+        return (Cost) CostFactory.INSTANCE.makeCost(rows, cpu, network);
     }
 
     private static String planErrorMessage(String message, PlanRows expected, PlanRows actual) {
