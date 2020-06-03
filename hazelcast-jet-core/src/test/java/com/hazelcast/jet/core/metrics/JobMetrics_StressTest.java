@@ -21,10 +21,10 @@ import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JetConfig;
+import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.core.JobStatus;
-import com.hazelcast.jet.core.Outbox;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import org.junit.Before;
@@ -109,7 +109,7 @@ public class JobMetrics_StressTest extends JetTestSupport {
         return dag;
     }
 
-    private static final class IncrementingProcessor implements Processor {
+    private static final class IncrementingProcessor extends AbstractProcessor {
 
         @Probe(name = "initCount")
         static final AtomicInteger initCount = new AtomicInteger();
@@ -118,7 +118,7 @@ public class JobMetrics_StressTest extends JetTestSupport {
         static final AtomicInteger completeCount = new AtomicInteger();
 
         @Override
-        public void init(@Nonnull Outbox outbox, @Nonnull Context context) {
+        protected void init(@Nonnull Context context) throws Exception {
             initCount.incrementAndGet();
         }
 

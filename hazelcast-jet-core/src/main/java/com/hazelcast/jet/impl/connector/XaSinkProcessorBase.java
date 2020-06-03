@@ -23,6 +23,7 @@ import com.hazelcast.jet.config.ProcessingGuarantee;
 import com.hazelcast.jet.core.Inbox;
 import com.hazelcast.jet.core.Outbox;
 import com.hazelcast.jet.core.Processor;
+import com.hazelcast.jet.core.Watermark;
 import com.hazelcast.jet.impl.processor.TransactionPoolSnapshotUtility;
 import com.hazelcast.jet.impl.processor.TwoPhaseSnapshotCommitUtility.TransactionId;
 import com.hazelcast.jet.impl.processor.TwoPhaseSnapshotCommitUtility.TransactionalResource;
@@ -78,6 +79,12 @@ public abstract class XaSinkProcessorBase implements Processor {
     @Override
     public boolean tryProcess() {
         return snapshotUtility.tryProcess();
+    }
+
+    @Override
+    public boolean tryProcessWatermark(@Nonnull Watermark watermark) {
+        // sinks can ignore the watermark
+        return true;
     }
 
     @Override

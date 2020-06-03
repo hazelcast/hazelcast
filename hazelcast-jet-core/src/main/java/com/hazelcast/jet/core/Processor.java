@@ -188,11 +188,8 @@ public interface Processor {
      * {@code false}, in which case it will be called again later with the same
      * {@code timestamp} before any other <em>processing method</em> is called.
      * Before the method returns {@code true}, it should emit the watermark to
-     * the downstream processors.
-     * <p>
-     * The default implementation throws an exception. For any non-sink
-     * processor you must provide an implementation that at least forwards the
-     * watermark. A sink processor may simply return {@code true}.
+     * the downstream processors. Sink processors can ignore the watermark and
+     * simply return {@code true}.
      *
      * <h3>Caution for Jobs With the At-Least-Once Guarantee</h3>
      * Jet propagates the value of the watermark by sending <em>watermark
@@ -207,9 +204,7 @@ public interface Processor {
      * @return {@code true} if this watermark has now been processed,
      *         {@code false} to call this method again with the same watermark
      */
-    default boolean tryProcessWatermark(@Nonnull Watermark watermark) {
-        throw new UnsupportedOperationException("Missing implementation in " + getClass());
-    }
+    boolean tryProcessWatermark(@Nonnull Watermark watermark);
 
     /**
      * This method will be called periodically and only when the current batch

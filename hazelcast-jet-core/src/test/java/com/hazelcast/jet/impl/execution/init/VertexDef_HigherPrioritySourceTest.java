@@ -22,9 +22,9 @@ import com.hazelcast.internal.cluster.impl.MembersView;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.jet.SimpleTestInClusterSupport;
 import com.hazelcast.jet.config.JobConfig;
+import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.Edge;
-import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.impl.MasterJobContext;
@@ -139,6 +139,6 @@ public class VertexDef_HigherPrioritySourceTest extends SimpleTestInClusterSuppo
         assertEquals(expectedVertices, actualHigherPriorityVertices);
     }
 
-    private static class DummyProcessor implements Processor {
+    private static class DummyProcessor extends AbstractProcessor {
     }
 }
