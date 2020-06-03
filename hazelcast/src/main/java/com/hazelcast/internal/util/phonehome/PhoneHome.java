@@ -47,6 +47,7 @@ public class PhoneHome {
 
     volatile ScheduledFuture<?> phoneHomeFuture;
     private final ILogger logger;
+    private final String basePhoneHomeUrl;
 
     private final Node hazelcastNode;
     private final List<MetricsCollector> metricsCollectorList = Arrays.asList(new BuildInfoCollector(),
@@ -55,12 +56,13 @@ public class PhoneHome {
     public PhoneHome(Node node) {
         hazelcastNode = node;
         logger = hazelcastNode.getLogger(com.hazelcast.internal.util.phonehome.PhoneHome.class);
+        basePhoneHomeUrl=BASE_PHONE_HOME_URL;
     }
 
     public PhoneHome(Node node, String base_url) {
         hazelcastNode = node;
         logger = hazelcastNode.getLogger(com.hazelcast.internal.util.phonehome.PhoneHome.class);
-        BASE_PHONE_HOME_URL = base_url;
+        basePhoneHomeUrl = base_url;
     }
 
 
@@ -99,7 +101,7 @@ public class PhoneHome {
         PhoneHomeParameterCreator parameterCreator = createParameters();
 
         if (!pretend) {
-            String urlStr = BASE_PHONE_HOME_URL + parameterCreator.build();
+            String urlStr = basePhoneHomeUrl + parameterCreator.build();
             fetchWebService(urlStr);
         }
 

@@ -22,35 +22,22 @@ import wiremock.org.apache.http.impl.client.HttpClients;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.lang.reflect.Field;
-import java.util.List;
-import java.util.Map;
 import java.util.Scanner;
-//import org.junit.contrib.java.lang.system.EnvironmentVariables;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
-import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.options;
-import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
 import static com.hazelcast.test.Accessors.getNode;
-import static org.junit.Assert.assertEquals;
 
 public class IntegrationTest extends HazelcastTestSupport {
 
     @Rule
     public WireMockRule wireMockRule = new WireMockRule();
-    @VisibleForTesting
-    String BASE_PHONE_HOME_URL = "http://localhost:8080/ping";
-
-
-
 
     @Test()
     public void test() throws IOException {
-        System.setProperty("test","true");
-        HazelcastInstance hz=createHazelcastInstance();
-        Node node=getNode(hz);
-        PhoneHome phoneHome=new PhoneHome(node,"http://localhost:8080/ping");
-
+        System.setProperty("test", "true");
+        HazelcastInstance hz = createHazelcastInstance();
+        Node node = getNode(hz);
+        PhoneHome phoneHome = new PhoneHome(node, "http://localhost:8080/ping");
 
 
         stubFor(get(urlPathMatching("/ping/.*"))
@@ -62,7 +49,7 @@ public class IntegrationTest extends HazelcastTestSupport {
         phoneHome.phoneHome(false);
 
 
-        verify(1,getRequestedFor(urlPathMatching("/ping/.*")));
+        verify(1, getRequestedFor(urlPathEqualTo("/ping")));
 
     }
 
