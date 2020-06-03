@@ -41,8 +41,6 @@ public class PhoneHome {
 
     private static final int TIMEOUT = 1000;
 
-
-    private static String BASE_PHONE_HOME_URL = "http://phonehome.hazelcast.com/ping";
     private static final String FALSE = "false";
 
     volatile ScheduledFuture<?> phoneHomeFuture;
@@ -56,7 +54,7 @@ public class PhoneHome {
     public PhoneHome(Node node) {
         hazelcastNode = node;
         logger = hazelcastNode.getLogger(com.hazelcast.internal.util.phonehome.PhoneHome.class);
-        basePhoneHomeUrl=BASE_PHONE_HOME_URL;
+        basePhoneHomeUrl = "http://phonehome.hazelcast.com/ping";
     }
 
     public PhoneHome(Node node, String base_url) {
