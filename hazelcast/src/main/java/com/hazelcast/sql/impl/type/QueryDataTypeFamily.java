@@ -28,43 +28,36 @@ import static com.hazelcast.sql.impl.type.QueryDataTypeUtils.TYPE_LEN_TIMESTAMP_
 import static com.hazelcast.sql.impl.type.QueryDataTypeUtils.TYPE_LEN_VARCHAR;
 
 public enum QueryDataTypeFamily {
-    NULL(false, 0, TYPE_LEN_NULL),
-    VARCHAR(false, 100, TYPE_LEN_VARCHAR),
-    BOOLEAN(false, 200, 1),
-    TINYINT(false, 300, 1),
-    SMALLINT(false, 400, 2),
-    INT(false, 500, 4),
-    BIGINT(false, 600, 8),
-    DECIMAL(false, 700, TYPE_LEN_DECIMAL),
-    REAL(false, 800, 4),
-    DOUBLE(false, 900, 8),
-    TIME(true, 1000, TYPE_LEN_TIME),
-    DATE(true, 1100, TYPE_LEN_DATE),
-    TIMESTAMP(true, 1200, TYPE_LEN_TIMESTAMP),
-    TIMESTAMP_WITH_TIME_ZONE(true, 1300, TYPE_LEN_TIMESTAMP_WITH_OFFSET),
-    OBJECT(false, 1400, TYPE_LEN_OBJECT),
-    INTERVAL_YEAR_MONTH(false, 910, TYPE_INTERVAL_YEAR_MONTH),
-    INTERVAL_DAY_SECOND(false, 920, TYPE_INTERVAL_DAY_SECOND);
+    NULL(false, TYPE_LEN_NULL),
+    VARCHAR(false, TYPE_LEN_VARCHAR),
+    BOOLEAN(false, 1),
+    TINYINT(false, 1),
+    SMALLINT(false, 2),
+    INT(false, 4),
+    BIGINT(false, 8),
+    DECIMAL(false, TYPE_LEN_DECIMAL),
+    REAL(false, 4),
+    DOUBLE(false, 8),
+    INTERVAL_YEAR_MONTH(true, TYPE_INTERVAL_YEAR_MONTH),
+    INTERVAL_DAY_SECOND(true, TYPE_INTERVAL_DAY_SECOND),
+    TIME(true, TYPE_LEN_TIME),
+    DATE(true, TYPE_LEN_DATE),
+    TIMESTAMP(true, TYPE_LEN_TIMESTAMP),
+    TIMESTAMP_WITH_TIME_ZONE(true, TYPE_LEN_TIMESTAMP_WITH_OFFSET),
+    OBJECT(false, TYPE_LEN_OBJECT);
 
     private final boolean temporal;
-    private final int precedence;
     private final int estimatedSize;
 
-    QueryDataTypeFamily(boolean temporal, int precedence, int estimatedSize) {
-        assert precedence >= 0;
+    QueryDataTypeFamily(boolean temporal, int estimatedSize) {
         assert estimatedSize > 0;
 
         this.temporal = temporal;
-        this.precedence = precedence;
         this.estimatedSize = estimatedSize;
     }
 
     public boolean isTemporal() {
         return temporal;
-    }
-
-    public int getPrecedence() {
-        return precedence;
     }
 
     public int getEstimatedSize() {

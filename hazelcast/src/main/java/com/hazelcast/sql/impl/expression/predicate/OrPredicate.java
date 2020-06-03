@@ -19,7 +19,6 @@ package com.hazelcast.sql.impl.expression.predicate;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.expression.VariExpression;
-import com.hazelcast.sql.impl.expression.util.EnsureConvertible;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
@@ -37,10 +36,6 @@ public class OrPredicate extends VariExpression<Boolean> {
     }
 
     public static OrPredicate create(Expression<?>... operands) {
-        for (Expression<?> operand : operands) {
-            EnsureConvertible.toBoolean(operand);
-        }
-
         return new OrPredicate(operands);
     }
 

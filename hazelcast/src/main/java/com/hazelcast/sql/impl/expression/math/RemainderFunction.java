@@ -41,7 +41,7 @@ public class RemainderFunction<T> extends BiExpressionWithType<T> {
     }
 
     public static RemainderFunction<?> create(Expression<?> operand1, Expression<?> operand2) {
-        QueryDataType resultType = MathFunctionUtils.inferRemainderResultType(operand1.getType(), operand2.getType());
+        QueryDataType resultType = ExpressionMath.inferRemainderResultType(operand1.getType(), operand2.getType());
 
         return new RemainderFunction<>(operand1, operand2, resultType);
     }

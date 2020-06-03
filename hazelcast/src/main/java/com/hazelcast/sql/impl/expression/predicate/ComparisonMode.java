@@ -27,6 +27,8 @@ public enum ComparisonMode {
     LESS_THAN(4),
     LESS_THAN_OR_EQUAL(5);
 
+    private static final ComparisonMode[] VALUES = values();
+
     private final int id;
 
     ComparisonMode(int id) {
@@ -38,7 +40,7 @@ public enum ComparisonMode {
     }
 
     public static ComparisonMode getById(int id) {
-        for (ComparisonMode value : values()) {
+        for (ComparisonMode value : VALUES) {
             if (id == value.id) {
                 return value;
             }

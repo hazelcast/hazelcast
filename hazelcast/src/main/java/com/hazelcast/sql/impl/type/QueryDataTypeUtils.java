@@ -39,11 +39,6 @@ import static com.hazelcast.sql.impl.type.QueryDataType.INTERVAL_DAY_SECOND;
 import static com.hazelcast.sql.impl.type.QueryDataType.INTERVAL_YEAR_MONTH;
 import static com.hazelcast.sql.impl.type.QueryDataType.NULL;
 import static com.hazelcast.sql.impl.type.QueryDataType.OBJECT;
-import static com.hazelcast.sql.impl.type.QueryDataType.PRECISION_BIGINT;
-import static com.hazelcast.sql.impl.type.QueryDataType.PRECISION_INT;
-import static com.hazelcast.sql.impl.type.QueryDataType.PRECISION_SMALLINT;
-import static com.hazelcast.sql.impl.type.QueryDataType.PRECISION_TINYINT;
-import static com.hazelcast.sql.impl.type.QueryDataType.PRECISION_UNLIMITED;
 import static com.hazelcast.sql.impl.type.QueryDataType.REAL;
 import static com.hazelcast.sql.impl.type.QueryDataType.SMALLINT;
 import static com.hazelcast.sql.impl.type.QueryDataType.TIME;
@@ -92,34 +87,6 @@ public final class QueryDataTypeUtils {
     // still costs a single reference now, but reference cost is not taken into
     // account as of now.
     public static final int TYPE_LEN_NULL = 1;
-
-    private static final QueryDataType[] INTEGER_TYPES = new QueryDataType[PRECISION_BIGINT + 1];
-
-    static {
-        for (int i = 1; i <= PRECISION_BIGINT; i++) {
-            QueryDataType type;
-
-            if (i < PRECISION_TINYINT) {
-                type = new QueryDataType(TINYINT.getConverter(), i);
-            } else if (i == PRECISION_TINYINT) {
-                type = TINYINT;
-            } else if (i < PRECISION_SMALLINT) {
-                type = new QueryDataType(SMALLINT.getConverter(), i);
-            } else if (i == PRECISION_SMALLINT) {
-                type = SMALLINT;
-            } else if (i < PRECISION_INT) {
-                type = new QueryDataType(INT.getConverter(), i);
-            } else if (i == PRECISION_INT) {
-                type = INT;
-            } else if (i < PRECISION_BIGINT) {
-                type = new QueryDataType(BIGINT.getConverter(), i);
-            } else {
-                type = BIGINT;
-            }
-
-            INTEGER_TYPES[i] = type;
-        }
-    }
 
     private QueryDataTypeUtils() {
         // No-op.
@@ -271,40 +238,4 @@ public final class QueryDataTypeUtils {
         }
     }
 
-    /**
-     * Get integer type for the given precision.
-     *
-     * @param precision Precision.
-     * @return Type.
-     */
-    public static QueryDataType integerType(int precision) {
-        if (precision == 0) {
-            throw new IllegalArgumentException("Precision cannot be zero.");
-        }
-
-        if (precision == PRECISION_UNLIMITED) {
-            return DECIMAL;
-        } else if (precision <= PRECISION_BIGINT) {
-            return INTEGER_TYPES[precision];
-        } else {
-            return DECIMAL;
-        }
-    }
-
-    public static QueryDataType withHigherPrecedence(QueryDataType first, QueryDataType second) {
-        int res = Integer.compare(first.getTypeFamily().getPrecedence(), second.getTypeFamily().getPrecedence());
-
-        if (res == 0) {
-            // Only types from the same type family may have the same precedence.
-            assert first.getTypeFamily() == second.getTypeFamily();
-
-            // Types from the same family either all have unlimited precision, or both have non-unlimited precision.
-            assert (first.getPrecision() != PRECISION_UNLIMITED && second.getPrecision() != PRECISION_UNLIMITED)
-                || (first.getPrecision() == PRECISION_UNLIMITED && second.getPrecision() == PRECISION_UNLIMITED);
-
-            res = Integer.compare(first.getPrecision(), second.getPrecision());
-        }
-
-        return (res >= 0) ? first : second;
-    }
 }

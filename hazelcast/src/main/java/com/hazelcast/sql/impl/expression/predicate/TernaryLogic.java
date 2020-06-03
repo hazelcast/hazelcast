@@ -18,7 +18,6 @@ package com.hazelcast.sql.impl.expression.predicate;
 
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
-import com.hazelcast.sql.impl.expression.util.Eval;
 import com.hazelcast.sql.impl.row.Row;
 
 public final class TernaryLogic {
@@ -31,12 +30,14 @@ public final class TernaryLogic {
         boolean seenUnknown = false;
 
         for (Expression<?> operand : operands) {
-            Boolean result = Eval.asBoolean(operand, row, context);
+            Boolean result = (Boolean) operand.eval(row, context);
 
-            if (result == null) {
-                seenUnknown = true;
-            } else if (!result) {
+            if (isFalse(result)) {
                 return Boolean.FALSE;
+            }
+
+            if (isNull(result)) {
+                seenUnknown = true;
             }
         }
 
@@ -47,12 +48,14 @@ public final class TernaryLogic {
         boolean seenUnknown = false;
 
         for (Expression<?> operand : operands) {
-            Boolean result = Eval.asBoolean(operand, row, context);
+            Boolean result = (Boolean) operand.eval(row, context);
 
-            if (result == null) {
-                seenUnknown = true;
-            } else if (result) {
+            if (isTrue(result)) {
                 return Boolean.TRUE;
+            }
+
+            if (isNull(result)) {
+                seenUnknown = true;
             }
         }
 

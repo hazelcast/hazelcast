@@ -16,6 +16,7 @@
 
 package com.hazelcast.sql.impl.expression.math;
 
+import com.hazelcast.sql.SqlErrorCode;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.expression.BiExpressionWithType;
 import com.hazelcast.sql.impl.expression.Expression;
@@ -23,16 +24,17 @@ import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
-import com.hazelcast.sql.impl.type.QueryDataTypeUtils;
 import com.hazelcast.sql.impl.type.SqlDaySecondInterval;
 import com.hazelcast.sql.impl.type.SqlYearMonthInterval;
-import com.hazelcast.sql.impl.type.converter.Converter;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
+
+import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.INTERVAL_DAY_SECOND;
+import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.INTERVAL_YEAR_MONTH;
 
 public class PlusFunction<T> extends BiExpressionWithType<T> {
 
@@ -45,91 +47,74 @@ public class PlusFunction<T> extends BiExpressionWithType<T> {
         super(operand1, operand2, resultType);
     }
 
-    public static PlusFunction<?> create(Expression<?> operand1, Expression<?> operand2) {
-        QueryDataType operand1Type = operand1.getType();
-        QueryDataType operand2Type = operand2.getType();
-
-        QueryDataType resultType = MathFunctionUtils.inferPlusMinusResultType(operand1Type, operand2Type, true);
-
-        if (QueryDataTypeUtils.withHigherPrecedence(operand1Type, operand2Type) == operand1Type) {
-            return new PlusFunction<>(operand1, operand2, resultType);
-        } else {
-            return new PlusFunction<>(operand2, operand1, resultType);
+    public static PlusFunction<?> create(Expression<?> operand1, Expression<?> operand2, QueryDataType resultType) {
+        if (operand1.getType().getTypeFamily() == INTERVAL_DAY_SECOND
+                || operand1.getType().getTypeFamily() == INTERVAL_YEAR_MONTH) {
+            Expression<?> intervalOperand = operand1;
+            operand1 = operand2;
+            operand2 = intervalOperand;
         }
+
+        return new PlusFunction<>(operand1, operand2, resultType);
     }
 
     @SuppressWarnings("unchecked")
     @Override
     public T eval(Row row, ExpressionEvalContext context) {
-        Object operand1Value = operand1.eval(row, context);
+        QueryDataTypeFamily family = resultType.getTypeFamily();
+        // expressions having NULL type should be replaced with just NULL literal
+        assert family != QueryDataTypeFamily.NULL;
 
-        if (operand1Value == null) {
+        Object left = operand1.eval(row, context);
+        if (left == null) {
             return null;
         }
 
-        Object operand2Value = operand2.eval(row, context);
-
-        if (operand2Value == null) {
+        Object right = operand2.eval(row, context);
+        if (right == null) {
             return null;
         }
 
-        return (T) doPlus(operand1Value, operand1.getType(), operand2Value, operand2.getType(), resultType);
-    }
-
-    private static Object doPlus(Object operand1, QueryDataType operand1Type, Object operand2, QueryDataType operand2Type,
-                                 QueryDataType resultType) {
-        // Handle temporal.
-        if (resultType.getTypeFamily().isTemporal()) {
-            return doPlusTemporal(operand2, operand2Type, operand1, operand1Type, resultType);
+        if (family.isTemporal()) {
+            return (T) evalTemporal(left, operand1.getType(), right, operand2.getType(), resultType);
+        } else {
+            return (T) evalNumeric((Number) left, (Number) right, family);
         }
-
-        // Handle numeric.
-        return doPlusNumeric(operand1, operand1Type, operand2, operand2Type, resultType);
     }
 
-    private static Object doPlusNumeric(Object operand1, QueryDataType operand1Type, Object operand2, QueryDataType operand2Type,
-                                        QueryDataType resultType) {
-        Converter operand1Converter = operand1Type.getConverter();
-        Converter operand2Converter = operand2Type.getConverter();
-
-        switch (resultType.getTypeFamily()) {
+    private static Object evalNumeric(Number left, Number right, QueryDataTypeFamily family) {
+        switch (family) {
             case TINYINT:
-                return operand1Converter.asTinyint(operand1) + operand2Converter.asTinyint(operand2);
-
+                return (byte) (left.byteValue() + right.byteValue());
             case SMALLINT:
-                return operand1Converter.asSmallint(operand1) + operand2Converter.asSmallint(operand2);
-
+                return (short) (left.shortValue() + right.shortValue());
             case INT:
-                return operand1Converter.asInt(operand1) + operand2Converter.asInt(operand2);
-
+                return left.intValue() + right.intValue();
             case BIGINT:
-                return operand1Converter.asBigint(operand1) + operand2Converter.asBigint(operand2);
-
-            case DECIMAL:
-                BigDecimal op1Decimal = operand1Converter.asDecimal(operand1);
-                BigDecimal op2Decimal = operand2Converter.asDecimal(operand2);
-
-                return op1Decimal.add(op2Decimal);
-
+                try {
+                    return Math.addExact(left.longValue(), right.longValue());
+                } catch (ArithmeticException e) {
+                    throw QueryException.error(SqlErrorCode.DATA_EXCEPTION, "BIGINT overflow");
+                }
             case REAL:
-                return operand1Converter.asReal(operand1) + operand2Converter.asReal(operand2);
-
+                return left.floatValue() + right.floatValue();
             case DOUBLE:
-                return operand1Converter.asDouble(operand1) + operand2Converter.asDouble(operand2);
-
+                return left.doubleValue() + right.doubleValue();
+            case DECIMAL:
+                return ((BigDecimal) left).add((BigDecimal) right, ExpressionMath.DECIMAL_MATH_CONTEXT);
             default:
-                throw QueryException.error("Invalid type: " + resultType);
+                throw new IllegalArgumentException("unexpected result family: " + family);
         }
     }
 
     @SuppressWarnings("checkstyle:AvoidNestedBlocks")
-    private static Object doPlusTemporal(Object temporalOperand, QueryDataType temporalOperandType, Object intervalOperand,
-                                         QueryDataType intervalOperandType, QueryDataType resType) {
+    private static Object evalTemporal(Object temporalOperand, QueryDataType temporalOperandType, Object intervalOperand,
+                                       QueryDataType intervalOperandType, QueryDataType resType) {
         switch (resType.getTypeFamily()) {
             case DATE: {
                 LocalDate date = temporalOperandType.getConverter().asDate(temporalOperand);
 
-                if (intervalOperandType.getTypeFamily() == QueryDataTypeFamily.INTERVAL_YEAR_MONTH) {
+                if (intervalOperandType.getTypeFamily() == INTERVAL_YEAR_MONTH) {
                     return date.plusDays(((SqlYearMonthInterval) intervalOperand).getMonths());
                 } else {
                     SqlDaySecondInterval interval = (SqlDaySecondInterval) intervalOperand;
@@ -141,7 +126,7 @@ public class PlusFunction<T> extends BiExpressionWithType<T> {
             case TIME: {
                 LocalTime time = temporalOperandType.getConverter().asTime(temporalOperand);
 
-                if (intervalOperandType.getTypeFamily() == QueryDataTypeFamily.INTERVAL_YEAR_MONTH) {
+                if (intervalOperandType.getTypeFamily() == INTERVAL_YEAR_MONTH) {
                     return time;
                 } else {
                     SqlDaySecondInterval interval = (SqlDaySecondInterval) intervalOperand;
@@ -153,7 +138,7 @@ public class PlusFunction<T> extends BiExpressionWithType<T> {
             case TIMESTAMP: {
                 LocalDateTime ts = temporalOperandType.getConverter().asTimestamp(temporalOperand);
 
-                if (intervalOperandType.getTypeFamily() == QueryDataTypeFamily.INTERVAL_YEAR_MONTH) {
+                if (intervalOperandType.getTypeFamily() == INTERVAL_YEAR_MONTH) {
                     return ts.plusDays(((SqlYearMonthInterval) intervalOperand).getMonths());
                 } else {
                     SqlDaySecondInterval interval = (SqlDaySecondInterval) intervalOperand;
@@ -165,7 +150,7 @@ public class PlusFunction<T> extends BiExpressionWithType<T> {
             case TIMESTAMP_WITH_TIME_ZONE: {
                 OffsetDateTime ts = temporalOperandType.getConverter().asTimestampWithTimezone(temporalOperand);
 
-                if (intervalOperandType.getTypeFamily() == QueryDataTypeFamily.INTERVAL_YEAR_MONTH) {
+                if (intervalOperandType.getTypeFamily() == INTERVAL_YEAR_MONTH) {
                     return ts.plusDays(((SqlYearMonthInterval) intervalOperand).getMonths());
                 } else {
                     SqlDaySecondInterval interval = (SqlDaySecondInterval) intervalOperand;

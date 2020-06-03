@@ -123,7 +123,7 @@ public abstract class FloorCeilFunction<T> extends UniExpressionWithType<T> {
     }
 
     private static QueryDataType inferResultType(QueryDataType operandType) {
-        if (!MathFunctionUtils.canConvertToNumber(operandType)) {
+        if (!ExpressionMath.canConvertToNumber(operandType)) {
             throw QueryException.error("Operand is not numeric: " + operandType);
         }
 
