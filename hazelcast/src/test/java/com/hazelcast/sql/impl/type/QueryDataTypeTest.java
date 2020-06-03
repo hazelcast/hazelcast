@@ -73,10 +73,10 @@ public class QueryDataTypeTest extends SqlTestSupport {
         checkType(QueryDataType.VARCHAR_CHARACTER, CharacterConverter.INSTANCE);
 
         checkType(QueryDataType.BOOLEAN, BooleanConverter.INSTANCE);
-        checkType(QueryDataType.TINYINT, ByteConverter.INSTANCE, QueryDataType.PRECISION_TINYINT);
-        checkType(QueryDataType.SMALLINT, ShortConverter.INSTANCE, QueryDataType.PRECISION_SMALLINT);
-        checkType(QueryDataType.INT, IntegerConverter.INSTANCE, QueryDataType.PRECISION_INT);
-        checkType(QueryDataType.BIGINT, LongConverter.INSTANCE, QueryDataType.PRECISION_BIGINT);
+        checkType(QueryDataType.TINYINT, ByteConverter.INSTANCE);
+        checkType(QueryDataType.SMALLINT, ShortConverter.INSTANCE);
+        checkType(QueryDataType.INT, IntegerConverter.INSTANCE);
+        checkType(QueryDataType.BIGINT, LongConverter.INSTANCE);
         checkType(QueryDataType.DECIMAL, BigDecimalConverter.INSTANCE);
         checkType(QueryDataType.DECIMAL_BIG_INTEGER, BigIntegerConverter.INSTANCE);
         checkType(QueryDataType.REAL, FloatConverter.INSTANCE);
@@ -94,33 +94,6 @@ public class QueryDataTypeTest extends SqlTestSupport {
         checkType(QueryDataType.OBJECT, ObjectConverter.INSTANCE);
 
         checkType(QueryDataType.NULL, NullConverter.INSTANCE);
-    }
-
-    @Test
-    public void testIntegerTypeFactory() {
-        for (int i = 1; i <= QueryDataType.PRECISION_BIGINT; i++) {
-            QueryDataType type = QueryDataTypeUtils.integerType(i);
-
-            int precision = type.getPrecision();
-
-            assertEquals(i, precision);
-
-            if (precision <= QueryDataType.PRECISION_TINYINT) {
-                assertEquals(QueryDataTypeFamily.TINYINT, type.getTypeFamily());
-            } else if (precision <= QueryDataType.PRECISION_SMALLINT) {
-                assertEquals(QueryDataTypeFamily.SMALLINT, type.getTypeFamily());
-            } else if (precision <= QueryDataType.PRECISION_INT) {
-                assertEquals(QueryDataTypeFamily.INT, type.getTypeFamily());
-            } else if (precision <= QueryDataType.PRECISION_BIGINT) {
-                assertEquals(QueryDataTypeFamily.BIGINT, type.getTypeFamily());
-            }
-        }
-
-        QueryDataType decimalType = QueryDataTypeUtils.integerType(QueryDataType.PRECISION_BIGINT + 1);
-        checkType(decimalType, decimalType.getConverter(), QueryDataType.PRECISION_UNLIMITED);
-
-        decimalType = QueryDataTypeUtils.integerType(QueryDataType.PRECISION_UNLIMITED);
-        checkType(decimalType, decimalType.getConverter(), QueryDataType.PRECISION_UNLIMITED);
     }
 
     @Test
@@ -183,39 +156,15 @@ public class QueryDataTypeTest extends SqlTestSupport {
     }
 
     @Test
-    public void testBigger() {
-        checkPrecedence(QueryDataType.BOOLEAN, QueryDataType.VARCHAR);
-        checkPrecedence(QueryDataType.TINYINT, QueryDataType.BOOLEAN);
-        checkPrecedence(QueryDataType.SMALLINT, QueryDataType.TINYINT);
-        checkPrecedence(QueryDataType.INT, QueryDataType.SMALLINT);
-        checkPrecedence(QueryDataType.BIGINT, QueryDataType.INT);
-        checkPrecedence(QueryDataType.DECIMAL, QueryDataType.BIGINT);
-        checkPrecedence(QueryDataType.REAL, QueryDataType.DECIMAL);
-        checkPrecedence(QueryDataType.DOUBLE, QueryDataType.REAL);
-
-        checkPrecedence(QueryDataType.TIME, QueryDataType.DOUBLE);
-        checkPrecedence(QueryDataType.DATE, QueryDataType.TIME);
-        checkPrecedence(QueryDataType.TIMESTAMP, QueryDataType.DATE);
-        checkPrecedence(QueryDataType.TIMESTAMP_WITH_TZ_OFFSET_DATE_TIME, QueryDataType.TIMESTAMP);
-
-        for (int i = 1; i < QueryDataType.PRECISION_BIGINT; i++) {
-            checkPrecedence(QueryDataTypeUtils.integerType(i + 1), QueryDataTypeUtils.integerType(i));
-        }
-
-        checkPrecedence(QueryDataType.VARCHAR, QueryDataType.NULL);
-    }
-
-    @Test
     public void testEquals() {
-        checkEquals(new QueryDataType(IntegerConverter.INSTANCE, 11), new QueryDataType(IntegerConverter.INSTANCE, 11), true);
-        checkEquals(new QueryDataType(IntegerConverter.INSTANCE, 11), new QueryDataType(IntegerConverter.INSTANCE, 12), false);
-        checkEquals(new QueryDataType(IntegerConverter.INSTANCE, 11), new QueryDataType(LongConverter.INSTANCE, 11), false);
+        checkEquals(new QueryDataType(IntegerConverter.INSTANCE), new QueryDataType(IntegerConverter.INSTANCE), true);
+        checkEquals(new QueryDataType(IntegerConverter.INSTANCE), new QueryDataType(LongConverter.INSTANCE), false);
     }
 
     @Test
     public void testSerialization() {
         for (Converter converter : Converters.getConverters()) {
-            QueryDataType original = new QueryDataType(converter, QueryDataType.PRECISION_BIGINT);
+            QueryDataType original = new QueryDataType(converter);
             QueryDataType restored = serializeAndCheck(original, SqlDataSerializerHook.QUERY_DATA_TYPE);
 
             checkEquals(original, restored, true);
@@ -223,13 +172,8 @@ public class QueryDataTypeTest extends SqlTestSupport {
     }
 
     private void checkType(QueryDataType type, Converter expectedConverter) {
-        checkType(type, expectedConverter, QueryDataType.PRECISION_UNLIMITED);
-    }
-
-    private void checkType(QueryDataType type, Converter expectedConverter, int expectedPrecision) {
         assertEquals(expectedConverter, type.getConverter());
         assertEquals(expectedConverter.getTypeFamily(), type.getConverter().getTypeFamily());
-        assertEquals(expectedPrecision, type.getPrecision());
     }
 
     private void checkResolvedTypeForClass(QueryDataType expectedType, Class<?>... classes) {
@@ -244,10 +188,4 @@ public class QueryDataTypeTest extends SqlTestSupport {
         assertSame(expectedType, QueryDataTypeUtils.resolveTypeForTypeFamily(typeFamily));
     }
 
-    private void checkPrecedence(QueryDataType bigger, QueryDataType smaller) {
-        assertSame(bigger, QueryDataTypeUtils.withHigherPrecedence(bigger, smaller));
-
-        assertSame(bigger, QueryDataTypeUtils.withHigherPrecedence(bigger, bigger));
-        assertSame(smaller, QueryDataTypeUtils.withHigherPrecedence(smaller, smaller));
-    }
 }

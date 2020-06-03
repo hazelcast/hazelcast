@@ -37,11 +37,11 @@ public class Atan2Function extends BiExpression<Double> {
     }
 
     public static Atan2Function create(Expression<?> first, Expression<?> second) {
-        if (!MathFunctionUtils.canConvertToNumber(first.getType())) {
+        if (!ExpressionMath.canConvertToNumber(first.getType())) {
             throw QueryException.error("Operand 1 is not numeric: " + first.getType());
         }
 
-        if (!MathFunctionUtils.canConvertToNumber(second.getType())) {
+        if (!ExpressionMath.canConvertToNumber(second.getType())) {
             throw QueryException.error("Operand 2 is not numeric: " + second.getType());
         }
 

@@ -16,42 +16,26 @@
 
 package com.hazelcast.sql.impl.expression;
 
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.QueryDataType;
-import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
-import com.hazelcast.sql.impl.type.QueryDataTypeUtils;
 import com.hazelcast.sql.impl.type.converter.Converter;
-
-import java.io.IOException;
 
 /**
  * Expression which converts data from one type to another.
  */
-public class CastExpression<T> extends UniExpression<T> {
-
-    private QueryDataType type;
+public class CastExpression<T> extends UniExpressionWithType<T> {
 
     @SuppressWarnings("unused")
     public CastExpression() {
         // No-op.
     }
 
-    private CastExpression(Expression<?> operand, QueryDataType type) {
-        super(operand);
-        this.type = type;
+    private CastExpression(Expression<?> operand, QueryDataType resultType) {
+        super(operand, resultType);
     }
 
-    public static CastExpression<?> create(Expression<?> operand, QueryDataType type) {
-        boolean convertible = operand.getType().getConverter().canConvertTo(type.getTypeFamily());
-
-        if (!convertible) {
-            throw QueryException.error("Cannot convert " + operand.getType() + " to " + type);
-        }
-
-        return new CastExpression<>(operand, type);
+    public static CastExpression<?> create(Expression<?> operand, QueryDataType resultType) {
+        return new CastExpression<>(operand, resultType);
     }
 
     @SuppressWarnings("unchecked")
@@ -63,40 +47,9 @@ public class CastExpression<T> extends UniExpression<T> {
             return null;
         }
 
-        Converter valueConverter = operand.getType().getConverter();
-        Converter typeConverter = type.getConverter();
-        return (T) typeConverter.convertToSelf(valueConverter, value);
-    }
-
-    @Override
-    public QueryDataType getType() {
-        return type;
-    }
-
-    public static Expression<?> coerceExpression(Expression<?> from, QueryDataTypeFamily toTypeFamily) {
-        QueryDataType fromType = from.getType();
-
-        if (fromType.getTypeFamily() == toTypeFamily) {
-            return from;
-        } else {
-            QueryDataType type = QueryDataTypeUtils.resolveTypeForTypeFamily(toTypeFamily);
-
-            return CastExpression.create(from, type);
-        }
-    }
-
-    @Override
-    public void writeData(ObjectDataOutput out) throws IOException {
-        super.writeData(out);
-
-        out.writeObject(type);
-    }
-
-    @Override
-    public void readData(ObjectDataInput in) throws IOException {
-        super.readData(in);
-
-        type = in.readObject();
+        Converter fromConverter = operand.getType().getConverter();
+        Converter toConverter = resultType.getConverter();
+        return (T) toConverter.convertToSelf(fromConverter, value);
     }
 
 }

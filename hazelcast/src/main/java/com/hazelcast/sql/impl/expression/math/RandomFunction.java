@@ -40,7 +40,7 @@ public class RandomFunction extends UniExpression<Double> {
     }
 
     public static RandomFunction create(Expression<?> seedExp) {
-        if (seedExp != null && !MathFunctionUtils.canConvertToNumber(seedExp.getType())) {
+        if (seedExp != null && !ExpressionMath.canConvertToNumber(seedExp.getType())) {
             throw QueryException.error("Operand is not numeric: " + seedExp.getType());
         }
 

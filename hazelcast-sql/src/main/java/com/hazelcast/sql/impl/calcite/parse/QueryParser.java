@@ -19,6 +19,7 @@ package com.hazelcast.sql.impl.calcite.parse;
 import com.hazelcast.sql.SqlErrorCode;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.calcite.parser.HazelcastSqlParser;
+import com.hazelcast.sql.impl.calcite.validate.HazelcastOperatorVisitor;
 import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlConformance;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.sql.SqlNode;
@@ -54,7 +55,10 @@ public class QueryParser {
         try {
             SqlParser parser = SqlParser.create(sql, CONFIG);
 
-            node = validator.validate(parser.parseStmt());
+            node = parser.parseStmt();
+            node.accept(HazelcastOperatorVisitor.INSTANCE);
+
+            node = validator.validate(node);
 
             node.accept(UnsupportedOperationVisitor.INSTANCE);
 
