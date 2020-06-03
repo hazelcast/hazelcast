@@ -25,7 +25,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import static com.hazelcast.nio.Packet.FLAG_3_12;
 import static com.hazelcast.nio.Packet.FLAG_OP_CONTROL;
 import static com.hazelcast.nio.Packet.FLAG_URGENT;
 import static org.junit.Assert.assertEquals;
@@ -38,23 +37,11 @@ import static org.junit.Assert.assertTrue;
 public class PacketTest {
 
     @Test
-    public void isFlag_3_12Set() {
-        byte[] payload = {};
-        Packet packet = new Packet();
-        Packet packet2 = new Packet(payload);
-        Packet packet3 = new Packet(payload, 1);
-
-        assertTrue(packet.isFlagRaised(FLAG_3_12));
-        assertTrue(packet2.isFlagRaised(FLAG_3_12));
-        assertTrue(packet3.isFlagRaised(FLAG_3_12));
-    }
-
-    @Test
     public void raiseFlags() {
         Packet packet = new Packet();
         packet.raiseFlags(FLAG_URGENT);
 
-        assertEquals(FLAG_URGENT | FLAG_3_12, packet.getFlags());
+        assertEquals(FLAG_URGENT, packet.getFlags());
     }
 
     @Test
