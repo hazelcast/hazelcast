@@ -9,12 +9,9 @@ import org.junit.Rule;
 
 import org.junit.Test;
 
-import wiremock.org.apache.http.HttpResponse;
-
 import java.io.IOException;
-import java.io.InputStream;
+
 import java.util.Map;
-import java.util.Scanner;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static com.hazelcast.test.Accessors.getNode;
@@ -26,7 +23,6 @@ public class IntegrationTest extends HazelcastTestSupport {
 
     @Test()
     public void test() throws IOException {
-        System.setProperty("test", "true");
         HazelcastInstance hz = createHazelcastInstance();
         Node node = getNode(hz);
         PhoneHome phoneHome = new PhoneHome(node, "http://localhost:8080/ping");
