@@ -1,5 +1,5 @@
 ---
-title: Hazelcast Jet Enteprise Operator on Red Hat Openshift
+title: Installation on Red Hat OpenShift
 description: Step-by-step guide to install Hazelcast Jet Enteprise Operator on Red Hat Openshift and deploying a sample job.
 ---
 

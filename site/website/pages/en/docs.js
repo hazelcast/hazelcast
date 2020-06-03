@@ -8,8 +8,7 @@ function docUrl(doc, language) {
     siteConfig.baseUrl +
     "docs/" +
     (language ? language + "/" : "") +
-    doc +
-    ".html"
+    doc 
   );
 }
 

@@ -1,5 +1,5 @@
 ---
-title: Hazelcast Jet with Docker
+title: Running With Docker
 description: How to use Jet in a Docker environment
 ---
 

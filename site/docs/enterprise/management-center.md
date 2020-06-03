@@ -8,13 +8,19 @@ used to monitor a Jet cluster and manage the lifecycle of the jobs
 
 ## Download Management Center
 
-You can download Hazelcast Jet Management Center [here](https://download.hazelcast.com/hazelcast-jet-management-center/hazelcast-jet-management-center-{jet-version}.tar.gz).
-
-Once you have downloaded it, unzip it to a folder:
+Download Jet Management Center and unzip it to a folder:
 
 ```bash
-tar zxvf hazelcast-jet-enterprise-{jet-version}.tar.gz
+wget https://download.hazelcast.com/hazelcast-jet-management-center/hazelcast-jet-management-center-{jet-version}.tar.gz
+tar zxvf hazelcast-jet-management-center-{jet-version}.tar.gz
 ```
+
+## Setting License Key
+
+Like with the Jet Enterprise Server, Jet Management Center also requires
+a license key. You can get a 30-day trial license from
+[the Hazelcast website](https://hazelcast.com/download). You can use the
+same license key on the management center as on the enterprise server.
 
 ## Setting License Key
 

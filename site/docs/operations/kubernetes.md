@@ -1,5 +1,5 @@
 ---
-title: Jet on Kubernetes
+title: Deployment On Kubernetes
 description: Using Kubernetes for orchestrating Jet clusters. 
 ---
 
