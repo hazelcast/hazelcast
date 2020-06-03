@@ -1,13 +1,14 @@
 ---
-title: CDC Deployment
-description: Guide for deploying CDC connectors and target databases.
+title: Change Data Capture
+description: Guide for deploying Change Data Capture connectors and target databases.
 ---
 
 ## Database Setup
 
-When using [CDC data sources](../api/sources-sinks#cdc) in Jet, one must
-also take care that the source databases are set up correctly, meaning
-they have all the features required for change data capture enabled.
+When using [CDC data sources](../api/sources-sinks.md#change-data-capture-cdc)
+in Jet, one must also take care that the source databases are set up
+correctly, meaning they have all the features required for change data
+capture enabled.
 
 ### MySQL
 
