@@ -48,6 +48,11 @@ public class HadoopParquet {
     private static final String INPUT_PATH = MODULE_DIRECTORY + "/hdfs-parquet-input";
     private static final String OUTPUT_PATH = MODULE_DIRECTORY + "/hdfs-parquet-output";
 
+    private static final String INPUT_BUCKET_NAME = "jet-hdfs-parquet-input";
+    private static final String OUTPUT_BUCKET_NAME = "jet-hdfs-parquet-output";
+    private static final String ACCESS_KEY = "";
+    private static final String SECRET_KEY = "";
+
     private static Pipeline buildPipeline(Configuration configuration) {
         Pipeline p = Pipeline.create();
         p.readFrom(HadoopSources.<String, User, User>inputFormat(configuration, (s, user) -> user))
@@ -57,16 +62,25 @@ public class HadoopParquet {
         return p;
     }
 
+    /**
+     * To run the example on Amazon S3 upload the created file `file.parquet`
+     * to the `INPUT_BUCKET_NAME` and fill `ACCESS_KEY`, `SECRET_KEY` fields.
+     */
     public static void main(String[] args) throws Exception {
         new HadoopParquet().go();
+
+//        new HadoopParquet().s3();
     }
 
     private void go() throws Exception {
+        Path inputPath = new Path(INPUT_PATH);
+        Path outputPath = new Path(OUTPUT_PATH);
+        FileSystem.get(new Configuration()).delete(outputPath, true);
         try {
             createParquetFile();
             JetInstance jet = Jet.bootstrappedInstance();
 
-            Configuration jobConfig = createJobConfig();
+            Configuration jobConfig = createJobConfig(Job.getInstance(), inputPath, outputPath);
             jet.newJob(buildPipeline(jobConfig)).join();
 
         } finally {
@@ -74,13 +88,30 @@ public class HadoopParquet {
         }
     }
 
-    private Configuration createJobConfig() throws IOException {
-        Path inputPath = new Path(INPUT_PATH);
-        Path outputPath = new Path(OUTPUT_PATH);
+    private void s3() throws Exception {
+        Path inputPath = new Path("s3a://" + INPUT_BUCKET_NAME + "/");
+        Path outputPath = new Path("s3a://" + OUTPUT_BUCKET_NAME + "/");
 
-        FileSystem.get(new Configuration()).delete(outputPath, true);
+        try {
+            JetInstance jet = Jet.bootstrappedInstance();
 
+            Configuration jobConfig = createJobConfig(jobWithS3AccessKeys(), inputPath, outputPath);
+            jet.newJob(buildPipeline(jobConfig)).join();
+
+        } finally {
+            Jet.shutdownAll();
+        }
+    }
+
+    private Job jobWithS3AccessKeys() throws IOException {
         Job job = Job.getInstance();
+        Configuration configuration = job.getConfiguration();
+        configuration.set("fs.s3a.access.key", ACCESS_KEY);
+        configuration.set("fs.s3a.secret.key", SECRET_KEY);
+        return job;
+    }
+
+    private Configuration createJobConfig(Job job, Path inputPath, Path outputPath) throws IOException {
         job.setInputFormatClass(AvroParquetInputFormat.class);
         job.setOutputFormatClass(AvroParquetOutputFormat.class);
         AvroParquetOutputFormat.setOutputPath(job, outputPath);
