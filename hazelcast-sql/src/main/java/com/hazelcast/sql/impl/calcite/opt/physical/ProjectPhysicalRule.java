@@ -34,7 +34,7 @@ import static com.hazelcast.sql.impl.calcite.opt.distribution.DistributionType.P
 
 /**
  * This rule converts logical projection into physical projection. Physical projection inherits distribution and collation of
- * the input provided that input columns responsible for distribution/collation is present in the project operator.
+ * the input provided that input columns responsible for distribution/collation are present in the project operator.
  */
 public final class ProjectPhysicalRule extends RelOptRule {
     public static final RelOptRule INSTANCE = new ProjectPhysicalRule();

@@ -32,7 +32,7 @@ public enum DistributionType {
     PARTITIONED,
 
     /**
-     * Data set is localed on the root node.
+     * Data set is located on the root node.
      */
     ROOT
 }

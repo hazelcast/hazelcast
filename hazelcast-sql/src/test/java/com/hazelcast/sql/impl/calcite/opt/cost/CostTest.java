@@ -45,7 +45,7 @@ public class CostTest extends SqlTestSupport {
         Cost cost = factory.makeCost(1.0d, 2.0d, 3.0d);
 
         assertEquals(1.0d, cost.getRowsInternal(), 0.0d);
-        assertEquals(2.0d, cost.getCputInternal(), 0.0d);
+        assertEquals(2.0d, cost.getCpuInternal(), 0.0d);
         assertEquals(3.0d, cost.getNetworkInternal(), 0.0d);
     }
 

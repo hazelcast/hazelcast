@@ -39,7 +39,7 @@ public final class HazelcastConventions {
         @Override
         public boolean useAbstractConvertersForConversion(RelTraitSet fromTraits, RelTraitSet toTraits) {
             // Forces Apache Calcite to install abstract converters when traits of two relations do not satisfy each other.
-            // The converter will have LOGICAL "from" convention and PHYSICAL "to"" convention. As a result, installation
+            // The converter will have LOGICAL "from" convention and PHYSICAL "to" convention. As a result, installation
             // of such a converter into a search space will re-trigger rules on LOGICAL parents, giving these rules a chance
             // to propagate physical traits from children nodes.
             return !fromTraits.satisfies(toTraits);

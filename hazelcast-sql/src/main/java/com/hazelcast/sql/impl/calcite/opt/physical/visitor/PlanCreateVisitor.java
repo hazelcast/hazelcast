@@ -58,8 +58,8 @@ import java.util.UUID;
  * <p>
  * Plan is a sequence of fragments connected via send/receive operators. A fragment is a sequence of relational operators.
  * <p>
- * Most relational operators has one-to-one mapping to the appropriate {@link PlanNode}.
- * The exception is family of {@link AbstractExchangePhysicalRel} operators. When an exchange is met, a new fragment is created,
+ * Most relational operators have one-to-one mapping to the appropriate {@link PlanNode}.
+ * The exception is the family of {@link AbstractExchangePhysicalRel} operators. When an exchange is met, a new fragment is created,
  * and then exchange is converted into a pair of appropriate send/receive operators. Send operator is added to the previous
  * fragment, receive operator is a starting point for the new fragment.
  */
@@ -89,7 +89,7 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
     /** Inbound edges of the fragment. */
     private final List<List<Integer>> fragmentInboundEdges = new ArrayList<>();
 
-    /** Upstream nodes. Normally it is a one node, except of multi-source operations (e.g. joins, sets, subqueries). */
+    /** Upstream nodes. Normally it is one node, except for multi-source operations (e.g. joins, sets, subqueries). */
     private final Deque<PlanNode> upstreamNodes = new ArrayDeque<>();
 
     /** ID of current edge. */

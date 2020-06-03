@@ -24,16 +24,16 @@ import org.apache.calcite.rel.type.RelDataTypeField;
  * Utility methods for cost estimation.
  */
 public final class CostUtils {
-    /** CPU multiplier applied to a project/filter inside a scan operator. */
+    /** CPU multiplier applied to a project/filter inside of a scan operator. */
     public static final double CONSTRAINED_SCAN_CPU_MULTIPLIER = 0.8d;
 
     /** CPU multiplier applied to normal scan. */
     public static final double TABLE_SCAN_CPU_MULTIPLIER = 1.0d;
 
-    /** Multiplier for CPU part of the cost. Assumes 1ns per CPU item. */
+    /** Multiplier for the CPU part of the cost. Assumes 1ns per item. */
     public static final double CPU_COST_MULTIPLIER = 1.0d;
 
-    /** Multiplier for network part of the cost. Assume ~10mcs per 1Kb that results in ~10ns per byte. */
+    /** Multiplier for the network part of the cost. Assumes ~10µs per 1Kb that results in ~10ns per byte. */
     public static final double NETWORK_COST_MULTIPLIER = CPU_COST_MULTIPLIER * 10;
 
     /** Replacement value if filter selectivity cannot be determined.  */
@@ -44,7 +44,7 @@ public final class CostUtils {
     }
 
     /**
-     * Adjust cost of a CPU-related operation (project, filter) located inside a scan. This allows optimzier to prefer
+     * Adjust the cost of a CPU-related operation (project, filter) located inside a scan. This allows the optimizer to prefer
      * filters and projects inlined into the scan.
      *
      * @param cpu CPU.

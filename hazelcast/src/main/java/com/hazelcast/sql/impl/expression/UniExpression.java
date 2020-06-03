@@ -23,7 +23,7 @@ import java.io.IOException;
 import java.util.Objects;
 
 /**
- * Expression with two operands.
+ * Expression with one operand.
  */
 public abstract class UniExpression<T> implements Expression<T> {
 

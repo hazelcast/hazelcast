@@ -53,7 +53,7 @@ public class Cost implements RelOptCost {
         return rows;
     }
 
-    public double getCputInternal() {
+    public double getCpuInternal() {
         return cpu;
     }
 

@@ -50,27 +50,27 @@ import java.util.UUID;
 /**
  * SQL optimizer based on Apache Calcite.
  * <p>
- * After parsing and initial sql-to-rel conversion is finished, all relational nodes starts with {@link Convention#NONE}
+ * After parsing and initial sql-to-rel conversion is finished, all relational nodes start with {@link Convention#NONE}
  * convention. Such nodes are typically referred as "abstract" in Apache Calcite, because they do not have any physical
  * properties.
  * <p>
  * The optimization process is split into two phases - logical and physical. During logical planning we normalize abstract
- * nodes and convert them in nodes with {@link HazelcastConventions#LOGICAL} convention. These new nodes are Hazelcast-specific
- * and hence may have an additional properties. For example, at this stage we do filter pushdowns, introduce constrained scans,
+ * nodes and convert them to nodes with {@link HazelcastConventions#LOGICAL} convention. These new nodes are Hazelcast-specific
+ * and hence may have additional properties. For example, at this stage we do filter pushdowns, introduce constrained scans,
  * etc.
  * <p>
- * During physical planning we look for specific physical implementations of logical nodes. Implementation nodes has
+ * During physical planning we look for specific physical implementations of logical nodes. Implementation nodes have
  * {@link HazelcastConventions#PHYSICAL} convention. The process contains the following fundamental steps:
  * <ul>
  *     <li>Choosing proper access methods for scan (normal scan, index scan, etc)</li>
  *     <li>Propagating physical properties from children nodes to their parents</li>
- *     <li>Choosing proper implementations of parent operators based on physical properties of children (
- *     local vs distributed sorting, blocking vs streaming aggregation, hash join vs merge join, etc) </li>
+ *     <li>Choosing proper implementations of parent operators based on physical properties of children
+ *     (local vs. distributed sorting, blocking vs. streaming aggregation, hash join vs. merge join, etc.)</li>
  *     <li>Enforcing exchange operators when data movement is necessary</li>
  * </ul>
  * <p>
  * Physical optimization stage uses {@link VolcanoPlanner}. This is a rule-based optimizer. However it doesn't share any
- * architectural traits with EXODUS/Volcano/Cascades papers, except for rule-based nature. In classical Cascades algorithm [1],
+ * architectural traits with EXODUS/Volcano/Cascades papers, except for the rule-based nature. In classical Cascades algorithm [1],
  * the optimization process is performed in a top-down style. Parent operator may request implementations of children
  * operators with specific properties. This is not possible in {@code VolcanoPlanner}. Instead, in this planner the rules are
  * fired in effectively uncontrollable fashion, thus making propagation of physical properties difficult. To overcome this
@@ -78,11 +78,11 @@ import java.util.UUID;
  * <p>
  * First, {@link HazelcastConventions#PHYSICAL} convention overrides {@link Convention#canConvertConvention(Convention)} and
  * {@link Convention#useAbstractConvertersForConversion(RelTraitSet, RelTraitSet)} methods. Their implementations ensure that
- * whenever a new children node with {@code PHYSICAL} convention is created, the rule of the parent {@code LOGICAL} nodes
+ * whenever a new child node with {@code PHYSICAL} convention is created, the rule of the parent {@code LOGICAL} nodes
  * will be re-scheduled. Second, physical rules for {@code LOGICAL} nodes iterate over concrete physical implementations of
- * inputs and convert logical nodes to physical nodes with proper traits. Combined these techniques ensure complete exploration
- * of a search space and proper propagation of physical properties from children nodes to parent nodes. The downside is that
- * the same rule on the same node could be fired multiple times this increasing optimization time.
+ * inputs and convert logical nodes to physical nodes with proper traits. Combined, these techniques ensure complete exploration
+ * of a search space and proper propagation of physical properties from child nodes to parent nodes. The downside is that
+ * the same rule on the same node could be fired multiple times, thus increase the optimization time.
  * <p>
  * For example, consider the following logical tree:
  * <pre>
@@ -100,7 +100,7 @@ import java.util.UUID;
  * </pre>
  * Notice how we failed to propagate important physical properties to the {@code PhysicalFilter}.
  * <p>
- * With the above described techniques we force the Apache Calcite to re-optimize logical parent after a new physical child
+ * With the above-described techniques we force Apache Calcite to re-optimize the logical parent after a new physical child
  * has been created. This way we are able to pull-up physical properties. The result of the optimization will be:
  * <pre>
  * [LogicalFilter, PhysicalFilter(PARTITIONED), PhysicalFilter(PARTITIONED, a ASC)]
