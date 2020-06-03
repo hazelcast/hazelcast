@@ -20,6 +20,7 @@ import com.hazelcast.jet.pipeline.BatchSource;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
 import org.elasticsearch.action.search.SearchRequest;
+import org.elasticsearch.client.ResponseException;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
@@ -29,6 +30,7 @@ import java.io.IOException;
 
 import static com.google.common.collect.ImmutableMap.of;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.elasticsearch.index.query.QueryBuilders.matchAllQuery;
 
 /**
@@ -260,4 +262,35 @@ public abstract class CommonElasticSourcesTest extends BaseElasticTest {
         assertThat(results).hasSize(2 * BATCH_SIZE);
     }
 
+    @Test
+    public void given_nonExistingIndex_whenReadFromElasticSource_thenThrowException() {
+        Pipeline p = Pipeline.create();
+        BatchSource<String> source = new ElasticSourceBuilder<>()
+                .clientFn(elasticClientSupplier())
+                .searchRequestFn(() -> new SearchRequest("non-existing-index"))
+                .mapToItemFn(SearchHit::getSourceAsString)
+                .build();
+        p.readFrom(source)
+         .writeTo(Sinks.list(results));
+
+        assertThatThrownBy(() -> submitJob(p))
+                .hasRootCauseInstanceOf(ResponseException.class)
+                .hasStackTraceContaining("no such index [non-existing-index]");
+    }
+
+    @Test
+    public void given_aliasMatchingNoIndex_whenReadFromElasticSource_thenReturnNoResults() {
+        Pipeline p = Pipeline.create();
+        BatchSource<String> source = new ElasticSourceBuilder<>()
+                .clientFn(elasticClientSupplier())
+                .searchRequestFn(() -> new SearchRequest("my-index-*"))
+                .mapToItemFn(SearchHit::getSourceAsString)
+                .build();
+
+        p.readFrom(source)
+         .writeTo(Sinks.list(results));
+
+        submitJob(p);
+        assertThat(results).isEmpty();
+    }
 }

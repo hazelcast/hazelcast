@@ -168,7 +168,11 @@ final class ElasticSourceP<T> extends AbstractProcessor {
 
                 // These should be always present, even when there are no results
                 hits = requireNonNull(response.getHits(), "null hits in the response");
-                scrollId = requireNonNull(response.getScrollId(), "null scrollId in the response");
+                scrollId = response.getScrollId();
+                if (scrollId == null && hits.getHits().length > 0) {
+                    throw new IllegalStateException("Unexpected response: returned scrollId is null, but hits.length " +
+                            "is not zero (" + hits.getHits().length + "). Please file a bug.");
+                }
 
                 TotalHits totalHits = hits.getTotalHits();
                 logger.fine("Initialized scroll with scrollId " + scrollId + ", total results " +
