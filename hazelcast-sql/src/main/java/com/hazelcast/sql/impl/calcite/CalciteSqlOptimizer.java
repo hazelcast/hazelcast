@@ -70,8 +70,8 @@ import java.util.UUID;
  * </ul>
  * <p>
  * Physical optimization stage uses {@link VolcanoPlanner}. This is a rule-based optimizer. However it doesn't share any
- * architectural traits with EXODUS/Volcano/Cascades papers, except for the rule-based nature. In classical Cascades algorithm [1],
- * the optimization process is performed in a top-down style. Parent operator may request implementations of children
+ * architectural traits with EXODUS/Volcano/Cascades papers, except for the rule-based nature. In classical Cascades algorithm
+ * [1], the optimization process is performed in a top-down style. Parent operator may request implementations of children
  * operators with specific properties. This is not possible in {@code VolcanoPlanner}. Instead, in this planner the rules are
  * fired in effectively uncontrollable fashion, thus making propagation of physical properties difficult. To overcome this
  * problem we use several techniques that helps us emulate at least some parts of Cascades-style optimization.
