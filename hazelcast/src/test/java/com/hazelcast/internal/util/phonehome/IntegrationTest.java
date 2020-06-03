@@ -7,10 +7,13 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.spi.impl.operationservice.impl.responses.Response;
 import com.hazelcast.test.HazelcastTestSupport;
+import org.apache.http.client.HttpClient;
+import org.junit.Before;
 import org.junit.Rule;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.client.WireMock;
 import org.junit.Test;
+import wiremock.com.google.common.annotations.VisibleForTesting;
 import wiremock.org.apache.http.HttpResponse;
 import wiremock.org.apache.http.client.methods.CloseableHttpResponse;
 import wiremock.org.apache.http.client.methods.HttpGet;
@@ -19,9 +22,11 @@ import wiremock.org.apache.http.impl.client.HttpClients;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.reflect.Field;
 import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
+//import org.junit.contrib.java.lang.system.EnvironmentVariables;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.options;
@@ -33,9 +38,19 @@ public class IntegrationTest extends HazelcastTestSupport {
 
     @Rule
     public WireMockRule wireMockRule = new WireMockRule();
+    @VisibleForTesting
+    String BASE_PHONE_HOME_URL = "http://localhost:8080/ping";
 
-    @Test
+
+
+
+    @Test()
     public void test() throws IOException {
+        System.setProperty("test","true");
+        HazelcastInstance hz=createHazelcastInstance();
+        Node node=getNode(hz);
+        PhoneHome phoneHome=new PhoneHome(node,"http://localhost:8080/ping");
+
 
 
         stubFor(get(urlPathMatching("/ping/.*"))
@@ -43,6 +58,8 @@ public class IntegrationTest extends HazelcastTestSupport {
                         .withStatus(200)
                         .withHeader("Content-Type", "application/json")
                         .withBody("content")));
+
+        phoneHome.phoneHome(false);
 
 
         verify(1,getRequestedFor(urlPathMatching("/ping/.*")));

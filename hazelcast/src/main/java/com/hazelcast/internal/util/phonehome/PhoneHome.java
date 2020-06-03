@@ -42,7 +42,7 @@ public class PhoneHome {
     private static final int TIMEOUT = 1000;
 
 
-    private static final String BASE_PHONE_HOME_URL = "http://phonehome.hazelcast.com/ping";
+    private static String BASE_PHONE_HOME_URL = "http://phonehome.hazelcast.com/ping";
     private static final String FALSE = "false";
 
     volatile ScheduledFuture<?> phoneHomeFuture;
@@ -56,6 +56,13 @@ public class PhoneHome {
         hazelcastNode = node;
         logger = hazelcastNode.getLogger(com.hazelcast.internal.util.phonehome.PhoneHome.class);
     }
+
+    public PhoneHome(Node node, String base_url) {
+        hazelcastNode = node;
+        logger = hazelcastNode.getLogger(com.hazelcast.internal.util.phonehome.PhoneHome.class);
+        BASE_PHONE_HOME_URL = base_url;
+    }
+
 
     public void check() {
         if (!hazelcastNode.getProperties().getBoolean(ClusterProperty.PHONE_HOME_ENABLED)) {
