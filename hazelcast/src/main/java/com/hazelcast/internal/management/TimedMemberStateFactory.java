@@ -333,23 +333,23 @@ public class TimedMemberStateFactory {
     }
 
     private void handleQueue(MemberStateImpl memberState, Config config, Map<String, LocalQueueStats> queues) {
-        Set<String> mapsWithStats = createHashSet(queues.size());
+        Set<String> queuesWithStats = createHashSet(queues.size());
         for (String name : queues.keySet()) {
             if (config.findQueueConfig(name).isStatisticsEnabled()) {
-                mapsWithStats.add(name);
-            }
-        }
-        memberState.setQueuesWithStats(mapsWithStats);
-    }
-
-    private void handleMap(MemberStateImpl memberState, Config config, Map<String, LocalMapStats> maps) {
-        Set<String> queuesWithStats = createHashSet(maps.size());
-        for (String name : maps.keySet()) {
-            if (config.findMapConfig(name).isStatisticsEnabled()) {
                 queuesWithStats.add(name);
             }
         }
-        memberState.setMapsWithStats(queuesWithStats);
+        memberState.setQueuesWithStats(queuesWithStats);
+    }
+
+    private void handleMap(MemberStateImpl memberState, Config config, Map<String, LocalMapStats> maps) {
+        Set<String> mapsWithStats = createHashSet(maps.size());
+        for (String name : maps.keySet()) {
+            if (config.findMapConfig(name).isStatisticsEnabled()) {
+                mapsWithStats.add(name);
+            }
+        }
+        memberState.setMapsWithStats(mapsWithStats);
     }
 
     private void handleCache(MemberStateImpl memberState, CacheService cacheService) {

@@ -82,11 +82,6 @@ public class MemberStateImpl implements MemberState {
     }
 
     @Override
-    public LocalWanStats getLocalWanStats(String schemeName) {
-        return wanStats.get(schemeName);
-    }
-
-    @Override
     public String getAddress() {
         return address;
     }

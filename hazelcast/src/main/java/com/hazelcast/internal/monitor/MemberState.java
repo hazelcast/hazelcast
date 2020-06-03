@@ -51,8 +51,6 @@ public interface MemberState extends JsonSerializable {
      */
     String getName();
 
-    LocalWanStats getLocalWanStats(String schemeName);
-
     Collection<ClientEndPointDTO> getClients();
 
     /**
