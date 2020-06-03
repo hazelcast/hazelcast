@@ -26,6 +26,8 @@ public class IntegrationTest extends HazelcastTestSupport {
         HazelcastInstance hz = createHazelcastInstance();
         Node node = getNode(hz);
         PhoneHome phoneHome = new PhoneHome(node, "http://localhost:8080/ping");
+        Map<String, String> map1 = hz.getMap("hazelcast");
+        Map<String, String> map2 = hz.getMap("phonehome");
 
         stubFor(get(urlPathEqualTo("/ping"))
                 .willReturn(aResponse()
@@ -33,9 +35,9 @@ public class IntegrationTest extends HazelcastTestSupport {
                         .withHeader("Content-Type", "application/json")
                         .withBody("content")));
 
-        Map<String, String> parameters = phoneHome.phoneHome(false);
+        phoneHome.phoneHome(false);
 
-        parameters.forEach((k, v) -> verify(1, getRequestedFor(urlPathEqualTo("/ping")).withQueryParam(k, equalTo(v))));
+        verify(1, getRequestedFor(urlPathEqualTo("/ping")).withQueryParam("mpct", equalTo("2")));
 
     }
 }
