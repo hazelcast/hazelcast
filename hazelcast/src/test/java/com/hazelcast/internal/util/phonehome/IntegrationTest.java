@@ -13,6 +13,7 @@ import wiremock.org.apache.http.HttpResponse;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Map;
 import java.util.Scanner;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
@@ -30,31 +31,16 @@ public class IntegrationTest extends HazelcastTestSupport {
         Node node = getNode(hz);
         PhoneHome phoneHome = new PhoneHome(node, "http://localhost:8080/ping");
 
-
         stubFor(get(urlPathEqualTo("/ping"))
                 .willReturn(aResponse()
                         .withStatus(200)
                         .withHeader("Content-Type", "application/json")
                         .withBody("content")));
 
-        phoneHome.phoneHome(false);
+        Map<String, String> parameters = phoneHome.phoneHome(false);
 
-
-        verify(1, getRequestedFor(urlPathEqualTo("/ping")));
+        parameters.forEach((k, v) -> verify(1, getRequestedFor(urlPathEqualTo("/ping")).withQueryParam(k, equalTo(v))));
 
     }
-
-    private String convertHttpResponseToString(HttpResponse httpResponse) throws IOException {
-        InputStream inputStream = httpResponse.getEntity().getContent();
-        return convertInputStreamToString(inputStream);
-    }
-
-    private String convertInputStreamToString(InputStream inputStream) {
-        Scanner scanner = new Scanner(inputStream, "UTF-8");
-        String string = scanner.useDelimiter("\\Z").next();
-        scanner.close();
-        return string;
-    }
-
 }
 
