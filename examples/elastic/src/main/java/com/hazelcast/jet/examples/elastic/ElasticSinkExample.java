@@ -52,7 +52,7 @@ public class ElasticSinkExample {
 
             JetInstance jet = Jet.bootstrappedInstance();
             jet.newJob(p).join();
-        } catch (Exception e) {
+        } finally {
             Jet.shutdownAll();
         }
     }
