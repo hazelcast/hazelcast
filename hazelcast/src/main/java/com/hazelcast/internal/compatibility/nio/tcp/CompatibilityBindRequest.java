@@ -31,7 +31,6 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
-import static com.hazelcast.internal.nio.Packet.FLAG_3_12;
 import static com.hazelcast.internal.nio.Packet.FLAG_4_0;
 
 /**
@@ -73,8 +72,7 @@ public class CompatibilityBindRequest {
         CompatibilityExtendedBindMessage bind =
                 new CompatibilityExtendedBindMessage((byte) 1, getConfiguredLocalAddresses(), remoteEndPoint, reply);
         byte[] bytes = ioService.getSerializationService().toBytes(bind);
-        Packet packet = new Packet(bytes).setPacketType(Type.COMPATIBILITY_EXTENDED_BIND)
-                                         .raiseFlags(FLAG_3_12);
+        Packet packet = new Packet(bytes).setPacketType(Type.COMPATIBILITY_EXTENDED_BIND);
         // unset 4_0 flag
         packet.resetFlagsTo(packet.getFlags() & ~FLAG_4_0);
         connection.write(packet);

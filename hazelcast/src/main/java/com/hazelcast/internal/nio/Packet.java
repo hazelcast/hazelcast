@@ -103,12 +103,6 @@ public final class Packet extends HeapData implements OutboundFrame {
      */
     public static final int FLAG_4_0 = 1 << 7;
 
-    /**
-     * Marks a packet as sent by a 3.12 member
-     */
-    public static final int FLAG_3_12 = 1 << 8;
-
-
     //            END OF HEADER FLAG SECTION
 
 
