@@ -33,12 +33,9 @@ public class IntegrationTest extends HazelcastTestSupport {
 
     @Rule
     public WireMockRule wireMockRule = new WireMockRule();
-//    WireMockServer wireMockServer=new WireMockServer(wireMockConfig().extensions((Class<? extends Extension>) PhoneHome.class));
 
     @Test
     public void test() throws IOException {
-        HazelcastInstance hz = createHazelcastInstance();
-        Node node = getNode(hz);
 
 
         stubFor(get(urlPathMatching("/ping/.*"))
@@ -48,11 +45,7 @@ public class IntegrationTest extends HazelcastTestSupport {
                         .withBody("content")));
 
 
-        CloseableHttpClient httpClient = HttpClients.createDefault();
-        HttpGet request = new HttpGet("http://localhost:8080/ping/");
-        HttpResponse httpResponse = httpClient.execute(request);
-
-        verify(1,getRequestedFor(urlMatching("/ping/.*")));
+        verify(1,getRequestedFor(urlPathMatching("/ping/.*")));
 
     }
 
