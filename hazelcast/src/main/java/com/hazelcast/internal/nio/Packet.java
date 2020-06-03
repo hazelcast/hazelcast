@@ -103,12 +103,6 @@ public final class Packet extends HeapData implements OutboundFrame {
      */
     public static final int FLAG_4_0 = 1 << 7;
 
-    /**
-     * Marks a packet as sent by a 3.12 member
-     */
-    public static final int FLAG_3_12 = 1 << 8;
-
-
     //            END OF HEADER FLAG SECTION
 
 
@@ -156,7 +150,11 @@ public final class Packet extends HeapData implements OutboundFrame {
     }
 
     public Type getPacketType() {
-        boolean isCompatibility = isFlagRaised(FLAG_3_12);
+        // the packet was sent from 3.12 if the 4_0 flag is missing
+        // 4.0.1 and 4.2 members do not set this flag
+        // so this member should not be a part of a cluster
+        // with those members
+        boolean isCompatibility = !isFlagRaised(FLAG_4_0);
         return Type.fromFlags(flags, isCompatibility);
     }
 

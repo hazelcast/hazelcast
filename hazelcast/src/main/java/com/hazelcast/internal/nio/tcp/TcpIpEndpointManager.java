@@ -178,7 +178,11 @@ public class TcpIpEndpointManager
 
     @Override
     public synchronized void accept(Packet packet) {
-        boolean isCompatibility = packet.isFlagRaised(Packet.FLAG_3_12);
+        // the packet was sent from 3.12 if the 4_0 flag is missing
+        // 4.0.1 and 4.2 members do not set this flag
+        // so this member should not be a part of a cluster
+        // with those members
+        boolean isCompatibility = !packet.isFlagRaised(Packet.FLAG_4_0);
         if (isCompatibility) {
             compatibilityBindHandler.process(packet);
         } else {

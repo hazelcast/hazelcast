@@ -405,9 +405,11 @@ class OperationRunnerImpl extends OperationRunner implements StaticMetricsProvid
         Connection connection = packet.getConn();
         Address caller = connection.getEndPoint();
         try {
-            // deserialize with compatibility serialization service
-            // if sent from 3.x member
-            boolean isCompatibility = packet.isFlagRaised(Packet.FLAG_3_12);
+            // the packet was sent from 3.12 if the 4_0 flag is missing
+            // 4.0.1 and 4.2 members do not set this flag
+            // so this member should not be a part of a cluster
+            // with those members
+            boolean isCompatibility = !packet.isFlagRaised(Packet.FLAG_4_0);
             InternalSerializationService serializationService = isCompatibility
                     ? nodeEngine.getNode().getCompatibilitySerializationService()
                     : nodeEngine.getNode().getSerializationService();
