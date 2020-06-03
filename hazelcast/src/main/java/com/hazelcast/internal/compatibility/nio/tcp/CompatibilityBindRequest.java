@@ -69,8 +69,6 @@ public class CompatibilityBindRequest {
         byte[] bytes = ioService.getSerializationService().toBytes(bind);
         Packet packet = new Packet(bytes).setPacketType(Packet.Type.BIND)
                                          .raiseFlags(Packet.FLAG_4_0);
-        // unset 3_12 flag
-        packet.resetFlagsTo(packet.getFlags() & ~Packet.FLAG_3_12);
         connection.write(packet);
         //now you can send anything...
     }

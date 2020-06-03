@@ -103,17 +103,9 @@ public final class Packet extends HeapData implements OutboundFrame {
     /**
      * Reserved for 4.x member compatibility code to mark packets as being sent
      * by a 4.x member. The absence of this flag does not mean the packet was
-     * not sent by a 4.x member, though as it is only set on special
-     * compatibility releases. Instead, check for the presence of the
-     * {@link #FLAG_3_12} which should be set by 3.12.x compatibility releases.
+     * not sent by a 4.x member.
      */
     public static final int FLAG_4_0 = 1 << 7;
-
-    /**
-     * Marks a packet as sent by a 3.12 member
-     */
-    public static final int FLAG_3_12 = 1 << 8;
-
 
     //            END OF HEADER FLAG SECTION
 
@@ -125,7 +117,6 @@ public final class Packet extends HeapData implements OutboundFrame {
     private transient Connection conn;
 
     public Packet() {
-        raiseFlags(FLAG_3_12);
     }
 
     public Packet(byte[] payload) {
@@ -135,7 +126,6 @@ public final class Packet extends HeapData implements OutboundFrame {
     public Packet(byte[] payload, int partitionId) {
         super(payload);
         this.partitionId = partitionId;
-        raiseFlags(FLAG_3_12);
     }
 
     /**
