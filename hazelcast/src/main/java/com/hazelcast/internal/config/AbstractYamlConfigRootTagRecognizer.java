@@ -17,6 +17,7 @@
 package com.hazelcast.internal.config;
 
 import com.hazelcast.config.ConfigRecognizer;
+import com.hazelcast.config.ConfigStream;
 import com.hazelcast.internal.yaml.YamlException;
 import com.hazelcast.internal.yaml.YamlLoader;
 import com.hazelcast.logging.ILogger;
@@ -24,7 +25,6 @@ import com.hazelcast.logging.Logger;
 import org.snakeyaml.engine.v1.api.ConstructNode;
 import org.snakeyaml.engine.v1.api.LoadSettingsBuilder;
 
-import java.io.InputStream;
 import java.util.Optional;
 
 /**
@@ -55,7 +55,7 @@ public abstract class AbstractYamlConfigRootTagRecognizer implements ConfigRecog
     }
 
     @Override
-    public boolean isRecognized(InputStream configStream) {
+    public boolean isRecognized(ConfigStream configStream) {
         try {
             YamlLoader.load(configStream, expectedRootNode);
             return true;

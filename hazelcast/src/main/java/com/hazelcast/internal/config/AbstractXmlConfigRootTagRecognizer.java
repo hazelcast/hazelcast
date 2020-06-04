@@ -17,6 +17,7 @@
 package com.hazelcast.internal.config;
 
 import com.hazelcast.config.ConfigRecognizer;
+import com.hazelcast.config.ConfigStream;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import org.xml.sax.Attributes;
@@ -26,7 +27,6 @@ import org.xml.sax.helpers.DefaultHandler;
 
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
-import java.io.InputStream;
 
 import static java.util.Objects.requireNonNull;
 
@@ -58,7 +58,7 @@ public class AbstractXmlConfigRootTagRecognizer implements ConfigRecognizer {
     }
 
     @Override
-    public boolean isRecognized(InputStream configStream) throws Exception {
+    public boolean isRecognized(ConfigStream configStream) throws Exception {
         MemberHandler memberHandler = new MemberHandler(expectedRootNode);
         try {
             saxParser.parse(configStream, memberHandler);

@@ -25,8 +25,8 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
-import java.io.InputStream;
 import java.util.Scanner;
 
 import static org.junit.Assert.assertFalse;
@@ -59,7 +59,30 @@ public class ConfigRecognizerTest {
                 + HAZELCAST_START_TAG
                 + "  <cluster-name>foobar</cluster-name>\n"
                 + HAZELCAST_END_TAG;
-        ByteArrayInputStream bis = new ByteArrayInputStream(xml.getBytes());
+        byte[] bytes = xml.getBytes();
+        ConfigStream bis = new ConfigStream(new BufferedInputStream(new ByteArrayInputStream(bytes), bytes.length));
+
+        assertTrue(memberRecognizer.isRecognized(bis));
+        assertFalse(clientRecognizer.isRecognized(bis));
+        assertFalse(clientFailoverRecognizer.isRecognized(bis));
+    }
+
+    @Test
+    public void testRecognizeMemberFullBlownXmlPartialStreamRead() throws Exception {
+        ConfigRecognizer memberRecognizer = new MemberConfigRecognizer();
+        ConfigRecognizer clientRecognizer = new ClientConfigRecognizer();
+        ConfigRecognizer clientFailoverRecognizer = new ClientFailoverConfigRecognizer();
+
+        String xml = ""
+                + "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+                + "<!--\n"
+                + "BANNER\n"
+                + "-->\n"
+                + "\n"
+                + HAZELCAST_START_TAG  // end of read limit:116 bytes
+                + "  <cluster-name>foobar</cluster-name>"; // incomplete config, this line is not consumed by the recognizer
+        byte[] bytes = xml.getBytes();
+        ConfigStream bis = new ConfigStream(new BufferedInputStream(new ByteArrayInputStream(bytes), bytes.length), 116);
 
         assertTrue(memberRecognizer.isRecognized(bis));
         assertFalse(clientRecognizer.isRecognized(bis));
@@ -75,7 +98,7 @@ public class ConfigRecognizerTest {
         String xml = HAZELCAST_START_TAG
                 + "  <cluster-name>foobar</cluster-name>\n"
                 + HAZELCAST_END_TAG;
-        ByteArrayInputStream bis = new ByteArrayInputStream(xml.getBytes());
+        ConfigStream bis = new ConfigStream(new ByteArrayInputStream(xml.getBytes()));
 
         assertTrue(memberRecognizer.isRecognized(bis));
         assertFalse(clientRecognizer.isRecognized(bis));
@@ -91,7 +114,23 @@ public class ConfigRecognizerTest {
         String xml = HAZELCAST_CLIENT_START_TAG
                 + "  <cluster-name>foobar</cluster-name>\n"
                 + HAZELCAST_CLIENT_END_TAG;
-        ByteArrayInputStream bis = new ByteArrayInputStream(xml.getBytes());
+        ConfigStream bis = new ConfigStream(new ByteArrayInputStream(xml.getBytes()));
+
+        assertFalse(memberRecognizer.isRecognized(bis));
+        assertTrue(clientRecognizer.isRecognized(bis));
+        assertFalse(clientFailoverRecognizer.isRecognized(bis));
+    }
+
+    @Test
+    public void testRecognizeClientXmlPartialStreamRead() throws Exception {
+        ConfigRecognizer memberRecognizer = new MemberConfigRecognizer();
+        ConfigRecognizer clientRecognizer = new ClientConfigRecognizer();
+        ConfigRecognizer clientFailoverRecognizer = new ClientFailoverConfigRecognizer();
+
+        String xml = HAZELCAST_CLIENT_START_TAG // end of read limit:72 bytes
+                + "  <cluster-name>foobar</cluster-name>\n"; // incomplete config, this line is not consumed by the recognizers
+        byte[] bytes = xml.getBytes();
+        ConfigStream bis = new ConfigStream(new BufferedInputStream(new ByteArrayInputStream(bytes), bytes.length), 72);
 
         assertFalse(memberRecognizer.isRecognized(bis));
         assertTrue(clientRecognizer.isRecognized(bis));
@@ -107,7 +146,23 @@ public class ConfigRecognizerTest {
         String xml = HAZELCAST_CLIENT_FAILOVER_START_TAG
                 + "  <cluster-name>foobar</cluster-name>\n"
                 + HAZELCAST_CLIENT_FAILOVER_END_TAG;
-        ByteArrayInputStream bis = new ByteArrayInputStream(xml.getBytes());
+        ConfigStream bis = new ConfigStream(new ByteArrayInputStream(xml.getBytes()));
+
+        assertFalse(memberRecognizer.isRecognized(bis));
+        assertFalse(clientRecognizer.isRecognized(bis));
+        assertTrue(clientFailoverRecognizer.isRecognized(bis));
+    }
+
+    @Test
+    public void testRecognizeFailoverClientXmlPartialStreamRead() throws Exception {
+        ConfigRecognizer memberRecognizer = new MemberConfigRecognizer();
+        ConfigRecognizer clientRecognizer = new ClientConfigRecognizer();
+        ConfigRecognizer clientFailoverRecognizer = new ClientFailoverConfigRecognizer();
+
+        String xml = HAZELCAST_CLIENT_FAILOVER_START_TAG // end of read limit:90 bytes
+                + "  <cluster-name>foobar</cluster-name>\n"; // incomplete config, this line is not consumed by the recognizers
+        byte[] bytes = xml.getBytes();
+        ConfigStream bis = new ConfigStream(new BufferedInputStream(new ByteArrayInputStream(bytes), bytes.length), 90);
 
         assertFalse(memberRecognizer.isRecognized(bis));
         assertFalse(clientRecognizer.isRecognized(bis));
@@ -121,7 +176,7 @@ public class ConfigRecognizerTest {
         ConfigRecognizer clientFailoverRecognizer = new ClientFailoverConfigRecognizer();
 
         String xml = "invalid-xml";
-        ByteArrayInputStream bis = new ByteArrayInputStream(xml.getBytes());
+        ConfigStream bis = new ConfigStream(new ByteArrayInputStream(xml.getBytes()));
 
         assertFalse(memberRecognizer.isRecognized(bis));
         assertFalse(clientRecognizer.isRecognized(bis));
@@ -137,7 +192,23 @@ public class ConfigRecognizerTest {
         String yaml = ""
                 + "hazelcast:\n"
                 + "  cluster-name: foobar";
-        ByteArrayInputStream bis = new ByteArrayInputStream(yaml.getBytes());
+        ConfigStream bis = new ConfigStream(new ByteArrayInputStream(yaml.getBytes()));
+
+        assertTrue(memberRecognizer.isRecognized(bis));
+        assertFalse(clientRecognizer.isRecognized(bis));
+        assertFalse(clientFailoverRecognizer.isRecognized(bis));
+    }
+
+    @Test
+    public void testRecognizeMemberYamlPartialStreamRead() throws Exception {
+        ConfigRecognizer memberRecognizer = new MemberConfigRecognizer();
+        ConfigRecognizer clientRecognizer = new ClientConfigRecognizer();
+        ConfigRecognizer clientFailoverRecognizer = new ClientFailoverConfigRecognizer();
+
+        String yaml = ""
+                + "hazelcast:\n"
+                + "  c"; // ...luster-name: foobar"; "c" is needed to make the YAML document valid
+        ConfigStream bis = new ConfigStream(new BufferedInputStream(new ByteArrayInputStream(yaml.getBytes())), 14);
 
         assertTrue(memberRecognizer.isRecognized(bis));
         assertFalse(clientRecognizer.isRecognized(bis));
@@ -153,7 +224,23 @@ public class ConfigRecognizerTest {
         String yaml = ""
                 + "hazelcast-client:\n"
                 + "  cluster-name: foobar";
-        ByteArrayInputStream bis = new ByteArrayInputStream(yaml.getBytes());
+        ConfigStream bis = new ConfigStream(new ByteArrayInputStream(yaml.getBytes()));
+
+        assertFalse(memberRecognizer.isRecognized(bis));
+        assertTrue(clientRecognizer.isRecognized(bis));
+        assertFalse(clientFailoverRecognizer.isRecognized(bis));
+    }
+
+    @Test
+    public void testRecognizeClientYamlPartialStreamRead() throws Exception {
+        ConfigRecognizer memberRecognizer = new MemberConfigRecognizer();
+        ConfigRecognizer clientRecognizer = new ClientConfigRecognizer();
+        ConfigRecognizer clientFailoverRecognizer = new ClientFailoverConfigRecognizer();
+
+        String yaml = ""
+                + "hazelcast-client:\n"
+                + "  c"; // ...luster-name: foobar"; "c" is needed to make the YAML document valid
+        ConfigStream bis = new ConfigStream(new BufferedInputStream(new ByteArrayInputStream(yaml.getBytes())), 21);
 
         assertFalse(memberRecognizer.isRecognized(bis));
         assertTrue(clientRecognizer.isRecognized(bis));
@@ -169,7 +256,23 @@ public class ConfigRecognizerTest {
         String yaml = ""
                 + "hazelcast-client-failover:\n"
                 + "  cluster-name: foobar";
-        ByteArrayInputStream bis = new ByteArrayInputStream(yaml.getBytes());
+        ConfigStream bis = new ConfigStream(new ByteArrayInputStream(yaml.getBytes()));
+
+        assertFalse(memberRecognizer.isRecognized(bis));
+        assertFalse(clientRecognizer.isRecognized(bis));
+        assertTrue(clientFailoverRecognizer.isRecognized(bis));
+    }
+
+    @Test
+    public void testRecognizeFailoverClientYamlPartialStreamRead() throws Exception {
+        ConfigRecognizer memberRecognizer = new MemberConfigRecognizer();
+        ConfigRecognizer clientRecognizer = new ClientConfigRecognizer();
+        ConfigRecognizer clientFailoverRecognizer = new ClientFailoverConfigRecognizer();
+
+        String yaml = ""
+                + "hazelcast-client-failover:\n"
+                + "  c"; // ...luster-name: foobar"; "c" is needed to make the YAML document valid
+        ConfigStream bis = new ConfigStream(new BufferedInputStream(new ByteArrayInputStream(yaml.getBytes())), 30);
 
         assertFalse(memberRecognizer.isRecognized(bis));
         assertFalse(clientRecognizer.isRecognized(bis));
@@ -183,7 +286,7 @@ public class ConfigRecognizerTest {
         ConfigRecognizer clientFailoverRecognizer = new ClientFailoverConfigRecognizer();
 
         String yaml = "invalid-yaml";
-        ByteArrayInputStream bis = new ByteArrayInputStream(yaml.getBytes());
+        ConfigStream bis = new ConfigStream(new ByteArrayInputStream(yaml.getBytes()));
 
         assertFalse(memberRecognizer.isRecognized(bis));
         assertFalse(clientRecognizer.isRecognized(bis));
@@ -198,7 +301,7 @@ public class ConfigRecognizerTest {
         ConfigRecognizer clientFailoverRecognizer = new ClientFailoverConfigRecognizer(customRecognizer);
 
         String config = "test-hazelcast-config";
-        ByteArrayInputStream bis = new ByteArrayInputStream(config.getBytes());
+        ConfigStream bis = new ConfigStream(new ByteArrayInputStream(config.getBytes()));
 
         assertTrue(memberRecognizer.isRecognized(bis));
         assertTrue(clientRecognizer.isRecognized(bis));
@@ -208,7 +311,7 @@ public class ConfigRecognizerTest {
     private class TestConfigRecognizer implements ConfigRecognizer {
 
         @Override
-        public boolean isRecognized(InputStream configStream) throws Exception {
+        public boolean isRecognized(ConfigStream configStream) throws Exception {
             String firstLine;
             try (Scanner scanner = new Scanner(configStream)) {
                 firstLine = scanner.nextLine();

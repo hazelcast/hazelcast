@@ -16,8 +16,6 @@
 
 package com.hazelcast.config;
 
-import java.io.InputStream;
-
 /**
  * Interface for recognizing a declarative Hazelcast configuration
  * based on the rules defined in the actual implementation.
@@ -34,5 +32,5 @@ public interface ConfigRecognizer {
      * otherwise
      * @throws Exception If any error occurs during the recognition
      */
-    boolean isRecognized(InputStream configStream) throws Exception;
+    boolean isRecognized(ConfigStream configStream) throws Exception;
 }

@@ -17,8 +17,8 @@
 package com.hazelcast.internal.config;
 
 import com.hazelcast.config.ConfigRecognizer;
+import com.hazelcast.config.ConfigStream;
 
-import java.io.InputStream;
 import java.util.Collection;
 
 /**
@@ -33,7 +33,7 @@ public class AbstractConfigRecognizer implements ConfigRecognizer {
     }
 
     @Override
-    public boolean isRecognized(InputStream configStream) throws Exception {
+    public boolean isRecognized(ConfigStream configStream) throws Exception {
         boolean recognized = false;
         for (ConfigRecognizer recognizer : recognizers) {
             configStream.reset();
