@@ -67,6 +67,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -915,6 +916,14 @@ public class BasicMapTest extends HazelcastTestSupport {
         } catch (ExecutionException e) {
             e.printStackTrace();
         }
+    }
+
+    @Test
+    public void testAsyncMethodChaining() {
+        IMap<Integer, Integer> map = getInstance().getMap("testGetPutRemoveAsync");
+        CompletionStage<Integer> setThenGet = map.setAsync(1, 1)
+                                              .thenCompose(v -> map.getAsync(1));
+        assertEquals(1L, (long) setThenGet.toCompletableFuture().join());
     }
 
     @Test
