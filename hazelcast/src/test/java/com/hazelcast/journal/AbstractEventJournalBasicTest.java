@@ -32,6 +32,7 @@ import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastTestSupport;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -475,6 +476,7 @@ public abstract class AbstractEventJournalBasicTest<EJ_TYPE> extends HazelcastTe
     }
 
     @Test
+    @Ignore("https://github.com/hazelcast/hazelcast/issues/16964")
     public void allowReadingWithFutureSeq() throws Exception {
         final EventJournalTestContext<String, Integer, EJ_TYPE> context = createContext();
 

@@ -32,11 +32,11 @@ import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.metrics.StaticMetricsProvider;
 import com.hazelcast.internal.nio.Packet;
-import com.hazelcast.internal.server.ServerConnection;
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.partition.PartitionReplica;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.impl.SerializationServiceV1;
+import com.hazelcast.internal.server.ServerConnection;
 import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.internal.util.counters.Counter;
 import com.hazelcast.logging.ILogger;
@@ -46,7 +46,6 @@ import com.hazelcast.spi.exception.CallerNotMemberException;
 import com.hazelcast.spi.exception.PartitionMigratingException;
 import com.hazelcast.spi.exception.ResponseAlreadySentException;
 import com.hazelcast.spi.exception.RetryableException;
-import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.spi.exception.WrongTargetException;
 import com.hazelcast.spi.impl.AllowedDuringPassiveState;
 import com.hazelcast.spi.impl.NodeEngineImpl;
@@ -278,16 +277,6 @@ class OperationRunnerImpl extends OperationRunner implements StaticMetricsProvid
         if (nodeEngine.getClusterService().getClusterState() == ClusterState.PASSIVE) {
             throw new IllegalStateException("Cluster is in " + ClusterState.PASSIVE + " state! Operation: " + op);
         }
-
-        // Operation has no partition ID, so it's sent to this node in purpose.
-        // Operation will fail since node is shutting down or cluster is passive.
-        if (op.getPartitionId() < 0) {
-            throw new HazelcastInstanceNotActiveException("Member " + localAddress + " is currently passive! Operation: " + op);
-        }
-
-        // Custer is not passive but this node is shutting down.
-        // Since operation has a partition ID, it must be retried on another node.
-        throw new RetryableHazelcastException("Member " + localAddress + " is currently shutting down! Operation: " + op);
     }
 
     /**
