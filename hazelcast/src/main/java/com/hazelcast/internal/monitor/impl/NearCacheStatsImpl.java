@@ -16,9 +16,7 @@
 
 package com.hazelcast.internal.monitor.impl;
 
-import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.metrics.Probe;
-import com.hazelcast.json.internal.JsonSerializable;
 import com.hazelcast.nearcache.NearCacheStats;
 
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
@@ -39,13 +37,11 @@ import static com.hazelcast.internal.metrics.MetricDescriptorConstants.NEARCACHE
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.NEARCACHE_METRIC_PERSISTENCE_COUNT;
 import static com.hazelcast.internal.metrics.ProbeUnit.BYTES;
 import static com.hazelcast.internal.metrics.ProbeUnit.MS;
-import static com.hazelcast.internal.util.JsonUtil.getLong;
-import static com.hazelcast.internal.util.JsonUtil.getString;
 import static java.lang.String.format;
 import static java.util.concurrent.atomic.AtomicLongFieldUpdater.newUpdater;
 
 @SuppressWarnings("checkstyle:methodcount")
-public class NearCacheStatsImpl implements NearCacheStats, JsonSerializable {
+public class NearCacheStatsImpl implements NearCacheStats {
 
     private static final double PERCENTAGE = 100.0;
 
@@ -69,7 +65,7 @@ public class NearCacheStatsImpl implements NearCacheStats, JsonSerializable {
             newUpdater(NearCacheStatsImpl.class, "persistenceCount");
 
     @Probe(name = NEARCACHE_METRIC_CREATION_TIME, unit = MS)
-    private volatile long creationTime;
+    private final long creationTime;
     @Probe(name = NEARCACHE_METRIC_OWNED_ENTRY_COUNT)
     private volatile long ownedEntryCount;
     @Probe(name = NEARCACHE_METRIC_OWNED_ENTRY_MEMORY_COST, unit = BYTES)
@@ -297,46 +293,6 @@ public class NearCacheStatsImpl implements NearCacheStats, JsonSerializable {
     @Override
     public String getLastPersistenceFailure() {
         return lastPersistenceFailure;
-    }
-
-    @Override
-    public JsonObject toJson() {
-        JsonObject root = new JsonObject();
-        root.add("ownedEntryCount", ownedEntryCount);
-        root.add("ownedEntryMemoryCost", ownedEntryMemoryCost);
-        root.add("creationTime", creationTime);
-        root.add("hits", hits);
-        root.add("misses", misses);
-        root.add("evictions", evictions);
-        root.add("expirations", expirations);
-        root.add("invalidations", invalidations);
-        root.add("invalidationEvents", invalidationRequests);
-        root.add("persistenceCount", persistenceCount);
-        root.add("lastPersistenceTime", lastPersistenceTime);
-        root.add("lastPersistenceDuration", lastPersistenceDuration);
-        root.add("lastPersistenceWrittenBytes", lastPersistenceWrittenBytes);
-        root.add("lastPersistenceKeyCount", lastPersistenceKeyCount);
-        root.add("lastPersistenceFailure", lastPersistenceFailure);
-        return root;
-    }
-
-    @Override
-    public void fromJson(JsonObject json) {
-        ownedEntryCount = getLong(json, "ownedEntryCount", -1L);
-        ownedEntryMemoryCost = getLong(json, "ownedEntryMemoryCost", -1L);
-        creationTime = getLong(json, "creationTime", -1L);
-        hits = getLong(json, "hits", -1L);
-        misses = getLong(json, "misses", -1L);
-        evictions = getLong(json, "evictions", -1L);
-        expirations = getLong(json, "expirations", -1L);
-        invalidations = getLong(json, "invalidations", -1L);
-        invalidationRequests = getLong(json, "invalidationEvents", -1L);
-        persistenceCount = getLong(json, "persistenceCount", -1L);
-        lastPersistenceTime = getLong(json, "lastPersistenceTime", -1L);
-        lastPersistenceDuration = getLong(json, "lastPersistenceDuration", -1L);
-        lastPersistenceWrittenBytes = getLong(json, "lastPersistenceWrittenBytes", -1L);
-        lastPersistenceKeyCount = getLong(json, "lastPersistenceKeyCount", -1L);
-        lastPersistenceFailure = getString(json, "lastPersistenceFailure", "");
     }
 
     @Override

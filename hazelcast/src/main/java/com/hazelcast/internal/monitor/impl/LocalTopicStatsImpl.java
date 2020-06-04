@@ -16,10 +16,8 @@
 
 package com.hazelcast.internal.monitor.impl;
 
-import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.util.Clock;
-import com.hazelcast.json.internal.JsonSerializable;
 import com.hazelcast.topic.LocalTopicStats;
 import com.hazelcast.topic.impl.reliable.ReliableMessageRunner;
 
@@ -29,17 +27,16 @@ import static com.hazelcast.internal.metrics.MetricDescriptorConstants.TOPIC_MET
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.TOPIC_METRIC_TOTAL_PUBLISHES;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.TOPIC_METRIC_TOTAL_RECEIVED_MESSAGES;
 import static com.hazelcast.internal.metrics.ProbeUnit.MS;
-import static com.hazelcast.internal.util.JsonUtil.getLong;
 import static java.util.concurrent.atomic.AtomicLongFieldUpdater.newUpdater;
 
-public class LocalTopicStatsImpl implements LocalTopicStats, JsonSerializable {
+public class LocalTopicStatsImpl implements LocalTopicStats {
 
     private static final AtomicLongFieldUpdater<LocalTopicStatsImpl> TOTAL_PUBLISHES =
             newUpdater(LocalTopicStatsImpl.class, "totalPublishes");
     private static final AtomicLongFieldUpdater<LocalTopicStatsImpl> TOTAL_RECEIVED_MESSAGES =
             newUpdater(LocalTopicStatsImpl.class, "totalReceivedMessages");
     @Probe(name = TOPIC_METRIC_CREATION_TIME, unit = MS)
-    private long creationTime;
+    private final long creationTime;
 
     // These fields are only accessed through the updaters
     @Probe(name = TOPIC_METRIC_TOTAL_PUBLISHES)
@@ -88,22 +85,6 @@ public class LocalTopicStatsImpl implements LocalTopicStats, JsonSerializable {
      */
     public void incrementReceives() {
         TOTAL_RECEIVED_MESSAGES.incrementAndGet(this);
-    }
-
-    @Override
-    public JsonObject toJson() {
-        JsonObject root = new JsonObject();
-        root.add("creationTime", creationTime);
-        root.add("totalPublishes", totalPublishes);
-        root.add("totalReceivedMessages", totalReceivedMessages);
-        return root;
-    }
-
-    @Override
-    public void fromJson(JsonObject json) {
-        creationTime = getLong(json, "creationTime", -1L);
-        totalPublishes = getLong(json, "totalPublishes", -1L);
-        totalReceivedMessages = getLong(json, "totalReceivedMessages", -1L);
     }
 
     @Override

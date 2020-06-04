@@ -40,7 +40,6 @@ public class MemberPartitionStateImplTest {
         memberPartitionState = new MemberPartitionStateImpl();
 
         memberPartitionState.setMemberStateSafe(true);
-        memberPartitionState.setMigrationQueueSize(125342);
         memberPartitionState.getPartitions().add(5);
         memberPartitionState.getPartitions().add(18);
     }
@@ -48,7 +47,6 @@ public class MemberPartitionStateImplTest {
     @Test
     public void testDefaultConstructor() {
         assertTrue(memberPartitionState.isMemberStateSafe());
-        assertEquals(125342, memberPartitionState.getMigrationQueueSize());
         assertNotNull(memberPartitionState.getPartitions());
         assertEquals(2, memberPartitionState.getPartitions().size());
         assertNotNull(memberPartitionState.toString());
@@ -61,7 +59,6 @@ public class MemberPartitionStateImplTest {
         deserialized.fromJson(serialized);
 
         assertTrue(deserialized.isMemberStateSafe());
-        assertEquals(125342, deserialized.getMigrationQueueSize());
         assertNotNull(deserialized.getPartitions());
         assertEquals(2, deserialized.getPartitions().size());
         assertNotNull(deserialized.toString());

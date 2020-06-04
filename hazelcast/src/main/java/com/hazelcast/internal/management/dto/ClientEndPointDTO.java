@@ -62,7 +62,7 @@ public class ClientEndPointDTO implements JsonSerializable {
 
     public ClientEndPointDTO(Client client) {
         this.uuid = client.getUuid();
-        this.clientType = client.getClientType().toString();
+        this.clientType = client.getClientType();
         this.name = client.getName();
         this.labels = client.getLabels();
 

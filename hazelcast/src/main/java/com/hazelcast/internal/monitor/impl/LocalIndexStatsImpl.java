@@ -16,9 +16,7 @@
 
 package com.hazelcast.internal.monitor.impl;
 
-import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.metrics.Probe;
-import com.hazelcast.json.internal.JsonSerializable;
 import com.hazelcast.query.LocalIndexStats;
 
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MAP_METRIC_INDEX_AVERAGE_HIT_LATENCY;
@@ -43,7 +41,7 @@ import static com.hazelcast.internal.metrics.ProbeUnit.PERCENT;
  * public API.
  */
 @SuppressWarnings("checkstyle:methodcount")
-public class LocalIndexStatsImpl implements LocalIndexStats, JsonSerializable {
+public class LocalIndexStatsImpl implements LocalIndexStats {
 
     @Probe(name = MAP_METRIC_INDEX_CREATION_TIME, unit = MS)
     private volatile long creationTime;
@@ -276,46 +274,21 @@ public class LocalIndexStatsImpl implements LocalIndexStats, JsonSerializable {
     }
 
     @Override
-    public JsonObject toJson() {
-        JsonObject json = new JsonObject();
-        json.add("creationTime", creationTime);
-        json.add("hitCount", hitCount);
-        json.add("queryCount", queryCount);
-        json.add("averageHitSelectivity", averageHitSelectivity);
-        json.add("averageHitLatency", averageHitLatency);
-        json.add("insertCount", insertCount);
-        json.add("totalInsertLatency", totalInsertLatency);
-        json.add("updateCount", updateCount);
-        json.add("totalUpdateLatency", totalUpdateLatency);
-        json.add("removeCount", removeCount);
-        json.add("totalRemoveLatency", totalRemoveLatency);
-        json.add("memoryCost", memoryCost);
-        return json;
-    }
-
-    @Override
-    public void fromJson(JsonObject json) {
-        creationTime = json.getLong("creationTime", -1);
-        hitCount = json.getLong("hitCount", -1);
-        queryCount = json.getLong("queryCount", -1);
-        averageHitSelectivity = json.getDouble("averageHitSelectivity", -1.0);
-        averageHitLatency = json.getLong("averageHitLatency", -1);
-        insertCount = json.getLong("insertCount", -1);
-        totalInsertLatency = json.getLong("totalInsertLatency", -1);
-        updateCount = json.getLong("updateCount", -1);
-        totalUpdateLatency = json.getLong("totalUpdateLatency", -1);
-        removeCount = json.getLong("removeCount", -1);
-        totalRemoveLatency = json.getLong("totalRemoveLatency", -1);
-        memoryCost = json.getLong("memoryCost", -1);
-    }
-
-    @Override
     public String toString() {
-        return "LocalIndexStatsImpl{" + "creationTime=" + creationTime + ", hitCount=" + hitCount + ", queryCount=" + queryCount
-                + ", averageHitSelectivity=" + averageHitSelectivity + ", averageHitLatency=" + averageHitLatency
-                + ", insertCount=" + insertCount + ", totalInsertLatency=" + totalInsertLatency + ", updateCount=" + updateCount
-                + ", totalUpdateLatency=" + totalUpdateLatency + ", removeCount=" + removeCount + ", totalRemoveLatency="
-                + totalRemoveLatency + ", memoryCost=" + memoryCost + '}';
+        return "LocalIndexStatsImpl{"
+                + "creationTime=" + creationTime
+                + ", hitCount=" + hitCount
+                + ", queryCount=" + queryCount
+                + ", averageHitSelectivity=" + averageHitSelectivity
+                + ", averageHitLatency=" + averageHitLatency
+                + ", insertCount=" + insertCount
+                + ", totalInsertLatency=" + totalInsertLatency
+                + ", updateCount=" + updateCount
+                + ", totalUpdateLatency=" + totalUpdateLatency
+                + ", removeCount=" + removeCount
+                + ", totalRemoveLatency=" + totalRemoveLatency
+                + ", memoryCost=" + memoryCost
+                + '}';
     }
 
 }

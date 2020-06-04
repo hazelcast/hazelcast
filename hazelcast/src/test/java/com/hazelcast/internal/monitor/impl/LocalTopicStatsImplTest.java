@@ -16,7 +16,6 @@
 
 package com.hazelcast.internal.monitor.impl;
 
-import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -52,17 +51,5 @@ public class LocalTopicStatsImplTest {
         assertEquals(3, localTopicStats.getPublishOperationCount());
         assertEquals(2, localTopicStats.getReceiveOperationCount());
         assertNotNull(localTopicStats.toString());
-    }
-
-    @Test
-    public void testSerialization() {
-        JsonObject serialized = localTopicStats.toJson();
-        LocalTopicStatsImpl deserialized = new LocalTopicStatsImpl();
-        deserialized.fromJson(serialized);
-
-        assertTrue(deserialized.getCreationTime() > 0);
-        assertEquals(3, deserialized.getPublishOperationCount());
-        assertEquals(2, deserialized.getReceiveOperationCount());
-        assertNotNull(deserialized.toString());
     }
 }

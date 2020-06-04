@@ -17,144 +17,68 @@
 package com.hazelcast.internal.monitor.impl;
 
 import com.hazelcast.cluster.Address;
-import com.hazelcast.collection.LocalQueueStats;
-import com.hazelcast.executor.LocalExecutorStats;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.internal.json.JsonArray;
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.json.JsonValue;
-import com.hazelcast.internal.management.dto.AdvancedNetworkStatsDTO;
 import com.hazelcast.internal.management.dto.ClientEndPointDTO;
 import com.hazelcast.internal.management.dto.ClusterHotRestartStatusDTO;
 import com.hazelcast.internal.monitor.HotRestartState;
-import com.hazelcast.internal.monitor.LocalCacheStats;
-import com.hazelcast.internal.monitor.LocalFlakeIdGeneratorStats;
-import com.hazelcast.internal.monitor.LocalMemoryStats;
 import com.hazelcast.internal.monitor.LocalOperationStats;
-import com.hazelcast.internal.monitor.LocalPNCounterStats;
 import com.hazelcast.internal.monitor.LocalWanStats;
 import com.hazelcast.internal.monitor.MemberPartitionState;
 import com.hazelcast.internal.monitor.MemberState;
 import com.hazelcast.internal.monitor.NodeState;
-import com.hazelcast.internal.monitor.WanSyncState;
 import com.hazelcast.json.internal.JsonSerializable;
-import com.hazelcast.map.LocalMapStats;
-import com.hazelcast.multimap.LocalMultiMapStats;
-import com.hazelcast.replicatedmap.LocalReplicatedMapStats;
-import com.hazelcast.topic.LocalTopicStats;
 
 import java.net.UnknownHostException;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.UUID;
 
 import static com.hazelcast.internal.util.EmptyStatement.ignore;
 import static com.hazelcast.internal.util.JsonUtil.getArray;
 import static com.hazelcast.internal.util.JsonUtil.getObject;
 import static com.hazelcast.internal.util.JsonUtil.getString;
+import static java.util.Collections.emptyMap;
+import static java.util.Collections.emptySet;
 
 @SuppressWarnings({"checkstyle:classdataabstractioncoupling",
         "checkstyle:classfanoutcomplexity",
         "checkstyle:methodcount"})
 public class MemberStateImpl implements MemberState {
+
     private String address;
     private UUID uuid;
     private UUID cpMemberUuid;
     private String name;
-    private Map<EndpointQualifier, Address> endpoints = new HashMap<>();
-    private Map<String, Long> runtimeProps = new HashMap<>();
-    private Map<String, LocalMapStats> mapStats = new HashMap<>();
-    private Map<String, LocalMultiMapStats> multiMapStats = new HashMap<>();
-    private Map<String, LocalQueueStats> queueStats = new HashMap<>();
-    private Map<String, LocalTopicStats> topicStats = new HashMap<>();
-    private Map<String, LocalTopicStats> reliableTopicStats = new HashMap<>();
-    private Map<String, LocalPNCounterStats> pnCounterStats = new HashMap<>();
-    private Map<String, LocalExecutorStats> executorStats = new HashMap<>();
-    private Map<String, LocalReplicatedMapStats> replicatedMapStats = new HashMap<>();
-    private Map<String, LocalCacheStats> cacheStats = new HashMap<>();
-    private Map<String, LocalWanStats> wanStats = new HashMap<>();
-    private Map<String, LocalFlakeIdGeneratorStats> flakeIdGeneratorStats = new HashMap<>();
-    private Collection<ClientEndPointDTO> clients = new HashSet<>();
-    private Map<UUID, String> clientStats = new HashMap<>();
-    private LocalMemoryStats memoryStats = new LocalMemoryStatsImpl();
+    private Map<EndpointQualifier, Address> endpoints = emptyMap();
+    private Set<String> mapsWithStats = emptySet();
+    private Set<String> multiMapsWithStats = emptySet();
+    private Set<String> replicatedMapsWithStats = emptySet();
+    private Set<String> queuesWithStats = emptySet();
+    private Set<String> topicsWithStats = emptySet();
+    private Set<String> reliableTopicsWithStats = emptySet();
+    private Set<String> pnCountersWithStats = emptySet();
+    private Set<String> executorsWithStats = emptySet();
+    private Set<String> cachesWithStats = emptySet();
+    private Set<String> flakeIdGeneratorsWithStats = emptySet();
+    private Collection<ClientEndPointDTO> clients = emptySet();
+    private Map<UUID, String> clientStats = emptyMap();
     private MemberPartitionState memberPartitionState = new MemberPartitionStateImpl();
     private LocalOperationStats operationStats = new LocalOperationStatsImpl();
     private NodeState nodeState = new NodeStateImpl();
     private HotRestartState hotRestartState = new HotRestartStateImpl();
     private ClusterHotRestartStatusDTO clusterHotRestartStatus = new ClusterHotRestartStatusDTO();
-    private WanSyncState wanSyncState = new WanSyncStateImpl();
-    private AdvancedNetworkStatsDTO inboundNetworkStats = new AdvancedNetworkStatsDTO();
-    private AdvancedNetworkStatsDTO outboundNetworkStats = new AdvancedNetworkStatsDTO();
+    private final Map<String, LocalWanStats> wanStats = new HashMap<>();
 
     public MemberStateImpl() {
-    }
-
-    @Override
-    public Map<String, Long> getRuntimeProps() {
-        return runtimeProps;
-    }
-
-    public void setRuntimeProps(Map<String, Long> runtimeProps) {
-        this.runtimeProps = runtimeProps;
-    }
-
-    @Override
-    public LocalMapStats getLocalMapStats(String mapName) {
-        return mapStats.get(mapName);
-    }
-
-    @Override
-    public LocalMultiMapStats getLocalMultiMapStats(String mapName) {
-        return multiMapStats.get(mapName);
-    }
-
-    @Override
-    public LocalQueueStats getLocalQueueStats(String queueName) {
-        return queueStats.get(queueName);
-    }
-
-    @Override
-    public LocalTopicStats getLocalTopicStats(String topicName) {
-        return topicStats.get(topicName);
-    }
-
-    @Override
-    public LocalTopicStats getReliableLocalTopicStats(String reliableTopicName) {
-        return reliableTopicStats.get(reliableTopicName);
-    }
-
-    @Override
-    public LocalPNCounterStats getLocalPNCounterStats(String pnCounterName) {
-        return pnCounterStats.get(pnCounterName);
-    }
-
-    @Override
-    public LocalReplicatedMapStats getLocalReplicatedMapStats(String replicatedMapName) {
-        return replicatedMapStats.get(replicatedMapName);
-    }
-
-    @Override
-    public LocalExecutorStats getLocalExecutorStats(String executorName) {
-        return executorStats.get(executorName);
-    }
-
-    @Override
-    public LocalCacheStats getLocalCacheStats(String cacheName) {
-        return cacheStats.get(cacheName);
-    }
-
-    @Override
-    public LocalWanStats getLocalWanStats(String schemeName) {
-        return wanStats.get(schemeName);
-    }
-
-    @Override
-    public LocalFlakeIdGeneratorStats getLocalFlakeIdGeneratorStats(String flakeIdName) {
-        return flakeIdGeneratorStats.get(flakeIdName);
     }
 
     @Override
@@ -201,48 +125,88 @@ public class MemberStateImpl implements MemberState {
         this.endpoints = addressMap;
     }
 
-    public void putLocalMapStats(String name, LocalMapStats localMapStats) {
-        mapStats.put(name, localMapStats);
+    public Set<String> getMapsWithStats() {
+        return mapsWithStats;
     }
 
-    public void putLocalMultiMapStats(String name, LocalMultiMapStats localMultiMapStats) {
-        multiMapStats.put(name, localMultiMapStats);
+    public void setMapsWithStats(Set<String> mapsWithStats) {
+        this.mapsWithStats = mapsWithStats;
     }
 
-    public void putLocalQueueStats(String name, LocalQueueStats localQueueStats) {
-        queueStats.put(name, localQueueStats);
+    public Set<String> getMultiMapsWithStats() {
+        return multiMapsWithStats;
     }
 
-    public void putLocalReplicatedMapStats(String name, LocalReplicatedMapStats localReplicatedMapStats) {
-        replicatedMapStats.put(name, localReplicatedMapStats);
+    public void setMultiMapsWithStats(Set<String> multiMapsWithStats) {
+        this.multiMapsWithStats = multiMapsWithStats;
     }
 
-    public void putLocalTopicStats(String name, LocalTopicStats localTopicStats) {
-        topicStats.put(name, localTopicStats);
+    public Set<String> getReplicatedMapsWithStats() {
+        return replicatedMapsWithStats;
     }
 
-    public void putLocalReliableTopicStats(String name, LocalTopicStats localTopicStats) {
-        reliableTopicStats.put(name, localTopicStats);
+    public void setReplicatedMapsWithStats(Set<String> replicatedMapsWithStats) {
+        this.replicatedMapsWithStats = replicatedMapsWithStats;
     }
 
-    public void putLocalPNCounterStats(String name, LocalPNCounterStats localPNCounterStats) {
-        pnCounterStats.put(name, localPNCounterStats);
+    public Set<String> getQueuesWithStats() {
+        return queuesWithStats;
     }
 
-    public void putLocalExecutorStats(String name, LocalExecutorStats localExecutorStats) {
-        executorStats.put(name, localExecutorStats);
+    public void setQueuesWithStats(Set<String> queuesWithStats) {
+        this.queuesWithStats = queuesWithStats;
     }
 
-    public void putLocalCacheStats(String name, LocalCacheStats localCacheStats) {
-        cacheStats.put(name, localCacheStats);
+    public Set<String> getTopicsWithStats() {
+        return topicsWithStats;
+    }
+
+    public void setTopicsWithStats(Set<String> topicsWithStats) {
+        this.topicsWithStats = topicsWithStats;
+    }
+
+    public Set<String> getReliableTopicsWithStats() {
+        return reliableTopicsWithStats;
+    }
+
+    public void setReliableTopicsWithStats(Set<String> reliableTopicsWithStats) {
+        this.reliableTopicsWithStats = reliableTopicsWithStats;
+    }
+
+    public Set<String> getPNCountersWithStats() {
+        return pnCountersWithStats;
+    }
+
+    public void setPNCountersWithStats(Set<String> pnCountersWithStats) {
+        this.pnCountersWithStats = pnCountersWithStats;
+    }
+
+    public Set<String> getExecutorsWithStats() {
+        return executorsWithStats;
+    }
+
+    public void setExecutorsWithStats(Set<String> executorsWithStats) {
+        this.executorsWithStats = executorsWithStats;
+    }
+
+    public Set<String> getCachesWithStats() {
+        return cachesWithStats;
+    }
+
+    public void setCachesWithStats(Set<String> cachesWithStats) {
+        this.cachesWithStats = cachesWithStats;
+    }
+
+    public Set<String> getFlakeIdGeneratorsWithStats() {
+        return flakeIdGeneratorsWithStats;
+    }
+
+    public void setFlakeIdGeneratorsWithStats(Set<String> flakeIdGeneratorsWithStats) {
+        this.flakeIdGeneratorsWithStats = flakeIdGeneratorsWithStats;
     }
 
     public void putLocalWanStats(String name, LocalWanStats localWanStats) {
         wanStats.put(name, localWanStats);
-    }
-
-    public void putLocalFlakeIdStats(String name, LocalFlakeIdGeneratorStats localFlakeIdStats) {
-        flakeIdGeneratorStats.put(name, localFlakeIdStats);
     }
 
     public Collection<ClientEndPointDTO> getClients() {
@@ -251,15 +215,6 @@ public class MemberStateImpl implements MemberState {
 
     public void setClients(Collection<ClientEndPointDTO> clients) {
         this.clients = clients;
-    }
-
-    @Override
-    public LocalMemoryStats getLocalMemoryStats() {
-        return memoryStats;
-    }
-
-    public void setLocalMemoryStats(LocalMemoryStats memoryStats) {
-        this.memoryStats = memoryStats;
     }
 
     @Override
@@ -303,15 +258,6 @@ public class MemberStateImpl implements MemberState {
         this.clusterHotRestartStatus = clusterHotRestartStatus;
     }
 
-    @Override
-    public WanSyncState getWanSyncState() {
-        return wanSyncState;
-    }
-
-    public void setWanSyncState(WanSyncState wanSyncState) {
-        this.wanSyncState = wanSyncState;
-    }
-
     public Map<UUID, String> getClientStats() {
         return clientStats;
     }
@@ -320,24 +266,7 @@ public class MemberStateImpl implements MemberState {
         this.clientStats = clientStats;
     }
 
-    public AdvancedNetworkStatsDTO getInboundNetworkStats() {
-        return inboundNetworkStats;
-    }
-
-    public void setInboundNetworkStats(AdvancedNetworkStatsDTO inboundNetworkStats) {
-        this.inboundNetworkStats = inboundNetworkStats;
-    }
-
-    public AdvancedNetworkStatsDTO getOutboundNetworkStats() {
-        return outboundNetworkStats;
-    }
-
-    public void setOutboundNetworkStats(AdvancedNetworkStatsDTO outboundNetworkStats) {
-        this.outboundNetworkStats = outboundNetworkStats;
-    }
-
     @Override
-    @SuppressWarnings("unchecked")
     public JsonObject toJson() {
         final JsonObject root = new JsonObject();
         root.add("address", address);
@@ -365,44 +294,34 @@ public class MemberStateImpl implements MemberState {
         }
         root.add("endpoints", endpoints);
 
-        serializeMap(root, "mapStats", mapStats);
-        serializeMap(root, "multiMapStats", multiMapStats);
-        serializeMap(root, "replicatedMapStats", replicatedMapStats);
-        serializeMap(root, "queueStats", queueStats);
-        serializeMap(root, "topicStats", topicStats);
-        serializeMap(root, "reliableTopicStats", reliableTopicStats);
-        serializeMap(root, "pnCounterStats", pnCounterStats);
-        serializeMap(root, "executorStats", executorStats);
-        serializeMap(root, "cacheStats", cacheStats);
+        serializeAsMap(root, "mapStats", mapsWithStats);
+        serializeAsMap(root, "multiMapStats", multiMapsWithStats);
+        serializeAsMap(root, "replicatedMapStats", replicatedMapsWithStats);
+        serializeAsMap(root, "queueStats", queuesWithStats);
+        serializeAsMap(root, "topicStats", topicsWithStats);
+        serializeAsMap(root, "reliableTopicStats", reliableTopicsWithStats);
+        serializeAsMap(root, "pnCounterStats", pnCountersWithStats);
+        serializeAsMap(root, "executorStats", executorsWithStats);
+        serializeAsMap(root, "cacheStats", cachesWithStats);
+        serializeAsMap(root, "flakeIdStats", flakeIdGeneratorsWithStats);
         serializeMap(root, "wanStats", wanStats);
-        serializeMap(root, "flakeIdStats", flakeIdGeneratorStats);
-
-        final JsonObject runtimePropsObject = new JsonObject();
-        for (Map.Entry<String, Long> entry : runtimeProps.entrySet()) {
-            runtimePropsObject.add(entry.getKey(), entry.getValue());
-        }
-        root.add("runtimeProps", runtimePropsObject);
 
         final JsonArray clientsArray = new JsonArray();
         for (ClientEndPointDTO client : clients) {
             clientsArray.add(client.toJson());
         }
         root.add("clients", clientsArray);
-        addJsonIfSerializable(root, "memoryStats", memoryStats);
         addJsonIfSerializable(root, "operationStats", operationStats);
         root.add("memberPartitionState", memberPartitionState.toJson());
         root.add("nodeState", nodeState.toJson());
         root.add("hotRestartState", hotRestartState.toJson());
         root.add("clusterHotRestartStatus", clusterHotRestartStatus.toJson());
-        addJsonIfSerializable(root, "wanSyncState", wanSyncState);
 
         JsonObject clientStatsObject = new JsonObject();
         for (Map.Entry<UUID, String> entry : clientStats.entrySet()) {
             clientStatsObject.add(entry.getKey().toString(), entry.getValue());
         }
         root.add("clientStats", clientStatsObject);
-        root.add("inboundNetworkStats", inboundNetworkStats.toJson());
-        root.add("outboundNetworkStats", outboundNetworkStats.toJson());
         return root;
     }
 
@@ -410,6 +329,18 @@ public class MemberStateImpl implements MemberState {
         final JsonObject jsonObject = new JsonObject();
         for (Entry<String, ?> e : map.entrySet()) {
             addJsonIfSerializable(jsonObject, e.getKey(), e.getValue());
+        }
+        root.add(key, jsonObject);
+    }
+
+    /**
+     * Keeps JSON representation compatible with IMDG 4.0 by using empty objects as values.
+     */
+    private static void serializeAsMap(JsonObject root, String key, Set<String> set) {
+        JsonObject jsonObject = new JsonObject();
+        JsonObject stubValue = new JsonObject();
+        for (String s : set) {
+            jsonObject.add(s, stubValue);
         }
         root.add(key, jsonObject);
     }
@@ -447,8 +378,9 @@ public class MemberStateImpl implements MemberState {
         cpMemberUuid = cpMemberUuidString != null ? UUID.fromString(cpMemberUuidString) : null;
         name = getString(json, "name", null);
 
-        JsonArray endpoints = getArray(json, "endpoints");
-        for (JsonValue obj : endpoints) {
+        JsonArray jsonEndpoints = getArray(json, "endpoints");
+        endpoints = new HashMap<>();
+        for (JsonValue obj : jsonEndpoints) {
             JsonObject endpoint = obj.asObject();
             String id = endpoint.getString("id", null);
             ProtocolType type = ProtocolType.valueOf(endpoint.getString("protocol", "MEMBER"));
@@ -464,73 +396,59 @@ public class MemberStateImpl implements MemberState {
                 //ignore
                 ignore(e);
             }
-
-            this.endpoints.put(qualifier, address);
+            endpoints.put(qualifier, address);
         }
 
+        mapsWithStats = new HashSet<>();
         for (JsonObject.Member next : getObject(json, "mapStats")) {
-            LocalMapStatsImpl stats = new LocalMapStatsImpl();
-            stats.fromJson(next.getValue().asObject());
-            mapStats.put(next.getName(), stats);
+            mapsWithStats.add(next.getName());
         }
+        multiMapsWithStats = new HashSet<>();
         for (JsonObject.Member next : getObject(json, "multiMapStats")) {
-            LocalMultiMapStatsImpl stats = new LocalMultiMapStatsImpl();
-            stats.fromJson(next.getValue().asObject());
-            multiMapStats.put(next.getName(), stats);
+            multiMapsWithStats.add(next.getName());
         }
-        for (JsonObject.Member next : getObject(json, "replicatedMapStats", new JsonObject())) {
-            putDeserializedIfSerializable(replicatedMapStats, next.getName(), next.getValue().asObject(),
-                    new LocalReplicatedMapStatsImpl());
+        replicatedMapsWithStats = new HashSet<>();
+        for (JsonObject.Member next : getObject(json, "replicatedMapStats")) {
+            replicatedMapsWithStats.add(next.getName());
         }
+        queuesWithStats = new HashSet<>();
         for (JsonObject.Member next : getObject(json, "queueStats")) {
-            LocalQueueStatsImpl stats = new LocalQueueStatsImpl();
-            stats.fromJson(next.getValue().asObject());
-            queueStats.put(next.getName(), stats);
+            queuesWithStats.add(next.getName());
         }
+        topicsWithStats = new HashSet<>();
         for (JsonObject.Member next : getObject(json, "topicStats")) {
-            LocalTopicStatsImpl stats = new LocalTopicStatsImpl();
-            stats.fromJson(next.getValue().asObject());
-            topicStats.put(next.getName(), stats);
+            topicsWithStats.add(next.getName());
         }
+        reliableTopicsWithStats = new HashSet<>();
         for (JsonObject.Member next : getObject(json, "reliableTopicStats")) {
-            LocalTopicStatsImpl stats = new LocalTopicStatsImpl();
-            stats.fromJson(next.getValue().asObject());
-            reliableTopicStats.put(next.getName(), stats);
+            reliableTopicsWithStats.add(next.getName());
         }
+        pnCountersWithStats = new HashSet<>();
         for (JsonObject.Member next : getObject(json, "pnCounterStats")) {
-            LocalPNCounterStatsImpl stats = new LocalPNCounterStatsImpl();
-            stats.fromJson(next.getValue().asObject());
-            pnCounterStats.put(next.getName(), stats);
+            pnCountersWithStats.add(next.getName());
         }
+        executorsWithStats = new HashSet<>();
         for (JsonObject.Member next : getObject(json, "executorStats")) {
-            LocalExecutorStatsImpl stats = new LocalExecutorStatsImpl();
-            stats.fromJson(next.getValue().asObject());
-            executorStats.put(next.getName(), stats);
+            executorsWithStats.add(next.getName());
         }
-        for (JsonObject.Member next : getObject(json, "cacheStats", new JsonObject())) {
-            putDeserializedIfSerializable(cacheStats, next.getName(), next.getValue().asObject(),
-                    new LocalCacheStatsImpl());
+        cachesWithStats = new HashSet<>();
+        for (JsonObject.Member next : getObject(json, "cacheStats")) {
+            cachesWithStats.add(next.getName());
+        }
+        flakeIdGeneratorsWithStats = new HashSet<>();
+        for (JsonObject.Member next : getObject(json, "flakeIdStats")) {
+            flakeIdGeneratorsWithStats.add(next.getName());
         }
         for (JsonObject.Member next : getObject(json, "wanStats", new JsonObject())) {
             putDeserializedIfSerializable(wanStats, next.getName(), next.getValue().asObject(),
                     new LocalWanStatsImpl());
         }
-        for (JsonObject.Member next : getObject(json, "flakeIdStats", new JsonObject())) {
-            putDeserializedIfSerializable(flakeIdGeneratorStats, next.getName(), next.getValue().asObject(),
-                    new LocalFlakeIdGeneratorStatsImpl());
-        }
-        for (JsonObject.Member next : getObject(json, "runtimeProps")) {
-            runtimeProps.put(next.getName(), next.getValue().asLong());
-        }
-        final JsonArray jsonClients = getArray(json, "clients");
+        JsonArray jsonClients = getArray(json, "clients");
+        clients = new ArrayList<>();
         for (JsonValue jsonClient : jsonClients) {
             final ClientEndPointDTO client = new ClientEndPointDTO();
             client.fromJson(jsonClient.asObject());
             clients.add(client);
-        }
-        JsonObject jsonMemoryStats = getObject(json, "memoryStats", null);
-        if (jsonMemoryStats != null) {
-            memoryStats = readJsonIfDeserializable(jsonMemoryStats, memoryStats);
         }
         JsonObject jsonOperationStats = getObject(json, "operationStats", null);
         if (jsonOperationStats != null) {
@@ -556,22 +474,9 @@ public class MemberStateImpl implements MemberState {
             clusterHotRestartStatus = new ClusterHotRestartStatusDTO();
             clusterHotRestartStatus.fromJson(jsonClusterHotRestartStatus);
         }
-        JsonObject jsonWanSyncState = getObject(json, "wanSyncState", null);
-        if (jsonWanSyncState != null) {
-            wanSyncState = readJsonIfDeserializable(jsonWanSyncState, new WanSyncStateImpl());
-        }
+        clientStats = new HashMap<>();
         for (JsonObject.Member next : getObject(json, "clientStats")) {
             clientStats.put(UUID.fromString(next.getName()), next.getValue().asString());
-        }
-        JsonObject jsonInboundNetworkStats = getObject(json, "inboundNetworkStats", null);
-        if (jsonInboundNetworkStats != null) {
-            inboundNetworkStats = new AdvancedNetworkStatsDTO();
-            inboundNetworkStats.fromJson(jsonInboundNetworkStats);
-        }
-        JsonObject jsonOutboundNetworkStats = getObject(json, "outboundNetworkStats", null);
-        if (jsonOutboundNetworkStats != null) {
-            outboundNetworkStats = new AdvancedNetworkStatsDTO();
-            outboundNetworkStats.fromJson(jsonOutboundNetworkStats);
         }
     }
 
@@ -582,27 +487,23 @@ public class MemberStateImpl implements MemberState {
                 + ", uuid=" + uuid
                 + ", cpMemberUuid=" + cpMemberUuid
                 + ", name=" + name
-                + ", runtimeProps=" + runtimeProps
-                + ", mapStats=" + mapStats
-                + ", multiMapStats=" + multiMapStats
-                + ", replicatedMapStats=" + replicatedMapStats
-                + ", queueStats=" + queueStats
-                + ", topicStats=" + topicStats
-                + ", reliableTopicStats=" + reliableTopicStats
-                + ", pnCounterStats=" + pnCounterStats
-                + ", executorStats=" + executorStats
-                + ", cacheStats=" + cacheStats
-                + ", memoryStats=" + memoryStats
+                + ", mapsWithStats=" + mapsWithStats
+                + ", multiMapsWithStats=" + multiMapsWithStats
+                + ", replicatedMapsWithStats=" + replicatedMapsWithStats
+                + ", queuesWithStats=" + queuesWithStats
+                + ", topicsWithStats=" + topicsWithStats
+                + ", reliableTopicsWithStats=" + reliableTopicsWithStats
+                + ", pnCountersWithStats=" + pnCountersWithStats
+                + ", executorsWithStats=" + executorsWithStats
+                + ", cachesWithStats=" + cachesWithStats
+                + ", flakeIdGeneratorsWithStats=" + flakeIdGeneratorsWithStats
+                + ", wanStats=" + wanStats
                 + ", operationStats=" + operationStats
                 + ", memberPartitionState=" + memberPartitionState
                 + ", nodeState=" + nodeState
                 + ", hotRestartState=" + hotRestartState
                 + ", clusterHotRestartStatus=" + clusterHotRestartStatus
-                + ", wanSyncState=" + wanSyncState
-                + ", flakeIdStats=" + flakeIdGeneratorStats
                 + ", clientStats=" + clientStats
-                + ", inboundNetworkStats=" + inboundNetworkStats
-                + ", outboundNetworkStats=" + outboundNetworkStats
                 + '}';
     }
 }

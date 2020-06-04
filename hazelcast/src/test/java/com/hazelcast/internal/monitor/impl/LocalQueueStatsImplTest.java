@@ -16,7 +16,6 @@
 
 package com.hazelcast.internal.monitor.impl;
 
-import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -48,40 +47,5 @@ public class LocalQueueStatsImplTest {
         assertEquals(1234, localQueueStats.getOwnedItemCount());
         assertEquals(15124, localQueueStats.getBackupItemCount());
         assertNotNull(localQueueStats.toString());
-    }
-
-    @Test
-    public void testSerialization() {
-        LocalQueueStatsImpl localQueueStats = new LocalQueueStatsImpl();
-
-        localQueueStats.incrementOtherOperations();
-        localQueueStats.incrementOtherOperations();
-        localQueueStats.incrementOffers();
-        localQueueStats.incrementOffers();
-        localQueueStats.incrementOffers();
-        localQueueStats.incrementRejectedOffers();
-        localQueueStats.incrementRejectedOffers();
-        localQueueStats.incrementRejectedOffers();
-        localQueueStats.incrementRejectedOffers();
-        localQueueStats.incrementPolls();
-        localQueueStats.incrementEmptyPolls();
-        localQueueStats.incrementEmptyPolls();
-        localQueueStats.incrementReceivedEvents();
-        localQueueStats.incrementReceivedEvents();
-        localQueueStats.incrementReceivedEvents();
-
-        JsonObject serialized = localQueueStats.toJson();
-        LocalQueueStatsImpl deserialized = new LocalQueueStatsImpl();
-        deserialized.fromJson(serialized);
-
-        assertTrue(deserialized.getCreationTime() > 0);
-        assertEquals(2, deserialized.getOtherOperationsCount());
-        assertEquals(3, deserialized.getOfferOperationCount());
-        assertEquals(4, deserialized.getRejectedOfferOperationCount());
-        assertEquals(1, deserialized.getPollOperationCount());
-        assertEquals(2, deserialized.getEmptyPollOperationCount());
-        assertEquals(3, deserialized.getEventOperationCount());
-        assertEquals(6, deserialized.total());
-        assertNotNull(deserialized.toString());
     }
 }

@@ -17,10 +17,10 @@
 package com.hazelcast.internal.monitor.impl;
 
 import com.hazelcast.instance.impl.Node;
-import com.hazelcast.internal.management.dto.SlowOperationDTO;
 import com.hazelcast.internal.json.JsonArray;
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.json.JsonValue;
+import com.hazelcast.internal.management.dto.SlowOperationDTO;
 import com.hazelcast.internal.monitor.LocalOperationStats;
 import com.hazelcast.internal.util.Clock;
 import com.hazelcast.json.internal.JsonSerializable;
@@ -28,9 +28,9 @@ import com.hazelcast.json.internal.JsonSerializable;
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.hazelcast.spi.properties.ClusterProperty.MC_MAX_VISIBLE_SLOW_OPERATION_COUNT;
 import static com.hazelcast.internal.util.JsonUtil.getArray;
 import static com.hazelcast.internal.util.JsonUtil.getLong;
+import static com.hazelcast.spi.properties.ClusterProperty.MC_MAX_VISIBLE_SLOW_OPERATION_COUNT;
 
 /**
  * Hazelcast statistic implementations for local operations.
@@ -38,12 +38,12 @@ import static com.hazelcast.internal.util.JsonUtil.getLong;
 public class LocalOperationStatsImpl implements LocalOperationStats, JsonSerializable {
 
     private long maxVisibleSlowOperationCount;
-    private List<SlowOperationDTO> slowOperations;
+    private final List<SlowOperationDTO> slowOperations;
     private long creationTime;
 
     public LocalOperationStatsImpl() {
         this.maxVisibleSlowOperationCount = Long.MAX_VALUE;
-        this.slowOperations = new ArrayList<SlowOperationDTO>();
+        this.slowOperations = new ArrayList<>();
         this.creationTime = Clock.currentTimeMillis();
     }
 
