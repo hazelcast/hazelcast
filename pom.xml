@@ -118,7 +118,7 @@
         <avro.version>1.8.2</avro.version>
         <scala.version>2.12</scala.version>
         <kafka.version>2.2.0</kafka.version>
-        <grpc.version>1.26.0</grpc.version>
+        <grpc.version>1.29.0</grpc.version>
         <protobuf.version>3.11.3</protobuf.version>
         <picocli.version>3.9.0</picocli.version>
         <classgraph.version>4.8.66</classgraph.version>
