@@ -16,7 +16,6 @@
 
 package com.hazelcast.sql.impl.expression.math;
 
-import com.hazelcast.sql.SqlErrorCode;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
@@ -24,11 +23,9 @@ import com.hazelcast.sql.impl.expression.UniExpressionWithType;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
+import com.hazelcast.sql.impl.type.converter.Converter;
 
 import java.math.BigDecimal;
-
-import static com.hazelcast.sql.impl.expression.math.ExpressionMath.DECIMAL_MATH_CONTEXT;
-import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.NULL;
 
 /**
  * Unary minus operation.
@@ -44,54 +41,69 @@ public class UnaryMinusFunction<T> extends UniExpressionWithType<T> {
         super(operand, resultType);
     }
 
-    public static UnaryMinusFunction<?> create(Expression<?> operand, QueryDataType resultType) {
-        return new UnaryMinusFunction<>(operand, resultType);
+    public static UnaryMinusFunction<?> create(Expression<?> operand) {
+        return new UnaryMinusFunction<>(operand, inferResultType(operand.getType()));
     }
 
     @SuppressWarnings("unchecked")
     @Override
     public T eval(Row row, ExpressionEvalContext context) {
-        QueryDataTypeFamily family = resultType.getTypeFamily();
-        assert family != NULL;
-
         Object value = operand.eval(row, context);
+
         if (value == null) {
             return null;
         }
 
-        return (T) evalNumeric((Number) value, family);
+        return (T) doMinus(value, operand.getType(), resultType);
     }
 
-    private static Object evalNumeric(Number number, QueryDataTypeFamily family) {
-        switch (family) {
+    @Override
+    public QueryDataType getType() {
+        return operand.getType();
+    }
+
+    private static Object doMinus(Object operandValue, QueryDataType operandType, QueryDataType resultType) {
+        Converter operandConverter = operandType.getConverter();
+
+        switch (resultType.getTypeFamily()) {
             case TINYINT:
-                return (byte) -number.byteValue();
+                return (byte) (-operandConverter.asTinyint(operandValue));
 
             case SMALLINT:
-                return (short) -number.shortValue();
+                return (short) (-operandConverter.asSmallint(operandValue));
 
             case INT:
-                return -number.intValue();
+                return -operandConverter.asInt(operandValue);
 
             case BIGINT:
-                try {
-                    return Math.negateExact(number.longValue());
-                } catch (ArithmeticException e) {
-                    throw QueryException.error(SqlErrorCode.DATA_EXCEPTION, "BIGINT overflow");
-                }
+                return -operandConverter.asBigint(operandValue);
 
             case DECIMAL:
-                return ((BigDecimal) number).negate(DECIMAL_MATH_CONTEXT);
+                BigDecimal opDecimal = operandConverter.asDecimal(operandValue);
+
+                return opDecimal.negate();
 
             case REAL:
-                return -number.floatValue();
+                return -operandConverter.asReal(operandValue);
 
             case DOUBLE:
-                return -number.doubleValue();
+                return -operandConverter.asDouble(operandValue);
 
             default:
-                throw new IllegalArgumentException("unexpected result family: " + family);
+                throw QueryException.error("Invalid type: " + resultType);
         }
+    }
+
+    private static QueryDataType inferResultType(QueryDataType operandType) {
+        if (!MathFunctionUtils.canConvertToNumber(operandType)) {
+            throw QueryException.error("Operand is not numeric: " + operandType);
+        }
+
+        if (operandType.getTypeFamily() == QueryDataTypeFamily.VARCHAR) {
+            return QueryDataType.DECIMAL;
+        }
+
+        return MathFunctionUtils.expandPrecision(operandType);
     }
 
 }

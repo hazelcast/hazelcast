@@ -14,36 +14,17 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.expression.predicate;
+package com.hazelcast.sql.impl.calcite;
 
-/**
- * Comparison predicate type.
- */
-public enum ComparisonMode {
-    EQUALS(0),
-    NOT_EQUALS(1),
-    GREATER_THAN(2),
-    GREATER_THAN_OR_EQUAL(3),
-    LESS_THAN(4),
-    LESS_THAN_OR_EQUAL(5);
+import org.apache.calcite.jdbc.JavaTypeFactoryImpl;
+import org.apache.calcite.util.ConversionUtil;
 
-    private final int id;
+import java.nio.charset.Charset;
 
-    ComparisonMode(int id) {
-        this.id = id;
-    }
-
-    public int getId() {
-        return id;
-    }
-
-    public static ComparisonMode getById(int id) {
-        for (ComparisonMode value : values()) {
-            if (id == value.id) {
-                return value;
-            }
-        }
-
-        throw new IllegalArgumentException("Unknown ID: " + id);
+public class HazelcastTypeFactory extends JavaTypeFactoryImpl {
+    @Override
+    public Charset getDefaultCharset() {
+        // Calcite uses Latin-1 by default (see {@code CalciteSystemProperty.DEFAULT_CHARSET}). We use unicode.
+        return Charset.forName(ConversionUtil.NATIVE_UTF16_CHARSET_NAME);
     }
 }

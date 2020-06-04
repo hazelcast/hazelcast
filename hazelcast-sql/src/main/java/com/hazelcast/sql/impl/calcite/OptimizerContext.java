@@ -29,11 +29,11 @@ import com.hazelcast.sql.impl.calcite.parse.QueryParser;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastCalciteCatalogReader;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastSchema;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastSchemaUtils;
-import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeFactory;
 import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlConformance;
 import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlOperatorTable;
 import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlValidator;
 import com.hazelcast.sql.impl.schema.TableResolver;
+import org.apache.calcite.adapter.java.JavaTypeFactory;
 import org.apache.calcite.config.CalciteConnectionConfig;
 import org.apache.calcite.jdbc.HazelcastRootCalciteSchema;
 import org.apache.calcite.plan.Contexts;
@@ -49,7 +49,7 @@ import org.apache.calcite.rel.metadata.ChainedRelMetadataProvider;
 import org.apache.calcite.rel.metadata.DefaultRelMetadataProvider;
 import org.apache.calcite.rel.metadata.JaninoRelMetadataProvider;
 import org.apache.calcite.rel.metadata.RelMetadataProvider;
-import org.apache.calcite.rel.type.RelDataTypeFactory;
+import org.apache.calcite.rex.RexBuilder;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.SqlOperatorTable;
 import org.apache.calcite.sql.fun.SqlStdOperatorTable;
@@ -78,24 +78,14 @@ public final class OptimizerContext {
     private final QueryConverter converter;
     private final QueryPlanner planner;
 
-    // for testing purposes only
-    private final SqlValidator validator;
-
     private OptimizerContext(
         QueryParser parser,
         QueryConverter converter,
-        QueryPlanner planner,
-        SqlValidator validator
+        QueryPlanner planner
     ) {
         this.parser = parser;
         this.converter = converter;
         this.planner = planner;
-        this.validator = validator;
-    }
-
-    // for testing purposes only
-    public SqlValidator getValidator() {
-        return validator;
     }
 
     /**
@@ -129,7 +119,7 @@ public final class OptimizerContext {
     ) {
         DistributionTraitDef distributionTraitDef = new DistributionTraitDef(memberCount);
 
-        RelDataTypeFactory typeFactory = HazelcastTypeFactory.INSTANCE;
+        JavaTypeFactory typeFactory = new HazelcastTypeFactory();
         Prepare.CatalogReader catalogReader = createCatalogReader(typeFactory, CONNECTION_CONFIG, rootSchema, schemaPaths);
         SqlValidator validator = createValidator(jetSqlBackend, typeFactory, catalogReader);
         VolcanoPlanner volcanoPlanner = createPlanner(CONNECTION_CONFIG, distributionTraitDef);
@@ -139,7 +129,7 @@ public final class OptimizerContext {
         QueryConverter converter = new QueryConverter(catalogReader, validator, cluster);
         QueryPlanner planner = new QueryPlanner(volcanoPlanner);
 
-        return new OptimizerContext(parser, converter, planner, validator);
+        return new OptimizerContext(parser, converter, planner);
     }
 
     /**
@@ -175,7 +165,7 @@ public final class OptimizerContext {
     }
 
     private static Prepare.CatalogReader createCatalogReader(
-        RelDataTypeFactory typeFactory,
+        JavaTypeFactory typeFactory,
         CalciteConnectionConfig config,
         HazelcastSchema rootSchema,
         List<List<String>> schemaPaths
@@ -188,7 +178,7 @@ public final class OptimizerContext {
         );
     }
 
-    private static SqlValidator createValidator(JetSqlBackend jetSqlBackend, RelDataTypeFactory typeFactory,
+    private static SqlValidator createValidator(JetSqlBackend jetSqlBackend, JavaTypeFactory typeFactory,
                                                 CatalogReader catalogReader) {
         SqlOperatorTable opTab = ChainedSqlOperatorTable.of(
             HazelcastSqlOperatorTable.instance(),
@@ -228,13 +218,12 @@ public final class OptimizerContext {
 
     private static HazelcastRelOptCluster createCluster(
         VolcanoPlanner planner,
-        RelDataTypeFactory typeFactory,
+        JavaTypeFactory typeFactory,
         DistributionTraitDef distributionTraitDef
     ) {
-        HazelcastRexBuilder rexBuilder = new HazelcastRexBuilder(typeFactory);
         HazelcastRelOptCluster cluster = HazelcastRelOptCluster.create(
             planner,
-            rexBuilder,
+            new RexBuilder(typeFactory),
             distributionTraitDef
         );
 

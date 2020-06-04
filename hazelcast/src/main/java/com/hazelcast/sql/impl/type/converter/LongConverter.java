@@ -20,8 +20,6 @@ import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 
 import java.math.BigDecimal;
 
-import static com.hazelcast.sql.impl.expression.math.ExpressionMath.DECIMAL_MATH_CONTEXT;
-
 /**
  * Converter for {@link java.lang.Long} type.
  */
@@ -40,38 +38,17 @@ public final class LongConverter extends Converter {
 
     @Override
     public byte asTinyint(Object val) {
-        long casted = cast(val);
-        byte converted = (byte) casted;
-
-        if (converted != casted) {
-            throw cannotConvert(QueryDataTypeFamily.TINYINT, val);
-        }
-
-        return converted;
+        return (byte) cast(val);
     }
 
     @Override
     public short asSmallint(Object val) {
-        long casted = cast(val);
-        short converted = (short) casted;
-
-        if (converted != casted) {
-            throw cannotConvert(QueryDataTypeFamily.SMALLINT, val);
-        }
-
-        return converted;
+        return (short) cast(val);
     }
 
     @Override
     public int asInt(Object val) {
-        long casted = cast(val);
-        int converted = (int) casted;
-
-        if (converted != casted) {
-            throw cannotConvert(QueryDataTypeFamily.INT, val);
-        }
-
-        return converted;
+        return (int) cast(val);
     }
 
     @Override
@@ -81,7 +58,7 @@ public final class LongConverter extends Converter {
 
     @Override
     public BigDecimal asDecimal(Object val) {
-        return new BigDecimal(cast(val), DECIMAL_MATH_CONTEXT);
+        return new BigDecimal(cast(val));
     }
 
     @Override
@@ -107,5 +84,4 @@ public final class LongConverter extends Converter {
     private long cast(Object val) {
         return (long) val;
     }
-
 }

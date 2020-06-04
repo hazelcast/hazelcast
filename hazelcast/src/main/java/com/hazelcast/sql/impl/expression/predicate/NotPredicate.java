@@ -16,8 +16,10 @@
 
 package com.hazelcast.sql.impl.expression.predicate;
 
-import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
+import com.hazelcast.sql.impl.expression.util.EnsureConvertible;
+import com.hazelcast.sql.impl.expression.util.Eval;
+import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.UniExpression;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.QueryDataType;
@@ -26,7 +28,6 @@ import com.hazelcast.sql.impl.type.QueryDataType;
  * Not predicate.
  */
 public class NotPredicate extends UniExpression<Boolean> {
-
     public NotPredicate() {
         // No-op.
     }
@@ -36,17 +37,18 @@ public class NotPredicate extends UniExpression<Boolean> {
     }
 
     public static NotPredicate create(Expression<?> operand) {
+        EnsureConvertible.toBoolean(operand);
+
         return new NotPredicate(operand);
     }
 
     @Override
     public Boolean eval(Row row, ExpressionEvalContext context) {
-        return TernaryLogic.not((Boolean) operand.eval(row, context));
+        return TernaryLogic.not(Eval.asBoolean(operand, row, context));
     }
 
     @Override
     public QueryDataType getType() {
         return QueryDataType.BOOLEAN;
     }
-
 }

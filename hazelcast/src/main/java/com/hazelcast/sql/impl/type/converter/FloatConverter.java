@@ -20,8 +20,6 @@ import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 
 import java.math.BigDecimal;
 
-import static com.hazelcast.sql.impl.expression.math.ExpressionMath.DECIMAL_MATH_CONTEXT;
-
 /**
  * Converter for {@link java.lang.Float} type.
  */
@@ -40,58 +38,27 @@ public final class FloatConverter extends Converter {
 
     @Override
     public byte asTinyint(Object val) {
-        float casted = cast(val);
-        byte converted = (byte) casted;
-
-        if (converted != (int) casted || !Float.isFinite(casted)) {
-            throw cannotConvert(QueryDataTypeFamily.TINYINT, val);
-        }
-
-        return converted;
+        return (byte) cast(val);
     }
 
     @Override
     public short asSmallint(Object val) {
-        float casted = cast(val);
-        short converted = (short) casted;
-
-        if (converted != (int) casted || !Float.isFinite(casted)) {
-            throw cannotConvert(QueryDataTypeFamily.SMALLINT, val);
-        }
-
-        return converted;
+        return (short) cast(val);
     }
 
     @Override
     public int asInt(Object val) {
-        float casted = cast(val);
-        int converted = (int) casted;
-
-        if (converted != (long) casted || !Float.isFinite(casted)) {
-            throw cannotConvert(QueryDataTypeFamily.INT, val);
-        }
-
-        return converted;
+        return (int) cast(val);
     }
 
     @Override
     public long asBigint(Object val) {
-        float casted = cast(val);
-        float truncated = (float) (casted > 0.0 ? Math.floor(casted) : Math.ceil(casted));
-        long converted = (long) truncated;
-
-        // No checks for NaNs and infinities are needed: NaNs are zeros and
-        // infinities are Long.MAX/MIN_VALUE when converted to long.
-        if ((float) converted != truncated) {
-            throw cannotConvert(QueryDataTypeFamily.BIGINT, val);
-        }
-
-        return converted;
+        return (long) cast(val);
     }
 
     @Override
     public BigDecimal asDecimal(Object val) {
-        return new BigDecimal(Float.toString(cast(val)), DECIMAL_MATH_CONTEXT);
+        return BigDecimal.valueOf(cast(val));
     }
 
     @Override
@@ -117,5 +84,4 @@ public final class FloatConverter extends Converter {
     private float cast(Object val) {
         return (float) val;
     }
-
 }

@@ -24,11 +24,17 @@ import java.io.IOException;
 import java.util.Objects;
 
 public abstract class BiExpressionWithType<T> extends BiExpression<T> {
-
+    /** Result type. */
     protected QueryDataType resultType;
 
     protected BiExpressionWithType() {
         // No-op.
+    }
+
+    // TODO: Remove this after refactoring.
+    protected BiExpressionWithType(Expression<?> operand1, Expression<?> operand2) {
+        this.operand1 = operand1;
+        this.operand2 = operand2;
     }
 
     protected BiExpressionWithType(Expression<?> operand1, Expression<?> operand2, QueryDataType resultType) {
@@ -73,13 +79,12 @@ public abstract class BiExpressionWithType<T> extends BiExpression<T> {
 
         BiExpressionWithType<?> that = (BiExpressionWithType<?>) o;
 
-        return Objects.equals(operand1, that.operand1) && Objects.equals(operand2, that.operand2) && Objects.equals(resultType,
-                that.resultType);
+        return Objects.equals(operand1, that.operand1) && Objects.equals(operand2, that.operand2)
+                   && Objects.equals(resultType, that.resultType);
     }
 
     @Override
     public String toString() {
         return getClass().getSimpleName() + "{operand1=" + operand1 + ", operand2=" + operand2 + ", resType=" + resultType + '}';
     }
-
 }

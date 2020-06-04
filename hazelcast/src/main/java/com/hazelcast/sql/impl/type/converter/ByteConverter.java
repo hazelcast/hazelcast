@@ -20,8 +20,6 @@ import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 
 import java.math.BigDecimal;
 
-import static com.hazelcast.sql.impl.expression.math.ExpressionMath.DECIMAL_MATH_CONTEXT;
-
 /**
  * Converter for {@link java.lang.Byte} type.
  */
@@ -60,7 +58,7 @@ public final class ByteConverter extends Converter {
 
     @Override
     public BigDecimal asDecimal(Object val) {
-        return new BigDecimal(cast(val), DECIMAL_MATH_CONTEXT);
+        return new BigDecimal(cast(val));
     }
 
     @Override

@@ -16,12 +16,8 @@
 
 package com.hazelcast.sql.impl.type.converter;
 
-import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
-
 import java.math.BigDecimal;
 import java.math.BigInteger;
-
-import static com.hazelcast.sql.impl.expression.math.ExpressionMath.DECIMAL_MATH_CONTEXT;
 
 /**
  * Converter for {@link java.math.BigInteger} type.
@@ -41,47 +37,27 @@ public final class BigIntegerConverter extends AbstractDecimalConverter {
 
     @Override
     public byte asTinyint(Object val) {
-        BigInteger casted = cast(val);
-        try {
-            return casted.byteValueExact();
-        } catch (ArithmeticException e) {
-            throw cannotConvert(QueryDataTypeFamily.TINYINT, val);
-        }
+        return cast(val).byteValue();
     }
 
     @Override
     public short asSmallint(Object val) {
-        BigInteger casted = cast(val);
-        try {
-            return casted.shortValueExact();
-        } catch (ArithmeticException e) {
-            throw cannotConvert(QueryDataTypeFamily.SMALLINT, val);
-        }
+        return cast(val).shortValue();
     }
 
     @Override
     public int asInt(Object val) {
-        BigInteger casted = cast(val);
-        try {
-            return casted.intValueExact();
-        } catch (ArithmeticException e) {
-            throw cannotConvert(QueryDataTypeFamily.INT, val);
-        }
+        return cast(val).intValue();
     }
 
     @Override
     public long asBigint(Object val) {
-        BigInteger casted = cast(val);
-        try {
-            return casted.longValueExact();
-        } catch (ArithmeticException e) {
-            throw cannotConvert(QueryDataTypeFamily.BIGINT, val);
-        }
+        return cast(val).longValue();
     }
 
     @Override
     public BigDecimal asDecimal(Object val) {
-        return new BigDecimal(cast(val), DECIMAL_MATH_CONTEXT);
+        return new BigDecimal(cast(val));
     }
 
     @Override
@@ -102,5 +78,4 @@ public final class BigIntegerConverter extends AbstractDecimalConverter {
     private BigInteger cast(Object val) {
         return (BigInteger) val;
     }
-
 }

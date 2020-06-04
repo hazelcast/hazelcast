@@ -16,21 +16,20 @@
 
 package com.hazelcast.sql.impl.expression.math;
 
-import com.hazelcast.sql.SqlErrorCode;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.expression.BiExpressionWithType;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.QueryDataType;
-import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
+import com.hazelcast.sql.impl.type.QueryDataTypeUtils;
 import com.hazelcast.sql.impl.type.SqlDaySecondInterval;
 import com.hazelcast.sql.impl.type.SqlYearMonthInterval;
+import com.hazelcast.sql.impl.type.converter.Converter;
 
 import java.math.BigDecimal;
 
 import static com.hazelcast.sql.impl.expression.datetime.DateTimeExpressionUtils.NANO_IN_SECONDS;
-import static com.hazelcast.sql.impl.expression.math.ExpressionMath.DECIMAL_MATH_CONTEXT;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.INTERVAL_DAY_SECOND;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.INTERVAL_YEAR_MONTH;
 
@@ -48,69 +47,85 @@ public class MultiplyFunction<T> extends BiExpressionWithType<T> {
         super(operand1, operand2, resultType);
     }
 
-    public static MultiplyFunction<?> create(Expression<?> operand1, Expression<?> operand2, QueryDataType resultType) {
-        if (operand2.getType().getTypeFamily() == INTERVAL_DAY_SECOND
-                || operand2.getType().getTypeFamily() == INTERVAL_YEAR_MONTH) {
-            Expression<?> intervalOperand = operand2;
-            operand2 = operand1;
-            operand1 = intervalOperand;
-        }
+    public static MultiplyFunction<?> create(Expression<?> operand1, Expression<?> operand2) {
+        QueryDataType operand1Type = operand1.getType();
+        QueryDataType operand2Type = operand2.getType();
 
-        return new MultiplyFunction<>(operand1, operand2, resultType);
+        QueryDataType resultType = MathFunctionUtils.inferMultiplyResultType(operand1Type, operand2Type);
+
+        if (QueryDataTypeUtils.withHigherPrecedence(operand1Type, operand2Type) == operand1Type) {
+            return new MultiplyFunction<>(operand1, operand2, resultType);
+        } else {
+            return new MultiplyFunction<>(operand2, operand1, resultType);
+        }
     }
 
     @SuppressWarnings("unchecked")
     @Override
     public T eval(Row row, ExpressionEvalContext context) {
-        QueryDataTypeFamily family = resultType.getTypeFamily();
-        // expressions having NULL type should be replaced with just NULL literal
-        assert family != QueryDataTypeFamily.NULL;
+        Object operand1Value = operand1.eval(row, context);
 
-        Object left = operand1.eval(row, context);
-        if (left == null) {
+        if (operand1Value == null) {
             return null;
         }
 
-        Object right = operand2.eval(row, context);
-        if (right == null) {
+        Object operand2Value = operand2.eval(row, context);
+
+        if (operand2Value == null) {
             return null;
         }
 
-        if (family.isTemporal()) {
-            return (T) evalTemporal(operand1, operand2, operand2.getType(), resultType);
-        } else {
-            return (T) evalNumeric((Number) left, (Number) right, family);
-        }
+        // Execute.
+        return (T) doMultiply(operand1Value, operand1.getType(), operand2Value, operand2.getType(), resultType);
     }
 
-    private static Object evalNumeric(Number left, Number right, QueryDataTypeFamily family) {
-        switch (family) {
+    private static Object doMultiply(Object operand1, QueryDataType operand1Type, Object operand2, QueryDataType operand2Type,
+                                     QueryDataType resultType) {
+        if (resultType.getTypeFamily() == INTERVAL_YEAR_MONTH || resultType.getTypeFamily() == INTERVAL_DAY_SECOND) {
+            return doMultiplyInterval(operand1, operand2, operand2Type, resultType);
+        }
+
+        return doMultiplyNumeric(operand1, operand1Type, operand2, operand2Type, resultType);
+    }
+
+    private static Object doMultiplyNumeric(Object operand1, QueryDataType operand1Type, Object operand2,
+                                            QueryDataType operand2Type, QueryDataType resultType) {
+        Converter operand1Converter = operand1Type.getConverter();
+        Converter operand2Converter = operand2Type.getConverter();
+
+        switch (resultType.getTypeFamily()) {
             case TINYINT:
-                return (byte) (left.byteValue() * right.byteValue());
+                return (byte) (operand1Converter.asTinyint(operand1) * operand2Converter.asTinyint(operand2));
+
             case SMALLINT:
-                return (short) (left.shortValue() * right.shortValue());
+                return (short) (operand1Converter.asSmallint(operand1) * operand2Converter.asSmallint(operand2));
+
             case INT:
-                return left.intValue() * right.intValue();
+                return (operand1Converter.asInt(operand1) * operand2Converter.asInt(operand2));
+
             case BIGINT:
-                try {
-                    return Math.multiplyExact(left.longValue(), right.longValue());
-                } catch (ArithmeticException e) {
-                    throw QueryException.error(SqlErrorCode.DATA_EXCEPTION, "BIGINT overflow");
-                }
-            case REAL:
-                return left.floatValue() * right.floatValue();
-            case DOUBLE:
-                return left.doubleValue() * right.doubleValue();
+                return operand1Converter.asBigint(operand1) * operand2Converter.asBigint(operand2);
+
             case DECIMAL:
-                return ((BigDecimal) left).multiply((BigDecimal) right, DECIMAL_MATH_CONTEXT);
+                BigDecimal op1Decimal = operand1Converter.asDecimal(operand1);
+                BigDecimal op2Decimal = operand2Converter.asDecimal(operand2);
+
+                return op1Decimal.multiply(op2Decimal);
+
+            case REAL:
+                return operand1Converter.asReal(operand1) * operand2Converter.asReal(operand2);
+
+            case DOUBLE:
+                return operand1Converter.asDouble(operand1) * operand2Converter.asDouble(operand2);
+
             default:
-                throw new IllegalArgumentException("unexpected result family: " + family);
+                throw QueryException.error("Invalid type: " + resultType);
         }
     }
 
     @SuppressWarnings("checkstyle:AvoidNestedBlocks")
-    private static Object evalTemporal(Object intervalOperand, Object numericOperand, QueryDataType numericOperandType,
-                                       QueryDataType resultType) {
+    private static Object doMultiplyInterval(Object intervalOperand, Object numericOperand, QueryDataType numericOperandType,
+                                             QueryDataType resultType) {
         switch (resultType.getTypeFamily()) {
             case INTERVAL_YEAR_MONTH: {
                 SqlYearMonthInterval interval = (SqlYearMonthInterval) intervalOperand;

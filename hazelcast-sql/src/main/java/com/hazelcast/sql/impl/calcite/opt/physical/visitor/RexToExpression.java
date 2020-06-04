@@ -105,26 +105,27 @@ public final class RexToExpression {
             "checkstyle:NPathComplexity"})
     public static Expression<?> convertCall(RexCall call, Expression<?>[] operands) {
         SqlOperator operator = call.getOperator();
-        QueryDataType resultType = SqlToQueryType.map(call.getType().getSqlTypeName());
+
+        QueryDataType returnType = SqlToQueryType.map(call.getType().getSqlTypeName());
 
         switch (operator.getKind()) {
             case PLUS:
-                return PlusFunction.create(operands[0], operands[1], resultType);
+                return PlusFunction.create(operands[0], operands[1]);
 
             case MINUS:
-                return MinusFunction.create(operands[0], operands[1], resultType);
+                return MinusFunction.create(operands[0], operands[1]);
 
             case TIMES:
-                return MultiplyFunction.create(operands[0], operands[1], resultType);
+                return MultiplyFunction.create(operands[0], operands[1]);
 
             case DIVIDE:
-                return DivideFunction.create(operands[0], operands[1], resultType);
+                return DivideFunction.create(operands[0], operands[1]);
 
             case MOD:
                 return RemainderFunction.create(operands[0], operands[1]);
 
             case MINUS_PREFIX:
-                return UnaryMinusFunction.create(operands[0], resultType);
+                return UnaryMinusFunction.create(operands[0]);
 
             case FLOOR:
                 return FloorCeilFunction.create(operands[0], false);
@@ -197,14 +198,14 @@ public final class RexToExpression {
                 return ComparisonPredicate.create(operands[0], operands[1], ComparisonMode.LESS_THAN_OR_EQUAL);
 
             case CASE:
-                return CaseExpression.create(operands, resultType);
+                return CaseExpression.create(operands);
 
             case LIKE:
                 Expression<?> escape = operands.length == 2 ? null : operands[2];
                 return LikeFunction.create(operands[0], operands[1], escape);
 
             case CAST:
-                return CastExpression.create(operands[0], resultType);
+                return CastExpression.create(operands[0], returnType);
 
             case OTHER_FUNCTION:
                 SqlFunction function = (SqlFunction) operator;
@@ -238,7 +239,7 @@ public final class RexToExpression {
                 } else if (function == SqlStdOperatorTable.ABS) {
                     return AbsFunction.create(operands[0]);
                 } else if (function == SqlStdOperatorTable.PI) {
-                    return ConstantExpression.create(Math.PI, resultType);
+                    return ConstantExpression.create(returnType, Math.PI);
                 } else if (function == SqlStdOperatorTable.SIGN) {
                     return SignFunction.create(operands[0]);
                 } else if (function == SqlStdOperatorTable.ATAN2) {
@@ -343,13 +344,13 @@ public final class RexToExpression {
             case INTERVAL_MINUTE:
             case INTERVAL_MINUTE_SECOND:
             case INTERVAL_SECOND:
-                return convertIntervalDaySecondLiteral(literal, type);
+                return convertDaySecondLiteral(literal, type);
 
             case SYMBOL:
                 return convertSymbolLiteral(literal);
 
             case NULL:
-                return ConstantExpression.create(null, QueryDataType.NULL);
+                return ConstantExpression.create(QueryDataType.NULL, null);
 
             default:
                 throw QueryException.error("Unsupported literal: " + literal);
@@ -396,7 +397,7 @@ public final class RexToExpression {
                 throw new IllegalArgumentException("Unsupported literal type: " + type);
         }
 
-        return ConstantExpression.create(value, SqlToQueryType.map(type));
+        return ConstantExpression.create(SqlToQueryType.map(type), value);
     }
 
     private static Expression<?> convertStringLiteral(RexLiteral literal, SqlTypeName type) {
@@ -411,7 +412,7 @@ public final class RexToExpression {
                 throw new IllegalArgumentException("Unsupported literal type: " + type);
         }
 
-        return ConstantExpression.create(value, SqlToQueryType.map(type));
+        return ConstantExpression.create(SqlToQueryType.map(type), value);
     }
 
     private static Expression<?> convertTemporalLiteral(RexLiteral literal, SqlTypeName type) {
@@ -441,21 +442,21 @@ public final class RexToExpression {
                 throw new IllegalArgumentException("Unsupported literal type: " + type);
         }
 
-        return ConstantExpression.create(value, SqlToQueryType.map(type));
+        return ConstantExpression.create(SqlToQueryType.map(type), value);
     }
 
     private static Expression<?> convertIntervalYearMonthLiteral(RexLiteral literal, SqlTypeName type) {
         int months = literal.getValueAs(Integer.class);
-        return ConstantExpression.create(new SqlYearMonthInterval(months), SqlToQueryType.map(type));
+        return ConstantExpression.create(SqlToQueryType.map(type), new SqlYearMonthInterval(months));
     }
 
-    private static Expression<?> convertIntervalDaySecondLiteral(RexLiteral literal, SqlTypeName type) {
+    private static Expression<?> convertDaySecondLiteral(RexLiteral literal, SqlTypeName type) {
         long value = literal.getValueAs(Long.class);
 
         long seconds = value / MILLISECONDS_PER_SECOND;
         int nanoseconds = (int) (value % MILLISECONDS_PER_SECOND) * NANOSECONDS_PER_MILLISECOND;
 
-        return ConstantExpression.create(new SqlDaySecondInterval(seconds, nanoseconds), SqlToQueryType.map(type));
+        return ConstantExpression.create(SqlToQueryType.map(type), new SqlDaySecondInterval(seconds, nanoseconds));
     }
 
     private static Expression<?> convertSymbolLiteral(RexLiteral literal) {

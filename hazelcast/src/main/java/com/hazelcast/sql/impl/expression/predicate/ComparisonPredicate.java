@@ -18,13 +18,25 @@ package com.hazelcast.sql.impl.expression.predicate;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.expression.BiExpression;
+import com.hazelcast.sql.impl.expression.CastExpression;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.QueryDataType;
+import com.hazelcast.sql.impl.type.QueryDataTypeUtils;
+import com.hazelcast.sql.impl.type.SqlDaySecondInterval;
+import com.hazelcast.sql.impl.type.SqlYearMonthInterval;
+import com.hazelcast.sql.impl.type.converter.Converter;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.OffsetDateTime;
 import java.util.Objects;
 
 /**
@@ -32,62 +44,171 @@ import java.util.Objects;
  */
 public class ComparisonPredicate extends BiExpression<Boolean> {
 
-    private ComparisonMode mode;
+    /**
+     * Data type which is used for comparison.
+     */
+    private QueryDataType type;
+
+    private ComparisonMode comparisonMode;
 
     @SuppressWarnings("unused")
     public ComparisonPredicate() {
         // No-op.
     }
 
-    private ComparisonPredicate(Expression<?> left, Expression<?> right, ComparisonMode mode) {
-        super(left, right);
-        this.mode = mode;
+    private ComparisonPredicate(Expression<?> first, Expression<?> second, QueryDataType type, ComparisonMode comparisonMode) {
+        super(first, second);
+
+        this.type = type;
+        this.comparisonMode = comparisonMode;
     }
 
-    public static ComparisonPredicate create(Expression<?> left, Expression<?> right, ComparisonMode comparisonMode) {
-        assert left.getType().equals(right.getType());
-        return new ComparisonPredicate(left, right, comparisonMode);
+    public static ComparisonPredicate create(Expression<?> first, Expression<?> second, ComparisonMode comparisonMode) {
+        QueryDataType type = QueryDataTypeUtils.withHigherPrecedence(first.getType(), second.getType());
+
+        Expression<?> coercedFirst = CastExpression.coerceExpression(first, type.getTypeFamily());
+        Expression<?> coercedSecond = CastExpression.coerceExpression(second, type.getTypeFamily());
+
+        return new ComparisonPredicate(coercedFirst, coercedSecond, type, comparisonMode);
     }
 
-    @SuppressWarnings({"rawtypes", "unchecked"})
+    @SuppressFBWarnings(value = "NP_BOOLEAN_RETURN_NULL", justification = "SQL ternary logic allows NULL")
     @Override
     public Boolean eval(Row row, ExpressionEvalContext context) {
-        Object left = operand1.eval(row, context);
-        if (left == null) {
+        Object operand1Value = operand1.eval(row, context);
+        Object operand2Value = operand2.eval(row, context);
+
+        if (operand1Value == null) {
             return null;
         }
 
-        Object right = operand2.eval(row, context);
-        if (right == null) {
+        if (operand2Value == null) {
             return null;
         }
 
-        Comparable leftComparable = (Comparable) left;
-        Comparable rightComparable = (Comparable) right;
+        return doCompare(comparisonMode, operand1Value, operand1.getType(), operand2Value, operand2.getType(), type);
+    }
 
-        int order = leftComparable.compareTo(rightComparable);
+    @SuppressWarnings({"checkstyle:CyclomaticComplexity", "checkstyle:ReturnCount", "checkstyle:AvoidNestedBlocks"})
+    private static boolean doCompare(ComparisonMode comparisonMode, Object operand1, QueryDataType operand1Type, Object operand2,
+                                     QueryDataType operand2Type, QueryDataType type) {
+        Converter converter1 = operand1Type.getConverter();
+        Converter converter2 = operand2Type.getConverter();
 
-        switch (mode) {
-            case EQUALS:
-                return order == 0;
+        switch (type.getTypeFamily()) {
+            case BOOLEAN:
+            case TINYINT:
+            case SMALLINT:
+            case INT:
+            case BIGINT: {
+                long first = converter1.asBigint(operand1);
+                long second = converter2.asBigint(operand2);
 
-            case NOT_EQUALS:
-                return order != 0;
+                return doCompareLong(comparisonMode, first, second);
+            }
 
-            case GREATER_THAN:
-                return order > 0;
+            case DECIMAL: {
+                BigDecimal first = converter1.asDecimal(operand1);
+                BigDecimal second = converter2.asDecimal(operand2);
 
-            case GREATER_THAN_OR_EQUAL:
-                return order >= 0;
+                return doCompareComparable(comparisonMode, first, second);
+            }
 
-            case LESS_THAN:
-                return order < 0;
+            case REAL:
+            case DOUBLE: {
+                double first = converter1.asDouble(operand1);
+                double second = converter2.asDouble(operand2);
 
-            case LESS_THAN_OR_EQUAL:
-                return order <= 0;
+                return doCompareDouble(comparisonMode, first, second);
+            }
+
+            case DATE: {
+                LocalDate first = converter1.asDate(operand1);
+                LocalDate second = converter2.asDate(operand2);
+
+                return doCompareComparable(comparisonMode, first, second);
+            }
+
+            case TIME: {
+                LocalTime first = converter1.asTime(operand1);
+                LocalTime second = converter2.asTime(operand2);
+
+                return doCompareComparable(comparisonMode, first, second);
+            }
+
+            case TIMESTAMP: {
+                LocalDateTime first = converter1.asTimestamp(operand1);
+                LocalDateTime second = converter2.asTimestamp(operand2);
+
+                return doCompareComparable(comparisonMode, first, second);
+            }
+
+            case TIMESTAMP_WITH_TIME_ZONE: {
+                OffsetDateTime first = converter1.asTimestampWithTimezone(operand1);
+                OffsetDateTime second = converter2.asTimestampWithTimezone(operand2);
+
+                return doCompareComparable(comparisonMode, first, second);
+            }
+
+            case INTERVAL_DAY_SECOND:
+                return doCompareComparable(comparisonMode, (SqlDaySecondInterval) operand1, (SqlDaySecondInterval) operand2);
+
+            case INTERVAL_YEAR_MONTH:
+                return doCompareComparable(comparisonMode, (SqlYearMonthInterval) operand1, (SqlYearMonthInterval) operand2);
+
+            case VARCHAR: {
+                String first = converter1.asVarchar(operand1);
+                String second = converter2.asVarchar(operand2);
+
+                return doCompareComparable(comparisonMode, first, second);
+            }
 
             default:
-                throw new IllegalStateException("unexpected comparison mode: " + mode);
+                throw QueryException.error("Unsupported result type: " + type);
+        }
+    }
+
+    private static boolean doCompareLong(ComparisonMode comparisonMode, long first, long second) {
+        int compare = Long.compare(first, second);
+
+        return doCompare0(comparisonMode, compare);
+    }
+
+    private static boolean doCompareDouble(ComparisonMode comparisonMode, double first, double second) {
+        int compare = Double.compare(first, second);
+
+        return doCompare0(comparisonMode, compare);
+    }
+
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    private static boolean doCompareComparable(ComparisonMode comparisonMode, Comparable first, Comparable second) {
+        int compare = first.compareTo(second);
+
+        return doCompare0(comparisonMode, compare);
+    }
+
+    private static boolean doCompare0(ComparisonMode type, int compare) {
+        switch (type) {
+            case EQUALS:
+                return compare == 0;
+
+            case NOT_EQUALS:
+                return compare != 0;
+
+            case GREATER_THAN:
+                return compare > 0;
+
+            case GREATER_THAN_OR_EQUAL:
+                return compare >= 0;
+
+            case LESS_THAN:
+                return compare < 0;
+
+            case LESS_THAN_OR_EQUAL:
+                return compare <= 0;
+
+            default:
+                throw QueryException.error("Unsupported operator: " + type);
         }
     }
 
@@ -99,18 +220,22 @@ public class ComparisonPredicate extends BiExpression<Boolean> {
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         super.writeData(out);
-        out.writeInt(mode.getId());
+
+        out.writeObject(type);
+        out.writeInt(comparisonMode.getId());
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         super.readData(in);
-        mode = ComparisonMode.getById(in.readInt());
+
+        type = in.readObject();
+        comparisonMode = ComparisonMode.getById(in.readInt());
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(operand1, operand2, mode);
+        return Objects.hash(operand1, operand2, type, comparisonMode);
     }
 
     @Override
@@ -125,12 +250,13 @@ public class ComparisonPredicate extends BiExpression<Boolean> {
 
         ComparisonPredicate that = (ComparisonPredicate) o;
 
-        return Objects.equals(operand1, that.operand1) && Objects.equals(operand2, that.operand2) && mode == that.mode;
+        return Objects.equals(operand1, that.operand1) && Objects.equals(operand2, that.operand2) && Objects.equals(type,
+                that.type) && comparisonMode == that.comparisonMode;
     }
 
     @Override
     public String toString() {
-        return getClass().getSimpleName() + "{mode=" + mode + ", operand1=" + operand1 + ", operand2=" + operand2 + '}';
+        return getClass().getSimpleName() + "{mode=" + comparisonMode + ", operand1=" + operand1 + ", operand2=" + operand2 + '}';
     }
 
 }
