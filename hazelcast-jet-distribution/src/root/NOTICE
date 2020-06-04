@@ -33,7 +33,7 @@ Apache License, Version 2.0
   mysql-binlog-connector-java:0.19.1
   compiler:0.9.3
   Google Android Annotations Library:4.1.1.4
-  proto-google-common-protos:1.12.0
+  proto-google-common-protos:1.17.0
   FindBugs-jsr305:3.0.2
   Gson:2.8.6
   error-prone annotations:2.3.2
@@ -52,13 +52,13 @@ Apache License, Version 2.0
   Debezium Connector for PostgreSQL:1.1.0.Final
   Debezium Core:1.1.0.Final
   Debezium ANTLR DDL parsers:1.1.0.Final
-  io.grpc:grpc-api:1.26.0
-  io.grpc:grpc-context:1.26.0
-  io.grpc:grpc-core:1.26.0
-  io.grpc:grpc-netty-shaded:1.26.0
-  io.grpc:grpc-protobuf:1.26.0
-  io.grpc:grpc-protobuf-lite:1.26.0
-  io.grpc:grpc-stub:1.26.0
+  io.grpc:grpc-api:1.29.0
+  io.grpc:grpc-context:1.29.0
+  io.grpc:grpc-core:1.29.0
+  io.grpc:grpc-netty-shaded:1.29.0
+  io.grpc:grpc-protobuf:1.29.0
+  io.grpc:grpc-protobuf-lite:1.29.0
+  io.grpc:grpc-stub:1.29.0
   Netty/Buffer:4.1.39.Final
   Netty/Codec:4.1.39.Final
   Netty/Codec/HTTP:4.1.39.Final
@@ -69,8 +69,6 @@ Apache License, Version 2.0
   Netty/Transport:4.1.39.Final
   Netty/Transport/Native/Epoll:4.1.39.Final
   Netty/Transport/Native/Unix/Common:4.1.39.Final
-  OpenCensus:0.24.0
-  OpenCensus:0.24.0
   perfmark:perfmark-api:0.19.0
   jmx_prometheus_javaagent:0.13.0
   Joda-Time:2.10.1
@@ -139,7 +137,7 @@ BSD 2-Clause License
   zstd-jni:1.3.8-1
   PostgreSQL JDBC Driver - JDBC 4.2:42.2.9
 BSD 3-Clause License
-  Protocol Buffers [Core]:3.11.3
+  Protocol Buffers [Core]:3.12.2
   ParaNamer Core:2.7
   ANTLR 4 Runtime:4.7.2
 CC0
