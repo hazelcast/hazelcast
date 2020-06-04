@@ -28,7 +28,7 @@ import org.apache.calcite.rel.metadata.RelMetadataQuery;
 /**
  * Base class for root operators.
  */
-public class AbstractRootRel extends SingleRel implements HazelcastRelNode {
+public abstract class AbstractRootRel extends SingleRel implements HazelcastRelNode {
     public AbstractRootRel(RelOptCluster cluster, RelTraitSet traits, RelNode input) {
         super(cluster, traits, input);
     }

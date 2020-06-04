@@ -86,12 +86,12 @@ public class DistributionTrait implements RelTrait {
 
         DistributionTrait other = (DistributionTrait) o;
 
-        return type == other.type;
+        return traitDef.equals(other.traitDef) && type == other.type;
     }
 
     @Override
     public int hashCode() {
-        return type.hashCode();
+        return 31 * traitDef.hashCode() + type.hashCode();
     }
 
     @Override

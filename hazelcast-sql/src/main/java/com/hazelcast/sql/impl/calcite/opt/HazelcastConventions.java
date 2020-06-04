@@ -33,6 +33,8 @@ public final class HazelcastConventions {
         @Override
         public boolean canConvertConvention(Convention toConvention) {
             // Allows conversion between LOGICAL and PHYSICAL conventions.
+            assert toConvention == LOGICAL;
+
             return true;
         }
 

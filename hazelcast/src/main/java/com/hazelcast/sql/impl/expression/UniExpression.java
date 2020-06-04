@@ -20,7 +20,6 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 
 import java.io.IOException;
-import java.util.Objects;
 
 /**
  * Expression with one operand.
@@ -53,7 +52,7 @@ public abstract class UniExpression<T> implements Expression<T> {
 
     @Override
     public int hashCode() {
-        return operand != null ? operand.hashCode() : 0;
+        return operand.hashCode();
     }
 
     @Override
@@ -68,7 +67,7 @@ public abstract class UniExpression<T> implements Expression<T> {
 
         UniExpression<?> that = (UniExpression<?>) o;
 
-        return Objects.equals(operand, that.operand);
+        return operand.equals(that.operand);
     }
 
     @Override
