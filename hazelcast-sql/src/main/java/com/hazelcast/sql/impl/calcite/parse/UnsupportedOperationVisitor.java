@@ -33,13 +33,42 @@ import org.apache.calcite.sql.type.SqlTypeName;
 import org.apache.calcite.sql.util.SqlVisitor;
 import org.apache.calcite.sql.validate.SqlValidatorException;
 
+import java.util.HashSet;
+import java.util.Set;
+
 /**
  * Visitor that throws exceptions for unsupported SQL features.
  */
 public final class UnsupportedOperationVisitor implements SqlVisitor<Void> {
 
     public static final UnsupportedOperationVisitor INSTANCE = new UnsupportedOperationVisitor();
+
+    /** Error messages. */
     private static final Resource RESOURCE = Resources.create(Resource.class);
+
+    /** A set of {@link SqlKind} values that are supported without any additional validation. */
+    private static final Set<SqlKind> SUPPORTED_KINDS;
+
+    static {
+        // We define all supported features explicitly instead of getting them from predefined sets of SqlKind class.
+        // This is needed to ensure that we do not miss any unsupported features when something is added to a new version
+        // of Apache Calcite.
+        SUPPORTED_KINDS = new HashSet<>();
+
+        // "IS" predicates
+        SUPPORTED_KINDS.add(SqlKind.IS_NULL);
+
+        // Comparisons predicates
+        SUPPORTED_KINDS.add(SqlKind.EQUALS);
+        SUPPORTED_KINDS.add(SqlKind.NOT_EQUALS);
+        SUPPORTED_KINDS.add(SqlKind.LESS_THAN);
+        SUPPORTED_KINDS.add(SqlKind.GREATER_THAN);
+        SUPPORTED_KINDS.add(SqlKind.GREATER_THAN_OR_EQUAL);
+        SUPPORTED_KINDS.add(SqlKind.LESS_THAN_OR_EQUAL);
+
+        // Miscellaneous
+        SUPPORTED_KINDS.add(SqlKind.AS);
+    }
 
     private UnsupportedOperationVisitor() {
         // No-op.
@@ -109,7 +138,7 @@ public final class UnsupportedOperationVisitor implements SqlVisitor<Void> {
     private void processCall(SqlCall call) {
         SqlKind kind = call.getKind();
 
-        if (SqlKind.COMPARISON.contains(kind)) {
+        if (SUPPORTED_KINDS.contains(kind)) {
             return;
         }
 
@@ -117,9 +146,6 @@ public final class UnsupportedOperationVisitor implements SqlVisitor<Void> {
             case SELECT:
                 processSelect((SqlSelect) call);
 
-                return;
-
-            case AS:
                 return;
 
             default:

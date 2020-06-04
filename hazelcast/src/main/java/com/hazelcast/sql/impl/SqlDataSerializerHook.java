@@ -23,6 +23,7 @@ import com.hazelcast.internal.util.ConstructorFunction;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.sql.impl.expression.ColumnExpression;
+import com.hazelcast.sql.impl.expression.predicate.IsNullPredicate;
 import com.hazelcast.sql.impl.extract.GenericQueryTargetDescriptor;
 import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.operation.QueryBatchExchangeOperation;
@@ -79,10 +80,11 @@ public class SqlDataSerializerHook implements DataSerializerHook {
     public static final int NODE_MAP_SCAN = 18;
 
     public static final int EXPRESSION_COLUMN = 19;
+    public static final int EXPRESSION_IS_NULL = 20;
 
-    public static final int TARGET_DESCRIPTOR_GENERIC = 20;
+    public static final int TARGET_DESCRIPTOR_GENERIC = 21;
 
-    public static final int QUERY_PATH = 21;
+    public static final int QUERY_PATH = 22;
 
     public static final int LEN = QUERY_PATH + 1;
 
@@ -121,6 +123,7 @@ public class SqlDataSerializerHook implements DataSerializerHook {
         constructors[NODE_MAP_SCAN] = arg -> new MapScanPlanNode();
 
         constructors[EXPRESSION_COLUMN] = arg -> new ColumnExpression<>();
+        constructors[EXPRESSION_IS_NULL] = arg -> new IsNullPredicate();
 
         constructors[TARGET_DESCRIPTOR_GENERIC] = arg -> GenericQueryTargetDescriptor.INSTANCE;
 

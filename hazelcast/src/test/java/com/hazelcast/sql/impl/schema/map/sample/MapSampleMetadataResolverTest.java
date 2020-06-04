@@ -56,7 +56,6 @@ import java.util.TreeMap;
 import static com.hazelcast.sql.impl.extract.QueryPath.KEY;
 import static com.hazelcast.sql.impl.extract.QueryPath.VALUE;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -104,6 +103,9 @@ public class MapSampleMetadataResolverTest extends MapSchemaTestSupport {
         checkPrimitive(Instant.now(), QueryDataType.TIMESTAMP_WITH_TZ_INSTANT);
         checkPrimitive(OffsetDateTime.now(), QueryDataType.TIMESTAMP_WITH_TZ_OFFSET_DATE_TIME);
         checkPrimitive(ZonedDateTime.now(), QueryDataType.TIMESTAMP_WITH_TZ_ZONED_DATE_TIME);
+
+        checkPrimitive(new JavaWithoutFields(), QueryDataType.OBJECT);
+        checkPrimitive(new PortableWithoutFields(), QueryDataType.OBJECT);
     }
 
     @Test
@@ -135,7 +137,7 @@ public class MapSampleMetadataResolverTest extends MapSchemaTestSupport {
             field("fDouble", QueryDataType.DOUBLE, true),
             field("fString", QueryDataType.VARCHAR, true),
             field("fObject", QueryDataType.OBJECT, true),
-            field(KEY, QueryDataType.OBJECT, true)
+            hiddenField(KEY, QueryDataType.OBJECT, true)
         );
 
         // Test value.
@@ -153,7 +155,7 @@ public class MapSampleMetadataResolverTest extends MapSchemaTestSupport {
             field("fDouble", QueryDataType.DOUBLE, false),
             field("fString", QueryDataType.VARCHAR, false),
             field("fObject", QueryDataType.OBJECT, false),
-            field(VALUE, QueryDataType.OBJECT, false)
+            hiddenField(VALUE, QueryDataType.OBJECT, false)
         );
     }
 
@@ -176,7 +178,7 @@ public class MapSampleMetadataResolverTest extends MapSchemaTestSupport {
             field(PORTABLE_DOUBLE, QueryDataType.DOUBLE, true),
             field(PORTABLE_STRING, QueryDataType.VARCHAR, true),
             field(PORTABLE_OBJECT, QueryDataType.OBJECT, true),
-            field(KEY, QueryDataType.OBJECT, true)
+            hiddenField(KEY, QueryDataType.OBJECT, true)
         );
 
         // Test value.
@@ -194,7 +196,7 @@ public class MapSampleMetadataResolverTest extends MapSchemaTestSupport {
             field(PORTABLE_DOUBLE, QueryDataType.DOUBLE, false),
             field(PORTABLE_STRING, QueryDataType.VARCHAR, false),
             field(PORTABLE_OBJECT, QueryDataType.OBJECT, false),
-            field(VALUE, QueryDataType.OBJECT, false)
+            hiddenField(VALUE, QueryDataType.OBJECT, false)
         );
     }
 
@@ -212,7 +214,7 @@ public class MapSampleMetadataResolverTest extends MapSchemaTestSupport {
         checkFields(
             metadata,
             field("publicField", QueryDataType.INT, true),
-            field(KEY, QueryDataType.OBJECT, true)
+            hiddenField(KEY, QueryDataType.OBJECT, true)
         );
 
         metadata = MapSampleMetadataResolver.resolve(ss, ss.toData(object), true, true);
@@ -220,7 +222,7 @@ public class MapSampleMetadataResolverTest extends MapSchemaTestSupport {
         checkFields(
             metadata,
             field("publicField", QueryDataType.INT, true),
-            field(KEY, QueryDataType.OBJECT, true)
+            hiddenField(KEY, QueryDataType.OBJECT, true)
         );
     }
 
@@ -240,7 +242,7 @@ public class MapSampleMetadataResolverTest extends MapSchemaTestSupport {
             field("publicGetter", QueryDataType.INT, true),
             field("booleanGetGetter", QueryDataType.BOOLEAN, true),
             field("booleanIsGetter", QueryDataType.BOOLEAN, true),
-            field(KEY, QueryDataType.OBJECT, true)
+            hiddenField(KEY, QueryDataType.OBJECT, true)
         );
 
         metadata = MapSampleMetadataResolver.resolve(ss, ss.toData(object), true, true);
@@ -250,7 +252,7 @@ public class MapSampleMetadataResolverTest extends MapSchemaTestSupport {
             field("publicGetter", QueryDataType.INT, true),
             field("booleanGetGetter", QueryDataType.BOOLEAN, true),
             field("booleanIsGetter", QueryDataType.BOOLEAN, true),
-            field(KEY, QueryDataType.OBJECT, true)
+            hiddenField(KEY, QueryDataType.OBJECT, true)
         );
     }
 
@@ -297,17 +299,17 @@ public class MapSampleMetadataResolverTest extends MapSchemaTestSupport {
 
         // Key
         TableField field = MapSampleMetadataResolver.resolve(ss, object, true, true).getFields().get(KEY);
-        assertEquals(field(KEY, QueryDataType.OBJECT, true), field);
+        assertEquals(hiddenField(KEY, QueryDataType.OBJECT, true), field);
 
         field = MapSampleMetadataResolver.resolve(ss, ss.toData(object), true, true).getFields().get(KEY);
-        assertEquals(field(KEY, QueryDataType.OBJECT, true), field);
+        assertEquals(hiddenField(KEY, QueryDataType.OBJECT, true), field);
 
         // Value
         field = MapSampleMetadataResolver.resolve(ss, object, true, false).getFields().get(VALUE);
-        assertEquals(field(VALUE, QueryDataType.OBJECT, false), field);
+        assertEquals(hiddenField(VALUE, QueryDataType.OBJECT, false), field);
 
         field = MapSampleMetadataResolver.resolve(ss, ss.toData(object), true, false).getFields().get(VALUE);
-        assertEquals(field(VALUE, QueryDataType.OBJECT, false), field);
+        assertEquals(hiddenField(VALUE, QueryDataType.OBJECT, false), field);
     }
 
     /**
@@ -321,17 +323,17 @@ public class MapSampleMetadataResolverTest extends MapSchemaTestSupport {
 
         // Key
         TableField field = MapSampleMetadataResolver.resolve(ss, object, true, true).getFields().get(KEY);
-        assertEquals(field(KEY, QueryDataType.OBJECT, true), field);
+        assertEquals(hiddenField(KEY, QueryDataType.OBJECT, true), field);
 
         field = MapSampleMetadataResolver.resolve(ss, ss.toData(object), true, true).getFields().get(KEY);
-        assertEquals(field(KEY, QueryDataType.OBJECT, true), field);
+        assertEquals(hiddenField(KEY, QueryDataType.OBJECT, true), field);
 
         // Value
         field = MapSampleMetadataResolver.resolve(ss, object, true, false).getFields().get(VALUE);
-        assertEquals(field(VALUE, QueryDataType.OBJECT, false), field);
+        assertEquals(hiddenField(VALUE, QueryDataType.OBJECT, false), field);
 
         field = MapSampleMetadataResolver.resolve(ss, ss.toData(object), true, false).getFields().get(VALUE);
-        assertEquals(field(VALUE, QueryDataType.OBJECT, false), field);
+        assertEquals(hiddenField(VALUE, QueryDataType.OBJECT, false), field);
     }
 
     @Test
@@ -353,7 +355,7 @@ public class MapSampleMetadataResolverTest extends MapSchemaTestSupport {
 
         checkFields(
             metadata,
-            field(KEY, QueryDataType.OBJECT, true),
+            hiddenField(KEY, QueryDataType.OBJECT, true),
             field(VALUE, QueryDataType.INT, true)
         );
 
@@ -363,7 +365,7 @@ public class MapSampleMetadataResolverTest extends MapSchemaTestSupport {
         checkFields(
             metadata,
             field(KEY, QueryDataType.INT, false),
-            field(VALUE, QueryDataType.OBJECT, false)
+            hiddenField(VALUE, QueryDataType.OBJECT, false)
         );
     }
 
@@ -430,7 +432,7 @@ public class MapSampleMetadataResolverTest extends MapSchemaTestSupport {
     private void checkJavaTypes(Object object, boolean key) {
         MapSampleMetadata metadata = MapSampleMetadataResolver.resolve(getSerializationService(), object, true, key);
 
-        assertSame(GenericQueryTargetDescriptor.INSTANCE, metadata.getDescriptor());
+        assertEquals(GenericQueryTargetDescriptor.INSTANCE, metadata.getDescriptor());
 
         checkFields(
             metadata,
@@ -467,7 +469,7 @@ public class MapSampleMetadataResolverTest extends MapSchemaTestSupport {
             field("fOffsetDateTime", QueryDataType.TIMESTAMP_WITH_TZ_OFFSET_DATE_TIME, key),
             field("fZonedDateTime", QueryDataType.TIMESTAMP_WITH_TZ_ZONED_DATE_TIME, key),
 
-            field(key ? KEY : VALUE, QueryDataType.OBJECT, key)
+            hiddenField(key ? KEY : VALUE, QueryDataType.OBJECT, key)
         );
     }
 
@@ -711,6 +713,10 @@ public class MapSampleMetadataResolverTest extends MapSchemaTestSupport {
         }
     }
 
+    private static class JavaWithoutFields implements Serializable {
+        // No-op.
+    }
+
     private static class PortableParent implements Portable {
 
         public boolean fBoolean;
@@ -810,6 +816,28 @@ public class MapSampleMetadataResolverTest extends MapSchemaTestSupport {
         public void readPortable(PortableReader reader) throws IOException {
             k = reader.readInt(KEY);
             v = reader.readInt(VALUE);
+        }
+    }
+
+    private static class PortableWithoutFields implements Portable {
+        @Override
+        public int getFactoryId() {
+            return 1;
+        }
+
+        @Override
+        public int getClassId() {
+            return 5;
+        }
+
+        @Override
+        public void writePortable(PortableWriter writer) throws IOException {
+            // No-op.
+        }
+
+        @Override
+        public void readPortable(PortableReader reader) throws IOException {
+            // No-op.
         }
     }
 }

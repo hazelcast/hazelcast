@@ -14,15 +14,19 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.schema;
+package com.hazelcast.sql.impl.calcite.opt.physical;
 
-import java.util.List;
+import com.hazelcast.sql.impl.calcite.opt.HazelcastRelNode;
+import com.hazelcast.sql.impl.calcite.opt.physical.visitor.PhysicalRelVisitor;
 
 /**
- * A table that is backed by a Hazelcast map.
+ * Marker interface for physical relations.
  */
-public abstract class AbstractMapTable extends Table {
-    public AbstractMapTable(String schemaName, String name, List<TableField> fields, TableStatistics statistics) {
-        super(schemaName, name, fields, statistics);
-    }
+public interface PhysicalRel extends HazelcastRelNode {
+    /**
+     * Visit physical rel. A node should invoke visitor on inputs first.
+     *
+     * @param visitor Visitor.
+     */
+    void visit(PhysicalRelVisitor visitor);
 }

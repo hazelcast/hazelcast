@@ -27,8 +27,8 @@ public class MapTableField extends TableField {
     /** Path to the field. */
     private final QueryPath path;
 
-    public MapTableField(String name, QueryDataType type, QueryPath path) {
-        super(name, type);
+    public MapTableField(String name, QueryDataType type, boolean hidden, QueryPath path) {
+        super(name, type, hidden);
 
         this.path = path;
     }
@@ -49,7 +49,7 @@ public class MapTableField extends TableField {
 
         MapTableField field = (MapTableField) o;
 
-        return name.equals(field.name) && type.equals(field.type) && path.equals(field.path);
+        return name.equals(field.name) && type.equals(field.type) && path.equals(field.path) && hidden == field.hidden;
     }
 
     @Override
@@ -58,12 +58,13 @@ public class MapTableField extends TableField {
 
         result = 31 * result + type.hashCode();
         result = 31 * result + path.hashCode();
+        result = 31 * result + Boolean.hashCode(hidden);
 
         return result;
     }
 
     @Override
     public String toString() {
-        return "MapTableField{name=" + name + ", type=" + type + ", path=" + path + '}';
+        return "MapTableField{name=" + name + ", type=" + type + ", path=" + path + ", hidden=" + hidden + '}';
     }
 }

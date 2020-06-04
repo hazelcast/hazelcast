@@ -62,7 +62,7 @@ public abstract class Converter {
     private final int id;
     private final QueryDataTypeFamily typeFamily;
 
-    private final boolean convertToBit;
+    private final boolean convertToBoolean;
     private final boolean convertToTinyint;
     private final boolean convertToSmallint;
     private final boolean convertToInt;
@@ -84,7 +84,7 @@ public abstract class Converter {
         try {
             Class<? extends Converter> clazz = getClass();
 
-            convertToBit = canConvert(clazz.getMethod("asBit", Object.class));
+            convertToBoolean = canConvert(clazz.getMethod("asBoolean", Object.class));
             convertToTinyint = canConvert(clazz.getMethod("asTinyint", Object.class));
             convertToSmallint = canConvert(clazz.getMethod("asSmallint", Object.class));
             convertToInt = canConvert(clazz.getMethod("asInt", Object.class));
@@ -114,7 +114,7 @@ public abstract class Converter {
     public abstract Class<?> getValueClass();
 
     @NotConvertible
-    public boolean asBit(Object val) {
+    public boolean asBoolean(Object val) {
         throw cannotConvert(QueryDataTypeFamily.BOOLEAN);
     }
 
@@ -182,8 +182,8 @@ public abstract class Converter {
         return val;
     }
 
-    public final boolean canConvertToBit() {
-        return convertToBit;
+    public final boolean canConvertToBoolean() {
+        return convertToBoolean;
     }
 
     public final boolean canConvertToTinyint() {
@@ -242,7 +242,7 @@ public abstract class Converter {
     public final boolean canConvertTo(QueryDataTypeFamily typeFamily) {
         switch (typeFamily) {
             case BOOLEAN:
-                return canConvertToBit();
+                return canConvertToBoolean();
 
             case TINYINT:
                 return canConvertToTinyint();

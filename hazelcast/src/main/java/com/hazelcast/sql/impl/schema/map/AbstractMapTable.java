@@ -72,13 +72,6 @@ public abstract class AbstractMapTable extends Table {
         return super.getField(index);
     }
 
-    @Override
-    public TableStatistics getStatistics() {
-        checkException();
-
-        return super.getStatistics();
-    }
-
     public QueryTargetDescriptor getKeyDescriptor() {
         return keyDescriptor;
     }

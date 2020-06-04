@@ -16,10 +16,11 @@
 
 package com.hazelcast.sql.impl.calcite;
 
-import com.hazelcast.sql.impl.schema.AbstractMapTable;
+import com.hazelcast.sql.impl.extract.GenericQueryTargetDescriptor;
 import com.hazelcast.sql.impl.schema.ConstantTableStatistics;
 import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.schema.TableStatistics;
+import com.hazelcast.sql.impl.schema.map.AbstractMapTable;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
 import java.util.Arrays;
@@ -30,7 +31,14 @@ import java.util.List;
  */
 public class TestMapTable extends AbstractMapTable {
     private TestMapTable(String schemaName, String name, List<TableField> fields, TableStatistics statistics) {
-        super(schemaName, name, fields, statistics);
+        super(
+            schemaName,
+            name,
+            fields,
+            statistics,
+            GenericQueryTargetDescriptor.INSTANCE,
+            GenericQueryTargetDescriptor.INSTANCE
+        );
     }
 
     public static TestMapTable create(String schemaName, String name, TableField... fields) {
@@ -38,16 +46,24 @@ public class TestMapTable extends AbstractMapTable {
     }
 
     public static TableField field(String name) {
-        return field(name, QueryDataType.INT);
+        return field(name, false);
+    }
+
+    public static TableField field(String name, boolean hidden) {
+        return field(name, QueryDataType.INT, hidden);
     }
 
     public static TableField field(String name, QueryDataType type) {
-        return new Field(name, type);
+        return field(name, type, false);
+    }
+
+    public static TableField field(String name, QueryDataType type, boolean hidden) {
+        return new Field(name, type, hidden);
     }
 
     private static class Field extends TableField {
-        private Field(String name, QueryDataType type) {
-            super(name, type);
+        private Field(String name, QueryDataType type, boolean hidden) {
+            super(name, type, hidden);
         }
     }
 }

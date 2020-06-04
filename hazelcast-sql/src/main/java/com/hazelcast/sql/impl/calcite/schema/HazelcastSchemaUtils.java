@@ -17,14 +17,13 @@
 package com.hazelcast.sql.impl.calcite.schema;
 
 import com.hazelcast.sql.impl.QueryUtils;
-import com.hazelcast.sql.impl.schema.AbstractMapTable;
 import com.hazelcast.sql.impl.schema.Table;
 import com.hazelcast.sql.impl.schema.TableResolver;
+import com.hazelcast.sql.impl.schema.map.AbstractMapTable;
 import org.apache.calcite.schema.Schema;
 import org.apache.calcite.schema.Statistic;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -67,13 +66,7 @@ public final class HazelcastSchemaUtils {
         Map<String, Map<String, HazelcastTable>> tableMap = new HashMap<>();
 
         for (TableResolver tableResolver : tableResolvers) {
-            Collection<Table> tables = tableResolver.getTables();
-
-            if (tables == null || tables.isEmpty()) {
-                continue;
-            }
-
-            for (Table table : tables) {
+            for (Table table : tableResolver.getTables()) {
                 HazelcastTable convertedTable = new HazelcastTable(
                     table,
                     createTableStatistic(table)
@@ -82,7 +75,7 @@ public final class HazelcastSchemaUtils {
                 Map<String , HazelcastTable> schemaTableMap =
                     tableMap.computeIfAbsent(table.getSchemaName(), (k) -> new HashMap<>());
 
-                schemaTableMap.put(table.getName(), convertedTable);
+                schemaTableMap.putIfAbsent(table.getName(), convertedTable);
             }
         }
 

@@ -16,6 +16,7 @@
 
 package org.apache.calcite.plan;
 
+import com.hazelcast.sql.impl.calcite.opt.distribution.DistributionTraitDef;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.type.RelDataTypeFactory;
 import org.apache.calcite.rex.RexBuilder;
@@ -30,26 +31,43 @@ import java.util.concurrent.atomic.AtomicInteger;
  * Located in the Calcite package because the required super constructor is package-private.
  */
 public final class HazelcastRelOptCluster extends RelOptCluster {
+    /** Distribution trait definition that is used during query execution. */
+    private final DistributionTraitDef distributionTraitDef;
+
     private HazelcastRelOptCluster(
         RelOptPlanner planner,
         RelDataTypeFactory typeFactory,
         RexBuilder rexBuilder,
         AtomicInteger nextCorrel,
-        Map<String, RelNode> mapCorrelToRel
+        Map<String, RelNode> mapCorrelToRel,
+        DistributionTraitDef distributionTraitDef
     ) {
         super(planner, typeFactory, rexBuilder, nextCorrel, mapCorrelToRel);
+
+        this.distributionTraitDef = distributionTraitDef;
     }
 
     public static HazelcastRelOptCluster create(
         RelOptPlanner planner,
-        RexBuilder rexBuilder
+        RexBuilder rexBuilder,
+        DistributionTraitDef distributionTraitDef
     ) {
         return new HazelcastRelOptCluster(
             planner,
             rexBuilder.getTypeFactory(),
             rexBuilder,
             new AtomicInteger(0),
-            new HashMap<>()
+            new HashMap<>(),
+            distributionTraitDef
         );
+    }
+
+    public DistributionTraitDef getDistributionTraitDef() {
+        return distributionTraitDef;
+    }
+
+    @Override
+    public String toString() {
+        return getClass().getSimpleName() + "{distributionTraitDef=" + distributionTraitDef + '}';
     }
 }
