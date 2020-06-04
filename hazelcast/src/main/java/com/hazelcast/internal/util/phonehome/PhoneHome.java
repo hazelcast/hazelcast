@@ -57,10 +57,10 @@ public class PhoneHome {
         basePhoneHomeUrl = "http://phonehome.hazelcast.com/ping";
     }
 
-    public PhoneHome(Node node, String base_url) {
+    public PhoneHome(Node node, String baseurl) {
         hazelcastNode = node;
         logger = hazelcastNode.getLogger(com.hazelcast.internal.util.phonehome.PhoneHome.class);
-        basePhoneHomeUrl = base_url;
+        basePhoneHomeUrl = baseurl;
     }
 
 
