@@ -23,6 +23,16 @@ To expand an issue number into a full GitHub link, use this template:
 
 https://github.com/hazelcast/hazelcast-jet/issues/<issue number>
 
+** Hazelcast Jet 4.1.1 **
+
+1. Enhancements 
+
+[docker] Update Java version to 11 in Docker image
+
+2. Fixes
+
+[core] JmsSink should not throw when it receives a Watermark
+
 
 ** Hazelcast Jet 4.1 **
 
@@ -70,13 +80,6 @@ Thank you for your valuable contributions!
 [pipeline-api] For xUsingServiceAsync transforms, reduce the default number of concurrent
                service calls per processor. Before: 256; now: 4. (#2204)
 
-
-** Hazelcast Jet 4.2 **
-
-1. New Features
-
-2. Enhancements
-[integration] Improve Debezium connector usability and production readiness (generic & MySQL versions) [#2142]
 
 ** Hazelcast Jet 4.0 **
 
