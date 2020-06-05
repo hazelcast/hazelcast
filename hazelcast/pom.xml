@@ -480,7 +480,6 @@
             <version>0.8.11</version>
             <scope>test</scope>
         </dependency>
-        <!--Wire mock for Testing-->
         <dependency>
             <groupId>com.github.tomakehurst</groupId>
             <artifactId>wiremock-jre8-standalone</artifactId>

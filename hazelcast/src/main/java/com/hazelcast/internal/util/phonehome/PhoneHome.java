@@ -46,18 +46,17 @@ public class PhoneHome {
     volatile ScheduledFuture<?> phoneHomeFuture;
     private final ILogger logger;
     private final String basePhoneHomeUrl;
+    private final static String DEFAULT_BASE_PHONE_HOME_URL="http://phonehome.hazelcast.com/ping";
 
     private final Node hazelcastNode;
     private final List<MetricsCollector> metricsCollectorList = Arrays.asList(new BuildInfoCollector(),
             new ClusterInfoCollector(), new ClientInfoCollector(), new MapInfoCollector(), new OSInfoCollector());
 
     public PhoneHome(Node node) {
-        hazelcastNode = node;
-        logger = hazelcastNode.getLogger(com.hazelcast.internal.util.phonehome.PhoneHome.class);
-        basePhoneHomeUrl = "http://phonehome.hazelcast.com/ping";
+        this(node,DEFAULT_BASE_PHONE_HOME_URL);
     }
 
-    public PhoneHome(Node node, String baseurl) {
+    PhoneHome(Node node, String baseurl) {
         hazelcastNode = node;
         logger = hazelcastNode.getLogger(com.hazelcast.internal.util.phonehome.PhoneHome.class);
         basePhoneHomeUrl = baseurl;
