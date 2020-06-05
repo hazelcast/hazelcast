@@ -18,7 +18,6 @@ package com.hazelcast.cp.internal.datastructures.atomicref.client;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.AtomicRefSetCodec;
-import com.hazelcast.cp.internal.RaftService;
 import com.hazelcast.cp.internal.client.AbstractCPMessageTask;
 import com.hazelcast.cp.internal.datastructures.atomicref.AtomicRefService;
 import com.hazelcast.cp.internal.datastructures.atomicref.operation.SetOp;
@@ -40,10 +39,7 @@ public class SetMessageTask extends AbstractCPMessageTask<AtomicRefSetCodec.Requ
 
     @Override
     protected void processMessage() {
-        RaftService service = nodeEngine.getService(RaftService.SERVICE_NAME);
-        service.getInvocationManager()
-               .invoke(parameters.groupId, new SetOp(parameters.name, parameters.newValue, parameters.returnOldValue))
-               .whenCompleteAsync(this);
+        invoke(parameters.groupId, new SetOp(parameters.name, parameters.newValue, parameters.returnOldValue));
     }
 
     @Override

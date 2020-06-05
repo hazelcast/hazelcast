@@ -19,7 +19,6 @@ package com.hazelcast.cp.internal.datastructures.atomicref.client;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.AtomicRefCompareAndSetCodec;
 import com.hazelcast.cp.internal.RaftOp;
-import com.hazelcast.cp.internal.RaftService;
 import com.hazelcast.cp.internal.client.AbstractCPMessageTask;
 import com.hazelcast.cp.internal.datastructures.atomicref.AtomicRefService;
 import com.hazelcast.cp.internal.datastructures.atomicref.operation.CompareAndSetOp;
@@ -41,9 +40,8 @@ public class CompareAndSetMessageTask extends AbstractCPMessageTask<AtomicRefCom
 
     @Override
     protected void processMessage() {
-        RaftService service = nodeEngine.getService(RaftService.SERVICE_NAME);
         RaftOp op = new CompareAndSetOp(parameters.name, parameters.oldValue, parameters.newValue);
-        service.getInvocationManager().<Boolean>invoke(parameters.groupId, op).whenCompleteAsync(this);
+        invoke(parameters.groupId, op);
     }
 
     @Override
