@@ -56,7 +56,7 @@ public class PhysicalIndexScanTest extends OptimizerTestSupport {
             optimizePhysical("SELECT f1, f2 FROM p WHERE 1 < f1 AND f2 < 3 AND f3 = 5"),
             plan(
                 planRow(0, RootPhysicalRel.class, "", 3.8),
-                planRow(1, MapIndexScanPhysicalRel.class, "table=[[hazelcast, p]], projects=[[0, 1]], filter=[AND(<(1, $0), <($1, 3), =($2, 5))], index=[idx1], indexExp=[<(1, $0)], remainderExp=[AND(<($1, 3), =($2, 5))]", 3.8)
+                planRow(1, MapIndexScanPhysicalRel.class, "table=[[hazelcast, p[projects=[0, 1]]]], index=[idx1], indexExp=[<(1, $0)], remainderExp=[AND(<($1, 3), =($2, 5))]", 3.8)
             )
         );
     }

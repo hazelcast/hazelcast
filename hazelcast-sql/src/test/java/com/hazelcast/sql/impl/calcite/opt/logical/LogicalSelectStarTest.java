@@ -70,7 +70,7 @@ public class LogicalSelectStarTest extends OptimizerTestSupport {
             optimizeLogical("SELECT * FROM r"),
             plan(
                 planRow(0, RootLogicalRel.class, ""),
-                planRow(1, MapScanLogicalRel.class, "table=[[hazelcast, r]], projects=[[0]]")
+                planRow(1, MapScanLogicalRel.class, "table=[[hazelcast, r[projects=[0]]]]")
             )
         );
 
@@ -78,7 +78,7 @@ public class LogicalSelectStarTest extends OptimizerTestSupport {
             optimizeLogical("SELECT r.* FROM r"),
             plan(
                 planRow(0, RootLogicalRel.class, ""),
-                planRow(1, MapScanLogicalRel.class, "table=[[hazelcast, r]], projects=[[0]]")
+                planRow(1, MapScanLogicalRel.class, "table=[[hazelcast, r[projects=[0]]]]")
             )
         );
 
@@ -86,7 +86,7 @@ public class LogicalSelectStarTest extends OptimizerTestSupport {
             optimizeLogical("SELECT *, r.r_f2 FROM r"),
             plan(
                 planRow(0, RootLogicalRel.class, ""),
-                planRow(1, MapScanLogicalRel.class, "table=[[hazelcast, r]], projects=[[0, 1]]")
+                planRow(1, MapScanLogicalRel.class, "table=[[hazelcast, r]]")
             )
         );
 
@@ -94,7 +94,7 @@ public class LogicalSelectStarTest extends OptimizerTestSupport {
             optimizeLogical("SELECT r.*, r.r_f2 FROM r"),
             plan(
                 planRow(0, RootLogicalRel.class, ""),
-                planRow(1, MapScanLogicalRel.class, "table=[[hazelcast, r]], projects=[[0, 1]]")
+                planRow(1, MapScanLogicalRel.class, "table=[[hazelcast, r]]")
             )
         );
 
@@ -102,7 +102,7 @@ public class LogicalSelectStarTest extends OptimizerTestSupport {
             optimizeLogical("SELECT r.r_f2, r.* FROM r"),
             plan(
                 planRow(0, RootLogicalRel.class, ""),
-                planRow(1, MapScanLogicalRel.class, "table=[[hazelcast, r]], projects=[[1, 0]]")
+                planRow(1, MapScanLogicalRel.class, "table=[[hazelcast, r[projects=[1, 0]]]]")
             )
         );
     }
@@ -114,8 +114,8 @@ public class LogicalSelectStarTest extends OptimizerTestSupport {
             plan(
                 planRow(0, RootLogicalRel.class, ""),
                 planRow(1, JoinLogicalRel.class, "condition=[true], joinType=[inner]"),
-                planRow(2, MapScanLogicalRel.class, "table=[[hazelcast, r]], projects=[[0]]"),
-                planRow(2, MapScanLogicalRel.class, "table=[[hazelcast, s]], projects=[[0]]")
+                planRow(2, MapScanLogicalRel.class, "table=[[hazelcast, r[projects=[0]]]]"),
+                planRow(2, MapScanLogicalRel.class, "table=[[hazelcast, s[projects=[0]]]]")
             )
         );
 
@@ -124,8 +124,8 @@ public class LogicalSelectStarTest extends OptimizerTestSupport {
             plan(
                 planRow(0, RootLogicalRel.class, ""),
                 planRow(1, JoinLogicalRel.class, "condition=[true], joinType=[inner]"),
-                planRow(2, MapScanLogicalRel.class, "table=[[hazelcast, r]], projects=[[0]]"),
-                planRow(2, MapScanLogicalRel.class, "table=[[hazelcast, s]], projects=[[0]]")
+                planRow(2, MapScanLogicalRel.class, "table=[[hazelcast, r[projects=[0]]]]"),
+                planRow(2, MapScanLogicalRel.class, "table=[[hazelcast, s[projects=[0]]]]")
             )
         );
 
@@ -135,8 +135,8 @@ public class LogicalSelectStarTest extends OptimizerTestSupport {
                 planRow(0, RootLogicalRel.class, ""),
                 planRow(1, ProjectLogicalRel.class, "r_f1=[$0], s_f1=[$2], r_f2=[$1], s_f2=[$3]"),
                 planRow(2, JoinLogicalRel.class, "condition=[true], joinType=[inner]"),
-                planRow(3, MapScanLogicalRel.class, "table=[[hazelcast, r]], projects=[[0, 1]]"),
-                planRow(3, MapScanLogicalRel.class, "table=[[hazelcast, s]], projects=[[0, 1]]")
+                planRow(3, MapScanLogicalRel.class, "table=[[hazelcast, r]]"),
+                planRow(3, MapScanLogicalRel.class, "table=[[hazelcast, s]]")
             )
         );
 
@@ -146,8 +146,8 @@ public class LogicalSelectStarTest extends OptimizerTestSupport {
                 planRow(0, RootLogicalRel.class, ""),
                 planRow(1, ProjectLogicalRel.class, "r_f1=[$0], s_f1=[$2], r_f2=[$1], s_f2=[$3]"),
                 planRow(2, JoinLogicalRel.class, "condition=[true], joinType=[inner]"),
-                planRow(3, MapScanLogicalRel.class, "table=[[hazelcast, r]], projects=[[0, 1]]"),
-                planRow(3, MapScanLogicalRel.class, "table=[[hazelcast, s]], projects=[[0, 1]]")
+                planRow(3, MapScanLogicalRel.class, "table=[[hazelcast, r]]"),
+                planRow(3, MapScanLogicalRel.class, "table=[[hazelcast, s]]")
             )
         );
 
@@ -157,8 +157,8 @@ public class LogicalSelectStarTest extends OptimizerTestSupport {
                 planRow(0, RootLogicalRel.class, ""),
                 planRow(1, ProjectLogicalRel.class, "r_f2=[$1], s_f2=[$3], r_f1=[$0], s_f1=[$2]"),
                 planRow(2, JoinLogicalRel.class, "condition=[true], joinType=[inner]"),
-                planRow(3, MapScanLogicalRel.class, "table=[[hazelcast, r]], projects=[[0, 1]]"),
-                planRow(3, MapScanLogicalRel.class, "table=[[hazelcast, s]], projects=[[0, 1]]")
+                planRow(3, MapScanLogicalRel.class, "table=[[hazelcast, r]]"),
+                planRow(3, MapScanLogicalRel.class, "table=[[hazelcast, s]]")
             )
         );
     }

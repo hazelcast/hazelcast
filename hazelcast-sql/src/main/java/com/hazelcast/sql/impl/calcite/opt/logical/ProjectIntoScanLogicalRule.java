@@ -17,12 +17,15 @@
 package com.hazelcast.sql.impl.calcite.opt.logical;
 
 import com.hazelcast.sql.impl.calcite.opt.OptUtils;
+import com.hazelcast.sql.impl.calcite.schema.HazelcastRelOptTable;
+import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.RelOptRuleCall;
-import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.core.Project;
 import org.apache.calcite.rel.core.RelFactories;
 import org.apache.calcite.rel.core.TableScan;
+import org.apache.calcite.rel.logical.LogicalProject;
+import org.apache.calcite.rel.logical.LogicalTableScan;
 import org.apache.calcite.rel.rules.ProjectRemoveRule;
 import org.apache.calcite.rex.RexCall;
 import org.apache.calcite.rex.RexInputRef;
@@ -38,13 +41,18 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Rule that attempts to restrict the number of fields returned from the scan based on the project sitting on top of it.
+ * <p>
+ * The rule finds all field references present in project expressions and restrict table scan to these expressions only.
+ */
 public final class ProjectIntoScanLogicalRule extends RelOptRule {
     public static final ProjectIntoScanLogicalRule INSTANCE = new ProjectIntoScanLogicalRule();
 
     private ProjectIntoScanLogicalRule() {
         super(
-            operand(Project.class,
-                operandJ(TableScan.class, null, OptUtils::isProjectableFilterable, none())),
+            operand(LogicalProject.class,
+                operandJ(LogicalTableScan.class, null, OptUtils::isHazelcastTable, none())),
             RelFactories.LOGICAL_BUILDER,
             ProjectIntoScanLogicalRule.class.getSimpleName()
         );
@@ -57,18 +65,11 @@ public final class ProjectIntoScanLogicalRule extends RelOptRule {
 
         Mappings.TargetMapping mapping = project.getMapping();
 
-        RelNode transformed;
-
         if (mapping == null) {
-            transformed = processComplex(project, scan);
-        } else if (Mappings.isIdentity(mapping)) {
-            // Project returns all the rows of the scan. Let ProjectRemoveRule do its job.
-            return;
+            processComplex(call, project, scan);
         } else {
-            transformed = processSimple(mapping, scan);
+            processSimple(call, mapping, scan);
         }
-
-        call.transformTo(transformed);
     }
 
     /**
@@ -76,21 +77,27 @@ public final class ProjectIntoScanLogicalRule extends RelOptRule {
      *
      * @param mapping Projects mapping.
      * @param scan Scan.
-     * @return Transformed node (new scan).
      */
-    private static RelNode processSimple(Mappings.TargetMapping mapping, TableScan scan) {
-        List<Integer> projects = getScanProjects(scan);
-        RexNode filter = getScanFilter(scan);
+    private static void processSimple(RelOptRuleCall call, Mappings.TargetMapping mapping, TableScan scan) {
+        if (Mappings.isIdentity(mapping)) {
+            call.transformTo(scan);
 
+            return;
+        }
+
+        HazelcastRelOptTable originalRelTable = (HazelcastRelOptTable) scan.getTable();
+        HazelcastTable originalHazelcastTable = OptUtils.getHazelcastTable(scan);
+
+        List<Integer> projects = originalHazelcastTable.getProjects();
         List<Integer> newProjects = Mappings.apply((Mapping) mapping, projects);
 
-        return new MapScanLogicalRel(
-            scan.getCluster(),
-            OptUtils.toLogicalConvention(scan.getTraitSet()),
-            scan.getTable(),
-            newProjects,
-            filter
+        LogicalTableScan newScan = OptUtils.createLogicalScanWithNewTable(
+            scan,
+            originalRelTable,
+            originalHazelcastTable.withProject(newProjects)
         );
+
+        call.transformTo(newScan);
     }
 
     /**
@@ -99,13 +106,13 @@ public final class ProjectIntoScanLogicalRule extends RelOptRule {
      *
      * @param project Project.
      * @param scan Scan.
-     * @return Transformed node (new project with new scan).
      */
-    private RelNode processComplex(Project project, TableScan scan) {
-        // Map projected field references to real scan fields.
-        List<Integer> oldScanFields = getScanProjects(scan);
+    private void processComplex(RelOptRuleCall call, Project project, TableScan scan) {
+        HazelcastRelOptTable originalRelTable = (HazelcastRelOptTable) scan.getTable();
+        HazelcastTable originalHazelcastTable = OptUtils.getHazelcastTable(scan);
 
-        ProjectFieldVisitor projectFieldVisitor = new ProjectFieldVisitor(oldScanFields);
+        // Map projected field references to real scan fields.
+        ProjectFieldVisitor projectFieldVisitor = new ProjectFieldVisitor(originalHazelcastTable.getProjects());
 
         for (RexNode projectExp : project.getProjects()) {
             projectExp.accept(projectFieldVisitor);
@@ -113,16 +120,23 @@ public final class ProjectIntoScanLogicalRule extends RelOptRule {
 
         // Get new scan fields. These are the only fields which are accessed by the project operator, so the rest could be
         // removed.
-        List<Integer> newScanFields = projectFieldVisitor.createNewScanFields();
-        RexNode filter = getScanFilter(scan);
+        List<Integer> newScanProjects = projectFieldVisitor.createNewScanProjects();
 
-        MapScanLogicalRel newScan = new MapScanLogicalRel(
-            scan.getCluster(),
-            OptUtils.toLogicalConvention(scan.getTraitSet()),
-            scan.getTable(),
-            newScanFields,
-            filter
-        );
+        if (newScanProjects.isEmpty()) {
+            // TODO: Retain key only.
+            // No scan columns are referenced from within a project. In principle we may reduce the relation to key only
+            // here, but we do not have a notion of key at the moment. So no-op for now.
+            return;
+        }
+
+        if (newScanProjects.equals(originalHazelcastTable.getProjects())) {
+            // Do nothing if all scan fields are referenced.
+            return;
+        }
+
+        HazelcastTable newHazelcastTable = originalHazelcastTable.withProject(newScanProjects);
+
+        LogicalTableScan newScan = OptUtils.createLogicalScanWithNewTable(scan, originalRelTable, newHazelcastTable);
 
         // Create new project nodes with references to scan fields.
         ProjectConverter projectConverter = projectFieldVisitor.createProjectConverter();
@@ -135,40 +149,19 @@ public final class ProjectIntoScanLogicalRule extends RelOptRule {
             newProjects.add(newProjectExp);
         }
 
-        ProjectLogicalRel newProject = new ProjectLogicalRel(
-            project.getCluster(),
-            OptUtils.toLogicalConvention(project.getTraitSet()),
+        LogicalProject newProject = LogicalProject.create(
             newScan,
+            project.getHints(),
             newProjects,
             project.getRowType()
         );
 
         // If new project is trivial, i.e. it contains only references to scan fields, then it can be eliminated.
         if (ProjectRemoveRule.isTrivial(newProject)) {
-            return newScan;
+            call.transformTo(newScan);
         } else {
-            return newProject;
+            call.transformTo(newProject);
         }
-    }
-
-    /**
-     * Get index of the fields exposed by the scan.
-     *
-     * @param scan Scan.
-     * @return Field indexes.
-     */
-    private static List<Integer> getScanProjects(TableScan scan) {
-        return scan instanceof MapScanLogicalRel ? ((MapScanLogicalRel) scan).getProjects() : scan.identity();
-    }
-
-    /**
-     * Get filter associated with the scan, if any.
-     *
-     * @param scan Scan.
-     * @return Filter or null.
-     */
-    private static RexNode getScanFilter(TableScan scan) {
-        return scan instanceof MapScanLogicalRel ? ((MapScanLogicalRel) scan).getFilter() : null;
     }
 
     /**
@@ -212,7 +205,7 @@ public final class ProjectIntoScanLogicalRule extends RelOptRule {
             return null;
         }
 
-        private List<Integer> createNewScanFields() {
+        private List<Integer> createNewScanProjects() {
             return new ArrayList<>(scanFieldIndexToProjectInputs.keySet());
         }
 

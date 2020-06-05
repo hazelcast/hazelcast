@@ -28,6 +28,7 @@ import org.apache.calcite.plan.RelOptTable;
 import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.RelWriter;
+import org.apache.calcite.rel.metadata.RelMdUtil;
 import org.apache.calcite.rel.metadata.RelMetadataQuery;
 import org.apache.calcite.rex.RexNode;
 
@@ -47,14 +48,12 @@ public class MapIndexScanPhysicalRel extends AbstractMapScanRel implements Physi
         RelOptCluster cluster,
         RelTraitSet traitSet,
         RelOptTable table,
-        List<Integer> projects,
         MapTableIndex index,
         IndexFilter indexFilter,
         RexNode indexExp,
-        RexNode remainderExp,
-        RexNode originalFilter
+        RexNode remainderExp
     ) {
-        super(cluster, traitSet, table, projects, originalFilter);
+        super(cluster, traitSet, table);
 
         this.index = index;
         this.indexFilter = indexFilter;
@@ -80,12 +79,10 @@ public class MapIndexScanPhysicalRel extends AbstractMapScanRel implements Physi
             getCluster(),
             traitSet,
             getTable(),
-            projects,
             index,
             indexFilter,
             indexExp,
-            remainderExp,
-            filter
+            remainderExp
         );
     }
 
@@ -103,32 +100,44 @@ public class MapIndexScanPhysicalRel extends AbstractMapScanRel implements Physi
     }
 
     @Override
+    public double estimateRowCount(RelMetadataQuery mq) {
+        double rowCount = table.getRowCount();
+
+        if (indexExp != null) {
+            rowCount = CostUtils.adjustFilteredRowCount(rowCount, RelMdUtil.guessSelectivity(indexExp));
+        }
+
+        if (remainderExp != null) {
+            rowCount = CostUtils.adjustFilteredRowCount(rowCount, RelMdUtil.guessSelectivity(remainderExp));
+        }
+
+        return rowCount;
+    }
+
+    @Override
     public RelOptCost computeSelfCost(RelOptPlanner planner, RelMetadataQuery mq) {
+        // Get the number of rows being scanned. This is either the whole index (scan), or only part of the index (lookup)
         double scanRowCount = table.getRowCount();
 
-        if (indexFilter == null) {
-            // This is an index scan. It is costlier than normal scan due to an indirection between index records and data
-            // records. Nevertheless, it might be useful due to collation provided by the index itself.
-            return computeSelfCost(
-                planner,
-                mq,
-                scanRowCount,
-                filter,
-                getProjects().size(),
-                CostUtils.INDEX_SCAN_CPU_MULTIPLIER
-            );
-        } else {
-            // This is an index lookup. We scan records matching index filter, then apply the remainder filter on the result.
-            scanRowCount = CostUtils.adjustFilteredRowCount(scanRowCount, mq.getSelectivity(this, filter));
-
-            return computeSelfCost(
-                planner,
-                mq,
-                scanRowCount,
-                remainderExp,
-                getProjects().size(),
-                CostUtils.INDEX_SCAN_CPU_MULTIPLIER
-            );
+        if (indexExp != null) {
+            scanRowCount = CostUtils.adjustFilteredRowCount(scanRowCount, RelMdUtil.guessSelectivity(indexExp));
         }
+
+        // Get the number of rows that we expect after the remainder filter is applied.
+        boolean hasFilter = remainderExp != null;
+
+        double filterRowCount = scanRowCount;
+
+        if (hasFilter) {
+            filterRowCount = CostUtils.adjustFilteredRowCount(filterRowCount, RelMdUtil.guessSelectivity(remainderExp));
+        }
+
+        return computeSelfCost(
+            planner,
+            scanRowCount,
+            CostUtils.INDEX_SCAN_CPU_MULTIPLIER, hasFilter,
+            filterRowCount,
+            getTableUnwrapped().getProjects().size()
+        );
     }
 }

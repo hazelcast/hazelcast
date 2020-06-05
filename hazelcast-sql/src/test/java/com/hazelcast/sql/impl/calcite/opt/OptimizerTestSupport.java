@@ -38,6 +38,7 @@ import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.calcite.plan.RelOptCost;
 import org.apache.calcite.plan.RelOptUtil;
 import org.apache.calcite.plan.RelTraitSet;
+import org.apache.calcite.plan.volcano.VolcanoPlanner;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.schema.Table;
 import org.apache.calcite.sql.SqlExplainLevel;
@@ -45,7 +46,9 @@ import org.apache.calcite.sql.SqlNode;
 
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.io.StringReader;
+import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -260,6 +263,16 @@ public abstract class OptimizerTestSupport extends SqlTestSupport {
 
     private static String planErrorMessage(String message, PlanRows expected, PlanRows actual) {
         return message + "\n\n>>> EXPECTED PLAN:\n" + expected + "\n>>> ACTUAL PLAN:\n" + actual;
+    }
+
+    public static void dump(RelNode node) {
+        VolcanoPlanner planner = (VolcanoPlanner) node.getCluster().getPlanner();
+
+        StringWriter sw = new StringWriter();
+
+        planner.dump(new PrintWriter(sw));
+
+        System.out.println(sw);
     }
 
     /**

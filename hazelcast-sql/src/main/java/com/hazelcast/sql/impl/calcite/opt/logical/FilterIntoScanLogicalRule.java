@@ -17,11 +17,15 @@
 package com.hazelcast.sql.impl.calcite.opt.logical;
 
 import com.hazelcast.sql.impl.calcite.opt.OptUtils;
+import com.hazelcast.sql.impl.calcite.schema.HazelcastRelOptTable;
+import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.RelOptRuleCall;
 import org.apache.calcite.rel.core.Filter;
 import org.apache.calcite.rel.core.RelFactories;
 import org.apache.calcite.rel.core.TableScan;
+import org.apache.calcite.rel.logical.LogicalFilter;
+import org.apache.calcite.rel.logical.LogicalTableScan;
 import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.rex.RexUtil;
 import org.apache.calcite.util.mapping.Mapping;
@@ -35,8 +39,8 @@ public final class FilterIntoScanLogicalRule extends RelOptRule {
 
     private FilterIntoScanLogicalRule() {
         super(
-            operand(Filter.class,
-                operandJ(TableScan.class, null, OptUtils::isProjectableFilterable, none())),
+            operand(LogicalFilter.class,
+                operandJ(LogicalTableScan.class, null, OptUtils::isHazelcastTable, none())),
             RelFactories.LOGICAL_BUILDER,
             FilterIntoScanLogicalRule.class.getSimpleName()
         );
@@ -47,45 +51,32 @@ public final class FilterIntoScanLogicalRule extends RelOptRule {
         Filter filter = call.rel(0);
         TableScan scan = call.rel(1);
 
-        int scanFieldCount = scan.getTable().getRowType().getFieldCount();
+        HazelcastRelOptTable originalRelTable = (HazelcastRelOptTable) scan.getTable();
+        HazelcastTable originalHazelcastTable = OptUtils.getHazelcastTable(scan);
 
-        List<Integer> projects;
-        RexNode oldFilter;
+        List<Integer> projects = originalHazelcastTable.getProjects();
 
-        Mapping mapping;
+        // Remap the new filter to the original table fields.
+        // E.g. the filter [$0 IS NULL] for the projected table [2, 3] is converted to [$2 IS NULL].
+        Mapping mapping = Mappings.source(projects, originalHazelcastTable.getOriginalFieldCount());
 
-        if (scan instanceof MapScanLogicalRel) {
-            MapScanLogicalRel scan0 = (MapScanLogicalRel) scan;
+        RexNode newCondition = RexUtil.apply(mapping, filter.getCondition());
 
-            projects = scan0.getProjects();
-            oldFilter = scan0.getFilter();
+        // Compose the conjunction with the old filter if needed.
+        RexNode originalCondition = originalHazelcastTable.getFilter();
 
-            mapping = Mappings.source(projects, scanFieldCount);
-        } else {
-            projects = null;
-            oldFilter = null;
-
-            mapping = Mappings.source(scan.identity(), scanFieldCount);
-        }
-
-        //Mapping mapping = Mappings.target(scan.identity(), scan.getTable().getRowType().getFieldCount()); // TODO: Old mode
-        RexNode newFilter = RexUtil.apply(mapping, filter.getCondition());
-
-        if (oldFilter != null) {
+        if (originalCondition != null) {
             List<RexNode> nodes = new ArrayList<>(2);
-            nodes.add(oldFilter);
-            nodes.add(newFilter);
+            nodes.add(originalCondition);
+            nodes.add(newCondition);
 
-            newFilter = RexUtil.composeConjunction(scan.getCluster().getRexBuilder(), nodes, true);
+            newCondition = RexUtil.composeConjunction(scan.getCluster().getRexBuilder(), nodes, true);
         }
 
-        MapScanLogicalRel newScan = new MapScanLogicalRel(
-            scan.getCluster(),
-            OptUtils.toLogicalConvention(scan.getTraitSet()),
-            scan.getTable(),
-            projects,
-            newFilter
-        );
+        // Create a scan with a new filter.
+        HazelcastTable newHazelcastTable = originalHazelcastTable.withFilter(newCondition);
+
+        LogicalTableScan newScan = OptUtils.createLogicalScanWithNewTable(scan, originalRelTable, newHazelcastTable);
 
         call.transformTo(newScan);
     }

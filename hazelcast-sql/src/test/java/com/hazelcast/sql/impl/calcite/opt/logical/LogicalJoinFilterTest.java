@@ -72,8 +72,8 @@ public class LogicalJoinFilterTest extends OptimizerTestSupport {
                 planRow(0, RootLogicalRel.class, "", 33.8d),
                 planRow(1, ProjectLogicalRel.class, "r_f1=[$0], s_f1=[$2]", 33.8d),
                 planRow(2, JoinLogicalRel.class, "condition=[=($1, $3)], joinType=[inner]", 33.8d),
-                planRow(3, MapScanLogicalRel.class, "table=[[hazelcast, r]], projects=[[0, 1]], filter=[=($2, 1)]", 15d),
-                planRow(3, MapScanLogicalRel.class, "table=[[hazelcast, s]], projects=[[0, 1]], filter=[=($2, 2)]", 15d)
+                planRow(3, MapScanLogicalRel.class, "table=[[hazelcast, r[projects=[0, 1], filter==($2, 1)]]]", 15d),
+                planRow(3, MapScanLogicalRel.class, "table=[[hazelcast, s[projects=[0, 1], filter==($2, 2)]]]", 15d)
             )
         );
     }

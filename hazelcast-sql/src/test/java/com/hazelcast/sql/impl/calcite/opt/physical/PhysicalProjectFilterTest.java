@@ -34,7 +34,7 @@ public class PhysicalProjectFilterTest extends OptimizerTestSupport {
             plan(
                 planRow(0, RootPhysicalRel.class, "", 100d),
                 planRow(1, ProjectPhysicalRel.class, "EXPR$0=[+($0, $1)], f3=[$2]", 100d),
-                planRow(2, MapScanPhysicalRel.class, "table=[[hazelcast, p]], projects=[[0, 1, 2]]", 100d)
+                planRow(2, MapScanPhysicalRel.class, "table=[[hazelcast, p[projects=[0, 1, 2]]]]", 100d)
             )
         );
     }

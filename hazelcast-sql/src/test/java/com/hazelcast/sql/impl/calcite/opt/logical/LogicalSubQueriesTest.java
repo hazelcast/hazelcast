@@ -55,9 +55,9 @@ public class LogicalSubQueriesTest extends OptimizerTestSupport {
                 new PlanRow(0, RootLogicalRel.class, "", 20.2d),
                 new PlanRow(1, ProjectLogicalRel.class, "r3=[$2]", 20.2),
                 new PlanRow(2, JoinLogicalRel.class, "condition=[AND(=($1, $4), =($0, $3))], joinType=[inner]", 20.2d),
-                new PlanRow(3, MapScanLogicalRel.class, "table=[[hazelcast, r]], projects=[[1, 2, 3]]", 100d),
+                new PlanRow(3, MapScanLogicalRel.class, "table=[[hazelcast, r[projects=[1, 2, 3]]]]", 100d),
                 new PlanRow(3, AggregateLogicalRel.class, "group=[{0, 1}]", 9d),
-                new PlanRow(4, MapScanLogicalRel.class, "table=[[hazelcast, s]], projects=[[1, 2]], filter=[IS NOT NULL($2)]", 90d)
+                new PlanRow(4, MapScanLogicalRel.class, "table=[[hazelcast, s[projects=[1, 2], filter=IS NOT NULL($2)]]]", 90d)
             )
         );
     }
@@ -73,8 +73,8 @@ public class LogicalSubQueriesTest extends OptimizerTestSupport {
                 new PlanRow(0, RootLogicalRel.class, "", 100d),
                 new PlanRow(1, ProjectLogicalRel.class, "r2=[$1]", 100d),
                 new PlanRow(2, JoinLogicalRel.class, "condition=[=($0, $2)], joinType=[semi]", 100d),
-                new PlanRow(3, MapScanLogicalRel.class, "table=[[hazelcast, r]], projects=[[1, 2]]", 100d),
-                new PlanRow(3, MapScanLogicalRel.class, "table=[[hazelcast, s]], projects=[[1]], filter=[<($2, 50)]", 50d)
+                new PlanRow(3, MapScanLogicalRel.class, "table=[[hazelcast, r[projects=[1, 2]]]]", 100d),
+                new PlanRow(3, MapScanLogicalRel.class, "table=[[hazelcast, s[projects=[1], filter=<($2, 50)]]]", 50d)
             )
         );
     }

@@ -39,6 +39,7 @@ import com.hazelcast.sql.impl.calcite.opt.physical.exchange.SortMergeExchangePhy
 import com.hazelcast.sql.impl.calcite.opt.physical.exchange.UnicastExchangePhysicalRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.join.HashJoinPhysicalRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.join.NestedLoopJoinPhysicalRel;
+import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
 import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlOperatorTable;
 import com.hazelcast.sql.impl.explain.QueryExplain;
 import com.hazelcast.sql.impl.expression.ColumnExpression;
@@ -222,6 +223,7 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
 
     @Override
     public void onMapScan(MapScanPhysicalRel rel) {
+        HazelcastTable hazelcastTable = rel.getTableUnwrapped();
         AbstractMapTable table = rel.getMap();
 
         PlanNodeSchema schemaBefore = getScanSchemaBeforeProject(table);
@@ -233,8 +235,8 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
             table.getValueDescriptor(),
             getScanFieldPaths(table),
             schemaBefore.getTypes(),
-            rel.getProjects(),
-            convertFilter(schemaBefore, rel.getFilter())
+            hazelcastTable.getProjects(),
+            convertFilter(schemaBefore, hazelcastTable.getFilter())
         );
 
         pushUpstream(scanNode);
@@ -242,6 +244,7 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
 
     @Override
     public void onMapIndexScan(MapIndexScanPhysicalRel rel) {
+        HazelcastTable hazelcastTable = rel.getTableUnwrapped();
         AbstractMapTable table = rel.getMap();
 
         PlanNodeSchema schemaBefore = getScanSchemaBeforeProject(table);
@@ -253,7 +256,7 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
             table.getValueDescriptor(),
             getScanFieldPaths(table),
             schemaBefore.getTypes(),
-            rel.getProjects(),
+            hazelcastTable.getProjects(),
             rel.getIndex().getName(),
             rel.getIndexFilter(),
             convertFilter(schemaBefore, rel.getRemainderExp())
@@ -264,6 +267,7 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
 
     @Override
     public void onReplicatedMapScan(ReplicatedMapScanPhysicalRel rel) {
+        HazelcastTable hazelcastTable = rel.getTableUnwrapped();
         AbstractMapTable table = rel.getMap();
 
         PlanNodeSchema schemaBefore = getScanSchemaBeforeProject(table);
@@ -275,8 +279,8 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
             table.getValueDescriptor(),
             getScanFieldPaths(table),
             schemaBefore.getTypes(),
-            rel.getProjects(),
-            convertFilter(schemaBefore, rel.getFilter())
+            hazelcastTable.getProjects(),
+            convertFilter(schemaBefore, hazelcastTable.getFilter())
         );
 
         pushUpstream(scanNode);

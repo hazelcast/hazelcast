@@ -19,6 +19,7 @@ package com.hazelcast.sql.impl.calcite.schema;
 import org.apache.calcite.config.CalciteConnectionConfig;
 import org.apache.calcite.jdbc.CalciteSchema;
 import org.apache.calcite.prepare.CalciteCatalogReader;
+import org.apache.calcite.prepare.Prepare;
 import org.apache.calcite.rel.type.RelDataTypeFactory;
 import org.apache.calcite.sql.validate.SqlNameMatchers;
 
@@ -42,5 +43,18 @@ public class HazelcastCalciteCatalogReader extends CalciteCatalogReader {
             typeFactory,
             config
         );
+    }
+
+    @Override
+    public Prepare.PreparingTable getTable(List<String> names) {
+        // Resolve the original table as usual.
+        Prepare.PreparingTable table = super.getTable(names);
+
+        if (table == null) {
+            return null;
+        }
+
+        // Wrap it into our own table.
+        return new HazelcastRelOptTable(table);
     }
 }

@@ -84,6 +84,17 @@ public final class LogicalRules {
         // No-op.
     }
 
+    public static RuleSet getConvertRuleSet() {
+        return RuleSets.ofList(
+            MapScanLogicalRule.INSTANCE,
+            FilterLogicalRule.INSTANCE,
+            ProjectLogicalRule.INSTANCE,
+            AggregateLogicalRule.INSTANCE,
+            SortLogicalRule.INSTANCE,
+            JoinLogicalRule.INSTANCE
+        );
+    }
+
     public static RuleSet getRuleSet() {
         return RuleSets.ofList(
             // Join optimization rules.

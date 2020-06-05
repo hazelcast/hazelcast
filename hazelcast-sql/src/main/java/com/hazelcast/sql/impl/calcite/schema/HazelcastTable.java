@@ -17,19 +17,26 @@
 package com.hazelcast.sql.impl.calcite.schema;
 
 import com.hazelcast.sql.impl.calcite.SqlToQueryType;
+import com.hazelcast.sql.impl.calcite.opt.cost.CostUtils;
 import com.hazelcast.sql.impl.schema.Table;
 import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
+import org.apache.calcite.rel.RelCollation;
+import org.apache.calcite.rel.RelDistribution;
+import org.apache.calcite.rel.RelReferentialConstraint;
+import org.apache.calcite.rel.metadata.RelMdUtil;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeFactory;
 import org.apache.calcite.rel.type.RelDataTypeField;
 import org.apache.calcite.rel.type.RelDataTypeFieldImpl;
 import org.apache.calcite.rel.type.RelRecordType;
 import org.apache.calcite.rel.type.StructKind;
+import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.schema.Statistic;
 import org.apache.calcite.schema.impl.AbstractTable;
 import org.apache.calcite.sql.type.SqlTypeName;
+import org.apache.calcite.util.ImmutableBitSet;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -47,13 +54,51 @@ public class HazelcastTable extends AbstractTable {
 
     private final Table target;
     private final Statistic statistic;
+    private final List<Integer> projects;
+    private final RexNode filter;
 
     private RelDataType rowType;
     private Set<String> hiddenFieldNames;
 
     public HazelcastTable(Table target, Statistic statistic) {
+        this(target, statistic, null, null);
+    }
+
+    private HazelcastTable(Table target, Statistic statistic, List<Integer> projects, RexNode filter) {
         this.target = target;
         this.statistic = statistic;
+        this.projects = projects;
+        this.filter = filter;
+    }
+
+    public HazelcastTable withProject(List<Integer> projects) {
+        return new HazelcastTable(target, statistic, projects, filter);
+    }
+
+    public HazelcastTable withFilter(RexNode filter) {
+        return new HazelcastTable(target, statistic, projects, filter);
+    }
+
+    public List<Integer> getProjects() {
+        assert projects == null || !projects.isEmpty();
+
+        if (projects == null) {
+            int fieldCount = target.getFieldCount();
+
+            List<Integer> res = new ArrayList<>(fieldCount);
+
+            for (int i = 0; i < fieldCount; i++) {
+                res.add(i);
+            }
+
+            return res;
+        }
+
+        return projects;
+    }
+
+    public RexNode getFilter() {
+        return filter;
     }
 
     @SuppressWarnings("unchecked")
@@ -69,10 +114,12 @@ public class HazelcastTable extends AbstractTable {
 
         hiddenFieldNames = new HashSet<>();
 
-        List<RelDataTypeField> convertedFields = new ArrayList<>(target.getFieldCount());
+        List<Integer> projects = getProjects();
 
-        for (int i = 0; i < target.getFieldCount(); i++) {
-            TableField field = target.getField(i);
+        List<RelDataTypeField> convertedFields = new ArrayList<>(projects.size());
+
+        for (Integer project : projects) {
+            TableField field = target.getField(project);
 
             String fieldName = field.getName();
             QueryDataType fieldType = field.getType();
@@ -102,12 +149,103 @@ public class HazelcastTable extends AbstractTable {
 
     @Override
     public Statistic getStatistic() {
-        return statistic;
+        if (filter == null) {
+            return statistic;
+        } else {
+            Double selectivity = RelMdUtil.guessSelectivity(filter);
+
+            double rowCount = CostUtils.adjustFilteredRowCount(statistic.getRowCount(), selectivity);
+
+            return new AdjustedStatistic(rowCount);
+        }
+    }
+
+    public double getTotalRowCount() {
+        return statistic.getRowCount();
     }
 
     public boolean isHidden(String fieldName) {
         assert hiddenFieldNames != null;
 
         return hiddenFieldNames.contains(fieldName);
+    }
+
+    public int getOriginalFieldCount() {
+        return target.getFieldCount();
+    }
+
+    public String getSignature() {
+        if (projects == null && filter == null) {
+            return "";
+        }
+
+        StringBuilder res = new StringBuilder("[");
+
+        if (projects != null) {
+            res.append("projects=[");
+
+            for (int i = 0; i < projects.size(); i++) {
+                if (i != 0) {
+                    res.append(", ");
+                }
+
+                res.append(projects.get(i));
+            }
+
+            res.append("]");
+        }
+
+        if (filter != null) {
+            if (projects != null) {
+                res.append(", ");
+            }
+
+            res.append("filter=").append(filter);
+        }
+
+        res.append("]");
+
+        return res.toString();
+    }
+
+    // TODO: VO: Make sure to project keys (and possibly collations?) properly when implementing sort/aggregate/join. Otherwise
+    //  we may have incorrect optimization results.
+    private final class AdjustedStatistic implements Statistic {
+
+        private final double rowCount;
+
+        private AdjustedStatistic(double rowCount) {
+            this.rowCount = rowCount;
+        }
+
+        @Override
+        public Double getRowCount() {
+            return rowCount;
+        }
+
+        @Override
+        public boolean isKey(ImmutableBitSet columns) {
+            return statistic.isKey(columns);
+        }
+
+        @Override
+        public List<ImmutableBitSet> getKeys() {
+            return statistic.getKeys();
+        }
+
+        @Override
+        public List<RelReferentialConstraint> getReferentialConstraints() {
+            return statistic.getReferentialConstraints();
+        }
+
+        @Override
+        public List<RelCollation> getCollations() {
+            return statistic.getCollations();
+        }
+
+        @Override
+        public RelDistribution getDistribution() {
+            return statistic.getDistribution();
+        }
     }
 }
