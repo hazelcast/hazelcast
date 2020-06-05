@@ -23,7 +23,7 @@ project:
 <!--Gradle-->
 
 ```bash
-compile 'com.hazelcast.jet:hazelcast-jet-core:4.1:tests'
+compile 'com.hazelcast.jet:hazelcast-jet-core:4.1.1:tests'
 compile 'com.hazelcast:hazelcast:4.0.1:tests'
 ```
 

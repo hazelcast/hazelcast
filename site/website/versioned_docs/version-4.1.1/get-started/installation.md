@@ -40,7 +40,7 @@ command. For example, let's check the cluster state:
 ```bash
 $ bin/jet cluster
 State: ACTIVE
-Version: 4.1
+Version: 4.1.1
 Size: 1
 
 ADDRESS                  UUID

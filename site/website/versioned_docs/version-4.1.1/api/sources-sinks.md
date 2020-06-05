@@ -97,7 +97,7 @@ dependency to your application:
 <!--Gradle-->
 
 ```groovy
-compile 'com.hazelcast.jet:hazelcast-jet-avro:4.1'
+compile 'com.hazelcast.jet:hazelcast-jet-avro:4.1.1'
 ```
 
 <!--Maven-->
@@ -204,7 +204,7 @@ dependency to your application:
 <!--Gradle-->
 
 ```groovy
-compile 'com.hazelcast.jet:hazelcast-jet-hadoop:4.1'
+compile 'com.hazelcast.jet:hazelcast-jet-hadoop:4.1.1'
 ```
 
 <!--Maven-->
@@ -281,7 +281,7 @@ application:
 <!--Gradle-->
 
 ```groovy
-compile 'com.hazelcast.jet:hazelcast-jet-s3:4.1'
+compile 'com.hazelcast.jet:hazelcast-jet-s3:4.1.1'
 ```
 
 <!--Maven-->
@@ -355,7 +355,7 @@ dependency to your application:
 
 ```groovy
 
-compile 'com.hazelcast.jet:hazelcast-jet-kafka:4.1'
+compile 'com.hazelcast.jet:hazelcast-jet-kafka:4.1.1'
 ```
 
 <!--Maven-->
@@ -1224,9 +1224,9 @@ processing even with at-least-once sinks.
 
 If Jet doesn’t natively support the data source/sink you need, you can
 build a connector for it yourself by using the
-[SourceBuilder](/javadoc/4.1/com/hazelcast/jet/pipeline/SourceBuilder.html)
+[SourceBuilder](/javadoc/4.1.1/com/hazelcast/jet/pipeline/SourceBuilder.html)
 and
-[SinkBuilder](/javadoc/4.1/com/hazelcast/jet/pipeline/SinkBuilder.html).
+[SinkBuilder](/javadoc/4.1.1/com/hazelcast/jet/pipeline/SinkBuilder.html).
 
 ### SourceBuilder
 

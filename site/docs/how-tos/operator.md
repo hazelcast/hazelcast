@@ -215,7 +215,7 @@ folder with the commands below:
 
 ```bash
 tar xf hazelcast-jet-4.1.1.tar.gz
-cd hazelcast-jet-4.1/
+cd hazelcast-jet-4.1.1/
 ```
 
 Verify that CLI can connect to the cluster with the command below:

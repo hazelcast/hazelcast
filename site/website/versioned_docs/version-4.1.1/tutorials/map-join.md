@@ -34,7 +34,7 @@ We will use the ticker to lookup the full company name in a replicated map.
 ```bash
 cd <where_you_downloaded_it>
 tar zxvf hazelcast-jet-4.1.1.tar.gz
-cd hazelcast-jet-4.1
+cd hazelcast-jet-4.1.1
 ```
 
 3. Start Jet:
@@ -75,7 +75,7 @@ repositories.mavenCentral()
 
 dependencies {
     compile 'com.hazelcast.jet:hazelcast-jet:4.1.1'
-    compile 'com.hazelcast.jet.examples:hazelcast-jet-examples-trade-source:4.1'
+    compile 'com.hazelcast.jet.examples:hazelcast-jet-examples-trade-source:4.1.1'
 }
 
 jar {

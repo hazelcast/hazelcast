@@ -258,9 +258,9 @@ beans:
        xsi:schemaLocation="http://www.springframework.org/schema/beans
         http://www.springframework.org/schema/beans/spring-beans-2.5.xsd
         http://www.hazelcast.com/schema/spring
-        http://www.hazelcast.com/schema/spring/hazelcast-spring-{imdg-version}.xsd
+        http://www.hazelcast.com/schema/spring/hazelcast-spring-{imdg-minor-version}.xsd
         http://www.hazelcast.com/schema/jet-spring
-        http://www.hazelcast.com/schema/jet-spring/hazelcast-jet-spring-{jet-version}.xsd">
+        http://www.hazelcast.com/schema/jet-spring/hazelcast-jet-spring-{jet-minor-version}.xsd">
 
     <!-- Obtain Hazelcast IMDG instance from Hazelcast Jet instance-->
     <jet:hazelcast jet-instance-ref="jet-instance" id="hazelcast-instance"/>

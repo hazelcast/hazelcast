@@ -1,4 +1,6 @@
 {
  "jet-version": "4.2-SNAPSHOT",
- "imdg-version": "4.0.1"
+ "jet-minor-version": "4.2",
+ "imdg-version": "4.0.1",
+ "imdg-minor-version": "4.0"
 }

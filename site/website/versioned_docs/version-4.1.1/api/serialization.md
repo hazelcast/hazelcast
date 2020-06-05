@@ -159,8 +159,8 @@ types:
 
 - [java.io.Serializable](https://docs.oracle.com/javase/8/docs/api/java/io/Serializable.html)
 - [java.io.Externalizable](https://docs.oracle.com/javase/8/docs/api/java/io/Externalizable.html)
-- [com.hazelcast.nio.serialization.Portable](/javadoc/4.1/com/hazelcast/nio/serialization/Portable.html)
-- [com.hazelcast.nio.serialization.StreamSerializer](/javadoc/4.1/com/hazelcast/nio/serialization/StreamSerializer.html)
+- [com.hazelcast.nio.serialization.Portable](/javadoc/4.1.1/com/hazelcast/nio/serialization/Portable.html)
+- [com.hazelcast.nio.serialization.StreamSerializer](/javadoc/4.1.1/com/hazelcast/nio/serialization/StreamSerializer.html)
 
 The following table provides a comparison between them to help you in
 deciding which interface to use in your applications.
@@ -217,7 +217,7 @@ not to mention very wasteful with memory.
 
 For the best performance and simplest implementation we recommend using
 the Hazelcast
-[StreamSerializer](/javadoc/4.1/com/hazelcast/nio/serialization/StreamSerializer.html)
+[StreamSerializer](/javadoc/4.1.1/com/hazelcast/nio/serialization/StreamSerializer.html)
 mechanism. Here is a sample implementation for a `Person` class:
 
 ```java
@@ -343,7 +343,7 @@ dependency to your Jet job's project:
 <!--Gradle-->
 
 ```groovy
-compile "com.hazelcast.jet:hazelcast-jet-protobuf:4.1"
+compile "com.hazelcast.jet:hazelcast-jet-protobuf:4.1.1"
 ```
 
 <!--Maven-->

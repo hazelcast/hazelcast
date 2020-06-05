@@ -28,7 +28,7 @@ hub](https://hub.docker.com/r/hazelcast/hazelcast-jet/). You can check
 the version of Jet in the logs, look for a line similar to this one:
 
 ```text
-2020-05-18 19:34:43,872 [ INFO] [main] [c.h.system]: Hazelcast Jet 4.1 (20200429 - e6c60a1) starting at [172.17.0.2]:5701
+2020-05-18 19:34:43,872 [ INFO] [main] [c.h.system]: Hazelcast Jet 4.1.1 (20200605 - cff6d45) starting at [172.17.0.2]:5701
 ```
 
 You can also verify the version of Hazelcast Jet by running the
@@ -42,7 +42,7 @@ You should get an output similar to the following:
 
 ```text
 $ docker run hazelcast/hazelcast-jet jet --version
-Hazelcast Jet 4.1
+Hazelcast Jet 4.1.1
 Revision e6c60a1
 Build 20200429
 ```

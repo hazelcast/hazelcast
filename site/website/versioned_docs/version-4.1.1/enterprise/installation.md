@@ -19,7 +19,7 @@ unzip it to a folder which we will refer from now on as `JET_HOME`.
 ```bash
 wget https://download.hazelcast.com/jet-enterprise/hazelcast-jet-enterprise-4.1.1.tar.gz
 tar zxvf hazelcast-jet-enterprise-4.1.1.tar.gz
-cd hazelcast-jet-enterprise-4.1
+cd hazelcast-jet-enterprise-4.1.1
 ```
 
 ## Set License Key
@@ -137,11 +137,11 @@ below instead of our example's `172.17.0.2`. Let's submit the Hello
 World application from the distribution package:
 
 ```bash
-cd hazelcast-jet-enterprise-4.1
+cd hazelcast-jet-enterprise-4.1.1
 docker run -it -v "$(pwd)"/examples:/examples hazelcast/hazelcast-jet-enterprise jet -a 172.17.0.2 submit /examples/hello-world.jar
 ```
 
-The command mounts the local `examples` directory from `hazelcast-jet-enterprise-4.1`
+The command mounts the local `examples` directory from `hazelcast-jet-enterprise-4.1.1`
 to the container and uses `jet submit` to submit the example JAR. While
 the job is running, it should produce output like this:
 

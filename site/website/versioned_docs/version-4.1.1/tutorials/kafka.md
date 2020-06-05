@@ -29,7 +29,7 @@ From now on we assume Kafka is running on your machine.
 ```bash
 cd <where_you_downloaded_it>
 tar zxvf hazelcast-jet-4.1.1.tar.gz
-cd hazelcast-jet-4.1
+cd hazelcast-jet-4.1.1
 ```
 
 If you already have Jet and you skipped the above steps, make sure to
@@ -38,7 +38,7 @@ follow from here on.
 3. Activate the Apache Kafka Connector plugin:
 
 ```bash
-mv opt/hazelcast-jet-kafka-4.1.jar lib/
+mv opt/hazelcast-jet-kafka-4.1.1.jar lib/
 ```
 
 4. Start Jet:
@@ -78,7 +78,7 @@ repositories.mavenCentral()
 
 dependencies {
     compile 'com.hazelcast.jet:hazelcast-jet:4.1.1'
-    compile 'com.hazelcast.jet:hazelcast-jet-kafka:4.1'
+    compile 'com.hazelcast.jet:hazelcast-jet-kafka:4.1.1'
 }
 
 jar.manifest.attributes 'Main-Class': 'org.example.JetJob'
