@@ -145,5 +145,23 @@ public class PhoneHomeTest extends HazelcastTestSupport {
         parameters = phoneHome.phoneHome(true);
         assertEquals(parameters.get("mpct"), "3");
     }
+
+    @Test
+    public void testMapCountWithBackupReadEnabled() {
+        HazelcastInstance hz = createHazelcastInstance();
+        Node node = getNode(hz);
+        PhoneHome phoneHome = new PhoneHome(node);
+        Map<String, String> parameters;
+        parameters = phoneHome.phoneHome(true);
+        assertEquals(parameters.get("mpbrct"), "0");
+
+        Map<String, String> map1 = hz.getMap("hazelcast");
+        parameters = phoneHome.phoneHome(true);
+        assertEquals(parameters.get("mpbrct"), "0");
+
+        node.getConfig().getMapConfig("hazelcast").setReadBackupData(true);
+        parameters = phoneHome.phoneHome(true);
+        assertEquals(parameters.get("mpbrct"), "1");
+    }
 }
 

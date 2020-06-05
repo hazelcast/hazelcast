@@ -39,7 +39,13 @@ class MapInfoCollector implements MetricsCollector {
         Map<String, String> mapInfo = new HashMap<>();
 
         mapInfo.put("mpct", String.valueOf(maps.size()));
+        mapInfo.put("mpbrct", String.valueOf(countMapWithBackupReadEnabled(hazelcastNode)));
 
         return mapInfo;
+    }
+
+    private long countMapWithBackupReadEnabled(Node node) {
+        return maps.stream().filter(distributedObject -> node.getConfig().
+                getMapConfig(distributedObject.getName()).isReadBackupData()).count();
     }
 }
