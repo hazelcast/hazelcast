@@ -214,7 +214,7 @@ In a different terminal window, unpack and navigate to the distribution
 folder with the commands below:
 
 ```bash
-tar xf hazelcast-jet-4.1.tar.gz
+tar xf hazelcast-jet-4.1.1.tar.gz
 cd hazelcast-jet-4.1/
 ```
 
