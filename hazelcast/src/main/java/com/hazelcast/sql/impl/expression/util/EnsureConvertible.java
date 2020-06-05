@@ -36,7 +36,7 @@ public final class EnsureConvertible {
      * @throws QueryException if the expression is not convertible.
      */
     public static void toBoolean(Expression<?> expression) {
-        if (!expression.getType().getConverter().canConvertToBit()) {
+        if (!expression.getType().getConverter().canConvertToBoolean()) {
             throw QueryException.error("Expression cannot be converted to BOOLEAN: " + expression);
         }
     }

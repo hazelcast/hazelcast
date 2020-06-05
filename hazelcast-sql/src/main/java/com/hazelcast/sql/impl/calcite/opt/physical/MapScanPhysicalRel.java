@@ -30,7 +30,7 @@ import java.util.List;
  * Traits:
  * <ul>
  *     <li><b>Collation</b>: empty, as map is not sorted</li>
- *     <li><b>Distribution</b>: PARTITIONED</li>
+ *     <li><b>Distribution</b>: PARTITIONED or REPLICATED depending on the map type</li>
  * </ul>
  */
 public class MapScanPhysicalRel extends AbstractMapScanPhysicalRel {

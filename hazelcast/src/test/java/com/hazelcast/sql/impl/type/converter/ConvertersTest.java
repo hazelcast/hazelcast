@@ -847,7 +847,7 @@ public class ConvertersTest {
                 break;
 
             case BOOLEAN:
-                assertEquals(expected, converter.canConvertToBit());
+                assertEquals(expected, converter.canConvertToBoolean());
 
                 break;
 

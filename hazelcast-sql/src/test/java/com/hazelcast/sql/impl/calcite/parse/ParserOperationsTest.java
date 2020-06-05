@@ -62,6 +62,11 @@ public class ParserOperationsTest {
     }
 
     @Test
+    public void testWhereIsPredicates() {
+        checkSuccess("SELECT a, b FROM t WHERE a IS NULL");
+    }
+
+    @Test
     public void testWhereComparison() {
         checkSuccess("SELECT a, b FROM t WHERE a = b");
         checkSuccess("SELECT a, b FROM t WHERE a != b");
@@ -70,7 +75,6 @@ public class ParserOperationsTest {
         checkSuccess("SELECT a, b FROM t WHERE a >= b");
         checkSuccess("SELECT a, b FROM t WHERE a < b");
         checkSuccess("SELECT a, b FROM t WHERE a <= b");
-        checkSuccess("SELECT a, b FROM t WHERE a IN (1, 2)");
     }
 
     private static void checkSuccess(String sql) {

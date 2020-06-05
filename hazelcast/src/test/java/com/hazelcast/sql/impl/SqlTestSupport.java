@@ -38,6 +38,8 @@ import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Helper test classes.
@@ -154,5 +156,12 @@ public class SqlTestSupport extends HazelcastTestSupport {
 
     public static NodeEngineImpl nodeEngine(HazelcastInstance instance) {
         return ((HazelcastInstanceProxy) instance).getOriginal().node.nodeEngine;
+    }
+
+    public static Row row(Object... values) {
+        assertNotNull(values);
+        assertTrue(values.length > 0);
+
+        return new HeapRow(values);
     }
 }

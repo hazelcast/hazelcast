@@ -16,18 +16,11 @@
 
 package com.hazelcast.internal.monitor;
 
-import com.hazelcast.collection.LocalQueueStats;
-import com.hazelcast.executor.LocalExecutorStats;
 import com.hazelcast.internal.management.dto.ClientEndPointDTO;
 import com.hazelcast.internal.management.dto.ClusterHotRestartStatusDTO;
 import com.hazelcast.json.internal.JsonSerializable;
-import com.hazelcast.map.LocalMapStats;
-import com.hazelcast.multimap.LocalMultiMapStats;
-import com.hazelcast.replicatedmap.LocalReplicatedMapStats;
-import com.hazelcast.topic.LocalTopicStats;
 
 import java.util.Collection;
-import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -58,33 +51,7 @@ public interface MemberState extends JsonSerializable {
      */
     String getName();
 
-    Map<String, Long> getRuntimeProps();
-
-    LocalMapStats getLocalMapStats(String mapName);
-
-    LocalMultiMapStats getLocalMultiMapStats(String mapName);
-
-    LocalQueueStats getLocalQueueStats(String queueName);
-
-    LocalTopicStats getLocalTopicStats(String topicName);
-
-    LocalTopicStats getReliableLocalTopicStats(String reliableTopicName);
-
-    LocalPNCounterStats getLocalPNCounterStats(String pnCounterName);
-
-    LocalReplicatedMapStats getLocalReplicatedMapStats(String replicatedMapName);
-
-    LocalExecutorStats getLocalExecutorStats(String executorName);
-
-    LocalCacheStats getLocalCacheStats(String cacheName);
-
-    LocalWanStats getLocalWanStats(String schemeName);
-
-    LocalFlakeIdGeneratorStats getLocalFlakeIdGeneratorStats(String flakeIdName);
-
     Collection<ClientEndPointDTO> getClients();
-
-    LocalMemoryStats getLocalMemoryStats();
 
     /**
      * Returns the local operation statistics.
@@ -100,6 +67,4 @@ public interface MemberState extends JsonSerializable {
     HotRestartState getHotRestartState();
 
     ClusterHotRestartStatusDTO getClusterHotRestartStatus();
-
-    WanSyncState getWanSyncState();
 }

@@ -251,7 +251,7 @@ public class SqlServiceImpl implements SqlService, Consumer<Packet> {
             clazz = Class.forName(className);
         } catch (ClassNotFoundException e) {
             logger.log(SQL_MODULE_OPTIMIZER_CLASS.equals(className) ? Level.FINE : Level.WARNING,
-                    "Optimizer class \"" + className + "\" not found, falling back to " + DisabledSqlOptimizer.class.getName());
+                "Optimizer class \"" + className + "\" not found, falling back to " + DisabledSqlOptimizer.class.getName());
 
             return new DisabledSqlOptimizer();
         } catch (Exception e) {

@@ -27,7 +27,10 @@ import org.apache.calcite.rel.core.Filter;
 import org.apache.calcite.rel.metadata.RelMetadataQuery;
 import org.apache.calcite.rex.RexNode;
 
-public abstract class AbstractFilterRel extends Filter {
+/**
+ * Base class for filters.
+ */
+public abstract class AbstractFilterRel extends Filter implements HazelcastRelNode {
     public AbstractFilterRel(
         RelOptCluster cluster,
         RelTraitSet traits,
@@ -47,7 +50,7 @@ public abstract class AbstractFilterRel extends Filter {
         double inputRows = mq.getRowCount(getInput());
 
         double rows = CostUtils.adjustFilteredRowCount(inputRows, mq.getSelectivity(this, condition));
-        double cpu = inputRows + 1;
+        double cpu = inputRows;
 
         return planner.getCostFactory().makeCost(rows, cpu, 0);
     }

@@ -25,7 +25,7 @@ import org.apache.calcite.rel.RelNode;
 import java.util.List;
 
 /**
- * Logical scan.
+ * Logical map scan.
  */
 public class MapScanLogicalRel extends AbstractMapScanRel implements LogicalRel {
     public MapScanLogicalRel(

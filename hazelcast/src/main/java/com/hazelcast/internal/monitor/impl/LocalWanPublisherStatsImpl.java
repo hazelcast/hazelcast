@@ -33,8 +33,6 @@ import static com.hazelcast.internal.metrics.MetricDescriptorConstants.WAN_METRI
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.WAN_METRIC_TOTAL_PUBLISH_LATENCY;
 import static com.hazelcast.internal.metrics.ProbeUnit.MS;
 import static com.hazelcast.internal.util.JsonUtil.getBoolean;
-import static com.hazelcast.internal.util.JsonUtil.getInt;
-import static com.hazelcast.internal.util.JsonUtil.getLong;
 import static com.hazelcast.internal.util.JsonUtil.getString;
 import static java.util.concurrent.atomic.AtomicLongFieldUpdater.newUpdater;
 
@@ -47,6 +45,7 @@ public class LocalWanPublisherStatsImpl implements LocalWanPublisherStats {
 
     private volatile boolean connected;
     private volatile WanPublisherState state;
+
     @Probe(name = WAN_METRIC_OUTBOUND_QUEUE_SIZE)
     private volatile int outboundQueueSize;
     @Probe(name = WAN_METRIC_TOTAL_PUBLISH_LATENCY, unit = MS)
@@ -140,9 +139,6 @@ public class LocalWanPublisherStatsImpl implements LocalWanPublisherStats {
     public JsonObject toJson() {
         JsonObject root = new JsonObject();
         root.add("isConnected", connected);
-        root.add("totalPublishLatencies", totalPublishLatency);
-        root.add("totalPublishedEventCount", totalPublishedEventCount);
-        root.add("outboundQueueSize", outboundQueueSize);
         root.add("state", state.name());
         return root;
     }
@@ -150,9 +146,6 @@ public class LocalWanPublisherStatsImpl implements LocalWanPublisherStats {
     @Override
     public void fromJson(JsonObject json) {
         connected = getBoolean(json, "isConnected", false);
-        totalPublishLatency = getLong(json, "totalPublishLatencies", -1);
-        totalPublishedEventCount = getLong(json, "totalPublishedEventCount", -1);
-        outboundQueueSize = getInt(json, "outboundQueueSize", -1);
         state = WanPublisherState.valueOf(getString(json, "state", WanPublisherState.REPLICATING.name()));
     }
 

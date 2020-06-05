@@ -41,6 +41,9 @@ import com.hazelcast.sql.impl.plan.node.join.NestedLoopJoinPlanNode;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Visitor that collects edges of a plan fragment.
+ */
 public class EdgeCollectorPlanNodeVisitor implements PlanNodeVisitor {
     /** Outbound edge. */
     private Integer outboundEdge;

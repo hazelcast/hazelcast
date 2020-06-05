@@ -265,6 +265,26 @@ public class DistributionTraitDef extends RelTraitDef<DistributionTrait> {
     }
 
     @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        DistributionTraitDef that = (DistributionTraitDef) o;
+
+        return memberCount == that.memberCount;
+    }
+
+    @Override
+    public int hashCode() {
+        return memberCount;
+    }
+
+    @Override
     public String toString() {
         return "DistributionTraitDef {memberCount=" + memberCount + '}';
     }

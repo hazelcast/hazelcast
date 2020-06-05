@@ -25,6 +25,9 @@ import org.apache.calcite.rel.convert.ConverterRule;
 import org.apache.calcite.rel.core.Project;
 import org.apache.calcite.rel.logical.LogicalProject;
 
+/**
+ * Converts abstract project to logical project.
+ */
 public final class ProjectLogicalRule extends ConverterRule {
     public static final RelOptRule INSTANCE = new ProjectLogicalRule();
 

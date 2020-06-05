@@ -32,9 +32,9 @@ import org.apache.calcite.rex.RexNode;
 import java.util.List;
 
 /**
- * Base class for projections.
+ * Base class for projects.
  */
-public abstract class AbstractProjectRel extends Project {
+public abstract class AbstractProjectRel extends Project implements HazelcastRelNode {
     public AbstractProjectRel(
         RelOptCluster cluster,
         RelTraitSet traits,
@@ -51,9 +51,9 @@ public abstract class AbstractProjectRel extends Project {
     }
 
     @Override
-    public RelOptCost computeSelfCost(RelOptPlanner planner, RelMetadataQuery mq) {
+    public final RelOptCost computeSelfCost(RelOptPlanner planner, RelMetadataQuery mq) {
         double rows = mq.getRowCount(getInput());
-        double cpu = CostUtils.getProjectCpu(rows + 1, exps.size());
+        double cpu = CostUtils.getProjectCpu(rows, exps.size());
 
         return planner.getCostFactory().makeCost(rows, cpu, 0);
     }

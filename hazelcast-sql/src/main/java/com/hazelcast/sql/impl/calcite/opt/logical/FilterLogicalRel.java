@@ -23,6 +23,9 @@ import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.core.Filter;
 import org.apache.calcite.rex.RexNode;
 
+/**
+ * Logical filter.
+ */
 public class FilterLogicalRel extends AbstractFilterRel implements LogicalRel {
     public FilterLogicalRel(
         RelOptCluster cluster,

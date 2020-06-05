@@ -25,7 +25,10 @@ import org.apache.calcite.rel.RelWriter;
 import org.apache.calcite.rel.SingleRel;
 import org.apache.calcite.rel.metadata.RelMetadataQuery;
 
-public class AbstractRootRel extends SingleRel {
+/**
+ * Base class for root operators.
+ */
+public abstract class AbstractRootRel extends SingleRel implements HazelcastRelNode {
     public AbstractRootRel(RelOptCluster cluster, RelTraitSet traits, RelNode input) {
         super(cluster, traits, input);
     }
@@ -38,7 +41,7 @@ public class AbstractRootRel extends SingleRel {
     @Override
     public final RelOptCost computeSelfCost(RelOptPlanner planner, RelMetadataQuery mq) {
         double rows = mq.getRowCount(getInput());
-        double cpu = rows + 1;
+        double cpu = rows;
 
         return planner.getCostFactory().makeCost(rows, cpu, 0);
     }

@@ -21,6 +21,16 @@ import org.apache.calcite.plan.RelOptUtil;
 
 /**
  * Cost of relational operator.
+ * <p>
+ * We use our own implementation instead of the one provided by Apache Calcite. In Apache Calcite, the cost is a vector of
+ * three values - row count, CPU and IO. First, it has some problems with comparison semantics [1]. Second, its comparison
+ * depends mostly on row count, while in our case other factors, such as network, are more important. Last, it has a
+ * number of methods and variables that are otherwise unused (or mostly unused).
+ * <p>
+ * Our implementation still tracks row count, CPU and network, but it doesn't implement unnecessary methods, has proper
+ * comparison semantics, and use CPU and network for cost comparison instead row count.
+ * <p>
+ * [1] https://issues.apache.org/jira/browse/CALCITE-3956
  */
 public class Cost implements RelOptCost {
 
@@ -82,12 +92,12 @@ public class Cost implements RelOptCost {
 
         Cost other0 = (Cost) other;
 
-        if (this == other0) {
-            return true;
-        }
-
         if (isInfinite() || other0.isInfinite()) {
             return false;
+        }
+
+        if (this == other0) {
+            return true;
         }
 
         return Math.abs(getValue() - other0.getValue()) < RelOptUtil.EPSILON;
@@ -110,7 +120,7 @@ public class Cost implements RelOptCost {
     }
 
     @Override
-    public RelOptCost plus(RelOptCost other) {
+    public Cost plus(RelOptCost other) {
         Cost other0 = (Cost) other;
 
         if (isInfinite() || other.isInfinite()) {
@@ -126,7 +136,7 @@ public class Cost implements RelOptCost {
     }
 
     @Override
-    public RelOptCost multiplyBy(double factor) {
+    public Cost multiplyBy(double factor) {
         if (isInfinite()) {
             return INFINITY;
         }
@@ -163,7 +173,7 @@ public class Cost implements RelOptCost {
             return equals((RelOptCost) other);
         }
 
-        return equals((RelOptCost) other);
+        return false;
     }
 
     @Override

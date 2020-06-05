@@ -17,7 +17,6 @@
 package com.hazelcast.sql.impl.optimizer;
 
 public enum SqlPlanType {
-
     /** Schema plan. */
     SCHEMA,
 

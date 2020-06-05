@@ -83,15 +83,13 @@ public final class SqlToQueryType {
     }
 
     private SqlToQueryType() {
+        // No-op.
     }
 
     public static SqlTypeName map(QueryDataTypeFamily family) {
         return HZ_TO_CALCITE.get(family);
     }
 
-    /**
-     * Maps the given {@link SqlTypeName} to {@link QueryDataType}.
-     */
     public static QueryDataType map(SqlTypeName sqlTypeName) {
         QueryDataType queryDataType = CALCITE_TO_HZ.get(sqlTypeName);
         if (queryDataType == null) {
@@ -100,9 +98,6 @@ public final class SqlToQueryType {
         return queryDataType;
     }
 
-    /**
-     * Maps the given Calcite's row type to {@link QueryDataType} row type.
-     */
     public static QueryDataType[] mapRowType(RelDataType rowType) {
         List<RelDataTypeField> fields = rowType.getFieldList();
 

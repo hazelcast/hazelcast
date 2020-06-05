@@ -187,7 +187,7 @@ public abstract class Converter implements Serializable {
         return val;
     }
 
-    public final boolean canConvertToBit() {
+    public final boolean canConvertToBoolean() {
         return convertToBoolean;
     }
 
@@ -247,7 +247,7 @@ public abstract class Converter implements Serializable {
     public final boolean canConvertTo(QueryDataTypeFamily typeFamily) {
         switch (typeFamily) {
             case BOOLEAN:
-                return canConvertToBit();
+                return canConvertToBoolean();
 
             case TINYINT:
                 return canConvertToTinyint();

@@ -41,7 +41,6 @@ import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -137,8 +136,8 @@ public class TimedMemberStateTest extends HazelcastTestSupport {
 
         MemberStateImpl memberState = createState().getMemberState();
         for (int i = 0; i < 100; i++) {
-            assertNotNull(memberState.getLocalCacheStats(getDistributedObjectName(CACHE_WITH_STATS_PREFIX + i)));
-            assertNull(memberState.getLocalCacheStats(getDistributedObjectName(CACHE_WITHOUT_STATS_PREFIX + i)));
+            assertContains(memberState.getCachesWithStats(), getDistributedObjectName(CACHE_WITH_STATS_PREFIX + i));
+            assertNotContains(memberState.getCachesWithStats(), getDistributedObjectName(CACHE_WITHOUT_STATS_PREFIX + i));
         }
     }
 

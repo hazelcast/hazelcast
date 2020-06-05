@@ -22,13 +22,12 @@ package com.hazelcast.sql.impl.calcite.opt.distribution;
 public enum DistributionType {
     /**
      * Abstract unknown distribution. Rel nodes start in this mode, but must be converted to specific distribution
-     * eventually.
+     * during physical planning.
      */
     ANY,
 
     /**
-     * Data set is distributed between nodes, i.e. every tuple is located on exactly one node, but tuples are
-     * potentially located on all nodes.
+     * Data set is partitioned between nodes. Each tuple is located on exactly one node.
      */
     PARTITIONED,
 
@@ -39,7 +38,7 @@ public enum DistributionType {
     REPLICATED,
 
     /**
-     * The whole data set is located on the root node.
+     * Data set is located on the root node.
      */
     ROOT
 }

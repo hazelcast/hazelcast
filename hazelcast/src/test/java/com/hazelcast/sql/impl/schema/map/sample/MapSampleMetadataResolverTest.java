@@ -103,6 +103,9 @@ public class MapSampleMetadataResolverTest extends MapSchemaTestSupport {
         checkPrimitive(Instant.now(), QueryDataType.TIMESTAMP_WITH_TZ_INSTANT);
         checkPrimitive(OffsetDateTime.now(), QueryDataType.TIMESTAMP_WITH_TZ_OFFSET_DATE_TIME);
         checkPrimitive(ZonedDateTime.now(), QueryDataType.TIMESTAMP_WITH_TZ_ZONED_DATE_TIME);
+
+        checkPrimitive(new JavaWithoutFields(), QueryDataType.OBJECT);
+        checkPrimitive(new PortableWithoutFields(), QueryDataType.OBJECT);
     }
 
     @Test
@@ -710,6 +713,10 @@ public class MapSampleMetadataResolverTest extends MapSchemaTestSupport {
         }
     }
 
+    private static class JavaWithoutFields implements Serializable {
+        // No-op.
+    }
+
     private static class PortableParent implements Portable {
 
         public boolean fBoolean;
@@ -809,6 +816,28 @@ public class MapSampleMetadataResolverTest extends MapSchemaTestSupport {
         public void readPortable(PortableReader reader) throws IOException {
             k = reader.readInt(KEY);
             v = reader.readInt(VALUE);
+        }
+    }
+
+    private static class PortableWithoutFields implements Portable {
+        @Override
+        public int getFactoryId() {
+            return 1;
+        }
+
+        @Override
+        public int getClassId() {
+            return 5;
+        }
+
+        @Override
+        public void writePortable(PortableWriter writer) throws IOException {
+            // No-op.
+        }
+
+        @Override
+        public void readPortable(PortableReader reader) throws IOException {
+            // No-op.
         }
     }
 }

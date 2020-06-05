@@ -26,6 +26,9 @@ import org.apache.calcite.rex.RexNode;
 
 import java.util.List;
 
+/**
+ * Logical project.
+ */
 public class ProjectLogicalRel extends AbstractProjectRel implements LogicalRel {
     public ProjectLogicalRel(
         RelOptCluster cluster,

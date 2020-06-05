@@ -25,7 +25,7 @@ import org.apache.calcite.rel.core.Filter;
 import org.apache.calcite.rex.RexNode;
 
 /**
- * Physical projection.
+ * Physical filter.
  * <p>
  * Traits:
  * <ul>

@@ -28,7 +28,7 @@ import java.util.Collections;
 /**
  * Base class for scans.
  */
-public abstract class AbstractScanRel extends TableScan {
+public abstract class AbstractScanRel extends TableScan implements HazelcastRelNode {
     protected AbstractScanRel(RelOptCluster cluster, RelTraitSet traitSet, RelOptTable table) {
         super(cluster, traitSet, Collections.emptyList(), table);
     }

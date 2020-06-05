@@ -16,11 +16,9 @@
 
 package com.hazelcast.internal.monitor.impl;
 
-import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.monitor.LocalFlakeIdGeneratorStats;
 import com.hazelcast.internal.util.Clock;
-import com.hazelcast.json.internal.JsonSerializable;
 
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 
@@ -28,19 +26,17 @@ import static com.hazelcast.internal.metrics.MetricDescriptorConstants.FLAKE_ID_
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.FLAKE_ID_METRIC_CREATION_TIME;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.FLAKE_ID_METRIC_ID_COUNT;
 import static com.hazelcast.internal.metrics.ProbeUnit.MS;
-import static com.hazelcast.internal.util.JsonUtil.getLong;
 import static java.util.concurrent.atomic.AtomicLongFieldUpdater.newUpdater;
 
-public class LocalFlakeIdGeneratorStatsImpl implements LocalFlakeIdGeneratorStats, JsonSerializable {
+public class LocalFlakeIdGeneratorStatsImpl implements LocalFlakeIdGeneratorStats {
 
     private static final AtomicLongFieldUpdater<LocalFlakeIdGeneratorStatsImpl> BATCH_COUNT =
             newUpdater(LocalFlakeIdGeneratorStatsImpl.class, "batchCount");
-
     private static final AtomicLongFieldUpdater<LocalFlakeIdGeneratorStatsImpl> ID_COUNT =
             newUpdater(LocalFlakeIdGeneratorStatsImpl.class, "idCount");
 
     @Probe(name = FLAKE_ID_METRIC_CREATION_TIME, unit = MS)
-    private volatile long creationTime;
+    private final long creationTime;
     @Probe(name = FLAKE_ID_METRIC_BATCH_COUNT)
     private volatile long batchCount;
     @Probe(name = FLAKE_ID_METRIC_ID_COUNT)
@@ -70,24 +66,11 @@ public class LocalFlakeIdGeneratorStatsImpl implements LocalFlakeIdGeneratorStat
     }
 
     @Override
-    public JsonObject toJson() {
-        JsonObject root = new JsonObject();
-        root.add("creationTime", creationTime);
-        root.add("batchCount", batchCount);
-        root.add("idCount", idCount);
-        return root;
-    }
-
-    @Override
-    public void fromJson(JsonObject json) {
-        creationTime = getLong(json, "creationTime", -1L);
-        batchCount = getLong(json, "batchCount", 0);
-        idCount = getLong(json, "idCount", 0);
-    }
-
-    @Override
     public String toString() {
-        return "LocalFlakeIdStatsImpl{" + "creationTime=" + creationTime + ", batchCount="
-                + batchCount + ", idCount=" + idCount + '}';
+        return "LocalFlakeIdStatsImpl{"
+                + "creationTime=" + creationTime
+                + ", batchCount=" + batchCount
+                + ", idCount=" + idCount
+                + '}';
     }
 }

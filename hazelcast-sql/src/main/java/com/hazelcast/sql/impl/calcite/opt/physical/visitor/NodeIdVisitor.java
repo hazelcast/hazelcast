@@ -25,14 +25,14 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Visitor which assigns unique numbers to physical rels. These numbers are propagated to the plan and executor nodes
- * in order to facilitate monitoring and debugging.
+ * Visitor that assigns unique numbers to physical rels. These numbers are propagated to the plan and executor nodes
+ * in order to facilitate compilation, monitoring and debugging.
  */
 public class NodeIdVisitor extends PhysicalRelVisitorAdapter {
     /** Initial index. */
     private int curId;
 
-    /** Map from the node to its indexes as they are found in the tree bottom-up.. */
+    /** Map from the node to its indexes as they are found in the tree bottom-up. */
     private final IdentityHashMap<PhysicalRel, List<Integer>> idMap = new IdentityHashMap<>();
 
     public Map<PhysicalRel, List<Integer>> getIdMap() {

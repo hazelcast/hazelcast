@@ -30,7 +30,7 @@ import org.apache.calcite.rel.metadata.RelMetadataQuery;
 /**
  * Base class for map scans.
  */
-public abstract class AbstractMapScanRel extends AbstractScanRel implements HazelcastRelNode {
+public abstract class AbstractMapScanRel extends AbstractScanRel {
     public AbstractMapScanRel(
         RelOptCluster cluster,
         RelTraitSet traitSet,
@@ -68,24 +68,24 @@ public abstract class AbstractMapScanRel extends AbstractScanRel implements Haze
         double filterRowCount,
         int projectCount
     ) {
-        // 1. Get cost of the scan itself. For replicated map cost is multiplied by the number of nodes.
-        double scanCpu = scanRowCount + 1;
+            // 1. Get cost of the scan itself. For replicated map cost is multiplied by the number of nodes.
+            double scanCpu = scanRowCount;
 
-        if (isReplicated()) {
-            scanCpu = scanCpu * getMemberCount() * scanCostMultiplier;
+            if (isReplicated()) {
+                scanCpu = scanCpu * getMemberCount() * scanCostMultiplier;
+            }
+
+            // 2. Get cost of the filter, if any.
+            double filterCpu = hasFilter ? CostUtils.adjustCpuForConstrainedScan(scanCpu) : 0;
+
+            // 3. Get cost of the project taking in count filter and number of expressions. Project never produces IO.
+            double projectCpu = CostUtils.adjustCpuForConstrainedScan(CostUtils.getProjectCpu(filterRowCount, projectCount));
+
+            // 4. Finally, return sum of both scan and project.
+            return planner.getCostFactory().makeCost(
+                filterRowCount,
+                scanCpu + filterCpu + projectCpu,
+                0
+            );
         }
-
-        // 2. Get cost of the filter, if any.
-        double filterCpu = hasFilter ? CostUtils.adjustCpuForConstrainedScan(scanCpu) : 0;
-
-        // 3. Get cost of the project taking in count filter and number of expressions. Project never produces IO.
-        double projectCpu = CostUtils.adjustCpuForConstrainedScan(CostUtils.getProjectCpu(filterRowCount, projectCount));
-
-        // 4. Finally, return sum of both scan and project.
-        return planner.getCostFactory().makeCost(
-            filterRowCount,
-            scanCpu + filterCpu + projectCpu,
-            0
-        );
-    }
 }

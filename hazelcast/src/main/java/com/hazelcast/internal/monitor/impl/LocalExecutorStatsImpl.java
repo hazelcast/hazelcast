@@ -17,10 +17,8 @@
 package com.hazelcast.internal.monitor.impl;
 
 import com.hazelcast.executor.LocalExecutorStats;
-import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.util.Clock;
-import com.hazelcast.json.internal.JsonSerializable;
 
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 
@@ -32,9 +30,8 @@ import static com.hazelcast.internal.metrics.MetricDescriptorConstants.EXECUTOR_
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.EXECUTOR_METRIC_TOTAL_EXECUTION_TIME;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.EXECUTOR_METRIC_TOTAL_START_LATENCY;
 import static com.hazelcast.internal.metrics.ProbeUnit.MS;
-import static com.hazelcast.internal.util.JsonUtil.getLong;
 
-public class LocalExecutorStatsImpl implements LocalExecutorStats, JsonSerializable {
+public class LocalExecutorStatsImpl implements LocalExecutorStats {
 
     private static final AtomicLongFieldUpdater<LocalExecutorStatsImpl> PENDING = AtomicLongFieldUpdater
             .newUpdater(LocalExecutorStatsImpl.class, "pending");
@@ -50,7 +47,7 @@ public class LocalExecutorStatsImpl implements LocalExecutorStats, JsonSerializa
             .newUpdater(LocalExecutorStatsImpl.class, "totalExecutionTime");
 
     @Probe(name = EXECUTOR_METRIC_CREATION_TIME, unit = MS)
-    private long creationTime;
+    private final long creationTime;
 
     // These fields are only accessed through the updaters
     @Probe(name = EXECUTOR_METRIC_PENDING)
@@ -126,30 +123,6 @@ public class LocalExecutorStatsImpl implements LocalExecutorStats, JsonSerializa
     @Override
     public long getTotalExecutionLatency() {
         return totalExecutionTime;
-    }
-
-    @Override
-    public JsonObject toJson() {
-        JsonObject root = new JsonObject();
-        root.add("creationTime", creationTime);
-        root.add("pending", pending);
-        root.add("started", started);
-        root.add("completed", completed);
-        root.add("cancelled", cancelled);
-        root.add("totalStartLatency", totalStartLatency);
-        root.add("totalExecutionTime", totalExecutionTime);
-        return root;
-    }
-
-    @Override
-    public void fromJson(JsonObject json) {
-        creationTime = getLong(json, "creationTime", -1L);
-        PENDING.set(this, getLong(json, "pending", -1L));
-        STARTED.set(this, getLong(json, "started", -1L));
-        COMPLETED.set(this, getLong(json, "completed", -1L));
-        CANCELLED.set(this, getLong(json, "cancelled", -1L));
-        TOTAL_START_LATENCY.set(this, getLong(json, "totalStartLatency", -1L));
-        TOTAL_EXECUTION_TIME.set(this, getLong(json, "totalExecutionTime", -1L));
     }
 
     @Override

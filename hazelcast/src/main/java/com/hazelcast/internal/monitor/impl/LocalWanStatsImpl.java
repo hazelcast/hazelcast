@@ -37,7 +37,7 @@ public class LocalWanStatsImpl implements LocalWanStats, JsonSerializable {
      * publisher ID.
      */
     private volatile Map<String, LocalWanPublisherStats> localPublisherStatsMap = new HashMap<>();
-    private volatile long creationTime;
+    private final long creationTime;
 
     public LocalWanStatsImpl() {
         creationTime = Clock.currentTimeMillis();

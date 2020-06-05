@@ -24,6 +24,9 @@ import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.convert.ConverterRule;
 import org.apache.calcite.rel.logical.LogicalFilter;
 
+/**
+ * Converts abstract filter to logical filter.
+ */
 public final class FilterLogicalRule extends ConverterRule {
     public static final RelOptRule INSTANCE = new FilterLogicalRule();
 

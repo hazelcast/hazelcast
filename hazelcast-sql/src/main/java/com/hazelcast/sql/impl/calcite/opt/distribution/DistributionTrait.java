@@ -16,7 +16,6 @@
 
 package com.hazelcast.sql.impl.calcite.opt.distribution;
 
-import com.hazelcast.sql.impl.calcite.opt.physical.RootPhysicalRel;
 import org.apache.calcite.plan.RelOptPlanner;
 import org.apache.calcite.plan.RelTrait;
 import org.apache.calcite.plan.RelTraitDef;
@@ -30,22 +29,9 @@ import static com.hazelcast.sql.impl.calcite.opt.distribution.DistributionType.R
 import static com.hazelcast.sql.impl.calcite.opt.distribution.DistributionType.ROOT;
 
 /**
- * Distribution trait. Defines how the given relation is distributed in the cluster. We define three principal
- * distribution types:
- * <ul>
- *     <li>{@code PARTITIONED} - the relation is distributed between members, and every member contains a subset of
- *     tuples. The relation may have zero, one or several distribution column groups. Every group may have one or
- *     several columns. Most often the relation will have zero or one distribution column groups. Several column
- *     groups may appear during join. E.g. given A(a) and B(b), after doing {@code A JOIN B on a = b}, resulting
- *     relation will have two distribution column groups: {a} and {b}.</li>
- *     <li>{@code REPLICATED} - the full copy of the whole relation exists on every node. Typically this distribution
- *     is used for replicated maps.</li>
- *     <li>{@code ROOT} - the whole relation exists only on a single node. This distribution type is mostly used
- *     for {@link RootPhysicalRel} operator or in case there is only one
- *     member with data in the cluster.</li>
- * </ul>
+ * Defines how the given relation is distributed in the cluster.
  */
-// TODO: Rework to RelMultipleTrait!!
+// TODO: Rework to RelMultipleTrait?
 public class DistributionTrait implements RelTrait {
     /** Trait definition. */
     private final DistributionTraitDef traitDef;
@@ -230,12 +216,17 @@ public class DistributionTrait implements RelTrait {
 
         DistributionTrait other = (DistributionTrait) o;
 
-        return type == other.type && fieldGroups.equals(other.fieldGroups);
+        return traitDef.equals(other.traitDef) && type == other.type && fieldGroups.equals(other.fieldGroups);
     }
 
     @Override
     public int hashCode() {
-        return 31 * type.hashCode() + fieldGroups.hashCode();
+        int res = traitDef.hashCode();
+
+        res = 31 * res + type.hashCode();
+        res = 31 * res + fieldGroups.hashCode();
+
+        return res;
     }
 
     @Override

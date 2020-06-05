@@ -29,9 +29,8 @@ import java.time.OffsetDateTime;
  * conversion of the evaluation result to one type or another.
  */
 public final class Eval {
-
     private Eval() {
-        // do nothing
+        // No-op.
     }
 
     /**

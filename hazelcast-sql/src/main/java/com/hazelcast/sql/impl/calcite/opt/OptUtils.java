@@ -47,7 +47,7 @@ import java.util.Set;
 import static org.apache.calcite.plan.RelOptRule.convert;
 
 /**
- * Static utility classes for rules.
+ * Utility methods for rules.
  */
 public final class OptUtils {
     private OptUtils() {

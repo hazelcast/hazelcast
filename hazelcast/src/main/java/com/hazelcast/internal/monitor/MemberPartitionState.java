@@ -39,11 +39,4 @@ public interface MemberPartitionState extends JsonSerializable {
      * @return {@code true} if member is safe for shutdown, {@code false} otherwise
      */
     boolean isMemberStateSafe();
-
-    /**
-     * Returns the migration queue size (this statistic is valid only for master).
-     *
-     * @return migration queue size
-     */
-    long getMigrationQueueSize();
 }

@@ -24,7 +24,7 @@ import com.hazelcast.sql.impl.calcite.opt.physical.visitor.PhysicalRelVisitor;
  */
 public interface PhysicalRel extends HazelcastRelNode {
     /**
-     * Visit physical rel. A node with children should delegate to parent nodes first.
+     * Visit physical rel. A node should invoke visitor on inputs first.
      *
      * @param visitor Visitor.
      */

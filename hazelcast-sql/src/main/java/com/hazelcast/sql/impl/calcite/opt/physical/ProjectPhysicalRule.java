@@ -43,8 +43,8 @@ import java.util.Map;
 import static com.hazelcast.sql.impl.calcite.opt.distribution.DistributionType.PARTITIONED;
 
 /**
- * This rule converts logical projection into physical projection. Physical projection inherits distribution of the
- * underlying operator.
+ * This rule converts logical projection into physical projection. Physical projection inherits distribution and collation of
+ * the input provided that input columns responsible for distribution/collation are present in the project operator.
  */
 public final class ProjectPhysicalRule extends RelOptRule {
     public static final RelOptRule INSTANCE = new ProjectPhysicalRule();
@@ -154,10 +154,6 @@ public final class ProjectPhysicalRule extends RelOptRule {
             case REPLICATED:
                 // Replicated remains replicated.
                 return physicalInputDist;
-
-            case ANY:
-                // Unknown distribution -> do not convert.
-                return null;
 
             default:
                 assert type == PARTITIONED;

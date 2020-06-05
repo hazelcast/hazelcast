@@ -25,18 +25,25 @@ import org.apache.calcite.plan.RelTraitSet;
  * Hazelcast conventions.
  */
 public final class HazelcastConventions {
-    /** Logical convention. */
+    /** Convention used during logical planning. */
     public static final Convention LOGICAL = new Convention.Impl("LOGICAL", LogicalRel.class);
 
-    /** Physical convention. */
+    /** Convention used during physical planning. */
     public static final Convention PHYSICAL = new Convention.Impl("PHYSICAL", PhysicalRel.class) {
         @Override
         public boolean canConvertConvention(Convention toConvention) {
+            // Allows conversion between LOGICAL and PHYSICAL conventions.
+            assert toConvention == LOGICAL;
+
             return true;
         }
 
         @Override
         public boolean useAbstractConvertersForConversion(RelTraitSet fromTraits, RelTraitSet toTraits) {
+            // Forces Apache Calcite to install abstract converters when traits of two relations do not satisfy each other.
+            // The converter will have LOGICAL "from" convention and PHYSICAL "to" convention. As a result, installation
+            // of such a converter into a search space will re-trigger rules on LOGICAL parents, giving these rules a chance
+            // to propagate physical traits from children nodes.
             return !fromTraits.satisfies(toTraits);
         }
     };

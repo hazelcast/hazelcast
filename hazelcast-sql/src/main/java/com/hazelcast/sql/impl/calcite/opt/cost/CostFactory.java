@@ -16,11 +16,10 @@
 
 package com.hazelcast.sql.impl.calcite.opt.cost;
 
-import org.apache.calcite.plan.RelOptCost;
 import org.apache.calcite.plan.RelOptCostFactory;
 
 /**
- * Cost factory which is injected into Calcite optimizer.
+ * Cost factory that is injected into Apache Calcite.
  */
 public final class CostFactory implements RelOptCostFactory {
     /** Singleton instance. */
@@ -31,27 +30,27 @@ public final class CostFactory implements RelOptCostFactory {
     }
 
     @Override
-    public RelOptCost makeCost(double rowCount, double cpu, double io) {
+    public Cost makeCost(double rowCount, double cpu, double io) {
         return new Cost(rowCount, cpu, io);
     }
 
     @Override
-    public RelOptCost makeHugeCost() {
+    public Cost makeHugeCost() {
         return Cost.HUGE;
     }
 
     @Override
-    public RelOptCost makeInfiniteCost() {
+    public Cost makeInfiniteCost() {
         return Cost.INFINITY;
     }
 
     @Override
-    public RelOptCost makeTinyCost() {
+    public Cost makeTinyCost() {
         return Cost.TINY;
     }
 
     @Override
-    public RelOptCost makeZeroCost() {
+    public Cost makeZeroCost() {
         return Cost.ZERO;
     }
 

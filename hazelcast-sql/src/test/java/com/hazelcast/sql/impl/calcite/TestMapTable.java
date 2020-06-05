@@ -38,7 +38,8 @@ public class TestMapTable extends AbstractMapTable {
             fields,
             statistics,
             GenericQueryTargetDescriptor.INSTANCE,
-            GenericQueryTargetDescriptor.INSTANCE, Collections.emptyMap())
+            GenericQueryTargetDescriptor.INSTANCE,
+            Collections.emptyMap())
         ;
     }
 

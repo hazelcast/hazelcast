@@ -20,7 +20,7 @@ import org.apache.calcite.plan.HazelcastRelOptCluster;
 import org.apache.calcite.rel.RelNode;
 
 /**
- * Marker interface for Hazelcast rel node.
+ * Marker interface for all Hazelcast relational operators.
  */
 public interface HazelcastRelNode extends RelNode {
     default HazelcastRelOptCluster getHazelcastCluster() {

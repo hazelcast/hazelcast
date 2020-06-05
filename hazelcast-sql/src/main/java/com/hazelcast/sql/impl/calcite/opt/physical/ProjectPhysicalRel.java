@@ -32,8 +32,8 @@ import java.util.List;
  * <p>
  * Traits:
  * <ul>
- *     <li><b>Collation</b>: propagated from input if prefix of sort fields are still there; destroyed otherwise</li>
- *     <li><b>Distribution</b>: derived from input if all distribution fields are still there; destroyed otherwise</li>
+ *     <li><b>Collation</b>: propagated from input if the prefix of sort fields is preserved; destroyed otherwise</li>
+ *     <li><b>Distribution</b>: derived from input if all distribution fields are preserved; destroyed otherwise</li>
  * </ul>
  */
 public class ProjectPhysicalRel extends AbstractProjectRel implements PhysicalRel {

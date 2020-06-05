@@ -33,10 +33,10 @@ public final class CostUtils {
     /** CPU multiplier applied to index scan. */
     public static final double INDEX_SCAN_CPU_MULTIPLIER = 1.1d;
 
-    /** Multiplier for CPU part of the cost. Assumes 1ns per CPU item. */
+    /** Multiplier for the CPU part of the cost. Assumes 1ns per item. */
     public static final double CPU_COST_MULTIPLIER = 1.0d;
 
-    /** Multiplier for network part of the cost. Assume ~10mcs per 1Kb that results in ~10ns per byte. */
+    /** Multiplier for the network part of the cost. Assumes ~10µs per 1Kb that results in ~10ns per byte. */
     public static final double NETWORK_COST_MULTIPLIER = CPU_COST_MULTIPLIER * 10;
 
     /** Replacement value if filter selectivity cannot be determined.  */
@@ -47,7 +47,7 @@ public final class CostUtils {
     }
 
     /**
-     * Adjust cost of a CPU-related operation (project, filter) located inside a scan. This allows optimizer to prefer
+     * Adjust the cost of a CPU-related operation (project, filter) located inside a scan. This allows the optimizer to prefer
      * filters and projects inlined into the scan.
      *
      * @param cpu CPU.
