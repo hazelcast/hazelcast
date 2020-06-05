@@ -9,8 +9,6 @@
 // site configuration options.
 
 const CWD = process.cwd();
-const versions = require(`${CWD}/all-versions.json`);
-const latestVersion= versions[0].version;
 const isLocalhost = Boolean(
     process.env.NODE_ENV === 'development'
 );
@@ -44,7 +42,6 @@ const siteConfig = {
         {search: true},
     ],
     disableHeaderTitle: true,
-    cleanUrl: true,
     noIndex: false, // do not crawl website
 
     // If you have users set above, you add it here:

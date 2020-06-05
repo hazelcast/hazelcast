@@ -66,10 +66,12 @@ class JetToPythonServer {
             serverSocket.setSoTimeout((int) SECONDS.toMillis(2));
             while (true) {
                 try (Socket clientSocket = serverSocket.accept()) {
-                    int serverPort = Integer.parseInt(new BufferedReader(
-                            new InputStreamReader(clientSocket.getInputStream(), UTF_8)).readLine());
-                    logger.info("Python process " + pythonProcessPid + " listening on port " + serverPort);
-                    return serverPort;
+                    try (BufferedReader reader = new BufferedReader(
+                            new InputStreamReader(clientSocket.getInputStream(), UTF_8))) {
+                        int serverPort = Integer.parseInt(reader.readLine());
+                        logger.info("Python process " + pythonProcessPid + " listening on port " + serverPort);
+                        return serverPort;
+                    }
                 } catch (SocketTimeoutException e) {
                     if (!pythonProcess.isAlive()) {
                         throw new IOException("Python process died before completing initialization");
