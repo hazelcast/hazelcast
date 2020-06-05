@@ -18,7 +18,6 @@ package com.hazelcast.cp.internal.datastructures.atomiclong.client;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.AtomicLongGetCodec;
-import com.hazelcast.cp.internal.RaftService;
 import com.hazelcast.cp.internal.client.AbstractCPMessageTask;
 import com.hazelcast.cp.internal.datastructures.atomiclong.AtomicLongService;
 import com.hazelcast.cp.internal.datastructures.atomiclong.operation.GetAndAddOp;
@@ -42,10 +41,7 @@ public class GetMessageTask extends AbstractCPMessageTask<AtomicLongGetCodec.Req
 
     @Override
     protected void processMessage() {
-        RaftService service = nodeEngine.getService(RaftService.SERVICE_NAME);
-        service.getInvocationManager()
-               .<Long>query(parameters.groupId, new GetAndAddOp(parameters.name, 0), LINEARIZABLE)
-               .whenCompleteAsync(this);
+       query(parameters.groupId, new GetAndAddOp(parameters.name, 0), LINEARIZABLE);
     }
 
     @Override

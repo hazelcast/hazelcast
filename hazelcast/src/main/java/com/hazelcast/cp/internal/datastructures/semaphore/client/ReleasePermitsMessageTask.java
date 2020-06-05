@@ -19,7 +19,6 @@ package com.hazelcast.cp.internal.datastructures.semaphore.client;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.SemaphoreReleaseCodec;
 import com.hazelcast.cp.internal.RaftOp;
-import com.hazelcast.cp.internal.RaftService;
 import com.hazelcast.cp.internal.client.AbstractCPMessageTask;
 import com.hazelcast.cp.internal.datastructures.semaphore.SemaphoreService;
 import com.hazelcast.cp.internal.datastructures.semaphore.operation.ReleasePermitsOp;
@@ -41,12 +40,9 @@ public class ReleasePermitsMessageTask extends AbstractCPMessageTask<SemaphoreRe
 
     @Override
     protected void processMessage() {
-        RaftService service = nodeEngine.getService(RaftService.SERVICE_NAME);
         RaftOp op = new ReleasePermitsOp(parameters.name, parameters.sessionId, parameters.threadId, parameters.invocationUid,
                 parameters.permits);
-        service.getInvocationManager()
-               .<Boolean>invoke(parameters.groupId, op)
-               .whenCompleteAsync(this);
+        invoke(parameters.groupId, op);
     }
 
     @Override

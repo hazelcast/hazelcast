@@ -19,9 +19,7 @@ package com.hazelcast.cp.internal.datastructures.atomicref.client;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.AtomicRefApplyCodec;
 import com.hazelcast.cp.CPGroupId;
-import com.hazelcast.cp.internal.RaftInvocationManager;
 import com.hazelcast.cp.internal.RaftOp;
-import com.hazelcast.cp.internal.RaftService;
 import com.hazelcast.cp.internal.client.AbstractCPMessageTask;
 import com.hazelcast.cp.internal.datastructures.atomicref.AtomicRefService;
 import com.hazelcast.cp.internal.datastructures.atomicref.operation.ApplyOp;
@@ -30,7 +28,6 @@ import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.AtomicReferencePermission;
-import com.hazelcast.spi.impl.InternalCompletableFuture;
 
 import java.security.Permission;
 
@@ -48,13 +45,14 @@ public class ApplyMessageTask extends AbstractCPMessageTask<AtomicRefApplyCodec.
     @Override
     protected void processMessage() {
         ReturnValueType returnValueType = ReturnValueType.fromValue(parameters.returnValueType);
-        RaftService service = nodeEngine.getService(RaftService.SERVICE_NAME);
-        RaftInvocationManager invocationManager = service.getInvocationManager();
         CPGroupId groupId = parameters.groupId;
         RaftOp op = new ApplyOp(parameters.name, parameters.function, returnValueType, parameters.alter);
-        InternalCompletableFuture<Object> future = parameters.alter
-                ? invocationManager.invoke(groupId, op) : invocationManager.query(groupId, op, LINEARIZABLE);
-        future.whenCompleteAsync(this);
+
+        if (parameters.alter) {
+            invoke(groupId, op);
+        } else {
+            query(groupId, op, LINEARIZABLE);
+        }
     }
 
     @Override

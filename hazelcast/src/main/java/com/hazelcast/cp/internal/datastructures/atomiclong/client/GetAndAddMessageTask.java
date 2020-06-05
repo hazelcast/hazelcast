@@ -19,9 +19,7 @@ package com.hazelcast.cp.internal.datastructures.atomiclong.client;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.AtomicLongGetAndAddCodec;
 import com.hazelcast.cp.CPGroupId;
-import com.hazelcast.cp.internal.RaftInvocationManager;
 import com.hazelcast.cp.internal.RaftOp;
-import com.hazelcast.cp.internal.RaftService;
 import com.hazelcast.cp.internal.client.AbstractCPMessageTask;
 import com.hazelcast.cp.internal.datastructures.atomiclong.AtomicLongService;
 import com.hazelcast.cp.internal.datastructures.atomiclong.operation.GetAndAddOp;
@@ -29,7 +27,6 @@ import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.AtomicLongPermission;
-import com.hazelcast.spi.impl.InternalCompletableFuture;
 
 import java.security.Permission;
 
@@ -46,14 +43,14 @@ public class GetAndAddMessageTask extends AbstractCPMessageTask<AtomicLongGetAnd
 
     @Override
     protected void processMessage() {
-        RaftService service = nodeEngine.getService(RaftService.SERVICE_NAME);
-        RaftInvocationManager invocationManager = service.getInvocationManager();
         CPGroupId groupId = parameters.groupId;
         long delta = parameters.delta;
         RaftOp op = new GetAndAddOp(parameters.name, delta);
-        InternalCompletableFuture<Long> future = (delta == 0)
-                ? invocationManager.query(groupId, op, LINEARIZABLE) : invocationManager.invoke(groupId, op);
-        future.whenCompleteAsync(this);
+        if (delta == 0) {
+            query(groupId, op, LINEARIZABLE);
+        } else {
+            invoke(groupId, op);
+        }
     }
 
     @Override

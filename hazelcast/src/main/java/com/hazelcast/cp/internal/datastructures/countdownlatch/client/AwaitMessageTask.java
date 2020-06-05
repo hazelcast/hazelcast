@@ -18,7 +18,6 @@ package com.hazelcast.cp.internal.datastructures.countdownlatch.client;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.CountDownLatchAwaitCodec;
-import com.hazelcast.cp.internal.RaftService;
 import com.hazelcast.cp.internal.client.AbstractCPMessageTask;
 import com.hazelcast.cp.internal.datastructures.countdownlatch.CountDownLatchService;
 import com.hazelcast.cp.internal.datastructures.countdownlatch.operation.AwaitOp;
@@ -41,10 +40,7 @@ public class AwaitMessageTask extends AbstractCPMessageTask<CountDownLatchAwaitC
 
     @Override
     protected void processMessage() {
-        RaftService service = nodeEngine.getService(RaftService.SERVICE_NAME);
-        service.getInvocationManager()
-               .<Boolean>invoke(parameters.groupId, new AwaitOp(parameters.name, parameters.invocationUid, parameters.timeoutMs))
-               .whenCompleteAsync(this);
+        invoke(parameters.groupId, new AwaitOp(parameters.name, parameters.invocationUid, parameters.timeoutMs));
     }
 
     @Override
@@ -79,6 +75,6 @@ public class AwaitMessageTask extends AbstractCPMessageTask<CountDownLatchAwaitC
 
     @Override
     public Object[] getParameters() {
-        return new Object[]{parameters.timeoutMs, TimeUnit.MILLISECONDS};
+        return new Object[] {parameters.timeoutMs, TimeUnit.MILLISECONDS};
     }
 }
