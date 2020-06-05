@@ -42,18 +42,18 @@ public class PhoneHome {
     private static final int TIMEOUT = 1000;
 
     private static final String FALSE = "false";
+    private static final String DEFAULT_BASE_PHONE_HOME_URL = "http://phonehome.hazelcast.com/ping";
 
     volatile ScheduledFuture<?> phoneHomeFuture;
     private final ILogger logger;
     private final String basePhoneHomeUrl;
-    private final static String DEFAULT_BASE_PHONE_HOME_URL="http://phonehome.hazelcast.com/ping";
 
     private final Node hazelcastNode;
     private final List<MetricsCollector> metricsCollectorList = Arrays.asList(new BuildInfoCollector(),
             new ClusterInfoCollector(), new ClientInfoCollector(), new MapInfoCollector(), new OSInfoCollector());
 
     public PhoneHome(Node node) {
-        this(node,DEFAULT_BASE_PHONE_HOME_URL);
+        this(node, DEFAULT_BASE_PHONE_HOME_URL);
     }
 
     PhoneHome(Node node, String baseurl) {
