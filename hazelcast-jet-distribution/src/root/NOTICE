@@ -78,8 +78,8 @@ Apache License, Version 2.0
   Apache HttpClient:4.5.7
   Apache HttpCore:4.4.11
   Apache HttpCore NIO:4.4.11
-  Apache Kafka:2.3.1
-  Apache Kafka:2.3.1
+  Apache Kafka:2.2.0
+  Apache Kafka:2.2.0
   Apache Kafka:2.2.0
   Apache Log4j API:2.12.1
   Apache Log4j Core:2.12.1
