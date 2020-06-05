@@ -16,6 +16,12 @@
 
 package com.hazelcast.sql.impl.calcite.opt.logical;
 
+import org.apache.calcite.rel.rules.FilterMergeRule;
+import org.apache.calcite.rel.rules.FilterProjectTransposeRule;
+import org.apache.calcite.rel.rules.ProjectFilterTransposeRule;
+import org.apache.calcite.rel.rules.ProjectJoinTransposeRule;
+import org.apache.calcite.rel.rules.ProjectMergeRule;
+import org.apache.calcite.rel.rules.ProjectRemoveRule;
 import org.apache.calcite.tools.RuleSet;
 import org.apache.calcite.tools.RuleSets;
 
@@ -29,7 +35,19 @@ public final class LogicalRules {
 
     public static RuleSet getRuleSet() {
         return RuleSets.ofList(
-            // Convert Calcite node into Hazelcast nodes.
+            // Filter rules.
+            FilterMergeRule.INSTANCE,
+            FilterProjectTransposeRule.INSTANCE,
+            FilterIntoScanLogicalRule.INSTANCE,
+
+            // Project rules.
+            ProjectMergeRule.INSTANCE,
+            ProjectRemoveRule.INSTANCE,
+            ProjectFilterTransposeRule.INSTANCE,
+            ProjectJoinTransposeRule.INSTANCE,
+            ProjectIntoScanLogicalRule.INSTANCE,
+
+            // Converter rules
             MapScanLogicalRule.INSTANCE,
             FilterLogicalRule.INSTANCE,
             ProjectLogicalRule.INSTANCE
