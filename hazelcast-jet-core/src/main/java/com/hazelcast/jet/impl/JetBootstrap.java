@@ -87,7 +87,7 @@ public final class JetBootstrap {
                            @Nullable String jobName, @Nullable String mainClass, @Nonnull List<String> args
     ) throws Exception {
         if (JetBootstrap.supplier != null) {
-            throw new IllegalStateException("Supplier was already set. This method should not be called outside" +
+            throw new IllegalStateException("Supplier was already set. This method should not be called outside " +
                     "the Jet command line.");
         }
 
