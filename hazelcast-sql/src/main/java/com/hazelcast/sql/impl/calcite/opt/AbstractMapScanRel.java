@@ -63,20 +63,20 @@ public abstract class AbstractMapScanRel extends AbstractScanRel {
         double filterRowCount,
         int projectCount
     ) {
-            // 1. Get cost of the scan itself.
-            double scanCpu = scanRowCount * scanCostMultiplier;
+        // 1. Get cost of the scan itself.
+        double scanCpu = scanRowCount * scanCostMultiplier;
 
-            // 2. Get cost of the filter, if any.
-            double filterCpu = hasFilter ? CostUtils.adjustCpuForConstrainedScan(scanCpu) : 0;
+        // 2. Get cost of the filter, if any.
+        double filterCpu = hasFilter ? CostUtils.adjustCpuForConstrainedScan(scanCpu) : 0;
 
-            // 3. Get cost of the project taking in count filter and number of expressions. Project never produces IO.
-            double projectCpu = CostUtils.adjustCpuForConstrainedScan(CostUtils.getProjectCpu(filterRowCount, projectCount));
+        // 3. Get cost of the project taking in count filter and number of expressions. Project never produces IO.
+        double projectCpu = CostUtils.adjustCpuForConstrainedScan(CostUtils.getProjectCpu(filterRowCount, projectCount));
 
-            // 4. Finally, return sum of both scan and project.
-            return planner.getCostFactory().makeCost(
-                filterRowCount,
-                scanCpu + filterCpu + projectCpu,
-                0
-            );
-        }
+        // 4. Finally, return sum of both scan and project.
+        return planner.getCostFactory().makeCost(
+            filterRowCount,
+            scanCpu + filterCpu + projectCpu,
+            0
+        );
+    }
 }
