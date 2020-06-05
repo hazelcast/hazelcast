@@ -103,8 +103,8 @@ const siteConfig = {
     editUrl: 'https://github.com/hazelcast/hazelcast-jet/edit/master/site/docs/',
 
     // Open Graph and Twitter card images.
-    ogImage: 'img/Hazelcast-Jet-Logo-Blue_Dark.png',
-    twitterImage: 'img/Hazelcast-Jet-Logo-Blue_Dark.png',
+    ogImage: 'img/Hazelcast-Jet-Logo-Blue_Dark.jpg',
+    twitterImage: 'img/Hazelcast-Jet-Logo-Blue_Dark.jpg',
 
     // For sites with a sizable amount of content, set collapsible to true.
     // Expand/collapse the links and subcategories under categories.
