@@ -126,7 +126,7 @@ public class ClientDelegatingFuture<V> extends DelegatingCompletableFuture<V> {
         if (deserializeResponse) {
             decoded = serializationService.toObject(decoded);
         }
-        cacheDeserializedValue(decoded);
+        decoded = cacheDeserializedValue(decoded);
 
         return (V) decoded;
     }
