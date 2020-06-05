@@ -53,7 +53,7 @@
       "operations/kubernetes",
       "operations/monitoring",
       "operations/version-compatibility",
-      "operations/cdc-deployment"
+      "operations/cdc"
     ],
     "Architecture": [
       "architecture/distributed-computing",
