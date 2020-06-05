@@ -16,6 +16,7 @@
 
 package com.hazelcast.sql.impl.calcite.opt;
 
+import com.google.common.collect.ImmutableList;
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelOptCost;
 import org.apache.calcite.plan.RelOptPlanner;
@@ -49,7 +50,7 @@ public abstract class AbstractJoinRel extends Join {
         List<Integer> leftKeys,
         List<Integer> rightKeys
     ) {
-        super(cluster, traitSet, left, right, condition, Collections.emptySet(), joinType);
+        super(cluster, traitSet, ImmutableList.of(), left, right, condition, Collections.emptySet(), joinType);
 
         this.leftKeys = leftKeys;
         this.rightKeys = rightKeys;

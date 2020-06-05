@@ -26,6 +26,7 @@ import org.apache.calcite.rel.core.Aggregate;
 import org.apache.calcite.rel.core.AggregateCall;
 import org.apache.calcite.util.ImmutableBitSet;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -44,7 +45,7 @@ public class AggregatePhysicalRel extends Aggregate implements PhysicalRel {
         List<AggregateCall> aggCalls,
         ImmutableBitSet sortedGroupSet
     ) {
-        super(cluster, traits, child, groupSet, groupSets, aggCalls);
+        super(cluster, traits, new ArrayList<>(), child, groupSet, groupSets, aggCalls);
 
         this.sortedGroupSet = sortedGroupSet;
     }

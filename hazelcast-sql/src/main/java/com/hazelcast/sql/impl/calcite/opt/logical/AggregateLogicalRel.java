@@ -24,6 +24,7 @@ import org.apache.calcite.rel.core.Aggregate;
 import org.apache.calcite.rel.core.AggregateCall;
 import org.apache.calcite.util.ImmutableBitSet;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class AggregateLogicalRel extends Aggregate implements LogicalRel {
@@ -31,12 +32,11 @@ public class AggregateLogicalRel extends Aggregate implements LogicalRel {
         RelOptCluster cluster,
         RelTraitSet traits,
         RelNode child,
-        boolean indicator,
         ImmutableBitSet groupSet,
         List<ImmutableBitSet> groupSets,
         List<AggregateCall> aggCalls
     ) {
-        super(cluster, traits, child, indicator, groupSet, groupSets, aggCalls);
+        super(cluster, traits, new ArrayList<>(), child, groupSet, groupSets, aggCalls);
     }
 
     @Override
@@ -47,7 +47,7 @@ public class AggregateLogicalRel extends Aggregate implements LogicalRel {
         List<ImmutableBitSet> groupSets,
         List<AggregateCall> aggCalls
     ) {
-        return new AggregateLogicalRel(getCluster(), traitSet, input, indicator, groupSet, groupSets, aggCalls);
+        return new AggregateLogicalRel(getCluster(), traitSet, input, groupSet, groupSets, aggCalls);
     }
 
     @Override

@@ -162,6 +162,7 @@ public class HazelcastRelOptTable implements Prepare.PreparingTable {
         return delegate.isTemporal();
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public boolean columnHasDefaultValue(RelDataType rowType, int ordinal, InitializerContext initializerContext) {
         return delegate.columnHasDefaultValue(rowType, ordinal, initializerContext);

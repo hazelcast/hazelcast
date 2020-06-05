@@ -46,7 +46,6 @@ public final class AggregateLogicalRule extends ConverterRule {
             agg.getCluster(),
             OptUtils.toLogicalConvention(agg.getTraitSet()),
             OptUtils.toLogicalInput(input),
-            agg.indicator,
             agg.getGroupSet(),
             agg.getGroupSets(),
             agg.getAggCallList()
