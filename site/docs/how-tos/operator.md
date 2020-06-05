@@ -1,5 +1,5 @@
 ---
-title: Install Hazelcast Jet Kubernetes Operator 
+title: Install Kubernetes Operator 
 description: A step-by-step guide on how to install Hazelcast Jet Kubernetes Operator on your Kubernetes Cluster.
 ---
 
