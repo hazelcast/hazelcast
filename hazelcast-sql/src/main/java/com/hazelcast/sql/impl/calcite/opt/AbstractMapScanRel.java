@@ -72,8 +72,10 @@ public abstract class AbstractMapScanRel extends AbstractScanRel {
             double scanCpu = scanRowCount;
 
             if (isReplicated()) {
-                scanCpu = scanCpu * getMemberCount() * scanCostMultiplier;
+                scanCpu = scanCpu * getMemberCount();
             }
+
+            scanCpu = scanCpu * scanCostMultiplier;
 
             // 2. Get cost of the filter, if any.
             double filterCpu = hasFilter ? CostUtils.adjustCpuForConstrainedScan(scanCpu) : 0;
