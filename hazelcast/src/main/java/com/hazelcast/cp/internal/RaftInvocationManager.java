@@ -36,6 +36,7 @@ import com.hazelcast.internal.util.SimpleCompletableFuture;
 import com.hazelcast.internal.util.SimpleCompletedFuture;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.InternalCompletableFuture;
+import com.hazelcast.spi.InvocationBuilder;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.NodeEngineImpl;
@@ -190,24 +191,35 @@ public class RaftInvocationManager {
     }
 
     public <T> InternalCompletableFuture<T> invoke(CPGroupId groupId, RaftOp raftOp) {
+        return invoke(groupId, raftOp, InvocationBuilder.DEFAULT_DESERIALIZE_RESULT);
+    }
+
+    public <T> InternalCompletableFuture<T> invoke(CPGroupId groupId, RaftOp raftOp, boolean deserializeResponse) {
         InternalCompletableFuture<T> completedFuture = completeExceptionallyIfCPSubsystemNotAvailable();
         if (completedFuture != null) {
             return completedFuture;
         }
         Operation operation = new DefaultRaftReplicateOp(groupId, raftOp);
-        Invocation invocation = new RaftInvocation(operationService.getInvocationContext(), raftInvocationContext,
-                groupId, operation, invocationMaxRetryCount, invocationRetryPauseMillis, operationCallTimeout);
+        Invocation invocation =
+                new RaftInvocation(operationService.getInvocationContext(), raftInvocationContext, groupId, operation,
+                        invocationMaxRetryCount, invocationRetryPauseMillis, operationCallTimeout, deserializeResponse);
         return invocation.invoke();
     }
 
     public <T> InternalCompletableFuture<T> query(CPGroupId groupId, RaftOp raftOp, QueryPolicy queryPolicy) {
+        return query(groupId, raftOp, queryPolicy, InvocationBuilder.DEFAULT_DESERIALIZE_RESULT);
+    }
+
+    public <T> InternalCompletableFuture<T> query(CPGroupId groupId, RaftOp raftOp, QueryPolicy queryPolicy,
+            boolean deserializeResponse) {
         InternalCompletableFuture<T> completedFuture = completeExceptionallyIfCPSubsystemNotAvailable();
         if (completedFuture != null) {
             return completedFuture;
         }
         RaftQueryOp operation = new RaftQueryOp(groupId, raftOp, queryPolicy);
-        Invocation invocation = new RaftInvocation(operationService.getInvocationContext(), raftInvocationContext,
-                groupId, operation, invocationMaxRetryCount, invocationRetryPauseMillis, operationCallTimeout);
+        Invocation invocation =
+                new RaftInvocation(operationService.getInvocationContext(), raftInvocationContext, groupId, operation,
+                        invocationMaxRetryCount, invocationRetryPauseMillis, operationCallTimeout, deserializeResponse);
         return invocation.invoke();
     }
 
