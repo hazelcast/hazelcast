@@ -163,7 +163,7 @@ public final class OptUtils {
 
     /**
      * @param rel Node.
-     * @return {@code True} if the given node is physical node.
+     * @return {@code true} if the given node is physical node.
      */
     public static boolean isPhysical(RelNode rel) {
         return rel.getTraitSet().getTrait(ConventionTraitDef.INSTANCE).equals(HazelcastConventions.PHYSICAL);
