@@ -37,6 +37,7 @@
       "version-4.1-how-tos/custom-batch-source",
       "version-4.1-how-tos/custom-stream-source",
       "version-4.1-how-tos/custom-sink",
+      "version-4.1-how-tos/operator",
       "version-4.1-how-tos/xa",
       "version-4.1-how-tos/grpc"
     ],

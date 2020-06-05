@@ -210,12 +210,12 @@ please see [Hazelcast Discovery Plugin for Microsoft Azure](https://github.com/h
 
 The Hazelcast Kubernetes plugin provides the automatic member discovery
 in the Kubernetes environment by communicating with the Kubernetes
-Master. The plugin is included in the main
+Master. The plugin included in the main
 Hazelcast Jet distribution so no extra dependencies needs to be added to
-use it..
+use it.
 
 This plugin supports two different options of how Hazelcast Jet members
-discover each others:
+discover each other:
 
 - Kubernetes API
 - DNS Lookup
