@@ -22,6 +22,7 @@ import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.config.ProcessingGuarantee;
+import com.hazelcast.jet.impl.processor.MetaSupplierFromProcessorSupplier;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 
@@ -139,7 +140,7 @@ public interface ProcessorMetaSupplier extends Serializable {
      */
     @Nonnull
     static ProcessorMetaSupplier of(int preferredLocalParallelism, @Nonnull ProcessorSupplier procSupplier) {
-        return of(preferredLocalParallelism, (Address x) -> procSupplier);
+        return new MetaSupplierFromProcessorSupplier(preferredLocalParallelism, procSupplier);
     }
 
     /**

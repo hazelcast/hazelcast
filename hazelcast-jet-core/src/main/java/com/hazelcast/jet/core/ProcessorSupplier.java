@@ -19,6 +19,7 @@ package com.hazelcast.jet.core;
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.config.JobConfig;
+import com.hazelcast.jet.impl.processor.ProcessorSupplierFromSimpleSupplier;
 import com.hazelcast.logging.ILogger;
 
 import javax.annotation.Nonnull;
@@ -26,9 +27,6 @@ import javax.annotation.Nullable;
 import java.io.File;
 import java.io.Serializable;
 import java.util.Collection;
-import java.util.stream.Stream;
-
-import static java.util.stream.Collectors.toList;
 
 /**
  * Factory of {@link Processor} instances. Part of the initialization
@@ -85,7 +83,7 @@ public interface ProcessorSupplier extends Serializable {
      */
     @Nonnull
     static ProcessorSupplier of(@Nonnull SupplierEx<? extends Processor> processorSupplier) {
-        return count -> Stream.generate(processorSupplier).limit(count).collect(toList());
+        return new ProcessorSupplierFromSimpleSupplier(processorSupplier);
     }
 
     /**

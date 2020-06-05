@@ -28,6 +28,7 @@ import com.hazelcast.jet.function.RunnableEx;
 import com.hazelcast.jet.impl.JetEvent;
 import com.hazelcast.jet.impl.JetService;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.spi.impl.NodeEngine;
 
 import javax.annotation.CheckReturnValue;
@@ -158,9 +159,10 @@ public final class Util {
     }
 
     /**
-     * Checks that the {@code object} implements {@link Serializable} and is
-     * correctly serializable by actually trying to serialize it. This will
-     * reveal some non-serializable field early.
+     * Checks that the {@code object} implements {@link Serializable} or {@link
+     * DataSerializable}. In case of {@code Serializable}, it additionally
+     * checks it is correctly serializable by actually trying to serialize it.
+     * This will reveal a non-serializable field early.
      *
      * @param object     object to check
      * @param objectName object description for the exception
@@ -171,6 +173,11 @@ public final class Util {
     public static <T> T checkSerializable(@Nullable T object, @Nonnull String objectName) {
         if (object == null) {
             return null;
+        }
+        if (object instanceof DataSerializable) {
+            // hz-serialization is implemented, but we cannot actually check it - we don't have a
+            // SerializationService at hand.
+            return object;
         }
         if (!(object instanceof Serializable)) {
             throw new IllegalArgumentException('"' + objectName + "\" must implement Serializable");
