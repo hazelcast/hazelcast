@@ -112,7 +112,7 @@ public final class SortPhysicalRule extends RelOptRule {
     /**
      * Check if local sorting phase is needed. It could be avoided iff sort collation is a prefix of input collation.
      *
-     * @return {@code True} if local sorting is needed, {@code false} otherwise.
+     * @return {@code true} if local sorting is needed, {@code false} otherwise.
      */
     private static boolean requiresLocalSort(RelCollation sortCollation, RelCollation inputCollation) {
         if (sortCollation.getFieldCollations().isEmpty()) {

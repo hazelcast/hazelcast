@@ -159,7 +159,7 @@ public class DistributionTrait implements RelTrait {
      *
      * @param currentTrait Current trait.
      * @param targetTrait Target trait.
-     * @return {@code True} if satisfies, {@code false} if conversion is required.
+     * @return {@code true} if satisfies, {@code false} if conversion is required.
      */
     private static boolean satisfiesPartitioned(DistributionTrait currentTrait, DistributionTrait targetTrait) {
         assert currentTrait.getType() == PARTITIONED;
@@ -197,7 +197,7 @@ public class DistributionTrait implements RelTrait {
      * @param currentFields Current distribution fields.
      * @param targetFields Target distribution fields.
      *
-     * @return {@code True} if satisfies, {@code false} otherwise.
+     * @return {@code true} if satisfies, {@code false} otherwise.
      */
     private static boolean satisfiesPartitioned(List<Integer> currentFields, List<Integer> targetFields) {
         if (currentFields.size() > targetFields.size()) {

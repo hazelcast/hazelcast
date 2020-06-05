@@ -48,7 +48,7 @@ public interface Exec {
     RowBatch currentBatch();
 
     /**
-     * @return {@code True} if the input could be reset.
+     * @return {@code true} if the input could be reset.
      */
     boolean canReset();
 

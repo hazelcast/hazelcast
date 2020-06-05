@@ -105,7 +105,7 @@ public final class AggregateDistribution {
      *
      * @param aggGroupSet Group set of original aggregate.
      * @param inputFieldGroup Field group.
-     * @return {@code True} if this aggregate could be processed in collocated mode.
+     * @return {@code true} if this aggregate could be processed in collocated mode.
      */
     private static boolean isCollocated(ImmutableBitSet aggGroupSet, List<Integer> inputFieldGroup) {
         // If group set size is less than the number of input distribution fields, then dist fields could not be a

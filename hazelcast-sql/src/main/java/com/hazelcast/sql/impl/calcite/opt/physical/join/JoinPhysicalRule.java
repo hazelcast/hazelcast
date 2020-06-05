@@ -717,7 +717,7 @@ public final class JoinPhysicalRule extends RelOptRule {
          * Check if two partitioned inputs are collocated.
          *
          * @param otherDistributionJoinKeyPositions Positions of distribution join keys of the other relation.
-         * @return {@code True} if collocated.
+         * @return {@code true} if collocated.
          */
         public boolean isPartitionedCollocated(List<Integer> otherDistributionJoinKeyPositions) {
             return distributionJoinKeyPositions.equals(otherDistributionJoinKeyPositions);

@@ -56,7 +56,7 @@ public abstract class AbstractSingleOperandAggregateExpression<T> extends Aggreg
     }
 
     /**
-     * @return {@code True} if NULL values should be ignored and not passed to the collector, {@code false} otherwise.
+     * @return {@code true} if NULL values should be ignored and not passed to the collector, {@code false} otherwise.
      */
     protected abstract boolean isIgnoreNull();
 

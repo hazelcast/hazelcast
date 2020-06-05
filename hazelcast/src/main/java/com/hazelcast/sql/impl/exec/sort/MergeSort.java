@@ -83,7 +83,7 @@ public class MergeSort {
     /**
      * Prepare the heap.
      *
-     * @return {@code True} if all sources are fetched and sorting can proceed.
+     * @return {@code true} if all sources are fetched and sorting can proceed.
      */
     private boolean prepare() {
         if (missingSourceIndexes.isEmpty()) {
