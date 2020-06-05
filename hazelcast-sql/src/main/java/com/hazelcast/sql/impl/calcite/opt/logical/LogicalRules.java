@@ -26,6 +26,7 @@ import org.apache.calcite.rel.rules.FilterProjectTransposeRule;
 import org.apache.calcite.rel.rules.JoinPushExpressionsRule;
 import org.apache.calcite.rel.rules.ProjectFilterTransposeRule;
 import org.apache.calcite.rel.rules.ProjectJoinTransposeRule;
+import org.apache.calcite.rel.rules.ProjectMergeRule;
 import org.apache.calcite.rel.rules.ProjectRemoveRule;
 import org.apache.calcite.rel.rules.SemiJoinRule;
 import org.apache.calcite.rel.type.RelDataTypeField;
@@ -48,51 +49,8 @@ public final class LogicalRules {
     private static final FilterJoinRule.JoinConditionPushRule CONDITION_PUSH_RULE =
         new FilterJoinRule.JoinConditionPushRule(RelFactories.LOGICAL_BUILDER, FilterPredicate.INSTANCE);
 
-    /** Rule which moves expressions out of join condition: {Join <- Node} -> {Join <- Project <- Node}. */
-    private static final JoinPushExpressionsRule EXPRESSIONS_PUSH_RULE = JoinPushExpressionsRule.INSTANCE;
-
-    /** Rule which merges two nearby filters together. */
-    private static final FilterMergeRule FILTER_MERGE_RULE = FilterMergeRule.INSTANCE;
-
-    /** Rule which moves filter past project. */
-    // TODO: Disallow "item" pushdown
-    private static final FilterProjectTransposeRule FILTER_PROJECT_TRANSPOSE_RULE = FilterProjectTransposeRule.INSTANCE;
-
-    /** Rule which merges filter and scan. */
-    private static final FilterIntoScanLogicalRule FILTER_INTO_SCAN_RULE = FilterIntoScanLogicalRule.INSTANCE;
-
-    /** Rule which removes unnecessary projects. */
-    private static final ProjectRemoveRule PROJECT_REMOVE_RULE = ProjectRemoveRule.INSTANCE;
-
-    /** Rule which moves project past filter. */
-    // TODO: Disallow "item" pushdown
-    private static final ProjectFilterTransposeRule PROJECT_FILTER_TRANSPOSE_RULE = ProjectFilterTransposeRule.INSTANCE;
-
-    /** Rule which moves project past join. */
-    private static final ProjectJoinTransposeRule PROJECT_JOIN_TRANSPOSE_RULE = ProjectJoinTransposeRule.INSTANCE;
-
-    /** Rule which merges project and scan. */
-    private static final ProjectIntoScanLogicalRule PROJECT_INTO_SCAN_RULE = ProjectIntoScanLogicalRule.INSTANCE;
-
-    /** Rule which creates a semi-join from the Project-Join-Aggregate. */
-    private static final SemiJoinRule SEMI_JOIN_PROJECT_RULE = SemiJoinRule.PROJECT;
-
-    /** Rule which creates a semi-join from the Project-Join. */
-    private static final SemiJoinRule SEMI_JOIN_JOIN_RULE = SemiJoinRule.JOIN;
-
     private LogicalRules() {
         // No-op.
-    }
-
-    public static RuleSet getConvertRuleSet() {
-        return RuleSets.ofList(
-            MapScanLogicalRule.INSTANCE,
-            FilterLogicalRule.INSTANCE,
-            ProjectLogicalRule.INSTANCE,
-            AggregateLogicalRule.INSTANCE,
-            SortLogicalRule.INSTANCE,
-            JoinLogicalRule.INSTANCE
-        );
     }
 
     public static RuleSet getRuleSet() {
@@ -100,25 +58,27 @@ public final class LogicalRules {
             // Join optimization rules.
             FILTER_PULL_RULE,
             CONDITION_PUSH_RULE,
-            EXPRESSIONS_PUSH_RULE,
+            JoinPushExpressionsRule.INSTANCE,
 
-            // Filter and project rules.
-            FILTER_MERGE_RULE,
-            FILTER_PROJECT_TRANSPOSE_RULE,
-            FILTER_INTO_SCAN_RULE,
-            // TODO: ProjectMergeRule: https://jira.apache.org/jira/browse/CALCITE-2223
-            PROJECT_FILTER_TRANSPOSE_RULE,
-            PROJECT_JOIN_TRANSPOSE_RULE,
-            PROJECT_REMOVE_RULE,
-            PROJECT_INTO_SCAN_RULE,
+            // Filter rules.
+            FilterMergeRule.INSTANCE,
+            FilterProjectTransposeRule.INSTANCE,
+            FilterIntoScanLogicalRule.INSTANCE,
+
+            // Project rules.
+            ProjectMergeRule.INSTANCE,
+            ProjectRemoveRule.INSTANCE,
+            ProjectFilterTransposeRule.INSTANCE,
+            ProjectJoinTransposeRule.INSTANCE,
+            ProjectIntoScanLogicalRule.INSTANCE,
 
             // TODO: Aggregate rules
 
-            SEMI_JOIN_PROJECT_RULE,
-            SEMI_JOIN_JOIN_RULE,
+            // Semi-join rules.
+            SemiJoinRule.PROJECT,
+            SemiJoinRule.JOIN,
 
-            // Convert Calcite node into Hazelcast nodes.
-            // TODO: Should we extend converter here instead (see Flink)?
+            // Converter rules
             MapScanLogicalRule.INSTANCE,
             FilterLogicalRule.INSTANCE,
             ProjectLogicalRule.INSTANCE,
@@ -127,6 +87,8 @@ public final class LogicalRules {
             JoinLogicalRule.INSTANCE
 
             // TODO: Transitive closures: (a.a=b.b) AND (a=1) -> (a.a=b.b) AND (a=1) AND (b=1) -> pushdown to two tables, not one
+
+            // TODO: Expression simplification rules
         );
     }
 
