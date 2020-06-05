@@ -42,6 +42,11 @@ public final class LocalDateHelper {
             ISO_LOCAL_DATE_TIME, ISO_OFFSET_DATE_TIME, ISO_DATE_TIME, ISO_ZONED_DATE_TIME, ISO_INSTANT, BASIC_ISO_DATE,
             RFC_1123_DATE_TIME };
 
+    private static final String[] DATE_FORMATS = new String[] { "yyyy-MM-dd", "yyyy/MM/dd", "yyyy-MM-dd HH:mm:ss",
+            "yyyy-MM-dd HH:mm", "dd MMM yyyy", "dd MMM yyyy HH:mm", "dd MMM yyyy HH:mm", "dd MMM yyyy HH:mm:ss",
+            "dd MMM yyyy HH:mm:ss", "MM/yy", "dd MMM yyyy, HH:mm:ss", "E MMM dd HH:mm:ss Z yyyy",
+            "dd mmm yyyy, HH:mm a", "yyyy-MM-dd'T'hh:mm:ss" };
+
     private LocalDateHelper() {
     }
 
@@ -64,6 +69,12 @@ public final class LocalDateHelper {
             DateTimeFormatter formatter = ofLocalizedDate(formatStyle);
             try {
                 return formatter.parse(dateAsString);
+            } catch (DateTimeParseException ignore) {
+            }
+        }
+        for (String format : DATE_FORMATS) {
+            try {
+                return DateTimeFormatter.ofPattern(format).parse(dateAsString);
             } catch (DateTimeParseException ignore) {
             }
         }
