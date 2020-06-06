@@ -52,7 +52,7 @@ import java.util.List;
  * <p>
  * To mitigate this we provide our own table implementation that overrides {@link #getQualifiedName()} method, used for scan
  * signature calculation (see {@link TableScan#explainTerms(RelWriter)}). The overridden version adds information about
- * pushed-down projects and scans to the table name, thus avoiding the problem.
+ * pushed-down projections and scans to the table name, thus avoiding the problem.
  * <p>
  * For example, a table scan over table {@code p} without pushdowns may have a signature:
  * <pre>
@@ -83,20 +83,10 @@ public class HazelcastRelOptTable implements Prepare.PreparingTable {
 
         assert names != null && !names.isEmpty();
 
-        // Extend table name with project/filter information.
-        List<String> res = new ArrayList<>(names.size());
-
-        for (int i = 0; i < names.size(); i++) {
-            String currentPart = names.get(i);
-
-            if (i != names.size() - 1) {
-                // Not a table name, just add it as is.
-                res.add(currentPart);
-            } else {
-                // Table name. Extend it with project/filter.
-                res.add(currentPart + getTableSignature());
-            }
-        }
+        List<String> res = new ArrayList<>(names);
+        // Extend the table name (the last element) with project/filter signature.
+        int lastElement = res.size() - 1;
+        res.set(lastElement, res.get(lastElement) + getTableSignature());
 
         return res;
     }

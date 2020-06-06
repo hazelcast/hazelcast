@@ -43,7 +43,11 @@ import org.apache.calcite.util.ImmutableBitSet;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
+import java.util.StringJoiner;
+
+import static java.util.stream.Collectors.joining;
 
 /**
  * Base class for all tables in the Calcite integration:
@@ -210,35 +214,19 @@ public class HazelcastTable extends AbstractTable {
      * @return Signature.
      */
     public String getSignature() {
-        if (projects == null && filter == null) {
-            return "";
-        }
-
-        StringBuilder res = new StringBuilder("[");
+        StringJoiner res = new StringJoiner(", ", "[", "]");
+        res.setEmptyValue("");
 
         if (projects != null) {
-            res.append("projects=[");
-
-            for (int i = 0; i < projects.size(); i++) {
-                if (i != 0) {
-                    res.append(", ");
-                }
-
-                res.append(projects.get(i));
-            }
-
-            res.append("]");
+            res.add("projects=" +
+                    projects.stream()
+                            .map(Objects::toString)
+                            .collect(joining(", ", "[", "]")));
         }
 
         if (filter != null) {
-            if (projects != null) {
-                res.append(", ");
-            }
-
-            res.append("filter=").append(filter);
+            res.add("filter=" + filter);
         }
-
-        res.append("]");
 
         return res.toString();
     }
