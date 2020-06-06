@@ -34,7 +34,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Logical rules that pushes down a {@link Filter} into a {@link TableScan} to allow for constrained scans.
+ * Logical rule that pushes down a {@link Filter} into a {@link TableScan} to allow for constrained scans.
  * See {@link HazelcastTable} for more information about constrained scans.
  * <p>
  * Before:
@@ -113,7 +113,7 @@ public final class FilterIntoScanLogicalRule extends RelOptRule {
      *
      * @param originalHazelcastTable The original table from the {@code TableScan} before the pushdown
      * @param originalFilterCondition The original condition from the {@code Filter}.
-     * @return New condition that is going to be pushe down to a {@code TableScan}.
+     * @return New condition that is going to be pushed down to a {@code TableScan}.
      */
     private static RexNode remapCondition(HazelcastTable originalHazelcastTable, RexNode originalFilterCondition) {
         List<Integer> projects = originalHazelcastTable.getProjects();

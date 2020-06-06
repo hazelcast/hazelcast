@@ -40,7 +40,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Logical rule that pushes down a column references from a {@link Project} into a {@link TableScan} to allow for constrained
+ * Logical rule that pushes down column references from a {@link Project} into a {@link TableScan} to allow for constrained
  * scans. See {@link HazelcastTable} for more information about constrained scans.
  * <p>
  * <b>Case 1: </b>projects that have only column expressions are eliminated completely, unused columns returned from the
@@ -145,7 +145,7 @@ public final class ProjectIntoScanLogicalRule extends RelOptRule {
         if (newScanProjects.isEmpty()) {
             // No TableScan columns are referenced from within a project, i.e. the Project doesn't depend on column values
             // of the TableScan. E.g. "SELECT CURRENT_TIME() FROM t". In future we will introduce a special optimizer operator
-            // for that case that will not do a real scan. It is not trivial, because we should take in count whether the
+            // for that case that will not do a real scan. It is not trivial, because we should take into account whether the
             // Project expressions are deterministic or not. Therefore, we simply ignore that case for now.
             return;
         }
@@ -163,7 +163,7 @@ public final class ProjectIntoScanLogicalRule extends RelOptRule {
             originalTable.withProject(newScanProjects)
         );
 
-        // Create new Projectwith adjusted columns references that point to new TableScan fields.
+        // Create new Project with adjusted column references that point to new TableScan fields.
         ProjectConverter projectConverter = projectFieldVisitor.createProjectConverter();
 
         List<RexNode> newProjects = new ArrayList<>();

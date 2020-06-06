@@ -50,22 +50,22 @@ import java.util.Set;
  * <ul>
  *     <li>Maps field types defined in the {@code core} module to Calcite types</li>
  *     <li>Provides access to the underlying table and statistics</li>
- *     <li>Encapsulates projects and filter to allow for constained scans</li>
+ *     <li>Encapsulates projects and filter to allow for constrained scans</li>
  * </ul>
  * <p>
  * <h2>Constrained scans</h2>
- * For a sequence of logical project/filter/scan operators, we would like to ensure that the resulting relational tree is as
- * flat as possible because this minimizes processing overhead and memory usage. To achieve this we try to push projects and
- * filters into the table using {@link ProjectIntoScanLogicalRule} and {@link FilterIntoScanLogicalRule} rules. These rules
- * reduce the amount of data returned from the table during scanning. Pushed down projection ensures that only columns required
- * by parent operators are returned, thus implementing field trimming. Pushed down filter reduces the number of returned rows.
+ * For a sequence of logical project/filter/scan operators we would like to ensure that the resulting relational tree is as
+ * flat as possible because this minimizes the processing overhead and memory usage. To achieve this we try to push projects and
+ * filters into the table using {@link ProjectIntoScanLogicalRule} and {@link FilterIntoScanLogicalRule}. These rules
+ * reduce the amount of data returned from the table during scanning. Pushed-down projection ensures that only columns required
+ * by parent operators are returned, thus implementing field trimming. Pushed-down filter reduces the number of returned rows.
  * <p>
  * Projects are indexes of table fields that are returned. Initial projection (i.e. before optimization) returns all the columns.
  * After project pushdown the number and order of columns may change. For example, for the table {@code t[f1, f2, f3]} the
  * initial projection is {@code [0, 1, 2]}. After pushdown of a {@code "SELECT f3, f1"} the projection becomes {@code [2, 0]}
  * which means that the columns {@code [f3, f1]} are returned in that order.
  * <p>
- * Filter is a conjunctive expression that references table fields via their original indexes. That is, {@code [f3]} is
+ * Filter is a conjunctive expression that references table fields via their original indexes. That is, {@code [f2]} is
  * referenced as {@code [2]} even if it is projected as the first field in the example above. This is needed to allow for
  * projections and filters on disjoint sets of attributes.
  * <p>
@@ -73,7 +73,7 @@ import java.util.Set;
  * <pre>
  * SELECT f3, f1 FROM t WHERE f2 > ?
  * </pre>
- * In this case {@code projects=[2, 0]}, {@code filter=[>$1,?]}.
+ * In this case {@code projects=[2, 0]}, {@code filter=[>$1, ?]}.
  * <p>
  * We do not pushdown the project expressions other than columns because in this case it will be difficult to pushdown
  * filters, as it will require non-trivial rewrite of the filter expression to match to original scan columns.

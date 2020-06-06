@@ -47,19 +47,19 @@ import java.util.List;
  * Tables are used inside {@link TableScan} operators. During logical planning we attempt to flatten the relational tree by
  * pushing down projects and filters into the table, see {@link ProjectIntoScanLogicalRule} and {@link FilterIntoScanLogicalRule}.
  * <p>
- * It is important do distinguish {@code TableScan} operators with and without pushdown. Otherwise scans that produce different
+ * It is important to distinguish {@code TableScan} operators with and without pushdown. Otherwise scans that produce different
  * results will be merged into a single equivalence group, leading to incorrect query results.
  * <p>
  * To mitigate this we provide our own table implementation that overrides {@link #getQualifiedName()} method, used for scan
  * signature calculation (see {@link TableScan#explainTerms(RelWriter)}). The overridden version adds information about
- * pushed down project and scans to the table name, thus avoiding the problem.
+ * pushed-down projects and scans to the table name, thus avoiding the problem.
  * <p>
- * For example, table scan over table {@code p} without pushdowns may have a signature
+ * For example, a table scan over table {@code p} without pushdowns may have a signature:
  * <pre>
  * ...table=[[hazelcast, p]]....
  * </pre>
  * <p>
- * Scan over the same table with project and filter will have a signature
+ * A scan over the same table with project and filter will have a signature:
  * <pre>
  * ...table=[[hazelcast, p[projects=[0, 1], filter=>($2, 1)]]]...
  * </pre>

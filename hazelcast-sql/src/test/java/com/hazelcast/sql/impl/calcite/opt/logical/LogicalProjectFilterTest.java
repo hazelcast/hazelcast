@@ -53,7 +53,7 @@ public class LogicalProjectFilterTest extends OptimizerTestSupport {
     }
 
     @Test
-    public void testTrivialStartProject() {
+    public void testTrivialStarProject() {
         assertPlan(
             optimizeLogical("SELECT * FROM p"),
             plan(
@@ -64,7 +64,7 @@ public class LogicalProjectFilterTest extends OptimizerTestSupport {
     }
 
     @Test
-    public void testTrivialStartProjectProject() {
+    public void testTrivialStarProjectProject() {
         assertPlan(
             optimizeLogical("SELECT * FROM (SELECT * FROM p)"),
             plan(

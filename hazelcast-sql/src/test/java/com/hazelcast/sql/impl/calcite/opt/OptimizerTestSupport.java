@@ -216,7 +216,7 @@ public abstract class OptimizerTestSupport extends SqlTestSupport {
         int expectedRowCount = expected.getRowCount();
         int actualRowCount = actual.getRowCount();
 
-        assertEquals(planErrorMessage("Plan are different", expected, actual), expectedRowCount, actualRowCount);
+        assertEquals(planErrorMessage("Plans are different", expected, actual), expectedRowCount, actualRowCount);
 
         for (int i = 0; i < expectedRowCount; i++) {
             PlanRow expectedRow = expected.getRow(i);
