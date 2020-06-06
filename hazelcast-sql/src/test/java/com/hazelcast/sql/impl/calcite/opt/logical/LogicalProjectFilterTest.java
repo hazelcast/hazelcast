@@ -402,4 +402,15 @@ public class LogicalProjectFilterTest extends OptimizerTestSupport {
             )
         );
     }
+
+    @Test
+    public void testFilterCompoundExpression() {
+        assertPlan(
+                optimizeLogical("SELECT f3 FROM (SELECT f1 + f2 d1, f3 FROM p) WHERE d1 + f3 > 2"),
+                plan(
+                        planRow(0, RootLogicalRel.class, "", 50d),
+                        planRow(1, MapScanLogicalRel.class, "table=[[hazelcast, p[projects=[2], filter=>(+(+($0, $1), $2), 2)]]]", 50d)
+                )
+        );
+    }
 }
