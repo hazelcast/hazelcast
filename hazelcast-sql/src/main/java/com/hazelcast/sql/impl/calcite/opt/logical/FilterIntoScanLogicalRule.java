@@ -93,22 +93,22 @@ public final class FilterIntoScanLogicalRule extends RelOptRule {
     /**
      * Remaps the column indexes referenced in the {@code Filter} to match the original indexed used by {@code TableScan}.
      * <p>
-     * Consider the following query: "SELECT f2, f1 FROM t WHERE f1>?" for the table {@code t[f1, f2]}
+     * Consider the following query: "SELECT f1, f0 FROM t WHERE f0 > ?" for the table {@code t[f0, f1]}
      * <p>
      * The original tree before optimization:
      * <pre>
-     * LogicalFilter[$1>?]                                  // f1 is referenced as $1
-     *   LogicalProject[$1, $0]                             // f2, f1
-     *     LogicalScan[table=t[projects=[0, 1]]]            // f1, f2
+     * LogicalFilter[$1>?]                                  // f0 is referenced as $1
+     *   LogicalProject[$1, $0]                             // f1, f0
+     *     LogicalScan[table=t[projects=[0, 1]]]            // f0, f1
      * </pre>
      * After project pushdown:
      * <pre>
-     * LogicalFilter[$1>?]                                  // f1 is referenced as $1
-     *   LogicalScan[table=t[projects=[1, 0]]]              // f2, f1
+     * LogicalFilter[$1>?]                                  // f0 is referenced as $1
+     *   LogicalScan[table=t[projects=[1, 0]]]              // f1, f0
      * </pre>
      * After filter pushdown:
      * <pre>
-     * LogicalScan[table=t[projects=[1, 0], filter=[$0>?]]] // f1 is referenced as $0
+     * LogicalScan[table=t[projects=[1, 0], filter=[$0>?]]] // f0 is referenced as $0
      * </pre>
      *
      * @param originalHazelcastTable The original table from the {@code TableScan} before the pushdown

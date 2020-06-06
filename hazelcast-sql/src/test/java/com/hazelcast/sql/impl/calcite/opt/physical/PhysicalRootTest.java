@@ -46,11 +46,11 @@ public class PhysicalRootTest extends OptimizerTestSupport {
         tableMap.put("p", OptimizerTestSupport.partitionedTable(
             "p",
             Arrays.asList(
+                TestMapTable.field("f0"),
                 TestMapTable.field("f1"),
                 TestMapTable.field("f2"),
                 TestMapTable.field("f3"),
-                TestMapTable.field("f4"),
-                TestMapTable.field("f5")
+                TestMapTable.field("f4")
             ),
             100
         ));
@@ -58,11 +58,11 @@ public class PhysicalRootTest extends OptimizerTestSupport {
         tableMap.put("e", OptimizerTestSupport.partitionedTable(
             "e",
             Arrays.asList(
+                TestMapTable.field("f0"),
                 TestMapTable.field("f1"),
                 TestMapTable.field("f2"),
                 TestMapTable.field("f3"),
-                TestMapTable.field("f4"),
-                TestMapTable.field("f5")
+                TestMapTable.field("f4")
             ),
             0
         ));

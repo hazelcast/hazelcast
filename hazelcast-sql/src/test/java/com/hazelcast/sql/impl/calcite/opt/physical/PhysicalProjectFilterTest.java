@@ -34,7 +34,7 @@ public class PhysicalProjectFilterTest extends OptimizerTestSupport {
     @Test
     public void testTrivialProject() {
         assertPlan(
-            optimizePhysical("SELECT f1, f2, f3, f4, f5 FROM p", 2),
+            optimizePhysical("SELECT f0, f1, f2, f3, f4 FROM p", 2),
             plan(
                 planRow(0, RootPhysicalRel.class, "", 100d),
                 planRow(1, RootExchangePhysicalRel.class, "", 100d),
@@ -46,7 +46,7 @@ public class PhysicalProjectFilterTest extends OptimizerTestSupport {
     @Test
     public void testTrivialProjectProject() {
         assertPlan(
-            optimizePhysical("SELECT f1, f2, f3, f4, f5 FROM (SELECT f1, f2, f3, f4, f5 FROM p)", 2),
+            optimizePhysical("SELECT f0, f1, f2, f3, f4 FROM (SELECT f0, f1, f2, f3, f4 FROM p)", 2),
             plan(
                 planRow(0, RootPhysicalRel.class, "", 100d),
                 planRow(1, RootExchangePhysicalRel.class, "", 100d),
@@ -86,7 +86,7 @@ public class PhysicalProjectFilterTest extends OptimizerTestSupport {
     @Test
     public void testProjectIntoScan() {
         assertPlan(
-            optimizePhysical("SELECT f1, f2 FROM p", 2),
+            optimizePhysical("SELECT f0, f1 FROM p", 2),
             plan(
                 planRow(0, RootPhysicalRel.class, "", 100d),
                 planRow(1, RootExchangePhysicalRel.class, "", 100d),
@@ -115,11 +115,11 @@ public class PhysicalProjectFilterTest extends OptimizerTestSupport {
     @Test
     public void testProjectExpressionIntoScan() {
         assertPlan(
-            optimizePhysical("SELECT f1 + f2, f3 FROM p", 2),
+            optimizePhysical("SELECT f0 + f1, f2 FROM p", 2),
             plan(
                 planRow(0, RootPhysicalRel.class, "", 100d),
                 planRow(1, RootExchangePhysicalRel.class, "", 100d),
-                planRow(2, ProjectPhysicalRel.class, "EXPR$0=[+($0, $1)], f3=[$2]", 100d),
+                planRow(2, ProjectPhysicalRel.class, "EXPR$0=[+($0, $1)], f2=[$2]", 100d),
                 planRow(3, MapScanPhysicalRel.class, "table=[[hazelcast, p[projects=[0, 1, 2]]]]", 100d)
             )
         );
@@ -132,7 +132,7 @@ public class PhysicalProjectFilterTest extends OptimizerTestSupport {
     @Test
     public void testProjectFilterIntoScan() {
         assertPlan(
-            optimizePhysical("SELECT f1, f2 FROM p WHERE f3 > 1", 2),
+            optimizePhysical("SELECT f0, f1 FROM p WHERE f2 > 1", 2),
             plan(
                 planRow(0, RootPhysicalRel.class, "", 50d),
                 planRow(1, RootExchangePhysicalRel.class, "", 50d),
@@ -148,11 +148,11 @@ public class PhysicalProjectFilterTest extends OptimizerTestSupport {
     @Test
     public void testProjectExpressionFilterScan() {
         assertPlan(
-            optimizePhysical("SELECT f1 + f2, f3 FROM p WHERE f4 > 1", 2),
+            optimizePhysical("SELECT f0 + f1, f2 FROM p WHERE f3 > 1", 2),
             plan(
                 planRow(0, RootPhysicalRel.class, "", 50d),
                 planRow(1, RootExchangePhysicalRel.class, "", 50d),
-                planRow(2, ProjectPhysicalRel.class, "EXPR$0=[+($0, $1)], f3=[$2]", 50d),
+                planRow(2, ProjectPhysicalRel.class, "EXPR$0=[+($0, $1)], f2=[$2]", 50d),
                 planRow(3, MapScanPhysicalRel.class, "table=[[hazelcast, p[projects=[0, 1, 2], filter=>($3, 1)]]]", 50d)
             )
         );
@@ -165,7 +165,7 @@ public class PhysicalProjectFilterTest extends OptimizerTestSupport {
     @Test
     public void testProjectProjectIntoScan() {
         assertPlan(
-            optimizePhysical("SELECT f1 FROM (SELECT f1, f2 FROM p)", 2),
+            optimizePhysical("SELECT f0 FROM (SELECT f0, f1 FROM p)", 2),
             plan(
                 planRow(0, RootPhysicalRel.class, "", 100d),
                 planRow(1, RootExchangePhysicalRel.class, "", 100d),
@@ -181,11 +181,11 @@ public class PhysicalProjectFilterTest extends OptimizerTestSupport {
     @Test
     public void testProjectProjectExpressionIntoScan() {
         assertPlan(
-            optimizePhysical("SELECT d1, f3 FROM (SELECT f1 + f2 d1, f3, f4 FROM p)", 2),
+            optimizePhysical("SELECT d1, f2 FROM (SELECT f0 + f1 d1, f2, f3 FROM p)", 2),
             plan(
                 planRow(0, RootPhysicalRel.class, "", 100d),
                 planRow(1, RootExchangePhysicalRel.class, "", 100d),
-                planRow(2, ProjectPhysicalRel.class, "d1=[+($0, $1)], f3=[$2]", 100d),
+                planRow(2, ProjectPhysicalRel.class, "d1=[+($0, $1)], f2=[$2]", 100d),
                 planRow(3, MapScanPhysicalRel.class, "table=[[hazelcast, p[projects=[0, 1, 2]]]]", 100d)
             )
         );
@@ -198,11 +198,11 @@ public class PhysicalProjectFilterTest extends OptimizerTestSupport {
     @Test
     public void testProjectExpressionProjectIntoScan() {
         assertPlan(
-            optimizePhysical("SELECT f1 + f2, f3 FROM (SELECT f1, f2, f3, f4 FROM p)", 2),
+            optimizePhysical("SELECT f0 + f1, f2 FROM (SELECT f0, f1, f2, f3 FROM p)", 2),
             plan(
                 planRow(0, RootPhysicalRel.class, "", 100d),
                 planRow(1, RootExchangePhysicalRel.class, "", 100d),
-                planRow(2, ProjectPhysicalRel.class, "EXPR$0=[+($0, $1)], f3=[$2]", 100d),
+                planRow(2, ProjectPhysicalRel.class, "EXPR$0=[+($0, $1)], f2=[$2]", 100d),
                 planRow(3, MapScanPhysicalRel.class, "table=[[hazelcast, p[projects=[0, 1, 2]]]]", 100d)
             )
         );
@@ -215,7 +215,7 @@ public class PhysicalProjectFilterTest extends OptimizerTestSupport {
     @Test
     public void testProjectExpressionProjectExpressionIntoScan() {
         assertPlan(
-            optimizePhysical("SELECT d1 + f3 FROM (SELECT f1 + f2 d1, f3, f4 FROM p)", 2),
+            optimizePhysical("SELECT d1 + f2 FROM (SELECT f0 + f1 d1, f2, f3 FROM p)", 2),
             plan(
                 planRow(0, RootPhysicalRel.class, "", 100d),
                 planRow(1, RootExchangePhysicalRel.class, "", 100d),
@@ -232,7 +232,7 @@ public class PhysicalProjectFilterTest extends OptimizerTestSupport {
     @Test
     public void testProjectProjectFilterIntoScan() {
         assertPlan(
-            optimizePhysical("SELECT f1 FROM (SELECT f1, f2 FROM p WHERE f3 > 1)", 2),
+            optimizePhysical("SELECT f0 FROM (SELECT f0, f1 FROM p WHERE f2 > 1)", 2),
             plan(
                 planRow(0, RootPhysicalRel.class, "", 50d),
                 planRow(1, RootExchangePhysicalRel.class, "", 50d),
@@ -248,11 +248,11 @@ public class PhysicalProjectFilterTest extends OptimizerTestSupport {
     @Test
     public void testProjectProjectExpressionFilterIntoScan() {
         assertPlan(
-            optimizePhysical("SELECT d1, f3 FROM (SELECT f1 + f2 d1, f3, f4 FROM p WHERE f5 > 1)", 2),
+            optimizePhysical("SELECT d1, f2 FROM (SELECT f0 + f1 d1, f2, f3 FROM p WHERE f4 > 1)", 2),
             plan(
                 planRow(0, RootPhysicalRel.class, "", 50d),
                 planRow(1, RootExchangePhysicalRel.class, "", 50d),
-                planRow(2, ProjectPhysicalRel.class, "d1=[+($0, $1)], f3=[$2]", 50d),
+                planRow(2, ProjectPhysicalRel.class, "d1=[+($0, $1)], f2=[$2]", 50d),
                 planRow(3, MapScanPhysicalRel.class, "table=[[hazelcast, p[projects=[0, 1, 2], filter=>($4, 1)]]]", 50d)
             )
         );
@@ -265,7 +265,7 @@ public class PhysicalProjectFilterTest extends OptimizerTestSupport {
     @Test
     public void testProjectExpressionProjectFilterIntoScan() {
         assertPlan(
-            optimizePhysical("SELECT f1 + f2 FROM (SELECT f1, f2, f3, f4 FROM p WHERE f3 > 1)", 2),
+            optimizePhysical("SELECT f0 + f1 FROM (SELECT f0, f1, f2, f3 FROM p WHERE f2 > 1)", 2),
             plan(
                 planRow(0, RootPhysicalRel.class, "", 50d),
                 planRow(1, RootExchangePhysicalRel.class, "", 50d),
@@ -282,7 +282,7 @@ public class PhysicalProjectFilterTest extends OptimizerTestSupport {
     @Test
     public void testProjectExpressionProjectExpressionFilterIntoScan() {
         assertPlan(
-            optimizePhysical("SELECT d1 + f3 FROM (SELECT f1 + f2 d1, f3, f4 FROM p WHERE f5 > 1)", 2),
+            optimizePhysical("SELECT d1 + f2 FROM (SELECT f0 + f1 d1, f2, f3 FROM p WHERE f4 > 1)", 2),
             plan(
                 planRow(0, RootPhysicalRel.class, "", 50d),
                 planRow(1, RootExchangePhysicalRel.class, "", 50d),
@@ -299,7 +299,7 @@ public class PhysicalProjectFilterTest extends OptimizerTestSupport {
     @Test
     public void testProjectFilterProjectIntoScan() {
         assertPlan(
-            optimizePhysical("SELECT f1 FROM (SELECT f1, f2, f3 FROM p) WHERE f2 > 1", 2),
+            optimizePhysical("SELECT f0 FROM (SELECT f0, f1, f2 FROM p) WHERE f1 > 1", 2),
             plan(
                 planRow(0, RootPhysicalRel.class, "", 50d),
                 planRow(1, RootExchangePhysicalRel.class, "", 50d),
@@ -316,11 +316,11 @@ public class PhysicalProjectFilterTest extends OptimizerTestSupport {
     @Test
     public void testProjectFilterProjectExpressionIntoScan() {
         assertPlan(
-            optimizePhysical("SELECT d1, f3 FROM (SELECT f1 + f2 d1, f3, f4, f5 FROM p) WHERE f4 > 1", 2),
+            optimizePhysical("SELECT d1, f2 FROM (SELECT f0 + f1 d1, f2, f3, f4 FROM p) WHERE f3 > 1", 2),
             plan(
                 planRow(0, RootPhysicalRel.class, "", 50d),
                 planRow(1, RootExchangePhysicalRel.class, "", 50d),
-                planRow(2, ProjectPhysicalRel.class, "d1=[+($0, $1)], f3=[$2]", 50d),
+                planRow(2, ProjectPhysicalRel.class, "d1=[+($0, $1)], f2=[$2]", 50d),
                 planRow(3, MapScanPhysicalRel.class, "table=[[hazelcast, p[projects=[0, 1, 2], filter=>($3, 1)]]]", 50d)
             )
         );
@@ -334,7 +334,7 @@ public class PhysicalProjectFilterTest extends OptimizerTestSupport {
     @Test
     public void testProjectExpressionFilterProjectIntoScan() {
         assertPlan(
-            optimizePhysical("SELECT f1 + f2 FROM (SELECT f1, f2, f3, f4 FROM p) WHERE f3 > 1", 2),
+            optimizePhysical("SELECT f0 + f1 FROM (SELECT f0, f1, f2, f3 FROM p) WHERE f2 > 1", 2),
             plan(
                 planRow(0, RootPhysicalRel.class, "", 50d),
                 planRow(1, RootExchangePhysicalRel.class, "", 50d),
@@ -352,7 +352,7 @@ public class PhysicalProjectFilterTest extends OptimizerTestSupport {
     @Test
     public void testProjectExpressionFilterProjectExpressionIntoScan() {
         assertPlan(
-            optimizePhysical("SELECT d1 + f3 FROM (SELECT f1 + f2 d1, f3, f4, f5 FROM p) WHERE f4 > 1", 2),
+            optimizePhysical("SELECT d1 + f2 FROM (SELECT f0 + f1 d1, f2, f3, f4 FROM p) WHERE f3 > 1", 2),
             plan(
                 planRow(0, RootPhysicalRel.class, "", 50d),
                 planRow(1, RootExchangePhysicalRel.class, "", 50d),
@@ -369,7 +369,7 @@ public class PhysicalProjectFilterTest extends OptimizerTestSupport {
     @Test
     public void testProjectFilterProjectFilterIntoScan() {
         assertPlan(
-            optimizePhysical("SELECT f1 FROM (SELECT f1, f2, f3 FROM p WHERE f4 > 1) WHERE f2 > 1", 2),
+            optimizePhysical("SELECT f0 FROM (SELECT f0, f1, f2 FROM p WHERE f3 > 1) WHERE f1 > 1", 2),
             plan(
                 planRow(0, RootPhysicalRel.class, "", 25d),
                 planRow(1, RootExchangePhysicalRel.class, "", 25d),
@@ -385,11 +385,11 @@ public class PhysicalProjectFilterTest extends OptimizerTestSupport {
     @Test
     public void testProjectFilterProjectExpressionFilterIntoScan() {
         assertPlan(
-            optimizePhysical("SELECT d1, f3 FROM (SELECT f1 + f2 d1, f3, f4, f5 FROM p WHERE f4 > 1) WHERE f3 > 2", 2),
+            optimizePhysical("SELECT d1, f2 FROM (SELECT f0 + f1 d1, f2, f3, f4 FROM p WHERE f3 > 1) WHERE f2 > 2", 2),
             plan(
                 planRow(0, RootPhysicalRel.class, "", 25d),
                 planRow(1, RootExchangePhysicalRel.class, "", 25d),
-                planRow(2, ProjectPhysicalRel.class, "d1=[+($0, $1)], f3=[$2]", 25d),
+                planRow(2, ProjectPhysicalRel.class, "d1=[+($0, $1)], f2=[$2]", 25d),
                 planRow(3, MapScanPhysicalRel.class, "table=[[hazelcast, p[projects=[0, 1, 2], filter=AND(>($3, 1), >($2, 2))]]]", 25d)
             )
         );
@@ -402,7 +402,7 @@ public class PhysicalProjectFilterTest extends OptimizerTestSupport {
     @Test
     public void testProjectExpressionFilterProjectFilterIntoScan() {
         assertPlan(
-            optimizePhysical("SELECT f1 + f2 FROM (SELECT f1, f2, f3, f4 FROM p WHERE f4 > 1) WHERE f3 > 1", 2),
+            optimizePhysical("SELECT f0 + f1 FROM (SELECT f0, f1, f2, f3 FROM p WHERE f3 > 1) WHERE f2 > 1", 2),
             plan(
                 planRow(0, RootPhysicalRel.class, "", 25d),
                 planRow(1, RootExchangePhysicalRel.class, "", 25d),
@@ -419,7 +419,7 @@ public class PhysicalProjectFilterTest extends OptimizerTestSupport {
     @Test
     public void testProjectExpressionFilterProjectExpressionFilterIntoScan() {
         assertPlan(
-            optimizePhysical("SELECT d1 + f3 FROM (SELECT f1 + f2 d1, f3, f4, f5 FROM p WHERE f4 > 1) WHERE f3 > 2", 2),
+            optimizePhysical("SELECT d1 + f2 FROM (SELECT f0 + f1 d1, f2, f3, f4 FROM p WHERE f3 > 1) WHERE f2 > 2", 2),
             plan(
                 planRow(0, RootPhysicalRel.class, "", 25d),
                 planRow(1, RootExchangePhysicalRel.class, "", 25d),

@@ -65,9 +65,9 @@ import static java.util.stream.Collectors.joining;
  * by parent operators are returned, thus implementing field trimming. Pushed-down filter reduces the number of returned rows.
  * <p>
  * Projects are indexes of table fields that are returned. Initial projection (i.e. before optimization) returns all the columns.
- * After project pushdown the number and order of columns may change. For example, for the table {@code t[f1, f2, f3]} the
- * initial projection is {@code [0, 1, 2]}. After pushdown of a {@code "SELECT f3, f1"} the projection becomes {@code [2, 0]}
- * which means that the columns {@code [f3, f1]} are returned in that order.
+ * After project pushdown the number and order of columns may change. For example, for the table {@code t[f0, f1, f2]} the
+ * initial projection is {@code [0, 1, 2]}. After pushdown of a {@code "SELECT f2, f0"} the projection becomes {@code [2, 0]}
+ * which means that the columns {@code [f2, f0]} are returned, in that order.
  * <p>
  * Filter is a conjunctive expression that references table fields via their original indexes. That is, {@code [f2]} is
  * referenced as {@code [2]} even if it is projected as the first field in the example above. This is needed to allow for
@@ -75,7 +75,7 @@ import static java.util.stream.Collectors.joining;
  * <p>
  * Consider the following SQL statement:
  * <pre>
- * SELECT f3, f1 FROM t WHERE f2 > ?
+ * SELECT f2, f0 FROM t WHERE f1 > ?
  * </pre>
  * In this case {@code projects=[2, 0]}, {@code filter=[>$1, ?]}.
  * <p>

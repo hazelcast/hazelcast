@@ -147,7 +147,7 @@ public abstract class OptimizerTestSupport extends SqlTestSupport {
     }
 
     /**
-     * Creates the default test schema. Override that method if you would like to have anoher schema.
+     * Creates the default test schema. Override this method if you would like to have another schema.
      *
      * @return Default schema.
      */
@@ -156,7 +156,7 @@ public abstract class OptimizerTestSupport extends SqlTestSupport {
 
         tableMap.put("p", partitionedTable(
             "p",
-            fields("f1", INT, "f2", INT, "f3", INT, "f4", INT, "f5", INT),
+            fields("f0", INT, "f1", INT, "f2", INT, "f3", INT, "f4", INT),
             100
         ));
 
@@ -248,7 +248,7 @@ public abstract class OptimizerTestSupport extends SqlTestSupport {
     }
 
     public static Cost cost(double rows, double cpu, double network) {
-        return (Cost) CostFactory.INSTANCE.makeCost(rows, cpu, network);
+        return CostFactory.INSTANCE.makeCost(rows, cpu, network);
     }
 
     private static String planErrorMessage(String message, PlanRows expected, PlanRows actual) {
