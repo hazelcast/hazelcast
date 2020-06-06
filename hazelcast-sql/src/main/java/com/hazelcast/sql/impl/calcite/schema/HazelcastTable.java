@@ -218,8 +218,8 @@ public class HazelcastTable extends AbstractTable {
         res.setEmptyValue("");
 
         if (projects != null) {
-            res.add("projects=" +
-                    projects.stream()
+            res.add("projects="
+                    + projects.stream()
                             .map(Objects::toString)
                             .collect(joining(", ", "[", "]")));
         }
