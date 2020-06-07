@@ -24,6 +24,7 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -48,11 +49,19 @@ import static org.junit.Assume.assumeFalse;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class PhoneHomeTest extends HazelcastTestSupport {
 
+    private Node node;
+    private PhoneHome phoneHome;
+    private HazelcastInstance hz;
+
+    @Before
+    public void initialise() {
+        hz = createHazelcastInstance();
+        node = getNode(hz);
+        phoneHome = new PhoneHome(node);
+    }
+
     @Test
     public void testPhoneHomeParameters() {
-        HazelcastInstance hz = createHazelcastInstance();
-        Node node = getNode(hz);
-        PhoneHome phoneHome = new PhoneHome(node);
         sleepAtLeastMillis(1);
         Map<String, String> parameters = phoneHome.phoneHome(true);
         RuntimeMXBean runtimeMxBean = ManagementFactory.getRuntimeMXBean();
@@ -132,9 +141,6 @@ public class PhoneHomeTest extends HazelcastTestSupport {
 
     @Test
     public void testMapCount() {
-        HazelcastInstance hz = createHazelcastInstance();
-        Node node = getNode(hz);
-        PhoneHome phoneHome = new PhoneHome(node);
         Map<String, String> parameters = phoneHome.phoneHome(true);
         assertEquals(parameters.get("mpct"), "0");
         Map<String, String> map1 = hz.getMap("hazelcast");
@@ -148,9 +154,6 @@ public class PhoneHomeTest extends HazelcastTestSupport {
 
     @Test
     public void testMapCountWithBackupReadEnabled() {
-        HazelcastInstance hz = createHazelcastInstance();
-        Node node = getNode(hz);
-        PhoneHome phoneHome = new PhoneHome(node);
         Map<String, String> parameters;
         parameters = phoneHome.phoneHome(true);
         assertEquals(parameters.get("mpbrct"), "0");

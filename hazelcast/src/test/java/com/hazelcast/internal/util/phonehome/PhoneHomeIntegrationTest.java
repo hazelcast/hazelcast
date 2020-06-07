@@ -40,29 +40,12 @@ public class PhoneHomeIntegrationTest extends HazelcastTestSupport {
     public WireMockRule wireMockRule = new WireMockRule();
 
     @Test()
-    public void testMapCount() {
+    public void testMapMetrics() {
         HazelcastInstance hz = createHazelcastInstance();
         Node node = getNode(hz);
         PhoneHome phoneHome = new PhoneHome(node, "http://localhost:8080/ping");
         Map<String, String> map1 = hz.getMap("hazelcast");
         Map<String, String> map2 = hz.getMap("phonehome");
-
-        stubFor(get(urlPathEqualTo("/ping"))
-                .willReturn(aResponse()
-                        .withStatus(200)));
-
-        phoneHome.phoneHome(false);
-
-        verify(1, getRequestedFor(urlPathEqualTo("/ping")).withQueryParam("mpct", equalTo("2")));
-
-    }
-
-    @Test
-    public void testMapCountWithBackupReadEnabled() {
-        HazelcastInstance hz = createHazelcastInstance();
-        Node node = getNode(hz);
-        PhoneHome phoneHome = new PhoneHome(node, "http://localhost:8080/ping");
-        Map<String, String> map1 = hz.getMap("hazelcast");
         node.getConfig().getMapConfig("hazelcast").setReadBackupData(true);
 
         stubFor(get(urlPathEqualTo("/ping"))
@@ -71,8 +54,10 @@ public class PhoneHomeIntegrationTest extends HazelcastTestSupport {
 
         phoneHome.phoneHome(false);
 
+        verify(1, getRequestedFor(urlPathEqualTo("/ping")).withQueryParam("mpct", equalTo("2")));
         verify(1, getRequestedFor(urlPathEqualTo("/ping")).withQueryParam("mpbrct", equalTo("1")));
 
     }
+
 }
 
