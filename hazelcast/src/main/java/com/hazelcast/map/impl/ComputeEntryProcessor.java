@@ -25,6 +25,11 @@ import java.io.IOException;
 import java.util.Map;
 import java.util.function.BiFunction;
 
+/**
+ * Entry processor used by Hazelcast Map to execute the Map.compute() method remotely
+ *
+ * @since 4.1
+ */
 public class ComputeEntryProcessor<K, V> implements EntryProcessor<K, V, V>, IdentifiedDataSerializable {
 
     BiFunction<? super K, ? super V, ? extends V> biFunction;
