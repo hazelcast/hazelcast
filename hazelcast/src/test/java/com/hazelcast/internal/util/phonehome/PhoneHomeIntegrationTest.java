@@ -54,8 +54,8 @@ public class PhoneHomeIntegrationTest extends HazelcastTestSupport {
 
         phoneHome.phoneHome(false);
 
-        verify(1, getRequestedFor(urlPathEqualTo("/ping")).withQueryParam("mpct", equalTo("2")));
-        verify(1, getRequestedFor(urlPathEqualTo("/ping")).withQueryParam("mpbrct", equalTo("1")));
+        verify(1, getRequestedFor(urlPathEqualTo("/ping")).withQueryParam("mpct", equalTo("2"))
+                .withQueryParam("mpbrct", equalTo("1")));
 
     }
 
