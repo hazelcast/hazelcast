@@ -27,10 +27,12 @@ public class QueryParseResult {
 
     private final SqlNode node;
     private final RelDataType parameterRowType;
+    private final boolean isImdg;
 
-    public QueryParseResult(SqlNode node, RelDataType parameterRowType) {
+    public QueryParseResult(SqlNode node, RelDataType parameterRowType, boolean isImdg) {
         this.node = node;
         this.parameterRowType = parameterRowType;
+        this.isImdg = isImdg;
     }
 
     public boolean isDdl() {
@@ -43,5 +45,9 @@ public class QueryParseResult {
 
     public RelDataType getParameterRowType() {
         return parameterRowType;
+    }
+
+    public boolean isImdg() {
+        return isImdg;
     }
 }

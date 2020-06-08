@@ -47,16 +47,29 @@ public class QueryParser {
         this.validator = validator;
     }
 
-    public QueryParseResult parse(String sql) {
+    public QueryParseResult parse(String sql, boolean jetBackendPresent) {
         SqlNode node;
         RelDataType parameterRowType;
 
+        UnsupportedOperationVisitor visitor;
         try {
             SqlParser parser = SqlParser.create(sql, CONFIG);
 
             node = validator.validate(parser.parseStmt());
 
-            node.accept(UnsupportedOperationVisitor.INSTANCE);
+            visitor = new UnsupportedOperationVisitor(validator.getCatalogReader());
+            node.accept(visitor);
+
+            if (!visitor.runsOnImdg() && !visitor.runsOnJet()) {
+                // If there's a single feature that's not supported by either engine, the visitor already
+                // threw an error when visiting. If we get here it means that there's some feature
+                // missing in IMDG and a distinct feature missing in Jet.
+                throw QueryException.error("The query contains an unsupported combination of features");
+            }
+
+            if (!visitor.runsOnImdg() && !jetBackendPresent) {
+                throw QueryException.error("To run this query Hazelcast Jet must be on the classpath");
+            }
 
             parameterRowType = validator.getParameterRowType(node);
 
@@ -65,6 +78,6 @@ public class QueryParser {
             throw QueryException.error(SqlErrorCode.PARSING, e.getMessage(), e);
         }
 
-        return new QueryParseResult(node, parameterRowType);
+        return new QueryParseResult(node, parameterRowType, visitor.runsOnImdg());
     }
 }

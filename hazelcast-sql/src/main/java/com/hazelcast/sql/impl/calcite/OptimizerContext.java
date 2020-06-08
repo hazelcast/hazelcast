@@ -136,10 +136,11 @@ public final class OptimizerContext {
      * Parse SQL statement.
      *
      * @param sql SQL string.
+     * @param jetBackendPresent True if Jet is on classpath and able to run queries.
      * @return SQL tree.
      */
-    public QueryParseResult parse(String sql) {
-        return parser.parse(sql);
+    public QueryParseResult parse(String sql, boolean jetBackendPresent) {
+        return parser.parse(sql, jetBackendPresent);
     }
 
     /**

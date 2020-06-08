@@ -78,12 +78,12 @@ public class ParserOperationsTest {
     }
 
     private static void checkSuccess(String sql) {
-        createContext().parse(sql);
+        createContext().parse(sql, false);
     }
 
     private static void checkFailure(String sql, String message) {
         try {
-            createContext().parse(sql);
+            createContext().parse(sql, false);
 
             fail("Exception is not thrown: " + message);
         } catch (QueryException e) {
