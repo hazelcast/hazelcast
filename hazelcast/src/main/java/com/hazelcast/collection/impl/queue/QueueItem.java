@@ -24,11 +24,12 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.internal.util.Clock;
 
 import java.io.IOException;
+import java.util.Comparator;
 
 /**
  * Queue Item.
  */
-public class QueueItem implements IdentifiedDataSerializable, Comparable<QueueItem> {
+public class QueueItem implements IdentifiedDataSerializable, Comparable<QueueItem>, Comparator<QueueItem> {
 
     protected long itemId;
     protected Data data;
@@ -96,10 +97,15 @@ public class QueueItem implements IdentifiedDataSerializable, Comparable<QueueIt
     }
 
     @Override
-    public int compareTo(QueueItem o) {
-        if (itemId < o.getItemId()) {
+    public int compareTo(QueueItem other) {
+       return compare(this, other);
+    }
+
+    @Override
+    public int compare(QueueItem queueItem1, QueueItem queueItem2) {
+        if (queueItem1.getItemId() < queueItem2.getItemId()) {
             return -1;
-        } else if (itemId > o.getItemId()) {
+        } else if (queueItem1.getItemId() > queueItem2.getItemId()) {
             return 1;
         }
         return 0;
