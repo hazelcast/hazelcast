@@ -257,6 +257,7 @@ public final class ClientConfigXmlGenerator {
             .nodeIfContents("realm", c.getRealm())
             .nodeIfContents("security-realm", c.getSecurityRealm())
             .nodeIfContents("service-name-prefix", c.getServiceNamePrefix())
+            .nodeIfContents("use-canonical-hostname", c.getUseCanonicalHostname())
             .nodeIfContents("spn", c.getSpn())
             .close();
     }

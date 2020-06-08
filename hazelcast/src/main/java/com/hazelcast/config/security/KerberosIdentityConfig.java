@@ -17,9 +17,12 @@
 package com.hazelcast.config.security;
 
 import java.util.Objects;
+import java.util.Properties;
 
 import com.hazelcast.config.CredentialsFactoryConfig;
 import com.hazelcast.security.ICredentialsFactory;
+
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 public class KerberosIdentityConfig implements IdentityConfig {
 
@@ -62,6 +65,22 @@ public class KerberosIdentityConfig implements IdentityConfig {
         return this;
     }
 
+    @SuppressFBWarnings(value = "NP_BOOLEAN_RETURN_NULL", justification = "Proper support in the config XML generator.")
+    public Boolean getUseCanonicalHostname() {
+        String strVal = factoryConfig.getProperties().getProperty("useCanonicalHostname");
+        return strVal != null ? Boolean.parseBoolean(strVal) : null;
+    }
+
+    public KerberosIdentityConfig setUseCanonicalHostname(Boolean useCanonicalHostname) {
+        Properties props = factoryConfig.getProperties();
+        if (useCanonicalHostname != null) {
+            props.setProperty("useCanonicalHostname", useCanonicalHostname.toString());
+        } else {
+            props.remove("useCanonicalHostname");
+        }
+        return this;
+    }
+
     @Override
     public ICredentialsFactory asCredentialsFactory(ClassLoader cl) {
         return factoryConfig.asCredentialsFactory(cl);
@@ -96,7 +115,10 @@ public class KerberosIdentityConfig implements IdentityConfig {
     @Override
     public String toString() {
         return "KerberosIdentityConfig [spn=" + getSpn() + ", serviceNamePrefix=" + getServiceNamePrefix()
-                + ", realm()=" + getRealm() + ", securityRealm=" + getSecurityRealm() + "]";
+                + ", realm=" + getRealm()
+                + ", securityRealm=" + getSecurityRealm()
+                + ", useCanonicalHostname=" + getUseCanonicalHostname()
+                + "]";
     }
 
 }

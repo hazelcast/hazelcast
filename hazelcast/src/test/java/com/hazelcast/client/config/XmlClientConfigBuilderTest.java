@@ -388,6 +388,7 @@ public class XmlClientConfigBuilderTest extends AbstractClientConfigBuilderTest 
                 + "        <realm>HAZELCAST.COM</realm>"
                 + "        <security-realm>krb5Initiator</security-realm>"
                 + "        <service-name-prefix>hz/</service-name-prefix>"
+                + "        <use-canonical-hostname>true</use-canonical-hostname>"
                 + "        <spn>hz/127.0.0.1@HAZELCAST.COM</spn>"
                 + "    </kerberos>"
                 + "</security>"
@@ -398,6 +399,7 @@ public class XmlClientConfigBuilderTest extends AbstractClientConfigBuilderTest 
         assertEquals("HAZELCAST.COM", identityConfig.getRealm());
         assertEquals("krb5Initiator", identityConfig.getSecurityRealm());
         assertEquals("hz/", identityConfig.getServiceNamePrefix());
+        assertTrue(identityConfig.getUseCanonicalHostname());
         assertEquals("hz/127.0.0.1@HAZELCAST.COM", identityConfig.getSpn());
     }
 

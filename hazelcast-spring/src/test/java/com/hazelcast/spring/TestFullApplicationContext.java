@@ -605,11 +605,13 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         KerberosAuthenticationConfig kerbAuthentication = kerberosRealm.getKerberosAuthenticationConfig();
         assertNotNull(kerbAuthentication);
         assertEquals(TRUE, kerbAuthentication.getRelaxFlagsCheck());
+        assertEquals(TRUE, kerbAuthentication.getUseNameWithoutRealm());
         assertEquals("krb5Acceptor", kerbAuthentication.getSecurityRealm());
         assertNotNull(kerbAuthentication.getLdapAuthenticationConfig());
         KerberosIdentityConfig kerbIdentity = kerberosRealm.getKerberosIdentityConfig();
         assertNotNull(kerbIdentity);
         assertEquals("HAZELCAST.COM", kerbIdentity.getRealm());
+        assertEquals(TRUE, kerbIdentity.getUseCanonicalHostname());
     }
 
     @Test

@@ -224,6 +224,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "        <kerberos>"
                 + "          <skip-role>false</skip-role>"
                 + "          <relax-flags-check>true</relax-flags-check>"
+                + "          <use-name-without-realm>true</use-name-without-realm>"
                 + "          <security-realm>krb5Acceptor</security-realm>"
                 + "          <ldap>"
                 + "            <url>ldap://127.0.0.1</url>"
@@ -234,6 +235,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "        <kerberos>"
                 + "          <realm>HAZELCAST.COM</realm>"
                 + "          <security-realm>krb5Initializer</security-realm>"
+                + "          <use-canonical-hostname>true</use-canonical-hostname>"
                 + "        </kerberos>"
                 + "      </identity>"
                 + "    </realm>"
@@ -302,6 +304,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         assertNotNull(kerbIdentity);
         assertEquals("HAZELCAST.COM", kerbIdentity.getRealm());
         assertEquals("krb5Initializer", kerbIdentity.getSecurityRealm());
+        assertTrue(kerbIdentity.getUseCanonicalHostname());
 
         KerberosAuthenticationConfig kerbAuthentication = kerberosRealm.getKerberosAuthenticationConfig();
         assertNotNull(kerbAuthentication);
@@ -309,6 +312,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         assertEquals(Boolean.FALSE, kerbAuthentication.getSkipRole());
         assertNull(kerbAuthentication.getSkipIdentity());
         assertEquals("krb5Acceptor", kerbAuthentication.getSecurityRealm());
+        assertTrue(kerbAuthentication.getUseNameWithoutRealm());
 
         LdapAuthenticationConfig kerbLdapAuthentication = kerbAuthentication.getLdapAuthenticationConfig();
         assertNotNull(kerbLdapAuthentication);

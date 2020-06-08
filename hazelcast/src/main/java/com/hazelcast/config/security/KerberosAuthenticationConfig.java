@@ -25,6 +25,7 @@ import com.hazelcast.config.LoginModuleConfig.LoginModuleUsage;
 public class KerberosAuthenticationConfig extends AbstractClusterLoginConfig<KerberosAuthenticationConfig> {
 
     private Boolean relaxFlagsCheck;
+    private Boolean useNameWithoutRealm;
     private String securityRealm;
     private LdapAuthenticationConfig ldapAuthenticationConfig;
 
@@ -39,6 +40,15 @@ public class KerberosAuthenticationConfig extends AbstractClusterLoginConfig<Ker
 
     public String getSecurityRealm() {
         return securityRealm;
+    }
+
+    public KerberosAuthenticationConfig setUseNameWithoutRealm(Boolean useNameWithoutRealm) {
+        this.useNameWithoutRealm = useNameWithoutRealm;
+        return this;
+    }
+
+    public Boolean getUseNameWithoutRealm() {
+        return useNameWithoutRealm;
     }
 
     public KerberosAuthenticationConfig setSecurityRealm(String securityRealm) {
@@ -59,6 +69,7 @@ public class KerberosAuthenticationConfig extends AbstractClusterLoginConfig<Ker
     protected Properties initLoginModuleProperties() {
         Properties props = super.initLoginModuleProperties();
         setIfConfigured(props, "relaxFlagsCheck", relaxFlagsCheck);
+        setIfConfigured(props, "useNameWithoutRealm", useNameWithoutRealm);
         setIfConfigured(props, "securityRealm", securityRealm);
         return props;
     }
@@ -85,7 +96,7 @@ public class KerberosAuthenticationConfig extends AbstractClusterLoginConfig<Ker
     public int hashCode() {
         final int prime = 31;
         int result = super.hashCode();
-        result = prime * result + Objects.hash(ldapAuthenticationConfig, relaxFlagsCheck, securityRealm);
+        result = prime * result + Objects.hash(ldapAuthenticationConfig, relaxFlagsCheck, useNameWithoutRealm, securityRealm);
         return result;
     }
 
@@ -102,12 +113,15 @@ public class KerberosAuthenticationConfig extends AbstractClusterLoginConfig<Ker
         }
         KerberosAuthenticationConfig other = (KerberosAuthenticationConfig) obj;
         return Objects.equals(ldapAuthenticationConfig, other.ldapAuthenticationConfig)
-                && Objects.equals(relaxFlagsCheck, other.relaxFlagsCheck) && Objects.equals(securityRealm, other.securityRealm);
+                && Objects.equals(relaxFlagsCheck, other.relaxFlagsCheck)
+                && Objects.equals(useNameWithoutRealm, other.useNameWithoutRealm)
+                && Objects.equals(securityRealm, other.securityRealm);
     }
 
     @Override
     public String toString() {
         return "KerberosAuthenticationConfig [relaxFlagsCheck=" + relaxFlagsCheck + ", securityRealm=" + securityRealm
+                + ", useNameWithoutRealm=" + useNameWithoutRealm
                 + ", ldapAuthenticationConfig=" + ldapAuthenticationConfig
                 + ", getSkipIdentity()=" + getSkipIdentity() + ", getSkipEndpoint()=" + getSkipEndpoint() + ", getSkipRole()="
                 + getSkipRole() + "]";

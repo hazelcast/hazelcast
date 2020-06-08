@@ -394,6 +394,7 @@ public class YamlClientConfigBuilderTest extends AbstractClientConfigBuilderTest
                 + "      realm: HAZELCAST.COM\n"
                 + "      security-realm: krb5Initiator\n"
                 + "      service-name-prefix: hz/\n"
+                + "      use-canonical-hostname: true\n"
                 + "      spn: hz/127.0.0.1@HAZELCAST.COM\n";
 
         ClientConfig config = buildConfig(yaml);
@@ -402,6 +403,7 @@ public class YamlClientConfigBuilderTest extends AbstractClientConfigBuilderTest
         assertEquals("HAZELCAST.COM", identityConfig.getRealm());
         assertEquals("krb5Initiator", identityConfig.getSecurityRealm());
         assertEquals("hz/", identityConfig.getServiceNamePrefix());
+        assertTrue(identityConfig.getUseCanonicalHostname());
         assertEquals("hz/127.0.0.1@HAZELCAST.COM", identityConfig.getSpn());
     }
 

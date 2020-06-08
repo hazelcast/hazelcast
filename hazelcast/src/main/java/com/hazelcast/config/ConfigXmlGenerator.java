@@ -361,6 +361,7 @@ public class ConfigXmlGenerator {
         XmlGenerator kerberosGen = gen.open("kerberos");
         addClusterLoginElements(kerberosGen, c)
             .nodeIfContents("relax-flags-check", c.getRelaxFlagsCheck())
+            .nodeIfContents("use-name-without-realm", c.getUseNameWithoutRealm())
             .nodeIfContents("security-realm", c.getSecurityRealm());
         ldapAuthenticationGenerator(kerberosGen, c.getLdapAuthenticationConfig());
         kerberosGen.close();
@@ -375,6 +376,7 @@ public class ConfigXmlGenerator {
             .nodeIfContents("security-realm", c.getSecurityRealm())
             .nodeIfContents("service-name-prefix", c.getServiceNamePrefix())
             .nodeIfContents("spn", c.getSpn())
+            .nodeIfContents("use-canonical-hostname", c.getUseCanonicalHostname())
             .close();
     }
 

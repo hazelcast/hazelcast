@@ -2254,6 +2254,7 @@
                     <kerberos>
                         <skip-role>true</skip-role>
                         <relax-flags-check>true</relax-flags-check>
+                        <use-name-without-realm>true</use-name-without-realm>
                         <security-realm>krb5Acceptor</security-realm>
                         <ldap>
                             <url>ldap://127.0.0.1/</url>
@@ -2270,6 +2271,7 @@
                         <realm>HAZELCAST.COM</realm>
                         <security-realm>krb5Initiator</security-realm>
                         <service-name-prefix>hz/</service-name-prefix>
+                        <use-canonical-hostname>true</use-canonical-hostname>
                         <spn>hz/127.0.0.1@HAZELCAST.COM</spn>
                     </kerberos>
                 </identity>
