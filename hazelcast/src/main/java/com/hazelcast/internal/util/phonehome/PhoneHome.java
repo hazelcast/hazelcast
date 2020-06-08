@@ -108,10 +108,13 @@ public class PhoneHome {
     public PhoneHomeParameterCreator createParameters() {
 
         PhoneHomeParameterCreator parameterCreator = new PhoneHomeParameterCreator();
-
-        metricsCollectorList.forEach((metricsCollector -> parameterCreator.
-                addMap(metricsCollector.computeMetrics(hazelcastNode))));
-
+        for (MetricsCollector metricsCollector : metricsCollectorList) {
+            try {
+                parameterCreator.addMap(metricsCollector.computeMetrics(hazelcastNode));
+            } catch (Exception ignored) {
+                logger.warning("Some metrics were not recorded");
+            }
+        }
         return parameterCreator;
     }
 
