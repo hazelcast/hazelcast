@@ -16,41 +16,39 @@
 
 package com.hazelcast.collection.impl.queue;
 
-import com.hazelcast.collection.impl.txnqueue.TxQueueItem;
-import com.hazelcast.config.QueueConfig;
-import com.hazelcast.config.QueueStoreConfig;
-import com.hazelcast.core.HazelcastException;
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.internal.monitor.impl.LocalQueueStatsImpl;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.internal.serialization.Data;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.impl.NodeEngine;
-import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.transaction.TransactionException;
-import com.hazelcast.internal.util.Clock;
-
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Deque;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.ListIterator;
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
-import java.util.concurrent.TimeUnit;
-
 import static com.hazelcast.collection.impl.collection.CollectionContainer.ID_PROMOTION_OFFSET;
 import static com.hazelcast.internal.util.MapUtil.createHashMap;
 import static com.hazelcast.internal.util.MapUtil.createLinkedHashMap;
 import static com.hazelcast.internal.util.SetUtil.createHashSet;
+
+import com.hazelcast.collection.impl.txnqueue.TxQueueItem;
+import com.hazelcast.config.QueueConfig;
+import com.hazelcast.config.QueueStoreConfig;
+import com.hazelcast.core.HazelcastException;
+import com.hazelcast.internal.monitor.impl.LocalQueueStatsImpl;
+import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.util.Clock;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.transaction.TransactionException;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.ListIterator;
+import java.util.Map;
+import java.util.PriorityQueue;
+import java.util.Set;
+import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
 /**
  * The {@code QueueContainer} contains the actual queue and provides functionalities such as :
@@ -70,7 +68,7 @@ public class QueueContainer implements IdentifiedDataSerializable {
     private final Map<Long, Data> dataMap = new HashMap<Long, Data>();
     private QueueWaitNotifyKey pollWaitNotifyKey;
     private QueueWaitNotifyKey offerWaitNotifyKey;
-    private LinkedList<QueueItem> itemQueue;
+    private PriorityQueue<QueueItem> itemQueue;
     private Map<Long, QueueItem> backupMap;
     private QueueConfig config;
     private QueueStoreWrapper store;
@@ -678,6 +676,7 @@ public class QueueContainer implements IdentifiedDataSerializable {
     /**
      * Iterates all items, checks equality with data
      * This method does not trigger store load.
+     *
      * @param data the data to remove.
      * @return the item ID of the removed item or {@code -1} if no matching item was found.
      */
@@ -887,17 +886,19 @@ public class QueueContainer implements IdentifiedDataSerializable {
      *
      * @return the item queue
      */
-    public Deque<QueueItem> getItemQueue() {
+    public PriorityQueue<QueueItem> getItemQueue() {
         if (itemQueue == null) {
-            itemQueue = new LinkedList<QueueItem>();
+            ForwardingQueueItemComparator comparatorHolder = new ForwardingQueueItemComparator<>(config.getComparator(),
+                    nodeEngine.getSerializationService());
+            itemQueue = new PriorityQueue<QueueItem>(comparatorHolder);
             if (backupMap != null && !backupMap.isEmpty()) {
-                List<QueueItem> values = new ArrayList<QueueItem>(backupMap.values());
+                List<QueueItem> values = new ArrayList<>(backupMap.values());
                 Collections.sort(values);
-                itemQueue.addAll(values);
-                QueueItem lastItem = itemQueue.peekLast();
+                QueueItem lastItem = values.get(values.size() - 1);
                 if (lastItem != null) {
                     setId(lastItem.itemId + ID_PROMOTION_OFFSET);
                 }
+                itemQueue.addAll(values);
                 backupMap.clear();
                 backupMap = null;
             }
@@ -1035,7 +1036,7 @@ public class QueueContainer implements IdentifiedDataSerializable {
             if (transactionId.equals(item.getTransactionId())) {
                 iterator.remove();
                 if (item.isPollOperation()) {
-                    getItemQueue().offerFirst(item);
+                    getItemQueue().offer(item);
                     cancelEvictionIfExists();
                 }
             }

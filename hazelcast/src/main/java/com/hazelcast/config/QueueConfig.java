@@ -24,14 +24,13 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.readNullableList;
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.writeNullableList;
-import static com.hazelcast.internal.util.Preconditions.checkAsyncBackupCount;
-import static com.hazelcast.internal.util.Preconditions.checkBackupCount;
-import static com.hazelcast.internal.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.*;
 
 /**
  * Contains the configuration for an {@link IQueue}.
@@ -69,6 +68,7 @@ public class QueueConfig implements IdentifiedDataSerializable, NamedConfig {
     private boolean statisticsEnabled = true;
     private String splitBrainProtectionName;
     private MergePolicyConfig mergePolicyConfig = new MergePolicyConfig();
+    private Comparator comparator;
 
     public QueueConfig() {
     }
@@ -89,6 +89,7 @@ public class QueueConfig implements IdentifiedDataSerializable, NamedConfig {
         this.mergePolicyConfig = config.mergePolicyConfig;
         this.queueStoreConfig = config.queueStoreConfig != null ? new QueueStoreConfig(config.queueStoreConfig) : null;
         this.listenerConfigs = new ArrayList<ItemListenerConfig>(config.getItemListenerConfigs());
+        this.comparator = config.comparator;
     }
 
     /**
@@ -323,6 +324,15 @@ public class QueueConfig implements IdentifiedDataSerializable, NamedConfig {
         return this;
     }
 
+    public Comparator getComparator() {
+        return comparator;
+    }
+
+    public QueueConfig setComparator(Comparator comparator) {
+        this.comparator = comparator;
+        return this;
+    }
+
     @Override
     public String toString() {
         return "QueueConfig{"
@@ -335,6 +345,7 @@ public class QueueConfig implements IdentifiedDataSerializable, NamedConfig {
                 + ", queueStoreConfig=" + queueStoreConfig
                 + ", statisticsEnabled=" + statisticsEnabled
                 + ", mergePolicyConfig=" + mergePolicyConfig
+                + ", comparator=" +comparator
                 + '}';
     }
 

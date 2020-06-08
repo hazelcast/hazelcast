@@ -326,8 +326,8 @@
         </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-api</artifactId>
-            <version>${slf4j.api.version}</version>
+            <artifactId>slf4j-simple</artifactId>
+            <version>1.5.8</version>
             <scope>provided</scope>
             <optional>true</optional>
         </dependency>

@@ -653,6 +653,7 @@
                 <xs:restriction base="xs:string"/>
             </xs:simpleType>
         </xs:attribute>
+        <xs:attribute name="comparator" type="xs:string" use="optional"/>
     </xs:complexType>
     <xs:complexType name="list">
         <xs:all>
