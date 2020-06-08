@@ -15,7 +15,6 @@
  */
 package com.hazelcast.internal.util.phonehome;
 
-import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.DistributedObject;
 
