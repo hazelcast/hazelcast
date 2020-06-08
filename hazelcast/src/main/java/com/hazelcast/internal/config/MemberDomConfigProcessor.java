@@ -2985,6 +2985,8 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
                 kerbIdentity.setServiceNamePrefix(getTextContent(child));
             } else if ("spn".equals(nodeName)) {
                 kerbIdentity.setSpn(getTextContent(child));
+            } else if ("use-canonical-hostname".equals(nodeName)) {
+                kerbIdentity.setUseCanonicalHostname(getBooleanValue(getTextContent(child)));
             }
         }
         realmConfig.setKerberosIdentityConfig(kerbIdentity);
@@ -3058,6 +3060,8 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             String nodeName = cleanNodeName(child);
             if ("relax-flags-check".equals(nodeName)) {
                 krbCfg.setRelaxFlagsCheck(getBooleanValue(getTextContent(child)));
+            } else if ("use-name-without-realm".contentEquals(nodeName)) {
+                krbCfg.setUseNameWithoutRealm(getBooleanValue(getTextContent(child)));
             } else if ("security-realm".contentEquals(nodeName)) {
                 krbCfg.setSecurityRealm(getTextContent(child));
             } else if ("ldap".contentEquals(nodeName)) {

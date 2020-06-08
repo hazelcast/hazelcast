@@ -2216,6 +2216,7 @@ hazelcast:
           kerberos:
             skip-role: true
             relax-flags-check: true
+            use-name-without-realm: true
             security-realm: krb5Acceptor
             ldap:
               url: ldap://127.0.0.1/
@@ -2229,6 +2230,7 @@ hazelcast:
             realm: HAZELCAST.COM
             security-realm: krb5Initiator
             service-name-prefix: hz/
+            use-canonical-hostname: true
             spn: hz/127.0.0.1@HAZELCAST.COM
       - name: krb5Acceptor
         authentication:
