@@ -23,6 +23,3 @@ Thanks for creating your pull request (PR).
 5.	Before you push, run the command `mvn clean package -P checkstyle,spotbugs` in your terminal and fix the CheckStyle and SpotBugs errors (if any). Push your PR once it is free of CheckStyle and SpotBugs errors.
 6.	Please keep your PRs as small as possible, i.e. if you plan to perform a huge change, do not submit a single and large PR for it. For an enhancement or larger feature, you can create a GitHub issue first to discuss.
 7.	If you submit a PR as the solution to a specific issue, please mention the issue number either in the PR description or commit message.
-
-
-[Contributor Agreement Form]:https://hazelcast.atlassian.net/wiki/display/COM/Hazelcast+Contributor+Agreement
