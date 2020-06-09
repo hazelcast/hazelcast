@@ -47,6 +47,7 @@ public class PhoneHomeIntegrationTest extends HazelcastTestSupport {
         Map<String, String> map1 = hz.getMap("hazelcast");
         Map<String, String> map2 = hz.getMap("phonehome");
         node.getConfig().getMapConfig("hazelcast").setReadBackupData(true);
+        node.getConfig().getMapConfig("phonehome").getMapStoreConfig().setEnabled(true);
 
         stubFor(get(urlPathEqualTo("/ping"))
                 .willReturn(aResponse()
@@ -55,7 +56,8 @@ public class PhoneHomeIntegrationTest extends HazelcastTestSupport {
         phoneHome.phoneHome(false);
 
         verify(1, getRequestedFor(urlPathEqualTo("/ping")).withQueryParam("mpct", equalTo("2"))
-                .withQueryParam("mpbrct", equalTo("1")));
+                .withQueryParam("mpbrct", equalTo("1"))
+                .withQueryParam("mpmsct", equalTo("1")));
 
     }
 

@@ -34,10 +34,7 @@ import java.util.Map;
 import java.util.UUID;
 
 import static com.hazelcast.test.Accessors.getNode;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNull;
+import static org.junit.Assert.*;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -126,6 +123,21 @@ public class PhoneHomeTest extends HazelcastTestSupport {
         node.getConfig().getMapConfig("hazelcast").setReadBackupData(true);
         parameters = phoneHome.phoneHome(true);
         assertEquals(parameters.get("mpbrct"), "1");
+    }
+
+    @Test
+    public void testMapCountWithMapStoreEnabled() {
+        Map<String,String> parameters;
+        parameters=phoneHome.phoneHome(true);
+        assertEquals(parameters.get("mpmsct"),"0");
+
+        Map<String,String> map1=node.hazelcastInstance.getMap("hazelcast");
+        parameters=phoneHome.phoneHome(true);
+        assertEquals(parameters.get("mpmsct"),"0");
+
+        node.getConfig().getMapConfig("hazelcast").getMapStoreConfig().setEnabled(true);
+        parameters=phoneHome.phoneHome(true);
+        assertEquals(parameters.get("mpmsct"),"1");
     }
 }
 
