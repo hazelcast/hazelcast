@@ -17,19 +17,18 @@
 package com.hazelcast.collection.impl.queue;
 
 import com.hazelcast.internal.nio.IOUtil;
+import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.util.Clock;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.internal.util.Clock;
 
 import java.io.IOException;
-import java.util.Comparator;
 
 /**
  * Queue Item.
  */
-public class QueueItem implements IdentifiedDataSerializable, Comparable<QueueItem>, Comparator<QueueItem> {
+public class QueueItem implements IdentifiedDataSerializable, Comparable<QueueItem> {
 
     protected long itemId;
     protected Data data;
@@ -98,14 +97,9 @@ public class QueueItem implements IdentifiedDataSerializable, Comparable<QueueIt
 
     @Override
     public int compareTo(QueueItem other) {
-       return compare(this, other);
-    }
-
-    @Override
-    public int compare(QueueItem queueItem1, QueueItem queueItem2) {
-        if (queueItem1.getItemId() < queueItem2.getItemId()) {
+        if (getItemId() < other.getItemId()) {
             return -1;
-        } else if (queueItem1.getItemId() > queueItem2.getItemId()) {
+        } else if (getItemId() > other.getItemId()) {
             return 1;
         }
         return 0;

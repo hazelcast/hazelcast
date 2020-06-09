@@ -17,7 +17,6 @@
 package com.hazelcast.config;
 
 import com.hazelcast.collection.IQueue;
-import com.hazelcast.collection.impl.queue.QueueItem;
 import com.hazelcast.internal.config.ConfigDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -69,7 +68,7 @@ public class QueueConfig implements IdentifiedDataSerializable, NamedConfig {
     private boolean statisticsEnabled = true;
     private String splitBrainProtectionName;
     private MergePolicyConfig mergePolicyConfig = new MergePolicyConfig();
-    private Comparator comparator = new QueueItem();
+    private Comparator comparator;
 
     public QueueConfig() {
     }

@@ -666,6 +666,7 @@ public class QueueContainer implements IdentifiedDataSerializable {
     /**
      * Iterates all items, checks equality with data
      * This method does not trigger store load.
+     *
      * @param data the data to remove.
      * @return the item ID of the removed item or {@code -1} if no matching item was found.
      */
@@ -877,11 +878,13 @@ public class QueueContainer implements IdentifiedDataSerializable {
      */
     public PriorityQueue<QueueItem> getItemQueue() {
         if (itemQueue == null) {
-            itemQueue = new PriorityQueue<QueueItem>(config.getComparator());
+            ForwardingQueueItemComparator comparatorHolder = new ForwardingQueueItemComparator<>(config.getComparator(),
+                    nodeEngine.getSerializationService());
+            itemQueue = new PriorityQueue<QueueItem>(comparatorHolder);
             if (backupMap != null && !backupMap.isEmpty()) {
                 List<QueueItem> values = new ArrayList<>(backupMap.values());
                 Collections.sort(values);
-                QueueItem lastItem = values.get(values.size()-1);
+                QueueItem lastItem = values.get(values.size() - 1);
                 if (lastItem != null) {
                     setId(lastItem.itemId + ID_PROMOTION_OFFSET);
                 }
