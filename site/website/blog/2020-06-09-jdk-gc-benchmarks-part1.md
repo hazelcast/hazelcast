@@ -1,6 +1,9 @@
 ---
 title: Performance of Modern Java on Data-Heavy Workloads, Part 1
 description: Results of extensive testing of Hazelcast Jet with various combinations of JDK version and GC
+author: Marko Topolnik
+authorURL: https://stackoverflow.com/users/1103872/marko-topolnik
+authorImageURL: https://i.imgur.com/xuavzce.jpg
 ---
 
 The Java runtime has been evolving more rapidly in recent years and,
