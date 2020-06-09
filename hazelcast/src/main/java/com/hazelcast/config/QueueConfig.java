@@ -90,6 +90,7 @@ public class QueueConfig implements IdentifiedDataSerializable, NamedConfig {
         this.mergePolicyConfig = config.mergePolicyConfig;
         this.queueStoreConfig = config.queueStoreConfig != null ? new QueueStoreConfig(config.queueStoreConfig) : null;
         this.listenerConfigs = new ArrayList<ItemListenerConfig>(config.getItemListenerConfigs());
+        this.comparator = config.comparator;
     }
 
     /**
