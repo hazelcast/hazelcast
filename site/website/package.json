@@ -30,9 +30,9 @@
     "markdownlint-cli": "^0.22.0",
     "markdownlint-rule-emphasis-style": "^1.0.0",
     "replace-in-file": "^5.0.2",
-    "wait-on": "^4.0.0"
+    "wait-on": "^4.0.2"
   },
   "dependencies": {
-    "concurrently": "^5.1.0"
+    "concurrently": "^5.2.0"
   }
 }
