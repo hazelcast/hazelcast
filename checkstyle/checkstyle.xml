@@ -117,11 +117,24 @@
         <!-- Checks for Javadoc comments.                     -->
         <!-- See http://checkstyle.sf.net/config_javadoc.html -->
         <!-- Only for methods on public APIs we agreed to have JavaDoc. -->
-        <!-- TODO: figure out how to do that -->
+        <module name="MissingJavadocMethod">
+            <property name="scope" value="public"/>
+            <property name="allowedAnnotations" value="Override,JavaDocClear,JavaDocDefine"/>
+            <property name="ignoreMethodNamesRegex"
+                      value="^((get|set|is|has|add|remove|create|new).*)|(build|init|iterator|size)$"/>
+            <!--            <property name="allowMissingPropertyJavadoc" value="true"/>-->
+            <!-- constructors are not validated against missing javadoc -->
+            <property name="tokens" value="METHOD_DEF,ANNOTATION_FIELD_DEF"/>
+        </module>
         <!--<module name="JavadocMethod">-->
         <!--<property name="scope" value="public"/>-->
         <!--<property name="allowMissingParamTags" value="true"/>-->
         <!--</module>-->
+        <module name="MissingJavadocType">
+            <property name="skipAnnotations" value="JavaDocDefine"/>
+            <property name="scope" value="public"/>
+        </module>
+        <module name="MissingJavadocPackage"/>
         <module name="JavadocType">
             <property name="scope" value="public"/>
         </module>

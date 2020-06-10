@@ -16,11 +16,13 @@
 
 package com.hazelcast.config.security;
 
-import static com.hazelcast.internal.util.StringUtil.trim;
-import static java.nio.charset.StandardCharsets.US_ASCII;
+import com.hazelcast.internal.JavaDocClear;
 
 import java.util.Base64;
 import java.util.function.Function;
+
+import static com.hazelcast.internal.util.StringUtil.trim;
+import static java.nio.charset.StandardCharsets.US_ASCII;
 
 /**
  * Possible token encodings.
@@ -52,10 +54,12 @@ public enum TokenEncoding {
         return valueString;
     }
 
+    @JavaDocClear
     public String encode(byte[] token) {
         return token == null ? null : encoder.apply(token);
     }
 
+    @JavaDocClear
     public byte[] decode(String str) {
         return str == null ? null : decoder.apply(str);
     }

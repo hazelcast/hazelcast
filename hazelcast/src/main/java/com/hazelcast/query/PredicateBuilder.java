@@ -16,6 +16,7 @@
 
 package com.hazelcast.query;
 
+import com.hazelcast.internal.JavaDocClear;
 import com.hazelcast.internal.serialization.BinaryInterface;
 
 /**
@@ -30,8 +31,10 @@ public interface PredicateBuilder extends Predicate {
 
     EntryObject getEntryObject();
 
+    @JavaDocClear
     PredicateBuilder and(Predicate predicate);
 
+    @JavaDocClear
     PredicateBuilder or(Predicate predicate);
 
     /**

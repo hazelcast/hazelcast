@@ -32,6 +32,7 @@ import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IExecutorService;
 import com.hazelcast.cp.IAtomicLong;
+import com.hazelcast.internal.JavaDocClear;
 import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.internal.util.Clock;
 import com.hazelcast.internal.util.RuntimeAvailableProcessors;
@@ -44,12 +45,12 @@ import com.hazelcast.topic.Message;
 import com.hazelcast.topic.MessageListener;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
-import java.io.PrintStream;
-import java.io.FileReader;
-import java.io.File;
 import java.io.BufferedReader;
-import java.io.InputStreamReader;
+import java.io.File;
+import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.PrintStream;
 import java.lang.management.ManagementFactory;
 import java.nio.charset.StandardCharsets;
 import java.util.Collection;
@@ -148,10 +149,12 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
         return list;
     }
 
+    @JavaDocClear
     public void stop() {
         running = false;
     }
 
+    @JavaDocClear
     public void start(String[] args) {
         getMap().size();
         getList().size();
@@ -1529,12 +1532,14 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
         print("");
     }
 
+    @JavaDocClear
     public void println(Object obj) {
         if (!silent) {
             outOrig.println(obj);
         }
     }
 
+    @JavaDocClear
     public void print(Object obj) {
         if (!silent) {
             outOrig.print(obj);

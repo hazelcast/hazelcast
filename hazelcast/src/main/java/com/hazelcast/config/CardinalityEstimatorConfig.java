@@ -16,6 +16,7 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.internal.JavaDocClear;
 import com.hazelcast.internal.config.ConfigDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -296,6 +297,7 @@ public class CardinalityEstimatorConfig implements IdentifiedDataSerializable, N
         return result;
     }
 
+    @JavaDocClear
     public final void validate() {
         if (!Arrays.asList(ALLOWED_POLICIES).contains(mergePolicyConfig.getPolicy())) {
             throw new InvalidConfigurationException(format("Policy %s is not allowed as a merge-policy "

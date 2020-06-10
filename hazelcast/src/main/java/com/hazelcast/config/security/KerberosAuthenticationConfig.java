@@ -16,12 +16,16 @@
 
 package com.hazelcast.config.security;
 
-import java.util.Objects;
-import java.util.Properties;
-
 import com.hazelcast.config.LoginModuleConfig;
 import com.hazelcast.config.LoginModuleConfig.LoginModuleUsage;
 
+import java.util.Objects;
+import java.util.Properties;
+
+/**
+ * Kerberos authentication configuration which allows accepting Kerberos tickets. It's also able to delegate authorization to
+ * LDAP authentication when the {@code ldapAuthenticationConfig} is defined.
+ */
 public class KerberosAuthenticationConfig extends AbstractClusterLoginConfig<KerberosAuthenticationConfig> {
 
     private Boolean relaxFlagsCheck;
@@ -32,6 +36,10 @@ public class KerberosAuthenticationConfig extends AbstractClusterLoginConfig<Ker
         return relaxFlagsCheck;
     }
 
+    /**
+     * When {@code true} is set then some Kerberos ticket checks are skipped during authentication (e.g. allows to ignore
+     * request for the mutual authentication).
+     */
     public KerberosAuthenticationConfig setRelaxFlagsCheck(Boolean relaxFlagsCheck) {
         this.relaxFlagsCheck = relaxFlagsCheck;
         return this;
@@ -41,6 +49,10 @@ public class KerberosAuthenticationConfig extends AbstractClusterLoginConfig<Ker
         return securityRealm;
     }
 
+    /**
+     * Sets a realm name within the Hazelcast security configuration. The realm is used to authenticate the current instance to
+     * Kerberos KDC server (i.e. retrieving TGT) before asking for the service ticket.
+     */
     public KerberosAuthenticationConfig setSecurityRealm(String securityRealm) {
         this.securityRealm = securityRealm;
         return this;
@@ -50,6 +62,9 @@ public class KerberosAuthenticationConfig extends AbstractClusterLoginConfig<Ker
         return ldapAuthenticationConfig;
     }
 
+    /**
+     * Allows to configure LDAP authentication for role retrieval.
+     */
     public KerberosAuthenticationConfig setLdapAuthenticationConfig(LdapAuthenticationConfig ldapAuthenticationConfig) {
         this.ldapAuthenticationConfig = ldapAuthenticationConfig;
         return this;

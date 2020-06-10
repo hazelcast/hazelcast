@@ -16,11 +16,12 @@
 
 package com.hazelcast.version;
 
+import com.hazelcast.internal.JavaDocClear;
 import com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook;
+import com.hazelcast.internal.util.StringUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.internal.util.StringUtil;
 
 import java.io.IOException;
 import java.io.Serializable;
@@ -111,7 +112,7 @@ public final class MemberVersion
 
     @Override
     public int hashCode() {
-        int result = (int) major;
+        int result = major;
         result = 31 * result + (int) minor;
         result = 31 * result + (int) patch;
         return result;
@@ -137,6 +138,7 @@ public final class MemberVersion
         this.patch = in.readByte();
     }
 
+    @JavaDocClear
     public static MemberVersion of(int major, int minor, int patch) {
         if (major == 0 && minor == 0 && patch == 0) {
             return MemberVersion.UNKNOWN;
@@ -145,6 +147,7 @@ public final class MemberVersion
         }
     }
 
+    @JavaDocClear
     public static MemberVersion of(String version) {
         if (version == null || version.startsWith(UNKNOWN_VERSION_STRING)) {
             return MemberVersion.UNKNOWN;

@@ -16,14 +16,15 @@
 
 package com.hazelcast.config.security;
 
-import static java.util.Objects.requireNonNull;
+import com.hazelcast.config.CredentialsFactoryConfig;
+import com.hazelcast.config.LoginModuleConfig;
+import com.hazelcast.internal.JavaDocClear;
+import com.hazelcast.security.Credentials;
+import com.hazelcast.security.ICredentialsFactory;
 
 import java.util.Objects;
 
-import com.hazelcast.config.CredentialsFactoryConfig;
-import com.hazelcast.config.LoginModuleConfig;
-import com.hazelcast.security.Credentials;
-import com.hazelcast.security.ICredentialsFactory;
+import static java.util.Objects.requireNonNull;
 
 /**
  * Security realm represents the security configuration for part of the system (e.g. member-to-member comunication).
@@ -137,6 +138,7 @@ public class RealmConfig {
         return identityConfig != null;
     }
 
+    @JavaDocClear
     public LoginModuleConfig[] asLoginModuleConfigs() {
         if (authenticationConfig == null) {
             return null;
@@ -144,6 +146,7 @@ public class RealmConfig {
         return authenticationConfig.asLoginModuleConfigs();
     }
 
+    @JavaDocClear
     public ICredentialsFactory asCredentialsFactory() {
         return identityConfig != null ? identityConfig.asCredentialsFactory(null) : null;
     }

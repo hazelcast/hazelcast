@@ -36,12 +36,21 @@ public final class ElementParser {
     private ElementParser() {
     }
 
+    /**
+     * Parses delimited string and returns a list containing the trimmed tokens. This parser obeys quotes, so the delimiter
+     * character will be ignored if it is inside of a quote. This method assumes that the quote character is not included in
+     * the set of delimiter characters.
+     *
+     * @param value     the delimited string to parse.
+     * @param delimiter the characters delimiting the tokens.
+     * @return an array of string tokens or null if there were no tokens.
+     */
     public static List<String> parseDelimitedString(String value, char delimiter) {
         return parseDelimitedString(value, delimiter, true);
     }
 
     /**
-     * Parses delimited string and returns an array containing the tokens. This parser obeys quotes, so the delimiter character
+     * Parses delimited string and returns a list containing the tokens. This parser obeys quotes, so the delimiter character
      * will be ignored if it is inside of a quote. This method assumes that the quote character is not included in the set of
      * delimiter characters.
      *
@@ -55,7 +64,7 @@ public final class ElementParser {
             value = "";
         }
 
-        List<String> list = new ArrayList<String>();
+        List<String> list = new ArrayList<>();
         StringBuilder sb = new StringBuilder();
 
         int expecting = (CHAR | DELIMITER | START_QUOTE);

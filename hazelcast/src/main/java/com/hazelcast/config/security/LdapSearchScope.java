@@ -16,9 +16,11 @@
 
 package com.hazelcast.config.security;
 
-import static com.hazelcast.internal.util.StringUtil.trim;
+import com.hazelcast.internal.JavaDocDefine;
 
 import javax.naming.directory.SearchControls;
+
+import static com.hazelcast.internal.util.StringUtil.trim;
 
 /**
  * Search scope types for LDAP queries.
@@ -55,6 +57,7 @@ public enum LdapSearchScope {
         return valueString;
     }
 
+    @JavaDocDefine
     public int toSearchControlValue() {
         return searchControlValue;
     }

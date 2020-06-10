@@ -16,10 +16,6 @@
 
 package com.hazelcast.client.config;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
-
 import com.hazelcast.config.CredentialsFactoryConfig;
 import com.hazelcast.config.security.CredentialsIdentityConfig;
 import com.hazelcast.config.security.IdentityConfig;
@@ -27,8 +23,13 @@ import com.hazelcast.config.security.KerberosIdentityConfig;
 import com.hazelcast.config.security.RealmConfig;
 import com.hazelcast.config.security.TokenIdentityConfig;
 import com.hazelcast.config.security.UsernamePasswordIdentityConfig;
+import com.hazelcast.internal.JavaDocClear;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.security.ICredentialsFactory;
+
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
 
 /**
  * Contains the security configuration for the client.
@@ -109,6 +110,7 @@ public class ClientSecurityConfig {
         return this;
     }
 
+    @JavaDocClear
     public ICredentialsFactory asCredentialsFactory(ClassLoader cl) {
         return identityConfig != null ? identityConfig.asCredentialsFactory(cl) : null;
     }

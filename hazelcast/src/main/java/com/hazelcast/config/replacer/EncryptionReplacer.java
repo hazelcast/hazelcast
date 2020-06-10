@@ -16,6 +16,7 @@
 
 package com.hazelcast.config.replacer;
 
+import com.hazelcast.internal.JavaDocClear;
 import com.hazelcast.internal.nio.IOUtil;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -128,6 +129,7 @@ public class EncryptionReplacer extends AbstractPbeReplacer {
         }
     }
 
+    @JavaDocClear
     public static final void main(String... args) throws Exception {
         if (args == null || args.length < 1 || args.length > 2) {
             System.err.println("Usage:");

@@ -16,6 +16,7 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.internal.JavaDocDefine;
 import com.hazelcast.spi.annotation.PrivateApi;
 
 /**
@@ -28,6 +29,7 @@ public final class NearCacheConfigAccessor {
     private NearCacheConfigAccessor() {
     }
 
+    @JavaDocDefine
     public static void initDefaultMaxSizeForOnHeapMaps(NearCacheConfig nearCacheConfig) {
         if (nearCacheConfig == null) {
             return;
