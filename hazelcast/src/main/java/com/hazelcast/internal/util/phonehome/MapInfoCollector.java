@@ -16,7 +16,6 @@
 package com.hazelcast.internal.util.phonehome;
 
 import com.hazelcast.config.MapConfig;
-import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.core.DistributedObject;
 
 import java.util.Collection;
@@ -59,9 +58,9 @@ class MapInfoCollector implements MetricsCollector {
 
     private long countMapWithMapStoreEnabled(Node node) {
         return maps.stream().filter(distributedObject -> {
-            MapStoreConfig config = node.getConfig().getMapConfig(distributedObject.getName()).getMapStoreConfig();
+            MapConfig config = node.getConfig().getMapConfig(distributedObject.getName());
             if (config != null) {
-                return config.isEnabled();
+                return config.getMapStoreConfig().isEnabled();
             }
             return false;
         }).count();
