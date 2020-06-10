@@ -9,7 +9,7 @@ authorImageURL: https://i.imgur.com/xuavzce.jpg
 The Java runtime has been evolving more rapidly in recent years and,
 after 15 years, we finally got a new default garbage collector: the
 G1. Two more GCs are on their way to production and are available as
-experimental features: Oracle's Z and OpenJDK's Shenandoah. We at
+experimental features: Oracle's ZGC and OpenJDK's Shenandoah. We at
 Hazelcast thought it was time to put all these new options to the test
 and find which choices work well with workloads typical for our
 distributed stream processing engine, [Hazelcast Jet](https://jet-start.sh).
@@ -46,7 +46,7 @@ We tried the following combinations:
 1. JDK 8 with the default Parallel collector and the optional
    ConcurrentMarkSweep and G1
 2. JDK 11 with the default G1 collector and the optional Parallel
-3. JDK 14 with the default G1 as well as the experimental Z and
+3. JDK 14 with the default G1 as well as the experimental ZGC and
   Shenandoah
 
 And here are our overall conclusions:
@@ -66,12 +66,12 @@ And here are our overall conclusions:
    minute for G1. The ConcurrentMarkSweep collector is strictly worse
    than G1 in all scenarios, and its failure mode are multi-minute Full
    GC pauses.
-3. The Z, while allowing substantially less throughput than G1, is very
-   good in that one weak area of G1, offering worst-case pauses up to 10
-   ms under light load.
+3. The ZGC, while allowing substantially less throughput than G1, is
+   very good in that one weak area of G1, offering worst-case pauses up
+   to 10 ms under light load.
 4. Shenandoah was a disappointment with occasional, but nevertheless
    regular, latency spikes up to 220 ms in the low-pressure regime.
-5. Neither Z nor Shenandoah showed as smooth failure modes as G1. They
+5. Neither ZGC nor Shenandoah showed as smooth failure modes as G1. They
    exhibited brittleness, with the low-latency regime suddenly giving
    way to very long pauses and even OOMEs.
 
@@ -188,10 +188,12 @@ with the three garbage collectors we tested:
 Note that these numbers include a fixed time of about 3 milliseconds to
 emit the window results. The chart is pretty self-explanatory: the
 default collector, G1, is pretty good on its own, but if you need even
-better latency, you can use the experimental Z collector. Reducing the
-GC pauses below 10 milliseconds still seems to be out of reach for Java
-runtimes. Shenandoah came out as a big loser in our test, pauses
-regularly exceeding even the G1's default of 200 ms.
+better latency, you can use the experimental ZGC collector. We couldn't
+reduce the latency spikes below 10 milliseconds, however we did note
+they weren't necessarily due to outright GC pauses but rather short
+periods of increased background GC work. Shenandoah came out as a big
+loser in our test, concurrent GC work occasionally raising latency above
+200 ms.
 
 ### Scenario 2: Large State, Less Strict Latency
 
