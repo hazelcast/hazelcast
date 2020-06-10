@@ -8,7 +8,6 @@ authorImageURL: https://i.imgur.com/xuavzce.jpg
 
 Go to [Part 1: intro and the Streaming Pipeline Benchmarks](/blog/2020/06/09/jdk-gc-benchmarks-part1).
 
-
 ## Batch Pipeline Benchmark
 
 A batch pipeline processes a finite amount of stored data. There are no

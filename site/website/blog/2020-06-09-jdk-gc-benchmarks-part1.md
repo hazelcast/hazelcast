@@ -12,7 +12,7 @@ G1. Two more GCs are on their way to production and are available as
 experimental features: Oracle's Z and OpenJDK's Shenandoah. We at
 Hazelcast thought it was time to put all these new options to the test
 and find which choices work well with workloads typical for our
-distributed stream processing engine, Hazelcast Jet.
+distributed stream processing engine, [Hazelcast Jet](https://jet-start.sh).
 
 Jet is being used for a broad spectrum of use cases, with different
 latency and throughput requirements. Here are three important
