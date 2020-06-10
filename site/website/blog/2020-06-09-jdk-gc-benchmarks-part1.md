@@ -266,7 +266,7 @@ We worked out the formulas that predict the sizes of the rectangles for
 a given combination of event rate, window size, sliding step and keyset
 size, so that we could determine the catchup demand for each case.
 
-Now we that we have two more-or-less independent parameters derived from
+Now that we have two more-or-less independent parameters derived from
 many more parameters describing each individual setup, we can create a
 2D-chart where each benchmark run has a point on it. We assigned a color
 to each point, telling us whether the given combination worked or
