@@ -66,9 +66,9 @@ And here are our overall conclusions:
    minute for G1. The ConcurrentMarkSweep collector is strictly worse
    than G1 in all scenarios, and its failure mode are multi-minute Full
    GC pauses.
-3. The ZGC, while allowing substantially less throughput than G1, is
-   very good in that one weak area of G1, offering worst-case pauses up
-   to 10 ms under light load.
+3. The ZGC, while allowing substantially less throughput than G1, was
+   very good in that one weak area of G1, occasionally increasing our
+   latency by up to 10 ms under light load.
 4. Shenandoah was a disappointment with occasional, but nevertheless
    regular, latency spikes up to 220 ms in the low-pressure regime.
 5. Neither ZGC nor Shenandoah showed as smooth failure modes as G1. They
@@ -179,9 +179,9 @@ For the first scenario we used these parameters:
 - 30-second window sliding by 0.1 second
 
 In this scenario there's less than 1 GB heap usage. The collector is not
-under high pressure, it has plenty of time to perform concurrent GC in
-the background. These are the maximum pipeline latencies we observed
-with the three garbage collectors we tested:
+under high pressure, it has enough time to perform concurrent GC in the
+background. These are the maximum pipeline latencies we observed with
+the three garbage collectors we tested:
 
 ![Pipeline Latency with Light Streaming](assets/2020-06-01-light-streaming-latency.png)
 
@@ -190,10 +190,9 @@ emit the window results. The chart is pretty self-explanatory: the
 default collector, G1, is pretty good on its own, but if you need even
 better latency, you can use the experimental ZGC collector. We couldn't
 reduce the latency spikes below 10 milliseconds, however we did note
-they weren't necessarily due to outright GC pauses but rather short
-periods of increased background GC work. Shenandoah came out as a big
-loser in our test, concurrent GC work occasionally raising latency above
-200 ms.
+that, in the case of ZGC and Shenandoah, they weren't due to outright GC
+pauses but rather short periods of increased background GC work.
+Shenandoah's overheads occasionally raised latency above 200 ms.
 
 ### Scenario 2: Large State, Less Strict Latency
 
