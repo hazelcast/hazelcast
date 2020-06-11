@@ -71,7 +71,7 @@ class MapInfoCollector implements MetricsCollector {
         return maps.stream().filter(distributedObject -> {
             MapConfig config = node.getConfig().getMapConfig(distributedObject.getName());
             if (config != null) {
-                return config.getQueryCacheConfigs().size() >= 1;
+                return !config.getQueryCacheConfigs().isEmpty();
             }
             return false;
         }).count();
