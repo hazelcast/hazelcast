@@ -92,7 +92,9 @@ const siteConfig = {
     algolia: {
         apiKey: '79d1e4941621b9fd761d279d4d19ed69',
         indexName: 'hazelcast-jet',
-        algoliaOptions: {} // Optional, if provided by Algolia
+        algoliaOptions: {
+            facetFilters: [ "language:LANGUAGE", "version:VERSION" ]
+        }
     },
 
     // On page navigation for the current documentation page.
