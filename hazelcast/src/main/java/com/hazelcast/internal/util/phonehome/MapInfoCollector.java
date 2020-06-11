@@ -42,6 +42,7 @@ class MapInfoCollector implements MetricsCollector {
         mapInfo.put("mpct", String.valueOf(maps.size()));
         mapInfo.put("mpbrct", String.valueOf(countMapWithBackupReadEnabled(hazelcastNode)));
         mapInfo.put("mpmsct", String.valueOf(countMapWithMapStoreEnabled(hazelcastNode)));
+        mapInfo.put("mpaoqcct", String.valueOf(countMapWithAtleastOneQueryCache(hazelcastNode)));
 
         return mapInfo;
     }
@@ -64,5 +65,16 @@ class MapInfoCollector implements MetricsCollector {
             }
             return false;
         }).count();
+    }
+
+    private long countMapWithAtleastOneQueryCache(Node node) {
+        return maps.stream().filter(distributedObject -> {
+            MapConfig config = node.getConfig().getMapConfig(distributedObject.getName());
+            if (config != null) {
+                return config.getQueryCacheConfigs().size() >= 1;
+            }
+            return false;
+        }).count();
+
     }
 }

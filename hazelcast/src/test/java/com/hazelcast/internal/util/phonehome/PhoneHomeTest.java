@@ -15,6 +15,7 @@
  */
 package com.hazelcast.internal.util.phonehome;
 
+import com.hazelcast.config.QueryCacheConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.instance.impl.Node;
@@ -34,7 +35,10 @@ import java.util.Map;
 import java.util.UUID;
 
 import static com.hazelcast.test.Accessors.getNode;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNull;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -127,17 +131,41 @@ public class PhoneHomeTest extends HazelcastTestSupport {
 
     @Test
     public void testMapCountWithMapStoreEnabled() {
-        Map<String,String> parameters;
-        parameters=phoneHome.phoneHome(true);
-        assertEquals(parameters.get("mpmsct"),"0");
+        Map<String, String> parameters;
+        parameters = phoneHome.phoneHome(true);
+        assertEquals(parameters.get("mpmsct"), "0");
 
-        Map<String,String> map1=node.hazelcastInstance.getMap("hazelcast");
-        parameters=phoneHome.phoneHome(true);
-        assertEquals(parameters.get("mpmsct"),"0");
+        Map<String, String> map1 = node.hazelcastInstance.getMap("hazelcast");
+        parameters = phoneHome.phoneHome(true);
+        assertEquals(parameters.get("mpmsct"), "0");
 
         node.getConfig().getMapConfig("hazelcast").getMapStoreConfig().setEnabled(true);
-        parameters=phoneHome.phoneHome(true);
-        assertEquals(parameters.get("mpmsct"),"1");
+        parameters = phoneHome.phoneHome(true);
+        assertEquals(parameters.get("mpmsct"), "1");
+    }
+
+    @Test
+    public void testMapCountWithAtleastOneQueryCache() {
+        Map<String, String> parameters;
+        parameters = phoneHome.phoneHome(true);
+        assertEquals(parameters.get("mpaoqcct"), "0");
+
+        Map<String, String> map1 = node.hazelcastInstance.getMap("hazelcast");
+        parameters = phoneHome.phoneHome(true);
+        assertEquals(parameters.get("mpaoqcct"), "0");
+
+        QueryCacheConfig cacheConfig = new QueryCacheConfig();
+        cacheConfig.setName("hazelcastconfig");
+        node.getConfig().getMapConfig("hazelcast").addQueryCacheConfig(cacheConfig);
+        parameters = phoneHome.phoneHome(true);
+        assertEquals(parameters.get("mpaoqcct"), "1");
+
+        cacheConfig = new QueryCacheConfig();
+        cacheConfig.setName("hazelcastconfig2");
+        node.getConfig().getMapConfig("hazelcast").addQueryCacheConfig(cacheConfig);
+        parameters = phoneHome.phoneHome(true);
+        assertEquals(parameters.get("mpaoqcct"), "1");
+
     }
 }
 

@@ -112,7 +112,7 @@ public class PhoneHome {
             try {
                 parameterCreator.addMap(metricsCollector.computeMetrics(hazelcastNode));
             } catch (Exception e) {
-                logger.warning("Some metrics were not recorded ",e);
+                logger.warning("Some metrics were not recorded ", e);
             }
         }
         return parameterCreator;
