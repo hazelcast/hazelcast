@@ -1,5 +1,14 @@
 This document lists the new features, enhancements, fixed issues and, removed or deprecated features for Hazelcast IMDG 3.12.x release. The numbers in the square brackets refer to the issues in Hazelcast's GitHub repositories.
 
+==== 3.12.2 - VISA4 ====
+
+1. Fixes
+
+* Fixed an issue where the quorum listener was triggered during the
+startup of a member, but before it joins the cluster. With this fix,
+these listeners will not be fired until the quorum is met after the
+member startups. [#17038]
+
 ==== 3.12.2 - VISA3 ====
 
 1. Fixes
