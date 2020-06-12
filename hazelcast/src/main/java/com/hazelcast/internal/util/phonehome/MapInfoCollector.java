@@ -81,7 +81,13 @@ class MapInfoCollector implements MetricsCollector {
     }
 
     private long countMapWithAtleastOneIndex(Node node) {
-        return maps.stream().filter(distributedObject -> !(node.hazelcastInstance.getMap(distributedObject.getName()).isEmpty())).count();
+        return maps.stream().filter(distributedObject -> {
+            MapConfig config = node.getConfig().getMapConfig(distributedObject.getName());
+            if (config != null) {
+                return !config.getIndexConfigs().isEmpty();
+            }
+            return false;
+        }).count();
     }
 
     private long countMapWithHotRestartEnabled(Node node) {

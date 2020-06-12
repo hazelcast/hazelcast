@@ -16,6 +16,7 @@
 package com.hazelcast.internal.util.phonehome;
 
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
+import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.QueryCacheConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.impl.Node;
@@ -47,11 +48,11 @@ public class PhoneHomeIntegrationTest extends HazelcastTestSupport {
         PhoneHome phoneHome = new PhoneHome(node, "http://localhost:8080/ping");
         Map<String, String> map1 = hz.getMap("hazelcast");
         Map<String, String> map2 = hz.getMap("phonehome");
-        map2.put("1", "hazelcast");
         node.getConfig().getMapConfig("hazelcast").setReadBackupData(true);
         node.getConfig().getMapConfig("phonehome").getMapStoreConfig().setEnabled(true);
         node.getConfig().getMapConfig("hazelcast").addQueryCacheConfig(new QueryCacheConfig("queryconfig"));
         node.getConfig().getMapConfig("hazelcast").getHotRestartConfig().setEnabled(true);
+        node.getConfig().getMapConfig("hazelcast").getIndexConfigs().add(new IndexConfig());
 
 
         stubFor(get(urlPathEqualTo("/ping"))

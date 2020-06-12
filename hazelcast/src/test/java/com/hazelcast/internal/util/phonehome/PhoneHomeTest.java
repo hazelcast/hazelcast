@@ -15,6 +15,8 @@
  */
 package com.hazelcast.internal.util.phonehome;
 
+import com.hazelcast.config.IndexConfig;
+import com.hazelcast.config.IndexType;
 import com.hazelcast.config.QueryCacheConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.BuildInfoProvider;
@@ -178,11 +180,13 @@ public class PhoneHomeTest extends HazelcastTestSupport {
         parameters = phoneHome.phoneHome(true);
         assertEquals(parameters.get("mpaoict"), "0");
 
-        map1.put("1", "hazelcast");
+        IndexConfig config = new IndexConfig(IndexType.SORTED, "hazelcast");
+        node.getConfig().getMapConfig("hazelcast").getIndexConfigs().add(config);
         parameters = phoneHome.phoneHome(true);
         assertEquals(parameters.get("mpaoict"), "1");
 
-        map1.put("2", "phonehome");
+        config = new IndexConfig(IndexType.HASH, "phonehome");
+        node.getConfig().getMapConfig("hazelcast").getIndexConfigs().add(config);
         parameters = phoneHome.phoneHome(true);
         assertEquals(parameters.get("mpaoict"), "1");
 
