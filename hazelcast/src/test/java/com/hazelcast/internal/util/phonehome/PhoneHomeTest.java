@@ -167,5 +167,41 @@ public class PhoneHomeTest extends HazelcastTestSupport {
         assertEquals(parameters.get("mpaoqcct"), "1");
 
     }
+
+    @Test
+    public void testMapCountWithAtleastOneIndex() {
+        Map<String, String> parameters;
+        parameters = phoneHome.phoneHome(true);
+        assertEquals(parameters.get("mpaoict"), "0");
+
+        Map<String, String> map1 = node.hazelcastInstance.getMap("hazelcast");
+        parameters = phoneHome.phoneHome(true);
+        assertEquals(parameters.get("mpaoict"), "0");
+
+        map1.put("1", "hazelcast");
+        parameters = phoneHome.phoneHome(true);
+        assertEquals(parameters.get("mpaoict"), "1");
+
+        map1.put("2", "phonehome");
+        parameters = phoneHome.phoneHome(true);
+        assertEquals(parameters.get("mpaoict"), "1");
+
+    }
+
+    @Test
+    public void testMapCountWithHotRestartEnabled() {
+        Map<String, String> parameters;
+        parameters = phoneHome.phoneHome(true);
+        assertEquals(parameters.get("mphect"), "0");
+
+        Map<String, String> map1 = node.hazelcastInstance.getMap("hazelcast");
+        parameters = phoneHome.phoneHome(true);
+        assertEquals(parameters.get("mphect"), "0");
+
+        node.getConfig().getMapConfig("hazelcast").getHotRestartConfig().setEnabled(true);
+        parameters = phoneHome.phoneHome(true);
+        assertEquals(parameters.get("mphect"), "1");
+
+    }
 }
 

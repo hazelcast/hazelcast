@@ -43,6 +43,8 @@ class MapInfoCollector implements MetricsCollector {
         mapInfo.put("mpbrct", String.valueOf(countMapWithBackupReadEnabled(hazelcastNode)));
         mapInfo.put("mpmsct", String.valueOf(countMapWithMapStoreEnabled(hazelcastNode)));
         mapInfo.put("mpaoqcct", String.valueOf(countMapWithAtleastOneQueryCache(hazelcastNode)));
+        mapInfo.put("mpaoict", String.valueOf(countMapWithAtleastOneIndex(hazelcastNode)));
+        mapInfo.put("mphect", String.valueOf(countMapWithHotRestartEnabled(hazelcastNode)));
 
         return mapInfo;
     }
@@ -76,5 +78,19 @@ class MapInfoCollector implements MetricsCollector {
             return false;
         }).count();
 
+    }
+
+    private long countMapWithAtleastOneIndex(Node node) {
+        return maps.stream().filter(distributedObject -> !(node.hazelcastInstance.getMap(distributedObject.getName()).isEmpty())).count();
+    }
+
+    private long countMapWithHotRestartEnabled(Node node) {
+        return maps.stream().filter(distributedObject -> {
+            MapConfig config = node.getConfig().getMapConfig(distributedObject.getName());
+            if (config != null) {
+                return config.getHotRestartConfig().isEnabled();
+            }
+            return false;
+        }).count();
     }
 }
