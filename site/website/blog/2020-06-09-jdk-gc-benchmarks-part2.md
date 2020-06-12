@@ -40,7 +40,7 @@ code on
 ```java
 p.readFrom(longSource)
  .rebalance() // Introduced in Jet 4.2
- .groupingKey(n -> n / % NUM_KEYS)
+ .groupingKey(n -> n % NUM_KEYS)
  .aggregate(summingLong(n -> n))
  .filter(e -> (e.getKey() & 0xFF_FFFFL) == 0)
  .writeTo(Sinks.logger())
