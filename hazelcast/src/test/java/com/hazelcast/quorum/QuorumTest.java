@@ -43,7 +43,6 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.Collection;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -265,7 +264,6 @@ public class QuorumTest extends HazelcastTestSupport {
 
     @Test
     public void testCustomQuorumFunctionFailsThenSuccess() {
-        final AtomicInteger count = new AtomicInteger(1);
         String mapName = randomMapName();
         String quorumName = randomString();
 
@@ -278,12 +276,7 @@ public class QuorumTest extends HazelcastTestSupport {
                 .setQuorumFunctionImplementation(new QuorumFunction() {
                     @Override
                     public boolean apply(Collection<Member> members) {
-                        if (count.get() == 1) {
-                            count.incrementAndGet();
-                            return false;
-                        } else {
-                            return true;
-                        }
+                        return members.size() >= 2;
                     }
                 });
 
@@ -291,18 +284,16 @@ public class QuorumTest extends HazelcastTestSupport {
                 .addMapConfig(mapConfig)
                 .addQuorumConfig(quorumConfig);
 
-        TestHazelcastInstanceFactory factory = new TestHazelcastInstanceFactory(2);
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
         HazelcastInstance hazelcastInstance = factory.newHazelcastInstance(config);
         IMap<Object, Object> map = hazelcastInstance.getMap(mapName);
         try {
             map.put("1", "1");
             fail();
-        } catch (Exception e) {
-            e.printStackTrace();
+        } catch (QuorumException ignored) {
         }
         factory.newHazelcastInstance(config);
         map.put("1", "1");
-        factory.shutdownAll();
     }
 
     @Test
