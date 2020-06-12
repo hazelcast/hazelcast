@@ -152,7 +152,7 @@ public class CdcSource {
         ExtractNewRecordState<SourceRecord> transform = new ExtractNewRecordState<>();
 
         Map<String, String> config = new HashMap<>();
-        config.put("add.fields", "op, ts_ms");
+        config.put("add.fields", "db, table, op, ts_ms");
         config.put("delete.handling.mode", "rewrite");
         transform.configure(config);
 

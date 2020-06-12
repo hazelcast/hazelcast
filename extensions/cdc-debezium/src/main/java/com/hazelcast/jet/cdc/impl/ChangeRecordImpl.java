@@ -35,6 +35,8 @@ public class ChangeRecordImpl implements ChangeRecord {
     private String json;
     private Long timestamp;
     private Operation operation;
+    private String database;
+    private String table;
     private RecordPart key;
     private RecordPart value;
 
@@ -70,6 +72,30 @@ public class ChangeRecordImpl implements ChangeRecord {
             operation = Operation.get(opAlias);
         }
         return operation;
+    }
+
+    @Nonnull
+    @Override
+    public String database() throws ParsingException {
+        if (database == null) {
+            database = get(value().toMap(), "__db", String.class);
+            if (database == null) {
+                throw new ParsingException("No parsable database name field found");
+            }
+        }
+        return database;
+    }
+
+    @Nonnull
+    @Override
+    public String table() throws ParsingException {
+        if (table == null) {
+            table = get(value().toMap(), "__table", String.class);
+            if (table == null) {
+                throw new ParsingException("No parsable table name field found");
+            }
+        }
+        return table;
     }
 
     @Override
@@ -129,4 +155,27 @@ public class ChangeRecordImpl implements ChangeRecord {
         return null;
     }
 
+    @Override
+    public int hashCode() {
+        int hash = (int) sequenceSource;
+        hash = 31 * hash + (int) sequenceValue;
+        hash = 31 * hash + keyJson.hashCode();
+        hash = 31 * hash + valueJson.hashCode();
+        return hash;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null || getClass() != obj.getClass()) {
+            return false;
+        }
+        ChangeRecordImpl that = (ChangeRecordImpl) obj;
+        return this.sequenceSource == that.sequenceSource &&
+                this.sequenceValue == that.sequenceValue &&
+                this.keyJson.equals(that.keyJson) &&
+                this.valueJson.equals(that.valueJson);
+    }
 }

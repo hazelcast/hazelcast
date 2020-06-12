@@ -58,7 +58,8 @@ public interface ChangeRecord {
      * operation instead of {@code INSERT}, however some databases emit {@code
      * INSERT} events in both cases (a notable example is MySQL).
      *
-     * @throws ParsingException if the timestamp field isn't present or is unparsable
+     * @throws ParsingException if the timestamp field isn't present or
+     *                          is unparsable
      */
     long timestamp() throws ParsingException;
 
@@ -70,11 +71,31 @@ public interface ChangeRecord {
      * @return {@link Operation#UNSPECIFIED} if this {@code ChangeRecord}
      * doesn't have an operation field, otherwise the appropriate {@link
      * Operation} that matches the CDC record's operation field
-     * @throws ParsingException if there is an operation field, but its value is not among the handled
-     *                         ones.
+     * @throws ParsingException if there is an operation field, but its
+     *                          value is not among the handled ones.
      */
     @Nonnull
     Operation operation() throws ParsingException;
+
+    /**
+     * Returns the name of the database containing the record's table.
+     *
+     * @return name of the source database for the current record
+     * @throws ParsingException if the database name field isn't present
+     *                          or is unparsable
+     */
+    @Nonnull
+    String database() throws ParsingException;
+
+    /**
+     * Returns the name of the table this record is part of.
+     *
+     * @return name of the source table for the current record
+     * @throws ParsingException if the table name field isn't present or
+     *                          is unparsable
+     */
+    @Nonnull
+    String table() throws ParsingException;
 
     /**
      * Returns the key part of the CDC event. It identifies the affected record.
