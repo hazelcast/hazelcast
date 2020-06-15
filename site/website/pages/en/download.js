@@ -28,7 +28,7 @@ function Downloads(props) {
           <MarkdownBlock>
             The Hazelcast Jet download package includes Hazelcast Jet server and 
             several additional modules. It requires a JDK to run, which can be obtained from 
-            [AdoptOpenJDK](https://adoptopenjdk.net) (minimum version 8). For details about 
+            [AdoptOpenJDK](https://adoptopenjdk.net) (minimum version is 8 - recommended is 11 or later). For details about 
             what's included, and minimim requirements please see the
              [installation page](/docs/operations/installation).
           </MarkdownBlock>

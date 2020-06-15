@@ -7,10 +7,11 @@ Let's write some data processing code and have Jet run it for us.
 
 ## Start a Java Project
 
-By now you should have some version of Java (at least 8) installed.
-You can get it from the [AdoptOpenJDK](https://adoptopenjdk.net/) website.
-Create a new project targeting your build tool of preference, Maven or
-Gradle, and add the Jet JAR to your build:
+By now you should have some version of Java (at least 8, recommended is
+11 or later) installed. You can get it from the
+[AdoptOpenJDK](https://adoptopenjdk.net/) website. Create a new project
+targeting your build tool of preference, Maven or Gradle, and add the
+Jet JAR to your build:
 
 <!--DOCUSAURUS_CODE_TABS-->
 
