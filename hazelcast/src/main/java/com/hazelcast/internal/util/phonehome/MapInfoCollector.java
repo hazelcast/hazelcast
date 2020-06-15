@@ -45,6 +45,7 @@ class MapInfoCollector implements MetricsCollector {
         mapInfo.put("mpaoqcct", String.valueOf(countMapWithAtleastOneQueryCache(hazelcastNode)));
         mapInfo.put("mpaoict", String.valueOf(countMapWithAtleastOneIndex(hazelcastNode)));
         mapInfo.put("mphect", String.valueOf(countMapWithHotRestartEnabled(hazelcastNode)));
+        mapInfo.put("mpwact", String.valueOf(countMapWithWANReplication(hazelcastNode)));
 
         return mapInfo;
     }
@@ -77,7 +78,6 @@ class MapInfoCollector implements MetricsCollector {
             }
             return false;
         }).count();
-
     }
 
     private long countMapWithAtleastOneIndex(Node node) {
@@ -95,6 +95,16 @@ class MapInfoCollector implements MetricsCollector {
             MapConfig config = node.getConfig().getMapConfig(distributedObject.getName());
             if (config != null) {
                 return config.getHotRestartConfig().isEnabled();
+            }
+            return false;
+        }).count();
+    }
+
+    private long countMapWithWANReplication(Node node) {
+        return maps.stream().filter(distributedObject -> {
+            MapConfig config = node.getConfig().getMapConfig(distributedObject.getName());
+            if (config != null) {
+                return config.getWanReplicationRef() != null;
             }
             return false;
         }).count();

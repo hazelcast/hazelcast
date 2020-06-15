@@ -18,6 +18,7 @@ package com.hazelcast.internal.util.phonehome;
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.IndexType;
 import com.hazelcast.config.QueryCacheConfig;
+import com.hazelcast.config.WanReplicationRef;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.instance.impl.Node;
@@ -205,6 +206,22 @@ public class PhoneHomeTest extends HazelcastTestSupport {
         node.getConfig().getMapConfig("hazelcast").getHotRestartConfig().setEnabled(true);
         parameters = phoneHome.phoneHome(true);
         assertEquals(parameters.get("mphect"), "1");
+
+    }
+
+    @Test
+    public void testMapCountWithWANReplication() {
+        Map<String, String> parameters;
+        parameters = phoneHome.phoneHome(true);
+        assertEquals(parameters.get("mpwact"), "0");
+
+        Map<String, String> map1 = node.hazelcastInstance.getMap("hazelcast");
+        parameters = phoneHome.phoneHome(true);
+        assertEquals(parameters.get("mpwact"), "0");
+
+        node.getConfig().getMapConfig("hazelcast").setWanReplicationRef(new WanReplicationRef());
+        parameters = phoneHome.phoneHome(true);
+        assertEquals(parameters.get("mpwact"), "1");
 
     }
 }
