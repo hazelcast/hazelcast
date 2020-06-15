@@ -105,7 +105,20 @@ public class QuorumImpl implements Quorum {
                     + newQuorumState, e);
         }
 
+        if (previousQuorumState == QuorumState.INITIAL && newQuorumState != QuorumState.PRESENT) {
+            // We should not set the new quorum state until quorum is met the first time
+            // after local member joins the cluster.
+            return;
+        }
+
         quorumState = newQuorumState;
+
+        if (previousQuorumState == QuorumState.INITIAL) {
+            // We should not fire any quorum events before quorum is present the first time
+            // when local member joins the cluster.
+            return;
+        }
+
         if (previousQuorumState != newQuorumState) {
             createAndPublishEvent(members, newQuorumState == QuorumState.PRESENT);
         }
