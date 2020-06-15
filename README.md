@@ -126,7 +126,7 @@ There are several properties to configure the plugin, all of them are optional.
  * `namespace`: Kubernetes Namespace where Hazelcast is running; if not specified, the value is taken from the environment variables `KUBERNETES_NAMESPACE` or `OPENSHIFT_BUILD_NAMESPACE`. If those are not set, the namespace of the POD will be used (retrieved from `/var/run/secrets/kubernetes.io/serviceaccount/namespace`).
  * `service-name`: service name used to scan only PODs connected to the given service; if not specified, then all PODs in the namespace are checked
  * `service-label-name`, `service-label-value`: service label and value used to tag services that should form the Hazelcast cluster together
- * `pod-label-name`, `pod-label-value`: pod label and value used to tag pods that should form the Hazelcast cluster together.
+ * `pod-label-name`, `pod-label-value`: pod label and value used to tag pods that should form the Hazelcast cluster together
  * `resolve-not-ready-addresses`: if set to `true`, it checks also the addresses of PODs which are not ready; `true` by default
  * `use-node-name-as-external-address`: if set to `true`, uses the node name to connect to a `NodePort` service instead of looking up the external IP using the API; `false` by default
  * `kubernetes-api-retries`: number of retries in case of issues while connecting to Kubernetes API; defaults to `3` 
@@ -135,7 +135,7 @@ There are several properties to configure the plugin, all of them are optional.
  * `ca-certificate`: CA Certificate for Kubernetes API; if not specified, the value is taken from the file `/var/run/secrets/kubernetes.io/serviceaccount/ca.crt`
  * `service-port`: endpoint port of the service; if specified with a value greater than `0`, it overrides the default; `0` by default
  
-You can use one of `service-name`,`service-label`(*service-label-name,service-label-value*) and `pod-label`(*pod-label-name, pod-label-value*) based discovery mechanisms, configuring two of them at once does not make sense.
+You can use one of `service-name`,`service-label`(`service-label-name`, `service-label-value`) and `pod-label`(`pod-label-name`, `pod-label-value`) based discovery mechanisms, configuring two of them at once does not make sense.
 
 *Note*: If you don't specify any property at all, then the Hazelcast cluster is formed using all PODs in your current namespace. In other words, you can look at the properties as a grouping feature if you want to have multiple Hazelcast clusters in one namespace.
 
