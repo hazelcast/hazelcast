@@ -25,6 +25,7 @@ import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.hamcrest.Matchers;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -63,6 +64,7 @@ public class CPMemberAutoRemoveTest extends HazelcastRaftTestSupport {
         });
     }
 
+    @Ignore("Ignored in visa branch, this is already fixed in 4.z line.")
     @Test
     public void when_missingCPNodeJoins_then_itIsNotAutomaticallyRemoved() {
         missingRaftMemberRemovalSeconds = 300;
