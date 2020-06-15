@@ -36,7 +36,7 @@ public final class Timer {
     }
 
     public static long nanosElapsed(long startNanos) {
-        return nanos() - startNanos;
+        return System.nanoTime() - startNanos;
     }
 
     public static long microsElapsed(long startNanos) {
