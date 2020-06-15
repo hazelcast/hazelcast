@@ -115,7 +115,8 @@ public class ReplicatedMapTableResolver extends AbstractMapTableResolver {
         } catch (QueryException e) {
             return new ReplicatedMapTable(name, e);
         } catch (Exception e) {
-            QueryException e0 =  QueryException.error("Failed to get metadata for ReplicatedMap " + name + ": " + e.getMessage(), e);
+            QueryException e0 =
+                    QueryException.error("Failed to get metadata for ReplicatedMap " + name + ": " + e.getMessage(), e);
 
             return new ReplicatedMapTable(name, e0);
         }

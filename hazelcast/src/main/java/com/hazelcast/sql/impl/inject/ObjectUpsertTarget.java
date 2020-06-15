@@ -25,7 +25,8 @@ public class ObjectUpsertTarget implements UpsertTarget {
 
     @Override
     public TargetHolder get() {
-        return new TargetHolder(null); // TODO: reuse ???
+        // TODO: reuse ???
+        return new TargetHolder(null);
     }
 
     @Override

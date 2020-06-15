@@ -44,7 +44,8 @@ public class PojoUpsertTarget implements UpsertTarget {
     @Override
     public TargetHolder get() {
         try {
-            return new TargetHolder(clazz.newInstance()); // TODO: reuse ???
+            // TODO: reuse ???
+            return new TargetHolder(clazz.newInstance());
         } catch (Exception e) {
             throw QueryException.dataException(
                     format("Unable to instantiate class \"%s\" : %s", clazz.getName(), e.getMessage()), e

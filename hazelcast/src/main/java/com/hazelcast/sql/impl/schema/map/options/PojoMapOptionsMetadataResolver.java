@@ -154,7 +154,7 @@ public class PojoMapOptionsMetadataResolver implements MapOptionsMetadataResolve
         return Character.toLowerCase(fieldNameWithWrongCase.charAt(0)) + fieldNameWithWrongCase.substring(1);
     }
 
-    @SuppressWarnings("RedundantIfStatement")
+    @SuppressWarnings({"RedundantIfStatement", "checkstyle:npathcomplexity"})
     private static boolean skipMethod(Class<?> clazz, Method method) {
         // Exclude non-public getters.
         if (!Modifier.isPublic(method.getModifiers())) {
@@ -184,9 +184,9 @@ public class PojoMapOptionsMetadataResolver implements MapOptionsMetadataResolve
 
         // Skip getFactoryId(), getClassId() and getVersion() from Portable and IdentifiedDataSerializable.
         String methodName = method.getName();
-        if (methodName.equals(METHOD_GET_FACTORY_ID) ||
-                methodName.equals(METHOD_GET_CLASS_ID) ||
-                methodName.equals(METHOD_GET_CLASS_VERSION)) {
+        if (methodName.equals(METHOD_GET_FACTORY_ID)
+                || methodName.equals(METHOD_GET_CLASS_ID)
+                || methodName.equals(METHOD_GET_CLASS_VERSION)) {
             if (IdentifiedDataSerializable.class.isAssignableFrom(clazz) || Portable.class.isAssignableFrom(clazz)) {
                 return true;
             }

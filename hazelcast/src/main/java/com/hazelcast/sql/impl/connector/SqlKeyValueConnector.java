@@ -43,13 +43,13 @@ public abstract class SqlKeyValueConnector implements SqlConnector {
      */
     public static final String TO_VALUE_CLASS = "valueClass";
 
-    public static String TO_KEY_FACTORY_ID = "keyFactoryId";
-    public static String TO_KEY_CLASS_ID = "keyClassId";
-    public static String TO_KEY_CLASS_VERSION = "keyClassVersion";
+    public static final String TO_KEY_FACTORY_ID = "keyFactoryId";
+    public static final String TO_KEY_CLASS_ID = "keyClassId";
+    public static final String TO_KEY_CLASS_VERSION = "keyClassVersion";
 
-    public static String TO_VALUE_FACTORY_ID = "valueFactoryId";
-    public static String TO_VALUE_CLASS_ID = "valueClassId";
-    public static String TO_VALUE_CLASS_VERSION = "valueClassVersion";
+    public static final String TO_VALUE_FACTORY_ID = "valueFactoryId";
+    public static final String TO_VALUE_CLASS_ID = "valueClassId";
+    public static final String TO_VALUE_CLASS_VERSION = "valueClassVersion";
 
     protected static List<TableField> mergeFields(
             List<ExternalField> externalFields,

@@ -48,6 +48,7 @@ public class MapOptionsMetadata {
         return upsertTargetDescriptor;
     }
 
+    @SuppressWarnings("checkstyle:IllegalType")
     public LinkedHashMap<String, TableField> getFields() {
         return fields;
     }

@@ -55,7 +55,8 @@ public class PortableUpsertTarget implements UpsertTarget {
 
     @Override
     public TargetHolder get() {
-        return new TargetHolder(new GenericPortable()); // TODO: reuse ???
+        // TODO: reuse ???
+        return new TargetHolder(new GenericPortable());
     }
 
     @Override
@@ -78,7 +79,7 @@ public class PortableUpsertTarget implements UpsertTarget {
         return fieldDefinition;
     }
 
-    class GenericPortable implements VersionedPortable {
+    final class GenericPortable implements VersionedPortable {
 
         private final List<FieldDefinition> fieldDefinitions;
         private final List<Object> values;
@@ -117,6 +118,8 @@ public class PortableUpsertTarget implements UpsertTarget {
             }
         }
 
+
+        @SuppressWarnings("checkstyle:cyclomaticcomplexity")
         private void write(PortableWriter writer, FieldDefinition fieldDefinition, Object value) throws IOException {
             // TODO: temporal data types, BigDecimal, BigInteger - extend Portable supported types set ???
             String name = fieldDefinition.getName();
