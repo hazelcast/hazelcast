@@ -24,7 +24,6 @@ import com.hazelcast.sql.impl.schema.map.AbstractMapTable;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 
 /**
@@ -39,8 +38,9 @@ public class TestMapTable extends AbstractMapTable {
             statistics,
             GenericQueryTargetDescriptor.INSTANCE,
             GenericQueryTargetDescriptor.INSTANCE,
-            Collections.emptyMap())
-        ;
+            null,
+            null
+        );
     }
 
     public static TestMapTable create(String schemaName, String name, TableField... fields) {

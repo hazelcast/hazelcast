@@ -14,17 +14,16 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.schema.map.sample;
+package com.hazelcast.sql.impl.schema.map.options;
 
-import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.nio.ClassLoaderUtil;
 import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.nio.serialization.ClassDefinition;
-import com.hazelcast.nio.serialization.FieldType;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.nio.serialization.Portable;
-import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.extract.GenericQueryTargetDescriptor;
 import com.hazelcast.sql.impl.extract.QueryPath;
+import com.hazelcast.sql.impl.inject.PojoUpsertTargetDescriptor;
+import com.hazelcast.sql.impl.schema.ExternalTable.ExternalField;
 import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.schema.map.MapTableField;
 import com.hazelcast.sql.impl.type.QueryDataType;
@@ -34,122 +33,47 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
-/**
- * Helper class that resolves a map-backed table from a key/value sample.
- */
-// TODO: deduplicate with MapOptionsMetadataResolvers
-public final class MapSampleMetadataResolver {
+import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
+import static com.hazelcast.sql.impl.connector.SqlKeyValueConnector.TO_KEY_CLASS;
+import static com.hazelcast.sql.impl.connector.SqlKeyValueConnector.TO_VALUE_CLASS;
+
+// TODO: deduplicate with MapSampleMetadataResolver
+public class PojoMapOptionsMetadataResolver implements MapOptionsMetadataResolver {
 
     private static final String METHOD_PREFIX_GET = "get";
     private static final String METHOD_PREFIX_IS = "is";
     private static final String METHOD_GET_FACTORY_ID = "getFactoryId";
     private static final String METHOD_GET_CLASS_ID = "getClassId";
+    private static final String METHOD_GET_CLASS_VERSION = "getVersion";
 
-    private MapSampleMetadataResolver() {
-        // No-op.
-    }
-
-    /**
-     * Resolves the metadata associated with the given key-value sample.
-     *
-     * @param ss Serialization service.
-     * @param target Target to be analyzed.
-     * @param binary Whether map objects are stored in binary form.
-     * @param key Whether passed target is key or value.
-     * @return Sample metadata.
-     * @throws QueryException If metadata cannot be resolved.
-     */
-    public static MapSampleMetadata resolve(
-        InternalSerializationService ss,
-        Object target,
-        boolean binary,
-        boolean key
+    @Override
+    public MapOptionsMetadata resolve(
+            List<ExternalField> externalFields,
+            Map<String, String> options,
+            boolean isKey,
+            InternalSerializationService serializationService
     ) {
+        String className = options.get(isKey ? TO_KEY_CLASS : TO_VALUE_CLASS);
+        if (className != null) {
+            Class<?> clazz = loadClass(className);
+            return resolveClass(clazz, isKey);
+        }
+        return null;
+    }
+
+    private static Class<?> loadClass(String className) {
         try {
-            if (target instanceof Data) {
-                Data data = (Data) target;
-
-                if (data.isPortable() && binary) {
-                    return resolvePortable(ss.getPortableContext().lookupClassDefinition(data), key);
-                } else if (data.isJson()) {
-                    throw new UnsupportedOperationException("JSON objects are not supported.");
-                } else {
-                    return resolveClass(ss.toObject(data).getClass(), key);
-                }
-            } else {
-                return resolveClass(target.getClass(), key);
-            }
-        } catch (Exception e) {
-            throw QueryException.error("Failed to resolve " + (key ? "key" : "value") + " metadata: " + e.getMessage(), e);
+            return ClassLoaderUtil.loadClass(null, className);
+        } catch (ClassNotFoundException e) {
+            throw sneakyThrow(e);
         }
     }
 
-    /**
-     * Resolve metadata from a portable object.
-     *
-     * @param clazz Portable class definition.
-     * @param isKey Whether this is a key.
-     * @return Metadata.
-     */
-    private static MapSampleMetadata resolvePortable(ClassDefinition clazz, boolean isKey) {
-        TreeMap<String, TableField> fields = new TreeMap<>();
-
-        // Add regular fields.
-        for (String name : clazz.getFieldNames()) {
-            FieldType portableType = clazz.getFieldType(name);
-
-            QueryDataType type = resolvePortableType(portableType);
-
-            fields.putIfAbsent(name, new MapTableField(name, type, false, new QueryPath(name, isKey)));
-        }
-
-        // Add top-level object.
-        String topName = isKey ? QueryPath.KEY : QueryPath.VALUE;
-        QueryPath topPath = isKey ? QueryPath.KEY_PATH : QueryPath.VALUE_PATH;
-        fields.put(topName, new MapTableField(topName, QueryDataType.OBJECT, !fields.isEmpty(), topPath));
-
-        return new MapSampleMetadata(GenericQueryTargetDescriptor.INSTANCE, new LinkedHashMap<>(fields));
-    }
-
-    @SuppressWarnings("checkstyle:ReturnCount")
-    private static QueryDataType resolvePortableType(FieldType portableType) {
-        switch (portableType) {
-            case BOOLEAN:
-                return QueryDataType.BOOLEAN;
-
-            case BYTE:
-                return QueryDataType.TINYINT;
-
-            case SHORT:
-                return QueryDataType.SMALLINT;
-
-            case CHAR:
-                return QueryDataType.VARCHAR_CHARACTER;
-
-            case UTF:
-                return QueryDataType.VARCHAR;
-
-            case INT:
-                return QueryDataType.INT;
-
-            case LONG:
-                return QueryDataType.BIGINT;
-
-            case FLOAT:
-                return QueryDataType.REAL;
-
-            case DOUBLE:
-                return QueryDataType.DOUBLE;
-
-            default:
-                return QueryDataType.OBJECT;
-        }
-    }
-
-    private static MapSampleMetadata resolveClass(Class<?> clazz, boolean isKey) {
+    private static MapOptionsMetadata resolveClass(Class<?> clazz, boolean isKey) {
         Map<String, TableField> fields = new TreeMap<>();
 
         // Extract fields from non-primitive type.
@@ -167,8 +91,8 @@ public final class MapSampleMetadataResolver {
                 QueryDataType methodType = QueryDataTypeUtils.resolveTypeForClass(method.getReturnType());
 
                 fields.putIfAbsent(
-                    methodName,
-                    new MapTableField(methodName, methodType, false, new QueryPath(methodName, isKey))
+                        methodName,
+                        new MapTableField(methodName, methodType, false, new QueryPath(methodName, isKey))
                 );
             }
 
@@ -185,8 +109,8 @@ public final class MapSampleMetadataResolver {
                     QueryDataType fieldType = QueryDataTypeUtils.resolveTypeForClass(field.getType());
 
                     fields.putIfAbsent(
-                        fieldName,
-                        new MapTableField(fieldName, fieldType, false, new QueryPath(fieldName, isKey))
+                            fieldName,
+                            new MapTableField(fieldName, fieldType, false, new QueryPath(fieldName, isKey))
                     );
                 }
 
@@ -199,7 +123,11 @@ public final class MapSampleMetadataResolver {
         QueryPath topPath = isKey ? QueryPath.KEY_PATH : QueryPath.VALUE_PATH;
         fields.put(topName, new MapTableField(topName, topType, !fields.isEmpty(), topPath));
 
-        return new MapSampleMetadata(GenericQueryTargetDescriptor.INSTANCE, new LinkedHashMap<>(fields));
+        return new MapOptionsMetadata(
+                GenericQueryTargetDescriptor.INSTANCE,
+                new PojoUpsertTargetDescriptor(clazz.getName()),
+                new LinkedHashMap<>(fields)
+        );
     }
 
     private static String extractAttributeNameFromMethod(Class<?> clazz, Method method) {
@@ -254,9 +182,11 @@ public final class MapSampleMetadataResolver {
             return true;
         }
 
-        // Skip getFactoryId() and getClassId() from Portable and IdentifiedDataSerializable.
+        // Skip getFactoryId(), getClassId() and getVersion() from Portable and IdentifiedDataSerializable.
         String methodName = method.getName();
-        if (methodName.equals(METHOD_GET_FACTORY_ID) || methodName.equals(METHOD_GET_CLASS_ID)) {
+        if (methodName.equals(METHOD_GET_FACTORY_ID) ||
+                methodName.equals(METHOD_GET_CLASS_ID) ||
+                methodName.equals(METHOD_GET_CLASS_VERSION)) {
             if (IdentifiedDataSerializable.class.isAssignableFrom(clazz) || Portable.class.isAssignableFrom(clazz)) {
                 return true;
             }

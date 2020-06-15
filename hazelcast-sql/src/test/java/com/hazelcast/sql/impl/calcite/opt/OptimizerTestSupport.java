@@ -56,7 +56,6 @@ import java.util.Map;
 
 import static com.hazelcast.sql.impl.QueryUtils.SCHEMA_NAME_REPLICATED;
 import static com.hazelcast.sql.impl.type.QueryDataType.INT;
-import static java.util.Collections.emptyMap;
 import static junit.framework.TestCase.assertEquals;
 
 /**
@@ -147,9 +146,10 @@ public abstract class OptimizerTestSupport extends SqlTestSupport {
             new ConstantTableStatistics(rowCount),
             null,
             null,
+            null,
+            null,
             indexes,
-            PartitionedMapTable.DISTRIBUTION_FIELD_ORDINAL_NONE,
-            emptyMap()
+            PartitionedMapTable.DISTRIBUTION_FIELD_ORDINAL_NONE
         );
 
         return new HazelcastTable(table, new MapTableStatistic(rowCount));

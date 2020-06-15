@@ -14,32 +14,40 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.schema.map.sample;
+package com.hazelcast.sql.impl.schema.map.options;
 
 import com.hazelcast.sql.impl.extract.QueryTargetDescriptor;
+import com.hazelcast.sql.impl.inject.UpsertTargetDescriptor;
 import com.hazelcast.sql.impl.schema.TableField;
 
 import java.util.LinkedHashMap;
 
 /**
- * Metadata from sample resolution.
+ * Metadata from options resolution.
  */
-// TODO: deduplicate with MapOptionsMetadata ?
-public class MapSampleMetadata {
+// TODO: deduplicate with MapSampleMetadata ?
+public class MapOptionsMetadata {
 
-    private final QueryTargetDescriptor descriptor;
+    private final QueryTargetDescriptor queryTargetDescriptor;
+    private final UpsertTargetDescriptor upsertTargetDescriptor;
     private final LinkedHashMap<String, TableField> fields;
 
-    public MapSampleMetadata(QueryTargetDescriptor descriptor, LinkedHashMap<String, TableField> fields) {
-        this.descriptor = descriptor;
+    public MapOptionsMetadata(QueryTargetDescriptor queryTargetDescriptor,
+                              UpsertTargetDescriptor upsertTargetDescriptor,
+                              LinkedHashMap<String, TableField> fields) {
+        this.queryTargetDescriptor = queryTargetDescriptor;
+        this.upsertTargetDescriptor = upsertTargetDescriptor;
         this.fields = fields;
     }
 
-    public QueryTargetDescriptor getDescriptor() {
-        return descriptor;
+    public QueryTargetDescriptor getQueryTargetDescriptor() {
+        return queryTargetDescriptor;
     }
 
-    @SuppressWarnings("checkstyle:IllegalType")
+    public UpsertTargetDescriptor getUpsertTargetDescriptor() {
+        return upsertTargetDescriptor;
+    }
+
     public LinkedHashMap<String, TableField> getFields() {
         return fields;
     }

@@ -18,7 +18,6 @@ package com.hazelcast.sql.impl.schema;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Generic table metadata.
@@ -29,20 +28,17 @@ public abstract class Table {
     private final String name;
     private final List<TableField> fields;
     private final TableStatistics statistics;
-    private final Map<String, String> ddlOptions;
 
     protected Table(
         String schemaName,
         String name,
         List<TableField> fields,
-        TableStatistics statistics,
-        Map<String, String> ddlOptions
+        TableStatistics statistics
     ) {
         this.schemaName = schemaName;
         this.name = name;
         this.fields = Collections.unmodifiableList(fields);
         this.statistics = statistics;
-        this.ddlOptions = ddlOptions;
     }
 
     public String getSchemaName() {
@@ -68,9 +64,5 @@ public abstract class Table {
 
     public TableStatistics getStatistics() {
         return statistics;
-    }
-
-    public Map<String, String> getDdlOptions() {
-        return ddlOptions;
     }
 }

@@ -21,6 +21,10 @@ import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
+import java.io.IOException;
+
+import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
+
 public class GenericQueryTarget implements QueryTarget, GenericTargetAccessor {
 
     private final InternalSerializationService serializationService;
@@ -54,10 +58,21 @@ public class GenericQueryTarget implements QueryTarget, GenericTargetAccessor {
     @Override
     public Object getTarget() {
         if (target == null) {
-            target = rawTarget instanceof Data ? serializationService.toObject(rawTarget) : rawTarget;
+            target = rawTarget instanceof Data ? convert((Data) rawTarget) : rawTarget;
         }
 
         return target;
+    }
+
+    private Object convert(Data target) {
+        try {
+            // TODO: PortableExtractor ?
+            return target.isPortable() ?
+                    serializationService.createPortableReader(target) :
+                    serializationService.toObject(target);
+        } catch (IOException ioe) {
+            throw sneakyThrow(ioe);
+        }
     }
 
     public boolean isKey() {

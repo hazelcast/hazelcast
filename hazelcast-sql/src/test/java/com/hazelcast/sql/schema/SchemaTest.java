@@ -41,6 +41,8 @@ import java.util.GregorianCalendar;
 import java.util.List;
 import java.util.Map;
 
+import static com.hazelcast.sql.impl.connector.SqlKeyValueConnector.TO_KEY_CLASS;
+import static com.hazelcast.sql.impl.connector.SqlKeyValueConnector.TO_VALUE_CLASS;
 import static java.lang.String.format;
 import static java.time.ZoneOffset.UTC;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -69,8 +71,14 @@ public class SchemaTest extends CalciteSqlTestSupport {
         String name = "predeclared_map";
 
         // when
-        List<SqlRow> updateRows = getQueryRows(member, format("CREATE EXTERNAL TABLE %s (__key INT) TYPE \"%s\"",
-                name, LocalPartitionedMapConnector.TYPE_NAME));
+        List<SqlRow> updateRows = getQueryRows(
+                member,
+                format("CREATE EXTERNAL TABLE %s (" +
+                                "  __key INT," +
+                                "  this VARCHAR" +
+                                ") TYPE \"%s\"",
+                        name, LocalPartitionedMapConnector.TYPE_NAME)
+        );
 
         // then
         assertThat(updateRows).hasSize(1);
@@ -91,8 +99,14 @@ public class SchemaTest extends CalciteSqlTestSupport {
         HazelcastInstance[] instances = factory.newInstances();
 
         // when create table is executed on one member
-        executeQuery(instances[0], format("CREATE EXTERNAL TABLE %s (__key INT) TYPE \"%s\"", name,
-                LocalPartitionedMapConnector.TYPE_NAME));
+        executeQuery(
+                instances[0],
+                format("CREATE EXTERNAL TABLE %s (" +
+                                "  __key INT," +
+                                "  this VARCHAR" +
+                                ") TYPE \"%s\"",
+                        name, LocalPartitionedMapConnector.TYPE_NAME)
+        );
 
         // then schema is available on another one
         // TODO: fix it properly - sticky client, different catalog storage, ???
@@ -106,19 +120,27 @@ public class SchemaTest extends CalciteSqlTestSupport {
     public void testPredeclaredTablePriority() {
         // given
         String name = "priority_map";
-        executeQuery(member, format("CREATE EXTERNAL TABLE %s (\"__key.age\" INT, age INT) TYPE \"%s\"",
-                name, LocalPartitionedMapConnector.TYPE_NAME));
+        executeQuery(
+                member,
+                format("CREATE EXTERNAL TABLE %s ("
+                                + "  age INT"
+                                + ") TYPE \"%s\" "
+                                + "OPTIONS ("
+                                + "  %s '%s',"
+                                + "  %s '%s'"
+                                + ")",
+                        name, LocalPartitionedMapConnector.TYPE_NAME,
+                        TO_KEY_CLASS, Person.class.getName(),
+                        TO_VALUE_CLASS, Person.class.getName()
+
+                ));
 
         Map<Person, Person> map = member.getMap(name);
         map.put(new Person("Alice", BigInteger.valueOf(30)), new Person("Bob", BigInteger.valueOf(40)));
 
         // when
-        List<SqlRow> rows = getQueryRows(member, format("SELECT age, \"__key.age\" FROM %s", name));
-
-        // then
-        assertThat(rows).hasSize(1);
-        assertThat((int) rows.get(0).getObject(0)).isEqualTo(40);
-        assertThat((int) rows.get(0).getObject(1)).isEqualTo(30);
+        assertThatThrownBy(() -> executeQuery(member, format("SELECT name, age FROM %s", name)))
+                .isInstanceOf(HazelcastSqlException.class);
     }
 
     @Test
@@ -126,30 +148,34 @@ public class SchemaTest extends CalciteSqlTestSupport {
         // given
         String name = "all_fields_map";
         executeQuery(member, format("CREATE EXTERNAL TABLE %s ("
-                        + "__key DECIMAL(10, 0), "
-                        + "string VARCHAR,"
-                        + "character0 CHAR, "
-                        + "boolean0 BOOLEAN, "
-                        + "byte0 TINYINT, "
-                        + "short0 SMALLINT, "
-                        + "int0 INT, "
-                        + "long0 BIGINT, "
-                        + "float0 REAL, "
-                        + "double0 DOUBLE, "
-                        + "bigDecimal DEC(10, 1), "
-                        + "bigInteger NUMERIC(5, 0), "
-                        + "\"localTime\" TIME, "
-                        + "localDate DATE, "
-                        + "localDateTime TIMESTAMP, "
-                        + "\"date\" TIMESTAMP WITH LOCAL TIME ZONE (\"DATE\"), "
-                        + "calendar TIMESTAMP WITH TIME ZONE (\"CALENDAR\"), "
-                        + "instant TIMESTAMP WITH LOCAL TIME ZONE, "
-                        + "zonedDateTime TIMESTAMP WITH TIME ZONE (\"ZONED_DATE_TIME\"), "
-                        + "offsetDateTime TIMESTAMP WITH TIME ZONE "
-                        /* + "yearMonthInterval INTERVAL_YEAR_MONTH, "
-                        + "offsetDateTime INTERVAL_DAY_SECOND, "*/
-                        + ") TYPE \"%s\"",
-                name, LocalPartitionedMapConnector.TYPE_NAME
+                        + "  __key DECIMAL(10, 0), "
+                        + "  string VARCHAR,"
+                        + "  character0 CHAR, "
+                        + "  boolean0 BOOLEAN, "
+                        + "  byte0 TINYINT, "
+                        + "  short0 SMALLINT, "
+                        + "  int0 INT, "
+                        + "  long0 BIGINT, "
+                        + "  float0 REAL, "
+                        + "  double0 DOUBLE, "
+                        + "  bigDecimal DEC(10, 1), "
+                        + "  bigInteger NUMERIC(5, 0), "
+                        + "  \"localTime\" TIME, "
+                        + "  localDate DATE, "
+                        + "  localDateTime TIMESTAMP, "
+                        + "  \"date\" TIMESTAMP WITH LOCAL TIME ZONE (\"DATE\"), "
+                        + "  calendar TIMESTAMP WITH TIME ZONE (\"CALENDAR\"), "
+                        + "  instant TIMESTAMP WITH LOCAL TIME ZONE, "
+                        + "  zonedDateTime TIMESTAMP WITH TIME ZONE (\"ZONED_DATE_TIME\"), "
+                        + "  offsetDateTime TIMESTAMP WITH TIME ZONE "
+                        /* + "  yearMonthInterval INTERVAL_YEAR_MONTH, "
+                        + "  offsetDateTime INTERVAL_DAY_SECOND, "*/
+                        + ") TYPE \"%s\" "
+                        + "OPTIONS ("
+                        + "  %s '%s'"
+                        + ")",
+                name, LocalPartitionedMapConnector.TYPE_NAME,
+                TO_VALUE_CLASS, AllTypesValue.class.getName()
         ));
 
         AllTypesValue allTypes = new AllTypesValue(
@@ -209,7 +235,14 @@ public class SchemaTest extends CalciteSqlTestSupport {
     public void testDropTable() {
         // given
         String name = "to_be_dropped_map";
-        executeQuery(member, format("CREATE EXTERNAL TABLE %s (name VARCHAR) TYPE \"%s\"", name, LocalPartitionedMapConnector.TYPE_NAME));
+        executeQuery(
+                member,
+                format("CREATE EXTERNAL TABLE %s (" +
+                                "  __key INT," +
+                                "  this VARCHAR" +
+                                ") TYPE \"%s\"",
+                        name, LocalPartitionedMapConnector.TYPE_NAME)
+        );
 
         // when
         executeQuery(member, format("DROP EXTERNAL TABLE %s", name));
