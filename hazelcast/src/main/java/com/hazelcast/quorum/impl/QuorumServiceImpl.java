@@ -298,7 +298,7 @@ public class QuorumServiceImpl implements EventPublishingService<QuorumEvent, Qu
 
     @Override
     public void memberAdded(MembershipServiceEvent event) {
-        if (isInactive()) {
+        if (isInactive() || event.getMember().localMember()) {
             return;
         }
         nodeEngine.getExecutionService().execute(QUORUM_EXECUTOR, new UpdateQuorums(event));
