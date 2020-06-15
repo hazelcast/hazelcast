@@ -19,12 +19,14 @@ package com.hazelcast.sql.impl.exec.scan;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.sql.impl.exec.AbstractExec;
+import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.extract.QueryTargetDescriptor;
-import com.hazelcast.sql.impl.worker.QueryFragmentContext;
-import com.hazelcast.sql.impl.expression.Expression;
+import com.hazelcast.sql.impl.row.EmptyRow;
 import com.hazelcast.sql.impl.row.HeapRow;
+import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.QueryDataType;
+import com.hazelcast.sql.impl.worker.QueryFragmentContext;
 
 import java.util.List;
 
@@ -93,7 +95,7 @@ public abstract class AbstractMapScanExec extends AbstractExec {
      * @param rawValue Value (data or object)
      * @return Row that is ready for processing by parent operators or {@code null} if the row hasn't passed the filter.
      */
-    protected HeapRow prepareRow(Object rawkey, Object rawValue) {
+    protected Row prepareRow(Object rawkey, Object rawValue) {
         row.setKeyValue(rawkey, rawValue);
 
         // Filter.
@@ -102,6 +104,10 @@ public abstract class AbstractMapScanExec extends AbstractExec {
         }
 
         // Project.
+        if (projects.size() == 0) {
+            return EmptyRow.INSTANCE;
+        }
+
         HeapRow row = new HeapRow(projects.size());
 
         for (int j = 0; j < projects.size(); j++) {

@@ -21,24 +21,32 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.sql.impl.SqlDataSerializerHook;
 
+import java.io.IOException;
+
 /**
- * Empty row batch.
+ * Row with no columns. It may appear when the downstream operator doesn't need any columns from
+ * the upstream, and only the number of returned rows is important.
+ * <p>
+ * Example:
+ * <pre>
+ * SELECT GET_DATE() FROM person
+ * </pre>
  */
-public final class EmptyRowBatch implements RowBatch, IdentifiedDataSerializable {
+public class EmptyRow implements Row, IdentifiedDataSerializable {
 
-    public static final EmptyRowBatch INSTANCE = new EmptyRowBatch();
+    public static final EmptyRow INSTANCE = new EmptyRow();
 
-    private EmptyRowBatch() {
+    public EmptyRow() {
         // No-op.
     }
 
     @Override
-    public Row getRow(int idx) {
+    public <T> T get(int index) {
         throw new UnsupportedOperationException("Should not be called.");
     }
 
     @Override
-    public int getRowCount() {
+    public int getColumnCount() {
         return 0;
     }
 
@@ -49,16 +57,31 @@ public final class EmptyRowBatch implements RowBatch, IdentifiedDataSerializable
 
     @Override
     public int getClassId() {
-        return SqlDataSerializerHook.ROW_BATCH_EMPTY;
+        return SqlDataSerializerHook.ROW_EMPTY;
     }
 
     @Override
-    public void writeData(ObjectDataOutput out) {
+    public void writeData(ObjectDataOutput out) throws IOException {
         // No-op.
     }
 
     @Override
-    public void readData(ObjectDataInput in) {
+    public void readData(ObjectDataInput in) throws IOException {
         // No-op.
+    }
+
+    @Override
+    public int hashCode() {
+        return 0;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        return obj instanceof EmptyRow;
+    }
+
+    @Override
+    public String toString() {
+        return getClass().getName() + "{}";
     }
 }

@@ -142,14 +142,6 @@ public final class ProjectIntoScanLogicalRule extends RelOptRule {
         // Get new scan fields. These are the only fields that are accessed by the project operator.
         List<Integer> newScanProjects = projectFieldVisitor.createNewScanProjects();
 
-        if (newScanProjects.isEmpty()) {
-            // No TableScan columns are referenced from within a project, i.e. the Project doesn't depend on column values
-            // of the TableScan. E.g. "SELECT CURRENT_TIME() FROM t". In future we will introduce a special optimizer operator
-            // for that case that will not do a real scan. It is not trivial, because we should take into account whether the
-            // Project expressions are deterministic or not. Therefore, we simply ignore that case for now.
-            return;
-        }
-
         if (newScanProjects.size() == originalTable.getProjects().size()) {
             // The Project operator already references all the fields from the TableScan. No trimming is possible, so further
             // optimization makes no sense.

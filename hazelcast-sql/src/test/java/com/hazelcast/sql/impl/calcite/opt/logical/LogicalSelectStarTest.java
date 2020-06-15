@@ -75,7 +75,7 @@ public class LogicalSelectStarTest extends OptimizerTestSupport {
             optimizeLogical("SELECT *, r.r_f1 FROM r"),
             plan(
                 planRow(0, RootLogicalRel.class, ""),
-                planRow(1, MapScanLogicalRel.class, "table=[[hazelcast, r]]")
+                planRow(1, MapScanLogicalRel.class, "table=[[hazelcast, r[projects=[0, 1]]]]")
             )
         );
 
@@ -83,7 +83,7 @@ public class LogicalSelectStarTest extends OptimizerTestSupport {
             optimizeLogical("SELECT r.*, r.r_f1 FROM r"),
             plan(
                 planRow(0, RootLogicalRel.class, ""),
-                planRow(1, MapScanLogicalRel.class, "table=[[hazelcast, r]]")
+                planRow(1, MapScanLogicalRel.class, "table=[[hazelcast, r[projects=[0, 1]]]]")
             )
         );
 

@@ -112,8 +112,6 @@ public class HazelcastTable extends AbstractTable {
     }
 
     public List<Integer> getProjects() {
-        assert projects == null || !projects.isEmpty();
-
         if (projects == null) {
             int fieldCount = target.getFieldCount();
 
@@ -217,12 +215,7 @@ public class HazelcastTable extends AbstractTable {
         StringJoiner res = new StringJoiner(", ", "[", "]");
         res.setEmptyValue("");
 
-        if (projects != null) {
-            res.add("projects="
-                    + projects.stream()
-                            .map(Objects::toString)
-                            .collect(joining(", ", "[", "]")));
-        }
+        res.add("projects=" + getProjects().stream().map(Objects::toString).collect(joining(", ", "[", "]")));
 
         if (filter != null) {
             res.add("filter=" + filter);
