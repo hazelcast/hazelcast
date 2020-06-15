@@ -73,10 +73,10 @@ public class SchemaTest extends CalciteSqlTestSupport {
         // when
         List<SqlRow> updateRows = getQueryRows(
                 member,
-                format("CREATE EXTERNAL TABLE %s (" +
-                                "  __key INT," +
-                                "  this VARCHAR" +
-                                ") TYPE \"%s\"",
+                format("CREATE EXTERNAL TABLE %s ("
+                                + "  __key INT,"
+                                + "  this VARCHAR"
+                                + ") TYPE \"%s\"",
                         name, LocalPartitionedMapConnector.TYPE_NAME)
         );
 
@@ -101,10 +101,10 @@ public class SchemaTest extends CalciteSqlTestSupport {
         // when create table is executed on one member
         executeQuery(
                 instances[0],
-                format("CREATE EXTERNAL TABLE %s (" +
-                                "  __key INT," +
-                                "  this VARCHAR" +
-                                ") TYPE \"%s\"",
+                format("CREATE EXTERNAL TABLE %s ("
+                                + "  __key INT,"
+                                + "  this VARCHAR"
+                                + ") TYPE \"%s\"",
                         name, LocalPartitionedMapConnector.TYPE_NAME)
         );
 
@@ -237,10 +237,10 @@ public class SchemaTest extends CalciteSqlTestSupport {
         String name = "to_be_dropped_map";
         executeQuery(
                 member,
-                format("CREATE EXTERNAL TABLE %s (" +
-                                "  __key INT," +
-                                "  this VARCHAR" +
-                                ") TYPE \"%s\"",
+                format("CREATE EXTERNAL TABLE %s ("
+                                + "  __key INT,"
+                                + "  this VARCHAR"
+                                + ") TYPE \"%s\"",
                         name, LocalPartitionedMapConnector.TYPE_NAME)
         );
 
