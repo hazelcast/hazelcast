@@ -164,6 +164,10 @@ public final class ClientMessage implements OutboundFrame {
         return startFrame;
     }
 
+    public Frame getEndFrame() {
+        return endFrame;
+    }
+
     public ClientMessage add(Frame frame) {
         frame.next = null;
         if (startFrame == null) {
