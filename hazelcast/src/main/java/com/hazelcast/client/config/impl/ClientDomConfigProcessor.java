@@ -657,6 +657,8 @@ public class ClientDomConfigProcessor extends AbstractDomConfigProcessor {
                 kerbIdentity.setServiceNamePrefix(getTextContent(child));
             } else if ("spn".equals(nodeName)) {
                 kerbIdentity.setSpn(getTextContent(child));
+            } else if ("use-canonical-hostname".equals(nodeName)) {
+                kerbIdentity.setUseCanonicalHostname(getBooleanValue(getTextContent(child)));
             }
         }
         clientSecurityConfig.setKerberosIdentityConfig(kerbIdentity);
