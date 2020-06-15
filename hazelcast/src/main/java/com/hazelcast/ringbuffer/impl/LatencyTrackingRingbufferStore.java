@@ -16,6 +16,7 @@
 
 package com.hazelcast.ringbuffer.impl;
 
+import com.hazelcast.internal.util.Timer;
 import com.hazelcast.ringbuffer.RingbufferStore;
 import com.hazelcast.internal.diagnostics.StoreLatencyPlugin;
 import com.hazelcast.internal.diagnostics.StoreLatencyPlugin.LatencyProbe;
@@ -46,41 +47,41 @@ class LatencyTrackingRingbufferStore<T> implements RingbufferStore<T> {
 
     @Override
     public void store(long sequence, T data) {
-        long startNanos = System.nanoTime();
+        long startNanos = Timer.nanos();
         try {
             delegate.store(sequence, data);
         } finally {
-            storeProbe.recordValue(System.nanoTime() - startNanos);
+            storeProbe.recordValue(Timer.nanosElapsed(startNanos));
         }
     }
 
     @Override
     public void storeAll(long firstItemSequence, T[] items) {
-        long startNanos = System.nanoTime();
+        long startNanos = Timer.nanos();
         try {
             delegate.storeAll(firstItemSequence, items);
         } finally {
-            storeAllProbe.recordValue(System.nanoTime() - startNanos);
+            storeAllProbe.recordValue(Timer.nanosElapsed(startNanos));
         }
     }
 
     @Override
     public T load(long sequence) {
-        long startNanos = System.nanoTime();
+        long startNanos = Timer.nanos();
         try {
             return delegate.load(sequence);
         } finally {
-            loadProbe.recordValue(System.nanoTime() - startNanos);
+            loadProbe.recordValue(Timer.nanosElapsed(startNanos));
         }
     }
 
     @Override
     public long getLargestSequence() {
-        long startNanos = System.nanoTime();
+        long startNanos = Timer.nanos();
         try {
             return delegate.getLargestSequence();
         } finally {
-            getLargestSequenceProbe.recordValue(System.nanoTime() - startNanos);
+            getLargestSequenceProbe.recordValue(Timer.nanosElapsed(startNanos));
         }
     }
 }

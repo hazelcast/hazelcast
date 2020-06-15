@@ -31,6 +31,7 @@ import com.hazelcast.internal.util.ConstructorFunction;
 import com.hazelcast.internal.util.ContextMutexFactory;
 import com.hazelcast.internal.util.InvocationUtil;
 import com.hazelcast.internal.util.LocalRetryableExecution;
+import com.hazelcast.internal.util.Timer;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.internal.util.comparators.ValueComparator;
 import com.hazelcast.internal.util.comparators.ValueComparatorUtil;
@@ -772,8 +773,9 @@ class MapServiceContextImpl implements MapServiceContext {
     }
 
     @Override
-    public void incrementOperationStats(long startTime, LocalMapStatsImpl localMapStats, String mapName, Operation operation) {
-        final long durationNanos = System.nanoTime() - startTime;
+    public void incrementOperationStats(long startTimeNanos, LocalMapStatsImpl localMapStats, String mapName,
+                                        Operation operation) {
+        final long durationNanos = Timer.nanosElapsed(startTimeNanos);
         if (operation instanceof SetOperation) {
             localMapStats.incrementSetLatencyNanos(durationNanos);
         } else if (operation instanceof BasePutOperation) {

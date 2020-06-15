@@ -16,6 +16,7 @@
 
 package com.hazelcast.scheduledexecutor.impl;
 
+import com.hazelcast.internal.util.Timer;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.scheduledexecutor.ScheduledTaskStatistics;
@@ -34,7 +35,7 @@ public class ScheduledTaskStatisticsImpl
     private long totalRunDuration;
     private long totalIdleDuration;
 
-    private transient long createdAt;
+    private transient long startNanos;
     private transient long firstRunStart;
     private transient long lastRunStart;
     private transient long lastRunEnd;
@@ -43,7 +44,7 @@ public class ScheduledTaskStatisticsImpl
     }
 
     public ScheduledTaskStatisticsImpl(ScheduledTaskStatisticsImpl copy) {
-        this(copy.createdAt, copy.getTotalRuns(), copy.firstRunStart, copy.lastRunStart, copy.lastRunEnd,
+        this(copy.startNanos, copy.getTotalRuns(), copy.firstRunStart, copy.lastRunStart, copy.lastRunEnd,
                 copy.getLastIdleTime(MEASUREMENT_UNIT), copy.getTotalRunTime(MEASUREMENT_UNIT),
                 copy.getTotalIdleTime(MEASUREMENT_UNIT), copy.getLastRunDuration(MEASUREMENT_UNIT));
     }
@@ -57,10 +58,10 @@ public class ScheduledTaskStatisticsImpl
         this.lastRunDuration = lastRunDuration;
     }
 
-    ScheduledTaskStatisticsImpl(long createdAt, long runs, long firstRunStartNanos, long lastRunStartNanos, long lastRunEndNanos,
+    ScheduledTaskStatisticsImpl(long startNanos, long runs, long firstRunStartNanos, long lastRunStartNanos, long lastRunEndNanos,
                                 long lastIdleTimeNanos, long totalRunTimeNanos, long totalIdleTimeNanos,
                                 long lastRunDurationNanos) {
-        this.createdAt = createdAt;
+        this.startNanos = startNanos;
         this.runs = runs;
         this.firstRunStart = firstRunStartNanos;
         this.lastRunStart = lastRunStartNanos;
@@ -128,14 +129,13 @@ public class ScheduledTaskStatisticsImpl
 
     @Override
     public void onInit() {
-        this.createdAt = System.nanoTime();
+        this.startNanos = Timer.nanos();
     }
 
     @Override
     public void onBeforeRun() {
-        long now = System.nanoTime();
-        this.lastRunStart = now;
-        this.lastIdleDuration = now - (lastRunEnd != 0L ? lastRunEnd : createdAt);
+        this.lastRunStart = Timer.nanos();
+        this.lastIdleDuration = Timer.nanosElapsed(lastRunEnd != 0L ? lastRunEnd : startNanos);
         this.totalIdleDuration += lastIdleDuration;
 
         if (this.firstRunStart == 0L) {
@@ -145,9 +145,7 @@ public class ScheduledTaskStatisticsImpl
 
     @Override
     public void onAfterRun() {
-        long now = System.nanoTime();
-
-        this.lastRunEnd = now;
+        this.lastRunEnd = Timer.nanos();
         this.lastRunDuration = lastRunEnd - lastRunStart;
         this.runs++;
         this.totalRunDuration += lastRunDuration;

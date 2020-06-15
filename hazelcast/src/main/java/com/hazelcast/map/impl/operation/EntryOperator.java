@@ -24,6 +24,7 @@ import com.hazelcast.internal.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.internal.partition.IPartitionService;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.util.Clock;
+import com.hazelcast.internal.util.Timer;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.impl.LazyMapEntry;
 import com.hazelcast.map.impl.LocalMapStatsProvider;
@@ -64,7 +65,7 @@ public final class EntryOperator {
     private final boolean wanReplicationEnabled;
     private final boolean hasEventRegistration;
     private final int partitionId;
-    private final long startTimeNanos = System.nanoTime();
+    private final long startTimeNanos = Timer.nanos();
     private final String mapName;
     private final RecordStore recordStore;
     private final InternalSerializationService ss;
@@ -264,7 +265,7 @@ public final class EntryOperator {
                 entry.setValueByInMemoryFormat(inMemoryFormat, newValue);
             }
             mapServiceContext.interceptAfterPut(mapContainer.getInterceptorRegistry(), newValue);
-            stats.incrementPutLatencyNanos(getLatencyNanos(startTimeNanos));
+            stats.incrementPutLatencyNanos(Timer.nanosElapsed(startTimeNanos));
         }
     }
 
@@ -274,7 +275,7 @@ public final class EntryOperator {
         } else {
             recordStore.delete(dataKey, NOT_WAN);
             mapServiceContext.interceptAfterRemove(mapContainer.getInterceptorRegistry(), oldValue);
-            stats.incrementRemoveLatencyNanos(getLatencyNanos(startTimeNanos));
+            stats.incrementRemoveLatencyNanos(Timer.nanosElapsed(startTimeNanos));
         }
     }
 
@@ -319,10 +320,6 @@ public final class EntryOperator {
         if (record != null) {
             recordStore.accessRecord(record, Clock.currentTimeMillis());
         }
-    }
-
-    private static long getLatencyNanos(long beginTimeNanos) {
-        return System.nanoTime() - beginTimeNanos;
     }
 
     private void process(Entry entry) {
