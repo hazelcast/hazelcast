@@ -20,7 +20,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.accumulator.LongAccumulator;
-import com.hazelcast.jet.cdc.AbstractIntegrationTest;
 import com.hazelcast.jet.cdc.CdcSinks;
 import com.hazelcast.jet.cdc.ChangeRecord;
 import com.hazelcast.jet.cdc.Operation;
@@ -33,9 +32,7 @@ import com.hazelcast.jet.core.JobStatus;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.StreamSource;
-import org.junit.Rule;
 import org.junit.Test;
-import org.testcontainers.containers.MySQLContainer;
 
 import javax.annotation.Nonnull;
 import java.sql.Connection;
@@ -48,14 +45,8 @@ import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.jet.Util.entry;
-import static org.testcontainers.containers.MySQLContainer.MYSQL_PORT;
 
-public class MySqlIntegrationTest extends AbstractIntegrationTest {
-
-    @Rule
-    public MySQLContainer<?> mysql = new MySQLContainer<>("debezium/example-mysql:1.2")
-            .withUsername("mysqluser")
-            .withPassword("mysqlpw");
+public class MySqlIntegrationTest extends AbstractMySqlIntegrationTest {
 
     @Test
     public void customers() throws Exception {
@@ -298,12 +289,7 @@ public class MySqlIntegrationTest extends AbstractIntegrationTest {
 
     @Nonnull
     private StreamSource<ChangeRecord> source(String tableName) {
-        return MySqlCdcSources.mysql(tableName)
-                .setDatabaseAddress(mysql.getContainerIpAddress())
-                .setDatabasePort(mysql.getMappedPort(MYSQL_PORT))
-                .setDatabaseUser("debezium")
-                .setDatabasePassword("dbz")
-                .setClusterName("dbserver1")
+        return sourceBuilder(tableName)
                 .setDatabaseWhitelist("inventory")
                 .setTableWhitelist("inventory." + tableName)
                 .build();
