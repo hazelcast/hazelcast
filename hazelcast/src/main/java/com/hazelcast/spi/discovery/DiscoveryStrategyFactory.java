@@ -23,6 +23,8 @@ import com.hazelcast.logging.ILogger;
 import java.util.Collection;
 import java.util.Map;
 
+import static com.hazelcast.spi.discovery.DiscoveryStrategyFactory.DiscoveryStrategyLevel.UNKNOWN;
+
 /**
  * The <code>DiscoveryStrategyFactory</code> is the entry point for strategy vendors. Every
  * {@link DiscoveryStrategy} should have its own factory building it. In rare cases (like
@@ -73,4 +75,43 @@ public interface DiscoveryStrategyFactory {
      * @return a set of expected configuration properties
      */
     Collection<PropertyDefinition> getConfigurationProperties();
+
+    /**
+     * Checks whether the given discovery strategy may be applied to the environment in which Hazelcast is currently running.
+     * <p>
+     * User by the auto detection mechanism to decide if which strategy could be used.
+     */
+    default boolean isApplicableToCurrentEnvironment() {
+        return false;
+    }
+
+    /**
+     * Level of the discovery strategy.
+     */
+    default DiscoveryStrategyLevel discoveryStrategyLevel() {
+        return UNKNOWN;
+    }
+
+    /**
+     * Level of the discovery strategy.
+     * <p>
+     * In general the discovery strategies can be at the level of Cloud Virtual Machines, for example, AWS EC2 Instance or GCP
+     * Virtual Machine. They can also be at the level of some specific platform or framework, like Kubernetes.
+     * <p>
+     * It decides on the priority in the auto detection mechanism, because you can have a Kubernetes environment installed on
+     * AWS EC2 Instances and then Hazelcast Kubernetes Discovery Strategy should take precedence over AWS Discovery Strategy.
+     */
+    enum DiscoveryStrategyLevel {
+        UNKNOWN(0), CLOUD_VM(10), PLATFORM(20), CUSTOM(50);
+
+        private int priority;
+
+        DiscoveryStrategyLevel(int priority) {
+            this.priority = priority;
+        }
+
+        public int getPriority() {
+            return priority;
+        }
+    }
 }

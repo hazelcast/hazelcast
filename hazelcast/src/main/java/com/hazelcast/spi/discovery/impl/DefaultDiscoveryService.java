@@ -30,7 +30,9 @@ import com.hazelcast.spi.discovery.integration.DiscoveryServiceSettings;
 import com.hazelcast.internal.util.ServiceLoader;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -131,15 +133,36 @@ public class DefaultDiscoveryService
         ClassLoader configClassLoader = settings.getConfigClassLoader();
 
         try {
-            Collection<DiscoveryStrategyConfig> discoveryStrategyConfigs = new ArrayList<DiscoveryStrategyConfig>(
-                    settings.getAllDiscoveryConfigs());
-
+            Collection<DiscoveryStrategyConfig> discoveryStrategyConfigs = new ArrayList<DiscoveryStrategyConfig>(settings
+                    .getAllDiscoveryConfigs());
             List<DiscoveryStrategyFactory> factories = collectFactories(discoveryStrategyConfigs, configClassLoader);
-
             List<DiscoveryStrategy> discoveryStrategies = new ArrayList<DiscoveryStrategy>();
-            for (DiscoveryStrategyConfig config : discoveryStrategyConfigs) {
-                DiscoveryStrategy discoveryStrategy = buildDiscoveryStrategy(config, factories);
-                discoveryStrategies.add(discoveryStrategy);
+
+            if (settings.isAutoDetectionEnabled()) {
+                logger.info("Discovery Strategy auto-detection enabled, looking for available discovery methods");
+                DiscoveryStrategyFactory foundFactory = null;
+                for (DiscoveryStrategyFactory factory : factories) {
+                    if (factory.isApplicableToCurrentEnvironment()) {
+                        logger.info(String.format("Discovery Factory '%s' is applicable to the current runtime environment", factory.getClass()));
+                        if (foundFactory == null || factory.discoveryStrategyLevel().getPriority() > foundFactory
+                                .discoveryStrategyLevel().getPriority()) {
+                            foundFactory = factory;
+
+                        }
+                    } else {
+                        logger.info(String.format("Discovery Factory '%s' is not applicable to the current runtime environment", factory.getClass()));
+                    }
+                }
+                if (foundFactory != null) {
+                    logger.info(String.format("Selected the following discovery strategy: %s", foundFactory.getClass()));
+                    discoveryStrategies
+                            .add(foundFactory.newDiscoveryStrategy(discoveryNode, logger, Collections.emptyMap()));
+                }
+            } else {
+                for (DiscoveryStrategyConfig config : discoveryStrategyConfigs) {
+                    DiscoveryStrategy discoveryStrategy = buildDiscoveryStrategy(config, factories);
+                    discoveryStrategies.add(discoveryStrategy);
+                }
             }
             return discoveryStrategies;
         } catch (Exception e) {

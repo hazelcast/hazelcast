@@ -35,7 +35,7 @@ hazelcast:
       - 0
     join:
       multicast:
-        enabled: true
+        enabled: false
         multicast-group: 224.2.2.3
         multicast-port: 54327
       tcp-ip:
@@ -70,6 +70,8 @@ hazelcast:
         enabled: false
         self-registration: true
         namespace: hazelcast
+      auto-detection:
+        enabled: true
     interfaces:
       enabled: false
       interfaces:

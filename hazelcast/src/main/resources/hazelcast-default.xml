@@ -43,7 +43,7 @@
             <ports>0</ports>
         </outbound-ports>
         <join>
-            <multicast enabled="true">
+            <multicast enabled="false">
                 <multicast-group>224.2.2.3</multicast-group>
                 <multicast-port>54327</multicast-port>
             </multicast>
@@ -82,6 +82,7 @@
             </eureka>
             <discovery-strategies>
             </discovery-strategies>
+            <auto-detection enabled="true"/>
         </join>
         <interfaces enabled="false">
             <interface>10.10.1.*</interface>

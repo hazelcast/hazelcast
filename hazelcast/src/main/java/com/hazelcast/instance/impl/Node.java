@@ -259,7 +259,8 @@ public class Node {
             DiscoveryConfig discoveryConfig = new DiscoveryConfigReadOnly(joinConfig.getDiscoveryConfig());
             List<DiscoveryStrategyConfig> aliasedDiscoveryConfigs =
                     AliasedDiscoveryConfigUtils.createDiscoveryStrategyConfigs(joinConfig);
-            discoveryService = createDiscoveryService(discoveryConfig, aliasedDiscoveryConfigs, localMember);
+            boolean isAutoDetectionEnabled = joinConfig.getAutoDetectionConfig().isEnabled();
+            discoveryService = createDiscoveryService(discoveryConfig, aliasedDiscoveryConfigs, isAutoDetectionEnabled, localMember);
             clusterService = new ClusterServiceImpl(this, localMember);
             partitionService = new InternalPartitionServiceImpl(this);
             textCommandService = nodeExtension.createTextCommandService();
@@ -306,7 +307,7 @@ public class Node {
     }
 
     public DiscoveryService createDiscoveryService(DiscoveryConfig discoveryConfig,
-                                                   List<DiscoveryStrategyConfig> aliasedDiscoveryConfigs, Member localMember) {
+                                                   List<DiscoveryStrategyConfig> aliasedDiscoveryConfigs, boolean isAutoDetectionEnabled, Member localMember) {
         DiscoveryServiceProvider factory = discoveryConfig.getDiscoveryServiceProvider();
         if (factory == null) {
             factory = new DefaultDiscoveryServiceProvider();
@@ -319,6 +320,7 @@ public class Node {
                 .setDiscoveryMode(DiscoveryMode.Member)
                 .setDiscoveryConfig(discoveryConfig)
                 .setAliasedDiscoveryConfigs(aliasedDiscoveryConfigs)
+                .setAutoDetectionEnabled(isAutoDetectionEnabled)
                 .setDiscoveryNode(
                         new SimpleDiscoveryNode(localMember.getAddress(), localMember.getAttributes()));
 
@@ -434,7 +436,7 @@ public class Node {
                     createThreadName(hazelcastInstance.getName(), "MulticastThread"));
             multicastServiceThread.start();
         }
-        if (properties.getBoolean(DISCOVERY_SPI_ENABLED) || isAnyAliasedConfigEnabled(join)) {
+        if (properties.getBoolean(DISCOVERY_SPI_ENABLED) || isAnyAliasedConfigEnabled(join) || isAutoDetectionEnabled(join)) {
             discoveryService.start();
 
             // Discover local metadata from environment and merge into member attributes
@@ -804,7 +806,7 @@ public class Node {
         JoinConfig join = getActiveMemberNetworkConfig(config).getJoin();
         join.verify();
 
-        if (properties.getBoolean(DISCOVERY_SPI_ENABLED) || isAnyAliasedConfigEnabled(join)) {
+        if (properties.getBoolean(DISCOVERY_SPI_ENABLED) || isAnyAliasedConfigEnabled(join) || isAutoDetectionEnabled(join)) {
             //TODO: Auto-Upgrade Multicast+AWS configuration!
             logger.info("Activating Discovery SPI Joiner");
             return new DiscoveryJoiner(this, discoveryService, usePublicAddress(join));
@@ -825,6 +827,10 @@ public class Node {
 
     private static boolean isAnyAliasedConfigEnabled(JoinConfig join) {
         return !AliasedDiscoveryConfigUtils.createDiscoveryStrategyConfigs(join).isEmpty();
+    }
+
+    private static boolean isAutoDetectionEnabled(JoinConfig join) {
+        return join.getAutoDetectionConfig().isEnabled();
     }
 
     private boolean usePublicAddress(JoinConfig join) {

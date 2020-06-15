@@ -1494,6 +1494,15 @@
             </xs:annotation>
         </xs:attribute>
     </xs:complexType>
+    <xs:complexType name="auto-detection">
+        <xs:attribute name="enabled" type="xs:boolean" use="optional" default="true">
+            <xs:annotation>
+                <xs:documentation>
+                    Specifies whether the auto-detection discovery is enabled or not. Values can be true or false.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
     <xs:complexType name="join">
         <xs:annotation>
             <xs:documentation>
@@ -1510,6 +1519,7 @@
             <xs:element name="azure" type="aliased-discovery-strategy" minOccurs="0"/>
             <xs:element name="kubernetes" type="aliased-discovery-strategy" minOccurs="0"/>
             <xs:element name="eureka" type="aliased-discovery-strategy" minOccurs="0"/>
+            <xs:element name="auto-detection" type="aliased-discovery-strategy" minOccurs="0"/>
             <xs:element name="discovery-strategies" type="discovery-strategies" minOccurs="0" maxOccurs="1"/>
         </xs:all>
     </xs:complexType>
