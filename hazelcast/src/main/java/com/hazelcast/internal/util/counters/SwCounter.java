@@ -89,7 +89,6 @@ public abstract class SwCounter implements Counter {
             OFFSET = MEM.objectFieldOffset(field);
         }
 
-        private long localValue;
         private volatile long value;
 
         UnsafeSwCounter(long initialValue) {
@@ -99,7 +98,7 @@ public abstract class SwCounter implements Counter {
         @Override
         @SuppressWarnings("checkstyle:innerassignment")
         public long inc() {
-            long newLocalValue = localValue += 1;
+            final long newLocalValue = value + 1;
             MEM.putOrderedLong(this, OFFSET, newLocalValue);
             return newLocalValue;
         }
@@ -107,7 +106,7 @@ public abstract class SwCounter implements Counter {
         @Override
         @SuppressWarnings("checkstyle:innerassignment")
         public long inc(long amount) {
-            long newLocalValue = localValue += amount;
+            final long newLocalValue = value + amount;
             MEM.putOrderedLong(this, OFFSET, newLocalValue);
             return newLocalValue;
         }
@@ -119,7 +118,6 @@ public abstract class SwCounter implements Counter {
 
         @Override
         public void set(long newValue) {
-            localValue = newValue;
             MEM.putOrderedLong(this, OFFSET, newValue);
         }
 
