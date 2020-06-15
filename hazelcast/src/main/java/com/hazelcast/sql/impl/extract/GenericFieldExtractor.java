@@ -62,6 +62,7 @@ public class GenericFieldExtractor extends AbstractGenericExtractor {
         }
     }
 
+    @SuppressWarnings("checkstyle:ReturnCount")
     private static Object extract(PortableReader reader, String path) throws IOException {
         if (!reader.hasField(path)) {
             return null;
