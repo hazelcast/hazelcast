@@ -1066,7 +1066,7 @@ public final class GroupProperty {
      * @see #WAN_CONSUMER_ACK_DELAY_BACKOFF_MULTIPLIER
      */
     public static final HazelcastProperty WAN_CONSUMER_INVOCATION_THRESHOLD
-            = new HazelcastProperty("hazelcast.wan.consumer.invocation.threshold", 1000000);
+            = new HazelcastProperty("hazelcast.wan.consumer.invocation.threshold", 50000);
 
     /**
      * Defines the initial backoff delay for the Enterprise WAN
