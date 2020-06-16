@@ -122,7 +122,6 @@ class ClusterDiscoveryServiceBuilder {
                 && networkConfig.getKubernetesConfig().isEnabled();
         boolean eurekaDiscoveryEnabled = networkConfig.getEurekaConfig() != null && networkConfig.getEurekaConfig().isEnabled();
         boolean discoverySpiEnabled = discoverySpiEnabled(networkConfig);
-        boolean autoDetectionEnabled = networkConfig.getAutoDetectionConfig() != null && networkConfig.getAutoDetectionConfig().isEnabled();
         String cloudDiscoveryToken = properties.getString(HAZELCAST_CLOUD_DISCOVERY_TOKEN);
         if (cloudDiscoveryToken != null && cloudConfig.isEnabled()) {
             throw new IllegalStateException("Ambiguous hazelcast.cloud configuration. "
@@ -131,7 +130,7 @@ class ClusterDiscoveryServiceBuilder {
         }
         boolean hazelcastCloudEnabled = cloudDiscoveryToken != null || cloudConfig.isEnabled();
         isDiscoveryConfigurationConsistent(addressListProvided, awsDiscoveryEnabled, gcpDiscoveryEnabled, azureDiscoveryEnabled,
-                kubernetesDiscoveryEnabled, eurekaDiscoveryEnabled, discoverySpiEnabled, autoDetectionEnabled, hazelcastCloudEnabled);
+                kubernetesDiscoveryEnabled, eurekaDiscoveryEnabled, discoverySpiEnabled, hazelcastCloudEnabled);
 
         if (discoveryService != null) {
             return new RemoteAddressProvider(() -> discoverAddresses(discoveryService), usePublicAddress(clientConfig));
@@ -176,8 +175,7 @@ class ClusterDiscoveryServiceBuilder {
     private void isDiscoveryConfigurationConsistent(boolean addressListProvided, boolean awsDiscoveryEnabled,
                                                     boolean gcpDiscoveryEnabled, boolean azureDiscoveryEnabled,
                                                     boolean kubernetesDiscoveryEnabled, boolean eurekaDiscoveryEnabled,
-                                                    boolean discoverySpiEnabled, boolean autoDetectionEnabled,
-                                                    boolean hazelcastCloudEnabled) {
+                                                    boolean discoverySpiEnabled, boolean hazelcastCloudEnabled) {
         int count = 0;
         if (addressListProvided) {
             count++;
@@ -200,9 +198,6 @@ class ClusterDiscoveryServiceBuilder {
         if (discoverySpiEnabled) {
             count++;
         }
-        if (autoDetectionEnabled) {
-            count++;
-        }
         if (hazelcastCloudEnabled) {
             count++;
         }
@@ -215,7 +210,6 @@ class ClusterDiscoveryServiceBuilder {
                     + ", kubernetes discovery: " + kubernetesDiscoveryEnabled
                     + ", eureka discovery: " + eurekaDiscoveryEnabled
                     + ", discovery spi enabled : " + discoverySpiEnabled
-                    + ", auto detection enabled : " + autoDetectionEnabled
                     + ", hazelcast.cloud enabled : " + hazelcastCloudEnabled);
         }
     }

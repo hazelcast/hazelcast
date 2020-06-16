@@ -806,21 +806,19 @@ public class Node {
         JoinConfig join = getActiveMemberNetworkConfig(config).getJoin();
         join.verify();
 
-        if (properties.getBoolean(DISCOVERY_SPI_ENABLED) || isAnyAliasedConfigEnabled(join) || isAutoDetectionEnabled(join)) {
+        if (join.getMulticastConfig().isEnabled() && multicastService != null) {
+            logger.info("Creating MulticastJoiner");
+            return new MulticastJoiner(this);
+        } else if (join.getTcpIpConfig().isEnabled()) {
+            logger.info("Creating TcpIpJoiner");
+            return new TcpIpJoiner(this);
+        } else if (join.getAwsConfig().isEnabled()) {
+            logger.info("Creating AWSJoiner");
+            return createAwsJoiner();
+        } else if (properties.getBoolean(DISCOVERY_SPI_ENABLED) || isAnyAliasedConfigEnabled(join) || isAutoDetectionEnabled(join)) {
             //TODO: Auto-Upgrade Multicast+AWS configuration!
             logger.info("Activating Discovery SPI Joiner");
             return new DiscoveryJoiner(this, discoveryService, usePublicAddress(join));
-        } else {
-            if (join.getMulticastConfig().isEnabled() && multicastService != null) {
-                logger.info("Creating MulticastJoiner");
-                return new MulticastJoiner(this);
-            } else if (join.getTcpIpConfig().isEnabled()) {
-                logger.info("Creating TcpIpJoiner");
-                return new TcpIpJoiner(this);
-            } else if (join.getAwsConfig().isEnabled()) {
-                logger.info("Creating AWSJoiner");
-                return createAwsJoiner();
-            }
         }
         return null;
     }

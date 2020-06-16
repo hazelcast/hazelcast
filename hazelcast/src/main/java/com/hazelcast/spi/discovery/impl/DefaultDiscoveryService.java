@@ -137,7 +137,12 @@ public class DefaultDiscoveryService
             List<DiscoveryStrategyFactory> factories = collectFactories(discoveryStrategyConfigs, configClassLoader);
             List<DiscoveryStrategy> discoveryStrategies = new ArrayList<DiscoveryStrategy>();
 
-            if (settings.isAutoDetectionEnabled()) {
+            for (DiscoveryStrategyConfig config : discoveryStrategyConfigs) {
+                DiscoveryStrategy discoveryStrategy = buildDiscoveryStrategy(config, factories);
+                discoveryStrategies.add(discoveryStrategy);
+            }
+
+            if (discoveryStrategies.isEmpty() && settings.isAutoDetectionEnabled()) {
                 logger.info("Discovery Strategy auto-detection enabled, looking for available discovery methods");
                 DiscoveryStrategyFactory bestFactory = null;
                 for (DiscoveryStrategyFactory factory : factories) {
@@ -158,11 +163,6 @@ public class DefaultDiscoveryService
                     logger.info(String.format("Selected the following discovery strategy: %s", bestFactory.getClass()));
                     discoveryStrategies
                             .add(bestFactory.newDiscoveryStrategy(discoveryNode, logger, Collections.emptyMap()));
-                }
-            } else {
-                for (DiscoveryStrategyConfig config : discoveryStrategyConfigs) {
-                    DiscoveryStrategy discoveryStrategy = buildDiscoveryStrategy(config, factories);
-                    discoveryStrategies.add(discoveryStrategy);
                 }
             }
             return discoveryStrategies;
