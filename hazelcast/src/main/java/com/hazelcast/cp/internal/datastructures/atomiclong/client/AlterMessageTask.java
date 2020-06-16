@@ -19,7 +19,6 @@ package com.hazelcast.cp.internal.datastructures.atomiclong.client;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.AtomicLongAlterCodec;
 import com.hazelcast.core.IFunction;
-import com.hazelcast.cp.internal.RaftService;
 import com.hazelcast.cp.internal.client.AbstractCPMessageTask;
 import com.hazelcast.cp.internal.datastructures.atomiclong.AtomicLongService;
 import com.hazelcast.cp.internal.datastructures.atomiclong.operation.AlterOp;
@@ -44,10 +43,7 @@ public class AlterMessageTask extends AbstractCPMessageTask<AtomicLongAlterCodec
     protected void processMessage() {
         IFunction<Long, Long> function = serializationService.toObject(parameters.function);
         AlterResultType resultType = AlterResultType.fromValue(parameters.returnValueType);
-        RaftService service = nodeEngine.getService(RaftService.SERVICE_NAME);
-        service.getInvocationManager()
-               .<Long>invoke(parameters.groupId, new AlterOp(parameters.name, function, resultType))
-               .whenCompleteAsync(this);
+        invoke(parameters.groupId, new AlterOp(parameters.name, function, resultType));
     }
 
     @Override
@@ -88,6 +84,6 @@ public class AlterMessageTask extends AbstractCPMessageTask<AtomicLongAlterCodec
 
     @Override
     public Object[] getParameters() {
-        return new Object[]{parameters.function};
+        return new Object[] {parameters.function};
     }
 }

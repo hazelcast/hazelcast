@@ -18,7 +18,6 @@ package com.hazelcast.cp.internal.datastructures.semaphore.client;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.SemaphoreAvailablePermitsCodec;
-import com.hazelcast.cp.internal.RaftService;
 import com.hazelcast.cp.internal.client.AbstractCPMessageTask;
 import com.hazelcast.cp.internal.datastructures.semaphore.SemaphoreService;
 import com.hazelcast.cp.internal.datastructures.semaphore.operation.AvailablePermitsOp;
@@ -42,10 +41,7 @@ public class AvailablePermitsMessageTask extends AbstractCPMessageTask<Semaphore
 
     @Override
     protected void processMessage() {
-        RaftService service = nodeEngine.getService(RaftService.SERVICE_NAME);
-        service.getInvocationManager()
-               .<Integer>query(parameters.groupId, new AvailablePermitsOp(parameters.name), LINEARIZABLE)
-               .whenCompleteAsync(this);
+        query(parameters.groupId, new AvailablePermitsOp(parameters.name), LINEARIZABLE);
     }
 
     @Override

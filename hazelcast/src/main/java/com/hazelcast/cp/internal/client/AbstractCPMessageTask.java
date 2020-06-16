@@ -18,8 +18,14 @@ package com.hazelcast.cp.internal.client;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.task.AbstractMessageTask;
+import com.hazelcast.cp.CPGroupId;
+import com.hazelcast.cp.internal.RaftInvocationManager;
+import com.hazelcast.cp.internal.RaftOp;
+import com.hazelcast.cp.internal.RaftService;
+import com.hazelcast.cp.internal.raft.QueryPolicy;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.spi.impl.InternalCompletableFuture;
 
 import java.util.function.BiConsumer;
 
@@ -27,6 +33,23 @@ public abstract class AbstractCPMessageTask<P> extends AbstractMessageTask<P> im
 
     protected AbstractCPMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
+    }
+
+    protected void query(CPGroupId groupId, RaftOp op, QueryPolicy policy) {
+        RaftInvocationManager invocationManager = getInvocationManager();
+        InternalCompletableFuture<Object> future = invocationManager.query(groupId, op, policy, false);
+        future.whenCompleteAsync(this);
+    }
+
+    protected void invoke(CPGroupId groupId, RaftOp op) {
+        RaftInvocationManager invocationManager = getInvocationManager();
+        InternalCompletableFuture<Object> future = invocationManager.invoke(groupId, op, false);
+        future.whenCompleteAsync(this);
+    }
+
+    private RaftInvocationManager getInvocationManager() {
+        RaftService service = nodeEngine.getService(RaftService.SERVICE_NAME);
+        return service.getInvocationManager();
     }
 
     @Override
