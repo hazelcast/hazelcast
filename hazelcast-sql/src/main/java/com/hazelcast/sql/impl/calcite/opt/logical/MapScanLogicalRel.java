@@ -21,7 +21,6 @@ import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelOptTable;
 import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.rel.RelNode;
-import org.apache.calcite.rex.RexNode;
 
 import java.util.List;
 
@@ -32,15 +31,13 @@ public class MapScanLogicalRel extends AbstractMapScanRel implements LogicalRel 
     public MapScanLogicalRel(
         RelOptCluster cluster,
         RelTraitSet traitSet,
-        RelOptTable table,
-        List<Integer> projects,
-        RexNode filter
+        RelOptTable table
     ) {
-        super(cluster, traitSet, table, projects, filter);
+        super(cluster, traitSet, table);
     }
 
     @Override
     public final RelNode copy(RelTraitSet traitSet, List<RelNode> inputs) {
-        return new MapScanLogicalRel(getCluster(), traitSet, table, projects, filter);
+        return new MapScanLogicalRel(getCluster(), traitSet, table);
     }
 }

@@ -37,6 +37,7 @@ import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.calcite.plan.RelOptCost;
 import org.apache.calcite.plan.RelOptUtil;
 import org.apache.calcite.plan.RelTraitSet;
+import org.apache.calcite.plan.volcano.VolcanoPlanner;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.schema.Table;
 import org.apache.calcite.sql.SqlExplainLevel;
@@ -44,7 +45,9 @@ import org.apache.calcite.sql.SqlNode;
 
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.io.StringReader;
+import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -144,7 +147,7 @@ public abstract class OptimizerTestSupport extends SqlTestSupport {
     }
 
     /**
-     * Creates the default test schema. Override that method if you would like to have anoher schema.
+     * Creates the default test schema. Override this method if you would like to have another schema.
      *
      * @return Default schema.
      */
@@ -153,7 +156,7 @@ public abstract class OptimizerTestSupport extends SqlTestSupport {
 
         tableMap.put("p", partitionedTable(
             "p",
-            fields("f1", INT, "f2", INT, "f3", INT, "f4", INT, "f5", INT),
+            fields("f0", INT, "f1", INT, "f2", INT, "f3", INT, "f4", INT),
             100
         ));
 
@@ -213,7 +216,7 @@ public abstract class OptimizerTestSupport extends SqlTestSupport {
         int expectedRowCount = expected.getRowCount();
         int actualRowCount = actual.getRowCount();
 
-        assertEquals(planErrorMessage("Plan are different", expected, actual), expectedRowCount, actualRowCount);
+        assertEquals(planErrorMessage("Plans are different", expected, actual), expectedRowCount, actualRowCount);
 
         for (int i = 0; i < expectedRowCount; i++) {
             PlanRow expectedRow = expected.getRow(i);
@@ -245,11 +248,21 @@ public abstract class OptimizerTestSupport extends SqlTestSupport {
     }
 
     public static Cost cost(double rows, double cpu, double network) {
-        return (Cost) CostFactory.INSTANCE.makeCost(rows, cpu, network);
+        return CostFactory.INSTANCE.makeCost(rows, cpu, network);
     }
 
     private static String planErrorMessage(String message, PlanRows expected, PlanRows actual) {
         return message + "\n\n>>> EXPECTED PLAN:\n" + expected + "\n>>> ACTUAL PLAN:\n" + actual;
+    }
+
+    public static void dump(RelNode node) {
+        VolcanoPlanner planner = (VolcanoPlanner) node.getCluster().getPlanner();
+
+        StringWriter sw = new StringWriter();
+
+        planner.dump(new PrintWriter(sw));
+
+        System.out.println(sw);
     }
 
     /**

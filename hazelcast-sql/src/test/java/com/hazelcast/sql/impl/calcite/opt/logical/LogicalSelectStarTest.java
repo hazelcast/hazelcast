@@ -44,17 +44,8 @@ public class LogicalSelectStarTest extends OptimizerTestSupport {
         tableMap.put("r", OptimizerTestSupport.partitionedTable(
             "r",
             Arrays.asList(
-                TestMapTable.field("r_f1", false),
-                TestMapTable.field("r_f2", true)
-            ),
-            100
-        ));
-
-        tableMap.put("s", OptimizerTestSupport.partitionedTable(
-            "s",
-            Arrays.asList(
-                TestMapTable.field("s_f1", false),
-                TestMapTable.field("s_f2", true)
+                TestMapTable.field("r_f0", false),
+                TestMapTable.field("r_f1", true)
             ),
             100
         ));
@@ -68,8 +59,7 @@ public class LogicalSelectStarTest extends OptimizerTestSupport {
             optimizeLogical("SELECT * FROM r"),
             plan(
                 planRow(0, RootLogicalRel.class, ""),
-                planRow(1, ProjectLogicalRel.class, "r_f1=[$0]"),
-                planRow(2, MapScanLogicalRel.class, "table=[[hazelcast, r]], projects=[[0, 1]]")
+                planRow(1, MapScanLogicalRel.class, "table=[[hazelcast, r[projects=[0]]]]")
             )
         );
 
@@ -77,35 +67,31 @@ public class LogicalSelectStarTest extends OptimizerTestSupport {
             optimizeLogical("SELECT r.* FROM r"),
             plan(
                 planRow(0, RootLogicalRel.class, ""),
-                planRow(1, ProjectLogicalRel.class, "r_f1=[$0]"),
-                planRow(2, MapScanLogicalRel.class, "table=[[hazelcast, r]], projects=[[0, 1]]")
+                planRow(1, MapScanLogicalRel.class, "table=[[hazelcast, r[projects=[0]]]]")
             )
         );
 
         assertPlan(
-            optimizeLogical("SELECT *, r.r_f2 FROM r"),
+            optimizeLogical("SELECT *, r.r_f1 FROM r"),
             plan(
                 planRow(0, RootLogicalRel.class, ""),
-                planRow(1, ProjectLogicalRel.class, "r_f1=[$0], r_f2=[$1]"),
-                planRow(2, MapScanLogicalRel.class, "table=[[hazelcast, r]], projects=[[0, 1]]")
+                planRow(1, MapScanLogicalRel.class, "table=[[hazelcast, r[projects=[0, 1]]]]")
             )
         );
 
         assertPlan(
-            optimizeLogical("SELECT r.*, r.r_f2 FROM r"),
+            optimizeLogical("SELECT r.*, r.r_f1 FROM r"),
             plan(
                 planRow(0, RootLogicalRel.class, ""),
-                planRow(1, ProjectLogicalRel.class, "r_f1=[$0], r_f2=[$1]"),
-                planRow(2, MapScanLogicalRel.class, "table=[[hazelcast, r]], projects=[[0, 1]]")
+                planRow(1, MapScanLogicalRel.class, "table=[[hazelcast, r[projects=[0, 1]]]]")
             )
         );
 
         assertPlan(
-            optimizeLogical("SELECT r.r_f2, r.* FROM r"),
+            optimizeLogical("SELECT r.r_f1, r.* FROM r"),
             plan(
                 planRow(0, RootLogicalRel.class, ""),
-                planRow(1, ProjectLogicalRel.class, "r_f2=[$1], r_f1=[$0]"),
-                planRow(2, MapScanLogicalRel.class, "table=[[hazelcast, r]], projects=[[0, 1]]")
+                planRow(1, MapScanLogicalRel.class, "table=[[hazelcast, r[projects=[1, 0]]]]")
             )
         );
     }

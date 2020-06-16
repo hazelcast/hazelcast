@@ -16,6 +16,7 @@
 
 package com.hazelcast.sql.impl.calcite.opt;
 
+import com.google.common.collect.ImmutableList;
 import com.hazelcast.sql.impl.calcite.opt.cost.CostUtils;
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelOptCost;
@@ -41,7 +42,7 @@ public abstract class AbstractProjectRel extends Project implements HazelcastRel
         List<? extends RexNode> projects,
         RelDataType rowType
     ) {
-        super(cluster, traits, input, projects, rowType);
+        super(cluster, traits, ImmutableList.of(), input, projects, rowType);
     }
 
     @Override
