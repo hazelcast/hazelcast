@@ -7,13 +7,13 @@ Based on an [extensive test](/blog/2020/06/09/jdk-gc-benchmarks-part1)
 we performed in June 2020 regarding the choice of JDK and GC, here are
 some tips to get the most out of Hazelcast Jet.
 
-### Upgrade Your JDK
+## Upgrade Your JDK
 
 If you are still on JDK 8, seriously consider upgrading. We found that
 none of its garbage collectors are a match for the offerings of JDK 11,
 which is the current version with Oracle's Long-Term Support (LTS).
 
-### The G1 Collector is Great for Most Worlkoads
+## The G1 Collector is Great for Most Worlkoads
 
 For batch workloads, as well as streaming workloads that can tolerate
 occasional latency spikes of 2-3 seconds, the G1 collector is the best
@@ -27,12 +27,12 @@ occurs only in exceptional conditions with very high GC pressure. The
 advantage of G1 over many other collectors is a graceful increase in
 GC pause length under such conditions.
 
-### For Latency Goals Below 20 ms, Use the Low-Latency GCs
+## For Latency Goals Below 20 ms, Use the Low-Latency GCs
 
 If you aim for very low latencies (anything below 20 ms), your best bet
 are the Shenandoah and ZGC collectors. They are still in their
 experimental phases and under active development, so using the latest
-JDK is highly recommonded. Their maximum throughput is lower than G1,
+JDK is highly recommended. Their maximum throughput is lower than G1,
 which means you must provision more hardware for them.
 
 The version of ZGC in JDK 14.0.1 (that we tested) has crude ergonomics
@@ -45,7 +45,7 @@ not overshoot, the application's needs. JDK versions released on July
 14, 2020 or later introduce a fix for that, with which Shenandoah is on
 par with ZGC.
 
-### For Batch Processing, Garbage-Free Aggregation is a Big Deal
+## For Batch Processing, Garbage-Free Aggregation is a Big Deal
 
 In batch aggregation, once a given grouping key is observed, the state
 associated with it is retained until the end of the computation. If
@@ -57,7 +57,7 @@ the throughput of the batch pipeline by 30-35%.
 
 For this reason we always strive to make the aggregate operations we
 provide with Jet garbage-free. Examples are summing, averaging and
-finding extremes. Our current implementation of linear tred, however,
+finding extremes. Our current implementation of linear trend, however,
 does generate garbage because it uses immutable `BigDecimal`s in the
 state.
 
