@@ -13,7 +13,7 @@ If you are still on JDK 8, seriously consider upgrading. We found that
 none of its garbage collectors are a match for the offerings of JDK 11,
 which is the current version with Oracle's Long-Term Support (LTS).
 
-## The G1 Collector is Great for Most Worlkoads
+## The G1 Collector is Great for Most Workloads
 
 For batch workloads, as well as streaming workloads that can tolerate
 occasional latency spikes of 2-3 seconds, the G1 collector is the best
