@@ -27,4 +27,14 @@ if [ "$JAVA_VERSION" -ge "9" ]; then
     "
 fi
 
-CLASSPATH="$JET_HOME/lib/*:$CLASSPATH"
+IFS=',' read -ra MODULES <<< "$JET_MODULES"
+for module in "${MODULES[@]}"; do
+    # ${project.version} interpolated during build by maven assembly plugin
+    if [ -z "$CLASSPATH" ]; then
+        CLASSPATH="$JET_HOME/opt/hazelcast-jet-${module}-${project.version}.jar"
+    else
+        CLASSPATH="$JET_HOME/opt/hazelcast-jet-${module}-${project.version}.jar:$CLASSPATH"
+    fi
+done
+
+CLASSPATH="$JET_HOME/lib:$JET_HOME/lib/*:$CLASSPATH"
