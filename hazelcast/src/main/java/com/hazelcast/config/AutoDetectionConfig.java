@@ -23,7 +23,7 @@ package com.hazelcast.config;
  * environment. For example, it will automatically use the {@code hazelcast-aws} plugin if run on an AWS instance.
  */
 public class AutoDetectionConfig {
-    private boolean enabled;
+    private boolean enabled = true;
 
     /**
      * Checks whether the auto detection mechanism is enabled.
