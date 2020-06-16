@@ -29,7 +29,6 @@ import com.hazelcast.core.MemberAttributeEvent;
 import com.hazelcast.core.MembershipEvent;
 import com.hazelcast.instance.AbstractMember;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.spi.exception.TargetDisconnectedException;
 
@@ -184,13 +183,6 @@ class ClientMembershipListener extends ClientAddMembershipListenerCodec.Abstract
         // removal events should be added before added events
         for (Member member : prevMembers) {
             events.add(new MembershipEvent(client.getCluster(), member, MembershipEvent.MEMBER_REMOVED, eventMembers));
-            Address address = member.getAddress();
-            if (clusterService.getMember(address) == null) {
-                Connection connection = connectionManager.getActiveConnection(address);
-                if (connection != null) {
-                    connection.close(null, newTargetDisconnectedExceptionCausedByMemberLeftEvent(connection));
-                }
-            }
         }
         for (Member member : newMembers) {
             events.add(new MembershipEvent(client.getCluster(), member, MembershipEvent.MEMBER_ADDED, eventMembers));
