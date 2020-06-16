@@ -57,6 +57,7 @@ import java.util.stream.Collectors;
 
 import static com.hazelcast.cp.internal.RaftService.CP_SUBSYSTEM_EXECUTOR;
 import static com.hazelcast.cp.internal.raft.QueryPolicy.LINEARIZABLE;
+import static com.hazelcast.spi.impl.operationservice.InvocationBuilder.DEFAULT_DESERIALIZE_RESULT;
 import static java.util.Collections.shuffle;
 
 /**
@@ -210,29 +211,47 @@ public class RaftInvocationManager {
     }
 
     public <T> InternalCompletableFuture<T> invoke(CPGroupId groupId, RaftOp raftOp) {
+        return invoke(groupId, raftOp, DEFAULT_DESERIALIZE_RESULT);
+    }
+
+    public <T> InternalCompletableFuture<T> invoke(CPGroupId groupId, RaftOp raftOp, boolean deserializeResponse) {
         if (cpSubsystemEnabled) {
             Operation operation = new DefaultRaftReplicateOp(groupId, raftOp);
             Invocation invocation =
                     new RaftInvocation(operationService.getInvocationContext(), raftInvocationContext, groupId, operation,
-                            invocationMaxRetryCount, invocationRetryPauseMillis, operationCallTimeout);
+                            invocationMaxRetryCount, invocationRetryPauseMillis, operationCallTimeout, deserializeResponse);
             return invocation.invoke();
         }
-        return invokeOnPartition(new UnsafeRaftReplicateOp(groupId, raftOp));
+        return invokeOnPartition(new UnsafeRaftReplicateOp(groupId, raftOp), deserializeResponse);
     }
 
     public <T> InternalCompletableFuture<T> invokeOnPartition(AbstractUnsafeRaftOp operation) {
-        operation.setPartitionId(raftService.getCPGroupPartitionId(operation.getGroupId()));
-        return nodeEngine.getOperationService().invokeOnPartition(operation);
+        return invokeOnPartition(operation, DEFAULT_DESERIALIZE_RESULT);
+    }
+
+    public <T> InternalCompletableFuture<T> invokeOnPartition(AbstractUnsafeRaftOp operation, boolean deserializeResponse) {
+        int partitionId = raftService.getCPGroupPartitionId(operation.getGroupId());
+        return nodeEngine.getOperationService().createInvocationBuilder(operation.getServiceName(), operation, partitionId)
+                .setCallTimeout(operationCallTimeout)
+                .setTryCount(invocationMaxRetryCount)
+                .setTryPauseMillis(invocationRetryPauseMillis)
+                .setResultDeserialized(deserializeResponse).invoke();
     }
 
     public <T> InternalCompletableFuture<T> query(CPGroupId groupId, RaftOp raftOp, QueryPolicy queryPolicy) {
+        return query(groupId, raftOp, queryPolicy, DEFAULT_DESERIALIZE_RESULT);
+    }
+
+    public <T> InternalCompletableFuture<T> query(CPGroupId groupId, RaftOp raftOp, QueryPolicy queryPolicy,
+            boolean deserializeResponse) {
         if (cpSubsystemEnabled) {
             RaftQueryOp operation = new RaftQueryOp(groupId, raftOp, queryPolicy);
             Invocation invocation = new RaftInvocation(operationService.getInvocationContext(), raftInvocationContext,
-                    groupId, operation, invocationMaxRetryCount, invocationRetryPauseMillis, operationCallTimeout);
+                    groupId, operation, invocationMaxRetryCount, invocationRetryPauseMillis,
+                    operationCallTimeout, deserializeResponse);
             return invocation.invoke();
         }
-        return invokeOnPartition(new UnsafeRaftQueryOp(groupId, raftOp));
+        return invokeOnPartition(new UnsafeRaftQueryOp(groupId, raftOp), deserializeResponse);
     }
 
     public <T> InternalCompletableFuture<T> queryLocally(CPGroupId groupId, RaftOp raftOp, QueryPolicy queryPolicy) {

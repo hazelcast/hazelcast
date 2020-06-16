@@ -18,7 +18,6 @@ package com.hazelcast.cp.internal.datastructures.semaphore.client;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.SemaphoreInitCodec;
-import com.hazelcast.cp.internal.RaftService;
 import com.hazelcast.cp.internal.client.AbstractCPMessageTask;
 import com.hazelcast.cp.internal.datastructures.semaphore.SemaphoreService;
 import com.hazelcast.cp.internal.datastructures.semaphore.operation.InitSemaphoreOp;
@@ -40,10 +39,7 @@ public class InitSemaphoreMessageTask extends AbstractCPMessageTask<SemaphoreIni
 
     @Override
     protected void processMessage() {
-        RaftService service = nodeEngine.getService(RaftService.SERVICE_NAME);
-        service.getInvocationManager()
-               .<Boolean>invoke(parameters.groupId, new InitSemaphoreOp(parameters.name, parameters.permits))
-               .whenCompleteAsync(this);
+        invoke(parameters.groupId, new InitSemaphoreOp(parameters.name, parameters.permits));
     }
 
     @Override

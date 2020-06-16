@@ -18,7 +18,6 @@ package com.hazelcast.cp.internal.datastructures.lock.client;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.FencedLockLockCodec;
-import com.hazelcast.cp.internal.RaftService;
 import com.hazelcast.cp.internal.client.AbstractCPMessageTask;
 import com.hazelcast.cp.internal.datastructures.lock.LockService;
 import com.hazelcast.cp.internal.datastructures.lock.operation.LockOp;
@@ -40,11 +39,8 @@ public class LockMessageTask extends AbstractCPMessageTask<FencedLockLockCodec.R
 
     @Override
     protected void processMessage() {
-        RaftService service = nodeEngine.getService(RaftService.SERVICE_NAME);
-        service.getInvocationManager()
-               .<Long>invoke(parameters.groupId, new LockOp(parameters.name, parameters.sessionId, parameters.threadId,
-                       parameters.invocationUid))
-               .whenCompleteAsync(this);
+        invoke(parameters.groupId,
+                new LockOp(parameters.name, parameters.sessionId, parameters.threadId, parameters.invocationUid));
     }
 
     @Override
