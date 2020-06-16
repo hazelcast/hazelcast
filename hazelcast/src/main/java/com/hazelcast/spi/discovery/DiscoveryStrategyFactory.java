@@ -77,11 +77,11 @@ public interface DiscoveryStrategyFactory {
     Collection<PropertyDefinition> getConfigurationProperties();
 
     /**
-     * Checks whether the given discovery strategy may be applied to the environment in which Hazelcast is currently running.
+     * Checks whether the given discovery strategy may be applied with no additional config to the environment in which Hazelcast is currently running.
      * <p>
      * User by the auto detection mechanism to decide if which strategy could be used.
      */
-    default boolean isApplicableToCurrentEnvironment() {
+    default boolean isAutoConfigApplicable() {
         return false;
     }
 
@@ -95,8 +95,8 @@ public interface DiscoveryStrategyFactory {
     /**
      * Level of the discovery strategy.
      * <p>
-     * In general the discovery strategies can be at the level of Cloud Virtual Machines, for example, AWS EC2 Instance or GCP
-     * Virtual Machine. They can also be at the level of some specific platform or framework, like Kubernetes.
+     * Discovery strategies can have different levels. They can be at the level of Cloud Virtual Machines, for example, AWS EC2
+     * Instance or GCP Virtual Machine. They can also be at the level of some specific platform or framework, like Kubernetes.
      * <p>
      * It decides on the priority in the auto detection mechanism, because you can have a Kubernetes environment installed on
      * AWS EC2 Instances and then Hazelcast Kubernetes Discovery Strategy should take precedence over AWS Discovery Strategy.

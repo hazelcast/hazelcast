@@ -30,7 +30,6 @@ import com.hazelcast.spi.discovery.integration.DiscoveryServiceSettings;
 import com.hazelcast.internal.util.ServiceLoader;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -140,23 +139,25 @@ public class DefaultDiscoveryService
 
             if (settings.isAutoDetectionEnabled()) {
                 logger.info("Discovery Strategy auto-detection enabled, looking for available discovery methods");
-                DiscoveryStrategyFactory foundFactory = null;
+                DiscoveryStrategyFactory bestFactory = null;
                 for (DiscoveryStrategyFactory factory : factories) {
-                    if (factory.isApplicableToCurrentEnvironment()) {
-                        logger.info(String.format("Discovery Factory '%s' is applicable to the current runtime environment", factory.getClass()));
-                        if (foundFactory == null || factory.discoveryStrategyLevel().getPriority() > foundFactory
-                                .discoveryStrategyLevel().getPriority()) {
-                            foundFactory = factory;
+                    if (factory.isAutoConfigApplicable()) {
+                        logger.fine(String.format("Discovery Factory '%s' is auto-applicable to the current runtime environment",
+                                factory.getClass()));
+                        if (bestFactory == null || factory.discoveryStrategyLevel().getPriority() >
+                                bestFactory.discoveryStrategyLevel().getPriority()) {
+                            bestFactory = factory;
 
                         }
                     } else {
-                        logger.info(String.format("Discovery Factory '%s' is not applicable to the current runtime environment", factory.getClass()));
+                        logger.fine(String.format("Discovery Factory '%s' is not applicable to the current runtime environment",
+                                factory.getClass()));
                     }
                 }
-                if (foundFactory != null) {
-                    logger.info(String.format("Selected the following discovery strategy: %s", foundFactory.getClass()));
+                if (bestFactory != null) {
+                    logger.info(String.format("Selected the following discovery strategy: %s", bestFactory.getClass()));
                     discoveryStrategies
-                            .add(foundFactory.newDiscoveryStrategy(discoveryNode, logger, Collections.emptyMap()));
+                            .add(bestFactory.newDiscoveryStrategy(discoveryNode, logger, Collections.emptyMap()));
                 }
             } else {
                 for (DiscoveryStrategyConfig config : discoveryStrategyConfigs) {

@@ -34,6 +34,8 @@ hazelcast:
       # 0 or * means use system provided port.
       - 0
     join:
+      auto-detection:
+        enabled: true
       multicast:
         enabled: false
         multicast-group: 224.2.2.3
@@ -70,8 +72,6 @@ hazelcast:
         enabled: false
         self-registration: true
         namespace: hazelcast
-      auto-detection:
-        enabled: true
     interfaces:
       enabled: false
       interfaces:

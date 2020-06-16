@@ -613,6 +613,8 @@ hazelcast:
       - 34500
     reuse-address: false
     join:
+      auto-detection:
+        enabled: false
       multicast:
         enabled: false
         multicast-group: 224.2.2.3
