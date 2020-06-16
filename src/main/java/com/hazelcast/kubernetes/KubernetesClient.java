@@ -504,8 +504,11 @@ class KubernetesClient {
             LOGGER.severe("Kubernetes API authorization failure, please check your 'api-token' property");
         } else if (e.getHttpErrorCode() == 403) {
             LOGGER.severe(
-                    "Kubernetes API forbidden access, please check that your Service Account have the correct (Cluster) Role "
-                            + "rules");
+                    "Kubernetes API forbidden access, please check that your Service Account have the correct "
+                            + "(Cluster) Role rules. To assign them to `default` Service Account in `default` namespace, "
+                            + "execute the following command: `kubectl apply -f "
+                            + "https://raw.githubusercontent.com/hazelcast/hazelcast-kubernetes/master/rbac.yaml`"
+            );
         } else {
             throw e;
         }
