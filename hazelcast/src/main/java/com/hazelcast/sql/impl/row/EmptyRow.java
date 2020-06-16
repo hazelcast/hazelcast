@@ -42,7 +42,7 @@ public class EmptyRow implements Row, IdentifiedDataSerializable {
 
     @Override
     public <T> T get(int index) {
-        throw new UnsupportedOperationException("Should not be called.");
+        throw new IndexOutOfBoundsException(getClass().getName() + " has no columns");
     }
 
     @Override

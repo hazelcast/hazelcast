@@ -40,6 +40,7 @@ import org.apache.calcite.schema.impl.AbstractTable;
 import org.apache.calcite.sql.type.SqlTypeName;
 import org.apache.calcite.util.ImmutableBitSet;
 
+import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -111,6 +112,7 @@ public class HazelcastTable extends AbstractTable {
         return new HazelcastTable(target, statistic, projects, filter);
     }
 
+    @Nonnull
     public List<Integer> getProjects() {
         if (projects == null) {
             int fieldCount = target.getFieldCount();
@@ -213,6 +215,7 @@ public class HazelcastTable extends AbstractTable {
      */
     public String getSignature() {
         StringJoiner res = new StringJoiner(", ", "[", "]");
+
         res.setEmptyValue("");
 
         res.add("projects=" + getProjects().stream().map(Objects::toString).collect(joining(", ", "[", "]")));

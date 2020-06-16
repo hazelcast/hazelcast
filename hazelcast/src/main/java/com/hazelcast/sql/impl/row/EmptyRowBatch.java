@@ -34,7 +34,7 @@ public final class EmptyRowBatch implements RowBatch, IdentifiedDataSerializable
 
     @Override
     public Row getRow(int idx) {
-        throw new UnsupportedOperationException("Should not be called.");
+        throw new IndexOutOfBoundsException(getClass().getName() + " has no rows");
     }
 
     @Override
