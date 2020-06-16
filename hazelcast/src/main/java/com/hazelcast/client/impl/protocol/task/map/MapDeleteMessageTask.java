@@ -20,6 +20,7 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MapDeleteCodec;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.internal.util.Timer;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.operation.MapOperation;
@@ -49,7 +50,7 @@ public class MapDeleteMessageTask
 
     @Override
     protected void beforeProcess() {
-        startTimeNanos = System.nanoTime();
+        startTimeNanos = Timer.nanos();
     }
 
     @Override
@@ -58,7 +59,7 @@ public class MapDeleteMessageTask
         MapContainer mapContainer = mapService.getMapServiceContext().getMapContainer(parameters.name);
         if (mapContainer.getMapConfig().isStatisticsEnabled()) {
             mapService.getMapServiceContext().getLocalMapStatsProvider().getLocalMapStatsImpl(parameters.name)
-                    .incrementRemoveLatencyNanos(System.nanoTime() - startTimeNanos);
+                    .incrementRemoveLatencyNanos(Timer.nanosElapsed(startTimeNanos));
         }
         return response;
     }

@@ -21,6 +21,7 @@ import com.hazelcast.cluster.Member;
 import com.hazelcast.cluster.memberselector.MemberSelectors;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.util.Clock;
+import com.hazelcast.internal.util.Timer;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapEventPublishingService;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.replicatedmap.impl.operation.ReplicateUpdateOperation;
@@ -75,18 +76,18 @@ public abstract class AbstractReplicatedRecordStore<K, V> extends AbstractBaseRe
     @SuppressWarnings("unchecked")
     private Object remove(InternalReplicatedMapStorage<K, V> storage, Object key) {
         isNotNull(key, "key");
-        long time = System.nanoTime();
+        long startNanos = Timer.nanos();
         V oldValue;
         K marshalledKey = (K) marshall(key);
-        ReplicatedRecord current = storage.get(marshalledKey);
+        ReplicatedRecord<K, V> current = storage.get(marshalledKey);
         if (current == null) {
             oldValue = null;
         } else {
-            oldValue = (V) current.getValueInternal();
+            oldValue = current.getValueInternal();
             storage.remove(marshalledKey, current);
         }
         if (replicatedMapConfig.isStatisticsEnabled()) {
-            getStats().incrementRemovesNanos(System.nanoTime() - time);
+            getStats().incrementRemovesNanos(Timer.nanosElapsed(startNanos));
         }
         cancelTtlEntry(marshalledKey);
         return oldValue;
@@ -96,15 +97,15 @@ public abstract class AbstractReplicatedRecordStore<K, V> extends AbstractBaseRe
     @SuppressWarnings("unchecked")
     public void evict(Object key) {
         isNotNull(key, "key");
-        long time = System.nanoTime();
+        long startNanos = Timer.nanos();
         V oldValue;
         K marshalledKey = (K) marshall(key);
         InternalReplicatedMapStorage<K, V> storage = getStorage();
-        ReplicatedRecord current = storage.get(marshalledKey);
+        ReplicatedRecord<K, V> current = storage.get(marshalledKey);
         if (current == null) {
             oldValue = null;
         } else {
-            oldValue = (V) current.getValueInternal();
+            oldValue = current.getValueInternal();
             storage.remove(marshalledKey, current);
         }
         Data dataKey = nodeEngine.toData(key);
@@ -112,15 +113,15 @@ public abstract class AbstractReplicatedRecordStore<K, V> extends AbstractBaseRe
         ReplicatedMapEventPublishingService eventPublishingService = replicatedMapService.getEventPublishingService();
         eventPublishingService.fireEntryListenerEvent(dataKey, dataOldValue, null, EVICTED, name, nodeEngine.getThisAddress());
         if (replicatedMapConfig.isStatisticsEnabled()) {
-            getStats().incrementRemovesNanos(System.nanoTime() - time);
+            getStats().incrementRemovesNanos(Timer.nanosElapsed(startNanos));
         }
     }
 
     @Override
     public Object get(Object key) {
         isNotNull(key, "key");
-        long time = System.nanoTime();
-        ReplicatedRecord replicatedRecord = getStorage().get(marshall(key));
+        long startNanos = Timer.nanos();
+        ReplicatedRecord<K, V> replicatedRecord = getStorage().get(marshall(key));
 
         // Force return null on ttl expiration (but before cleanup thread run)
         long ttlMillis = replicatedRecord == null ? 0 : replicatedRecord.getTtlMillis();
@@ -130,7 +131,7 @@ public abstract class AbstractReplicatedRecordStore<K, V> extends AbstractBaseRe
 
         Object value = replicatedRecord == null ? null : unmarshall(replicatedRecord.getValue());
         if (replicatedMapConfig.isStatisticsEnabled()) {
-            getStats().incrementGetsNanos(System.nanoTime() - time);
+            getStats().incrementGetsNanos(Timer.nanosElapsed(startNanos));
         }
         return value;
     }
@@ -167,7 +168,7 @@ public abstract class AbstractReplicatedRecordStore<K, V> extends AbstractBaseRe
         if (ttl < 0) {
             throw new IllegalArgumentException("ttl must be a positive integer");
         }
-        long time = System.nanoTime();
+        long startNanos = Timer.nanos();
         V oldValue = null;
         K marshalledKey = (K) marshall(key);
         V marshalledValue = (V) marshall(value);
@@ -192,7 +193,7 @@ public abstract class AbstractReplicatedRecordStore<K, V> extends AbstractBaseRe
             cancelTtlEntry(marshalledKey);
         }
         if (replicatedMapConfig.isStatisticsEnabled()) {
-            getStats().incrementPutsNanos(System.nanoTime() - time);
+            getStats().incrementPutsNanos(Timer.nanosElapsed(startNanos));
         }
         return oldValue;
     }
@@ -206,7 +207,7 @@ public abstract class AbstractReplicatedRecordStore<K, V> extends AbstractBaseRe
 
     // IMPORTANT >> Increments hit counter
     private boolean containsKeyAndValue(Object key) {
-        ReplicatedRecord replicatedRecord = getStorage().get(marshall(key));
+        ReplicatedRecord<K, V> replicatedRecord = getStorage().get(marshall(key));
         return replicatedRecord != null && replicatedRecord.getValue() != null;
     }
 
@@ -250,7 +251,7 @@ public abstract class AbstractReplicatedRecordStore<K, V> extends AbstractBaseRe
     public Collection values(Comparator comparator) {
         InternalReplicatedMapStorage<K, V> storage = getStorage();
         List<Object> values = new ArrayList<>(storage.size());
-        for (ReplicatedRecord record : storage.values()) {
+        for (ReplicatedRecord<K, V> record : storage.values()) {
             values.add(unmarshall(record.getValue()));
         }
         getStats().incrementOtherOperations();
@@ -318,7 +319,7 @@ public abstract class AbstractReplicatedRecordStore<K, V> extends AbstractBaseRe
     private void putRecord(InternalReplicatedMapStorage<K, V> storage, RecordMigrationInfo record) {
         K key = (K) marshall(record.getKey());
         V value = (V) marshall(record.getValue());
-        ReplicatedRecord newRecord = buildReplicatedRecord(key, value, record.getTtl());
+        ReplicatedRecord<K, V> newRecord = buildReplicatedRecord(key, value, record.getTtl());
         newRecord.setHits(record.getHits());
         newRecord.setCreationTime(record.getCreationTime());
         newRecord.setLastAccessTime(record.getLastAccessTime());

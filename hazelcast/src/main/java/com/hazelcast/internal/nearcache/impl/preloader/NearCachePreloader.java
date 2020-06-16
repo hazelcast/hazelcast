@@ -20,6 +20,7 @@ import com.hazelcast.config.NearCachePreloaderConfig;
 import com.hazelcast.internal.adapter.DataStructureAdapter;
 import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.internal.util.BufferingInputStream;
+import com.hazelcast.internal.util.Timer;
 import com.hazelcast.internal.util.collection.InflatableSet;
 import com.hazelcast.internal.util.collection.InflatableSet.Builder;
 import com.hazelcast.logging.ILogger;
@@ -49,7 +50,6 @@ import static com.hazelcast.internal.nio.IOUtil.toFileName;
 import static com.hazelcast.internal.util.StringUtil.isNullOrEmpty;
 import static java.lang.String.format;
 import static java.nio.ByteBuffer.allocate;
-import static java.util.concurrent.TimeUnit.NANOSECONDS;
 
 /**
  * Loads and stores the keys from a Near Cache into a file.
@@ -127,7 +127,7 @@ public class NearCachePreloader<K> {
             return;
         }
 
-        long startedNanos = System.nanoTime();
+        long startedNanos = Timer.nanos();
         BufferingInputStream bis = null;
         try {
             bis = new BufferingInputStream(new FileInputStream(storeFile), BUFFER_SIZE);
@@ -137,7 +137,7 @@ public class NearCachePreloader<K> {
 
             int loadedKeys = loadKeySet(bis, adapter);
 
-            long elapsedMillis = getElapsedMillis(startedNanos);
+            long elapsedMillis = Timer.millisElapsed(startedNanos);
             logger.info(format("Loaded %d keys of Near Cache %s in %d ms", loadedKeys, nearCacheName, elapsedMillis));
         } catch (Exception e) {
             logger.warning(format("Could not pre-load Near Cache %s (%s)", nearCacheName, storeFile.getAbsolutePath()), e);
@@ -167,7 +167,7 @@ public class NearCachePreloader<K> {
      * @param iterator {@link Iterator} over the key set of a {@link com.hazelcast.internal.nearcache.NearCacheRecordStore}
      */
     public void storeKeys(Iterator<K> iterator) {
-        long startedNanos = System.nanoTime();
+        long startedNanos = Timer.nanos();
         FileOutputStream fos = null;
         try {
             buf = allocate(BUFFER_SIZE);
@@ -204,7 +204,7 @@ public class NearCachePreloader<K> {
     }
 
     private void updatePersistenceStats(long startedNanos) {
-        long elapsedMillis = getElapsedMillis(startedNanos);
+        long elapsedMillis = Timer.millisElapsed(startedNanos);
         nearCacheStats.addPersistence(elapsedMillis, lastWrittenBytes, lastKeyCount);
 
         logger.info(format("Stored %d keys of Near Cache %s in %d ms (%d kB)", lastKeyCount, nearCacheName, elapsedMillis,
@@ -296,9 +296,5 @@ public class NearCachePreloader<K> {
             return filename;
         }
         return getPath(directory, filename);
-    }
-
-    private static long getElapsedMillis(long startedNanos) {
-        return NANOSECONDS.toMillis(System.nanoTime() - startedNanos);
     }
 }
