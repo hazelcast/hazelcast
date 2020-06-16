@@ -18,9 +18,8 @@ package com.hazelcast.cp.internal.datastructures.atomicref.client;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.CPAtomicRefApplyCodec;
-import com.hazelcast.client.impl.protocol.task.AbstractMessageTask;
-import com.hazelcast.core.ExecutionCallback;
-import com.hazelcast.cp.internal.RaftService;
+import com.hazelcast.client.impl.protocol.codec.CPAtomicRefApplyCodec.RequestParameters;
+import com.hazelcast.cp.internal.client.AbstractCPMessageTask;
 import com.hazelcast.cp.internal.datastructures.atomicref.RaftAtomicRefService;
 import com.hazelcast.cp.internal.datastructures.atomicref.operation.ApplyOp;
 import com.hazelcast.cp.internal.datastructures.atomicref.operation.ApplyOp.ReturnValueType;
@@ -34,8 +33,7 @@ import java.security.Permission;
 /**
  * Client message task for {@link ApplyOp}
  */
-public class ApplyMessageTask extends AbstractMessageTask<CPAtomicRefApplyCodec.RequestParameters>
-        implements ExecutionCallback<Object> {
+public class ApplyMessageTask extends AbstractCPMessageTask<RequestParameters> {
 
     public ApplyMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -44,10 +42,7 @@ public class ApplyMessageTask extends AbstractMessageTask<CPAtomicRefApplyCodec.
     @Override
     protected void processMessage() {
         ReturnValueType returnValueType = ReturnValueType.fromValue(parameters.returnValueType);
-        RaftService service = nodeEngine.getService(RaftService.SERVICE_NAME);
-        service.getInvocationManager()
-               .invoke(parameters.groupId, new ApplyOp(parameters.name, parameters.function, returnValueType, parameters.alter))
-               .andThen(this);
+        invoke(parameters.groupId, new ApplyOp(parameters.name, parameters.function, returnValueType, parameters.alter));
     }
 
     @Override
@@ -91,15 +86,5 @@ public class ApplyMessageTask extends AbstractMessageTask<CPAtomicRefApplyCodec.
     @Override
     public Object[] getParameters() {
         return new Object[]{parameters.function};
-    }
-
-    @Override
-    public void onResponse(Object response) {
-        sendResponse(response);
-    }
-
-    @Override
-    public void onFailure(Throwable t) {
-        handleProcessingFailure(t);
     }
 }

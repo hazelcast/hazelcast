@@ -18,9 +18,8 @@ package com.hazelcast.cp.internal.datastructures.atomiclong.client;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.CPAtomicLongGetAndAddCodec;
-import com.hazelcast.client.impl.protocol.task.AbstractMessageTask;
-import com.hazelcast.core.ExecutionCallback;
-import com.hazelcast.cp.internal.RaftService;
+import com.hazelcast.client.impl.protocol.codec.CPAtomicLongGetAndAddCodec.RequestParameters;
+import com.hazelcast.cp.internal.client.AbstractCPMessageTask;
 import com.hazelcast.cp.internal.datastructures.atomiclong.RaftAtomicLongService;
 import com.hazelcast.cp.internal.datastructures.atomiclong.operation.GetAndAddOp;
 import com.hazelcast.instance.Node;
@@ -33,8 +32,7 @@ import java.security.Permission;
 /**
  * Client message task for {@link GetAndAddOp}
  */
-public class GetAndAddMessageTask extends AbstractMessageTask<CPAtomicLongGetAndAddCodec.RequestParameters>
-        implements ExecutionCallback<Long> {
+public class GetAndAddMessageTask extends AbstractCPMessageTask<RequestParameters> {
 
     public GetAndAddMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -42,10 +40,7 @@ public class GetAndAddMessageTask extends AbstractMessageTask<CPAtomicLongGetAnd
 
     @Override
     protected void processMessage() {
-        RaftService service = nodeEngine.getService(RaftService.SERVICE_NAME);
-        service.getInvocationManager()
-               .<Long>invoke(parameters.groupId, new GetAndAddOp(parameters.name, parameters.delta))
-               .andThen(this);
+        invoke(parameters.groupId, new GetAndAddOp(parameters.name, parameters.delta));
     }
 
     @Override
@@ -80,15 +75,5 @@ public class GetAndAddMessageTask extends AbstractMessageTask<CPAtomicLongGetAnd
 
     public Object[] getParameters() {
         return new Object[]{parameters.delta};
-    }
-
-    @Override
-    public void onResponse(Long response) {
-        sendResponse(response);
-    }
-
-    @Override
-    public void onFailure(Throwable t) {
-        handleProcessingFailure(t);
     }
 }

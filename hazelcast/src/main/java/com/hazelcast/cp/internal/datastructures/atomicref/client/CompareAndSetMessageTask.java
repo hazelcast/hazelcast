@@ -18,10 +18,9 @@ package com.hazelcast.cp.internal.datastructures.atomicref.client;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.CPAtomicRefCompareAndSetCodec;
-import com.hazelcast.client.impl.protocol.task.AbstractMessageTask;
-import com.hazelcast.core.ExecutionCallback;
+import com.hazelcast.client.impl.protocol.codec.CPAtomicRefCompareAndSetCodec.RequestParameters;
 import com.hazelcast.cp.internal.RaftOp;
-import com.hazelcast.cp.internal.RaftService;
+import com.hazelcast.cp.internal.client.AbstractCPMessageTask;
 import com.hazelcast.cp.internal.datastructures.atomicref.RaftAtomicRefService;
 import com.hazelcast.cp.internal.datastructures.atomicref.operation.CompareAndSetOp;
 import com.hazelcast.instance.Node;
@@ -34,8 +33,7 @@ import java.security.Permission;
 /**
  * Client message task for {@link CompareAndSetOp}
  */
-public class CompareAndSetMessageTask extends AbstractMessageTask<CPAtomicRefCompareAndSetCodec.RequestParameters>
-        implements ExecutionCallback<Boolean> {
+public class CompareAndSetMessageTask extends AbstractCPMessageTask<RequestParameters> {
 
     public CompareAndSetMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -43,9 +41,8 @@ public class CompareAndSetMessageTask extends AbstractMessageTask<CPAtomicRefCom
 
     @Override
     protected void processMessage() {
-        RaftService service = nodeEngine.getService(RaftService.SERVICE_NAME);
         RaftOp op = new CompareAndSetOp(parameters.name, parameters.oldValue, parameters.newValue);
-        service.getInvocationManager().<Boolean>invoke(parameters.groupId, op).andThen(this);
+        invoke(parameters.groupId, op);
     }
 
     @Override
@@ -81,15 +78,5 @@ public class CompareAndSetMessageTask extends AbstractMessageTask<CPAtomicRefCom
     @Override
     public Object[] getParameters() {
         return new Object[]{parameters.oldValue, parameters.newValue};
-    }
-
-    @Override
-    public void onResponse(Boolean response) {
-        sendResponse(response);
-    }
-
-    @Override
-    public void onFailure(Throwable t) {
-        handleProcessingFailure(t);
     }
 }

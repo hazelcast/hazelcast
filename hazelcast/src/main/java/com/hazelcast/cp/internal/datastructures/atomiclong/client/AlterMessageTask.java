@@ -18,10 +18,9 @@ package com.hazelcast.cp.internal.datastructures.atomiclong.client;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.CPAtomicLongAlterCodec;
-import com.hazelcast.client.impl.protocol.task.AbstractMessageTask;
-import com.hazelcast.core.ExecutionCallback;
+import com.hazelcast.client.impl.protocol.codec.CPAtomicLongAlterCodec.RequestParameters;
 import com.hazelcast.core.IFunction;
-import com.hazelcast.cp.internal.RaftService;
+import com.hazelcast.cp.internal.client.AbstractCPMessageTask;
 import com.hazelcast.cp.internal.datastructures.atomiclong.RaftAtomicLongService;
 import com.hazelcast.cp.internal.datastructures.atomiclong.operation.AlterOp;
 import com.hazelcast.cp.internal.datastructures.atomiclong.operation.AlterOp.AlterResultType;
@@ -35,8 +34,7 @@ import java.security.Permission;
 /**
  * Client message task for {@link AlterOp}
  */
-public class AlterMessageTask extends AbstractMessageTask<CPAtomicLongAlterCodec.RequestParameters>
-        implements ExecutionCallback<Long> {
+public class AlterMessageTask extends AbstractCPMessageTask<RequestParameters> {
 
     public AlterMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -46,10 +44,7 @@ public class AlterMessageTask extends AbstractMessageTask<CPAtomicLongAlterCodec
     protected void processMessage() {
         IFunction<Long, Long> function = serializationService.toObject(parameters.function);
         AlterResultType resultType = AlterResultType.fromValue(parameters.returnValueType);
-        RaftService service = nodeEngine.getService(RaftService.SERVICE_NAME);
-        service.getInvocationManager()
-               .<Long>invoke(parameters.groupId, new AlterOp(parameters.name, function, resultType))
-               .andThen(this);
+        invoke(parameters.groupId, new AlterOp(parameters.name, function, resultType));
     }
 
     @Override
@@ -90,16 +85,6 @@ public class AlterMessageTask extends AbstractMessageTask<CPAtomicLongAlterCodec
 
     @Override
     public Object[] getParameters() {
-        return new Object[]{parameters.function};
-    }
-
-    @Override
-    public void onResponse(Long response) {
-        sendResponse(response);
-    }
-
-    @Override
-    public void onFailure(Throwable t) {
-        handleProcessingFailure(t);
+        return new Object[] {parameters.function};
     }
 }
