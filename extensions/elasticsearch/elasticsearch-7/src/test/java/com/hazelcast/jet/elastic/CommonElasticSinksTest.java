@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.elastic;
 
+import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sink;
 import com.hazelcast.jet.pipeline.test.TestSources;
@@ -28,13 +29,14 @@ import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.support.WriteRequest.RefreshPolicy;
 import org.elasticsearch.action.update.UpdateRequest;
+import org.elasticsearch.client.RequestOptions;
+import org.elasticsearch.client.indices.CreateIndexRequest;
 import org.junit.Test;
 
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
-import org.elasticsearch.ElasticsearchException;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -150,6 +152,8 @@ public abstract class CommonElasticSinksTest extends BaseElasticTest {
      */
     @Test
     public void given_documentNotInIndex_whenWriteToElasticSinkUpdateRequest_then_jobShouldFail() throws Exception {
+        elasticClient.indices().create(new CreateIndexRequest("my-index"), RequestOptions.DEFAULT);
+
         Sink<TestItem> elasticSink = ElasticSinks.elastic(
                 elasticClientSupplier(),
                 item -> new UpdateRequest("my-index", item.id).doc(item.asMap())
@@ -157,31 +161,36 @@ public abstract class CommonElasticSinksTest extends BaseElasticTest {
 
         Pipeline p = Pipeline.create();
         p.readFrom(TestSources.items(new TestItem("notExist", "Frantisek")))
-                .writeTo(elasticSink);
+         .writeTo(elasticSink);
 
         assertThatThrownBy(() -> submitJob(p))
-                .hasRootCauseInstanceOf(ElasticsearchException.class);
+                .hasRootCauseInstanceOf(JetException.class)
+                .hasStackTraceContaining("document missing");
     }
 
-    /**
-     * Regression test for checking that behavior was not unexpectedly changed.
-     * It is possible that behavior will be changed in any of future version
-     * since failing job based on unsuccessful delete/update leads to problems
-     * when job are restarted.
-     */
     @Test
-    public void given_documentNotInIndex_whenWriteToElasticSinkDeleteRequest_then_jobShouldFail() throws Exception {
-        Sink<String> elasticSink = ElasticSinks.elastic(
-                elasticClientSupplier(),
-                (item) -> new DeleteRequest("my-index", item)
-        );
+    public void given_documentInIndex_whenWriteToElasticSinkDeleteRequestTwice_then_jobShouldFinishSuccessfully()
+            throws Exception {
+
+        Map<String, Object> doc = new HashMap<>();
+        doc.put("name", "Frantisek");
+        String id = indexDocument("my-index", doc);
+
+        Sink<String> elasticSink = new ElasticSinkBuilder<>()
+                .clientFn(elasticClientSupplier())
+                .mapToRequestFn((String item) -> new DeleteRequest("my-index", item))
+                .bulkRequestFn(() -> new BulkRequest().setRefreshPolicy(RefreshPolicy.IMMEDIATE))
+                .build();
 
         Pipeline p = Pipeline.create();
-        p.readFrom(TestSources.items("notExist"))
-                .writeTo(elasticSink);
+        p.readFrom(TestSources.items(id))
+         .writeTo(elasticSink);
 
-        assertThatThrownBy(() -> submitJob(p))
-                .hasRootCauseInstanceOf(ElasticsearchException.class);
+        // Submit job 2x to delete non-existing document on 2nd run
+        submitJob(p);
+        submitJob(p);
+
+        assertNoDocuments("my-index");
     }
 
     private void refreshIndex() throws IOException {

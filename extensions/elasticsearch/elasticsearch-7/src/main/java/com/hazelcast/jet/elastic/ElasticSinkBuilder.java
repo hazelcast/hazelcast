@@ -18,10 +18,10 @@ package com.hazelcast.jet.elastic;
 
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.SupplierEx;
+import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.pipeline.Sink;
 import com.hazelcast.jet.pipeline.SinkBuilder;
 import com.hazelcast.logging.ILogger;
-import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.action.ActionRequest;
 import org.elasticsearch.action.DocWriteRequest;
 import org.elasticsearch.action.bulk.BulkRequest;
@@ -212,7 +212,7 @@ public final class ElasticSinkBuilder<T> implements Serializable {
             if (!bulkRequest.requests().isEmpty()) {
                 BulkResponse response = client.bulk(bulkRequest, optionsFn.apply(bulkRequest));
                 if (response.hasFailures()) {
-                    throw new ElasticsearchException(response.buildFailureMessage());
+                    throw new JetException(response.buildFailureMessage());
                 }
                 if (logger.isFineEnabled()) {
                     logger.fine("BulkRequest with " + bulkRequest.requests().size() + " requests succeeded");
