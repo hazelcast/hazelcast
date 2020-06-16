@@ -254,7 +254,7 @@ clientConfig.getNetworkConfig().getKubernetesConfig().setEnabled(true)
 
 ### Outside Kubernetes Cluster
 
-If your Hazelcast cluster is deployed on Kubernetes, but Hazelcast Client is in a completely different network, then they can connect only through the public Internet network.
+If your Hazelcast cluster is deployed on Kubernetes, but Hazelcast Client is in a completely different network, then they can connect only through the public Internet network. This requires a special configuration of both Hazelcast server and Hazelcast client. You can find a complete guide on how to set it up here: [How to Set Up Your Own On-Premises Hazelcast on Kubernetes](https://hazelcast.com/blog/how-to-set-up-your-own-on-premises-hazelcast-on-kubernetes/).
 
 To use **Hazelcast Dummy Client** (`<smart-routing>false</smart-routing>`) you don't need any plugin, it's enough to expose your Hazelcast cluster with a LoadBalancer (or NodePort) service and set its IP/port as the TCP/IP Hazelcast Client configuration. Dummy Client, however, compromises the performance, since all the communication happens against a single Hazelcast member.
 
