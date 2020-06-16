@@ -4,6 +4,9 @@ This document lists the new features, enhancements, fixed issues and, removed or
 
 1. Fixes
 
+* Fixed a serialization error when performing the get()/set() operations
+from a Hazelcast client on the CP concurreny structures like IAtomicReference,
+IAtomicLong and ISemaphore. [#17050]
 * Fixed an issue where the quorum listener was triggered during the
 startup of a member, but before it joins the cluster. With this fix,
 these listeners will not be fired until the quorum is met after the
