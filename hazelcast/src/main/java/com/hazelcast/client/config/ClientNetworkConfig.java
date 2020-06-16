@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.config;
 
+import com.hazelcast.config.AutoDetectionConfig;
 import com.hazelcast.config.AwsConfig;
 import com.hazelcast.config.AzureConfig;
 import com.hazelcast.config.DiscoveryConfig;
@@ -55,6 +56,7 @@ public class ClientNetworkConfig {
     private EurekaConfig eurekaConfig = new EurekaConfig();
     private ClientCloudConfig cloudConfig = new ClientCloudConfig();
     private DiscoveryConfig discoveryConfig = new DiscoveryConfig();
+    private AutoDetectionConfig autoDetectionConfig = new AutoDetectionConfig();
     private Collection<String> outboundPortDefinitions;
     private Collection<Integer> outboundPorts;
     private ClientIcmpPingConfig clientIcmpPingConfig = new ClientIcmpPingConfig();
@@ -102,6 +104,28 @@ public class ClientNetworkConfig {
      */
     public ClientNetworkConfig setDiscoveryConfig(DiscoveryConfig discoveryConfig) {
         this.discoveryConfig = isNotNull(discoveryConfig, "discoveryConfig");
+        return this;
+    }
+
+
+    /**
+     * Returns the configuration of the Auto Detection discovery.
+     *
+     * @return Configuration of Auto Detection discovery
+     */
+    public AutoDetectionConfig getAutoDetectionConfig() {
+        return autoDetectionConfig;
+    }
+
+    /**
+     * Defines the Auto Detection configuration.
+     *
+     * @param autoDetectionConfig Auto Detection configuration
+     * @return this configuration
+     * @throws java.lang.IllegalArgumentException if autoDetectionConfig is null
+     */
+    public ClientNetworkConfig setAutoDetectionConfig(AutoDetectionConfig autoDetectionConfig) {
+        this.autoDetectionConfig = isNotNull(autoDetectionConfig, "autoDetectionConfig");
         return this;
     }
 

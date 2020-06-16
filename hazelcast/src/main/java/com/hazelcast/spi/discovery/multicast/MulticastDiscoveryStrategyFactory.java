@@ -56,4 +56,9 @@ public class MulticastDiscoveryStrategyFactory implements DiscoveryStrategyFacto
     public Collection<PropertyDefinition> getConfigurationProperties() {
         return PROPERTY_DEFINITIONS;
     }
+
+    @Override
+    public boolean isAutoConfigApplicable() {
+        return true;
+    }
 }

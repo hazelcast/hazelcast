@@ -104,6 +104,7 @@
                 <property name="keyStoreType">JKS</property>
             </properties>
         </ssl>
+        <auto-detection enabled="false"/>
         <aws enabled="true" connection-timeout-seconds="11">
             <inside-aws>true</inside-aws>
             <access-key>TEST_ACCESS_KEY</access-key>
