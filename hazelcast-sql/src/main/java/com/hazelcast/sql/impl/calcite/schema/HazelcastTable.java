@@ -80,8 +80,8 @@ import static java.util.stream.Collectors.joining;
  * </pre>
  * In this case {@code projects=[2, 0]}, {@code filter=[>$1, ?]}.
  * <p>
- * We do not pushdown the project expressions other than columns because in this case it will be difficult to pushdown
- * filters, as it will require non-trivial rewrite of the filter expression to match to original scan columns.
+ * We do not pushdown the project expressions other than columns, because expressions inside the scan may change its physical
+ * properties, thus making further optimization more complex.
  */
 public class HazelcastTable extends AbstractTable {
 
