@@ -469,6 +469,33 @@ they have form further sub-nodes in the resulting tree structure.
 Hazelcast metrics are stored under the
 `com.hazelcast/Metrics/<instanceName>/` node.
 
+#### Prometheus
+
+Prometheus is a popular monitoring system and time series database.
+Setting up monitoring via Prometheus consists of two steps. First step
+is exposing an HTTP endpoint with metrics. The second step is setting up
+Prometheus server, which pulls the metrics in a specified interval.
+
+The Prometheus javaagent is already part of the Hazelcast Jet
+distribution and just needs to be enabled. Enable the agent and expose
+all metrics via HTTP endpoint by setting an environment variable
+PROMETHEUS_PORT, you can change the port to any available port:
+
+```bash
+PROMETHEUS_PORT=8080 bin/jet-start
+```
+
+You should see following line printed to the logs:
+
+```text
+Prometheus enabled on port 8080
+```
+
+The metrics are available on [http://localhost:8080](http://localhost:8080).
+
+For a guide on how to set up Prometheus server go to the
+[Prometheus website](https://prometheus.io/docs/prometheus/latest/getting_started).
+
 #### Via Job API
 
 The `Job` class has a

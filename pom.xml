@@ -112,6 +112,7 @@
         <slf4j.api.version>1.7.28</slf4j.api.version>
         <reflections.version>0.9.10</reflections.version>
         <osgi.version>4.2.0</osgi.version>
+        <prometheus.version>0.13.0</prometheus.version>
         <hadoop.version>2.10.0</hadoop.version>
         <spring.version>4.3.0.RELEASE</spring.version>
         <avro.version>1.8.2</avro.version>

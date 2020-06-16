@@ -30,6 +30,7 @@
                 <include>com.hazelcast.jet:hazelcast-jet</include>
                 <include>org.apache.logging.log4j:*</include>
                 <include>org.slf4j:*</include>
+                <include>io.prometheus.jmx:jmx_prometheus_javaagent</include>
             </includes>
             <outputDirectory>lib</outputDirectory>
             <outputFileNameMapping>${artifact.artifactId}-${artifact.baseVersion}.${artifact.extension}</outputFileNameMapping>
