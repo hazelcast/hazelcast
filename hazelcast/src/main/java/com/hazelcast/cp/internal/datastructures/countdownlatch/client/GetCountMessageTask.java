@@ -18,11 +18,11 @@ package com.hazelcast.cp.internal.datastructures.countdownlatch.client;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.CPCountDownLatchGetRoundCodec;
-import com.hazelcast.client.impl.protocol.task.AbstractMessageTask;
-import com.hazelcast.core.ExecutionCallback;
-import com.hazelcast.cp.internal.RaftService;
+import com.hazelcast.client.impl.protocol.codec.CPCountDownLatchGetRoundCodec.RequestParameters;
+import com.hazelcast.cp.internal.client.AbstractCPMessageTask;
 import com.hazelcast.cp.internal.datastructures.countdownlatch.RaftCountDownLatchService;
 import com.hazelcast.cp.internal.datastructures.countdownlatch.operation.GetCountOp;
+import com.hazelcast.cp.internal.raft.QueryPolicy;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.security.permission.ActionConstants;
@@ -33,8 +33,7 @@ import java.security.Permission;
 /**
  * Client message task for {@link GetCountOp}
  */
-public class GetCountMessageTask extends AbstractMessageTask<CPCountDownLatchGetRoundCodec.RequestParameters>
-        implements ExecutionCallback<Integer> {
+public class GetCountMessageTask extends AbstractCPMessageTask<RequestParameters> {
 
     public GetCountMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -42,10 +41,7 @@ public class GetCountMessageTask extends AbstractMessageTask<CPCountDownLatchGet
 
     @Override
     protected void processMessage() {
-        RaftService service = nodeEngine.getService(RaftService.SERVICE_NAME);
-        service.getInvocationManager()
-               .<Integer>invoke(parameters.groupId, new GetCountOp(parameters.name))
-               .andThen(this);
+        query(parameters.groupId, new GetCountOp(parameters.name), QueryPolicy.LINEARIZABLE);
     }
 
     @Override
@@ -81,15 +77,5 @@ public class GetCountMessageTask extends AbstractMessageTask<CPCountDownLatchGet
     @Override
     public Object[] getParameters() {
         return new Object[0];
-    }
-
-    @Override
-    public void onResponse(Integer response) {
-        sendResponse(response);
-    }
-
-    @Override
-    public void onFailure(Throwable t) {
-        handleProcessingFailure(t);
     }
 }
