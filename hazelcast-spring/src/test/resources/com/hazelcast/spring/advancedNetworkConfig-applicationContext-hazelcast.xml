@@ -132,6 +132,7 @@
             </hz:wan-replication>
             <hz:advanced-network enabled="true">
                 <hz:join>
+                    <hz:auto-detection enabled="${boolean:false}"/>
                     <hz:multicast enabled="${boolean.false}" multicast-group="224.2.2.3" multicast-port="54327"
                                   multicast-time-to-live="16" multicast-timeout-seconds="8" loopback-mode-enabled="false">
                         <hz:trusted-interfaces>

@@ -2024,6 +2024,10 @@
         <xs:attribute name="discovery-strategy-factory" type="non-space-string" use="optional"/>
     </xs:complexType>
 
+    <xs:complexType name="auto-detection">
+        <xs:attribute name="enabled" type="xs:string" use="optional" default="false"/>
+    </xs:complexType>
+
     <xs:complexType name="wan-sync">
         <xs:all>
             <xs:element name="consistency-check-strategy" type="consistency-check-strategy" minOccurs="0" default="NONE">
@@ -2101,6 +2105,7 @@
             <xs:element name="kubernetes" type="aliased-discovery-strategy" minOccurs="0"/>
             <xs:element name="eureka" type="aliased-discovery-strategy" minOccurs="0"/>
             <xs:element name="discovery-strategies" type="discovery-strategies" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="auto-detection" type="auto-detection" minOccurs="0"/>
         </xs:sequence>
     </xs:complexType>
 
@@ -3013,6 +3018,7 @@
             <xs:element name="kubernetes" type="aliased-discovery-strategy" minOccurs="0" maxOccurs="1"/>
             <xs:element name="eureka" type="aliased-discovery-strategy" minOccurs="0" maxOccurs="1"/>
             <xs:element name="discovery-strategies" type="discovery-strategies" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="auto-detection" type="auto-detection" minOccurs="0" maxOccurs="1"/>
             <xs:element name="outbound-ports" type="outbound-ports" minOccurs="0" maxOccurs="1"/>
             <xs:element name="icmp-ping" type="icmp-ping-client" minOccurs="0" maxOccurs="1"/>
             <xs:element name="hazelcast-cloud" type="hazelcast-cloud-client" minOccurs="0" maxOccurs="1"/>
