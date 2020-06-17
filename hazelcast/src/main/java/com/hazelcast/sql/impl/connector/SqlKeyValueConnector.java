@@ -53,31 +53,30 @@ public abstract class SqlKeyValueConnector implements SqlConnector {
 
     protected static List<TableField> mergeFields(
             List<ExternalField> externalFields,
-            Map<String, TableField> keyFields,
-            Map<String, TableField> valueFields
+            Map<String, QueryPath> keyFields,
+            Map<String, QueryPath> valueFields
     ) {
         List<TableField> fields = new ArrayList<>(externalFields.size());
         for (ExternalField externalField : externalFields) {
             String fieldName = externalField.name();
 
-            MapTableField keyField = (MapTableField) keyFields.get(fieldName); // TODO: get rid of casting ???
-            MapTableField valueField = (MapTableField) valueFields.get(fieldName); // TODO: get rid of casting ???
+            QueryPath keyPath = keyFields.get(fieldName);
+            QueryPath valuePath = valueFields.get(fieldName);
 
-            // TODO: validate type mismatches ???
             TableField field;
-            if (keyField != null) {
+            if (keyPath != null) {
                 field = new MapTableField(
                         externalField.name(),
                         externalField.type(),
                         false,
-                        keyField.getPath()
+                        keyPath
                 );
-            } else if (valueField != null) {
+            } else if (valuePath != null) {
                 field = new MapTableField(
                         externalField.name(),
                         externalField.type(),
                         false,
-                        valueField.getPath()
+                        valuePath
                 );
             } else {
                 // allow nulls for non existing fields

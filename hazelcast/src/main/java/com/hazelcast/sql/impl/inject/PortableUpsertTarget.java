@@ -31,6 +31,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
+import static com.hazelcast.sql.impl.schema.map.options.PortableMapOptionsMetadataResolver.lookupClassDefinition;
 import static java.lang.String.format;
 
 public class PortableUpsertTarget implements UpsertTarget {
@@ -41,16 +42,7 @@ public class PortableUpsertTarget implements UpsertTarget {
             InternalSerializationService serializationService,
             int factoryId, int classId, int classVersion
     ) {
-        ClassDefinition classDefinition = serializationService
-                .getPortableContext()
-                .lookupClassDefinition(factoryId, classId, classVersion);
-        if (classDefinition == null) {
-            throw QueryException.dataException(
-                    format("Unable to find class definition for factoryId: %s, classId: %s, classVersion: %s",
-                            factoryId, classId, classVersion)
-            );
-        }
-        this.classDefinition = classDefinition;
+        this.classDefinition = lookupClassDefinition(serializationService, factoryId, classId, classVersion);
     }
 
     @Override
@@ -61,22 +53,12 @@ public class PortableUpsertTarget implements UpsertTarget {
 
     @Override
     public UpsertInjector createInjector(String path) {
-        FieldDefinition fieldDefinition = findFieldDefinition(path);
+        FieldDefinition fieldDefinition = checkNotNull(classDefinition.getField(path), "Missing field");
         return (holder, value) -> {
             GenericPortable target = checkNotNull((GenericPortable) holder.get(), "Missing target");
 
             target.add(fieldDefinition, value);
         };
-    }
-
-    private FieldDefinition findFieldDefinition(String fieldName) {
-        FieldDefinition fieldDefinition = classDefinition.getField(fieldName);
-        if (fieldDefinition == null) {
-            throw QueryException.dataException(
-                    format("Unable to find field definition for \"%s\" in %s", fieldName, classDefinition)
-            );
-        }
-        return fieldDefinition;
     }
 
     private final class GenericPortable implements VersionedPortable {

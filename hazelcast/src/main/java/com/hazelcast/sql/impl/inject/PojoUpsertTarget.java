@@ -16,31 +16,30 @@
 
 package com.hazelcast.sql.impl.inject;
 
-import com.hazelcast.internal.nio.ClassLoaderUtil;
 import com.hazelcast.sql.impl.QueryException;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
+import java.util.Map;
+import java.util.Map.Entry;
 
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
+import static com.hazelcast.sql.impl.schema.map.options.PojoMapOptionsMetadataResolver.extractField;
+import static com.hazelcast.sql.impl.schema.map.options.PojoMapOptionsMetadataResolver.extractSetter;
+import static com.hazelcast.sql.impl.schema.map.options.PojoMapOptionsMetadataResolver.loadClass;
 import static java.lang.String.format;
+import static java.util.stream.Collectors.toMap;
 
 public class PojoUpsertTarget implements UpsertTarget {
 
-    private static final String METHOD_PREFIX_SET = "set";
-
     private final Class<?> clazz;
+    private final Map<String, Class<?>> typesByFields;
 
-    PojoUpsertTarget(String className) {
-        try {
-            this.clazz = ClassLoaderUtil.tryLoadClass(className);
-        } catch (Exception e) {
-            throw QueryException.dataException(
-                    format("Unable to load class \"%s\" : %s", className, e.getMessage()), e
-            );
-        }
+    PojoUpsertTarget(String className, Map<String, String> typeNamesByFields) {
+        this.clazz = loadClass(className);
+        this.typesByFields = typeNamesByFields.entrySet().stream()
+                                              .collect(toMap(Entry::getKey, entry -> loadClass(entry.getValue())));
     }
 
     @Override
@@ -57,41 +56,13 @@ public class PojoUpsertTarget implements UpsertTarget {
 
     @Override
     public UpsertInjector createInjector(String path) {
-        Method method = findMethod(path);
+        Method method = extractSetter(clazz, path, typesByFields.get(path));
         if (method != null) {
             return createMethodInjector(method, path);
         } else {
-            Field field = findField(path);
+            Field field = extractField(clazz, path);
             return createFieldInjector(field, path);
         }
-    }
-
-    private Method findMethod(String fieldName) {
-        for (Method method : clazz.getMethods()) {
-            if (methodMatches(method, fieldName)) {
-                return method;
-            }
-        }
-        return null;
-    }
-
-    // TODO: better heuristics ???
-    @SuppressWarnings("RedundantIfStatement")
-    private boolean methodMatches(Method method, String fieldName) {
-        String methodName = METHOD_PREFIX_SET + Character.toUpperCase(fieldName.charAt(0)) + fieldName.substring(1);
-        if (!method.getName().equalsIgnoreCase(methodName)) {
-            return false;
-        }
-        if (method.getParameterCount() != 1) {
-            return false;
-        }
-        if (!Modifier.isPublic(method.getModifiers())) {
-            return false;
-        }
-        if (Modifier.isStatic(method.getModifiers())) {
-            return false;
-        }
-        return true;
     }
 
     private UpsertInjector createMethodInjector(Method method, String path) {
@@ -114,24 +85,6 @@ public class PojoUpsertTarget implements UpsertTarget {
                 }
             }
         };
-    }
-
-    private Field findField(String fieldName) {
-        for (Field field : clazz.getDeclaredFields()) {
-            if (fieldMatches(field, fieldName)) {
-                return field;
-            }
-        }
-        return null;
-    }
-
-    // TODO: better heuristics ???
-    @SuppressWarnings("RedundantIfStatement")
-    private boolean fieldMatches(Field field, String fieldName) {
-        if (!field.getName().equalsIgnoreCase(fieldName)) {
-            return false;
-        }
-        return true;
     }
 
     private UpsertInjector createFieldInjector(Field field, String path) {

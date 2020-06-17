@@ -21,31 +21,36 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 
 import java.io.IOException;
+import java.util.Map;
 
 public class PojoUpsertTargetDescriptor implements UpsertTargetDescriptor {
 
     private String className;
+    private Map<String, String> typeNamesByFields;
 
     @SuppressWarnings("unused")
     PojoUpsertTargetDescriptor() {
     }
 
-    public PojoUpsertTargetDescriptor(String className) {
+    public PojoUpsertTargetDescriptor(String className, Map<String, String> typeNamesByFields) {
         this.className = className;
+        this.typeNamesByFields = typeNamesByFields;
     }
 
     @Override
     public UpsertTarget create(InternalSerializationService serializationService) {
-        return new PojoUpsertTarget(className);
+        return new PojoUpsertTarget(className, typeNamesByFields);
     }
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeUTF(className);
+        out.writeObject(typeNamesByFields);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         className = in.readUTF();
+        typeNamesByFields = in.readObject();
     }
 }

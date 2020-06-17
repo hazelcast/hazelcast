@@ -16,9 +16,9 @@
 
 package com.hazelcast.sql.impl.schema.map.options;
 
+import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.extract.QueryTargetDescriptor;
 import com.hazelcast.sql.impl.inject.UpsertTargetDescriptor;
-import com.hazelcast.sql.impl.schema.TableField;
 
 import java.util.LinkedHashMap;
 
@@ -30,11 +30,11 @@ public class MapOptionsMetadata {
 
     private final QueryTargetDescriptor queryTargetDescriptor;
     private final UpsertTargetDescriptor upsertTargetDescriptor;
-    private final LinkedHashMap<String, TableField> fields;
+    private final LinkedHashMap<String, QueryPath> fields;
 
     public MapOptionsMetadata(QueryTargetDescriptor queryTargetDescriptor,
                               UpsertTargetDescriptor upsertTargetDescriptor,
-                              LinkedHashMap<String, TableField> fields) {
+                              LinkedHashMap<String, QueryPath> fields) {
         this.queryTargetDescriptor = queryTargetDescriptor;
         this.upsertTargetDescriptor = upsertTargetDescriptor;
         this.fields = fields;
@@ -49,7 +49,7 @@ public class MapOptionsMetadata {
     }
 
     @SuppressWarnings("checkstyle:IllegalType")
-    public LinkedHashMap<String, TableField> getFields() {
+    public LinkedHashMap<String, QueryPath> getFields() {
         return fields;
     }
 }

@@ -18,19 +18,15 @@ package com.hazelcast.sql.impl.schema.map.options;
 
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.nio.serialization.ClassDefinition;
-import com.hazelcast.nio.serialization.FieldType;
+import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.extract.GenericQueryTargetDescriptor;
 import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.inject.PortableUpsertTargetDescriptor;
 import com.hazelcast.sql.impl.schema.ExternalTable.ExternalField;
-import com.hazelcast.sql.impl.schema.TableField;
-import com.hazelcast.sql.impl.schema.map.MapTableField;
-import com.hazelcast.sql.impl.type.QueryDataType;
 
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.TreeMap;
 
 import static com.hazelcast.sql.impl.connector.SqlKeyValueConnector.TO_KEY_CLASS_ID;
 import static com.hazelcast.sql.impl.connector.SqlKeyValueConnector.TO_KEY_CLASS_VERSION;
@@ -38,6 +34,7 @@ import static com.hazelcast.sql.impl.connector.SqlKeyValueConnector.TO_KEY_FACTO
 import static com.hazelcast.sql.impl.connector.SqlKeyValueConnector.TO_VALUE_CLASS_ID;
 import static com.hazelcast.sql.impl.connector.SqlKeyValueConnector.TO_VALUE_CLASS_VERSION;
 import static com.hazelcast.sql.impl.connector.SqlKeyValueConnector.TO_VALUE_FACTORY_ID;
+import static java.lang.String.format;
 
 // TODO: deduplicate with MapSampleMetadataResolver
 public class PortableMapOptionsMetadataResolver implements MapOptionsMetadataResolver {
@@ -49,78 +46,66 @@ public class PortableMapOptionsMetadataResolver implements MapOptionsMetadataRes
             boolean isKey,
             InternalSerializationService serializationService
     ) {
-        // TODO: ensure binary ???
-        Integer factoryId = parseInt(options.get(isKey ? TO_KEY_FACTORY_ID : TO_VALUE_FACTORY_ID));
-        Integer classId = parseInt(options.get(isKey ? TO_KEY_CLASS_ID : TO_VALUE_CLASS_ID));
-        Integer classVersion = parseInt(options.get(isKey ? TO_KEY_CLASS_VERSION : TO_VALUE_CLASS_VERSION));
+        String factoryId = options.get(isKey ? TO_KEY_FACTORY_ID : TO_VALUE_FACTORY_ID);
+        String classId = options.get(isKey ? TO_KEY_CLASS_ID : TO_VALUE_CLASS_ID);
+        String classVersion = options.get(isKey ? TO_KEY_CLASS_VERSION : TO_VALUE_CLASS_VERSION);
+
         if (factoryId != null && classId != null && classVersion != null) {
-            ClassDefinition classDefinition = serializationService
-                    .getPortableContext()
-                    .lookupClassDefinition(factoryId, classId, classVersion);
-            return resolvePortable(classDefinition, isKey);
+            ClassDefinition classDefinition = lookupClassDefinition(
+                    serializationService,
+                    Integer.parseInt(factoryId),
+                    Integer.parseInt(classId),
+                    Integer.parseInt(classVersion)
+            );
+            return resolvePortable(externalFields, classDefinition, isKey);
         }
+
         return null;
     }
 
-    private static Integer parseInt(String value) {
-        if (value == null) {
-            return null;
+    // TODO: extract to util class ???
+    public static ClassDefinition lookupClassDefinition(
+            InternalSerializationService serializationService,
+            int factoryId,
+            int classId,
+            int classVersion
+    ) {
+        ClassDefinition classDefinition = serializationService
+                .getPortableContext()
+                .lookupClassDefinition(factoryId, classId, classVersion);
+        if (classDefinition == null) {
+            throw QueryException.dataException(
+                    format("Unable to find class definition for factoryId: %s, classId: %s, classVersion: %s",
+                            factoryId, classId, classVersion)
+            );
         }
-
-        try {
-            return Integer.valueOf(value);
-        } catch (NumberFormatException e) {
-            return null;
-        }
+        return classDefinition;
     }
 
-    private static MapOptionsMetadata resolvePortable(ClassDefinition clazz, boolean isKey) {
-        TreeMap<String, TableField> fields = new TreeMap<>();
+    private static MapOptionsMetadata resolvePortable(
+            List<ExternalField> externalFields,
+            ClassDefinition classDefinition,
+            boolean isKey
+    ) {
+        LinkedHashMap<String, QueryPath> fields = new LinkedHashMap<>();
 
-        // Add regular fields.
-        for (String name : clazz.getFieldNames()) {
-            FieldType portableType = clazz.getFieldType(name);
+        // TODO: validate type mismatches ???
+        for (ExternalField externalField : externalFields) {
+            String fieldName = externalField.name();
 
-            QueryDataType type = resolvePortableType(portableType);
-
-            fields.putIfAbsent(name, new MapTableField(name, type, false, new QueryPath(name, isKey)));
+            if (classDefinition.hasField(fieldName)) {
+                fields.put(fieldName, new QueryPath(fieldName, isKey));
+            }
         }
-
-        // Add top-level object.
-        String topName = isKey ? QueryPath.KEY : QueryPath.VALUE;
-        QueryPath topPath = isKey ? QueryPath.KEY_PATH : QueryPath.VALUE_PATH;
-        fields.put(topName, new MapTableField(topName, QueryDataType.OBJECT, !fields.isEmpty(), topPath));
 
         return new MapOptionsMetadata(
                 GenericQueryTargetDescriptor.INSTANCE,
-                new PortableUpsertTargetDescriptor(clazz.getFactoryId(), clazz.getClassId(), clazz.getVersion()),
+                new PortableUpsertTargetDescriptor(
+                        classDefinition.getFactoryId(),
+                        classDefinition.getClassId(),
+                        classDefinition.getVersion()
+                ),
                 new LinkedHashMap<>(fields)
         );
-    }
-
-    @SuppressWarnings("checkstyle:ReturnCount")
-    private static QueryDataType resolvePortableType(FieldType portableType) {
-        switch (portableType) {
-            case BOOLEAN:
-                return QueryDataType.BOOLEAN;
-            case BYTE:
-                return QueryDataType.TINYINT;
-            case SHORT:
-                return QueryDataType.SMALLINT;
-            case CHAR:
-                return QueryDataType.VARCHAR_CHARACTER;
-            case UTF:
-                return QueryDataType.VARCHAR;
-            case INT:
-                return QueryDataType.INT;
-            case LONG:
-                return QueryDataType.BIGINT;
-            case FLOAT:
-                return QueryDataType.REAL;
-            case DOUBLE:
-                return QueryDataType.DOUBLE;
-            default:
-                return QueryDataType.OBJECT;
-        }
     }
 }
