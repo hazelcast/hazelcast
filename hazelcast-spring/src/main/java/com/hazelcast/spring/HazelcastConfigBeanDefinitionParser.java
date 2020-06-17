@@ -1092,6 +1092,10 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                     queueConfigBuilder.addPropertyValue("splitBrainProtectionName", getTextContent(childNode));
                 } else if ("merge-policy".equals(nodeName)) {
                     handleMergePolicyConfig(childNode, queueConfigBuilder);
+                } else if ("comparator-class-name".equals(nodeName)) {
+                    queueConfigBuilder.addPropertyValue("comparatorClassName", getTextContent(childNode));
+                } else if ("duplicate-allowed".equals(nodeName)) {
+                    queueConfigBuilder.addPropertyValue("duplicateAllowed", getBooleanValue(getTextContent(childNode)));
                 }
             }
             queueManagedMap.put(name, queueConfigBuilder.getBeanDefinition());

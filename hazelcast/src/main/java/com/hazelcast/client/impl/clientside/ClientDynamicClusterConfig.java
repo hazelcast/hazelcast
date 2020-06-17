@@ -16,6 +16,8 @@
 
 package com.hazelcast.client.impl.clientside;
 
+import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
+
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddCacheConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddCardinalityEstimatorConfigCodec;
@@ -94,8 +96,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentMap;
-
-import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
+import javax.annotation.Nonnull;
 
 /**
  * Client implementation of member side config. Clients use this to submit new data structure configurations into
@@ -183,7 +184,8 @@ public class ClientDynamicClusterConfig extends Config {
                 queueConfig.getBackupCount(), queueConfig.getAsyncBackupCount(), queueConfig.getMaxSize(),
                 queueConfig.getEmptyQueueTtl(), queueConfig.isStatisticsEnabled(), queueConfig.getSplitBrainProtectionName(),
                 queueStoreConfigHolder, queueConfig.getMergePolicyConfig().getPolicy(),
-                queueConfig.getMergePolicyConfig().getBatchSize());
+                queueConfig.getMergePolicyConfig().getBatchSize(), queueConfig.getComparatorClassName(),
+                queueConfig.isDuplicateAllowed());
         invoke(request);
         return this;
     }

@@ -201,8 +201,6 @@ import com.hazelcast.config.security.TokenEncoding;
 import com.hazelcast.config.security.TokenIdentityConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.instance.ProtocolType;
-import com.hazelcast.internal.nio.ClassLoaderUtil;
-import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.internal.util.StringUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
@@ -213,7 +211,6 @@ import com.hazelcast.wan.WanPublisherState;
 import java.io.File;
 import java.lang.reflect.Method;
 import java.util.Arrays;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -1597,22 +1594,7 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         String name = getTextContent(attName);
         QueueConfig qConfig = new QueueConfig();
         qConfig.setName(name);
-        Comparator comparator = createPriorityQueueComparator(node);
-        qConfig.setComparator(comparator);
         handleQueueNode(node, qConfig);
-    }
-
-    private Comparator createPriorityQueueComparator(Node node) {
-        Node attComparator = node.getAttributes().getNamedItem("comparator");
-        final String comparatorFullPackageName = getTextContent(attComparator);
-        if (!StringUtil.isNullOrEmptyAfterTrim(comparatorFullPackageName)) {
-            try {
-                return ClassLoaderUtil.newInstance(null, trim(comparatorFullPackageName));
-            } catch (Exception e) {
-                ExceptionUtil.sneakyThrow(e);
-            }
-        }
-        return null;
     }
 
     void handleQueueNode(Node node, final QueueConfig qConfig) {
@@ -1645,6 +1627,10 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             } else if ("merge-policy".equals(nodeName)) {
                 MergePolicyConfig mergePolicyConfig = createMergePolicyConfig(n);
                 qConfig.setMergePolicyConfig(mergePolicyConfig);
+            } else if ("comparator-class-name".equals(nodeName)) {
+                qConfig.setComparatorClassName(value);
+            } else if ("duplicate-allowed".equals(nodeName)) {
+                qConfig.setDuplicateAllowed(getBooleanValue(value));
             }
         }
         config.addQueueConfig(qConfig);

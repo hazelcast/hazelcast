@@ -30,7 +30,9 @@ import java.util.Objects;
 
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.readNullableList;
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.writeNullableList;
-import static com.hazelcast.internal.util.Preconditions.*;
+import static com.hazelcast.internal.util.Preconditions.checkAsyncBackupCount;
+import static com.hazelcast.internal.util.Preconditions.checkBackupCount;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 /**
  * Contains the configuration for an {@link IQueue}.
@@ -68,7 +70,8 @@ public class QueueConfig implements IdentifiedDataSerializable, NamedConfig {
     private boolean statisticsEnabled = true;
     private String splitBrainProtectionName;
     private MergePolicyConfig mergePolicyConfig = new MergePolicyConfig();
-    private Comparator comparator;
+    private String comparatorClassName;
+    private boolean duplicateAllowed = true;
 
     public QueueConfig() {
     }
@@ -88,8 +91,9 @@ public class QueueConfig implements IdentifiedDataSerializable, NamedConfig {
         this.splitBrainProtectionName = config.splitBrainProtectionName;
         this.mergePolicyConfig = config.mergePolicyConfig;
         this.queueStoreConfig = config.queueStoreConfig != null ? new QueueStoreConfig(config.queueStoreConfig) : null;
-        this.listenerConfigs = new ArrayList<ItemListenerConfig>(config.getItemListenerConfigs());
-        this.comparator = config.comparator;
+        this.listenerConfigs = new ArrayList<>(config.getItemListenerConfigs());
+        this.comparatorClassName = config.comparatorClassName;
+        this.duplicateAllowed = config.duplicateAllowed;
     }
 
     /**
@@ -269,7 +273,7 @@ public class QueueConfig implements IdentifiedDataSerializable, NamedConfig {
      */
     public List<ItemListenerConfig> getItemListenerConfigs() {
         if (listenerConfigs == null) {
-            listenerConfigs = new ArrayList<ItemListenerConfig>();
+            listenerConfigs = new ArrayList<>();
         }
         return listenerConfigs;
     }
@@ -324,14 +328,47 @@ public class QueueConfig implements IdentifiedDataSerializable, NamedConfig {
         return this;
     }
 
-    public Comparator getComparator() {
-        return comparator;
+    /**
+     * Returns the class name of the configured {@link Comparator} implementation.
+     *
+     * @return the class name of the configured {@link Comparator} implementation
+     */
+    public String getComparatorClassName() {
+        return comparatorClassName;
     }
 
-    public QueueConfig setComparator(Comparator comparator) {
-        this.comparator = comparator;
+    /**
+     * Sets the class name of the configured {@link Comparator} implementation.
+     *
+     * @param comparatorClassName the class name of the
+     *                            configured {@link Comparator} implementation
+     * @return this QueueConfig instance
+     */
+    public QueueConfig setComparatorClassName(String comparatorClassName) {
+        this.comparatorClassName = comparatorClassName;
         return this;
     }
+
+    /**
+     * Check if duplicates are allowed for this queue.
+     *
+     * @return {@code true} if duplicates are allowed, {@code false} otherwise
+     */
+    public boolean isDuplicateAllowed() {
+        return duplicateAllowed;
+    }
+
+    /**
+     * Allows or forbids duplicates for this queue.
+     *
+     * @param duplicateAllowed {@code true} to allow duplicates for this queue, {@code false} to forbid
+     * @return the updated QueueConfig
+     */
+    public QueueConfig setDuplicateAllowed(boolean duplicateAllowed) {
+        this.duplicateAllowed = duplicateAllowed;
+        return this;
+    }
+
 
     @Override
     public String toString() {
@@ -345,7 +382,8 @@ public class QueueConfig implements IdentifiedDataSerializable, NamedConfig {
                 + ", queueStoreConfig=" + queueStoreConfig
                 + ", statisticsEnabled=" + statisticsEnabled
                 + ", mergePolicyConfig=" + mergePolicyConfig
-                + ", comparator=" +comparator
+                + ", comparatorClassName=" + comparatorClassName
+                + ", duplicateAllowed=" + duplicateAllowed
                 + '}';
     }
 
@@ -371,6 +409,8 @@ public class QueueConfig implements IdentifiedDataSerializable, NamedConfig {
         out.writeBoolean(statisticsEnabled);
         out.writeUTF(splitBrainProtectionName);
         out.writeObject(mergePolicyConfig);
+        out.writeObject(comparatorClassName);
+        out.writeBoolean(duplicateAllowed);
     }
 
     @Override
@@ -385,9 +425,12 @@ public class QueueConfig implements IdentifiedDataSerializable, NamedConfig {
         statisticsEnabled = in.readBoolean();
         splitBrainProtectionName = in.readUTF();
         mergePolicyConfig = in.readObject();
+        comparatorClassName = in.readObject();
+        duplicateAllowed = in.readBoolean();
     }
 
     @Override
+    @SuppressWarnings({"checkstyle:cyclomaticcomplexity", "checkstyle:npathcomplexity"})
     public final boolean equals(Object o) {
         if (this == o) {
             return true;
@@ -397,21 +440,46 @@ public class QueueConfig implements IdentifiedDataSerializable, NamedConfig {
         }
 
         QueueConfig that = (QueueConfig) o;
-        return backupCount == that.backupCount
-            && asyncBackupCount == that.asyncBackupCount
-            && getMaxSize() == that.getMaxSize()
-            && emptyQueueTtl == that.emptyQueueTtl
-            && statisticsEnabled == that.statisticsEnabled
-            && Objects.equals(name, that.name)
-            && getItemListenerConfigs().equals(that.getItemListenerConfigs())
-            && Objects.equals(queueStoreConfig, that.queueStoreConfig)
-            && Objects.equals(splitBrainProtectionName, that.splitBrainProtectionName)
-            && Objects.equals(mergePolicyConfig, that.mergePolicyConfig);
+        if (backupCount != that.backupCount) {
+            return false;
+        }
+        if (asyncBackupCount != that.asyncBackupCount) {
+            return false;
+        }
+        if (getMaxSize() != that.getMaxSize()) {
+            return false;
+        }
+        if (emptyQueueTtl != that.emptyQueueTtl) {
+            return false;
+        }
+        if (statisticsEnabled != that.statisticsEnabled) {
+            return false;
+        }
+        if (!Objects.equals(name, that.name)) {
+            return false;
+        }
+        if (!getItemListenerConfigs().equals(that.getItemListenerConfigs())) {
+            return false;
+        }
+        if (!Objects.equals(queueStoreConfig, that.queueStoreConfig)) {
+            return false;
+        }
+        if (!Objects.equals(splitBrainProtectionName, that.splitBrainProtectionName)) {
+            return false;
+        }
+        if (!Objects.equals(mergePolicyConfig, that.mergePolicyConfig)) {
+            return false;
+        }
+        if (!Objects.equals(comparatorClassName, that.comparatorClassName)) {
+            return false;
+        }
+        return Objects.equals(duplicateAllowed, that.duplicateAllowed);
     }
 
     @Override
     public final int hashCode() {
         return Objects.hash(name, getItemListenerConfigs(), backupCount, asyncBackupCount, getMaxSize(), emptyQueueTtl,
-            queueStoreConfig, statisticsEnabled, splitBrainProtectionName, mergePolicyConfig);
+                queueStoreConfig, statisticsEnabled, splitBrainProtectionName, mergePolicyConfig, comparatorClassName,
+                duplicateAllowed);
     }
 }

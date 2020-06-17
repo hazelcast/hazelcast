@@ -6496,6 +6496,8 @@ public class MemberCompatibilityNullTest_2_0 {
         assertTrue(isEqual(null, parameters.queueStoreConfig));
         assertTrue(isEqual(aString, parameters.mergePolicy));
         assertTrue(isEqual(anInt, parameters.mergeBatchSize));
+        assertTrue(isEqual(null, parameters.comparatorClassName));
+        assertTrue(isEqual(aBoolean, parameters.duplicateAllowed));
     }
 
     @Test

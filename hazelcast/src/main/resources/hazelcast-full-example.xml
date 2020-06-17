@@ -923,6 +923,12 @@
         Configuration element's name is <queue>. It has the optional attribute "name" with which you
         can specify the name of your queue. Its default value is "default".
         It has the following elements:
+        * "comparator-class-name":
+        Full qualified name comparator's class name to be used for the priority queue.
+        If nothing is provided, then the queue will behaves as a FiFo queue, using queue item id for comparison
+        * "duplicate-allowed":
+        When you set it to false, it implies usage of NoDuplicatePriorityQueue which filters duplicates on queue item data.
+        Default value is true with the behaviour of standard JDK priority queue which allows duplicates.
         * <statistics-enabled>:
         When you enable it, you can retrieve queue statistics. Its default value is true.
         * <max-size>:
@@ -965,6 +971,7 @@
             element. You should set the <split-brain-protection-ref>'s value as the <split-brain-protection>'s name.
     -->
     <queue name="default">
+        <duplicate-allowed>true</duplicate-allowed>
         <statistics-enabled>true</statistics-enabled>
         <max-size>0</max-size>
         <backup-count>1</backup-count>

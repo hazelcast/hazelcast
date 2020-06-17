@@ -6518,6 +6518,8 @@ public class MemberCompatibilityTest_2_1 {
         assertTrue(isEqual(aQueueStoreConfigHolder, parameters.queueStoreConfig));
         assertTrue(isEqual(aString, parameters.mergePolicy));
         assertTrue(isEqual(anInt, parameters.mergeBatchSize));
+        assertTrue(isEqual(aString, parameters.comparatorClassName));
+        assertTrue(isEqual(aBoolean, parameters.duplicateAllowed));
     }
 
     @Test

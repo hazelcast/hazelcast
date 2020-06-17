@@ -127,6 +127,8 @@ public final class QueueDataSerializerHook implements DataSerializerHook {
     public static final int MERGE = 44;
     public static final int MERGE_BACKUP = 45;
 
+    public static final int PRIORITY_QUEUE_COMPARATOR = 46;
+
     public int getFactoryId() {
         return F_ID;
     }

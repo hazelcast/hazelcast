@@ -128,6 +128,9 @@ hazelcast:
 
   queue:
     default:
+      # This is the standard behaviour of a priority queue which allows duplicates.
+      # false implies a use of NoDuplicatePriorityQueue which filters duplicates on queue item data.
+      duplicate-allowed: true
       # Maximum size of the queue. When a JVM's local queue size reaches the maximum,
       # all put/offer operations will get blocked until the queue size
       # of the JVM goes down below the maximum.

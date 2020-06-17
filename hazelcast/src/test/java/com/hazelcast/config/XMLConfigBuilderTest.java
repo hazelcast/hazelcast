@@ -16,6 +16,22 @@
 
 package com.hazelcast.config;
 
+import static com.hazelcast.config.EvictionPolicy.LRU;
+import static com.hazelcast.config.MaxSizePolicy.ENTRY_COUNT;
+import static com.hazelcast.config.PermissionConfig.PermissionType.CACHE;
+import static com.hazelcast.config.PermissionConfig.PermissionType.CONFIG;
+import static com.hazelcast.config.RestEndpointGroup.CLUSTER_READ;
+import static com.hazelcast.config.RestEndpointGroup.HEALTH_CHECK;
+import static com.hazelcast.config.WanQueueFullBehavior.THROW_EXCEPTION;
+import static com.hazelcast.config.XmlYamlConfigBuilderEqualsTest.readResourceToString;
+import static java.io.File.createTempFile;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
+
 import com.google.common.collect.ImmutableSet;
 import com.hazelcast.config.LoginModuleConfig.LoginModuleUsage;
 import com.hazelcast.config.PermissionConfig.PermissionType;
@@ -37,11 +53,6 @@ import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.topic.TopicOverloadPolicy;
 import com.hazelcast.wan.WanPublisherState;
-import org.junit.Ignore;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
-
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.InputStream;
@@ -608,6 +619,8 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     public void readQueueConfig() {
         String xml = HAZELCAST_START_TAG
                 + "      <queue name=\"custom\">"
+                + "        <comparator-class-name>com.hazelcast.config.QueueTestComparator</comparator-class-name>"
+                + "        <duplicate-allowed>false</duplicate-allowed>"
                 + "        <statistics-enabled>false</statistics-enabled>"
                 + "        <max-size>100</max-size>"
                 + "        <backup-count>2</backup-count>"
@@ -631,6 +644,8 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
 
         Config config = buildConfig(xml);
         QueueConfig queueConfig = config.getQueueConfig("custom");
+        assertEquals("com.hazelcast.config.QueueTestComparator", queueConfig.getComparatorClassName());
+        assertFalse(queueConfig.isDuplicateAllowed());
         assertFalse(queueConfig.isStatisticsEnabled());
         assertEquals(100, queueConfig.getMaxSize());
         assertEquals(2, queueConfig.getBackupCount());

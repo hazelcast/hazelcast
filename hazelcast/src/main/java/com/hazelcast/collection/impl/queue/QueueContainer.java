@@ -37,6 +37,7 @@ import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.transaction.TransactionException;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -274,6 +275,18 @@ public class QueueContainer implements IdentifiedDataSerializable {
     }
 
     @SuppressWarnings("unchecked")
+    /*private void addTxItemOrdered(TxQueueItem txQueueItem) {
+        ListIterator<QueueItem> iterator = ((List<QueueItem>) getItemQueue()).listIterator();
+        while (iterator.hasNext()) {
+            QueueItem queueItem = iterator.next();
+            if (txQueueItem.itemId < queueItem.itemId) {
+                iterator.previous();
+                break;
+            }
+        }
+        iterator.add(txQueueItem);
+    }*/
+
     private void addTxItemOrdered(TxQueueItem txQueueItem) {
         ListIterator<QueueItem> iterator = ((List<QueueItem>) getItemQueue()).listIterator();
         while (iterator.hasNext()) {
@@ -888,9 +901,7 @@ public class QueueContainer implements IdentifiedDataSerializable {
      */
     public PriorityQueue<QueueItem> getItemQueue() {
         if (itemQueue == null) {
-            ForwardingQueueItemComparator comparatorHolder = new ForwardingQueueItemComparator<>(config.getComparator(),
-                    nodeEngine.getSerializationService());
-            itemQueue = new PriorityQueue<QueueItem>(comparatorHolder);
+            itemQueue = createPriorityQueue(config);
             if (backupMap != null && !backupMap.isEmpty()) {
                 List<QueueItem> values = new ArrayList<>(backupMap.values());
                 Collections.sort(values);
@@ -911,6 +922,19 @@ public class QueueContainer implements IdentifiedDataSerializable {
             }
         }
         return itemQueue;
+    }
+
+    /**
+     * Returns concrete {@link PriorityQueue} depending on what have been defined in queue configuration
+     */
+    private PriorityQueue<QueueItem> createPriorityQueue(QueueConfig config) {
+        Comparator comparator = QueueComparatorProvider.getPriorityQueueComparator(config, config.getClass().getClassLoader());
+        ForwardingQueueItemComparator<?> forwardingQueueItemComparator = new ForwardingQueueItemComparator<>(comparator,
+                nodeEngine.getSerializationService());
+        if (config.isDuplicateAllowed()) {
+            return new PriorityQueue<>(forwardingQueueItemComparator);
+        }
+        return new NoDuplicatePriorityQueue(forwardingQueueItemComparator);
     }
 
     /**
