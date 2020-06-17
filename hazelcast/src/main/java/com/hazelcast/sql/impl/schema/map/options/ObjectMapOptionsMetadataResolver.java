@@ -44,7 +44,7 @@ public class ObjectMapOptionsMetadataResolver implements MapOptionsMetadataResol
         int fieldIndex = indexOf(externalFields, fieldName);
 
         if (fieldIndex > -1) {
-            // TODO: validate type mismatch ???
+            // TODO: validate types match ???
             QueryPath path = isKey ? QueryPath.KEY_PATH : QueryPath.VALUE_PATH;
             return new MapOptionsMetadata(
                     GenericQueryTargetDescriptor.INSTANCE,

@@ -86,7 +86,7 @@ public class PojoMapOptionsMetadataResolver implements MapOptionsMetadataResolve
         Map<String, String> typeNamesByFields = new HashMap<>();
         LinkedHashMap<String, QueryPath> fields = new LinkedHashMap<>();
 
-        // TODO: validate type mismatches ???
+        // TODO: validate types match ???
         for (ExternalField externalField : externalFields) {
             String fieldName = externalField.name();
 
@@ -143,33 +143,27 @@ public class PojoMapOptionsMetadataResolver implements MapOptionsMetadataResolve
 
     @SuppressWarnings({"RedundantIfStatement", "checkstyle:npathcomplexity"})
     private static boolean isGetter(Class<?> clazz, Method method) {
-        // Exclude non-public getters.
         if (!Modifier.isPublic(method.getModifiers())) {
             return false;
         }
 
-        // Exclude static getters.
         if (Modifier.isStatic(method.getModifiers())) {
             return false;
         }
 
-        // Exclude void return type.
         Class<?> returnType = method.getReturnType();
         if (returnType == void.class || returnType == Void.class) {
             return false;
         }
 
-        // Skip methods with parameters.
         if (method.getParameterCount() != 0) {
             return false;
         }
 
-        // Skip "getClass"
         if (method.getDeclaringClass() == Object.class) {
             return false;
         }
 
-        // Skip getFactoryId(), getClassId() and getVersion() from Portable and IdentifiedDataSerializable.
         String methodName = method.getName();
         if (methodName.equals(METHOD_GET_FACTORY_ID)
                 || methodName.equals(METHOD_GET_CLASS_ID)

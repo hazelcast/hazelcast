@@ -89,7 +89,7 @@ public class PortableMapOptionsMetadataResolver implements MapOptionsMetadataRes
     ) {
         LinkedHashMap<String, QueryPath> fields = new LinkedHashMap<>();
 
-        // TODO: validate type mismatches ???
+        // TODO: validate types match ???
         for (ExternalField externalField : externalFields) {
             String fieldName = externalField.name();
 

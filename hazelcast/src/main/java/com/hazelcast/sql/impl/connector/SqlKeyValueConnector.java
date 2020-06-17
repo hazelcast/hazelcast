@@ -57,39 +57,30 @@ public abstract class SqlKeyValueConnector implements SqlConnector {
             Map<String, QueryPath> valueFields
     ) {
         List<TableField> fields = new ArrayList<>(externalFields.size());
+
         for (ExternalField externalField : externalFields) {
             String fieldName = externalField.name();
 
-            QueryPath keyPath = keyFields.get(fieldName);
-            QueryPath valuePath = valueFields.get(fieldName);
-
-            TableField field;
-            if (keyPath != null) {
-                field = new MapTableField(
-                        externalField.name(),
-                        externalField.type(),
-                        false,
-                        keyPath
-                );
-            } else if (valuePath != null) {
-                field = new MapTableField(
-                        externalField.name(),
-                        externalField.type(),
-                        false,
-                        valuePath
-                );
+            QueryPath queryPath;
+            if (keyFields.containsKey(fieldName)) {
+                queryPath = keyFields.get(fieldName);
+            } else if (valueFields.containsKey(fieldName)) {
+                queryPath = valueFields.get(fieldName);
             } else {
                 // allow nulls for non existing fields
-                field = new MapTableField(
-                        externalField.name(),
-                        externalField.type(),
-                        false,
-                        QueryPath.create(fieldName)
-                );
+                queryPath = QueryPath.create(fieldName);
             }
+
+            TableField field = new MapTableField(
+                    externalField.name(),
+                    externalField.type(),
+                    false,
+                    queryPath
+            );
 
             fields.add(field);
         }
+
         return fields;
     }
 }
