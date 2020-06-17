@@ -321,8 +321,8 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         if (!isAlive.compareAndSet(true, false)) {
             return;
         }
-
-        ClientExecutionServiceImpl.shutdownExecutor("cluster", executor, logger);
+        executor.shutdownNow();
+        ClientExecutionServiceImpl.awaitExecutorTermination("cluster", executor, logger);
         for (Connection connection : activeConnections.values()) {
             connection.close("Hazelcast client is shutting down", null);
         }
@@ -453,7 +453,6 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
                         return true;
                     }
                 }
-
                 // If the address providers load no addresses (which seems to be possible), then the above loop is not entered
                 // and the lifecycle check is missing, hence we need to repeat the same check at this point.
                 checkClientActive();
