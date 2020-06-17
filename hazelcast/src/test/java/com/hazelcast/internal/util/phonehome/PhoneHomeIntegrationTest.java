@@ -16,6 +16,7 @@
 package com.hazelcast.internal.util.phonehome;
 
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
+import com.hazelcast.config.AttributeConfig;
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.QueryCacheConfig;
 import com.hazelcast.config.WanReplicationRef;
@@ -55,6 +56,7 @@ public class PhoneHomeIntegrationTest extends HazelcastTestSupport {
         node.getConfig().getMapConfig("hazelcast").getHotRestartConfig().setEnabled(true);
         node.getConfig().getMapConfig("hazelcast").getIndexConfigs().add(new IndexConfig());
         node.getConfig().getMapConfig("hazelcast").setWanReplicationRef(new WanReplicationRef());
+        node.getConfig().getMapConfig("hazelcast").getAttributeConfigs().add(new AttributeConfig());
 
 
         stubFor(get(urlPathEqualTo("/ping"))
@@ -70,7 +72,8 @@ public class PhoneHomeIntegrationTest extends HazelcastTestSupport {
                 .withQueryParam("mpaoqcct", equalTo("1"))
                 .withQueryParam("mpaoict", equalTo("1"))
                 .withQueryParam("mphect", equalTo("1"))
-                .withQueryParam("mpwact", equalTo("1")));
+                .withQueryParam("mpwact", equalTo("1"))
+                .withQueryParam("mpaocct", equalTo("1")));
 
     }
 

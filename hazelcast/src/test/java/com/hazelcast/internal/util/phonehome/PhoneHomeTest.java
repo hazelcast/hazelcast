@@ -15,10 +15,7 @@
  */
 package com.hazelcast.internal.util.phonehome;
 
-import com.hazelcast.config.IndexConfig;
-import com.hazelcast.config.IndexType;
-import com.hazelcast.config.QueryCacheConfig;
-import com.hazelcast.config.WanReplicationRef;
+import com.hazelcast.config.*;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.instance.impl.Node;
@@ -224,5 +221,26 @@ public class PhoneHomeTest extends HazelcastTestSupport {
         assertEquals(parameters.get("mpwact"), "1");
 
     }
+
+    @Test
+    public void testMapCountWithAtleastOneAttribute() {
+        Map<String, String> parameters;
+        parameters = phoneHome.phoneHome(true);
+        assertEquals(parameters.get("mpaocct"), "0");
+
+        Map<String, String> map1 = node.hazelcastInstance.getMap("hazelcast");
+        parameters = phoneHome.phoneHome(true);
+        assertEquals(parameters.get("mpaocct"), "0");
+
+        node.getConfig().getMapConfig("hazelcast").getAttributeConfigs().add(new AttributeConfig());
+        parameters = phoneHome.phoneHome(true);
+        assertEquals(parameters.get("mpaocct"), "1");
+
+        node.getConfig().getMapConfig("hazelcast").getAttributeConfigs().add(new AttributeConfig());
+        parameters = phoneHome.phoneHome(true);
+        assertEquals(parameters.get("mpaocct"), "1");
+
+    }
+
 }
 
