@@ -1133,6 +1133,38 @@ p.readFrom(source)
 Elasticsearch is a popular fulltext search engine. Hazelcast Jet can
 use it both as a source and a sink.
 
+#### Dependency
+
+To use the Elasticsearch connector, you need to copy the
+`hazelcast-jet-elasticsearch-7` module from the `opt` folder to the
+`lib` folder and add the following dependency to your application:
+
+<!--DOCUSAURUS_CODE_TABS-->
+
+<!--Gradle-->
+
+```groovy
+compile 'com.hazelcast.jet:hazelcast-jet-elasticsearch-7:{jet-version}'
+```
+
+<!--Maven-->
+
+```xml
+<dependency>
+  <groupId>com.hazelcast.jet</groupId>
+  <artifactId>hazelcast-jet-elasticsearch-7</artifactId>
+  <version>{jet-version}</version>
+</dependency>
+```
+
+> For Elasticsearch version 6 and 5 there are separate modules
+> `hazelcast-jet-elasticsearch-6` and `hazelcast-jet-elasticsearch-5`.
+> Each module includes Elasticsearch client compatible with given major
+> version of Elasticsearch. The connector API is the same between
+> different versions, apart from a few minor differences where we
+> surface the API of Elasticsearch client. See the JavaDoc for any
+> such differences.
+
 #### Source
 
 The Elasticsearch connector source provides a builder and several
@@ -1437,6 +1469,7 @@ restarted in face of an intermittent failure.
 |:-----|:------------------|:-----------|:--------|
 |`AvroSources.files`|`hazelcast-jet-avro (avro)`|batch|N/A|
 |`DebeziumCdcSources.debezium`|`hazelcast-jet-cdc-debezium (cdc-debezium)`|stream|at-least-once|
+|`ElasticSources.elastic`|`hazelcast-jet-elasticsearch-6 (elasticsearch-6)`|batch|N/A|
 |`ElasticSources.elastic`|`hazelcast-jet-elasticsearch-7 (elasticsearch-7)`|batch|N/A|
 |`HadoopSources.inputFormat`|`hazelcast-jet-hadoop (hadoop)`|batch|N/A|
 |`KafkaSources.kafka`|`hazelcast-jet-kafka (kafka)`|stream|exactly-once|
@@ -1473,6 +1506,7 @@ processing even with at-least-once sinks.
 |:---|:------------------|:--------------|:-------------------|
 |`AvroSinks.files`|`hazelcast-jet-avro (avro)`|no|N/A|
 |`CdcSinks.map`|`hazelcast-jet-cdc-debezium (cdc-debezium)`|yes|at-least-once|
+|`ElasticSinks.elastic`|`hazelcast-jet-elasticsearch-6 (elasticsearch-6)`|yes|at-least-once|
 |`ElasticSinks.elastic`|`hazelcast-jet-elasticsearch-7 (elasticsearch-7)`|yes|at-least-once|
 |`HadoopSinks.outputFormat`|`hazelcast-jet-hadoop (hadoop)`|no|N/A|
 |`KafkaSinks.kafka`|`hazelcast-jet-kafka (kafka)`|yes|exactly-once|
