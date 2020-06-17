@@ -702,7 +702,7 @@ public abstract class ExpressionTestBase {
             assertArrayEquals(expected, actual);
 
             if (VERIFY_EVALUATION) {
-                RelNode relNode = optimizerContext.convert(sqlNode);
+                RelNode relNode = optimizerContext.convert(sqlNode).getRel();
                 Expression<?> expression = convertToExpression(relNode, validator.getParameterRowType(sqlNode));
 
                 verifyEvaluation(expected, operands, expression, expectedValues, evaluationId);

@@ -33,6 +33,7 @@ import com.hazelcast.sql.impl.calcite.opt.physical.ReplicatedToDistributedPhysic
 import com.hazelcast.sql.impl.calcite.opt.physical.RootPhysicalRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.SortPhysicalRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.agg.AggregatePhysicalRel;
+import com.hazelcast.sql.impl.calcite.opt.physical.exchange.AbstractExchangePhysicalRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.exchange.BroadcastExchangePhysicalRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.exchange.RootExchangePhysicalRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.exchange.SortMergeExchangePhysicalRel;
@@ -129,6 +130,9 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
 
     private final QueryParameterMetadata parameterMetadata;
 
+    /** Names of the returned columns from the original query. */
+    private final List<String> rootColumnNames;
+
     /** Prepared fragments. */
     private final List<PlanNode> fragments = new ArrayList<>();
 
@@ -158,13 +162,15 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
         Map<UUID, PartitionIdSet> partMap,
         Map<PhysicalRel, List<Integer>> relIdMap,
         String sql,
-        QueryParameterMetadata parameterMetadata
+        QueryParameterMetadata parameterMetadata,
+        List<String> rootColumnNames
     ) {
         this.localMemberId = localMemberId;
         this.partMap = partMap;
         this.relIdMap = relIdMap;
         this.sql = sql;
         this.parameterMetadata = parameterMetadata;
+        this.rootColumnNames = rootColumnNames;
 
         memberIds = new HashSet<>(partMap.keySet());
     }
@@ -223,7 +229,7 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
             upstreamNode
         );
 
-        rootMetadata = new QueryMetadata(rootNode.getSchema().getTypes());
+        rootMetadata = new QueryMetadata(rootColumnNames, rootNode.getSchema().getTypes());
 
         addFragment(rootNode, new PlanFragmentMapping(Collections.singleton(localMemberId), false));
     }

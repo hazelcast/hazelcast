@@ -29,12 +29,14 @@ import java.util.Iterator;
 
 public class SingleValueCursor implements SqlCursor {
 
+    private static final String COLUMN_NAME = "VALUE";
+
     private final SqlColumnMetadata metadata;
     private Iterator<SqlRow> iterator;
 
     public <T> SingleValueCursor(T value) {
         QueryDataType queryDataType = QueryDataTypeUtils.resolveTypeForClass(value.getClass());
-        this.metadata = QueryUtils.getColumnMetadata(queryDataType);
+        this.metadata = QueryUtils.getColumnMetadata(COLUMN_NAME, queryDataType);
 
         SqlRow row = new SqlRowImpl(new HeapRow(new Object[]{value}));
         this.iterator = Collections.singleton(row).iterator();

@@ -25,10 +25,18 @@ import java.util.List;
  */
 public class QueryMetadata {
 
-    private List<QueryDataType> columnTypes;
+    private final List<String> columnNames;
+    private final List<QueryDataType> columnTypes;
 
-    public QueryMetadata(List<QueryDataType> columnTypes) {
+    public QueryMetadata(List<String> columnNames, List<QueryDataType> columnTypes) {
         this.columnTypes = columnTypes;
+        this.columnNames = columnNames;
+    }
+
+    public String getColumnName(int columnIndex) {
+        assert columnIndex >= 0 && columnIndex <= columnTypes.size();
+
+        return columnNames.get(columnIndex);
     }
 
     public QueryDataType getColumnType(int columnIndex) {

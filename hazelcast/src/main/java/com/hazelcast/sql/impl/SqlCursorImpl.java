@@ -53,10 +53,10 @@ public class SqlCursorImpl implements SqlCursor {
         int columnCount = metadata.getColumnCount();
 
         if (index < 0 || index >= columnCount) {
-            throw new IllegalArgumentException("Column index is out of range: " + index);
+            throw new IndexOutOfBoundsException("Column index is out of range: " + index);
         }
 
-        return QueryUtils.getColumnMetadata(metadata.getColumnType(index));
+        return QueryUtils.getColumnMetadata(metadata.getColumnName(index), metadata.getColumnType(index));
     }
 
     @Override @Nonnull

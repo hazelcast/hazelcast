@@ -29,7 +29,9 @@ import java.util.List;
  */
 public class QueryExplainCursor implements SqlCursor {
 
-    private static final SqlColumnMetadata COLUMN_METADATA = new SqlColumnMetadata(SqlColumnType.VARCHAR);
+    private static final String COLUMN_NAME = "ITEM";
+
+    private static final SqlColumnMetadata COLUMN_METADATA = new SqlColumnMetadata(COLUMN_NAME, SqlColumnType.VARCHAR);
     private final List<SqlRow> rows;
 
     public QueryExplainCursor(List<SqlRow> rows) {

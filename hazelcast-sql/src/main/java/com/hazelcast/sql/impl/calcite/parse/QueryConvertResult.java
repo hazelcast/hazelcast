@@ -14,26 +14,30 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql;
+package com.hazelcast.sql.impl.calcite.parse;
+
+import org.apache.calcite.rel.RelNode;
+
+import java.util.List;
 
 /**
- * Column metadata.
+ * Encapsulates result of a query conversion from SQL tree to relational tree.
  */
-public class SqlColumnMetadata {
+public class QueryConvertResult {
 
-    private final String name;
-    private final SqlColumnType type;
+    private final RelNode rel;
+    private final List<String> fieldNames;
 
-    public SqlColumnMetadata(String name, SqlColumnType type) {
-        this.name = name;
-        this.type = type;
+    public QueryConvertResult(RelNode rel, List<String> fieldNames) {
+        this.rel = rel;
+        this.fieldNames = fieldNames;
     }
 
-    public String getName() {
-        return name;
+    public RelNode getRel() {
+        return rel;
     }
 
-    public SqlColumnType getType() {
-        return type;
+    public List<String> getFieldNames() {
+        return fieldNames;
     }
 }
