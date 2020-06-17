@@ -238,7 +238,8 @@ public class ClientListenerServiceImpl implements ClientListenerService, StaticM
 
     public void shutdown() {
         eventExecutor.shutdown();
-        ClientExecutionServiceImpl.shutdownExecutor("registrationExecutor", registrationExecutor, logger);
+        registrationExecutor.shutdown();
+        ClientExecutionServiceImpl.awaitExecutorTermination("registrationExecutor", registrationExecutor, logger);
     }
 
     public void start() {
