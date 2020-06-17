@@ -812,11 +812,7 @@ public class Node {
         } else if (join.getTcpIpConfig().isEnabled()) {
             logger.info("Creating TcpIpJoiner");
             return new TcpIpJoiner(this);
-        } else if (join.getAwsConfig().isEnabled()) {
-            logger.info("Creating AWSJoiner");
-            return createAwsJoiner();
         } else if (properties.getBoolean(DISCOVERY_SPI_ENABLED) || isAnyAliasedConfigEnabled(join) || isAutoDetectionEnabled(join)) {
-            //TODO: Auto-Upgrade Multicast+AWS configuration!
             logger.info("Activating Discovery SPI Joiner");
             return new DiscoveryJoiner(this, discoveryService, usePublicAddress(join));
         }
@@ -834,27 +830,6 @@ public class Node {
     private boolean usePublicAddress(JoinConfig join) {
         return properties.getBoolean(DISCOVERY_SPI_PUBLIC_IP_ENABLED)
                 || allUsePublicAddress(AliasedDiscoveryConfigUtils.aliasedDiscoveryConfigsFrom(join));
-    }
-
-    private Joiner createAwsJoiner() {
-        try {
-            Class clazz = Class.forName("com.hazelcast.cluster.impl.TcpIpJoinerOverAWS");
-            Constructor constructor = clazz.getConstructor(Node.class);
-            return (Joiner) constructor.newInstance(this);
-        } catch (ClassNotFoundException e) {
-            String message = "Your Hazelcast network configuration has AWS discovery "
-                     + "enabled, but there is no Hazelcast AWS module on a classpath. " + LINE_SEPARATOR
-                     + "Hint: If you are using Maven then add this dependency into your pom.xml:" + LINE_SEPARATOR
-                     + "<dependency>" + LINE_SEPARATOR
-                     + "    <groupId>com.hazelcast</groupId>" + LINE_SEPARATOR
-                     + "    <artifactId>hazelcast-aws</artifactId>" + LINE_SEPARATOR
-                     + "    <version>insert hazelcast-aws version</version>" + LINE_SEPARATOR
-                     + "</dependency>" + LINE_SEPARATOR
-                     + " See https://github.com/hazelcast/hazelcast-aws for additional details";
-            throw new InvalidConfigurationException(message, e);
-        } catch (Exception e) {
-            throw rethrow(e);
-        }
     }
 
     public UUID getThisUuid() {
