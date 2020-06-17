@@ -18,6 +18,7 @@ package com.hazelcast.spi.impl.sequence;
 
 import com.hazelcast.core.HazelcastOverloadException;
 import com.hazelcast.internal.util.ConcurrencyDetection;
+import com.hazelcast.internal.util.Timer;
 import com.hazelcast.internal.util.concurrent.BackoffIdleStrategy;
 import com.hazelcast.internal.util.concurrent.IdleStrategy;
 
@@ -57,9 +58,9 @@ public final class CallIdSequenceWithBackpressure extends AbstractCallIdSequence
 
     @Override
     protected void handleNoSpaceLeft() {
-        long start = System.nanoTime();
+        long startNanos = Timer.nanos();
         for (long idleCount = 0; ; idleCount++) {
-            long elapsedNanos = System.nanoTime() - start;
+            long elapsedNanos = Timer.nanosElapsed(startNanos);
             if (elapsedNanos > backoffTimeoutNanos) {
                 throw new HazelcastOverloadException(String.format("Timed out trying to acquire another call ID."
                                 + " maxConcurrentInvocations = %d, backoffTimeout = %d msecs, elapsed:%d msecs",

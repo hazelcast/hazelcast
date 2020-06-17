@@ -19,6 +19,7 @@ package com.hazelcast.collection.impl.queue;
 import com.hazelcast.collection.QueueStore;
 import com.hazelcast.internal.diagnostics.StoreLatencyPlugin;
 import com.hazelcast.internal.diagnostics.StoreLatencyPlugin.LatencyProbe;
+import com.hazelcast.internal.util.Timer;
 
 import java.util.Collection;
 import java.util.Map;
@@ -49,71 +50,71 @@ public class LatencyTrackingQueueStore<T> implements QueueStore<T> {
 
     @Override
     public void store(Long key, T value) {
-        long startNanos = System.nanoTime();
+        long startNanos = Timer.nanos();
         try {
             delegate.store(key, value);
         } finally {
-            storeProbe.recordValue(System.nanoTime() - startNanos);
+            storeProbe.recordValue(Timer.nanosElapsed(startNanos));
         }
     }
 
     @Override
     public void storeAll(Map<Long, T> map) {
-        long startNanos = System.nanoTime();
+        long startNanos = Timer.nanos();
         try {
             delegate.storeAll(map);
         } finally {
-            storeAllProbe.recordValue(System.nanoTime() - startNanos);
+            storeAllProbe.recordValue(Timer.nanosElapsed(startNanos));
         }
     }
 
     @Override
     public void delete(Long key) {
-        long startNanos = System.nanoTime();
+        long startNanos = Timer.nanos();
         try {
             delegate.delete(key);
         } finally {
-            deleteProbe.recordValue(System.nanoTime() - startNanos);
+            deleteProbe.recordValue(Timer.nanosElapsed(startNanos));
         }
     }
 
     @Override
     public void deleteAll(Collection<Long> keys) {
-        long startNanos = System.nanoTime();
+        long startNanos = Timer.nanos();
         try {
             delegate.deleteAll(keys);
         } finally {
-            deleteAllProbe.recordValue(System.nanoTime() - startNanos);
+            deleteAllProbe.recordValue(Timer.nanosElapsed(startNanos));
         }
     }
 
     @Override
     public T load(Long key) {
-        long startNanos = System.nanoTime();
+        long startNanos = Timer.nanos();
         try {
             return delegate.load(key);
         } finally {
-            loadProbe.recordValue(System.nanoTime() - startNanos);
+            loadProbe.recordValue(Timer.nanosElapsed(startNanos));
         }
     }
 
     @Override
     public Map<Long, T> loadAll(Collection<Long> keys) {
-        long startNanos = System.nanoTime();
+        long startNanos = Timer.nanos();
         try {
             return delegate.loadAll(keys);
         } finally {
-            loadAllProbe.recordValue(System.nanoTime() - startNanos);
+            loadAllProbe.recordValue(Timer.nanosElapsed(startNanos));
         }
     }
 
     @Override
     public Set<Long> loadAllKeys() {
-        long startNanos = System.nanoTime();
+        long startNanos = Timer.nanos();
         try {
             return delegate.loadAllKeys();
         } finally {
-            loadAllKeysProbe.recordValue(System.nanoTime() - startNanos);
+            loadAllKeysProbe.recordValue(Timer.nanosElapsed(startNanos));
         }
     }
 }

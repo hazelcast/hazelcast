@@ -19,7 +19,6 @@ package com.hazelcast.cp.internal.datastructures.atomiclong.client;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.AtomicLongApplyCodec;
 import com.hazelcast.core.IFunction;
-import com.hazelcast.cp.internal.RaftService;
 import com.hazelcast.cp.internal.client.AbstractCPMessageTask;
 import com.hazelcast.cp.internal.datastructures.atomiclong.AtomicLongService;
 import com.hazelcast.cp.internal.datastructures.atomiclong.operation.ApplyOp;
@@ -44,10 +43,7 @@ public class ApplyMessageTask extends AbstractCPMessageTask<AtomicLongApplyCodec
     @Override
     protected void processMessage() {
         IFunction<Long, Object> function = serializationService.toObject(parameters.function);
-        RaftService service = nodeEngine.getService(RaftService.SERVICE_NAME);
-        service.getInvocationManager()
-               .query(parameters.groupId, new ApplyOp<>(parameters.name, function), LINEARIZABLE)
-               .whenCompleteAsync(this);
+        query(parameters.groupId, new ApplyOp<>(parameters.name, function), LINEARIZABLE);
     }
 
     @Override
@@ -82,6 +78,6 @@ public class ApplyMessageTask extends AbstractCPMessageTask<AtomicLongApplyCodec
 
     @Override
     public Object[] getParameters() {
-        return new Object[]{parameters.function};
+        return new Object[] {parameters.function};
     }
 }

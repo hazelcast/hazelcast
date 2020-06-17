@@ -43,6 +43,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import static com.hazelcast.spi.impl.InternalCompletableFuture.newCompletedFuture;
+import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
 import static com.hazelcast.test.HazelcastTestSupport.ignore;
 import static com.hazelcast.test.HazelcastTestSupport.sleepSeconds;
 import static org.junit.Assert.assertEquals;
@@ -290,6 +291,7 @@ public class ClientInvocationFutureTest {
                 (t) -> t);
         invocationFuture.complete(response);
 
+        assertTrueEventually(() -> assertTrue(nextStage.isDone()));
         assertEquals(null, nextStage.get(10, TimeUnit.SECONDS));
         verify(callIdSequence).forceNext();
         verify(callIdSequence, times(2)).complete();

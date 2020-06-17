@@ -585,6 +585,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
                 .setSkipEndpoint(FALSE)
                 .setSkipRole(TRUE)
                 .setRelaxFlagsCheck(TRUE)
+                .setUseNameWithoutRealm(TRUE)
                 .setSecurityRealm("jaasRealm")
                 .setLdapAuthenticationConfig(new LdapAuthenticationConfig()
                         .setUrl("url")))
@@ -592,6 +593,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
                 .setRealm("HAZELCAST.COM")
                 .setSecurityRealm("krb5Init")
                 .setServiceNamePrefix("hz/")
+                .setUseCanonicalHostname(TRUE)
                 .setSpn("spn@HAZELCAST.COM"));
         SecurityConfig expectedConfig = new SecurityConfig().setMemberRealmConfig("kerberosRealm", realmConfig);
         cfg.setSecurityConfig(expectedConfig);

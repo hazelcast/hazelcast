@@ -330,9 +330,10 @@ public final class OptUtils {
 
     public static LogicalTableScan createLogicalScanWithNewTable(
         TableScan originalScan,
-        HazelcastRelOptTable originalRelTable,
         HazelcastTable newHazelcastTable
     ) {
+        HazelcastRelOptTable originalRelTable = (HazelcastRelOptTable) originalScan.getTable();
+
         HazelcastRelOptTable newTable = createRelTable(
             originalRelTable,
             newHazelcastTable,

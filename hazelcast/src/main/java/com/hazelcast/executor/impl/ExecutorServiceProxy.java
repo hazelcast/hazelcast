@@ -28,6 +28,7 @@ import com.hazelcast.executor.impl.operations.ShutdownOperation;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.util.Clock;
 import com.hazelcast.internal.util.FutureUtil.ExceptionHandler;
+import com.hazelcast.internal.util.Timer;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.executor.LocalExecutorStats;
 import com.hazelcast.cluster.Address;
@@ -540,10 +541,10 @@ public class ExecutorServiceProxy
         boolean done = false;
         try {
             for (Callable<T> task : tasks) {
-                long start = System.nanoTime();
+                long startNanos = Timer.nanos();
                 int partitionId = getTaskPartitionId(task);
                 futures.add(submitToPartitionOwner(task, partitionId, true));
-                timeoutNanos -= System.nanoTime() - start;
+                timeoutNanos -= Timer.nanosElapsed(startNanos);
             }
             if (timeoutNanos <= 0L) {
                 return futures;
@@ -565,7 +566,7 @@ public class ExecutorServiceProxy
     private <T> boolean wait(long timeoutNanos, List<Future<T>> futures) throws InterruptedException {
         boolean done = true;
         for (int i = 0, size = futures.size(); i < size; i++) {
-            long start = System.nanoTime();
+            long startNanos = Timer.nanos();
             Object value;
             try {
                 Future<T> future = futures.get(i);
@@ -584,7 +585,7 @@ public class ExecutorServiceProxy
             }
 
             futures.set(i, InternalCompletableFuture.newCompletedFuture(value));
-            timeoutNanos -= System.nanoTime() - start;
+            timeoutNanos -= Timer.nanosElapsed(startNanos);
         }
         return done;
     }

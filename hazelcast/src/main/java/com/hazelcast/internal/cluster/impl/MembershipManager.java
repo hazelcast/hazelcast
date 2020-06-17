@@ -31,6 +31,7 @@ import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.internal.services.MembershipAwareService;
 import com.hazelcast.internal.services.MembershipServiceEvent;
 import com.hazelcast.internal.util.EmptyStatement;
+import com.hazelcast.internal.util.Timer;
 import com.hazelcast.internal.util.executor.ExecutorType;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.NodeEngineImpl;
@@ -59,7 +60,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Lock;
@@ -899,7 +899,7 @@ public class MembershipManager {
                 Address address = member.getAddress();
                 Future<MembersView> future = e.getValue();
 
-                long start = System.nanoTime();
+                long startNanos = Timer.nanos();
                 try {
                     long timeout = min(FETCH_MEMBER_LIST_MILLIS, Math.max(mastershipClaimTimeout, 1));
                     MembersView membersView = future.get(timeout, MILLISECONDS);
@@ -933,7 +933,7 @@ public class MembershipManager {
                     }
                 }
 
-                mastershipClaimTimeout -= TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start);
+                mastershipClaimTimeout -= Timer.millisElapsed(startNanos);
             }
 
             if (done) {

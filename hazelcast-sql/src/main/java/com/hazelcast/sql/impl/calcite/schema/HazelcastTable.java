@@ -18,6 +18,8 @@ package com.hazelcast.sql.impl.calcite.schema;
 
 import com.hazelcast.sql.impl.calcite.SqlToQueryType;
 import com.hazelcast.sql.impl.calcite.opt.cost.CostUtils;
+import com.hazelcast.sql.impl.calcite.opt.logical.FilterIntoScanLogicalRule;
+import com.hazelcast.sql.impl.calcite.opt.logical.ProjectIntoScanLogicalRule;
 import com.hazelcast.sql.impl.schema.Table;
 import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.type.QueryDataType;
@@ -38,17 +40,48 @@ import org.apache.calcite.schema.impl.AbstractTable;
 import org.apache.calcite.sql.type.SqlTypeName;
 import org.apache.calcite.util.ImmutableBitSet;
 
+import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
+import java.util.StringJoiner;
+
+import static java.util.stream.Collectors.joining;
 
 /**
  * Base class for all tables in the Calcite integration:
  * <ul>
  *     <li>Maps field types defined in the {@code core} module to Calcite types</li>
  *     <li>Provides access to the underlying table and statistics</li>
+ *     <li>Encapsulates projects and filter to allow for constrained scans</li>
  * </ul>
+ * <p>
+ * <h2>Constrained scans</h2>
+ * For a sequence of logical project/filter/scan operators we would like to ensure that the resulting relational tree is as
+ * flat as possible because this minimizes the processing overhead and memory usage. To achieve this we try to push projects and
+ * filters into the table using {@link ProjectIntoScanLogicalRule} and {@link FilterIntoScanLogicalRule}. These rules
+ * reduce the amount of data returned from the table during scanning. Pushed-down projection ensures that only columns required
+ * by parent operators are returned, thus implementing field trimming. Pushed-down filter reduces the number of returned rows.
+ * <p>
+ * Projects are indexes of table fields that are returned. Initial projection (i.e. before optimization) returns all the columns.
+ * After project pushdown the number and order of columns may change. For example, for the table {@code t[f0, f1, f2]} the
+ * initial projection is {@code [0, 1, 2]}. After pushdown of a {@code "SELECT f2, f0"} the projection becomes {@code [2, 0]}
+ * which means that the columns {@code [f2, f0]} are returned, in that order.
+ * <p>
+ * Filter is a conjunctive expression that references table fields via their original indexes. That is, {@code [f2]} is
+ * referenced as {@code [2]} even if it is projected as the first field in the example above. This is needed to allow for
+ * projections and filters on disjoint sets of attributes.
+ * <p>
+ * Consider the following SQL statement:
+ * <pre>
+ * SELECT f2, f0 FROM t WHERE f1 > ?
+ * </pre>
+ * In this case {@code projects=[2, 0]}, {@code filter=[>$1, ?]}.
+ * <p>
+ * We do not pushdown the project expressions other than columns, because expressions inside the scan may change its physical
+ * properties, thus making further optimization more complex.
  */
 public class HazelcastTable extends AbstractTable {
 
@@ -79,9 +112,8 @@ public class HazelcastTable extends AbstractTable {
         return new HazelcastTable(target, statistic, projects, filter);
     }
 
+    @Nonnull
     public List<Integer> getProjects() {
-        assert projects == null || !projects.isEmpty();
-
         if (projects == null) {
             int fieldCount = target.getFieldCount();
 
@@ -174,40 +206,30 @@ public class HazelcastTable extends AbstractTable {
         return target.getFieldCount();
     }
 
+    /**
+     * Constructs a signature for the table.
+     * <p>
+     * See {@link HazelcastRelOptTable} for more information.
+     *
+     * @return Signature.
+     */
     public String getSignature() {
-        if (projects == null && filter == null) {
-            return "";
-        }
+        StringJoiner res = new StringJoiner(", ", "[", "]");
 
-        StringBuilder res = new StringBuilder("[");
+        res.setEmptyValue("");
 
-        if (projects != null) {
-            res.append("projects=[");
-
-            for (int i = 0; i < projects.size(); i++) {
-                if (i != 0) {
-                    res.append(", ");
-                }
-
-                res.append(projects.get(i));
-            }
-
-            res.append("]");
-        }
+        res.add("projects=" + getProjects().stream().map(Objects::toString).collect(joining(", ", "[", "]")));
 
         if (filter != null) {
-            if (projects != null) {
-                res.append(", ");
-            }
-
-            res.append("filter=").append(filter);
+            res.add("filter=" + filter);
         }
-
-        res.append("]");
 
         return res.toString();
     }
 
+    /**
+     * Statistics that takes in count the row count after the filter is applied.
+     */
     // TODO: VO: Make sure to project keys (and possibly collations?) properly when implementing sort/aggregate/join. Otherwise
     //  we may have incorrect optimization results.
     private final class AdjustedStatistic implements Statistic {

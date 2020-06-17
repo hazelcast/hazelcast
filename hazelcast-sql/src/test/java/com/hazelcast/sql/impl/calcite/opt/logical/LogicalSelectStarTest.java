@@ -44,8 +44,8 @@ public class LogicalSelectStarTest extends OptimizerTestSupport {
         tableMap.put("r", OptimizerTestSupport.partitionedTable(
             "r",
             Arrays.asList(
-                TestMapTable.field("r_f1", false),
-                TestMapTable.field("r_f2", true)
+                TestMapTable.field("r_f0", false),
+                TestMapTable.field("r_f1", true)
             ),
             null,
             100
@@ -54,8 +54,8 @@ public class LogicalSelectStarTest extends OptimizerTestSupport {
         tableMap.put("s", OptimizerTestSupport.partitionedTable(
             "s",
             Arrays.asList(
-                TestMapTable.field("s_f1", false),
-                TestMapTable.field("s_f2", true)
+                TestMapTable.field("s_f0", false),
+                TestMapTable.field("s_f1", true)
             ),
             null,
             100
@@ -83,23 +83,23 @@ public class LogicalSelectStarTest extends OptimizerTestSupport {
         );
 
         assertPlan(
-            optimizeLogical("SELECT *, r.r_f2 FROM r"),
+            optimizeLogical("SELECT *, r.r_f1 FROM r"),
             plan(
                 planRow(0, RootLogicalRel.class, ""),
-                planRow(1, MapScanLogicalRel.class, "table=[[hazelcast, r]]")
+                planRow(1, MapScanLogicalRel.class, "table=[[hazelcast, r[projects=[0, 1]]]]")
             )
         );
 
         assertPlan(
-            optimizeLogical("SELECT r.*, r.r_f2 FROM r"),
+            optimizeLogical("SELECT r.*, r.r_f1 FROM r"),
             plan(
                 planRow(0, RootLogicalRel.class, ""),
-                planRow(1, MapScanLogicalRel.class, "table=[[hazelcast, r]]")
+                planRow(1, MapScanLogicalRel.class, "table=[[hazelcast, r[projects=[0, 1]]]]")
             )
         );
 
         assertPlan(
-            optimizeLogical("SELECT r.r_f2, r.* FROM r"),
+            optimizeLogical("SELECT r.r_f1, r.* FROM r"),
             plan(
                 planRow(0, RootLogicalRel.class, ""),
                 planRow(1, MapScanLogicalRel.class, "table=[[hazelcast, r[projects=[1, 0]]]]")

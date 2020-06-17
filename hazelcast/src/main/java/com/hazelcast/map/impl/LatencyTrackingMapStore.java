@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.impl;
 
+import com.hazelcast.internal.util.Timer;
 import com.hazelcast.map.MapStore;
 import com.hazelcast.internal.diagnostics.StoreLatencyPlugin;
 import com.hazelcast.internal.diagnostics.StoreLatencyPlugin.LatencyProbe;
@@ -23,7 +24,6 @@ import com.hazelcast.internal.diagnostics.StoreLatencyPlugin.LatencyProbe;
 import java.util.Collection;
 import java.util.Map;
 
-@SuppressWarnings("unchecked")
 public class LatencyTrackingMapStore<K, V> implements MapStore<K, V> {
     static final String KEY = "MapStoreLatency";
 
@@ -59,41 +59,41 @@ public class LatencyTrackingMapStore<K, V> implements MapStore<K, V> {
 
     @Override
     public void store(K key, V value) {
-        long startNanos = System.nanoTime();
+        long startNanos = Timer.nanos();
         try {
             delegate.store(key, value);
         } finally {
-            storeProbe.recordValue(System.nanoTime() - startNanos);
+            storeProbe.recordValue(Timer.nanosElapsed(startNanos));
         }
     }
 
     @Override
     public void storeAll(Map<K, V> map) {
-        long startNanos = System.nanoTime();
+        long startNanos = Timer.nanos();
         try {
             delegate.storeAll(map);
         } finally {
-            storeAllProbe.recordValue(System.nanoTime() - startNanos);
+            storeAllProbe.recordValue(Timer.nanosElapsed(startNanos));
         }
     }
 
     @Override
     public void delete(K key) {
-        long startNanos = System.nanoTime();
+        long startNanos = Timer.nanos();
         try {
             delegate.delete(key);
         } finally {
-            deleteProbe.recordValue(System.nanoTime() - startNanos);
+            deleteProbe.recordValue(Timer.nanosElapsed(startNanos));
         }
     }
 
     @Override
     public void deleteAll(Collection<K> keys) {
-        long startNanos = System.nanoTime();
+        long startNanos = Timer.nanos();
         try {
             delegate.deleteAll(keys);
         } finally {
-            deleteAllProbe.recordValue(System.nanoTime() - startNanos);
+            deleteAllProbe.recordValue(Timer.nanosElapsed(startNanos));
         }
     }
 

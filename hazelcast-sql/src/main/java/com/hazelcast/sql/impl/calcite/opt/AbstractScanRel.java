@@ -20,7 +20,6 @@ import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelOptTable;
 import org.apache.calcite.plan.RelTraitSet;
-import org.apache.calcite.rel.RelWriter;
 import org.apache.calcite.rel.core.TableScan;
 
 import java.util.Collections;
@@ -35,11 +34,5 @@ public abstract class AbstractScanRel extends TableScan implements HazelcastRelN
 
     public HazelcastTable getTableUnwrapped() {
         return table.unwrap(HazelcastTable.class);
-    }
-
-
-    @Override
-    public RelWriter explainTerms(RelWriter pw) {
-        return super.explainTerms(pw);
     }
 }

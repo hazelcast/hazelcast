@@ -18,6 +18,7 @@ package com.hazelcast.multimap.impl.txn;
 
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.internal.nio.IOUtil;
+import com.hazelcast.internal.util.Timer;
 import com.hazelcast.multimap.impl.MultiMapContainer;
 import com.hazelcast.multimap.impl.MultiMapDataSerializerHook;
 import com.hazelcast.multimap.impl.MultiMapRecord;
@@ -52,7 +53,7 @@ public class TxnPutOperation extends AbstractKeyBasedMultiMapOperation implement
 
     @Override
     public void run() throws Exception {
-        startTimeNanos = System.nanoTime();
+        startTimeNanos = Timer.nanos();
         MultiMapContainer container = getOrCreateContainer();
         MultiMapValue multiMapValue = container.getOrCreateMultiMapValue(dataKey);
         if (multiMapValue.containsRecordId(recordId)) {
@@ -68,9 +69,9 @@ public class TxnPutOperation extends AbstractKeyBasedMultiMapOperation implement
 
     @Override
     public void afterRun() throws Exception {
-        long elapsed = Math.max(0, System.nanoTime() - startTimeNanos);
+        long elapsedNanos = Math.max(0, Timer.nanosElapsed(startTimeNanos));
         MultiMapService service = getService();
-        service.getLocalMultiMapStatsImpl(name).incrementPutLatencyNanos(elapsed);
+        service.getLocalMultiMapStatsImpl(name).incrementPutLatencyNanos(elapsedNanos);
         if (Boolean.TRUE.equals(response)) {
             publishEvent(EntryEventType.ADDED, dataKey, value, null);
         }

@@ -56,6 +56,7 @@ import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.internal.util.FutureUtil;
+import com.hazelcast.internal.util.Timer;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 
@@ -274,7 +275,7 @@ abstract class ClientCacheProxySupport<K, V> extends ClientProxy implements ICac
     }
 
     protected long nowInNanosOrDefault() {
-        return statisticsEnabled ? System.nanoTime() : -1;
+        return statisticsEnabled ? Timer.nanos() : -1;
     }
 
     protected ClientInvocationFuture invoke(ClientMessage req, int partitionId, int completionId) {
@@ -715,7 +716,7 @@ abstract class ClientCacheProxySupport<K, V> extends ClientProxy implements ICac
         if (!statisticsEnabled) {
             return null;
         }
-        return statsHandler.newOnPutCallback(isGet, System.nanoTime());
+        return statsHandler.newOnPutCallback(isGet, Timer.nanos());
     }
 
     protected boolean setExpiryPolicyInternal(K key, ExpiryPolicy expiryPolicy) {

@@ -85,6 +85,7 @@ public class ClientInvocationFuture extends AbstractInvocationFuture<ClientMessa
 
     @Override
     protected void onComplete() {
+        super.onComplete();
         callIdSequence.complete();
     }
 
