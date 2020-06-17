@@ -132,9 +132,7 @@ class ClusterDiscoveryServiceBuilder {
         isDiscoveryConfigurationConsistent(addressListProvided, awsDiscoveryEnabled, gcpDiscoveryEnabled, azureDiscoveryEnabled,
                 kubernetesDiscoveryEnabled, eurekaDiscoveryEnabled, discoverySpiEnabled, hazelcastCloudEnabled);
 
-        if (discoveryService != null) {
-            return new RemoteAddressProvider(() -> discoverAddresses(discoveryService), usePublicAddress(clientConfig));
-        } else if (hazelcastCloudEnabled) {
+        if (hazelcastCloudEnabled) {
             String discoveryToken;
             if (cloudConfig.isEnabled()) {
                 discoveryToken = cloudConfig.getDiscoveryToken();
@@ -146,6 +144,12 @@ class ClusterDiscoveryServiceBuilder {
             int connectionTimeoutMillis = getConnectionTimeoutMillis(networkConfig);
             HazelcastCloudDiscovery cloudDiscovery = new HazelcastCloudDiscovery(urlEndpoint, connectionTimeoutMillis);
             return new RemoteAddressProvider(cloudDiscovery::discoverNodes, true);
+        }
+        else if (!networkConfig.getAddresses().isEmpty()) {
+            return new DefaultAddressProvider(networkConfig);
+        }
+        else if (discoveryService != null) {
+            return new RemoteAddressProvider(() -> discoverAddresses(discoveryService), usePublicAddress(clientConfig));
         }
 
         return new DefaultAddressProvider(networkConfig);
