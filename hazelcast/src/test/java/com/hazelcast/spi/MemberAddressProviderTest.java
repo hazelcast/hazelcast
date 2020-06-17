@@ -71,7 +71,7 @@ public class MemberAddressProviderTest {
                 .setClassName(MemberAddressProviderWithStaticProperties.class.getName())
                 .getProperties().setProperty("propName", "propValue");
 
-        config.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
+        config.getNetworkConfig().getJoin().getAutoDetectionConfig().setEnabled(false);
 
         Hazelcast.newHazelcastInstance(config);
         final String property = MemberAddressProviderWithStaticProperties.properties.getProperty("propName");
@@ -85,7 +85,7 @@ public class MemberAddressProviderTest {
                 .setEnabled(true)
                 .setClassName(MemberAddressProviderWithLogger.class.getName());
 
-        config.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
+        config.getNetworkConfig().getJoin().getAutoDetectionConfig().setEnabled(false);
 
         Hazelcast.newHazelcastInstance(config);
         assertNotNull(MemberAddressProviderWithLogger.logger);
@@ -99,7 +99,7 @@ public class MemberAddressProviderTest {
                 .setClassName(MemberAddressProviderWithLoggerAndProperties.class.getName())
                 .getProperties().setProperty("propName", "propValue");
 
-        config.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
+        config.getNetworkConfig().getJoin().getAutoDetectionConfig().setEnabled(false);
 
         Hazelcast.newHazelcastInstance(config);
         assertNotNull(MemberAddressProviderWithLoggerAndProperties.logger);
@@ -115,7 +115,7 @@ public class MemberAddressProviderTest {
                 .setClassName(MemberAddressProviderWithPropertiesAndLogger.class.getName())
                 .getProperties().setProperty("propName", "propValue");
 
-        config.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
+        config.getNetworkConfig().getJoin().getAutoDetectionConfig().setEnabled(false);
 
         Hazelcast.newHazelcastInstance(config);
         assertNotNull(MemberAddressProviderWithPropertiesAndLogger.logger);
@@ -130,7 +130,7 @@ public class MemberAddressProviderTest {
                 .setEnabled(true)
                 .setClassName(MemberAddressProviderNotImplementingTheInterface.class.getName());
 
-        config.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
+        config.getNetworkConfig().getJoin().getAutoDetectionConfig().setEnabled(false);
 
         Hazelcast.newHazelcastInstance(config);
     }
@@ -142,7 +142,7 @@ public class MemberAddressProviderTest {
                 .setEnabled(true)
                 .setClassName(MemberAddressProviderWithoutMatchingConstructor.class.getName());
 
-        config.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
+        config.getNetworkConfig().getJoin().getAutoDetectionConfig().setEnabled(false);
 
         Hazelcast.newHazelcastInstance(config);
     }
@@ -154,7 +154,7 @@ public class MemberAddressProviderTest {
                 .setEnabled(true)
                 .setClassName("com.hazelcast.clazz.does.not.Exist");
 
-        config.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
+        config.getNetworkConfig().getJoin().getAutoDetectionConfig().setEnabled(false);
 
         Hazelcast.newHazelcastInstance(config);
     }
@@ -179,7 +179,7 @@ public class MemberAddressProviderTest {
                 .setClassName(SimpleMemberAddressProvider.class.getName())
                 .getProperties().setProperty("foo", "bar"); // <-- this assumes MemberAddressProvider has a constructor accepting Properties
 
-        config.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
+        config.getNetworkConfig().getJoin().getAutoDetectionConfig().setEnabled(false);
 
         //this should fail
         Hazelcast.newHazelcastInstance(config);
@@ -247,7 +247,7 @@ public class MemberAddressProviderTest {
                 .setEnabled(true)
                 .setClassName(memberAddressProviderClass.getName());
 
-        config.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
+        config.getNetworkConfig().getJoin().getAutoDetectionConfig().setEnabled(false);
         return config;
     }
 
@@ -257,7 +257,7 @@ public class MemberAddressProviderTest {
                 .setEnabled(true)
                 .setImplementation(implementation);
 
-        config.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
+        config.getNetworkConfig().getJoin().getAutoDetectionConfig().setEnabled(false);
         return config;
     }
 
