@@ -20,11 +20,23 @@ import java.util.EventListener;
 
 /**
  * Listener to get notified when a quorum state is changed
- *
+ * <p>
  * IMPORTANT: The term "quorum" simply refers to the count of members in the cluster required for an operation to succeed.
  * It does NOT refer to an implementation of Paxos or Raft protocols as used in many NoSQL and distributed systems.
  * The mechanism it provides in Hazelcast protects the user in case the number of nodes in a cluster drops below the
  * specified one.
+ * <p>
+ * {@code QuorumEvent}s are fired only after the quorum is met for the first time.
+ * For instance, see the following scenario for a quorum size is equal to 3:
+ * <ul>
+ * <li>Member-1 starts; no quorum events are fired, since quorum is not present yet.</li>
+ * <li>Member-2 starts; no quorum events are fired, since quorum is not present yet.</li>
+ * <li>Member-3 starts; no quorum events, since this is the first time quorum is met.</li>
+ * <li>Member-1 stops; both Member-2 and Member-3 fire quorum absent events,
+ * since member count drops below 3.</li>
+ * <li>Member-1 restarts; both Member-2 and Member-3 fire quorum present events,
+ * but Member-1 does not, because for Member-1 this is the first time quorum is met.</li>
+ * </ul>
  */
 public interface QuorumListener extends EventListener {
 
