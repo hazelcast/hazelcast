@@ -87,7 +87,6 @@
                     <hz:property name="javax.net.ssl.protocol">TLS</hz:property>
                 </hz:properties>
             </hz:ssl>
-            <hz:auto-detection enabled="${boolean:false}"/>
             <hz:aws enabled="false"
                     access-key="sample-access-key"
                     secret-key="sample-secret-key"
@@ -117,6 +116,7 @@
                        self-registration="true"
                        namespace="hazelcast"/>
             <hz:discovery-strategies/>
+            <hz:auto-detection enabled="${boolean:false}"/>
             <hz:outbound-ports>
                 <hz:ports>34600</hz:ports>
                 <hz:ports>34700-34710</hz:ports>
