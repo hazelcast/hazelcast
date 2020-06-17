@@ -85,6 +85,7 @@ public class LocalPartitionedMapConnector extends SqlKeyValueConnector {
         InternalSerializationService serializationService =
                 (InternalSerializationService) nodeEngine.getSerializationService();
 
+        // TODO: check if InMemoryFormat == BINARY and only then use PortableResolver ???
         MapOptionsMetadata keyMetadata = resolveMetadata(externalFields, options, true, serializationService);
         MapOptionsMetadata valueMetadata = resolveMetadata(externalFields, options, false, serializationService);
         List<TableField> fields = mergeFields(externalFields, keyMetadata.getFields(), valueMetadata.getFields());

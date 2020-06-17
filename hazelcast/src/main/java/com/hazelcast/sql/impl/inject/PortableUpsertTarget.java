@@ -79,7 +79,7 @@ public class PortableUpsertTarget implements UpsertTarget {
         return fieldDefinition;
     }
 
-    final class GenericPortable implements VersionedPortable {
+    private final class GenericPortable implements VersionedPortable {
 
         private final List<FieldDefinition> fieldDefinitions;
         private final List<Object> values;
@@ -117,7 +117,6 @@ public class PortableUpsertTarget implements UpsertTarget {
                 write(writer, fieldDefinition, value);
             }
         }
-
 
         @SuppressWarnings("checkstyle:cyclomaticcomplexity")
         private void write(PortableWriter writer, FieldDefinition fieldDefinition, Object value) throws IOException {
