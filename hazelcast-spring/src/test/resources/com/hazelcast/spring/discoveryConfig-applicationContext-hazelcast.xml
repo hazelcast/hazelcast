@@ -69,6 +69,7 @@
                         </hz:discovery-strategy>
                         <hz:discovery-service-provider implementation="dummyDiscoveryServiceProvider"/>
                     </hz:discovery-strategies>
+                    <hz:auto-detection enabled="false"/>
                 </hz:join>
             </hz:network>
         </hz:config>
