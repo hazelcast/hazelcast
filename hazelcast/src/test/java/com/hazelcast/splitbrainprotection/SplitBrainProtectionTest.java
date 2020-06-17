@@ -39,7 +39,6 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.Collection;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -249,7 +248,6 @@ public class SplitBrainProtectionTest extends HazelcastTestSupport {
 
     @Test
     public void testCustomSplitBrainProtectionFunctionFailsThenSuccess() {
-        final AtomicInteger count = new AtomicInteger(1);
         String mapName = randomMapName();
         String splitBrainProtectionName = randomString();
 
@@ -259,34 +257,22 @@ public class SplitBrainProtectionTest extends HazelcastTestSupport {
         SplitBrainProtectionConfig splitBrainProtectionConfig = new SplitBrainProtectionConfig()
                 .setName(splitBrainProtectionName)
                 .setEnabled(true)
-                .setFunctionImplementation(new SplitBrainProtectionFunction() {
-                    @Override
-                    public boolean apply(Collection<Member> members) {
-                        if (count.get() == 1) {
-                            count.incrementAndGet();
-                            return false;
-                        } else {
-                            return true;
-                        }
-                    }
-                });
+                .setFunctionImplementation(members -> members.size() >= 2);
 
         Config config = new Config()
                 .addMapConfig(mapConfig)
                 .addSplitBrainProtectionConfig(splitBrainProtectionConfig);
 
-        TestHazelcastInstanceFactory factory = new TestHazelcastInstanceFactory(2);
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
         HazelcastInstance hazelcastInstance = factory.newHazelcastInstance(config);
         IMap<Object, Object> map = hazelcastInstance.getMap(mapName);
         try {
             map.put("1", "1");
             fail();
-        } catch (Exception e) {
-            e.printStackTrace();
+        } catch (SplitBrainProtectionException ignored) {
         }
         factory.newHazelcastInstance(config);
         map.put("1", "1");
-        factory.shutdownAll();
     }
 
     @Test
