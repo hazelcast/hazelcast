@@ -90,14 +90,6 @@
 
         <!-- TEST -->
         <dependency>
-            <groupId>com.hazelcast.jet</groupId>
-            <artifactId>hazelcast-jet-core</artifactId>
-            <version>${project.parent.version}</version>
-            <scope>test</scope>
-            <classifier>tests</classifier>
-        </dependency>
-
-        <dependency>
             <groupId>org.testcontainers</groupId>
             <artifactId>elasticsearch</artifactId>
             <version>1.12.5</version>

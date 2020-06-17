@@ -1456,15 +1456,16 @@ sources are batch and some are stream oriented. The processing guarantee
 is only relevant for streaming sources, as batch jobs should just be
 restarted in face of an intermittent failure.
 
-|source|artifactId (module)|batch/stream|guarantee|
-|:-----|:------------------|:-----------|:--------|
-|`AvroSources.files`|`hazelcast-jet-avro (avro)`|batch|N/A|
-|`DebeziumCdcSources.debezium`|`hazelcast-jet-cdc-debezium (cdc-debezium)`|stream|at-least-once|
+|source|module|batch/stream|guarantee|
+|:-----|:---- |:-----------|:--------|
+|`AvroSources.files`|`hazelcast-jet-avro`|batch|N/A|
+|`DebeziumCdcSources.debezium`|`hazelcast-jet-cdc-debezium`|stream|at-least-once|
+|`ElasticSources.elastic`|`hazelcast-jet-elasticsearch-5 (elasticsearch-5)`|batch|N/A|
 |`ElasticSources.elastic`|`hazelcast-jet-elasticsearch-6 (elasticsearch-6)`|batch|N/A|
 |`ElasticSources.elastic`|`hazelcast-jet-elasticsearch-7 (elasticsearch-7)`|batch|N/A|
-|`HadoopSources.inputFormat`|`hazelcast-jet-hadoop (hadoop)`|batch|N/A|
-|`KafkaSources.kafka`|`hazelcast-jet-kafka (kafka)`|stream|exactly-once|
-|`MySqlCdcSources.mysql`|`hazelcast-jet-cdc-mysql (cdc-mysql)`|stream|at-least-once|
+|`HadoopSources.inputFormat`|`hazelcast-jet-hadoop`|batch|N/A|
+|`KafkaSources.kafka`|`hazelcast-jet-kafka`|stream|exactly-once|
+|`MySqlCdcSources.mysql`|`hazelcast-jet-cdc-mysql`|stream|at-least-once|
 |`PulsarSources.pulsarConsumer`|`hazelcast-jet-contrib-pulsar`|stream|N/A|
 |`PulsarSources.pulsarReader`|`hazelcast-jet-contrib-pulsar`|stream|exactly-once|
 |`S3Sources.s3`|`hazelcast-jet-s3 (s3)`|batch|N/A|
@@ -1498,6 +1499,7 @@ processing even with at-least-once sinks.
 |`AvroSinks.files`|`hazelcast-jet-avro (avro)`|no|N/A|
 |`CdcSinks.map`|`hazelcast-jet-cdc-debezium (cdc-debezium)`|yes|at-least-once|
 |`ElasticSinks.elastic`|`hazelcast-jet-elasticsearch-6 (elasticsearch-6)`|yes|at-least-once|
+|`ElasticSinks.elastic`|`hazelcast-jet-elasticsearch-5`|yes|at-least-once|
 |`ElasticSinks.elastic`|`hazelcast-jet-elasticsearch-7 (elasticsearch-7)`|yes|at-least-once|
 |`HadoopSinks.outputFormat`|`hazelcast-jet-hadoop (hadoop)`|no|N/A|
 |`KafkaSinks.kafka`|`hazelcast-jet-kafka (kafka)`|yes|exactly-once|

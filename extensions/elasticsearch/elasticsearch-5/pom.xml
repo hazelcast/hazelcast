@@ -21,11 +21,11 @@
 
     <modelVersion>4.0.0</modelVersion>
     <packaging>jar</packaging>
-    <name>hazelcast-jet-elasticsearch-7</name>
-    <description>Elasticsearch 7 support for Hazelcast Jet</description>
+    <name>hazelcast-jet-elasticsearch-5</name>
+    <description>Elasticsearch 5 support for Hazelcast Jet</description>
     <url>http://www.hazelcast.com/</url>
 
-    <artifactId>hazelcast-jet-elasticsearch-7</artifactId>
+    <artifactId>hazelcast-jet-elasticsearch-5</artifactId>
 
     <parent>
         <groupId>com.hazelcast.jet</groupId>
@@ -80,10 +80,21 @@
         <dependency>
             <groupId>org.elasticsearch.client</groupId>
             <artifactId>elasticsearch-rest-high-level-client</artifactId>
-            <version>7.0.0</version>
+            <!--
+            Supports Elastic server 5.6.0+
+            This is the oldest version of the high level client.
+            -->
+            <version>5.6.16</version>
         </dependency>
 
         <!-- TEST -->
+        <dependency>
+            <groupId>org.elasticsearch.client</groupId>
+            <artifactId>transport</artifactId>
+            <version>5.6.16</version>
+            <scope>test</scope>
+        </dependency>
+
         <dependency>
             <groupId>org.testcontainers</groupId>
             <artifactId>elasticsearch</artifactId>
