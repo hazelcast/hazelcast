@@ -52,7 +52,6 @@ import java.util.Set;
  */
 @SuppressWarnings("checkstyle:ExecutableStatementCount")
 public final class UnsupportedOperationVisitor implements SqlVisitor<Void> {
-    
     /** Error messages. */
     private static final Resource RESOURCE = Resources.create(Resource.class);
 

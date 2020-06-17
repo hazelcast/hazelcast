@@ -29,7 +29,6 @@ import com.hazelcast.sql.impl.exec.IterationResult;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.extract.QueryTargetDescriptor;
-import com.hazelcast.sql.impl.row.HeapRow;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.row.RowBatch;
 import com.hazelcast.sql.impl.type.QueryDataType;
@@ -101,7 +100,7 @@ public class MapIndexScanExec extends AbstractMapScanExec {
             for (QueryableEntry entry : entries) {
                 Record record = entry.getRecord();
 
-                HeapRow row = prepareRow(entry.getKeyData(), record.getValue());
+                Row row = prepareRow(entry.getKeyData(), record.getValue());
 
                 if (row != null) {
                     rows.add(row);

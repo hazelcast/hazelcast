@@ -489,6 +489,7 @@ public abstract class ExpressionTestBase {
         }
     }
 
+    @SuppressWarnings("checkstyle:NestedIfDepth")
     protected static RelDataType[] inferTypes(Operand[] operands, boolean assumeNumeric) {
         // Infer return type from columns and sub-expressions.
 

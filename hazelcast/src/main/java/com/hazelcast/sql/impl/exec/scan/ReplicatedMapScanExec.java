@@ -26,7 +26,6 @@ import com.hazelcast.sql.impl.exec.IterationResult;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.extract.QueryTargetDescriptor;
-import com.hazelcast.sql.impl.row.HeapRow;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.row.RowBatch;
 import com.hazelcast.sql.impl.type.QueryDataType;
@@ -85,7 +84,7 @@ public class ReplicatedMapScanExec extends AbstractMapScanExec {
                 while (iter.hasNext()) {
                     ReplicatedRecord record = iter.next();
 
-                    HeapRow row = prepareRow(record.getKey(), record.getValue());
+                    Row row = prepareRow(record.getKey(), record.getValue());
 
                     if (row != null) {
                         rows.add(row);

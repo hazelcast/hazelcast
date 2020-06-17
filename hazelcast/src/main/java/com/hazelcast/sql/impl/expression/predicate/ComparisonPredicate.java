@@ -23,6 +23,7 @@ import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.QueryDataType;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
 import java.util.Objects;
@@ -50,6 +51,7 @@ public class ComparisonPredicate extends BiExpression<Boolean> {
     }
 
     @SuppressWarnings({"rawtypes", "unchecked"})
+    @SuppressFBWarnings(value = "NP_BOOLEAN_RETURN_NULL", justification = "Any SQL expression may return null")
     @Override
     public Boolean eval(Row row, ExpressionEvalContext context) {
         Object left = operand1.eval(row, context);

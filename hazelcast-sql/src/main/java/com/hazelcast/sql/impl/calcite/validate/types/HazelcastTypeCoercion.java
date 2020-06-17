@@ -255,7 +255,8 @@ public final class HazelcastTypeCoercion extends TypeCoercionImpl {
         return HazelcastSqlOperatorTable.CAST.createCall(SqlParserPos.ZERO, node, SqlTypeUtil.convertTypeToSpec(type));
     }
 
-    @SuppressWarnings({"checkstyle:CyclomaticComplexity", "checkstyle:MethodLength", "checkstyle:NPathComplexity"})
+    @SuppressWarnings({"checkstyle:CyclomaticComplexity", "checkstyle:MethodLength", "checkstyle:NPathComplexity",
+        "checkstyle:NestedIfDepth"})
     private RelDataType[] inferTypes(SqlValidatorScope scope, List<SqlNode> operands, boolean assumeNumeric) {
         // Infer return type from columns and sub-expressions.
 
