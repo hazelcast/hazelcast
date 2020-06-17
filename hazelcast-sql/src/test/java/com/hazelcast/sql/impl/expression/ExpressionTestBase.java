@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.expressions;
+package com.hazelcast.sql.impl.expression;
 
 import com.hazelcast.internal.util.BiTuple;
 import com.hazelcast.internal.util.RuntimeAvailableProcessors;
@@ -30,7 +30,6 @@ import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
 import com.hazelcast.sql.impl.calcite.schema.MapTableStatistic;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeFactory;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeSystem;
-import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.plan.node.PlanNodeSchema;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.schema.ConstantTableStatistics;
@@ -844,7 +843,7 @@ public abstract class ExpressionTestBase {
 
         private static final Map<RelDataType, List<Operand>> SUBSTITUTIONS_CACHE = new ConcurrentHashMap<>();
 
-        protected final RelDataType type;
+        public final RelDataType type;
         protected final Object value;
         private final String text;
 
@@ -854,7 +853,7 @@ public abstract class ExpressionTestBase {
             this.text = text;
         }
 
-        protected boolean isLiteral() {
+        public boolean isLiteral() {
             return type != UNKNOWN_TYPE && value != UNKNOWN_VALUE;
         }
 
@@ -862,7 +861,7 @@ public abstract class ExpressionTestBase {
             return isLiteral() && value instanceof BigDecimal;
         }
 
-        protected boolean isParameter() {
+        public boolean isParameter() {
             return type == UNKNOWN_TYPE && value == UNKNOWN_VALUE;
         }
 
@@ -870,15 +869,15 @@ public abstract class ExpressionTestBase {
             return type == UNKNOWN_TYPE && value instanceof RelDataType;
         }
 
-        protected boolean isColumn() {
+        public boolean isColumn() {
             return type != UNKNOWN_TYPE && value == UNKNOWN_VALUE;
         }
 
-        protected SqlTypeName typeName() {
+        public SqlTypeName typeName() {
             return ExpressionTestBase.typeName(type);
         }
 
-        protected BigDecimal numericValue() {
+        public BigDecimal numericValue() {
             if (!isLiteral()) {
                 return null;
             }
@@ -894,7 +893,7 @@ public abstract class ExpressionTestBase {
             }
         }
 
-        protected Boolean booleanValue() {
+        public Boolean booleanValue() {
             assert isLiteral();
             assert value != null;
 

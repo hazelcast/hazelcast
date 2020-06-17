@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.expressions;
+package com.hazelcast.sql.impl.expression;
 
 import com.hazelcast.sql.SqlErrorCode;
 import com.hazelcast.sql.impl.QueryException;

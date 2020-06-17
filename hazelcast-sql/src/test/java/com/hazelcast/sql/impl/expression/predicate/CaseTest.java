@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.expressions;
+package com.hazelcast.sql.impl.expression.predicate;
 
-import com.hazelcast.sql.impl.expression.predicate.TernaryLogic;
+import com.hazelcast.sql.impl.expression.ExpressionTestBase;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;

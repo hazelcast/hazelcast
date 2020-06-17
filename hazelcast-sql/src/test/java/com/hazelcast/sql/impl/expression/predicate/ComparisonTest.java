@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.expressions;
+package com.hazelcast.sql.impl.expression.predicate;
 
-import com.hazelcast.sql.impl.expression.predicate.ComparisonMode;
+import com.hazelcast.sql.impl.expression.ExpressionTestBase;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.sql.SqlOperator;

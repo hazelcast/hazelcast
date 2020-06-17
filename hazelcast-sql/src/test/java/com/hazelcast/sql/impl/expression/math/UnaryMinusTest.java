@@ -14,9 +14,10 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.expressions;
+package com.hazelcast.sql.impl.expression.math;
 
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastReturnTypes;
+import com.hazelcast.sql.impl.expression.ExpressionTestBase;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;

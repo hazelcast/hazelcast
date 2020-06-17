@@ -31,12 +31,26 @@ import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.NULL;
  */
 public final class ExpressionMath {
 
+    /**
+     * Math context used by expressions while doing math on BigDecimal values.
+     */
     public static final MathContext DECIMAL_MATH_CONTEXT = new MathContext(MAX_DECIMAL_PRECISION, RoundingMode.HALF_DOWN);
 
     private ExpressionMath() {
         // No-op.
     }
 
+    /**
+     * Divides the left-hand side operand by the right-hand side operand.
+     * <p>
+     * Unlike the regular Java division operator, throws an exception if division
+     * resulted in overflow.
+     *
+     * @param left  the left-hand side operand.
+     * @param right the right-hand side operand.
+     * @return a division result.
+     * @throws QueryException if overflow or division by zero is detected.
+     */
     public static long divideExact(long left, long right) {
         if (left == Long.MIN_VALUE && right == -1) {
             throw QueryException.error(SqlErrorCode.DATA_EXCEPTION, "BIGINT overflow");
@@ -48,6 +62,17 @@ public final class ExpressionMath {
         }
     }
 
+    /**
+     * Divides the left-hand side operand by the right-hand side operand.
+     * <p>
+     * Unlike the regular Java division operator, throws an exception if division
+     * by zero is detected.
+     *
+     * @param left  the left-hand side operand.
+     * @param right the right-hand side operand.
+     * @return a division result.
+     * @throws QueryException if division by zero is detected.
+     */
     public static double divideExact(double left, double right) {
         double result = left / right;
         if (Double.isInfinite(result)) {
@@ -56,6 +81,17 @@ public final class ExpressionMath {
         return result;
     }
 
+    /**
+     * Divides the left-hand side operand by the right-hand side operand.
+     * <p>
+     * Unlike the regular Java division operator, throws an exception if division
+     * by zero is detected.
+     *
+     * @param left  the left-hand side operand.
+     * @param right the right-hand side operand.
+     * @return a division result.
+     * @throws QueryException if division by zero is detected.
+     */
     public static float divideExact(float left, float right) {
         float result = left / right;
         if (Float.isInfinite(result)) {

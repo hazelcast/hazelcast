@@ -14,9 +14,10 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.expressions;
+package com.hazelcast.sql.impl.expression.math;
 
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastReturnTypes;
+import com.hazelcast.sql.impl.expression.ExpressionTestBase;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -28,7 +29,7 @@ import org.junit.runner.RunWith;
 
 import java.math.BigDecimal;
 
-import static com.hazelcast.sql.impl.calcite.validate.HazelcastSqlOperatorTable.MULTIPLY;
+import static com.hazelcast.sql.impl.calcite.validate.HazelcastSqlOperatorTable.PLUS;
 import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastIntegerType.canOverflow;
 import static com.hazelcast.sql.impl.expression.math.ExpressionMath.DECIMAL_MATH_CONTEXT;
 import static org.apache.calcite.sql.type.SqlTypeName.NULL;
@@ -36,11 +37,11 @@ import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class MultiplyTest extends ExpressionTestBase {
+public class PlusTest extends ExpressionTestBase {
 
     @Test
     public void verify() {
-        verify(MULTIPLY, MultiplyTest::expectedTypes, MultiplyTest::expectedValues, ALL, ALL);
+        verify(PLUS, PlusTest::expectedTypes, PlusTest::expectedValues, ALL, ALL);
     }
 
     private static RelDataType[] expectedTypes(Operand[] operands) {
@@ -77,7 +78,7 @@ public class MultiplyTest extends ExpressionTestBase {
         if (seenNull) {
             types[2] = TYPE_FACTORY.createSqlType(NULL);
         } else if (isInteger(commonType)) {
-            types[2] = HazelcastReturnTypes.integerMultiply(types[0], types[1]);
+            types[2] = HazelcastReturnTypes.binaryIntegerPlus(types[0], types[1]);
         }
 
         return types;
@@ -108,30 +109,30 @@ public class MultiplyTest extends ExpressionTestBase {
 
         switch (typeName) {
             case TINYINT:
-                long byteResult = Math.multiplyExact(number(lhs).longValue(), number(rhs).longValue());
+                long byteResult = Math.addExact(number(lhs).longValue(), number(rhs).longValue());
                 assertTrue(byteResult >= Byte.MIN_VALUE && byteResult <= Byte.MAX_VALUE);
                 return (byte) byteResult;
             case SMALLINT:
-                long shortResult = Math.multiplyExact(number(lhs).longValue(), number(rhs).longValue());
+                long shortResult = Math.addExact(number(lhs).longValue(), number(rhs).longValue());
                 assertTrue(shortResult >= Short.MIN_VALUE && shortResult <= Short.MAX_VALUE);
                 return (short) shortResult;
             case INTEGER:
-                long intResult = Math.multiplyExact(number(lhs).longValue(), number(rhs).longValue());
+                long intResult = Math.addExact(number(lhs).longValue(), number(rhs).longValue());
                 assertTrue(intResult >= Integer.MIN_VALUE && intResult <= Integer.MAX_VALUE);
                 return (int) intResult;
             case BIGINT:
                 try {
-                    return Math.multiplyExact(number(lhs).longValue(), number(rhs).longValue());
+                    return Math.addExact(number(lhs).longValue(), number(rhs).longValue());
                 } catch (ArithmeticException e) {
                     assertTrue(canOverflow(type));
                     return INVALID_VALUE;
                 }
             case REAL:
-                return number(lhs).floatValue() * number(rhs).floatValue();
+                return number(lhs).floatValue() + number(rhs).floatValue();
             case DOUBLE:
-                return number(lhs).doubleValue() * number(rhs).doubleValue();
+                return number(lhs).doubleValue() + number(rhs).doubleValue();
             case DECIMAL:
-                return ((BigDecimal) lhs).multiply((BigDecimal) rhs, DECIMAL_MATH_CONTEXT);
+                return ((BigDecimal) lhs).add((BigDecimal) rhs, DECIMAL_MATH_CONTEXT);
 
             default:
                 throw new IllegalArgumentException("unexpected type name: " + typeName);
