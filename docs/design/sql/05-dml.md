@@ -88,5 +88,12 @@ CREATE EXTERNAL TABLE name (
   id INT,
   name VARCHAR
 ) TYPE "com.hazelcast.LocalPartitionedMap"
-OPTIONS (keyFactoryId '1', keyClassId '2', keyClassVersion '3', valueFactoryId '4', valueClassId '5', valueClassVersion '6')
+OPTIONS (
+  keyFactoryId '1',
+  keyClassId '2',
+  keyClassVersion '3',
+  valueFactoryId '4',
+  valueClassId '5',
+  valueClassVersion '6'
+)
 ```
