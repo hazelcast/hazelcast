@@ -30,24 +30,15 @@ p.readFrom(Sources.files("/home/data/web-logs"))
 
 #### JSON Files
 
-For JSON files, the source expects each line contains a valid JSON
-string and converts it to the given object type or to a `Map` if no
-type is specified:
+For JSON files, the source expects the content of the files as
+[streaming JSON](https://en.wikipedia.org/wiki/JSON_streaming) content,
+where each JSON string is separated by a new-line. The JSON string
+itself can span on multiple lines. The source converts each JSON string
+to an object of given type or to a `Map` if no type is specified:
 
 ```java
 Pipeline p = Pipeline.create();
 p.readFrom(Sources.json("/home/data/people", Person.class))
- .filter(person -> person.location().equals("NYC"))
- .writeTo(Sinks.logger());
-```
-
-If your JSON files contain JSON strings that span multiple
-lines, you can use `filesBuilder` source:
-
-```java
-Pipeline p = Pipeline.create();
-p.readFrom(Sources.filesBuilder(sourceDir)
-    .build(JsonUtil.asMultilineJson(Person.class)))
  .filter(person -> person.location().equals("NYC"))
  .writeTo(Sinks.logger());
 ```

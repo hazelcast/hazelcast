@@ -68,3 +68,85 @@ out-of-the-box processor offered through the Pipeline API can. If you
 get involved with this transform, make sure you are familiar with the
 internals of Hazelcast Jet, as exposed through the Core
 [DAG](/docs/architecture/distributed-computing) API.
+
+## JSON
+
+JSON is very frequent data exchange format. To transform the data
+from/to JSON format you can use `JsonUtil` utility class without adding
+an extra dependency to the classpath. The utility class uses the
+lightweight `jackson-jr` JSON library under the hood.
+
+For example, you can convert JSON formatted string to a bean. You need
+to have your bean fields as `public` or have public getters/setters and
+a no-argument(default) constructor.
+
+```json
+{
+  "name": "Jet",
+  "age": 4
+}
+```
+
+```java
+public class Person {
+    public String name;
+    public int age;
+
+    public Person() {
+    }
+}
+```
+
+```java
+BatchStage<Person> persons = stage.map(jsonString -> JsonUtil.beanFrom(jsonString, Person.class));
+```
+
+If you don't have a bean class, you can use `mapFrom` to convert the
+JSON formatted string to a `Map`.
+
+```java
+BatchStage<Map<String, Object>> personsAsMap = stage.map(jsonString -> JsonUtil.mapFrom(jsonString));
+```
+
+You can also use supported annotations from
+[Jackson Annotations](https://github.com/FasterXML/jackson-annotations/wiki/Jackson-Annotations)
+in your transforms by adding it to the classpath.
+
+<!--DOCUSAURUS_CODE_TABS-->
+
+<!--Gradle-->
+
+```groovy
+compile 'com.fasterxml.jackson.core:jackson-annotations:2.11.0'
+```
+
+<!--Maven-->
+
+```xml
+<dependency>
+  <groupId>com.fasterxml.jackson.core</groupId>
+  <artifactId>jackson-annotations</artifactId>
+  <version>2.11.0</version>
+</dependency>
+```
+
+<!--END_DOCUSAURUS_CODE_TABS-->
+
+For example if your bean field names differ from the JSON
+string field names you can use `JsonProperty` annotation for mapping.
+
+```java
+public class Person {
+
+    @JsonProperty("name")
+    public String _name;
+
+    @JsonProperty("age")
+    public int _age;
+
+    public Person() {
+    }
+}
+```
+
+See a list of [supported annotations](https://github.com/FasterXML/jackson-jr/tree/master/jr-annotation-support#supported-annotations).
