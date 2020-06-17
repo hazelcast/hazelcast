@@ -56,7 +56,7 @@ public final class ExpressionMath {
         return result;
     }
 
-    public static double divideExact(float left, float right) {
+    public static float divideExact(float left, float right) {
         float result = left / right;
         if (Float.isInfinite(result)) {
             throw QueryException.error(SqlErrorCode.DATA_EXCEPTION, "division by zero");
