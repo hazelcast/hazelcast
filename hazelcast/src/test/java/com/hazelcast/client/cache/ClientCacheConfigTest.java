@@ -128,6 +128,7 @@ public class ClientCacheConfigTest extends HazelcastTestSupport {
         String instanceName = "ClientInstanceTest";
 
         ClientConfig clientConfig = new ClientConfig();
+        clientConfig.getNetworkConfig().getAutoDetectionConfig().setEnabled(false);
         clientConfig.setClusterName("cluster1");
         clientConfig.setInstanceName(instanceName);
 
@@ -147,6 +148,7 @@ public class ClientCacheConfigTest extends HazelcastTestSupport {
     @Test
     public void testGetPreConfiguredCache() {
         ClientConfig config = new ClientConfig();
+        config.getNetworkConfig().getAutoDetectionConfig().setEnabled(false);
         config.setClusterName("cluster1");
 
         for (int i = 0; i < 4; i++) {
