@@ -30,7 +30,10 @@ public class AbstractJoinTest extends HazelcastTestSupport {
 
     protected void testJoin(Config config) throws Exception {
         config.setProperty(ClusterProperty.WAIT_SECONDS_BEFORE_JOIN.getName(), "0");
+        testJoinWithDefaultWait(config);
+    }
 
+    protected void testJoinWithDefaultWait(Config config) throws Exception {
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
         assertClusterSize(1, h1);
 

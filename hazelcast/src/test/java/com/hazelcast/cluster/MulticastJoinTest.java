@@ -64,7 +64,6 @@ public class MulticastJoinTest extends AbstractJoinTest {
 
         NetworkConfig networkConfig = config.getNetworkConfig();
         JoinConfig join = networkConfig.getJoin();
-        join.getTcpIpConfig().setEnabled(false);
         MulticastConfig multicastConfig = join.getMulticastConfig();
         multicastConfig.setEnabled(true);
 
@@ -77,7 +76,6 @@ public class MulticastJoinTest extends AbstractJoinTest {
 
         NetworkConfig networkConfig = config.getNetworkConfig();
         JoinConfig join = networkConfig.getJoin();
-        join.getTcpIpConfig().setEnabled(false);
         MulticastConfig multicastConfig = join.getMulticastConfig();
         multicastConfig.setEnabled(true);
 
@@ -94,7 +92,6 @@ public class MulticastJoinTest extends AbstractJoinTest {
         JoinConfig join = config.getNetworkConfig().getJoin();
         MulticastConfig multicastConfig = join.getMulticastConfig();
         multicastConfig.setEnabled(true);
-        join.getTcpIpConfig().setEnabled(false);
 
         testJoin_With_DifferentBuildNumber(config);
     }
@@ -107,7 +104,6 @@ public class MulticastJoinTest extends AbstractJoinTest {
         config1.setClusterName("cluster1");
         config1.getNetworkConfig().getJoin().getMulticastConfig()
                 .setEnabled(true).setMulticastTimeoutSeconds(3);
-        config1.getNetworkConfig().getJoin().getTcpIpConfig().setEnabled(false);
 
         Config config2 = new Config();
         config2.setProperty(ClusterProperty.WAIT_SECONDS_BEFORE_JOIN.getName(), "0");
@@ -115,7 +111,6 @@ public class MulticastJoinTest extends AbstractJoinTest {
         config2.setClusterName("cluster2");
         config2.getNetworkConfig().getJoin().getMulticastConfig()
                 .setEnabled(true).setMulticastTimeoutSeconds(3);
-        config2.getNetworkConfig().getJoin().getTcpIpConfig().setEnabled(false);
 
         assertIndependentClusters(config1, config2);
     }
@@ -127,7 +122,6 @@ public class MulticastJoinTest extends AbstractJoinTest {
         config1.setProperty(ClusterProperty.MAX_JOIN_SECONDS.getName(), "3");
         config1.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(true);
         config1.getNetworkConfig().getJoin().getMulticastConfig().setMulticastTimeoutSeconds(3);
-        config1.getNetworkConfig().getJoin().getTcpIpConfig().setEnabled(false);
         config1.getPartitionGroupConfig().setEnabled(true)
                 .setGroupType(PartitionGroupConfig.MemberGroupType.HOST_AWARE);
 
@@ -136,7 +130,6 @@ public class MulticastJoinTest extends AbstractJoinTest {
         config2.setProperty(ClusterProperty.MAX_JOIN_SECONDS.getName(), "3");
         config2.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(true);
         config2.getNetworkConfig().getJoin().getMulticastConfig().setMulticastTimeoutSeconds(3);
-        config2.getNetworkConfig().getJoin().getTcpIpConfig().setEnabled(false);
         config2.getPartitionGroupConfig().setEnabled(false);
 
         assertIncompatible(config1, config2);
