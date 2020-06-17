@@ -27,12 +27,13 @@ are supported:
   `ClassDefinition` to be registered upfront, if `InMemoryFormat` is set to `OBJECT` it requires also Portable factory
   and Portable class itself on the classpath
 
-The precedence of serialization formats is following:
+Serialization formats have following precedence (the order in which we check whether given serialization can be
+applied):
 1. primitive SQL types
 2. POJO
 3. Portable
 
-Eventual type mismatches between declared and actual types are deferred to statement execution.
+Eventual errors from type mismatch between declared and actual types are deferred to statement execution.
 
 The way the data is serialized is expressed via DDL. Depending on the nature of stored objects that information can be
 encoded either in column names or using `OPTIONS` clause.
