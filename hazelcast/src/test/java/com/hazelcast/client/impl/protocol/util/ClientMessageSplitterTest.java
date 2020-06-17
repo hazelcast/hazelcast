@@ -51,7 +51,6 @@ public class ClientMessageSplitterTest extends HazelcastTestSupport {
         String clientType = generateRandomString(1000);
         String clientSerializationVersion = generateRandomString(1000);
         String clusterName = generateRandomString(1000);
-        UUID clusterId = UUID.randomUUID();
         LinkedList<String> labels = new LinkedList<>();
         for (int i = 0; i < 10; i++) {
             labels.add(generateRandomString(1000));
