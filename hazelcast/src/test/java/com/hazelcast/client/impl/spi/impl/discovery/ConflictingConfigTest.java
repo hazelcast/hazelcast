@@ -79,16 +79,4 @@ public class ConflictingConfigTest {
         config.setProperty(ClientProperty.HAZELCAST_CLOUD_DISCOVERY_TOKEN.getName(), "TOKEN");
         HazelcastClient.newHazelcastClient(config);
     }
-
-    @Test(expected = IllegalStateException.class)
-    @Ignore("https://github.com/hazelcast/hazelcast/issues/15576")
-    public void testAwsEnabled_and_DiscoverySPIEnabled() {
-        ClientConfig config = new ClientConfig();
-        config.getNetworkConfig().getAwsConfig()
-                .setEnabled(true)
-                .setProperty("access-key", "12345")
-                .setProperty("secret-key", "56789");
-        config.setProperty(ClientProperty.DISCOVERY_SPI_ENABLED.getName(), "true");
-        HazelcastClient.newHazelcastClient(config);
-    }
 }

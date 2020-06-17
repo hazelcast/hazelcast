@@ -146,8 +146,7 @@ public class ClientDiscoverySpiTest extends HazelcastTestSupport {
         DiscoveryStrategyFactory factory = new CollectingDiscoveryStrategyFactory(discoveryNodes);
 
         JoinConfig join = config.getNetworkConfig().getJoin();
-        join.getTcpIpConfig().setEnabled(false);
-        join.getMulticastConfig().setEnabled(false);
+        join.getAutoDetectionConfig().setEnabled(false);
         DiscoveryConfig discoveryConfig = join.getDiscoveryConfig();
         discoveryConfig.getDiscoveryStrategyConfigs().clear();
 
@@ -202,8 +201,7 @@ public class ClientDiscoverySpiTest extends HazelcastTestSupport {
         DiscoveryStrategyFactory factory = new LifecycleDiscoveryStrategyFactory(startLatch, stopLatch, discoveryNodes);
 
         JoinConfig join = config.getNetworkConfig().getJoin();
-        join.getTcpIpConfig().setEnabled(false);
-        join.getMulticastConfig().setEnabled(false);
+        join.getAutoDetectionConfig().setEnabled(false);
         DiscoveryConfig discoveryConfig = join.getDiscoveryConfig();
         discoveryConfig.getDiscoveryStrategyConfigs().clear();
 
