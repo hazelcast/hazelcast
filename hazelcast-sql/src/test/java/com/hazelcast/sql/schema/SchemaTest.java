@@ -139,8 +139,11 @@ public class SchemaTest extends CalciteSqlTestSupport {
         map.put(new Person("Alice", BigInteger.valueOf(30)), new Person("Bob", BigInteger.valueOf(40)));
 
         // when
-        assertThatThrownBy(() -> executeQuery(member, format("SELECT name, age FROM %s", name)))
-                .isInstanceOf(HazelcastSqlException.class);
+        List<SqlRow> rows = getQueryRows(member, format("SELECT age FROM %s", name));
+
+        // then
+        assertThat(rows).hasSize(1);
+        assertThat((int) rows.get(0).getObject(0)).isEqualTo(30);
     }
 
     @Test
