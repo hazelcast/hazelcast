@@ -220,9 +220,6 @@ public class JoinConfig {
         if (getEurekaConfig().isEnabled()) {
             countEnabled++;
         }
-        if (getAutoDetectionConfig().isEnabled()) {
-            countEnabled++;
-        }
 
         Collection<DiscoveryStrategyConfig> discoveryStrategyConfigs = discoveryConfig.getDiscoveryStrategyConfigs();
         countEnabled += discoveryStrategyConfigs.size();
