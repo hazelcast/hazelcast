@@ -155,14 +155,67 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
-import static com.hazelcast.config.ServerSocketEndpointConfig.*;
+import static com.hazelcast.config.ServerSocketEndpointConfig.DEFAULT_SOCKET_CONNECT_TIMEOUT_SECONDS;
+import static com.hazelcast.config.ServerSocketEndpointConfig.DEFAULT_SOCKET_LINGER_SECONDS;
+import static com.hazelcast.config.ServerSocketEndpointConfig.DEFAULT_SOCKET_RECEIVE_BUFFER_SIZE_KB;
+import static com.hazelcast.config.ServerSocketEndpointConfig.DEFAULT_SOCKET_SEND_BUFFER_SIZE_KB;
 import static com.hazelcast.config.security.LdapRoleMappingMode.getRoleMappingMode;
 import static com.hazelcast.config.security.LdapSearchScope.getSearchScope;
 import static com.hazelcast.internal.config.AliasedDiscoveryConfigUtils.getConfigByTag;
-import static com.hazelcast.internal.config.ConfigSections.*;
-import static com.hazelcast.internal.config.ConfigValidator.*;
-import static com.hazelcast.internal.config.DomConfigHelper.*;
-import static com.hazelcast.internal.util.StringUtil.*;
+import static com.hazelcast.internal.config.ConfigSections.ADVANCED_NETWORK;
+import static com.hazelcast.internal.config.ConfigSections.CACHE;
+import static com.hazelcast.internal.config.ConfigSections.CARDINALITY_ESTIMATOR;
+import static com.hazelcast.internal.config.ConfigSections.CLUSTER_NAME;
+import static com.hazelcast.internal.config.ConfigSections.CP_SUBSYSTEM;
+import static com.hazelcast.internal.config.ConfigSections.CRDT_REPLICATION;
+import static com.hazelcast.internal.config.ConfigSections.DURABLE_EXECUTOR_SERVICE;
+import static com.hazelcast.internal.config.ConfigSections.EXECUTOR_SERVICE;
+import static com.hazelcast.internal.config.ConfigSections.FLAKE_ID_GENERATOR;
+import static com.hazelcast.internal.config.ConfigSections.HOT_RESTART_PERSISTENCE;
+import static com.hazelcast.internal.config.ConfigSections.IMPORT;
+import static com.hazelcast.internal.config.ConfigSections.INSTANCE_NAME;
+import static com.hazelcast.internal.config.ConfigSections.LICENSE_KEY;
+import static com.hazelcast.internal.config.ConfigSections.LIST;
+import static com.hazelcast.internal.config.ConfigSections.LISTENERS;
+import static com.hazelcast.internal.config.ConfigSections.LITE_MEMBER;
+import static com.hazelcast.internal.config.ConfigSections.MANAGEMENT_CENTER;
+import static com.hazelcast.internal.config.ConfigSections.MAP;
+import static com.hazelcast.internal.config.ConfigSections.MEMBER_ATTRIBUTES;
+import static com.hazelcast.internal.config.ConfigSections.METRICS;
+import static com.hazelcast.internal.config.ConfigSections.MULTIMAP;
+import static com.hazelcast.internal.config.ConfigSections.NATIVE_MEMORY;
+import static com.hazelcast.internal.config.ConfigSections.NETWORK;
+import static com.hazelcast.internal.config.ConfigSections.PARTITION_GROUP;
+import static com.hazelcast.internal.config.ConfigSections.PN_COUNTER;
+import static com.hazelcast.internal.config.ConfigSections.PROPERTIES;
+import static com.hazelcast.internal.config.ConfigSections.QUEUE;
+import static com.hazelcast.internal.config.ConfigSections.RELIABLE_TOPIC;
+import static com.hazelcast.internal.config.ConfigSections.REPLICATED_MAP;
+import static com.hazelcast.internal.config.ConfigSections.RINGBUFFER;
+import static com.hazelcast.internal.config.ConfigSections.SCHEDULED_EXECUTOR_SERVICE;
+import static com.hazelcast.internal.config.ConfigSections.SECURITY;
+import static com.hazelcast.internal.config.ConfigSections.SERIALIZATION;
+import static com.hazelcast.internal.config.ConfigSections.SET;
+import static com.hazelcast.internal.config.ConfigSections.SPLIT_BRAIN_PROTECTION;
+import static com.hazelcast.internal.config.ConfigSections.TOPIC;
+import static com.hazelcast.internal.config.ConfigSections.USER_CODE_DEPLOYMENT;
+import static com.hazelcast.internal.config.ConfigSections.WAN_REPLICATION;
+import static com.hazelcast.internal.config.ConfigSections.canOccurMultipleTimes;
+import static com.hazelcast.internal.config.ConfigValidator.checkCacheConfig;
+import static com.hazelcast.internal.config.ConfigValidator.checkCacheEvictionConfig;
+import static com.hazelcast.internal.config.ConfigValidator.checkMapEvictionConfig;
+import static com.hazelcast.internal.config.ConfigValidator.checkNearCacheEvictionConfig;
+import static com.hazelcast.internal.config.DomConfigHelper.childElements;
+import static com.hazelcast.internal.config.DomConfigHelper.childElementsWithName;
+import static com.hazelcast.internal.config.DomConfigHelper.cleanNodeName;
+import static com.hazelcast.internal.config.DomConfigHelper.firstChildElement;
+import static com.hazelcast.internal.config.DomConfigHelper.getBooleanValue;
+import static com.hazelcast.internal.config.DomConfigHelper.getDoubleValue;
+import static com.hazelcast.internal.config.DomConfigHelper.getIntegerValue;
+import static com.hazelcast.internal.config.DomConfigHelper.getLongValue;
+import static com.hazelcast.internal.util.StringUtil.isNullOrEmpty;
+import static com.hazelcast.internal.util.StringUtil.lowerCaseInternal;
+import static com.hazelcast.internal.util.StringUtil.upperCaseInternal;
 import static java.lang.Boolean.parseBoolean;
 import static java.lang.Integer.parseInt;
 import static java.lang.Long.parseLong;
@@ -1452,22 +1505,7 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         String name = getTextContent(attName);
         QueueConfig qConfig = new QueueConfig();
         qConfig.setName(name);
-        Comparator comparator = createPriorityQueueComparator(node);
-        qConfig.setComparator(comparator);
         handleQueueNode(node, qConfig);
-    }
-
-    private Comparator createPriorityQueueComparator(Node node) {
-        Node attComparator = node.getAttributes().getNamedItem("comparator");
-        final String comparatorFullPackageName = getTextContent(attComparator);
-        if (!StringUtil.isNullOrEmptyAfterTrim(comparatorFullPackageName)) {
-            try {
-                return ClassLoaderUtil.newInstance(null, trim(comparatorFullPackageName));
-            } catch (Exception e) {
-                ExceptionUtil.sneakyThrow(e);
-            }
-        }
-        return null;
     }
 
     void handleQueueNode(Node node, final QueueConfig qConfig) {
@@ -1500,9 +1538,25 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             } else if ("merge-policy".equals(nodeName)) {
                 MergePolicyConfig mergePolicyConfig = createMergePolicyConfig(n);
                 qConfig.setMergePolicyConfig(mergePolicyConfig);
+            } else if ("comparator".equals(nodeName)) {
+                Comparator comparator = createPriorityQueueComparator(value);
+                qConfig.setComparator(comparator);
+            } else if ("duplicate-allowed".equals(nodeName)) {
+                qConfig.setDuplicateAllowed(getBooleanValue(value));
             }
         }
         config.addQueueConfig(qConfig);
+    }
+
+    protected Comparator createPriorityQueueComparator(String fullyQualifiedComparatorName) {
+        if (!StringUtil.isNullOrEmpty(fullyQualifiedComparatorName)) {
+            try {
+                return ClassLoaderUtil.newInstance(null, fullyQualifiedComparatorName);
+            } catch (Exception e) {
+                ExceptionUtil.sneakyThrow(e);
+            }
+        }
+        return null;
     }
 
     protected void handleItemListeners(Node n, Function<ItemListenerConfig, Void> configAddFunction) {

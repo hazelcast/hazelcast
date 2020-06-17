@@ -20,19 +20,30 @@ import com.hazelcast.collection.impl.txnqueue.TxQueueItem;
 import com.hazelcast.config.QueueConfig;
 import com.hazelcast.config.QueueStoreConfig;
 import com.hazelcast.core.HazelcastException;
-import com.hazelcast.logging.ILogger;
 import com.hazelcast.internal.monitor.impl.LocalQueueStatsImpl;
+import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.util.Clock;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.impl.NodeEngine;
-import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.transaction.TransactionException;
-import com.hazelcast.internal.util.Clock;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.ListIterator;
+import java.util.Map;
+import java.util.PriorityQueue;
+import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.collection.impl.collection.CollectionContainer.ID_PROMOTION_OFFSET;
@@ -873,14 +884,14 @@ public class QueueContainer implements IdentifiedDataSerializable {
      * will also move the items from the backup map if this
      * member has been promoted from a backup replica to the
      * partition owner and clear the backup map.
+     * <p>
+     * Queue
      *
      * @return the item queue
      */
     public PriorityQueue<QueueItem> getItemQueue() {
         if (itemQueue == null) {
-            ForwardingQueueItemComparator comparatorHolder = new ForwardingQueueItemComparator<>(config.getComparator(),
-                    nodeEngine.getSerializationService());
-            itemQueue = new PriorityQueue<QueueItem>(comparatorHolder);
+            itemQueue = createPriorityQueue(config);
             if (backupMap != null && !backupMap.isEmpty()) {
                 List<QueueItem> values = new ArrayList<>(backupMap.values());
                 Collections.sort(values);
@@ -901,6 +912,18 @@ public class QueueContainer implements IdentifiedDataSerializable {
             }
         }
         return itemQueue;
+    }
+
+    /**
+     * Returns concrete {@link PriorityQueue} depending on what have been defined in queue configuration
+     */
+    private PriorityQueue<QueueItem> createPriorityQueue(QueueConfig config) {
+        ForwardingQueueItemComparator<?> comparatorHolder = new ForwardingQueueItemComparator<>(config.getComparator(),
+                nodeEngine.getSerializationService());
+        if (config.isDuplicateAllowed()) {
+            return new PriorityQueue<>(comparatorHolder);
+        }
+        return new NoDuplicatePriorityQueue(comparatorHolder);
     }
 
     /**
