@@ -63,6 +63,7 @@ public class PortableMapOptionsMetadataResolver implements MapOptionsMetadataRes
         return null;
     }
 
+    // TODO: build it on demand based on ExternalFields ???
     // TODO: extract to util class ???
     public static ClassDefinition lookupClassDefinition(
             InternalSerializationService serializationService,

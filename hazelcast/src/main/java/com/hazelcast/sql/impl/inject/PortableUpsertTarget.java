@@ -61,6 +61,7 @@ public class PortableUpsertTarget implements UpsertTarget {
         };
     }
 
+    // TODO: replace with GenericRecord when available
     private final class GenericPortable implements VersionedPortable {
 
         private final List<FieldDefinition> fieldDefinitions;
