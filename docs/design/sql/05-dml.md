@@ -25,7 +25,8 @@ are supported:
   constructor
 - Portable (supported just for IMDG data structures) - if `InMemoryFormat` is set to `BINARY` it requires just
   `ClassDefinition` to be registered upfront, if `InMemoryFormat` is set to `OBJECT` it requires also Portable factory
-  and Portable class itself on the classpath
+  and Portable class itself on the classpath. Currently, temporal types as well as `BigInteger` & `BigDecimal` are not
+  supported.
 
 Serialization formats have following precedence (the order in which we check whether given serialization can be
 applied):
@@ -36,7 +37,8 @@ applied):
 Eventual errors from type mismatch between declared and actual types are deferred to statement execution.
 
 The way the data is serialized is expressed via DDL. Depending on the nature of stored objects that information can be
-encoded either in column names or using `OPTIONS` clause.
+encoded either in column names or using `OPTIONS` clause. To avoid name clashes, so called _external_ tables are
+created in dedicated schema named `public`.
 
 #### 1.1.1 Key-Value storage
 The serialization formats of key and value are specified separately. To determine whether given field belongs to key or
@@ -96,5 +98,17 @@ OPTIONS (
   valueFactoryId '4',
   valueClassId '5',
   valueClassVersion '6'
+)
+```
+
+The only difference between an IMap and Kafka table declaration is the used `TYPE` (and additional Kafka specific
+options). So, to declare a table referencing a Kafka topic:
+```
+CREATE EXTERNAL TABLE name (
+  __key INT,
+  this VARCHAR
+) TYPE "com.hazelcast.Kafka"
+OPTIONS (
+  -- connection options
 )
 ```
