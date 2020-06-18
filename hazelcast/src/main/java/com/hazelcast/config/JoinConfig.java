@@ -226,7 +226,7 @@ public class JoinConfig {
 
         if (countEnabled > 1) {
             throw new InvalidConfigurationException("Multiple join configuration cannot be enabled at the same time. Enable only "
-                    + "one of: TCP/IP, Multicast, AWS, GCP, Azure, Kubernetes, Eureka, or AutoDetection");
+                    + "one of: TCP/IP, Multicast, AWS, GCP, Azure, Kubernetes, Eureka, or Discovery Strategy");
         }
     }
 

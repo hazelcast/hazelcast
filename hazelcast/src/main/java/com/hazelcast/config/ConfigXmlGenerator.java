@@ -1258,7 +1258,6 @@ public class ConfigXmlGenerator {
         gen.open("auto-detection", "enabled", join.getAutoDetectionConfig().isEnabled()).close();
     }
 
-
     private static void multicastConfigXmlGenerator(XmlGenerator gen, JoinConfig join) {
         MulticastConfig mcConfig = join.getMulticastConfig();
         gen.open("multicast", "enabled", mcConfig.isEnabled(), "loopbackModeEnabled", mcConfig.isLoopbackModeEnabled())

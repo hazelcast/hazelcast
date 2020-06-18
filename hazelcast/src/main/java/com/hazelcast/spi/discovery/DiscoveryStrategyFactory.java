@@ -80,7 +80,7 @@ public interface DiscoveryStrategyFactory {
      * Checks whether the given discovery strategy may be applied with no additional config to the environment in which Hazelcast
      * is currently running.
      * <p>
-     * User by the auto detection mechanism to decide if which strategy could be used.
+     * Used by the auto detection mechanism to decide which strategy should be used.
      */
     default boolean isAutoDetectionApplicable() {
         return false;

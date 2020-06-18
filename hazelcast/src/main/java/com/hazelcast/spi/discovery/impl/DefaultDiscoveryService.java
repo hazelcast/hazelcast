@@ -144,7 +144,7 @@ public class DefaultDiscoveryService
 
             if (discoveryStrategies.isEmpty() && settings.isAutoDetectionEnabled()) {
                 logger.info("Discovery auto-detection enabled, looking for available discovery strategies");
-                DiscoveryStrategyFactory autoDetectedFactory = autoDetectDiscoveryStrategyFactory(factories);
+                DiscoveryStrategyFactory autoDetectedFactory = detectDiscoveryStrategyFactory(factories);
                 if (autoDetectedFactory != null) {
                     logger.info(String.format("Auto-detection selected discovery strategy: %s", autoDetectedFactory.getClass()));
                     discoveryStrategies
@@ -198,22 +198,22 @@ public class DefaultDiscoveryService
                         + "Perhaps you forgot to include implementation on a classpath?");
     }
 
-    private DiscoveryStrategyFactory autoDetectDiscoveryStrategyFactory(List<DiscoveryStrategyFactory> factories) {
-        DiscoveryStrategyFactory bestFactory = null;
+    private DiscoveryStrategyFactory detectDiscoveryStrategyFactory(List<DiscoveryStrategyFactory> factories) {
+        DiscoveryStrategyFactory highestPriorityFactory = null;
         for (DiscoveryStrategyFactory factory : factories) {
             if (factory.isAutoDetectionApplicable()) {
                 logger.fine(String.format("Discovery strategy factory '%s' is auto-applicable to the current runtime environment",
                         factory.getClass()));
-                if (bestFactory == null || factory.discoveryStrategyLevel().getPriority()
-                        > bestFactory.discoveryStrategyLevel().getPriority()) {
-                    bestFactory = factory;
+                if (highestPriorityFactory == null || factory.discoveryStrategyLevel().getPriority()
+                        > highestPriorityFactory.discoveryStrategyLevel().getPriority()) {
+                    highestPriorityFactory = factory;
                 }
             } else {
                 logger.fine(String.format("Discovery Factory '%s' is not auto-applicable to the current runtime environment",
                         factory.getClass()));
             }
         }
-        return bestFactory;
+        return highestPriorityFactory;
     }
 
     private String getFactoryClassName(DiscoveryStrategyConfig config) {
