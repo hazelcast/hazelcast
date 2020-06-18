@@ -92,6 +92,7 @@ class MasterSnapshotContext {
         this.logger = logger;
     }
 
+    @SuppressWarnings("SameParameterValue") // used by jet-enterprise
     void enqueueSnapshot(String snapshotMapName, boolean isTerminal, CompletableFuture<Void> future) {
         snapshotQueue.add(tuple3(snapshotMapName, isTerminal, future));
     }
@@ -259,9 +260,8 @@ class MasterSnapshotContext {
             Function<ExecutionPlan, Operation> factory = plan -> new SnapshotPhase2Operation(
                     mc.jobId(), executionId, snapshotId, isSuccess && !SnapshotFlags.isExportOnly(snapshotFlags));
             mc.invokeOnParticipants(factory,
-                    responses2 -> mc.coordinationService().submitToCoordinatorThread(() ->
-                            onSnapshotPhase2Complete(mergedResult.getError(), responses2, executionId, snapshotId,
-                                    snapshotFlags, future, stats.startTime())),
+                    responses2 -> onSnapshotPhase2Complete(mergedResult.getError(), responses2, executionId, snapshotId,
+                            snapshotFlags, future, stats.startTime()),
                     null, true);
         });
     }
@@ -286,7 +286,7 @@ class MasterSnapshotContext {
             for (Entry<MemberInfo, Object> response : responses) {
                 if (response.getValue() instanceof Throwable) {
                     logger.warning(SnapshotPhase2Operation.class.getSimpleName() + " for snapshot " + snapshotId + " in "
-                            + mc.jobIdString() + " failed on member: " + response, (Throwable) response);
+                            + mc.jobIdString() + " failed on member: " + response, (Throwable) response.getValue());
                 }
             }
 

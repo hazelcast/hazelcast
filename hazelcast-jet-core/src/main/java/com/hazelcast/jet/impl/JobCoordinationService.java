@@ -995,6 +995,10 @@ public class JobCoordinationService {
             IS_JOB_COORDINATOR_THREAD.set(true);
             try {
                 return action.call();
+            } catch (Throwable e) {
+                // the executor ignores exceptions, let's log it at least
+                logger.warning(null, e);
+                throw e;
             } finally {
                 IS_JOB_COORDINATOR_THREAD.set(false);
             }
