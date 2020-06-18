@@ -122,8 +122,6 @@ public class TestCacheManager extends HazelcastTestSupport {
         config.getNetworkConfig().setPublicAddress("127.0.0.1")
                 .setPort(5101).setPortAutoIncrement(true);
         JoinConfig join = config.getNetworkConfig().getJoin();
-        join.getMulticastConfig().setEnabled(false);
-        join.getAwsConfig().setEnabled(false);
         join.getTcpIpConfig().setEnabled(true).setMembers(
                 Arrays.asList(
                         "127.0.0.1"));

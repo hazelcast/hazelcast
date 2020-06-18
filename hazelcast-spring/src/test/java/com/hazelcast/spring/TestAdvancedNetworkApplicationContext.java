@@ -74,6 +74,7 @@ public class TestAdvancedNetworkApplicationContext {
         assertTrue(tcpIpConfig.isEnabled());
         assertEquals("127.0.0.1:5700", tcpIpConfig.getRequiredMember());
         assertFalse(advancedNetworkConfig.getJoin().getMulticastConfig().isEnabled());
+        assertFalse(advancedNetworkConfig.getJoin().getAutoDetectionConfig().isEnabled());
 
         MemberAddressProviderConfig addressProviderConfig = advancedNetworkConfig.getMemberAddressProviderConfig();
         assertFalse(addressProviderConfig.isEnabled());
