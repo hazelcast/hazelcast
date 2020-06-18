@@ -23,7 +23,6 @@ import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.SerializationUtil;
 import com.hazelcast.internal.util.ConcurrencyUtil;
-import com.hazelcast.internal.util.ConstructorFunction;
 import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.ClassDefinitionBuilder;
 import com.hazelcast.nio.serialization.FieldDefinition;
@@ -49,13 +48,6 @@ public final class PortableContextImpl implements PortableContext {
             new ConcurrentHashMap<Integer, ClassDefinitionContext>();
 
     private final InternalSerializationService serializationService;
-
-    private final ConstructorFunction<Integer, ClassDefinitionContext> constructorFunction =
-            new ConstructorFunction<Integer, ClassDefinitionContext>() {
-                public ClassDefinitionContext createNew(Integer arg) {
-                    return new ClassDefinitionContext(arg);
-                }
-            };
 
     public PortableContextImpl(InternalSerializationService serializationService, int version) {
         this.serializationService = serializationService;
@@ -215,7 +207,7 @@ public final class PortableContextImpl implements PortableContext {
     }
 
     private ClassDefinitionContext getClassDefContext(int factoryId) {
-        return ConcurrencyUtil.getOrPutIfAbsent(classDefContextMap, factoryId, constructorFunction);
+        return ConcurrencyUtil.getOrPutIfAbsent(classDefContextMap, factoryId, ClassDefinitionContext::new);
     }
 
     @Override

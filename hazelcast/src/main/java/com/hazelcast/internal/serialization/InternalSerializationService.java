@@ -23,7 +23,7 @@ import com.hazelcast.internal.nio.Disposable;
 import com.hazelcast.internal.serialization.impl.portable.PortableContext;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.PortableReader;
+import com.hazelcast.internal.serialization.impl.InternalValueReader;
 import com.hazelcast.partition.PartitioningStrategy;
 
 import java.io.IOException;
@@ -89,7 +89,7 @@ public interface InternalSerializationService extends SerializationService, Disp
 
     BufferObjectDataOutput createObjectDataOutput();
 
-    PortableReader createPortableReader(Data data) throws IOException;
+    InternalValueReader createPortableReader(Data data) throws IOException;
 
     PortableContext getPortableContext();
 

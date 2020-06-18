@@ -14,22 +14,13 @@
  * limitations under the License.
  */
 
-package com.hazelcast.nio.serialization.compatibility;
+package com.hazelcast.internal.serialization.impl;
 
-import com.hazelcast.nio.serialization.Portable;
-import com.hazelcast.nio.serialization.PortableFactory;
+import com.hazelcast.query.extractor.ValueReader;
 
-public class APortableFactory implements PortableFactory {
+import java.io.IOException;
 
-    public static int FACTORY_ID = ReferenceObjects.PORTABLE_FACTORY_ID;
+public interface InternalValueReader extends ValueReader {
 
-    @Override
-    public Portable create(int classId) {
-        if (classId == ReferenceObjects.PORTABLE_CLASS_ID) {
-            return new APortable();
-        } else if (classId == ReferenceObjects.INNER_PORTABLE_CLASS_ID) {
-            return new AnInnerPortable();
-        }
-        return null;
-    }
+    Object read(String fieldPath) throws IOException;
 }

@@ -61,8 +61,9 @@ import com.hazelcast.nio.serialization.FieldType;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableFactory;
-import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.partition.PartitioningStrategy;
+import com.hazelcast.spi.properties.HazelcastProperties;
+import com.hazelcast.spi.properties.HazelcastProperty;
 
 import java.io.Externalizable;
 import java.io.IOException;
@@ -129,6 +130,9 @@ import static com.hazelcast.internal.util.MapUtil.createHashMap;
 
 public class SerializationServiceV1 extends AbstractSerializationService {
 
+    private static final HazelcastProperty QUERY_READ_CACHE_ENABLED
+            = new HazelcastProperty("hazelcast.serialization.query.read.cache.enabled", false);
+
     private static final int FACTORY_AND_CLASS_ID_BYTE_LENGTH = 8;
     private static final int EE_BYTE_LENGTH = 2;
 
@@ -142,9 +146,10 @@ public class SerializationServiceV1 extends AbstractSerializationService {
         for (ClassDefinition cd : loader.getDefinitions()) {
             portableContext.registerClassDefinition(cd);
         }
+        boolean queryReadCacheEnabled = new HazelcastProperties(System.getProperties()).getBoolean(QUERY_READ_CACHE_ENABLED);
         dataSerializerAdapter = createSerializerAdapter(
                 new DataSerializableSerializer(builder.dataSerializableFactories, builder.getClassLoader()));
-        portableSerializer = new PortableSerializer(portableContext, loader.getFactories());
+        portableSerializer = new PortableSerializer(portableContext, loader.getFactories(), queryReadCacheEnabled);
         portableSerializerAdapter = createSerializerAdapter(portableSerializer);
 
         javaSerializerAdapter = createSerializerAdapter(
@@ -179,12 +184,12 @@ public class SerializationServiceV1 extends AbstractSerializationService {
         return (B) data;
     }
 
-    public PortableReader createPortableReader(Data data) throws IOException {
+    public InternalValueReader createPortableReader(Data data) throws IOException {
         if (!data.isPortable()) {
             throw new IllegalArgumentException("Given data is not Portable! -> " + data.getType());
         }
         BufferObjectDataInput in = createObjectDataInput(data);
-        return portableSerializer.createReader(in);
+        return portableSerializer.createValueReader(in);
     }
 
     public PortableContext getPortableContext() {

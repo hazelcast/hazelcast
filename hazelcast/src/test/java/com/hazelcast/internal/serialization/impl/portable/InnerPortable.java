@@ -24,21 +24,21 @@ import com.hazelcast.nio.serialization.PortableWriter;
 import java.io.IOException;
 import java.util.Arrays;
 
-class InnerPortable implements Portable {
+public class InnerPortable implements Portable {
 
-    byte[] bb;
-    char[] cc;
-    short[] ss;
-    int[] ii;
-    long[] ll;
-    float[] ff;
-    double[] dd;
-    NamedPortable[] nn;
+    public byte[] bb;
+    public char[] cc;
+    public short[] ss;
+    public int[] ii;
+    public long[] ll;
+    public float[] ff;
+    public double[] dd;
+    public NamedPortable[] nn;
 
     InnerPortable() {
     }
 
-    InnerPortable(byte[] bb, char[] cc, short[] ss, int[] ii, long[] ll, float[] ff, double[] dd, NamedPortable[] nn) {
+    public InnerPortable(byte[] bb, char[] cc, short[] ss, int[] ii, long[] ll, float[] ff, double[] dd, NamedPortable[] nn) {
         this.bb = bb;
         this.cc = cc;
         this.ss = ss;

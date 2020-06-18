@@ -19,12 +19,18 @@ package com.hazelcast.internal.serialization.impl.portable;
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.internal.nio.BufferObjectDataInput;
 import com.hazelcast.internal.nio.BufferObjectDataOutput;
+import com.hazelcast.internal.serialization.impl.CachedGenericRecordQueryReader;
+import com.hazelcast.internal.serialization.impl.GenericRecordQueryReader;
+import com.hazelcast.internal.serialization.impl.InternalGenericRecord;
 import com.hazelcast.internal.serialization.impl.SerializationConstants;
 import com.hazelcast.internal.serialization.impl.SerializationUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.ClassDefinition;
+import com.hazelcast.nio.serialization.GenericRecord;
+import com.hazelcast.nio.serialization.GenericRecordBuilder;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
+import com.hazelcast.internal.serialization.impl.InternalValueReader;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableFactory;
 import com.hazelcast.nio.serialization.StreamSerializer;
@@ -32,14 +38,18 @@ import com.hazelcast.nio.serialization.StreamSerializer;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
-public final class PortableSerializer implements StreamSerializer<Portable> {
+public final class PortableSerializer implements StreamSerializer<Object> {
 
     private final PortableContextImpl context;
     private final Map<Integer, PortableFactory> factories = new HashMap<Integer, PortableFactory>();
+    private final boolean queryReadCacheEnabled;
 
-    public PortableSerializer(PortableContextImpl context, Map<Integer, ? extends PortableFactory> portableFactories) {
+    public PortableSerializer(PortableContextImpl context, Map<Integer, ? extends PortableFactory> portableFactories,
+                              boolean queryReadCacheEnabled) {
         this.context = context;
+        this.queryReadCacheEnabled = queryReadCacheEnabled;
         factories.putAll(portableFactories);
     }
 
@@ -49,21 +59,30 @@ public final class PortableSerializer implements StreamSerializer<Portable> {
     }
 
     @Override
-    public void write(ObjectDataOutput out, Portable p) throws IOException {
-        if (!(out instanceof BufferObjectDataOutput)) {
-            throw new IllegalArgumentException("ObjectDataOutput must be instance of BufferObjectDataOutput!");
-        }
-        if (p.getClassId() == 0) {
-            throw new IllegalArgumentException("Portable class ID cannot be zero!");
-        }
+    public void write(ObjectDataOutput out, Object o) throws IOException {
+        if (o instanceof Portable) {
+            Portable p = (Portable) o;
+            if (!(out instanceof BufferObjectDataOutput)) {
+                throw new IllegalArgumentException("ObjectDataOutput must be instance of BufferObjectDataOutput!");
+            }
+            if (p.getClassId() == 0) {
+                throw new IllegalArgumentException("Portable class ID cannot be zero!");
+            }
 
-        out.writeInt(p.getFactoryId());
-        out.writeInt(p.getClassId());
-        writeInternal((BufferObjectDataOutput) out, p);
+            out.writeInt(p.getFactoryId());
+            out.writeInt(p.getClassId());
+            writeInternal((BufferObjectDataOutput) out, (Portable) o);
+            return;
+        }
+        if (o instanceof PortableGenericRecord) {
+            writePortableGenericRecord(out, (PortableGenericRecord) o);
+            return;
+        }
+        throw new IllegalStateException("PortableSerializer can only write Portable and PortableGenericRecord");
     }
 
-    void writeInternal(BufferObjectDataOutput out, Portable p) throws IOException {
 
+    void writeInternal(BufferObjectDataOutput out, Portable p) throws IOException {
         ClassDefinition cd = context.lookupOrRegisterClassDefinition(p);
         out.writeInt(cd.getVersion());
 
@@ -73,24 +92,29 @@ public final class PortableSerializer implements StreamSerializer<Portable> {
     }
 
     @Override
-    public Portable read(ObjectDataInput in) throws IOException {
+    public Object read(ObjectDataInput in) throws IOException {
         if (!(in instanceof BufferObjectDataInput)) {
             throw new IllegalArgumentException("ObjectDataInput must be instance of BufferObjectDataInput!");
         }
 
         int factoryId = in.readInt();
         int classId = in.readInt();
-        return read((BufferObjectDataInput) in, factoryId, classId);
+
+        BufferObjectDataInput input = (BufferObjectDataInput) in;
+        Portable portable = createNewPortableInstance(factoryId, classId);
+        if (portable != null) {
+            return readPortable(input, factoryId, classId, portable);
+        }
+        GenericRecord genericRecord = readPortableGenericRecord(input, factoryId, classId);
+        assert genericRecord instanceof PortableGenericRecord;
+        return genericRecord;
     }
 
-    private Portable read(BufferObjectDataInput in, int factoryId, int classId) throws IOException {
-        int version = in.readInt();
 
-        Portable portable = createNewPortableInstance(factoryId, classId);
-        int portableVersion = findPortableVersion(factoryId, classId, portable);
-
-        DefaultPortableReader reader = createReader(in, factoryId, classId,
-                version, portableVersion);
+    private Portable readPortable(BufferObjectDataInput in, int factoryId, int classId, Portable portable) throws IOException {
+        int writeVersion = in.readInt();
+        int readVersion = findPortableVersion(factoryId, classId, portable);
+        DefaultPortableReader reader = createReader(in, factoryId, classId, writeVersion, readVersion);
         portable.readPortable(reader);
         reader.end();
         return portable;
@@ -110,27 +134,24 @@ public final class PortableSerializer implements StreamSerializer<Portable> {
     private Portable createNewPortableInstance(int factoryId, int classId) {
         final PortableFactory portableFactory = factories.get(factoryId);
         if (portableFactory == null) {
-            throw new HazelcastSerializationException("Could not find PortableFactory for factory-id: " + factoryId);
+            return null;
         }
-        final Portable portable = portableFactory.create(classId);
-        if (portable == null) {
-            throw new HazelcastSerializationException("Could not create Portable for class-id: " + classId);
-        }
-        return portable;
+        return portableFactory.create(classId);
     }
 
-    Portable readAndInitialize(BufferObjectDataInput in, int factoryId, int classId) throws IOException {
-        Portable p = read(in, factoryId, classId);
-        final ManagedContext managedContext = context.getManagedContext();
-        return managedContext != null ? (Portable) managedContext.initialize(p) : p;
-    }
-
-    public DefaultPortableReader createReader(BufferObjectDataInput in) throws IOException {
+    public InternalValueReader createValueReader(ObjectDataInput in) throws IOException {
         int factoryId = in.readInt();
         int classId = in.readInt();
         int version = in.readInt();
 
-        return createReader(in, factoryId, classId, version, version);
+        BufferObjectDataInput input = (BufferObjectDataInput) in;
+        ClassDefinition cd = setupPositionAndDefinition(input, factoryId, classId, version);
+        InternalGenericRecord genericRecord = new DefaultPortableReader(this, input, cd, true);
+        if (queryReadCacheEnabled) {
+            return new CachedGenericRecordQueryReader(genericRecord);
+        } else {
+            return new GenericRecordQueryReader(genericRecord);
+        }
     }
 
     DefaultPortableReader createMorphingReader(BufferObjectDataInput in) throws IOException {
@@ -168,7 +189,7 @@ public final class PortableSerializer implements StreamSerializer<Portable> {
         ClassDefinition cd = setupPositionAndDefinition(in, factoryId, classId, version);
         DefaultPortableReader reader;
         if (portableVersion == cd.getVersion()) {
-            reader = new DefaultPortableReader(this, in, cd);
+            reader = new DefaultPortableReader(this, in, cd, true);
         } else {
             reader = new MorphingPortableReader(this, in, cd);
         }
@@ -178,6 +199,191 @@ public final class PortableSerializer implements StreamSerializer<Portable> {
     @Override
     public void destroy() {
         factories.clear();
+    }
+
+    //Portable Generic Record
+
+    private void writePortableGenericRecord(ObjectDataOutput out, PortableGenericRecord record) throws IOException {
+        ClassDefinition cd = record.getClassDefinition();
+        out.writeInt(cd.getFactoryId());
+        out.writeInt(cd.getClassId());
+        writePortableGenericRecordInternal(out, record);
+    }
+
+    void writePortableGenericRecordInternal(ObjectDataOutput out, PortableGenericRecord record) throws IOException {
+        ClassDefinition cd = record.getClassDefinition();
+        out.writeInt(cd.getVersion());
+        context.registerClassDefinition(cd);
+
+        BufferObjectDataOutput output = (BufferObjectDataOutput) out;
+        DefaultPortableWriter writer = new DefaultPortableWriter(this, output, cd);
+        Set<String> fieldNames = cd.getFieldNames();
+        for (String fieldName : fieldNames) {
+            switch (cd.getFieldType(fieldName)) {
+                case PORTABLE:
+                    writer.writeGenericRecord(fieldName, record.readGenericRecord(fieldName));
+                    break;
+                case BYTE:
+                    writer.writeByte(fieldName, record.readByte(fieldName));
+                    break;
+                case BOOLEAN:
+                    writer.writeBoolean(fieldName, record.readBoolean(fieldName));
+                    break;
+                case CHAR:
+                    writer.writeChar(fieldName, record.readChar(fieldName));
+                    break;
+                case SHORT:
+                    writer.writeShort(fieldName, record.readShort(fieldName));
+                    break;
+                case INT:
+                    writer.writeInt(fieldName, record.readInt(fieldName));
+                    break;
+                case LONG:
+                    writer.writeLong(fieldName, record.readLong(fieldName));
+                    break;
+                case FLOAT:
+                    writer.writeFloat(fieldName, record.readFloat(fieldName));
+                    break;
+                case DOUBLE:
+                    writer.writeDouble(fieldName, record.readDouble(fieldName));
+                    break;
+                case UTF:
+                    writer.writeUTF(fieldName, record.readUTF(fieldName));
+                    break;
+                case PORTABLE_ARRAY:
+                    writer.writeGenericRecordArray(fieldName, record.readGenericRecordArray(fieldName));
+                    break;
+                case BYTE_ARRAY:
+                    writer.writeByteArray(fieldName, record.readByteArray(fieldName));
+                    break;
+                case BOOLEAN_ARRAY:
+                    writer.writeBooleanArray(fieldName, record.readBooleanArray(fieldName));
+                    break;
+                case CHAR_ARRAY:
+                    writer.writeCharArray(fieldName, record.readCharArray(fieldName));
+                    break;
+                case SHORT_ARRAY:
+                    writer.writeShortArray(fieldName, record.readShortArray(fieldName));
+                    break;
+                case INT_ARRAY:
+                    writer.writeIntArray(fieldName, record.readIntArray(fieldName));
+                    break;
+                case LONG_ARRAY:
+                    writer.writeLongArray(fieldName, record.readLongArray(fieldName));
+                    break;
+                case FLOAT_ARRAY:
+                    writer.writeFloatArray(fieldName, record.readFloatArray(fieldName));
+                    break;
+                case DOUBLE_ARRAY:
+                    writer.writeDoubleArray(fieldName, record.readDoubleArray(fieldName));
+                    break;
+                case UTF_ARRAY:
+                    writer.writeUTFArray(fieldName, record.readUTFArray(fieldName));
+                    break;
+                default:
+                    throw new IllegalStateException("Unexpected value: " + cd.getFieldType(fieldName));
+            }
+        }
+        writer.end();
+    }
+
+    <T> T readAndInitialize(BufferObjectDataInput in, int factoryId, int classId,
+                            boolean asPortable, boolean readGenericLazy) throws IOException {
+        if (asPortable) {
+            Portable portable = createNewPortableInstance(factoryId, classId);
+            if (portable == null) {
+                throw new HazelcastSerializationException("Could not find PortableFactory for factory-id: " + factoryId
+                        + ", class-id:" + classId);
+            }
+            readPortable(in, factoryId, classId, portable);
+            final ManagedContext managedContext = context.getManagedContext();
+            return managedContext != null ? (T) managedContext.initialize(portable) : (T) portable;
+        }
+
+        if (readGenericLazy) {
+            int version = in.readInt();
+            ClassDefinition cd = setupPositionAndDefinition(in, factoryId, classId, version);
+            DefaultPortableReader reader = new DefaultPortableReader(this, in, cd, true);
+            reader.end();
+            return (T) reader;
+        }
+
+        return readPortableGenericRecord(in, factoryId, classId);
+    }
+
+    private <T> T readPortableGenericRecord(BufferObjectDataInput in, int factoryId, int classId) throws IOException {
+        int version = in.readInt();
+        ClassDefinition cd = setupPositionAndDefinition(in, factoryId, classId, version);
+        DefaultPortableReader reader = new DefaultPortableReader(this, in, cd, false);
+        GenericRecordBuilder genericRecordBuilder = GenericRecordBuilder.portable(cd);
+        Set<String> fieldNames = cd.getFieldNames();
+        for (String fieldName : fieldNames) {
+            switch (cd.getFieldType(fieldName)) {
+                case PORTABLE:
+                    genericRecordBuilder.writeGenericRecord(fieldName, reader.readGenericRecord(fieldName));
+                    break;
+                case BYTE:
+                    genericRecordBuilder.writeByte(fieldName, reader.readByte(fieldName));
+                    break;
+                case BOOLEAN:
+                    genericRecordBuilder.writeBoolean(fieldName, reader.readBoolean(fieldName));
+                    break;
+                case CHAR:
+                    genericRecordBuilder.writeChar(fieldName, reader.readChar(fieldName));
+                    break;
+                case SHORT:
+                    genericRecordBuilder.writeShort(fieldName, reader.readShort(fieldName));
+                    break;
+                case INT:
+                    genericRecordBuilder.writeInt(fieldName, reader.readInt(fieldName));
+                    break;
+                case LONG:
+                    genericRecordBuilder.writeLong(fieldName, reader.readLong(fieldName));
+                    break;
+                case FLOAT:
+                    genericRecordBuilder.writeFloat(fieldName, reader.readFloat(fieldName));
+                    break;
+                case DOUBLE:
+                    genericRecordBuilder.writeDouble(fieldName, reader.readDouble(fieldName));
+                    break;
+                case UTF:
+                    genericRecordBuilder.writeUTF(fieldName, reader.readUTF(fieldName));
+                    break;
+                case PORTABLE_ARRAY:
+                    genericRecordBuilder.writeGenericRecordArray(fieldName, reader.readGenericRecordArray(fieldName));
+                    break;
+                case BYTE_ARRAY:
+                    genericRecordBuilder.writeByteArray(fieldName, reader.readByteArray(fieldName));
+                    break;
+                case BOOLEAN_ARRAY:
+                    genericRecordBuilder.writeBooleanArray(fieldName, reader.readBooleanArray(fieldName));
+                    break;
+                case CHAR_ARRAY:
+                    genericRecordBuilder.writeCharArray(fieldName, reader.readCharArray(fieldName));
+                    break;
+                case SHORT_ARRAY:
+                    genericRecordBuilder.writeShortArray(fieldName, reader.readShortArray(fieldName));
+                    break;
+                case INT_ARRAY:
+                    genericRecordBuilder.writeIntArray(fieldName, reader.readIntArray(fieldName));
+                    break;
+                case LONG_ARRAY:
+                    genericRecordBuilder.writeLongArray(fieldName, reader.readLongArray(fieldName));
+                    break;
+                case FLOAT_ARRAY:
+                    genericRecordBuilder.writeFloatArray(fieldName, reader.readFloatArray(fieldName));
+                    break;
+                case DOUBLE_ARRAY:
+                    genericRecordBuilder.writeDoubleArray(fieldName, reader.readDoubleArray(fieldName));
+                    break;
+                case UTF_ARRAY:
+                    genericRecordBuilder.writeUTFArray(fieldName, reader.readUTFArray(fieldName));
+                    break;
+                default:
+                    throw new IllegalStateException("Unexpected value: " + cd.getFieldType(fieldName));
+            }
+        }
+        return (T) genericRecordBuilder.build();
     }
 }
 

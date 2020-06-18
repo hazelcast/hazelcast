@@ -32,6 +32,7 @@ import com.hazelcast.nio.serialization.FieldDefinition;
 import com.hazelcast.nio.serialization.FieldType;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.internal.serialization.impl.InternalValueReader;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableFactory;
 import com.hazelcast.nio.serialization.PortableReader;
@@ -54,7 +55,7 @@ import static org.junit.Assert.fail;
 @Category(QuickTest.class)
 public class PortableTest {
 
-    static final int PORTABLE_FACTORY_ID = TestSerializationConstants.PORTABLE_FACTORY_ID;
+    public static final int PORTABLE_FACTORY_ID = TestSerializationConstants.PORTABLE_FACTORY_ID;
     static final int IDENTIFIED_FACTORY_ID = TestSerializationConstants.DATA_SERIALIZABLE_FACTORY_ID;
 
     @Test
@@ -215,10 +216,7 @@ public class PortableTest {
         serializationConfig
                 .addClassDefinition(
                         new ClassDefinitionBuilder(PORTABLE_FACTORY_ID, TestSerializationConstants.RAW_DATA_PORTABLE, portableVersion)
-                                .addLongField("l").addCharArrayField("c").addPortableField("p", createNamedPortableClassDefinition(portableVersion)).build())
-                .addClassDefinition(
-                        new ClassDefinitionBuilder(PORTABLE_FACTORY_ID, TestSerializationConstants.NAMED_PORTABLE, portableVersion)
-                                .addUTFField("name").addIntField("myint").build());
+                                .addLongField("l").addCharArrayField("c").addPortableField("p", createNamedPortableClassDefinition(portableVersion)).build());
 
         SerializationService serializationService
                 = new DefaultSerializationServiceBuilder().setConfig(serializationConfig).build();
@@ -334,11 +332,11 @@ public class PortableTest {
         GrandParentPortableObject grandParent = new GrandParentPortableObject(timestamp3, parent);
 
         Data data = serializationService.toData(grandParent);
-        PortableReader reader = serializationService.createPortableReader(data);
+        InternalValueReader reader = serializationService.createPortableReader(data);
 
-        assertEquals(grandParent.timestamp, reader.readLong("timestamp"));
-        assertEquals(parent.timestamp, reader.readLong("child.timestamp"));
-        assertEquals(child.timestamp, reader.readLong("child.child.timestamp"));
+        assertEquals(grandParent.timestamp, reader.read("timestamp"));
+        assertEquals(parent.timestamp, reader.read("child.timestamp"));
+        assertEquals(child.timestamp, reader.read("child.child.timestamp"));
     }
 
     @Test

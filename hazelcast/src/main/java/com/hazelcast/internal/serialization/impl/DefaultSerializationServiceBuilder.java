@@ -54,7 +54,7 @@ import static java.nio.ByteOrder.nativeOrder;
 
 public class DefaultSerializationServiceBuilder implements SerializationServiceBuilder {
 
-    static final ByteOrder DEFAULT_BYTE_ORDER = BIG_ENDIAN;
+    public static final ByteOrder DEFAULT_BYTE_ORDER = BIG_ENDIAN;
 
     // System property to override configured byte order for tests
     private static final String BYTE_ORDER_OVERRIDE_PROPERTY = "hazelcast.serialization.byteOrder";

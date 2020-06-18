@@ -54,7 +54,7 @@ import static com.hazelcast.nio.serialization.FieldType.UTF_ARRAY;
 public class MorphingPortableReader extends DefaultPortableReader {
 
     public MorphingPortableReader(PortableSerializer serializer, BufferObjectDataInput in, ClassDefinition cd) {
-        super(serializer, in, cd);
+        super(serializer, in, cd, true);
     }
 
     @Override
