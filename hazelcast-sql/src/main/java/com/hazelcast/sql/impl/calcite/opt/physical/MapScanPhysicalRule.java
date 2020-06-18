@@ -45,9 +45,7 @@ public final class MapScanPhysicalRule extends RelOptRule {
         call.transformTo(new MapScanPhysicalRel(
             scan.getCluster(),
             OptUtils.toPhysicalConvention(scan.getTraitSet(), distribution),
-            scan.getTable(),
-            scan.getProjects(),
-            scan.getFilter()
+            scan.getTable()
         ));
     }
 }

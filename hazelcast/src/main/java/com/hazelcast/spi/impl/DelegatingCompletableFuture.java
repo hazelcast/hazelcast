@@ -78,9 +78,21 @@ public class DelegatingCompletableFuture<V> extends InternalCompletableFuture<V>
     public DelegatingCompletableFuture(@Nonnull SerializationService serializationService,
                                        @Nonnull CompletableFuture future,
                                        V result) {
+        this(serializationService, future, result, true);
+    }
+
+    protected DelegatingCompletableFuture(@Nonnull SerializationService serializationService,
+                                          @Nonnull CompletableFuture future,
+                                          V result,
+                                          boolean listenFutureCompletion) {
         this.future = future;
         this.serializationService = (InternalSerializationService) serializationService;
         this.result = result;
+        if (listenFutureCompletion) {
+            this.future.whenComplete((v, t) -> {
+                completeSuper(v, (Throwable) t);
+            });
+        }
     }
 
     @Override
@@ -182,12 +194,20 @@ public class DelegatingCompletableFuture<V> extends InternalCompletableFuture<V>
 
     @Override
     public boolean complete(V value) {
-        return future.complete(value);
+        boolean triggered = future.complete(value);
+        if (triggered) {
+            super.complete(value);
+        }
+        return triggered;
     }
 
     @Override
     public boolean completeExceptionally(Throwable ex) {
-        return future.completeExceptionally(ex);
+        boolean triggered = future.completeExceptionally(ex);
+        if (triggered) {
+            super.completeExceptionally(ex);
+        }
+        return triggered;
     }
 
     @Override
@@ -430,6 +450,15 @@ public class DelegatingCompletableFuture<V> extends InternalCompletableFuture<V>
     // used for testing
     public V getDeserializedValue() {
         return (V) deserializedValue;
+    }
+
+    protected void completeSuper(Object value, Throwable t) {
+        if (t != null) {
+            super.completeExceptionally(t);
+        } else {
+            V resolved = resolve(value);
+            super.complete(resolved);
+        }
     }
 
     static class DeserializingFunction<E, R> implements Function<E, R> {

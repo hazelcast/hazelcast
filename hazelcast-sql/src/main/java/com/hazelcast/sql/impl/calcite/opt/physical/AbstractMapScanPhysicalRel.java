@@ -20,9 +20,6 @@ import com.hazelcast.sql.impl.calcite.opt.AbstractMapScanRel;
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelOptTable;
 import org.apache.calcite.plan.RelTraitSet;
-import org.apache.calcite.rex.RexNode;
-
-import java.util.List;
 
 /**
  * Base class for physical map scans.
@@ -31,10 +28,8 @@ public abstract class AbstractMapScanPhysicalRel extends AbstractMapScanRel impl
     public AbstractMapScanPhysicalRel(
         RelOptCluster cluster,
         RelTraitSet traitSet,
-        RelOptTable table,
-        List<Integer> projects,
-        RexNode filter
+        RelOptTable table
     ) {
-        super(cluster, traitSet, table, projects, filter);
+        super(cluster, traitSet, table);
     }
 }

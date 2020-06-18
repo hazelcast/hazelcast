@@ -20,50 +20,19 @@ import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelOptTable;
 import org.apache.calcite.plan.RelTraitSet;
-import org.apache.calcite.rel.RelWriter;
 import org.apache.calcite.rel.core.TableScan;
-import org.apache.calcite.rel.type.RelDataType;
-import org.apache.calcite.rel.type.RelDataTypeFactory;
-import org.apache.calcite.rel.type.RelDataTypeField;
 
 import java.util.Collections;
-import java.util.List;
 
 /**
  * Base class for scans.
  */
 public abstract class AbstractScanRel extends TableScan implements HazelcastRelNode {
-    /** Projection. */
-    protected final List<Integer> projects;
-
-    protected AbstractScanRel(RelOptCluster cluster, RelTraitSet traitSet, RelOptTable table, List<Integer> projects) {
+    protected AbstractScanRel(RelOptCluster cluster, RelTraitSet traitSet, RelOptTable table) {
         super(cluster, traitSet, Collections.emptyList(), table);
-
-        this.projects = projects;
-    }
-
-    public List<Integer> getProjects() {
-        return projects != null ? projects : identity();
     }
 
     public HazelcastTable getTableUnwrapped() {
         return table.unwrap(HazelcastTable.class);
-    }
-
-    @Override
-    public final RelDataType deriveRowType() {
-        RelDataTypeFactory.Builder builder = getCluster().getTypeFactory().builder();
-        List<RelDataTypeField> fieldList = table.getRowType().getFieldList();
-
-        for (int project : getProjects()) {
-            builder.add(fieldList.get(project));
-        }
-
-        return builder.build();
-    }
-
-    @Override
-    public RelWriter explainTerms(RelWriter pw) {
-        return super.explainTerms(pw).item("projects", getProjects());
     }
 }

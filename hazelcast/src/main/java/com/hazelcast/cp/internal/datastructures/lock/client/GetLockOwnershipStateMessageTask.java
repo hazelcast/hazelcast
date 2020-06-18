@@ -18,7 +18,6 @@ package com.hazelcast.cp.internal.datastructures.lock.client;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.FencedLockGetLockOwnershipCodec;
-import com.hazelcast.cp.internal.RaftService;
 import com.hazelcast.cp.internal.client.AbstractCPMessageTask;
 import com.hazelcast.cp.internal.datastructures.lock.LockOwnershipState;
 import com.hazelcast.cp.internal.datastructures.lock.LockService;
@@ -43,10 +42,7 @@ public class GetLockOwnershipStateMessageTask extends AbstractCPMessageTask<Fenc
 
     @Override
     protected void processMessage() {
-        RaftService service = nodeEngine.getService(RaftService.SERVICE_NAME);
-        service.getInvocationManager()
-               .<LockOwnershipState>query(parameters.groupId, new GetLockOwnershipStateOp(parameters.name), LINEARIZABLE)
-               .whenCompleteAsync(this);
+        query(parameters.groupId, new GetLockOwnershipStateOp(parameters.name), LINEARIZABLE);
     }
 
     @Override

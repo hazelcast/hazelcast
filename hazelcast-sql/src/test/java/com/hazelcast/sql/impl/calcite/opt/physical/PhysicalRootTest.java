@@ -46,11 +46,11 @@ public class PhysicalRootTest extends OptimizerTestSupport {
         tableMap.put("p", OptimizerTestSupport.partitionedTable(
             "p",
             Arrays.asList(
+                TestMapTable.field("f0"),
                 TestMapTable.field("f1"),
                 TestMapTable.field("f2"),
                 TestMapTable.field("f3"),
-                TestMapTable.field("f4"),
-                TestMapTable.field("f5")
+                TestMapTable.field("f4")
             ),
             100
         ));
@@ -58,11 +58,11 @@ public class PhysicalRootTest extends OptimizerTestSupport {
         tableMap.put("e", OptimizerTestSupport.partitionedTable(
             "e",
             Arrays.asList(
+                TestMapTable.field("f0"),
                 TestMapTable.field("f1"),
                 TestMapTable.field("f2"),
                 TestMapTable.field("f3"),
-                TestMapTable.field("f4"),
-                TestMapTable.field("f5")
+                TestMapTable.field("f4")
             ),
             0
         ));
@@ -73,15 +73,13 @@ public class PhysicalRootTest extends OptimizerTestSupport {
     @Test
     public void test_singleNode_nonEmpty() {
         Cost scanCost = cost(100d, 500d, 0d);
-        Cost projectCost = cost(100d, 500d, 0d).plus(scanCost);
-        Cost rootCost = cost(100d, 100d, 0d).plus(projectCost);
+        Cost rootCost = cost(100d, 100d, 0d).plus(scanCost);
 
         assertPlan(
             optimizePhysical("SELECT * FROM p"),
             plan(
                 planRow(0, RootPhysicalRel.class, "", 100d, rootCost),
-                planRow(1, ProjectPhysicalRel.class, "f1=[$0], f2=[$1], f3=[$2], f4=[$3], f5=[$4]", 100d, projectCost),
-                planRow(2, MapScanPhysicalRel.class, "table=[[hazelcast, p]], projects=[[0, 1, 2, 3, 4]]", 100d, scanCost)
+                planRow(1, MapScanPhysicalRel.class, "table=[[hazelcast, p[projects=[0, 1, 2, 3, 4]]]]", 100d, scanCost)
             )
         );
     }
@@ -89,15 +87,13 @@ public class PhysicalRootTest extends OptimizerTestSupport {
     @Test
     public void test_singleNode_empty() {
         Cost scanCost = cost(0d, 0d, 0d);
-        Cost projectCost = cost(1d, 5d, 0d).plus(scanCost);
-        Cost rootCost = cost(1d, 1d, 0d).plus(projectCost);
+        Cost rootCost = cost(1d, 1d, 0d).plus(scanCost);
 
         assertPlan(
             optimizePhysical("SELECT * FROM e"),
             plan(
                 planRow(0, RootPhysicalRel.class, "", 1d, rootCost),
-                planRow(1, ProjectPhysicalRel.class, "f1=[$0], f2=[$1], f3=[$2], f4=[$3], f5=[$4]", 1d, projectCost),
-                planRow(2, MapScanPhysicalRel.class, "table=[[hazelcast, e]], projects=[[0, 1, 2, 3, 4]]", 1d, scanCost)
+                planRow(1, MapScanPhysicalRel.class, "table=[[hazelcast, e[projects=[0, 1, 2, 3, 4]]]]", 1d, scanCost)
             )
         );
     }
@@ -105,8 +101,7 @@ public class PhysicalRootTest extends OptimizerTestSupport {
     @Test
     public void test_multipleNodes_nonEmpty() {
         Cost scanCost = cost(100d, 500d, 0d);
-        Cost projectCost = cost(100d, 500d, 0d).plus(scanCost);
-        Cost rootExchangeCost = cost(100d, 100d, 2000d).plus(projectCost);
+        Cost rootExchangeCost = cost(100d, 100d, 2000d).plus(scanCost);
         Cost rootCost = cost(100d, 100d, 0d).plus(rootExchangeCost);
 
         assertPlan(
@@ -114,8 +109,7 @@ public class PhysicalRootTest extends OptimizerTestSupport {
             plan(
                 planRow(0, RootPhysicalRel.class, "", 100d, rootCost),
                 planRow(1, RootExchangePhysicalRel.class, "", 100d, rootExchangeCost),
-                planRow(2, ProjectPhysicalRel.class, "f1=[$0], f2=[$1], f3=[$2], f4=[$3], f5=[$4]", 100d, projectCost),
-                planRow(3, MapScanPhysicalRel.class, "table=[[hazelcast, p]], projects=[[0, 1, 2, 3, 4]]", 100d, scanCost)
+                planRow(2, MapScanPhysicalRel.class, "table=[[hazelcast, p[projects=[0, 1, 2, 3, 4]]]]", 100d, scanCost)
             )
         );
     }
@@ -123,8 +117,7 @@ public class PhysicalRootTest extends OptimizerTestSupport {
     @Test
     public void test_multipleNodes_empty() {
         Cost scanCost = cost(0d, 0d, 0d);
-        Cost projectCost = cost(1d, 5d, 0d).plus(scanCost);
-        Cost rootExchangeCost = cost(1d, 1d, 20d).plus(projectCost);
+        Cost rootExchangeCost = cost(1d, 1d, 20d).plus(scanCost);
         Cost rootCost = cost(1d, 1d, 0d).plus(rootExchangeCost);
 
         assertPlan(
@@ -132,8 +125,7 @@ public class PhysicalRootTest extends OptimizerTestSupport {
             plan(
                 planRow(0, RootPhysicalRel.class, "", 1d, rootCost),
                 planRow(1, RootExchangePhysicalRel.class, "", 1d, rootExchangeCost),
-                planRow(2, ProjectPhysicalRel.class, "f1=[$0], f2=[$1], f3=[$2], f4=[$3], f5=[$4]", 1d, projectCost),
-                planRow(3, MapScanPhysicalRel.class, "table=[[hazelcast, e]], projects=[[0, 1, 2, 3, 4]]", 1d, scanCost)
+                planRow(2, MapScanPhysicalRel.class, "table=[[hazelcast, e[projects=[0, 1, 2, 3, 4]]]]", 1d, scanCost)
             )
         );
     }

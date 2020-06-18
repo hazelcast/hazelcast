@@ -45,7 +45,7 @@ public class HazelcastSqlValidator extends SqlValidatorImpl {
         RelDataTypeFactory typeFactory,
         SqlConformance conformance
     ) {
-        super(opTab, catalogReader, typeFactory, conformance);
+        super(opTab, catalogReader, typeFactory, Config.DEFAULT.withSqlConformance(conformance));
     }
 
     @Override

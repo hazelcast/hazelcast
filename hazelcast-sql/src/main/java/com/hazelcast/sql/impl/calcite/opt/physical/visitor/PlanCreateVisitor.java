@@ -24,6 +24,7 @@ import com.hazelcast.sql.impl.calcite.opt.physical.ProjectPhysicalRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.RootPhysicalRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.exchange.AbstractExchangePhysicalRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.exchange.RootExchangePhysicalRel;
+import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.plan.Plan;
@@ -163,6 +164,7 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
 
     @Override
     public void onMapScan(MapScanPhysicalRel rel) {
+        HazelcastTable hazelcastTable = rel.getTableUnwrapped();
         AbstractMapTable table = rel.getMap();
 
         PlanNodeSchema schemaBefore = getScanSchemaBeforeProject(table);
@@ -174,8 +176,8 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
             table.getValueDescriptor(),
             getScanFieldPaths(table),
             schemaBefore.getTypes(),
-            rel.getProjects(),
-            convertFilter(schemaBefore, rel.getFilter())
+            hazelcastTable.getProjects(),
+            convertFilter(schemaBefore, hazelcastTable.getFilter())
         );
 
         pushUpstream(scanNode);

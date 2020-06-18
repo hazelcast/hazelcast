@@ -55,6 +55,9 @@ public final class UnsupportedOperationVisitor implements SqlVisitor<Void> {
         // of Apache Calcite.
         SUPPORTED_KINDS = new HashSet<>();
 
+        // Arithmetics
+        SUPPORTED_KINDS.add(SqlKind.PLUS);
+
         // "IS" predicates
         SUPPORTED_KINDS.add(SqlKind.IS_NULL);
 
@@ -118,6 +121,7 @@ public final class UnsupportedOperationVisitor implements SqlVisitor<Void> {
         SqlTypeName typeName = literal.getTypeName();
 
         switch (typeName) {
+            case BOOLEAN:
             case TINYINT:
             case SMALLINT:
             case INTEGER:

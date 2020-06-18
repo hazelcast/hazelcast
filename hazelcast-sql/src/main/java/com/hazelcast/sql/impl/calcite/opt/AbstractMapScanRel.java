@@ -17,43 +17,25 @@
 package com.hazelcast.sql.impl.calcite.opt;
 
 import com.hazelcast.sql.impl.calcite.opt.cost.CostUtils;
+import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
 import com.hazelcast.sql.impl.schema.map.AbstractMapTable;
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelOptCost;
 import org.apache.calcite.plan.RelOptPlanner;
 import org.apache.calcite.plan.RelOptTable;
 import org.apache.calcite.plan.RelTraitSet;
-import org.apache.calcite.rel.RelWriter;
 import org.apache.calcite.rel.metadata.RelMetadataQuery;
-import org.apache.calcite.rex.RexNode;
-
-import java.util.List;
 
 /**
  * Base class for map scans.
  */
 public abstract class AbstractMapScanRel extends AbstractScanRel {
-    /** Filter. */
-    protected final RexNode filter;
-
     public AbstractMapScanRel(
         RelOptCluster cluster,
         RelTraitSet traitSet,
-        RelOptTable table,
-        List<Integer> projects,
-        RexNode filter
+        RelOptTable table
     ) {
-        super(cluster, traitSet, table, projects);
-
-        this.filter = filter;
-    }
-
-    public List<Integer> getProjects() {
-        return projects != null ? projects : identity();
-    }
-
-    public RexNode getFilter() {
-        return filter;
+        super(cluster, traitSet, table);
     }
 
     public AbstractMapTable getMap() {
@@ -61,65 +43,40 @@ public abstract class AbstractMapScanRel extends AbstractScanRel {
     }
 
     @Override
-    public RelWriter explainTerms(RelWriter pw) {
-        return super.explainTerms(pw).itemIf("filter", filter, filter != null);
-    }
-
-    @Override
-    public final double estimateRowCount(RelMetadataQuery mq) {
-        double rowCount = super.estimateRowCount(mq);
-
-        if (filter != null) {
-            double selectivity = mq.getSelectivity(this, filter);
-
-            rowCount = rowCount * selectivity;
-        }
-
-        return rowCount;
-    }
-
-    @Override
     public RelOptCost computeSelfCost(RelOptPlanner planner, RelMetadataQuery mq) {
+        HazelcastTable table0 = getTableUnwrapped();
+
         return computeSelfCost(
             planner,
-            mq,
+            table0.getTotalRowCount(),
+            CostUtils.TABLE_SCAN_CPU_MULTIPLIER,
+            table0.getFilter() != null,
             table.getRowCount(),
-            filter,
-            getProjects().size(),
-            CostUtils.TABLE_SCAN_CPU_MULTIPLIER
+            table0.getProjects().size()
         );
     }
 
     protected RelOptCost computeSelfCost(
         RelOptPlanner planner,
-        RelMetadataQuery mq,
         double scanRowCount,
-        RexNode filter,
-        int projectCount,
-        double costMultiplier
+        double scanCostMultiplier,
+        boolean hasFilter,
+        double filterRowCount,
+        int projectCount
     ) {
-        // 1. Get cost of the scan itself. For replicated map cost is multiplied by the number of nodes.
-        double scanCpu = scanRowCount;
+        // 1. Get cost of the scan itself.
+        double scanCpu = scanRowCount * scanCostMultiplier;
 
         // 2. Get cost of the filter, if any.
-        double filterRowCount;
-        double filterCpu;
+        double filterCpu = hasFilter ? CostUtils.adjustCpuForConstrainedScan(scanCpu) : 0;
 
-        if (filter != null) {
-            filterRowCount = CostUtils.adjustFilteredRowCount(scanRowCount, mq.getSelectivity(this, filter));
-            filterCpu = CostUtils.adjustCpuForConstrainedScan(scanCpu);
-        } else {
-            filterRowCount = scanRowCount;
-            filterCpu = 0;
-        }
-
-        // 3. Get cost of the project taking in count filter and number of expressions. Project never produces IO.
+        // 3. Get cost of the project taking into account the filter and number of expressions. Project never produces IO.
         double projectCpu = CostUtils.adjustCpuForConstrainedScan(CostUtils.getProjectCpu(filterRowCount, projectCount));
 
         // 4. Finally, return sum of both scan and project.
         return planner.getCostFactory().makeCost(
             filterRowCount,
-            (scanCpu + filterCpu + projectCpu) * costMultiplier,
+            scanCpu + filterCpu + projectCpu,
             0
         );
     }

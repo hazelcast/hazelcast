@@ -18,6 +18,8 @@ package com.hazelcast.sql.impl.calcite.opt;
 
 import com.hazelcast.sql.impl.calcite.opt.distribution.DistributionTrait;
 import com.hazelcast.sql.impl.calcite.opt.distribution.DistributionTraitDef;
+import com.hazelcast.sql.impl.calcite.schema.HazelcastRelOptTable;
+import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
 import org.apache.calcite.plan.Convention;
 import org.apache.calcite.plan.ConventionTraitDef;
 import org.apache.calcite.plan.HazelcastRelOptCluster;
@@ -26,7 +28,11 @@ import org.apache.calcite.plan.RelOptRuleOperand;
 import org.apache.calcite.plan.RelTrait;
 import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.plan.volcano.RelSubset;
+import org.apache.calcite.prepare.RelOptTableImpl;
 import org.apache.calcite.rel.RelNode;
+import org.apache.calcite.rel.core.TableScan;
+import org.apache.calcite.rel.logical.LogicalTableScan;
+import org.apache.calcite.rel.type.RelDataTypeFactory;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -157,7 +163,7 @@ public final class OptUtils {
 
     /**
      * @param rel Node.
-     * @return {@code True} if the given node is physical node.
+     * @return {@code true} if the given node is physical node.
      */
     public static boolean isPhysical(RelNode rel) {
         return rel.getTraitSet().getTrait(ConventionTraitDef.INSTANCE).equals(HazelcastConventions.PHYSICAL);
@@ -193,6 +199,20 @@ public final class OptUtils {
         }
     }
 
+    public static boolean isHazelcastTable(TableScan scan) {
+        HazelcastTable table = scan.getTable().unwrap(HazelcastTable.class);
+
+        return table != null;
+    }
+
+    public static HazelcastTable getHazelcastTable(TableScan scan) {
+        HazelcastTable table = scan.getTable().unwrap(HazelcastTable.class);
+
+        assert table != null;
+
+        return table;
+    }
+
     public static HazelcastRelOptCluster getCluster(RelNode rel) {
         assert rel.getCluster() instanceof HazelcastRelOptCluster;
 
@@ -205,5 +225,40 @@ public final class OptUtils {
 
     public static DistributionTrait getDistribution(RelNode rel) {
         return rel.getTraitSet().getTrait(getDistributionDef(rel));
+    }
+
+    public static HazelcastRelOptTable createRelTable(
+        HazelcastRelOptTable originalRelTable,
+        HazelcastTable newHazelcastTable,
+        RelDataTypeFactory typeFactory
+    ) {
+        RelOptTableImpl newTable = RelOptTableImpl.create(
+            originalRelTable.getRelOptSchema(),
+            newHazelcastTable.getRowType(typeFactory),
+            originalRelTable.getDelegate().getQualifiedName(),
+            newHazelcastTable,
+            null
+        );
+
+        return new HazelcastRelOptTable(newTable);
+    }
+
+    public static LogicalTableScan createLogicalScanWithNewTable(
+        TableScan originalScan,
+        HazelcastTable newHazelcastTable
+    ) {
+        HazelcastRelOptTable originalRelTable = (HazelcastRelOptTable) originalScan.getTable();
+
+        HazelcastRelOptTable newTable = createRelTable(
+            originalRelTable,
+            newHazelcastTable,
+            originalScan.getCluster().getTypeFactory()
+        );
+
+        return LogicalTableScan.create(
+            originalScan.getCluster(),
+            newTable,
+            originalScan.getHints()
+        );
     }
 }

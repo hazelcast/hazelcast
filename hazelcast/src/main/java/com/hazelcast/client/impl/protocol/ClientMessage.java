@@ -274,10 +274,12 @@ public final class ClientMessage implements OutboundFrame {
     }
 
     public void merge(ClientMessage fragment) {
-        // ignore the first frame of the fragment since first frame marks the fragment
-        Frame fragmentMessageStartFrame = fragment.startFrame.next;
-        endFrame.next = fragmentMessageStartFrame;
+        endFrame.next = fragment.startFrame;
         endFrame = fragment.endFrame;
+    }
+
+    public void dropFragmentationFrame() {
+        startFrame = startFrame.next;
     }
 
     @Override

@@ -18,9 +18,8 @@ package com.hazelcast.cp.internal.datastructures.semaphore.client;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.SemaphoreDrainCodec;
-import com.hazelcast.cp.internal.client.AbstractCPMessageTask;
 import com.hazelcast.cp.internal.RaftOp;
-import com.hazelcast.cp.internal.RaftService;
+import com.hazelcast.cp.internal.client.AbstractCPMessageTask;
 import com.hazelcast.cp.internal.datastructures.semaphore.SemaphoreService;
 import com.hazelcast.cp.internal.datastructures.semaphore.operation.DrainPermitsOp;
 import com.hazelcast.instance.impl.Node;
@@ -41,9 +40,8 @@ public class DrainPermitsMessageTask extends AbstractCPMessageTask<SemaphoreDrai
 
     @Override
     protected void processMessage() {
-        RaftService service = nodeEngine.getService(RaftService.SERVICE_NAME);
         RaftOp op = new DrainPermitsOp(parameters.name, parameters.sessionId, parameters.threadId, parameters.invocationUid);
-        service.getInvocationManager().<Integer>invoke(parameters.groupId, op).whenCompleteAsync(this);
+        invoke(parameters.groupId, op);
     }
 
     @Override

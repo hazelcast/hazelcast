@@ -18,7 +18,6 @@ package com.hazelcast.cp.internal.datastructures.atomiclong.client;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.AtomicLongCompareAndSetCodec;
-import com.hazelcast.cp.internal.RaftService;
 import com.hazelcast.cp.internal.client.AbstractCPMessageTask;
 import com.hazelcast.cp.internal.datastructures.atomiclong.AtomicLongService;
 import com.hazelcast.cp.internal.datastructures.atomiclong.operation.CompareAndSetOp;
@@ -40,10 +39,7 @@ public class CompareAndSetMessageTask extends AbstractCPMessageTask<AtomicLongCo
 
     @Override
     protected void processMessage() {
-        RaftService service = nodeEngine.getService(RaftService.SERVICE_NAME);
-        service.getInvocationManager()
-               .<Boolean>invoke(parameters.groupId, new CompareAndSetOp(parameters.name, parameters.expected, parameters.updated))
-               .whenCompleteAsync(this);
+        invoke(parameters.groupId, new CompareAndSetOp(parameters.name, parameters.expected, parameters.updated));
     }
 
     @Override
