@@ -24,13 +24,24 @@ import com.hazelcast.jet.cdc.ChangeRecord;
 import com.hazelcast.jet.core.Outbox;
 import com.hazelcast.jet.impl.connector.AbstractUpdateMapP;
 import com.hazelcast.map.EntryProcessor;
+import com.hazelcast.map.IMap;
 import com.hazelcast.spi.properties.HazelcastProperties;
 
 import javax.annotation.Nonnull;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Set;
 
 public class WriteCdcP<K, V> extends AbstractUpdateMapP<ChangeRecord, K, V> {
+
+    /**
+     * This processor uses {@link IMap#submitToKeys(Set, EntryProcessor)}, which
+     * if used from multiple parallel async operations can end up reordering
+     * the changes done to the map and this in turn can result in unforseen
+     * consequences. For this reason we need to limit ourselves to a single
+     * in-flight operation at a time.
+     */
+    private static final int MAX_PARALLEL_ASYNC_OPS = 1;
 
     private static final int INITIAL_CAPACITY = 4 * 1024;
     private static final float LOAD_FACTOR = 0.75f;
@@ -55,7 +66,7 @@ public class WriteCdcP<K, V> extends AbstractUpdateMapP<ChangeRecord, K, V> {
             @Nonnull FunctionEx<? super ChangeRecord, ? extends K> keyFn,
             @Nonnull FunctionEx<? super ChangeRecord, ? extends V> valueFn
     ) {
-        super(instance, MAX_PARALLEL_ASYNC_OPS_DEFAULT, map, keyFn);
+        super(instance, MAX_PARALLEL_ASYNC_OPS, map, keyFn);
         this.valueFn = valueFn;
 
     }
