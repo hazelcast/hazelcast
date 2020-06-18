@@ -38,6 +38,11 @@ public abstract class AbstractStringConverter extends Converter {
     }
 
     @Override
+    public Class<?> getNormalizedValueClass() {
+        return String.class;
+    }
+
+    @Override
     public final boolean asBoolean(Object val) {
         String val0 = cast(val);
 

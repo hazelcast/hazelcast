@@ -112,7 +112,7 @@ public class QueryDataType implements IdentifiedDataSerializable, Serializable {
 
         Class<?> valueClass = value.getClass();
 
-        if (valueClass == converter.getValueClass()) {
+        if (valueClass == converter.getNormalizedValueClass()) {
             return value;
         }
 
