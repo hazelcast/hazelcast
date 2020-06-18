@@ -36,7 +36,7 @@ public class SqlRowImpl implements SqlRow {
     }
 
     @Override
-    public <T> T getObject(int index) {
+    public Object getObject(int index) {
         checkIndex(index);
 
         return row.get(index);

@@ -88,7 +88,7 @@ public class ReplicatedMapSqlTest extends CalciteSqlTestSupport {
             assertEquals(expSize, rows.size());
 
             for (SqlRow row : rows) {
-                String name = row.getObject(0);
+                String name = (String) row.getObject(0);
 
                 assertTrue(expNames.contains(name));
             }
@@ -117,7 +117,7 @@ public class ReplicatedMapSqlTest extends CalciteSqlTestSupport {
             assertEquals(expSize, rows.size());
 
             for (SqlRow row : rows) {
-                String name = row.getObject(0);
+                String name = (String) row.getObject(0);
 
                 assertTrue(expNames.contains(name));
             }
