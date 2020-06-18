@@ -27,6 +27,9 @@ public class SqlQuery {
     /** Default page size. */
     public static final int DEFAULT_PAGE_SIZE = 1000;
 
+    /** Default query timeout. */
+    public static final long TIMEOUT_NOT_SET = -1;
+
     /** SQL query. */
     private String sql;
 
@@ -34,7 +37,7 @@ public class SqlQuery {
     private List<Object> parameters;
 
     /** Timeout. */
-    private long timeout;
+    private long timeout = TIMEOUT_NOT_SET;
 
     /** Page size. */
     private int pageSize = DEFAULT_PAGE_SIZE;

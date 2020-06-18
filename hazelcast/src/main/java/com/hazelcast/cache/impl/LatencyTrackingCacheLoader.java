@@ -18,6 +18,7 @@ package com.hazelcast.cache.impl;
 
 import com.hazelcast.internal.diagnostics.StoreLatencyPlugin;
 import com.hazelcast.internal.diagnostics.StoreLatencyPlugin.LatencyProbe;
+import com.hazelcast.internal.util.Timer;
 
 import javax.cache.integration.CacheLoader;
 import javax.cache.integration.CacheLoaderException;
@@ -39,21 +40,21 @@ public class LatencyTrackingCacheLoader<K, V> implements CacheLoader<K, V> {
 
     @Override
     public V load(K k) throws CacheLoaderException {
-        long startNanos = System.nanoTime();
+        long startNanos = Timer.nanos();
         try {
             return delegate.load(k);
         } finally {
-            loadProbe.recordValue(System.nanoTime() - startNanos);
+            loadProbe.recordValue(Timer.nanosElapsed(startNanos));
         }
     }
 
     @Override
     public Map<K, V> loadAll(Iterable<? extends K> iterable) throws CacheLoaderException {
-        long startNanos = System.nanoTime();
+        long startNanos = Timer.nanos();
         try {
             return delegate.loadAll(iterable);
         } finally {
-            loadAllProbe.recordValue(System.nanoTime() - startNanos);
+            loadAllProbe.recordValue(Timer.nanosElapsed(startNanos));
         }
     }
 }

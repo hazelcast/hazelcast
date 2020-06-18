@@ -30,6 +30,7 @@ import com.hazelcast.sql.impl.calcite.opt.physical.PhysicalRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.PhysicalRules;
 import com.hazelcast.sql.impl.calcite.opt.physical.visitor.NodeIdVisitor;
 import com.hazelcast.sql.impl.calcite.opt.physical.visitor.PlanCreateVisitor;
+import com.hazelcast.sql.impl.calcite.parse.QueryConvertResult;
 import com.hazelcast.sql.impl.calcite.parse.QueryParseResult;
 import com.hazelcast.sql.impl.calcite.parse.SqlCreateExternalTable;
 import com.hazelcast.sql.impl.calcite.parse.SqlDropExternalTable;
@@ -164,16 +165,16 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         }
 
         // 3. Convert parse tree to relational tree.
-        RelNode rel = context.convert(parseResult.getNode());
+        QueryConvertResult convertResult = context.convert(parseResult.getNode());
 
         if (parseResult.isImdg()) {
             // 5. Perform optimization.
-            PhysicalRel physicalRel = optimize(context, rel);
+            PhysicalRel physicalRel = optimize(context, convertResult.getRel());
 
             // 6. Create plan.
-            return createImdgPlan(task.getSql(), parseResult.getParameterRowType(), physicalRel);
+            return createImdgPlan(task.getSql(), parseResult.getParameterRowType(), physicalRel, convertResult.getFieldNames());
         } else {
-            return jetSqlBackend.optimizeAndCreatePlan(context, rel);
+            return jetSqlBackend.optimizeAndCreatePlan(context, convertResult.getRel());
         }
     }
 
@@ -223,7 +224,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
      * @param rel Rel.
      * @return Plan.
      */
-    private Plan createImdgPlan(String sql, RelDataType parameterRowType, PhysicalRel rel) {
+    private Plan createImdgPlan(String sql, RelDataType parameterRowType, PhysicalRel rel, List<String> rootColumnNames) {
         // Get partition mapping.
         Collection<Partition> parts = nodeEngine.getHazelcastInstance().getPartitionService().getPartitions();
 
@@ -251,7 +252,8 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
             partMap,
             relIdMap,
             sql,
-            parameterMetadata
+            parameterMetadata,
+            rootColumnNames
         );
 
         rel.visit(visitor);

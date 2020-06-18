@@ -116,7 +116,17 @@ public abstract class Converter implements Serializable {
         return typeFamily;
     }
 
+    /**
+     * @return Class of the value that is handled by this converter.
+     */
     public abstract Class<?> getValueClass();
+
+    /**
+     * @return Class the value should be converted to as a result of {@link #convertToSelf(Converter, Object)} call.
+     */
+    public Class<?> getNormalizedValueClass() {
+        return getValueClass();
+    }
 
     @NotConvertible
     public boolean asBoolean(Object val) {

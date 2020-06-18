@@ -18,6 +18,7 @@ package com.hazelcast.multimap.impl.txn;
 
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.internal.nio.IOUtil;
+import com.hazelcast.internal.util.Timer;
 import com.hazelcast.multimap.impl.MultiMapContainer;
 import com.hazelcast.multimap.impl.MultiMapDataSerializerHook;
 import com.hazelcast.multimap.impl.MultiMapRecord;
@@ -53,7 +54,7 @@ public class TxnRemoveOperation extends AbstractKeyBasedMultiMapOperation implem
 
     @Override
     public void run() throws Exception {
-        startTimeNanos = System.nanoTime();
+        startTimeNanos = Timer.nanos();
         MultiMapContainer container = getOrCreateContainer();
         MultiMapValue multiMapValue = container.getMultiMapValueOrNull(dataKey);
         if (multiMapValue == null || !multiMapValue.containsRecordId(recordId)) {
@@ -77,7 +78,7 @@ public class TxnRemoveOperation extends AbstractKeyBasedMultiMapOperation implem
 
     @Override
     public void afterRun() throws Exception {
-        long elapsed = Math.max(0, System.nanoTime() - startTimeNanos);
+        long elapsed = Math.max(0, Timer.nanosElapsed(startTimeNanos));
         MultiMapService service = getService();
         service.getLocalMultiMapStatsImpl(name).incrementRemoveLatencyNanos(elapsed);
         if (Boolean.TRUE.equals(response)) {

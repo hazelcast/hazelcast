@@ -26,7 +26,7 @@ import org.apache.calcite.sql.validate.SqlNameMatchers;
 import java.util.List;
 
 /**
- * Catalog reader that allows for setting predefined schema paths.
+ * Custom catalog reader that allows for setting predefined schema paths and wrapping of returned tables.
  */
 public class HazelcastCalciteCatalogReader extends CalciteCatalogReader {
     public HazelcastCalciteCatalogReader(
@@ -45,6 +45,10 @@ public class HazelcastCalciteCatalogReader extends CalciteCatalogReader {
         );
     }
 
+    /**
+     * Hook into the Apache Calcite table creation process and wrap the Calcite table into our own implementation
+     * that resolves signatures of tables with pushed-down projects and filters properly.
+     */
     @Override
     public Prepare.PreparingTable getTable(List<String> names) {
         // Resolve the original table as usual.

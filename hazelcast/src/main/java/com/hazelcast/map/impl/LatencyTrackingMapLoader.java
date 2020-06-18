@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.impl;
 
+import com.hazelcast.internal.util.Timer;
 import com.hazelcast.map.MapLoader;
 import com.hazelcast.internal.diagnostics.StoreLatencyPlugin;
 import com.hazelcast.internal.diagnostics.StoreLatencyPlugin.LatencyProbe;
@@ -41,31 +42,31 @@ public class LatencyTrackingMapLoader<K, V> implements MapLoader<K, V> {
 
     @Override
     public V load(K key) {
-        long startNanos = System.nanoTime();
+        long startNanos = Timer.nanos();
         try {
             return delegate.load(key);
         } finally {
-            loadProbe.recordValue(System.nanoTime() - startNanos);
+            loadProbe.recordValue(Timer.nanosElapsed(startNanos));
         }
     }
 
     @Override
     public Map<K, V> loadAll(Collection<K> keys) {
-        long startNanos = System.nanoTime();
+        long startNanos = Timer.nanos();
         try {
             return delegate.loadAll(keys);
         } finally {
-            loadAllProbe.recordValue(System.nanoTime() - startNanos);
+            loadAllProbe.recordValue(Timer.nanosElapsed(startNanos));
         }
     }
 
     @Override
     public Iterable<K> loadAllKeys() {
-        long startNanos = System.nanoTime();
+        long startNanos = Timer.nanos();
         try {
             return delegate.loadAllKeys();
         } finally {
-            loadAllKeysProbe.recordValue(System.nanoTime() - startNanos);
+            loadAllKeysProbe.recordValue(Timer.nanosElapsed(startNanos));
         }
     }
 }

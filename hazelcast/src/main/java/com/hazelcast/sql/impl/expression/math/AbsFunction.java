@@ -89,7 +89,7 @@ public class AbsFunction<T> extends UniExpressionWithType<T> {
      * @return Result type.
      */
     private static QueryDataType inferResultType(QueryDataType operandType) {
-        if (!MathFunctionUtils.canConvertToNumber(operandType)) {
+        if (!ExpressionMath.canConvertToNumber(operandType)) {
             throw QueryException.error("Operand is not numeric: " + operandType);
         }
 

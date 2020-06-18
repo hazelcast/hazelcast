@@ -26,6 +26,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static org.apache.calcite.sql.type.SqlTypeName.DAY_INTERVAL_TYPES;
+import static org.apache.calcite.sql.type.SqlTypeName.YEAR_INTERVAL_TYPES;
+
 /**
  * Provides utilities to map from Calcite's {@link SqlTypeName} to {@link
  * QueryDataType}.
@@ -91,6 +94,12 @@ public final class SqlToQueryType {
     }
 
     public static QueryDataType map(SqlTypeName sqlTypeName) {
+        if (YEAR_INTERVAL_TYPES.contains(sqlTypeName)) {
+            sqlTypeName = SqlTypeName.INTERVAL_YEAR_MONTH;
+        } else if (DAY_INTERVAL_TYPES.contains(sqlTypeName)) {
+            sqlTypeName = SqlTypeName.INTERVAL_DAY_SECOND;
+        }
+
         QueryDataType queryDataType = CALCITE_TO_HZ.get(sqlTypeName);
         if (queryDataType == null) {
             throw new IllegalArgumentException("unexpected SQL type: " + sqlTypeName);

@@ -22,6 +22,7 @@ import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.IndexType;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.internal.util.Timer;
 import com.hazelcast.projection.Projections;
 import com.hazelcast.query.LocalIndexStats;
 import com.hazelcast.query.Predicate;
@@ -424,9 +425,9 @@ public class LocalIndexStatsTest extends HazelcastTestSupport {
 
         long totalMeasuredLatency = 0;
         for (int i = 1; i <= QUERIES; ++i) {
-            long start = System.nanoTime();
+            long startNanos = Timer.nanos();
             map.entrySet(Predicates.equal("__key", i));
-            totalMeasuredLatency += System.nanoTime() - start;
+            totalMeasuredLatency += Timer.nanosElapsed(startNanos);
 
             assertTrue(keyStats().getAverageHitLatency() > 0);
             assertTrue(keyStats().getAverageHitLatency() <= totalMeasuredLatency / i);
@@ -450,9 +451,9 @@ public class LocalIndexStatsTest extends HazelcastTestSupport {
         long totalMeasuredLatency = 0;
         long previousTotalInsertLatency = 0;
         for (int i = 1; i <= 100; ++i) {
-            long start = System.nanoTime();
+            long startNanos = Timer.nanos();
             map.put(i, i);
-            totalMeasuredLatency += System.nanoTime() - start;
+            totalMeasuredLatency += Timer.nanosElapsed(startNanos);
 
             assertEquals(i, keyStats().getInsertCount());
             assertTrue(keyStats().getTotalInsertLatency() > previousTotalInsertLatency);
@@ -480,9 +481,9 @@ public class LocalIndexStatsTest extends HazelcastTestSupport {
         long totalMeasuredLatency = 0;
         long previousTotalUpdateLatency = 0;
         for (int i = 1; i <= 50; ++i) {
-            long start = System.nanoTime();
+            long startNanos = Timer.nanos();
             map.put(i, i * 2);
-            totalMeasuredLatency += System.nanoTime() - start;
+            totalMeasuredLatency += Timer.nanosElapsed(startNanos);
 
             assertEquals(i, keyStats().getUpdateCount());
             assertTrue(keyStats().getTotalUpdateLatency() > previousTotalUpdateLatency);
@@ -510,9 +511,9 @@ public class LocalIndexStatsTest extends HazelcastTestSupport {
         long totalMeasuredLatency = 0;
         long previousTotalRemoveLatency = 0;
         for (int i = 1; i <= 50; ++i) {
-            long start = System.nanoTime();
+            long startNanos = Timer.nanos();
             map.remove(i);
-            totalMeasuredLatency += System.nanoTime() - start;
+            totalMeasuredLatency += Timer.nanosElapsed(startNanos);
 
             assertEquals(i, keyStats().getRemoveCount());
             assertTrue(keyStats().getTotalRemoveLatency() > previousTotalRemoveLatency);

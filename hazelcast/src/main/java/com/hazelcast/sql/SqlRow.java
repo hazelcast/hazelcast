@@ -26,5 +26,5 @@ public interface SqlRow {
      * @param index Index.
      * @return Value of the column.
      */
-    <T> T getObject(int index);
+    Object getObject(int index);
 }

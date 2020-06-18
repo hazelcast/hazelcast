@@ -14,17 +14,30 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.calcite;
+package com.hazelcast.sql.impl.calcite.parse;
 
-import org.apache.calcite.jdbc.JavaTypeFactoryImpl;
-import org.apache.calcite.util.ConversionUtil;
+import org.apache.calcite.rel.RelNode;
 
-import java.nio.charset.Charset;
+import java.util.List;
 
-public class HazelcastTypeFactory extends JavaTypeFactoryImpl {
-    @Override
-    public Charset getDefaultCharset() {
-        // Calcite uses Latin-1 by default (see {@code CalciteSystemProperty.DEFAULT_CHARSET}). We use unicode.
-        return Charset.forName(ConversionUtil.NATIVE_UTF16_CHARSET_NAME);
+/**
+ * Encapsulates result of a query conversion from SQL tree to relational tree.
+ */
+public class QueryConvertResult {
+
+    private final RelNode rel;
+    private final List<String> fieldNames;
+
+    public QueryConvertResult(RelNode rel, List<String> fieldNames) {
+        this.rel = rel;
+        this.fieldNames = fieldNames;
+    }
+
+    public RelNode getRel() {
+        return rel;
+    }
+
+    public List<String> getFieldNames() {
+        return fieldNames;
     }
 }

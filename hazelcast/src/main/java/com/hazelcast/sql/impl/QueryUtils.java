@@ -89,7 +89,7 @@ public final class QueryUtils {
      * @return Public type.
      */
     @SuppressWarnings("checkstyle:CyclomaticComplexity")
-    public static SqlColumnMetadata getColumnMetadata(QueryDataType columnType) {
+    public static SqlColumnMetadata getColumnMetadata(String columnName, QueryDataType columnType) {
         SqlColumnType type;
 
         switch (columnType.getTypeFamily()) {
@@ -164,6 +164,6 @@ public final class QueryUtils {
                 type = SqlColumnType.OBJECT;
         }
 
-        return new SqlColumnMetadata(type);
+        return new SqlColumnMetadata(columnName, type);
     }
 }

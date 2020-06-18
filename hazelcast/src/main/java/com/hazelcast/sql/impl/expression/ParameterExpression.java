@@ -30,7 +30,6 @@ import java.util.Objects;
 public class ParameterExpression<T> implements Expression<T> {
 
     private int index;
-    // TODO: remove type?
     private QueryDataType type;
 
     @SuppressWarnings("unused")

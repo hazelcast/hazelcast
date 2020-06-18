@@ -59,7 +59,7 @@ public class SqlServiceImpl implements SqlService, Consumer<Packet> {
     private SqlOptimizer optimizer;
     private final ILogger logger;
     private final NodeEngineImpl nodeEngine;
-    private final boolean liteMember;
+    private final long queryTimeout;
 
     private final NodeServiceProviderImpl nodeServiceProvider;
 
@@ -73,6 +73,7 @@ public class SqlServiceImpl implements SqlService, Consumer<Packet> {
 
         int operationThreadCount = config.getOperationThreadCount();
         int fragmentThreadCount = config.getThreadCount();
+        long queryTimeout = config.getQueryTimeout();
         long maxMemory = config.getMaxMemory();
 
         if (operationThreadCount <= 0) {
@@ -82,6 +83,12 @@ public class SqlServiceImpl implements SqlService, Consumer<Packet> {
         if (fragmentThreadCount <= 0) {
             throw new HazelcastException("SqlConfig.threadCount must be positive: " + config.getThreadCount());
         }
+
+        if (queryTimeout < 0) {
+            throw new HazelcastException("SqlConfig.queryTimeout cannot be positive: " + config.getQueryTimeout());
+        }
+
+        this.queryTimeout = queryTimeout;
 
         nodeServiceProvider = new NodeServiceProviderImpl(nodeEngine);
 
@@ -98,8 +105,6 @@ public class SqlServiceImpl implements SqlService, Consumer<Packet> {
             STATE_CHECK_FREQUENCY,
             maxMemory
         );
-
-        liteMember = nodeEngine.getConfig().isLiteMember();
     }
 
     public void start() {
@@ -144,12 +149,18 @@ public class SqlServiceImpl implements SqlService, Consumer<Packet> {
 
     @Override
     public SqlCursor query(SqlQuery query) {
-        if (liteMember) {
+        if (nodeEngine.getLocalMember().isLiteMember()) {
             throw QueryException.error("SQL queries cannot be executed on lite members.");
         }
 
         try {
-            return query0(query.getSql(), query.getParameters(), query.getTimeout(), query.getPageSize());
+            long timeout = query.getTimeout();
+
+            if (timeout == SqlQuery.TIMEOUT_NOT_SET) {
+                timeout = queryTimeout;
+            }
+
+            return query0(query.getSql(), query.getParameters(), timeout, query.getPageSize());
         } catch (Exception e) {
             throw QueryUtils.toPublicException(e, nodeServiceProvider.getLocalMemberId());
         }

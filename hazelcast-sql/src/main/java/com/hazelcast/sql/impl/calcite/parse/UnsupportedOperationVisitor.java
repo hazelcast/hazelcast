@@ -52,7 +52,6 @@ import java.util.Set;
  */
 @SuppressWarnings("checkstyle:ExecutableStatementCount")
 public final class UnsupportedOperationVisitor implements SqlVisitor<Void> {
-
     /** Error messages. */
     private static final Resource RESOURCE = Resources.create(Resource.class);
 
@@ -79,6 +78,7 @@ public final class UnsupportedOperationVisitor implements SqlVisitor<Void> {
         SUPPORTED_KINDS.add(SqlKind.TIMES);
         SUPPORTED_KINDS.add(SqlKind.DIVIDE);
         SUPPORTED_KINDS.add(SqlKind.MOD);
+        SUPPORTED_KINDS.add(SqlKind.PLUS_PREFIX);
         SUPPORTED_KINDS.add(SqlKind.MINUS_PREFIX);
 
         // Boolean logic predicates

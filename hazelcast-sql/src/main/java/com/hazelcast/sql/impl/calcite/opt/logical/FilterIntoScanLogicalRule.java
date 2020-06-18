@@ -17,7 +17,6 @@
 package com.hazelcast.sql.impl.calcite.opt.logical;
 
 import com.hazelcast.sql.impl.calcite.opt.OptUtils;
-import com.hazelcast.sql.impl.calcite.schema.HazelcastRelOptTable;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.RelOptRuleCall;
@@ -34,7 +33,22 @@ import org.apache.calcite.util.mapping.Mappings;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Logical rule that pushes down a {@link Filter} into a {@link TableScan} to allow for constrained scans.
+ * See {@link HazelcastTable} for more information about constrained scans.
+ * <p>
+ * Before:
+ * <pre>
+ * LogicalFilter[filter=exp1]
+ *     LogicalScan[table[filter=exp2]]
+ * </pre>
+ * After:
+ * <pre>
+ * LogicalScan[table[filter=exp1 AND exp2]]
+ * </pre>
+ */
 public final class FilterIntoScanLogicalRule extends RelOptRule {
+
     public static final FilterIntoScanLogicalRule INSTANCE = new FilterIntoScanLogicalRule();
 
     private FilterIntoScanLogicalRule() {
@@ -51,19 +65,13 @@ public final class FilterIntoScanLogicalRule extends RelOptRule {
         Filter filter = call.rel(0);
         TableScan scan = call.rel(1);
 
-        HazelcastRelOptTable originalRelTable = (HazelcastRelOptTable) scan.getTable();
-        HazelcastTable originalHazelcastTable = OptUtils.getHazelcastTable(scan);
+        HazelcastTable originalTable = OptUtils.getHazelcastTable(scan);
 
-        List<Integer> projects = originalHazelcastTable.getProjects();
-
-        // Remap the new filter to the original table fields.
-        // E.g. the filter [$0 IS NULL] for the projected table [2, 3] is converted to [$2 IS NULL].
-        Mapping mapping = Mappings.source(projects, originalHazelcastTable.getOriginalFieldCount());
-
-        RexNode newCondition = RexUtil.apply(mapping, filter.getCondition());
+        // Remap the condition to the original TableScan columns.
+        RexNode newCondition = remapCondition(originalTable, filter.getCondition());
 
         // Compose the conjunction with the old filter if needed.
-        RexNode originalCondition = originalHazelcastTable.getFilter();
+        RexNode originalCondition = originalTable.getFilter();
 
         if (originalCondition != null) {
             List<RexNode> nodes = new ArrayList<>(2);
@@ -74,10 +82,44 @@ public final class FilterIntoScanLogicalRule extends RelOptRule {
         }
 
         // Create a scan with a new filter.
-        HazelcastTable newHazelcastTable = originalHazelcastTable.withFilter(newCondition);
-
-        LogicalTableScan newScan = OptUtils.createLogicalScanWithNewTable(scan, originalRelTable, newHazelcastTable);
+        LogicalTableScan newScan = OptUtils.createLogicalScanWithNewTable(
+            scan,
+            originalTable.withFilter(newCondition)
+        );
 
         call.transformTo(newScan);
+    }
+
+    /**
+     * Remaps the column indexes referenced in the {@code Filter} to match the original indexed used by {@code TableScan}.
+     * <p>
+     * Consider the following query: "SELECT f1, f0 FROM t WHERE f0 > ?" for the table {@code t[f0, f1]}
+     * <p>
+     * The original tree before optimization:
+     * <pre>
+     * LogicalFilter[$1>?]                                  // f0 is referenced as $1
+     *   LogicalProject[$1, $0]                             // f1, f0
+     *     LogicalScan[table=t[projects=[0, 1]]]            // f0, f1
+     * </pre>
+     * After project pushdown:
+     * <pre>
+     * LogicalFilter[$1>?]                                  // f0 is referenced as $1
+     *   LogicalScan[table=t[projects=[1, 0]]]              // f1, f0
+     * </pre>
+     * After filter pushdown:
+     * <pre>
+     * LogicalScan[table=t[projects=[1, 0], filter=[$0>?]]] // f0 is referenced as $0
+     * </pre>
+     *
+     * @param originalHazelcastTable The original table from the {@code TableScan} before the pushdown
+     * @param originalFilterCondition The original condition from the {@code Filter}.
+     * @return New condition that is going to be pushed down to a {@code TableScan}.
+     */
+    private static RexNode remapCondition(HazelcastTable originalHazelcastTable, RexNode originalFilterCondition) {
+        List<Integer> projects = originalHazelcastTable.getProjects();
+
+        Mapping mapping = Mappings.source(projects, originalHazelcastTable.getOriginalFieldCount());
+
+        return RexUtil.apply(mapping, originalFilterCondition);
     }
 }

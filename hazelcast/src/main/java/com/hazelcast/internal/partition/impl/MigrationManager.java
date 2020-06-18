@@ -46,6 +46,7 @@ import com.hazelcast.internal.partition.operation.PublishCompletedMigrationsOper
 import com.hazelcast.internal.partition.operation.ShutdownResponseOperation;
 import com.hazelcast.internal.util.Clock;
 import com.hazelcast.internal.util.Preconditions;
+import com.hazelcast.internal.util.Timer;
 import com.hazelcast.internal.util.collection.Int2ObjectHashMap;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.internal.util.scheduler.CoalescingDelayedTrigger;
@@ -978,7 +979,7 @@ public class MigrationManager {
             if (partitionOwner == null) {
                 return;
             }
-            long start = System.nanoTime();
+            long startNanos = Timer.nanos();
             try {
                 beforeMigration();
                 Boolean result = executeMigrateOperation(partitionOwner);
@@ -988,11 +989,11 @@ public class MigrationManager {
                 logger.log(level, "Error during " + migrationInfo, t);
                 migrationOperationFailed(partitionOwner);
             } finally {
-                long elapsed = System.nanoTime() - start;
-                stats.recordMigrationTaskTime(elapsed);
+                long elapsedNanos = Timer.nanosElapsed(startNanos);
+                stats.recordMigrationTaskTime(elapsedNanos);
                 PartitionEventManager partitionEventManager = partitionService.getPartitionEventManager();
                 partitionEventManager.sendMigrationEvent(stats.toMigrationState(), migrationInfo,
-                        TimeUnit.NANOSECONDS.toMillis(elapsed));
+                        TimeUnit.NANOSECONDS.toMillis(elapsedNanos));
             }
         }
 
@@ -1069,7 +1070,7 @@ public class MigrationManager {
          * migration was successful.
          */
         private Boolean executeMigrateOperation(Member fromMember) {
-            long start = System.nanoTime();
+            long startNanos = Timer.nanos();
             List<MigrationInfo> completedMigrations = getCompletedMigrationsCopy();
             int partitionStateVersion = partitionStateManager.getVersion();
             Operation op = new MigrationRequestOperation(migrationInfo, completedMigrations, partitionStateVersion,
@@ -1089,7 +1090,7 @@ public class MigrationManager {
                     logger.log(level, "Failed migration from " + fromMember + " for " + migrationInfo, e);
                 }
             } finally {
-                stats.recordMigrationOperationTime(System.nanoTime() - start);
+                stats.recordMigrationOperationTime(Timer.nanosElapsed(startNanos));
             }
             return Boolean.FALSE;
         }
@@ -1171,9 +1172,9 @@ public class MigrationManager {
          */
         private void migrationOperationSucceeded() {
             migrationInterceptor.onMigrationComplete(MigrationParticipant.MASTER, migrationInfo, true);
-            long start = System.nanoTime();
+            long startNanos = Timer.nanos();
             boolean commitSuccessful = commitMigrationToDestination(migrationInfo);
-            stats.recordDestinationCommitTime(System.nanoTime() - start);
+            stats.recordDestinationCommitTime(Timer.nanosElapsed(startNanos));
             partitionServiceLock.lock();
             try {
                 if (commitSuccessful) {

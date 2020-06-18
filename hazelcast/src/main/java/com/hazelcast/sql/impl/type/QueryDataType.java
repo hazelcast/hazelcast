@@ -55,21 +55,18 @@ import java.io.Serializable;
  * <p>Java serialization is needed for Jet.
  */
 public class QueryDataType implements IdentifiedDataSerializable, Serializable {
-    public static final int PRECISION_TINYINT = 4;
-    public static final int PRECISION_SMALLINT = 7;
-    public static final int PRECISION_INT = 11;
-    public static final int PRECISION_BIGINT = 20;
-    public static final int PRECISION_UNLIMITED = -1;
+
+    public static final int MAX_DECIMAL_PRECISION = 38;
 
     public static final QueryDataType VARCHAR = new QueryDataType(StringConverter.INSTANCE);
     public static final QueryDataType VARCHAR_CHARACTER = new QueryDataType(CharacterConverter.INSTANCE);
 
     public static final QueryDataType BOOLEAN = new QueryDataType(BooleanConverter.INSTANCE);
 
-    public static final QueryDataType TINYINT = new QueryDataType(ByteConverter.INSTANCE, PRECISION_TINYINT);
-    public static final QueryDataType SMALLINT = new QueryDataType(ShortConverter.INSTANCE, PRECISION_SMALLINT);
-    public static final QueryDataType INT = new QueryDataType(IntegerConverter.INSTANCE, PRECISION_INT);
-    public static final QueryDataType BIGINT = new QueryDataType(LongConverter.INSTANCE, PRECISION_BIGINT);
+    public static final QueryDataType TINYINT = new QueryDataType(ByteConverter.INSTANCE);
+    public static final QueryDataType SMALLINT = new QueryDataType(ShortConverter.INSTANCE);
+    public static final QueryDataType INT = new QueryDataType(IntegerConverter.INSTANCE);
+    public static final QueryDataType BIGINT = new QueryDataType(LongConverter.INSTANCE);
     public static final QueryDataType DECIMAL = new QueryDataType(BigDecimalConverter.INSTANCE);
     public static final QueryDataType DECIMAL_BIG_INTEGER = new QueryDataType(BigIntegerConverter.INSTANCE);
     public static final QueryDataType REAL = new QueryDataType(FloatConverter.INSTANCE);
@@ -91,19 +88,13 @@ public class QueryDataType implements IdentifiedDataSerializable, Serializable {
     public static final QueryDataType NULL = new QueryDataType(NullConverter.INSTANCE);
 
     private Converter converter;
-    private int precision;
 
     public QueryDataType() {
         // No-op.
     }
 
     QueryDataType(Converter converter) {
-        this(converter, PRECISION_UNLIMITED);
-    }
-
-    QueryDataType(Converter converter, int precision) {
         this.converter = converter;
-        this.precision = precision;
     }
 
     public QueryDataTypeFamily getTypeFamily() {
@@ -114,10 +105,6 @@ public class QueryDataType implements IdentifiedDataSerializable, Serializable {
         return converter;
     }
 
-    public int getPrecision() {
-        return precision;
-    }
-
     public Object convert(Object value) {
         if (value == null) {
             return value;
@@ -125,7 +112,7 @@ public class QueryDataType implements IdentifiedDataSerializable, Serializable {
 
         Class<?> valueClass = value.getClass();
 
-        if (valueClass == converter.getValueClass()) {
+        if (valueClass == converter.getNormalizedValueClass()) {
             return value;
         }
 
@@ -145,18 +132,16 @@ public class QueryDataType implements IdentifiedDataSerializable, Serializable {
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeInt(converter.getId());
-        out.writeInt(precision);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         converter = Converters.getConverter(in.readInt());
-        precision = in.readInt();
     }
 
     @Override
     public int hashCode() {
-        return 31 * converter.getId() + precision;
+        return 31 * converter.getId();
     }
 
     @Override
@@ -171,11 +156,11 @@ public class QueryDataType implements IdentifiedDataSerializable, Serializable {
 
         QueryDataType type = (QueryDataType) o;
 
-        return converter.getId() == type.converter.getId() && precision == type.precision;
+        return converter.getId() == type.converter.getId();
     }
 
     @Override
     public String toString() {
-        return getClass().getSimpleName() + " {family=" + getTypeFamily() + ", precision=" + precision + "}";
+        return getClass().getSimpleName() + " {family=" + getTypeFamily() + "}";
     }
 }

@@ -34,7 +34,6 @@ import java.util.Objects;
  */
 public class ConstantExpression<T> implements Expression<T> {
 
-    // TODO: remove type?
     private QueryDataType type;
     private T value;
 
@@ -43,26 +42,26 @@ public class ConstantExpression<T> implements Expression<T> {
         // No-op.
     }
 
-    private ConstantExpression(QueryDataType type, T value) {
+    private ConstantExpression(T value, QueryDataType type) {
         this.type = type;
         this.value = value;
     }
 
-    public static ConstantExpression<?> create(QueryDataType type, Object value) {
+    public static ConstantExpression<?> create(Object value, QueryDataType type) {
         if (type.getTypeFamily() == QueryDataTypeFamily.NULL) {
             assert value == null;
-            return new ConstantExpression<>(QueryDataType.NULL, null);
+            return new ConstantExpression<>(null, QueryDataType.NULL);
         }
 
         if (value == null) {
-            return new ConstantExpression<>(type, null);
+            return new ConstantExpression<>(null, type);
         }
 
         Converter valueConverter = Converters.getConverter(value.getClass());
         Converter typeConverter = type.getConverter();
         value = typeConverter.convertToSelf(valueConverter, value);
 
-        return new ConstantExpression<>(type, value);
+        return new ConstantExpression<>(value, type);
     }
 
     @Override

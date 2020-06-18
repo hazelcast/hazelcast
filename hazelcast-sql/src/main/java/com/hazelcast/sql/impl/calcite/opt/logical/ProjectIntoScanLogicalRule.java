@@ -17,7 +17,6 @@
 package com.hazelcast.sql.impl.calcite.opt.logical;
 
 import com.hazelcast.sql.impl.calcite.opt.OptUtils;
-import com.hazelcast.sql.impl.calcite.schema.HazelcastRelOptTable;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.RelOptRuleCall;
@@ -26,7 +25,6 @@ import org.apache.calcite.rel.core.RelFactories;
 import org.apache.calcite.rel.core.TableScan;
 import org.apache.calcite.rel.logical.LogicalProject;
 import org.apache.calcite.rel.logical.LogicalTableScan;
-import org.apache.calcite.rel.rules.ProjectRemoveRule;
 import org.apache.calcite.rex.RexCall;
 import org.apache.calcite.rex.RexInputRef;
 import org.apache.calcite.rex.RexNode;
@@ -42,11 +40,36 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Rule that attempts to restrict the number of fields returned from the scan based on the project sitting on top of it.
+ * Logical rule that pushes down column references from a {@link Project} into a {@link TableScan} to allow for constrained
+ * scans. See {@link HazelcastTable} for more information about constrained scans.
  * <p>
- * The rule finds all field references present in project expressions and restrict table scan to these expressions only.
+ * <b>Case 1: </b>projects that have only column expressions are eliminated completely, unused columns returned from the
+ * {@code TableScan} are trimmed.
+ * <p>
+ * Before:
+ * <pre>
+ * LogicalProject[projects=[$2, $1]]]
+ *   LogicalTableScan[table[projects=[0, 1, 2]]]
+ * </pre>
+ * After:
+ * <pre>
+ * LogicalTableScan[table[projects=[2, 1]]]
+ * </pre>
+ * <b>Case 2: </b>projects with non-column expressions trim the unused columns only.
+ * <p>
+ * Before:
+ * <pre>
+ * LogicalProject[projects=[+$2, $0]]]
+ *   LogicalTableScan[table[projects=[0, 1, 2]]]
+ * </pre>
+ * After:
+ * <pre>
+ * LogicalProject[projects=[+$0, $1]]]
+ *   LogicalTableScan[table[projects=[2, 0]]]
+ * </pre>
  */
 public final class ProjectIntoScanLogicalRule extends RelOptRule {
+
     public static final ProjectIntoScanLogicalRule INSTANCE = new ProjectIntoScanLogicalRule();
 
     private ProjectIntoScanLogicalRule() {
@@ -65,80 +88,74 @@ public final class ProjectIntoScanLogicalRule extends RelOptRule {
 
         Mappings.TargetMapping mapping = project.getMapping();
 
-        if (mapping == null) {
-            processComplex(call, project, scan);
-        } else {
+        if (mapping != null) {
             processSimple(call, mapping, scan);
+        } else {
+            processComplex(call, project, scan);
         }
     }
 
     /**
-     * Process simple case when all project expressions are direct field access.
+     * Process simple case when all project expressions are direct field access. The {@code Project} is eliminated completely.
      *
      * @param mapping Projects mapping.
      * @param scan Scan.
      */
     private static void processSimple(RelOptRuleCall call, Mappings.TargetMapping mapping, TableScan scan) {
-        if (Mappings.isIdentity(mapping)) {
-            call.transformTo(scan);
+        // Get columns defined in the original TableScan.
+        HazelcastTable originalTable = OptUtils.getHazelcastTable(scan);
 
-            return;
-        }
+        List<Integer> originalProjects = originalTable.getProjects();
 
-        HazelcastRelOptTable originalRelTable = (HazelcastRelOptTable) scan.getTable();
-        HazelcastTable originalHazelcastTable = OptUtils.getHazelcastTable(scan);
+        // Remap columns from the Project. The result is the projects that will be pushed down to the new TableScan.
+        // E.g. consider the table "t[f0, f1, f2]" and the SQL query "SELECT f2, f0":
+        //   Original projects: [0(f0), 1(f1), 2(f2)]
+        //   New projects:      [2(f2), 0(f0)]
+        List<Integer> newProjects = Mappings.apply((Mapping) mapping, originalProjects);
 
-        List<Integer> projects = originalHazelcastTable.getProjects();
-        List<Integer> newProjects = Mappings.apply((Mapping) mapping, projects);
-
+        // Construct the new TableScan with adjusted columns.
         LogicalTableScan newScan = OptUtils.createLogicalScanWithNewTable(
             scan,
-            originalRelTable,
-            originalHazelcastTable.withProject(newProjects)
+            originalTable.withProject(newProjects)
         );
 
         call.transformTo(newScan);
     }
 
     /**
-     * Process complex project with expressions. Projection will remain as is, but the number of returned fields might be
-     * decreased in scan.
+     * Process the complex project with expressions. The {@code Project} operator will remain, but the number and the order of
+     * columns returned from the {@code TableScan} is adjusted.
      *
      * @param project Project.
      * @param scan Scan.
      */
     private void processComplex(RelOptRuleCall call, Project project, TableScan scan) {
-        HazelcastRelOptTable originalRelTable = (HazelcastRelOptTable) scan.getTable();
-        HazelcastTable originalHazelcastTable = OptUtils.getHazelcastTable(scan);
+        HazelcastTable originalTable = OptUtils.getHazelcastTable(scan);
 
         // Map projected field references to real scan fields.
-        ProjectFieldVisitor projectFieldVisitor = new ProjectFieldVisitor(originalHazelcastTable.getProjects());
+        ProjectFieldVisitor projectFieldVisitor = new ProjectFieldVisitor(originalTable.getProjects());
 
         for (RexNode projectExp : project.getProjects()) {
             projectExp.accept(projectFieldVisitor);
         }
 
-        // Get new scan fields. These are the only fields which are accessed by the project operator, so the rest could be
-        // removed.
+        // Get new scan fields. These are the only fields that are accessed by the project operator.
         List<Integer> newScanProjects = projectFieldVisitor.createNewScanProjects();
 
-        if (newScanProjects.isEmpty()) {
-            // TODO: Retain key only.
-            // No scan columns are referenced from within a project. In principle we may reduce the relation to key only
-            // here, but we do not have a notion of key at the moment. So no-op for now.
+        if (newScanProjects.size() == originalTable.getProjects().size()) {
+            // The Project operator already references all the fields from the TableScan. No trimming is possible, so further
+            // optimization makes no sense.
+            // E.g. "SELECT f3, f2, f1 FROM t" where t=[f1, f2, f3]
             return;
         }
 
-        if (newScanProjects.equals(originalHazelcastTable.getProjects())) {
-            // Do nothing if all scan fields are referenced.
-            return;
-        }
+        // Create the new TableScan that do not return unused columns.
+        LogicalTableScan newScan = OptUtils.createLogicalScanWithNewTable(
+            scan,
+            originalTable.withProject(newScanProjects)
+        );
 
-        HazelcastTable newHazelcastTable = originalHazelcastTable.withProject(newScanProjects);
-
-        LogicalTableScan newScan = OptUtils.createLogicalScanWithNewTable(scan, originalRelTable, newHazelcastTable);
-
-        // Create new project nodes with references to scan fields.
+        // Create new Project with adjusted column references that point to new TableScan fields.
         ProjectConverter projectConverter = projectFieldVisitor.createProjectConverter();
 
         List<RexNode> newProjects = new ArrayList<>();
@@ -156,24 +173,17 @@ public final class ProjectIntoScanLogicalRule extends RelOptRule {
             project.getRowType()
         );
 
-        // If new project is trivial, i.e. it contains only references to scan fields, then it can be eliminated.
-        if (ProjectRemoveRule.isTrivial(newProject)) {
-            call.transformTo(newScan);
-        } else {
-            call.transformTo(newProject);
-        }
+        call.transformTo(newProject);
     }
 
     /**
      * Visitor which collects fields from project expressions and map them to respective scan fields.
      */
     private static final class ProjectFieldVisitor extends RexVisitorImpl<Void> {
-        /** Originally available scan fields. */
+        /** Fields from the original TableScan operator. */
         private final List<Integer> originalScanFields;
 
-        /**
-         * Mapped project fields.
-         */
+        /** Map from original scan fields to input expressions that must be remapped during the pushdown. */
         private final Map<Integer, List<RexInputRef>> scanFieldIndexToProjectInputs = new LinkedHashMap<>();
 
         private ProjectFieldVisitor(List<Integer> originalScanFields) {
@@ -184,10 +194,14 @@ public final class ProjectIntoScanLogicalRule extends RelOptRule {
 
         @Override
         public Void visitInputRef(RexInputRef projectInput) {
+            // Get the scan field referenced by the given column expression (RexInputRef).
+            // E.g., for the table t[t1, t2, t3] and the constrained TableScan[table=[t, project[2, 0]]], the input
+            // reference [$0] (i.e. t3) is mapped to the scan field [2].
             Integer scanField = originalScanFields.get(projectInput.getIndex());
 
             assert scanField != null;
 
+            // Track all column expressions from the Project operator that refer to the same TableScan field.
             List<RexInputRef> projectInputs = scanFieldIndexToProjectInputs.computeIfAbsent(scanField, (k) -> new ArrayList<>(1));
 
             projectInputs.add(projectInput);
@@ -197,7 +211,6 @@ public final class ProjectIntoScanLogicalRule extends RelOptRule {
 
         @Override
         public Void visitCall(RexCall call) {
-            // TODO: Support "star" and "item".
             for (RexNode operand : call.operands) {
                 operand.accept(this);
             }
@@ -205,10 +218,16 @@ public final class ProjectIntoScanLogicalRule extends RelOptRule {
             return null;
         }
 
+        /**
+         * @return The list of {@code TableScan} columns referenced by expressions of the {@code Project} operator.
+         */
         private List<Integer> createNewScanProjects() {
             return new ArrayList<>(scanFieldIndexToProjectInputs.keySet());
         }
 
+        /**
+         * @return The converter that will adjust column references ({@code RexInputRef}) of the new {@code Project} operator.
+         */
         private ProjectConverter createProjectConverter() {
             Map<RexNode, Integer> projectExpToScanFieldMap = new HashMap<>();
 
@@ -227,7 +246,7 @@ public final class ProjectIntoScanLogicalRule extends RelOptRule {
     }
 
     /**
-     * Visitor which converts old project expressions (before pushdown) to new project expressions (after pushdown).
+     * Visitor which converts old column expressions (before pushdown) to new column expressions (after pushdown).
      */
     public static final class ProjectConverter extends RexShuttle {
         /** Map from old project expression to relevant field in the new scan operator. */
@@ -238,25 +257,12 @@ public final class ProjectIntoScanLogicalRule extends RelOptRule {
         }
 
         @Override
-        public RexNode visitCall(final RexCall call) {
-            Integer index = projectExpToScanFieldMap.get(call);
-
-            if (index != null) {
-                return new RexInputRef(index, call.getType());
-            }
-
-            return super.visitCall(call);
-        }
-
-        @Override
         public RexNode visitInputRef(RexInputRef inputRef) {
             Integer index = projectExpToScanFieldMap.get(inputRef);
 
-            if (index != null) {
-                return new RexInputRef(index, inputRef.getType());
-            }
+            assert index != null;
 
-            return super.visitInputRef(inputRef);
+            return new RexInputRef(index, inputRef.getType());
         }
     }
 }

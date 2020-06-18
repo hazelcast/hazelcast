@@ -4898,6 +4898,7 @@
             <xs:extension base="basic-authentication">
                 <xs:choice maxOccurs="unbounded">
                     <xs:element name="relax-flags-check" type="xs:boolean" minOccurs="0"/>
+                    <xs:element name="use-name-without-realm" type="xs:boolean" minOccurs="0"/>
                     <xs:element name="security-realm" type="xs:string" minOccurs="0"/>
                     <xs:element name="ldap" type="ldap-authentication" minOccurs="0"/>
                 </xs:choice>
@@ -4918,6 +4919,7 @@
             <xs:element name="security-realm" type="xs:string" minOccurs="0"/>
             <xs:element name="service-name-prefix" type="xs:string" minOccurs="0"/>
             <xs:element name="spn" type="xs:string" minOccurs="0"/>
+            <xs:element name="use-canonical-hostname" type="xs:boolean" minOccurs="0"/>
         </xs:all>
     </xs:complexType>
     <xs:complexType name="username-password">

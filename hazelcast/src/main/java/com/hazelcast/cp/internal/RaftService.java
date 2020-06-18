@@ -80,6 +80,7 @@ import com.hazelcast.internal.services.MembershipServiceEvent;
 import com.hazelcast.internal.services.PreJoinAwareService;
 import com.hazelcast.internal.util.Clock;
 import com.hazelcast.internal.util.ExceptionUtil;
+import com.hazelcast.internal.util.Timer;
 import com.hazelcast.internal.util.executor.ManagedExecutorService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.exception.PartitionMigratingException;
@@ -516,7 +517,7 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
 
     private boolean ensureCPMemberRemoved(CPMemberInfo member, long remainingTimeNanos) {
         while (remainingTimeNanos > 0) {
-            long start = System.nanoTime();
+            long startNanos = Timer.nanos();
             try {
                 if (metadataGroupManager.getActiveMembers().size() == 1) {
                     logger.warning("I am one of the last 2 CP members...");
@@ -530,7 +531,7 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
                 if (!(e.getCause() instanceof CannotRemoveCPMemberException)) {
                     throw ExceptionUtil.rethrow(e);
                 }
-                remainingTimeNanos -= (System.nanoTime() - start);
+                remainingTimeNanos -= Timer.nanosElapsed(startNanos);
                 if (remainingTimeNanos <= 0) {
                     throw new IllegalStateException(e.getMessage());
                 }

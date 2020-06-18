@@ -16,6 +16,8 @@
 
 package com.hazelcast.sql.impl.calcite.schema;
 
+import com.hazelcast.sql.impl.calcite.opt.logical.FilterIntoScanLogicalRule;
+import com.hazelcast.sql.impl.calcite.opt.logical.ProjectIntoScanLogicalRule;
 import org.apache.calcite.linq4j.tree.Expression;
 import org.apache.calcite.plan.RelOptSchema;
 import org.apache.calcite.plan.RelOptTable;
@@ -24,6 +26,8 @@ import org.apache.calcite.rel.RelCollation;
 import org.apache.calcite.rel.RelDistribution;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.RelReferentialConstraint;
+import org.apache.calcite.rel.RelWriter;
+import org.apache.calcite.rel.core.TableScan;
 import org.apache.calcite.rel.logical.LogicalTableScan;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeField;
@@ -37,6 +41,29 @@ import org.apache.calcite.util.ImmutableBitSet;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Custom implementation of Apache Calcite table.
+ * <p>
+ * Tables are used inside {@link TableScan} operators. During logical planning we attempt to flatten the relational tree by
+ * pushing down projects and filters into the table, see {@link ProjectIntoScanLogicalRule} and {@link FilterIntoScanLogicalRule}.
+ * <p>
+ * It is important to distinguish {@code TableScan} operators with and without pushdown. Otherwise scans that produce different
+ * results will be merged into a single equivalence group, leading to incorrect query results.
+ * <p>
+ * To mitigate this we provide our own table implementation that overrides {@link #getQualifiedName()} method, used for scan
+ * signature calculation (see {@link TableScan#explainTerms(RelWriter)}). The overridden version adds information about
+ * pushed-down projections and scans to the table name, thus avoiding the problem.
+ * <p>
+ * For example, a table scan over table {@code p} without pushdowns may have a signature:
+ * <pre>
+ * ...table=[[hazelcast, p]]....
+ * </pre>
+ * <p>
+ * A scan over the same table with project and filter will have a signature:
+ * <pre>
+ * ...table=[[hazelcast, p[projects=[0, 1], filter=>($2, 1)]]]...
+ * </pre>
+ */
 public class HazelcastRelOptTable implements Prepare.PreparingTable {
 
     private final Prepare.PreparingTable delegate;
@@ -56,20 +83,10 @@ public class HazelcastRelOptTable implements Prepare.PreparingTable {
 
         assert names != null && !names.isEmpty();
 
-        // Extend table name with project/filter information.
-        List<String> res = new ArrayList<>(names.size());
-
-        for (int i = 0; i < names.size(); i++) {
-            String currentPart = names.get(i);
-
-            if (i != names.size() - 1) {
-                // Not a table name, just add it as is.
-                res.add(currentPart);
-            } else {
-                // Table name. Extend it with project/filter.
-                res.add(currentPart + getTableSignature());
-            }
-        }
+        List<String> res = new ArrayList<>(names);
+        // Extend the table name (the last element) with project/filter signature.
+        int lastElement = res.size() - 1;
+        res.set(lastElement, res.get(lastElement) + getTableSignature());
 
         return res;
     }
@@ -99,6 +116,8 @@ public class HazelcastRelOptTable implements Prepare.PreparingTable {
 
     @Override
     public RelNode toRel(ToRelContext context) {
+        // Override this method to pass this table to the LogicalTableScan.
+        // Otherwise the delegate would be used, which is incorrect.
         return LogicalTableScan.create(context.getCluster(), this, context.getTableHints());
     }
 

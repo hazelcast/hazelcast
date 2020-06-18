@@ -17,6 +17,7 @@
 package com.hazelcast.internal.monitor.impl;
 
 import com.hazelcast.internal.memory.MemoryAllocator;
+import com.hazelcast.internal.util.Timer;
 import com.hazelcast.query.impl.Index;
 import com.hazelcast.query.impl.IndexHeapMemoryCostUtil;
 import com.hazelcast.internal.util.Clock;
@@ -109,7 +110,7 @@ public class GlobalPerIndexStats implements PerIndexStats {
 
     @Override
     public long makeTimestamp() {
-        return System.nanoTime();
+        return Timer.nanos();
     }
 
     @Override
@@ -178,14 +179,14 @@ public class GlobalPerIndexStats implements PerIndexStats {
     }
 
     @Override
-    public void onInsert(long timestamp, IndexOperationStats operationStats, Index.OperationSource operationSource) {
+    public void onInsert(long timestampNanos, IndexOperationStats operationStats, Index.OperationSource operationSource) {
         if (operationStats.getEntryCountDelta() == 0) {
             // no entries were inserted
             return;
         }
 
         if (operationSource == Index.OperationSource.USER) {
-            TOTAL_INSERT_LATENCY.addAndGet(this, System.nanoTime() - timestamp);
+            TOTAL_INSERT_LATENCY.addAndGet(this, Timer.nanosElapsed(timestampNanos));
             INSERT_COUNT.incrementAndGet(this);
         }
         ENTRY_COUNT.incrementAndGet(this);
@@ -193,9 +194,9 @@ public class GlobalPerIndexStats implements PerIndexStats {
     }
 
     @Override
-    public void onUpdate(long timestamp, IndexOperationStats operationStats, Index.OperationSource operationSource) {
+    public void onUpdate(long timestampNanos, IndexOperationStats operationStats, Index.OperationSource operationSource) {
         if (operationSource == Index.OperationSource.USER) {
-            TOTAL_UPDATE_LATENCY.addAndGet(this, System.nanoTime() - timestamp);
+            TOTAL_UPDATE_LATENCY.addAndGet(this, Timer.nanosElapsed(timestampNanos));
             UPDATE_COUNT.incrementAndGet(this);
         }
         VALUES_MEMORY_COST.addAndGet(this, operationStats.getMemoryCostDelta());
@@ -209,7 +210,7 @@ public class GlobalPerIndexStats implements PerIndexStats {
         }
 
         if (operationSource == Index.OperationSource.USER) {
-            TOTAL_REMOVE_LATENCY.addAndGet(this, System.nanoTime() - timestamp);
+            TOTAL_REMOVE_LATENCY.addAndGet(this, Timer.nanosElapsed(timestamp));
             REMOVE_COUNT.incrementAndGet(this);
         }
         ENTRY_COUNT.decrementAndGet(this);
@@ -230,7 +231,7 @@ public class GlobalPerIndexStats implements PerIndexStats {
             return;
         }
 
-        TOTAL_HIT_LATENCY.addAndGet(this, System.nanoTime() - timestamp);
+        TOTAL_HIT_LATENCY.addAndGet(this, Timer.nanosElapsed(timestamp));
         HIT_COUNT.incrementAndGet(this);
 
         // limit the cardinality for "safety"

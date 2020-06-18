@@ -17,6 +17,7 @@
 package com.hazelcast.internal.monitor.impl;
 
 import com.hazelcast.internal.memory.MemoryAllocator;
+import com.hazelcast.internal.util.Timer;
 import com.hazelcast.query.impl.Index;
 import com.hazelcast.internal.util.Clock;
 
@@ -93,7 +94,7 @@ public class PartitionPerIndexStats implements PerIndexStats {
 
     @Override
     public long makeTimestamp() {
-        return System.nanoTime();
+        return Timer.nanos();
     }
 
     @Override
@@ -164,37 +165,37 @@ public class PartitionPerIndexStats implements PerIndexStats {
     }
 
     @Override
-    public void onInsert(long timestamp, IndexOperationStats operationStats, Index.OperationSource operationSource) {
+    public void onInsert(long startNanos, IndexOperationStats operationStats, Index.OperationSource operationSource) {
         if (operationStats.getEntryCountDelta() == 0) {
             // no entries were inserted
             return;
         }
 
         if (operationSource == Index.OperationSource.USER) {
-            TOTAL_INSERT_LATENCY.lazySet(this, totalInsertLatency + (System.nanoTime() - timestamp));
+            TOTAL_INSERT_LATENCY.lazySet(this, totalInsertLatency + (Timer.nanosElapsed(startNanos)));
             INSERT_COUNT.lazySet(this, insertCount + 1);
         }
         ENTRY_COUNT.lazySet(this, entryCount + 1);
     }
 
     @Override
-    public void onUpdate(long timestamp, IndexOperationStats operationStats, Index.OperationSource operationSource) {
+    public void onUpdate(long startNanos, IndexOperationStats operationStats, Index.OperationSource operationSource) {
         if (operationSource == Index.OperationSource.USER) {
-            TOTAL_UPDATE_LATENCY.lazySet(this, totalUpdateLatency + (System.nanoTime() - timestamp));
+            TOTAL_UPDATE_LATENCY.lazySet(this, totalUpdateLatency + (Timer.nanosElapsed(startNanos)));
             UPDATE_COUNT.lazySet(this, updateCount + 1);
         }
         ENTRY_COUNT.lazySet(this, entryCount + operationStats.getEntryCountDelta());
     }
 
     @Override
-    public void onRemove(long timestamp, IndexOperationStats operationStats, Index.OperationSource operationSource) {
+    public void onRemove(long startNanos, IndexOperationStats operationStats, Index.OperationSource operationSource) {
         if (operationStats.getEntryCountDelta() == 0) {
             // no entries were removed
             return;
         }
 
         if (operationSource == Index.OperationSource.USER) {
-            TOTAL_REMOVE_LATENCY.lazySet(this, totalRemoveLatency + (System.nanoTime() - timestamp));
+            TOTAL_REMOVE_LATENCY.lazySet(this, totalRemoveLatency + (Timer.nanosElapsed(startNanos)));
             REMOVE_COUNT.lazySet(this, removeCount + 1);
         }
         ENTRY_COUNT.lazySet(this, entryCount - 1);
@@ -206,7 +207,7 @@ public class PartitionPerIndexStats implements PerIndexStats {
     }
 
     @Override
-    public void onIndexHit(long timestamp, long hitCardinality) {
+    public void onIndexHit(long startNanos, long hitCardinality) {
         // To compute the average hit cardinality we need to track the total
         // cardinality of all of the hits and then divide it by the number of hits.
         // But since the number of the indexed entries may change with time, this
@@ -223,7 +224,7 @@ public class PartitionPerIndexStats implements PerIndexStats {
             return;
         }
 
-        TOTAL_HIT_LATENCY.lazySet(this, totalHitLatency + (System.nanoTime() - timestamp));
+        TOTAL_HIT_LATENCY.lazySet(this, totalHitLatency + (Timer.nanosElapsed(startNanos)));
         HIT_COUNT.lazySet(this, hitCount + 1);
 
         // limit the cardinality for "safety"

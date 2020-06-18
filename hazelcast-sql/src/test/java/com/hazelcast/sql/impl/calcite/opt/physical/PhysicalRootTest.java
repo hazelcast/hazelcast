@@ -47,11 +47,11 @@ public class PhysicalRootTest extends OptimizerTestSupport {
         tableMap.put("p", OptimizerTestSupport.partitionedTable(
             "p",
             Arrays.asList(
+                TestMapTable.field("f0"),
                 TestMapTable.field("f1"),
                 TestMapTable.field("f2"),
                 TestMapTable.field("f3"),
-                TestMapTable.field("f4"),
-                TestMapTable.field("f5")
+                TestMapTable.field("f4")
             ),
             Collections.emptyList(),
             100
@@ -60,11 +60,11 @@ public class PhysicalRootTest extends OptimizerTestSupport {
         tableMap.put("e", OptimizerTestSupport.partitionedTable(
             "e",
             Arrays.asList(
+                TestMapTable.field("f0"),
                 TestMapTable.field("f1"),
                 TestMapTable.field("f2"),
                 TestMapTable.field("f3"),
-                TestMapTable.field("f4"),
-                TestMapTable.field("f5")
+                TestMapTable.field("f4")
             ),
             Collections.emptyList(),
             0
@@ -82,7 +82,7 @@ public class PhysicalRootTest extends OptimizerTestSupport {
             optimizePhysical("SELECT * FROM p"),
             plan(
                 planRow(0, RootPhysicalRel.class, "", 100d, rootCost),
-                planRow(1, MapScanPhysicalRel.class, "table=[[hazelcast, p]]", 100d, scanCost)
+                planRow(1, MapScanPhysicalRel.class, "table=[[hazelcast, p[projects=[0, 1, 2, 3, 4]]]]", 100d, scanCost)
             )
         );
     }
@@ -96,7 +96,7 @@ public class PhysicalRootTest extends OptimizerTestSupport {
             optimizePhysical("SELECT * FROM e"),
             plan(
                 planRow(0, RootPhysicalRel.class, "", 1d, rootCost),
-                planRow(1, MapScanPhysicalRel.class, "table=[[hazelcast, e]]", 1d, scanCost)
+                planRow(1, MapScanPhysicalRel.class, "table=[[hazelcast, e[projects=[0, 1, 2, 3, 4]]]]", 1d, scanCost)
             )
         );
     }
@@ -112,7 +112,7 @@ public class PhysicalRootTest extends OptimizerTestSupport {
             plan(
                 planRow(0, RootPhysicalRel.class, "", 100d, rootCost),
                 planRow(1, RootExchangePhysicalRel.class, "", 100d, rootExchangeCost),
-                planRow(2, MapScanPhysicalRel.class, "table=[[hazelcast, p]]", 100d, scanCost)
+                planRow(2, MapScanPhysicalRel.class, "table=[[hazelcast, p[projects=[0, 1, 2, 3, 4]]]]", 100d, scanCost)
             )
         );
     }
@@ -128,7 +128,7 @@ public class PhysicalRootTest extends OptimizerTestSupport {
             plan(
                 planRow(0, RootPhysicalRel.class, "", 1d, rootCost),
                 planRow(1, RootExchangePhysicalRel.class, "", 1d, rootExchangeCost),
-                planRow(2, MapScanPhysicalRel.class, "table=[[hazelcast, e]]", 1d, scanCost)
+                planRow(2, MapScanPhysicalRel.class, "table=[[hazelcast, e[projects=[0, 1, 2, 3, 4]]]]", 1d, scanCost)
             )
         );
     }
