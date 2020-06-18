@@ -27,6 +27,7 @@ public class SqlQuery {
     /** Default page size. */
     public static final int DEFAULT_PAGE_SIZE = 1000;
 
+    /** Default query timeout. */
     public static final long TIMEOUT_NOT_SET = -1;
 
     /** SQL query. */
