@@ -41,6 +41,7 @@ public class JoinConfigTest {
         assertOk(false, false, false, false, false, false, false, false, true);
     }
 
+    @SuppressWarnings("checkstyle:parameternumber")
     private static void assertOk(boolean autoDetection, boolean tcp, boolean multicast, boolean aws, boolean gcp, boolean azure,
                                  boolean kubernetes, boolean eureka, boolean discoveryConfig) {
         JoinConfig config = new JoinConfig();

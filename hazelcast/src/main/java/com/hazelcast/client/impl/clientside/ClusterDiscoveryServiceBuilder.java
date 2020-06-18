@@ -133,25 +133,17 @@ class ClusterDiscoveryServiceBuilder {
                 kubernetesDiscoveryEnabled, eurekaDiscoveryEnabled, discoverySpiEnabled, hazelcastCloudEnabled);
 
         if (hazelcastCloudEnabled) {
-            String discoveryToken;
-            if (cloudConfig.isEnabled()) {
-                discoveryToken = cloudConfig.getDiscoveryToken();
-            } else {
-                discoveryToken = cloudDiscoveryToken;
-            }
+            String discoveryToken = cloudDiscoveryToken(cloudConfig, cloudDiscoveryToken);
             String cloudUrlBase = properties.getString(HazelcastCloudDiscovery.CLOUD_URL_BASE_PROPERTY);
             String urlEndpoint = HazelcastCloudDiscovery.createUrlEndpoint(cloudUrlBase, discoveryToken);
             int connectionTimeoutMillis = getConnectionTimeoutMillis(networkConfig);
             HazelcastCloudDiscovery cloudDiscovery = new HazelcastCloudDiscovery(urlEndpoint, connectionTimeoutMillis);
             return new RemoteAddressProvider(cloudDiscovery::discoverNodes, true);
-        }
-        else if (!networkConfig.getAddresses().isEmpty()) {
+        } else if (!networkConfig.getAddresses().isEmpty()) {
             return new DefaultAddressProvider(networkConfig);
-        }
-        else if (discoveryService != null) {
+        } else if (discoveryService != null) {
             return new RemoteAddressProvider(() -> discoverAddresses(discoveryService), usePublicAddress(clientConfig));
         }
-
         return new DefaultAddressProvider(networkConfig);
     }
 
@@ -215,6 +207,14 @@ class ClusterDiscoveryServiceBuilder {
                     + ", eureka discovery: " + eurekaDiscoveryEnabled
                     + ", discovery spi enabled : " + discoverySpiEnabled
                     + ", hazelcast.cloud enabled : " + hazelcastCloudEnabled);
+        }
+    }
+
+    private static String cloudDiscoveryToken(ClientCloudConfig cloudConfig, String cloudDiscoveryToken) {
+        if (cloudConfig.isEnabled()) {
+            return cloudConfig.getDiscoveryToken();
+        } else {
+            return cloudDiscoveryToken;
         }
     }
 

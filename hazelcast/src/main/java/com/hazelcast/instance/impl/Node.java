@@ -29,7 +29,6 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.DiscoveryConfig;
 import com.hazelcast.config.DiscoveryStrategyConfig;
 import com.hazelcast.config.EndpointConfig;
-import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.JoinConfig;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.MemberAttributeConfig;
@@ -62,14 +61,14 @@ import com.hazelcast.internal.dynamicconfig.DynamicConfigurationAwareConfig;
 import com.hazelcast.internal.management.ManagementCenterService;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.impl.MetricsConfigHelper;
-import com.hazelcast.internal.server.tcp.ServerSocketRegistry;
 import com.hazelcast.internal.nio.ClassLoaderUtil;
-import com.hazelcast.internal.server.Server;
 import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.internal.partition.impl.MigrationInterceptor;
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.server.Server;
+import com.hazelcast.internal.server.tcp.ServerSocketRegistry;
 import com.hazelcast.internal.services.GracefulShutdownAwareService;
 import com.hazelcast.internal.usercodedeployment.UserCodeDeploymentClassLoader;
 import com.hazelcast.internal.util.Clock;
@@ -94,7 +93,6 @@ import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.version.MemberVersion;
 import com.hazelcast.version.Version;
 
-import java.lang.reflect.Constructor;
 import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -120,7 +118,6 @@ import static com.hazelcast.internal.config.ConfigValidator.checkAdvancedNetwork
 import static com.hazelcast.internal.util.EmptyStatement.ignore;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.internal.util.FutureUtil.waitWithDeadline;
-import static com.hazelcast.internal.util.StringUtil.LINE_SEPARATOR;
 import static com.hazelcast.internal.util.ThreadUtil.createThreadName;
 import static com.hazelcast.spi.properties.ClusterProperty.DISCOVERY_SPI_ENABLED;
 import static com.hazelcast.spi.properties.ClusterProperty.DISCOVERY_SPI_PUBLIC_IP_ENABLED;
@@ -260,7 +257,8 @@ public class Node {
             List<DiscoveryStrategyConfig> aliasedDiscoveryConfigs =
                     AliasedDiscoveryConfigUtils.createDiscoveryStrategyConfigs(joinConfig);
             boolean isAutoDetectionEnabled = joinConfig.getAutoDetectionConfig().isEnabled();
-            discoveryService = createDiscoveryService(discoveryConfig, aliasedDiscoveryConfigs, isAutoDetectionEnabled, localMember);
+            discoveryService = createDiscoveryService(discoveryConfig, aliasedDiscoveryConfigs, isAutoDetectionEnabled,
+                    localMember);
             clusterService = new ClusterServiceImpl(this, localMember);
             partitionService = new InternalPartitionServiceImpl(this);
             textCommandService = nodeExtension.createTextCommandService();
@@ -307,7 +305,8 @@ public class Node {
     }
 
     public DiscoveryService createDiscoveryService(DiscoveryConfig discoveryConfig,
-                                                   List<DiscoveryStrategyConfig> aliasedDiscoveryConfigs, boolean isAutoDetectionEnabled, Member localMember) {
+                                                   List<DiscoveryStrategyConfig> aliasedDiscoveryConfigs,
+                                                   boolean isAutoDetectionEnabled, Member localMember) {
         DiscoveryServiceProvider factory = discoveryConfig.getDiscoveryServiceProvider();
         if (factory == null) {
             factory = new DefaultDiscoveryServiceProvider();
@@ -812,7 +811,8 @@ public class Node {
         } else if (join.getTcpIpConfig().isEnabled()) {
             logger.info("Creating TcpIpJoiner");
             return new TcpIpJoiner(this);
-        } else if (properties.getBoolean(DISCOVERY_SPI_ENABLED) || isAnyAliasedConfigEnabled(join) || isAutoDetectionEnabled(join)) {
+        } else if (properties.getBoolean(DISCOVERY_SPI_ENABLED) || isAnyAliasedConfigEnabled(join)
+                || isAutoDetectionEnabled(join)) {
             logger.info("Activating Discovery SPI Joiner");
             return new DiscoveryJoiner(this, discoveryService, usePublicAddress(join));
         }

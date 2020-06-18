@@ -77,7 +77,8 @@ public interface DiscoveryStrategyFactory {
     Collection<PropertyDefinition> getConfigurationProperties();
 
     /**
-     * Checks whether the given discovery strategy may be applied with no additional config to the environment in which Hazelcast is currently running.
+     * Checks whether the given discovery strategy may be applied with no additional config to the environment in which Hazelcast
+     * is currently running.
      * <p>
      * User by the auto detection mechanism to decide if which strategy could be used.
      */

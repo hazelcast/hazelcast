@@ -204,8 +204,8 @@ public class DefaultDiscoveryService
             if (factory.isAutoDetectionApplicable()) {
                 logger.fine(String.format("Discovery strategy factory '%s' is auto-applicable to the current runtime environment",
                         factory.getClass()));
-                if (bestFactory == null || factory.discoveryStrategyLevel().getPriority() >
-                        bestFactory.discoveryStrategyLevel().getPriority()) {
+                if (bestFactory == null || factory.discoveryStrategyLevel().getPriority()
+                        > bestFactory.discoveryStrategyLevel().getPriority()) {
                     bestFactory = factory;
                 }
             } else {
