@@ -36,12 +36,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.io.IOException;
-import java.net.Inet6Address;
-import java.net.InetAddress;
-import java.net.NetworkInterface;
-import java.util.Enumeration;
-
 import static com.hazelcast.test.OverridePropertyRule.clear;
 import static org.junit.Assert.assertEquals;
 
@@ -204,24 +198,4 @@ public class MulticastJoinTest extends AbstractJoinTest {
         assertEquals(2, numNodesWithTwoMembers);
         assertEquals(2, numNodesThatKnowAboutH3);
     }
-
-    private static InetAddress pickLocalInetAddress() throws IOException {
-        Enumeration<NetworkInterface> networkInterfaces = NetworkInterface.getNetworkInterfaces();
-        while (networkInterfaces.hasMoreElements()) {
-            NetworkInterface ni = networkInterfaces.nextElement();
-            if (!ni.isUp() || ni.isVirtual() || ni.isLoopback() || !ni.supportsMulticast()) {
-                continue;
-            }
-            Enumeration<InetAddress> e = ni.getInetAddresses();
-            while (e.hasMoreElements()) {
-                InetAddress inetAddress = e.nextElement();
-                if (inetAddress instanceof Inet6Address) {
-                    continue;
-                }
-                return inetAddress;
-            }
-        }
-        return InetAddress.getLocalHost();
-    }
-
 }

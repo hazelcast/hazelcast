@@ -132,37 +132,23 @@ public class DefaultDiscoveryService
         ClassLoader configClassLoader = settings.getConfigClassLoader();
 
         try {
-            Collection<DiscoveryStrategyConfig> discoveryStrategyConfigs = new ArrayList<DiscoveryStrategyConfig>(settings
-                    .getAllDiscoveryConfigs());
+            Collection<DiscoveryStrategyConfig> discoveryStrategyConfigs = new ArrayList<DiscoveryStrategyConfig>(
+                    settings.getAllDiscoveryConfigs());
             List<DiscoveryStrategyFactory> factories = collectFactories(discoveryStrategyConfigs, configClassLoader);
-            List<DiscoveryStrategy> discoveryStrategies = new ArrayList<DiscoveryStrategy>();
 
+            List<DiscoveryStrategy> discoveryStrategies = new ArrayList<DiscoveryStrategy>();
             for (DiscoveryStrategyConfig config : discoveryStrategyConfigs) {
                 DiscoveryStrategy discoveryStrategy = buildDiscoveryStrategy(config, factories);
                 discoveryStrategies.add(discoveryStrategy);
             }
 
             if (discoveryStrategies.isEmpty() && settings.isAutoDetectionEnabled()) {
-                logger.info("Discovery Strategy auto-detection enabled, looking for available discovery methods");
-                DiscoveryStrategyFactory bestFactory = null;
-                for (DiscoveryStrategyFactory factory : factories) {
-                    if (factory.isAutoConfigApplicable()) {
-                        logger.fine(String.format("Discovery Factory '%s' is auto-applicable to the current runtime environment",
-                                factory.getClass()));
-                        if (bestFactory == null || factory.discoveryStrategyLevel().getPriority() >
-                                bestFactory.discoveryStrategyLevel().getPriority()) {
-                            bestFactory = factory;
-
-                        }
-                    } else {
-                        logger.fine(String.format("Discovery Factory '%s' is not applicable to the current runtime environment",
-                                factory.getClass()));
-                    }
-                }
-                if (bestFactory != null) {
-                    logger.info(String.format("Selected the following discovery strategy: %s", bestFactory.getClass()));
+                logger.info("Discovery auto-detection enabled, looking for available discovery strategies");
+                DiscoveryStrategyFactory autoDetectedFactory = autoDetectDiscoveryStrategyFactory(factories);
+                if (autoDetectedFactory != null) {
+                    logger.info(String.format("Auto-detection selected discovery strategy: %s", autoDetectedFactory.getClass()));
                     discoveryStrategies
-                            .add(bestFactory.newDiscoveryStrategy(discoveryNode, logger, Collections.emptyMap()));
+                            .add(autoDetectedFactory.newDiscoveryStrategy(discoveryNode, logger, Collections.emptyMap()));
                 }
             }
             return discoveryStrategies;
@@ -210,6 +196,24 @@ public class DefaultDiscoveryService
         throw new ValidationException(
                 "There is no discovery strategy factory to create '" + config + "' Is it a typo in a strategy classname? "
                         + "Perhaps you forgot to include implementation on a classpath?");
+    }
+
+    private DiscoveryStrategyFactory autoDetectDiscoveryStrategyFactory(List<DiscoveryStrategyFactory> factories) {
+        DiscoveryStrategyFactory bestFactory = null;
+        for (DiscoveryStrategyFactory factory : factories) {
+            if (factory.isAutoDetectionApplicable()) {
+                logger.fine(String.format("Discovery strategy factory '%s' is auto-applicable to the current runtime environment",
+                        factory.getClass()));
+                if (bestFactory == null || factory.discoveryStrategyLevel().getPriority() >
+                        bestFactory.discoveryStrategyLevel().getPriority()) {
+                    bestFactory = factory;
+                }
+            } else {
+                logger.fine(String.format("Discovery Factory '%s' is not auto-applicable to the current runtime environment",
+                        factory.getClass()));
+            }
+        }
+        return bestFactory;
     }
 
     private String getFactoryClassName(DiscoveryStrategyConfig config) {

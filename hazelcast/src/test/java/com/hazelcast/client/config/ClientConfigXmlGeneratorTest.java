@@ -250,7 +250,13 @@ public class ClientConfigXmlGeneratorTest extends HazelcastTestSupport {
             String testKey = generatedDiscoveryConfig.getProperty("testKey");
             assertEquals("testValue", testKey);
         }
+    }
 
+    @Test
+    public void networkAutoDetectionConfig() {
+        clientConfig.getNetworkConfig().getAutoDetectionConfig().setEnabled(false);
+        ClientConfig actualConfig = newConfigViaGenerator();
+        assertFalse(actualConfig.getNetworkConfig().getAutoDetectionConfig().isEnabled());
     }
 
     @Test

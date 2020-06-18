@@ -244,6 +244,14 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testNetworkAutoDetectionJoinConfig() {
+        Config cfg = new Config();
+        cfg.getNetworkConfig().getJoin().getAutoDetectionConfig().setEnabled(false);
+        Config actualConfig = getNewConfigViaXMLGenerator(cfg);
+        assertFalse(actualConfig.getNetworkConfig().getJoin().getAutoDetectionConfig().isEnabled());
+    }
+
+    @Test
     public void testNetworkMulticastJoinConfig() {
         Config cfg = new Config();
 
@@ -1839,6 +1847,14 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         RestApiConfig generatedConfig = getNewConfigViaXMLGenerator(config).getNetworkConfig().getRestApiConfig();
         assertTrue(generatedConfig.toString() + " should be compatible with " + restApiConfig.toString(),
                 new ConfigCompatibilityChecker.RestApiConfigChecker().check(restApiConfig, generatedConfig));
+    }
+
+    @Test
+    public void testAdvancedNetworkAutoDetectionJoinConfig() {
+        Config cfg = new Config();
+        cfg.getAdvancedNetworkConfig().setEnabled(true).getJoin().getAutoDetectionConfig().setEnabled(false);
+        Config actualConfig = getNewConfigViaXMLGenerator(cfg);
+        assertFalse(actualConfig.getAdvancedNetworkConfig().getJoin().getAutoDetectionConfig().isEnabled());
     }
 
     @Test

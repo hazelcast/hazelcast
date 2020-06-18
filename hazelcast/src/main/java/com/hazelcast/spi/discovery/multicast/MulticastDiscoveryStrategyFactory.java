@@ -58,7 +58,7 @@ public class MulticastDiscoveryStrategyFactory implements DiscoveryStrategyFacto
     }
 
     @Override
-    public boolean isAutoConfigApplicable() {
+    public boolean isAutoDetectionApplicable() {
         return true;
     }
 }

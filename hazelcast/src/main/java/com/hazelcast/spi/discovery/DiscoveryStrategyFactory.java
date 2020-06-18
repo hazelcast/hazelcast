@@ -81,7 +81,7 @@ public interface DiscoveryStrategyFactory {
      * <p>
      * User by the auto detection mechanism to decide if which strategy could be used.
      */
-    default boolean isAutoConfigApplicable() {
+    default boolean isAutoDetectionApplicable() {
         return false;
     }
 

@@ -23,6 +23,12 @@ import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastTestSupport;
 
+import java.io.IOException;
+import java.net.Inet6Address;
+import java.net.InetAddress;
+import java.net.NetworkInterface;
+import java.util.Enumeration;
+
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -116,5 +122,24 @@ public class AbstractJoinTest extends HazelcastTestSupport {
                 assertClusterSize(1, hz2);
             }
         }, durationSeconds);
+    }
+
+    protected static InetAddress pickLocalInetAddress() throws IOException {
+        Enumeration<NetworkInterface> networkInterfaces = NetworkInterface.getNetworkInterfaces();
+        while (networkInterfaces.hasMoreElements()) {
+            NetworkInterface ni = networkInterfaces.nextElement();
+            if (!ni.isUp() || ni.isVirtual() || ni.isLoopback() || !ni.supportsMulticast()) {
+                continue;
+            }
+            Enumeration<InetAddress> e = ni.getInetAddresses();
+            while (e.hasMoreElements()) {
+                InetAddress inetAddress = e.nextElement();
+                if (inetAddress instanceof Inet6Address) {
+                    continue;
+                }
+                return inetAddress;
+            }
+        }
+        return InetAddress.getLocalHost();
     }
 }

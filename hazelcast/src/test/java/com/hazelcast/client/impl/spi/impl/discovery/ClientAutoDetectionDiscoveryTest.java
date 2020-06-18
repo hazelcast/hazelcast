@@ -46,7 +46,7 @@ public class ClientAutoDetectionDiscoveryTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void autoDetectionNotConflictingWithOtherDiscoveries() {
+    public void autoDetectionNotUsedWhenOtherDiscoveryEnabled() {
         Config config = new Config();
         config.getNetworkConfig().setPort(5710);
         config.getNetworkConfig().getJoin().getAutoDetectionConfig().setEnabled(false);
