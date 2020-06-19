@@ -24,10 +24,10 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.exception.ServiceNotFoundException;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.sql.SqlCursor;
+import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlQuery;
 import com.hazelcast.sql.SqlService;
-import com.hazelcast.sql.impl.explain.QueryExplainCursor;
+import com.hazelcast.sql.impl.explain.QueryExplainResult;
 import com.hazelcast.sql.impl.optimizer.DisabledSqlOptimizer;
 import com.hazelcast.sql.impl.optimizer.OptimizationTask;
 import com.hazelcast.sql.impl.optimizer.SqlOptimizer;
@@ -148,7 +148,7 @@ public class SqlServiceImpl implements SqlService, Consumer<Packet> {
     }
 
     @Override
-    public SqlCursor query(SqlQuery query) {
+    public SqlResult query(SqlQuery query) {
         if (nodeEngine.getLocalMember().isLiteMember()) {
             throw QueryException.error("SQL queries cannot be executed on lite members.");
         }
@@ -171,7 +171,7 @@ public class SqlServiceImpl implements SqlService, Consumer<Packet> {
         internalService.onPacket(packet);
     }
 
-    private SqlCursor query0(String sql, List<Object> params, long timeout, int pageSize) {
+    private SqlResult query0(String sql, List<Object> params, long timeout, int pageSize) {
         // Validate and normalize.
         if (sql == null || sql.isEmpty()) {
             throw QueryException.error("SQL statement cannot be empty.");
@@ -203,7 +203,7 @@ public class SqlServiceImpl implements SqlService, Consumer<Packet> {
 
             SqlPlan plan = prepare(unwrappedSql);
 
-            return new QueryExplainCursor(plan.getExplain().asRows());
+            return new QueryExplainResult(plan.getExplain().asRows());
         } else {
             SqlPlan plan = prepare(sql);
 
@@ -211,7 +211,7 @@ public class SqlServiceImpl implements SqlService, Consumer<Packet> {
         }
     }
 
-    private SqlCursor execute(SqlPlan plan, List<Object> params, long timeout, int pageSize) {
+    private SqlResult execute(SqlPlan plan, List<Object> params, long timeout, int pageSize) {
         switch (plan.getType()) {
             case SCHEMA:
                 return executeSchemaChange((SchemaPlan) plan);
@@ -224,19 +224,19 @@ public class SqlServiceImpl implements SqlService, Consumer<Packet> {
         }
     }
 
-    private SqlCursor executeSchemaChange(SchemaPlan plan) {
+    private SqlResult executeSchemaChange(SchemaPlan plan) {
         plan.execute();
 
-        return new SingleValueCursor(0);
+        return new SingleValueResult(0);
     }
 
-    private SqlCursor executeImdg(Plan plan, List<Object> params, long timeout, int pageSize) {
+    private SqlResult executeImdg(Plan plan, List<Object> params, long timeout, int pageSize) {
         QueryState state = internalService.execute(plan, params, timeout, pageSize);
 
-        return new SqlCursorImpl(state);
+        return new SqlResultImpl(state);
     }
 
-    private SqlCursor executeJet(SqlPlan plan, List<Object> params, long timeout, int pageSize) {
+    private SqlResult executeJet(SqlPlan plan, List<Object> params, long timeout, int pageSize) {
         return jetSqlBackend.execute(plan, params, timeout, pageSize);
     }
 

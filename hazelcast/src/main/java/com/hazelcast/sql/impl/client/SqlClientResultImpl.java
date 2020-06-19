@@ -19,12 +19,15 @@ package com.hazelcast.sql.impl.client;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.util.BiTuple;
 import com.hazelcast.sql.SqlColumnMetadata;
-import com.hazelcast.sql.SqlCursor;
+import com.hazelcast.sql.SqlColumnType;
+import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlRow;
+import com.hazelcast.sql.SqlRowMetadata;
 import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.SqlRowImpl;
 import com.hazelcast.sql.impl.row.Row;
 
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -32,7 +35,7 @@ import java.util.NoSuchElementException;
 /**
  * Client-side cursor.
  */
-public class SqlClientCursorImpl implements SqlCursor {
+public class SqlClientResultImpl implements SqlResult {
     private final SqlClientService service;
     private final Connection connection;
     private final QueryId queryId;
@@ -43,7 +46,7 @@ public class SqlClientCursorImpl implements SqlCursor {
     private boolean closed;
     private boolean iteratorAccessed;
 
-    public SqlClientCursorImpl(
+    public SqlClientResultImpl(
         SqlClientService service,
         Connection connection,
         QueryId queryId,
@@ -58,14 +61,15 @@ public class SqlClientCursorImpl implements SqlCursor {
     }
 
     @Override
-    public int getColumnCount() {
-        return columnCount;
-    }
-
-    @Override
-    public SqlColumnMetadata getColumnMetadata(int index) {
+    public SqlRowMetadata getRowMetadata() {
         // TODO: Implement.
-        throw new UnsupportedOperationException("Implement me.");
+        List<SqlColumnMetadata> columnMetadata = new ArrayList<>(columnCount);
+
+        for (int i = 0; i < columnCount; i++) {
+            columnMetadata.add(new SqlColumnMetadata("col-" + i, SqlColumnType.OBJECT));
+        }
+
+        return new SqlRowMetadata(columnMetadata);
     }
 
     @SuppressWarnings("NullableProblems")

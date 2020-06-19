@@ -16,9 +16,9 @@
 
 package com.hazelcast.sql.impl;
 
-import com.hazelcast.sql.SqlColumnMetadata;
-import com.hazelcast.sql.SqlCursor;
+import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlRow;
+import com.hazelcast.sql.SqlRowMetadata;
 import com.hazelcast.sql.impl.plan.Plan;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.state.QueryInitiatorState;
@@ -31,32 +31,21 @@ import java.util.NoSuchElementException;
 /**
  * Cursor implementation.
  */
-public class SqlCursorImpl implements SqlCursor {
+public class SqlResultImpl implements SqlResult {
 
     private final QueryState state;
-    private final QueryMetadata metadata;
+    private final SqlRowMetadata rowMetadata;
     private Iterator<SqlRow> iterator;
 
-    public SqlCursorImpl(QueryState state) {
+    public SqlResultImpl(QueryState state) {
         this.state = state;
 
-        metadata = state.getInitiatorState().getMetadata();
+        rowMetadata = state.getInitiatorState().getRowMetadata();
     }
 
     @Override
-    public int getColumnCount() {
-        return metadata.getColumnCount();
-    }
-
-    @Override
-    public SqlColumnMetadata getColumnMetadata(int index) {
-        int columnCount = metadata.getColumnCount();
-
-        if (index < 0 || index >= columnCount) {
-            throw new IndexOutOfBoundsException("Column index is out of range: " + index);
-        }
-
-        return QueryUtils.getColumnMetadata(metadata.getColumnName(index), metadata.getColumnType(index));
+    public SqlRowMetadata getRowMetadata() {
+        return rowMetadata;
     }
 
     @Override @Nonnull

@@ -18,7 +18,7 @@ package com.hazelcast.sql.jdbc.impl;
 
 import com.hazelcast.sql.SqlQuery;
 import com.hazelcast.sql.SqlRow;
-import com.hazelcast.sql.impl.client.SqlClientCursorImpl;
+import com.hazelcast.sql.impl.client.SqlClientResultImpl;
 
 import java.util.Iterator;
 
@@ -27,12 +27,12 @@ import java.util.Iterator;
  */
 public class JdbcCursor {
     /** Cursor. */
-    private final SqlClientCursorImpl cursor;
+    private final SqlClientResultImpl cursor;
 
     /** Iterator. */
     private final Iterator<SqlRow> iterator;
 
-    public JdbcCursor(SqlClientCursorImpl cursor, Iterator<SqlRow> iterator) {
+    public JdbcCursor(SqlClientResultImpl cursor, Iterator<SqlRow> iterator) {
         this.cursor = cursor;
         this.iterator = iterator;
     }
@@ -60,7 +60,7 @@ public class JdbcCursor {
     }
 
     public int getColumnCount() {
-        return cursor.getColumnCount();
+        return cursor.getRowMetadata().getColumnCount();
     }
 
     public void close() {

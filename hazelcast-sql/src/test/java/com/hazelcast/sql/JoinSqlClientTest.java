@@ -61,7 +61,7 @@ public class JoinSqlClientTest extends CalciteSqlTestSupport {
 
     @Test
     public void testJoinClient() throws Exception {
-        SqlCursor cursor = executeQuery(
+        SqlResult cursor = executeQuery(
             client,
             "SELECT p.name, p.deptTitle FROM person p INNER JOIN department d ON p.deptTitle = d.title"
         );

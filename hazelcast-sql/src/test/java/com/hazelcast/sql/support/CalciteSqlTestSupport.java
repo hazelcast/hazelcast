@@ -17,9 +17,9 @@
 package com.hazelcast.sql.support;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.sql.SqlCursor;
+import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlRow;
-import com.hazelcast.sql.impl.SqlCursorImpl;
+import com.hazelcast.sql.impl.SqlResultImpl;
 import com.hazelcast.sql.impl.SqlServiceImpl;
 import com.hazelcast.sql.impl.SqlTestSupport;
 import com.hazelcast.sql.impl.optimizer.OptimizationTask;
@@ -39,15 +39,15 @@ public class CalciteSqlTestSupport extends SqlTestSupport {
         return (T) sqlService.getOptimizer().prepare(new OptimizationTask.Builder(sql).build());
     }
 
-    protected SqlCursor executeQuery(HazelcastInstance target, String sql) {
+    protected SqlResult executeQuery(HazelcastInstance target, String sql) {
         return target.getSqlService().query(sql);
     }
 
-    protected SqlCursorImpl executeQueryEx(HazelcastInstance target, String sql) {
-        return (SqlCursorImpl) executeQuery(target, sql);
+    protected SqlResultImpl executeQueryEx(HazelcastInstance target, String sql) {
+        return (SqlResultImpl) executeQuery(target, sql);
     }
 
-    protected List<SqlRow> getQueryRows(SqlCursor cursor) {
+    protected List<SqlRow> getQueryRows(SqlResult cursor) {
         List<SqlRow> rows = new ArrayList<>();
 
         for (SqlRow row : cursor) {
@@ -58,7 +58,7 @@ public class CalciteSqlTestSupport extends SqlTestSupport {
     }
 
     protected List<SqlRow> getQueryRows(HazelcastInstance target, String sql) {
-        try (SqlCursor cursor = executeQuery(target, sql)) {
+        try (SqlResult cursor = executeQuery(target, sql)) {
             return getQueryRows(cursor);
         } catch (Exception e) {
             throw new RuntimeException("Failed to execute query and get result set rows: " + sql, e);

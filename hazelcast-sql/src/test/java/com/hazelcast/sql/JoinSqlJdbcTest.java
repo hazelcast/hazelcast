@@ -68,7 +68,7 @@ public class JoinSqlJdbcTest extends CalciteSqlTestSupport {
         String sql = "SELECT p.name, p.deptTitle FROM person p INNER JOIN department d ON p.deptTitle = d.title";
 
         // Execute normal query.
-        SqlCursor cursor = executeQuery(client, sql);
+        SqlResult cursor = executeQuery(client, sql);
         List<SqlRow> rows = getQueryRows(cursor);
 
         // Execute JDBC query.

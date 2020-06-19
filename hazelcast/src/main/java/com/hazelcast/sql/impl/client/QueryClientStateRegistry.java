@@ -19,7 +19,7 @@ package com.hazelcast.sql.impl.client;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.impl.QueryId;
-import com.hazelcast.sql.impl.SqlCursorImpl;
+import com.hazelcast.sql.impl.SqlResultImpl;
 import com.hazelcast.sql.impl.SqlRowImpl;
 import com.hazelcast.sql.impl.row.Row;
 
@@ -37,7 +37,7 @@ public class QueryClientStateRegistry {
     /** Registered client cursors. */
     private final ConcurrentHashMap<QueryId, QueryClientState> clientCursors = new ConcurrentHashMap<>();
 
-    public void register(UUID clientId, SqlCursorImpl cursor) {
+    public void register(UUID clientId, SqlResultImpl cursor) {
         QueryClientState clientCursor = new QueryClientState(clientId, cursor);
 
         clientCursors.put(cursor.getQueryId(), clientCursor);

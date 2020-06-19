@@ -159,7 +159,7 @@ public class SqlInternalService {
             localMemberId,
             timeout,
             plan,
-            plan.getMetadata(),
+            plan.getRowMetadata(),
             consumer,
             operationHandler
         );

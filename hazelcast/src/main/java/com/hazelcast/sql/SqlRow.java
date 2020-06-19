@@ -17,13 +17,18 @@
 package com.hazelcast.sql;
 
 /**
- * Single SQL row.
+ * SQL row.
  */
 public interface SqlRow {
     /**
-     * Get value of the column by index.
+     * Gets the value of the column by index.
+     * <p>
+     * The class of the returned value depends on the SQL type of the column.
      *
-     * @param index Index.
+     * @see SqlResult#getRowMetadata()
+     * @see SqlColumnMetadata
+     * @see SqlColumnType
+     * @param index Column index, 0-based.
      * @return Value of the column.
      */
     Object getObject(int index);

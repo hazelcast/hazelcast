@@ -198,7 +198,7 @@ public class SqlQuery {
     /**
      * Sets the cursor buffer size (measured in the number of rows).
      * <p>
-     * When a query is submitted for execution, the {@link SqlCursor} is returned as a result. When rows are ready to be
+     * When a query is submitted for execution, the {@link SqlResult} is returned as a result. When rows are ready to be
      * consumed, they are put into an internal buffer of the cursor. This parameter defines the maximum number of rows in
      * the buffer. When the threshold is reached, the backpressure mechanism will slow down the query execution, possibly to a
      * complete halt, to prevent out-of-memory.
@@ -211,7 +211,7 @@ public class SqlQuery {
      * Defaults to {@link #DEFAULT_CURSOR_BUFFER_SIZE}.
      *
      * @see SqlService#query(SqlQuery)
-     * @see SqlCursor
+     * @see SqlResult
      * @param cursorBufferSize Cursor buffer size (measured in the number of rows).
      * @return This instance for chaining.
      */

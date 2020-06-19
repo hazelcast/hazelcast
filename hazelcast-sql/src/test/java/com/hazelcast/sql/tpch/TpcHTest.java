@@ -24,7 +24,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.partition.strategy.DeclarativePartitioningStrategy;
 import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.impl.plan.Plan;
-import com.hazelcast.sql.impl.SqlCursorImpl;
+import com.hazelcast.sql.impl.SqlResultImpl;
 import com.hazelcast.sql.support.CalciteSqlTestSupport;
 import com.hazelcast.sql.tpch.model.ModelConfig;
 import com.hazelcast.sql.tpch.model.ModelLoader;
@@ -913,7 +913,7 @@ public class TpcHTest extends CalciteSqlTestSupport {
             rowCount = 100;
         }
 
-        SqlCursorImpl res = (SqlCursorImpl) member.getSqlService().query(sql, args);
+        SqlResultImpl res = (SqlResultImpl) member.getSqlService().query(sql, args);
         Plan plan = res.getPlan();
 
         System.out.println(">>> Explain:");

@@ -17,7 +17,7 @@
 package com.hazelcast.sql;
 
 /**
- * Column metadata.
+ * SQL column metadata.
  */
 public class SqlColumnMetadata {
 
@@ -29,10 +29,20 @@ public class SqlColumnMetadata {
         this.type = type;
     }
 
+    /**
+     * Get column name.
+     *
+     * @return Column name.
+     */
     public String getName() {
         return name;
     }
 
+    /**
+     * Gets column type.
+     *
+     * @return Column type.
+     */
     public SqlColumnType getType() {
         return type;
     }

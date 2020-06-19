@@ -29,7 +29,7 @@ import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.util.BiTuple;
-import com.hazelcast.sql.SqlCursor;
+import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlQuery;
 import com.hazelcast.sql.SqlService;
 import com.hazelcast.sql.impl.QueryId;
@@ -78,7 +78,7 @@ public class SqlClientService implements SqlService {
     }
 
     @Override
-    public SqlCursor query(SqlQuery query) {
+    public SqlResult query(SqlQuery query) {
         List<Object> params = query.getParameters();
         List<Data> params0;
 
@@ -100,7 +100,7 @@ public class SqlClientService implements SqlService {
 
         QueryId queryId = toObject(response.getQueryId());
 
-        return new SqlClientCursorImpl(this, connection, queryId, response.getColumnCount(), query.getCursorBufferSize());
+        return new SqlClientResultImpl(this, connection, queryId, response.getColumnCount(), query.getCursorBufferSize());
     }
 
     /**
