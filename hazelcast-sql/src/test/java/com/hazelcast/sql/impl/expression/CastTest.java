@@ -93,10 +93,10 @@ public class CastTest extends ExpressionTestBase {
         // Infer the return type.
 
         if (isInteger(to) && isInteger(from)) {
-            returnType = HazelcastIntegerType.cast(from, to);
+            returnType = HazelcastIntegerType.deriveCastType(from, to);
         } else if (isInteger(to) && numeric != null) {
             // numeric value is already validated above and fits into long
-            returnType = HazelcastIntegerType.cast(numeric.longValue(), to);
+            returnType = HazelcastIntegerType.deriveCastType(numeric.longValue(), to);
         }
 
         returnType = TYPE_FACTORY.createTypeWithNullability(returnType, from.isNullable());

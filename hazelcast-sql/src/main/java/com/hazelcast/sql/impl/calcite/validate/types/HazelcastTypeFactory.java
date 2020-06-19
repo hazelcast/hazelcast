@@ -135,11 +135,10 @@ public final class HazelcastTypeFactory extends SqlTypeFactoryImpl {
         if (selected == null) {
             return null;
         }
-
         SqlTypeName selectedTypeName = selected.getSqlTypeName();
 
         if (HazelcastIntegerType.supports(selectedTypeName)) {
-            return HazelcastIntegerType.leastRestrictive(selectedTypeName, selected.isNullable(), types);
+            return HazelcastIntegerType.leastRestrictive(selected, types);
         }
 
         if (selectedTypeName == DOUBLE) {
