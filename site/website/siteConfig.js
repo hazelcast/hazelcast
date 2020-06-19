@@ -37,7 +37,7 @@ const siteConfig = {
         {page: 'demos', label: "Demos"},
         // {href: `/javadoc/${latestVersion}`, label: "Javadoc"},
         {href: 'https://github.com/hazelcast/hazelcast-jet', label: "GitHub"},
-        {href: 'https://gitter.im/hazelcast/hazelcast-jet', label: "Contact"},
+        {href: 'https://hz-community-slack.herokuapp.com/', label: "Community"},
         {blog: true, label: 'Blog'},
         {search: true},
     ],
