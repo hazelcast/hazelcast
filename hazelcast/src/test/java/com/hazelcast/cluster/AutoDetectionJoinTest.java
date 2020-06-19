@@ -38,14 +38,14 @@ public class AutoDetectionJoinTest extends AbstractJoinTest {
 
     @Test
     public void defaultConfig() throws Exception {
-        testJoinWithDefaultWait(new Config());
+        testJoinEventually(new Config());
     }
 
     @Test
     public void interfacesEnabled() throws Exception {
         Config config = new Config();
         config.getNetworkConfig().getInterfaces().setEnabled(true).addInterface(pickLocalInetAddress().getHostAddress());
-        testJoinWithDefaultWait(config);
+        testJoinEventually(config);
     }
 
     @Test
