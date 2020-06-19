@@ -18,11 +18,11 @@ package com.hazelcast.client.impl.spi.impl;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MapGetCodec;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.internal.util.RootCauseMatcher;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.sequence.CallIdSequence;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -43,7 +43,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import static com.hazelcast.spi.impl.InternalCompletableFuture.newCompletedFuture;
-import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
 import static com.hazelcast.test.HazelcastTestSupport.ignore;
 import static com.hazelcast.test.HazelcastTestSupport.sleepSeconds;
 import static org.junit.Assert.assertEquals;
@@ -236,7 +235,7 @@ public class ClientInvocationFutureTest {
     public void test_thenAcceptBoth() throws Exception {
         CompletableFuture nextStage = invocationFuture.thenAcceptBoth(newCompletedFuture(null),
                 (t, u) -> ignore(null));
-        invocationFuture.complete(response);
+        invocationFuture.complete(null);
 
         assertEquals(null, nextStage.get(10, TimeUnit.SECONDS));
         verify(callIdSequence).forceNext();
@@ -278,29 +277,25 @@ public class ClientInvocationFutureTest {
     public void test_acceptEither() throws Exception {
         CompletableFuture nextStage = invocationFuture.acceptEither(newCompletedFuture(null),
                 t -> ignore(null));
-        invocationFuture.complete(response);
 
         assertEquals(null, nextStage.get(10, TimeUnit.SECONDS));
         verify(callIdSequence).forceNext();
-        verify(callIdSequence, times(2)).complete();
+        verify(callIdSequence, times(1)).complete();
     }
 
     @Test
     public void test_applyEither() throws Exception {
-        CompletableFuture nextStage = invocationFuture.applyToEither(newCompletedFuture(null),
-                (t) -> t);
-        invocationFuture.complete(response);
+        CompletableFuture nextStage = invocationFuture.applyToEither(newCompletedFuture(null), (t) -> t);
 
-        assertTrueEventually(() -> assertTrue(nextStage.isDone()));
         assertEquals(null, nextStage.get(10, TimeUnit.SECONDS));
         verify(callIdSequence).forceNext();
-        verify(callIdSequence, times(2)).complete();
+        verify(callIdSequence, times(1)).complete();
     }
 
     @Test
     public void test_runAfterBoth() throws Exception {
-        CompletableFuture nextStage = invocationFuture.runAfterBoth(newCompletedFuture(null), () -> ignore(null));
-        invocationFuture.complete(response);
+        CompletableFuture<Void> nextStage = invocationFuture.runAfterBoth(newCompletedFuture(null), () -> ignore(null));
+        invocationFuture.complete(null);
 
         assertEquals(null, nextStage.get(10, TimeUnit.SECONDS));
         verify(callIdSequence).forceNext();
@@ -309,12 +304,11 @@ public class ClientInvocationFutureTest {
 
     @Test
     public void test_runAfterEither() throws Exception {
-        CompletableFuture nextStage = invocationFuture.runAfterEither(newCompletedFuture(null),
+        CompletableFuture<Void> nextStage = invocationFuture.runAfterEither(newCompletedFuture(null),
                 () -> ignore(null));
-        invocationFuture.complete(response);
 
         assertEquals(null, nextStage.get(10, TimeUnit.SECONDS));
         verify(callIdSequence).forceNext();
-        verify(callIdSequence, times(2)).complete();
+        verify(callIdSequence, times(1)).complete();
     }
 }
