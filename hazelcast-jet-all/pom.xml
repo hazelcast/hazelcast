@@ -66,6 +66,7 @@
                 </executions>
                 <configuration>
                     <createSourcesJar>true</createSourcesJar>
+                    <shadeSourcesContent>true</shadeSourcesContent>
                     <createDependencyReducedPom>true</createDependencyReducedPom>
                     <artifactSet>
                         <includes>
@@ -89,24 +90,24 @@
                     </filters>
                     <relocations>
                         <relocation>
-                            <pattern>picocli.</pattern>
-                            <shadedPattern>com.hazelcast.jet.picocli.</shadedPattern>
+                            <pattern>picocli</pattern>
+                            <shadedPattern>com.hazelcast.jet.picocli</shadedPattern>
                         </relocation>
                         <relocation>
-                            <pattern>io.github.classgraph.</pattern>
-                            <shadedPattern>com.hazelcast.jet.io.github.classgraph.</shadedPattern>
+                            <pattern>io.github.classgraph</pattern>
+                            <shadedPattern>com.hazelcast.jet.io.github.classgraph</shadedPattern>
                         </relocation>
                         <relocation>
-                            <pattern>nonapi.io.github.classgraph.</pattern>
-                            <shadedPattern>com.hazelcast.jet.nonapi.io.github.classgraph.</shadedPattern>
+                            <pattern>nonapi.io.github.classgraph</pattern>
+                            <shadedPattern>com.hazelcast.jet.nonapi.io.github.classgraph</shadedPattern>
                         </relocation>
                         <relocation>
-                            <pattern>com.fasterxml.jackson.jr.</pattern>
-                            <shadedPattern>com.hazelcast.com.fasterxml.jackson.jr.</shadedPattern>
+                            <pattern>com.fasterxml.jackson.jr</pattern>
+                            <shadedPattern>com.hazelcast.com.fasterxml.jackson.jr</shadedPattern>
                         </relocation>
                         <relocation>
-                            <pattern>com.fasterxml.jackson.core.</pattern>
-                            <shadedPattern>com.hazelcast.com.fasterxml.jackson.core.</shadedPattern>
+                            <pattern>com.fasterxml.jackson.core</pattern>
+                            <shadedPattern>com.hazelcast.com.fasterxml.jackson.core</shadedPattern>
                         </relocation>
                     </relocations>
                     <transformers>
