@@ -30,6 +30,7 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map.Entry;
 import java.util.Objects;
 
 import static com.hazelcast.jet.Util.entry;
@@ -112,6 +113,84 @@ public class DebeziumIntegrationTest extends AbstractIntegrationTest {
             //then
             try {
                 assertEqualsEventually(() -> mapResultsToSortedList(jet.getMap("results")), expectedRecords);
+            } finally {
+                job.cancel();
+            }
+        } finally {
+            container.stop();
+        }
+    }
+
+    @Test
+    public void mysql_simpleJson() {
+        MySQLContainer<?> container = new MySQLContainer<>("debezium/example-mysql")
+                .withUsername("mysqluser")
+                .withPassword("mysqlpw");
+
+        try {
+            container.start();
+
+            // given
+            List<String> expectedRecords = Arrays.asList(
+                    "\\{\"id\":1001}:\\{\"before\":null," +
+                            "\"after\":\\{\"id\":1001,\"first_name\":\"Sally\",\"last_name\":\"Thomas\"," +
+                                "\"email\":\"sally.thomas@acme.com\"}," +
+                            "\"source\":\\{\"version\":\"1.1.0.Final\",\"connector\":\"mysql\",\"name\":\"dbserver1\"," +
+                                "\"ts_ms\":0,\"snapshot\":\"true\",\"db\":\"inventory\",\"table\":\"customers\"," +
+                                "\"server_id\":0,\"gtid\":null,\"file\":\"mysql-bin.000003\",\"pos\":154,\"row\":0," +
+                                "\"thread\":null,\"query\":null}," +
+                            "\"op\":\"c\",\"ts_ms\":[0-9]*,\"transaction\":null}",
+                    "\\{\"id\":1002}:\\{\"before\":null," +
+                            "\"after\":\\{\"id\":1002,\"first_name\":\"George\",\"last_name\":\"Bailey\"," +
+                                "\"email\":\"gbailey@foobar.com\"}," +
+                            "\"source\":\\{\"version\":\"1.1.0.Final\",\"connector\":\"mysql\",\"name\":\"dbserver1\"," +
+                                "\"ts_ms\":0,\"snapshot\":\"true\",\"db\":\"inventory\",\"table\":\"customers\"," +
+                                "\"server_id\":0,\"gtid\":null,\"file\":\"mysql-bin.000003\",\"pos\":154,\"row\":0," +
+                                "\"thread\":null,\"query\":null}," +
+                            "\"op\":\"c\",\"ts_ms\":[0-9]*,\"transaction\":null}",
+                    "\\{\"id\":1003}:\\{\"before\":null," +
+                            "\"after\":\\{\"id\":1003,\"first_name\":\"Edward\",\"last_name\":\"Walker\"," +
+                                "\"email\":\"ed@walker.com\"}," +
+                            "\"source\":\\{\"version\":\"1.1.0.Final\",\"connector\":\"mysql\",\"name\":\"dbserver1\"," +
+                                "\"ts_ms\":0,\"snapshot\":\"true\",\"db\":\"inventory\",\"table\":\"customers\"," +
+                                "\"server_id\":0,\"gtid\":null,\"file\":\"mysql-bin.000003\",\"pos\":154,\"row\":0," +
+                                "\"thread\":null,\"query\":null}," +
+                            "\"op\":\"c\",\"ts_ms\":[0-9]*,\"transaction\":null}",
+                    "\\{\"id\":1004}:\\{\"before\":null," +
+                            "\"after\":\\{\"id\":1004,\"first_name\":\"Anne\",\"last_name\":\"Kretchmar\"," +
+                                "\"email\":\"annek@noanswer.org\"}," +
+                            "\"source\":\\{\"version\":\"1.1.0.Final\",\"connector\":\"mysql\",\"name\":\"dbserver1\"," +
+                                "\"ts_ms\":0,\"snapshot\":\"last\",\"db\":\"inventory\",\"table\":\"customers\"," +
+                                "\"server_id\":0,\"gtid\":null,\"file\":\"mysql-bin.000003\",\"pos\":154,\"row\":0," +
+                                "\"thread\":null,\"query\":null}," +
+                            "\"op\":\"c\",\"ts_ms\":[0-9]*,\"transaction\":null}"
+            );
+
+            StreamSource<Entry<String, String>> source = DebeziumCdcSources.debeziumJson("mysql",
+                    "io.debezium.connector.mysql.MySqlConnector")
+                    .setProperty("include.schema.changes", "false")
+                    .setProperty("database.hostname", container.getContainerIpAddress())
+                    .setProperty("database.port", Integer.toString(container.getMappedPort(MYSQL_PORT)))
+                    .setProperty("database.user", "debezium")
+                    .setProperty("database.password", "dbz")
+                    .setProperty("database.server.id", "184054")
+                    .setProperty("database.server.name", "dbserver1")
+                    .setProperty("database.whitelist", "inventory")
+                    .setProperty("table.whitelist", "inventory.customers")
+                    .build();
+
+            Pipeline pipeline = Pipeline.create();
+            pipeline.readFrom(source)
+                    .withNativeTimestamps(0)
+                    .writeTo(Sinks.map("results"));
+
+            // when
+            JetInstance jet = createJetMembers(2)[0];
+            Job job = jet.newJob(pipeline);
+
+            //then
+            try {
+                assertTrueEventually(() -> assertMatch(expectedRecords, mapResultsToSortedList(jet.getMap("results"))));
             } finally {
                 job.cancel();
             }

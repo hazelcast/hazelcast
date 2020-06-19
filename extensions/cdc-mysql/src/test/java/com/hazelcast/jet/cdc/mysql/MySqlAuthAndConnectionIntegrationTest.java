@@ -24,14 +24,14 @@ import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.StreamSource;
 import com.hazelcast.test.annotation.NightlyTest;
-import java.sql.SQLException;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.testcontainers.containers.MySQLContainer;
 
+import java.sql.SQLException;
+
 import static com.hazelcast.jet.core.JobStatus.FAILED;
-import static com.hazelcast.test.HazelcastTestSupport.assertEqualsEventually;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.testcontainers.containers.MySQLContainer.MYSQL_PORT;
 
@@ -114,7 +114,7 @@ public class MySqlAuthAndConnectionIntegrationTest extends JetTestSupport {
 
     @Test
     public void testIncorrectPort() throws Exception {
-        int wrongPort = mysql.getMappedPort(MYSQL_PORT) + 1;
+        int wrongPort = mysql.getMappedPort(MYSQL_PORT) - 10;
         StreamSource<ChangeRecord> source = MySqlCdcSources.mysql("name")
                 .setDatabaseAddress(mysql.getContainerIpAddress())
                 .setDatabasePort(wrongPort)

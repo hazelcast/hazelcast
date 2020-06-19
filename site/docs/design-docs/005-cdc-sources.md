@@ -111,6 +111,12 @@ raw JSON message the object is based on:
 * `RecordPart.toJson()` gives you the JSON message of that particular
   fragment
 
+There is also a second type of fallback. Among our [generic Debezium
+sources](/javadoc/{jet-version}/com/hazelcast/jet/cdc/DebeziumCdcSources.html)
+we also provide a version, called `debeziumJson`, which streams data
+as it comes in from Debezium, without doing any processing on it. This
+bypasses our convenience API completely.
+
 ### JSON parsing
 
 Debezium database connecters provide messages in standard JSON format

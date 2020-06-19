@@ -29,6 +29,9 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
 public class AbstractIntegrationTest extends JetTestSupport {
 
     @Nonnull
@@ -36,6 +39,16 @@ public class AbstractIntegrationTest extends JetTestSupport {
         return map.entrySet().stream()
                 .map(e -> e.getKey() + ":" + e.getValue())
                 .sorted().collect(Collectors.toList());
+    }
+
+    @Nonnull
+    protected static void assertMatch(List<String> expectedPatterns, List<String> actualValues) {
+        assertEquals(expectedPatterns.size(), actualValues.size());
+        for (int i = 0; i < expectedPatterns.size(); i++) {
+            String pattern = expectedPatterns.get(i);
+            String value = actualValues.get(i);
+            assertTrue(value.matches(pattern));
+        }
     }
 
     @SuppressWarnings("unchecked")

@@ -16,10 +16,6 @@
 
 package com.hazelcast.jet.cdc.impl;
 
-import com.hazelcast.jet.cdc.ChangeRecord;
-import com.hazelcast.jet.pipeline.SourceBuilder;
-import com.hazelcast.jet.pipeline.StreamSource;
-
 import java.util.Objects;
 import java.util.Properties;
 
@@ -60,21 +56,7 @@ public class DebeziumConfig {
         setProperty(key, String.join(",", values));
     }
 
-    public void check(PropertyRules rules) {
-        rules.check(properties);
-    }
-
-    public StreamSource<ChangeRecord> createSource() {
-        return createSource(properties);
-    }
-
-    private static StreamSource<ChangeRecord> createSource(Properties properties) {
-        String name = properties.getProperty("name");
-        return SourceBuilder.timestampedStream(name, ctx -> new CdcSource(properties))
-                .fillBufferFn(CdcSource::fillBuffer)
-                .createSnapshotFn(CdcSource::createSnapshot)
-                .restoreSnapshotFn(CdcSource::restoreSnapshot)
-                .destroyFn(CdcSource::destroy)
-                .build();
+    public Properties toProperties() {
+        return properties;
     }
 }

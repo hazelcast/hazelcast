@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet.cdc.impl;
 
-import com.hazelcast.jet.cdc.ChangeRecord;
 import com.hazelcast.jet.pipeline.SourceBuilder;
 import io.debezium.document.Document;
 import io.debezium.document.DocumentReader;
@@ -24,10 +23,8 @@ import io.debezium.document.DocumentWriter;
 import io.debezium.relational.history.AbstractDatabaseHistory;
 import io.debezium.relational.history.DatabaseHistoryException;
 import io.debezium.relational.history.HistoryRecord;
-import io.debezium.transforms.ExtractNewRecordState;
 import org.apache.kafka.connect.connector.ConnectorContext;
 import org.apache.kafka.connect.data.Struct;
-import org.apache.kafka.connect.data.Values;
 import org.apache.kafka.connect.source.SourceConnector;
 import org.apache.kafka.connect.source.SourceRecord;
 import org.apache.kafka.connect.source.SourceTask;
@@ -47,7 +44,7 @@ import java.util.function.Consumer;
 
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 
-public class CdcSource {
+public abstract class CdcSource<T> {
 
     public static final String CONNECTOR_CLASS_PROPERTY = "connector.class";
     public static final String SEQUENCE_EXTRACTOR_CLASS_PROPERTY = "sequence.extractor.class";
@@ -55,10 +52,9 @@ public class CdcSource {
     private static final ThreadLocal<List<byte[]>> THREAD_LOCAL_HISTORY = new ThreadLocal<>();
 
     private final SourceConnector connector;
-    private final SequenceExtractor sequenceExtractor;
+
     private final SourceTask task;
     private final Map<String, String> taskConfig;
-    private final ExtractNewRecordState<SourceRecord> transform;
 
     private State state = new State();
     private boolean taskInit;
@@ -69,10 +65,6 @@ public class CdcSource {
             connector.initialize(new JetConnectorContext());
             connector.start((Map) properties);
 
-            sequenceExtractor = newInstance(properties, SEQUENCE_EXTRACTOR_CLASS_PROPERTY);
-
-            transform = initTransform();
-
             taskConfig = connector.taskConfigs(1).get(0);
             task = (SourceTask) connector.taskClass().getConstructor().newInstance();
         } catch (Exception e) {
@@ -80,7 +72,7 @@ public class CdcSource {
         }
     }
 
-    public void fillBuffer(SourceBuilder.TimestampedSourceBuffer<ChangeRecord> buf) {
+    public void fillBuffer(SourceBuilder.TimestampedSourceBuffer<T> buf) {
         if (!taskInit) {
             task.initialize(new JetSourceTaskContext());
 
@@ -113,12 +105,11 @@ public class CdcSource {
         }
     }
 
-    private boolean addToBuffer(SourceRecord sourceRecord, SourceBuilder.TimestampedSourceBuffer<ChangeRecord> buf) {
-        sourceRecord = transform.apply(sourceRecord);
-        if (sourceRecord != null) {
-            ChangeRecord changeRecord = toChangeRecord(sourceRecord);
+    private boolean addToBuffer(SourceRecord sourceRecord, SourceBuilder.TimestampedSourceBuffer<T> buf) {
+        T t = mapToOutput(sourceRecord);
+        if (t != null) {
             long timestamp = extractTimestamp(sourceRecord);
-            buf.add(changeRecord, timestamp);
+            buf.add(t, timestamp);
             return true;
         }
         return false;
@@ -140,37 +131,20 @@ public class CdcSource {
         this.state = snapshots.get(0);
     }
 
-    private ChangeRecord toChangeRecord(SourceRecord record) {
-        long sequenceSource = sequenceExtractor.source(record.sourcePartition(), record.sourceOffset());
-        long sequenceValue = sequenceExtractor.sequence(record.sourceOffset());
-        String keyJson = Values.convertToString(record.keySchema(), record.key());
-        String valueJson = Values.convertToString(record.valueSchema(), record.value());
-        return new ChangeRecordImpl(sequenceSource, sequenceValue, keyJson, valueJson);
-    }
+    protected abstract T mapToOutput(SourceRecord record);
 
-    private static ExtractNewRecordState<SourceRecord> initTransform() {
-        ExtractNewRecordState<SourceRecord> transform = new ExtractNewRecordState<>();
-
-        Map<String, String> config = new HashMap<>();
-        config.put("add.fields", "db, table, op, ts_ms");
-        config.put("delete.handling.mode", "rewrite");
-        transform.configure(config);
-
-        return transform;
-    }
-
-    private static long extractTimestamp(SourceRecord record) {
-        if (record.valueSchema().field("__ts_ms") == null) {
-            return 0L;
-        } else {
-            return ((Struct) record.value()).getInt64("__ts_ms");
-        }
-    }
-
-    private static <T> T newInstance(Properties properties, String classNameProperty) throws Exception {
+    protected static <T> T newInstance(Properties properties, String classNameProperty) throws Exception {
         String className = properties.getProperty(classNameProperty);
         Class<?> clazz = Thread.currentThread().getContextClassLoader().loadClass(className);
         return (T) clazz.getConstructor().newInstance();
+    }
+
+    private static long extractTimestamp(SourceRecord record) {
+        if (record.valueSchema().field("ts_ms") == null) {
+            return 0L;
+        } else {
+            return ((Struct) record.value()).getInt64("ts_ms");
+        }
     }
 
     private class JetSourceTaskContext implements SourceTaskContext {
