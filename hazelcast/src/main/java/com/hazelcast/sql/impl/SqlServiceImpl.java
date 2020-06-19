@@ -160,7 +160,7 @@ public class SqlServiceImpl implements SqlService, Consumer<Packet> {
                 timeout = queryTimeout;
             }
 
-            return query0(query.getSql(), query.getParameters(), timeout, query.getPageSize());
+            return query0(query.getSql(), query.getParameters(), timeout, query.getCursorBufferSize());
         } catch (Exception e) {
             throw QueryUtils.toPublicException(e, nodeServiceProvider.getLocalMemberId());
         }

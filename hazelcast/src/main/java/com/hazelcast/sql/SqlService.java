@@ -17,7 +17,7 @@
 package com.hazelcast.sql;
 
 /**
- * Service to query Hazelcast data with SQL.
+ * Service to execute SQL queries.
  */
 public interface SqlService {
     /** Unique service name. */

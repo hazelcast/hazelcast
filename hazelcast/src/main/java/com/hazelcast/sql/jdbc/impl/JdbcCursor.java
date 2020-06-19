@@ -44,7 +44,7 @@ public class JdbcCursor {
     public void setPageSize(int pageSize) {
         assert pageSize >= 0;
 
-        cursor.setPageSize(pageSize == 0 ? SqlQuery.DEFAULT_PAGE_SIZE : pageSize);
+        cursor.setPageSize(pageSize == 0 ? SqlQuery.DEFAULT_CURSOR_BUFFER_SIZE : pageSize);
     }
 
     public boolean hasNextRow() {

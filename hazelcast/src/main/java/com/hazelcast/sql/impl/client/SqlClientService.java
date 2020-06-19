@@ -100,7 +100,7 @@ public class SqlClientService implements SqlService {
 
         QueryId queryId = toObject(response.getQueryId());
 
-        return new SqlClientCursorImpl(this, connection, queryId, response.getColumnCount(), query.getPageSize());
+        return new SqlClientCursorImpl(this, connection, queryId, response.getColumnCount(), query.getCursorBufferSize());
     }
 
     /**

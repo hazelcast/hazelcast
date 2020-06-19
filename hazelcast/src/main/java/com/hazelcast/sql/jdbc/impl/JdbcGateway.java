@@ -39,7 +39,7 @@ public class JdbcGateway {
     }
 
     public JdbcCursor execute(String sql, List<Object> args, int pageSize, long timeout) {
-        SqlQuery query = new SqlQuery(sql).setParameters(args).setPageSize(pageSize).setTimeout(timeout);
+        SqlQuery query = new SqlQuery(sql).setParameters(args).setCursorBufferSize(pageSize).setTimeout(timeout);
 
         SqlClientCursorImpl cursor = (SqlClientCursorImpl) client.getSqlService().query(query);
         Iterator<SqlRow> iterator = cursor.iterator();

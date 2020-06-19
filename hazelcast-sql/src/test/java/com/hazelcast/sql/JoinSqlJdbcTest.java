@@ -45,7 +45,7 @@ import static junit.framework.TestCase.assertEquals;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class JoinSqlJdbcTest extends CalciteSqlTestSupport {
     /** Make sure that we fetch several pages. */
-    private static final int PERSON_CNT = SqlQuery.DEFAULT_PAGE_SIZE * 2;
+    private static final int PERSON_CNT = SqlQuery.DEFAULT_CURSOR_BUFFER_SIZE * 2;
 
     private static HazelcastInstance client;
 
