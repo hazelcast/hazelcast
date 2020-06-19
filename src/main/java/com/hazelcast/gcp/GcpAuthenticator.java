@@ -19,6 +19,7 @@ import com.hazelcast.internal.json.Json;
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.core.HazelcastException;
 
+import java.io.FileNotFoundException;
 import java.util.Base64;
 import java.io.FileInputStream;
 import java.io.InputStreamReader;
@@ -59,6 +60,10 @@ class GcpAuthenticator {
             String body = createBody(privateKeyPath, currentTimeMs);
             String response = callService(body);
             return parseResponse(response);
+        } catch (FileNotFoundException e) {
+            throw new HazelcastException(String.format("Private key json file not found. "
+                    + "Please ensure you have stored the json file at the specified file path: %s", privateKeyPath)
+                    , e);
         } catch (Exception e) {
             throw new HazelcastException("Error while fetching access token from Google API", e);
         }

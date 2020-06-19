@@ -18,6 +18,7 @@ package com.hazelcast.gcp;
 import com.hazelcast.core.HazelcastException;
 import org.junit.Test;
 
+import static java.util.Arrays.asList;
 import java.util.concurrent.Callable;
 
 import static com.hazelcast.gcp.RetryUtils.BACKOFF_MULTIPLIER;
@@ -32,6 +33,7 @@ import static org.mockito.Mockito.verify;
 public class RetryUtilsTest {
     private static final Integer RETRIES = 1;
     private static final String RESULT = "result string";
+    private static final String NON_RETRYABLE_KEYWORDS = "Non retryable keywords";
 
     private Callable<String> callable = mock(Callable.class);
 
@@ -103,6 +105,19 @@ public class RetryUtilsTest {
 
         // then
         assertTrue(twoBackoffIntervalsMs < (endTimeMs - startTimeMs));
+    }
+
+    @Test(expected = HazelcastException.class)
+    public void retryNonRetryableKeywords()
+            throws Exception {
+        // given
+        given(callable.call()).willThrow(new HazelcastException(NON_RETRYABLE_KEYWORDS)).willThrow(new RuntimeException());
+
+        // when
+        String result = RetryUtils.retry(callable, RETRIES, asList(NON_RETRYABLE_KEYWORDS));
+
+        // then
+        // throws exception
     }
 
 }
