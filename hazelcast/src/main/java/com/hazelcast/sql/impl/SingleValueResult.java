@@ -62,5 +62,6 @@ public class SingleValueResult implements SqlResult {
 
     @Override
     public void close() {
+        // No-op.
     }
 }

@@ -16,8 +16,27 @@
 
 package com.hazelcast.sql;
 
+import javax.annotation.Nonnull;
+import java.util.Iterator;
+
 /**
- * Cursor over SQL query result.
+ * SQL query result. Represents a stream of rows.
+ * <p>
+ * Use {@link #iterator()} to iterate over rows. The iterator could be requested only once.
+ * <p>
+ * Use {@link #close()} to release the resources associated with the result.
+ * <p>
+ * Typical usage pattern:
+ * <pre>
+ * try (SqlResult result = hazelcastInstance.getSqlQuery().query("SELECT ...")) {
+ *     for (SqlRow row : result) {
+ *         // Process the row.
+ *     }
+ * }
+ * </pre>
+ *
+ * @see #iterator()
+ * @see #close()
  */
 public interface SqlResult extends Iterable<SqlRow>, AutoCloseable {
     /**
@@ -26,4 +45,25 @@ public interface SqlResult extends Iterable<SqlRow>, AutoCloseable {
      * @return Row metadata.
      */
     SqlRowMetadata getRowMetadata();
+
+    /**
+     * Returns the iterator over query rows.
+     * <p>
+     * The iterator may be requested only once.
+     *
+     * @return Iterator.
+     */
+    @Override
+    @Nonnull
+    Iterator<SqlRow> iterator();
+
+    /**
+     * Release the resources associated with the query result.
+     * <p>
+     * The query engine delivers results asynchronously. The query may become inactive even before all rows are
+     * consumed. The invocation of this command will cancel the execution of the query on all members if the query
+     * is still active. Otherwise it is no-op.
+     */
+    @Override
+    void close();
 }

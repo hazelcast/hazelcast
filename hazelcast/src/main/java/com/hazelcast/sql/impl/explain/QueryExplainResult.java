@@ -22,6 +22,7 @@ import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.SqlRowMetadata;
 
+import javax.annotation.Nonnull;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
@@ -48,12 +49,12 @@ public class QueryExplainResult implements SqlResult {
     }
 
     @Override
-    public void close() throws Exception {
+    public void close() {
         // No-op.
     }
 
-    @SuppressWarnings("NullableProblems")
     @Override
+    @Nonnull
     public Iterator<SqlRow> iterator() {
         return rows.iterator();
     }

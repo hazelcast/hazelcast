@@ -27,6 +27,7 @@ import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.SqlRowImpl;
 import com.hazelcast.sql.impl.row.Row;
 
+import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -72,8 +73,8 @@ public class SqlClientResultImpl implements SqlResult {
         return new SqlRowMetadata(columnMetadata);
     }
 
-    @SuppressWarnings("NullableProblems")
     @Override
+    @Nonnull
     public Iterator<SqlRow> iterator() {
         if (!iteratorAccessed) {
             iteratorAccessed = true;
@@ -87,7 +88,7 @@ public class SqlClientResultImpl implements SqlResult {
     }
 
     @Override
-    public void close() throws Exception {
+    public void close() {
         try {
             if (!closed) {
                 if (iterator.last) {

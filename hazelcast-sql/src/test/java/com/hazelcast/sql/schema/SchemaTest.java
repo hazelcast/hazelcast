@@ -17,7 +17,7 @@
 package com.hazelcast.sql.schema;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.sql.HazelcastSqlException;
+import com.hazelcast.sql.SqlException;
 import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.impl.connector.LocalPartitionedMapConnector;
 import com.hazelcast.sql.schema.model.AllTypesValue;
@@ -238,6 +238,6 @@ public class SchemaTest extends CalciteSqlTestSupport {
 
         // then
         assertThatThrownBy(() -> executeQuery(member, format("SELECT name FROM %s", name)))
-                .isInstanceOf(HazelcastSqlException.class);
+                .isInstanceOf(SqlException.class);
     }
 }

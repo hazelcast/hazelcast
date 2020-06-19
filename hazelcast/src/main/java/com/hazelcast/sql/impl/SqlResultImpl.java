@@ -48,7 +48,8 @@ public class SqlResultImpl implements SqlResult {
         return rowMetadata;
     }
 
-    @Override @Nonnull
+    @Override
+    @Nonnull
     public Iterator<SqlRow> iterator() {
         if (iterator == null) {
             Iterator<SqlRow> iterator0 = new RowToSqlRowIterator(getQueryInitiatorState().getResultProducer().iterator());
