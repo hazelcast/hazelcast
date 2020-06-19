@@ -22,6 +22,9 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
 
+/**
+ * SQL column type.
+ */
 public enum SqlColumnType {
     /** VARCHAR type. */
     VARCHAR(String.class),
@@ -71,6 +74,11 @@ public enum SqlColumnType {
         this.valueClass = valueClass;
     }
 
+    /**
+     * Gets Java class of the value of this SQL type.
+     *
+     * @return Java class of the value of this SQL type.
+     */
     public Class<?> getValueClass() {
         return valueClass;
     }

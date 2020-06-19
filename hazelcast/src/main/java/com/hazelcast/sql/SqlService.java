@@ -17,7 +17,7 @@
 package com.hazelcast.sql;
 
 /**
- * Service to query Hazelcast data with SQL.
+ * Service to execute SQL queries.
  */
 public interface SqlService {
     /** Unique service name. */
@@ -30,7 +30,7 @@ public interface SqlService {
      * @param params Parameters.
      * @return Cursor.
      */
-    default SqlCursor query(String sql, Object... params) {
+    default SqlResult query(String sql, Object... params) {
         SqlQuery query = new SqlQuery(sql);
 
         if (params != null) {
@@ -48,5 +48,5 @@ public interface SqlService {
      * @param query Query.
      * @return Cursor.
      */
-    SqlCursor query(SqlQuery query);
+    SqlResult query(SqlQuery query);
 }

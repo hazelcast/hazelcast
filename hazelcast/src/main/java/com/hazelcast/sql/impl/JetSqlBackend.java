@@ -16,7 +16,7 @@
 
 package com.hazelcast.sql.impl;
 
-import com.hazelcast.sql.SqlCursor;
+import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.impl.optimizer.SqlPlan;
 
 import java.util.List;
@@ -47,5 +47,5 @@ public interface JetSqlBackend {
     /**
      * Execute the SqlPlan.
      */
-    SqlCursor execute(SqlPlan plan, List<Object> params, long timeout, int pageSize);
+    SqlResult execute(SqlPlan plan, List<Object> params, long timeout, int pageSize);
 }

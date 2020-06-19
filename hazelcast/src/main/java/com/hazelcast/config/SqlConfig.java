@@ -131,6 +131,7 @@ public class SqlConfig {
      * <p>
      * Defaults to {@link #DEFAULT_QUERY_TIMEOUT}.
      *
+     * @see SqlQuery#setTimeout(long)
      * @param queryTimeout Timeout in milliseconds.
      * @return This instance for chaining.
      */

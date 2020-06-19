@@ -40,7 +40,7 @@ import static junit.framework.TestCase.assertEquals;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class JoinSqlClientTest extends CalciteSqlTestSupport {
     /** Make sure that we fetch several pages. */
-    private static final int PERSON_CNT = SqlQuery.DEFAULT_PAGE_SIZE * 2;
+    private static final int PERSON_CNT = SqlQuery.DEFAULT_CURSOR_BUFFER_SIZE * 2;
 
     private static HazelcastInstance client;
 
@@ -61,7 +61,7 @@ public class JoinSqlClientTest extends CalciteSqlTestSupport {
 
     @Test
     public void testJoinClient() throws Exception {
-        SqlCursor cursor = executeQuery(
+        SqlResult cursor = executeQuery(
             client,
             "SELECT p.name, p.deptTitle FROM person p INNER JOIN department d ON p.deptTitle = d.title"
         );

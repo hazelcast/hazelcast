@@ -18,47 +18,43 @@ package com.hazelcast.sql.impl.explain;
 
 import com.hazelcast.sql.SqlColumnMetadata;
 import com.hazelcast.sql.SqlColumnType;
-import com.hazelcast.sql.SqlCursor;
+import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlRow;
+import com.hazelcast.sql.SqlRowMetadata;
 
+import javax.annotation.Nonnull;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 
 /**
  * Cursor for explain operation.
  */
-public class QueryExplainCursor implements SqlCursor {
+public class QueryExplainResult implements SqlResult {
 
     private static final String COLUMN_NAME = "ITEM";
 
     private static final SqlColumnMetadata COLUMN_METADATA = new SqlColumnMetadata(COLUMN_NAME, SqlColumnType.VARCHAR);
+    private static final SqlRowMetadata ROW_METADATA = new SqlRowMetadata(Collections.singletonList(COLUMN_METADATA));
+
     private final List<SqlRow> rows;
 
-    public QueryExplainCursor(List<SqlRow> rows) {
+    public QueryExplainResult(List<SqlRow> rows) {
         this.rows = rows;
     }
 
     @Override
-    public int getColumnCount() {
-        return 1;
+    public SqlRowMetadata getRowMetadata() {
+        return ROW_METADATA;
     }
 
     @Override
-    public SqlColumnMetadata getColumnMetadata(int index) {
-        if (index == 0) {
-            return COLUMN_METADATA;
-        }
-
-        throw new IllegalArgumentException("Index out of bounds: " + index);
-    }
-
-    @Override
-    public void close() throws Exception {
+    public void close() {
         // No-op.
     }
 
-    @SuppressWarnings("NullableProblems")
     @Override
+    @Nonnull
     public Iterator<SqlRow> iterator() {
         return rows.iterator();
     }

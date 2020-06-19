@@ -60,7 +60,7 @@ public class JoinSqlTest extends CalciteSqlTestSupport {
 
     @Test
     public void testEquiPartitionedPartitionedNonCollocated() {
-        SqlCursor cursor = executeQuery(
+        SqlResult cursor = executeQuery(
             member,
             "SELECT p.name, p.deptTitle FROM person p INNER JOIN department d ON p.deptTitle = d.title"
         );

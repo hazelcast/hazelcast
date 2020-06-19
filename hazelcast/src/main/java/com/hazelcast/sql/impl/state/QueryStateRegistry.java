@@ -16,9 +16,9 @@
 
 package com.hazelcast.sql.impl.state;
 
+import com.hazelcast.sql.SqlRowMetadata;
 import com.hazelcast.sql.impl.ClockProvider;
 import com.hazelcast.sql.impl.QueryId;
-import com.hazelcast.sql.impl.QueryMetadata;
 import com.hazelcast.sql.impl.QueryResultProducer;
 import com.hazelcast.sql.impl.plan.Plan;
 
@@ -45,7 +45,7 @@ public class QueryStateRegistry {
      * @param localMemberId Cache local member ID.
      * @param initiatorTimeout Query timeout.
      * @param initiatorPlan Query plan.
-     * @param initiatorMetadata Metadata.
+     * @param initiatorRowMetadata Metadata.
      * @param initiatorResultProducer An object that will produce final query results.
      * @param completionCallback Callback that will be invoked when the query is completed.
      * @return Query state.
@@ -54,7 +54,7 @@ public class QueryStateRegistry {
         UUID localMemberId,
         long initiatorTimeout,
         Plan initiatorPlan,
-        QueryMetadata initiatorMetadata,
+        SqlRowMetadata initiatorRowMetadata,
         QueryResultProducer initiatorResultProducer,
         QueryStateCompletionCallback completionCallback
     ) {
@@ -66,7 +66,7 @@ public class QueryStateRegistry {
             completionCallback,
             initiatorTimeout,
             initiatorPlan,
-            initiatorMetadata,
+            initiatorRowMetadata,
             initiatorResultProducer,
             clockProvider
         );

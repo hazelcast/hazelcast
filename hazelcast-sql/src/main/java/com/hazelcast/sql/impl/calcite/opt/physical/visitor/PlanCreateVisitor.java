@@ -17,9 +17,11 @@
 package com.hazelcast.sql.impl.calcite.opt.physical.visitor;
 
 import com.hazelcast.internal.util.collection.PartitionIdSet;
+import com.hazelcast.sql.SqlColumnMetadata;
+import com.hazelcast.sql.SqlRowMetadata;
 import com.hazelcast.sql.impl.QueryException;
-import com.hazelcast.sql.impl.QueryMetadata;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
+import com.hazelcast.sql.impl.QueryUtils;
 import com.hazelcast.sql.impl.calcite.opt.ExplainCreator;
 import com.hazelcast.sql.impl.calcite.opt.physical.FetchPhysicalRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.FilterPhysicalRel;
@@ -154,8 +156,8 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
     /** Root physical rel. */
     private RootPhysicalRel rootPhysicalRel;
 
-    /** Root metadata. */
-    private QueryMetadata rootMetadata;
+    /** Row metadata. */
+    private SqlRowMetadata rowMetadata;
 
     public PlanCreateVisitor(
         UUID localMemberId,
@@ -201,7 +203,7 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
         }
 
         assert rootPhysicalRel != null;
-        assert rootMetadata != null;
+        assert rowMetadata != null;
 
         QueryExplain explain = ExplainCreator.explain(sql, rootPhysicalRel);
 
@@ -213,7 +215,7 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
             inboundEdgeMap,
             inboundEdgeMemberCountMap,
             parameterMetadata,
-            rootMetadata,
+            rowMetadata,
             explain
         );
     }
@@ -229,9 +231,23 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
             upstreamNode
         );
 
-        rootMetadata = new QueryMetadata(rootColumnNames, rootNode.getSchema().getTypes());
+        rowMetadata = createRowMetadata(rootColumnNames, rootNode.getSchema().getTypes());
 
         addFragment(rootNode, new PlanFragmentMapping(Collections.singleton(localMemberId), false));
+    }
+
+    private static SqlRowMetadata createRowMetadata(List<String> columnNames, List<QueryDataType> columnTypes) {
+        assert columnNames.size() == columnTypes.size();
+
+        List<SqlColumnMetadata> columns = new ArrayList<>(columnNames.size());
+
+        for (int i = 0; i < columnNames.size(); i++) {
+            SqlColumnMetadata column = QueryUtils.getColumnMetadata(columnNames.get(i), columnTypes.get(i));
+
+            columns.add(column);
+        }
+
+        return new SqlRowMetadata(columns);
     }
 
     @Override

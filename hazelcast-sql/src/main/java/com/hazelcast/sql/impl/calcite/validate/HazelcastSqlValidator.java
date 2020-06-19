@@ -191,18 +191,19 @@ public class HazelcastSqlValidator extends SqlValidatorImpl {
 
         SqlLiteral literal = (SqlLiteral) expression;
 
-        if (literal.getTypeName() == NULL && derived.getSqlTypeName() != NULL) {
-            // Keep NULL type for NULL literals, so we can always tell from the
-            // type itself that we are dealing with NULL.
+        if (literal.getTypeName() == NULL) {
+            if (derived.getSqlTypeName() != NULL) {
+                // Keep NULL type for NULL literals, so we can always tell from the
+                // type itself that we are dealing with NULL.
 
-            derived = HazelcastTypeFactory.INSTANCE.createSqlType(NULL);
-            setKnownAndValidatedNodeType(expression, derived);
-        } else if (HazelcastIntegerType.supports(derived.getSqlTypeName())) {
-            RelDataType derivedLiteralType = HazelcastIntegerType.deriveLiteralType(literal);
-            if (derivedLiteralType != null) {
-                derived = derivedLiteralType;
+                derived = HazelcastTypeFactory.INSTANCE.createSqlType(NULL);
                 setKnownAndValidatedNodeType(expression, derived);
             }
+        } else if (HazelcastIntegerType.supports(derived.getSqlTypeName())) {
+            // Assign narrowest type to integer literals.
+
+            derived = HazelcastIntegerType.deriveLiteralType(literal);
+            setKnownAndValidatedNodeType(expression, derived);
         } else if (derived.getSqlTypeName() == DECIMAL) {
             // Assign DOUBLE type to any standalone floating point literal: the
             // exact type is inferred later from the context in which the literal
@@ -257,10 +258,10 @@ public class HazelcastSqlValidator extends SqlValidatorImpl {
         // Infer return type.
 
         if (isInteger(to) && isInteger(from)) {
-            derived = HazelcastIntegerType.cast(from, to);
+            derived = HazelcastIntegerType.deriveCastType(from, to);
         } else if (isInteger(to) && numeric != null) {
             long longValue = numeric.longValue();
-            derived = HazelcastIntegerType.cast(longValue, to);
+            derived = HazelcastIntegerType.deriveCastType(longValue, to);
         }
 
         derived = HazelcastTypeFactory.INSTANCE.createTypeWithNullability(derived, from.isNullable());
@@ -338,4 +339,5 @@ public class HazelcastSqlValidator extends SqlValidatorImpl {
 
         return Util.last(names);
     }
+
 }

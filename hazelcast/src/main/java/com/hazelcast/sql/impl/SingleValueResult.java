@@ -17,8 +17,9 @@
 package com.hazelcast.sql.impl;
 
 import com.hazelcast.sql.SqlColumnMetadata;
-import com.hazelcast.sql.SqlCursor;
+import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlRow;
+import com.hazelcast.sql.SqlRowMetadata;
 import com.hazelcast.sql.impl.row.HeapRow;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.sql.impl.type.QueryDataTypeUtils;
@@ -27,14 +28,14 @@ import javax.annotation.Nonnull;
 import java.util.Collections;
 import java.util.Iterator;
 
-public class SingleValueCursor implements SqlCursor {
+public class SingleValueResult implements SqlResult {
 
     private static final String COLUMN_NAME = "VALUE";
 
     private final SqlColumnMetadata metadata;
     private Iterator<SqlRow> iterator;
 
-    public <T> SingleValueCursor(T value) {
+    public <T> SingleValueResult(T value) {
         QueryDataType queryDataType = QueryDataTypeUtils.resolveTypeForClass(value.getClass());
         this.metadata = QueryUtils.getColumnMetadata(COLUMN_NAME, queryDataType);
 
@@ -43,16 +44,8 @@ public class SingleValueCursor implements SqlCursor {
     }
 
     @Override
-    public int getColumnCount() {
-        return 1;
-    }
-
-    @Override
-    public SqlColumnMetadata getColumnMetadata(int index) {
-        if (index != 0) {
-            throw new IllegalArgumentException("Column index is out of range: " + index);
-        }
-        return metadata;
+    public SqlRowMetadata getRowMetadata() {
+        return new SqlRowMetadata(Collections.singletonList(metadata));
     }
 
     @Override
@@ -69,5 +62,6 @@ public class SingleValueCursor implements SqlCursor {
 
     @Override
     public void close() {
+        // No-op.
     }
 }

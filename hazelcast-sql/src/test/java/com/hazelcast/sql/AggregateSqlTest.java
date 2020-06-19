@@ -74,12 +74,12 @@ public class AggregateSqlTest extends CalciteSqlTestSupport {
             collector.add(person.getSalary());
         }
 
-        SqlCursor cursor = executeQuery(
+        SqlResult cursor = executeQuery(
             member,
             "SELECT SUM(salary), COUNT(salary), AVG(salary), MIN(salary), MAX(salary) FROM person"
         );
 
-        assertEquals(5, cursor.getColumnCount());
+        assertEquals(5, cursor.getRowMetadata().getColumnCount());
 
         List<SqlRow> rows = getQueryRows(cursor);
         assertEquals(1, rows.size());
@@ -105,12 +105,12 @@ public class AggregateSqlTest extends CalciteSqlTestSupport {
             collectors.computeIfAbsent(deptId, (k) -> new PersonSalaryCollector()).add(salary);
         }
 
-        SqlCursor cursor = executeQuery(
+        SqlResult cursor = executeQuery(
             member,
             "SELECT deptId, SUM(salary), COUNT(salary), AVG(salary), MIN(salary), MAX(salary) FROM person GROUP BY deptId"
         );
 
-        assertEquals(6, cursor.getColumnCount());
+        assertEquals(6, cursor.getRowMetadata().getColumnCount());
 
         List<SqlRow> rows = getQueryRows(cursor);
         assertEquals(collectors.size(), rows.size());
@@ -141,12 +141,12 @@ public class AggregateSqlTest extends CalciteSqlTestSupport {
             collectors.computeIfAbsent(deptTitle, (k) -> new PersonSalaryCollector()).add(salary);
         }
 
-        SqlCursor cursor = executeQuery(
+        SqlResult cursor = executeQuery(
             member,
             "SELECT deptTitle, SUM(salary), COUNT(salary), AVG(salary), MIN(salary), MAX(salary) FROM person GROUP BY deptTitle"
         );
 
-        assertEquals(6, cursor.getColumnCount());
+        assertEquals(6, cursor.getRowMetadata().getColumnCount());
 
         List<SqlRow> rows = getQueryRows(cursor);
         assertEquals(collectors.size(), rows.size());

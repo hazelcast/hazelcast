@@ -23,7 +23,7 @@ import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.sql.SqlService;
-import com.hazelcast.sql.impl.SqlCursorImpl;
+import com.hazelcast.sql.impl.SqlResultImpl;
 import com.hazelcast.sql.impl.SqlServiceImpl;
 
 import java.security.Permission;
@@ -55,11 +55,14 @@ public class SqlExecuteMessageTask extends AbstractCallableMessageTask<SqlExecut
 
         SqlServiceImpl sqlService = nodeEngine.getSqlService();
 
-        SqlCursorImpl cursor = (SqlCursorImpl) sqlService.query(query, params);
+        SqlResultImpl cursor = (SqlResultImpl) sqlService.query(query, params);
 
         sqlService.getInternalService().getClientStateRegistry().register(endpoint.getUuid(), cursor);
 
-        return new SqlClientExecuteResponse(serializationService.toData(cursor.getQueryId()), cursor.getColumnCount());
+        return new SqlClientExecuteResponse(
+            serializationService.toData(cursor.getQueryId()),
+            cursor.getRowMetadata().getColumnCount()
+        );
     }
 
     @Override

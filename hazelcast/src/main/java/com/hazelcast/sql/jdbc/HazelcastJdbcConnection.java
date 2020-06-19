@@ -65,7 +65,7 @@ public class HazelcastJdbcConnection implements Connection {
 
     // TODO: Should be propagated from connection properties.
     /** Page size. */
-    private int pageSize = SqlQuery.DEFAULT_PAGE_SIZE;
+    private int pageSize = SqlQuery.DEFAULT_CURSOR_BUFFER_SIZE;
 
     HazelcastJdbcConnection(JdbcGateway gateway) {
         this.gateway = gateway;

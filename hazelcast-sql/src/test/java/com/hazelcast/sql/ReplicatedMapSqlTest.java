@@ -19,7 +19,7 @@ package com.hazelcast.sql;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.replicatedmap.ReplicatedMap;
 import com.hazelcast.sql.impl.plan.Plan;
-import com.hazelcast.sql.impl.SqlCursorImpl;
+import com.hazelcast.sql.impl.SqlResultImpl;
 import com.hazelcast.sql.support.ModelGenerator;
 import com.hazelcast.sql.support.CalciteSqlTestSupport;
 import com.hazelcast.sql.support.model.person.City;
@@ -78,7 +78,7 @@ public class ReplicatedMapSqlTest extends CalciteSqlTestSupport {
             expNames.add(city.getName());
         }
 
-        try (SqlCursorImpl cursor = executeQueryEx(member, "SELECT name FROM city")) {
+        try (SqlResultImpl cursor = executeQueryEx(member, "SELECT name FROM city")) {
             Plan plan = cursor.getPlan();
 
             assertEquals(1, plan.getFragmentCount());
@@ -107,7 +107,7 @@ public class ReplicatedMapSqlTest extends CalciteSqlTestSupport {
             expNames.add(city.getName());
         }
 
-        try (SqlCursorImpl cursor = executeQueryEx(member, "SELECT name FROM (SELECT name FROM city)")) {
+        try (SqlResultImpl cursor = executeQueryEx(member, "SELECT name FROM (SELECT name FROM city)")) {
             Plan plan = cursor.getPlan();
 
             assertEquals(1, plan.getFragmentCount());
@@ -132,7 +132,7 @@ public class ReplicatedMapSqlTest extends CalciteSqlTestSupport {
 
         String name = city.getValue().getName();
 
-        try (SqlCursorImpl cursor = executeQueryEx(member, "SELECT name FROM city WHERE name='" + name + "'")) {
+        try (SqlResultImpl cursor = executeQueryEx(member, "SELECT name FROM city WHERE name='" + name + "'")) {
             Plan plan = cursor.getPlan();
 
             assertEquals(1, plan.getFragmentCount());

@@ -18,7 +18,7 @@ package com.hazelcast.sql.impl.client;
 
 import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.impl.QueryId;
-import com.hazelcast.sql.impl.SqlCursorImpl;
+import com.hazelcast.sql.impl.SqlResultImpl;
 
 import java.util.Iterator;
 import java.util.UUID;
@@ -28,12 +28,12 @@ public class QueryClientState {
     private final UUID clientId;
 
     /** Cursor. */
-    private final SqlCursorImpl cursor;
+    private final SqlResultImpl cursor;
 
     /** Iterator. */
     private Iterator<SqlRow> iterator;
 
-    public QueryClientState(UUID clientId, SqlCursorImpl cursor) {
+    public QueryClientState(UUID clientId, SqlResultImpl cursor) {
         this.clientId = clientId;
         this.cursor = cursor;
     }
@@ -46,7 +46,7 @@ public class QueryClientState {
         return cursor.getQueryId();
     }
 
-    public SqlCursorImpl getCursor() {
+    public SqlResultImpl getCursor() {
         return cursor;
     }
 
