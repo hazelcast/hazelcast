@@ -54,7 +54,7 @@ class Footer extends React.Component {
               rel="noreferrer noopener">
               Stack Overflow
             </a>
-            <a href="https://gitter.im/hazelcast/hazelcast-jet">Gitter Chat</a>
+            <a href="https://hz-community-slack.herokuapp.com/">Slack</a>
           </div>
           <div>
             <h5>Latest From the Blog</h5>

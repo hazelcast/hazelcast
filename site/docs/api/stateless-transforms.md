@@ -250,6 +250,79 @@ As you can see, there is some more code to write to combine the results
 back, but this should give better throughput given the service is able
 to efficient batching.
 
+## mapUsingPython
+
+Hazelcast Jet can call Python code to perform a mapping step in the
+pipeline. The prerequisite is that the Jet servers are Linux or Mac with
+Python installed and that the `hazelcast-jet-python` module is deployed
+on the classpath, through being present in the `lib` folder. Jet
+supports Python versions 3.5-3.7.
+
+You are expected to define a function, conventionally named
+`transform_list(input_list)`, that takes a list of strings and returns a
+list of strings whose items match positionally one-to-one with the input
+list. Jet will call this function with batches of items received by the
+Python mapping stage. If necessary, you can also use a custom name for
+the transforming function.
+
+Internally Jet launches Python processes that execute your function. It
+launches as many of them as requested by the `localParallelism` setting
+on the Python pipeline stage. It prepares a local virtual Python
+environment for the processes to run in and they communicate with it
+over the loopback network interface, using a bidirectional streaming
+gRPC call.
+
+If you have some simple Python work that fits into a single file, you
+can tell Jet just the name of that file, which is assumed to be a Python
+module file that declares `transform_list`:
+
+```java
+StreamStage<String> sourceStage = sourceStage();
+StreamStage<String> pythonMapped = sourceStage.apply(PythonTransforms.mapUsingPython(
+        new PythonServiceConfig().setHandlerFile("path/to/handler.py")));
+```
+
+And here's an example of `handler.py`:
+
+```python
+def transform_list(input_list):
+    return ['reply-' + item for item in input_list]
+```
+
+If you have an entire Python project that you want to use from Jet, just
+name its base directory and Jet will upload all of it (recursively) to
+the cluster as a part of the submitted job. In this case you must also
+name the Python module that declares `transform_list`:
+
+```java
+StreamStage<String> sourceStage = sourceStage();
+StreamStage<String> pythonMapped = sourceStage.apply(PythonTransforms.mapUsingPython(
+        new PythonServiceConfig().setBaseDir("path/to/python_project")
+                                 .setHandlerModule("jet_handler"))
+);
+```
+
+Normally your Python code will make use of non-standard libraries. Jet
+recognizes the conventional `requirements.txt` file in your project's
+base directory and will ensure all the listed requirements are
+satisfied.
+
+Finally, Jet also recognizes bash scripts `init.sh` and `cleanup.sh`. It
+will run those during the initialization and cleanup phases of the job.
+Regardless of the parallelism of the Python stage, these scripts run
+just once per job, and they run in the context of an already activated
+virtual environment.
+
+One issue with making `requirements.txt` work is that in many production
+back-end environments the public internet is not available. To work
+around this you can pre-install all the requirements to the global (or
+user-local) Python environment on all Jet servers. You can also take
+full control by writing your own logic in `init.sh` that installs the
+dependencies to the local virtual environment. For example, you can make
+use of `pip --find_links`.
+
+For a full tutorial, see [Apply a Python Function](../tutorials/python).
+
 ## hashJoin
 
 `hashJoin` is a type of join where you have two or more inputs where all

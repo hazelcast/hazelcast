@@ -20,7 +20,7 @@ _stage_. The stage resulting from a `writeTo` operation is called a
 _sink stage_ and you can't attach more stages to it. All others are
 called _compute stages_ and expect you to attach further stages to them.
 
-## Batch vs Stream
+## BatchStage and StreamStage
 
 The API differentiates between batch (bounded) and stream (unbounded)
 sources and this is reflected in the naming: there is a
@@ -37,6 +37,59 @@ In this section we'll mostly use batch stages, for simplicity, but the
 API of operations common to both kinds is identical. Jet internally
 treats batches as a bounded stream. We'll explain later on how to apply
 windowing, which is necessary to aggregate over unbounded streams.
+
+### Adding Timestamps to a Stream
+
+The Pipeline API guides you to set up the timestamp policy right after
+you obtain a source stage. `pipeline.readFrom(someStreamSource)` returns
+a `SourceStreamStage` which offers just these methods:
+
+- `withNativeTimestamps()`
+declares that the stream will use source's native timestamps. This
+typically refers to the timestamps that the external source system sets
+on each event.
+
+- `withTimestamps(timestampFn)`
+provides a function to the source that determines the timestamp of
+each event.
+
+- `withoutTimestamps()`
+declares that the source stage has no timestamps. Use this if you don't
+need them (i.e., your pipeline won't perform windowed aggregation or stateful
+mapping).
+
+Exceptionally, you may need to call `withoutTimestamps()` on the source
+stage, then perform some transformations that determine the event
+timestamps, and then call `addTimestamps(timestampFn)` to instruct Jet
+where to find them in the events. Some examples include an enrichment
+stage that retrieves the timestamps from a side input or flat-mapping
+the stream to unpack a series of events from each original item. If you
+do this, however, it will no longer be the source that determines the
+watermark.
+
+#### Prefer Assigning Timestamps at the Source
+
+In some source implementations, especially partitioned ones like Kafka,
+there is a risk of high [event time skew](../concepts/event-time)
+occurring across partitions as the Jet processor pulls the data from
+them in batches, in a round-robin fashion. This problem is especially
+pronounced when Jet recovers from a failure and restarts your job. In
+this case Jet must catch up with all the events that arrived since
+taking the last snapshot. It will receive these events at the maximum
+system throughput and thus each partition will have a lot of data each
+time Jet polls it. This means that the interleaving of data from
+different partitions will become much more coarse-grained and there will
+be sudden jumps in event time at the points of transition from one
+partition to the next. The jumps can easily exceed the configured
+`allowedLateness` and cause Jet to drop whole swaths of events as late.
+
+In order to mitigate this issue, Jet has special logic in its
+partitioned source implementations that keeps separate track of the
+timestamps within each partition and knows how to reconcile the
+temporary differences that occur between them.
+
+This feature works only if you set the timestamping policy in the source
+using `withTimestamps()` or `withNativeTimestamps()`.
 
 ## Multiple Inputs
 

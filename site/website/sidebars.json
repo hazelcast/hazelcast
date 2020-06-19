@@ -39,6 +39,7 @@
       "how-tos/custom-batch-source",
       "how-tos/custom-stream-source",
       "how-tos/custom-sink",
+      "how-tos/custom-aggregate-operation",
       "how-tos/operator",
       "how-tos/xa",
       "how-tos/grpc"

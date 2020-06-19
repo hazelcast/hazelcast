@@ -253,6 +253,48 @@ p.readFrom(KafkaSources.kafka(.., "website-events"))
  .writeTo(Sinks.logger());
 ```
 
+### Early Results
+
+If you had to allow a lot of event lateness, or if you just use large
+time windows, you may want to track the progress of a window while it is
+still accumulating events. You can order Jet to give you, at regular
+intervals, the current status on all the windows it has some data for,
+but aren't yet complete. For example, on the session window example we
+may want to get an update of all running session every second without
+waiting for the 15 minute timeout to get the full results:
+
+```java
+p.readFrom(KafkaSources.kafka(.., "website-events"))
+ .withIngestionTimestamps()
+ .groupingKey(event -> event.getUserId())
+ .window(WindowDefinition.session(TimeUnit.MINUTES.toMillis(15))
+   .setEarlyResultsPeriod(SECONDS.toMillis(1)))
+ .aggregate(AggregateOperations.counting())
+ .writeTo(Sinks.logger());
+```
+
+The output of the windowing stage is in the form of
+`KeyedWindowResult<String, Long>`, where `String` is the word and `Long`
+is the frequency of the events in the given window. `KeyedWindowResult`
+also has an `isEarly` property that says whether the result is early or
+final.
+
+The early results period works for all windows types. For example in a
+tumbling window, if you are working with a window size of one
+minute and there's an additional 15-second allowed lateness for the
+late-coming events, this amounts to waiting up to 75 seconds from
+receiving a given event to getting the result it contributed to.
+Therefore it may be desirable to ask Jet to give us updates on the
+current progress every second.
+
+>Generally, Jet doesn't guarantee that a stage will receive the items in
+>the same order its upstream stage emitted them. For example, it
+>executes a `map` transform with many parallel tasks. One task may get
+>the early result and another one the final result. They may emit the
+>transformed result to the sink in any order. This can lead to a
+>situation where your sink receives an early result after it has already
+>received the final result.
+
 ## distinct
 
 Suppresses duplicate items from a stream. This operation
