@@ -16,24 +16,17 @@
 
 package com.hazelcast.sql.impl.connector;
 
-import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.spi.impl.NodeEngine;
-import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.schema.ExternalTable.ExternalField;
 import com.hazelcast.sql.impl.schema.Table;
-import com.hazelcast.sql.impl.schema.TableField;
-import com.hazelcast.sql.impl.schema.map.MapTableField;
 import com.hazelcast.sql.impl.schema.map.ReplicatedMapTableResolver;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 
-import static java.util.stream.Collectors.toList;
-
-// TODO: do we want to keep it? maps are auto discovered...
-public class LocalReplicatedMapConnector extends SqlKeyValueConnector {
+public class LocalReplicatedMapConnector extends LocalAbstractMapConnector {
 
     public static final String TYPE_NAME = "com.hazelcast.LocalReplicatedMap";
 
@@ -47,18 +40,11 @@ public class LocalReplicatedMapConnector extends SqlKeyValueConnector {
             @Nonnull NodeEngine nodeEngine,
             @Nonnull String schemaName,
             @Nonnull String tableName,
-            @Nonnull List<ExternalField> externalFields,
-            @Nonnull Map<String, String> options
+            @Nonnull Map<String, String> options,
+            @Nullable List<ExternalField> externalFields
     ) {
-        ReplicatedMapService mapService = nodeEngine.getService(ReplicatedMapService.SERVICE_NAME);
-        return Objects.requireNonNull(
-                ReplicatedMapTableResolver.createTable(nodeEngine, mapService, schemaName, tableName,
-                        toMapFields(externalFields), options));
-    }
+        String mapName = options.getOrDefault(TO_OBJECT_NAME, tableName);
 
-    private static List<TableField> toMapFields(List<ExternalField> externalFields) {
-        return externalFields.stream()
-                             .map(field -> new MapTableField(field.name(), field.type(), false, QueryPath.create(field.name())))
-                             .collect(toList());
+        return ReplicatedMapTableResolver.createTable(nodeEngine, schemaName, mapName, options, toMapFields(externalFields));
     }
 }

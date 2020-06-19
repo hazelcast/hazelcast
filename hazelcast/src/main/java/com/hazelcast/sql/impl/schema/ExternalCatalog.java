@@ -83,6 +83,6 @@ public class ExternalCatalog implements TableResolver {
 
     private Table toTable(ExternalTable extTable) {
         SqlConnector connector = sqlConnectorCache.forType(extTable.type());
-        return connector.createTable(nodeEngine, SCHEMA_NAME_PUBLIC, extTable.name(), extTable.fields(), extTable.options());
+        return connector.createTable(nodeEngine, SCHEMA_NAME_PUBLIC, extTable.name(), extTable.options(), extTable.fields());
     }
 }

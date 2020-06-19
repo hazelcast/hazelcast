@@ -61,7 +61,7 @@ public class ReplicatedMapTableResolver extends AbstractMapTableResolver {
         List<Table> res = new ArrayList<>();
 
         for (String mapName : mapService.getPartitionContainer(0).getStores().keySet()) {
-            ReplicatedMapTable table;
+            Table table;
 
             // TODO: skip all system tables, i.e. `__jet` prefixed
             if (mapName.equalsIgnoreCase(ExternalCatalog.CATALOG_MAP_NAME)) {
@@ -69,13 +69,9 @@ public class ReplicatedMapTableResolver extends AbstractMapTableResolver {
             }
 
             try {
-                table = createTable(nodeEngine, mapService, SCHEMA_NAME_REPLICATED, mapName, null, emptyMap());
+                table = createTable(nodeEngine, SCHEMA_NAME_REPLICATED, mapName, emptyMap(), null);
             } catch (QueryException e) {
                 table = new ReplicatedMapTable(mapName, e);
-            }
-
-            if (table == null) {
-                continue;
             }
 
             res.add(table);
@@ -86,55 +82,55 @@ public class ReplicatedMapTableResolver extends AbstractMapTableResolver {
         return res;
     }
 
-    @SuppressWarnings("rawtypes")
-    public static ReplicatedMapTable createTable(
+    @Nonnull
+    public static Table createTable(
             @Nonnull NodeEngine nodeEngine,
-            @Nonnull ReplicatedMapService mapService,
             @Nonnull String schemaName,
             @Nonnull String mapName,
-            @Nullable List<TableField> fields,
-            @Nonnull Map<String, String> ddlOptions
+            @Nonnull Map<String, String> options,
+            @Nullable List<TableField> fields
     ) {
         try {
-            Collection<ReplicatedRecordStore> stores = mapService.getAllReplicatedRecordStores(mapName);
-
             long estimatedRowCount = 0;
             QueryTargetDescriptor keyDescriptor = null;
             QueryTargetDescriptor valueDescriptor = null;
 
-            // Iterate over stores trying to get the sample.
-            for (ReplicatedRecordStore store : stores) {
-                Iterator<ReplicatedRecord> iterator = store.recordIterator();
+            if (fields == null) {
+                ReplicatedMapService mapService = nodeEngine.getService(ReplicatedMapService.SERVICE_NAME);
+                Collection<ReplicatedRecordStore> stores = mapService.getAllReplicatedRecordStores(mapName);
 
-                if (!iterator.hasNext()) {
-                    continue;
+                // Iterate over the stores trying to get a sample.
+                for (ReplicatedRecordStore store : stores) {
+                    @SuppressWarnings("rawtypes")
+                    Iterator<ReplicatedRecord> iterator = store.recordIterator();
+
+                    if (!iterator.hasNext()) {
+                        continue;
+                    }
+
+                    ReplicatedRecord<?, ?> record = iterator.next();
+
+                    Object key = record.getKey();
+                    Object value = record.getValue();
+
+                    InternalSerializationService ss = (InternalSerializationService) nodeEngine.getSerializationService();
+
+                    // TODO: Resolve the flag properly (config.getInMemoryFormat() == InMemoryFormat.BINARY).
+                    boolean binary = false;
+
+                    MapSampleMetadata keyMetadata = MapSampleMetadataResolver.resolve(ss, key, binary, true);
+                    MapSampleMetadata valueMetadata = MapSampleMetadataResolver.resolve(ss, value, binary, false);
+                    keyDescriptor = keyMetadata.getDescriptor();
+                    valueDescriptor = valueMetadata.getDescriptor();
+                    estimatedRowCount = stores.size() * nodeEngine.getPartitionService().getPartitionCount();
+
+                    fields = mergeMapFields(keyMetadata.getFields(), valueMetadata.getFields());
+                    break;
                 }
-
-                ReplicatedRecord<?, ?> record = iterator.next();
-
-                Object key = record.getKey();
-                Object value = record.getValue();
-
-                InternalSerializationService ss = (InternalSerializationService) nodeEngine.getSerializationService();
-
-                // TODO: Resolve the flag properly (config.getInMemoryFormat() == InMemoryFormat.BINARY).
-                boolean binary = false;
-
-                MapSampleMetadata keyMetadata = MapSampleMetadataResolver.resolve(ss, key, binary, true);
-                MapSampleMetadata valueMetadata = MapSampleMetadataResolver.resolve(ss, value, binary, false);
-                keyDescriptor = keyMetadata.getDescriptor();
-                valueDescriptor = valueMetadata.getDescriptor();
-                estimatedRowCount = stores.size() * nodeEngine.getPartitionService().getPartitionCount();
 
                 if (fields == null) {
-                    fields = mergeMapFields(keyMetadata.getFields(), valueMetadata.getFields());
+                    throw QueryException.error("Failed to resolve fields, map is empty: " + mapName);
                 }
-                break;
-            }
-
-            // TODO: Throw an error here instead so that the user knows that resolution failed due to empty map.
-            if (fields == null) {
-                return null;
             }
 
             if (keyDescriptor == null) {
@@ -151,7 +147,7 @@ public class ReplicatedMapTableResolver extends AbstractMapTableResolver {
                     new ConstantTableStatistics(estimatedRowCount),
                     keyDescriptor,
                     valueDescriptor,
-                    ddlOptions
+                    options
             );
         } catch (QueryException e) {
             throw e;

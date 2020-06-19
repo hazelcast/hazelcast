@@ -26,7 +26,7 @@ import com.hazelcast.sql.impl.worker.QueryFragmentContext;
 import java.util.ArrayList;
 
 /**
- * Root executor which consumes results from the upstream stages and pass them to target consumer.
+ * Root executor which consumes results from the upstream stages and passes them to target consumer.
  */
 public class RootExec extends AbstractUpstreamAwareExec {
 

@@ -17,8 +17,6 @@
 package com.hazelcast.sql.impl.calcite;
 
 import com.hazelcast.cluster.memberselector.MemberSelectors;
-import com.hazelcast.internal.util.collection.PartitionIdSet;
-import com.hazelcast.partition.Partition;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.JetSqlBackend;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
@@ -57,11 +55,8 @@ import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.sql.SqlNode;
 
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
@@ -174,7 +169,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
             // 6. Create plan.
             return createImdgPlan(task.getSql(), parseResult.getParameterRowType(), physicalRel, convertResult.getFieldNames());
         } else {
-            return jetSqlBackend.optimizeAndCreatePlan(context, convertResult.getRel());
+            return jetSqlBackend.optimizeAndCreatePlan(nodeEngine, context, convertResult.getRel(), convertResult.getFieldNames());
         }
     }
 
@@ -225,19 +220,6 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
      * @return Plan.
      */
     private Plan createImdgPlan(String sql, RelDataType parameterRowType, PhysicalRel rel, List<String> rootColumnNames) {
-        // Get partition mapping.
-        Collection<Partition> parts = nodeEngine.getHazelcastInstance().getPartitionService().getPartitions();
-
-        int partCnt = parts.size();
-
-        LinkedHashMap<UUID, PartitionIdSet> partMap = new LinkedHashMap<>();
-
-        for (Partition part : parts) {
-            UUID ownerId = part.getOwner().getUuid();
-
-            partMap.computeIfAbsent(ownerId, (key) -> new PartitionIdSet(partCnt)).add(part.getPartitionId());
-        }
-
         // Assign IDs to nodes.
         NodeIdVisitor idVisitor = new NodeIdVisitor();
         rel.visit(idVisitor);
@@ -248,8 +230,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         QueryParameterMetadata parameterMetadata = new QueryParameterMetadata(mappedParameterRowType);
 
         PlanCreateVisitor visitor = new PlanCreateVisitor(
-            nodeEngine.getLocalMember().getUuid(),
-            partMap,
+            nodeEngine,
             relIdMap,
             sql,
             parameterMetadata,
@@ -267,8 +248,6 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         res.add(catalog);
         res.add(new PartitionedMapTableResolver(nodeEngine));
         res.add(new ReplicatedMapTableResolver(nodeEngine));
-
-        // TODO: Add Jet resolvers
 
         return res;
     }

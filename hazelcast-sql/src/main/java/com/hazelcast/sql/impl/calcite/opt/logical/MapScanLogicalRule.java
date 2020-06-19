@@ -18,6 +18,8 @@ package com.hazelcast.sql.impl.calcite.opt.logical;
 
 import com.hazelcast.sql.impl.calcite.opt.HazelcastConventions;
 import com.hazelcast.sql.impl.calcite.opt.OptUtils;
+import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
+import com.hazelcast.sql.impl.schema.map.AbstractMapTable;
 import org.apache.calcite.plan.Convention;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.rel.RelNode;
@@ -37,6 +39,11 @@ public final class MapScanLogicalRule extends ConverterRule {
     @Override
     public RelNode convert(RelNode rel) {
         LogicalTableScan scan = (LogicalTableScan) rel;
+        HazelcastTable table = scan.getTable().unwrap(HazelcastTable.class);
+        if (!(table.getTarget() instanceof AbstractMapTable)) {
+            // if the table isn't IMDG table (can be Jet's), ignore it
+            return null;
+        }
 
         return new MapScanLogicalRel(
             scan.getCluster(),

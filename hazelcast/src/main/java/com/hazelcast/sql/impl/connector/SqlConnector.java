@@ -21,6 +21,7 @@ import com.hazelcast.sql.impl.schema.ExternalTable.ExternalField;
 import com.hazelcast.sql.impl.schema.Table;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Map;
 
@@ -43,31 +44,23 @@ public interface SqlConnector {
     String typeName();
 
     /**
-     * Creates a Table object with automatic field resolution. Can connect to
-     * the remote service and possibly fail if it's unable to determine the
-     * fields.
-     *
-     * @param options Generic options from the DDL query
-     */
-    @Nonnull
-    default Table createTable(
-            @Nonnull NodeEngine nodeEngine,
-            @Nonnull String tableName,
-            @Nonnull Map<String, String> options
-    ) {
-        throw new UnsupportedOperationException("Field resolution not supported for " + getClass().getName());
-    }
-
-    /**
      * Creates a Table object with the given fields. Will not attempt to
      * connect to the remote service.
+     *
+     * @param externalFields optional list of fields. If {@code null},
+     *     an attempt to resolve them automatically will be made. If not
+     *     successful, an exception will be thrown. An empty list is
+     *     valid, it means there are zero columns in the table: you can
+     *     still query hidden fields or count the records. No validation
+     *     is performed: if fields are given, no connection to remote
+     *     source is made.
      */
     @Nonnull
     Table createTable(
             @Nonnull NodeEngine nodeEngine,
             @Nonnull String schemaName,
             @Nonnull String tableName,
-            @Nonnull List<ExternalField> externalFields,
-            @Nonnull Map<String, String> options
+            @Nonnull Map<String, String> options,
+            @Nullable List<ExternalField> externalFields
     );
 }
