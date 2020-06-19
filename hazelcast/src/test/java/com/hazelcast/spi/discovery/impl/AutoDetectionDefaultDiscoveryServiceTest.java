@@ -28,6 +28,7 @@ import com.hazelcast.spi.discovery.integration.DiscoveryServiceSettings;
 import com.hazelcast.spi.discovery.multicast.MulticastDiscoveryStrategy;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -48,8 +49,9 @@ public class AutoDetectionDefaultDiscoveryServiceTest {
 
     private final DiscoveryServiceSettings settings = discoveryServiceSettings();
 
+    @After
     @Before
-    public void setUp() {
+    public void clearAutoDetectionFields() {
         TestDiscoveryStrategyFactory.isAutoDetectionApplicable = false;
         TestHighPriorityDiscoveryStrategyFactory.isAutoDetectionApplicable = false;
     }
