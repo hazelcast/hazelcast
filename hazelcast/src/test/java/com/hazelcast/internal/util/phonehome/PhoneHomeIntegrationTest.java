@@ -28,6 +28,7 @@ import org.junit.Rule;
 import org.junit.Test;
 
 import java.util.Map;
+import java.util.Set;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
@@ -74,6 +75,25 @@ public class PhoneHomeIntegrationTest extends HazelcastTestSupport {
                 .withQueryParam("mphect", equalTo("1"))
                 .withQueryParam("mpwact", equalTo("1"))
                 .withQueryParam("mpaocct", equalTo("1")));
+
+    }
+
+    @Test
+    public void testSetMetrics() {
+        HazelcastInstance hz = createHazelcastInstance();
+        Node node = getNode(hz);
+        PhoneHome phoneHome = new PhoneHome(node, "http://localhost:8080/ping");
+        Set<String> set1 = hz.getSet("hazelcast");
+        Set<String> set2 = hz.getSet("phonehome");
+
+        stubFor(get(urlPathEqualTo("/ping"))
+                .willReturn(aResponse()
+                        .withStatus(200)));
+
+        phoneHome.phoneHome(false);
+
+        verify(1, getRequestedFor(urlPathEqualTo("/ping"))
+                .withQueryParam("sect", equalTo("2")));
 
     }
 

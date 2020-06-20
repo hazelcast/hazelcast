@@ -32,6 +32,7 @@ import java.lang.management.ManagementFactory;
 import java.lang.management.OperatingSystemMXBean;
 import java.lang.management.RuntimeMXBean;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 import static com.hazelcast.test.Accessors.getNode;
@@ -240,6 +241,21 @@ public class PhoneHomeTest extends HazelcastTestSupport {
         parameters = phoneHome.phoneHome(true);
         assertEquals(parameters.get("mpaocct"), "1");
 
+    }
+
+    @Test
+    public void testSetCount() {
+        Map<String, String> parameters;
+        parameters = phoneHome.phoneHome(true);
+        assertEquals(parameters.get("sect"), "0");
+
+        Set<String> set1 = node.hazelcastInstance.getSet("hazelcast");
+        parameters = phoneHome.phoneHome(true);
+        assertEquals(parameters.get("sect"), "1");
+
+        Set<String> set2 = node.hazelcastInstance.getSet("phonehome");
+        parameters = phoneHome.phoneHome(true);
+        assertEquals(parameters.get("sect"), "2");
     }
 
 }
