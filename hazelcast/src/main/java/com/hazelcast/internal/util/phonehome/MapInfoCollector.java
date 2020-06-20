@@ -39,7 +39,6 @@ class MapInfoCollector implements MetricsCollector {
                 equals(MapService.SERVICE_NAME)).collect(toList());
         Map<String, String> mapInfo = new HashMap<>();
 
-        mapInfo.put("mpct", String.valueOf(maps.size()));
         mapInfo.put("mpbrct", String.valueOf(countMapWithBackupReadEnabled(hazelcastNode)));
         mapInfo.put("mpmsct", String.valueOf(countMapWithMapStoreEnabled(hazelcastNode)));
         mapInfo.put("mpaoqcct", String.valueOf(countMapWithAtleastOneQueryCache(hazelcastNode)));

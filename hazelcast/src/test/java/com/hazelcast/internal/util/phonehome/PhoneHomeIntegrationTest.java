@@ -22,12 +22,16 @@ import com.hazelcast.config.QueryCacheConfig;
 import com.hazelcast.config.WanReplicationRef;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.impl.Node;
+import com.hazelcast.multimap.MultiMap;
+import com.hazelcast.ringbuffer.Ringbuffer;
 import com.hazelcast.test.HazelcastTestSupport;
 
 import org.junit.Rule;
 import org.junit.Test;
 
+import java.util.List;
 import java.util.Map;
+import java.util.Queue;
 import java.util.Set;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
@@ -79,12 +83,16 @@ public class PhoneHomeIntegrationTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testSetMetrics() {
+    public void testCountDistributedObjects() {
         HazelcastInstance hz = createHazelcastInstance();
         Node node = getNode(hz);
         PhoneHome phoneHome = new PhoneHome(node, "http://localhost:8080/ping");
-        Set<String> set1 = hz.getSet("hazelcast");
-        Set<String> set2 = hz.getSet("phonehome");
+        Map<Object, Object> map1 = hz.getMap("hazelcast");
+        Set<Object> set1 = hz.getSet("hazelcast");
+        Queue<Object> queue1 = hz.getQueue("hazelcast");
+        MultiMap<Object, Object> multimap1 = hz.getMultiMap("hazelcast");
+        List<Object> list1 = hz.getList("hazelcast");
+        Ringbuffer<Object> ringbuffer1 = hz.getRingbuffer("hazelcast");
 
         stubFor(get(urlPathEqualTo("/ping"))
                 .willReturn(aResponse()
@@ -93,7 +101,12 @@ public class PhoneHomeIntegrationTest extends HazelcastTestSupport {
         phoneHome.phoneHome(false);
 
         verify(1, getRequestedFor(urlPathEqualTo("/ping"))
-                .withQueryParam("sect", equalTo("2")));
+                .withQueryParam("mpct", equalTo("1"))
+                .withQueryParam("sect", equalTo("1"))
+                .withQueryParam("quct", equalTo("1"))
+                .withQueryParam("mmct", equalTo("1"))
+                .withQueryParam("lict", equalTo("1"))
+                .withQueryParam("rbct", equalTo("1")));
 
     }
 

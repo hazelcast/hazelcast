@@ -51,7 +51,7 @@ public class PhoneHome {
     private final Node hazelcastNode;
     private final List<MetricsCollector> metricsCollectorList = Arrays.asList(new BuildInfoCollector(),
             new ClusterInfoCollector(), new ClientInfoCollector(), new MapInfoCollector(),
-            new OSInfoCollector(), new SetInfoCollector());
+            new OSInfoCollector(), new DistributedObjectCounterCollector());
 
     public PhoneHome(Node node) {
         this(node, DEFAULT_BASE_PHONE_HOME_URL);
