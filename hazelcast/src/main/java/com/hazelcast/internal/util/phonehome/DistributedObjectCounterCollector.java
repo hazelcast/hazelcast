@@ -15,7 +15,6 @@
  */
 package com.hazelcast.internal.util.phonehome;
 
-import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.collection.impl.list.ListService;
 import com.hazelcast.collection.impl.queue.QueueService;
 import com.hazelcast.collection.impl.set.SetService;
@@ -43,30 +42,41 @@ class DistributedObjectCounterCollector implements MetricsCollector {
 
     @Override
     public Map<String, String> computeMetrics(Node hazelcastNode) {
+        final int[] count = {0, 0, 0, 0, 0, 0};
 
         Collection<DistributedObject> distributedObjects = hazelcastNode.hazelcastInstance.getDistributedObjects();
 
-        maps = distributedObjects.stream().filter(distributedObject -> distributedObject.getServiceName().
-                equals(MapService.SERVICE_NAME)).collect(toList());
-        sets = distributedObjects.stream().filter(distributedObject -> distributedObject.getServiceName().
-                equals(SetService.SERVICE_NAME)).collect(toList());
-        queues = distributedObjects.stream().filter(distributedObject -> distributedObject.getServiceName().
-                equals(QueueService.SERVICE_NAME)).collect(toList());
-        multimaps = distributedObjects.stream().filter(distributedObject -> distributedObject.getServiceName().
-                equals(MultiMapService.SERVICE_NAME)).collect(toList());
-        lists = distributedObjects.stream().filter(distributedObject -> distributedObject.getServiceName().
-                equals(ListService.SERVICE_NAME)).collect(toList());
-        ringbuffers = distributedObjects.stream().filter(distributedObject -> distributedObject.getServiceName().
-                equals(RingbufferService.SERVICE_NAME)).collect(toList());
+        distributedObjects.stream().forEach(distributedObject -> {
+            switch (distributedObject.getServiceName()) {
+                case MapService.SERVICE_NAME:
+                    count[0]++;
+                    break;
+                case SetService.SERVICE_NAME:
+                    count[1]++;
+                    break;
+                case QueueService.SERVICE_NAME:
+                    count[2]++;
+                    break;
+                case MultiMapService.SERVICE_NAME:
+                    count[3]++;
+                    break;
+                case ListService.SERVICE_NAME:
+                    count[4]++;
+                    break;
+                case RingbufferService.SERVICE_NAME:
+                    count[5]++;
+                    break;
+            }
+        });
 
         Map<String, String> countInfo = new HashMap<>();
 
-        countInfo.put("mpct", String.valueOf(maps.size()));
-        countInfo.put("sect", String.valueOf(sets.size()));
-        countInfo.put("quct", String.valueOf(queues.size()));
-        countInfo.put("mmct", String.valueOf(multimaps.size()));
-        countInfo.put("lict", String.valueOf(lists.size()));
-        countInfo.put("rbct", String.valueOf(ringbuffers.size()));
+        countInfo.put("mpct", String.valueOf(count[0]));
+        countInfo.put("sect", String.valueOf(count[1]));
+        countInfo.put("quct", String.valueOf(count[2]));
+        countInfo.put("mmct", String.valueOf(count[3]));
+        countInfo.put("lict", String.valueOf(count[4]));
+        countInfo.put("rbct", String.valueOf(count[5]));
 
         return countInfo;
     }
