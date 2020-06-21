@@ -97,7 +97,9 @@
                                 <relocation>
                                     <pattern>com.</pattern>
                                     <shadedPattern>${relocation.root}.com.</shadedPattern>
-                                    <excludes>com.hazelcast.**</excludes>
+                                    <excludes>
+                                        <exclude>com.hazelcast.**</exclude>
+                                    </excludes>
                                 </relocation>
                                 <relocation>
                                     <pattern>org.</pattern>
