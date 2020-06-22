@@ -15,6 +15,9 @@
  */
 package com.hazelcast.internal.util.phonehome;
 
+import com.hazelcast.collection.IList;
+import com.hazelcast.collection.IQueue;
+import com.hazelcast.collection.ISet;
 import com.hazelcast.config.AttributeConfig;
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.IndexType;
@@ -37,10 +40,7 @@ import org.junit.runner.RunWith;
 import java.lang.management.ManagementFactory;
 import java.lang.management.OperatingSystemMXBean;
 import java.lang.management.RuntimeMXBean;
-import java.util.List;
 import java.util.Map;
-import java.util.Queue;
-import java.util.Set;
 import java.util.UUID;
 
 import static com.hazelcast.test.Accessors.getNode;
@@ -257,13 +257,17 @@ public class PhoneHomeTest extends HazelcastTestSupport {
         parameters = phoneHome.phoneHome(true);
         assertEquals(parameters.get("sect"), "0");
 
-        Set<String> set1 = node.hazelcastInstance.getSet("hazelcast");
+        ISet<String> set1 = node.hazelcastInstance.getSet("hazelcast");
         parameters = phoneHome.phoneHome(true);
         assertEquals(parameters.get("sect"), "1");
 
-        Set<String> set2 = node.hazelcastInstance.getSet("phonehome");
+        ISet<Object> set2 = node.hazelcastInstance.getSet("phonehome");
         parameters = phoneHome.phoneHome(true);
         assertEquals(parameters.get("sect"), "2");
+
+        set2.destroy();
+        parameters = phoneHome.phoneHome(true);
+        assertEquals(parameters.get("sect"), "1");
     }
 
     @Test
@@ -272,13 +276,17 @@ public class PhoneHomeTest extends HazelcastTestSupport {
         parameters = phoneHome.phoneHome(true);
         assertEquals(parameters.get("quct"), "0");
 
-        Queue<String> queue1 = node.hazelcastInstance.getQueue("hazelcast");
+        IQueue<Object> queue1 = node.hazelcastInstance.getQueue("hazelcast");
         parameters = phoneHome.phoneHome(true);
         assertEquals(parameters.get("quct"), "1");
 
-        Queue<String> queue2 = node.hazelcastInstance.getQueue("phonehome");
+        IQueue<String> queue2 = node.hazelcastInstance.getQueue("phonehome");
         parameters = phoneHome.phoneHome(true);
         assertEquals(parameters.get("quct"), "2");
+
+        queue2.destroy();
+        parameters = phoneHome.phoneHome(true);
+        assertEquals(parameters.get("quct"), "1");
     }
 
     @Test
@@ -302,11 +310,11 @@ public class PhoneHomeTest extends HazelcastTestSupport {
         parameters = phoneHome.phoneHome(true);
         assertEquals(parameters.get("lict"), "0");
 
-        List<Object> list1 = node.hazelcastInstance.getList("hazelcast");
+        IList<Object> list1 = node.hazelcastInstance.getList("hazelcast");
         parameters = phoneHome.phoneHome(true);
         assertEquals(parameters.get("lict"), "1");
 
-        List<Object> list2 = node.hazelcastInstance.getList("phonehome");
+        IList<Object> list2 = node.hazelcastInstance.getList("phonehome");
         parameters = phoneHome.phoneHome(true);
         assertEquals(parameters.get("lict"), "2");
     }
