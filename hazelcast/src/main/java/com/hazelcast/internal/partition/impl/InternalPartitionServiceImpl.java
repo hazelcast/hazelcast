@@ -967,7 +967,6 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
     @Override
     public Map<Address, List<Integer>> getMemberPartitionsMap() {
         Collection<Member> dataMembers = node.getClusterService().getMembers(DATA_MEMBER_SELECTOR);
-
         int dataMembersSize = dataMembers.size();
         int partitionsPerMember = (dataMembersSize > 0 ? (int) ceil((float) partitionCount / dataMembersSize) : 0);
 

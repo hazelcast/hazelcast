@@ -19,7 +19,7 @@ package com.hazelcast.sql.impl.optimizer;
 import com.hazelcast.sql.impl.explain.QueryExplain;
 
 /**
- * Abstraction over execution plan that allows for choosing an execution backend.
+ * Abstraction over execution plan that allows for specialization for an execution backend.
  */
 public interface SqlPlan {
     /**

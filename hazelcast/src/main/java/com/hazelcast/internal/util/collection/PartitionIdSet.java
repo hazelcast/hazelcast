@@ -61,7 +61,7 @@ public class PartitionIdSet extends AbstractSet<Integer> {
         this(initialPartitionIds.partitionCount, initialPartitionIds);
     }
 
-    public PartitionIdSet(int partitionCount, BitSet bitSet) {
+    PartitionIdSet(int partitionCount, BitSet bitSet) {
         this.partitionCount = partitionCount;
         this.bitSet = bitSet;
     }
@@ -95,10 +95,6 @@ public class PartitionIdSet extends AbstractSet<Integer> {
 
     public boolean contains(int partitionId) {
         return bitSet.get(partitionId);
-    }
-
-    public BitSet getBitSet() {
-        return bitSet;
     }
 
     /**
