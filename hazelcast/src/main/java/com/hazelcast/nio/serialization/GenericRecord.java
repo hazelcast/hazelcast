@@ -19,13 +19,13 @@ package com.hazelcast.nio.serialization;
 import java.io.IOException;
 
 /**
- * Generic Object interface to be returned when domain class can not be created
- * Currently this is valid for Portable objects
+ * A generic object interface that is returned when the domain class can not be created.
+ * Currently this is valid for {@link Portable} objects.
  */
 public interface GenericRecord {
 
     /**
-     * @return Creates a generic record builder with same class definition of this one
+     * @return Creates a generic record builder with same class definition as this one
      */
     GenericRecordBuilder createGenericRecordBuilder();
 

@@ -22,13 +22,13 @@ import java.io.IOException;
 import java.util.Set;
 
 /**
- * Provides a mean of reading portable fields from a binary in form of java primitives
+ * Provides means for reading portable fields from binary data in the form of java primitives,
  * arrays of java primitives, nested portable fields and array of portable fields.
  */
 public interface PortableReader {
 
     /**
-     * @return version global version of portable classes
+     * @return global version of portable classes
      */
     int getVersion();
 
@@ -199,8 +199,8 @@ public interface PortableReader {
     /**
      * {@link PortableWriter#getRawDataOutput()}.
      * <p>
-     * Note that portable fields can not read after getRawDataInput() is called. In case this happens,
-     * IOException will be thrown.
+     * Note that portable fields can not be read after this method is called. If this happens,
+     * an IOException will be thrown.
      *
      * @return rawDataInput
      * @throws IOException in case of any exceptional case

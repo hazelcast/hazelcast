@@ -19,8 +19,8 @@ package com.hazelcast.nio.serialization;
 import com.hazelcast.internal.serialization.impl.portable.PortableGenericRecordBuilder;
 
 /**
- * Interface for creating GenericRecords
- * Allows using Portable without having the domain class
+ * Interface for creating {@link GenericRecord} instances.
+ * Allows the usage of {@link Portable} without having a domain class.
  */
 public interface GenericRecordBuilder {
 
