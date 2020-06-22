@@ -53,7 +53,6 @@ import java.util.Map.Entry;
 import java.util.Set;
 
 import static com.hazelcast.sql.impl.QueryUtils.SCHEMA_NAME_PARTITIONED;
-import static java.util.Collections.emptyList;
 
 public class PartitionedMapTableResolver extends AbstractMapTableResolver {
 
@@ -109,6 +108,7 @@ public class PartitionedMapTableResolver extends AbstractMapTableResolver {
      *     table with an exception.
      */
     @Nullable
+    @SuppressWarnings({"checkstyle:MethodLength", "checkstyle:CyclomaticComplexity", "checkstyle:NPathComplexity"})
     public static PartitionedMapTable createTable(
             @Nonnull NodeEngine nodeEngine,
             @Nonnull String schemaName,
@@ -163,7 +163,8 @@ public class PartitionedMapTableResolver extends AbstractMapTableResolver {
                     InternalSerializationService ss = (InternalSerializationService) nodeEngine.getSerializationService();
 
                     MapSampleMetadata keyMetadata = MapSampleMetadataResolver.resolve(ss, entry.getKey(), binary, true);
-                    MapSampleMetadata valueMetadata = MapSampleMetadataResolver.resolve(ss, entry.getValue().getValue(), binary, false);
+                    MapSampleMetadata valueMetadata =
+                            MapSampleMetadataResolver.resolve(ss, entry.getValue().getValue(), binary, false);
 
                     keyDescriptor = keyMetadata.getDescriptor();
                     valueDescriptor = valueMetadata.getDescriptor();
@@ -194,16 +195,11 @@ public class PartitionedMapTableResolver extends AbstractMapTableResolver {
             List<MapTableIndex> indexes;
             int distributionFieldOrdinal;
 
-            if (mapContainer != null) {
-                // Resolve indexes.
-                indexes = MapTableUtils.getPartitionedMapIndexes(mapContainer, mapName, pathToOrdinalMap);
+            // Resolve indexes.
+            indexes = MapTableUtils.getPartitionedMapIndexes(mapContainer, mapName, pathToOrdinalMap);
 
-                // Resolve distribution field ordinal.
-                distributionFieldOrdinal = MapTableUtils.getPartitionedMapDistributionField(mapContainer, context, pathToOrdinalMap);
-            } else {
-                indexes = emptyList();
-                distributionFieldOrdinal = PartitionedMapTable.DISTRIBUTION_FIELD_ORDINAL_NONE;
-            }
+            // Resolve distribution field ordinal.
+            distributionFieldOrdinal = MapTableUtils.getPartitionedMapDistributionField(mapContainer, context, pathToOrdinalMap);
 
             // Done.
             return new PartitionedMapTable(
