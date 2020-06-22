@@ -304,41 +304,41 @@ public final class UnsupportedOperationVisitor implements SqlVisitor<Void> {
             case SELECT:
                 processSelect((SqlSelect) call);
 
-                return;
+                break;
 
             case SCALAR_QUERY:
                 // TODO: Perhaps we may add it to SUPPORTED_KINDS since we always decorrelate. Double-check it when working
                 //  on subqueries.
-                return;
+                break;
 
             case JOIN:
                 // TODO: Proper validation for JOIN (e.g. outer, theta, etc)!
-                return;
+                break;
 
             case CREATE_TABLE:
             case DROP_TABLE:
                 SqlIdentifier identifier = (SqlIdentifier) call.getOperandList().get(0);
                 this.ddlOperandTableNames = identifier.names;
                 // TODO: Proper validation for DDL
-                return;
+                break;
 
             case COLUMN_DECL:
                 // TODO: Proper validation for DDL
-                return;
+                break;
 
             case INSERT:
                 // TODO: Proper validation for DML
                 runsOnImdg = false;
-                return;
+                break;
 
             case OTHER:
             case OTHER_FUNCTION:
                 processOther(call);
-                return;
+                break;
 
             case HINT:
                 // TODO: Proper validation for hints
-                return;
+                break;
 
             default:
                 throw unsupported(call, call.getKind());

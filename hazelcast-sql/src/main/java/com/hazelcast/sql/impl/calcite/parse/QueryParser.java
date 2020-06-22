@@ -87,7 +87,8 @@ public class QueryParser {
                     @Override
                     public Void visit(SqlCall node) {
                         jetHinted[0] |= node.getKind() == SqlKind.SELECT
-                                && ((SqlSelect) node).getHints().getList().stream().anyMatch(n -> ((SqlHint) n).getName().equals(RUN_ON_JET_HINT));
+                                && ((SqlSelect) node).getHints().getList().stream()
+                                                     .anyMatch(n -> ((SqlHint) n).getName().equals(RUN_ON_JET_HINT));
                         return super.visit(node);
                     }
                 });

@@ -169,7 +169,8 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
             // 6. Create plan.
             return createImdgPlan(task.getSql(), parseResult.getParameterRowType(), physicalRel, convertResult.getFieldNames());
         } else {
-            return jetSqlBackend.optimizeAndCreatePlan(nodeEngine, context, convertResult.getRel(), convertResult.getFieldNames());
+            return jetSqlBackend.optimizeAndCreatePlan(nodeEngine, context, convertResult.getRel(),
+                    convertResult.getFieldNames());
         }
     }
 
