@@ -40,15 +40,27 @@ class DistributedObjectCounterCollector implements MetricsCollector {
     public Map<String, String> computeMetrics(Node hazelcastNode) {
 
         Collection<DistributedObject> distributedObjects = hazelcastNode.hazelcastInstance.getDistributedObjects();
-        Map<String, Long> result = distributedObjects.stream().collect(groupingBy(DistributedObject::getServiceName, Collectors.counting()));
+
+        Map<String, Boolean> map = new HashMap<>();
+        map.put(MapService.SERVICE_NAME, true);
+        map.put(SetService.SERVICE_NAME, true);
+        map.put(QueueService.SERVICE_NAME, true);
+        map.put(MultiMapService.SERVICE_NAME, true);
+        map.put(ListService.SERVICE_NAME, true);
+        map.put(RingbufferService.SERVICE_NAME, true);
+
+        Map<String, Long> distributedObjectCount = distributedObjects.stream()
+                .filter(distributedObject -> map.containsKey(distributedObject.getServiceName()))
+                .collect(groupingBy(DistributedObject::getServiceName, Collectors.counting()));
+
         Map<String, String> countInfo = new HashMap<>();
 
-        countInfo.put("mpct", String.valueOf(result.getOrDefault(MapService.SERVICE_NAME, 0L)));
-        countInfo.put("sect", String.valueOf(result.getOrDefault(SetService.SERVICE_NAME, 0L)));
-        countInfo.put("quct", String.valueOf(result.getOrDefault(QueueService.SERVICE_NAME, 0L)));
-        countInfo.put("mmct", String.valueOf(result.getOrDefault(MultiMapService.SERVICE_NAME, 0L)));
-        countInfo.put("lict", String.valueOf(result.getOrDefault(ListService.SERVICE_NAME, 0L)));
-        countInfo.put("rbct", String.valueOf(result.getOrDefault(RingbufferService.SERVICE_NAME, 0L)));
+        countInfo.put("mpct", String.valueOf(distributedObjectCount.getOrDefault(MapService.SERVICE_NAME, 0L)));
+        countInfo.put("sect", String.valueOf(distributedObjectCount.getOrDefault(SetService.SERVICE_NAME, 0L)));
+        countInfo.put("quct", String.valueOf(distributedObjectCount.getOrDefault(QueueService.SERVICE_NAME, 0L)));
+        countInfo.put("mmct", String.valueOf(distributedObjectCount.getOrDefault(MultiMapService.SERVICE_NAME, 0L)));
+        countInfo.put("lict", String.valueOf(distributedObjectCount.getOrDefault(ListService.SERVICE_NAME, 0L)));
+        countInfo.put("rbct", String.valueOf(distributedObjectCount.getOrDefault(RingbufferService.SERVICE_NAME, 0L)));
 
         return countInfo;
     }
