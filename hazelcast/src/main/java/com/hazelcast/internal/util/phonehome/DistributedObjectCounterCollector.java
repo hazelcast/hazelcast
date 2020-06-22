@@ -24,9 +24,7 @@ import com.hazelcast.map.impl.MapService;
 import com.hazelcast.multimap.impl.MultiMapService;
 import com.hazelcast.ringbuffer.impl.RingbufferService;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static java.util.stream.Collectors.groupingBy;
@@ -37,17 +35,12 @@ class DistributedObjectCounterCollector implements MetricsCollector {
     public Map<String, String> computeMetrics(Node hazelcastNode) {
 
         Collection<DistributedObject> distributedObjects = hazelcastNode.hazelcastInstance.getDistributedObjects();
+        List<String> list = Arrays.asList(MapService.SERVICE_NAME, SetService.SERVICE_NAME, QueueService.SERVICE_NAME,
+                MultiMapService.SERVICE_NAME, ListService.SERVICE_NAME, RingbufferService.SERVICE_NAME);
 
-        Map<String, Boolean> map = new HashMap<>();
-        map.put(MapService.SERVICE_NAME, true);
-        map.put(SetService.SERVICE_NAME, true);
-        map.put(QueueService.SERVICE_NAME, true);
-        map.put(MultiMapService.SERVICE_NAME, true);
-        map.put(ListService.SERVICE_NAME, true);
-        map.put(RingbufferService.SERVICE_NAME, true);
 
         Map<String, Long> distributedObjectCount = distributedObjects.stream()
-                .filter(distributedObject -> map.containsKey(distributedObject.getServiceName()))
+                .filter(distributedObject -> list.contains(distributedObject.getServiceName()))
                 .collect(groupingBy(DistributedObject::getServiceName, Collectors.counting()));
 
         Map<String, String> countInfo = new HashMap<>();
