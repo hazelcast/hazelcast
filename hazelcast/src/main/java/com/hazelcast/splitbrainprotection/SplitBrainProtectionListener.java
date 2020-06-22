@@ -19,7 +19,20 @@ package com.hazelcast.splitbrainprotection;
 import java.util.EventListener;
 
 /**
- * Listener to get notified when a split brain protection state is changed
+ * Listener to get notified when a split brain protection state is changed.
+ * <p>
+ * {@code SplitBrainProtectionEvent}s are fired only after the minimum cluster size
+ * requirement is met for the first time.
+ * For instance, see the following scenario for a minimum cluster size is equal to 3:
+ * <ul>
+ * <li>Member-1 starts; no events are fired, since cluster size is still below minimum size.</li>
+ * <li>Member-2 starts; no events are fired, since cluster size is still below minimum size.</li>
+ * <li>Member-3 starts; no events yet, since this is the first time minimum cluster size is reached.</li>
+ * <li>Member-1 stops; both Member-2 and Member-3 fire splitbrain protection missing events,
+ * since member count drops below 3.</li>
+ * <li>Member-1 restarts; both Member-2 and Member-3 fire splitbrain protection present events,
+ * but Member-1 does not, because for Member-1 this is the first time minimum cluster size is met.</li>
+ * </ul>
  */
 @FunctionalInterface
 public interface SplitBrainProtectionListener extends EventListener {

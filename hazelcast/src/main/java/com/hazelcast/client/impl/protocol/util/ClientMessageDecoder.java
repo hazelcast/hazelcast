@@ -90,13 +90,11 @@ public class ClientMessageDecoder extends InboundHandlerWithCounters<ByteBuffer,
                     throw new IllegalStateException(
                             "Fragmented client messages are not allowed before the client is authenticated.");
                 } else {
-                    ClientMessage.ForwardFrameIterator frameIterator = activeReader.getClientMessage().frameIterator();
-                    //ignore the fragmentationFrame
-                    frameIterator.next();
-                    ClientMessage.Frame startFrame = frameIterator.next();
+                    ClientMessage message = activeReader.getClientMessage();
+                    message.dropFragmentationFrame();
                     long fragmentationId = Bits.readLongL(firstFrame.content, FRAGMENTATION_ID_OFFSET);
                     if (ClientMessage.isFlagSet(flags, BEGIN_FRAGMENT_FLAG)) {
-                        builderBySessionIdMap.put(fragmentationId, ClientMessage.createForDecode(startFrame));
+                        builderBySessionIdMap.put(fragmentationId, message);
                     } else if (ClientMessage.isFlagSet(flags, END_FRAGMENT_FLAG)) {
                         ClientMessage clientMessage = mergeIntoExistingClientMessage(fragmentationId);
                         handleMessage(clientMessage);
