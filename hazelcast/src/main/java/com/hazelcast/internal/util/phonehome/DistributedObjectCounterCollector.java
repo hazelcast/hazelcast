@@ -24,7 +24,6 @@ import com.hazelcast.map.impl.MapService;
 import com.hazelcast.multimap.impl.MultiMapService;
 import com.hazelcast.ringbuffer.impl.RingbufferService;
 
-
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
@@ -32,9 +31,7 @@ import java.util.stream.Collectors;
 
 import static java.util.stream.Collectors.groupingBy;
 
-
 class DistributedObjectCounterCollector implements MetricsCollector {
-
 
     @Override
     public Map<String, String> computeMetrics(Node hazelcastNode) {
