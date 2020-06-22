@@ -17,6 +17,7 @@
 package com.hazelcast.query.impl;
 
 import com.hazelcast.config.IndexConfig;
+import com.hazelcast.internal.monitor.impl.GlobalPerIndexStats;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.map.impl.StoreAdapter;
 import com.hazelcast.internal.monitor.impl.PerIndexStats;
@@ -38,4 +39,8 @@ public class DefaultIndexProvider implements IndexProvider {
         return new IndexImpl(config, ss, extractors, copyBehavior, stats);
     }
 
+    @Override
+    public PerIndexStats createPerIndexStats(boolean ordered, boolean usesCachedQueryableEntries) {
+        return new GlobalPerIndexStats(ordered, usesCachedQueryableEntries);
+    }
 }

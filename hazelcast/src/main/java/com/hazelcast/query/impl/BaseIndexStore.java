@@ -26,7 +26,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Consumer;
 
 import static com.hazelcast.query.impl.AbstractIndex.NULL;
@@ -38,10 +37,6 @@ public abstract class BaseIndexStore implements IndexStore {
 
     static final float LOAD_FACTOR = 0.75F;
 
-    private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
-    private final ReentrantReadWriteLock.ReadLock readLock = lock.readLock();
-    private final ReentrantReadWriteLock.WriteLock writeLock = lock.writeLock();
-
     private final CopyFunctor<Data, QueryableEntry> resultCopyFunctor;
 
     /**
@@ -49,10 +44,8 @@ public abstract class BaseIndexStore implements IndexStore {
      * for expiration (idle or tll), otherwise {@code false}.
      * <p>
      * The field is updated on every update of the index.
-     * <p>
-     * The filed's access is guarded by {@link BaseIndexStore#lock}.
      */
-    private boolean isIndexStoreExpirable;
+    private volatile boolean isIndexStoreExpirable;
 
     BaseIndexStore(IndexCopyBehavior copyOn) {
         if (copyOn == IndexCopyBehavior.COPY_ON_WRITE || copyOn == IndexCopyBehavior.NEVER) {
@@ -78,22 +71,6 @@ public abstract class BaseIndexStore implements IndexStore {
      * @return the canonicalized value.
      */
     abstract Comparable canonicalizeScalarForStorage(Comparable value);
-
-    void takeWriteLock() {
-        writeLock.lock();
-    }
-
-    void releaseWriteLock() {
-        writeLock.unlock();
-    }
-
-    void takeReadLock() {
-        readLock.lock();
-    }
-
-    void releaseReadLock() {
-        readLock.unlock();
-    }
 
     final void copyToMultiResultSet(MultiResultSet resultSet, Map<Data, QueryableEntry> records) {
         resultSet.addResultSet(resultCopyFunctor.invoke(records));
@@ -136,7 +113,6 @@ public abstract class BaseIndexStore implements IndexStore {
     }
 
     void markIndexStoreExpirableIfNecessary(QueryableEntry record) {
-        assert lock.isWriteLockedByCurrentThread();
         // StoreAdapter is not set in plenty of internal unit tests
         if (record.getStoreAdapter() != null) {
             isIndexStoreExpirable = record.getStoreAdapter().isExpirable();

@@ -43,11 +43,13 @@ public interface IndexProvider {
      * @return the created index instance.
      */
     InternalIndex createIndex(
-        IndexConfig config,
-        Extractors extractors,
-        InternalSerializationService ss,
-        IndexCopyBehavior copyBehavior,
-        PerIndexStats stats,
-        StoreAdapter storeAdapter
+            IndexConfig config,
+            Extractors extractors,
+            InternalSerializationService ss,
+            IndexCopyBehavior copyBehavior,
+            PerIndexStats stats,
+            StoreAdapter storeAdapter
     );
+
+    PerIndexStats createPerIndexStats(boolean ordered, boolean usesCachedQueryableEntries);
 }

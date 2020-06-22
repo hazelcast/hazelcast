@@ -112,13 +112,8 @@ public class UnorderedIndexStore extends BaseSingleValueIndexStore {
 
     @Override
     public void clear() {
-        takeWriteLock();
-        try {
-            recordsWithNullValue.clear();
-            recordMap.clear();
-        } finally {
-            releaseWriteLock();
-        }
+        recordsWithNullValue.clear();
+        recordMap.clear();
     }
 
     @Override
@@ -138,112 +133,92 @@ public class UnorderedIndexStore extends BaseSingleValueIndexStore {
 
     @Override
     public Set<QueryableEntry> getRecords(Comparable value) {
-        takeReadLock();
-        try {
-            if (value == NULL) {
-                return toSingleResultSet(recordsWithNullValue);
-            } else {
-                return toSingleResultSet(recordMap.get(canonicalize(value)));
-            }
-        } finally {
-            releaseReadLock();
+        if (value == NULL) {
+            return toSingleResultSet(recordsWithNullValue);
+        } else {
+            return toSingleResultSet(recordMap.get(canonicalize(value)));
         }
     }
 
     @Override
     public Set<QueryableEntry> getRecords(Set<Comparable> values) {
-        takeReadLock();
-        try {
-            MultiResultSet results = createMultiResultSet();
-            for (Comparable value : values) {
-                Map<Data, QueryableEntry> records;
-                if (value == NULL) {
-                    records = recordsWithNullValue;
-                } else {
-                    // value is already canonicalized by the associated index
-                    records = recordMap.get(value);
-                }
-                if (records != null) {
-                    copyToMultiResultSet(results, records);
-                }
+        MultiResultSet results = createMultiResultSet();
+        for (Comparable value : values) {
+            Map<Data, QueryableEntry> records;
+            if (value == NULL) {
+                records = recordsWithNullValue;
+            } else {
+                // value is already canonicalized by the associated index
+                records = recordMap.get(value);
             }
-            return results;
-        } finally {
-            releaseReadLock();
+            if (records != null) {
+                copyToMultiResultSet(results, records);
+            }
         }
+        return results;
     }
 
     @Override
     public Set<QueryableEntry> getRecords(Comparison comparison, Comparable value) {
-        takeReadLock();
-        try {
-            MultiResultSet results = createMultiResultSet();
-            for (Map.Entry<Comparable, Map<Data, QueryableEntry>> recordMapEntry : recordMap.entrySet()) {
-                Comparable indexedValue = recordMapEntry.getKey();
-                boolean valid;
-                int result = Comparables.compare(value, indexedValue);
-                switch (comparison) {
-                    case LESS:
-                        valid = result > 0;
-                        break;
-                    case LESS_OR_EQUAL:
-                        valid = result >= 0;
-                        break;
-                    case GREATER:
-                        valid = result < 0;
-                        break;
-                    case GREATER_OR_EQUAL:
-                        valid = result <= 0;
-                        break;
-                    default:
-                        throw new IllegalStateException("Unrecognized comparison: " + comparison);
-                }
-                if (valid) {
-                    Map<Data, QueryableEntry> records = recordMapEntry.getValue();
-                    if (records != null) {
-                        copyToMultiResultSet(results, records);
-                    }
+        MultiResultSet results = createMultiResultSet();
+        for (Map.Entry<Comparable, Map<Data, QueryableEntry>> recordMapEntry : recordMap.entrySet()) {
+            Comparable indexedValue = recordMapEntry.getKey();
+            boolean valid;
+            int result = Comparables.compare(value, indexedValue);
+            switch (comparison) {
+                case LESS:
+                    valid = result > 0;
+                    break;
+                case LESS_OR_EQUAL:
+                    valid = result >= 0;
+                    break;
+                case GREATER:
+                    valid = result < 0;
+                    break;
+                case GREATER_OR_EQUAL:
+                    valid = result <= 0;
+                    break;
+                default:
+                    throw new IllegalStateException("Unrecognized comparison: " + comparison);
+            }
+            if (valid) {
+                Map<Data, QueryableEntry> records = recordMapEntry.getValue();
+                if (records != null) {
+                    copyToMultiResultSet(results, records);
                 }
             }
-            return results;
-        } finally {
-            releaseReadLock();
         }
+        return results;
     }
 
     @SuppressWarnings({"checkstyle:npathcomplexity"})
     @Override
     public Set<QueryableEntry> getRecords(Comparable from, boolean fromInclusive, Comparable to, boolean toInclusive) {
-        takeReadLock();
-        try {
-            MultiResultSet results = createMultiResultSet();
-            if (Comparables.compare(from, to) == 0) {
-                if (!fromInclusive || !toInclusive) {
-                    return results;
-                }
-
-                Map<Data, QueryableEntry> records = recordMap.get(canonicalize(from));
-                if (records != null) {
-                    copyToMultiResultSet(results, records);
-                }
+        MultiResultSet results = createMultiResultSet();
+        if (Comparables.compare(from, to) == 0) {
+            if (!fromInclusive || !toInclusive) {
                 return results;
             }
 
-            int fromBound = fromInclusive ? 0 : +1;
-            int toBound = toInclusive ? 0 : -1;
-            for (Map.Entry<Comparable, Map<Data, QueryableEntry>> recordMapEntry : recordMap.entrySet()) {
-                Comparable value = recordMapEntry.getKey();
-                if (Comparables.compare(value, from) >= fromBound && Comparables.compare(value, to) <= toBound) {
-                    Map<Data, QueryableEntry> records = recordMapEntry.getValue();
-                    if (records != null) {
-                        copyToMultiResultSet(results, records);
-                    }
-                }
+            Map<Data, QueryableEntry> records = recordMap.get(canonicalize(from));
+            if (records != null) {
+                copyToMultiResultSet(results, records);
             }
             return results;
-        } finally {
-            releaseReadLock();
         }
+
+        int fromBound = fromInclusive ? 0 : +1;
+        int toBound = toInclusive ? 0 : -1;
+        for (Map.Entry<Comparable, Map<Data, QueryableEntry>> recordMapEntry : recordMap.entrySet()) {
+            Comparable value = recordMapEntry.getKey();
+            if (Comparables.compare(value, from) >= fromBound && Comparables.compare(value, to) <= toBound) {
+                Map<Data, QueryableEntry> records = recordMapEntry.getValue();
+                if (records != null) {
+                    copyToMultiResultSet(results, records);
+                }
+            }
+        }
+        return results;
     }
 
     /**

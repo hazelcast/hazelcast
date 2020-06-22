@@ -40,6 +40,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import static com.hazelcast.query.impl.QueryableEntry.extractAttributeValue;
 
@@ -69,6 +70,10 @@ public final class BitmapIndexStore extends BaseIndexStore {
         EVALUABLE_PREDICATES.add(NotEqualPredicate.class);
         EVALUABLE_PREDICATES.add(InPredicate.class);
     }
+
+    private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
+    private final ReentrantReadWriteLock.ReadLock readLock = lock.readLock();
+    private final ReentrantReadWriteLock.WriteLock writeLock = lock.writeLock();
 
     private final String keyAttribute;
     private final InternalSerializationService serializationService;
@@ -505,6 +510,22 @@ public final class BitmapIndexStore extends BaseIndexStore {
             return canonicalize(converter.convert(value));
         }
 
+    }
+
+    void takeWriteLock() {
+        writeLock.lock();
+    }
+
+    void releaseWriteLock() {
+        writeLock.unlock();
+    }
+
+    void takeReadLock() {
+        readLock.lock();
+    }
+
+    void releaseReadLock() {
+        readLock.unlock();
     }
 
 }

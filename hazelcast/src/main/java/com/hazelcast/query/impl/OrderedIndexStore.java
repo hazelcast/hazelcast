@@ -86,13 +86,8 @@ public class OrderedIndexStore extends BaseSingleValueIndexStore {
 
     @Override
     public void clear() {
-        takeWriteLock();
-        try {
-            recordsWithNullValue.clear();
-            recordMap.clear();
-        } finally {
-            releaseWriteLock();
-        }
+        recordsWithNullValue.clear();
+        recordMap.clear();
     }
 
     @Override
@@ -112,94 +107,74 @@ public class OrderedIndexStore extends BaseSingleValueIndexStore {
 
     @Override
     public Set<QueryableEntry> getRecords(Comparable value) {
-        takeReadLock();
-        try {
-            if (value == NULL) {
-                return toSingleResultSet(recordsWithNullValue);
-            } else {
-                return toSingleResultSet(recordMap.get(value));
-            }
-        } finally {
-            releaseReadLock();
+        if (value == NULL) {
+            return toSingleResultSet(recordsWithNullValue);
+        } else {
+            return toSingleResultSet(recordMap.get(value));
         }
     }
 
     @Override
     public Set<QueryableEntry> getRecords(Set<Comparable> values) {
-        takeReadLock();
-        try {
-            MultiResultSet results = createMultiResultSet();
-            for (Comparable value : values) {
-                Map<Data, QueryableEntry> records;
-                if (value == NULL) {
-                    records = recordsWithNullValue;
-                } else {
-                    records = recordMap.get(value);
-                }
-                if (records != null) {
-                    copyToMultiResultSet(results, records);
-                }
+        MultiResultSet results = createMultiResultSet();
+        for (Comparable value : values) {
+            Map<Data, QueryableEntry> records;
+            if (value == NULL) {
+                records = recordsWithNullValue;
+            } else {
+                records = recordMap.get(value);
             }
-            return results;
-        } finally {
-            releaseReadLock();
+            if (records != null) {
+                copyToMultiResultSet(results, records);
+            }
         }
+        return results;
     }
 
     @Override
     public Set<QueryableEntry> getRecords(Comparison comparison, Comparable searchedValue) {
-        takeReadLock();
-        try {
-            MultiResultSet results = createMultiResultSet();
-            SortedMap<Comparable, Map<Data, QueryableEntry>> subMap;
-            switch (comparison) {
-                case LESS:
-                    subMap = recordMap.headMap(searchedValue, false);
-                    break;
-                case LESS_OR_EQUAL:
-                    subMap = recordMap.headMap(searchedValue, true);
-                    break;
-                case GREATER:
-                    subMap = recordMap.tailMap(searchedValue, false);
-                    break;
-                case GREATER_OR_EQUAL:
-                    subMap = recordMap.tailMap(searchedValue, true);
-                    break;
-                default:
-                    throw new IllegalArgumentException("Unrecognized comparison: " + comparison);
-            }
-            for (Map<Data, QueryableEntry> value : subMap.values()) {
-                copyToMultiResultSet(results, value);
-            }
-            return results;
-        } finally {
-            releaseReadLock();
+        MultiResultSet results = createMultiResultSet();
+        SortedMap<Comparable, Map<Data, QueryableEntry>> subMap;
+        switch (comparison) {
+            case LESS:
+                subMap = recordMap.headMap(searchedValue, false);
+                break;
+            case LESS_OR_EQUAL:
+                subMap = recordMap.headMap(searchedValue, true);
+                break;
+            case GREATER:
+                subMap = recordMap.tailMap(searchedValue, false);
+                break;
+            case GREATER_OR_EQUAL:
+                subMap = recordMap.tailMap(searchedValue, true);
+                break;
+            default:
+                throw new IllegalArgumentException("Unrecognized comparison: " + comparison);
         }
+        for (Map<Data, QueryableEntry> value : subMap.values()) {
+            copyToMultiResultSet(results, value);
+        }
+        return results;
     }
 
     @Override
     public Set<QueryableEntry> getRecords(Comparable from, boolean fromInclusive, Comparable to, boolean toInclusive) {
-        takeReadLock();
-        try {
-            int order = Comparables.compare(from, to);
-            if (order == 0) {
-                if (!fromInclusive || !toInclusive) {
-                    return emptySet();
-                }
-                return toSingleResultSet(recordMap.get(from));
-            } else if (order > 0) {
+        int order = Comparables.compare(from, to);
+        if (order == 0) {
+            if (!fromInclusive || !toInclusive) {
                 return emptySet();
             }
-
-            MultiResultSet results = createMultiResultSet();
-            SortedMap<Comparable, Map<Data, QueryableEntry>> subMap = recordMap.subMap(from, fromInclusive, to, toInclusive);
-            for (Map<Data, QueryableEntry> value : subMap.values()) {
-                copyToMultiResultSet(results, value);
-            }
-            return results;
-        } finally {
-            releaseReadLock();
+            return toSingleResultSet(recordMap.get(from));
+        } else if (order > 0) {
+            return emptySet();
         }
+
+        MultiResultSet results = createMultiResultSet();
+        SortedMap<Comparable, Map<Data, QueryableEntry>> subMap = recordMap.subMap(from, fromInclusive, to, toInclusive);
+        for (Map<Data, QueryableEntry> value : subMap.values()) {
+            copyToMultiResultSet(results, value);
+        }
+        return results;
     }
 
     /**
