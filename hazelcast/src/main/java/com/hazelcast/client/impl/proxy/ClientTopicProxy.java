@@ -99,10 +99,7 @@ public class ClientTopicProxy<E> extends PartitionSpecificClientProxy implements
     public void publishAll(@Nonnull Collection<? extends E> messages) {
         checkNotNull(messages, NULL_MESSAGE_IS_NOT_ALLOWED);
         checkNoNullInside(messages, NULL_MESSAGE_IS_NOT_ALLOWED);
-
-        Collection<Data> dataCollection = objectToDataCollection(messages, getSerializationService());
-
-        ClientMessage request = TopicPublishAllCodec.encodeRequest(name, dataCollection);
+        ClientMessage request = getClientMessage(messages);
         invokeOnPartition(request);
     }
 
@@ -110,10 +107,13 @@ public class ClientTopicProxy<E> extends PartitionSpecificClientProxy implements
     public InternalCompletableFuture<E> publishAllAsync(@Nonnull Collection<? extends E> messages) {
         checkNotNull(messages, NULL_MESSAGE_IS_NOT_ALLOWED);
         checkNoNullInside(messages, NULL_MESSAGE_IS_NOT_ALLOWED);
-
-        Collection<Data> dataCollection = objectToDataCollection(messages, getSerializationService());
-        final ClientMessage clientMessage = TopicPublishAllCodec.encodeRequest(name, dataCollection);
+        final ClientMessage clientMessage = getClientMessage(messages);
         return publishAsyncInternal(clientMessage);
+    }
+
+    private ClientMessage getClientMessage(@Nonnull Collection<? extends E> messages) {
+        Collection<Data> dataCollection = objectToDataCollection(messages, getSerializationService());
+        return TopicPublishAllCodec.encodeRequest(name, dataCollection);
     }
 
     @Override
