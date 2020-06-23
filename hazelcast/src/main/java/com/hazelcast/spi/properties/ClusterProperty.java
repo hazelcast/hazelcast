@@ -1130,6 +1130,63 @@ public final class ClusterProperty {
     public static final HazelcastProperty METRICS_COLLECTION_FREQUENCY
             = new HazelcastProperty("hazelcast.metrics.collection.frequency");
 
+    /**
+     * Defines the pending invocation threshold for the Enterprise WAN
+     * replication implementation. Exceeding this threshold on a WAN
+     * consumer member makes the member delaying the WAN acknowledgment,
+     * thus slowing down the WAN publishers on the source side that send
+     * WAN events to the given WAN consumer. Setting this value to
+     * negative turns off the acknowledgement delaying feature.
+     *
+     * @see #WAN_CONSUMER_ACK_DELAY_BACKOFF_INIT_MS
+     * @see #WAN_CONSUMER_ACK_DELAY_BACKOFF_MAX_MS
+     * @see #WAN_CONSUMER_ACK_DELAY_BACKOFF_MULTIPLIER
+     */
+    public static final HazelcastProperty WAN_CONSUMER_INVOCATION_THRESHOLD
+            = new HazelcastProperty("hazelcast.wan.consumer.invocation.threshold", 50000);
+
+    /**
+     * Defines the initial backoff delay for the Enterprise WAN
+     * implementation's consumer. It is used if the acknowledgment
+     * delaying feature is enabled by setting
+     * {@link #WAN_CONSUMER_INVOCATION_THRESHOLD} to a non-negative value
+     * and that the threshold is exceeded.
+     *
+     * @see #WAN_CONSUMER_INVOCATION_THRESHOLD
+     * @see #WAN_CONSUMER_ACK_DELAY_BACKOFF_MAX_MS
+     * @see #WAN_CONSUMER_ACK_DELAY_BACKOFF_MULTIPLIER
+     */
+    public static final HazelcastProperty WAN_CONSUMER_ACK_DELAY_BACKOFF_INIT_MS
+            = new HazelcastProperty("hazelcast.wan.consumer.ack.delay.backoff.init", 1);
+
+    /**
+     * Defines the maximum backoff delay for the Enterprise WAN
+     * implementation's consumer. It is used if the acknowledgment
+     * delaying feature is enabled by setting
+     * {@link #WAN_CONSUMER_INVOCATION_THRESHOLD} to a non-negative value
+     * and that the threshold is exceeded.
+     *
+     * @see #WAN_CONSUMER_INVOCATION_THRESHOLD
+     * @see #WAN_CONSUMER_ACK_DELAY_BACKOFF_INIT_MS
+     * @see #WAN_CONSUMER_ACK_DELAY_BACKOFF_MULTIPLIER
+     */
+    public static final HazelcastProperty WAN_CONSUMER_ACK_DELAY_BACKOFF_MAX_MS
+            = new HazelcastProperty("hazelcast.wan.consumer.ack.delay.backoff.max", 100);
+
+    /**
+     * Defines the multiplier (the speed of the function) for the backoff
+     * delay for the Enterprise WAN implementation's consumer. It is used
+     * if the acknowledgment delaying feature is enabled by setting
+     * {@link #WAN_CONSUMER_INVOCATION_THRESHOLD} to a non-negative value
+     * and that the threshold is exceeded.
+     *
+     * @see #WAN_CONSUMER_INVOCATION_THRESHOLD
+     * @see #WAN_CONSUMER_ACK_DELAY_BACKOFF_INIT_MS
+     * @see #WAN_CONSUMER_ACK_DELAY_BACKOFF_MAX_MS
+     */
+    public static final HazelcastProperty WAN_CONSUMER_ACK_DELAY_BACKOFF_MULTIPLIER
+            = new HazelcastProperty("hazelcast.wan.consumer.ack.delay.backoff.multiplier", 1.5D);
+
     private ClusterProperty() {
     }
 }
