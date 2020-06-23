@@ -174,6 +174,19 @@ will be released with Jet 4.2, which is the reason we couldn't use a
 released Jet version. We expect all the results to be reproducible with
 Jet 4.2 once released.
 
+## What Exactly We Measured
+
+We measured the latency as the timestamp at which the pipeline emits a
+given result minus the timestamp to which the result pertains, giving us
+end-to-end latency (the only kind the user actually cares about).
+
+Keep especially in mind that latency does not equal a GC pause.
+Normally, neither Shenandoah nor ZGC enter anything more than a
+millisecond of GC pause, but their background work shares the limited
+system capacity with the application. With G1 the equivalence is much
+stronger and its 10-20 millisecond latencies are primarily the result of
+GC pauses that long.
+
 ## The Measurements
 
 To come up with the charts below, for each data point we let the
@@ -211,10 +224,7 @@ Shenandoah): this is a symptom of the way a single bad event trickles
 down into the lower latency percentiles. For example, if one result is
 late by 50 ms, that means it has already caused the next four results to
 have at least the latencies of 40, 30, 20, and 10 ms, even if they would
-be emitted instantaneously. We measure the latency as the timestamp at
-which the pipeline emits a given result minus the timestamp the result
-pertains to, giving us end-to-end latency (the only kind the user
-actually cares about).
+be emitted instantaneously.
 
 Next, let's zoom out to an overview of the entire range of throughputs
 we benchmarked, taking the 99.99%ile as the reference point and showing
