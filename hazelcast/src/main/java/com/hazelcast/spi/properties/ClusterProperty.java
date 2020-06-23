@@ -1185,7 +1185,7 @@ public final class ClusterProperty {
      * @see #WAN_CONSUMER_ACK_DELAY_BACKOFF_MAX_MS
      */
     public static final HazelcastProperty WAN_CONSUMER_ACK_DELAY_BACKOFF_MULTIPLIER
-            = new HazelcastProperty("hazelcast.wan.consumer.ack.delay.backoff.multiplier", "1.5");
+            = new HazelcastProperty("hazelcast.wan.consumer.ack.delay.backoff.multiplier", 1.5D);
 
     private ClusterProperty() {
     }
