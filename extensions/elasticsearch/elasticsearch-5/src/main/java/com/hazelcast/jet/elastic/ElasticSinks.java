@@ -37,12 +37,17 @@ public final class ElasticSinks {
 
     /**
      * Creates an Elasticsearch sink, uses a local instance of Elasticsearch
+     * <p>
+     * Usage:
+     * <pre>{@code Sink<Map<String, Object>> sink = ElasticSinks.elastic(
+     *   map -> new IndexRequest("my-index").source(map)
+     * );}</pre>
      *
      * @param mapToRequestFn function that maps an item from a pipeline
      *                       to an indexing request
      */
     @Nonnull
-    public static <T> Sink<? super T> elastic(
+    public static <T> Sink<T> elastic(
             @Nonnull FunctionEx<? super T, ? extends DocWriteRequest<?>> mapToRequestFn
     ) {
         return elastic(ElasticClients::client, mapToRequestFn);
@@ -51,6 +56,12 @@ public final class ElasticSinks {
     /**
      * Creates an Elasticsearch sink, uses a client obtained from
      * clientFn and maps items using given mapToRequestFn
+     * <p>
+     * Usage:
+     * <pre>Sink<Map<String, Object>> sink = ElasticSinks.elastic(
+     *   () -> ElasticClients.client("es-host", 9200),
+     *   map -> new IndexRequest("my-index").source(map)
+     * );</pre>
      *
      * @param clientFn       supplier function returning configured RestClientBuilder
      * @param mapToRequestFn function that maps an item from a pipeline to an indexing request
