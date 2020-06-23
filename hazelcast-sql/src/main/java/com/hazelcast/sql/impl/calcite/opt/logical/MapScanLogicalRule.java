@@ -41,7 +41,8 @@ public final class MapScanLogicalRule extends ConverterRule {
                     HazelcastTable table = scan.getTable().unwrap(HazelcastTable.class);
                     return table.getTarget() instanceof AbstractMapTable;
                 },
-                Convention.NONE, HazelcastConventions.LOGICAL, RelFactories.LOGICAL_BUILDER, MapScanLogicalRule.class.getSimpleName());
+                Convention.NONE, HazelcastConventions.LOGICAL, RelFactories.LOGICAL_BUILDER,
+                MapScanLogicalRule.class.getSimpleName());
     }
 
     @Override
