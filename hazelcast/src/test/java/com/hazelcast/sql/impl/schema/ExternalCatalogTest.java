@@ -72,7 +72,7 @@ public class ExternalCatalogTest extends SqlTestSupport {
         catalog.createTable(table(name, ImmutableMap.of("key", "value")), true, false);
 
         // then
-        assertEquals(tableOptions(catalog, name), ImmutableMap.of("key", "value"));
+        assertEquals(ImmutableMap.of("key", "value"), tableOptions(catalog, name));
     }
 
     @Test
@@ -86,7 +86,7 @@ public class ExternalCatalogTest extends SqlTestSupport {
         catalog.createTable(table(name, ImmutableMap.of("key", "value")), false, true);
 
         // then
-        assertEquals(tableOptions(catalog, name), emptyMap());
+        assertEquals(emptyMap(), tableOptions(catalog, name));
     }
 
     @Test(expected = QueryException.class)

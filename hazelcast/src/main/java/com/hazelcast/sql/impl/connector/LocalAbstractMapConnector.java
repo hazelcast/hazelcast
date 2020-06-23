@@ -26,6 +26,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import static com.hazelcast.query.QueryConstants.KEY_ATTRIBUTE_NAME;
+import static com.hazelcast.query.QueryConstants.THIS_ATTRIBUTE_NAME;
 import static java.util.stream.Collectors.toList;
 
 public abstract class LocalAbstractMapConnector extends SqlKeyValueConnector {
@@ -46,7 +48,14 @@ public abstract class LocalAbstractMapConnector extends SqlKeyValueConnector {
             return null;
         }
         return externalFields.stream()
-                             .map(field -> new MapTableField(field.name(), field.type(), false, QueryPath.create(field.name())))
+                             .map(field -> {
+                                 boolean isKey = field.extName().startsWith(KEY_ATTRIBUTE_NAME.value());
+                                 assert isKey || field.extName().startsWith(THIS_ATTRIBUTE_NAME.value());
+                                 int dotPos = field.extName().indexOf('.');
+
+                                 return new MapTableField(field.name(), field.type(), false,
+                                         new QueryPath(dotPos < 0 ? null : field.extName().substring(dotPos + 1), isKey));
+                             })
                              .collect(toList());
     }
 }
