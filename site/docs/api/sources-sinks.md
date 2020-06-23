@@ -1154,7 +1154,8 @@ compile 'com.hazelcast.jet:hazelcast-jet-elasticsearch-7:{jet-version}'
 > version of Elasticsearch. The connector API is the same between
 > different versions, apart from a few minor differences where we
 > surface the API of Elasticsearch client. See the JavaDoc for any
-> such differences.
+> such differences. The jars are available as separate downloads on the
+> [download page](/download) or in Maven Central.
 
 #### Source
 
@@ -1202,6 +1203,31 @@ If Hazelcast Jet nodes and Elasticsearch nodes are located on the same
 machines then the connector will use co-located reading, avoiding the
 overhead of physical network.
 
+##### Failure Scenario Considerations
+
+The connector uses retry capability of the underlying Elasticsearch
+client. This allows the connector to handle some transient network
+issues but it doesn't cover all cases.
+
+The source uses Elasticsearch's [Scroll API](https://www.elastic.co/guide/en/elasticsearch/client/java-rest/current/java-rest-high-search-scroll.html).
+The scroll context is stored on a node with the primary shard. If this
+node crashes, the search context is lost and the job can't reliably read
+all documents, so the job fails.
+
+If there is a network issue between Jet and Elasticsearch the
+Elasticsearch client retries the request, allowing the job to continue.
+
+However, there is an edge case where the scroll request is processed by
+the Elasticsearch server, moves the scroll cursor forward, but the
+response is lost. The client then retries and receives the next page,
+effectively skipping the previous page. The recommended way to handle
+this is to check the number of processed documents after the job
+finishes, possibly restart the job when not all documents are read.
+
+These are known limitations of Elasticsearch Scroll API. There is
+an [ongoing work](https://github.com/elastic/elasticsearch/pull/56480)
+on Elasticsearch side to fix these issues.
+
 #### Sink
 
 The Elasticsearch connector sink provides a builder and several
@@ -1241,6 +1267,51 @@ Sink<Map<String, Object>> elasticSink = new ElasticSinkBuilder<Map<String, Objec
 The Elasticsearch sink doesn't implement co-located writing. To achieve
 maximum write throughput provide all nodes to the `RestClient`
 and configure parallelism.
+
+##### Failure Scenario Considerations
+
+The sink connector is able to handle transient network failures,
+failures of nodes in the cluster and cluster changes, e.g., scaling up.
+
+Transient network failures between Jet and Elasticsearch cluster are
+handled by retries in the Elasticsearch client.
+
+The worst case scenario is when a master node containing a primary of a
+shard fails.
+
+First, you need to set `BulkRequest.waitForActiveShards(int)` to ensure
+that a document is replicated to at least some replicas. Also, you can't
+use the auto-generated ids and need to set the document id manually to
+avoid duplicate records.
+
+Second, you need to make sure new master node and primary shard is
+allocated before the client times out. This involves:
+
+* configuration of the following properties on the client:
+
+  ```text
+  org.apache.http.client.config.RequestConfig.Builder.setConnectionRequestTimeout
+  org.apache.http.client.config.RequestConfig.Builder.setConnectTimeout
+  org.apache.http.client.config.RequestConfig.Builder.setSocketTimeout
+  ```
+
+* and configuration of the following properties in the Elasticsearch
+  cluster:
+
+  ```text
+  cluster.election.max_timeout
+  cluster.fault_detection.follower_check.timeout
+  cluster.fault_detection.follower_check.retry_count
+  cluster.fault_detection.leader_check.timeout
+  cluster.fault_detection.leader_check.retry_count
+  cluster.follower_lag.timeout
+  transport.connect_timeout
+  transport.ping_schedule
+  network.tcp.connect_timeout
+  ```
+
+For details see Elasticsearch documentation section on
+[cluster fault detection](https://www.elastic.co/guide/en/elasticsearch/reference/current/cluster-fault-detection.html).
 
 ### MongoDB
 
