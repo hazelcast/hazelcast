@@ -83,7 +83,11 @@ make when testing the other garbage collectors.
   against suddenly changing the behavior for upgrading users, but the
   precaution is no longer necessary. It will be [enabled by
   default](https://openjdk.java.net/jeps/163) in upcoming JDK versions,
-  and we saw no harm in enabling it in all cases as well.
+  and we saw no harm in enabling it in all cases as well. **Late
+  update**: G1 can also optimize for the NUMA layout, but we didn't use
+  `UseNUMA` for it. However, we also checked the c5.4xlarge instance
+  with `numactl` and it indicated that the entire machine was a single
+  NUMA node anyway.
 
 There is also a JVM feature that is simply incompatible with ZGC's
 colored pointers: compressed object pointers. In other words, ZGC
