@@ -56,6 +56,14 @@ public final class HazelcastProperty {
         this(name, String.valueOf(defaultValue));
     }
 
+    public HazelcastProperty(String name, Double defaultValue) {
+        this(name, String.valueOf(defaultValue));
+    }
+
+    public HazelcastProperty(String name, Float defaultValue) {
+        this(name, String.valueOf(defaultValue));
+    }
+
     public HazelcastProperty(String name, Byte defaultValue) {
         this(name, String.valueOf(defaultValue));
     }
