@@ -163,7 +163,7 @@ public class RingbufferConfig implements IdentifiedDataSerializable, NamedConfig
      * @see #getCapacity()
      */
     public RingbufferConfig setCapacity(int capacity) {
-        this.capacity = checkPositive(capacity, "capacity can't be smaller than 1");
+        this.capacity = checkPositive("capacity", capacity);
         return this;
     }
 
@@ -441,19 +441,19 @@ public class RingbufferConfig implements IdentifiedDataSerializable, NamedConfig
 
         RingbufferConfig that = (RingbufferConfig) o;
         return capacity == that.capacity
-            && backupCount == that.backupCount
-            && asyncBackupCount == that.asyncBackupCount
-            && timeToLiveSeconds == that.timeToLiveSeconds
-            && Objects.equals(name, that.name)
-            && inMemoryFormat == that.inMemoryFormat
-            && Objects.equals(ringbufferStoreConfig, that.ringbufferStoreConfig)
-            && Objects.equals(splitBrainProtectionName, that.splitBrainProtectionName)
-            && Objects.equals(mergePolicyConfig, that.mergePolicyConfig);
+                && backupCount == that.backupCount
+                && asyncBackupCount == that.asyncBackupCount
+                && timeToLiveSeconds == that.timeToLiveSeconds
+                && Objects.equals(name, that.name)
+                && inMemoryFormat == that.inMemoryFormat
+                && Objects.equals(ringbufferStoreConfig, that.ringbufferStoreConfig)
+                && Objects.equals(splitBrainProtectionName, that.splitBrainProtectionName)
+                && Objects.equals(mergePolicyConfig, that.mergePolicyConfig);
     }
 
     @Override
     public final int hashCode() {
         return Objects.hash(name, capacity, backupCount, asyncBackupCount, timeToLiveSeconds, inMemoryFormat,
-            ringbufferStoreConfig, splitBrainProtectionName, mergePolicyConfig);
+                ringbufferStoreConfig, splitBrainProtectionName, mergePolicyConfig);
     }
 }

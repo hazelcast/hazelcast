@@ -62,7 +62,7 @@ public abstract class AbstractExpirationManagerTest extends HazelcastTestSupport
         try {
             setProperty(taskPeriodSecondsPropName(), valueOf(0));
 
-            thrown.expectMessage("taskPeriodSeconds should be a positive number");
+            thrown.expectMessage("taskPeriodSeconds is 0 but must be > 0");
             thrown.expect(IllegalArgumentException.class);
 
             newExpirationManager(createHazelcastInstance());

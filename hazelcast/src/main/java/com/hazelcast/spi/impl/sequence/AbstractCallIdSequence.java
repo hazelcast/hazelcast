@@ -50,8 +50,7 @@ public abstract class AbstractCallIdSequence implements CallIdSequence {
     private final ConcurrencyDetection concurrencyDetection;
 
     public AbstractCallIdSequence(int maxConcurrentInvocations, ConcurrencyDetection concurrencyDetection) {
-        checkPositive(maxConcurrentInvocations,
-                "maxConcurrentInvocations should be a positive number. maxConcurrentInvocations=" + maxConcurrentInvocations);
+        checkPositive("maxConcurrentInvocations", maxConcurrentInvocations);
 
         this.concurrencyDetection = concurrencyDetection;
         this.maxConcurrentInvocations = maxConcurrentInvocations;

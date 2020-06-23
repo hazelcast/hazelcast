@@ -78,6 +78,7 @@ public class IcmpFailureDetectorConfig {
     private boolean enabled = DEFAULT_ENABLED;
 
     private boolean parallelMode = DEFAULT_PARALLEL_MODE;
+
     /**
      * @return the timeout in Milliseconds before declaring a failed ping
      */
@@ -93,7 +94,7 @@ public class IcmpFailureDetectorConfig {
      * @return this {@link IcmpFailureDetectorConfig} instance
      */
     public IcmpFailureDetectorConfig setTimeoutMilliseconds(int timeoutMilliseconds) {
-        checkPositive(timeoutMilliseconds, "Timeout must be a positive value");
+        checkPositive("timeoutMilliseconds", timeoutMilliseconds);
         this.timeoutMilliseconds = timeoutMilliseconds;
         return this;
     }

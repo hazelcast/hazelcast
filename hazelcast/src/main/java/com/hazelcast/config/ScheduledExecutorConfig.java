@@ -135,7 +135,7 @@ public class ScheduledExecutorConfig implements IdentifiedDataSerializable, Name
      * @return this executor config instance
      */
     public ScheduledExecutorConfig setPoolSize(int poolSize) {
-        this.poolSize = checkPositive(poolSize, "Pool size should be greater than 0");
+        this.poolSize = checkPositive("poolSize", poolSize);
         return this;
     }
 
@@ -207,6 +207,7 @@ public class ScheduledExecutorConfig implements IdentifiedDataSerializable, Name
         this.capacityPolicy = capacityPolicy;
         return this;
     }
+
     /**
      * Returns the split brain protection name for operations.
      *

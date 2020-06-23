@@ -110,7 +110,7 @@ public class MergePolicyConfig implements IdentifiedDataSerializable {
      * @return this {@code MergePolicyConfig} instance
      */
     public MergePolicyConfig setBatchSize(int batchSize) {
-        this.batchSize = checkPositive(batchSize, "batchSize must be a positive number!");
+        this.batchSize = checkPositive("batchSize", batchSize);
         return this;
     }
 

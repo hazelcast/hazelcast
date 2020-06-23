@@ -163,7 +163,7 @@ public class NativeMemoryConfig {
      * @return this {@link NativeMemoryConfig} instance
      */
     public NativeMemoryConfig setMinBlockSize(int minBlockSize) {
-        this.minBlockSize = checkPositive(minBlockSize, "Minimum block size should be positive");
+        this.minBlockSize = checkPositive("minBlockSize", minBlockSize);
         return this;
     }
 
@@ -192,7 +192,7 @@ public class NativeMemoryConfig {
      * @return this {@link NativeMemoryConfig} instance
      */
     public NativeMemoryConfig setPageSize(int pageSize) {
-        this.pageSize = checkPositive(pageSize, "Page size should be positive");
+        this.pageSize = checkPositive("pageSize", pageSize);
         return this;
     }
 
@@ -235,6 +235,7 @@ public class NativeMemoryConfig {
     /**
      * Sets the persistent memory directory (e.g. Intel Optane) to be used to store memory structures allocated by native memory
      * manager.
+     *
      * @param directory the persistent memory directory
      * @return this {@link NativeMemoryConfig} instance
      */
