@@ -163,10 +163,9 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
             throw new CacheNotExistsException("Cache " + cacheNameWithPrefix + " is already destroyed or not created yet, on "
                     + nodeEngine.getLocalMember());
         }
-        this.eventJournalConfig = cacheConfig.getEventJournalConfig();
         Closeable tenantContext = CacheConfigAccessor.getTenantControl(cacheConfig).setTenant(true);
         try {
-            this.eventJournalConfig = nodeEngine.getConfig().findCacheEventJournalConfig(cacheConfig.getName());
+            this.eventJournalConfig = cacheConfig.getEventJournalConfig();
             this.evictionConfig = cacheConfig.getEvictionConfig();
             if (evictionConfig == null) {
                 throw new IllegalStateException("Eviction config cannot be null!");
