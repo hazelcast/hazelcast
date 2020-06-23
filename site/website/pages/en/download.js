@@ -69,7 +69,7 @@ function Downloads(props) {
 
         <h3 id="management-center">Management Center</h3>
 
-         <p>Jet Management Center can be used for monitoring the cluster and running jobs. For instructions on how to download and run it,
+         <p>Jet Management Center can be used for monitoring the cluster. For instructions on how to download and run it,
             see the <a href="/docs/enterprise/management-center">installation page</a>.</p>
          {/*
          <p>
