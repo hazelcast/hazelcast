@@ -172,30 +172,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
             }
             this.wanReplicationEnabled = cacheService.isWanReplicationEnabled(cacheNameWithPrefix);
             this.disablePerEntryInvalidationEvents = cacheConfig.isDisablePerEntryInvalidationEvents();
-            if (cacheConfig.isStatisticsEnabled()) {
-                statistics = cacheService.createCacheStatIfAbsent(cacheNameWithPrefix);
-            }
-            if (cacheConfig.getCacheLoaderFactory() != null) {
-                Factory<CacheLoader> cacheLoaderFactory = cacheConfig.getCacheLoaderFactory();
-                injectDependencies(cacheLoaderFactory);
-                cacheLoader = cacheLoaderFactory.create();
-                injectDependencies(cacheLoader);
-            }
-            if (cacheConfig.getCacheWriterFactory() != null) {
-                Factory<CacheWriter> cacheWriterFactory = cacheConfig.getCacheWriterFactory();
-                injectDependencies(cacheWriterFactory);
-                cacheWriter = cacheWriterFactory.create();
-                injectDependencies(cacheWriter);
-            }
-            if (cacheConfig.getExpiryPolicyFactory() != null) {
-                Factory<ExpiryPolicy> expiryPolicyFactory = cacheConfig.getExpiryPolicyFactory();
-                injectDependencies(expiryPolicyFactory);
-                defaultExpiryPolicy = expiryPolicyFactory.create();
-                injectDependencies(defaultExpiryPolicy);
-            } else {
-                throw new IllegalStateException("Expiry policy factory cannot be null!");
-            }
-
+            initializeStatisticsAndFactories(cacheNameWithPrefix);
             this.cacheContext = cacheService.getOrCreateCacheContext(cacheNameWithPrefix);
             this.records = createRecordCacheMap();
             this.evictionChecker = createCacheEvictionChecker(evictionConfig.getSize(), evictionConfig.getMaxSizePolicy());
@@ -216,8 +193,34 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
             try {
                 tenantContext.close();
             } catch (IOException ex) {
-                throw new RuntimeException(ex);
+                ExceptionUtil.rethrow(ex);
             }
+        }
+    }
+
+    private void initializeStatisticsAndFactories(String cacheNameWithPrefix) {
+        if (cacheConfig.isStatisticsEnabled()) {
+            statistics = cacheService.createCacheStatIfAbsent(cacheNameWithPrefix);
+        }
+        if (cacheConfig.getCacheLoaderFactory() != null) {
+            Factory<CacheLoader> cacheLoaderFactory = cacheConfig.getCacheLoaderFactory();
+            injectDependencies(cacheLoaderFactory);
+            cacheLoader = cacheLoaderFactory.create();
+            injectDependencies(cacheLoader);
+        }
+        if (cacheConfig.getCacheWriterFactory() != null) {
+            Factory<CacheWriter> cacheWriterFactory = cacheConfig.getCacheWriterFactory();
+            injectDependencies(cacheWriterFactory);
+            cacheWriter = cacheWriterFactory.create();
+            injectDependencies(cacheWriter);
+        }
+        if (cacheConfig.getExpiryPolicyFactory() != null) {
+            Factory<ExpiryPolicy> expiryPolicyFactory = cacheConfig.getExpiryPolicyFactory();
+            injectDependencies(expiryPolicyFactory);
+            defaultExpiryPolicy = expiryPolicyFactory.create();
+            injectDependencies(defaultExpiryPolicy);
+        } else {
+            throw new IllegalStateException("Expiry policy factory cannot be null!");
         }
     }
 
