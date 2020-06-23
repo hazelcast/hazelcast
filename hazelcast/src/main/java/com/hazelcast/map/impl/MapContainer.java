@@ -46,7 +46,6 @@ import com.hazelcast.map.impl.record.DataRecordFactory;
 import com.hazelcast.map.impl.record.ObjectRecordFactory;
 import com.hazelcast.map.impl.record.RecordFactory;
 import com.hazelcast.internal.serialization.Data;
-import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.partition.PartitioningStrategy;
 import com.hazelcast.query.impl.Index;
 import com.hazelcast.query.impl.Indexes;
@@ -436,10 +435,6 @@ MapContainer {
 
     public boolean isPersistWanReplicatedData() {
         return persistWanReplicatedData;
-    }
-
-    public RecordStore<?> getRecordStore(int partitionId) {
-        return mapServiceContext.getRecordStore(partitionId, name);
     }
 
     private class ObjectToData implements Function<Object, Data> {

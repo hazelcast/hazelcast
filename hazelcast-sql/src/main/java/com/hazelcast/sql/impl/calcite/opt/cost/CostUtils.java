@@ -24,7 +24,7 @@ import org.apache.calcite.rel.type.RelDataTypeField;
  * Utility methods for cost estimation.
  */
 public final class CostUtils {
-    /** CPU multiplier applied to a project/filter inside a scan operator. */
+    /** CPU multiplier applied to a project/filter inside of a scan operator. */
     public static final double CONSTRAINED_SCAN_CPU_MULTIPLIER = 0.8d;
 
     /** CPU multiplier applied to normal scan. */
@@ -40,7 +40,7 @@ public final class CostUtils {
     public static final double NETWORK_COST_MULTIPLIER = CPU_COST_MULTIPLIER * 10;
 
     /** Replacement value if filter selectivity cannot be determined.  */
-    private static final double UNKNOWN_SELECTIVITY = 0.1d;
+    private static final double UNKNOWN_SELECTIVITY = 0.25d;
 
     private CostUtils() {
         // No-op.

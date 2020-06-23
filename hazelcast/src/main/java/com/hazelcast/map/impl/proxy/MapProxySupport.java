@@ -21,7 +21,6 @@ import com.hazelcast.cluster.Address;
 import com.hazelcast.config.EntryListenerConfig;
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.ListenerConfig;
-import com.hazelcast.config.AttributeConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapPartitionLostListenerConfig;
 import com.hazelcast.config.MapStoreConfig;
@@ -117,7 +116,6 @@ import static com.hazelcast.internal.util.CollectionUtil.asIntegerList;
 import static com.hazelcast.internal.util.ConcurrencyUtil.CALLER_RUNS;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.internal.util.InvocationUtil.invokeOnStableClusterSerial;
-import static com.hazelcast.internal.util.IterableUtil.map;
 import static com.hazelcast.internal.util.IterableUtil.nullToEmpty;
 import static com.hazelcast.internal.util.MapUtil.createHashMap;
 import static com.hazelcast.internal.util.MapUtil.toIntSize;
@@ -217,7 +215,6 @@ abstract class MapProxySupport<K, V>
     private final int putAllBatchSize;
     private final float putAllInitialSizeFactor;
 
-    @SuppressWarnings("checkstyle:ExecutableStatementCount")
     protected MapProxySupport(String name, MapService service, NodeEngine nodeEngine, MapConfig mapConfig) {
         super(nodeEngine, service);
         this.name = name;
@@ -1381,14 +1378,6 @@ abstract class MapProxySupport<K, V>
                 ((HazelcastInstanceAware) object).setHazelcastInstance(getNodeEngine().getHazelcastInstance());
             }
         }
-    }
-
-    public MapServiceContext getMapServiceContext() {
-        return mapServiceContext;
-    }
-
-    public List<AttributeConfig> getAttributeConfigs() {
-        return Collections.unmodifiableList(mapConfig.getAttributeConfigs());
     }
 
     private class IncrementStatsExecutionCallback<T> implements BiConsumer<T, Throwable> {

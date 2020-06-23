@@ -316,7 +316,7 @@ public class SplitBrainProtectionServiceImpl implements EventPublishingService<S
 
     @Override
     public void memberAdded(MembershipServiceEvent event) {
-        if (isInactive()) {
+        if (isInactive() || event.getMember().localMember()) {
             return;
         }
         nodeEngine.getExecutionService().execute(SPLIT_BRAIN_PROTECTION_EXECUTOR, new UpdateSplitBrainProtections(event));
