@@ -43,6 +43,7 @@ import com.hazelcast.multimap.impl.MultiMapService;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.ringbuffer.impl.RingbufferService;
 import com.hazelcast.topic.impl.TopicService;
+import com.hazelcast.topic.impl.reliable.ReliableTopicService;
 
 import java.security.Permission;
 import java.util.HashMap;
@@ -239,6 +240,12 @@ public final class ActionConstants {
                 return new PNCounterPermission(name, actions);
             }
         });
+        PERMISSION_FACTORY_MAP.put(ReliableTopicService.SERVICE_NAME, new PermissionFactory() {
+            @Override
+            public Permission create(String name, String... actions) {
+                return new ReliableTopicPermission(name, actions);
+            }
+        });
     }
 
     private ActionConstants() {
@@ -251,9 +258,9 @@ public final class ActionConstants {
     /**
      * Creates a permission
      *
-     * @param name
-     * @param serviceName
-     * @param actions
+     * @param name        the permission name
+     * @param serviceName the service name
+     * @param actions     the actions
      * @return the created Permission
      * @throws java.lang.IllegalArgumentException if there is no service found with the given serviceName.
      */

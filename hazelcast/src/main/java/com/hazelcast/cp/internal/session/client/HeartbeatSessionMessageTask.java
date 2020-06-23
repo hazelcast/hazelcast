@@ -18,9 +18,9 @@ package com.hazelcast.cp.internal.session.client;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.CPSessionHeartbeatSessionCodec;
-import com.hazelcast.client.impl.protocol.task.AbstractMessageTask;
-import com.hazelcast.core.ExecutionCallback;
+import com.hazelcast.client.impl.protocol.codec.CPSessionHeartbeatSessionCodec.RequestParameters;
 import com.hazelcast.cp.internal.RaftService;
+import com.hazelcast.cp.internal.client.AbstractCPMessageTask;
 import com.hazelcast.cp.internal.session.operation.HeartbeatSessionOp;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
@@ -30,8 +30,7 @@ import java.security.Permission;
 /**
  * Client message task for {@link HeartbeatSessionOp}
  */
-public class HeartbeatSessionMessageTask extends AbstractMessageTask<CPSessionHeartbeatSessionCodec.RequestParameters>
-        implements ExecutionCallback<Object> {
+public class HeartbeatSessionMessageTask extends AbstractCPMessageTask<RequestParameters> {
 
     public HeartbeatSessionMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -39,10 +38,7 @@ public class HeartbeatSessionMessageTask extends AbstractMessageTask<CPSessionHe
 
     @Override
     protected void processMessage() {
-        RaftService service = nodeEngine.getService(RaftService.SERVICE_NAME);
-        service.getInvocationManager()
-               .invoke(parameters.groupId, new HeartbeatSessionOp(parameters.sessionId))
-               .andThen(this);
+        invoke(parameters.groupId, new HeartbeatSessionOp(parameters.sessionId));
     }
 
     @Override
@@ -78,15 +74,5 @@ public class HeartbeatSessionMessageTask extends AbstractMessageTask<CPSessionHe
     @Override
     public Object[] getParameters() {
         return new Object[0];
-    }
-
-    @Override
-    public void onResponse(Object response) {
-        sendResponse(response);
-    }
-
-    @Override
-    public void onFailure(Throwable t) {
-        handleProcessingFailure(t);
     }
 }

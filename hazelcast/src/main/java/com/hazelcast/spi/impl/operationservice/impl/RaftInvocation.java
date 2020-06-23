@@ -51,7 +51,13 @@ public class RaftInvocation extends Invocation<CPMember> {
 
     public RaftInvocation(Context context, RaftInvocationContext raftInvocationContext, CPGroupId groupId, Operation op,
                           int retryCount, long retryPauseMillis, long callTimeoutMillis) {
-        super(context, op, null, retryCount, retryPauseMillis, callTimeoutMillis, DEFAULT_DESERIALIZE_RESULT, null);
+        this(context, raftInvocationContext, groupId, op, retryCount, retryPauseMillis, callTimeoutMillis,
+                DEFAULT_DESERIALIZE_RESULT);
+    }
+
+    public RaftInvocation(Context context, RaftInvocationContext raftInvocationContext, CPGroupId groupId, Operation op,
+            int retryCount, long retryPauseMillis, long callTimeoutMillis, boolean deserializeResponse) {
+        super(context, op, null, retryCount, retryPauseMillis, callTimeoutMillis, deserializeResponse, null);
         this.raftInvocationContext = raftInvocationContext;
         this.groupId = groupId;
 

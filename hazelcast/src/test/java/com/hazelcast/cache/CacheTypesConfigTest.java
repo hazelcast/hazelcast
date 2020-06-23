@@ -25,6 +25,7 @@ import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.UserCodeDeploymentConfig;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -155,6 +156,30 @@ public class CacheTypesConfigTest extends HazelcastTestSupport {
         expect.expectCause(new RootCauseMatcher(ClassNotFoundException.class, "classloading.domain.PersonExpiryPolicyFactory - "
                 + "Package excluded explicitly"));
         cache.invoke(key, new PersonEntryProcessor());
+    }
+
+    @Test
+    public void cacheConfigShouldBeAddedOnJoiningMember_whenNoMemberResolvesClass() {
+        // given a member who cannot resolve the value type of a CacheConfig
+        HazelcastInstance hz1 = factory.newHazelcastInstance(getClassFilteringConfig());
+        // and a new member that creates a CacheConfig with an explicit value type
+        HazelcastInstance hz2 = factory.newHazelcastInstance(getConfig());
+        CachingProvider cachingProvider = HazelcastServerCachingProvider.createCachingProvider(hz2);
+        cachingProvider.getCacheManager().createCache(cacheName, createCacheConfig());
+        // ensure cluster is formed but cache is not used
+        assertClusterSize(2, hz1, hz2);
+        // member that is aware of value type leaves cluster
+        hz2.shutdown();
+
+        // then new member unaware of the value type can join the cluster
+        hz2 = factory.newHazelcastInstance(getClassFilteringConfig());
+        assertClusterSize(2, hz1, hz2);
+    }
+
+    @Override
+    protected Config getConfig() {
+        return smallInstanceConfig()
+                .setProperty(GroupProperty.MAX_JOIN_SECONDS.getName(), "10");
     }
 
     // overridden in another context

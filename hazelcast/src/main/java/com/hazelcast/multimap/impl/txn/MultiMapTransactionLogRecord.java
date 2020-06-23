@@ -61,6 +61,16 @@ public class MultiMapTransactionLogRecord implements TransactionLogRecord {
     }
 
     @Override
+    public void onCommitSuccess() {
+        // NOP
+    }
+
+    @Override
+    public void onCommitFailure() {
+        // NOP
+    }
+
+    @Override
     public Operation newRollbackOperation() {
         return new TxnRollbackOperation(partitionId, name, key, threadId);
     }

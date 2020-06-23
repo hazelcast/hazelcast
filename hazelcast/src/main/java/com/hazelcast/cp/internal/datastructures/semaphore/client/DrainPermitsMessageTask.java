@@ -18,10 +18,9 @@ package com.hazelcast.cp.internal.datastructures.semaphore.client;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.CPSemaphoreDrainCodec;
-import com.hazelcast.client.impl.protocol.task.AbstractMessageTask;
-import com.hazelcast.core.ExecutionCallback;
+import com.hazelcast.client.impl.protocol.codec.CPSemaphoreDrainCodec.RequestParameters;
 import com.hazelcast.cp.internal.RaftOp;
-import com.hazelcast.cp.internal.RaftService;
+import com.hazelcast.cp.internal.client.AbstractCPMessageTask;
 import com.hazelcast.cp.internal.datastructures.semaphore.RaftSemaphoreService;
 import com.hazelcast.cp.internal.datastructures.semaphore.operation.DrainPermitsOp;
 import com.hazelcast.instance.Node;
@@ -34,8 +33,7 @@ import java.security.Permission;
 /**
  * Client message task for {@link DrainPermitsOp}
  */
-public class DrainPermitsMessageTask extends AbstractMessageTask<CPSemaphoreDrainCodec.RequestParameters>
-        implements ExecutionCallback<Integer> {
+public class DrainPermitsMessageTask extends AbstractCPMessageTask<RequestParameters> {
 
     public DrainPermitsMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -43,9 +41,8 @@ public class DrainPermitsMessageTask extends AbstractMessageTask<CPSemaphoreDrai
 
     @Override
     protected void processMessage() {
-        RaftService service = nodeEngine.getService(RaftService.SERVICE_NAME);
         RaftOp op = new DrainPermitsOp(parameters.name, parameters.sessionId, parameters.threadId, parameters.invocationUid);
-        service.getInvocationManager().<Integer>invoke(parameters.groupId, op).andThen(this);
+        invoke(parameters.groupId, op);
     }
 
     @Override
@@ -81,15 +78,5 @@ public class DrainPermitsMessageTask extends AbstractMessageTask<CPSemaphoreDrai
     @Override
     public Object[] getParameters() {
         return new Object[0];
-    }
-
-    @Override
-    public void onResponse(Integer response) {
-        sendResponse(response);
-    }
-
-    @Override
-    public void onFailure(Throwable t) {
-        handleProcessingFailure(t);
     }
 }

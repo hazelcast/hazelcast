@@ -180,6 +180,43 @@ public class Config {
     }
 
     /**
+     * Populates Hazelcast {@link Config} object from an external configuration file.
+     * <p>
+     * It tries to load Hazelcast configuration from a list of well-known locations.
+     * When no location contains Hazelcast configuration then it returns default.
+     * <p>
+     * Note that the same mechanism is used when calling {@link com.hazelcast.core.Hazelcast#newHazelcastInstance()}.
+     *
+     * @return Config created from a file when exists, otherwise default.
+     */
+    public static Config load() {
+        XmlConfigLocator xmlConfigLocator = new XmlConfigLocator();
+        YamlConfigLocator yamlConfigLocator = new YamlConfigLocator();
+
+        if (yamlConfigLocator.locateFromSystemProperty()) {
+            // 1. Try loading YAML config if provided in system property with .yaml or .yml extension
+            return new YamlConfigBuilder(yamlConfigLocator).build();
+
+        } else if (xmlConfigLocator.locateFromSystemProperty()) {
+            // 2. Try loading XML config if provided in system property with any extension
+            return new XmlConfigBuilder(xmlConfigLocator).build();
+
+        } else if (xmlConfigLocator.locateInWorkDirOrOnClasspath()) {
+            // 3. Try loading XML config from the working directory or from the classpath
+            return new XmlConfigBuilder(xmlConfigLocator).build();
+
+        } else if (yamlConfigLocator.locateInWorkDirOrOnClasspath()) {
+            // 4. Try loading YAML config from the working directory or from the classpath
+            return new YamlConfigBuilder(yamlConfigLocator).build();
+
+        } else {
+            // 5. Loading the default XML configuration file
+            xmlConfigLocator.locateDefault();
+            return new XmlConfigBuilder(xmlConfigLocator).build();
+        }
+    }
+
+    /**
      * Returns the class-loader that will be used in serialization.
      * <p>
      * If {@code null}, then thread context class-loader will be used instead.

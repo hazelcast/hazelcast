@@ -16,7 +16,6 @@
 
 package com.hazelcast.internal.partition.operation;
 
-import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.MigrationCycleOperation;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
@@ -33,26 +32,22 @@ public class ShutdownResponseOperation extends AbstractPartitionOperation implem
     @Override
     public void run() {
         InternalPartitionServiceImpl partitionService = getService();
-        final ILogger logger = getLogger();
-        final Address caller = getCallerAddress();
+        ILogger logger = getLogger();
+        Address caller = getCallerAddress();
 
-        final NodeEngine nodeEngine = getNodeEngine();
-        final ClusterService clusterService = nodeEngine.getClusterService();
-        final Address masterAddress = clusterService.getMasterAddress();
-
+        NodeEngine nodeEngine = getNodeEngine();
         if (nodeEngine.isRunning()) {
             logger.severe("Received a shutdown response from " + caller + ", but this node is not shutting down!");
             return;
         }
 
-        boolean fromMaster = masterAddress.equals(caller);
-        if (fromMaster) {
+        if (partitionService.isMemberMaster(caller)) {
             if (logger.isFinestEnabled()) {
                 logger.finest("Received shutdown response from " + caller);
             }
             partitionService.onShutdownResponse();
         } else {
-            logger.warning("Received shutdown response from " + caller + " but known master is: " + masterAddress);
+            logger.warning("Received shutdown response from " + caller + " but it's not the known master");
         }
     }
 

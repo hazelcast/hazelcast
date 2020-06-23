@@ -16,6 +16,8 @@
 
 package com.hazelcast.client.config;
 
+import com.hazelcast.core.HazelcastException;
+
 import java.util.LinkedList;
 import java.util.List;
 
@@ -32,6 +34,42 @@ public class ClientFailoverConfig {
 
     public ClientFailoverConfig() {
 
+    }
+
+    /**
+     * Populates Hazelcast {@link ClientFailoverConfig} object from an external configuration file.
+     * <p>
+     * It tries to load Hazelcast Failover Client configuration from a list of well-known locations.
+     * When no location contains Hazelcast Failover Client configuration then it returns default.
+     * <p>
+     * Note that the same mechanism is used when calling
+     * {@link com.hazelcast.client.HazelcastClient#newHazelcastFailoverClient()}.
+     *
+     * @return ClientFailoverConfig created from a file when exists, otherwise default.
+     */
+    public static ClientFailoverConfig load() {
+        XmlClientFailoverConfigLocator xmlConfigLocator = new XmlClientFailoverConfigLocator();
+        YamlClientFailoverConfigLocator yamlConfigLocator = new YamlClientFailoverConfigLocator();
+
+        if (yamlConfigLocator.locateFromSystemProperty()) {
+            // 1. Try loading config if provided in system property and it is an YAML file
+            return new YamlClientFailoverConfigBuilder(yamlConfigLocator).build();
+
+        } else if (xmlConfigLocator.locateFromSystemProperty()) {
+            // 2. Try loading config if provided in system property and it is an XML file
+            return new XmlClientFailoverConfigBuilder(xmlConfigLocator).build();
+
+        } else if (xmlConfigLocator.locateInWorkDirOrOnClasspath()) {
+            // 3. Try loading XML config from the working directory or from the classpath
+            return new XmlClientFailoverConfigBuilder(xmlConfigLocator).build();
+
+        } else if (yamlConfigLocator.locateInWorkDirOrOnClasspath()) {
+            // 4. Try loading YAML config from the working directory or from the classpath
+            return new YamlClientFailoverConfigBuilder(yamlConfigLocator).build();
+
+        } else {
+            throw new HazelcastException("Failed to load ClientFailoverConfig");
+        }
     }
 
     public ClientFailoverConfig addClientConfig(ClientConfig clientConfig) {

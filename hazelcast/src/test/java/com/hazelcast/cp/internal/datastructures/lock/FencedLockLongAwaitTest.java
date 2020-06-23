@@ -133,7 +133,7 @@ public class FencedLockLongAwaitTest extends HazelcastRaftTestSupport {
             @Override
             public void run() {
                 RaftLockService service = getNodeEngineImpl(instance).getService(RaftLockService.SERVICE_NAME);
-                assertEquals(2, service.getLiveOperations(lock.getGroupId()).size());
+                assertEquals(2, service.getLiveOperations(groupId).size());
             }
         });
 
@@ -141,7 +141,7 @@ public class FencedLockLongAwaitTest extends HazelcastRaftTestSupport {
             @Override
             public void run() {
                 RaftLockService service = getNodeEngineImpl(instance).getService(RaftLockService.SERVICE_NAME);
-                assertEquals(2, service.getLiveOperations(lock.getGroupId()).size());
+                assertEquals(2, service.getLiveOperations(groupId).size());
             }
         }, callTimeoutSeconds + 5);
 
@@ -153,6 +153,46 @@ public class FencedLockLongAwaitTest extends HazelcastRaftTestSupport {
         f1.get();
         f2.get();
     }
+
+    @Test(timeout = 300000)
+    public void when_tryLockTimeoutPassesDuringLostMajority_then_operationTimeoutIsReceived() throws Exception {
+        HazelcastInstance apInstance = factory.newHazelcastInstance(createConfig(groupSize, groupSize));
+        final FencedLock lock = apInstance.getCPSubsystem().getLock(proxyName);
+
+        lock.lock();
+
+        Future<Object> future = spawn(new Callable<Object>() {
+            @Override
+            public Object call() {
+                lock.tryLock(callTimeoutSeconds + 5, SECONDS);
+                return null;
+            }
+        });
+
+        final HazelcastInstance leader = getLeaderInstance(instances, groupId);
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() {
+                RaftLockService service = getNodeEngineImpl(leader).getService(RaftLockService.SERVICE_NAME);
+                assertEquals(1, service.getLiveOperations(groupId).size());
+            }
+        });
+
+        for (HazelcastInstance instance : instances) {
+            if (instance != leader) {
+                instance.getLifecycleService().terminate();
+            }
+        }
+
+        try {
+            future.get();
+            fail();
+        } catch (ExecutionException e) {
+            assertTrue(e.getCause() instanceof OperationTimeoutException);
+        }
+    }
+
 
     @Override
     protected Config createConfig(int cpNodeCount, int groupSize) {

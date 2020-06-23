@@ -43,5 +43,9 @@ public interface TransactionLogRecord extends IdentifiedDataSerializable {
 
     Operation newCommitOperation();
 
+    void onCommitSuccess();
+
+    void onCommitFailure();
+
     Operation newRollbackOperation();
 }
