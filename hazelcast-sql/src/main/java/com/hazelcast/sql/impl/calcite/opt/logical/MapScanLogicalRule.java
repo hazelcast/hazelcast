@@ -24,7 +24,10 @@ import org.apache.calcite.plan.Convention;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.convert.ConverterRule;
+import org.apache.calcite.rel.core.RelFactories;
 import org.apache.calcite.rel.logical.LogicalTableScan;
+
+import java.util.function.Predicate;
 
 /**
  * Converts abstract map scan into logical map scan.
@@ -33,17 +36,18 @@ public final class MapScanLogicalRule extends ConverterRule {
     public static final RelOptRule INSTANCE = new MapScanLogicalRule();
 
     private MapScanLogicalRule() {
-        super(LogicalTableScan.class, Convention.NONE, HazelcastConventions.LOGICAL, MapScanLogicalRule.class.getSimpleName());
+        super(LogicalTableScan.class,
+                (Predicate<LogicalTableScan>) scan -> {
+                    HazelcastTable table = scan.getTable().unwrap(HazelcastTable.class);
+                    return table.getTarget() instanceof AbstractMapTable;
+                },
+                Convention.NONE, HazelcastConventions.LOGICAL, RelFactories.LOGICAL_BUILDER, MapScanLogicalRule.class.getSimpleName());
     }
 
     @Override
     public RelNode convert(RelNode rel) {
         LogicalTableScan scan = (LogicalTableScan) rel;
-        HazelcastTable table = scan.getTable().unwrap(HazelcastTable.class);
-        if (!(table.getTarget() instanceof AbstractMapTable)) {
-            // if the table isn't IMDG table (can be Jet's), ignore it
-            return null;
-        }
+        assert scan.getTable().unwrap(HazelcastTable.class).getTarget() instanceof AbstractMapTable;
 
         return new MapScanLogicalRel(
             scan.getCluster(),
