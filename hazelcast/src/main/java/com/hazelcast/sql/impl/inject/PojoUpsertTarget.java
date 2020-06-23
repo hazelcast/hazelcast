@@ -24,7 +24,6 @@ import java.lang.reflect.Method;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.sql.impl.schema.map.options.PojoMapOptionsMetadataResolver.extractField;
 import static com.hazelcast.sql.impl.schema.map.options.PojoMapOptionsMetadataResolver.extractSetter;
 import static com.hazelcast.sql.impl.schema.map.options.PojoMapOptionsMetadataResolver.loadClass;
@@ -43,10 +42,10 @@ public class PojoUpsertTarget implements UpsertTarget {
     }
 
     @Override
-    public TargetHolder get() {
+    public Target get() {
         try {
             // TODO: reuse ???
-            return new TargetHolder(clazz.newInstance());
+            return new PojoTarget(clazz.newInstance());
         } catch (Exception e) {
             throw QueryException.dataException(
                     format("Unable to instantiate class \"%s\" : %s", clazz.getName(), e.getMessage()), e
@@ -66,9 +65,7 @@ public class PojoUpsertTarget implements UpsertTarget {
     }
 
     private UpsertInjector createMethodInjector(Method method, String path) {
-        return (holder, value) -> {
-            Object target = checkNotNull(holder.get(), "Missing target");
-
+        return (target, value) -> {
             if (value != null) {
                 if (method == null) {
                     throw QueryException.dataException(
@@ -77,7 +74,7 @@ public class PojoUpsertTarget implements UpsertTarget {
                 }
 
                 try {
-                    method.invoke(target, value);
+                    ((PojoTarget) target).set(method, value);
                 } catch (IllegalAccessException | InvocationTargetException e) {
                     throw QueryException.dataException(
                             format("Cannot inject field \"%s\" into %s : %s", path, clazz.getName(), e.getMessage()), e
@@ -88,9 +85,7 @@ public class PojoUpsertTarget implements UpsertTarget {
     }
 
     private UpsertInjector createFieldInjector(Field field, String path) {
-        return (holder, value) -> {
-            Object target = checkNotNull(holder.get(), "Missing target");
-
+        return (target, value) -> {
             if (value != null) {
                 if (field == null) {
                     throw QueryException.dataException(
@@ -99,7 +94,7 @@ public class PojoUpsertTarget implements UpsertTarget {
                 }
 
                 try {
-                    field.set(target, value);
+                    ((PojoTarget) target).set(field, value);
                 } catch (IllegalAccessException e) {
                     throw QueryException.dataException(
                             format("Cannot inject field \"%s\" into %s : %s", path, clazz.getName(), e.getMessage()), e
@@ -107,5 +102,27 @@ public class PojoUpsertTarget implements UpsertTarget {
                 }
             }
         };
+    }
+
+    private static class PojoTarget implements Target {
+
+        private final Object pojo;
+
+        private PojoTarget(Object pojo) {
+            this.pojo = pojo;
+        }
+
+        private void set(Method method, Object value) throws InvocationTargetException, IllegalAccessException {
+            method.invoke(pojo, value);
+        }
+
+        private void set(Field field, Object value) throws IllegalAccessException {
+            field.set(pojo, value);
+        }
+
+        @Override
+        public Object conclude() {
+            return pojo;
+        }
     }
 }

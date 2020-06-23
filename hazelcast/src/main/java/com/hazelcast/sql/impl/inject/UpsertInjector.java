@@ -19,5 +19,5 @@ package com.hazelcast.sql.impl.inject;
 @FunctionalInterface
 public interface UpsertInjector {
 
-    void set(TargetHolder holder, Object value);
+    void set(Target holder, Object value);
 }

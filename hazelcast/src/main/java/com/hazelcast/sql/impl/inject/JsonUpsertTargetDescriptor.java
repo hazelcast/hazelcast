@@ -16,19 +16,27 @@
 
 package com.hazelcast.sql.impl.inject;
 
-public class TargetHolder {
+import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
 
-    private Object target;
+public class JsonUpsertTargetDescriptor implements UpsertTargetDescriptor {
 
-    TargetHolder(Object target) {
-        this.target = target;
+    public static final UpsertTargetDescriptor INSTANCE = new JsonUpsertTargetDescriptor();
+
+    JsonUpsertTargetDescriptor() {
     }
 
-    void set(Object target) {
-        this.target = target;
+    @Override
+    public UpsertTarget create(InternalSerializationService serializationService) {
+        return new JsonUpsertTarget();
     }
 
-    public Object get() {
-        return target;
+    @Override
+    public void writeData(ObjectDataOutput out) {
+    }
+
+    @Override
+    public void readData(ObjectDataInput in) {
     }
 }

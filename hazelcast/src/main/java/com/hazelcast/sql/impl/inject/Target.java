@@ -16,9 +16,7 @@
 
 package com.hazelcast.sql.impl.inject;
 
-public interface UpsertTarget {
+public interface Target {
 
-    Target get();
-
-    UpsertInjector createInjector(String path);
+    Object conclude();
 }

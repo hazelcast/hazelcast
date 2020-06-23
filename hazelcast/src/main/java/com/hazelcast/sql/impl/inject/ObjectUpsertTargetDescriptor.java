@@ -20,8 +20,6 @@ import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 
-import java.io.IOException;
-
 public class ObjectUpsertTargetDescriptor implements UpsertTargetDescriptor {
 
     public static final UpsertTargetDescriptor INSTANCE = new ObjectUpsertTargetDescriptor();
@@ -35,10 +33,10 @@ public class ObjectUpsertTargetDescriptor implements UpsertTargetDescriptor {
     }
 
     @Override
-    public void writeData(ObjectDataOutput out) throws IOException {
+    public void writeData(ObjectDataOutput out) {
     }
 
     @Override
-    public void readData(ObjectDataInput in) throws IOException {
+    public void readData(ObjectDataInput in) {
     }
 }

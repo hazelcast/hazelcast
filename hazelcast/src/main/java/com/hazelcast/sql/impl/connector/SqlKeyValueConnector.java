@@ -27,6 +27,9 @@ import java.util.Map;
 
 public abstract class SqlKeyValueConnector implements SqlConnector {
 
+    public static final String TO_SERIALIZATION_KEY_FORMAT = "serialization.key.format";
+    public static final String TO_SERIALIZATION_VALUE_FORMAT = "serialization.value.format";
+
     /**
      * A key in the table options (TO).
      * <p>

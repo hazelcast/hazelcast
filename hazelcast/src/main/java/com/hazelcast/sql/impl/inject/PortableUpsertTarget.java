@@ -46,19 +46,33 @@ public class PortableUpsertTarget implements UpsertTarget {
     }
 
     @Override
-    public TargetHolder get() {
+    public Target get() {
         // TODO: reuse ???
-        return new TargetHolder(new GenericPortable());
+        return new PortableTarget();
     }
 
     @Override
     public UpsertInjector createInjector(String path) {
         FieldDefinition fieldDefinition = checkNotNull(classDefinition.getField(path), "Missing field");
-        return (holder, value) -> {
-            GenericPortable target = checkNotNull((GenericPortable) holder.get(), "Missing target");
+        return (target, value) -> ((PortableTarget) target).add(fieldDefinition, value);
+    }
 
-            target.add(fieldDefinition, value);
-        };
+    private class PortableTarget implements Target {
+
+        private final GenericPortable portable;
+
+        private PortableTarget() {
+            this.portable = new GenericPortable();
+        }
+
+        private void add(FieldDefinition fieldDefinition, Object value) {
+            portable.add(fieldDefinition, value);
+        }
+
+        @Override
+        public Object conclude() {
+            return portable;
+        }
     }
 
     // TODO: replace with GenericRecord when available

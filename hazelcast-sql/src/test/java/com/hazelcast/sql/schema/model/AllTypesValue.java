@@ -54,16 +54,13 @@ public final class AllTypesValue implements Serializable {
     private final Instant instant;
     private final ZonedDateTime zonedDateTime;
     private final OffsetDateTime offsetDateTime;
-    // TODO: when intervals are properly supported
-    /*private SqlYearMonthInterval yearMonthInterval;
-    private SqlDaySecondInterval daySecondInterval;*/
 
     @SuppressWarnings("checkstyle:ParameterNumber")
     public AllTypesValue(String string, char character0, boolean boolean0, byte byte0, short short0, int int0, long long0,
                          float float0, double double0, BigDecimal bigDecimal, BigInteger bigInteger, LocalTime localTime,
                          LocalDate localDate, LocalDateTime localDateTime, Date date, GregorianCalendar calendar,
-                         Instant instant, ZonedDateTime zonedDateTime, OffsetDateTime offsetDateTime/*,
-                         SqlYearMonthInterval yearMonthInterval, SqlDaySecondInterval daySecondInterval*/) {
+                         Instant instant, ZonedDateTime zonedDateTime, OffsetDateTime offsetDateTime
+    ) {
         this.string = string;
         this.character0 = character0;
         this.boolean0 = boolean0;
@@ -83,8 +80,6 @@ public final class AllTypesValue implements Serializable {
         this.instant = instant;
         this.zonedDateTime = zonedDateTime;
         this.offsetDateTime = offsetDateTime;
-        /*this.yearMonthInterval= yearMonthIntervall;
-        this.daySecondInterval = daySecondInterval;*/
     }
 
     public String getString() {
@@ -163,22 +158,6 @@ public final class AllTypesValue implements Serializable {
         return offsetDateTime;
     }
 
-    /*public SqlYearMonthInterval getYearMonthInterval() {
-        return yearMonthInterval;
-    }
-
-    public void setYearMonthInterval(SqlYearMonthInterval yearMonthInterval) {
-        this.yearMonthInterval = yearMonthInterval;
-    }
-
-    public SqlDaySecondInterval getDaySecondInterval() {
-        return daySecondInterval;
-    }
-
-    public void setDaySecondInterval(SqlDaySecondInterval daySecondInterval) {
-        this.daySecondInterval = daySecondInterval;
-    }*/
-
     @Override
     public String toString() {
         return "AllTypesValue{"
@@ -201,8 +180,6 @@ public final class AllTypesValue implements Serializable {
                 + ", instant=" + instant
                 + ", zonedDateTime=" + zonedDateTime
                 + ", offsetDateTime=" + offsetDateTime
-                //+ ", yearMonthInterval=" + yearMonthInterval
-                //+ ", daySecondInterval=" + daySecondInterval
                 + '}';
     }
 
@@ -233,8 +210,6 @@ public final class AllTypesValue implements Serializable {
                 && Objects.equals(calendar, that.calendar)
                 && Objects.equals(instant, that.instant)
                 && Objects.equals(zonedDateTime, that.zonedDateTime)
-                && Objects.equals(offsetDateTime, that.offsetDateTime) /*
-                && Objects.equals(yearMonthInterval, that.yearMonthInterval)
-                && Objects.equals(daySecondInterval, that.daySecondInterval)*/;
+                && Objects.equals(offsetDateTime, that.offsetDateTime);
     }
 }

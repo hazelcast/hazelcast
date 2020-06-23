@@ -16,25 +16,33 @@
 
 package com.hazelcast.sql.impl.inject;
 
-import static com.hazelcast.internal.util.Preconditions.checkState;
-
 public class ObjectUpsertTarget implements UpsertTarget {
 
     ObjectUpsertTarget() {
     }
 
     @Override
-    public TargetHolder get() {
+    public Target get() {
         // TODO: reuse ???
-        return new TargetHolder(null);
+        return new ObjectTarget();
     }
 
     @Override
     public UpsertInjector createInjector(String path) {
-        return (holder, value) -> {
-            checkState(holder.get() == null, "Target already set");
+        return (target, value) -> ((ObjectTarget) target).set(value);
+    }
 
-            holder.set(value);
-        };
+    private static class ObjectTarget implements Target {
+
+        private Object value;
+
+        private void set(Object value) {
+            this.value = value;
+        }
+
+        @Override
+        public Object conclude() {
+            return value;
+        }
     }
 }

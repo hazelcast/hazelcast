@@ -29,6 +29,7 @@ import com.hazelcast.sql.impl.schema.Table;
 import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.schema.map.MapTableIndex;
 import com.hazelcast.sql.impl.schema.map.PartitionedMapTable;
+import com.hazelcast.sql.impl.schema.map.options.JsonMapOptionsMetadataResolver;
 import com.hazelcast.sql.impl.schema.map.options.MapOptionsMetadata;
 import com.hazelcast.sql.impl.schema.map.options.MapOptionsMetadataResolver;
 import com.hazelcast.sql.impl.schema.map.options.ObjectMapOptionsMetadataResolver;
@@ -36,15 +37,14 @@ import com.hazelcast.sql.impl.schema.map.options.PojoMapOptionsMetadataResolver;
 import com.hazelcast.sql.impl.schema.map.options.PortableMapOptionsMetadataResolver;
 
 import javax.annotation.Nonnull;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 
 import static com.hazelcast.sql.impl.schema.map.MapTableUtils.estimatePartitionedMapRowCount;
 import static com.hazelcast.sql.impl.schema.map.MapTableUtils.getPartitionedMapDistributionField;
 import static com.hazelcast.sql.impl.schema.map.MapTableUtils.getPartitionedMapIndexes;
 import static com.hazelcast.sql.impl.schema.map.MapTableUtils.mapPathsToOrdinals;
-import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 
 // TODO: do we want to keep it? maps are auto discovered...
@@ -52,11 +52,13 @@ public class LocalPartitionedMapConnector extends SqlKeyValueConnector {
 
     public static final String TYPE_NAME = "com.hazelcast.LocalPartitionedMap";
 
-    private static final List<MapOptionsMetadataResolver> METADATA_RESOLVERS = asList(
-            new ObjectMapOptionsMetadataResolver(),
-            new PojoMapOptionsMetadataResolver(),
-            new PortableMapOptionsMetadataResolver()
-    );
+    private static final Map<String, MapOptionsMetadataResolver> METADATA_RESOLVERS =
+            new HashMap<String, MapOptionsMetadataResolver>() {{
+                put(OBJECT_SERIALIZATION_FORMAT, new ObjectMapOptionsMetadataResolver());
+                put(POJO_SERIALIZATION_FORMAT, new PojoMapOptionsMetadataResolver());
+                put(PORTABLE_SERIALIZATION_FORMAT, new PortableMapOptionsMetadataResolver());
+                put(JSON_SERIALIZATION_FORMAT, new JsonMapOptionsMetadataResolver());
+            }};
 
     @Override
     public String typeName() {
@@ -121,14 +123,23 @@ public class LocalPartitionedMapConnector extends SqlKeyValueConnector {
             boolean key,
             InternalSerializationService serializationService
     ) {
-        return METADATA_RESOLVERS
-                .stream()
-                .map(resolver -> resolver.resolve(externalFields, options, key, serializationService))
-                .filter(Objects::nonNull)
-                .findFirst()
-                .orElseThrow(() ->
-                        QueryException.error("Unable to resolve table metadata. Consult reference manual for more info.")
-                );
+        String formatName = key ? TO_SERIALIZATION_KEY_FORMAT : TO_SERIALIZATION_VALUE_FORMAT;
+        String format = options.get(formatName);
+        if (format == null) {
+            throw QueryException.error("Missing '" + formatName + "' option");
+        }
+
+        MapOptionsMetadataResolver resolver = METADATA_RESOLVERS.get(format);
+        if (resolver == null) {
+            throw QueryException.error("Unknown format '" + format + "'");
+        }
+
+        MapOptionsMetadata metadata = resolver.resolve(externalFields, options, key, serializationService);
+        if (metadata == null) {
+            throw QueryException.error("Unable to resolve table metadata. Consult reference manual for more info.");
+        }
+
+        return metadata;
 
         // TODO: fallback to sample resolution ???
     }

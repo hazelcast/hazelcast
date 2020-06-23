@@ -28,6 +28,11 @@ import java.util.Map;
 //   (TableSchemaField, Table, TableField, QueryDataType etc. need to be public then?)
 public interface SqlConnector {
 
+    String OBJECT_SERIALIZATION_FORMAT = "object";
+    String POJO_SERIALIZATION_FORMAT = "pojo";
+    String PORTABLE_SERIALIZATION_FORMAT = "portable";
+    String JSON_SERIALIZATION_FORMAT = "json";
+
     /**
      * A key in the table options (TO).
      * <p>
