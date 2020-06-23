@@ -20,30 +20,26 @@ occasional latency spikes of 2-3 seconds, the G1 collector is the best
 choice because it has very good throughput and its failure modes are
 graceful. It performs very well in a variety of workloads without any
 tuning parameters. Its default target for the maximum stop-the-world GC
-pause is 200 ms and you can configure it lower, down to 20 ms (using
+pause is 200 ms and you can configure it lower, down to 10 ms (using
 `-XX:MaxGCPauseMillis`). Lower targets allow less throughput, though.
 The mentioned 2-3 seconds latency (as opposed to the usual 200 ms)
 occurs only in exceptional conditions with very high GC pressure. The
 advantage of G1 over many other collectors is a graceful increase in
 GC pause length under such conditions.
 
-## For Latency Goals Below 20 ms, Use the Low-Latency GCs
+## For Latency Goals Below 10 ms, Use the Low-Latency GCs
 
-If you aim for very low latencies (anything below 20 ms), your best bet
+If you aim for very low latencies (anything below 10 ms), your best bet
 are the Shenandoah and ZGC collectors. They are still in their
 experimental phases and under active development, so using the latest
 JDK is highly recommended. Their maximum throughput is lower than G1,
 which means you must provision more hardware for them.
 
-The version of ZGC in JDK 14.0.1 (that we tested) has crude ergonomics
-to decide on a good background GC thread count, in some cases you can
-improve the throughput by using `-XX:ConcGCThreads`.
-
-Our initial test with Shenandoah hit an issue with its pacer heuristics
-that decide how much background GC effort to apply in order to meet, but
-not overshoot, the application's needs. JDK versions released on July
-14, 2020 or later introduce a fix for that, with which Shenandoah is on
-par with ZGC.
+In our tests we found that, in JDK version 14.0.2, ZGC performed
+significantly better than Shenandoah, which still had some issues with
+its pacer heuristics. ZGC was the only collector that maintained the
+99.99th percentile latency below 10 millisecond across a significant
+range of pipeline throughputs.
 
 ## For Batch Processing, Garbage-Free Aggregation is a Big Deal
 

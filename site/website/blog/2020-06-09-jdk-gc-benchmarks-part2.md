@@ -2,11 +2,15 @@
 title: Performance of Modern Java on Data-Heavy Workloads, Part 2
 description: Results of extensive testing of Hazelcast Jet with various combinations of JDK version and GC
 author: Marko Topolnik
-authorURL: https://stackoverflow.com/users/1103872/marko-topolnik
+authorURL: https://twitter.com/mtopolnik
 authorImageURL: https://i.imgur.com/xuavzce.jpg
 ---
 
-Go to [Part 1: intro and the Streaming Pipeline Benchmarks](/blog/2020/06/09/jdk-gc-benchmarks-part1).
+This post is a part of a series:
+
+- [Part 1](/blog/2020/06/09/jdk-gc-benchmarks-part1)
+- Part 2 (you are here)
+- [Part 3](/blog/2020-06-23/jdk-gc-benchmarks-rematch)
 
 ## Batch Pipeline Benchmark
 

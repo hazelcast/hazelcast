@@ -2,9 +2,15 @@
 title: Performance of Modern Java on Data-Heavy Workloads, Part 1
 description: Results of extensive testing of Hazelcast Jet with various combinations of JDK version and GC
 author: Marko Topolnik
-authorURL: https://stackoverflow.com/users/1103872/marko-topolnik
+authorURL: https://twitter.com/mtopolnik
 authorImageURL: https://i.imgur.com/xuavzce.jpg
 ---
+
+This post is a part of a series:
+
+- Part 1 (you are here)
+- [Part 2](/blog/2020/06/09/jdk-gc-benchmarks-part2)
+- [Part 3](/blog/2020-06-23/jdk-gc-benchmarks-rematch)
 
 The Java runtime has been evolving more rapidly in recent years and,
 after 15 years, we finally got a new default garbage collector: the
