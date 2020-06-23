@@ -43,11 +43,20 @@ enterprise versions also for Hazelcast Jet Management Center.
 
 ### Installing the Chart
 
+Hazelcast Official Chart Repository has sources hosted at https://github.com/hazelcast/charts
+
+Following command will add Hazelcast Official Chart Repository to your helm client.
+
+```bash
+helm repo add hazelcast https://hazelcast-charts.s3.amazonaws.com/
+helm repo update
+```
+
 You can install the latest version with default configuration values
 using below command:
 
 ```bash
-helm install my-cluster stable/hazelcast-jet
+helm install my-cluster hazelcast/hazelcast-jet
 ```
 
 This will create a cluster with the name `my-cluster` and with default
@@ -55,7 +64,7 @@ configuration values. To change various configuration options you can
 use `–set key=value`:
 
 ```bash
-helm install my-cluster --set cluster.memberCount=3 stable/hazelcast-jet
+helm install my-cluster --set cluster.memberCount=3 hazelcast/hazelcast-jet
 ```
 
 Or you can create a `values.yaml` file which contains custom
@@ -63,7 +72,7 @@ configuration options. This file may contain custom `hazelcast` and
 `hazelcast-jet` yaml files in it too.
 
 ```bash
-helm install my-cluster -f values.yaml stable/hazelcast-jet
+helm install my-cluster -f values.yaml hazelcast/hazelcast-jet
 ```
 
 ### Uninstalling the Chart
