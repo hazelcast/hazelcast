@@ -22,15 +22,26 @@ import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.SqlOperandCountRange;
 import org.apache.calcite.sql.SqlOperator;
 import org.apache.calcite.sql.type.ComparableOperandTypeChecker;
+import org.apache.calcite.sql.type.OperandTypes;
 import org.apache.calcite.sql.type.SqlOperandTypeChecker;
 import org.apache.calcite.sql.type.SqlSingleOperandTypeChecker;
-import org.apache.calcite.sql.type.SqlTypeName;
 
+import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeSystem.typeName;
+import static org.apache.calcite.sql.type.SqlTypeName.ANY;
+import static org.apache.calcite.sql.type.SqlTypeName.NULL;
+
+/**
+ * A collection of operand type checkers. Basically, a mirror of {@link
+ * OperandTypes} provided by Calcite with various enhancements.
+ */
 public final class HazelcastOperandTypes {
 
-    // The same as Calcite's OperandTypes.COMPARABLE_ORDERED_COMPARABLE_ORDERED,
-    // but selects the least restrictive type as a common type. We do character
-    // coercion provided by Consistency.COMPARE on our own.
+    /**
+     * The same as Calcite's {@link OperandTypes#COMPARABLE_ORDERED_COMPARABLE_ORDERED},
+     * but selects the least restrictive type as a common type. We do character
+     * coercion provided by {@link SqlOperandTypeChecker.Consistency#COMPARE} used
+     * by Calcite on our own.
+     */
     public static final SqlOperandTypeChecker COMPARABLE_ORDERED_COMPARABLE_ORDERED =
             new ComparableOperandTypeChecker(2, RelDataTypeComparability.ALL,
                     SqlOperandTypeChecker.Consistency.LEAST_RESTRICTIVE);
@@ -38,14 +49,22 @@ public final class HazelcastOperandTypes {
     private HazelcastOperandTypes() {
     }
 
+    /**
+     * @return the base operand type checker wrapped into a new type checker
+     * disallowing ANY type.
+     */
     public static SqlSingleOperandTypeChecker notAny(SqlOperandTypeChecker base) {
         return new NotAny(base);
     }
 
     /**
-     * Disallows ANY type on operands while allowing all other types allowed by
-     * the provided base operand type checker.
+     * @return the base operand type checker wrapped into a new type checker
+     * disallowing all of the operands to be of NULL type simultaneously.
      */
+    public static SqlOperandTypeChecker notAllNull(SqlOperandTypeChecker base) {
+        return new NotAllNull(base);
+    }
+
     private static final class NotAny implements SqlSingleOperandTypeChecker {
 
         private final SqlOperandTypeChecker base;
@@ -55,13 +74,13 @@ public final class HazelcastOperandTypes {
         }
 
         @Override
-        public boolean checkOperandTypes(SqlCallBinding callBinding, boolean throwOnFailure) {
-            if (!base.checkOperandTypes(callBinding, throwOnFailure)) {
+        public boolean checkOperandTypes(SqlCallBinding binding, boolean throwOnFailure) {
+            if (!base.checkOperandTypes(binding, throwOnFailure)) {
                 return false;
             }
 
-            for (int i = 0; i < callBinding.getOperandCount(); ++i) {
-                if (!checkSingleOperandType(callBinding, callBinding.operand(i), i, throwOnFailure)) {
+            for (int i = 0; i < binding.getOperandCount(); ++i) {
+                if (!checkSingleOperandType(binding, binding.operand(i), i, throwOnFailure)) {
                     return false;
                 }
             }
@@ -90,16 +109,65 @@ public final class HazelcastOperandTypes {
         }
 
         @Override
-        public boolean checkSingleOperandType(SqlCallBinding callBinding, SqlNode operand, int iFormalOperand,
-                                              boolean throwOnFailure) {
-            if (callBinding.getOperandType(iFormalOperand).getSqlTypeName() == SqlTypeName.ANY) {
+        public boolean checkSingleOperandType(SqlCallBinding binding, SqlNode operand, int index, boolean throwOnFailure) {
+            if (typeName(binding.getOperandType(index)) == ANY) {
                 if (throwOnFailure) {
-                    throw callBinding.newValidationSignatureError();
+                    throw binding.newValidationSignatureError();
                 }
                 return false;
             }
 
             return true;
+        }
+
+    }
+
+    private static final class NotAllNull implements SqlOperandTypeChecker {
+
+        private final SqlOperandTypeChecker base;
+
+        NotAllNull(SqlOperandTypeChecker base) {
+            this.base = base;
+        }
+
+        @Override
+        public boolean checkOperandTypes(SqlCallBinding binding, boolean throwOnFailure) {
+            boolean seenNonNull = false;
+            for (int i = 0; i < binding.getOperandCount(); ++i) {
+                if (typeName(binding.getOperandType(i)) != NULL) {
+                    seenNonNull = true;
+                    break;
+                }
+            }
+
+            if (!seenNonNull) {
+                if (throwOnFailure) {
+                    throw binding.newValidationSignatureError();
+                }
+                return false;
+            }
+
+            return base.checkOperandTypes(binding, throwOnFailure);
+        }
+
+        @Override
+        public SqlOperandCountRange getOperandCountRange() {
+            return base.getOperandCountRange();
+        }
+
+        @Override
+        public String getAllowedSignatures(SqlOperator op, String opName) {
+            return base.getAllowedSignatures(op, opName);
+        }
+
+        @Override
+        public Consistency getConsistency() {
+            return base.getConsistency();
+        }
+
+        @Override
+        public boolean isOptional(int i) {
+            return base.isOptional(i);
         }
 
     }

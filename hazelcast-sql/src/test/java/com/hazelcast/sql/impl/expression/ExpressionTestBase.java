@@ -125,7 +125,7 @@ public abstract class ExpressionTestBase {
     private static final boolean VERIFY_EVALUATION = true;
 
     private static final boolean TRACE = true;
-    private static final boolean TRACE_ON_SUCCESS = false;
+    private static final boolean LOG_ON_SUCCESS = false;
 
     protected static final boolean TEMPORAL_TYPES_ENABLED = false;
 
@@ -149,7 +149,7 @@ public abstract class ExpressionTestBase {
     @SuppressWarnings({"checkstyle:IllegalInstantiation", "UnnecessaryBoxing", "BooleanConstructorCall"})
     protected static final Boolean INVALID_BOOLEAN_VALUE = new Boolean(true);
 
-    protected static final HazelcastTypeFactory TYPE_FACTORY = HazelcastTypeFactory.INSTANCE;
+    public static final HazelcastTypeFactory TYPE_FACTORY = HazelcastTypeFactory.INSTANCE;
 
     protected static final List<Operand> COLUMNS = new ArrayList<>();
     protected static final List<Operand> LITERALS = new ArrayList<>();
@@ -467,7 +467,7 @@ public abstract class ExpressionTestBase {
             try {
                 future.get();
 
-                if (TRACE && TRACE_ON_SUCCESS) {
+                if (TRACE && LOG_ON_SUCCESS) {
                     System.out.println(trace);
                 }
             } catch (InterruptedException e) {
@@ -574,7 +574,10 @@ public abstract class ExpressionTestBase {
                 types[i] = TYPE_FACTORY.createTypeWithNullability(commonType, true);
                 nullable = true;
             } else if (operand.isLiteral()) {
-                if (isNumeric(operandType) || (isChar(operandType) && isNumeric(commonType))) {
+                if (operand.value == null) {
+                    types[i] = TYPE_FACTORY.createTypeWithNullability(commonType, true);
+                    nullable = true;
+                } else if (isNumeric(operandType) || (isChar(operandType) && isNumeric(commonType))) {
                     // Assign final numeric types to numeric and char literals.
 
                     BigDecimal numeric = operand.numericValue();
@@ -973,7 +976,6 @@ public abstract class ExpressionTestBase {
         return typeName(type) == NULL;
     }
 
-    @SuppressWarnings("BooleanMethodIsAlwaysInverted")
     protected static boolean canRepresentLiteral(Operand literal, RelDataType as) {
         assert literal.isLiteral();
         return canRepresentLiteral(literal.value, literal.type, as);
@@ -983,7 +985,6 @@ public abstract class ExpressionTestBase {
         return HazelcastTypeSystem.canConvert(value, type, as);
     }
 
-    @SuppressWarnings("BooleanMethodIsAlwaysInverted")
     protected static boolean canCastLiteral(Operand literal, RelDataType from, RelDataType to) {
         assert literal.isLiteral();
 
@@ -1016,7 +1017,7 @@ public abstract class ExpressionTestBase {
         return (Number) value;
     }
 
-    private static OptimizerContext makeContext() {
+    public static OptimizerContext makeContext() {
         List<TableField> fields = new ArrayList<>();
         for (Map.Entry<String, QueryDataType> entry : FIELDS.entrySet()) {
             fields.add(new TableField(entry.getKey(), entry.getValue(), false));
@@ -1055,7 +1056,7 @@ public abstract class ExpressionTestBase {
         return type.getSqlTypeName() == TIMESTAMP_WITH_LOCAL_TIME_ZONE ? "TIMESTAMP WITH LOCAL TIME ZONE" : type.toString();
     }
 
-    private static Expression<?> convertToExpression(RelNode relNode, RelDataType parameterRowType) {
+    public static Expression<?> convertToExpression(RelNode relNode, RelDataType parameterRowType) {
         assert relNode instanceof Project;
         Project project = (Project) relNode;
         assert project.getProjects().size() == 1;

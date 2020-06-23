@@ -56,18 +56,15 @@ public class MinusTest extends ExpressionTestBase {
 
         // Validate, coerce and infer return type.
 
-        if (!isNumeric(commonType) && !isNull(commonType)) {
+        if (!isNumeric(commonType)) {
             return null;
         }
 
-        boolean seenNull = false;
         for (int i = 0; i < types.length - 1; ++i) {
             Operand operand = operands[i];
             RelDataType type = types[i];
 
-            if (isNull(type)) {
-                seenNull = true;
-            } else if (!isNumeric(type)) {
+            if (!isNumeric(type) && !isNull(type)) {
                 return null;
             }
 
@@ -76,9 +73,7 @@ public class MinusTest extends ExpressionTestBase {
             }
         }
 
-        if (seenNull) {
-            types[2] = TYPE_FACTORY.createSqlType(NULL);
-        } else if (isInteger(commonType)) {
+        if (isInteger(commonType)) {
             types[2] = HazelcastReturnTypes.binaryIntegerMinus(types[0], types[1]);
         }
 
@@ -93,6 +88,12 @@ public class MinusTest extends ExpressionTestBase {
         }
 
         Object lhs = args[0];
+        Object rhs = args[1];
+
+        if (operands[0].isLiteral() && lhs == null || operands[1].isLiteral() && rhs == null) {
+            return null;
+        }
+
         if (lhs == INVALID_VALUE) {
             return INVALID_VALUE;
         }
@@ -100,7 +101,6 @@ public class MinusTest extends ExpressionTestBase {
             return null;
         }
 
-        Object rhs = args[1];
         if (rhs == INVALID_VALUE) {
             return INVALID_VALUE;
         }

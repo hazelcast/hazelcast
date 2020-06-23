@@ -53,8 +53,10 @@ public class CastTest extends ExpressionTestBase {
         // Calcite treats target types as NOT NULL
         assert !to.isNullable();
 
+        // Handle NULL.
+
         if (isNull(from)) {
-            return new RelDataType[]{from, to, from};
+            return new RelDataType[]{from, to, TYPE_FACTORY.createTypeWithNullability(to, true)};
         }
 
         RelDataType returnType = to;

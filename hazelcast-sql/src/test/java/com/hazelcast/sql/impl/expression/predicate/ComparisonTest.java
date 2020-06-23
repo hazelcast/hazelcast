@@ -104,7 +104,6 @@ public class ComparisonTest extends ExpressionTestBase {
 
         RelDataType commonType = types[types.length - 1];
 
-        boolean seenNull = false;
         for (int i = 0; i < types.length - 1; ++i) {
             RelDataType type = types[i];
 
@@ -120,15 +119,10 @@ public class ComparisonTest extends ExpressionTestBase {
                 return null;
             }
 
-            if (typeName(type) == NULL) {
-                seenNull = true;
-            } else {
-                types[i] = TYPE_FACTORY.createTypeWithNullability(commonType, type.isNullable());
-            }
+            types[i] = TYPE_FACTORY.createTypeWithNullability(commonType, type.isNullable());
         }
 
-        types[types.length - 1] =
-                seenNull ? TYPE_FACTORY.createSqlType(NULL) : TYPE_FACTORY.createSqlType(BOOLEAN, commonType.isNullable());
+        types[types.length - 1] = TYPE_FACTORY.createSqlType(BOOLEAN, commonType.isNullable());
         return types;
     }
 

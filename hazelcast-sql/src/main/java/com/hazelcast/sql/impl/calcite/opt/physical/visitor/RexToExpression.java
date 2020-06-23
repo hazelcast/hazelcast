@@ -351,6 +351,11 @@ public final class RexToExpression {
             case NULL:
                 return ConstantExpression.create(null, QueryDataType.NULL);
 
+            case ANY:
+                // currently, the only possible literal of ANY type is NULL
+                assert literal.getValueAs(Object.class) == null;
+                return ConstantExpression.create(null, QueryDataType.OBJECT);
+
             default:
                 throw QueryException.error("Unsupported literal: " + literal);
         }
