@@ -156,12 +156,13 @@ public class PortableGenericRecordBuilder implements GenericRecordBuilder {
         FieldDefinition fd = classDefinition.getField(fieldName);
         if (fd == null) {
             throw new HazelcastSerializationException("Invalid field name: '" + fieldName
-                    + "' for ClassDefinition {id: " + classDefinition.getClassId() + ", version: " + classDefinition.getVersion() + "}");
+                    + "' for ClassDefinition {id: " + classDefinition.getClassId()
+                    + ", version: " + classDefinition.getVersion() + "}");
         }
         if (!fd.getType().equals(fieldType)) {
             throw new HazelcastSerializationException("Invalid field type: '" + fieldName
-                    + "' for ClassDefinition {id: " + classDefinition.getClassId() + ", version: " + classDefinition.getVersion() + "}"
-                    + ", expected : " + fd.getType() + ", given : " + fieldType);
+                    + "' for ClassDefinition {id: " + classDefinition.getClassId() + ", version: "
+                    + classDefinition.getVersion() + "}" + ", expected : " + fd.getType() + ", given : " + fieldType);
         }
         return fd;
     }

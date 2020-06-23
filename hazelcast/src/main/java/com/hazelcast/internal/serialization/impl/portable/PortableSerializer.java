@@ -210,6 +210,7 @@ public final class PortableSerializer implements StreamSerializer<Object> {
         writePortableGenericRecordInternal(out, record);
     }
 
+    @SuppressWarnings({"checkstyle:MethodLength", "checkstyle:CyclomaticComplexity"})
     void writePortableGenericRecordInternal(ObjectDataOutput out, PortableGenericRecord record) throws IOException {
         ClassDefinition cd = record.getClassDefinition();
         out.writeInt(cd.getVersion());
@@ -311,6 +312,7 @@ public final class PortableSerializer implements StreamSerializer<Object> {
         return readPortableGenericRecord(in, factoryId, classId);
     }
 
+    @SuppressWarnings({"checkstyle:MethodLength", "checkstyle:CyclomaticComplexity"})
     private <T> T readPortableGenericRecord(BufferObjectDataInput in, int factoryId, int classId) throws IOException {
         int version = in.readInt();
         ClassDefinition cd = setupPositionAndDefinition(in, factoryId, classId, version);

@@ -102,7 +102,7 @@ public final class GenericRecordQueryReader implements InternalValueReader {
         while (end != -1) {
             String path = fieldPath.substring(begin, end);
             begin = end + 1;
-            end = StringUtil.indexOf(fieldPath, '.' , begin);
+            end = StringUtil.indexOf(fieldPath, '.', begin);
 
             if (path.length() == 0) {
                 throw new IllegalArgumentException("The token's length cannot be zero: " + fieldPath);
@@ -170,53 +170,52 @@ public final class GenericRecordQueryReader implements InternalValueReader {
             }
         }
 
-        {//last loop that we have skipped
-            String path = fieldPath.substring(begin);
-            if (path.length() == 0) {
-                throw new IllegalArgumentException("The token's length cannot be zero: " + fieldPath);
-            }
+        //last loop that we have skipped
+        String path = fieldPath.substring(begin);
+        if (path.length() == 0) {
+            throw new IllegalArgumentException("The token's length cannot be zero: " + fieldPath);
+        }
 
-            ListIterator<Object> iterator = results.listIterator();
-            String fieldName = extractAttributeNameNameWithoutArguments(path);
-            if (!path.contains("]")) {
-                // ex: attribute
-                while (iterator.hasNext()) {
-                    InternalGenericRecord record = (InternalGenericRecord) iterator.next();
-                    Object leaf = readLeaf(record, fieldName);
-                    iterator.set(leaf);
-                }
-            } else if (path.endsWith("[any]")) {
-                // ex: attribute any
-                while (iterator.hasNext()) {
-                    InternalGenericRecord record = (InternalGenericRecord) iterator.next();
-                    iterator.remove();
-                    Object leaves = readLeaf(record, fieldName);
-                    if (leaves == null) {
+        ListIterator<Object> iterator = results.listIterator();
+        String fieldName = extractAttributeNameNameWithoutArguments(path);
+        if (!path.contains("]")) {
+            // ex: attribute
+            while (iterator.hasNext()) {
+                InternalGenericRecord record = (InternalGenericRecord) iterator.next();
+                Object leaf = readLeaf(record, fieldName);
+                iterator.set(leaf);
+            }
+        } else if (path.endsWith("[any]")) {
+            // ex: attribute any
+            while (iterator.hasNext()) {
+                InternalGenericRecord record = (InternalGenericRecord) iterator.next();
+                iterator.remove();
+                Object leaves = readLeaf(record, fieldName);
+                if (leaves == null) {
+                    multiResult.setNullOrEmptyTarget(true);
+                } else if (leaves instanceof Object[]) {
+                    Object[] array = (Object[]) leaves;
+                    if (array.length == 0) {
                         multiResult.setNullOrEmptyTarget(true);
-                    } else if (leaves instanceof Object[]) {
-                        Object[] array = (Object[]) leaves;
-                        if (array.length == 0) {
-                            multiResult.setNullOrEmptyTarget(true);
-                            continue;
-                        }
-                        for (Object leaf : array) {
-                            iterator.add(leaf);
-                        }
-                    } else {
-                        assert leaves.getClass().isArray() : "parameter is not an array";
-                        if (!ExtractorHelper.reducePrimitiveArrayInto(iterator::add, leaves)) {
-                            multiResult.setNullOrEmptyTarget(true);
-                        }
+                        continue;
+                    }
+                    for (Object leaf : array) {
+                        iterator.add(leaf);
+                    }
+                } else {
+                    assert leaves.getClass().isArray() : "parameter is not an array";
+                    if (!ExtractorHelper.reducePrimitiveArrayInto(iterator::add, leaves)) {
+                        multiResult.setNullOrEmptyTarget(true);
                     }
                 }
-            } else {
-                // ex: attribute[2]
-                int index = Integer.parseInt(extractArgumentsFromAttributeName(path));
-                while (iterator.hasNext()) {
-                    GenericRecord record = (GenericRecord) iterator.next();
-                    Object leaf = readIndexed((InternalGenericRecord) record, fieldName, index);
-                    iterator.set(leaf);
-                }
+            }
+        } else {
+            // ex: attribute[2]
+            int index = Integer.parseInt(extractArgumentsFromAttributeName(path));
+            while (iterator.hasNext()) {
+                GenericRecord record = (GenericRecord) iterator.next();
+                Object leaf = readIndexed((InternalGenericRecord) record, fieldName, index);
+                iterator.set(leaf);
             }
         }
 

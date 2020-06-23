@@ -139,7 +139,7 @@ public interface PortableWriter {
      * Writes a primitive boolean-array.
      *
      * @param fieldName name of the field
-     * @param booleans     boolean array to be written
+     * @param booleans  boolean array to be written
      * @throws IOException in case of any exceptional case
      */
     void writeBooleanArray(String fieldName, boolean[] booleans) throws IOException;
@@ -217,7 +217,7 @@ public interface PortableWriter {
     void writePortableArray(String fieldName, Portable[] portables) throws IOException;
 
     /**
-     * After writing portable fields one can subsequently write remaining fields in the old-fashioned way. 
+     * After writing portable fields one can subsequently write remaining fields in the old-fashioned way.
      * Users should note that after calling this method, trying to write portable fields will result
      * in an IOException.
      *

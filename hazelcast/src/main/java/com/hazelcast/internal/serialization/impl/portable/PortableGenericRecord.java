@@ -22,6 +22,7 @@ import com.hazelcast.nio.serialization.FieldType;
 import com.hazelcast.nio.serialization.GenericRecord;
 import com.hazelcast.nio.serialization.GenericRecordBuilder;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import javax.annotation.Nonnull;
 
@@ -30,6 +31,7 @@ public class PortableGenericRecord implements GenericRecord {
     private final ClassDefinition classDefinition;
     private final Object[] objects;
 
+    @SuppressFBWarnings({"EI_EXPOSE_REP2"})
     public PortableGenericRecord(ClassDefinition classDefinition, Object[] objects) {
         this.classDefinition = classDefinition;
         this.objects = objects;
@@ -164,12 +166,13 @@ public class PortableGenericRecord implements GenericRecord {
         FieldDefinition fd = classDefinition.getField(fieldName);
         if (fd == null) {
             throw new HazelcastSerializationException("Invalid field name: '" + fieldName
-                    + "' for ClassDefinition {id: " + classDefinition.getClassId() + ", version: " + classDefinition.getVersion() + "}");
+                    + "' for ClassDefinition {id: " + classDefinition.getClassId() + ", version: "
+                    + classDefinition.getVersion() + "}");
         }
         if (!fd.getType().equals(fieldType)) {
             throw new HazelcastSerializationException("Invalid field type: '" + fieldName
-                    + "' for ClassDefinition {id: " + classDefinition.getClassId() + ", version: " + classDefinition.getVersion() + "}"
-                    + ", expected : " + fd.getType() + ", given : " + fieldType);
+                    + "' for ClassDefinition {id: " + classDefinition.getClassId() + ", version: "
+                    + classDefinition.getVersion() + "}" + ", expected : " + fd.getType() + ", given : " + fieldType);
         }
         return fd;
     }

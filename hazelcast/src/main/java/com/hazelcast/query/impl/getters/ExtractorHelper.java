@@ -124,11 +124,11 @@ public final class ExtractorHelper {
     }
 
     /**
-     * @param add            Consumer that primitives will be passed tp
+     * @param add            Consumer that primitives will be passed to
      * @param primitiveArray primitive array to read from
      * @return false if primitive array is empty
      */
-    @SuppressWarnings({"checkstyle:cyclomaticcomplexity", "checkstyle:methodlength"})
+    @SuppressWarnings({"checkstyle:cyclomaticcomplexity", "checkstyle:methodlength", "checkstyle:returncount"})
     public static boolean reducePrimitiveArrayInto(Consumer add, Object primitiveArray) {
         // XXX: Standard Array.get has really bad performance, see
         // https://bugs.openjdk.java.net/browse/JDK-8051447. For large arrays

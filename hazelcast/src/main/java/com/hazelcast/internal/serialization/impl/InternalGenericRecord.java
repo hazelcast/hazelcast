@@ -25,8 +25,12 @@ import java.io.IOException;
  *
  * @see GenericRecordQueryReader
  * @see CachedGenericRecordQueryReader
+ *
+ * read*FromArray methods will return `null`
+ * 1. if the array is null or empty
+ * 2. there is no data at given index. In other words, the index is bigger than the length of the array
  */
-public interface InternalGenericRecord extends GenericRecord{
+public interface InternalGenericRecord extends GenericRecord {
 
     GenericRecord[] readGenericRecordArray(String fieldName) throws IOException;
 

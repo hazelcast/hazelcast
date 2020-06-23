@@ -28,6 +28,7 @@ import com.hazelcast.nio.serialization.GenericRecordBuilder;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
 import java.util.Set;
@@ -462,6 +463,7 @@ public class DefaultPortableReader implements PortableReader, InternalGenericRec
         return in.readByte(INT_SIZE_IN_BYTES + position + (index * BYTE_SIZE_IN_BYTES));
     }
 
+    @SuppressFBWarnings({"NP_BOOLEAN_RETURN_NULL"})
     @Override
     public Boolean readBooleanFromArray(String fieldName, int index) throws IOException {
         int position = readPosition(fieldName, FieldType.BOOLEAN_ARRAY);
