@@ -35,22 +35,12 @@ public class PojoUpsertTarget implements UpsertTarget {
     private final Class<?> clazz;
     private final Map<String, Class<?>> typesByFields;
 
+    private Object pojo;
+
     PojoUpsertTarget(String className, Map<String, String> typeNamesByFields) {
         this.clazz = loadClass(className);
         this.typesByFields = typeNamesByFields.entrySet().stream()
                                               .collect(toMap(Entry::getKey, entry -> loadClass(entry.getValue())));
-    }
-
-    @Override
-    public Target get() {
-        try {
-            // TODO: reuse ???
-            return new PojoTarget(clazz.newInstance());
-        } catch (Exception e) {
-            throw QueryException.dataException(
-                    format("Unable to instantiate class \"%s\" : %s", clazz.getName(), e.getMessage()), e
-            );
-        }
     }
 
     @Override
@@ -65,7 +55,7 @@ public class PojoUpsertTarget implements UpsertTarget {
     }
 
     private UpsertInjector createMethodInjector(Method method, String path) {
-        return (target, value) -> {
+        return value -> {
             if (value != null) {
                 if (method == null) {
                     throw QueryException.dataException(
@@ -74,7 +64,7 @@ public class PojoUpsertTarget implements UpsertTarget {
                 }
 
                 try {
-                    ((PojoTarget) target).set(method, value);
+                    method.invoke(pojo, value);
                 } catch (IllegalAccessException | InvocationTargetException e) {
                     throw QueryException.dataException(
                             format("Cannot inject field \"%s\" into %s : %s", path, clazz.getName(), e.getMessage()), e
@@ -85,7 +75,7 @@ public class PojoUpsertTarget implements UpsertTarget {
     }
 
     private UpsertInjector createFieldInjector(Field field, String path) {
-        return (target, value) -> {
+        return value -> {
             if (value != null) {
                 if (field == null) {
                     throw QueryException.dataException(
@@ -94,7 +84,7 @@ public class PojoUpsertTarget implements UpsertTarget {
                 }
 
                 try {
-                    ((PojoTarget) target).set(field, value);
+                    field.set(pojo, value);
                 } catch (IllegalAccessException e) {
                     throw QueryException.dataException(
                             format("Cannot inject field \"%s\" into %s : %s", path, clazz.getName(), e.getMessage()), e
@@ -104,25 +94,21 @@ public class PojoUpsertTarget implements UpsertTarget {
         };
     }
 
-    private static final class PojoTarget implements Target {
-
-        private final Object pojo;
-
-        private PojoTarget(Object pojo) {
-            this.pojo = pojo;
+    @Override
+    public void init() {
+        try {
+            pojo = clazz.newInstance();
+        } catch (Exception e) {
+            throw QueryException.dataException(
+                    format("Unable to instantiate class \"%s\" : %s", clazz.getName(), e.getMessage()), e
+            );
         }
+    }
 
-        private void set(Method method, Object value) throws InvocationTargetException, IllegalAccessException {
-            method.invoke(pojo, value);
-        }
-
-        private void set(Field field, Object value) throws IllegalAccessException {
-            field.set(pojo, value);
-        }
-
-        @Override
-        public Object conclude() {
-            return pojo;
-        }
+    @Override
+    public Object conclude() {
+        Object pojo = this.pojo;
+        this.pojo = null;
+        return pojo;
     }
 }

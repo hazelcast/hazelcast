@@ -21,66 +21,53 @@ import com.hazelcast.sql.impl.type.QueryDataType;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.Map.Entry;
 
 public class JsonUpsertTarget implements UpsertTarget {
+
+    private StringBuilder json;
+    private int i;
 
     JsonUpsertTarget() {
     }
 
     @Override
-    public Target get() {
-        // TODO: reuse ???
-        return new JsonTarget();
+    public UpsertInjector createInjector(String path) {
+        return value -> {
+            // TODO:
+            if (i > 0) {
+                json.append(',');
+            }
+
+            json.append('"').append(path).append('"');
+
+            json.append(':');
+
+            if (value == null) {
+                json.append("null");
+            } else if ((value instanceof Number && !(value instanceof BigDecimal) && !(value instanceof BigInteger))
+                    || value instanceof Boolean) {
+                json.append(QueryDataType.VARCHAR.convert(value));
+            } else {
+                json.append('"').append(QueryDataType.VARCHAR.convert(value)).append('"');
+            }
+
+            i++;
+        };
     }
 
     @Override
-    public UpsertInjector createInjector(String path) {
-        return (target, value) -> ((JsonTarget) target).put(path, value);
+    public void init() {
+        json = new StringBuilder("{");
+        i = 0;
     }
 
-    private static final class JsonTarget implements Target {
+    @Override
+    public Object conclude() {
+        json.append("}");
 
-        private final Map<String, Object> entries;
-
-        private JsonTarget() {
-            this.entries = new LinkedHashMap<>();
-        }
-
-        private void put(String key, Object value) {
-            entries.put(key, value);
-        }
-
-        @Override
-        public Object conclude() {
-            // TODO:
-            StringBuilder builder = new StringBuilder("{");
-            int i = 0;
-            for (Entry<String, Object> entry : entries.entrySet()) {
-                if (i > 0) {
-                    builder.append(',');
-                }
-
-                builder.append('"').append(entry.getKey()).append('"');
-
-                builder.append(':');
-
-                Object value = entry.getValue();
-                if (value == null) {
-                    builder.append("null");
-                } else if ((value instanceof Number && !(value instanceof BigDecimal) && !(value instanceof BigInteger))
-                        || value instanceof Boolean) {
-                    builder.append(QueryDataType.VARCHAR.convert(value));
-                } else {
-                    builder.append('"').append(QueryDataType.VARCHAR.convert(value)).append('"');
-                }
-
-                i++;
-            }
-            builder.append("}");
-            return new HazelcastJsonValue(builder.toString());
-        }
+        StringBuilder json = this.json;
+        this.json = null;
+        i = 0;
+        return new HazelcastJsonValue(json.toString());
     }
 }

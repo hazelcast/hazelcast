@@ -38,6 +38,8 @@ public class PortableUpsertTarget implements UpsertTarget {
 
     private final ClassDefinition classDefinition;
 
+    private GenericPortable portable;
+
     PortableUpsertTarget(
             InternalSerializationService serializationService,
             int factoryId, int classId, int classVersion
@@ -46,33 +48,21 @@ public class PortableUpsertTarget implements UpsertTarget {
     }
 
     @Override
-    public Target get() {
-        // TODO: reuse ???
-        return new PortableTarget();
+    public UpsertInjector createInjector(String path) {
+        FieldDefinition fieldDefinition = checkNotNull(classDefinition.getField(path), "Missing field");
+        return value -> portable.add(fieldDefinition, value);
     }
 
     @Override
-    public UpsertInjector createInjector(String path) {
-        FieldDefinition fieldDefinition = checkNotNull(classDefinition.getField(path), "Missing field");
-        return (target, value) -> ((PortableTarget) target).add(fieldDefinition, value);
+    public void init() {
+        portable = new GenericPortable();
     }
 
-    private final class PortableTarget implements Target {
-
-        private final GenericPortable portable;
-
-        private PortableTarget() {
-            this.portable = new GenericPortable();
-        }
-
-        private void add(FieldDefinition fieldDefinition, Object value) {
-            portable.add(fieldDefinition, value);
-        }
-
-        @Override
-        public Object conclude() {
-            return portable;
-        }
+    @Override
+    public Object conclude() {
+        GenericPortable portable = this.portable;
+        this.portable = null;
+        return portable;
     }
 
     // TODO: replace with GenericRecord when available

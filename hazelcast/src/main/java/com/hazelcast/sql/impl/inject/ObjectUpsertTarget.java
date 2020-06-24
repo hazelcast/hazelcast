@@ -18,31 +18,25 @@ package com.hazelcast.sql.impl.inject;
 
 public class ObjectUpsertTarget implements UpsertTarget {
 
+    private Object object;
+
     ObjectUpsertTarget() {
     }
 
     @Override
-    public Target get() {
-        // TODO: reuse ???
-        return new ObjectTarget();
+    public UpsertInjector createInjector(String path) {
+        return value -> object = value;
     }
 
     @Override
-    public UpsertInjector createInjector(String path) {
-        return (target, value) -> ((ObjectTarget) target).set(value);
+    public void init() {
+        object = null;
     }
 
-    private static class ObjectTarget implements Target {
-
-        private Object value;
-
-        private void set(Object value) {
-            this.value = value;
-        }
-
-        @Override
-        public Object conclude() {
-            return value;
-        }
+    @Override
+    public Object conclude() {
+        Object object = this.object;
+        this.object = null;
+        return object;
     }
 }
