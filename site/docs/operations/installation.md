@@ -70,9 +70,21 @@ folder.
 
 ## Configuring JVM parameters
 
-You can configure the required JVM parameters such as heap size by
-using the `JAVA_OPTS` environment variable. For example, to start
-Jet with a 8GB heap you can use the following command:
+You can configure the required JVM parameters such as heap size in the
+`jvm.options` file in the `config/` folder. Use one option per line. You
+can also use `#` at the beginning of the line for comments.
+
+For example, to start Jet with a 8GB heap use the following content in
+the `jvm.options` file:
+
+```text
+# JVM Configuration
+-Xmx8G
+```
+
+You can also use the `JAVA_OPTS` environment variable for ad-hoc
+configuration option. For example, to start Jet with a 8GB heap you can
+use the following command:
 
 ```bash
 JAVA_OPTS=-Xmx8G bin/jet-start

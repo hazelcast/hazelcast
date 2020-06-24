@@ -15,6 +15,7 @@ configuration files:
 config/hazelcast-jet.yaml
 config/hazelcast.yaml
 config/hazelcast-client.yaml
+config/jvm.options
 ```
 
 `hazelcast-jet.yaml` is used for configuring Jet specific configuration
@@ -26,6 +27,9 @@ the configuration specific to clustering, discovery and so forth.
 `hazelcast-client.yaml` refers to a Jet client configuration. This config
 file is only used by the `jet` command line client to connect to the cluster,
 but you can use it as a template for your own configuration files.
+
+`jvm.options` may contain any additional options passed to the JVM when
+a member node is started using the `jet-start` command.
 
 ## Client Configuration
 

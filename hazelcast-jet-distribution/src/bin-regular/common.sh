@@ -29,6 +29,10 @@ fi
 
 IFS=',' read -ra MODULES <<< "$JET_MODULES"
 for module in "${MODULES[@]}"; do
+    # Strip leading/trailing whitespaces, when JET_MODULES contains modules
+    # separated by comma and space, e.g. "avro, kafka"
+    module=$(echo "$module" | sed 's/^[[:blank:]]*//;s/[[:blank:]]*$//')
+
     # ${project.version} interpolated during build by maven assembly plugin
     if [ -z "$CLASSPATH" ]; then
         CLASSPATH="$JET_HOME/opt/hazelcast-jet-${module}-${project.version}.jar"
@@ -38,3 +42,20 @@ for module in "${MODULES[@]}"; do
 done
 
 CLASSPATH="$JET_HOME/lib:$JET_HOME/lib/*:$CLASSPATH"
+
+function readJvmOptionsFile {
+    # Read jvm.options file
+    while IFS= read -r line
+    do
+      # Ignore lines starting with # (does not support # in the middle of the line)
+      if [[ "$line" =~ ^#.*$ ]]
+      then
+        continue;
+      fi
+
+      JVM_OPTIONS="$JVM_OPTIONS $line"
+    done < $JET_HOME/config/$1
+
+    # Evaluate variables in the options, allowing to use e.g. JET_HOME variable
+    JVM_OPTIONS=$(eval echo $JVM_OPTIONS)
+}

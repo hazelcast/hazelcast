@@ -37,7 +37,7 @@ import java.util.concurrent.ThreadLocalRandom;
  * Demonstrates a simple job which calculates the top 10 numbers from a
  * stream of random numbers. This code is included in Jet's distribution
  * package as {@code examples/hello-world.jar}, ready to be submitted to
- * a running Jet cluster with {@code bin/jet submit examples/hello-world.java}.
+ * a running Jet cluster with {@code bin/jet submit examples/hello-world.jar}.
  * <p>
  * It also uses an {@link Observable} to print the results on the client side.
  */
