@@ -34,6 +34,7 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.sql.impl.schema.map.options.PortableMapOptionsMetadataResolver.lookupClassDefinition;
 import static java.lang.String.format;
 
+// TODO: can it be non-thread safe ?
 public class PortableUpsertTarget implements UpsertTarget {
 
     private final ClassDefinition classDefinition;

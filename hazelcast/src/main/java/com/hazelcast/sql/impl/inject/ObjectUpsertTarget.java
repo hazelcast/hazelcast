@@ -16,6 +16,7 @@
 
 package com.hazelcast.sql.impl.inject;
 
+// TODO: can it be non-thread safe ?
 public class ObjectUpsertTarget implements UpsertTarget {
 
     private Object object;

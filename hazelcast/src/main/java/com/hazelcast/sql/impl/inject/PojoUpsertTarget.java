@@ -30,6 +30,7 @@ import static com.hazelcast.sql.impl.schema.map.options.PojoMapOptionsMetadataRe
 import static java.lang.String.format;
 import static java.util.stream.Collectors.toMap;
 
+// TODO: can it be non-thread safe ?
 public class PojoUpsertTarget implements UpsertTarget {
 
     private final Class<?> clazz;

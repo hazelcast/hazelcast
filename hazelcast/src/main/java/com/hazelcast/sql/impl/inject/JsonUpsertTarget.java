@@ -17,57 +17,33 @@
 package com.hazelcast.sql.impl.inject;
 
 import com.hazelcast.core.HazelcastJsonValue;
+import com.hazelcast.internal.json.Json;
+import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
-import java.math.BigDecimal;
-import java.math.BigInteger;
-
+// TODO: can it be non-thread safe ?
 public class JsonUpsertTarget implements UpsertTarget {
 
-    private StringBuilder json;
-    private int i;
+    private JsonObject json;
 
     JsonUpsertTarget() {
     }
 
     @Override
     public UpsertInjector createInjector(String path) {
-        return value -> {
-            // TODO:
-            if (i > 0) {
-                json.append(',');
-            }
-
-            json.append('"').append(path).append('"');
-
-            json.append(':');
-
-            if (value == null) {
-                json.append("null");
-            } else if ((value instanceof Number && !(value instanceof BigDecimal) && !(value instanceof BigInteger))
-                    || value instanceof Boolean) {
-                json.append(QueryDataType.VARCHAR.convert(value));
-            } else {
-                json.append('"').append(QueryDataType.VARCHAR.convert(value)).append('"');
-            }
-
-            i++;
-        };
+        // TODO: unquoted support for booleans & numbers ???
+        return value -> json.add(path, (String) QueryDataType.VARCHAR.convert(value));
     }
 
     @Override
     public void init() {
-        json = new StringBuilder("{");
-        i = 0;
+        json = Json.object();
     }
 
     @Override
     public Object conclude() {
-        json.append("}");
-
-        StringBuilder json = this.json;
+        JsonObject json = this.json;
         this.json = null;
-        i = 0;
         return new HazelcastJsonValue(json.toString());
     }
 }
