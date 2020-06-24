@@ -42,7 +42,6 @@ import java.util.GregorianCalendar;
 import java.util.List;
 import java.util.Map;
 
-import static com.hazelcast.sql.impl.connector.SqlConnector.OBJECT_SERIALIZATION_FORMAT;
 import static com.hazelcast.sql.impl.connector.SqlConnector.POJO_SERIALIZATION_FORMAT;
 import static com.hazelcast.sql.impl.connector.SqlKeyValueConnector.TO_KEY_CLASS;
 import static com.hazelcast.sql.impl.connector.SqlKeyValueConnector.TO_SERIALIZATION_KEY_FORMAT;
@@ -72,6 +71,27 @@ public class SchemaTest extends CalciteSqlTestSupport {
     }
 
     @Test
+    public void testUnmappedFields() {
+        // given
+        String name = "unmapped_fields_map";
+
+        executeQuery(
+                member,
+                format("CREATE EXTERNAL TABLE %s ("
+                                + " __key INT,"
+                                + " this VARCHAR,"
+                                + " unmapped VARCHAR"
+                                + ") TYPE \"%s\"",
+                        name, LocalPartitionedMapConnector.TYPE_NAME
+                ));
+
+        // when
+        // then
+        assertThatThrownBy(() -> executeQuery(member, format("SELECT * FROM %s", name)))
+                .isInstanceOf(SqlException.class);
+    }
+
+    @Test
     public void testSelectFromDeclaredTable() {
         // given
         String name = "predeclared_map";
@@ -82,14 +102,8 @@ public class SchemaTest extends CalciteSqlTestSupport {
                 format("CREATE EXTERNAL TABLE %s ("
                                 + " __key INT,"
                                 + " this VARCHAR"
-                                + ") TYPE \"%s\" "
-                                + "OPTIONS ("
-                                + " \"%s\" '%s',"
-                                + " \"%s\" '%s'"
-                                + ")",
-                        name, LocalPartitionedMapConnector.TYPE_NAME,
-                        TO_SERIALIZATION_KEY_FORMAT, OBJECT_SERIALIZATION_FORMAT,
-                        TO_SERIALIZATION_VALUE_FORMAT, OBJECT_SERIALIZATION_FORMAT
+                                + ") TYPE \"%s\"",
+                        name, LocalPartitionedMapConnector.TYPE_NAME
                 ));
 
         // then
@@ -116,14 +130,8 @@ public class SchemaTest extends CalciteSqlTestSupport {
                 format("CREATE EXTERNAL TABLE %s ("
                                 + " __key INT,"
                                 + " this VARCHAR"
-                                + ") TYPE \"%s\" "
-                                + "OPTIONS ("
-                                + " \"%s\" '%s',"
-                                + " \"%s\" '%s'"
-                                + ")",
-                        name, LocalPartitionedMapConnector.TYPE_NAME,
-                        TO_SERIALIZATION_KEY_FORMAT, OBJECT_SERIALIZATION_FORMAT,
-                        TO_SERIALIZATION_VALUE_FORMAT, OBJECT_SERIALIZATION_FORMAT
+                                + ") TYPE \"%s\"",
+                        name, LocalPartitionedMapConnector.TYPE_NAME
                 ));
 
         // then schema is available on another one
@@ -176,11 +184,9 @@ public class SchemaTest extends CalciteSqlTestSupport {
                         + ") TYPE \"%s\" "
                         + "OPTIONS ("
                         + " \"%s\" '%s',"
-                        + " \"%s\" '%s',"
                         + " \"%s\" '%s'"
                         + ")",
                 name, LocalPartitionedMapConnector.TYPE_NAME,
-                TO_SERIALIZATION_KEY_FORMAT, OBJECT_SERIALIZATION_FORMAT,
                 TO_SERIALIZATION_VALUE_FORMAT, POJO_SERIALIZATION_FORMAT,
                 TO_VALUE_CLASS, AllTypesValue.class.getName()
 
@@ -293,14 +299,8 @@ public class SchemaTest extends CalciteSqlTestSupport {
                 format("CREATE EXTERNAL TABLE %s ("
                                 + "  __key INT,"
                                 + "  this VARCHAR"
-                                + ") TYPE \"%s\" "
-                                + "OPTIONS ("
-                                + " \"%s\" '%s',"
-                                + " \"%s\" '%s'"
-                                + ")",
-                        name, LocalPartitionedMapConnector.TYPE_NAME,
-                        TO_SERIALIZATION_KEY_FORMAT, OBJECT_SERIALIZATION_FORMAT,
-                        TO_SERIALIZATION_VALUE_FORMAT, OBJECT_SERIALIZATION_FORMAT
+                                + ") TYPE \"%s\"",
+                        name, LocalPartitionedMapConnector.TYPE_NAME
                 ));
 
         // when

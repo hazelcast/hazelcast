@@ -21,7 +21,6 @@ import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.spi.impl.NodeEngine;
-import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.schema.ConstantTableStatistics;
 import com.hazelcast.sql.impl.schema.ExternalTable.ExternalField;
@@ -32,7 +31,6 @@ import com.hazelcast.sql.impl.schema.map.PartitionedMapTable;
 import com.hazelcast.sql.impl.schema.map.options.JsonMapOptionsMetadataResolver;
 import com.hazelcast.sql.impl.schema.map.options.MapOptionsMetadata;
 import com.hazelcast.sql.impl.schema.map.options.MapOptionsMetadataResolver;
-import com.hazelcast.sql.impl.schema.map.options.ObjectMapOptionsMetadataResolver;
 import com.hazelcast.sql.impl.schema.map.options.PojoMapOptionsMetadataResolver;
 import com.hazelcast.sql.impl.schema.map.options.PortableMapOptionsMetadataResolver;
 
@@ -56,7 +54,6 @@ public class LocalPartitionedMapConnector extends SqlKeyValueConnector {
     public static final String TYPE_NAME = "com.hazelcast.LocalPartitionedMap";
 
     private static final Map<String, MapOptionsMetadataResolver> METADATA_RESOLVERS = Stream.of(
-            new ObjectMapOptionsMetadataResolver(),
             new PojoMapOptionsMetadataResolver(),
             new PortableMapOptionsMetadataResolver(),
             new JsonMapOptionsMetadataResolver()
@@ -92,7 +89,7 @@ public class LocalPartitionedMapConnector extends SqlKeyValueConnector {
 
         MapOptionsMetadata keyMetadata = resolveMetadata(externalFields, options, true, serializationService);
         MapOptionsMetadata valueMetadata = resolveMetadata(externalFields, options, false, serializationService);
-        List<TableField> fields = mergeFields(keyMetadata.getFields(), valueMetadata.getFields());
+        List<TableField> fields = mergeFields(externalFields, keyMetadata.getFields(), valueMetadata.getFields());
 
         // TODO: deduplicate with PartitionedMapTableResolver ???
         MapService service = nodeEngine.getService(MapService.SERVICE_NAME);
@@ -126,18 +123,10 @@ public class LocalPartitionedMapConnector extends SqlKeyValueConnector {
             boolean key,
             InternalSerializationService serializationService
     ) {
-        String formatName = key ? TO_SERIALIZATION_KEY_FORMAT : TO_SERIALIZATION_VALUE_FORMAT;
-        String format = options.get(formatName);
-        if (format == null) {
-            // TODO: fallback to sample resolution ???
-            throw QueryException.error("Missing '" + formatName + "' option");
-        }
-
+        String format = options.get(key ? TO_SERIALIZATION_KEY_FORMAT : TO_SERIALIZATION_VALUE_FORMAT);
         MapOptionsMetadataResolver resolver = METADATA_RESOLVERS.get(format);
-        if (resolver == null) {
-            throw QueryException.error("Unknown format '" + format + "'");
-        }
-
-        return checkNotNull(resolver.resolve(externalFields, options, key, serializationService));
+        return resolver == null
+                ? MapOptionsMetadataResolver.resolve(externalFields, key)
+                : checkNotNull(resolver.resolve(externalFields, options, key, serializationService));
     }
 }

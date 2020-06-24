@@ -17,11 +17,23 @@
 package com.hazelcast.sql.impl.schema.map.options;
 
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.sql.impl.QueryException;
+import com.hazelcast.sql.impl.extract.GenericQueryTargetDescriptor;
+import com.hazelcast.sql.impl.extract.QueryPath;
+import com.hazelcast.sql.impl.inject.ObjectUpsertTargetDescriptor;
 import com.hazelcast.sql.impl.schema.ExternalTable.ExternalField;
+import com.hazelcast.sql.impl.schema.TableField;
+import com.hazelcast.sql.impl.schema.map.MapTableField;
 
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import static com.hazelcast.query.QueryConstants.KEY_ATTRIBUTE_NAME;
+import static com.hazelcast.query.QueryConstants.THIS_ATTRIBUTE_NAME;
+import static java.util.Collections.singletonMap;
+
+// TODO: deduplicate with MapSampleMetadataResolver
 public interface MapOptionsMetadataResolver {
 
     String supportedFormat();
@@ -32,4 +44,36 @@ public interface MapOptionsMetadataResolver {
             boolean isKey,
             InternalSerializationService serializationService
     );
+
+    static MapOptionsMetadata resolve(
+            List<ExternalField> externalFields,
+            boolean isKey
+    ) {
+        String fieldName = isKey ? KEY_ATTRIBUTE_NAME.value() : THIS_ATTRIBUTE_NAME.value();
+        ExternalField externalField = findExternalField(externalFields, fieldName);
+
+        if (externalField != null) {
+            TableField tableField = new MapTableField(
+                    externalField.name(),
+                    externalField.type(),
+                    false,
+                    isKey ? QueryPath.KEY_PATH : QueryPath.VALUE_PATH
+            );
+            return new MapOptionsMetadata(
+                    GenericQueryTargetDescriptor.INSTANCE,
+                    ObjectUpsertTargetDescriptor.INSTANCE,
+                    new LinkedHashMap<>(singletonMap(tableField.getName(), tableField))
+            );
+        }
+
+        // TODO: fallback to sample resolution ???
+        throw QueryException.error("Unable to resolve table metadata. Missing '" + fieldName + "' column");
+    }
+
+    static ExternalField findExternalField(List<ExternalField> externalFields, String fieldName) {
+        return externalFields.stream()
+                             .filter(externalField -> fieldName.equalsIgnoreCase(externalField.name()))
+                             .findFirst()
+                             .orElse(null);
+    }
 }

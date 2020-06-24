@@ -20,7 +20,6 @@ import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
 import com.hazelcast.spi.impl.NodeEngine;
-import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.schema.ConstantTableStatistics;
 import com.hazelcast.sql.impl.schema.ExternalTable.ExternalField;
 import com.hazelcast.sql.impl.schema.Table;
@@ -29,30 +28,29 @@ import com.hazelcast.sql.impl.schema.map.ReplicatedMapTable;
 import com.hazelcast.sql.impl.schema.map.options.JsonMapOptionsMetadataResolver;
 import com.hazelcast.sql.impl.schema.map.options.MapOptionsMetadata;
 import com.hazelcast.sql.impl.schema.map.options.MapOptionsMetadataResolver;
-import com.hazelcast.sql.impl.schema.map.options.ObjectMapOptionsMetadataResolver;
 import com.hazelcast.sql.impl.schema.map.options.PojoMapOptionsMetadataResolver;
 import com.hazelcast.sql.impl.schema.map.options.PortableMapOptionsMetadataResolver;
 
 import javax.annotation.Nonnull;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Stream;
 
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
+import static java.util.stream.Collectors.toMap;
 
 // TODO: do we want to keep it? maps are auto discovered...
 public class LocalReplicatedMapConnector extends SqlKeyValueConnector {
 
     public static final String TYPE_NAME = "com.hazelcast.LocalReplicatedMap";
 
-    private static final Map<String, MapOptionsMetadataResolver> METADATA_RESOLVERS =
-            new HashMap<String, MapOptionsMetadataResolver>() {{
-                put(OBJECT_SERIALIZATION_FORMAT, new ObjectMapOptionsMetadataResolver());
-                put(POJO_SERIALIZATION_FORMAT, new PojoMapOptionsMetadataResolver());
-                put(PORTABLE_SERIALIZATION_FORMAT, new PortableMapOptionsMetadataResolver());
-                put(JSON_SERIALIZATION_FORMAT, new JsonMapOptionsMetadataResolver());
-            }};
+    private static final Map<String, MapOptionsMetadataResolver> METADATA_RESOLVERS = Stream.of(
+            new PojoMapOptionsMetadataResolver(),
+            new PortableMapOptionsMetadataResolver(),
+            new JsonMapOptionsMetadataResolver()
+    ).collect(toMap(MapOptionsMetadataResolver::supportedFormat, Function.identity()));
 
     @Override
     public String typeName() {
@@ -84,7 +82,7 @@ public class LocalReplicatedMapConnector extends SqlKeyValueConnector {
 
         MapOptionsMetadata keyMetadata = resolveMetadata(externalFields, options, true, serializationService);
         MapOptionsMetadata valueMetadata = resolveMetadata(externalFields, options, false, serializationService);
-        List<TableField> fields = mergeFields(keyMetadata.getFields(), valueMetadata.getFields());
+        List<TableField> fields = mergeFields(externalFields, keyMetadata.getFields(), valueMetadata.getFields());
 
         // TODO: deduplicate with ReplicatedMapTableResolver ???
         ReplicatedMapService service = nodeEngine.getService(ReplicatedMapService.SERVICE_NAME);
@@ -110,18 +108,10 @@ public class LocalReplicatedMapConnector extends SqlKeyValueConnector {
             boolean key,
             InternalSerializationService serializationService
     ) {
-        String formatName = key ? TO_SERIALIZATION_KEY_FORMAT : TO_SERIALIZATION_VALUE_FORMAT;
-        String format = options.get(formatName);
-        if (format == null) {
-            // TODO: fallback to sample resolution ???
-            throw QueryException.error("Missing '" + formatName + "' option");
-        }
-
+        String format = options.get(key ? TO_SERIALIZATION_KEY_FORMAT : TO_SERIALIZATION_VALUE_FORMAT);
         MapOptionsMetadataResolver resolver = METADATA_RESOLVERS.get(format);
-        if (resolver == null) {
-            throw QueryException.error("Unknown format '" + format + "'");
-        }
-
-        return checkNotNull(resolver.resolve(externalFields, options, key, serializationService));
+        return resolver == null
+                ? MapOptionsMetadataResolver.resolve(externalFields, key)
+                : checkNotNull(resolver.resolve(externalFields, options, key, serializationService));
     }
 }

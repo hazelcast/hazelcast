@@ -64,18 +64,18 @@ public class PortableMapOptionsMetadataResolver implements MapOptionsMetadataRes
         String classVersionProperty = isKey ? TO_KEY_CLASS_VERSION : TO_VALUE_CLASS_VERSION;
         String classVersion = options.get(classVersionProperty);
 
-        if (factoryId != null && classId != null && classVersion != null) {
-            ClassDefinition classDefinition = lookupClassDefinition(
-                    serializationService,
-                    Integer.parseInt(factoryId),
-                    Integer.parseInt(classId),
-                    Integer.parseInt(classVersion)
-            );
-            return resolvePortable(classDefinition, isKey);
+        if (factoryId == null || classId == null || classVersion == null) {
+            throw QueryException.error("Unable to resolve table metadata."
+                    + " Missing ['" + factoryIdProperty + "'|'" + classIdProperty + "'|'" + classVersionProperty + "'] option");
         }
 
-        throw QueryException.error("Unable to resolve table metadata."
-                + " Missing ['" + factoryIdProperty + "'|'" + classIdProperty + "'|'" + classVersionProperty + "'] option");
+        ClassDefinition classDefinition = lookupClassDefinition(
+                serializationService,
+                Integer.parseInt(factoryId),
+                Integer.parseInt(classId),
+                Integer.parseInt(classVersion)
+        );
+        return resolvePortable(classDefinition, isKey);
     }
 
     // TODO: extract to util class ???
@@ -105,12 +105,18 @@ public class PortableMapOptionsMetadataResolver implements MapOptionsMetadataRes
 
         for (int i = 0; i < classDefinition.getFieldCount(); i++) {
             FieldDefinition fieldDefinition = classDefinition.getField(i);
+
             String name = fieldDefinition.getName();
             FieldType portableType = fieldDefinition.getType();
 
-            QueryDataType type = resolvePortableType(portableType);
+            TableField tableField = new MapTableField(
+                    name,
+                    resolvePortableType(portableType),
+                    false,
+                    new QueryPath(name, isKey)
+            );
 
-            fields.putIfAbsent(name, new MapTableField(name, type, false, new QueryPath(name, isKey)));
+            fields.putIfAbsent(name, tableField);
         }
 
         return new MapOptionsMetadata(

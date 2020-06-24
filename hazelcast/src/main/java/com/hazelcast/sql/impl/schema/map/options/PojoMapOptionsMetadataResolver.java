@@ -41,6 +41,7 @@ import java.util.Map;
 import static com.hazelcast.sql.impl.connector.SqlConnector.POJO_SERIALIZATION_FORMAT;
 import static com.hazelcast.sql.impl.connector.SqlKeyValueConnector.TO_KEY_CLASS;
 import static com.hazelcast.sql.impl.connector.SqlKeyValueConnector.TO_VALUE_CLASS;
+import static java.lang.Character.toLowerCase;
 import static java.lang.Character.toUpperCase;
 import static java.lang.String.format;
 
@@ -70,12 +71,12 @@ public class PojoMapOptionsMetadataResolver implements MapOptionsMetadataResolve
         String classNameProperty = isKey ? TO_KEY_CLASS : TO_VALUE_CLASS;
         String className = options.get(classNameProperty);
 
-        if (className != null) {
-            Class<?> clazz = loadClass(className);
-            return resolveClass(clazz, isKey);
+        if (className == null) {
+            throw QueryException.error("Unable to resolve table metadata. Missing '" + classNameProperty + "' option");
         }
 
-        throw QueryException.error("Unable to resolve table metadata. Missing '" + classNameProperty + "' option");
+        Class<?> clazz = loadClass(className);
+        return resolveClass(clazz, isKey);
     }
 
     // TODO: extract to util class ???
@@ -104,27 +105,29 @@ public class PojoMapOptionsMetadataResolver implements MapOptionsMetadataResolve
 
             String propertyName = property.element1();
             Class<?> propertyClass = property.element2();
+
             TableField tableField = toField(propertyName, propertyClass, isKey);
 
             typeNamesByFields.putIfAbsent(propertyName, propertyClass.getName());
             fields.putIfAbsent(propertyName, tableField);
         }
 
-        Class<?> currentClass = clazz;
-        while (currentClass != Object.class) {
-            for (Field field : currentClass.getDeclaredFields()) {
+        Class<?> classToInspect = clazz;
+        while (classToInspect != Object.class) {
+            for (Field field : classToInspect.getDeclaredFields()) {
                 if (skipField(field)) {
                     continue;
                 }
 
                 String fieldName = field.getName();
                 Class<?> fieldClass = field.getType();
+
                 TableField tableField = toField(fieldName, fieldClass, isKey);
 
                 typeNamesByFields.putIfAbsent(fieldName, fieldClass.getName());
                 fields.putIfAbsent(fieldName, tableField);
             }
-            currentClass = currentClass.getSuperclass();
+            classToInspect = classToInspect.getSuperclass();
         }
 
         return new MapOptionsMetadata(
@@ -196,7 +199,7 @@ public class PojoMapOptionsMetadataResolver implements MapOptionsMetadataResolve
             return null;
         }
 
-        return Character.toLowerCase(fieldNameWithWrongCase.charAt(0)) + fieldNameWithWrongCase.substring(1);
+        return toLowerCase(fieldNameWithWrongCase.charAt(0)) + fieldNameWithWrongCase.substring(1);
     }
 
     // TODO: extract to util class ???
