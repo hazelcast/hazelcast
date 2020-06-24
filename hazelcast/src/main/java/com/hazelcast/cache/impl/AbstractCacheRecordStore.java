@@ -93,6 +93,7 @@ import static com.hazelcast.cache.impl.CacheEventContextUtil.createCacheUpdatedE
 import static com.hazelcast.cache.impl.operation.MutableOperation.IGNORE_COMPLETION;
 import static com.hazelcast.cache.impl.record.CacheRecord.TIME_NOT_AVAILABLE;
 import static com.hazelcast.cache.impl.record.CacheRecordFactory.isExpiredAt;
+import com.hazelcast.config.CacheConfigAccessor;
 import static com.hazelcast.config.CacheConfigAccessor.getTenantControl;
 import static com.hazelcast.internal.config.ConfigValidator.checkCacheEvictionConfig;
 import static com.hazelcast.internal.nio.IOUtil.closeResource;
@@ -101,6 +102,7 @@ import static com.hazelcast.internal.util.MapUtil.createHashMap;
 import static com.hazelcast.internal.util.SetUtil.createHashSet;
 import static com.hazelcast.internal.util.ThreadUtil.assertRunningOnPartitionThread;
 import static com.hazelcast.spi.impl.merge.MergingValueFactory.createMergingEntry;
+import java.io.IOException;
 import static java.util.Collections.emptySet;
 
 @SuppressWarnings({"checkstyle:methodcount", "checkstyle:classfanoutcomplexity"})
@@ -161,13 +163,42 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
             throw new CacheNotExistsException("Cache " + cacheNameWithPrefix + " is already destroyed or not created yet, on "
                     + nodeEngine.getLocalMember());
         }
-        this.eventJournalConfig = cacheConfig.getEventJournalConfig();
-        this.evictionConfig = cacheConfig.getEvictionConfig();
-        if (evictionConfig == null) {
-            throw new IllegalStateException("Eviction config cannot be null!");
+        Closeable tenantContext = CacheConfigAccessor.getTenantControl(cacheConfig).setTenant(true);
+        try {
+            this.eventJournalConfig = cacheConfig.getEventJournalConfig();
+            this.evictionConfig = cacheConfig.getEvictionConfig();
+            if (evictionConfig == null) {
+                throw new IllegalStateException("Eviction config cannot be null!");
+            }
+            this.wanReplicationEnabled = cacheService.isWanReplicationEnabled(cacheNameWithPrefix);
+            this.disablePerEntryInvalidationEvents = cacheConfig.isDisablePerEntryInvalidationEvents();
+            initializeStatisticsAndFactories(cacheNameWithPrefix);
+            this.cacheContext = cacheService.getOrCreateCacheContext(cacheNameWithPrefix);
+            this.records = createRecordCacheMap();
+            this.evictionChecker = createCacheEvictionChecker(evictionConfig.getSize(), evictionConfig.getMaxSizePolicy());
+            this.evictionPolicyEvaluator = createEvictionPolicyEvaluator(evictionConfig);
+            this.evictionStrategy = createEvictionStrategy(evictionConfig);
+            this.objectNamespace = CacheService.getObjectNamespace(cacheNameWithPrefix);
+            this.persistWanReplicatedData = canPersistWanReplicatedData(cacheConfig, nodeEngine);
+            this.cacheRecordFactory = new CacheRecordFactory(cacheConfig.getInMemoryFormat(), ss);
+            this.valueComparator = getValueComparatorOf(cacheConfig.getInMemoryFormat());
+            this.clearExpiredRecordsTask = cacheService.getExpirationManager().getTask();
+
+            injectDependencies(evictionPolicyEvaluator.getEvictionPolicyComparator());
+            registerResourceIfItIsClosable(cacheWriter);
+            registerResourceIfItIsClosable(cacheLoader);
+            registerResourceIfItIsClosable(defaultExpiryPolicy);
+            init();
+        } finally {
+            try {
+                tenantContext.close();
+            } catch (IOException ex) {
+                ExceptionUtil.rethrow(ex);
+            }
         }
-        this.wanReplicationEnabled = cacheService.isWanReplicationEnabled(cacheNameWithPrefix);
-        this.disablePerEntryInvalidationEvents = cacheConfig.isDisablePerEntryInvalidationEvents();
+    }
+
+    private void initializeStatisticsAndFactories(String cacheNameWithPrefix) {
         if (cacheConfig.isStatisticsEnabled()) {
             statistics = cacheService.createCacheStatIfAbsent(cacheNameWithPrefix);
         }
@@ -191,23 +222,6 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
         } else {
             throw new IllegalStateException("Expiry policy factory cannot be null!");
         }
-
-        this.cacheContext = cacheService.getOrCreateCacheContext(cacheNameWithPrefix);
-        this.records = createRecordCacheMap();
-        this.evictionChecker = createCacheEvictionChecker(evictionConfig.getSize(), evictionConfig.getMaxSizePolicy());
-        this.evictionPolicyEvaluator = createEvictionPolicyEvaluator(evictionConfig);
-        this.evictionStrategy = createEvictionStrategy(evictionConfig);
-        this.objectNamespace = CacheService.getObjectNamespace(cacheNameWithPrefix);
-        this.persistWanReplicatedData = canPersistWanReplicatedData(cacheConfig, nodeEngine);
-        this.cacheRecordFactory = new CacheRecordFactory(cacheConfig.getInMemoryFormat(), ss);
-        this.valueComparator = getValueComparatorOf(cacheConfig.getInMemoryFormat());
-        this.clearExpiredRecordsTask = cacheService.getExpirationManager().getTask();
-
-        injectDependencies(evictionPolicyEvaluator.getEvictionPolicyComparator());
-        registerResourceIfItIsClosable(cacheWriter);
-        registerResourceIfItIsClosable(cacheLoader);
-        registerResourceIfItIsClosable(defaultExpiryPolicy);
-        init();
     }
 
     // Overridden in EE
