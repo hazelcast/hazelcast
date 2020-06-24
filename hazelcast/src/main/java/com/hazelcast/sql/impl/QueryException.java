@@ -109,4 +109,13 @@ public final class QueryException extends HazelcastException {
     public UUID getOriginatingMemberId() {
         return originatingMemberId;
     }
+
+    @Override
+    public String getMessage() {
+        if (originatingMemberId != null) {
+            return super.getMessage() + " (code=" + code + ", originatingMemberId=" + originatingMemberId + ')';
+        } else {
+            return super.getMessage() + " (code=" + code + ')';
+        }
+    }
 }

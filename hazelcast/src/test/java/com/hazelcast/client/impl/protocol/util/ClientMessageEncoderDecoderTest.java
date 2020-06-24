@@ -41,13 +41,16 @@ import javax.annotation.Nullable;
 import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Random;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static com.hazelcast.client.impl.protocol.ClientMessage.IS_FINAL_FLAG;
 import static com.hazelcast.client.impl.protocol.ClientMessage.UNFRAGMENTED_MESSAGE;
+import static com.hazelcast.client.impl.protocol.util.ClientMessageSplitter.getFragments;
 import static com.hazelcast.internal.networking.HandlerStatus.CLEAN;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
@@ -133,8 +136,6 @@ public class ClientMessageEncoderDecoderTest extends HazelcastTestSupport {
         Collection<String> labels = new LinkedList<>();
         labels.add("Label");
         UUID uuid = UUID.randomUUID();
-        UUID ownerUuid = UUID.randomUUID();
-        UUID clusterId = UUID.randomUUID();
         ClientMessage message = ClientAuthenticationCodec.encodeRequest("cluster", "user", "pass",
                 uuid, "JAVA", (byte) 1,
                 "1.0", "name", labels);
@@ -187,7 +188,6 @@ public class ClientMessageEncoderDecoderTest extends HazelcastTestSupport {
         Address address2 = new Address("127.0.0.1", 5703);
         members.add(new MemberImpl(address2, MemberVersion.of("3.12"), false, UUID.randomUUID()));
         UUID uuid = UUID.randomUUID();
-        UUID ownerUuid = UUID.randomUUID();
         UUID clusterId = UUID.randomUUID();
 
         ClientMessage message = ClientAuthenticationCodec.encodeResponse((byte) 2, new Address("127.0.0.1", 5701),
@@ -293,6 +293,64 @@ public class ClientMessageEncoderDecoderTest extends HazelcastTestSupport {
         assertEquals(1, eventHandler.eventType);
         assertEquals(uuid, eventHandler.uuid);
         assertEquals(1, eventHandler.numberOfAffectedEntries);
+    }
+
+    @Test
+    public void testFragmentedMessageHandling() {
+        ClientMessage message = createMessage(10, 9);
+        List<ClientMessage> fragments = getFragments(48, message);
+
+        assertEquals(3, fragments.size());
+
+        AtomicReference<Iterator<ClientMessage>> reference = new AtomicReference<>(fragments.iterator());
+
+        ClientMessageEncoder encoder = new ClientMessageEncoder();
+        encoder.src(() -> {
+            Iterator<ClientMessage> iterator = reference.get();
+            if (iterator.hasNext()) {
+                return iterator.next();
+            }
+            return null;
+        });
+
+        ByteBuffer buffer = ByteBuffer.allocate(200);
+        buffer.flip();
+        encoder.dst(buffer);
+
+        HandlerStatus result = encoder.onWrite();
+
+        assertEquals(CLEAN, result);
+
+        AtomicReference<ClientMessage> resultingMessageRef = new AtomicReference<>();
+        ClientMessageDecoder decoder = new ClientMessageDecoder(null, resultingMessageRef::set, null);
+        decoder.setNormalPacketsRead(SwCounter.newSwCounter());
+
+        buffer.position(buffer.limit());
+
+        decoder.src(buffer);
+        decoder.onRead();
+
+        ClientMessage resultingMessage = resultingMessageRef.get();
+
+        assertEquals(message.getFrameLength(), resultingMessage.getFrameLength());
+
+        ClientMessage.ForwardFrameIterator expectedIterator = message.frameIterator();
+        ClientMessage.ForwardFrameIterator resultingIterator = resultingMessage.frameIterator();
+        while (expectedIterator.hasNext()) {
+            assertArrayEquals(expectedIterator.next().content, resultingIterator.next().content);
+        }
+    }
+
+    private ClientMessage createMessage(int frameLength, int frameCount) {
+        ClientMessage message = ClientMessage.createForEncode();
+
+        Random random = new Random();
+        for (int i = 0; i < frameCount; i++) {
+            byte[] content = new byte[frameLength];
+            random.nextBytes(content);
+            message.add(new Frame(content));
+        }
+        return message;
     }
 
     private HeapData randomData() {

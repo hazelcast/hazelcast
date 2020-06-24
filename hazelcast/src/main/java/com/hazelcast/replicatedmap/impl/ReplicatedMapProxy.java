@@ -523,10 +523,6 @@ public class ReplicatedMapProxy<K, V> extends AbstractDistributedObject<Replicat
         return stats;
     }
 
-    public ReplicatedMapConfig getConfig() {
-        return config;
-    }
-
     private void ensureNoSplitBrain(SplitBrainProtectionOn requiredSplitBrainProtectionPermissionType) {
         service.ensureNoSplitBrain(name, requiredSplitBrainProtectionPermissionType);
     }

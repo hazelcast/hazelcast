@@ -28,7 +28,7 @@ Types supported by the Hazelcast Mustang are listed in Table 1. Precision is the
 | SQL Type | Precedence | Precision |
 |---|---|---|
 | `VARCHAR` | 100 |  |
-| `BOOLEAN` | 200 |  |
+| `BOOLEAN` | 200 | 1 |
 | `TINYINT` | 300 | 4 |
 | `SMALLINT` | 400 | 7 |
 | `INT` | 500 | 11 |
