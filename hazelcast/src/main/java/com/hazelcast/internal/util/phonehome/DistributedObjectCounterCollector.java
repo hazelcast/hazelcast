@@ -24,10 +24,8 @@ import com.hazelcast.map.impl.MapService;
 import com.hazelcast.multimap.impl.MultiMapService;
 import com.hazelcast.ringbuffer.impl.RingbufferService;
 
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -35,26 +33,30 @@ import static java.util.stream.Collectors.groupingBy;
 
 class DistributedObjectCounterCollector implements MetricsCollector {
 
+    private static final Map<String, String> mapMetric;
+
+    static {
+        mapMetric = new HashMap<>();
+        mapMetric.put(MapService.SERVICE_NAME, "mpct");
+        mapMetric.put(SetService.SERVICE_NAME, "sect");
+        mapMetric.put(QueueService.SERVICE_NAME, "quct");
+        mapMetric.put(MultiMapService.SERVICE_NAME, "mmct");
+        mapMetric.put(ListService.SERVICE_NAME, "lict");
+        mapMetric.put(RingbufferService.SERVICE_NAME, "rbct");
+    }
+
     @Override
     public Map<String, String> computeMetrics(Node hazelcastNode) {
 
         Collection<DistributedObject> distributedObjects = hazelcastNode.hazelcastInstance.getDistributedObjects();
-        List<String> list = Arrays.asList(MapService.SERVICE_NAME, SetService.SERVICE_NAME, QueueService.SERVICE_NAME,
-                MultiMapService.SERVICE_NAME, ListService.SERVICE_NAME, RingbufferService.SERVICE_NAME);
 
-
-        Map<String, Long> distributedObjectCount = distributedObjects.stream()
-                .filter(distributedObject -> list.contains(distributedObject.getServiceName()))
-                .collect(groupingBy(DistributedObject::getServiceName, Collectors.counting()));
+        Map<String, Long> countDistributedObjects = new HashMap<>(distributedObjects.stream()
+                .filter(distributedObject -> mapMetric.containsKey(distributedObject.getServiceName()))
+                .collect(groupingBy(DistributedObject::getServiceName, Collectors.counting())));
 
         Map<String, String> countInfo = new HashMap<>();
 
-        countInfo.put("mpct", String.valueOf(distributedObjectCount.getOrDefault(MapService.SERVICE_NAME, 0L)));
-        countInfo.put("sect", String.valueOf(distributedObjectCount.getOrDefault(SetService.SERVICE_NAME, 0L)));
-        countInfo.put("quct", String.valueOf(distributedObjectCount.getOrDefault(QueueService.SERVICE_NAME, 0L)));
-        countInfo.put("mmct", String.valueOf(distributedObjectCount.getOrDefault(MultiMapService.SERVICE_NAME, 0L)));
-        countInfo.put("lict", String.valueOf(distributedObjectCount.getOrDefault(ListService.SERVICE_NAME, 0L)));
-        countInfo.put("rbct", String.valueOf(distributedObjectCount.getOrDefault(RingbufferService.SERVICE_NAME, 0L)));
+        mapMetric.forEach((k, v) -> countInfo.put(v, String.valueOf(countDistributedObjects.getOrDefault(k, 0L))));
 
         return countInfo;
     }
