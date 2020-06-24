@@ -21,13 +21,23 @@ import com.hazelcast.sql.impl.extract.GenericQueryTargetDescriptor;
 import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.inject.JsonUpsertTargetDescriptor;
 import com.hazelcast.sql.impl.schema.ExternalTable.ExternalField;
+import com.hazelcast.sql.impl.schema.TableField;
+import com.hazelcast.sql.impl.schema.map.MapTableField;
+import com.hazelcast.sql.impl.type.QueryDataType;
 
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import static com.hazelcast.sql.impl.connector.SqlConnector.JSON_SERIALIZATION_FORMAT;
+
 // TODO: deduplicate with MapSampleMetadataResolver
 public class JsonMapOptionsMetadataResolver implements MapOptionsMetadataResolver {
+
+    @Override
+    public String supportedFormat() {
+        return JSON_SERIALIZATION_FORMAT;
+    }
 
     @Override
     public MapOptionsMetadata resolve(
@@ -36,9 +46,13 @@ public class JsonMapOptionsMetadataResolver implements MapOptionsMetadataResolve
             boolean isKey,
             InternalSerializationService serializationService
     ) {
-        LinkedHashMap<String, QueryPath> fields = new LinkedHashMap<>();
+        LinkedHashMap<String, TableField> fields = new LinkedHashMap<>();
         for (ExternalField externalField : externalFields) {
-            fields.put(externalField.name(), new QueryPath(externalField.name(), isKey));
+            String name = externalField.name();
+            QueryDataType type = externalField.type();
+            TableField field = new MapTableField(name, type, false, new QueryPath(name, isKey));
+
+            fields.put(externalField.name(), field);
         }
 
         return new MapOptionsMetadata(

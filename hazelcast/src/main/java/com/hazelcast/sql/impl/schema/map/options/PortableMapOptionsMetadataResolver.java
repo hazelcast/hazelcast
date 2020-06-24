@@ -18,16 +18,22 @@ package com.hazelcast.sql.impl.schema.map.options;
 
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.nio.serialization.ClassDefinition;
+import com.hazelcast.nio.serialization.FieldDefinition;
+import com.hazelcast.nio.serialization.FieldType;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.extract.GenericQueryTargetDescriptor;
 import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.inject.PortableUpsertTargetDescriptor;
 import com.hazelcast.sql.impl.schema.ExternalTable.ExternalField;
+import com.hazelcast.sql.impl.schema.TableField;
+import com.hazelcast.sql.impl.schema.map.MapTableField;
+import com.hazelcast.sql.impl.type.QueryDataType;
 
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import static com.hazelcast.sql.impl.connector.SqlConnector.PORTABLE_SERIALIZATION_FORMAT;
 import static com.hazelcast.sql.impl.connector.SqlKeyValueConnector.TO_KEY_CLASS_ID;
 import static com.hazelcast.sql.impl.connector.SqlKeyValueConnector.TO_KEY_CLASS_VERSION;
 import static com.hazelcast.sql.impl.connector.SqlKeyValueConnector.TO_KEY_FACTORY_ID;
@@ -38,6 +44,11 @@ import static java.lang.String.format;
 
 // TODO: deduplicate with MapSampleMetadataResolver
 public class PortableMapOptionsMetadataResolver implements MapOptionsMetadataResolver {
+
+    @Override
+    public String supportedFormat() {
+        return PORTABLE_SERIALIZATION_FORMAT;
+    }
 
     @Override
     public MapOptionsMetadata resolve(
@@ -57,7 +68,7 @@ public class PortableMapOptionsMetadataResolver implements MapOptionsMetadataRes
                     Integer.parseInt(classId),
                     Integer.parseInt(classVersion)
             );
-            return resolvePortable(externalFields, classDefinition, isKey);
+            return resolvePortable(classDefinition, isKey);
         }
 
         return null;
@@ -84,19 +95,19 @@ public class PortableMapOptionsMetadataResolver implements MapOptionsMetadataRes
     }
 
     private static MapOptionsMetadata resolvePortable(
-            List<ExternalField> externalFields,
             ClassDefinition classDefinition,
             boolean isKey
     ) {
-        LinkedHashMap<String, QueryPath> fields = new LinkedHashMap<>();
+        LinkedHashMap<String, TableField> fields = new LinkedHashMap<>();
 
-        // TODO: validate types match ???
-        for (ExternalField externalField : externalFields) {
-            String fieldName = externalField.name();
+        for (int i = 0; i < classDefinition.getFieldCount(); i++) {
+            FieldDefinition fieldDefinition = classDefinition.getField(i);
+            String name = fieldDefinition.getName();
+            FieldType portableType = fieldDefinition.getType();
 
-            if (classDefinition.hasField(fieldName)) {
-                fields.put(fieldName, new QueryPath(fieldName, isKey));
-            }
+            QueryDataType type = resolvePortableType(portableType);
+
+            fields.putIfAbsent(name, new MapTableField(name, type, false, new QueryPath(name, isKey)));
         }
 
         return new MapOptionsMetadata(
@@ -106,7 +117,33 @@ public class PortableMapOptionsMetadataResolver implements MapOptionsMetadataRes
                         classDefinition.getClassId(),
                         classDefinition.getVersion()
                 ),
-                new LinkedHashMap<>(fields)
+                fields
         );
+    }
+
+    @SuppressWarnings("checkstyle:ReturnCount")
+    private static QueryDataType resolvePortableType(FieldType portableType) {
+        switch (portableType) {
+            case BOOLEAN:
+                return QueryDataType.BOOLEAN;
+            case BYTE:
+                return QueryDataType.TINYINT;
+            case SHORT:
+                return QueryDataType.SMALLINT;
+            case CHAR:
+                return QueryDataType.VARCHAR_CHARACTER;
+            case UTF:
+                return QueryDataType.VARCHAR;
+            case INT:
+                return QueryDataType.INT;
+            case LONG:
+                return QueryDataType.BIGINT;
+            case FLOAT:
+                return QueryDataType.REAL;
+            case DOUBLE:
+                return QueryDataType.DOUBLE;
+            default:
+                return QueryDataType.OBJECT;
+        }
     }
 }

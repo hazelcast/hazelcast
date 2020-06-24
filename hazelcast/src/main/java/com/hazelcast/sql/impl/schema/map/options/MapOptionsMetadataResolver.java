@@ -24,6 +24,8 @@ import java.util.Map;
 
 public interface MapOptionsMetadataResolver {
 
+    String supportedFormat();
+
     MapOptionsMetadata resolve(
             List<ExternalField> externalFields,
             Map<String, String> options,

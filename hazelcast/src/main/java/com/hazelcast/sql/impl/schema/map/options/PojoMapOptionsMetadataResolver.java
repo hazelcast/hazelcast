@@ -18,6 +18,7 @@ package com.hazelcast.sql.impl.schema.map.options;
 
 import com.hazelcast.internal.nio.ClassLoaderUtil;
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.util.BiTuple;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.sql.impl.QueryException;
@@ -25,6 +26,9 @@ import com.hazelcast.sql.impl.extract.GenericQueryTargetDescriptor;
 import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.inject.PojoUpsertTargetDescriptor;
 import com.hazelcast.sql.impl.schema.ExternalTable.ExternalField;
+import com.hazelcast.sql.impl.schema.TableField;
+import com.hazelcast.sql.impl.schema.map.MapTableField;
+import com.hazelcast.sql.impl.type.QueryDataTypeUtils;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -34,6 +38,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import static com.hazelcast.sql.impl.connector.SqlConnector.POJO_SERIALIZATION_FORMAT;
 import static com.hazelcast.sql.impl.connector.SqlKeyValueConnector.TO_KEY_CLASS;
 import static com.hazelcast.sql.impl.connector.SqlKeyValueConnector.TO_VALUE_CLASS;
 import static java.lang.Character.toUpperCase;
@@ -51,6 +56,11 @@ public class PojoMapOptionsMetadataResolver implements MapOptionsMetadataResolve
     private static final String METHOD_GET_CLASS_VERSION = "getVersion";
 
     @Override
+    public String supportedFormat() {
+        return POJO_SERIALIZATION_FORMAT;
+    }
+
+    @Override
     public MapOptionsMetadata resolve(
             List<ExternalField> externalFields,
             Map<String, String> options,
@@ -61,7 +71,7 @@ public class PojoMapOptionsMetadataResolver implements MapOptionsMetadataResolve
 
         if (className != null) {
             Class<?> clazz = loadClass(className);
-            return resolveClass(externalFields, clazz, isKey);
+            return resolveClass(clazz, isKey);
         }
 
         return null;
@@ -79,29 +89,41 @@ public class PojoMapOptionsMetadataResolver implements MapOptionsMetadataResolve
     }
 
     private static MapOptionsMetadata resolveClass(
-            List<ExternalField> externalFields,
             Class<?> clazz,
             boolean isKey
     ) {
         Map<String, String> typeNamesByFields = new HashMap<>();
-        LinkedHashMap<String, QueryPath> fields = new LinkedHashMap<>();
+        LinkedHashMap<String, TableField> fields = new LinkedHashMap<>();
 
-        // TODO: validate types match ???
-        for (ExternalField externalField : externalFields) {
-            String fieldName = externalField.name();
-
-            Class<?> attributeClass = extractPropertyClass(clazz, fieldName);
-
-            if (attributeClass == null) {
-                attributeClass = extractFieldClass(clazz, fieldName);
-            }
-
-            if (attributeClass == null) {
+        for (Method method : clazz.getMethods()) {
+            BiTuple<String, Class<?>> property = extractProperty(clazz, method);
+            if (property == null) {
                 continue;
             }
 
-            typeNamesByFields.putIfAbsent(fieldName, attributeClass.getName());
-            fields.putIfAbsent(fieldName, new QueryPath(fieldName, isKey));
+            String propertyName = property.element1();
+            Class<?> propertyClass = property.element2();
+            TableField tableField = toField(propertyName, propertyClass, isKey);
+
+            typeNamesByFields.putIfAbsent(propertyName, propertyClass.getName());
+            fields.putIfAbsent(propertyName, tableField);
+        }
+
+        Class<?> currentClass = clazz;
+        while (currentClass != Object.class) {
+            for (Field field : currentClass.getDeclaredFields()) {
+                if (skipField(field)) {
+                    continue;
+                }
+
+                String fieldName = field.getName();
+                Class<?> fieldClass = field.getType();
+                TableField tableField = toField(fieldName, fieldClass, isKey);
+
+                typeNamesByFields.putIfAbsent(fieldName, fieldClass.getName());
+                fields.putIfAbsent(fieldName, tableField);
+            }
+            currentClass = currentClass.getSuperclass();
         }
 
         return new MapOptionsMetadata(
@@ -111,57 +133,27 @@ public class PojoMapOptionsMetadataResolver implements MapOptionsMetadataResolve
         );
     }
 
-    private static Class<?> extractPropertyClass(Class<?> clazz, String propertyName) {
-        Method getter = extractGetter(clazz, propertyName);
-        if (getter == null) {
-            return null;
-        }
-
-        Class<?> propertyClass = getter.getReturnType();
-
-        Method setter = extractSetter(clazz, propertyName, propertyClass);
-        if (setter == null) {
-            return null;
-        }
-
-        return propertyClass;
-    }
-
-    private static Method extractGetter(Class<?> clazz, String propertyName) {
-        String getName = METHOD_PREFIX_GET + toUpperCase(propertyName.charAt(0)) + propertyName.substring(1);
-        String isName = METHOD_PREFIX_IS + toUpperCase(propertyName.charAt(0)) + propertyName.substring(1);
-
-        for (Method method : clazz.getMethods()) {
-            String methodName = method.getName();
-            if ((getName.equals(methodName) || isName.equals(methodName)) && isGetter(clazz, method)) {
-                return method;
-            }
-        }
-
-        return null;
-    }
-
-    @SuppressWarnings({"RedundantIfStatement", "checkstyle:npathcomplexity"})
-    private static boolean isGetter(Class<?> clazz, Method method) {
+    @SuppressWarnings({"checkstyle:npathcomplexity"})
+    private static BiTuple<String, Class<?>> extractProperty(Class<?> clazz, Method method) {
         if (!Modifier.isPublic(method.getModifiers())) {
-            return false;
+            return null;
         }
 
         if (Modifier.isStatic(method.getModifiers())) {
-            return false;
+            return null;
         }
 
         Class<?> returnType = method.getReturnType();
         if (returnType == void.class || returnType == Void.class) {
-            return false;
+            return null;
         }
 
         if (method.getParameterCount() != 0) {
-            return false;
+            return null;
         }
 
         if (method.getDeclaringClass() == Object.class) {
-            return false;
+            return null;
         }
 
         String methodName = method.getName();
@@ -169,11 +161,41 @@ public class PojoMapOptionsMetadataResolver implements MapOptionsMetadataResolve
                 || methodName.equals(METHOD_GET_CLASS_ID)
                 || methodName.equals(METHOD_GET_CLASS_VERSION)) {
             if (IdentifiedDataSerializable.class.isAssignableFrom(clazz) || Portable.class.isAssignableFrom(clazz)) {
-                return false;
+                return null;
             }
         }
 
-        return true;
+        String propertyName = extractPropertyName(method);
+        if (propertyName == null) {
+            return null;
+        }
+
+        Class<?> propertyClass = method.getReturnType();
+        if (extractSetter(clazz, propertyName, propertyClass) == null) {
+            return null;
+        }
+
+        return BiTuple.of(propertyName, propertyClass);
+    }
+
+    private static String extractPropertyName(Method method) {
+        String fieldNameWithWrongCase;
+
+        String methodName = method.getName();
+        if (methodName.startsWith(METHOD_PREFIX_GET) && methodName.length() > METHOD_PREFIX_GET.length()) {
+            fieldNameWithWrongCase = methodName.substring(METHOD_PREFIX_GET.length());
+        } else if (methodName.startsWith(METHOD_PREFIX_IS) && methodName.length() > METHOD_PREFIX_IS.length()) {
+            // Skip getters that do not return primitive boolean.
+            if (method.getReturnType() != boolean.class) {
+                return null;
+            }
+
+            fieldNameWithWrongCase = methodName.substring(METHOD_PREFIX_IS.length());
+        } else {
+            return null;
+        }
+
+        return Character.toLowerCase(fieldNameWithWrongCase.charAt(0)) + fieldNameWithWrongCase.substring(1);
     }
 
     // TODO: extract to util class ???
@@ -212,16 +234,6 @@ public class PojoMapOptionsMetadataResolver implements MapOptionsMetadataResolve
         return true;
     }
 
-    private static Class<?> extractFieldClass(Class<?> clazz, String fieldName) {
-        Field field = extractField(clazz, fieldName);
-
-        if (field == null) {
-            return null;
-        }
-
-        return field.getType();
-    }
-
     // TODO: extract to util class ???
     public static Field extractField(Class<?> clazz, String fieldName) {
         Field field;
@@ -231,10 +243,23 @@ public class PojoMapOptionsMetadataResolver implements MapOptionsMetadataResolve
             return null;
         }
 
-        if (!Modifier.isPublic(field.getModifiers())) {
+        if (skipField(field)) {
             return null;
         }
 
         return field;
+    }
+
+    @SuppressWarnings("RedundantIfStatement")
+    private static boolean skipField(Field field) {
+        if (!Modifier.isPublic(field.getModifiers())) {
+            return true;
+        }
+
+        return false;
+    }
+
+    private static MapTableField toField(String name, Class<?> clazz, boolean isKey) {
+        return new MapTableField(name, QueryDataTypeUtils.resolveTypeForClass(clazz), false, new QueryPath(name, isKey));
     }
 }

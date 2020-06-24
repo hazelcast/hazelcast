@@ -16,12 +16,10 @@
 
 package com.hazelcast.sql.impl.connector;
 
-import com.hazelcast.sql.impl.extract.QueryPath;
-import com.hazelcast.sql.impl.schema.ExternalTable.ExternalField;
 import com.hazelcast.sql.impl.schema.TableField;
-import com.hazelcast.sql.impl.schema.map.MapTableField;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -55,35 +53,16 @@ public abstract class SqlKeyValueConnector implements SqlConnector {
     public static final String TO_VALUE_CLASS_VERSION = "valueClassVersion";
 
     protected static List<TableField> mergeFields(
-            List<ExternalField> externalFields,
-            Map<String, QueryPath> keyFields,
-            Map<String, QueryPath> valueFields
+            Map<String, TableField> keyFields,
+            Map<String, TableField> valueFields
     ) {
-        List<TableField> fields = new ArrayList<>(externalFields.size());
+        LinkedHashMap<String, TableField> fields = new LinkedHashMap<>(keyFields);
 
-        for (ExternalField externalField : externalFields) {
-            String fieldName = externalField.name();
-
-            QueryPath queryPath;
-            if (keyFields.containsKey(fieldName)) {
-                queryPath = keyFields.get(fieldName);
-            } else if (valueFields.containsKey(fieldName)) {
-                queryPath = valueFields.get(fieldName);
-            } else {
-                // allow nulls for non existing fields
-                queryPath = QueryPath.create(fieldName);
-            }
-
-            TableField field = new MapTableField(
-                    externalField.name(),
-                    externalField.type(),
-                    false,
-                    queryPath
-            );
-
-            fields.add(field);
+        // Value fields do not override key fields.
+        for (Map.Entry<String, TableField> valueFieldEntry : valueFields.entrySet()) {
+            fields.putIfAbsent(valueFieldEntry.getKey(), valueFieldEntry.getValue());
         }
 
-        return fields;
+        return new ArrayList<>(fields.values());
     }
 }

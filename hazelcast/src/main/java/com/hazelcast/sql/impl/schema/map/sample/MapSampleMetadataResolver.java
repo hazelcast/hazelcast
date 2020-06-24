@@ -95,7 +95,7 @@ public final class MapSampleMetadataResolver {
      * @return Metadata.
      */
     private static MapSampleMetadata resolvePortable(ClassDefinition clazz, boolean isKey) {
-        TreeMap<String, TableField> fields = new TreeMap<>();
+        Map<String, TableField> fields = new TreeMap<>();
 
         // Add regular fields.
         for (String name : clazz.getFieldNames()) {

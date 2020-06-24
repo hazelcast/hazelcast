@@ -21,6 +21,8 @@ import com.hazelcast.sql.impl.extract.GenericQueryTargetDescriptor;
 import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.inject.ObjectUpsertTargetDescriptor;
 import com.hazelcast.sql.impl.schema.ExternalTable.ExternalField;
+import com.hazelcast.sql.impl.schema.TableField;
+import com.hazelcast.sql.impl.schema.map.MapTableField;
 
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -28,10 +30,16 @@ import java.util.Map;
 
 import static com.hazelcast.query.QueryConstants.KEY_ATTRIBUTE_NAME;
 import static com.hazelcast.query.QueryConstants.THIS_ATTRIBUTE_NAME;
+import static com.hazelcast.sql.impl.connector.SqlConnector.OBJECT_SERIALIZATION_FORMAT;
 import static java.util.Collections.singletonMap;
 
 // TODO: deduplicate with MapSampleMetadataResolver
 public class ObjectMapOptionsMetadataResolver implements MapOptionsMetadataResolver {
+
+    @Override
+    public String supportedFormat() {
+        return OBJECT_SERIALIZATION_FORMAT;
+    }
 
     @Override
     public MapOptionsMetadata resolve(
@@ -40,28 +48,32 @@ public class ObjectMapOptionsMetadataResolver implements MapOptionsMetadataResol
             boolean isKey,
             InternalSerializationService serializationService
     ) {
-        String fieldName = isKey ? KEY_ATTRIBUTE_NAME.value() : THIS_ATTRIBUTE_NAME.value();
-        int fieldIndex = indexOf(externalFields, fieldName);
+        ExternalField externalField = findExternalField(
+                externalFields,
+                isKey ? KEY_ATTRIBUTE_NAME.value() : THIS_ATTRIBUTE_NAME.value()
+        );
 
-        if (fieldIndex > -1) {
-            // TODO: validate types match ???
-            QueryPath path = isKey ? QueryPath.KEY_PATH : QueryPath.VALUE_PATH;
+        if (externalField != null) {
+            TableField field = new MapTableField(
+                    externalField.name(),
+                    externalField.type(),
+                    false,
+                    isKey ? QueryPath.KEY_PATH : QueryPath.VALUE_PATH
+            );
             return new MapOptionsMetadata(
                     GenericQueryTargetDescriptor.INSTANCE,
                     ObjectUpsertTargetDescriptor.INSTANCE,
-                    new LinkedHashMap<>(singletonMap(fieldName, path))
+                    new LinkedHashMap<>(singletonMap(field.getName(), field))
             );
         }
 
         return null;
     }
 
-    private static int indexOf(List<ExternalField> externalFields, String fieldName) {
-        for (int i = 0; i < externalFields.size(); i++) {
-            if (externalFields.get(i).name().equals(fieldName)) {
-                return i;
-            }
-        }
-        return -1;
+    private static ExternalField findExternalField(List<ExternalField> externalFields, String fieldName) {
+        return externalFields.stream()
+                             .filter(externalField -> fieldName.equalsIgnoreCase(externalField.name()))
+                             .findFirst()
+                             .orElse(null);
     }
 }

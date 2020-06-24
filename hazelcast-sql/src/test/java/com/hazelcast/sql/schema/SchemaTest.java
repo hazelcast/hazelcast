@@ -42,7 +42,11 @@ import java.util.GregorianCalendar;
 import java.util.List;
 import java.util.Map;
 
+import static com.hazelcast.sql.impl.connector.SqlConnector.OBJECT_SERIALIZATION_FORMAT;
+import static com.hazelcast.sql.impl.connector.SqlConnector.POJO_SERIALIZATION_FORMAT;
 import static com.hazelcast.sql.impl.connector.SqlKeyValueConnector.TO_KEY_CLASS;
+import static com.hazelcast.sql.impl.connector.SqlKeyValueConnector.TO_SERIALIZATION_KEY_FORMAT;
+import static com.hazelcast.sql.impl.connector.SqlKeyValueConnector.TO_SERIALIZATION_VALUE_FORMAT;
 import static com.hazelcast.sql.impl.connector.SqlKeyValueConnector.TO_VALUE_CLASS;
 import static java.lang.String.format;
 import static java.time.ZoneOffset.UTC;
@@ -76,11 +80,17 @@ public class SchemaTest extends CalciteSqlTestSupport {
         List<SqlRow> updateRows = getQueryRows(
                 member,
                 format("CREATE EXTERNAL TABLE %s ("
-                                + "  __key INT,"
-                                + "  this VARCHAR"
-                                + ") TYPE \"%s\"",
-                        name, LocalPartitionedMapConnector.TYPE_NAME)
-        );
+                                + " __key INT,"
+                                + " this VARCHAR"
+                                + ") TYPE \"%s\" "
+                                + "OPTIONS ("
+                                + " \"%s\" '%s',"
+                                + " \"%s\" '%s'"
+                                + ")",
+                        name, LocalPartitionedMapConnector.TYPE_NAME,
+                        TO_SERIALIZATION_KEY_FORMAT, OBJECT_SERIALIZATION_FORMAT,
+                        TO_SERIALIZATION_VALUE_FORMAT, OBJECT_SERIALIZATION_FORMAT
+                ));
 
         // then
         assertThat(updateRows).hasSize(1);
@@ -104,11 +114,17 @@ public class SchemaTest extends CalciteSqlTestSupport {
         executeQuery(
                 instances[0],
                 format("CREATE EXTERNAL TABLE %s ("
-                                + "  __key INT,"
-                                + "  this VARCHAR"
-                                + ") TYPE \"%s\"",
-                        name, LocalPartitionedMapConnector.TYPE_NAME)
-        );
+                                + " __key INT,"
+                                + " this VARCHAR"
+                                + ") TYPE \"%s\" "
+                                + "OPTIONS ("
+                                + " \"%s\" '%s',"
+                                + " \"%s\" '%s'"
+                                + ")",
+                        name, LocalPartitionedMapConnector.TYPE_NAME,
+                        TO_SERIALIZATION_KEY_FORMAT, OBJECT_SERIALIZATION_FORMAT,
+                        TO_SERIALIZATION_VALUE_FORMAT, OBJECT_SERIALIZATION_FORMAT
+                ));
 
         // then schema is available on another one
         // TODO: fix it properly - sticky client, different catalog storage, ???
@@ -124,15 +140,18 @@ public class SchemaTest extends CalciteSqlTestSupport {
         String name = "priority_map";
         executeQuery(
                 member,
-                format("CREATE EXTERNAL TABLE %s ("
-                                + "  age INT"
-                                + ") TYPE \"%s\" "
+                format("CREATE EXTERNAL TABLE %s "
+                                + "TYPE \"%s\" "
                                 + "OPTIONS ("
-                                + "  %s '%s',"
-                                + "  %s '%s'"
+                                + " \"%s\" '%s',"
+                                + " \"%s\" '%s',"
+                                + " \"%s\" '%s',"
+                                + " \"%s\" '%s'"
                                 + ")",
                         name, LocalPartitionedMapConnector.TYPE_NAME,
+                        TO_SERIALIZATION_KEY_FORMAT, POJO_SERIALIZATION_FORMAT,
                         TO_KEY_CLASS, Person.class.getName(),
+                        TO_SERIALIZATION_VALUE_FORMAT, POJO_SERIALIZATION_FORMAT,
                         TO_VALUE_CLASS, Person.class.getName()
 
                 ));
@@ -145,7 +164,7 @@ public class SchemaTest extends CalciteSqlTestSupport {
 
         // then
         assertThat(rows).hasSize(1);
-        assertThat((int) rows.get(0).getObject(0)).isEqualTo(30);
+        assertThat(rows.get(0).getObject(0)).isEqualTo(BigDecimal.valueOf(30));
     }
 
     @Test
@@ -153,34 +172,18 @@ public class SchemaTest extends CalciteSqlTestSupport {
         // given
         String name = "all_fields_map";
         executeQuery(member, format("CREATE EXTERNAL TABLE %s ("
-                        + "  __key DECIMAL(10, 0), "
-                        + "  string VARCHAR,"
-                        + "  character0 CHAR, "
-                        + "  boolean0 BOOLEAN, "
-                        + "  byte0 TINYINT, "
-                        + "  short0 SMALLINT, "
-                        + "  int0 INT, "
-                        + "  long0 BIGINT, "
-                        + "  float0 REAL, "
-                        + "  double0 DOUBLE, "
-                        + "  bigDecimal DEC(10, 1), "
-                        + "  bigInteger NUMERIC(5, 0), "
-                        + "  \"localTime\" TIME, "
-                        + "  localDate DATE, "
-                        + "  localDateTime TIMESTAMP, "
-                        + "  \"date\" TIMESTAMP WITH LOCAL TIME ZONE (\"DATE\"), "
-                        + "  calendar TIMESTAMP WITH TIME ZONE (\"CALENDAR\"), "
-                        + "  instant TIMESTAMP WITH LOCAL TIME ZONE, "
-                        + "  zonedDateTime TIMESTAMP WITH TIME ZONE (\"ZONED_DATE_TIME\"), "
-                        + "  offsetDateTime TIMESTAMP WITH TIME ZONE "
-                        /* + "  yearMonthInterval INTERVAL_YEAR_MONTH, "
-                        + "  offsetDateTime INTERVAL_DAY_SECOND, "*/
+                        + " __key DECIMAL(10, 0)"
                         + ") TYPE \"%s\" "
                         + "OPTIONS ("
-                        + "  %s '%s'"
+                        + " \"%s\" '%s',"
+                        + " \"%s\" '%s',"
+                        + " \"%s\" '%s'"
                         + ")",
                 name, LocalPartitionedMapConnector.TYPE_NAME,
+                TO_SERIALIZATION_KEY_FORMAT, OBJECT_SERIALIZATION_FORMAT,
+                TO_SERIALIZATION_VALUE_FORMAT, POJO_SERIALIZATION_FORMAT,
                 TO_VALUE_CLASS, AllTypesValue.class.getName()
+
         ));
 
         AllTypesValue allTypes = new AllTypesValue(
@@ -209,7 +212,33 @@ public class SchemaTest extends CalciteSqlTestSupport {
         map.put(BigInteger.valueOf(13), allTypes);
 
         // when
-        List<SqlRow> rows = getQueryRows(member, format("SELECT * FROM %s", name));
+        List<SqlRow> rows = getQueryRows(
+                member,
+                format("SELECT"
+                                + " __key"
+                                + " ,string"
+                                + " ,character0"
+                                + " ,boolean0"
+                                + " ,byte0"
+                                + " ,short0"
+                                + " ,int0"
+                                + " ,long0"
+                                + " ,float0"
+                                + " ,double0"
+                                + " ,bigDecimal"
+                                + " ,bigInteger"
+                                + " ,\"localTime\""
+                                + " ,localDate"
+                                + " ,localDateTime"
+                                + " ,\"date\""
+                                + " ,calendar"
+                                + " ,instant"
+                                + " ,zonedDateTime"
+                                + " ,offsetDateTime"
+                                + " FROM %s",
+                        name
+                )
+        );
 
         // then
         assertThat(rows).hasSize(1);
@@ -230,29 +259,28 @@ public class SchemaTest extends CalciteSqlTestSupport {
         assertThat((LocalDateTime) rows.get(0).getObject(14)).isEqualTo(allTypes.getLocalDateTime());
 
         assertEquals(
-            rows.get(0).getObject(15),
-            OffsetDateTime.ofInstant(allTypes.getDate().toInstant(), ZoneId.systemDefault())
-        );
-
-        // TODO:
-        assertEquals(
-            rows.get(0).getObject(16),
-            allTypes.getCalendar().toZonedDateTime().toOffsetDateTime()
+                rows.get(0).getObject(15),
+                OffsetDateTime.ofInstant(allTypes.getDate().toInstant(), ZoneId.systemDefault())
         );
 
         assertEquals(
-            rows.get(0).getObject(17),
-            OffsetDateTime.ofInstant(allTypes.getInstant(), ZoneId.systemDefault())
+                rows.get(0).getObject(16),
+                allTypes.getCalendar().toZonedDateTime().toOffsetDateTime()
         );
 
         assertEquals(
-            rows.get(0).getObject(18),
-            allTypes.getZonedDateTime().toOffsetDateTime()
+                rows.get(0).getObject(17),
+                OffsetDateTime.ofInstant(allTypes.getInstant(), ZoneId.systemDefault())
         );
 
         assertEquals(
-            rows.get(0).getObject(19),
-            allTypes.getOffsetDateTime()
+                rows.get(0).getObject(18),
+                allTypes.getZonedDateTime().toOffsetDateTime()
+        );
+
+        assertEquals(
+                rows.get(0).getObject(19),
+                allTypes.offsetDateTime
         );
     }
 
@@ -265,9 +293,15 @@ public class SchemaTest extends CalciteSqlTestSupport {
                 format("CREATE EXTERNAL TABLE %s ("
                                 + "  __key INT,"
                                 + "  this VARCHAR"
-                                + ") TYPE \"%s\"",
-                        name, LocalPartitionedMapConnector.TYPE_NAME)
-        );
+                                + ") TYPE \"%s\" "
+                                + "OPTIONS ("
+                                + " \"%s\" '%s',"
+                                + " \"%s\" '%s'"
+                                + ")",
+                        name, LocalPartitionedMapConnector.TYPE_NAME,
+                        TO_SERIALIZATION_KEY_FORMAT, OBJECT_SERIALIZATION_FORMAT,
+                        TO_SERIALIZATION_VALUE_FORMAT, OBJECT_SERIALIZATION_FORMAT
+                ));
 
         // when
         executeQuery(member, format("DROP EXTERNAL TABLE %s", name));

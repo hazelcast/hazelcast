@@ -310,7 +310,7 @@ public abstract class AbstractJsonGetter extends Getter {
             case JsonTokenId.ID_NUMBER_INT:
                 return parser.getLongValue();
             case JsonTokenId.ID_NUMBER_FLOAT:
-                return parser.getDecimalValue();
+                return parser.getValueAsDouble();
             case JsonTokenId.ID_TRUE:
                 return true;
             case JsonTokenId.ID_FALSE:

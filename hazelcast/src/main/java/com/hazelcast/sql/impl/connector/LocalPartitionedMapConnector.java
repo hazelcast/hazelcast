@@ -37,35 +37,37 @@ import com.hazelcast.sql.impl.schema.map.options.PojoMapOptionsMetadataResolver;
 import com.hazelcast.sql.impl.schema.map.options.PortableMapOptionsMetadataResolver;
 
 import javax.annotation.Nonnull;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Stream;
 
 import static com.hazelcast.sql.impl.schema.map.MapTableUtils.estimatePartitionedMapRowCount;
 import static com.hazelcast.sql.impl.schema.map.MapTableUtils.getPartitionedMapDistributionField;
 import static com.hazelcast.sql.impl.schema.map.MapTableUtils.getPartitionedMapIndexes;
 import static com.hazelcast.sql.impl.schema.map.MapTableUtils.mapPathsToOrdinals;
 import static java.util.Collections.emptyList;
+import static java.util.stream.Collectors.toMap;
 
 // TODO: do we want to keep it? maps are auto discovered...
 public class LocalPartitionedMapConnector extends SqlKeyValueConnector {
 
     public static final String TYPE_NAME = "com.hazelcast.LocalPartitionedMap";
 
-    private static final Map<String, MapOptionsMetadataResolver> METADATA_RESOLVERS =
-            new HashMap<String, MapOptionsMetadataResolver>() {{
-                put(OBJECT_SERIALIZATION_FORMAT, new ObjectMapOptionsMetadataResolver());
-                put(POJO_SERIALIZATION_FORMAT, new PojoMapOptionsMetadataResolver());
-                put(PORTABLE_SERIALIZATION_FORMAT, new PortableMapOptionsMetadataResolver());
-                put(JSON_SERIALIZATION_FORMAT, new JsonMapOptionsMetadataResolver());
-            }};
+    private static final Map<String, MapOptionsMetadataResolver> METADATA_RESOLVERS = Stream.of(
+            new ObjectMapOptionsMetadataResolver(),
+            new PojoMapOptionsMetadataResolver(),
+            new PortableMapOptionsMetadataResolver(),
+            new JsonMapOptionsMetadataResolver()
+    ).collect(toMap(MapOptionsMetadataResolver::supportedFormat, Function.identity()));
 
     @Override
     public String typeName() {
         return TYPE_NAME;
     }
 
-    @Nonnull @Override
+    @Nonnull
+    @Override
     public Table createTable(
             @Nonnull NodeEngine nodeEngine,
             @Nonnull String schemaName,
@@ -89,7 +91,7 @@ public class LocalPartitionedMapConnector extends SqlKeyValueConnector {
 
         MapOptionsMetadata keyMetadata = resolveMetadata(externalFields, options, true, serializationService);
         MapOptionsMetadata valueMetadata = resolveMetadata(externalFields, options, false, serializationService);
-        List<TableField> fields = mergeFields(externalFields, keyMetadata.getFields(), valueMetadata.getFields());
+        List<TableField> fields = mergeFields(keyMetadata.getFields(), valueMetadata.getFields());
 
         // TODO: deduplicate with PartitionedMapTableResolver ???
         MapService service = nodeEngine.getService(MapService.SERVICE_NAME);

@@ -57,7 +57,7 @@ public class PortableUpsertTarget implements UpsertTarget {
         return (target, value) -> ((PortableTarget) target).add(fieldDefinition, value);
     }
 
-    private class PortableTarget implements Target {
+    private final class PortableTarget implements Target {
 
         private final GenericPortable portable;
 

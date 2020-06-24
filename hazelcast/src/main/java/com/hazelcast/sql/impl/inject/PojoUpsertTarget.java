@@ -104,7 +104,7 @@ public class PojoUpsertTarget implements UpsertTarget {
         };
     }
 
-    private static class PojoTarget implements Target {
+    private static final class PojoTarget implements Target {
 
         private final Object pojo;
 

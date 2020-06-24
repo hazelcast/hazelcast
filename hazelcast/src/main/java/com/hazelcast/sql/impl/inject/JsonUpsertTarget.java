@@ -19,6 +19,8 @@ package com.hazelcast.sql.impl.inject;
 import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -39,7 +41,7 @@ public class JsonUpsertTarget implements UpsertTarget {
         return (target, value) -> ((JsonTarget) target).put(path, value);
     }
 
-    private static class JsonTarget implements Target {
+    private static final class JsonTarget implements Target {
 
         private final Map<String, Object> entries;
 
@@ -68,7 +70,8 @@ public class JsonUpsertTarget implements UpsertTarget {
                 Object value = entry.getValue();
                 if (value == null) {
                     builder.append("null");
-                } else if (value instanceof Number || value instanceof Boolean) {
+                } else if ((value instanceof Number && !(value instanceof BigDecimal) && !(value instanceof BigInteger))
+                        || value instanceof Boolean) {
                     builder.append(QueryDataType.VARCHAR.convert(value));
                 } else {
                     builder.append('"').append(QueryDataType.VARCHAR.convert(value)).append('"');

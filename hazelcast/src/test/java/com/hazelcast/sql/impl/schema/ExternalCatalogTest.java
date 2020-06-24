@@ -31,9 +31,11 @@ import org.junit.Test;
 import java.util.Map;
 import java.util.NoSuchElementException;
 
+import static com.hazelcast.sql.impl.connector.SqlConnector.OBJECT_SERIALIZATION_FORMAT;
+import static com.hazelcast.sql.impl.connector.SqlKeyValueConnector.TO_SERIALIZATION_KEY_FORMAT;
+import static com.hazelcast.sql.impl.connector.SqlKeyValueConnector.TO_SERIALIZATION_VALUE_FORMAT;
 import static com.hazelcast.sql.impl.type.QueryDataType.INT;
 import static com.hazelcast.sql.impl.type.QueryDataType.VARCHAR;
-import static java.util.Collections.emptyMap;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 import static org.junit.Assert.assertEquals;
@@ -78,7 +80,7 @@ public class ExternalCatalogTest extends SqlTestSupport {
         catalog.createTable(table, true, false);
 
         // then
-        assertEquals(tableFields(catalog, name), ImmutableMap.of("__key", VARCHAR, "this", INT));
+        assertEquals(ImmutableMap.of("__key", VARCHAR, "this", INT), tableFields(catalog, name));
     }
 
     @Test
@@ -93,7 +95,7 @@ public class ExternalCatalogTest extends SqlTestSupport {
         catalog.createTable(table, false, true);
 
         // then
-        assertEquals(tableFields(catalog, name), ImmutableMap.of("__key", INT, "this", VARCHAR));
+        assertEquals(ImmutableMap.of("__key", INT, "this", VARCHAR), tableFields(catalog, name));
     }
 
     @Test(expected = QueryException.class)
@@ -127,7 +129,10 @@ public class ExternalCatalogTest extends SqlTestSupport {
                 fields.entrySet().stream()
                       .map(entry -> new ExternalField(entry.getKey(), entry.getValue()))
                       .collect(toList()),
-                emptyMap()
+                ImmutableMap.of(
+                        TO_SERIALIZATION_KEY_FORMAT, OBJECT_SERIALIZATION_FORMAT,
+                        TO_SERIALIZATION_VALUE_FORMAT, OBJECT_SERIALIZATION_FORMAT
+                )
         );
     }
 

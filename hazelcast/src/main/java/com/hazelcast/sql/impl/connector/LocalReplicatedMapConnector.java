@@ -57,7 +57,8 @@ public class LocalReplicatedMapConnector extends SqlKeyValueConnector {
         return TYPE_NAME;
     }
 
-    @Nonnull @Override
+    @Nonnull
+    @Override
     public Table createTable(
             @Nonnull NodeEngine nodeEngine,
             @Nonnull String schemaName,
@@ -81,7 +82,7 @@ public class LocalReplicatedMapConnector extends SqlKeyValueConnector {
 
         MapOptionsMetadata keyMetadata = resolveMetadata(externalFields, options, true, serializationService);
         MapOptionsMetadata valueMetadata = resolveMetadata(externalFields, options, false, serializationService);
-        List<TableField> fields = mergeFields(externalFields, keyMetadata.getFields(), valueMetadata.getFields());
+        List<TableField> fields = mergeFields(keyMetadata.getFields(), valueMetadata.getFields());
 
         // TODO: deduplicate with ReplicatedMapTableResolver ???
         ReplicatedMapService service = nodeEngine.getService(ReplicatedMapService.SERVICE_NAME);
