@@ -922,6 +922,8 @@
         Configuration element's name is <queue>. It has the optional attribute "name" with which you
         can specify the name of your queue. Its default value is "default".
         It has the following elements:
+        * <duplicate-allowed>:
+        When you enable it, you can retrieve queue statistics. Its default value is true.
         * <statistics-enabled>:
         When you enable it, you can retrieve queue statistics. Its default value is true.
         * <max-size>:

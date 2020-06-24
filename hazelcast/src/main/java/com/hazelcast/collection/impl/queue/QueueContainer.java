@@ -35,6 +35,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -884,8 +885,6 @@ public class QueueContainer implements IdentifiedDataSerializable {
      * will also move the items from the backup map if this
      * member has been promoted from a backup replica to the
      * partition owner and clear the backup map.
-     * <p>
-     * Queue
      *
      * @return the item queue
      */
@@ -918,12 +917,13 @@ public class QueueContainer implements IdentifiedDataSerializable {
      * Returns concrete {@link PriorityQueue} depending on what have been defined in queue configuration
      */
     private PriorityQueue<QueueItem> createPriorityQueue(QueueConfig config) {
-        ForwardingQueueItemComparator<?> comparatorHolder = new ForwardingQueueItemComparator<>(config.getComparator(),
+        Comparator comparator = QueueComparatorProvider.getPriorityQueueComparator(config, config.getClass().getClassLoader());
+        ForwardingQueueItemComparator<?> forwardingQueueItemComparator = new ForwardingQueueItemComparator<>(comparator,
                 nodeEngine.getSerializationService());
         if (config.isDuplicateAllowed()) {
-            return new PriorityQueue<>(comparatorHolder);
+            return new PriorityQueue<>(forwardingQueueItemComparator);
         }
-        return new NoDuplicatePriorityQueue(comparatorHolder);
+        return new NoDuplicatePriorityQueue(forwardingQueueItemComparator);
     }
 
     /**

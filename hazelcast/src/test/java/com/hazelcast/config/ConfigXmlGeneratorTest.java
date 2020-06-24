@@ -1244,6 +1244,8 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         ConfigCompatibilityChecker.checkQueueConfig(expectedConfig, actualConfig);
     }
 
+
+
     @Test
     public void testNativeMemory() {
         NativeMemoryConfig expectedConfig = new NativeMemoryConfig();

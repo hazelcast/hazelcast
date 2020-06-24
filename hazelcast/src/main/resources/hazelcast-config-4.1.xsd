@@ -647,10 +647,10 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
-            <xs:element name="comparator" type="xs:string" minOccurs="0" maxOccurs="1">
+            <xs:element name="comparator-class-name" type="xs:string" minOccurs="0" maxOccurs="1">
                 <xs:annotation>
                     <xs:documentation>
-                        Fully-qualified name for a comparator to be used for the priority queue.
+                        Fully-qualified comparator's class name to be used for the priority queue.
                         If nothing is provided, then queue behaves as a FiFo queue.
                     </xs:documentation>
                 </xs:annotation>
