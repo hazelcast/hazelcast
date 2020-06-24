@@ -50,9 +50,9 @@ public class JsonMapOptionsMetadataResolver implements MapOptionsMetadataResolve
         for (ExternalField externalField : externalFields) {
             String name = externalField.name();
             QueryDataType type = externalField.type();
-            TableField field = new MapTableField(name, type, false, new QueryPath(name, isKey));
+            TableField tableField = new MapTableField(name, type, false, new QueryPath(name, isKey));
 
-            fields.put(externalField.name(), field);
+            fields.put(externalField.name(), tableField);
         }
 
         return new MapOptionsMetadata(

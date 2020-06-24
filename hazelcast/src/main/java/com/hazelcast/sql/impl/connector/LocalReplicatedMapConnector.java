@@ -39,6 +39,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
+
 // TODO: do we want to keep it? maps are auto discovered...
 public class LocalReplicatedMapConnector extends SqlKeyValueConnector {
 
@@ -111,6 +113,7 @@ public class LocalReplicatedMapConnector extends SqlKeyValueConnector {
         String formatName = key ? TO_SERIALIZATION_KEY_FORMAT : TO_SERIALIZATION_VALUE_FORMAT;
         String format = options.get(formatName);
         if (format == null) {
+            // TODO: fallback to sample resolution ???
             throw QueryException.error("Missing '" + formatName + "' option");
         }
 
@@ -119,13 +122,6 @@ public class LocalReplicatedMapConnector extends SqlKeyValueConnector {
             throw QueryException.error("Unknown format '" + format + "'");
         }
 
-        MapOptionsMetadata metadata = resolver.resolve(externalFields, options, key, serializationService);
-        if (metadata == null) {
-            throw QueryException.error("Unable to resolve table metadata. Consult reference manual for more info.");
-        }
-
-        return metadata;
-
-        // TODO: fallback to sample resolution ???
+        return checkNotNull(resolver.resolve(externalFields, options, key, serializationService));
     }
 }

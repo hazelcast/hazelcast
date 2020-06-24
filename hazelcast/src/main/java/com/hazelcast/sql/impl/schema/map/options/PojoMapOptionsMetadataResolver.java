@@ -67,14 +67,15 @@ public class PojoMapOptionsMetadataResolver implements MapOptionsMetadataResolve
             boolean isKey,
             InternalSerializationService serializationService
     ) {
-        String className = options.get(isKey ? TO_KEY_CLASS : TO_VALUE_CLASS);
+        String classNameProperty = isKey ? TO_KEY_CLASS : TO_VALUE_CLASS;
+        String className = options.get(classNameProperty);
 
         if (className != null) {
             Class<?> clazz = loadClass(className);
             return resolveClass(clazz, isKey);
         }
 
-        return null;
+        throw QueryException.error("Unable to resolve table metadata. Missing '" + classNameProperty + "' option");
     }
 
     // TODO: extract to util class ???
@@ -133,7 +134,7 @@ public class PojoMapOptionsMetadataResolver implements MapOptionsMetadataResolve
         );
     }
 
-    @SuppressWarnings({"checkstyle:npathcomplexity"})
+    @SuppressWarnings({"checkstyle:CyclomaticComplexity", "checkstyle:ReturnCount", "checkstyle:NPathComplexity"})
     private static BiTuple<String, Class<?>> extractProperty(Class<?> clazz, Method method) {
         if (!Modifier.isPublic(method.getModifiers())) {
             return null;

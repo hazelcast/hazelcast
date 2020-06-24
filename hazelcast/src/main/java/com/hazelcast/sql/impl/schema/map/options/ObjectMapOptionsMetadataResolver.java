@@ -17,6 +17,7 @@
 package com.hazelcast.sql.impl.schema.map.options;
 
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.extract.GenericQueryTargetDescriptor;
 import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.inject.ObjectUpsertTargetDescriptor;
@@ -48,13 +49,11 @@ public class ObjectMapOptionsMetadataResolver implements MapOptionsMetadataResol
             boolean isKey,
             InternalSerializationService serializationService
     ) {
-        ExternalField externalField = findExternalField(
-                externalFields,
-                isKey ? KEY_ATTRIBUTE_NAME.value() : THIS_ATTRIBUTE_NAME.value()
-        );
+        String fieldName = isKey ? KEY_ATTRIBUTE_NAME.value() : THIS_ATTRIBUTE_NAME.value();
+        ExternalField externalField = findExternalField(externalFields, fieldName);
 
         if (externalField != null) {
-            TableField field = new MapTableField(
+            TableField tableField = new MapTableField(
                     externalField.name(),
                     externalField.type(),
                     false,
@@ -63,11 +62,11 @@ public class ObjectMapOptionsMetadataResolver implements MapOptionsMetadataResol
             return new MapOptionsMetadata(
                     GenericQueryTargetDescriptor.INSTANCE,
                     ObjectUpsertTargetDescriptor.INSTANCE,
-                    new LinkedHashMap<>(singletonMap(field.getName(), field))
+                    new LinkedHashMap<>(singletonMap(tableField.getName(), tableField))
             );
         }
 
-        return null;
+        throw QueryException.error("Unable to resolve table metadata. Missing '" + fieldName + "' column");
     }
 
     private static ExternalField findExternalField(List<ExternalField> externalFields, String fieldName) {

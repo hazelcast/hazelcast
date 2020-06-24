@@ -57,9 +57,12 @@ public class PortableMapOptionsMetadataResolver implements MapOptionsMetadataRes
             boolean isKey,
             InternalSerializationService serializationService
     ) {
-        String factoryId = options.get(isKey ? TO_KEY_FACTORY_ID : TO_VALUE_FACTORY_ID);
-        String classId = options.get(isKey ? TO_KEY_CLASS_ID : TO_VALUE_CLASS_ID);
-        String classVersion = options.get(isKey ? TO_KEY_CLASS_VERSION : TO_VALUE_CLASS_VERSION);
+        String factoryIdProperty = isKey ? TO_KEY_FACTORY_ID : TO_VALUE_FACTORY_ID;
+        String factoryId = options.get(factoryIdProperty);
+        String classIdProperty = isKey ? TO_KEY_CLASS_ID : TO_VALUE_CLASS_ID;
+        String classId = options.get(classIdProperty);
+        String classVersionProperty = isKey ? TO_KEY_CLASS_VERSION : TO_VALUE_CLASS_VERSION;
+        String classVersion = options.get(classVersionProperty);
 
         if (factoryId != null && classId != null && classVersion != null) {
             ClassDefinition classDefinition = lookupClassDefinition(
@@ -71,10 +74,10 @@ public class PortableMapOptionsMetadataResolver implements MapOptionsMetadataRes
             return resolvePortable(classDefinition, isKey);
         }
 
-        return null;
+        throw QueryException.error("Unable to resolve table metadata."
+                + " Missing ['" + factoryIdProperty + "'|'" + classIdProperty + "'|'" + classVersionProperty + "'] option");
     }
 
-    // TODO: build it on demand based on ExternalFields ???
     // TODO: extract to util class ???
     public static ClassDefinition lookupClassDefinition(
             InternalSerializationService serializationService,

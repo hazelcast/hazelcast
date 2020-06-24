@@ -42,6 +42,7 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.sql.impl.schema.map.MapTableUtils.estimatePartitionedMapRowCount;
 import static com.hazelcast.sql.impl.schema.map.MapTableUtils.getPartitionedMapDistributionField;
 import static com.hazelcast.sql.impl.schema.map.MapTableUtils.getPartitionedMapIndexes;
@@ -128,6 +129,7 @@ public class LocalPartitionedMapConnector extends SqlKeyValueConnector {
         String formatName = key ? TO_SERIALIZATION_KEY_FORMAT : TO_SERIALIZATION_VALUE_FORMAT;
         String format = options.get(formatName);
         if (format == null) {
+            // TODO: fallback to sample resolution ???
             throw QueryException.error("Missing '" + formatName + "' option");
         }
 
@@ -136,13 +138,6 @@ public class LocalPartitionedMapConnector extends SqlKeyValueConnector {
             throw QueryException.error("Unknown format '" + format + "'");
         }
 
-        MapOptionsMetadata metadata = resolver.resolve(externalFields, options, key, serializationService);
-        if (metadata == null) {
-            throw QueryException.error("Unable to resolve table metadata. Consult reference manual for more info.");
-        }
-
-        return metadata;
-
-        // TODO: fallback to sample resolution ???
+        return checkNotNull(resolver.resolve(externalFields, options, key, serializationService));
     }
 }
