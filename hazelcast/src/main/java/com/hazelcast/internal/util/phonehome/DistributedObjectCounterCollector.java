@@ -33,16 +33,16 @@ import static java.util.stream.Collectors.groupingBy;
 
 class DistributedObjectCounterCollector implements MetricsCollector {
 
-    private static final Map<String, String> mapMetric;
+    private static final Map<String, String> SERVICE_NAME_TO_METRIC_NAME;
 
     static {
-        mapMetric = new HashMap<>();
-        mapMetric.put(MapService.SERVICE_NAME, "mpct");
-        mapMetric.put(SetService.SERVICE_NAME, "sect");
-        mapMetric.put(QueueService.SERVICE_NAME, "quct");
-        mapMetric.put(MultiMapService.SERVICE_NAME, "mmct");
-        mapMetric.put(ListService.SERVICE_NAME, "lict");
-        mapMetric.put(RingbufferService.SERVICE_NAME, "rbct");
+        SERVICE_NAME_TO_METRIC_NAME = new HashMap<>();
+        SERVICE_NAME_TO_METRIC_NAME.put(MapService.SERVICE_NAME, "mpct");
+        SERVICE_NAME_TO_METRIC_NAME.put(SetService.SERVICE_NAME, "sect");
+        SERVICE_NAME_TO_METRIC_NAME.put(QueueService.SERVICE_NAME, "quct");
+        SERVICE_NAME_TO_METRIC_NAME.put(MultiMapService.SERVICE_NAME, "mmct");
+        SERVICE_NAME_TO_METRIC_NAME.put(ListService.SERVICE_NAME, "lict");
+        SERVICE_NAME_TO_METRIC_NAME.put(RingbufferService.SERVICE_NAME, "rbct");
     }
 
     @Override
@@ -51,12 +51,13 @@ class DistributedObjectCounterCollector implements MetricsCollector {
         Collection<DistributedObject> distributedObjects = hazelcastNode.hazelcastInstance.getDistributedObjects();
 
         Map<String, Long> countDistributedObjects = new HashMap<>(distributedObjects.stream()
-                .filter(distributedObject -> mapMetric.containsKey(distributedObject.getServiceName()))
+                .filter(distributedObject -> SERVICE_NAME_TO_METRIC_NAME.containsKey(distributedObject.getServiceName()))
                 .collect(groupingBy(DistributedObject::getServiceName, Collectors.counting())));
 
         Map<String, String> countInfo = new HashMap<>();
 
-        mapMetric.forEach((k, v) -> countInfo.put(v, String.valueOf(countDistributedObjects.getOrDefault(k, 0L))));
+        SERVICE_NAME_TO_METRIC_NAME.forEach((serviceName, metricName) -> countInfo
+                .put(metricName, String.valueOf(countDistributedObjects.getOrDefault(serviceName, 0L))));
 
         return countInfo;
     }
