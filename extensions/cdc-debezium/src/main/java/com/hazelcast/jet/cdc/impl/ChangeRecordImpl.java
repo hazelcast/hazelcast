@@ -36,6 +36,7 @@ public class ChangeRecordImpl implements ChangeRecord {
     private Long timestamp;
     private Operation operation;
     private String database;
+    private String schema;
     private String table;
     private RecordPart key;
     private RecordPart value;
@@ -84,6 +85,18 @@ public class ChangeRecordImpl implements ChangeRecord {
             }
         }
         return database;
+    }
+
+    @Nonnull
+    @Override
+    public String schema() throws ParsingException {
+        if (schema == null) {
+            schema = get(value().toMap(), "__schema", String.class);
+            if (schema == null) {
+                throw new ParsingException("No parsable schema name field found");
+            }
+        }
+        return schema;
     }
 
     @Nonnull

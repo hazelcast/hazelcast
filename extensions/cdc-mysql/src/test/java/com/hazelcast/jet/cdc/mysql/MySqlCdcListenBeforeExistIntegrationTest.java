@@ -26,28 +26,32 @@ import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.StreamSource;
 import com.hazelcast.test.annotation.NightlyTest;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.SQLException;
-import java.util.Arrays;
-import java.util.List;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.Arrays;
+import java.util.List;
+
 import static com.hazelcast.jet.Util.entry;
-import static com.hazelcast.jet.cdc.mysql.AbstractMySqlIntegrationTest.DATABASE;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
 
 @Category(NightlyTest.class)
-public class MySqlListenBeforeExistIntegrationTest extends AbstractMySqlIntegrationTest {
+public class MySqlCdcListenBeforeExistIntegrationTest extends AbstractMySqlCdcIntegrationTest {
+
+    private static final String DATABASE = "testDb";
+    private static final String SINK_MAP_NAME = "resultsMap";
 
     @Test
-    public void testListenBeforeDatabaseExists() throws Exception {
+    public void listenBeforeDatabaseExists() throws Exception {
         List<String> expectedRecords = Arrays.asList(
                 "1001/0:INSERT:TableRow {id=1001, value1=someValue1, value2=someValue2, value3=null}"
         );
 
-        StreamSource<ChangeRecord> source = sourceBuilder()
+        StreamSource<ChangeRecord> source = sourceBuilder("cdcMysql")
                 .setDatabaseWhitelist(DATABASE)
                 .build();
 
@@ -56,7 +60,7 @@ public class MySqlListenBeforeExistIntegrationTest extends AbstractMySqlIntegrat
         // when
         JetInstance jet = createJetMembers(2)[0];
         Job job = jet.newJob(pipeline);
-        assertEqualsEventually(() -> job.getStatus(), RUNNING);
+        assertJobStatusEventually(job, RUNNING);
 
         try {
             //then
@@ -71,7 +75,7 @@ public class MySqlListenBeforeExistIntegrationTest extends AbstractMySqlIntegrat
     }
 
     @Test
-    public void testListenBeforeTableExists() throws Exception {
+    public void listenBeforeTableExists() throws Exception {
         // given
         createDb(DATABASE);
 
@@ -79,7 +83,7 @@ public class MySqlListenBeforeExistIntegrationTest extends AbstractMySqlIntegrat
                 "1001/0:INSERT:TableRow {id=1001, value1=someValue1, value2=someValue2, value3=null}"
         );
 
-        StreamSource<ChangeRecord> source = sourceBuilder()
+        StreamSource<ChangeRecord> source = sourceBuilder("cdcMysql")
                 .setDatabaseWhitelist(DATABASE)
                 .setTableWhitelist(DATABASE + ".someTable")
                 .build();
@@ -89,7 +93,7 @@ public class MySqlListenBeforeExistIntegrationTest extends AbstractMySqlIntegrat
         // when
         JetInstance jet = createJetMembers(2)[0];
         Job job = jet.newJob(pipeline);
-        assertEqualsEventually(() -> job.getStatus(), RUNNING);
+        assertJobStatusEventually(job, RUNNING);
 
         try {
             //then
@@ -103,7 +107,7 @@ public class MySqlListenBeforeExistIntegrationTest extends AbstractMySqlIntegrat
     }
 
     @Test
-    public void testListenBeforeColumnExists() throws Exception {
+    public void listenBeforeColumnExists() throws Exception {
         // given
         createDb(DATABASE);
         createTableWithData(DATABASE, "someTable");
@@ -114,7 +118,7 @@ public class MySqlListenBeforeExistIntegrationTest extends AbstractMySqlIntegrat
                 "1002/0:INSERT:TableRow {id=1002, value1=someValue4, value2=someValue5, value3=someValue6}"
         );
 
-        StreamSource<ChangeRecord> source = sourceBuilder()
+        StreamSource<ChangeRecord> source = sourceBuilder("cdcMysql")
                 .setDatabaseWhitelist(DATABASE)
                 .setTableWhitelist(DATABASE + ".someTable")
                 .build();
@@ -124,19 +128,63 @@ public class MySqlListenBeforeExistIntegrationTest extends AbstractMySqlIntegrat
         // when
         JetInstance jet = createJetMembers(2)[0];
         Job job = jet.newJob(pipeline);
-        assertEqualsEventually(() -> job.getStatus(), RUNNING);
+        assertJobStatusEventually(job, RUNNING);
 
         try {
             assertEqualsEventually(() -> mapResultsToSortedList(jet.getMap(SINK_MAP_NAME)), Arrays.asList(
                     "1001/0:INSERT:TableRow {id=1001, value1=someValue1, value2=someValue2, value3=null}"
             ));
             //then
-            insertNewColumnToTable(DATABASE, "someTable", "value_3");
+            addColumnToTable(DATABASE, "someTable", "value_3");
             insertToTable(DATABASE, "someTable", 1002, "someValue4", "someValue5", "someValue6");
 
             assertEqualsEventually(() -> mapResultsToSortedList(jet.getMap(SINK_MAP_NAME)), expectedRecords);
         } finally {
             job.cancel();
+        }
+    }
+
+    private void createTableWithData(String database, String table) throws SQLException {
+        try (Connection connection = DriverManager.getConnection(mysql.withDatabaseName(database).getJdbcUrl(),
+                mysql.getUsername(), mysql.getPassword())) {
+            Statement statement = connection.createStatement();
+            statement.addBatch("CREATE TABLE " + table + " (\n"
+                            + "  id INTEGER NOT NULL AUTO_INCREMENT PRIMARY KEY,\n"
+                            + "  value_1 VARCHAR(255) NOT NULL,\n"
+                            + "  value_2 VARCHAR(255) NOT NULL\n"
+                            + ")");
+            statement.addBatch("ALTER TABLE " + table + " AUTO_INCREMENT = 1001 ;");
+            statement.executeBatch();
+        }
+    }
+
+    private void insertToTable(String database, String table, int id, String val1, String val2) throws SQLException {
+        insertToTable(database, table, id, val1, val2, null);
+    }
+
+    private void insertToTable(String database, String table, int id, String val1, String val2, String val3)
+            throws SQLException {
+        StringBuilder statement = new StringBuilder();
+        statement.append("INSERT INTO ").append(table).append(" VALUES ( ")
+                .append(id).append(", '")
+                .append(val1).append("', '")
+                .append(val2).append("'");
+        if (val3 != null) {
+            statement.append(", '").append(val3).append("'");
+        }
+        statement.append(")");
+        try (Connection connection = DriverManager.getConnection(mysql.withDatabaseName(database).getJdbcUrl(),
+                mysql.getUsername(), mysql.getPassword())) {
+            connection.createStatement().execute(statement.toString());
+
+        }
+    }
+
+    private void addColumnToTable(String database, String table, String column) throws SQLException {
+        try (Connection connection = DriverManager.getConnection(mysql.withDatabaseName(database).getJdbcUrl(),
+                mysql.getUsername(), mysql.getPassword())) {
+            connection.createStatement()
+                    .execute("ALTER TABLE " + table + " ADD COLUMN " + column + " VARCHAR(255);");
         }
     }
 
@@ -149,66 +197,18 @@ public class MySqlListenBeforeExistIntegrationTest extends AbstractMySqlIntegrat
                 .groupingKey(record -> (Integer) record.key().toMap().get("id"))
                 .mapStateful(
                         LongAccumulator::new,
-                        (accumulator, customerId, record) -> {
+                        (accumulator, rowId, record) -> {
                             long count = accumulator.get();
                             accumulator.add(1);
                             Operation operation = record.operation();
                             RecordPart value = record.value();
-                            TableRow customer = value.toObject(TableRow.class);
-                            return entry(customerId + "/" + count, operation + ":" + customer);
+                            TableRow row = value.toObject(TableRow.class);
+                            return entry(rowId + "/" + count, operation + ":" + row);
                         })
                 .setLocalParallelism(1)
+                .peek()
                 .writeTo(Sinks.map(SINK_MAP_NAME));
         return pipeline;
-    }
-
-    private void createTableWithData(String dbName, String tableName) throws SQLException {
-        try (Connection connection = DriverManager.getConnection(mysql.withDatabaseName(dbName).getJdbcUrl(),
-                mysql.getUsername(), mysql.getPassword())) {
-            connection
-                    .prepareStatement("CREATE TABLE " + tableName + " (\n"
-                            + "  id INTEGER NOT NULL AUTO_INCREMENT PRIMARY KEY,\n"
-                            + "  value_1 VARCHAR(255) NOT NULL,\n"
-                            + "  value_2 VARCHAR(255) NOT NULL\n"
-                            + ")")
-                    .executeUpdate();
-            connection
-                    .prepareStatement("ALTER TABLE " + tableName + " AUTO_INCREMENT = 1001 ;")
-                    .executeUpdate();
-        }
-    }
-
-    private void insertToTable(String dbName, String tableName, int id, String val1, String val2) throws SQLException {
-        insertToTable(dbName, tableName, id, val1, val2, null);
-    }
-
-    private void insertToTable(String dbName, String tableName, int id, String val1, String val2, String val3)
-            throws SQLException {
-        StringBuilder statement = new StringBuilder();
-        statement.append("INSERT INTO ").append(tableName).append(" VALUES ( ")
-                .append(id).append(", '")
-                .append(val1).append("', '")
-                .append(val2).append("'");
-        if (val3 != null) {
-            statement.append(", '").append(val3).append("'");
-        }
-        statement.append(")");
-        try (Connection connection = DriverManager.getConnection(mysql.withDatabaseName(dbName).getJdbcUrl(),
-                mysql.getUsername(), mysql.getPassword())) {
-            connection
-                    .prepareStatement(statement.toString())
-                    .executeUpdate();
-
-        }
-    }
-
-    private void insertNewColumnToTable(String dbName, String tableName, String column) throws SQLException {
-        try (Connection connection = DriverManager.getConnection(mysql.withDatabaseName(dbName).getJdbcUrl(),
-                mysql.getUsername(), mysql.getPassword())) {
-            connection
-                    .prepareStatement("ALTER TABLE " + tableName + " ADD COLUMN " + column + " VARCHAR(255) NOT NULL;")
-                    .executeUpdate();
-        }
     }
 
 }

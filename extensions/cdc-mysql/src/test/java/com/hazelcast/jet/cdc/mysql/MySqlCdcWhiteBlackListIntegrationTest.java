@@ -26,22 +26,25 @@ import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.StreamSource;
 import com.hazelcast.test.annotation.NightlyTest;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
 import static com.hazelcast.jet.Util.entry;
-import static com.hazelcast.jet.cdc.mysql.AbstractMySqlIntegrationTest.DATABASE;
-import static com.hazelcast.test.HazelcastTestSupport.assertEqualsEventually;
 
 @Category(NightlyTest.class)
-public class MySqlListenWhiteBlackListIntegrationTest extends AbstractMySqlIntegrationTest {
+public class MySqlCdcWhiteBlackListIntegrationTest extends AbstractMySqlCdcIntegrationTest {
+
+    private static final String DB_PREFIX = "testDb";
+    private static final String SINK_MAP_NAME = "resultsMap";
 
     @Before
     public void before() throws SQLException {
@@ -51,8 +54,8 @@ public class MySqlListenWhiteBlackListIntegrationTest extends AbstractMySqlInteg
     }
 
     @Test
-    public void testWithoutWhiteBlacklist() throws Exception {
-        StreamSource<ChangeRecord> source = sourceBuilder()
+    public void noWhiteBlacklist() throws Exception {
+        StreamSource<ChangeRecord> source = sourceBuilder("source")
                 .build();
 
         List<String> expectedRecords = allExpectedOperations();
@@ -61,20 +64,9 @@ public class MySqlListenWhiteBlackListIntegrationTest extends AbstractMySqlInteg
     }
 
     @Test
-    public void testListenOnlyWhitelistDatabase() throws Exception {
-        StreamSource<ChangeRecord> source = sourceBuilder()
-                .setDatabaseWhitelist(DATABASE + "2")
-                .build();
-
-        List<String> expectedRecords = allDbExpectedOperations(2);
-
-        test(source, expectedRecords, 9);
-    }
-
-    @Test
-    public void testListenMoreWhitelistDatabase() throws Exception {
-        StreamSource<ChangeRecord> source = sourceBuilder()
-                .setDatabaseWhitelist(DATABASE + "1", DATABASE + "3")
+    public void whitelistDatabase() throws Exception {
+        StreamSource<ChangeRecord> source = sourceBuilder("source")
+                .setDatabaseWhitelist(DB_PREFIX + "1", DB_PREFIX + "3")
                 .build();
 
         List<String> expectedRecords = new ArrayList<>();
@@ -85,22 +77,9 @@ public class MySqlListenWhiteBlackListIntegrationTest extends AbstractMySqlInteg
     }
 
     @Test
-    public void testNotListenBlacklistDatabase() throws Exception {
-        StreamSource<ChangeRecord> source = sourceBuilder()
-                .setDatabaseBlacklist(DATABASE + "2")
-                .build();
-
-        List<String> expectedRecords = new ArrayList<>();
-        expectedRecords.addAll(allDbExpectedOperations(1));
-        expectedRecords.addAll(allDbExpectedOperations(3));
-
-        test(source, expectedRecords, 18);
-    }
-
-    @Test
-    public void testNotListenMoreBlacklistDatabase() throws Exception {
-        StreamSource<ChangeRecord> source = sourceBuilder()
-                .setDatabaseBlacklist(DATABASE + "1", DATABASE + "3")
+    public void blacklistDatabase() throws Exception {
+        StreamSource<ChangeRecord> source = sourceBuilder("source")
+                .setDatabaseBlacklist(DB_PREFIX + "1", DB_PREFIX + "3")
                 .build();
 
         List<String> expectedRecords = allDbExpectedOperations(2);
@@ -109,21 +88,9 @@ public class MySqlListenWhiteBlackListIntegrationTest extends AbstractMySqlInteg
     }
 
     @Test
-    public void testListenOnlyWhitelistTable() throws Exception {
-        StreamSource<ChangeRecord> source = sourceBuilder()
-                .setTableWhitelist(DATABASE + "1.table0")
-                .build();
-
-        List<String> expectedRecords = new ArrayList<>();
-        expectedRecords.addAll(allTable0ExpectedOperations(1));
-
-        test(source, expectedRecords, 3);
-    }
-
-    @Test
-    public void testListenMoreWhitelistTable_inTheSameDb() throws Exception {
-        StreamSource<ChangeRecord> source = sourceBuilder()
-                .setTableWhitelist(DATABASE + "1.table0, " + DATABASE + "1.table2")
+    public void whitelistTable_sameDb() throws Exception {
+        StreamSource<ChangeRecord> source = sourceBuilder("source")
+                .setTableWhitelist(DB_PREFIX + "1.table0, " + DB_PREFIX + "1.table2")
                 .build();
 
         List<String> expectedRecords = new ArrayList<>();
@@ -134,9 +101,9 @@ public class MySqlListenWhiteBlackListIntegrationTest extends AbstractMySqlInteg
     }
 
     @Test
-    public void testListenMoreWhitelistTable_inTheDifferentDb() throws Exception {
-        StreamSource<ChangeRecord> source = sourceBuilder()
-                .setTableWhitelist(DATABASE + "1.table0, " + DATABASE + "2.table1")
+    public void whitelistTable_differentDb() throws Exception {
+        StreamSource<ChangeRecord> source = sourceBuilder("source")
+                .setTableWhitelist(DB_PREFIX + "1.table0, " + DB_PREFIX + "2.table1")
                 .build();
 
         List<String> expectedRecords = new ArrayList<>();
@@ -147,24 +114,9 @@ public class MySqlListenWhiteBlackListIntegrationTest extends AbstractMySqlInteg
     }
 
     @Test
-    public void testNotListenBlacklistTable() throws Exception {
-        StreamSource<ChangeRecord> source = sourceBuilder()
-                .setTableBlacklist(DATABASE + "1.table0")
-                .build();
-
-        List<String> expectedRecords = new ArrayList<>();
-        expectedRecords.addAll(allTable1ExpectedOperations(1));
-        expectedRecords.addAll(allTable2ExpectedOperations(1));
-        expectedRecords.addAll(allDbExpectedOperations(2));
-        expectedRecords.addAll(allDbExpectedOperations(3));
-
-        test(source, expectedRecords, 24);
-    }
-
-    @Test
-    public void testNotListenMoreBlacklistTable_inTheSameDb() throws Exception {
-        StreamSource<ChangeRecord> source = sourceBuilder()
-                .setTableBlacklist(DATABASE + "1.table0, " + DATABASE + "1.table2")
+    public void blacklistTable_sameDb() throws Exception {
+        StreamSource<ChangeRecord> source = sourceBuilder("source")
+                .setTableBlacklist(DB_PREFIX + "1.table0, " + DB_PREFIX + "1.table2")
                 .build();
 
         List<String> expectedRecords = new ArrayList<>();
@@ -176,9 +128,9 @@ public class MySqlListenWhiteBlackListIntegrationTest extends AbstractMySqlInteg
     }
 
     @Test
-    public void testNotListenMoreBlacklistTable_inTheDifferentDb() throws Exception {
-        StreamSource<ChangeRecord> source = sourceBuilder()
-                .setTableBlacklist(DATABASE + "1.table0, " + DATABASE + "2.table1")
+    public void blacklistTable_differentDb() throws Exception {
+        StreamSource<ChangeRecord> source = sourceBuilder("source")
+                .setTableBlacklist(DB_PREFIX + "1.table0, " + DB_PREFIX + "2.table1")
                 .build();
 
         List<String> expectedRecords = new ArrayList<>();
@@ -192,10 +144,10 @@ public class MySqlListenWhiteBlackListIntegrationTest extends AbstractMySqlInteg
     }
 
     @Test
-    public void testNotListenBlacklistTableInWhitelistDb() throws Exception {
-        StreamSource<ChangeRecord> source = sourceBuilder()
-                .setDatabaseWhitelist(DATABASE + "1")
-                .setTableBlacklist(DATABASE + "1.table0")
+    public void blacklistTableInWhitelistDb() throws Exception {
+        StreamSource<ChangeRecord> source = sourceBuilder("source")
+                .setDatabaseWhitelist(DB_PREFIX + "1")
+                .setTableBlacklist(DB_PREFIX + "1.table0")
                 .build();
 
         List<String> expectedRecords = new ArrayList<>();
@@ -205,29 +157,10 @@ public class MySqlListenWhiteBlackListIntegrationTest extends AbstractMySqlInteg
         test(source, expectedRecords, 6);
     }
 
-
     @Test
-    public void testNotListenBlacklistColumn() throws Exception {
-        StreamSource<ChangeRecord> source = sourceBuilder()
-                .setColumnBlacklist(DATABASE + "1.table1.value_2")
-                .build();
-
-        List<String> allTable1ExpectedOperations = allTable1ExpectedOperations(1);
-        setNullToValue(allTable1ExpectedOperations, "value2");
-        List<String> expectedRecords = new ArrayList<>();
-        expectedRecords.addAll(allTable0ExpectedOperations(1));
-        expectedRecords.addAll(allTable1ExpectedOperations);
-        expectedRecords.addAll(allTable2ExpectedOperations(1));
-        expectedRecords.addAll(allDbExpectedOperations(2));
-        expectedRecords.addAll(allDbExpectedOperations(3));
-
-        test(source, expectedRecords, 27);
-    }
-
-    @Test
-    public void testNotListenMoreBlacklistColumn_inTheSameTable() throws Exception {
-        StreamSource<ChangeRecord> source = sourceBuilder()
-                .setColumnBlacklist(DATABASE + "1.table1.value_1, " + DATABASE + "1.table1.value_2")
+    public void blacklistColumn_sameTable() throws Exception {
+        StreamSource<ChangeRecord> source = sourceBuilder("source")
+                .setColumnBlacklist(DB_PREFIX + "1.table1.value_1, " + DB_PREFIX + "1.table1.value_2")
                 .build();
 
         List<String> allTable1ExpectedOperations = allTable1ExpectedOperations(1);
@@ -244,9 +177,9 @@ public class MySqlListenWhiteBlackListIntegrationTest extends AbstractMySqlInteg
     }
 
     @Test
-    public void testNotListenMoreBlacklistColumn_inTheDifferentTable() throws Exception {
-        StreamSource<ChangeRecord> source = sourceBuilder()
-                .setColumnBlacklist(DATABASE + "1.table1.value_2, " + DATABASE + "1.table0.value_1")
+    public void blacklistColumn_differentTable() throws Exception {
+        StreamSource<ChangeRecord> source = sourceBuilder("source")
+                .setColumnBlacklist(DB_PREFIX + "1.table1.value_2, " + DB_PREFIX + "1.table0.value_1")
                 .build();
 
         List<String> allTable0ExpectedOperations = allTable0ExpectedOperations(1);
@@ -264,10 +197,10 @@ public class MySqlListenWhiteBlackListIntegrationTest extends AbstractMySqlInteg
     }
 
     @Test
-    public void testNotListenBlacklistColumnInWhitelistDb() throws Exception {
-        StreamSource<ChangeRecord> source = sourceBuilder()
-                .setDatabaseWhitelist(DATABASE + "1")
-                .setColumnBlacklist(DATABASE + "1.table1.value_2")
+    public void blacklistColumnInWhitelistDb() throws Exception {
+        StreamSource<ChangeRecord> source = sourceBuilder("source")
+                .setDatabaseWhitelist(DB_PREFIX + "1")
+                .setColumnBlacklist(DB_PREFIX + "1.table1.value_2")
                 .build();
 
         List<String> allTable1ExpectedOperations = allTable1ExpectedOperations(1);
@@ -281,11 +214,11 @@ public class MySqlListenWhiteBlackListIntegrationTest extends AbstractMySqlInteg
     }
 
     @Test
-    public void testNotListenBlacklistColumnInWhitelistDbAndTable() throws Exception {
-        StreamSource<ChangeRecord> source = sourceBuilder()
-                .setDatabaseWhitelist(DATABASE + "1")
-                .setTableWhitelist(DATABASE + "1.table1")
-                .setColumnBlacklist(DATABASE + "1.table1.value_2")
+    public void blacklistColumnInWhitelistDbAndTable() throws Exception {
+        StreamSource<ChangeRecord> source = sourceBuilder("source")
+                .setDatabaseWhitelist(DB_PREFIX + "1")
+                .setTableWhitelist(DB_PREFIX + "1.table1")
+                .setColumnBlacklist(DB_PREFIX + "1.table1.value_2")
                 .build();
 
         List<String> allTable1ExpectedOperations = allTable1ExpectedOperations(1);
@@ -324,20 +257,20 @@ public class MySqlListenWhiteBlackListIntegrationTest extends AbstractMySqlInteg
         Pipeline pipeline = Pipeline.create();
         pipeline.readFrom(source)
                 .withNativeTimestamps(0)
-                .filter(t -> t.database().startsWith(DATABASE))
+                .filter(t -> t.database().startsWith(DB_PREFIX))
                 .setLocalParallelism(1)
                 .<ChangeRecord>customTransform("filter_timestamps", filterTimestampsProcessorSupplier())
                 .setLocalParallelism(1)
                 .groupingKey(record -> (Integer) record.key().toMap().get("id"))
                 .mapStateful(
                         LongAccumulator::new,
-                        (accumulator, customerId, record) -> {
+                        (accumulator, rowId, record) -> {
                             long count = accumulator.get();
                             accumulator.add(1);
                             Operation operation = record.operation();
                             RecordPart value = record.value();
-                            TableRow customer = value.toObject(TableRow.class);
-                            return entry(customerId + "/" + count, operation + ":" + customer);
+                            TableRow row = value.toObject(TableRow.class);
+                            return entry(rowId + "/" + count, operation + ":" + row);
                         })
                 .setLocalParallelism(1)
                 .writeTo(Sinks.map(SINK_MAP_NAME));
@@ -345,94 +278,71 @@ public class MySqlListenWhiteBlackListIntegrationTest extends AbstractMySqlInteg
     }
 
     private void createDbWithData(int dbSuffix) throws SQLException {
-        String dbName = DATABASE + dbSuffix;
-        createDb(dbName);
-        try (Connection connection = DriverManager.getConnection(mysql.withDatabaseName(dbName).getJdbcUrl(),
+        String database = DB_PREFIX + dbSuffix;
+        createDb(database);
+        try (Connection connection = DriverManager.getConnection(mysql.withDatabaseName(database).getJdbcUrl(),
                 mysql.getUsername(), mysql.getPassword())) {
             int dbId = dbSuffix * 1000;
             for (int i = 0; i < 3; i++) {
-                String tableName = "table" + i;
+                String table = "table" + i;
                 int firstIdInTable = dbId + 100 * i + 1;
-                connection
-                        .prepareStatement("CREATE TABLE " + tableName + " (\n"
+                Statement statement = connection.createStatement();
+                statement.addBatch("CREATE TABLE " + table + " (\n"
                                 + "  id INTEGER NOT NULL AUTO_INCREMENT PRIMARY KEY,\n"
                                 + "  value_1 VARCHAR(255) NOT NULL,\n"
                                 + "  value_2 VARCHAR(255) NOT NULL,\n"
                                 + "  value_3 VARCHAR(255) NOT NULL\n"
-                                + ")")
-                        .executeUpdate();
-                connection
-                        .prepareStatement("ALTER TABLE " + tableName + " AUTO_INCREMENT = " + firstIdInTable + " ;")
-                        .executeUpdate();
+                                + ")");
+                statement.addBatch("ALTER TABLE " + table + " AUTO_INCREMENT = " + firstIdInTable + " ;");
                 for (int j = 0; j < 3; j++) {
                     int id = firstIdInTable + j;
-                    connection
-                            .prepareStatement("INSERT INTO " + tableName + " VALUES (\n"
+                    statement.addBatch("INSERT INTO " + table + " VALUES (\n"
                                     + "  " + id + ", "
-                                    + "  '" + dbName + "_" + tableName + "_val1_" + j + "',\n"
-                                    + "  '" + dbName + "_" + tableName + "_val2_" + j + "',\n"
-                                    + "  '" + dbName + "_" + tableName + "_val3_" + j + "'\n"
-                                    + ")")
-                            .executeUpdate();
+                                    + "  '" + database + "_" + table + "_val1_" + j + "',\n"
+                                    + "  '" + database + "_" + table + "_val2_" + j + "',\n"
+                                    + "  '" + database + "_" + table + "_val3_" + j + "'\n"
+                                    + ")");
                 }
+                statement.executeBatch();
             }
         }
 
     }
 
     private void executeStatementsOnDb(int dbSuffix) throws SQLException {
-        String dbName = DATABASE + dbSuffix;
-        try (Connection connection = DriverManager.getConnection(mysql.withDatabaseName(dbName).getJdbcUrl(),
+        String database = DB_PREFIX + dbSuffix;
+        try (Connection connection = DriverManager.getConnection(mysql.withDatabaseName(database).getJdbcUrl(),
                 mysql.getUsername(), mysql.getPassword())) {
             int id = dbSuffix * 1000 + 1;
-            connection
-                    .prepareStatement("UPDATE table0 SET "
-                            + "value_1='new_" + dbName + "_table0_val1_0' WHERE id=" + id)
-                    .executeUpdate();
+            Statement statement = connection.createStatement();
+            statement.addBatch("UPDATE table0 SET value_1='new_" + database + "_table0_val1_0' WHERE id=" + id);
             id = dbSuffix * 1000 + 100 + 2;
-            connection
-                    .prepareStatement("UPDATE table1 SET "
-                            + "value_2='new_" + dbName + "_table1_val2_1' WHERE id=" + id)
-                    .executeUpdate();
+            statement.addBatch("UPDATE table1 SET value_2='new_" + database + "_table1_val2_1' WHERE id=" + id);
             id = dbSuffix * 1000 + 200 + 3;
-            connection
-                    .prepareStatement("UPDATE table2 SET "
-                            + "value_3='new_" + dbName + "_table2_val3_2' WHERE id=" + id)
-                    .executeUpdate();
+            statement.addBatch("UPDATE table2 SET value_3='new_" + database + "_table2_val3_2' WHERE id=" + id);
 
             id = dbSuffix * 1000 + 4;
-            connection
-                    .prepareStatement("INSERT INTO table0 VALUES (" + id + ", '" + dbName + "_table0_val1_3', "
-                            + "'" + dbName + "_table0_val2_3', '" + dbName + "_table0_val3_3')")
-                    .executeUpdate();
+            statement.addBatch("INSERT INTO table0 VALUES (" + id + ", '" + database + "_table0_val1_3', "
+                            + "'" + database + "_table0_val2_3', '" + database + "_table0_val3_3')");
             id = dbSuffix * 1000 + 100 + 4;
-            connection
-                    .prepareStatement("INSERT INTO table1 VALUES (" + id + ", '" + dbName + "_table1_val1_3', "
-                            + "'" + dbName + "_table1_val2_3', '" + dbName + "_table1_val3_3')")
-                    .executeUpdate();
+            statement.addBatch("INSERT INTO table1 VALUES (" + id + ", '" + database + "_table1_val1_3', "
+                            + "'" + database + "_table1_val2_3', '" + database + "_table1_val3_3')");
             id = dbSuffix * 1000 + 200 + 4;
-            connection
-                    .prepareStatement("INSERT INTO table2 VALUES (" + id + ", '" + dbName + "_table2_val1_3', "
-                            + "'" + dbName + "_table2_val2_3', '" + dbName + "_table2_val3_3')")
-                    .executeUpdate();
+            statement.addBatch("INSERT INTO table2 VALUES (" + id + ", '" + database + "_table2_val1_3', "
+                            + "'" + database + "_table2_val2_3', '" + database + "_table2_val3_3')");
 
             id = dbSuffix * 1000 + 4;
-            connection
-                    .prepareStatement("DELETE FROM table0 WHERE id=" + id)
-                    .executeUpdate();
+            statement.addBatch("DELETE FROM table0 WHERE id=" + id);
             id = dbSuffix * 1000 + 100 + 4;
-            connection
-                    .prepareStatement("DELETE FROM table1 WHERE id=" + id)
-                    .executeUpdate();
+            statement.addBatch("DELETE FROM table1 WHERE id=" + id);
             id = dbSuffix * 1000 + 200 + 4;
-            connection
-                    .prepareStatement("DELETE FROM table2 WHERE id=" + id)
-                    .executeUpdate();
+            statement.addBatch("DELETE FROM table2 WHERE id=" + id);
+            statement.executeBatch();
         }
     }
 
     private List<String> allTable0ExpectedOperations(int dbSuffix) {
-        String db = DATABASE + dbSuffix;
+        String db = DB_PREFIX + dbSuffix;
         int id1 = 1000 * dbSuffix + 1;
         int id2 = 1000 * dbSuffix + 2;
         int id3 = 1000 * dbSuffix + 3;
@@ -454,7 +364,7 @@ public class MySqlListenWhiteBlackListIntegrationTest extends AbstractMySqlInteg
     }
 
     private List<String> allTable1ExpectedOperations(int dbSuffix) {
-        String db = DATABASE + dbSuffix;
+        String db = DB_PREFIX + dbSuffix;
         int id1 = 1000 * dbSuffix + 101;
         int id2 = 1000 * dbSuffix + 102;
         int id3 = 1000 * dbSuffix + 103;
@@ -476,7 +386,7 @@ public class MySqlListenWhiteBlackListIntegrationTest extends AbstractMySqlInteg
     }
 
     private List<String> allTable2ExpectedOperations(int dbSuffix) {
-        String db = DATABASE + dbSuffix;
+        String db = DB_PREFIX + dbSuffix;
         int id1 = 1000 * dbSuffix + 201;
         int id2 = 1000 * dbSuffix + 202;
         int id3 = 1000 * dbSuffix + 203;

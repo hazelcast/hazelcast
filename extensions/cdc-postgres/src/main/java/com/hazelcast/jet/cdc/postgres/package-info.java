@@ -15,10 +15,9 @@
  */
 
 /**
- * Contains source/sink connectors that deal with Change Data Capture (CDC)
- * events from various databases as well as a generic connector for Debezium
- * CDC sources.
+ * Contains connectors for change data capture events from PostgreSQL
+ * databases.
  *
  * @since 4.2
  */
-package com.hazelcast.jet.cdc;
+package com.hazelcast.jet.cdc.postgres;

@@ -26,6 +26,7 @@ public class PropertyRules {
 
     private final Set<String> required = new HashSet<>();
     private final Map<String, String> excludes = new HashMap<>();
+    private final Map<String, String> includes = new HashMap<>();
 
     public PropertyRules required(String property) {
         required.add(property);
@@ -34,6 +35,11 @@ public class PropertyRules {
 
     public PropertyRules exclusive(String one, String other) {
         excludes.put(one, other);
+        return this;
+    }
+
+    public PropertyRules inclusive(String one, String other) {
+        includes.put(one, other);
         return this;
     }
 
@@ -47,6 +53,12 @@ public class PropertyRules {
         for (Map.Entry<String, String> entry : excludes.entrySet()) {
             if (properties.containsKey(entry.getKey()) && properties.containsKey(entry.getValue())) {
                 throw new IllegalStateException(entry.getKey() + " and " + entry.getValue() + " are mutually exclusive");
+            }
+        }
+
+        for (Map.Entry<String, String> entry : includes.entrySet()) {
+            if (properties.contains(entry.getKey()) && !properties.contains(entry.getValue())) {
+                throw new IllegalArgumentException(entry.getKey() + " requires " + entry.getValue() + " to be set too");
             }
         }
     }

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.cdc.mysql;
+package com.hazelcast.jet.cdc.postgres;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hazelcast.jet.JetInstance;
@@ -32,11 +32,14 @@ import com.hazelcast.jet.core.JobStatus;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.StreamSource;
+import com.hazelcast.test.annotation.NightlyTest;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 
 import javax.annotation.Nonnull;
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.Statement;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
@@ -46,16 +49,17 @@ import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.jet.Util.entry;
 
-public class MySqlIntegrationTest extends AbstractMySqlIntegrationTest {
+public class PostgresCdcIntegrationTest extends AbstractPostgresCdcIntegrationTest {
 
     @Test
+    //category intentionally left out, we want this one test to run in standard test suits
     public void customers() throws Exception {
         // given
         List<String> expectedRecords = Arrays.asList(
-                "1001/0:INSERT:Customer {id=1001, firstName=Sally, lastName=Thomas, email=sally.thomas@acme.com}",
-                "1002/0:INSERT:Customer {id=1002, firstName=George, lastName=Bailey, email=gbailey@foobar.com}",
-                "1003/0:INSERT:Customer {id=1003, firstName=Edward, lastName=Walker, email=ed@walker.com}",
-                "1004/0:INSERT:Customer {id=1004, firstName=Anne, lastName=Kretchmar, email=annek@noanswer.org}",
+                "1001/0:SYNC:Customer {id=1001, firstName=Sally, lastName=Thomas, email=sally.thomas@acme.com}",
+                "1002/0:SYNC:Customer {id=1002, firstName=George, lastName=Bailey, email=gbailey@foobar.com}",
+                "1003/0:SYNC:Customer {id=1003, firstName=Edward, lastName=Walker, email=ed@walker.com}",
+                "1004/0:SYNC:Customer {id=1004, firstName=Anne, lastName=Kretchmar, email=annek@noanswer.org}",
                 "1004/1:UPDATE:Customer {id=1004, firstName=Anne Marie, lastName=Kretchmar, email=annek@noanswer.org}",
                 "1005/0:INSERT:Customer {id=1005, firstName=Jason, lastName=Bourne, email=jason@bourne.org}",
                 "1005/1:DELETE:Customer {id=1005, firstName=Jason, lastName=Bourne, email=jason@bourne.org}"
@@ -87,17 +91,14 @@ public class MySqlIntegrationTest extends AbstractMySqlIntegrationTest {
         assertEqualsEventually(() -> jet.getMap("results").size(), 4);
 
         //when
-        try (Connection connection = DriverManager.getConnection(mysql.withDatabaseName("inventory").getJdbcUrl(),
-                mysql.getUsername(), mysql.getPassword())) {
-            connection
-                    .prepareStatement("UPDATE customers SET first_name='Anne Marie' WHERE id=1004")
-                    .executeUpdate();
-            connection
-                    .prepareStatement("INSERT INTO customers VALUES (1005, 'Jason', 'Bourne', 'jason@bourne.org')")
-                    .executeUpdate();
-            connection
-                    .prepareStatement("DELETE FROM customers WHERE id=1005")
-                    .executeUpdate();
+        try (Connection connection = DriverManager.getConnection(postgres.getJdbcUrl(), postgres.getUsername(),
+                postgres.getPassword())) {
+            connection.setSchema("inventory");
+            Statement statement = connection.createStatement();
+            statement.addBatch("UPDATE customers SET first_name='Anne Marie' WHERE id=1004");
+            statement.addBatch("INSERT INTO customers VALUES (1005, 'Jason', 'Bourne', 'jason@bourne.org')");
+            statement.addBatch("DELETE FROM customers WHERE id=1005");
+            statement.executeBatch();
         }
 
         //then
@@ -109,23 +110,24 @@ public class MySqlIntegrationTest extends AbstractMySqlIntegrationTest {
     }
 
     @Test
+    @Category(NightlyTest.class)
     public void orders() {
         // given
         List<String> expectedRecords = Arrays.asList(
-                "10001/0:INSERT:Order {orderNumber=10001, orderDate=" + new Date(1452902400000L) +
+                "10001/0:SYNC:Order {orderNumber=10001, orderDate=" + new Date(1452902400000L) +
                         ", quantity=1, productId=102}",
-                "10002/0:INSERT:Order {orderNumber=10002, orderDate=" + new Date(1452988800000L) +
+                "10002/0:SYNC:Order {orderNumber=10002, orderDate=" + new Date(1452988800000L) +
                         ", quantity=2, productId=105}",
-                "10003/0:INSERT:Order {orderNumber=10003, orderDate=" + new Date(1455840000000L) +
+                "10003/0:SYNC:Order {orderNumber=10003, orderDate=" + new Date(1455840000000L) +
                         ", quantity=2, productId=106}",
-                "10004/0:INSERT:Order {orderNumber=10004, orderDate=" + new Date(1456012800000L) +
+                "10004/0:SYNC:Order {orderNumber=10004, orderDate=" + new Date(1456012800000L) +
                         ", quantity=1, productId=107}"
         );
 
         Pipeline pipeline = Pipeline.create();
         pipeline.readFrom(source("orders"))
                 .withoutTimestamps()
-                .groupingKey(MySqlIntegrationTest::getOrderNumber)
+                .groupingKey(PostgresCdcIntegrationTest::getOrderNumber)
                 .mapStateful(
                         LongAccumulator::new,
                         (accumulator, orderId, record) -> {
@@ -152,6 +154,7 @@ public class MySqlIntegrationTest extends AbstractMySqlIntegrationTest {
     }
 
     @Test
+    @Category(NightlyTest.class)
     public void restart() throws Exception {
         // given
         List<String> expectedRecords = Arrays.asList(
@@ -199,17 +202,14 @@ public class MySqlIntegrationTest extends AbstractMySqlIntegrationTest {
         JetTestSupport.assertJobStatusEventually(job, JobStatus.RUNNING);
 
         //then update a record
-        try (Connection connection = DriverManager.getConnection(mysql.withDatabaseName("inventory").getJdbcUrl(),
-                mysql.getUsername(), mysql.getPassword())) {
-            connection
-                    .prepareStatement("UPDATE customers SET first_name='Anne Marie' WHERE id=1004")
-                    .executeUpdate();
-            connection
-                    .prepareStatement("INSERT INTO customers VALUES (1005, 'Jason', 'Bourne', 'jason@bourne.org')")
-                    .executeUpdate();
-            connection
-                    .prepareStatement("DELETE FROM customers WHERE id=1005")
-                    .executeUpdate();
+        try (Connection connection = DriverManager.getConnection(postgres.getJdbcUrl(), postgres.getUsername(),
+                postgres.getPassword())) {
+            connection.setSchema("inventory");
+            Statement statement = connection.createStatement();
+            statement.addBatch("UPDATE customers SET first_name='Anne Marie' WHERE id=1004");
+            statement.addBatch("INSERT INTO customers VALUES (1005, 'Jason', 'Bourne', 'jason@bourne.org')");
+            statement.addBatch("DELETE FROM customers WHERE id=1005");
+            statement.executeBatch();
         }
 
         //then
@@ -221,6 +221,7 @@ public class MySqlIntegrationTest extends AbstractMySqlIntegrationTest {
     }
 
     @Test
+    @Category(NightlyTest.class)
     public void cdcMapSink() throws Exception {
         // given
         Pipeline pipeline = Pipeline.create();
@@ -249,14 +250,13 @@ public class MySqlIntegrationTest extends AbstractMySqlIntegrationTest {
         //when
         job.restart();
         JetTestSupport.assertJobStatusEventually(job, JobStatus.RUNNING);
-        try (Connection connection = DriverManager.getConnection(mysql.withDatabaseName("inventory").getJdbcUrl(),
-                mysql.getUsername(), mysql.getPassword())) {
-            connection
-                    .prepareStatement("UPDATE customers SET first_name='Anne Marie' WHERE id=1004")
-                    .executeUpdate();
-            connection
-                    .prepareStatement("INSERT INTO customers VALUES (1005, 'Jason', 'Bourne', 'jason@bourne.org')")
-                    .executeUpdate();
+        try (Connection connection = DriverManager.getConnection(postgres.getJdbcUrl(), postgres.getUsername(),
+                postgres.getPassword())) {
+            connection.setSchema("inventory");
+            Statement statement = connection.createStatement();
+            statement.addBatch("UPDATE customers SET first_name='Anne Marie' WHERE id=1004");
+            statement.addBatch("INSERT INTO customers VALUES (1005, 'Jason', 'Bourne', 'jason@bourne.org')");
+            statement.executeBatch();
         }
         //then
         assertEqualsEventually(() -> mapResultsToSortedList(jet.getMap("cache")),
@@ -270,8 +270,9 @@ public class MySqlIntegrationTest extends AbstractMySqlIntegrationTest {
         );
 
         //when
-        try (Connection connection = DriverManager.getConnection(mysql.withDatabaseName("inventory").getJdbcUrl(),
-                mysql.getUsername(), mysql.getPassword())) {
+        try (Connection connection = DriverManager.getConnection(postgres.getJdbcUrl(), postgres.getUsername(),
+                postgres.getPassword())) {
+            connection.setSchema("inventory");
             connection
                     .prepareStatement("DELETE FROM customers WHERE id=1005")
                     .executeUpdate();
@@ -290,7 +291,6 @@ public class MySqlIntegrationTest extends AbstractMySqlIntegrationTest {
     @Nonnull
     private StreamSource<ChangeRecord> source(String tableName) {
         return sourceBuilder(tableName)
-                .setDatabaseWhitelist("inventory")
                 .setTableWhitelist("inventory." + tableName)
                 .build();
     }
@@ -299,7 +299,7 @@ public class MySqlIntegrationTest extends AbstractMySqlIntegrationTest {
         //pick random method for extracting ID in order to test all code paths
         boolean primitive = ThreadLocalRandom.current().nextBoolean();
         if (primitive) {
-            return (Integer) record.key().toMap().get("order_number");
+            return (Integer) record.key().toMap().get("id");
         } else {
             return record.key().toObject(OrderPrimaryKey.class).id;
         }
@@ -350,7 +350,7 @@ public class MySqlIntegrationTest extends AbstractMySqlIntegrationTest {
 
     private static class Order {
 
-        @JsonProperty("order_number")
+        @JsonProperty("id")
         public int orderNumber;
 
         @JsonProperty("order_date")
@@ -366,7 +366,7 @@ public class MySqlIntegrationTest extends AbstractMySqlIntegrationTest {
         }
 
         public void setOrderDate(Date orderDate) {
-            long days = orderDate.getTime(); //database provides no of days for some reason, fixing it here
+            long days = orderDate.getTime();
             this.orderDate = new Date(TimeUnit.DAYS.toMillis(days));
         }
 
@@ -400,7 +400,7 @@ public class MySqlIntegrationTest extends AbstractMySqlIntegrationTest {
 
     private static class OrderPrimaryKey {
 
-        @JsonProperty("order_number")
+        @JsonProperty("id")
         public int id;
 
         @Override

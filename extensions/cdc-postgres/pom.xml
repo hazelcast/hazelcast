@@ -20,11 +20,11 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <packaging>jar</packaging>
-    <name>hazelcast-jet-cdc-debezium</name>
+    <name>hazelcast-jet-cdc-postgres</name>
     <description>Change Data Capture support for Hazelcast Jet</description>
     <url>http://www.hazelcast.com/</url>
 
-    <artifactId>hazelcast-jet-cdc-debezium</artifactId>
+    <artifactId>hazelcast-jet-cdc-postgres</artifactId>
 
     <parent>
         <groupId>com.hazelcast.jet</groupId>
@@ -54,17 +54,10 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <goals>
-                            <goal>test-jar</goal>
-                        </goals>
-                    </execution>
-                </executions>
                 <configuration>
                     <archive>
                         <manifestEntries>
-                            <Automatic-Module-Name>com.hazelcast.jet.cdc.debezium</Automatic-Module-Name>
+                            <Automatic-Module-Name>com.hazelcast.jet.cdc.postgres</Automatic-Module-Name>
                         </manifestEntries>
                     </archive>
                 </configuration>
@@ -72,6 +65,11 @@
             <plugin>
                 <artifactId>maven-assembly-plugin</artifactId>
                 <version>${maven.assembly.plugin.version}</version>
+                <configuration>
+                    <descriptors>
+                        <descriptor>src/assembly-descriptor.xml</descriptor>
+                    </descriptors>
+                </configuration>
                 <executions>
                     <execution>
                         <id>distro-assembly</id>
@@ -79,12 +77,6 @@
                         <goals>
                             <goal>single</goal>
                         </goals>
-                        <configuration>
-                            <descriptorRefs>
-                                <descriptorRef>jar-with-dependencies</descriptorRef>
-                            </descriptorRefs>
-                            <tarLongFileMode>posix</tarLongFileMode>
-                        </configuration>
                     </execution>
                 </executions>
             </plugin>
@@ -93,54 +85,38 @@
 
     <dependencies>
         <dependency>
-            <groupId>org.apache.kafka</groupId>
-            <artifactId>connect-api</artifactId>
-            <version>${kafka.version}</version>
+            <groupId>com.hazelcast.jet</groupId>
+            <artifactId>hazelcast-jet-cdc-debezium</artifactId>
+            <version>${project.parent.version}</version>
+            <scope>provided</scope>
         </dependency>
 
-        <dependency>
-            <groupId>org.apache.kafka</groupId>
-            <artifactId>connect-transforms</artifactId>
-            <version>${kafka.version}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>io.debezium</groupId>
-            <artifactId>debezium-core</artifactId>
-            <version>${debezium.version}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>jackson-annotations</artifactId>
-            <version>${jackson.jr.version}</version>
-        </dependency>
-
-        <!-- TEST -->
-        <dependency>
-            <groupId>io.debezium</groupId>
-            <artifactId>debezium-connector-mysql</artifactId>
-            <version>${debezium.version}</version>
-            <scope>test</scope>
-        </dependency>
         <dependency>
             <groupId>io.debezium</groupId>
             <artifactId>debezium-connector-postgres</artifactId>
             <version>${debezium.version}</version>
-            <scope>test</scope>
         </dependency>
 
+        <!-- TEST -->
         <dependency>
-            <groupId>org.testcontainers</groupId>
-            <artifactId>mysql</artifactId>
-            <version>${testcontainers.version}</version>
+            <groupId>com.hazelcast.jet</groupId>
+            <artifactId>hazelcast-jet-cdc-debezium</artifactId>
+            <version>${project.parent.version}</version>
             <scope>test</scope>
+            <classifier>tests</classifier>
         </dependency>
 
         <dependency>
             <groupId>org.testcontainers</groupId>
             <artifactId>postgresql</artifactId>
             <version>${testcontainers.version}</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-annotations</artifactId>
+            <version>${jackson.jr.version}</version>
             <scope>test</scope>
         </dependency>
 

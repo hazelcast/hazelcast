@@ -40,12 +40,13 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  * sinks. As a consequence these sinks take {@link ChangeRecord} items
  * as their input.
  * <p>
- * These sinks can detect any <em>reordering</em> that might happen in the
- * {@code ChangeRecord} stream (Jet pipelines use parallel execution, so
- * item reordering can and does happen). Reordering detection is based on
- * implementation-specific sequence numbers provided by CDC event sources.
- * The sink reacts to reordering by dropping obsolete input items. The
- * exact behavior is as follows. For each input item, the sink:
+ * These sinks can detect any <em>reordering</em> that might happen in
+ * the {@code ChangeRecord} stream (Jet pipelines use parallel
+ * execution, so item reordering can and does happen). Reordering
+ * detection is based on implementation-specific sequence numbers
+ * provided by CDC event sources. The sink reacts to reordering by
+ * dropping obsolete input items. The exact behavior is as follows. For
+ * each input item, the sink:
  * <ol><li>
  *     applies the {@code keyFn} to the input item to extract its key
  * </li><li>
@@ -57,6 +58,34 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  *     if the previous sequence number is more recent than the one observed in
  *     the input item, it drops (ignores) the input item
  * </li></ol>
+ * <p>
+ * About the implementation-specific sequence numbers provided by the
+ * CDC sources. They consist of two parts:
+ * <ul><li>
+ *     <em>numeric sequence</em> for which a monotonically increasing
+ *     value is emitted by the source and which allows ordering of the
+ *     event
+ * </li><li>
+ *     <em>source descriptor</em> which allows us to identify situations
+ *     when the numeric sequence gets reset or any other events when
+ *     comparing new numeric values with previous ones no longer makes
+ *     sense
+ * </li></ul>
+ * <p>
+ * The sequence source is made up of information like ID of the database
+ * instance the connector is connected to, name of the binlog file being
+ * monitored and so on. So whenever the source reconnects to a new server
+ * or switches to a new binlog file or other such event, the source field
+ * of sequence numbers will change.
+ * <p>
+ * The logic of determining which event are more recent takes the sequence
+ * source into consideration. Whenever the source field changes, the event
+ * carrying it will be considered more recent than ones with the old
+ * source value. Numeric sequence numbers are compared to establish order
+ * only when their sources match.
+ * <p>
+ * Restarting the CDC Jet source will not change sequence number sources,
+ * only significant changes on the database side will.
  *
  * @since 4.2
  */

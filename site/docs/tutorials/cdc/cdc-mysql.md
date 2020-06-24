@@ -1,5 +1,6 @@
 ---
 title: Change Data Capture from MySQL
+sidebar_label: MySQL
 description: How to monitor Change Data Capture data from a MySQL database in Jet.
 ---
 
@@ -15,8 +16,8 @@ Implementation of CDC in Jet is based on
 [Debezium](https://debezium.io/), which is an open source distributed
 platform for change data capture.
 
-Let's see an example, how to process change events from a MySQL database
-in Jet.
+Let's see an example, how to process change events in Jet, from a
+MySQL database.
 
 ## 1. Install Docker
 
@@ -146,7 +147,7 @@ which should then display:
 ```
 
 Use the MySQL command line client to explore the database and view the
-pre-loaded data in the database. For example:
+pre-loaded data. For example:
 
 ```text
 mysql> SELECT * FROM customers;
@@ -565,3 +566,5 @@ docker ps -a
 
 Of course, if any are still running, simply stop them using
 `docker stop <name>` or `docker stop <containerId>`.
+
+[Back to main](../cdc.md)

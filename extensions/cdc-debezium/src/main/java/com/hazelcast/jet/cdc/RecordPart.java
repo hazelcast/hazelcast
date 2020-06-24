@@ -40,6 +40,32 @@ public interface RecordPart {
      * Jackson jr</a> with <a
      * href="https://github.com/FasterXML/jackson-jr/tree/master/jr-annotation-support">
      * annotation support</a>, so the supplied class can be annotated accordingly.
+     * <p>
+     * Note: there is a bug in jackson-jr's object mapping, where it doesn't
+     * handle fields of type {@code Date} properly, if they are nullable.
+     * The null values trigger exceptions and failure in the object mapping code.
+     * <p>
+     * This can be overcome via following trick, which in fact could come
+     * in handy in many other situations.
+     * <p>
+     * Let's say we have a {@code birth_date} column in a table of type
+     * {@code DATE} and we want to map it to a field named {@code birthDate}
+     * in our row object, of type {@code LocalDate}. We would write
+     * code like this:
+     * <pre>
+     *  {@code
+     *  public LocalDate birthDate;
+     *
+     *  public void setBirthDate(long daysSinceBirth) {
+     *      this.birthDate = daysSinceBirth == 0 ? null : LocalDate.ofEpochDay(daysSinceBirth);
+     *  }
+     *  }
+     * </pre>
+     * The things to note here is that by specifying a setter and giving
+     * it the input parameter type of {@code long} we force the object
+     * mapping to interpret the column value as a {@code long} (as opposed
+     * to {@code Date}). Then we can take care of {@code null} handling
+     * and converting to whatever desired type ourselves.
      *
      * @return object of type {@code T}, obtained as the result of the mapping
      * @throws ParsingException if the mapping fails to produce a result

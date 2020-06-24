@@ -273,14 +273,16 @@ CDC sources in Jet are set up as extension modules:
   the creation of generic Debezium sources (see
   [DebeziumCdcSources](https://github.com/hazelcast/hazelcast-jet/tree/master/extensions/cdc-debezium/src/main/java/com/hazelcast/jet/cdc/DebeziumCdcSources.java))
 * [cdc-mysql](https://github.com/hazelcast/hazelcast-jet/tree/master/extensions/cdc-mysql):
-  allows for the creation of MySQL based CDC sources (see [MySqlCdcSources](https://github.com/hazelcast/hazelcast-jet/tree/master/extensions/cdc-mysql/src/main/java/com/hazelcast/jet/cdc/MySqlCdcSources.java))
+  allows for the creation of MySQL based CDC sources (see [MySqlCdcSources](https://github.com/hazelcast/hazelcast-jet/blob/master/extensions/cdc-mysql/src/main/java/com/hazelcast/jet/cdc/mysql/MySqlCdcSources.java))
+* [cdc-postgres](https://github.com/hazelcast/hazelcast-jet/tree/master/extensions/cdc-postgres):
+  allows for the creation of PostgreSQL based CDC sources (see [PostgresCdcSources](https://github.com/hazelcast/hazelcast-jet/tree/master/extensions/cdc-mysql/src/main/java/com/hazelcast/jet/cdc/postgres/PostgresCdcSources.java))
 * more supported databases coming in future versions
 
-`cdc-debezium` is the core module. It generates a self contained JAR
+`cdc-debezium` is the core module. It generates a self-contained JAR
 with all dependencies included and is stored in the `opt` folder of the
-distribution. The `cdc-mysql` jar is also in the `opt` folder of the
-distribution, but it does not contain dependencies, it has to be put on
-the classpath together with the `cdc-debezium` jar.
+distribution. The `cdc-mysql` and `cdc-postgres` jars are also in the
+`opt` folder of the distribution, but they don't contain dependencies,
+so have to be put on the classpath together with the `cdc-debezium` jar.
 
 For example to make members of a cluster able to work with MySQL CDC
 sources, what one needs to do is to move both the
@@ -309,18 +311,21 @@ The helper classes defined in `cdc-debezium`, such as `ChangeRecord` and
 Initial performance tests have been performed on non-production grade
 hardware, but results should still be relevant:
 
-* MySQL v5.7 running via Docker on a dedicated Ubuntu 19.10 box (quad
-  core i7-6700K CPU @ 4.0GHz, 16GB memory, AMD Radeon R3 SSD drive)
+* MySQL (v5.7) / PostgreSQL (v11) server running via Docker on a
+  dedicated Ubuntu 19.10 box (quad core i7-6700K CPU @ 4.0GHz, 16GB
+  memory, AMD Radeon R3 SSD drive)
 * Jet CDC pipeline running in a single node Jet cluster on a MacBook
   Pro (6 core i7 CPU @ 2.6GHz, 32GB memory, Apple AP0512M SSD)
 
 ### Results
 
+#### MySQL
+
 Maximum number of *sustained* change records that could be produced in
-the database (by continuously inserting into and then deleting data
-from) was around **100,000 rows/second**. The Jet job processing all the
-corresponding CDC events (reading them and mapping them to user data
-objects) had no problems with keeping up, no lagging behind observed.
+the MySQL database (by continuously inserting into and then deleting
+data from) was around **100,000 rows/second**. The Jet job processing
+all the corresponding CDC events (reading them and mapping them to user
+data objects) had no problems with keeping up, no lagging behind observed.
 
 *Peak* even handling rate of the Jet pipeline has been observed around
 **200,000 records/second**. This scenario was achieved by making the
@@ -333,7 +338,7 @@ seems to be what it's capable of.
 around **185,000 rows/second** (10 million row table finished in under
 one minute).
 
-### Database Hit
+##### Database Hit
 
 Enabling the *binlog* on the MySQL database has been observed to produce
 a **15%** performance hit on the number of update/insert/delete events
@@ -341,3 +346,19 @@ it's able to process.
 
 Enabling *global transaction IDs* doesn't seem to produce a
 significant performance impact.
+
+#### PostgreSQL
+
+Maximum number of *sustained* change records that could be produced in
+the database (by continuously inserting into and then deleting data
+from) was only around **20,000 rows/second**.
+
+This rate is much lower than what was possible with MySQL and seems to
+stem from how [logical
+decoding](https://www.postgresql.org/docs/current/logicaldecoding-explanation.html)
+is implemented by PostgreSQL, namely that it seems to be a single
+threaded process which doesn't scale much.
+
+We are not sure if this is a technical limitation or is intentionally
+done so by Postgres to limit the impact of logical replication, since it
+can be enabled only on the primary server of the Postgres cluster.

@@ -22,10 +22,12 @@ import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.StreamStage;
 import com.hazelcast.jet.pipeline.test.AssertionSinks;
 import com.hazelcast.jet.pipeline.test.TestSources;
+import com.hazelcast.test.annotation.NightlyTest;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -75,6 +77,7 @@ public class PythonServiceTest extends SimpleTestInClusterSupport {
     }
 
     @Test
+    //category intentionally left out, we want this one test to run in standard test suits
     public void batchStage_mapUsingPython() {
         // Given
         PythonServiceConfig cfg = new PythonServiceConfig()
@@ -96,6 +99,7 @@ public class PythonServiceTest extends SimpleTestInClusterSupport {
     }
 
     @Test
+    @Category(NightlyTest.class)
     public void batchStage_mapUsingPython_onAllMembers() {
         // Given
         PythonServiceConfig cfg = new PythonServiceConfig()
@@ -116,6 +120,7 @@ public class PythonServiceTest extends SimpleTestInClusterSupport {
     }
 
     @Test
+    @Category(NightlyTest.class)
     public void streamStage_mapUsingPython_withBaseDir() {
         // Given
         PythonServiceConfig cfg = new PythonServiceConfig()
@@ -137,6 +142,7 @@ public class PythonServiceTest extends SimpleTestInClusterSupport {
     }
 
     @Test
+    @Category(NightlyTest.class)
     public void streamStage_mapUsingPython_withHandlerFile() {
         // Given
         PythonServiceConfig cfg = new PythonServiceConfig()
@@ -157,6 +163,7 @@ public class PythonServiceTest extends SimpleTestInClusterSupport {
     }
 
     @Test
+    @Category(NightlyTest.class)
     public void streamStage_mapUsingPython_onAllMembers() {
         // Given
         PythonServiceConfig cfg = new PythonServiceConfig()
@@ -178,6 +185,7 @@ public class PythonServiceTest extends SimpleTestInClusterSupport {
     }
 
     @Test
+    @Category(NightlyTest.class)
     public void streamStage_mapUsingPython_withInitScript() throws Exception {
         // Given
         String baseDirStr = baseDir.toString();
@@ -207,6 +215,7 @@ public class PythonServiceTest extends SimpleTestInClusterSupport {
     }
 
     @Test
+    @Category(NightlyTest.class)
     public void streamStage_mapUsingPython_withCleanupScript() throws Exception {
         // Given
         String baseDirStr = baseDir.toString();
@@ -236,6 +245,7 @@ public class PythonServiceTest extends SimpleTestInClusterSupport {
     }
 
     @Test
+    @Category(NightlyTest.class)
     public void batchStage_mapUsingPythonFailure() {
         // Given
         PythonServiceConfig cfg = new PythonServiceConfig()
@@ -259,6 +269,7 @@ public class PythonServiceTest extends SimpleTestInClusterSupport {
     }
 
     @Test
+    @Category(NightlyTest.class)
     public void streamStage_mapUsingPythonFailure() {
         // Given
         PythonServiceConfig cfg = new PythonServiceConfig()
@@ -282,6 +293,7 @@ public class PythonServiceTest extends SimpleTestInClusterSupport {
     }
 
     @Test
+    @Category(NightlyTest.class)
     public void batchStage_mapUsingPythonException() throws IOException {
         // Given
         installFileToBaseDir(FAILING_FUNCTION, "failing.py");
@@ -306,6 +318,7 @@ public class PythonServiceTest extends SimpleTestInClusterSupport {
     }
 
     @Test
+    @Category(NightlyTest.class)
     public void streamStage_mapUsingPythonException() throws IOException {
         // Given
         installFileToBaseDir(FAILING_FUNCTION, "failing.py");

@@ -75,6 +75,7 @@
                             Apache 2|Apache 2.0|Apache-2.0|Apache License 2.0|The Apache License, Version 2.0
                         </licenseMerge>
                         <licenseMerge>MIT License|MIT|The MIT License|MIT license|The MIT License (MIT)</licenseMerge>
+                        <licenseMerge>BSD 2-Clause License|BSD-2-Clause</licenseMerge>
                         <licenseMerge>BSD 3-Clause License|BSD License|BSD|BSD licence|The BSD License|3-Clause BSD License| New BSD License</licenseMerge>
                     </licenseMerges>
                 </configuration>
@@ -281,6 +282,12 @@
         <dependency>
             <groupId>com.hazelcast.jet</groupId>
             <artifactId>hazelcast-jet-cdc-mysql</artifactId>
+            <version>${project.version}</version>
+            <classifier>jar-with-dependencies</classifier>
+        </dependency>
+        <dependency>
+            <groupId>com.hazelcast.jet</groupId>
+            <artifactId>hazelcast-jet-cdc-postgres</artifactId>
             <version>${project.version}</version>
             <classifier>jar-with-dependencies</classifier>
         </dependency>

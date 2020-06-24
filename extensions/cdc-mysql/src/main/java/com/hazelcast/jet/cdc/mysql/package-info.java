@@ -17,5 +17,7 @@
 /**
  * Contains connectors for change data capture events from MySQL
  * databases.
+ *
+ * @since 4.2
  */
 package com.hazelcast.jet.cdc.mysql;

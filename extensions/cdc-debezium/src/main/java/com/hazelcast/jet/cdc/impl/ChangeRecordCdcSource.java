@@ -23,13 +23,19 @@ import io.debezium.transforms.ExtractNewRecordState;
 import org.apache.kafka.connect.data.Values;
 import org.apache.kafka.connect.source.SourceRecord;
 
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 
 public class ChangeRecordCdcSource extends CdcSource<ChangeRecord> {
+
+    public static final String DB_SPECIFIC_EXTRA_FIELDS_PROPERTY = "db.specific.extra.fields";
 
     private final SequenceExtractor sequenceExtractor;
     private final ExtractNewRecordState<SourceRecord> transform;
@@ -38,7 +44,7 @@ public class ChangeRecordCdcSource extends CdcSource<ChangeRecord> {
         super(properties);
         try {
             sequenceExtractor = newInstance(properties, SEQUENCE_EXTRACTOR_CLASS_PROPERTY);
-            transform = initTransform();
+            transform = initTransform(properties.getProperty(DB_SPECIFIC_EXTRA_FIELDS_PROPERTY));
         } catch (Exception e) {
             throw rethrow(e);
         }
@@ -68,14 +74,22 @@ public class ChangeRecordCdcSource extends CdcSource<ChangeRecord> {
                 .build();
     }
 
-    private static ExtractNewRecordState<SourceRecord> initTransform() {
+    private static ExtractNewRecordState<SourceRecord> initTransform(String dbSpecificExtraFields) {
         ExtractNewRecordState<SourceRecord> transform = new ExtractNewRecordState<>();
 
         Map<String, String> config = new HashMap<>();
-        config.put("add.fields", "db, table, op, ts_ms");
+        config.put("add.fields", String.join(",", extraFields(dbSpecificExtraFields)));
         config.put("delete.handling.mode", "rewrite");
         transform.configure(config);
 
         return transform;
+    }
+
+    private static Collection<String> extraFields(String dbSpecificExtraFields) {
+        Set<String> extraFields = new HashSet<>(Arrays.asList("db", "table", "op", "ts_ms"));
+        if (dbSpecificExtraFields != null) {
+            extraFields.addAll(Arrays.asList(dbSpecificExtraFields.split(",")));
+        }
+        return extraFields;
     }
 }

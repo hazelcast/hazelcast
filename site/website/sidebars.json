@@ -9,7 +9,14 @@
     ],
     "Tutorials": [
       "tutorials/kafka",
-      "tutorials/cdc",
+      {
+        "type": "subcategory",
+        "label": "Change Data Capture",
+        "ids": [
+          "tutorials/cdc/cdc-mysql",
+          "tutorials/cdc/cdc-postgres"
+        ]
+      },
       "tutorials/map-join",
       "tutorials/windowing",
       "tutorials/python",
