@@ -1,6 +1,22 @@
+plugins {
+    id 'com.github.johnrengelman.shadow' version '5.2.0'
+}
+
 dependencies {
     compile 'org.mongodb:mongodb-driver-sync:3.12.2'
     testCompile "org.testcontainers:testcontainers:1.11.2"
+}
+
+
+jar {
+    enabled = false
+    dependsOn(shadowJar{archiveClassifier.set("")})
+}
+
+shadowJar {
+    dependencies {
+        exclude(dependency('com.hazelcast.jet:hazelcast-jet'))
+    }
 }
 
 test {
