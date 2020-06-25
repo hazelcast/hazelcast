@@ -55,6 +55,7 @@ public final class SerializerHookConstants {
     public static final int TIMESTAMPED_ITEM = -325;
     public static final int QUERY_ENTRY = -326;
     public static final int DEFERRED_MAP = -327;
+    public static final int AVRO_UTF8 = -328;
 
     public static final int CDC_RECORD = -340;
     public static final int CDC_RECORD_PART = -341;
