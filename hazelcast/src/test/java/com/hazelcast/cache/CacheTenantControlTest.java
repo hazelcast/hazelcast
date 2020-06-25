@@ -60,7 +60,7 @@ import static org.junit.Assert.assertNotNull;
 public class CacheTenantControlTest extends HazelcastTestSupport {
 
     private static AtomicInteger saveCurrentCount = new AtomicInteger();
-    private static AtomicInteger setTenantCount = new AtomicInteger();
+    static AtomicInteger setTenantCount = new AtomicInteger();
     private static AtomicInteger closeTenantCount = new AtomicInteger();
     private static AtomicInteger unregisterTenantCount = new AtomicInteger();
     private static AtomicReference<DestroyEventContext> destroyEventContext = new AtomicReference<DestroyEventContext>(null);
