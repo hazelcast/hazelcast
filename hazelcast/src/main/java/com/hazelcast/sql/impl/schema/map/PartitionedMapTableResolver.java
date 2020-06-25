@@ -29,7 +29,7 @@ import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.schema.ConstantTableStatistics;
 import com.hazelcast.sql.impl.schema.ExternalCatalog;
 import com.hazelcast.sql.impl.schema.Table;
-import com.hazelcast.sql.impl.schema.map.ResolverUtils.ResolveResult;
+import com.hazelcast.sql.impl.schema.map.MapTableUtils.ResolveResult;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
@@ -118,7 +118,7 @@ public class PartitionedMapTableResolver extends AbstractMapTableResolver {
 
             InternalSerializationService ss = (InternalSerializationService) nodeEngine.getSerializationService();
 
-            ResolveResult resolved = ResolverUtils.resolvePartitionedMap(ss, context, name);
+            ResolveResult resolved = MapTableUtils.resolvePartitionedMap(ss, context, name);
             if (resolved == null) {
                 return emptyMap(name);
             }

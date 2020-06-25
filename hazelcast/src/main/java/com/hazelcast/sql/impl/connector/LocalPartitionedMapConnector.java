@@ -32,8 +32,7 @@ import com.hazelcast.sql.impl.schema.Table;
 import com.hazelcast.sql.impl.schema.map.MapTableIndex;
 import com.hazelcast.sql.impl.schema.map.MapTableUtils;
 import com.hazelcast.sql.impl.schema.map.PartitionedMapTable;
-import com.hazelcast.sql.impl.schema.map.ResolverUtils;
-import com.hazelcast.sql.impl.schema.map.ResolverUtils.ResolveResult;
+import com.hazelcast.sql.impl.schema.map.MapTableUtils.ResolveResult;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -75,7 +74,7 @@ public class LocalPartitionedMapConnector extends LocalAbstractMapConnector {
 
             ResolveResult resolveResult;
             if (externalFields == null) {
-                resolveResult = ResolverUtils.resolvePartitionedMap(ss, context, mapName);
+                resolveResult = MapTableUtils.resolvePartitionedMap(ss, context, mapName);
                 if (resolveResult == null) {
                     throw QueryException.error("Failed to get metadata for IMap " + mapName + ": map is empty");
                 }
