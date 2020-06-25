@@ -20,35 +20,37 @@ import java.io.Serializable;
 import java.util.Objects;
 
 @SuppressWarnings("unused")
-public class Person implements Serializable {
+public class IdentifiedPerson extends Person implements Serializable {
 
-    private String name;
+    private long id;
 
-    public Person() {
+    public IdentifiedPerson() {
     }
 
-    public Person(String name) {
-        this.name = name;
+    public IdentifiedPerson(long id, String name) {
+        super(name);
+        this.id = id;
     }
 
-    public String getName() {
-        return name;
+    public long getId() {
+        return id;
     }
 
-    public void setName(String name) {
-        this.name = name;
+    public void setId(long id) {
+        this.id = id;
     }
 
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        Person person = (Person) o;
-        return Objects.equals(name, person.name);
+        if (!super.equals(o)) return false;
+        IdentifiedPerson that = (IdentifiedPerson) o;
+        return id == that.id;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(name);
+        return Objects.hash(super.hashCode(), id);
     }
 }

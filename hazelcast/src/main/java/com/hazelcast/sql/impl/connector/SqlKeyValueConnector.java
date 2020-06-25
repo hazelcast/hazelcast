@@ -69,7 +69,7 @@ public abstract class SqlKeyValueConnector implements SqlConnector {
             fields.putIfAbsent(valueFieldEntry.getKey(), valueFieldEntry.getValue());
         }
 
-        // all declared fields should be mapped to either key or value
+        // all declared fields should be mapped to neither key nor value
         List<String> unmappedFields = externalFields.stream()
                                                     .filter(externalField -> fields.get(externalField.name()) == null)
                                                     .map(ExternalField::name)
