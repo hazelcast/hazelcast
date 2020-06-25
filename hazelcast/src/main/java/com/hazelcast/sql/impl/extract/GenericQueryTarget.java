@@ -59,7 +59,7 @@ public class GenericQueryTarget implements QueryTarget, GenericTargetAccessor {
             if (rawTarget instanceof Data) {
                 Data rawTarget0 = (Data) rawTarget;
 
-                if (rawTarget0.isPortable()) {
+                if (rawTarget0.isPortable() || rawTarget0.isJson()) {
                     target = rawTarget;
                 } else {
                     // Deserialize non-Portable.

@@ -74,7 +74,7 @@ public class PartitionedMapTableResolver extends AbstractMapTableResolver {
                 continue;
             }
 
-            PartitionedMapTable table = createTable(nodeEngine, context, mapName);
+            PartitionedMapTable table = createTable(context, mapName);
 
             if (table == null) {
                 continue;
@@ -102,12 +102,9 @@ public class PartitionedMapTableResolver extends AbstractMapTableResolver {
     }
 
     // TODO: VO: Abstract out Jet stuff in a clean way.
+    // TODO: deduplicate with LocalPartitionedMapConnector ???
     @SuppressWarnings({"rawtypes", "checkstyle:MethodLength", "checkstyle:CyclomaticComplexity", "checkstyle:NPathComplexity"})
-    public static PartitionedMapTable createTable(
-        NodeEngine nodeEngine,
-        MapServiceContext context,
-        String name
-    ) {
+    private PartitionedMapTable createTable(MapServiceContext context, String name) {
         try {
             MapContainer mapContainer = context.getMapContainer(name);
 
@@ -175,9 +172,10 @@ public class PartitionedMapTableResolver extends AbstractMapTableResolver {
                     new ConstantTableStatistics(estimatedRowCount),
                     keyMetadata.getDescriptor(),
                     valueMetadata.getDescriptor(),
+                    null,
+                    null,
                     indexes,
-                    distributionFieldOrdinal,
-                    Collections.emptyMap()
+                    distributionFieldOrdinal
                 );
             }
 

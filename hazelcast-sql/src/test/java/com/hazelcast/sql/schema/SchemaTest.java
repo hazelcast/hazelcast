@@ -21,6 +21,7 @@ import com.hazelcast.sql.SqlException;
 import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.impl.connector.LocalPartitionedMapConnector;
 import com.hazelcast.sql.schema.model.AllTypesValue;
+import com.hazelcast.sql.schema.model.IdentifiedPerson;
 import com.hazelcast.sql.schema.model.Person;
 import com.hazelcast.sql.support.CalciteSqlTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -42,12 +43,14 @@ import java.util.GregorianCalendar;
 import java.util.List;
 import java.util.Map;
 
+import static com.hazelcast.sql.impl.connector.SqlConnector.POJO_SERIALIZATION_FORMAT;
+import static com.hazelcast.sql.impl.connector.SqlKeyValueConnector.TO_SERIALIZATION_VALUE_FORMAT;
+import static com.hazelcast.sql.impl.connector.SqlKeyValueConnector.TO_VALUE_CLASS;
 import static java.lang.String.format;
 import static java.time.ZoneOffset.UTC;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.junit.Assert.assertEquals;
 
 public class SchemaTest extends CalciteSqlTestSupport {
 
@@ -66,13 +69,38 @@ public class SchemaTest extends CalciteSqlTestSupport {
     }
 
     @Test
-    public void testSelectFromDeclaredTable() {
+    public void testTableValidation() {
         // given
-        String name = "predeclared_map";
+        String name = "InvalidTable";
 
         // when
-        List<SqlRow> updateRows = getQueryRows(member, format("CREATE EXTERNAL TABLE %s (__key INT) TYPE \"%s\"",
-                name, LocalPartitionedMapConnector.TYPE_NAME));
+        // then
+        assertThatThrownBy(() -> executeQuery(
+                member,
+                format("CREATE EXTERNAL TABLE %s ("
+                                + " __key INT,"
+                                + " this VARCHAR,"
+                                + " superfluous VARCHAR" // cannot be mapped to neither key nor value
+                                + ") TYPE \"%s\"",
+                        name, LocalPartitionedMapConnector.TYPE_NAME
+                ))
+        ).isInstanceOf(SqlException.class);
+    }
+
+    @Test
+    public void testTableCreation() {
+        // given
+        String name = "DeclaredTable";
+
+        // when
+        List<SqlRow> updateRows = getQueryRows(
+                member,
+                format("CREATE EXTERNAL TABLE %s ("
+                                + " __key INT,"
+                                + " this VARCHAR"
+                                + ") TYPE \"%s\"",
+                        name, LocalPartitionedMapConnector.TYPE_NAME
+                ));
 
         // then
         assertThat(updateRows).hasSize(1);
@@ -86,72 +114,74 @@ public class SchemaTest extends CalciteSqlTestSupport {
     }
 
     @Test
-    public void testSchemaAvailability() {
+    public void testSchemaPropagation() {
         // given
-        String name = "distributed_schema_map";
+        String name = "DistributedTable";
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         HazelcastInstance[] instances = factory.newInstances();
 
-        // when create table is executed on one member
-        executeQuery(instances[0], format("CREATE EXTERNAL TABLE %s (__key INT) TYPE \"%s\"", name,
-                LocalPartitionedMapConnector.TYPE_NAME));
+        // when create table statement is executed on one member
+        executeQuery(
+                instances[0],
+                format("CREATE EXTERNAL TABLE %s ("
+                                + " __key INT,"
+                                + " this VARCHAR"
+                                + ") TYPE \"%s\"",
+                        name, LocalPartitionedMapConnector.TYPE_NAME
+                ));
 
         // then schema is available on another one
-        // TODO: fix it properly - sticky client, different catalog storage, ???
-        assertTrueEventually("Table is not available on the second node", () -> {
-            assertThatCode(() -> getQueryRows(instances[1], format("SELECT __key FROM %s", name)))
-                    .doesNotThrowAnyException();
-        });
+        // TODO: fix it properly - sticky client, different catalog storage ???
+        assertTrueEventually(
+                "Table is not available on the second node", () ->
+                        assertThatCode(() -> getQueryRows(instances[1], format("SELECT __key FROM public.%s", name)))
+                                .doesNotThrowAnyException()
+        );
     }
 
     @Test
-    public void testPredeclaredTablePriority() {
+    public void testDeclaredTablePriority() {
         // given
-        String name = "priority_map";
-        executeQuery(member, format("CREATE EXTERNAL TABLE %s (\"__key.age\" INT, age INT) TYPE \"%s\"",
-                name, LocalPartitionedMapConnector.TYPE_NAME));
+        String name = "PriorityTable";
+        executeQuery(
+                member,
+                format("CREATE EXTERNAL TABLE %s ("
+                                + " __key INT"
+                                + ") TYPE \"%s\" "
+                                + "OPTIONS ("
+                                + " \"%s\" '%s',"
+                                + " \"%s\" '%s'"
+                                + ")",
+                        name, LocalPartitionedMapConnector.TYPE_NAME,
+                        TO_SERIALIZATION_VALUE_FORMAT, POJO_SERIALIZATION_FORMAT,
+                        TO_VALUE_CLASS, Person.class.getName()
 
-        Map<Person, Person> map = member.getMap(name);
-        map.put(new Person("Alice", BigInteger.valueOf(30)), new Person("Bob", BigInteger.valueOf(40)));
+                ));
+
+        Map<Integer, Person> map = member.getMap(name);
+        map.put(1, new IdentifiedPerson(2, "Alice"));
 
         // when
-        List<SqlRow> rows = getQueryRows(member, format("SELECT age, \"__key.age\" FROM %s", name));
-
         // then
-        assertThat(rows).hasSize(1);
-        assertThat((int) rows.get(0).getObject(0)).isEqualTo(40);
-        assertThat((int) rows.get(0).getObject(1)).isEqualTo(30);
+        assertThatThrownBy(() -> executeQuery(member, format("SELECT id FROM %s", name)))
+                .isInstanceOf(SqlException.class);
     }
 
     @Test
     public void testSelectAllSupportedTypes() {
         // given
-        String name = "all_fields_map";
+        String name = "AllFieldsTable";
         executeQuery(member, format("CREATE EXTERNAL TABLE %s ("
-                        + "__key DECIMAL(10, 0), "
-                        + "string VARCHAR,"
-                        + "character0 CHAR, "
-                        + "boolean0 BOOLEAN, "
-                        + "byte0 TINYINT, "
-                        + "short0 SMALLINT, "
-                        + "int0 INT, "
-                        + "long0 BIGINT, "
-                        + "float0 REAL, "
-                        + "double0 DOUBLE, "
-                        + "bigDecimal DEC(10, 1), "
-                        + "bigInteger NUMERIC(5, 0), "
-                        + "\"localTime\" TIME, "
-                        + "localDate DATE, "
-                        + "localDateTime TIMESTAMP, "
-                        + "\"date\" TIMESTAMP WITH LOCAL TIME ZONE (\"DATE\"), "
-                        + "calendar TIMESTAMP WITH TIME ZONE (\"CALENDAR\"), "
-                        + "instant TIMESTAMP WITH LOCAL TIME ZONE, "
-                        + "zonedDateTime TIMESTAMP WITH TIME ZONE (\"ZONED_DATE_TIME\"), "
-                        + "offsetDateTime TIMESTAMP WITH TIME ZONE "
-                        /* + "yearMonthInterval INTERVAL_YEAR_MONTH, "
-                        + "offsetDateTime INTERVAL_DAY_SECOND, "*/
-                        + ") TYPE \"%s\"",
-                name, LocalPartitionedMapConnector.TYPE_NAME
+                        + " __key DECIMAL(10, 0)"
+                        + ") TYPE \"%s\" "
+                        + "OPTIONS ("
+                        + " \"%s\" '%s',"
+                        + " \"%s\" '%s'"
+                        + ")",
+                name, LocalPartitionedMapConnector.TYPE_NAME,
+                TO_SERIALIZATION_VALUE_FORMAT, POJO_SERIALIZATION_FORMAT,
+                TO_VALUE_CLASS, AllTypesValue.class.getName()
+
         ));
 
         AllTypesValue allTypes = new AllTypesValue(
@@ -180,7 +210,33 @@ public class SchemaTest extends CalciteSqlTestSupport {
         map.put(BigInteger.valueOf(13), allTypes);
 
         // when
-        List<SqlRow> rows = getQueryRows(member, format("SELECT * FROM %s", name));
+        List<SqlRow> rows = getQueryRows(
+                member,
+                format("SELECT"
+                                + " __key"
+                                + " ,string"
+                                + " ,character0"
+                                + " ,boolean0"
+                                + " ,byte0"
+                                + " ,short0"
+                                + " ,int0"
+                                + " ,long0"
+                                + " ,float0"
+                                + " ,double0"
+                                + " ,bigDecimal"
+                                + " ,bigInteger"
+                                + " ,\"localTime\""
+                                + " ,localDate"
+                                + " ,localDateTime"
+                                + " ,\"date\""
+                                + " ,calendar"
+                                + " ,instant"
+                                + " ,zonedDateTime"
+                                + " ,offsetDateTime"
+                                + " FROM public.%s",
+                        name
+                )
+        );
 
         // then
         assertThat(rows).hasSize(1);
@@ -200,44 +256,39 @@ public class SchemaTest extends CalciteSqlTestSupport {
         assertThat((LocalDate) rows.get(0).getObject(13)).isEqualTo(allTypes.getLocalDate());
         assertThat((LocalDateTime) rows.get(0).getObject(14)).isEqualTo(allTypes.getLocalDateTime());
 
-        assertEquals(
-            rows.get(0).getObject(15),
-            OffsetDateTime.ofInstant(allTypes.getDate().toInstant(), ZoneId.systemDefault())
-        );
+        assertThat(rows.get(0).getObject(15))
+                .isEqualTo(OffsetDateTime.ofInstant(allTypes.getDate().toInstant(), ZoneId.systemDefault()));
 
-        // TODO:
-        assertEquals(
-            rows.get(0).getObject(16),
-            allTypes.getCalendar().toZonedDateTime().toOffsetDateTime()
-        );
+        assertThat(rows.get(0).getObject(16))
+                .isEqualTo(allTypes.getCalendar().toZonedDateTime().toOffsetDateTime());
 
-        assertEquals(
-            rows.get(0).getObject(17),
-            OffsetDateTime.ofInstant(allTypes.getInstant(), ZoneId.systemDefault())
-        );
+        assertThat(rows.get(0).getObject(17))
+                .isEqualTo(OffsetDateTime.ofInstant(allTypes.getInstant(), ZoneId.systemDefault()));
 
-        assertEquals(
-            rows.get(0).getObject(18),
-            allTypes.getZonedDateTime().toOffsetDateTime()
-        );
+        assertThat(rows.get(0).getObject(18))
+                .isEqualTo(allTypes.getZonedDateTime().toOffsetDateTime());
 
-        assertEquals(
-            rows.get(0).getObject(19),
-            allTypes.getOffsetDateTime()
-        );
+        assertThat(rows.get(0).getObject(19))
+                .isEqualTo(allTypes.offsetDateTime);
     }
 
     @Test
-    public void testDropTable() {
+    public void testTableRemoval() {
         // given
-        String name = "to_be_dropped_map";
-        executeQuery(member, format("CREATE EXTERNAL TABLE %s (name VARCHAR) TYPE \"%s\"", name, LocalPartitionedMapConnector.TYPE_NAME));
+        String name = "ToBeDroppedTable";
+        executeQuery(
+                member,
+                format("CREATE EXTERNAL TABLE %s ("
+                                + " __key INT,"
+                                + " this VARCHAR"
+                                + ") TYPE \"%s\"",
+                        name, LocalPartitionedMapConnector.TYPE_NAME
+                ));
 
         // when
         executeQuery(member, format("DROP EXTERNAL TABLE %s", name));
 
         // then
-        assertThatThrownBy(() -> executeQuery(member, format("SELECT name FROM %s", name)))
-                .isInstanceOf(SqlException.class);
+        assertThatThrownBy(() -> executeQuery(member, format("SELECT * FROM public.%s", name))).isInstanceOf(SqlException.class);
     }
 }

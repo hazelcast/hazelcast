@@ -16,9 +16,21 @@
 
 package com.hazelcast.sql.impl.connector;
 
+import com.hazelcast.sql.impl.QueryException;
+import com.hazelcast.sql.impl.schema.ExternalTable.ExternalField;
+import com.hazelcast.sql.impl.schema.TableField;
+
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.stream.Collectors;
 
 public abstract class SqlKeyValueConnector implements SqlConnector {
+
+    public static final String TO_SERIALIZATION_KEY_FORMAT = "serialization.key.format";
+    public static final String TO_SERIALIZATION_VALUE_FORMAT = "serialization.value.format";
 
     /**
      * A key in the table options (TO).
@@ -26,7 +38,7 @@ public abstract class SqlKeyValueConnector implements SqlConnector {
      * Specifies the key class in the entry. Can be omitted if "__key" is one
      * of the columns.
      */
-    public static final String TO_KEY_CLASS = "keyClass";
+    public static final String TO_KEY_CLASS = "serialization.key.pojo.class";
 
     /**
      * A key in the table options (TO).
@@ -34,13 +46,38 @@ public abstract class SqlKeyValueConnector implements SqlConnector {
      * Specifies the value class in the entry. Can be omitted if "this" is one
      * of the columns.
      */
-    public static final String TO_VALUE_CLASS = "valueClass";
+    public static final String TO_VALUE_CLASS = "serialization.value.pojo.class";
 
-    protected String keyClass(Map<String, String> options) {
-        return options.get(TO_KEY_CLASS);
-    }
+    public static final String TO_KEY_FACTORY_ID = "serialization.key.portable.factoryId";
+    public static final String TO_KEY_CLASS_ID = "serialization.key.portable.classId";
+    public static final String TO_KEY_CLASS_VERSION = "serialization.key.portable.classVersion";
 
-    protected String valueClass(Map<String, String> options) {
-        return options.get(TO_VALUE_CLASS);
+    public static final String TO_VALUE_FACTORY_ID = "serialization.value.portable.factoryId";
+    public static final String TO_VALUE_CLASS_ID = "serialization.value.portable.classId";
+    public static final String TO_VALUE_CLASS_VERSION = "serialization.value.portable.classVersion";
+
+    // TODO: deduplicate with AbstractMapTableResolver
+    protected static List<TableField> mergeFields(
+            List<ExternalField> externalFields,
+            Map<String, TableField> keyFields,
+            Map<String, TableField> valueFields
+    ) {
+        LinkedHashMap<String, TableField> fields = new LinkedHashMap<>(keyFields);
+
+        // value fields do not override key fields.
+        for (Entry<String, TableField> valueFieldEntry : valueFields.entrySet()) {
+            fields.putIfAbsent(valueFieldEntry.getKey(), valueFieldEntry.getValue());
+        }
+
+        // all declared fields should be mapped to neither key nor value
+        List<String> unmappedFields = externalFields.stream()
+                                                    .filter(externalField -> fields.get(externalField.name()) == null)
+                                                    .map(ExternalField::name)
+                                                    .collect(Collectors.toList());
+        if (!unmappedFields.isEmpty()) {
+            throw QueryException.error("Unmapped fields: " + unmappedFields);
+        }
+
+        return new ArrayList<>(fields.values());
     }
 }

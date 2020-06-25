@@ -23,8 +23,6 @@ import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.QueryUtils;
-import com.hazelcast.sql.impl.extract.GenericQueryTargetDescriptor;
-import com.hazelcast.sql.impl.extract.QueryTargetDescriptor;
 import com.hazelcast.sql.impl.schema.ConstantTableStatistics;
 import com.hazelcast.sql.impl.schema.ExternalCatalog;
 import com.hazelcast.sql.impl.schema.Table;
@@ -33,17 +31,14 @@ import com.hazelcast.sql.impl.schema.map.sample.MapSampleMetadata;
 import com.hazelcast.sql.impl.schema.map.sample.MapSampleMetadataResolver;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 
 import static com.hazelcast.sql.impl.QueryUtils.SCHEMA_NAME_REPLICATED;
-import static java.util.Collections.emptyMap;
 
 public class ReplicatedMapTableResolver extends AbstractMapTableResolver {
 
@@ -61,23 +56,12 @@ public class ReplicatedMapTableResolver extends AbstractMapTableResolver {
         List<Table> res = new ArrayList<>();
 
         for (String mapName : mapService.getPartitionContainer(0).getStores().keySet()) {
-            ReplicatedMapTable table;
-
             // TODO: skip all system tables, i.e. `__jet` prefixed
             if (mapName.equalsIgnoreCase(ExternalCatalog.CATALOG_MAP_NAME)) {
                 continue;
             }
 
-            try {
-                table = createTable(nodeEngine, mapService, SCHEMA_NAME_REPLICATED, mapName, null, emptyMap());
-            } catch (QueryException e) {
-                table = new ReplicatedMapTable(mapName, e);
-            }
-
-            if (table == null) {
-                continue;
-            }
-
+            ReplicatedMapTable table = createTable(mapService, mapName);
             res.add(table);
         }
 
@@ -87,20 +71,9 @@ public class ReplicatedMapTableResolver extends AbstractMapTableResolver {
     }
 
     @SuppressWarnings("rawtypes")
-    public static ReplicatedMapTable createTable(
-            @Nonnull NodeEngine nodeEngine,
-            @Nonnull ReplicatedMapService mapService,
-            @Nonnull String schemaName,
-            @Nonnull String mapName,
-            @Nullable List<TableField> fields,
-            @Nonnull Map<String, String> ddlOptions
-    ) {
+    private ReplicatedMapTable createTable(ReplicatedMapService mapService, String name) {
         try {
-            Collection<ReplicatedRecordStore> stores = mapService.getAllReplicatedRecordStores(mapName);
-
-            long estimatedRowCount = 0;
-            QueryTargetDescriptor keyDescriptor = null;
-            QueryTargetDescriptor valueDescriptor = null;
+            Collection<ReplicatedRecordStore> stores = mapService.getAllReplicatedRecordStores(name);
 
             // Iterate over stores trying to get the sample.
             for (ReplicatedRecordStore store : stores) {
@@ -119,41 +92,38 @@ public class ReplicatedMapTableResolver extends AbstractMapTableResolver {
 
                 MapSampleMetadata keyMetadata = MapSampleMetadataResolver.resolve(ss, key, true);
                 MapSampleMetadata valueMetadata = MapSampleMetadataResolver.resolve(ss, value, false);
-                keyDescriptor = keyMetadata.getDescriptor();
-                valueDescriptor = valueMetadata.getDescriptor();
-                estimatedRowCount = stores.size() * nodeEngine.getPartitionService().getPartitionCount();
+                List<TableField> fields = mergeMapFields(keyMetadata.getFields(), valueMetadata.getFields());
 
-                if (fields == null) {
-                    fields = mergeMapFields(keyMetadata.getFields(), valueMetadata.getFields());
-                }
-                break;
+                long estimatedRowCount = stores.size() * nodeEngine.getPartitionService().getPartitionCount();
+
+                return new ReplicatedMapTable(
+                        SCHEMA_NAME_REPLICATED,
+                        name,
+                        fields,
+                        new ConstantTableStatistics(estimatedRowCount),
+                        keyMetadata.getDescriptor(),
+                        valueMetadata.getDescriptor(),
+                        null,
+                        null
+                );
             }
 
-            // TODO: Throw an error here instead so that the user knows that resolution failed due to empty map.
-            if (fields == null) {
-                return null;
-            }
-
-            if (keyDescriptor == null) {
-                keyDescriptor = new GenericQueryTargetDescriptor();
-            }
-            if (valueDescriptor == null) {
-                valueDescriptor = new GenericQueryTargetDescriptor();
-            }
-
-            return new ReplicatedMapTable(
-                    schemaName,
-                    mapName,
-                    fields,
-                    new ConstantTableStatistics(estimatedRowCount),
-                    keyDescriptor,
-                    valueDescriptor,
-                    ddlOptions
-            );
+            return emptyMap(name);
         } catch (QueryException e) {
-            throw e;
+            return new ReplicatedMapTable(name, e);
         } catch (Exception e) {
-            throw QueryException.error("Failed to get metadata for ReplicatedMap " + mapName + ": " + e.getMessage(), e);
+            QueryException e0 =
+                    QueryException.error("Failed to get metadata for ReplicatedMap " + name + ": " + e.getMessage(), e);
+
+            return new ReplicatedMapTable(name, e0);
         }
+    }
+
+    private static ReplicatedMapTable emptyMap(String mapName) {
+        QueryException error = QueryException.error(
+                "Cannot resolve ReplicatedMap schema because it doesn't have entries on the local member: " + mapName
+        );
+
+        return new ReplicatedMapTable(mapName, error);
     }
 }

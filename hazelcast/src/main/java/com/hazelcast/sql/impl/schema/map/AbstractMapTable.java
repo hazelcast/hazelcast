@@ -18,6 +18,7 @@ package com.hazelcast.sql.impl.schema.map;
 
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.extract.QueryTargetDescriptor;
+import com.hazelcast.sql.impl.inject.UpsertTargetDescriptor;
 import com.hazelcast.sql.impl.schema.ConstantTableStatistics;
 import com.hazelcast.sql.impl.schema.Table;
 import com.hazelcast.sql.impl.schema.TableField;
@@ -25,7 +26,6 @@ import com.hazelcast.sql.impl.schema.TableStatistics;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Table backed by IMap or ReplicatedMap.
@@ -34,6 +34,8 @@ public abstract class AbstractMapTable extends Table {
 
     private final QueryTargetDescriptor keyDescriptor;
     private final QueryTargetDescriptor valueDescriptor;
+    private final UpsertTargetDescriptor keyUpsertDescriptor;
+    private final UpsertTargetDescriptor valueUpsertDescriptor;
     private final QueryException exception;
 
     protected AbstractMapTable(
@@ -43,21 +45,26 @@ public abstract class AbstractMapTable extends Table {
         TableStatistics statistics,
         QueryTargetDescriptor keyDescriptor,
         QueryTargetDescriptor valueDescriptor,
-        Map<String, String> ddlOptions
+        UpsertTargetDescriptor keyUpsertDescriptor,
+        UpsertTargetDescriptor valueUpsertDescriptor
     ) {
-        super(schemaName, name, fields, statistics, ddlOptions);
+        super(schemaName, name, fields, statistics);
 
         this.keyDescriptor = keyDescriptor;
         this.valueDescriptor = valueDescriptor;
+        this.keyUpsertDescriptor = keyUpsertDescriptor;
+        this.valueUpsertDescriptor = valueUpsertDescriptor;
 
         exception = null;
     }
 
     protected AbstractMapTable(String schemaName, String name, QueryException exception) {
-        super(schemaName, name, Collections.emptyList(), new ConstantTableStatistics(0), Collections.emptyMap());
+        super(schemaName, name, Collections.emptyList(), new ConstantTableStatistics(0));
 
         this.keyDescriptor = null;
         this.valueDescriptor = null;
+        this.keyUpsertDescriptor = null;
+        this.valueUpsertDescriptor = null;
 
         this.exception = exception;
     }
@@ -82,6 +89,14 @@ public abstract class AbstractMapTable extends Table {
 
     public QueryTargetDescriptor getValueDescriptor() {
         return valueDescriptor;
+    }
+
+    public UpsertTargetDescriptor getKeyUpsertDescriptor() {
+        return keyUpsertDescriptor;
+    }
+
+    public UpsertTargetDescriptor getValueUpsertDescriptor() {
+        return valueUpsertDescriptor;
     }
 
     public QueryException getException() {

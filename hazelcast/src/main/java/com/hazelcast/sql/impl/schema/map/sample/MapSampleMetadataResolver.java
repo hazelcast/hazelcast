@@ -16,6 +16,11 @@
 
 package com.hazelcast.sql.impl.schema.map.sample;
 
+import com.hazelcast.core.HazelcastJsonValue;
+import com.hazelcast.internal.json.Json;
+import com.hazelcast.internal.json.JsonObject;
+import com.hazelcast.internal.json.JsonObject.Member;
+import com.hazelcast.internal.json.JsonValue;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.nio.serialization.ClassDefinition;
@@ -34,11 +39,13 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.TreeMap;
 
 /**
  * Helper class that resolves a map-backed table from a key/value sample.
  */
+// TODO: deduplicate with MapOptionsMetadataResolvers
 public final class MapSampleMetadataResolver {
 
     private static final String METHOD_PREFIX_GET = "get";
@@ -76,7 +83,7 @@ public final class MapSampleMetadataResolver {
                 if (data.isPortable()) {
                     return resolvePortable(ss.getPortableContext().lookupClassDefinition(data), key);
                 } else if (data.isJson()) {
-                    throw new UnsupportedOperationException("JSON objects are not supported.");
+                    return resolveJson(ss.toObject(data), key);
                 } else {
                     return resolveClass(ss.toObject(data).getClass(), key);
                 }
@@ -96,7 +103,7 @@ public final class MapSampleMetadataResolver {
      * @return Metadata.
      */
     private static MapSampleMetadata resolvePortable(ClassDefinition clazz, boolean isKey) {
-        TreeMap<String, TableField> fields = new TreeMap<>();
+        Map<String, TableField> fields = new TreeMap<>();
 
         // Add regular fields.
         for (String name : clazz.getFieldNames()) {
@@ -150,8 +157,41 @@ public final class MapSampleMetadataResolver {
         }
     }
 
+    private static MapSampleMetadata resolveJson(HazelcastJsonValue json, boolean isKey) {
+        Map<String, TableField> fields = new TreeMap<>();
+
+        // Add regular fields.
+        JsonObject object = Json.parse(json.toString()).asObject();
+        for (Member member : object) {
+            String name = member.getName();
+            QueryDataType type = resolveJsonType(member.getValue());
+
+            fields.putIfAbsent(name, new MapTableField(name, type, false, new QueryPath(name, isKey)));
+        }
+
+        // Add top-level object.
+        String topName = isKey ? QueryPath.KEY : QueryPath.VALUE;
+        QueryPath topPath = isKey ? QueryPath.KEY_PATH : QueryPath.VALUE_PATH;
+        fields.put(topName, new MapTableField(topName, QueryDataType.OBJECT, !fields.isEmpty(), topPath));
+
+        return new MapSampleMetadata(GenericQueryTargetDescriptor.INSTANCE, new LinkedHashMap<>(fields));
+    }
+
+    @SuppressWarnings("checkstyle:ReturnCount")
+    private static QueryDataType resolveJsonType(JsonValue value) {
+        if (value.isBoolean()) {
+            return QueryDataType.BOOLEAN;
+        } else if (value.isNumber()) {
+            return QueryDataType.DOUBLE;
+        } else if (value.isString()) {
+            return QueryDataType.VARCHAR;
+        } else {
+            return QueryDataType.OBJECT;
+        }
+    }
+
     private static MapSampleMetadata resolveClass(Class<?> clazz, boolean isKey) {
-        TreeMap<String, TableField> fields = new TreeMap<>();
+        Map<String, TableField> fields = new TreeMap<>();
 
         // Extract fields from non-primitive type.
         QueryDataType topType = QueryDataTypeUtils.resolveTypeForClass(clazz);
@@ -208,10 +248,9 @@ public final class MapSampleMetadataResolver {
             return null;
         }
 
-        String methodName = method.getName();
-
         String fieldNameWithWrongCase;
 
+        String methodName = method.getName();
         if (methodName.startsWith(METHOD_PREFIX_GET) && methodName.length() > METHOD_PREFIX_GET.length()) {
             fieldNameWithWrongCase = methodName.substring(METHOD_PREFIX_GET.length());
         } else if (methodName.startsWith(METHOD_PREFIX_IS) && methodName.length() > METHOD_PREFIX_IS.length()) {
@@ -242,12 +281,9 @@ public final class MapSampleMetadataResolver {
 
         // Exclude void return type.
         Class<?> returnType = method.getReturnType();
-
         if (returnType == void.class || returnType == Void.class) {
             return true;
         }
-
-        String methodName = method.getName();
 
         // Skip methods with parameters.
         if (method.getParameterCount() != 0) {
@@ -260,6 +296,7 @@ public final class MapSampleMetadataResolver {
         }
 
         // Skip getFactoryId() and getClassId() from Portable and IdentifiedDataSerializable.
+        String methodName = method.getName();
         if (methodName.equals(METHOD_GET_FACTORY_ID) || methodName.equals(METHOD_GET_CLASS_ID)) {
             if (IdentifiedDataSerializable.class.isAssignableFrom(clazz) || Portable.class.isAssignableFrom(clazz)) {
                 return true;

@@ -92,7 +92,6 @@ import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeSystem.
 import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeSystem.withHigherPrecedence;
 import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeSystem.withHigherPrecedenceForLiterals;
 import static java.util.Collections.emptyList;
-import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonMap;
 import static org.apache.calcite.sql.type.SqlTypeName.ANY;
 import static org.apache.calcite.sql.type.SqlTypeName.BIGINT;
@@ -1024,8 +1023,8 @@ public abstract class ExpressionTestBase {
         }
 
         PartitionedMapTable table =
-                new PartitionedMapTable(SCHEMA_NAME_REPLICATED, "t", fields, new ConstantTableStatistics(100), null, null,
-                        emptyList(), PartitionedMapTable.DISTRIBUTION_FIELD_ORDINAL_NONE, emptyMap());
+                new PartitionedMapTable(SCHEMA_NAME_REPLICATED, "t", fields, new ConstantTableStatistics(100),
+                        null, null, null, null, emptyList(), PartitionedMapTable.DISTRIBUTION_FIELD_ORDINAL_NONE);
 
         HazelcastTable hazelcastTable = new HazelcastTable(table, new MapTableStatistic(100));
         return OptimizerContext.create(null, new HazelcastSchema(singletonMap("t", hazelcastTable)),
