@@ -92,8 +92,8 @@ public final class AvroSourceBuilder<D> {
      * Any {@code IOException} will cause the job to fail. The files must not
      * change while being read; if they do, the behavior is unspecified.
      * <p>
-     * The default local parallelism for this processor is 2 (or 1 if just 1
-     * CPU is available).
+     * The default local parallelism for this processor is 4 (or available CPU
+     * count if it is less than 4).
      *
      * @param mapOutputFn the function which creates output object from each
      *                    record. Gets the filename and record read by {@code

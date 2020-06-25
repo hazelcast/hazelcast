@@ -48,6 +48,8 @@ import static com.hazelcast.jet.impl.util.Util.checkSerializable;
  */
 public final class ReadFilesP<T> extends AbstractProcessor {
 
+    private static final int DEFAULT_LOCAL_PARALLELISM = 4;
+
     private final Path directory;
     private final String glob;
     private final boolean sharedFileSystem;
@@ -141,7 +143,7 @@ public final class ReadFilesP<T> extends AbstractProcessor {
     ) {
         checkSerializable(readFileFn, "readFileFn");
 
-        return ProcessorMetaSupplier.of(2, () -> new ReadFilesP<>(
+        return ProcessorMetaSupplier.of(DEFAULT_LOCAL_PARALLELISM, () -> new ReadFilesP<>(
                 directory, glob, sharedFileSystem, readFileFn)
         );
     }
