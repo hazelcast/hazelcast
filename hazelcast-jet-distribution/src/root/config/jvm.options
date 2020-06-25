@@ -41,15 +41,21 @@
 # See https://wiki.openjdk.java.net/display/shenandoah/Main
 #-XX:+UseShenandoahGC
 
-## JDK 8 GC logging
-#-XX:+PrintGCDetails
-#-XX:+PrintGCDateStamps
-#-XX:+PrintTenuringDistribution
-#-XX:+PrintGCApplicationStoppedTime
+# Java 8 GC logging
+#-XX:+PrintGC
 #-Xloggc:$JET_HOME/logs/gc.log
 #-XX:+UseGCLogFileRotation
 #-XX:NumberOfGCLogFiles=32
 #-XX:GCLogFileSize=64m
 
-# JDK 9+ GC logging
+# Java 8 More detailed GC logging - consider moving the logs location to a RAM disk
+#-XX:+PrintGCDetails
+#-XX:+PrintGCDateStamps
+#-XX:+PrintTenuringDistribution
+#-XX:+PrintGCApplicationStoppedTime
+
+# Java 9+ GC logging
+#-Xlog:gc:file=$JET_HOME/logs/gc.log:utctime,pid,tags:filecount=32,filesize=64m
+
+# Java 9+ More detailed GC logging - consider moving the logs location to a RAM disk
 #-Xlog:gc*,gc+age=trace,safepoint:file=$JET_HOME/logs/gc.log:utctime,pid,tags:filecount=32,filesize=64m
