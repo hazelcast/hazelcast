@@ -66,8 +66,7 @@ public class LocalPartitionedMapConnector extends SqlKeyValueConnector {
         return TYPE_NAME;
     }
 
-    @Nonnull
-    @Override
+    @Nonnull @Override
     public Table createTable(
             @Nonnull NodeEngine nodeEngine,
             @Nonnull String schemaName,
