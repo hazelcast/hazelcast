@@ -66,10 +66,14 @@ public class GenericQueryTarget implements QueryTarget, GenericTargetAccessor {
 
     private Object convert(Data target) {
         try {
-            // TODO: PortableExtractor ?
-            return target.isPortable()
-                    ? serializationService.createPortableReader(target)
-                    : serializationService.toObject(target);
+            // // TODO: separate extractors ?
+            if (target.isJson()) {
+                return target;
+            } else if (target.isPortable()) {
+                return serializationService.createPortableReader(target);
+            } else {
+                return serializationService.toObject(target);
+            }
         } catch (IOException ioe) {
             throw sneakyThrow(ioe);
         }
