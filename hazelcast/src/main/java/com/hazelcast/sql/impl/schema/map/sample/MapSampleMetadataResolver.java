@@ -161,7 +161,7 @@ public final class MapSampleMetadataResolver {
         JsonObject object = Json.parse(json.toString()).asObject();
         for (Member member : object) {
             String name = member.getName();
-            QueryDataType type = resolveJsonValue(member.getValue());
+            QueryDataType type = resolveJsonType(member.getValue());
 
             fields.putIfAbsent(name, new MapTableField(name, type, false, new QueryPath(name, isKey)));
         }
@@ -175,7 +175,7 @@ public final class MapSampleMetadataResolver {
     }
 
     @SuppressWarnings("checkstyle:ReturnCount")
-    private static QueryDataType resolveJsonValue(JsonValue value) {
+    private static QueryDataType resolveJsonType(JsonValue value) {
         if (value.isBoolean()) {
             return QueryDataType.BOOLEAN;
         } else if (value.isNumber()) {
