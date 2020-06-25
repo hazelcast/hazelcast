@@ -17,7 +17,6 @@
 package com.hazelcast.sql.impl.calcite.validate.operators;
 
 import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlOperatorTable;
-import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.sql.SqlBinaryOperator;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlOperatorBinding;
@@ -27,8 +26,10 @@ import org.apache.calcite.sql.type.SqlReturnTypeInference;
 import org.apache.calcite.sql.validate.SqlMonotonicity;
 import org.apache.calcite.util.Litmus;
 
-import static org.apache.calcite.sql.type.SqlTypeName.NULL;
-
+/**
+ * The same as {@link SqlBinaryOperator}, but supports monotonicity for NULL
+ * literals and operators from our custom {@link HazelcastSqlOperatorTable}.
+ */
 public class HazelcastSqlBinaryOperator extends SqlBinaryOperator {
 
     public HazelcastSqlBinaryOperator(String name, SqlKind kind, int prec, boolean leftAssoc,
@@ -39,10 +40,7 @@ public class HazelcastSqlBinaryOperator extends SqlBinaryOperator {
 
     @Override
     public SqlMonotonicity getMonotonicity(SqlOperatorBinding call) {
-        RelDataType left = call.getOperandType(0);
-        RelDataType right = call.getOperandType(1);
-
-        if (left.getSqlTypeName() == NULL || right.getSqlTypeName() == NULL) {
+        if (call.isOperandNull(0, true) || call.isOperandNull(1, true)) {
             return SqlMonotonicity.CONSTANT;
         }
 
@@ -51,7 +49,8 @@ public class HazelcastSqlBinaryOperator extends SqlBinaryOperator {
 
     @Override
     public boolean validRexOperands(int count, Litmus litmus) {
-        // XXX: super method does the same
+        // XXX: super method does the same, but works only for operators from
+        // Calcite's standard SqlStdOperatorTable.
         if ((this == HazelcastSqlOperatorTable.AND || this == HazelcastSqlOperatorTable.OR) && count > 2) {
             return true;
         }

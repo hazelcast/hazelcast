@@ -48,6 +48,9 @@ public class NotTest extends ExpressionTestBase {
 
             switch (operand.typeName()) {
                 case NULL:
+                    type = TYPE_FACTORY.createSqlType(BOOLEAN, true);
+                    break;
+
                 case BOOLEAN:
                     // do nothing
                     break;

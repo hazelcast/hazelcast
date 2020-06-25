@@ -37,6 +37,7 @@ import java.util.List;
 import static com.hazelcast.sql.impl.calcite.validate.HazelcastSqlOperatorTable.CASE;
 import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeSystem.canCast;
 import static org.apache.calcite.sql.type.SqlTypeName.BOOLEAN;
+import static org.apache.calcite.sql.type.SqlTypeName.NULL;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -139,7 +140,9 @@ public class CaseTest extends ExpressionTestBase {
                     return null;
                 }
 
-                if (isNumeric(type)) {
+                if (operand.typeName() == NULL) {
+                    type = TYPE_FACTORY.createTypeWithNullability(commonType, true);
+                } else if (isNumeric(type)) {
                     BigDecimal numericValue = operand.numericValue();
                     //noinspection NumberEquality
                     assert numericValue != null && numericValue != INVALID_NUMERIC_VALUE;

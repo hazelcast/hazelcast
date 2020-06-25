@@ -18,12 +18,9 @@ package com.hazelcast.sql.impl.extract;
 
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.sql.impl.type.QueryDataType;
-
-import java.io.IOException;
-
-import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
 
 public class GenericQueryTarget implements QueryTarget, GenericTargetAccessor {
 
@@ -58,25 +55,27 @@ public class GenericQueryTarget implements QueryTarget, GenericTargetAccessor {
     @Override
     public Object getTarget() {
         if (target == null) {
-            target = rawTarget instanceof Data ? convert((Data) rawTarget) : rawTarget;
+            // General rule: Portable must be Data, other objects must be deserialized.
+            if (rawTarget instanceof Data) {
+                Data rawTarget0 = (Data) rawTarget;
+
+                if (rawTarget0.isPortable() || rawTarget0.isJson()) {
+                    target = rawTarget;
+                } else {
+                    // Deserialize non-Portable.
+                    target = serializationService.toObject(rawTarget);
+                }
+            } else {
+                if (rawTarget instanceof Portable) {
+                    // Serialize Portable to Data.
+                    target = serializationService.toData(rawTarget);
+                } else {
+                    target = rawTarget;
+                }
+            }
         }
 
         return target;
-    }
-
-    private Object convert(Data target) {
-        try {
-            // // TODO: separate extractors ?
-            if (target.isJson()) {
-                return target;
-            } else if (target.isPortable()) {
-                return serializationService.createPortableReader(target);
-            } else {
-                return serializationService.toObject(target);
-            }
-        } catch (IOException ioe) {
-            throw sneakyThrow(ioe);
-        }
     }
 
     public boolean isKey() {

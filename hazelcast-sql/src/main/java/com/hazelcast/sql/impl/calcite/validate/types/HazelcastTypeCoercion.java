@@ -25,6 +25,7 @@ import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlLiteral;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.SqlNodeList;
+import org.apache.calcite.sql.SqlUtil;
 import org.apache.calcite.sql.fun.SqlCase;
 import org.apache.calcite.sql.parser.SqlParserPos;
 import org.apache.calcite.sql.type.SqlTypeFamily;
@@ -117,9 +118,7 @@ public final class HazelcastTypeCoercion extends TypeCoercionImpl {
         boolean coerced = false;
         for (int i = 0; i < types.length - 1; ++i) {
             RelDataType type = types[i];
-            if (typeName(type) != NULL) {
-                type = TYPE_FACTORY.createTypeWithNullability(commonType, type.isNullable());
-            }
+            type = TYPE_FACTORY.createTypeWithNullability(commonType, type.isNullable());
             boolean operandCoerced = coerceOperandType(binding.getScope(), binding.getCall(), i, type);
             coerced |= operandCoerced;
 
@@ -165,12 +164,8 @@ public final class HazelcastTypeCoercion extends TypeCoercionImpl {
 
     @Override
     public RelDataType implicitCast(RelDataType in, SqlTypeFamily expected) {
-        if (in.getSqlTypeName() == NULL) {
-            return in;
-        }
-
         // enables implicit conversion from CHAR to BOOLEAN
-        if (CHAR_TYPES.contains(in.getSqlTypeName()) && expected == SqlTypeFamily.BOOLEAN) {
+        if (CHAR_TYPES.contains(typeName(in)) && expected == SqlTypeFamily.BOOLEAN) {
             return TYPE_FACTORY.createSqlType(BOOLEAN, in.isNullable());
         }
 
@@ -202,12 +197,18 @@ public final class HazelcastTypeCoercion extends TypeCoercionImpl {
         return true;
     }
 
+    @SuppressWarnings("checkstyle:NPathComplexity")
     @Override
     protected boolean needToCast(SqlValidatorScope scope, SqlNode node, RelDataType to) {
         RelDataType from = validator.deriveType(scope, node);
 
         if (typeName(from) == typeName(to)) {
             // already of the same type
+            return false;
+        }
+
+        if (typeName(from) == NULL || SqlUtil.isNullLiteral(node, false)) {
+            // never cast NULLs, just assign types to them
             return false;
         }
 
@@ -256,7 +257,7 @@ public final class HazelcastTypeCoercion extends TypeCoercionImpl {
     }
 
     @SuppressWarnings({"checkstyle:CyclomaticComplexity", "checkstyle:MethodLength", "checkstyle:NPathComplexity",
-        "checkstyle:NestedIfDepth"})
+            "checkstyle:NestedIfDepth"})
     private RelDataType[] inferTypes(SqlValidatorScope scope, List<SqlNode> operands, boolean assumeNumeric) {
         // Infer return type from columns and sub-expressions.
 
@@ -285,10 +286,16 @@ public final class HazelcastTypeCoercion extends TypeCoercionImpl {
             if (!isLiteral(operand) || !isNumeric(operandType)) {
                 continue;
             }
+            SqlLiteral literal = (SqlLiteral) operand;
 
-            BigDecimal numeric = ((SqlLiteral) operand).getValueAs(BigDecimal.class);
-            RelDataType literalType = narrowestTypeFor(numeric, commonType == null ? null : typeName(commonType));
-            commonType = commonType == null ? literalType : withHigherPrecedenceForLiterals(literalType, commonType);
+            if (literal.getValue() == null) {
+                operandType = TYPE_FACTORY.createSqlType(NULL);
+            } else {
+                BigDecimal numeric = literal.getValueAs(BigDecimal.class);
+                operandType = narrowestTypeFor(numeric, commonType == null ? null : typeName(commonType));
+            }
+
+            commonType = commonType == null ? operandType : withHigherPrecedenceForLiterals(operandType, commonType);
         }
 
         // Continue inference on non-numeric literals.
@@ -298,8 +305,11 @@ public final class HazelcastTypeCoercion extends TypeCoercionImpl {
             if (!isLiteral(operand) || isNumeric(operandType)) {
                 continue;
             }
+            SqlLiteral literal = (SqlLiteral) operand;
 
-            if (isChar(operandType) && (commonType != null && isNumeric(commonType) || assumeNumeric)) {
+            if (literal.getValue() == null) {
+                operandType = TYPE_FACTORY.createSqlType(NULL);
+            } else if (isChar(operandType) && (commonType != null && isNumeric(commonType) || assumeNumeric)) {
                 // Infer proper numeric type for char literals.
 
                 BigDecimal numeric = numericValue(operand);
@@ -326,7 +336,7 @@ public final class HazelcastTypeCoercion extends TypeCoercionImpl {
             commonType = TYPE_FACTORY.createSqlType(DOUBLE);
         }
 
-        // widen integer common type: then ? ... then 1 -> BIGINT instead of TINYINT
+        // widen integer common type: ? + 1 -> BIGINT instead of TINYINT
         if ((seenParameters || seenChar) && isInteger(commonType)) {
             commonType = TYPE_FACTORY.createSqlType(BIGINT);
         }
@@ -343,12 +353,17 @@ public final class HazelcastTypeCoercion extends TypeCoercionImpl {
                 types[i] = TYPE_FACTORY.createTypeWithNullability(commonType, true);
                 nullable = true;
             } else if (isLiteral(operand)) {
-                if (isNumeric(operandType) || (isChar(operandType) && isNumeric(commonType))) {
+                SqlLiteral literal = (SqlLiteral) operand;
+
+                if (literal.getValue() == null) {
+                    types[i] = TYPE_FACTORY.createTypeWithNullability(commonType, true);
+                    nullable = true;
+                } else if (isNumeric(operandType) || (isChar(operandType) && isNumeric(commonType))) {
                     // Assign final numeric types to numeric and char literals.
 
+                    RelDataType literalType;
                     BigDecimal numeric = numericValue(operand);
                     assert numeric != null;
-                    RelDataType literalType;
                     if (typeName(commonType) == DECIMAL) {
                         // always enforce DECIMAL interpretation if common type is DECIMAL
                         literalType = TYPE_FACTORY.createSqlType(DECIMAL);

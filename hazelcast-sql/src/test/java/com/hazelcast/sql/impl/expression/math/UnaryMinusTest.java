@@ -57,6 +57,10 @@ public class UnaryMinusTest extends ExpressionTestBase {
             return null;
         }
 
+        if (operand.typeName() == NULL) {
+            return null;
+        }
+
         if (operand.typeName() == ANY) {
             return null;
         }

@@ -191,20 +191,12 @@ public class HazelcastSqlValidator extends SqlValidatorImpl {
 
         SqlLiteral literal = (SqlLiteral) expression;
 
-        if (literal.getTypeName() == NULL) {
-            if (derived.getSqlTypeName() != NULL) {
-                // Keep NULL type for NULL literals, so we can always tell from the
-                // type itself that we are dealing with NULL.
-
-                derived = HazelcastTypeFactory.INSTANCE.createSqlType(NULL);
-                setKnownAndValidatedNodeType(expression, derived);
-            }
-        } else if (HazelcastIntegerType.supports(derived.getSqlTypeName())) {
-            // Assign narrowest type to integer literals.
+        if (HazelcastIntegerType.supports(typeName(derived)) && literal.getValue() != null) {
+            // Assign narrowest type to non-null integer literals.
 
             derived = HazelcastIntegerType.deriveLiteralType(literal);
             setKnownAndValidatedNodeType(expression, derived);
-        } else if (derived.getSqlTypeName() == DECIMAL) {
+        } else if (typeName(derived) == DECIMAL) {
             // Assign DOUBLE type to any standalone floating point literal: the
             // exact type is inferred later from the context in which the literal
             // appears.
@@ -230,9 +222,13 @@ public class HazelcastSqlValidator extends SqlValidatorImpl {
         RelDataType to = deriveType(scope, call.operand(1));
         assert !to.isNullable();
 
-        if (typeName(from) == NULL) {
-            setKnownAndValidatedNodeType(expression, from);
-            return from;
+        // Handle NULL.
+
+        if (SqlUtil.isNullLiteral(operand, false)) {
+            setKnownAndValidatedNodeType(operand, HazelcastTypeFactory.INSTANCE.createSqlType(NULL));
+            derived = HazelcastTypeFactory.INSTANCE.createTypeWithNullability(to, true);
+            setKnownAndValidatedNodeType(expression, derived);
+            return derived;
         }
 
         derived = to;

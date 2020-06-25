@@ -52,7 +52,7 @@ public class OrTest extends ExpressionTestBase {
 
                 switch (operand.typeName()) {
                     case NULL:
-                        types[i] = operand.type;
+                        types[i] = TYPE_FACTORY.createSqlType(BOOLEAN, true);
                         seenNullable = true;
                         break;
 

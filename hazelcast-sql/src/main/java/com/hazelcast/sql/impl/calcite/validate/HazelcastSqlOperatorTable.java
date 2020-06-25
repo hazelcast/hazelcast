@@ -36,11 +36,11 @@ import org.apache.calcite.sql.type.OperandTypes;
 import org.apache.calcite.sql.type.ReturnTypes;
 import org.apache.calcite.sql.util.ReflectiveSqlOperatorTable;
 
+import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastOperandTypes.notAllNull;
 import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastOperandTypes.notAny;
-import static org.apache.calcite.sql.type.ReturnTypes.chain;
 
 /**
- * Custom functions.
+ * Custom functions and operators.
  */
 public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable {
 
@@ -90,7 +90,7 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
         SqlKind.EQUALS,
         30,
         true,
-        chain(HazelcastReturnTypes.NULL_IF_NULL_OPERANDS, ReturnTypes.BOOLEAN_NULLABLE),
+        ReturnTypes.BOOLEAN_NULLABLE,
         HazelcastInferTypes.FIRST_KNOWN,
         notAny(OperandTypes.COMPARABLE_UNORDERED_COMPARABLE_UNORDERED)
     );
@@ -100,7 +100,7 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
         SqlKind.NOT_EQUALS,
         30,
         true,
-        chain(HazelcastReturnTypes.NULL_IF_NULL_OPERANDS, ReturnTypes.BOOLEAN_NULLABLE),
+        ReturnTypes.BOOLEAN_NULLABLE,
         HazelcastInferTypes.FIRST_KNOWN,
         notAny(OperandTypes.COMPARABLE_UNORDERED_COMPARABLE_UNORDERED)
     );
@@ -110,7 +110,7 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
         SqlKind.GREATER_THAN,
         30,
         true,
-        chain(HazelcastReturnTypes.NULL_IF_NULL_OPERANDS, ReturnTypes.BOOLEAN_NULLABLE),
+        ReturnTypes.BOOLEAN_NULLABLE,
         HazelcastInferTypes.FIRST_KNOWN,
         notAny(HazelcastOperandTypes.COMPARABLE_ORDERED_COMPARABLE_ORDERED)
     );
@@ -120,7 +120,7 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
         SqlKind.GREATER_THAN_OR_EQUAL,
         30,
         true,
-        chain(HazelcastReturnTypes.NULL_IF_NULL_OPERANDS, ReturnTypes.BOOLEAN_NULLABLE),
+        ReturnTypes.BOOLEAN_NULLABLE,
         HazelcastInferTypes.FIRST_KNOWN,
         notAny(HazelcastOperandTypes.COMPARABLE_ORDERED_COMPARABLE_ORDERED)
     );
@@ -130,7 +130,7 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
         SqlKind.LESS_THAN,
         30,
         true,
-        chain(HazelcastReturnTypes.NULL_IF_NULL_OPERANDS, ReturnTypes.BOOLEAN_NULLABLE),
+        ReturnTypes.BOOLEAN_NULLABLE,
         HazelcastInferTypes.FIRST_KNOWN,
         notAny(HazelcastOperandTypes.COMPARABLE_ORDERED_COMPARABLE_ORDERED)
     );
@@ -140,7 +140,7 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
         SqlKind.LESS_THAN_OR_EQUAL,
         30,
         true,
-        chain(HazelcastReturnTypes.NULL_IF_NULL_OPERANDS, ReturnTypes.BOOLEAN_NULLABLE),
+        ReturnTypes.BOOLEAN_NULLABLE,
         HazelcastInferTypes.FIRST_KNOWN,
         notAny(HazelcastOperandTypes.COMPARABLE_ORDERED_COMPARABLE_ORDERED)
     );
@@ -156,7 +156,7 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
         true,
         HazelcastReturnTypes.PLUS,
         HazelcastInferTypes.NUMERIC_FIRST_KNOWN,
-        notAny(OperandTypes.PLUS_OPERATOR)
+        notAllNull(notAny(OperandTypes.PLUS_OPERATOR))
     );
 
     public static final SqlBinaryOperator MINUS = new HazelcastSqlMonotonicBinaryOperator(
@@ -166,7 +166,7 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
         true,
         HazelcastReturnTypes.MINUS,
         HazelcastInferTypes.NUMERIC_FIRST_KNOWN,
-        notAny(OperandTypes.MINUS_OPERATOR)
+        notAllNull(notAny(OperandTypes.MINUS_OPERATOR))
     );
 
     public static final SqlBinaryOperator MULTIPLY = new HazelcastSqlMonotonicBinaryOperator(
@@ -176,7 +176,7 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
         true,
         HazelcastReturnTypes.MULTIPLY,
         HazelcastInferTypes.NUMERIC_FIRST_KNOWN,
-        notAny(OperandTypes.MULTIPLY_OPERATOR)
+        notAllNull(notAny(OperandTypes.MULTIPLY_OPERATOR))
     );
 
     public static final SqlBinaryOperator DIVIDE = new HazelcastSqlBinaryOperator(
@@ -186,7 +186,7 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
         true,
         HazelcastReturnTypes.DIVIDE,
         HazelcastInferTypes.NUMERIC_FIRST_KNOWN,
-        notAny(OperandTypes.DIVISION_OPERATOR)
+        notAllNull(notAny(OperandTypes.DIVISION_OPERATOR))
     );
 
     public static final SqlPrefixOperator UNARY_PLUS = new SqlPrefixOperator(
@@ -195,7 +195,7 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
         80,
         ReturnTypes.ARG0,
         InferTypes.RETURN_TYPE,
-        notAny(OperandTypes.NUMERIC_OR_INTERVAL)
+        notAllNull(notAny(OperandTypes.NUMERIC_OR_INTERVAL))
     );
 
     public static final SqlPrefixOperator UNARY_MINUS = new SqlPrefixOperator(
@@ -204,7 +204,7 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
         80,
         HazelcastReturnTypes.UNARY_MINUS,
         InferTypes.RETURN_TYPE,
-        notAny(OperandTypes.NUMERIC_OR_INTERVAL)
+        notAllNull(notAny(OperandTypes.NUMERIC_OR_INTERVAL))
     );
 
     //#endregion
