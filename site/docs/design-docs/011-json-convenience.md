@@ -126,40 +126,29 @@ JSON_JR = builder.build();
 ### JSON File Source
 
 We've used `FileSourceBuilder` to create a JSON File Source. The source
-reads each line and converts it to the given type or to a `Map` if no
-type is specified. The source has `*.json` as `glob` parameter which
-filters out all files without `.json` extension.
+expects the content of the files as [streaming JSON](https://en.wikipedia.org/wiki/JSON_streaming)
+content, where each JSON string is separated by a new-line. The JSON
+string itself can span on multiple lines. The source converts each JSON
+string to an object of given type or to a `Map` if no type is
+specified.
 
 ```java
 public static <T> BatchSource<T> json(@Nonnull String directory, @Nonnull Class<T> type) {
     return filesBuilder(directory)
-            .glob("*.json")
-            .build(JsonUtil.asJson(type));
+            .build(path -> JsonUtil.beanSequenceFrom(path, type));
 }
 ```
 
 We've added a streaming source for JSON files which again uses the
 `FileSourceBuilder`. The source watches the changes on the files and
 converts each line appended to the given type or to a `Map` if no type
-is specified. The source has `*.json` as `glob` parameter which filters
-out all files without `.json` extension.
+is specified.
 
 ```java
 public static <T> StreamSource<T> jsonWatcher(@Nonnull String watchedDirectory, @Nonnull Class<T> type) {
     return filesBuilder(watchedDirectory)
-            .glob("*.json")
-            .buildWatcher(JsonUtil.asJson(type));
+            .buildWatcher((fileName, line) -> JsonUtil.beanFrom(line, type));
 }
-```
-
-Both of these sources expects a valid JSON string at each line, if you
-have a file with json strings spanning multiple lines then you need to
-build a source using `FileSourceBuilder` yourself.
-
-```java
-Sources.filesBuilder(directory)
-        .glob(".json")
-        .build(JsonUtil.asMultilineJson(type));
 ```
 
 ### JSON File Sink

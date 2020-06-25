@@ -987,8 +987,8 @@ public final class Sources {
     }
 
     /**
-     * A source to read all files with a `.json` extension in a directory in a
-     * batch way. The source expects the content of the files as
+     * A source to read all files in a directory in a batch way. The source
+     * expects the content of the files as
      * <a href="https://en.wikipedia.org/wiki/JSON_streaming">streaming JSON</a>
      * content, where each JSON string is separated by a new-line. The JSON
      * string itself can span on multiple lines. The source converts each JSON
@@ -1014,7 +1014,6 @@ public final class Sources {
     @Nonnull
     public static <T> BatchSource<T> json(@Nonnull String directory, @Nonnull Class<T> type) {
         return filesBuilder(directory)
-                .glob("*.json")
                 .build(path -> JsonUtil.beanSequenceFrom(path, type));
     }
 
@@ -1029,7 +1028,6 @@ public final class Sources {
     @Nonnull
     public static BatchSource<Map<String, Object>> json(@Nonnull String directory) {
         return filesBuilder(directory)
-                .glob("*.json")
                 .build(path -> JsonUtil.mapSequenceFrom(path));
     }
 
@@ -1062,10 +1060,10 @@ public final class Sources {
     }
 
     /**
-     * A source to stream lines added to files with a `.json` extension in a
-     * directory. This is a streaming source, it will watch directory and emit
-     * objects of given {@code type} by converting each line as they are
-     * appended to files in that directory.
+     * A source to stream lines added to files in a directory. This is a
+     * streaming source, it will watch directory and emit objects of given
+     * {@code type} by converting each line as they are appended to files in
+     * that directory.
      * <p>
      * This method is a shortcut for: <pre>{@code
      *   filesBuilder(directory)
@@ -1089,7 +1087,6 @@ public final class Sources {
     @Nonnull
     public static <T> StreamSource<T> jsonWatcher(@Nonnull String watchedDirectory, @Nonnull Class<T> type) {
         return filesBuilder(watchedDirectory)
-                .glob("*.json")
                 .buildWatcher((fileName, line) -> JsonUtil.beanFrom(line, type));
     }
 
@@ -1102,7 +1099,6 @@ public final class Sources {
     @Nonnull
     public static StreamSource<Map<String, Object>> jsonWatcher(@Nonnull String watchedDirectory) {
         return filesBuilder(watchedDirectory)
-                .glob("*.json")
                 .buildWatcher((fileName, line) -> JsonUtil.mapFrom(line));
     }
 
