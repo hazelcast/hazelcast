@@ -29,6 +29,7 @@ import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.impl.deployment.IMapInputStream;
 import com.hazelcast.jet.impl.util.ExceptionUtil;
+import com.hazelcast.jet.impl.util.IOUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.IMap;
 
@@ -37,7 +38,6 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static com.hazelcast.jet.Util.idToString;
@@ -47,6 +47,7 @@ import static com.hazelcast.jet.impl.JobRepository.fileKeyName;
 import static com.hazelcast.jet.impl.JobRepository.jobResourcesMapName;
 import static com.hazelcast.jet.impl.util.IOUtil.unzip;
 import static java.lang.Math.min;
+import static java.util.Objects.requireNonNull;
 
 public final class Contexts {
 
@@ -203,9 +204,8 @@ public final class Contexts {
                     "The resource with ID '%s' is not a file, its type is %s", id, resourceConfig.getResourceType()
                 ));
             }
-            Path fnamePath = Paths.get(resourceConfig.getUrl().getPath()).getFileName();
-            assert fnamePath != null : "Resource URL" + resourceConfig.getUrl() + " has no path part";
-            return new File(tempDirectories.computeIfAbsent(id, x -> extractFileToDisk(id)), fnamePath.toString());
+            String fnamePath = requireNonNull(IOUtil.fileNameFromUrl(resourceConfig.getUrl()));
+            return new File(tempDirectories.computeIfAbsent(id, x -> extractFileToDisk(id)), fnamePath);
         }
 
         public ConcurrentHashMap<String, File> tempDirectories() {

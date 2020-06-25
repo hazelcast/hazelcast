@@ -75,10 +75,12 @@ import java.util.zip.ZipInputStream;
 
 import static com.hazelcast.jet.Util.idFromString;
 import static com.hazelcast.jet.Util.idToString;
+import static com.hazelcast.jet.impl.util.IOUtil.fileNameFromUrl;
 import static com.hazelcast.jet.impl.util.IOUtil.packDirectoryIntoZip;
 import static com.hazelcast.jet.impl.util.IOUtil.packStreamIntoZip;
 import static com.hazelcast.jet.impl.util.LoggingUtil.logFine;
 import static java.util.Comparator.comparing;
+import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.TimeUnit.HOURS;
 import static java.util.stream.Collectors.toList;
 
@@ -212,12 +214,10 @@ public class JobRepository {
                         }
                         break;
                     case FILE:
-                        Path fnamePath = Paths.get(rc.getUrl().getPath()).getFileName();
-                        assert fnamePath != null : "Resource URL has no path part: " + rc.getUrl().toExternalForm();
                         try (InputStream in = rc.getUrl().openStream();
                              IMapOutputStream os = new IMapOutputStream(jobFileStorage.get(), fileKeyName(rc.getId()))
                         ) {
-                            packStreamIntoZip(in, os, fnamePath.toString());
+                            packStreamIntoZip(in, os, requireNonNull(fileNameFromUrl(rc.getUrl())));
                         }
                         break;
                     case DIRECTORY:

@@ -19,10 +19,12 @@ package com.hazelcast.jet.impl.util;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.stream.Stream;
@@ -129,5 +131,23 @@ public final class IOUtil {
                 }
             }
         }
+    }
+
+    /**
+     * Extracts the file name from the URL. File name is the part of {@code
+     * url.getPath()} after the last '/' character. Returns empty string if the
+     * path ends with a '/'.
+     * <p>
+     * Returns null if input is null or if {@code url.getPath()} returns null.
+     */
+    @Nullable
+    public static String fileNameFromUrl(@Nullable URL url) {
+        String fnamePath;
+        if (url == null || (fnamePath = url.getPath()) == null) {
+            return null;
+        }
+        // URLs always use forward slash to separate directories
+        int lastSlash = fnamePath.lastIndexOf('/');
+        return lastSlash < 0 ? fnamePath : fnamePath.substring(lastSlash + 1);
     }
 }
