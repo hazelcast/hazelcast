@@ -16,6 +16,11 @@
 
 package com.hazelcast.sql.impl.schema.map.sample;
 
+import com.hazelcast.core.HazelcastJsonValue;
+import com.hazelcast.internal.json.Json;
+import com.hazelcast.internal.json.JsonObject;
+import com.hazelcast.internal.json.JsonObject.Member;
+import com.hazelcast.internal.json.JsonValue;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.nio.serialization.ClassDefinition;
@@ -75,7 +80,7 @@ public final class MapSampleMetadataResolver {
                 if (data.isPortable() && binary) {
                     return resolvePortable(ss.getPortableContext().lookupClassDefinition(data), key);
                 } else if (data.isJson()) {
-                    throw new UnsupportedOperationException("JSON objects are not supported.");
+                    return resolveJson(ss.toObject(data), key);
                 } else {
                     return resolveClass(ss.toObject(data).getClass(), key);
                 }
@@ -146,6 +151,39 @@ public final class MapSampleMetadataResolver {
 
             default:
                 return QueryDataType.OBJECT;
+        }
+    }
+
+    private static MapSampleMetadata resolveJson(HazelcastJsonValue json, boolean isKey) {
+        Map<String, TableField> fields = new TreeMap<>();
+
+        // Add regular fields.
+        JsonObject object = Json.parse(json.toString()).asObject();
+        for (Member member : object) {
+            String name = member.getName();
+            QueryDataType type = resolveJsonValue(member.getValue());
+
+            fields.putIfAbsent(name, new MapTableField(name, type, false, new QueryPath(name, isKey)));
+        }
+
+        // Add top-level object.
+        String topName = isKey ? QueryPath.KEY : QueryPath.VALUE;
+        QueryPath topPath = isKey ? QueryPath.KEY_PATH : QueryPath.VALUE_PATH;
+        fields.put(topName, new MapTableField(topName, QueryDataType.OBJECT, !fields.isEmpty(), topPath));
+
+        return new MapSampleMetadata(GenericQueryTargetDescriptor.INSTANCE, new LinkedHashMap<>(fields));
+    }
+
+    @SuppressWarnings("checkstyle:ReturnCount")
+    private static QueryDataType resolveJsonValue(JsonValue value) {
+        if (value.isBoolean()) {
+            return QueryDataType.BOOLEAN;
+        } else if (value.isNumber()) {
+            return QueryDataType.DOUBLE;
+        } else if (value.isString()) {
+            return QueryDataType.VARCHAR;
+        } else {
+            return QueryDataType.OBJECT;
         }
     }
 

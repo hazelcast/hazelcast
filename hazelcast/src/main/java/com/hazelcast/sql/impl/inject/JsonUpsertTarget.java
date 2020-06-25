@@ -31,8 +31,25 @@ public class JsonUpsertTarget implements UpsertTarget {
 
     @Override
     public UpsertInjector createInjector(String path) {
-        // TODO: unquoted support for booleans & numbers ???
-        return value -> json.add(path, (String) QueryDataType.VARCHAR.convert(value));
+        return value -> {
+            if (value instanceof Boolean) {
+                json.add(path, (Boolean) value);
+            } else if (value instanceof Byte) {
+                json.add(path, (Byte) value);
+            } else if (value instanceof Short) {
+                json.add(path, (Short) value);
+            } else if (value instanceof Integer) {
+                json.add(path, (Integer) value);
+            } else if (value instanceof Long) {
+                json.add(path, (Long) value);
+            } else if (value instanceof Float) {
+                json.add(path, (Float) value);
+            } else if (value instanceof Double) {
+                json.add(path, (Double) value);
+            } else {
+                json.add(path, (String) QueryDataType.VARCHAR.convert(value));
+            }
+        };
     }
 
     @Override
