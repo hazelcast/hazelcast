@@ -42,7 +42,7 @@ import org.junit.runner.RunWith;
 
 /**
  * App Server reload / app not loaded tests
- * 
+ *
  * @author lprimak
  */
 @RunWith(HazelcastParallelClassRunner.class)
