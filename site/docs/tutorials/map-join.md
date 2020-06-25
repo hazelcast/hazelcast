@@ -77,7 +77,7 @@ dependencies {
 
 jar {
     enabled = false
-    dependsOn(shadowJar { classifier = null })
+    dependsOn(shadowJar{archiveClassifier.set("")})
     manifest.attributes 'Main-Class': 'org.example.JoinUsingMapJob'
 }
 
