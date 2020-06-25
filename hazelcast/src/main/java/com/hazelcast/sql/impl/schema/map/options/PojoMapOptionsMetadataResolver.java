@@ -90,6 +90,7 @@ public class PojoMapOptionsMetadataResolver implements MapOptionsMetadataResolve
         }
     }
 
+    @SuppressWarnings("checkstyle:CyclomaticComplexity")
     private static MapOptionsMetadata resolveClass(
             Class<?> clazz,
             boolean isKey
