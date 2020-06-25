@@ -55,7 +55,6 @@ public final class MapSampleMetadataResolver {
      *
      * @param ss Serialization service.
      * @param target Target to be analyzed.
-     * @param binary Whether map objects are stored in binary form.
      * @param key Whether passed target is key or value.
      * @return Sample metadata.
      * @throws QueryException If metadata cannot be resolved.
@@ -63,14 +62,18 @@ public final class MapSampleMetadataResolver {
     public static MapSampleMetadata resolve(
         InternalSerializationService ss,
         Object target,
-        boolean binary,
         boolean key
     ) {
         try {
+            // Convert Portable object to Data to have a consistent on object fields irrespectively of map's InMemoryFormat.
+            if (target instanceof Portable) {
+                target = ss.toData(target);
+            }
+
             if (target instanceof Data) {
                 Data data = (Data) target;
 
-                if (data.isPortable() && binary) {
+                if (data.isPortable()) {
                     return resolvePortable(ss.getPortableContext().lookupClassDefinition(data), key);
                 } else if (data.isJson()) {
                     throw new UnsupportedOperationException("JSON objects are not supported.");
