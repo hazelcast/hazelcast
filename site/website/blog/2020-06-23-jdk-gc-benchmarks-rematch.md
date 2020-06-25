@@ -31,7 +31,7 @@ reproduced our finding, created an
 a fix, and committed it to the jdk/jdk16 repository, all in the span of
 a few days. The change pertains to the heuristics that decide how much
 work the GC should do in the background in order to exactly match the
-applications allocation rate. This component is called the _pacer_. It
+applications allocation rate. This component is called the *pacer*. It
 was constantly detecting it's falling behind the application, triggering
 a brief "panic mode" in order to catch up. The fix fine-tunes the
 pacer's heuristics to make the background GC work more proactive.
@@ -163,8 +163,8 @@ Histogram](https://hdrhistogram.github.io/HdrHistogram/plotFiles.html)
 of the latencies.
 
 Another key difference is that, in the original post, we measured the
-latency of _completing_ to emit a result set, but here we measure the
-latency of _starting_ to emit it. Since we are changing the size of the
+latency of *completing* to emit a result set, but here we measure the
+latency of *starting* to emit it. Since we are changing the size of the
 output, if we kept measuring the completion latency, we'd be introducing
 a different amount of application-induced latency at each data point.
 
