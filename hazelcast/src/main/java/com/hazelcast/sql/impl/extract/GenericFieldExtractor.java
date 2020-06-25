@@ -58,7 +58,7 @@ public class GenericFieldExtractor extends AbstractGenericExtractor {
             }
         } catch (Exception e) {
             throw QueryException.dataException("Cannot extract " + (key ? "key" : "value") + " field \"" + path
-                    + "\" of type " + type + ": " + e.getMessage(), e);
+                + "\" of type " + type + ": " + e.getMessage(), e);
         }
     }
 

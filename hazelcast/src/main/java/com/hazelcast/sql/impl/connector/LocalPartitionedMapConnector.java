@@ -21,6 +21,7 @@ import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.schema.ConstantTableStatistics;
 import com.hazelcast.sql.impl.schema.ExternalTable.ExternalField;
@@ -45,6 +46,7 @@ import static com.hazelcast.sql.impl.schema.map.MapTableUtils.estimatePartitione
 import static com.hazelcast.sql.impl.schema.map.MapTableUtils.getPartitionedMapDistributionField;
 import static com.hazelcast.sql.impl.schema.map.MapTableUtils.getPartitionedMapIndexes;
 import static com.hazelcast.sql.impl.schema.map.MapTableUtils.mapPathsToOrdinals;
+import static java.lang.String.format;
 import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.toMap;
 
@@ -124,9 +126,17 @@ public class LocalPartitionedMapConnector extends SqlKeyValueConnector {
             InternalSerializationService serializationService
     ) {
         String format = options.get(key ? TO_SERIALIZATION_KEY_FORMAT : TO_SERIALIZATION_VALUE_FORMAT);
+        if (format == null) {
+            return MapOptionsMetadataResolver.resolve(externalFields, key);
+        }
+
         MapOptionsMetadataResolver resolver = METADATA_RESOLVERS.get(format);
-        return resolver == null
-                ? MapOptionsMetadataResolver.resolve(externalFields, key)
-                : checkNotNull(resolver.resolve(externalFields, options, key, serializationService));
+        if (resolver == null) {
+            throw QueryException.error(
+                    format("Specified format '%s' is not among supported ones %s", format, METADATA_RESOLVERS.keySet())
+            );
+        }
+
+        return checkNotNull(resolver.resolve(externalFields, options, key, serializationService));
     }
 }

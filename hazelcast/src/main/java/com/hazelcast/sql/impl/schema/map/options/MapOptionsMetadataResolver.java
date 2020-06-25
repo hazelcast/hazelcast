@@ -52,28 +52,28 @@ public interface MapOptionsMetadataResolver {
         String fieldName = isKey ? KEY_ATTRIBUTE_NAME.value() : THIS_ATTRIBUTE_NAME.value();
         ExternalField externalField = findExternalField(externalFields, fieldName);
 
-        if (externalField != null) {
-            TableField tableField = new MapTableField(
-                    externalField.name(),
-                    externalField.type(),
-                    false,
-                    isKey ? QueryPath.KEY_PATH : QueryPath.VALUE_PATH
-            );
-            return new MapOptionsMetadata(
-                    GenericQueryTargetDescriptor.INSTANCE,
-                    ObjectUpsertTargetDescriptor.INSTANCE,
-                    new LinkedHashMap<>(singletonMap(tableField.getName(), tableField))
-            );
+        if (externalField == null) {
+            // TODO: fallback to sample resolution ???
+            throw QueryException.error("Unable to resolve table metadata. Missing '" + fieldName + "' column");
         }
 
-        // TODO: fallback to sample resolution ???
-        throw QueryException.error("Unable to resolve table metadata. Missing '" + fieldName + "' column");
+        TableField tableField = new MapTableField(
+                externalField.name(),
+                externalField.type(),
+                false,
+                isKey ? QueryPath.KEY_PATH : QueryPath.VALUE_PATH
+        );
+        return new MapOptionsMetadata(
+                GenericQueryTargetDescriptor.INSTANCE,
+                ObjectUpsertTargetDescriptor.INSTANCE,
+                new LinkedHashMap<>(singletonMap(tableField.getName(), tableField))
+        );
     }
 
     static ExternalField findExternalField(List<ExternalField> externalFields, String fieldName) {
         return externalFields.stream()
-                             .filter(externalField -> fieldName.equalsIgnoreCase(externalField.name()))
-                             .findFirst()
-                             .orElse(null);
+                .filter(externalField -> fieldName.equalsIgnoreCase(externalField.name()))
+                .findFirst()
+                .orElse(null);
     }
 }

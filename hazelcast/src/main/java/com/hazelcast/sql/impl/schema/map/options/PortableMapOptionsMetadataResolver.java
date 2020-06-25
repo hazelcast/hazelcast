@@ -66,7 +66,10 @@ public class PortableMapOptionsMetadataResolver implements MapOptionsMetadataRes
 
         if (factoryId == null || classId == null || classVersion == null) {
             throw QueryException.error("Unable to resolve table metadata."
-                    + " Missing ['" + factoryIdProperty + "'|'" + classIdProperty + "'|'" + classVersionProperty + "'] option");
+                    + "'" + factoryIdProperty + "', "
+                    + "'" + classIdProperty + "', "
+                    + "'" + classVersionProperty
+                    + "' options should be specified.");
         }
 
         ClassDefinition classDefinition = lookupClassDefinition(
