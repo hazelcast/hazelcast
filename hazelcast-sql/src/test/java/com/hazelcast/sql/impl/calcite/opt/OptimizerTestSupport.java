@@ -108,7 +108,7 @@ public abstract class OptimizerTestSupport extends SqlTestSupport {
      */
     private static Result optimize(String sql, OptimizerContext context, boolean physical) {
         SqlNode node = context.parse(sql).getNode();
-        RelNode convertedRel = context.convert(node);
+        RelNode convertedRel = context.convert(node).getRel();
         LogicalRel logicalRel = optimizeLogicalInternal(context, convertedRel);
         PhysicalRel physicalRel = physical ? optimizePhysicalInternal(context, logicalRel) : null;
 

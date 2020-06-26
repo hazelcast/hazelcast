@@ -113,6 +113,10 @@ public class SqlInternalService {
      * @return Query state.
      */
     public QueryState execute(Plan plan, List<Object> params, long timeout, int pageSize) {
+        if (!params.isEmpty()) {
+            throw new UnsupportedOperationException("SQL queries with parameters are not supported yet!");
+        }
+
         // Get local member ID and check if it is still part of the plan.
         UUID localMemberId = nodeServiceProvider.getLocalMemberId();
 
@@ -134,9 +138,9 @@ public class SqlInternalService {
             localMemberId,
             timeout,
             plan,
+            plan.getRowMetadata(),
             consumer,
-            operationHandler,
-            true
+            operationHandler
         );
 
         try {

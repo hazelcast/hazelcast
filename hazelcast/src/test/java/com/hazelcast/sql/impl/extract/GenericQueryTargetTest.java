@@ -74,7 +74,7 @@ public class GenericQueryTargetTest extends SqlTestSupport {
         QueryExtractor badTargetExtractor = target.createExtractor(null, QueryDataType.INT);
         QueryException error = assertThrows(QueryException.class, badTargetExtractor::get);
         assertEquals(SqlErrorCode.DATA_EXCEPTION, error.getCode());
-        assertTrue(error.getMessage().startsWith("Cannot convert " + (target.isKey() ? "key" : "value")));
+        assertTrue(error.getMessage().startsWith("Failed to extract map entry " + (target.isKey() ? "key" : "value")));
 
         // Good field executor.
         QueryExtractor fieldExtractor = target.createExtractor("field", QueryDataType.OBJECT);
@@ -85,13 +85,13 @@ public class GenericQueryTargetTest extends SqlTestSupport {
         QueryExtractor badFieldTypeExtractor = target.createExtractor("field", QueryDataType.DATE);
         error = assertThrows(QueryException.class, badFieldTypeExtractor::get);
         assertEquals(SqlErrorCode.DATA_EXCEPTION, error.getCode());
-        assertTrue(error.getMessage().startsWith("Cannot extract " + (target.isKey() ? "key" : "value") + " field"));
+        assertTrue(error.getMessage().startsWith("Failed to extract map entry " + (target.isKey() ? "key" : "value") + " field"));
 
         // Bad field extractor (name).
         QueryExtractor badFieldNameExtractor = target.createExtractor("field2", QueryDataType.INT);
         error = assertThrows(QueryException.class, badFieldNameExtractor::get);
         assertEquals(SqlErrorCode.DATA_EXCEPTION, error.getCode());
-        assertTrue(error.getMessage().startsWith("Cannot extract " + (target.isKey() ? "key" : "value") + " field"));
+        assertTrue(error.getMessage().startsWith("Failed to extract map entry " + (target.isKey() ? "key" : "value") + " field"));
     }
 
     private static Data toData(TestObject object) {

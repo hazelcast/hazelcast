@@ -78,6 +78,9 @@ public class CreateExecPlanNodeVisitor implements PlanNodeVisitor {
     /** Recommended outbox batch size in bytes. */
     private final int outboxBatchSize;
 
+    /** Hook to alter produced Exec (for testing purposes). */
+    private final CreateExecPlanNodeVisitorHook hook;
+
     /** Stack of elements to be merged. */
     private final ArrayList<Exec> stack = new ArrayList<>(1);
 
@@ -98,7 +101,8 @@ public class CreateExecPlanNodeVisitor implements PlanNodeVisitor {
         QueryExecuteOperation operation,
         FlowControlFactory flowControlFactory,
         PartitionIdSet localParts,
-        int outboxBatchSize
+        int outboxBatchSize,
+        CreateExecPlanNodeVisitorHook hook
     ) {
         this.operationHandler = operationHandler;
         this.nodeServiceProvider = nodeServiceProvider;
@@ -108,6 +112,7 @@ public class CreateExecPlanNodeVisitor implements PlanNodeVisitor {
         this.flowControlFactory = flowControlFactory;
         this.localParts = localParts;
         this.outboxBatchSize = outboxBatchSize;
+        this.hook = hook;
     }
 
     @Override
@@ -294,6 +299,12 @@ public class CreateExecPlanNodeVisitor implements PlanNodeVisitor {
      * Public for testing purposes only.
      */
     public void push(Exec exec) {
+        CreateExecPlanNodeVisitorHook hook0 = hook;
+
+        if (hook0 != null) {
+            exec = hook0.onExec(exec);
+        }
+
         stack.add(exec);
     }
 

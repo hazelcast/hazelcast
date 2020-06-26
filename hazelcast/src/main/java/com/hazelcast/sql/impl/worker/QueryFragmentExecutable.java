@@ -18,13 +18,11 @@ package com.hazelcast.sql.impl.worker;
 
 import com.hazelcast.sql.impl.exec.Exec;
 import com.hazelcast.sql.impl.exec.IterationResult;
-import com.hazelcast.sql.impl.exec.io.InboundHandler;
 import com.hazelcast.sql.impl.exec.io.InboundBatch;
+import com.hazelcast.sql.impl.exec.io.InboundHandler;
 import com.hazelcast.sql.impl.exec.io.OutboundHandler;
 import com.hazelcast.sql.impl.operation.QueryBatchExchangeOperation;
-import com.hazelcast.sql.impl.operation.QueryAbstractExchangeOperation;
 import com.hazelcast.sql.impl.operation.QueryFlowControlExchangeOperation;
-import com.hazelcast.sql.impl.operation.QueryOperation;
 import com.hazelcast.sql.impl.state.QueryStateCallback;
 
 import java.util.Collection;
@@ -40,6 +38,9 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class QueryFragmentExecutable implements QueryFragmentScheduleCallback {
 
+    /** Marker object to ensure that the fragment is resubmitted for execution. */
+    private static final Object RESCHEDULE_OPERATION = new Object();
+
     private final QueryStateCallback stateCallback;
     private final List<Object> arguments;
     private final Exec exec;
@@ -48,7 +49,7 @@ public class QueryFragmentExecutable implements QueryFragmentScheduleCallback {
     private final QueryFragmentWorkerPool fragmentPool;
 
     /** Operations to be processed. */
-    private final ConcurrentLinkedDeque<QueryAbstractExchangeOperation> operations = new ConcurrentLinkedDeque<>();
+    private final ConcurrentLinkedDeque<Object> operations = new ConcurrentLinkedDeque<>();
 
     /** Batch count which we used instead of batches.size() (which is O(N)) to prevent starvation. */
     private final AtomicInteger operationCount = new AtomicInteger();
@@ -89,7 +90,7 @@ public class QueryFragmentExecutable implements QueryFragmentScheduleCallback {
     /**
      * Add operation to be processed.
      */
-    public void addOperation(QueryAbstractExchangeOperation operation) {
+    public void addOperation(Object operation) {
         operationCount.incrementAndGet();
         operations.addLast(operation);
     }
@@ -108,7 +109,7 @@ public class QueryFragmentExecutable implements QueryFragmentScheduleCallback {
             int maxOperationCount = operationCount.get();
             int processedBatchCount = 0;
 
-            QueryOperation operation;
+            Object operation;
 
             while ((operation = operations.pollFirst()) != null) {
                 if (operation instanceof QueryBatchExchangeOperation) {
@@ -124,18 +125,18 @@ public class QueryFragmentExecutable implements QueryFragmentScheduleCallback {
                     );
 
                     inbox.onBatch(batch, operation0.getRemainingMemory());
-                } else {
-                    assert operation instanceof QueryFlowControlExchangeOperation;
-
+                } else if (operation instanceof QueryFlowControlExchangeOperation) {
                     QueryFlowControlExchangeOperation operation0 = (QueryFlowControlExchangeOperation) operation;
 
                     Map<UUID, OutboundHandler> edgeOutboxes = outboxes.get(operation0.getEdgeId());
                     assert edgeOutboxes != null;
 
-                    OutboundHandler outbox = edgeOutboxes.get(operation.getCallerId());
+                    OutboundHandler outbox = edgeOutboxes.get(operation0.getCallerId());
                     assert outbox != null;
 
                     outbox.onFlowControl(operation0.getRemainingMemory());
+                } else {
+                    assert operation == RESCHEDULE_OPERATION;
                 }
 
                 if (++processedBatchCount >= maxOperationCount) {
@@ -145,6 +146,7 @@ public class QueryFragmentExecutable implements QueryFragmentScheduleCallback {
 
             operationCount.addAndGet(-1 * processedBatchCount);
 
+            // Advance the iterator.
             IterationResult res = exec.advance();
 
             // Send flow control messages if needed.
@@ -172,7 +174,12 @@ public class QueryFragmentExecutable implements QueryFragmentScheduleCallback {
     }
 
     @Override
-    public boolean schedule() {
+    public boolean schedule(boolean force) {
+        if (force) {
+            // Add dummy operation to the queue, to ensure that Exec#advance is called again if the fragment is not completed yet.
+            operations.add(RESCHEDULE_OPERATION);
+        }
+
         boolean res = !scheduled.get() && scheduled.compareAndSet(false, true);
 
         if (res) {
@@ -190,7 +197,7 @@ public class QueryFragmentExecutable implements QueryFragmentScheduleCallback {
 
         // Check for new operations. If there are some, re-submit the fragment for execution immediately.
         if (!completed0 && !operations.isEmpty()) {
-            // New operations arrived. Submit the fragment for execution again.
+            // New operations arrived. Submit the fragment for execution again without resetting the "scheduled" flag.
             submit();
 
             return;

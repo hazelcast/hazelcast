@@ -28,6 +28,7 @@ import com.hazelcast.sql.impl.calcite.opt.physical.PhysicalRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.PhysicalRules;
 import com.hazelcast.sql.impl.calcite.opt.physical.visitor.NodeIdVisitor;
 import com.hazelcast.sql.impl.calcite.opt.physical.visitor.PlanCreateVisitor;
+import com.hazelcast.sql.impl.calcite.parse.QueryConvertResult;
 import com.hazelcast.sql.impl.calcite.parse.QueryParseResult;
 import com.hazelcast.sql.impl.optimizer.OptimizationTask;
 import com.hazelcast.sql.impl.optimizer.SqlOptimizer;
@@ -39,6 +40,7 @@ import org.apache.calcite.plan.Convention;
 import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.plan.volcano.VolcanoPlanner;
 import org.apache.calcite.rel.RelNode;
+import org.apache.calcite.rel.type.RelDataType;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -135,13 +137,13 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         QueryParseResult parseResult = context.parse(task.getSql());
 
         // 3. Convert parse tree to relational tree.
-        RelNode rel = context.convert(parseResult.getNode());
+        QueryConvertResult convertResult = context.convert(parseResult.getNode());
 
         // 4. Perform optimization.
-        PhysicalRel physicalRel = optimize(context, rel);
+        PhysicalRel physicalRel = optimize(context, convertResult.getRel());
 
         // 5. Create plan.
-        return createImdgPlan(physicalRel);
+        return createImdgPlan(parseResult.getParameterRowType(), physicalRel, convertResult.getFieldNames());
     }
 
     private PhysicalRel optimize(OptimizerContext context, RelNode rel) {
@@ -165,7 +167,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
      * @param rel Rel.
      * @return Plan.
      */
-    private Plan createImdgPlan(PhysicalRel rel) {
+    private Plan createImdgPlan(RelDataType parameterRowType, PhysicalRel rel, List<String> rootColumnNames) {
         // Get partition mapping.
         Collection<Partition> parts = nodeEngine.getHazelcastInstance().getPartitionService().getPartitions();
 
@@ -188,7 +190,8 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         PlanCreateVisitor visitor = new PlanCreateVisitor(
             nodeEngine.getLocalMember().getUuid(),
             partMap,
-            relIdMap
+            relIdMap,
+            rootColumnNames
         );
 
         rel.visit(visitor);

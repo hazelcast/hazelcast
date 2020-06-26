@@ -501,16 +501,17 @@ public class QueryOperationHandlerTest extends SqlTestSupport {
             Collections.emptyList(),
             Collections.emptyMap(),
             Collections.emptyMap(),
-            Collections.emptyMap()
+            Collections.emptyMap(),
+            null
         );
 
         QueryId queryId = initiatorService.getStateRegistry().onInitiatorQueryStarted(
             initiatorId,
             timeout,
             plan,
+            null,
             new BlockingRootResultConsumer(),
-            initiatorService.getOperationHandler(),
-            true
+            initiatorService.getOperationHandler()
         ).getQueryId();
 
         testState = new State(queryId);

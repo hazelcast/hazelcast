@@ -66,6 +66,9 @@ public final class SqlToQueryType {
         CALCITE_TO_HZ.put(SqlTypeName.DATE, QueryDataType.DATE);
         CALCITE_TO_HZ.put(SqlTypeName.TIMESTAMP, QueryDataType.TIMESTAMP);
         CALCITE_TO_HZ.put(SqlTypeName.TIMESTAMP_WITH_LOCAL_TIME_ZONE, QueryDataType.TIMESTAMP_WITH_TZ_OFFSET_DATE_TIME);
+
+        HZ_TO_CALCITE.put(QueryDataTypeFamily.OBJECT, SqlTypeName.ANY);
+        CALCITE_TO_HZ.put(SqlTypeName.ANY, QueryDataType.OBJECT);
     }
 
     private SqlToQueryType() {

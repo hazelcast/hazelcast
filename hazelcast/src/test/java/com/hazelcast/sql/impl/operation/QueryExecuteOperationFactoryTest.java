@@ -72,7 +72,8 @@ public class QueryExecuteOperationFactoryTest {
             fragmentMappings,
             outboundEdgeMap,
             inboundEdgeMap,
-            inboundEdgeMemberCountMap
+            inboundEdgeMemberCountMap,
+            null
         );
 
         QueryId queryId = QueryId.create(UUID.randomUUID());

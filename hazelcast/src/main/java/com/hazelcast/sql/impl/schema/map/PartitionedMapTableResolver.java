@@ -115,8 +115,6 @@ public class PartitionedMapTableResolver extends AbstractMapTableResolver {
                 throw QueryException.error("IMap with InMemoryFormat.NATIVE is not supported: " + name);
             }
 
-            boolean binary = config.getInMemoryFormat() == InMemoryFormat.BINARY;
-
             for (PartitionContainer partitionContainer : context.getPartitionContainers()) {
                 // Resolve sample.
                 RecordStore<?> recordStore = partitionContainer.getExistingRecordStore(name);
@@ -138,14 +136,12 @@ public class PartitionedMapTableResolver extends AbstractMapTableResolver {
                 MapSampleMetadata keyMetadata = MapSampleMetadataResolver.resolve(
                     ss,
                     entry.getKey(),
-                    binary,
                     true
                 );
 
                 MapSampleMetadata valueMetadata = MapSampleMetadataResolver.resolve(
                     ss,
                     entry.getValue().getValue(),
-                    binary,
                     false
                 );
 

@@ -22,6 +22,7 @@ import com.hazelcast.sql.impl.calcite.opt.cost.CostFactory;
 import com.hazelcast.sql.impl.calcite.opt.distribution.DistributionTraitDef;
 import com.hazelcast.sql.impl.calcite.opt.metadata.HazelcastRelMdRowCount;
 import com.hazelcast.sql.impl.calcite.parse.CasingConfiguration;
+import com.hazelcast.sql.impl.calcite.parse.QueryConvertResult;
 import com.hazelcast.sql.impl.calcite.parse.QueryConverter;
 import com.hazelcast.sql.impl.calcite.parse.QueryParseResult;
 import com.hazelcast.sql.impl.calcite.parse.QueryParser;
@@ -142,7 +143,7 @@ public final class OptimizerContext {
      * @param node SQL tree.
      * @return Relational tree.
      */
-    public RelNode convert(SqlNode node) {
+    public QueryConvertResult convert(SqlNode node) {
         return converter.convert(node);
     }
 

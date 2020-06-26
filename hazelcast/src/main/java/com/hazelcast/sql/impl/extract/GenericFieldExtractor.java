@@ -19,6 +19,7 @@ package com.hazelcast.sql.impl.extract;
 import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.type.QueryDataType;
+import com.hazelcast.sql.impl.type.QueryDataTypeMismatchException;
 
 /**
  * An extractor that uses {@link com.hazelcast.query.impl.getters.Extractors} for field retrieval.
@@ -44,10 +45,14 @@ public class GenericFieldExtractor extends AbstractGenericExtractor {
     @Override
     public Object get() {
         try {
-            return type.convert(extractors.extract(getTarget(), path, null));
+            return type.normalize(extractors.extract(getTarget(), path, null));
+        } catch (QueryDataTypeMismatchException e) {
+            throw QueryException.dataException("Failed to extract map entry " + (key ? "key" : "value") + " field \""
+                + path + "\" because of type mismatch [expectedClass=" + e.getExpectedClass().getName()
+                + ", actualClass=" + e.getActualClass().getName() + ']');
         } catch (Exception e) {
-            throw QueryException.dataException("Cannot extract " + (key ? "key" : "value") + " field \"" + path
-                + "\" of type " + type + ": " + e.getMessage(), e);
+            throw QueryException.dataException("Failed to extract map entry " + (key ? "key" : "value") + " field \""
+                + path + "\": " + e.getMessage(), e);
         }
     }
 }

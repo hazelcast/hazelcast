@@ -24,6 +24,7 @@ import com.hazelcast.sql.SqlErrorCode;
 import com.hazelcast.sql.impl.NodeServiceProvider;
 import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.exec.CreateExecPlanNodeVisitor;
+import com.hazelcast.sql.impl.exec.CreateExecPlanNodeVisitorHook;
 import com.hazelcast.sql.impl.exec.Exec;
 import com.hazelcast.sql.impl.exec.io.InboundHandler;
 import com.hazelcast.sql.impl.exec.io.OutboundHandler;
@@ -54,6 +55,7 @@ public class QueryOperationHandlerImpl implements QueryOperationHandler, QuerySt
     private final QueryOperationWorkerPool operationPool;
     private final int outboxBatchSize;
     private final FlowControlFactory flowControlFactory;
+    private volatile CreateExecPlanNodeVisitorHook execHook;
 
     public QueryOperationHandlerImpl(
         String instanceName,
@@ -195,7 +197,8 @@ public class QueryOperationHandlerImpl implements QueryOperationHandler, QuerySt
                 operation,
                 flowControlFactory,
                 operation.getPartitionMap().get(localMemberId),
-                outboxBatchSize
+                outboxBatchSize,
+                execHook
             );
 
             fragmentDescriptor.getNode().visit(visitor);
@@ -369,5 +372,9 @@ public class QueryOperationHandlerImpl implements QueryOperationHandler, QuerySt
             throw QueryException.error(
                 "Failed to serialize " + operation.getClass().getSimpleName() + ": " + e.getMessage(), e);
         }
+    }
+
+    public void setExecHook(CreateExecPlanNodeVisitorHook execHook) {
+        this.execHook = execHook;
     }
 }

@@ -100,7 +100,7 @@ completion futures, timeouts, and retries.
 
 ### 2.4 Discussion
 
-The Hazelcast Mustang engine doesn't use `Operation` and `OperationSerice` abstractions for the following reasons. First, to
+The Hazelcast Mustang engine doesn't use `Operation` and `OperationService` abstractions for the following reasons. First, to
 satisfy the low-latency principle, the engine doesn't use the request-response messaging pattern for query initiation and data
 exchange. Second, due to fail-fast design choice, the engine doesn't need to keep data chunks on the sender side waiting for ack
 from the receiver. The fire-and-forget approach is used instead. Last, since `Operation` and `OperationService` interfaces do

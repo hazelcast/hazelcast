@@ -46,6 +46,7 @@ import com.hazelcast.config.RingbufferConfig;
 import com.hazelcast.config.ScheduledExecutorConfig;
 import com.hazelcast.config.SecurityConfig;
 import com.hazelcast.config.SerializationConfig;
+import com.hazelcast.config.SqlConfig;
 import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.internal.config.ServicesConfig;
 import com.hazelcast.config.SetConfig;
@@ -1085,6 +1086,18 @@ public class DynamicConfigurationAwareConfig extends Config {
     @Nonnull
     @Override
     public Config setMetricsConfig(@Nonnull MetricsConfig metricsConfig) {
+        throw new UnsupportedOperationException("Unsupported operation");
+    }
+
+    @Nonnull
+    @Override
+    public SqlConfig getSqlConfig() {
+        return staticConfig.getSqlConfig();
+    }
+
+    @Nonnull
+    @Override
+    public Config setSqlConfig(@Nonnull SqlConfig sqlConfig) {
         throw new UnsupportedOperationException("Unsupported operation");
     }
 }

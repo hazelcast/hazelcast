@@ -16,6 +16,7 @@
 
 package com.hazelcast.sql.impl.state;
 
+import com.hazelcast.sql.SqlRowMetadata;
 import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.QueryResultProducer;
 import com.hazelcast.sql.impl.plan.Plan;
@@ -27,17 +28,20 @@ public class QueryInitiatorState {
 
     private final QueryId queryId;
     private final Plan plan;
+    private final SqlRowMetadata rowMetadata;
     private final QueryResultProducer resultProducer;
     private final long timeout;
 
     public QueryInitiatorState(
         QueryId queryId,
         Plan plan,
+        SqlRowMetadata rowMetadata,
         QueryResultProducer resultProducer,
         long timeout
     ) {
         this.queryId = queryId;
         this.plan = plan;
+        this.rowMetadata = rowMetadata;
         this.resultProducer = resultProducer;
         this.timeout = timeout;
     }
@@ -48,6 +52,10 @@ public class QueryInitiatorState {
 
     public Plan getPlan() {
         return plan;
+    }
+
+    public SqlRowMetadata getRowMetadata() {
+        return rowMetadata;
     }
 
     public QueryResultProducer getResultProducer() {
