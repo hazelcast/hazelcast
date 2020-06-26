@@ -313,8 +313,9 @@ public final class MapDataSerializerHook implements DataSerializerHook {
     public static final int COMPUTE_IF_PRESENT_PROCESSOR = 148;
     public static final int COMPUTE_IF_ABSENT_PROCESSOR = 149;
     public static final int KEY_VALUE_CONSUMING_PROCESSOR = 150;
+    public static final int COMPUTE_MAP_OPERATION_PROCESSOR = 151;
 
-    private static final int LEN = KEY_VALUE_CONSUMING_PROCESSOR + 1;
+    private static final int LEN = COMPUTE_MAP_OPERATION_PROCESSOR + 1;
 
     @Override
     public int getFactoryId() {
@@ -473,6 +474,7 @@ public final class MapDataSerializerHook implements DataSerializerHook {
         constructors[COMPUTE_IF_PRESENT_PROCESSOR] = arg -> new ComputeIfPresentEntryProcessor<>();
         constructors[COMPUTE_IF_ABSENT_PROCESSOR] = arg -> new ComputeIfAbsentEntryProcessor<>();
         constructors[KEY_VALUE_CONSUMING_PROCESSOR] = arg -> new KeyValueConsumingEntryProcessor<>();
+        constructors[COMPUTE_MAP_OPERATION_PROCESSOR] = arg -> new ComputeEntryProcessor<>();
 
         return new ArrayDataSerializableFactory(constructors);
     }

@@ -204,4 +204,38 @@ public class ClientComputeConditionallyTests extends ClientTestSupport {
         assertEquals(expectedValue, map.get("absent_key"));
     }
 
+    @Test
+    public void testComputeShouldReplaceValueWhenBothOldAndNewValuesArePresent() {
+        final IMap<String, String> map = client.getMap("testCompute");
+        map.put("present_key", "present_value");
+        String newValue = map.compute("present_key", (k, v) -> "new_value");
+        assertEquals("new_value", newValue);
+        assertEquals("new_value", map.get("present_key"));
+    }
+
+    @Test
+    public void testComputeShouldRemoveValueWhenOldValuePresentButNewValuesIsNotPresent() {
+        final IMap<String, String> map = client.getMap("testCompute");
+        map.put("present_key", "present_value");
+        String newValue = map.compute("present_key", (k, v) -> null);
+        assertEquals(null, newValue);
+        assertEquals(null, map.get("present_key"));
+    }
+
+    @Test
+    public void testComputeShouldPutValueWhenOldValueNotPresentButNewValuesIsPresent() {
+        final IMap<String, String> map = client.getMap("testCompute");
+        String newValue = map.compute("absent_key", (k, v) -> "new_value");
+        assertEquals("new_value", newValue);
+        assertEquals("new_value", map.get("absent_key"));
+    }
+
+    @Test
+    public void testComputeShouldNotDoAnythingWhenBothOldAndNewValuesAreNotPresent() {
+        final IMap<String, String> map = client.getMap("testCompute");
+        String result = map.compute("absent_key", (k, v) -> null);
+        assertEquals(null, result);
+        assertEquals(null, map.get("absent_key"));
+    }
+
 }
