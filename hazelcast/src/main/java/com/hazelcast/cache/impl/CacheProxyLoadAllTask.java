@@ -70,7 +70,7 @@ final class CacheProxyLoadAllTask implements Runnable {
     @Override
     public void run() {
         try {
-            completionListener = (CompletionListener) injectDependencies(completionListener);
+            completionListener = injectDependencies(completionListener);
 
             OperationService operationService = nodeEngine.getOperationService();
             OperationFactory operationFactory;
@@ -108,9 +108,10 @@ final class CacheProxyLoadAllTask implements Runnable {
         }
     }
 
-    private Object injectDependencies(Object obj) {
+    @SuppressWarnings("unchecked")
+    private <T> T injectDependencies(Object obj) {
         ManagedContext managedContext = nodeEngine.getSerializationService().getManagedContext();
-        return managedContext.initialize(obj);
+        return (T) managedContext.initialize(obj);
     }
 
     private Set<Data> filterOwnerKeys(IPartitionService partitionService, Set<Integer> partitions) {

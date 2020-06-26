@@ -176,7 +176,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
             initializeStatisticsAndFactories(cacheNameWithPrefix);
 
             EvictionPolicyComparator evictionPolicyComparator = createEvictionPolicyComparator(evictionConfig);
-            evictionPolicyComparator = (EvictionPolicyComparator) injectDependencies(evictionPolicyComparator);
+            evictionPolicyComparator = injectDependencies(evictionPolicyComparator);
             this.evictionPolicyEvaluator = new EvictionPolicyEvaluator<>(evictionPolicyComparator);
             this.cacheContext = cacheService.getOrCreateCacheContext(cacheNameWithPrefix);
             this.records = createRecordCacheMap();
@@ -207,21 +207,21 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
         }
         if (cacheConfig.getCacheLoaderFactory() != null) {
             Factory<CacheLoader> cacheLoaderFactory = cacheConfig.getCacheLoaderFactory();
-            cacheLoaderFactory = (Factory<CacheLoader>) injectDependencies(cacheLoaderFactory);
+            cacheLoaderFactory = injectDependencies(cacheLoaderFactory);
             cacheLoader = cacheLoaderFactory.create();
-            cacheLoader = (CacheLoader) injectDependencies(cacheLoader);
+            cacheLoader = injectDependencies(cacheLoader);
         }
         if (cacheConfig.getCacheWriterFactory() != null) {
             Factory<CacheWriter> cacheWriterFactory = cacheConfig.getCacheWriterFactory();
-            cacheWriterFactory = (Factory<CacheWriter>) injectDependencies(cacheWriterFactory);
+            cacheWriterFactory = injectDependencies(cacheWriterFactory);
             cacheWriter = cacheWriterFactory.create();
-            cacheWriter = (CacheWriter) injectDependencies(cacheWriter);
+            cacheWriter = injectDependencies(cacheWriter);
         }
         if (cacheConfig.getExpiryPolicyFactory() != null) {
             Factory<ExpiryPolicy> expiryPolicyFactory = cacheConfig.getExpiryPolicyFactory();
-            expiryPolicyFactory = (Factory<ExpiryPolicy>) injectDependencies(expiryPolicyFactory);
+            expiryPolicyFactory = injectDependencies(expiryPolicyFactory);
             defaultExpiryPolicy = expiryPolicyFactory.create();
-            defaultExpiryPolicy = (ExpiryPolicy) injectDependencies(defaultExpiryPolicy);
+            defaultExpiryPolicy = injectDependencies(defaultExpiryPolicy);
         } else {
             throw new IllegalStateException("Expiry policy factory cannot be null!");
         }
@@ -281,9 +281,10 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
         return owner != null && owner.equals(thisAddress);
     }
 
-    private Object injectDependencies(Object obj) {
+    @SuppressWarnings("unchecked")
+    private <T> T injectDependencies(T obj) {
         ManagedContext managedContext = ss.getManagedContext();
-        return managedContext.initialize(obj);
+        return (T) managedContext.initialize(obj);
     }
 
     private void registerResourceIfItIsClosable(Object resource) {
@@ -1764,8 +1765,8 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
         final long now = Clock.currentTimeMillis();
         final long startNanos = isStatisticsEnabled() ? Timer.nanos() : 0;
 
-        mergingEntry = (CacheMergeTypes<Object, Object>) injectDependencies(mergingEntry);
-        mergePolicy = (SplitBrainMergePolicy<Object, CacheMergeTypes<Object, Object>, Object>) injectDependencies(mergePolicy);
+        mergingEntry = injectDependencies(mergingEntry);
+        mergePolicy = injectDependencies(mergePolicy);
 
         boolean merged = false;
         Data key = (Data) mergingEntry.getRawKey();
@@ -1844,7 +1845,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
             statistics.addGetTimeNanos(Timer.nanosElapsed(startNanos));
         }
         CacheEntryProcessorEntry entry = createCacheEntryProcessorEntry(key, record, now, completionId);
-        entryProcessor = (EntryProcessor) injectDependencies(entryProcessor);
+        entryProcessor = injectDependencies(entryProcessor);
         Object result = entryProcessor.process(entry, arguments);
         entry.applyChanges();
         return result;
