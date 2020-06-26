@@ -1026,8 +1026,8 @@ public abstract class ExpressionTestBase {
         }
 
         PartitionedMapTable table =
-                new PartitionedMapTable(SCHEMA_NAME_REPLICATED, "t", fields, new ConstantTableStatistics(100),
-                        null, null, null, null, emptyList(), PartitionedMapTable.DISTRIBUTION_FIELD_ORDINAL_NONE);
+                new PartitionedMapTable(SCHEMA_NAME_REPLICATED, "t", fields, new ConstantTableStatistics(100), null, null, null,
+                        null, emptyList(), PartitionedMapTable.DISTRIBUTION_FIELD_ORDINAL_NONE);
 
         HazelcastTable hazelcastTable = new HazelcastTable(table, new MapTableStatistic(100));
         return OptimizerContext.create(null, new HazelcastSchema(singletonMap("t", hazelcastTable)),
@@ -1058,7 +1058,13 @@ public abstract class ExpressionTestBase {
         return type.getSqlTypeName() == TIMESTAMP_WITH_LOCAL_TIME_ZONE ? "TIMESTAMP WITH LOCAL TIME ZONE" : type.toString();
     }
 
-    public static SqlCallBinding makeBinding(String expression) {
+    /**
+     * Makes a mock binding with a SqlCall corresponding to the given expression
+     * and its operand types mocked by the given types. Basically, just allows
+     * building an expression without messing with SqlNodes directly while still
+     * controlling the produced node types.
+     */
+    public static SqlCallBinding makeMockBinding(String expression, RelDataType... types) {
         OptimizerContext context = makeContext();
         QueryParseResult parseResult = context.parse("select " + expression + " from t", false);
 
@@ -1066,7 +1072,12 @@ public abstract class ExpressionTestBase {
         SqlValidator validator = context.getValidator();
         SqlValidatorScope scope = validator.getSelectScope(select);
 
-        return new SqlCallBinding(validator, scope, (SqlCall) select.getSelectList().get(0));
+        return new SqlCallBinding(validator, scope, (SqlCall) select.getSelectList().get(0)) {
+            @Override
+            public RelDataType getOperandType(int ordinal) {
+                return types[ordinal] == null ? validator.getUnknownType() : types[ordinal];
+            }
+        };
     }
 
     private static Expression<?> convertToExpression(RelNode relNode, RelDataType parameterRowType) {

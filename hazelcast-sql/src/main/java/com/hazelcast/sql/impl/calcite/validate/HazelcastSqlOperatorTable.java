@@ -209,7 +209,7 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
 
     //#endregion
 
-    //#region Custom functions and operators.
+    //#region Other custom functions and operators.
 
     public static final SqlFunction LENGTH = new SqlFunction(
         "LENGTH",

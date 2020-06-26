@@ -17,7 +17,6 @@
 package com.hazelcast.sql.impl.calcite.validate.types;
 
 import org.apache.calcite.rel.type.RelDataType;
-import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.type.InferTypes;
 import org.apache.calcite.sql.type.SqlOperandTypeInference;
 
@@ -45,10 +44,10 @@ public final class HazelcastInferTypes {
 
         boolean seenParameters = false;
         RelDataType known = unknown;
-        for (SqlNode operand : binding.operands()) {
-            RelDataType type = binding.getValidator().deriveType(binding.getScope(), operand);
+        for (int i = 0; i < binding.getOperandCount(); ++i) {
+            RelDataType type = binding.getOperandType(i);
 
-            if (isParameter(operand)) {
+            if (isParameter(binding.operand(i))) {
                 seenParameters = true;
             } else if (known == unknown && typeName(type) != NULL) {
                 known = type;

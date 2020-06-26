@@ -39,8 +39,8 @@ public final class HazelcastOperandTypes {
     /**
      * The same as Calcite's {@link OperandTypes#COMPARABLE_ORDERED_COMPARABLE_ORDERED},
      * but selects the least restrictive type as a common type. We do character
-     * coercion provided by {@link SqlOperandTypeChecker.Consistency#COMPARE} used
-     * by Calcite on our own.
+     * coercion provided by {@link SqlOperandTypeChecker.Consistency#COMPARE} and
+     * used by Calcite on our own.
      */
     public static final SqlOperandTypeChecker COMPARABLE_ORDERED_COMPARABLE_ORDERED =
             new ComparableOperandTypeChecker(2, RelDataTypeComparability.ALL,
