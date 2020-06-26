@@ -20,11 +20,11 @@ import com.hazelcast.config.EndpointConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.internal.networking.Channel;
 import com.hazelcast.internal.networking.ChannelOptions;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.ClassNameFilter;
-import com.hazelcast.internal.serialization.Data;
 
 import javax.annotation.Nonnull;
 import java.io.ByteArrayOutputStream;
@@ -60,9 +60,9 @@ import static com.hazelcast.internal.networking.ChannelOption.SO_LINGER;
 import static com.hazelcast.internal.networking.ChannelOption.SO_RCVBUF;
 import static com.hazelcast.internal.networking.ChannelOption.SO_SNDBUF;
 import static com.hazelcast.internal.networking.ChannelOption.TCP_NODELAY;
+import static com.hazelcast.internal.server.ServerContext.KILO_BYTE;
 import static com.hazelcast.internal.util.EmptyStatement.ignore;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
-import static com.hazelcast.internal.server.ServerContext.KILO_BYTE;
 import static java.lang.String.format;
 import static java.nio.file.FileVisitResult.CONTINUE;
 import static java.nio.file.LinkOption.NOFOLLOW_LINKS;
@@ -706,6 +706,28 @@ public final class IOUtil {
             if (n == -1) {
                 throw new IOException("Not enough bytes in the input stream");
             }
+            output.write(buffer, 0, n);
+            remaining -= n;
+        }
+    }
+
+    /**
+     * Writes maximum {@code limit} bytes from the given input stream to the given output stream.
+     *
+     * @param input  the input stream
+     * @param output the output stream
+     * @param limit  the maximum number of bytes to write
+     * @throws IOException if there is any other IO error.
+     */
+    public static void drainToLimited(InputStream input, OutputStream output, int limit) throws IOException {
+        byte[] buffer = new byte[1024];
+        int remaining = limit;
+        while (remaining > 0) {
+            int n = input.read(buffer, 0, Math.min(buffer.length, remaining));
+            if (n < 1) {
+                return;
+            }
+
             output.write(buffer, 0, n);
             remaining -= n;
         }
