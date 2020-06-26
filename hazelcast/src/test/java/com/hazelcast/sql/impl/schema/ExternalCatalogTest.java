@@ -21,6 +21,8 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.SqlTestSupport;
 import com.hazelcast.sql.impl.connector.LocalPartitionedMapConnector;
+import com.hazelcast.sql.impl.schema.ExternalTable.ExternalField;
+import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -29,8 +31,11 @@ import org.junit.Test;
 import java.util.Map;
 import java.util.NoSuchElementException;
 
-import static java.util.Collections.emptyList;
+import static com.hazelcast.sql.impl.type.QueryDataType.INT;
+import static com.hazelcast.sql.impl.type.QueryDataType.VARCHAR;
 import static java.util.Collections.emptyMap;
+import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toMap;
 import static org.junit.Assert.assertEquals;
 
 public class ExternalCatalogTest extends SqlTestSupport {
@@ -66,13 +71,14 @@ public class ExternalCatalogTest extends SqlTestSupport {
         // given
         String name = "my_table_to_be_replaced";
         ExternalCatalog catalog = new ExternalCatalog(nodeEngine(instance));
-        catalog.createTable(table(name), true, false);
+        catalog.createTable(table(name, ImmutableMap.of("__key", INT, "this", VARCHAR)), true, false);
 
         // when
-        catalog.createTable(table(name, ImmutableMap.of("key", "value")), true, false);
+        ExternalTable table = table(name, ImmutableMap.of("__key", VARCHAR, "this", INT));
+        catalog.createTable(table, true, false);
 
         // then
-        assertEquals(ImmutableMap.of("key", "value"), tableOptions(catalog, name));
+        assertEquals(ImmutableMap.of("__key", VARCHAR, "this", INT), tableFields(catalog, name));
     }
 
     @Test
@@ -80,13 +86,14 @@ public class ExternalCatalogTest extends SqlTestSupport {
         // given
         String name = "my_table_if_not_exists";
         ExternalCatalog catalog = new ExternalCatalog(nodeEngine(instance));
-        catalog.createTable(table(name), false, true);
+        catalog.createTable(table(name, ImmutableMap.of("__key", INT, "this", VARCHAR)), false, true);
 
         // when
-        catalog.createTable(table(name, ImmutableMap.of("key", "value")), false, true);
+        ExternalTable table = table(name, ImmutableMap.of("__key", VARCHAR, "this", INT));
+        catalog.createTable(table, false, true);
 
         // then
-        assertEquals(emptyMap(), tableOptions(catalog, name));
+        assertEquals(ImmutableMap.of("__key", INT, "this", VARCHAR), tableFields(catalog, name));
     }
 
     @Test(expected = QueryException.class)
@@ -110,18 +117,25 @@ public class ExternalCatalogTest extends SqlTestSupport {
     }
 
     private static ExternalTable table(String name) {
-        return table(name, emptyMap());
+        return table(name, ImmutableMap.of("__key", INT, "this", VARCHAR));
     }
 
-    private static ExternalTable table(String name, Map<String, String> options) {
-        return new ExternalTable(name, LocalPartitionedMapConnector.TYPE_NAME, emptyList(), options);
+    private static ExternalTable table(String name, Map<String, QueryDataType> fields) {
+        return new ExternalTable(
+                name,
+                LocalPartitionedMapConnector.TYPE_NAME,
+                fields.entrySet().stream()
+                      .map(entry -> new ExternalField(entry.getKey(), entry.getValue()))
+                      .collect(toList()),
+                emptyMap()
+        );
     }
 
-    private static Map<String, String> tableOptions(ExternalCatalog catalog, String tableName) {
+    private static Map<String, QueryDataType> tableFields(ExternalCatalog catalog, String tableName) {
         return catalog.getTables().stream()
                       .filter(table -> tableName.equals(table.getName()))
                       .findFirst()
-                      .map(Table::getDdlOptions)
+                      .map(table -> table.getFields().stream().collect(toMap(TableField::getName, TableField::getType)))
                       .orElseThrow(NoSuchElementException::new);
     }
 }

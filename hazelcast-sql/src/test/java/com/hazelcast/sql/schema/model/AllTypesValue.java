@@ -35,35 +35,32 @@ import java.util.Objects;
 @SuppressWarnings("unused")
 public final class AllTypesValue implements Serializable {
 
-    private final String string;
-    private final char character0;
-    private final boolean boolean0;
-    private final byte byte0;
-    private final short short0;
-    private final int int0;
-    private final long long0;
-    private final float float0;
-    private final double double0;
-    private final BigDecimal bigDecimal;
-    private final BigInteger bigInteger;
-    private final LocalTime localTime;
-    private final LocalDate localDate;
-    private final LocalDateTime localDateTime;
-    private final Date date;
-    private final GregorianCalendar calendar;
-    private final Instant instant;
-    private final ZonedDateTime zonedDateTime;
-    private final OffsetDateTime offsetDateTime;
-    // TODO: when intervals are properly supported
-    /*private SqlYearMonthInterval yearMonthInterval;
-    private SqlDaySecondInterval daySecondInterval;*/
+    private String string;
+    private char character0;
+    private boolean boolean0;
+    private byte byte0;
+    private short short0;
+    private int int0;
+    private long long0;
+    private float float0;
+    private double double0;
+    private BigDecimal bigDecimal;
+    private BigInteger bigInteger;
+    private LocalTime localTime;
+    private LocalDate localDate;
+    private LocalDateTime localDateTime;
+    private Date date;
+    private GregorianCalendar calendar;
+    private Instant instant;
+    private ZonedDateTime zonedDateTime;
+    public OffsetDateTime offsetDateTime;
 
     @SuppressWarnings("checkstyle:ParameterNumber")
     public AllTypesValue(String string, char character0, boolean boolean0, byte byte0, short short0, int int0, long long0,
                          float float0, double double0, BigDecimal bigDecimal, BigInteger bigInteger, LocalTime localTime,
                          LocalDate localDate, LocalDateTime localDateTime, Date date, GregorianCalendar calendar,
-                         Instant instant, ZonedDateTime zonedDateTime, OffsetDateTime offsetDateTime/*,
-                         SqlYearMonthInterval yearMonthInterval, SqlDaySecondInterval daySecondInterval*/) {
+                         Instant instant, ZonedDateTime zonedDateTime, OffsetDateTime offsetDateTime
+    ) {
         this.string = string;
         this.character0 = character0;
         this.boolean0 = boolean0;
@@ -83,101 +80,151 @@ public final class AllTypesValue implements Serializable {
         this.instant = instant;
         this.zonedDateTime = zonedDateTime;
         this.offsetDateTime = offsetDateTime;
-        /*this.yearMonthInterval= yearMonthIntervall;
-        this.daySecondInterval = daySecondInterval;*/
     }
 
     public String getString() {
         return string;
     }
 
+    public void setString(String string) {
+        this.string = string;
+    }
+
     public char getCharacter0() {
         return character0;
+    }
+
+    public void setCharacter0(char character0) {
+        this.character0 = character0;
     }
 
     public boolean isBoolean0() {
         return boolean0;
     }
 
+    public void setBoolean0(boolean boolean0) {
+        this.boolean0 = boolean0;
+    }
+
     public byte getByte0() {
         return byte0;
+    }
+
+    public void setByte0(byte byte0) {
+        this.byte0 = byte0;
     }
 
     public short getShort0() {
         return short0;
     }
 
+    public void setShort0(short short0) {
+        this.short0 = short0;
+    }
+
     public int getInt0() {
         return int0;
+    }
+
+    public void setInt0(int int0) {
+        this.int0 = int0;
     }
 
     public long getLong0() {
         return long0;
     }
 
+    public void setLong0(long long0) {
+        this.long0 = long0;
+    }
+
     public float getFloat0() {
         return float0;
+    }
+
+    public void setFloat0(float float0) {
+        this.float0 = float0;
     }
 
     public double getDouble0() {
         return double0;
     }
 
+    public void setDouble0(double double0) {
+        this.double0 = double0;
+    }
+
     public BigDecimal getBigDecimal() {
         return bigDecimal;
+    }
+
+    public void setBigDecimal(BigDecimal bigDecimal) {
+        this.bigDecimal = bigDecimal;
     }
 
     public BigInteger getBigInteger() {
         return bigInteger;
     }
 
+    public void setBigInteger(BigInteger bigInteger) {
+        this.bigInteger = bigInteger;
+    }
+
     public LocalTime getLocalTime() {
         return localTime;
+    }
+
+    public void setLocalTime(LocalTime localTime) {
+        this.localTime = localTime;
     }
 
     public LocalDate getLocalDate() {
         return localDate;
     }
 
+    public void setLocalDate(LocalDate localDate) {
+        this.localDate = localDate;
+    }
+
     public LocalDateTime getLocalDateTime() {
         return localDateTime;
+    }
+
+    public void setLocalDateTime(LocalDateTime localDateTime) {
+        this.localDateTime = localDateTime;
     }
 
     public Date getDate() {
         return date;
     }
 
+    public void setDate(Date date) {
+        this.date = date;
+    }
+
     public GregorianCalendar getCalendar() {
         return calendar;
+    }
+
+    public void setCalendar(GregorianCalendar calendar) {
+        this.calendar = calendar;
     }
 
     public Instant getInstant() {
         return instant;
     }
 
+    public void setInstant(Instant instant) {
+        this.instant = instant;
+    }
+
     public ZonedDateTime getZonedDateTime() {
         return zonedDateTime;
     }
 
-    public OffsetDateTime getOffsetDateTime() {
-        return offsetDateTime;
+    public void setZonedDateTime(ZonedDateTime zonedDateTime) {
+        this.zonedDateTime = zonedDateTime;
     }
-
-    /*public SqlYearMonthInterval getYearMonthInterval() {
-        return yearMonthInterval;
-    }
-
-    public void setYearMonthInterval(SqlYearMonthInterval yearMonthInterval) {
-        this.yearMonthInterval = yearMonthInterval;
-    }
-
-    public SqlDaySecondInterval getDaySecondInterval() {
-        return daySecondInterval;
-    }
-
-    public void setDaySecondInterval(SqlDaySecondInterval daySecondInterval) {
-        this.daySecondInterval = daySecondInterval;
-    }*/
 
     @Override
     public String toString() {
@@ -201,8 +248,6 @@ public final class AllTypesValue implements Serializable {
                 + ", instant=" + instant
                 + ", zonedDateTime=" + zonedDateTime
                 + ", offsetDateTime=" + offsetDateTime
-                //+ ", yearMonthInterval=" + yearMonthInterval
-                //+ ", daySecondInterval=" + daySecondInterval
                 + '}';
     }
 
@@ -233,8 +278,6 @@ public final class AllTypesValue implements Serializable {
                 && Objects.equals(calendar, that.calendar)
                 && Objects.equals(instant, that.instant)
                 && Objects.equals(zonedDateTime, that.zonedDateTime)
-                && Objects.equals(offsetDateTime, that.offsetDateTime) /*
-                && Objects.equals(yearMonthInterval, that.yearMonthInterval)
-                && Objects.equals(daySecondInterval, that.daySecondInterval)*/;
+                && Objects.equals(offsetDateTime, that.offsetDateTime);
     }
 }

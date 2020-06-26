@@ -29,8 +29,8 @@ import org.junit.runner.RunWith;
 
 import java.math.BigDecimal;
 
-import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeSystem.narrowestTypeFor;
 import static com.hazelcast.sql.impl.calcite.validate.HazelcastSqlOperatorTable.UNARY_PLUS;
+import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeSystem.narrowestTypeFor;
 import static org.apache.calcite.sql.type.SqlTypeName.ANY;
 import static org.apache.calcite.sql.type.SqlTypeName.BOOLEAN;
 import static org.apache.calcite.sql.type.SqlTypeName.DOUBLE;
@@ -50,6 +50,10 @@ public class UnaryPlusTest extends ExpressionTestBase {
         Operand operand = operands[0];
 
         if (operand.isParameter()) {
+            return null;
+        }
+
+        if (operand.typeName() == NULL) {
             return null;
         }
 

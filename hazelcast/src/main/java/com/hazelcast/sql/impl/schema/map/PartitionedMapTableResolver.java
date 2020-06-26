@@ -67,7 +67,7 @@ public class PartitionedMapTableResolver extends AbstractMapTableResolver {
                 continue;
             }
 
-            PartitionedMapTable table = createTable(nodeEngine, context, mapName);
+            PartitionedMapTable table = createTable(context, mapName);
 
             if (table == null) {
                 continue;
@@ -96,8 +96,7 @@ public class PartitionedMapTableResolver extends AbstractMapTableResolver {
     }
 
     @SuppressWarnings({"checkstyle:MethodLength", "checkstyle:CyclomaticComplexity", "checkstyle:NPathComplexity"})
-    private static PartitionedMapTable createTable(
-        NodeEngine nodeEngine,
+    private PartitionedMapTable createTable(
         MapServiceContext context,
         String name
     ) {
@@ -137,15 +136,16 @@ public class PartitionedMapTableResolver extends AbstractMapTableResolver {
 
             // Done.
             return new PartitionedMapTable(
-                SCHEMA_NAME_PARTITIONED,
-                name,
+                    SCHEMA_NAME_PARTITIONED,
+                    name,
                     resolved.getFields(),
-                new ConstantTableStatistics(estimatedRowCount),
+                    new ConstantTableStatistics(estimatedRowCount),
                     resolved.getKeyDescriptor(),
                     resolved.getValueDescriptor(),
-                indexes,
-                distributionFieldOrdinal,
-                Collections.emptyMap()
+                    null,
+                    null,
+                    indexes,
+                    distributionFieldOrdinal
             );
         } catch (QueryException e) {
             return new PartitionedMapTable(name, e);

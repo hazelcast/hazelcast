@@ -16,7 +16,6 @@
 
 package com.hazelcast.sql.impl.calcite.validate.operators;
 
-import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlOperatorBinding;
 import org.apache.calcite.sql.fun.SqlMonotonicBinaryOperator;
@@ -25,8 +24,10 @@ import org.apache.calcite.sql.type.SqlOperandTypeInference;
 import org.apache.calcite.sql.type.SqlReturnTypeInference;
 import org.apache.calcite.sql.validate.SqlMonotonicity;
 
-import static org.apache.calcite.sql.type.SqlTypeName.NULL;
-
+/**
+ * The same as {@link SqlMonotonicBinaryOperator}, but supports monotonicity for
+ * NULL literals.
+ */
 public final class HazelcastSqlMonotonicBinaryOperator extends SqlMonotonicBinaryOperator {
 
     public HazelcastSqlMonotonicBinaryOperator(String name, SqlKind kind, int prec, boolean isLeftAssoc,
@@ -37,15 +38,12 @@ public final class HazelcastSqlMonotonicBinaryOperator extends SqlMonotonicBinar
     }
 
     @Override
-    public SqlMonotonicity getMonotonicity(SqlOperatorBinding call) {
-        RelDataType left = call.getOperandType(0);
-        RelDataType right = call.getOperandType(1);
-
-        if (left.getSqlTypeName() == NULL || right.getSqlTypeName() == NULL) {
+    public SqlMonotonicity getMonotonicity(SqlOperatorBinding binding) {
+        if (binding.isOperandNull(0, true) || binding.isOperandNull(1, true)) {
             return SqlMonotonicity.CONSTANT;
         }
 
-        return super.getMonotonicity(call);
+        return super.getMonotonicity(binding);
     }
 
 }

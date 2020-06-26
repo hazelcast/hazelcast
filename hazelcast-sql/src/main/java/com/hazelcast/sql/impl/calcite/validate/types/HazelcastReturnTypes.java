@@ -16,56 +16,88 @@
 
 package com.hazelcast.sql.impl.calcite.validate.types;
 
+import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlOperatorTable;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.sql.SqlOperatorBinding;
+import org.apache.calcite.sql.type.ReturnTypes;
 import org.apache.calcite.sql.type.SqlReturnTypeInference;
-import org.apache.calcite.sql.type.SqlTypeName;
 
 import java.util.function.BiFunction;
 
 import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastIntegerType.bitWidthOf;
 import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastIntegerType.noOverflowBitWidthOf;
+import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeSystem.typeName;
 import static org.apache.calcite.sql.type.ReturnTypes.ARG0_INTERVAL_NULLABLE;
 import static org.apache.calcite.sql.type.ReturnTypes.DECIMAL_PRODUCT_NULLABLE;
 import static org.apache.calcite.sql.type.ReturnTypes.DECIMAL_QUOTIENT_NULLABLE;
 import static org.apache.calcite.sql.type.ReturnTypes.DECIMAL_SUM_NULLABLE;
 import static org.apache.calcite.sql.type.ReturnTypes.LEAST_RESTRICTIVE;
 import static org.apache.calcite.sql.type.ReturnTypes.chain;
-import static org.apache.calcite.sql.type.SqlTypeName.NULL;
 
+/**
+ * A collection of return type inference strategies. Basically, a mirror of {@link
+ * ReturnTypes} provided by Calcite with various enhancements and more precise
+ * type inference.
+ */
 public final class HazelcastReturnTypes {
 
-    public static final SqlReturnTypeInference NULL_IF_NULL_OPERANDS = binding -> {
-        for (RelDataType type : binding.collectOperandTypes()) {
-            if (type.getSqlTypeName() == NULL) {
-                return type;
-            }
-        }
-        return null;
-    };
+    /**
+     * The same as Calcite's {@link ReturnTypes#NULLABLE_SUM}, but provides bit
+     * width tracking of integer types for {@link HazelcastSqlOperatorTable#PLUS}
+     * operator.
+     *
+     * @see HazelcastIntegerType
+     */
+    public static final SqlReturnTypeInference PLUS =
+            chain(DECIMAL_SUM_NULLABLE, binding -> integer(binding, HazelcastReturnTypes::binaryIntegerPlus), LEAST_RESTRICTIVE);
 
-    public static final SqlReturnTypeInference PLUS = chain(NULL_IF_NULL_OPERANDS, DECIMAL_SUM_NULLABLE,
-            binding -> integer(binding, HazelcastReturnTypes::binaryIntegerPlus), LEAST_RESTRICTIVE);
+    /**
+     * The same as Calcite's {@link ReturnTypes#NULLABLE_SUM}, but provides bit
+     * width tracking of integer types for {@link HazelcastSqlOperatorTable#MINUS}
+     * operator.
+     *
+     * @see HazelcastIntegerType
+     */
+    public static final SqlReturnTypeInference MINUS =
+            chain(DECIMAL_SUM_NULLABLE, binding -> integer(binding, HazelcastReturnTypes::binaryIntegerMinus), LEAST_RESTRICTIVE);
 
-    public static final SqlReturnTypeInference MINUS = chain(NULL_IF_NULL_OPERANDS, DECIMAL_SUM_NULLABLE,
-            binding -> integer(binding, HazelcastReturnTypes::binaryIntegerMinus), LEAST_RESTRICTIVE);
+    /**
+     * The same as Calcite's {@link ReturnTypes#PRODUCT_NULLABLE}, but provides bit
+     * width tracking of integer types for {@link HazelcastSqlOperatorTable#MULTIPLY}
+     * operator.
+     *
+     * @see HazelcastIntegerType
+     */
+    public static final SqlReturnTypeInference MULTIPLY =
+            chain(DECIMAL_PRODUCT_NULLABLE, binding -> integer(binding, HazelcastReturnTypes::integerMultiply),
+                    LEAST_RESTRICTIVE);
 
-    public static final SqlReturnTypeInference MULTIPLY = chain(NULL_IF_NULL_OPERANDS, DECIMAL_PRODUCT_NULLABLE,
-            binding -> integer(binding, HazelcastReturnTypes::integerMultiply), LEAST_RESTRICTIVE);
+    /**
+     * The same as Calcite's {@link ReturnTypes#QUOTIENT_NULLABLE}, but provides bit
+     * width tracking of integer types for {@link HazelcastSqlOperatorTable#DIVIDE}
+     * operator.
+     *
+     * @see HazelcastIntegerType
+     */
+    public static final SqlReturnTypeInference DIVIDE = chain(DECIMAL_QUOTIENT_NULLABLE, ARG0_INTERVAL_NULLABLE,
+            binding -> integer(binding, HazelcastReturnTypes::integerDivide), LEAST_RESTRICTIVE);
 
-    public static final SqlReturnTypeInference DIVIDE =
-            chain(NULL_IF_NULL_OPERANDS, DECIMAL_QUOTIENT_NULLABLE, ARG0_INTERVAL_NULLABLE,
-                    binding -> integer(binding, HazelcastReturnTypes::integerDivide), LEAST_RESTRICTIVE);
-
+    /**
+     * Infers return type of {@link HazelcastSqlOperatorTable#UNARY_MINUS}
+     * operator.
+     */
     public static final SqlReturnTypeInference UNARY_MINUS = binding -> {
         RelDataType type = binding.getOperandType(0);
-        SqlTypeName typeName = type.getSqlTypeName();
-        return HazelcastIntegerType.supports(typeName) ? integerUnaryMinus(type) : type;
+        return HazelcastIntegerType.supports(typeName(type)) ? integerUnaryMinus(type) : type;
     };
 
     private HazelcastReturnTypes() {
     }
 
+    /**
+     * Infers return type of {@link HazelcastSqlOperatorTable#PLUS} operator for
+     * integers.
+     */
     public static RelDataType binaryIntegerPlus(RelDataType left, RelDataType right) {
         int leftBitWidth = noOverflowBitWidthOf(left);
         int rightBitWidth = noOverflowBitWidthOf(right);
@@ -78,6 +110,10 @@ public final class HazelcastReturnTypes {
         return HazelcastIntegerType.of(bitWidth, left.isNullable() || right.isNullable());
     }
 
+    /**
+     * Infers return type of {@link HazelcastSqlOperatorTable#MINUS} operator for
+     * integers.
+     */
     public static RelDataType binaryIntegerMinus(RelDataType left, RelDataType right) {
         int leftBitWidth = noOverflowBitWidthOf(left);
         int rightBitWidth = noOverflowBitWidthOf(right);
@@ -97,6 +133,10 @@ public final class HazelcastReturnTypes {
         return HazelcastIntegerType.of(bitWidth, left.isNullable() || right.isNullable());
     }
 
+    /**
+     * Infers return type of {@link HazelcastSqlOperatorTable#MULTIPLY} operator
+     * for integers.
+     */
     public static RelDataType integerMultiply(RelDataType left, RelDataType right) {
         int leftBitWidth = noOverflowBitWidthOf(left);
         int rightBitWidth = noOverflowBitWidthOf(right);
@@ -111,6 +151,10 @@ public final class HazelcastReturnTypes {
         return HazelcastIntegerType.of(bitWidth, left.isNullable() || right.isNullable());
     }
 
+    /**
+     * Infers return type of {@link HazelcastSqlOperatorTable#DIVIDE} operator
+     * for integers.
+     */
     public static RelDataType integerDivide(RelDataType left, RelDataType right) {
         int leftBitWidth = noOverflowBitWidthOf(left);
         // One more bit is needed because division might negate operands and
@@ -120,9 +164,13 @@ public final class HazelcastReturnTypes {
         return HazelcastIntegerType.of(bitWidth, left.isNullable() || right.isNullable());
     }
 
+    /**
+     * Infers return type of {@link HazelcastSqlOperatorTable#UNARY_MINUS} operator
+     * for integers.
+     */
     public static RelDataType integerUnaryMinus(RelDataType type) {
         int operandBitWidth = noOverflowBitWidthOf(type);
-        int typeBitWidth = bitWidthOf(type.getSqlTypeName());
+        int typeBitWidth = bitWidthOf(typeName(type));
 
         if (operandBitWidth == typeBitWidth) {
             operandBitWidth += 1;
@@ -131,15 +179,19 @@ public final class HazelcastReturnTypes {
         return HazelcastIntegerType.of(operandBitWidth, type.isNullable());
     }
 
-    private static RelDataType integer(SqlOperatorBinding binding, BiFunction<RelDataType, RelDataType, RelDataType> infer) {
+    /**
+     * Applies the given integer return type inference strategy if both operands
+     * of the given binary binding are integers.
+     */
+    private static RelDataType integer(SqlOperatorBinding binding, BiFunction<RelDataType, RelDataType, RelDataType> strategy) {
         RelDataType left = binding.getOperandType(0);
         RelDataType right = binding.getOperandType(1);
 
-        if (!HazelcastIntegerType.supports(left.getSqlTypeName()) || !HazelcastIntegerType.supports(right.getSqlTypeName())) {
+        if (!HazelcastIntegerType.supports(typeName(left)) || !HazelcastIntegerType.supports(typeName(right))) {
             return null;
         }
 
-        return infer.apply(left, right);
+        return strategy.apply(left, right);
     }
 
 }

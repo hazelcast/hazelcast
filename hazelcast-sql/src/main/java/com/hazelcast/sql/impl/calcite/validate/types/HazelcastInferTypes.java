@@ -16,21 +16,30 @@
 
 package com.hazelcast.sql.impl.calcite.validate.types;
 
+import com.hazelcast.sql.impl.calcite.validate.SqlNodeUtil;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.sql.SqlNode;
+import org.apache.calcite.sql.type.InferTypes;
 import org.apache.calcite.sql.type.SqlOperandTypeInference;
 
 import java.util.Arrays;
 
+import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeSystem.typeName;
 import static org.apache.calcite.sql.type.SqlTypeName.BIGINT;
 import static org.apache.calcite.sql.type.SqlTypeName.NULL;
 
+/**
+ * A collection of operand type inference strategies. Basically, a mirror of
+ * {@link InferTypes} provided by Calcite with various enhancements.
+ */
 public final class HazelcastInferTypes {
 
     // NOTE: Calcite validator's unknown type has NULL SqlTypeName.
 
-    // The same as Calcite's FIRST_KNOWN, but doesn't consider NULL as a known
-    // type.
+    /**
+     * The same as Calcite's {@link InferTypes#FIRST_KNOWN}, but doesn't consider
+     * NULL as a known type.
+     */
     public static final SqlOperandTypeInference FIRST_KNOWN = (binding, returnType, operandTypes) -> {
         RelDataType unknown = binding.getValidator().getUnknownType();
 
@@ -47,26 +56,32 @@ public final class HazelcastInferTypes {
         Arrays.fill(operandTypes, known);
     };
 
-    // The same as FIRST_KNOWN, but widens integer types to BIGINT, so dynamic
-    // parameters receive widest integer type.
+    /**
+     * The same as {@link #FIRST_KNOWN}, but widens integer types to BIGINT for
+     * dynamic parameters.
+     */
     public static final SqlOperandTypeInference NUMERIC_FIRST_KNOWN = (binding, returnType, operandTypes) -> {
         RelDataType unknown = binding.getValidator().getUnknownType();
 
+        boolean seenParameters = false;
         RelDataType known = unknown;
         for (SqlNode operand : binding.operands()) {
             RelDataType type = binding.getValidator().deriveType(binding.getScope(), operand);
 
-            if (!type.equals(unknown) && type.getSqlTypeName() != NULL) {
+            if (SqlNodeUtil.isParameter(operand)) {
+                seenParameters = true;
+            } else if (known == unknown && typeName(type) != NULL) {
                 known = type;
-                break;
             }
         }
 
-        if (HazelcastIntegerType.supports(known.getSqlTypeName())) {
-            known = HazelcastTypeFactory.INSTANCE.createSqlType(BIGINT);
-        }
+        if (seenParameters) {
+            if (HazelcastIntegerType.supports(known.getSqlTypeName())) {
+                known = HazelcastTypeFactory.INSTANCE.createSqlType(BIGINT);
+            }
 
-        Arrays.fill(operandTypes, known);
+            Arrays.fill(operandTypes, known);
+        }
     };
 
     private HazelcastInferTypes() {

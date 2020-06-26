@@ -26,12 +26,11 @@ import org.apache.calcite.prepare.Prepare;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rex.RexLiteral;
 import org.apache.calcite.rex.RexNode;
-import org.apache.calcite.sql.SqlBasicCall;
 import org.apache.calcite.sql.SqlCall;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlLiteral;
 import org.apache.calcite.sql.SqlNode;
-import org.apache.calcite.sql.fun.SqlCase;
+import org.apache.calcite.sql.SqlUtil;
 import org.apache.calcite.sql.type.SqlTypeName;
 import org.apache.calcite.sql.validate.SqlValidator;
 import org.apache.calcite.sql2rel.SqlRexConvertletTable;
@@ -46,7 +45,6 @@ import static org.apache.calcite.sql.type.SqlTypeName.BOOLEAN_TYPES;
 import static org.apache.calcite.sql.type.SqlTypeName.CHAR_TYPES;
 import static org.apache.calcite.sql.type.SqlTypeName.DOUBLE;
 import static org.apache.calcite.sql.type.SqlTypeName.INTERVAL_TYPES;
-import static org.apache.calcite.sql.type.SqlTypeName.NULL;
 import static org.apache.calcite.sql.type.SqlTypeName.REAL;
 import static org.apache.calcite.sql.type.SqlTypeName.VARCHAR;
 
@@ -64,13 +62,6 @@ public class HazelcastSqlToRelConverter extends SqlToRelConverter {
             return convertLiteral((SqlLiteral) node);
         } else if (node.getKind() == SqlKind.CAST) {
             return convertCast((SqlCall) node, blackboard);
-        } else if (node instanceof SqlBasicCall || node instanceof SqlCase) {
-            // Optimize all expressions having NULL type to just NULL literal.
-
-            RelDataType type = validator.getValidatedNodeTypeIfKnown(node);
-            if (type != null && type.getSqlTypeName() == NULL) {
-                return getRexBuilder().makeLiteral(null, type, false);
-            }
         }
 
         return null;
@@ -79,6 +70,13 @@ public class HazelcastSqlToRelConverter extends SqlToRelConverter {
     private RexNode convertCast(SqlCall call, Blackboard blackboard) {
         RelDataType to = validator.getValidatedNodeType(call);
         RexNode operand = blackboard.convertExpression(call.operand(0));
+
+        if (SqlUtil.isNullLiteral(call.operand(0), false)) {
+            // Just generate the cast without messing with the value: it's
+            // always NULL.
+            return getRexBuilder().makeCast(to, operand);
+        }
+
         RelDataType from = operand.getType();
 
         // Use our to-string conversions for REAL, DOUBLE and BOOLEAN;
@@ -124,6 +122,11 @@ public class HazelcastSqlToRelConverter extends SqlToRelConverter {
     }
 
     private RexNode convertLiteral(SqlLiteral literal) {
+        if (literal.getValue() == null) {
+            // trust Calcite on generation for NULL literals
+            return null;
+        }
+
         RelDataType type = validator.getValidatedNodeType(literal);
         SqlTypeName literalTypeName = literal.getTypeName();
 
