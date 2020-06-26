@@ -16,7 +16,7 @@
 
 package com.hazelcast.sql.impl.calcite.validate.types;
 
-import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.apache.calcite.rel.type.RelDataType;
@@ -36,7 +36,7 @@ import static org.apache.calcite.sql.type.SqlTypeName.TINYINT;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
-@RunWith(HazelcastSerialClassRunner.class)
+@RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class HazelcastReturnTypesTest {
 

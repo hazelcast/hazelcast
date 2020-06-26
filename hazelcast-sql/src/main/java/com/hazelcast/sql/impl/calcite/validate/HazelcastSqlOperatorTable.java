@@ -155,7 +155,7 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
         40,
         true,
         HazelcastReturnTypes.PLUS,
-        HazelcastInferTypes.NUMERIC_FIRST_KNOWN,
+        HazelcastInferTypes.FIRST_KNOWN,
         notAllNull(notAny(OperandTypes.PLUS_OPERATOR))
     );
 
@@ -165,7 +165,7 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
         40,
         true,
         HazelcastReturnTypes.MINUS,
-        HazelcastInferTypes.NUMERIC_FIRST_KNOWN,
+        HazelcastInferTypes.FIRST_KNOWN,
         notAllNull(notAny(OperandTypes.MINUS_OPERATOR))
     );
 
@@ -175,7 +175,7 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
         60,
         true,
         HazelcastReturnTypes.MULTIPLY,
-        HazelcastInferTypes.NUMERIC_FIRST_KNOWN,
+        HazelcastInferTypes.FIRST_KNOWN,
         notAllNull(notAny(OperandTypes.MULTIPLY_OPERATOR))
     );
 
@@ -185,7 +185,7 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
         60,
         true,
         HazelcastReturnTypes.DIVIDE,
-        HazelcastInferTypes.NUMERIC_FIRST_KNOWN,
+        HazelcastInferTypes.FIRST_KNOWN,
         notAllNull(notAny(OperandTypes.DIVISION_OPERATOR))
     );
 

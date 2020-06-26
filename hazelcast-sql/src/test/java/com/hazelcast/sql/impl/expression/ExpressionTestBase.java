@@ -24,6 +24,7 @@ import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.calcite.OptimizerContext;
 import com.hazelcast.sql.impl.calcite.SqlToQueryType;
 import com.hazelcast.sql.impl.calcite.opt.physical.visitor.RexToExpressionVisitor;
+import com.hazelcast.sql.impl.calcite.parse.QueryParseResult;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastSchema;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastSchemaUtils;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
@@ -48,6 +49,7 @@ import org.apache.calcite.rel.core.Project;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.sql.SqlCall;
+import org.apache.calcite.sql.SqlCallBinding;
 import org.apache.calcite.sql.SqlIdentifier;
 import org.apache.calcite.sql.SqlIntervalQualifier;
 import org.apache.calcite.sql.SqlKind;
@@ -62,6 +64,7 @@ import org.apache.calcite.sql.parser.SqlParserPos;
 import org.apache.calcite.sql.type.SqlOperandCountRanges;
 import org.apache.calcite.sql.type.SqlTypeName;
 import org.apache.calcite.sql.validate.SqlValidator;
+import org.apache.calcite.sql.validate.SqlValidatorScope;
 import org.apache.calcite.util.DateString;
 import org.apache.calcite.util.TimeString;
 import org.apache.calcite.util.TimestampString;
@@ -1016,7 +1019,7 @@ public abstract class ExpressionTestBase {
         return (Number) value;
     }
 
-    public static OptimizerContext makeContext() {
+    private static OptimizerContext makeContext() {
         List<TableField> fields = new ArrayList<>();
         for (Map.Entry<String, QueryDataType> entry : FIELDS.entrySet()) {
             fields.add(new TableField(entry.getKey(), entry.getValue(), false));
@@ -1055,7 +1058,18 @@ public abstract class ExpressionTestBase {
         return type.getSqlTypeName() == TIMESTAMP_WITH_LOCAL_TIME_ZONE ? "TIMESTAMP WITH LOCAL TIME ZONE" : type.toString();
     }
 
-    public static Expression<?> convertToExpression(RelNode relNode, RelDataType parameterRowType) {
+    public static SqlCallBinding makeBinding(String expression) {
+        OptimizerContext context = makeContext();
+        QueryParseResult parseResult = context.parse("select " + expression + " from t", false);
+
+        SqlSelect select = (SqlSelect) parseResult.getNode();
+        SqlValidator validator = context.getValidator();
+        SqlValidatorScope scope = validator.getSelectScope(select);
+
+        return new SqlCallBinding(validator, scope, (SqlCall) select.getSelectList().get(0));
+    }
+
+    private static Expression<?> convertToExpression(RelNode relNode, RelDataType parameterRowType) {
         assert relNode instanceof Project;
         Project project = (Project) relNode;
         assert project.getProjects().size() == 1;

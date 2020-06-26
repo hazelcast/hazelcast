@@ -16,7 +16,6 @@
 
 package com.hazelcast.sql.impl.calcite.validate.types;
 
-import com.hazelcast.sql.impl.calcite.validate.SqlNodeUtil;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.type.InferTypes;
@@ -24,6 +23,7 @@ import org.apache.calcite.sql.type.SqlOperandTypeInference;
 
 import java.util.Arrays;
 
+import static com.hazelcast.sql.impl.calcite.validate.SqlNodeUtil.isParameter;
 import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeSystem.typeName;
 import static org.apache.calcite.sql.type.SqlTypeName.BIGINT;
 import static org.apache.calcite.sql.type.SqlTypeName.NULL;
@@ -34,33 +34,13 @@ import static org.apache.calcite.sql.type.SqlTypeName.NULL;
  */
 public final class HazelcastInferTypes {
 
-    // NOTE: Calcite validator's unknown type has NULL SqlTypeName.
-
     /**
      * The same as Calcite's {@link InferTypes#FIRST_KNOWN}, but doesn't consider
-     * NULL as a known type.
+     * NULL as a known type and widens integer types to BIGINT for dynamic parameters.
      */
     public static final SqlOperandTypeInference FIRST_KNOWN = (binding, returnType, operandTypes) -> {
-        RelDataType unknown = binding.getValidator().getUnknownType();
+        // NOTE: Calcite validator's unknown type has NULL SqlTypeName.
 
-        RelDataType known = unknown;
-        for (SqlNode operand : binding.operands()) {
-            RelDataType type = binding.getValidator().deriveType(binding.getScope(), operand);
-
-            if (!type.equals(unknown) && type.getSqlTypeName() != NULL) {
-                known = type;
-                break;
-            }
-        }
-
-        Arrays.fill(operandTypes, known);
-    };
-
-    /**
-     * The same as {@link #FIRST_KNOWN}, but widens integer types to BIGINT for
-     * dynamic parameters.
-     */
-    public static final SqlOperandTypeInference NUMERIC_FIRST_KNOWN = (binding, returnType, operandTypes) -> {
         RelDataType unknown = binding.getValidator().getUnknownType();
 
         boolean seenParameters = false;
@@ -68,20 +48,18 @@ public final class HazelcastInferTypes {
         for (SqlNode operand : binding.operands()) {
             RelDataType type = binding.getValidator().deriveType(binding.getScope(), operand);
 
-            if (SqlNodeUtil.isParameter(operand)) {
+            if (isParameter(operand)) {
                 seenParameters = true;
             } else if (known == unknown && typeName(type) != NULL) {
                 known = type;
             }
         }
 
-        if (seenParameters) {
-            if (HazelcastIntegerType.supports(known.getSqlTypeName())) {
-                known = HazelcastTypeFactory.INSTANCE.createSqlType(BIGINT);
-            }
-
-            Arrays.fill(operandTypes, known);
+        if (seenParameters && HazelcastIntegerType.supports(typeName(known))) {
+            known = HazelcastTypeFactory.INSTANCE.createSqlType(BIGINT);
         }
+
+        Arrays.fill(operandTypes, known);
     };
 
     private HazelcastInferTypes() {
