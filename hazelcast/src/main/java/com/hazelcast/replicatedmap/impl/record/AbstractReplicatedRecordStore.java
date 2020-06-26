@@ -338,8 +338,10 @@ public abstract class AbstractReplicatedRecordStore<K, V> extends AbstractBaseRe
     @SuppressWarnings("unchecked")
     public boolean merge(ReplicatedMapMergeTypes<Object, Object> mergingEntry,
                          SplitBrainMergePolicy<Object, ReplicatedMapMergeTypes<Object, Object>, Object> mergePolicy) {
-        serializationService.getManagedContext().initialize(mergingEntry);
-        serializationService.getManagedContext().initialize(mergePolicy);
+        mergingEntry = (ReplicatedMapMergeTypes<Object, Object>)
+            serializationService.getManagedContext().initialize(mergingEntry);
+        mergePolicy = (SplitBrainMergePolicy<Object, ReplicatedMapMergeTypes<Object, Object>, Object>)
+            serializationService.getManagedContext().initialize(mergePolicy);
 
         K marshalledKey = (K) marshall(mergingEntry.getRawKey());
         InternalReplicatedMapStorage<K, V> storage = getStorage();

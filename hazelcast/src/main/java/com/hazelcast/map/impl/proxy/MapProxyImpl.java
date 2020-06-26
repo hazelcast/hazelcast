@@ -965,8 +965,9 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
                     + " must be greater or equal to minSize " + minSize);
         }
         final ManagedContext context = serializationService.getManagedContext();
-        context.initialize(predicate);
-        context.initialize(projection);
+        predicate = (java.util.function.Predicate<? super EventJournalMapEvent<K, V>>) context.initialize(predicate);
+        projection = (java.util.function.Function<? super EventJournalMapEvent<K, V>, ? extends T>)
+            context.initialize(projection);
         final MapEventJournalReadOperation<K, V, T> op = new MapEventJournalReadOperation<>(
                 name, startSequence, minSize, maxSize, predicate, projection);
         op.setPartitionId(partitionId);

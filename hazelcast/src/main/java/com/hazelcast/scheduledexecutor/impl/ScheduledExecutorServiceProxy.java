@@ -111,7 +111,7 @@ public class ScheduledExecutorServiceProxy
     public IScheduledFuture schedule(@Nonnull Runnable command, long delay, @Nonnull TimeUnit unit) {
         checkNotNull(command, "Command is null");
         checkNotNull(unit, "Unit is null");
-        initializeManagedContext(command);
+        command = initializeManagedContext(command);
 
         ScheduledRunnableAdapter<?> callable = createScheduledRunnableAdapter(command);
         return schedule(callable, delay, unit);
@@ -122,7 +122,7 @@ public class ScheduledExecutorServiceProxy
     public <V> IScheduledFuture<V> schedule(@Nonnull Callable<V> command, long delay, @Nonnull TimeUnit unit) {
         checkNotNull(command, "Command is null");
         checkNotNull(unit, "Unit is null");
-        initializeManagedContext(command);
+        command = initializeManagedContext(command);
 
         String name = extractNameOrGenerateOne(command);
         int partitionId = getTaskOrKeyPartitionId(command, name);
@@ -138,7 +138,7 @@ public class ScheduledExecutorServiceProxy
                                                        long period, @Nonnull TimeUnit unit) {
         checkNotNull(command, "Command is null");
         checkNotNull(unit, "Unit is null");
-        initializeManagedContext(command);
+        command = initializeManagedContext(command);
 
         String name = extractNameOrGenerateOne(command);
         int partitionId = getTaskOrKeyPartitionId(command, name);
@@ -157,7 +157,7 @@ public class ScheduledExecutorServiceProxy
                                                     long delay, @Nonnull TimeUnit unit) {
         checkNotNull(member, "Member is null");
         checkNotNull(unit, "Unit is null");
-        initializeManagedContext(command);
+        command = initializeManagedContext(command);
 
         Map<Member, IScheduledFuture<V>> futureMap = scheduleOnMembers(command, Collections.singleton(member), delay, unit);
         return futureMap.get(member);
@@ -170,7 +170,7 @@ public class ScheduledExecutorServiceProxy
                                                     long delay, @Nonnull TimeUnit unit) {
         checkNotNull(member, "Member is null");
         checkNotNull(unit, "Unit is null");
-        initializeManagedContext(command);
+        command = initializeManagedContext(command);
 
         return scheduleOnMembers(command, Collections.singleton(member), delay, unit).get(member);
     }
@@ -182,7 +182,7 @@ public class ScheduledExecutorServiceProxy
                                                                long initialDelay, long period, @Nonnull TimeUnit unit) {
         checkNotNull(member, "Member is null");
         checkNotNull(unit, "Unit is null");
-        initializeManagedContext(command);
+        command = initializeManagedContext(command);
 
         Map<Member, IScheduledFuture<V>> futureMap =
                 scheduleOnMembersAtFixedRate(command, Collections.singleton(member), initialDelay, period, unit);
@@ -196,7 +196,7 @@ public class ScheduledExecutorServiceProxy
                                                       long delay, @Nonnull TimeUnit unit) {
         checkNotNull(command, "Command is null");
         checkNotNull(unit, "Unit is null");
-        initializeManagedContext(command);
+        command = initializeManagedContext(command);
 
         ScheduledRunnableAdapter<V> callable = createScheduledRunnableAdapter(command);
         return scheduleOnKeyOwner(callable, key, delay, unit);
@@ -210,7 +210,7 @@ public class ScheduledExecutorServiceProxy
         checkNotNull(command, "Command is null");
         checkNotNull(key, "Key is null");
         checkNotNull(unit, "Unit is null");
-        initializeManagedContext(command);
+        command = initializeManagedContext(command);
 
         String name = extractNameOrGenerateOne(command);
         int partitionId = getKeyPartitionId(key);
@@ -227,7 +227,7 @@ public class ScheduledExecutorServiceProxy
         checkNotNull(command, "Command is null");
         checkNotNull(key, "Key is null");
         checkNotNull(unit, "Unit is null");
-        initializeManagedContext(command);
+        command = initializeManagedContext(command);
 
         String name = extractNameOrGenerateOne(command);
         int partitionId = getKeyPartitionId(key);
@@ -244,7 +244,7 @@ public class ScheduledExecutorServiceProxy
                                                                      long delay, @Nonnull TimeUnit unit) {
         checkNotNull(command, "Command is null");
         checkNotNull(unit, "Unit is null");
-        initializeManagedContext(command);
+        command = initializeManagedContext(command);
         return scheduleOnMembers(command, getNodeEngine().getClusterService().getMembers(), delay, unit);
     }
 
@@ -254,7 +254,7 @@ public class ScheduledExecutorServiceProxy
                                                                      long delay, @Nonnull TimeUnit unit) {
         checkNotNull(command, "Command is null");
         checkNotNull(unit, "Unit is null");
-        initializeManagedContext(command);
+        command = initializeManagedContext(command);
         return scheduleOnMembers(command, getNodeEngine().getClusterService().getMembers(), delay, unit);
     }
 
@@ -264,7 +264,7 @@ public class ScheduledExecutorServiceProxy
                                                                                 long period, @Nonnull TimeUnit unit) {
         checkNotNull(command, "Command is null");
         checkNotNull(unit, "Unit is null");
-        initializeManagedContext(command);
+        command = initializeManagedContext(command);
         return scheduleOnMembersAtFixedRate(command, getNodeEngine().getClusterService().getMembers(), initialDelay, period,
                 unit);
     }
@@ -277,7 +277,7 @@ public class ScheduledExecutorServiceProxy
         checkNotNull(command, "Command is null");
         checkNotNull(members, "Members is null");
         checkNotNull(unit, "Unit is null");
-        initializeManagedContext(command);
+        command = initializeManagedContext(command);
 
         ScheduledRunnableAdapter callable = createScheduledRunnableAdapter(command);
         return scheduleOnMembers(callable, members, delay, unit);
@@ -291,7 +291,7 @@ public class ScheduledExecutorServiceProxy
         checkNotNull(command, "Command is null");
         checkNotNull(members, "Members is null");
         checkNotNull(unit, "Unit is null");
-        initializeManagedContext(command);
+        command = initializeManagedContext(command);
 
         String name = extractNameOrGenerateOne(command);
         Map<Member, IScheduledFuture<V>> futures = createHashMap(members.size());
@@ -314,7 +314,7 @@ public class ScheduledExecutorServiceProxy
         checkNotNull(command, "Command is null");
         checkNotNull(members, "Members is null");
         checkNotNull(unit, "Unit is null");
-        initializeManagedContext(command);
+        command = initializeManagedContext(command);
 
         String name = extractNameOrGenerateOne(command);
         ScheduledRunnableAdapter<?> adapter = createScheduledRunnableAdapter(command);
@@ -334,8 +334,7 @@ public class ScheduledExecutorServiceProxy
     public <V> IScheduledFuture<V> getScheduledFuture(@Nonnull ScheduledTaskHandler handler) {
         checkNotNull(handler, "Handler is null");
         ScheduledFutureProxy proxy = new ScheduledFutureProxy(handler, this);
-        initializeManagedContext(proxy);
-        return proxy;
+        return initializeManagedContext(proxy);
     }
 
     @Nonnull
@@ -406,8 +405,7 @@ public class ScheduledExecutorServiceProxy
 
             for (ScheduledTaskHandler handler : handlers) {
                 IScheduledFuture future = new ScheduledFutureProxy(handler, this);
-                initializeManagedContext(future);
-                futures.add(future);
+                futures.add(initializeManagedContext(future));
             }
 
             if (accumulator.containsKey(owner)) {
@@ -495,13 +493,15 @@ public class ScheduledExecutorServiceProxy
         return createFutureProxy(uuid, taskName);
     }
 
-    private void initializeManagedContext(Object object) {
+    @SuppressWarnings("unchecked")
+    private <T> T initializeManagedContext(Object object) {
         ManagedContext context = getNodeEngine().getSerializationService().getManagedContext();
         if (object instanceof NamedTaskDecorator) {
             ((NamedTaskDecorator) object).initializeContext(context);
         } else {
-            context.initialize(object);
+            object = context.initialize(object);
         }
+        return (T) object;
     }
 
     private static class GetAllScheduledOnMemberOperationFactory

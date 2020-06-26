@@ -790,8 +790,9 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         checkIfLoaded();
         long now = getNow();
 
-        serializationService.getManagedContext().initialize(mergingEntry);
-        serializationService.getManagedContext().initialize(mergePolicy);
+        mergingEntry = (MapMergeTypes<Object, Object>) serializationService.getManagedContext().initialize(mergingEntry);
+        mergePolicy = (SplitBrainMergePolicy<Object, MapMergeTypes<Object, Object>, Object>)
+            serializationService.getManagedContext().initialize(mergePolicy);
 
         Data key = (Data) mergingEntry.getRawKey();
         Record record = getRecordOrNull(key, now, false);

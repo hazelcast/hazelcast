@@ -107,8 +107,7 @@ abstract class AbstractCallableTaskOperation extends Operation implements NamedO
             ManagedContext managedContext = serializationService.getManagedContext();
 
             Object object = serializationService.toObject(callableData);
-            managedContext.initialize(object);
-            return (T) object;
+            return (T) managedContext.initialize(object);
         }
     }
 }
