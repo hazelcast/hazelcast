@@ -60,7 +60,7 @@ public class MultipleEntryOperation extends MapOperation
 
         final SerializationService serializationService = getNodeEngine().getSerializationService();
         final ManagedContext managedContext = serializationService.getManagedContext();
-        managedContext.initialize(entryProcessor);
+        entryProcessor = (EntryProcessor) managedContext.initialize(entryProcessor);
     }
 
     @Override

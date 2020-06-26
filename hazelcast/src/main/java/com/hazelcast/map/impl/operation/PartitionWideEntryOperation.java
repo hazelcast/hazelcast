@@ -73,7 +73,7 @@ public class PartitionWideEntryOperation extends MapOperation
 
         SerializationService serializationService = getNodeEngine().getSerializationService();
         ManagedContext managedContext = serializationService.getManagedContext();
-        managedContext.initialize(entryProcessor);
+        entryProcessor = (EntryProcessor) managedContext.initialize(entryProcessor);
 
         keysFromIndex = null;
         queryOptimizer = mapServiceContext.getQueryOptimizer();

@@ -71,8 +71,9 @@ public class CollectionMergeOperation extends CollectionBackupAwareOperation {
                                              SplitBrainMergePolicy<Collection<Object>, CollectionMergeTypes<Object>,
                                                      Collection<Object>> mergePolicy) {
         SerializationService serializationService = getNodeEngine().getSerializationService();
-        serializationService.getManagedContext().initialize(mergingValue);
-        serializationService.getManagedContext().initialize(mergePolicy);
+        mergingValue = (CollectionMergeTypes<Object>) serializationService.getManagedContext().initialize(mergingValue);
+        mergePolicy = (SplitBrainMergePolicy<Collection<Object>, CollectionMergeTypes<Object>, Collection<Object>>)
+            serializationService.getManagedContext().initialize(mergePolicy);
 
         Collection<CollectionItem> existingItems = container.getCollection();
 

@@ -80,8 +80,9 @@ public class CardinalityEstimatorContainer
     public HyperLogLog merge(CardinalityEstimatorMergeTypes mergingEntry,
                              SplitBrainMergePolicy<HyperLogLog, CardinalityEstimatorMergeTypes, HyperLogLog> mergePolicy,
                              SerializationService serializationService) {
-        serializationService.getManagedContext().initialize(mergingEntry);
-        serializationService.getManagedContext().initialize(mergePolicy);
+        mergingEntry = (CardinalityEstimatorMergeTypes) serializationService.getManagedContext().initialize(mergingEntry);
+        mergePolicy = (SplitBrainMergePolicy<HyperLogLog, CardinalityEstimatorMergeTypes, HyperLogLog>)
+            serializationService.getManagedContext().initialize(mergePolicy);
 
         String name = mergingEntry.getKey();
         if (hll.estimate() != 0) {

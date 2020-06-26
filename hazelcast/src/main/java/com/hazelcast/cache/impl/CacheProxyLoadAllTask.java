@@ -50,7 +50,7 @@ final class CacheProxyLoadAllTask implements Runnable {
     private static final double SIZING_FUDGE_FACTOR = 1.3;
 
     private final NodeEngine nodeEngine;
-    private final CompletionListener completionListener;
+    private CompletionListener completionListener;
     private final CacheOperationProvider operationProvider;
     private final Set<Data> keysData;
     private final boolean replaceExistingValues;
@@ -70,7 +70,7 @@ final class CacheProxyLoadAllTask implements Runnable {
     @Override
     public void run() {
         try {
-            injectDependencies(completionListener);
+            completionListener = injectDependencies(completionListener);
 
             OperationService operationService = nodeEngine.getOperationService();
             OperationFactory operationFactory;
@@ -108,9 +108,10 @@ final class CacheProxyLoadAllTask implements Runnable {
         }
     }
 
-    private void injectDependencies(Object obj) {
+    @SuppressWarnings("unchecked")
+    private <T> T injectDependencies(Object obj) {
         ManagedContext managedContext = nodeEngine.getSerializationService().getManagedContext();
-        managedContext.initialize(obj);
+        return (T) managedContext.initialize(obj);
     }
 
     private Set<Data> filterOwnerKeys(IPartitionService partitionService, Set<Integer> partitions) {

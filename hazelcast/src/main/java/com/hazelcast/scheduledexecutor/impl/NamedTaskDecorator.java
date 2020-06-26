@@ -62,7 +62,7 @@ public class NamedTaskDecorator<V>
     }
 
     public void initializeContext(ManagedContext context) {
-        context.initialize(delegate);
+        delegate = context.initialize(delegate);
     }
 
     @Override

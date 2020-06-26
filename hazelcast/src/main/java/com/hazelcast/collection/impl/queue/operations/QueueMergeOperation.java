@@ -72,8 +72,9 @@ public class QueueMergeOperation extends QueueBackupAwareOperation implements Mu
                                    SplitBrainMergePolicy<Collection<Object>, QueueMergeTypes<Object>,
                                            Collection<Object>> mergePolicy) {
         SerializationService serializationService = getNodeEngine().getSerializationService();
-        serializationService.getManagedContext().initialize(mergingValue);
-        serializationService.getManagedContext().initialize(mergePolicy);
+        mergingValue = (QueueMergeTypes<Object>) serializationService.getManagedContext().initialize(mergingValue);
+        mergePolicy = (SplitBrainMergePolicy<Collection<Object>, QueueMergeTypes<Object>, Collection<Object>>)
+            serializationService.getManagedContext().initialize(mergePolicy);
 
         Queue<QueueItem> existingItems = container.getItemQueue();
         QueueMergeTypes<Object> existingValue = createMergingValueOrNull(serializationService, existingItems);
