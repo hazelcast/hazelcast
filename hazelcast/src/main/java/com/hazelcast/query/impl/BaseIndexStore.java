@@ -26,6 +26,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Consumer;
 
 import static com.hazelcast.query.impl.AbstractIndex.NULL;
@@ -37,6 +38,10 @@ public abstract class BaseIndexStore implements IndexStore {
 
     static final float LOAD_FACTOR = 0.75F;
 
+    private final ReentrantReadWriteLock lock;
+    private final ReentrantReadWriteLock.ReadLock readLock;
+    private final ReentrantReadWriteLock.WriteLock writeLock;
+
     private final CopyFunctor<Data, QueryableEntry> resultCopyFunctor;
 
     /**
@@ -47,12 +52,15 @@ public abstract class BaseIndexStore implements IndexStore {
      */
     private volatile boolean isIndexStoreExpirable;
 
-    BaseIndexStore(IndexCopyBehavior copyOn) {
+    BaseIndexStore(IndexCopyBehavior copyOn, boolean enableGlobalLock) {
         if (copyOn == IndexCopyBehavior.COPY_ON_WRITE || copyOn == IndexCopyBehavior.NEVER) {
             resultCopyFunctor = new PassThroughFunctor();
         } else {
             resultCopyFunctor = new CopyInputFunctor();
         }
+        lock = enableGlobalLock ? new ReentrantReadWriteLock() : null;
+        readLock = enableGlobalLock ? lock.readLock() : null;
+        writeLock = enableGlobalLock ? lock.writeLock() : null;
     }
 
     /**
@@ -71,6 +79,30 @@ public abstract class BaseIndexStore implements IndexStore {
      * @return the canonicalized value.
      */
     abstract Comparable canonicalizeScalarForStorage(Comparable value);
+
+    void takeWriteLock() {
+        if (lock != null) {
+            writeLock.lock();
+        }
+    }
+
+    void releaseWriteLock() {
+        if (lock != null) {
+            writeLock.unlock();
+        }
+    }
+
+    void takeReadLock() {
+        if (lock != null) {
+            readLock.lock();
+        }
+    }
+
+    void releaseReadLock() {
+        if (lock != null) {
+            readLock.unlock();
+        }
+    }
 
     final void copyToMultiResultSet(MultiResultSet resultSet, Map<Data, QueryableEntry> records) {
         resultSet.addResultSet(resultCopyFunctor.invoke(records));

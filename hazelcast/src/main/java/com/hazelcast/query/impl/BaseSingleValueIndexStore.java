@@ -43,8 +43,8 @@ public abstract class BaseSingleValueIndexStore extends BaseIndexStore {
      */
     private volatile boolean multiResultHasToDetectDuplicates;
 
-    BaseSingleValueIndexStore(IndexCopyBehavior copyOn) {
-        super(copyOn);
+    BaseSingleValueIndexStore(IndexCopyBehavior copyOn, boolean enableGlobalLock) {
+        super(copyOn, enableGlobalLock);
     }
 
     /**
@@ -80,19 +80,34 @@ public abstract class BaseSingleValueIndexStore extends BaseIndexStore {
 
     @Override
     public final void insert(Object value, QueryableEntry queryableEntry, IndexOperationStats operationStats) {
-        unwrapAndInsertToIndex(value, queryableEntry, operationStats);
+        takeWriteLock();
+        try {
+            unwrapAndInsertToIndex(value, queryableEntry, operationStats);
+        } finally {
+            releaseWriteLock();
+        }
     }
 
     @Override
     public final void update(Object oldValue, Object newValue, QueryableEntry entry, IndexOperationStats operationStats) {
-        Data indexKey = entry.getKeyData();
-        unwrapAndRemoveFromIndex(oldValue, indexKey, operationStats);
-        unwrapAndInsertToIndex(newValue, entry, operationStats);
+        takeWriteLock();
+        try {
+            Data indexKey = entry.getKeyData();
+            unwrapAndRemoveFromIndex(oldValue, indexKey, operationStats);
+            unwrapAndInsertToIndex(newValue, entry, operationStats);
+        } finally {
+            releaseWriteLock();
+        }
     }
 
     @Override
     public final void remove(Object value, Data entryKey, Object entryValue, IndexOperationStats operationStats) {
-        unwrapAndRemoveFromIndex(value, entryKey, operationStats);
+        takeWriteLock();
+        try {
+            unwrapAndRemoveFromIndex(value, entryKey, operationStats);
+        } finally {
+            releaseWriteLock();
+        }
     }
 
     @SuppressWarnings("unchecked")

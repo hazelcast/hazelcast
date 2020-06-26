@@ -45,7 +45,7 @@ public class OrderedIndexStore extends BaseSingleValueIndexStore {
     private volatile Map<Data, QueryableEntry> recordsWithNullValue;
 
     public OrderedIndexStore(IndexCopyBehavior copyOn) {
-        super(copyOn);
+        super(copyOn, true);
         assert copyOn != null;
         if (copyOn == IndexCopyBehavior.COPY_ON_WRITE) {
             addFunctor = new CopyOnWriteAddFunctor();
@@ -86,8 +86,13 @@ public class OrderedIndexStore extends BaseSingleValueIndexStore {
 
     @Override
     public void clear() {
-        recordsWithNullValue.clear();
-        recordMap.clear();
+        takeWriteLock();
+        try {
+            recordsWithNullValue.clear();
+            recordMap.clear();
+        } finally {
+            releaseWriteLock();
+        }
     }
 
     @Override
@@ -107,74 +112,93 @@ public class OrderedIndexStore extends BaseSingleValueIndexStore {
 
     @Override
     public Set<QueryableEntry> getRecords(Comparable value) {
-        if (value == NULL) {
-            return toSingleResultSet(recordsWithNullValue);
-        } else {
-            return toSingleResultSet(recordMap.get(value));
+        takeReadLock();
+        try {
+            if (value == NULL) {
+                return toSingleResultSet(recordsWithNullValue);
+            } else {
+                return toSingleResultSet(recordMap.get(value));
+            }
+        } finally {
+            releaseReadLock();
         }
     }
 
     @Override
     public Set<QueryableEntry> getRecords(Set<Comparable> values) {
-        MultiResultSet results = createMultiResultSet();
-        for (Comparable value : values) {
-            Map<Data, QueryableEntry> records;
-            if (value == NULL) {
-                records = recordsWithNullValue;
-            } else {
-                records = recordMap.get(value);
+        takeReadLock();
+        try {
+            MultiResultSet results = createMultiResultSet();
+            for (Comparable value : values) {
+                Map<Data, QueryableEntry> records;
+                if (value == NULL) {
+                    records = recordsWithNullValue;
+                } else {
+                    records = recordMap.get(value);
+                }
+                if (records != null) {
+                    copyToMultiResultSet(results, records);
+                }
             }
-            if (records != null) {
-                copyToMultiResultSet(results, records);
-            }
+            return results;
+        } finally {
+            releaseReadLock();
         }
-        return results;
     }
 
     @Override
     public Set<QueryableEntry> getRecords(Comparison comparison, Comparable searchedValue) {
-        MultiResultSet results = createMultiResultSet();
-        SortedMap<Comparable, Map<Data, QueryableEntry>> subMap;
-        switch (comparison) {
-            case LESS:
-                subMap = recordMap.headMap(searchedValue, false);
-                break;
-            case LESS_OR_EQUAL:
-                subMap = recordMap.headMap(searchedValue, true);
-                break;
-            case GREATER:
-                subMap = recordMap.tailMap(searchedValue, false);
-                break;
-            case GREATER_OR_EQUAL:
-                subMap = recordMap.tailMap(searchedValue, true);
-                break;
-            default:
-                throw new IllegalArgumentException("Unrecognized comparison: " + comparison);
+        takeReadLock();
+        try {
+            MultiResultSet results = createMultiResultSet();
+            SortedMap<Comparable, Map<Data, QueryableEntry>> subMap;
+            switch (comparison) {
+                case LESS:
+                    subMap = recordMap.headMap(searchedValue, false);
+                    break;
+                case LESS_OR_EQUAL:
+                    subMap = recordMap.headMap(searchedValue, true);
+                    break;
+                case GREATER:
+                    subMap = recordMap.tailMap(searchedValue, false);
+                    break;
+                case GREATER_OR_EQUAL:
+                    subMap = recordMap.tailMap(searchedValue, true);
+                    break;
+                default:
+                    throw new IllegalArgumentException("Unrecognized comparison: " + comparison);
+            }
+            for (Map<Data, QueryableEntry> value : subMap.values()) {
+                copyToMultiResultSet(results, value);
+            }
+            return results;
+        } finally {
+            releaseReadLock();
         }
-        for (Map<Data, QueryableEntry> value : subMap.values()) {
-            copyToMultiResultSet(results, value);
-        }
-        return results;
     }
 
     @Override
     public Set<QueryableEntry> getRecords(Comparable from, boolean fromInclusive, Comparable to, boolean toInclusive) {
-        int order = Comparables.compare(from, to);
-        if (order == 0) {
-            if (!fromInclusive || !toInclusive) {
+        takeReadLock();
+        try {
+            int order = Comparables.compare(from, to);
+            if (order == 0) {
+                if (!fromInclusive || !toInclusive) {
+                    return emptySet();
+                }
+                return toSingleResultSet(recordMap.get(from));
+            } else if (order > 0) {
                 return emptySet();
             }
-            return toSingleResultSet(recordMap.get(from));
-        } else if (order > 0) {
-            return emptySet();
+            MultiResultSet results = createMultiResultSet();
+            SortedMap<Comparable, Map<Data, QueryableEntry>> subMap = recordMap.subMap(from, fromInclusive, to, toInclusive);
+            for (Map<Data, QueryableEntry> value : subMap.values()) {
+                copyToMultiResultSet(results, value);
+            }
+            return results;
+        } finally {
+            releaseReadLock();
         }
-
-        MultiResultSet results = createMultiResultSet();
-        SortedMap<Comparable, Map<Data, QueryableEntry>> subMap = recordMap.subMap(from, fromInclusive, to, toInclusive);
-        for (Map<Data, QueryableEntry> value : subMap.values()) {
-            copyToMultiResultSet(results, value);
-        }
-        return results;
     }
 
     /**
