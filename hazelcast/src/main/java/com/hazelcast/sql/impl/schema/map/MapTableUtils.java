@@ -35,10 +35,6 @@ import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.extract.QueryTargetDescriptor;
 import com.hazelcast.sql.impl.schema.TableField;
-import com.hazelcast.sql.impl.schema.map.options.JsonMapOptionsMetadataResolver;
-import com.hazelcast.sql.impl.schema.map.options.MapOptionsMetadataResolver;
-import com.hazelcast.sql.impl.schema.map.options.PojoMapOptionsMetadataResolver;
-import com.hazelcast.sql.impl.schema.map.options.PortableMapOptionsMetadataResolver;
 import com.hazelcast.sql.impl.schema.map.sample.MapSampleMetadata;
 import com.hazelcast.sql.impl.schema.map.sample.MapSampleMetadataResolver;
 
@@ -50,20 +46,11 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.function.Function;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 /**
  * Utility methods for schema resolution.
  */
 public final class MapTableUtils {
-
-    private static final Map<String, MapOptionsMetadataResolver> METADATA_RESOLVERS = Stream.of(
-            new PojoMapOptionsMetadataResolver(),
-            new PortableMapOptionsMetadataResolver(),
-            new JsonMapOptionsMetadataResolver()
-    ).collect(Collectors.toMap(MapOptionsMetadataResolver::supportedFormat, Function.identity()));
 
     private MapTableUtils() {
         // No-op.
@@ -186,8 +173,6 @@ public final class MapTableUtils {
         if (config.getInMemoryFormat() == InMemoryFormat.NATIVE) {
             throw QueryException.error("IMap with InMemoryFormat.NATIVE is not supported: " + name);
         }
-
-        boolean binary = config.getInMemoryFormat() == InMemoryFormat.BINARY;
 
         for (PartitionContainer partitionContainer : context.getPartitionContainers()) {
             // Resolve sample.

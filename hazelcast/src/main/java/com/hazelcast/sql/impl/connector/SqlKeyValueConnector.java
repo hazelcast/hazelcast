@@ -20,26 +20,20 @@ import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.schema.ExternalTable.ExternalField;
 import com.hazelcast.sql.impl.schema.TableField;
-import com.hazelcast.sql.impl.schema.map.options.JsonMapOptionsMetadataResolver;
 import com.hazelcast.sql.impl.schema.map.options.MapOptionsMetadata;
 import com.hazelcast.sql.impl.schema.map.options.MapOptionsMetadataResolver;
-import com.hazelcast.sql.impl.schema.map.options.PojoMapOptionsMetadataResolver;
-import com.hazelcast.sql.impl.schema.map.options.PortableMapOptionsMetadataResolver;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.function.Function;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static com.hazelcast.query.QueryConstants.KEY_ATTRIBUTE_NAME;
 import static com.hazelcast.query.QueryConstants.THIS_ATTRIBUTE_NAME;
 import static java.lang.String.format;
 import static java.util.Objects.requireNonNull;
-import static java.util.stream.Collectors.toMap;
 
 public abstract class SqlKeyValueConnector implements SqlConnector {
 
@@ -70,12 +64,6 @@ public abstract class SqlKeyValueConnector implements SqlConnector {
     public static final String TO_VALUE_CLASS_ID = "serialization.value.portable.classId";
     public static final String TO_VALUE_CLASS_VERSION = "serialization.value.portable.classVersion";
 
-    private static final Map<String, MapOptionsMetadataResolver> METADATA_RESOLVERS = Stream.of(
-            new PojoMapOptionsMetadataResolver(),
-            new PortableMapOptionsMetadataResolver(),
-            new JsonMapOptionsMetadataResolver()
-    ).collect(toMap(MapOptionsMetadataResolver::supportedFormat, Function.identity()));
-
     // TODO: deduplicate with AbstractMapTableResolver
     protected static List<TableField> mergeFields(
             List<ExternalField> externalFields,
@@ -101,6 +89,8 @@ public abstract class SqlKeyValueConnector implements SqlConnector {
         return new ArrayList<>(fields.values());
     }
 
+    protected abstract Map<String, MapOptionsMetadataResolver> supportedResolvers();
+
     protected MapOptionsMetadata resolveMetadata(
             List<ExternalField> externalFields,
             Map<String, String> options,
@@ -120,14 +110,13 @@ public abstract class SqlKeyValueConnector implements SqlConnector {
             return primitiveField;
         }
 
-        MapOptionsMetadataResolver resolver = METADATA_RESOLVERS.get(format);
+        MapOptionsMetadataResolver resolver = supportedResolvers().get(format);
         if (resolver == null) {
             throw QueryException.error(
-                    format("Specified format '%s' is not among supported ones %s", format, METADATA_RESOLVERS.keySet())
+                    format("Specified format '%s' is not among supported ones %s", format, supportedResolvers().keySet())
             );
         }
 
         return requireNonNull(resolver.resolve(externalFields, options, key, serializationService));
     }
-
 }

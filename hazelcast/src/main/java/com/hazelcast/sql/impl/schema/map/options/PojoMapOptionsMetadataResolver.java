@@ -46,7 +46,9 @@ import static java.lang.Character.toUpperCase;
 import static java.lang.String.format;
 
 // TODO: deduplicate with MapSampleMetadataResolver
-public class PojoMapOptionsMetadataResolver implements MapOptionsMetadataResolver {
+public final class PojoMapOptionsMetadataResolver implements MapOptionsMetadataResolver {
+
+    public static final PojoMapOptionsMetadataResolver INSTANCE = new PojoMapOptionsMetadataResolver();
 
     private static final String METHOD_PREFIX_GET = "get";
     private static final String METHOD_PREFIX_IS = "is";
@@ -55,6 +57,8 @@ public class PojoMapOptionsMetadataResolver implements MapOptionsMetadataResolve
     private static final String METHOD_GET_FACTORY_ID = "getFactoryId";
     private static final String METHOD_GET_CLASS_ID = "getClassId";
     private static final String METHOD_GET_CLASS_VERSION = "getVersion";
+
+    private PojoMapOptionsMetadataResolver() { }
 
     @Override
     public String supportedFormat() {

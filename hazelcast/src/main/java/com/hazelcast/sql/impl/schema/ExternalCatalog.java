@@ -28,7 +28,6 @@ import java.util.Map;
 
 import static com.hazelcast.sql.impl.QueryUtils.CATALOG;
 import static com.hazelcast.sql.impl.QueryUtils.SCHEMA_NAME_PUBLIC;
-import static java.lang.String.format;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static java.util.Objects.requireNonNull;
@@ -54,9 +53,7 @@ public class ExternalCatalog implements TableResolver {
         try {
             toTable(table);
         } catch (Exception e) {
-            throw QueryException.error(
-                    format("Invalid table definition: %s", e.getMessage())
-            );
+            throw QueryException.error("Invalid table definition: " + e.getMessage(), e);
         }
 
         String name = table.name();

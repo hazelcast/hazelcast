@@ -25,17 +25,31 @@ import com.hazelcast.sql.impl.schema.ExternalTable.ExternalField;
 import com.hazelcast.sql.impl.schema.Table;
 import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.schema.map.ReplicatedMapTable;
+import com.hazelcast.sql.impl.schema.map.options.JsonMapOptionsMetadataResolver;
 import com.hazelcast.sql.impl.schema.map.options.MapOptionsMetadata;
+import com.hazelcast.sql.impl.schema.map.options.MapOptionsMetadataResolver;
+import com.hazelcast.sql.impl.schema.map.options.PojoMapOptionsMetadataResolver;
+import com.hazelcast.sql.impl.schema.map.options.PortableMapOptionsMetadataResolver;
 
 import javax.annotation.Nonnull;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Stream;
+
+import static java.util.stream.Collectors.toMap;
 
 // TODO: do we want to keep it? maps are auto discovered...
 public class LocalReplicatedMapConnector extends SqlKeyValueConnector {
 
     public static final String TYPE_NAME = "com.hazelcast.LocalReplicatedMap";
+
+    private static final Map<String, MapOptionsMetadataResolver> METADATA_RESOLVERS = Stream.of(
+            PojoMapOptionsMetadataResolver.INSTANCE,
+            PortableMapOptionsMetadataResolver.INSTANCE,
+            JsonMapOptionsMetadataResolver.INSTANCE
+    ).collect(toMap(MapOptionsMetadataResolver::supportedFormat, Function.identity()));
 
     @Override
     public String typeName() {
@@ -74,5 +88,10 @@ public class LocalReplicatedMapConnector extends SqlKeyValueConnector {
                 keyMetadata.getUpsertTargetDescriptor(),
                 valueMetadata.getUpsertTargetDescriptor()
         );
+    }
+
+    @Override
+    protected Map<String, MapOptionsMetadataResolver> supportedResolvers() {
+        return METADATA_RESOLVERS;
     }
 }
