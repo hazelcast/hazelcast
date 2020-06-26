@@ -60,7 +60,7 @@ import java.util.concurrent.TimeUnit;
  * @param <V> value
  */
 public class LazyMapEntry<K, V> extends CachedQueryEntry<K, V>
-        implements Serializable, IdentifiedDataSerializable, ExtendedMapEntry<V> {
+        implements Serializable, IdentifiedDataSerializable, ExtendedMapEntry<K, V> {
 
     private static final long serialVersionUID = 0L;
 
