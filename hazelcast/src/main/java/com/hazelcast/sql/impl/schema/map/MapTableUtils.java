@@ -17,28 +17,41 @@
 package com.hazelcast.sql.impl.schema.map;
 
 import com.hazelcast.cluster.memberselector.MemberSelectors;
+import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.MapConfig;
+import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.PartitionContainer;
+import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.partition.PartitioningStrategy;
 import com.hazelcast.partition.strategy.DeclarativePartitioningStrategy;
 import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.extract.QueryPath;
+import com.hazelcast.sql.impl.extract.QueryTargetDescriptor;
 import com.hazelcast.sql.impl.schema.TableField;
+import com.hazelcast.sql.impl.schema.map.sample.MapSampleMetadata;
+import com.hazelcast.sql.impl.schema.map.sample.MapSampleMetadataResolver;
 
+import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 
 /**
  * Utility methods for schema resolution.
  */
 public final class MapTableUtils {
+
     private MapTableUtils() {
         // No-op.
     }
@@ -143,5 +156,98 @@ public final class MapTableUtils {
         }
 
         return res;
+    }
+
+    @Nullable
+    public static ResolveResult resolvePartitionedMap(InternalSerializationService ss, MapServiceContext context, String name) {
+        MapContainer mapContainer = context.getMapContainer(name);
+
+        // Handle concurrent map destroy.
+        if (mapContainer == null) {
+            return null;
+        }
+
+        MapConfig config = mapContainer.getMapConfig();
+
+        // HD maps are not supported at the moment.
+        if (config.getInMemoryFormat() == InMemoryFormat.NATIVE) {
+            throw QueryException.error("IMap with InMemoryFormat.NATIVE is not supported: " + name);
+        }
+
+        for (PartitionContainer partitionContainer : context.getPartitionContainers()) {
+            // Resolve sample.
+            RecordStore<?> recordStore = partitionContainer.getExistingRecordStore(name);
+
+            if (recordStore == null) {
+                continue;
+            }
+
+            Iterator<Entry<Data, Record>> recordStoreIterator = recordStore.iterator();
+
+            if (!recordStoreIterator.hasNext()) {
+                continue;
+            }
+
+            Entry<Data, Record> entry = recordStoreIterator.next();
+
+            MapSampleMetadata keyMetadata = MapSampleMetadataResolver.resolve(
+                    ss,
+                    entry.getKey(),
+                    true
+            );
+
+            MapSampleMetadata valueMetadata = MapSampleMetadataResolver.resolve(
+                    ss,
+                    entry.getValue().getValue(),
+                    false
+            );
+
+            return new ResolveResult(
+                    mergeMapFields(keyMetadata.getFields(), valueMetadata.getFields()),
+                    keyMetadata.getDescriptor(),
+                    valueMetadata.getDescriptor());
+        }
+
+        // no sample entry found on local member
+        return null;
+    }
+
+    private static List<TableField> mergeMapFields(Map<String, TableField> keyFields, Map<String, TableField> valueFields) {
+        LinkedHashMap<String, TableField> res = new LinkedHashMap<>(keyFields);
+
+        for (Entry<String, TableField> valueFieldEntry : valueFields.entrySet()) {
+            // Value fields do not override key fields.
+            res.putIfAbsent(valueFieldEntry.getKey(), valueFieldEntry.getValue());
+        }
+
+        return new ArrayList<>(res.values());
+    }
+
+    public static final class ResolveResult {
+        private final List<TableField> fields;
+        private final QueryTargetDescriptor keyDescriptor;
+        private final QueryTargetDescriptor valueDescriptor;
+
+        public ResolveResult(
+                List<TableField> fields,
+                QueryTargetDescriptor keyDescriptor,
+                QueryTargetDescriptor valueDescriptor
+        ) {
+            this.fields = fields;
+            this.keyDescriptor = keyDescriptor;
+            this.valueDescriptor = valueDescriptor;
+        }
+
+        public List<TableField> getFields() {
+            return fields;
+        }
+
+        public QueryTargetDescriptor getKeyDescriptor() {
+            return keyDescriptor;
+        }
+
+        public QueryTargetDescriptor getValueDescriptor() {
+            return valueDescriptor;
+        }
     }
 }

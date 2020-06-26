@@ -32,7 +32,11 @@ import java.util.Map;
 import static com.hazelcast.sql.impl.connector.SqlConnector.JSON_SERIALIZATION_FORMAT;
 
 // TODO: deduplicate with MapSampleMetadataResolver
-public class JsonMapOptionsMetadataResolver implements MapOptionsMetadataResolver {
+public final class JsonMapOptionsMetadataResolver implements MapOptionsMetadataResolver {
+
+    public static final JsonMapOptionsMetadataResolver INSTANCE = new JsonMapOptionsMetadataResolver();
+
+    private JsonMapOptionsMetadataResolver() { }
 
     @Override
     public String supportedFormat() {

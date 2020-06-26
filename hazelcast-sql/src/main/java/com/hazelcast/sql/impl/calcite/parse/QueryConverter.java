@@ -32,9 +32,6 @@ import org.apache.calcite.sql2rel.SqlToRelConverter;
 import org.apache.calcite.sql2rel.StandardConvertletTable;
 import org.apache.calcite.util.Pair;
 
-import java.util.ArrayList;
-import java.util.List;
-
 /**
  * Converts a parse tree into a relational tree.
  */
@@ -78,7 +75,7 @@ public class QueryConverter {
         // 1. Perform initial conversion.
         RelRoot root = converter.convertQuery(node, false, true);
 
-        // 2. Remove subqSqlQuuery expressions, converting them to Correlate nodes.
+        // 2. Remove subquery expressions, converting them to Correlate nodes.
         RelNode relNoSubqueries = rewriteSubqueries(root.project());
 
         // 3. Perform decorrelation, i.e. rewrite a nested loop where the right side depends on the value of the left side,
@@ -90,14 +87,7 @@ public class QueryConverter {
         // primarily in projections. This steps removes unused fields from the tree.
         RelNode relTrimmed = converter.trimUnusedFields(true, relDecorrelated);
 
-        // 5. Collect original field names.
-        List<String> fieldNames = new ArrayList<>(root.fields.size());
-
-        for (Pair<Integer, String> field : root.fields) {
-            fieldNames.add(field.right);
-        }
-
-        return new QueryConvertResult(relTrimmed, fieldNames);
+        return new QueryConvertResult(relTrimmed, Pair.right(root.fields));
     }
 
     /**

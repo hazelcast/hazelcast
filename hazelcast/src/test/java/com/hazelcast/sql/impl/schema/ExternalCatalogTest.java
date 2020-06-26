@@ -125,7 +125,7 @@ public class ExternalCatalogTest extends SqlTestSupport {
                 name,
                 LocalPartitionedMapConnector.TYPE_NAME,
                 fields.entrySet().stream()
-                      .map(entry -> new ExternalField(entry.getKey(), entry.getValue()))
+                      .map(entry -> new ExternalField(entry.getKey(), entry.getValue(), "this." + entry.getKey()))
                       .collect(toList()),
                 emptyMap()
         );

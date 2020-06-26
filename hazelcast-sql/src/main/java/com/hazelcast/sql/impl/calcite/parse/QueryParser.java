@@ -21,14 +21,22 @@ import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.calcite.parser.HazelcastSqlParser;
 import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlConformance;
 import org.apache.calcite.rel.type.RelDataType;
+import org.apache.calcite.sql.SqlCall;
+import org.apache.calcite.sql.SqlHint;
+import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlNode;
+import org.apache.calcite.sql.SqlSelect;
 import org.apache.calcite.sql.parser.SqlParser;
+import org.apache.calcite.sql.util.SqlBasicVisitor;
 import org.apache.calcite.sql.validate.SqlValidator;
 
 /**
  * Performs syntactic and semantic validation of the query, and converts the parse tree into a relational tree.
  */
 public class QueryParser {
+
+    /** A hint to force execution of a query on Jet. */
+    private static final String RUN_ON_JET_HINT = "jet";
 
     private static final SqlParser.Config CONFIG;
     private final SqlValidator validator;
@@ -51,13 +59,13 @@ public class QueryParser {
         SqlNode node;
         RelDataType parameterRowType;
 
-        UnsupportedOperationVisitor visitor;
+        boolean isImdg;
         try {
             SqlParser parser = SqlParser.create(sql, CONFIG);
 
             node = validator.validate(parser.parseStmt());
 
-            visitor = new UnsupportedOperationVisitor(validator.getCatalogReader());
+            UnsupportedOperationVisitor visitor = new UnsupportedOperationVisitor(validator.getCatalogReader());
             node.accept(visitor);
 
             if (!visitor.runsOnImdg() && !visitor.runsOnJet()) {
@@ -71,6 +79,23 @@ public class QueryParser {
                 throw QueryException.error("To run this query Hazelcast Jet must be on the classpath");
             }
 
+            isImdg = visitor.runsOnImdg();
+            // check for the Jet hint to force execution on Jet. Ignore the hint if query doesn't run on Jet
+            if (isImdg && visitor.runsOnJet()) {
+                boolean[] jetHinted = {false};
+                node.accept(new SqlBasicVisitor<Void>() {
+                    @Override
+                    public Void visit(SqlCall node) {
+                        jetHinted[0] |= node.getKind() == SqlKind.SELECT
+                                && ((SqlSelect) node).getHints().getList().stream()
+                                                     .anyMatch(n -> ((SqlHint) n).getName().equals(RUN_ON_JET_HINT));
+                        return super.visit(node);
+                    }
+                });
+
+                isImdg = !jetHinted[0];
+            }
+
             parameterRowType = validator.getParameterRowType(node);
 
             // TODO: Get column names through SqlSelect.selectList[i].toString() (and, possibly, origins?)?
@@ -78,6 +103,6 @@ public class QueryParser {
             throw QueryException.error(SqlErrorCode.PARSING, e.getMessage(), e);
         }
 
-        return new QueryParseResult(node, parameterRowType, visitor.runsOnImdg());
+        return new QueryParseResult(node, parameterRowType, isImdg);
     }
 }

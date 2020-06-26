@@ -177,9 +177,9 @@ public final class MapScanPhysicalRule extends RelOptRule {
             return null;
         }
 
-        // TODO: We must add collation here (see commented line). Somehow it breaks the planner.
         RelTraitSet traitSet = OptUtils.toPhysicalConvention(scan.getTraitSet(), distribution);
 
+        // TODO: We must add collation here (see commented line). Somehow it breaks the planner.
 //        RelCollation collation = createIndexCollation(scan, index);
 //        RelTraitSet traitSet = RuleUtils.toPhysicalConvention(scan.getTraitSet(), distribution).plus(collation);
 

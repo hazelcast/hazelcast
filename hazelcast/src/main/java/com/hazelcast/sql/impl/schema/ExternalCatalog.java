@@ -28,7 +28,6 @@ import java.util.Map;
 
 import static com.hazelcast.sql.impl.QueryUtils.CATALOG;
 import static com.hazelcast.sql.impl.QueryUtils.SCHEMA_NAME_PUBLIC;
-import static java.lang.String.format;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static java.util.Objects.requireNonNull;
@@ -54,9 +53,7 @@ public class ExternalCatalog implements TableResolver {
         try {
             toTable(table);
         } catch (Exception e) {
-            throw QueryException.error(
-                    format("Invalid table definition: %s", e.getMessage())
-            );
+            throw QueryException.error("Invalid table definition: " + e.getMessage(), e);
         }
 
         String name = table.name();
@@ -83,8 +80,8 @@ public class ExternalCatalog implements TableResolver {
     @Override @Nonnull
     public Collection<Table> getTables() {
         return tables().values().stream()
-                .map(this::toTable)
-                .collect(toList());
+                       .map(this::toTable)
+                       .collect(toList());
     }
 
     private Map<String, ExternalTable> tables() {
@@ -95,6 +92,6 @@ public class ExternalCatalog implements TableResolver {
     private Table toTable(ExternalTable table) {
         String type = table.type();
         SqlConnector connector = requireNonNull(sqlConnectorCache.forType(type), "Unknown connector type - '" + type + "'");
-        return connector.createTable(nodeEngine, SCHEMA_NAME_PUBLIC, table.name(), table.fields(), table.options());
+        return connector.createTable(nodeEngine, SCHEMA_NAME_PUBLIC, table.name(), table.options(), table.fields());
     }
 }

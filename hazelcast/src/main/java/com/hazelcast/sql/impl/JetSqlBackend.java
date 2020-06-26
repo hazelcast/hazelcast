@@ -16,6 +16,7 @@
 
 package com.hazelcast.sql.impl;
 
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.impl.optimizer.SqlPlan;
 
@@ -42,7 +43,7 @@ public interface JetSqlBackend {
      * @param context Actual type is com.hazelcast.sql.impl.calcite.OptimizerContext
      * @param inputRel Actual type is org.apache.calcite.rel.RelNode
      */
-    SqlPlan optimizeAndCreatePlan(Object context, Object inputRel);
+    SqlPlan optimizeAndCreatePlan(NodeEngine nodeEngine, Object context, Object inputRel, List<String> rootColumnNames);
 
     /**
      * Execute the SqlPlan.

@@ -155,8 +155,12 @@ public final class QueryPath implements IdentifiedDataSerializable {
         return result;
     }
 
+    public String getFullPath() {
+        return (key ? KEY : VALUE) + (path != null ? "." + path : "");
+    }
+
     @Override
     public String toString() {
-        return (key ? KEY : VALUE) + (path != null ? "." + path : "");
+        return getFullPath();
     }
 }

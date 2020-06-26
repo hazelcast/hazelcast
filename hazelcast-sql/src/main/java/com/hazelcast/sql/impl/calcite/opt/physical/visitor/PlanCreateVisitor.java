@@ -17,6 +17,8 @@
 package com.hazelcast.sql.impl.calcite.opt.physical.visitor;
 
 import com.hazelcast.internal.util.collection.PartitionIdSet;
+import com.hazelcast.partition.Partition;
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.SqlColumnMetadata;
 import com.hazelcast.sql.SqlRowMetadata;
 import com.hazelcast.sql.impl.QueryException;
@@ -91,12 +93,15 @@ import org.apache.calcite.rel.core.AggregateCall;
 import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.sql.SqlAggFunction;
 
+import javax.annotation.Nullable;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -159,13 +164,17 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
     /** Row metadata. */
     private SqlRowMetadata rowMetadata;
 
+    /**
+     * @param rootColumnNames Root column names. They are null when called from
+     *     Jet for a sub-relNode and the row metadata aren't needed
+     */
     public PlanCreateVisitor(
         UUID localMemberId,
         Map<UUID, PartitionIdSet> partMap,
         Map<PhysicalRel, List<Integer>> relIdMap,
         String sql,
         QueryParameterMetadata parameterMetadata,
-        List<String> rootColumnNames
+        @Nullable List<String> rootColumnNames
     ) {
         this.localMemberId = localMemberId;
         this.partMap = partMap;
@@ -175,6 +184,20 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
         this.rootColumnNames = rootColumnNames;
 
         memberIds = new HashSet<>(partMap.keySet());
+    }
+
+    public static Map<UUID, PartitionIdSet> createPartitionMap(NodeEngine nodeEngine) {
+        // Get partition mapping.
+        Collection<Partition> parts = nodeEngine.getHazelcastInstance().getPartitionService().getPartitions();
+        int partCnt = parts.size();
+        Map<UUID, PartitionIdSet> partMap = new LinkedHashMap<>();
+
+        for (Partition part : parts) {
+            UUID ownerId = part.getOwner().getUuid();
+            partMap.computeIfAbsent(ownerId, (key) -> new PartitionIdSet(partCnt)).add(part.getPartitionId());
+        }
+
+        return partMap;
     }
 
     public Plan getPlan() {
@@ -203,7 +226,7 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
         }
 
         assert rootPhysicalRel != null;
-        assert rowMetadata != null;
+        assert rowMetadata != null ^ rootColumnNames == null;
 
         QueryExplain explain = ExplainCreator.explain(sql, rootPhysicalRel);
 
@@ -231,7 +254,9 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
             upstreamNode
         );
 
-        rowMetadata = createRowMetadata(rootColumnNames, rootNode.getSchema().getTypes());
+        if (rootColumnNames != null) {
+            rowMetadata = createRowMetadata(rootColumnNames, rootNode.getSchema().getTypes());
+        }
 
         addFragment(rootNode, new PlanFragmentMapping(Collections.singleton(localMemberId), false));
     }

@@ -23,6 +23,7 @@ import com.hazelcast.replicatedmap.impl.ReplicatedMapProxy;
 import com.hazelcast.sql.impl.NodeServiceProvider;
 import com.hazelcast.sql.impl.exec.agg.AggregateExec;
 import com.hazelcast.sql.impl.exec.fetch.FetchExec;
+import com.hazelcast.sql.impl.exec.root.RootResultConsumer;
 import com.hazelcast.sql.impl.exec.scan.index.MapIndexScanExec;
 import com.hazelcast.sql.impl.exec.io.BroadcastSendExec;
 import com.hazelcast.sql.impl.exec.io.InboundHandler;
@@ -90,6 +91,12 @@ public class CreateExecPlanNodeVisitor implements PlanNodeVisitor {
     /** Local member ID. */
     private final UUID localMemberId;
 
+    /** Root result consumer. */
+    private final RootResultConsumer rootResultConsumer;
+
+    /** Root batch size. */
+    private final int rootBatchSize;
+
     /** Operation. */
     private final QueryExecuteOperation operation;
 
@@ -119,6 +126,8 @@ public class CreateExecPlanNodeVisitor implements PlanNodeVisitor {
         NodeServiceProvider nodeServiceProvider,
         InternalSerializationService serializationService,
         UUID localMemberId,
+        RootResultConsumer rootResultConsumer,
+        int rootBatchSize,
         QueryExecuteOperation operation,
         FlowControlFactory flowControlFactory,
         PartitionIdSet localParts,
@@ -128,6 +137,8 @@ public class CreateExecPlanNodeVisitor implements PlanNodeVisitor {
         this.nodeServiceProvider = nodeServiceProvider;
         this.serializationService = serializationService;
         this.localMemberId = localMemberId;
+        this.rootResultConsumer = rootResultConsumer;
+        this.rootBatchSize = rootBatchSize;
         this.operation = operation;
         this.flowControlFactory = flowControlFactory;
         this.localParts = localParts;
@@ -141,8 +152,8 @@ public class CreateExecPlanNodeVisitor implements PlanNodeVisitor {
         exec = new RootExec(
             node.getId(),
             pop(),
-            operation.getRootConsumer(),
-            operation.getRootBatchSize()
+            rootResultConsumer,
+            rootBatchSize
         );
     }
 

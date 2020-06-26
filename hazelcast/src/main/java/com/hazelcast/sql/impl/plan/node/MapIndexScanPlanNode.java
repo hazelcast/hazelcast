@@ -76,7 +76,7 @@ public class MapIndexScanPlanNode extends AbstractMapScanPlanNode {
 
     @Override
     protected void writeData0(ObjectDataOutput out) throws IOException {
-        super.writeData(out);
+        super.writeData0(out);
 
         out.writeUTF(indexName);
         indexFilter.writeData(out);
@@ -84,7 +84,7 @@ public class MapIndexScanPlanNode extends AbstractMapScanPlanNode {
 
     @Override
     protected void readData0(ObjectDataInput in) throws IOException {
-        super.readData(in);
+        super.readData0(in);
 
         indexName = in.readUTF();
 

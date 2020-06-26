@@ -43,6 +43,7 @@ import org.apache.calcite.sql.validate.SqlValidatorException;
 import org.apache.calcite.sql.validate.SqlValidatorTable;
 
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -65,6 +66,12 @@ public final class UnsupportedOperationVisitor implements SqlVisitor<Void> {
 
     private boolean runsOnImdg = true;
     private boolean runsOnJet = true;
+
+    /**
+     * Names of a table being manipulated using DDL (CREATE/DROP/ALTER table) while processing
+     * the command.
+     */
+    private List<String> ddlOperandTableNames;
 
     static {
         // We define all supported features explicitly instead of getting them from predefined sets of SqlKind class.
@@ -208,6 +215,10 @@ public final class UnsupportedOperationVisitor implements SqlVisitor<Void> {
 
     @Override
     public Void visit(SqlIdentifier id) {
+        if (id.names.equals(ddlOperandTableNames)) {
+            return null;
+        }
+
         SqlValidatorTable table = catalogReader.getTable(id.names);
         if (table != null) {
             HazelcastTable hzTable = table.unwrap(HazelcastTable.class);
@@ -293,33 +304,41 @@ public final class UnsupportedOperationVisitor implements SqlVisitor<Void> {
             case SELECT:
                 processSelect((SqlSelect) call);
 
-                return;
+                break;
 
             case SCALAR_QUERY:
                 // TODO: Perhaps we may add it to SUPPORTED_KINDS since we always decorrelate. Double-check it when working
                 //  on subqueries.
-                return;
+                break;
 
             case JOIN:
                 // TODO: Proper validation for JOIN (e.g. outer, theta, etc)!
-                return;
+                break;
 
             case CREATE_TABLE:
-            case COLUMN_DECL:
             case DROP_TABLE:
+                SqlIdentifier identifier = (SqlIdentifier) call.getOperandList().get(0);
+                this.ddlOperandTableNames = identifier.names;
                 // TODO: Proper validation for DDL
-                return;
+                break;
+
+            case COLUMN_DECL:
+                // TODO: Proper validation for DDL
+                break;
 
             case INSERT:
                 // TODO: Proper validation for DML
                 runsOnImdg = false;
-                return;
+                break;
 
             case OTHER:
             case OTHER_FUNCTION:
                 processOther(call);
+                break;
 
-                return;
+            case HINT:
+                // TODO: Proper validation for hints
+                break;
 
             default:
                 throw unsupported(call, call.getKind());

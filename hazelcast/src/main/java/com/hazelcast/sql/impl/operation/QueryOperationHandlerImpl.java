@@ -192,6 +192,8 @@ public class QueryOperationHandlerImpl implements QueryOperationHandler, QuerySt
                 nodeServiceProvider,
                 serializationService,
                 localMemberId,
+                operation.getRootConsumer(),
+                operation.getRootBatchSize(),
                 operation,
                 flowControlFactory,
                 operation.getPartitionMap().get(localMemberId),

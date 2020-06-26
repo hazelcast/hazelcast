@@ -20,7 +20,6 @@ import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
 import com.hazelcast.spi.impl.NodeEngine;
-import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.schema.ConstantTableStatistics;
 import com.hazelcast.sql.impl.schema.ExternalTable.ExternalField;
 import com.hazelcast.sql.impl.schema.Table;
@@ -39,8 +38,6 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
-import static com.hazelcast.internal.util.Preconditions.checkNotNull;
-import static java.lang.String.format;
 import static java.util.stream.Collectors.toMap;
 
 // TODO: do we want to keep it? maps are auto discovered...
@@ -49,9 +46,9 @@ public class LocalReplicatedMapConnector extends SqlKeyValueConnector {
     public static final String TYPE_NAME = "com.hazelcast.LocalReplicatedMap";
 
     private static final Map<String, MapOptionsMetadataResolver> METADATA_RESOLVERS = Stream.of(
-            new PojoMapOptionsMetadataResolver(),
-            new PortableMapOptionsMetadataResolver(),
-            new JsonMapOptionsMetadataResolver()
+            PojoMapOptionsMetadataResolver.INSTANCE,
+            PortableMapOptionsMetadataResolver.INSTANCE,
+            JsonMapOptionsMetadataResolver.INSTANCE
     ).collect(toMap(MapOptionsMetadataResolver::supportedFormat, Function.identity()));
 
     @Override
@@ -63,21 +60,11 @@ public class LocalReplicatedMapConnector extends SqlKeyValueConnector {
     public Table createTable(
             @Nonnull NodeEngine nodeEngine,
             @Nonnull String schemaName,
-            @Nonnull String name,
-            @Nonnull List<ExternalField> externalFields,
-            @Nonnull Map<String, String> options
+            @Nonnull String tableName,
+            @Nonnull Map<String, String> options,
+            @Nonnull List<ExternalField> externalFields
     ) {
-        String objectName = options.getOrDefault(TO_OBJECT_NAME, name);
-        return createTable0(nodeEngine, schemaName, objectName, externalFields, options);
-    }
-
-    private static ReplicatedMapTable createTable0(
-            NodeEngine nodeEngine,
-            String schemaName,
-            String name,
-            List<ExternalField> externalFields,
-            Map<String, String> options
-    ) {
+        String objectName = options.getOrDefault(TO_OBJECT_NAME, tableName);
         InternalSerializationService serializationService =
                 (InternalSerializationService) nodeEngine.getSerializationService();
 
@@ -87,13 +74,13 @@ public class LocalReplicatedMapConnector extends SqlKeyValueConnector {
 
         // TODO: deduplicate with ReplicatedMapTableResolver ???
         ReplicatedMapService service = nodeEngine.getService(ReplicatedMapService.SERVICE_NAME);
-        Collection<ReplicatedRecordStore> stores = service.getAllReplicatedRecordStores(name);
+        Collection<ReplicatedRecordStore> stores = service.getAllReplicatedRecordStores(objectName);
 
         long estimatedRowCount = stores.size() * nodeEngine.getPartitionService().getPartitionCount();
 
         return new ReplicatedMapTable(
                 schemaName,
-                name,
+                objectName,
                 fields,
                 new ConstantTableStatistics(estimatedRowCount),
                 keyMetadata.getQueryTargetDescriptor(),
@@ -103,24 +90,8 @@ public class LocalReplicatedMapConnector extends SqlKeyValueConnector {
         );
     }
 
-    private static MapOptionsMetadata resolveMetadata(
-            List<ExternalField> externalFields,
-            Map<String, String> options,
-            boolean key,
-            InternalSerializationService serializationService
-    ) {
-        String format = options.get(key ? TO_SERIALIZATION_KEY_FORMAT : TO_SERIALIZATION_VALUE_FORMAT);
-        if (format == null) {
-            return MapOptionsMetadataResolver.resolve(externalFields, key);
-        }
-
-        MapOptionsMetadataResolver resolver = METADATA_RESOLVERS.get(format);
-        if (resolver == null) {
-            throw QueryException.error(
-                    format("Specified format '%s' is not among supported ones %s", format, METADATA_RESOLVERS.keySet())
-            );
-        }
-
-        return checkNotNull(resolver.resolve(externalFields, options, key, serializationService));
+    @Override
+    protected Map<String, MapOptionsMetadataResolver> supportedResolvers() {
+        return METADATA_RESOLVERS;
     }
 }

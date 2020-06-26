@@ -43,7 +43,11 @@ import static com.hazelcast.sql.impl.connector.SqlKeyValueConnector.TO_VALUE_FAC
 import static java.lang.String.format;
 
 // TODO: deduplicate with MapSampleMetadataResolver
-public class PortableMapOptionsMetadataResolver implements MapOptionsMetadataResolver {
+public final class PortableMapOptionsMetadataResolver implements MapOptionsMetadataResolver {
+
+    public static final PortableMapOptionsMetadataResolver INSTANCE = new PortableMapOptionsMetadataResolver();
+
+    private PortableMapOptionsMetadataResolver() { }
 
     @Override
     public String supportedFormat() {

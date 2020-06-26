@@ -402,6 +402,8 @@ public class CreateExecPlanNodeVisitorTest extends SqlTestSupport {
             nodeServiceProvider,
             new DefaultSerializationServiceBuilder().build(),
             membedId1,
+            operation.getRootConsumer(),
+            operation.getRootBatchSize(),
             operation,
             SimpleFlowControlFactory.INSTANCE,
             operation.getPartitionMap().get(membedId1),
