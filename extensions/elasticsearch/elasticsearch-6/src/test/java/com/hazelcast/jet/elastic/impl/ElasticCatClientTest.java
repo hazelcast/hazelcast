@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.elastic.impl;
 
+import com.hazelcast.jet.JetException;
 import org.elasticsearch.client.Response;
 import org.elasticsearch.client.RestClient;
 import org.junit.Test;
@@ -28,6 +29,7 @@ import java.io.IOException;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.RETURNS_DEEP_STUBS;
 import static org.mockito.Mockito.mock;
@@ -41,7 +43,7 @@ public class ElasticCatClientTest {
 
     @Test
     public void shards() throws IOException {
-        ElasticCatClient catClient = new ElasticCatClient(restClient);
+        ElasticCatClient catClient = new ElasticCatClient(restClient, 5);
 
         Response nodesResponse = response("es2node_nodes.json");
         Response shardsResponse = response("es2node_shards.json");
@@ -51,6 +53,34 @@ public class ElasticCatClientTest {
         List<Shard> shards = catClient.shards("my-index");
         assertThat(shards).extracting(Shard::getHttpAddress)
                           .containsOnly("127.0.0.1:9200", "127.0.0.1:9201");
+    }
+
+    @Test
+    public void shouldRetryOnShards() throws IOException {
+        ElasticCatClient catClient = new ElasticCatClient(restClient, 5);
+
+        Response nodesResponse = response("es2node_nodes.json");
+        Response shardsResponse = response("es2node_shards.json");
+        when(restClient.performRequest(any()))
+                .thenThrow(new IOException("Could not connect"))
+                .thenReturn(nodesResponse, shardsResponse);
+
+        List<Shard> shards = catClient.shards("my-index");
+        assertThat(shards).extracting(Shard::getHttpAddress)
+                          .containsOnly("127.0.0.1:9200", "127.0.0.1:9201");
+    }
+
+    @Test
+    public void shouldFailAfterFiveAttemptsShards() throws IOException {
+        ElasticCatClient catClient = new ElasticCatClient(restClient, 2);
+
+        when(restClient.performRequest(any()))
+                .thenThrow(new IOException("Could not connect"));
+
+        assertThatThrownBy(() -> catClient.shards("my-index"))
+                .isInstanceOf(JetException.class)
+                .hasRootCauseInstanceOf(IOException.class)
+                .hasRootCauseMessage("Could not connect");
     }
 
     private Response response(String json) throws IOException {

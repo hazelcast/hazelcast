@@ -85,6 +85,7 @@ public class AuthElasticSinksTest extends BaseElasticTest {
                 .clientFn(() -> client("elastic", "WrongPassword", containerIp, port))
                 .bulkRequestFn(() -> new BulkRequest().setRefreshPolicy(RefreshPolicy.IMMEDIATE))
                 .mapToRequestFn((TestItem item) -> new IndexRequest("my-index", "document").source(item.asMap()))
+                .retries(0)
                 .build();
 
         Pipeline p = Pipeline.create();
@@ -106,6 +107,7 @@ public class AuthElasticSinksTest extends BaseElasticTest {
                 .clientFn(() -> client(containerIp, port))
                 .bulkRequestFn(() -> new BulkRequest().setRefreshPolicy(RefreshPolicy.IMMEDIATE))
                 .mapToRequestFn((TestItem item) -> new IndexRequest("my-index", "document").source(item.asMap()))
+                .retries(0)
                 .build();
 
         Pipeline p = Pipeline.create();

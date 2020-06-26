@@ -40,6 +40,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import static com.hazelcast.jet.elastic.impl.RetryUtils.withRetry;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Optional.empty;
 import static java.util.Optional.of;
@@ -54,9 +55,11 @@ public class ElasticCatClient implements Closeable {
     private static final ILogger LOG = Logger.getLogger(ElasticCatClient.class);
 
     private final RestClient client;
+    private final int retries;
 
-    public ElasticCatClient(RestClient client) {
+    public ElasticCatClient(RestClient client, int retries) {
         this.client = client;
+        this.retries = retries;
     }
 
     /**
@@ -67,7 +70,7 @@ public class ElasticCatClient implements Closeable {
             Map<String, String> params = new HashMap<>();
             params.put("format", "json");
 
-            Response res = client.performRequest("GET", "/_cat/master", params);
+            Response res = withRetry(() -> client.performRequest("GET", "/_cat/master", params), retries);
 
             try (InputStreamReader reader = new InputStreamReader(res.getEntity().getContent(), UTF_8)) {
                 JsonArray array = Json.parse(reader).asArray();
@@ -93,7 +96,7 @@ public class ElasticCatClient implements Closeable {
             params.put("format", "json");
             params.put("full_id", "true");
             params.put("h", "id,ip,name,http_address,master");
-            Response res = client.performRequest("GET", "/_cat/nodes", params);
+            Response res = withRetry(() -> client.performRequest("GET", "/_cat/nodes", params), retries);
 
             try (InputStreamReader reader = new InputStreamReader(res.getEntity().getContent(), UTF_8)) {
                 JsonArray array = Json.parse(reader).asArray();
@@ -137,7 +140,10 @@ public class ElasticCatClient implements Closeable {
             Map<String, String> params = new HashMap<>();
             params.put("format", "json");
             params.put("h", "id,index,shard,prirep,docs,state,ip,node");
-            Response res = client.performRequest("GET", "/_cat/shards/" + String.join(",", indices), params);
+            Response res = withRetry(
+                    () -> client.performRequest("GET", "/_cat/shards/" + String.join(",", indices), params),
+                    retries
+            );
 
             try (InputStreamReader reader = new InputStreamReader(res.getEntity().getContent(), UTF_8)) {
                 JsonArray array = Json.parse(reader).asArray();
@@ -164,7 +170,7 @@ public class ElasticCatClient implements Closeable {
                     object.get("index").asString(),
                     Integer.parseInt(object.get("shard").asString()),
                     Prirep.valueOf(object.get("prirep").asString()),
-                    Integer.parseInt(object.get("docs").asString()),
+                    object.get("docs") != null ? Integer.parseInt(object.get("docs").asString()) : 0,
                     object.get("state").asString(),
                     object.get("ip").asString(),
                     idToAddress.get(id),

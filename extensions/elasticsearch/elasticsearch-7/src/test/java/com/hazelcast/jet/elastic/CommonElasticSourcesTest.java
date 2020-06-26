@@ -269,6 +269,7 @@ public abstract class CommonElasticSourcesTest extends BaseElasticTest {
                 .clientFn(elasticClientSupplier())
                 .searchRequestFn(() -> new SearchRequest("non-existing-index"))
                 .mapToItemFn(SearchHit::getSourceAsString)
+                .retries(0) // we expect the exception -> faster test
                 .build();
         p.readFrom(source)
          .writeTo(Sinks.list(results));

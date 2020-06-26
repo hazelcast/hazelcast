@@ -34,9 +34,9 @@ import org.elasticsearch.search.SearchHits;
 import org.elasticsearch.search.slice.SliceBuilder;
 
 import javax.annotation.Nonnull;
-import java.io.IOException;
 import java.util.List;
 
+import static com.hazelcast.jet.elastic.impl.RetryUtils.withRetry;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
@@ -146,6 +146,7 @@ final class ElasticSourceP<T> extends AbstractProcessor {
 
         private final RestHighLevelClient client;
         private final String scrollKeepAlive;
+        private final int retries;
 
         private SearchHits hits;
         private int nextHit;
@@ -155,10 +156,11 @@ final class ElasticSourceP<T> extends AbstractProcessor {
                                ILogger logger) {
             this.client = client;
             this.scrollKeepAlive = configuration.scrollKeepAlive();
+            this.retries = configuration.retries();
             this.logger = logger;
 
             try {
-                SearchResponse response = this.client.search(sr);
+                SearchResponse response = withRetry(() -> client.search(sr), retries);
 
                 // These should be always present, even when there are no results
                 hits = requireNonNull(response.getHits(), "null hits in the response");
@@ -170,7 +172,7 @@ final class ElasticSourceP<T> extends AbstractProcessor {
 
                 long totalHits = hits.getTotalHits();
                 logger.fine("Initialized scroll with scrollId " + scrollId + ", total results " + ", " + totalHits);
-            } catch (IOException e) {
+            } catch (Exception e) {
                 throw new JetException("Could not execute SearchRequest to Elastic", e);
             }
         }
@@ -187,13 +189,16 @@ final class ElasticSourceP<T> extends AbstractProcessor {
                     SearchScrollRequest ssr = new SearchScrollRequest(scrollId);
                     ssr.scroll(scrollKeepAlive);
 
-                    SearchResponse searchResponse = client.searchScroll(ssr);
+                    SearchResponse searchResponse = withRetry(
+                            () -> client.searchScroll(ssr),
+                            retries
+                    );
                     hits = searchResponse.getHits();
                     if (hits.getHits().length == 0) {
                         return null;
                     }
                     nextHit = 0;
-                } catch (IOException e) {
+                } catch (Exception e) {
                     throw new JetException("Could not execute SearchScrollRequest to Elastic", e);
                 }
             }
@@ -212,14 +217,17 @@ final class ElasticSourceP<T> extends AbstractProcessor {
             ClearScrollRequest clearScrollRequest = new ClearScrollRequest();
             clearScrollRequest.addScrollId(scrollId);
             try {
-                ClearScrollResponse response = client.clearScroll(clearScrollRequest);
+                ClearScrollResponse response = withRetry(
+                        () -> client.clearScroll(clearScrollRequest),
+                        retries
+                );
 
                 if (response.isSucceeded()) {
                     logger.fine("Succeeded clearing " + response.getNumFreed() + " scrolls");
                 } else {
                     logger.warning("Clearing scroll " + scrollId + " failed");
                 }
-            } catch (IOException e) {
+            } catch (Exception e) {
                 logger.fine("Could not clear scroll with scrollId=" + scrollId, e);
             }
         }

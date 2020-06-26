@@ -21,10 +21,14 @@ import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.JetTestInstanceFactory;
 import com.hazelcast.jet.config.JetConfig;
+import com.hazelcast.jet.pipeline.BatchSource;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
+import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.client.ResponseException;
 import org.elasticsearch.client.RestClientBuilder;
+import org.elasticsearch.search.SearchHit;
+import org.jetbrains.annotations.NotNull;
 import org.junit.After;
 import org.junit.Test;
 import org.testcontainers.elasticsearch.ElasticsearchContainer;
@@ -56,7 +60,7 @@ public class AuthElasticSourcesTest extends BaseElasticTest {
         indexDocument("my-index", ImmutableMap.of("name", "Frantisek"));
 
         Pipeline p = Pipeline.create();
-        p.readFrom(ElasticSources.elastic(elasticClientSupplier()))
+        p.readFrom(elasticSource(elasticClientSupplier()))
          .writeTo(Sinks.list(results));
 
         submitJob(p);
@@ -69,7 +73,7 @@ public class AuthElasticSourcesTest extends BaseElasticTest {
         Integer port = container.getMappedPort(PORT);
 
         Pipeline p = Pipeline.create();
-        p.readFrom(ElasticSources.elastic(() -> client("elastic", "WrongPassword", containerIp, port)))
+        p.readFrom(elasticSource(() -> client("elastic", "WrongPassword", containerIp, port)))
          .writeTo(Sinks.list(results));
 
         assertThatThrownBy(() -> submitJob(p))
@@ -84,11 +88,21 @@ public class AuthElasticSourcesTest extends BaseElasticTest {
         Integer port = container.getMappedPort(PORT);
 
         Pipeline p = Pipeline.create();
-        p.readFrom(ElasticSources.elastic(() -> client(containerIp, port)))
+        p.readFrom(elasticSource(() -> client(containerIp, port)))
          .writeTo(Sinks.list(results));
 
         assertThatThrownBy(() -> submitJob(p))
                 .hasRootCauseInstanceOf(ResponseException.class)
                 .hasStackTraceContaining("missing authentication token");
+    }
+
+    @NotNull
+    private BatchSource<String> elasticSource(SupplierEx<RestClientBuilder> clientFn) {
+        return ElasticSources.builder()
+                             .clientFn(clientFn)
+                             .searchRequestFn(SearchRequest::new)
+                             .mapToItemFn(SearchHit::getSourceAsString)
+                             .retries(0)
+                             .build();
     }
 }

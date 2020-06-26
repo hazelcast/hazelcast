@@ -65,7 +65,10 @@ public class ElasticSourcePMetaSupplier<T> implements ProcessorMetaSupplier {
 
     @Override
     public void init(@Nonnull Context context) throws Exception {
-        try (ElasticCatClient catClient = new ElasticCatClient(configuration.clientFn().get().getLowLevelClient())) {
+        try (ElasticCatClient catClient = new ElasticCatClient(
+                configuration.clientFn().get().getLowLevelClient(),
+                configuration.retries()
+        )) {
             List<Shard> shards = catClient.shards(configuration.searchRequestFn().get().indices());
 
             if (configuration.isCoLocatedReadingEnabled()) {

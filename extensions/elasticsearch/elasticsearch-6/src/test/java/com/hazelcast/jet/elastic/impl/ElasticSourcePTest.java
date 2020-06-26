@@ -102,8 +102,8 @@ public class ElasticSourcePTest {
                 SearchHit::getSourceAsString,
                 slicing,
                 coLocatedReading,
-                KEEP_ALIVE
-        );
+                KEEP_ALIVE,
+                5);
 
         // This constructor calls the client so it has to be called after specific mock setup in each test method
         // rather than in setUp()

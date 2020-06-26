@@ -33,6 +33,7 @@ import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.io.Serializable;
 
+import static com.hazelcast.jet.elastic.impl.RetryUtils.withRetry;
 import static com.hazelcast.jet.impl.util.Util.checkNonNullAndSerializable;
 import static java.util.Objects.requireNonNull;
 
@@ -63,10 +64,12 @@ public final class ElasticSinkBuilder<T> implements Serializable {
 
     private static final String DEFAULT_NAME = "elasticSink";
     private static final int DEFAULT_LOCAL_PARALLELISM = 2;
+    private static final int DEFAULT_RETRIES = 5;
 
     private SupplierEx<RestClientBuilder> clientFn;
     private SupplierEx<BulkRequest> bulkRequestFn = BulkRequest::new;
     private FunctionEx<? super T, ? extends DocWriteRequest<?>> mapToRequestFn;
+    private int retries = DEFAULT_RETRIES;
 
     /**
      * Set the client supplier function
@@ -140,6 +143,30 @@ public final class ElasticSinkBuilder<T> implements Serializable {
     }
 
     /**
+     * Number of retries the connector will do in addition to Elastic client
+     * retries
+     *
+     * Elastic client tries to connect to a node only once for each request.
+     * When a request fails the node is marked dead and is not retried again
+     * for the request. This causes problems with single node clusters or in a
+     * situation where whole cluster becomes unavailable at the same time (e.g.
+     * due to a network issue).
+     *
+     * The initial delay is 2s, increasing by factor of 2 with each retry (4s,
+     * 8s, 16s, ..).
+     *
+     * @param retries number of retries, defaults to 5
+     */
+    @Nonnull
+    public ElasticSinkBuilder<T> retries(int retries) {
+        if (retries < 0) {
+            throw new IllegalArgumentException("retries must be positive");
+        }
+        this.retries = retries;
+        return this;
+    }
+
+    /**
      * Create a sink that writes data into Elasticsearch based on this builder configuration
      */
     @Nonnull
@@ -149,7 +176,8 @@ public final class ElasticSinkBuilder<T> implements Serializable {
 
         return SinkBuilder
                 .sinkBuilder(DEFAULT_NAME, ctx ->
-                        new BulkContext(clientFn, bulkRequestFn, ctx.logger()))
+                        new BulkContext(clientFn, bulkRequestFn,
+                                retries, ctx.logger()))
                 .<T>receiveFn((bulkContext, item) -> bulkContext.add(mapToRequestFn.apply(item)))
                 .flushFn(BulkContext::flush)
                 .destroyFn(BulkContext::close)
@@ -165,14 +193,16 @@ public final class ElasticSinkBuilder<T> implements Serializable {
 
         private BulkRequest bulkRequest;
         private final ILogger logger;
+        private final int retries;
 
         BulkContext(SupplierEx<RestClientBuilder> clientBuilder, SupplierEx<BulkRequest> bulkRequestSupplier,
-                    ILogger logger) {
+                    int retries, ILogger logger) {
             restClient = clientBuilder.get().build();
             this.client = new RestHighLevelClient(restClient);
             this.bulkRequestSupplier = bulkRequestSupplier;
 
             this.bulkRequest = bulkRequestSupplier.get();
+            this.retries = retries;
             this.logger = logger;
         }
 
@@ -182,13 +212,20 @@ public final class ElasticSinkBuilder<T> implements Serializable {
 
         void flush() throws IOException {
             if (!bulkRequest.requests().isEmpty()) {
-                BulkResponse response = client.bulk(bulkRequest);
-                if (response.hasFailures()) {
-                    throw new JetException(response.buildFailureMessage());
-                }
-                if (logger.isFineEnabled()) {
-                    logger.fine("BulkRequest with " + bulkRequest.requests().size() + " requests succeeded");
-                }
+                withRetry(
+                        () -> {
+                            BulkResponse response = client.bulk(bulkRequest);
+                            if (response.hasFailures()) {
+                                throw new JetException(response.buildFailureMessage());
+                            }
+                            if (logger.isFineEnabled()) {
+                                logger.fine("BulkRequest with " + bulkRequest.requests().size() + " requests succeeded");
+                            }
+                            return response;
+                        },
+                        retries,
+                        IOException.class, JetException.class
+                );
                 bulkRequest = bulkRequestSupplier.get();
             }
         }

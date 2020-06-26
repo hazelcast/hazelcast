@@ -154,10 +154,11 @@ public abstract class CommonElasticSinksTest extends BaseElasticTest {
     public void given_documentNotInIndex_whenWriteToElasticSinkUpdateRequest_then_jobShouldFail() throws Exception {
         elasticClient.indices().create(new CreateIndexRequest("my-index"), RequestOptions.DEFAULT);
 
-        Sink<TestItem> elasticSink = ElasticSinks.elastic(
-                elasticClientSupplier(),
-                item -> new UpdateRequest("my-index", item.id).doc(item.asMap())
-        );
+        Sink<TestItem> elasticSink = new ElasticSinkBuilder<>()
+                .clientFn(elasticClientSupplier())
+                .mapToRequestFn((TestItem item) -> new UpdateRequest("my-index", item.id).doc(item.asMap()))
+                .retries(0)
+                .build();
 
         Pipeline p = Pipeline.create();
         p.readFrom(TestSources.items(new TestItem("notExist", "Frantisek")))

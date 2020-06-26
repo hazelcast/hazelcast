@@ -59,6 +59,7 @@ import static java.util.Objects.requireNonNull;
 public final class ElasticSourceBuilder<T> {
 
     private static final String DEFAULT_NAME = "elasticSource";
+    private static final int DEFAULT_RETRIES = 5;
 
     private SupplierEx<RestClientBuilder> clientFn;
     private SupplierEx<SearchRequest> searchRequestFn;
@@ -67,6 +68,7 @@ public final class ElasticSourceBuilder<T> {
     private boolean slicing;
     private boolean coLocatedReading;
     private String scrollKeepAlive = "1m"; // Using String because it needs to be Serializable
+    private int retries = DEFAULT_RETRIES;
 
     /**
      * Build Elasticsearch {@link BatchSource} with supplied parameters
@@ -82,7 +84,7 @@ public final class ElasticSourceBuilder<T> {
         ElasticSourceConfiguration<T> configuration = new ElasticSourceConfiguration<>(
                 restHighLevelClientFn(clientFn),
                 searchRequestFn, optionsFn, mapToItemFn, slicing, coLocatedReading,
-                scrollKeepAlive
+                scrollKeepAlive, retries
         );
         ElasticSourcePMetaSupplier<T> metaSupplier = new ElasticSourcePMetaSupplier<>(configuration);
         return Sources.batchFromProcessor(DEFAULT_NAME, metaSupplier);
@@ -229,4 +231,27 @@ public final class ElasticSourceBuilder<T> {
         return this;
     }
 
+    /**
+     * Number of retries the connector will do in addition to Elastic
+     * client retries
+     *
+     * Elastic client tries to connect to a node only once for each
+     * request. When a request fails the node is marked dead and is
+     * not retried again for the request. This causes problems with
+     * single node clusters or in a situation where whole cluster
+     * becomes unavailable at the same time (e.g. due to a network
+     * issue).
+     *
+     * The initial delay is 2s, increasing by factor of 2 with each retry (4s, 8s, 16s, ..).
+     *
+     * @param retries number of retries, defaults to 5
+     */
+    @Nonnull
+    public ElasticSourceBuilder<T> retries(int retries) {
+        if (retries < 0) {
+            throw new IllegalArgumentException("retries must be positive");
+        }
+        this.retries = retries;
+        return this;
+    }
 }
