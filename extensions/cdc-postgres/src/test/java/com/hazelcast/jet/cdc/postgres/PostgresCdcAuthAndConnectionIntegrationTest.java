@@ -27,6 +27,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
 import java.sql.SQLException;
+import org.postgresql.util.PSQLException;
 
 import static com.hazelcast.jet.core.JobStatus.FAILED;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -68,7 +69,7 @@ public class PostgresCdcAuthAndConnectionIntegrationTest extends AbstractPostgre
                 .setDatabaseAddress(wrongContainerIpAddress)
                 .setDatabasePort(postgres.getMappedPort(POSTGRESQL_PORT))
                 .setDatabaseUser("postgres")
-                .setDatabasePassword("")
+                .setDatabasePassword("postgres")
                 .setDatabaseName("postgres")
                 .build();
 
@@ -88,7 +89,7 @@ public class PostgresCdcAuthAndConnectionIntegrationTest extends AbstractPostgre
                 .setDatabaseAddress(postgres.getContainerIpAddress())
                 .setDatabasePort(postgres.getMappedPort(POSTGRESQL_PORT))
                 .setDatabaseUser("postgres")
-                .setDatabasePassword("")
+                .setDatabasePassword("postgres")
                 .setDatabaseName("wrongDatabaseName")
                 .build();
 
@@ -100,8 +101,8 @@ public class PostgresCdcAuthAndConnectionIntegrationTest extends AbstractPostgre
         Job job = jet.newJob(pipeline);
         // then
         assertThatThrownBy(job::join)
-                .hasRootCauseInstanceOf(SQLException.class)
-                .hasStackTraceContaining("password authentication failed for user \"postgres\"");
+                .hasRootCauseInstanceOf(PSQLException.class)
+                .hasStackTraceContaining("database \"wrongDatabaseName\" does not exist");
     }
 
     private Pipeline pipeline(StreamSource<ChangeRecord> source) {
