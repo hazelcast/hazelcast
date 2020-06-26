@@ -16,18 +16,38 @@
 
 package com.hazelcast.sql.impl.connector;
 
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.schema.ExternalTable.ExternalField;
 import com.hazelcast.sql.impl.schema.TableField;
+import com.hazelcast.sql.impl.schema.map.options.JsonMapOptionsMetadataResolver;
+import com.hazelcast.sql.impl.schema.map.options.MapOptionsMetadata;
+import com.hazelcast.sql.impl.schema.map.options.MapOptionsMetadataResolver;
+import com.hazelcast.sql.impl.schema.map.options.PojoMapOptionsMetadataResolver;
+import com.hazelcast.sql.impl.schema.map.options.PortableMapOptionsMetadataResolver;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import static com.hazelcast.query.QueryConstants.KEY_ATTRIBUTE_NAME;
+import static com.hazelcast.query.QueryConstants.THIS_ATTRIBUTE_NAME;
+import static java.lang.String.format;
+import static java.util.Objects.requireNonNull;
+import static java.util.stream.Collectors.toMap;
 
 public abstract class SqlKeyValueConnector implements SqlConnector {
+
+    private static final Map<String, MapOptionsMetadataResolver> METADATA_RESOLVERS = Stream.of(
+            new PojoMapOptionsMetadataResolver(),
+            new PortableMapOptionsMetadataResolver(),
+            new JsonMapOptionsMetadataResolver()
+    ).collect(toMap(MapOptionsMetadataResolver::supportedFormat, Function.identity()));
 
     public static final String TO_SERIALIZATION_KEY_FORMAT = "serialization.key.format";
     public static final String TO_SERIALIZATION_VALUE_FORMAT = "serialization.value.format";
@@ -80,4 +100,34 @@ public abstract class SqlKeyValueConnector implements SqlConnector {
 
         return new ArrayList<>(fields.values());
     }
+
+    protected MapOptionsMetadata resolveMetadata(
+            List<ExternalField> externalFields,
+            Map<String, String> options,
+            boolean key,
+            InternalSerializationService serializationService
+    ) {
+        String fieldName = key ? KEY_ATTRIBUTE_NAME.value() : THIS_ATTRIBUTE_NAME.value();
+        String formatOption = key ? TO_SERIALIZATION_KEY_FORMAT : TO_SERIALIZATION_VALUE_FORMAT;
+        String format = options.get(formatOption);
+        if (format == null) {
+            MapOptionsMetadata primitiveField = MapOptionsMetadataResolver.resolvePrimitive(externalFields, key);
+            if (primitiveField == null) {
+                // TODO: fallback to sample resolution
+                throw QueryException.error("Unable to resolve table metadata. Neither '"
+                        + fieldName + "' column nor '" + formatOption + "' option found");
+            }
+            return primitiveField;
+        }
+
+        MapOptionsMetadataResolver resolver = METADATA_RESOLVERS.get(format);
+        if (resolver == null) {
+            throw QueryException.error(
+                    format("Specified format '%s' is not among supported ones %s", format, METADATA_RESOLVERS.keySet())
+            );
+        }
+
+        return requireNonNull(resolver.resolve(externalFields, options, key, serializationService));
+    }
+
 }

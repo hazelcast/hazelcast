@@ -33,27 +33,22 @@ import com.hazelcast.sql.impl.schema.map.options.PojoMapOptionsMetadataResolver;
 import com.hazelcast.sql.impl.schema.map.options.PortableMapOptionsMetadataResolver;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
-import static com.hazelcast.internal.util.Preconditions.checkNotNull;
+import static com.hazelcast.query.QueryConstants.KEY_ATTRIBUTE_NAME;
+import static com.hazelcast.query.QueryConstants.THIS_ATTRIBUTE_NAME;
 import static java.lang.String.format;
+import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toMap;
 
 // TODO: do we want to keep it? maps are auto discovered...
 public class LocalReplicatedMapConnector extends SqlKeyValueConnector {
 
     public static final String TYPE_NAME = "com.hazelcast.LocalReplicatedMap";
-
-    private static final Map<String, MapOptionsMetadataResolver> METADATA_RESOLVERS = Stream.of(
-            new PojoMapOptionsMetadataResolver(),
-            new PortableMapOptionsMetadataResolver(),
-            new JsonMapOptionsMetadataResolver()
-    ).collect(toMap(MapOptionsMetadataResolver::supportedFormat, Function.identity()));
 
     @Override
     public String typeName() {
@@ -66,19 +61,9 @@ public class LocalReplicatedMapConnector extends SqlKeyValueConnector {
             @Nonnull String schemaName,
             @Nonnull String tableName,
             @Nonnull Map<String, String> options,
-            @Nullable List<ExternalField> externalFields
+            @Nonnull List<ExternalField> externalFields
     ) {
         String objectName = options.getOrDefault(TO_OBJECT_NAME, tableName);
-        return createTable0(nodeEngine, schemaName, objectName, externalFields, options);
-    }
-
-    private static ReplicatedMapTable createTable0(
-            NodeEngine nodeEngine,
-            String schemaName,
-            String name,
-            List<ExternalField> externalFields,
-            Map<String, String> options
-    ) {
         InternalSerializationService serializationService =
                 (InternalSerializationService) nodeEngine.getSerializationService();
 
@@ -88,13 +73,13 @@ public class LocalReplicatedMapConnector extends SqlKeyValueConnector {
 
         // TODO: deduplicate with ReplicatedMapTableResolver ???
         ReplicatedMapService service = nodeEngine.getService(ReplicatedMapService.SERVICE_NAME);
-        Collection<ReplicatedRecordStore> stores = service.getAllReplicatedRecordStores(name);
+        Collection<ReplicatedRecordStore> stores = service.getAllReplicatedRecordStores(objectName);
 
         long estimatedRowCount = stores.size() * nodeEngine.getPartitionService().getPartitionCount();
 
         return new ReplicatedMapTable(
                 schemaName,
-                name,
+                objectName,
                 fields,
                 new ConstantTableStatistics(estimatedRowCount),
                 keyMetadata.getQueryTargetDescriptor(),
@@ -102,26 +87,5 @@ public class LocalReplicatedMapConnector extends SqlKeyValueConnector {
                 keyMetadata.getUpsertTargetDescriptor(),
                 valueMetadata.getUpsertTargetDescriptor()
         );
-    }
-
-    private static MapOptionsMetadata resolveMetadata(
-            List<ExternalField> externalFields,
-            Map<String, String> options,
-            boolean key,
-            InternalSerializationService serializationService
-    ) {
-        String format = options.get(key ? TO_SERIALIZATION_KEY_FORMAT : TO_SERIALIZATION_VALUE_FORMAT);
-        if (format == null) {
-            return MapOptionsMetadataResolver.resolve(externalFields, key);
-        }
-
-        MapOptionsMetadataResolver resolver = METADATA_RESOLVERS.get(format);
-        if (resolver == null) {
-            throw QueryException.error(
-                    format("Specified format '%s' is not among supported ones %s", format, METADATA_RESOLVERS.keySet())
-            );
-        }
-
-        return checkNotNull(resolver.resolve(externalFields, options, key, serializationService));
     }
 }

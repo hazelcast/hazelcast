@@ -21,7 +21,6 @@ import com.hazelcast.sql.impl.schema.ExternalTable.ExternalField;
 import com.hazelcast.sql.impl.schema.Table;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Map;
 
@@ -65,6 +64,6 @@ public interface SqlConnector {
             @Nonnull String schemaName,
             @Nonnull String tableName,
             @Nonnull Map<String, String> options,
-            @Nullable List<ExternalField> externalFields
+            @Nonnull List<ExternalField> externalFields
     );
 }

@@ -17,7 +17,6 @@
 package com.hazelcast.sql.impl.schema.map.options;
 
 import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.extract.GenericQueryTargetDescriptor;
 import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.inject.ObjectUpsertTargetDescriptor;
@@ -45,16 +44,18 @@ public interface MapOptionsMetadataResolver {
             InternalSerializationService serializationService
     );
 
-    static MapOptionsMetadata resolve(
+    /**
+     * Resolve the key or value field assuming it is primitive. Return null if
+     * the `__key` or `this` column is missing.
+     */
+    static MapOptionsMetadata resolvePrimitive(
             List<ExternalField> externalFields,
             boolean isKey
     ) {
         String fieldName = isKey ? KEY_ATTRIBUTE_NAME.value() : THIS_ATTRIBUTE_NAME.value();
         ExternalField externalField = findExternalField(externalFields, fieldName);
-
         if (externalField == null) {
-            // TODO: fallback to sample resolution ???
-            throw QueryException.error("Unable to resolve table metadata. Missing '" + fieldName + "' column");
+            return null;
         }
 
         TableField tableField = new MapTableField(
@@ -73,7 +74,7 @@ public interface MapOptionsMetadataResolver {
     static ExternalField findExternalField(List<ExternalField> externalFields, String fieldName) {
         return externalFields.stream()
                 .filter(externalField -> fieldName.equalsIgnoreCase(externalField.name()))
-                .findFirst()
+                .findAny()
                 .orElse(null);
     }
 }
