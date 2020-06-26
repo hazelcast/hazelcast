@@ -53,7 +53,8 @@ public class PlanTest extends SqlTestSupport {
             fragmentMappings,
             outboundEdgeMap,
             inboundEdgeMap,
-            inboundEdgeMemberCountMap
+            inboundEdgeMemberCountMap,
+            null
         );
 
         assertSame(partitionMap, plan.getPartitionMap());

@@ -52,36 +52,14 @@ public class QueryStateRegistryTest extends SqlTestSupport {
         QueryResultProducer resultProducer = new BlockingRootResultConsumer();
         QueryStateCompletionCallback completionCallback = new TestQueryStateCompletionCallback();
 
-        // Test without registration.
+        // Test with registration.
         QueryState state = registry.onInitiatorQueryStarted(
             localMemberId,
             timeout,
             initiatorPlan,
+            null,
             resultProducer,
-            completionCallback,
-            false
-        );
-
-        assertEquals(state.getQueryId().getMemberId(), localMemberId);
-        assertEquals(state.getLocalMemberId(), localMemberId);
-        assertEquals(state.getStartTime(), currentTime);
-
-        assertTrue(state.isInitiator());
-        assertEquals(state.getQueryId(), state.getInitiatorState().getQueryId());
-        assertEquals(initiatorPlan, state.getInitiatorState().getPlan());
-        assertEquals(resultProducer, state.getInitiatorState().getResultProducer());
-        assertEquals(timeout, state.getInitiatorState().getTimeout());
-
-        assertTrue(registry.getStates().isEmpty());
-
-        // Test with registration.
-        state = registry.onInitiatorQueryStarted(
-            localMemberId,
-            timeout,
-            initiatorPlan,
-            resultProducer,
-            completionCallback,
-            true
+            completionCallback
         );
 
         assertEquals(1, registry.getStates().size());
