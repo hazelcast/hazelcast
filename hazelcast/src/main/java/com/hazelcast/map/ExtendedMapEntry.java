@@ -16,6 +16,7 @@
 
 package com.hazelcast.map;
 
+import java.util.Map.Entry;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -24,9 +25,10 @@ import java.util.concurrent.TimeUnit;
  * @see com.hazelcast.map.IMap#set(Object, Object, long, TimeUnit)
  * @see com.hazelcast.map.IMap#put(Object, Object, long, TimeUnit)
  *
+ * @param <K> key type
  * @param <V> value type
  */
-public interface ExtendedMapEntry<V> {
+public interface ExtendedMapEntry<K, V> extends Entry<K, V> {
 
     /** Set the value and set the TTL to a non-default value for the IMap */
     V setValue(V value, long ttl, TimeUnit ttlUnit);

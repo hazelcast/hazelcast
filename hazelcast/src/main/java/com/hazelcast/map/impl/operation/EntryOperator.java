@@ -26,6 +26,7 @@ import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.util.Clock;
 import com.hazelcast.internal.util.Timer;
 import com.hazelcast.map.EntryProcessor;
+import com.hazelcast.map.ExtendedMapEntry;
 import com.hazelcast.map.impl.LazyMapEntry;
 import com.hazelcast.map.impl.LocalMapStatsProvider;
 import com.hazelcast.map.impl.LockAwareLazyMapEntry;
@@ -322,7 +323,7 @@ public final class EntryOperator {
         }
     }
 
-    private void process(Entry entry) {
+    private void process(ExtendedMapEntry entry) {
         if (backup) {
             backupProcessor.process(entry);
             return;
