@@ -21,7 +21,6 @@ import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.spi.impl.NodeEngine;
-import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.schema.ConstantTableStatistics;
 import com.hazelcast.sql.impl.schema.ExternalTable.ExternalField;
@@ -29,28 +28,17 @@ import com.hazelcast.sql.impl.schema.Table;
 import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.schema.map.MapTableIndex;
 import com.hazelcast.sql.impl.schema.map.PartitionedMapTable;
-import com.hazelcast.sql.impl.schema.map.options.JsonMapOptionsMetadataResolver;
 import com.hazelcast.sql.impl.schema.map.options.MapOptionsMetadata;
-import com.hazelcast.sql.impl.schema.map.options.MapOptionsMetadataResolver;
-import com.hazelcast.sql.impl.schema.map.options.PojoMapOptionsMetadataResolver;
-import com.hazelcast.sql.impl.schema.map.options.PortableMapOptionsMetadataResolver;
 
 import javax.annotation.Nonnull;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Function;
-import java.util.stream.Stream;
 
-import static com.hazelcast.query.QueryConstants.KEY_ATTRIBUTE_NAME;
-import static com.hazelcast.query.QueryConstants.THIS_ATTRIBUTE_NAME;
 import static com.hazelcast.sql.impl.schema.map.MapTableUtils.estimatePartitionedMapRowCount;
 import static com.hazelcast.sql.impl.schema.map.MapTableUtils.getPartitionedMapDistributionField;
 import static com.hazelcast.sql.impl.schema.map.MapTableUtils.getPartitionedMapIndexes;
 import static com.hazelcast.sql.impl.schema.map.MapTableUtils.mapPathsToOrdinals;
-import static java.lang.String.format;
 import static java.util.Collections.emptyList;
-import static java.util.Objects.requireNonNull;
-import static java.util.stream.Collectors.toMap;
 
 // TODO: do we want to keep it? maps are auto discovered...
 public class LocalPartitionedMapConnector extends SqlKeyValueConnector {

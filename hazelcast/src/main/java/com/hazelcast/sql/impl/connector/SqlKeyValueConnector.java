@@ -43,12 +43,6 @@ import static java.util.stream.Collectors.toMap;
 
 public abstract class SqlKeyValueConnector implements SqlConnector {
 
-    private static final Map<String, MapOptionsMetadataResolver> METADATA_RESOLVERS = Stream.of(
-            new PojoMapOptionsMetadataResolver(),
-            new PortableMapOptionsMetadataResolver(),
-            new JsonMapOptionsMetadataResolver()
-    ).collect(toMap(MapOptionsMetadataResolver::supportedFormat, Function.identity()));
-
     public static final String TO_SERIALIZATION_KEY_FORMAT = "serialization.key.format";
     public static final String TO_SERIALIZATION_VALUE_FORMAT = "serialization.value.format";
 
@@ -75,6 +69,12 @@ public abstract class SqlKeyValueConnector implements SqlConnector {
     public static final String TO_VALUE_FACTORY_ID = "serialization.value.portable.factoryId";
     public static final String TO_VALUE_CLASS_ID = "serialization.value.portable.classId";
     public static final String TO_VALUE_CLASS_VERSION = "serialization.value.portable.classVersion";
+
+    private static final Map<String, MapOptionsMetadataResolver> METADATA_RESOLVERS = Stream.of(
+            new PojoMapOptionsMetadataResolver(),
+            new PortableMapOptionsMetadataResolver(),
+            new JsonMapOptionsMetadataResolver()
+    ).collect(toMap(MapOptionsMetadataResolver::supportedFormat, Function.identity()));
 
     // TODO: deduplicate with AbstractMapTableResolver
     protected static List<TableField> mergeFields(
