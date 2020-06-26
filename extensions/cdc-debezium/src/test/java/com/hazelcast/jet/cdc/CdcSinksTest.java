@@ -208,12 +208,61 @@ public class CdcSinksTest extends PipelineTestSupport {
     }
 
     @Test
+    public void reordering_syncUpdate() {
+        p.readFrom(items(() -> Arrays.asList(UPDATE1, SYNC1).iterator()))
+                .writeTo(localSync());
+        execute().join();
+
+        assertMap(jet(), "sthomas@acme.com", null);
+
+        jet().getMap(MAP).destroy();
+    }
+
+    @Test
+    public void reordering_insertDelete() {
+        p.readFrom(items(() -> Arrays.asList(DELETE2, INSERT2).iterator()))
+                .writeTo(localSync());
+        execute().join();
+
+        assertMap(jet(), null, null);
+
+        jet().getMap(MAP).destroy();
+    }
+
+    @Test
+    public void reordering_differentIds() {
+        p.readFrom(items(() -> Arrays.asList(DELETE2, UPDATE1, INSERT2, SYNC1).iterator()))
+                .writeTo(localSync());
+        execute().join();
+
+        assertMap(jet(), "sthomas@acme.com", null);
+
+        jet().getMap(MAP).destroy();
+    }
+
+    @Test
     public void deleteWithoutInsertNorUpdate() {
         p.readFrom(items(() -> Arrays.asList(SYNC1, DELETE2).iterator()))
                 .writeTo(localSync());
         execute().join();
 
         assertMap(jet(), "sally.thomas@acme.com", null);
+
+        jet().getMap(MAP).destroy();
+    }
+
+    @Test
+    public void sourceSwitch() {
+        p.readFrom(items(() -> Arrays.asList(
+                UPDATE1, INSERT2,
+                new ChangeRecordImpl(1, 0, UPDATE1.key().toJson(),
+                        UPDATE1.value().toJson().replace("sthomas@acme.com", "sthomas2@acme.com")))
+                .iterator()))
+                .writeTo(localSync());
+
+        execute().join();
+
+        assertMap(jet(), "sthomas2@acme.com", "gbailey@foobar.com");
 
         jet().getMap(MAP).destroy();
     }
