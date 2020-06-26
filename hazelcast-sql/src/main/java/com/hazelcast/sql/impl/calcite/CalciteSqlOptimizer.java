@@ -239,7 +239,8 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         QueryParameterMetadata parameterMetadata = new QueryParameterMetadata(mappedParameterRowType);
 
         PlanCreateVisitor visitor = new PlanCreateVisitor(
-            nodeEngine,
+            nodeEngine.getLocalMember().getUuid(),
+            PlanCreateVisitor.createPartitionMap(nodeEngine),
             relIdMap,
             sql,
             parameterMetadata,

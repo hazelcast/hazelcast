@@ -169,29 +169,35 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
      *     Jet for a sub-relNode and the row metadata aren't needed
      */
     public PlanCreateVisitor(
-        NodeEngine nodeEngine,
+        UUID localMemberId,
+        Map<UUID, PartitionIdSet> partMap,
         Map<PhysicalRel, List<Integer>> relIdMap,
         String sql,
         QueryParameterMetadata parameterMetadata,
         @Nullable List<String> rootColumnNames
     ) {
-        this.localMemberId = nodeEngine.getLocalMember().getUuid();
+        this.localMemberId = localMemberId;
+        this.partMap = partMap;
         this.relIdMap = relIdMap;
         this.sql = sql;
         this.parameterMetadata = parameterMetadata;
         this.rootColumnNames = rootColumnNames;
 
+        memberIds = new HashSet<>(partMap.keySet());
+    }
+
+    public static Map<UUID, PartitionIdSet> createPartitionMap(NodeEngine nodeEngine) {
         // Get partition mapping.
         Collection<Partition> parts = nodeEngine.getHazelcastInstance().getPartitionService().getPartitions();
         int partCnt = parts.size();
-        partMap = new LinkedHashMap<>();
+        Map<UUID, PartitionIdSet> partMap = new LinkedHashMap<>();
 
         for (Partition part : parts) {
             UUID ownerId = part.getOwner().getUuid();
             partMap.computeIfAbsent(ownerId, (key) -> new PartitionIdSet(partCnt)).add(part.getPartitionId());
         }
 
-        memberIds = new HashSet<>(partMap.keySet());
+        return partMap;
     }
 
     public Plan getPlan() {
