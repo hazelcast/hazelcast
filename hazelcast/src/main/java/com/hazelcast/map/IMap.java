@@ -3091,4 +3091,27 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
         ConcurrentMap.super.forEach(action);
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * <p> </p>
+     * <p>
+     *     If the supplied {@code remappingFunction} is a lambda, anonymous class or an inner class,
+     *     it would be executed locally. Same would happen if it is not serializable.
+     *     This may result in multiple round-trips between hazelcast nodes, and possibly a livelock.
+     *</p>
+     * <p>
+     *     Otherwise (i.e. if it is a top-level class or a member class, and it is serializable), the function <i>may be</i> sent
+     *     to the server which owns the key. This results in a single remote call. Also, the function would have exclusive
+     *     access to the map entry during its execution.
+     *     Note that in this case, the function class must be deployed on all the servers (either physically
+     *     or via user-code-deployment).
+     * </p>
+     * <p>
+     *     When this method is invoked using a hazelcast-client instance, the {@code remappingFunction} is always executed locally
+     * </p>
+     *
+     * @since 4.1
+     */
+    V compute(K key, BiFunction<? super K, ? super V, ? extends V> remappingFunction);
 }
