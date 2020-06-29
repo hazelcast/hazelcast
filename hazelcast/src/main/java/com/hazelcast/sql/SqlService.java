@@ -26,7 +26,7 @@ import javax.annotation.Nonnull;
  * <h1>Overview</h1>
  * Hazelcast is able to execute distributed SQL queries over the following entities:
  * <ul>
- *     <li>IMap</li>
+ *     <li>IMap
  * </ul>
  * When a query is submitted to a member, it is parsed and optimized by the {@code hazelcast-sql} module, that is based on
  * <a href="https://calcite.apache.org">Apache Calcite</a>. The {@code hazelcast-sql} must be in the classpath, otherwise
@@ -47,9 +47,9 @@ import javax.annotation.Nonnull;
  * Columns are extracted from objects as follows:
  * <ul>
  *     <li>For non-Portable objects, public getters and fields are used to populate the column list. For getters, the first
- *     letter is converted to lower case. A getter takes precedence over a field in case of naming conflict</li>
+ *     letter is converted to lower case. A getter takes precedence over a field in case of naming conflict
  *     <li>For {@link Portable} objects, field names used in the {@link Portable#writePortable(PortableWriter)} method
- *     are used to populate the column list</li>
+ *     are used to populate the column list
  * </ul>
  * The whole key and value objects could be accessed through a special fields {@code __key} and {@code this}, respectively. If
  * key (value) object has fields, then the whole key (value) field is exposed as a normal field. Otherwise the field is hidden.
@@ -73,17 +73,17 @@ import javax.annotation.Nonnull;
  * </pre>
  * This model will be resolved to the following table columns:
  * <ul>
- *     <li>personId BIGINT</li>
- *     <li>departmentId BIGINT</li>
- *     <li>name VARCHAR</li>
- *     <li>__key OBJECT (hidden)</li>
- *     <li>this OBJECT (hidden)</li>
+ *     <li>personId BIGINT
+ *     <li>departmentId BIGINT
+ *     <li>name VARCHAR
+ *     <li>__key OBJECT (hidden)
+ *     <li>this OBJECT (hidden)
  * </ul>
  * <h2>Consistency</h2>
  * Results returned from IMap query are weakly consistent:
  * <ul>
- *     <li>If an entry was not updated during iteration, it is guaranteed to be returned exactly once</li>
- *     <li>If an entry was modified during iteration, it might be returned zero, one or several times</li>
+ *     <li>If an entry was not updated during iteration, it is guaranteed to be returned exactly once
+ *     <li>If an entry was modified during iteration, it might be returned zero, one or several times
  * </ul>
  * <h1>Usage</h1>
  * When a query is executed, an {@link SqlResult} is returned. You may get row iterator from the result. The result must be closed
