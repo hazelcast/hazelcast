@@ -20,9 +20,6 @@ package com.hazelcast.sql;
  * Service to execute SQL queries.
  */
 public interface SqlService {
-    /** Unique service name. */
-    String SERVICE_NAME = "hz:impl:sqlService";
-
     /**
      * Execute query.
      *
