@@ -16,6 +16,8 @@
 
 package com.hazelcast.sql;
 
+import javax.annotation.Nonnull;
+
 /**
  * SQL row.
  */
@@ -34,7 +36,9 @@ public interface SqlRow {
     Object getObject(int columnIndex);
 
     /**
+     * @see SqlRowMetadata
      * @return Row metadata.
      */
+    @Nonnull
     SqlRowMetadata getRowMetadata();
 }

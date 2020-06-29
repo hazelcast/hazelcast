@@ -42,13 +42,14 @@ public class SqlResultImpl implements SqlResult {
         rowMetadata = state.getInitiatorState().getRowMetadata();
     }
 
+    @Nonnull
     @Override
     public SqlRowMetadata getRowMetadata() {
         return rowMetadata;
     }
 
-    @Override
     @Nonnull
+    @Override
     public Iterator<SqlRow> iterator() {
         if (iterator == null) {
             Iterator<SqlRow> iterator0 = new RowToSqlRowIterator(getQueryInitiatorState().getResultProducer().iterator());

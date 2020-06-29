@@ -16,6 +16,8 @@
 
 package com.hazelcast.sql;
 
+import javax.annotation.Nonnull;
+
 /**
  * Service to execute SQL queries.
  */
@@ -27,6 +29,7 @@ public interface SqlService {
      * @param params Parameters.
      * @return Cursor.
      */
+    @Nonnull
     default SqlResult query(String sql, Object... params) {
         SqlQuery query = new SqlQuery(sql);
 
@@ -45,5 +48,6 @@ public interface SqlService {
      * @param query Query.
      * @return Cursor.
      */
+    @Nonnull
     SqlResult query(SqlQuery query);
 }

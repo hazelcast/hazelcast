@@ -806,6 +806,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         return concurrencyDetection;
     }
 
+    @Nonnull
     @Override
     public SqlService getSql() {
         throw new UnsupportedOperationException("SQL is not supported on client members yet.");

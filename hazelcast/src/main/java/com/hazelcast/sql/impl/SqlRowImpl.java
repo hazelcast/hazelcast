@@ -21,6 +21,8 @@ import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.SqlRowMetadata;
 import com.hazelcast.sql.impl.row.Row;
 
+import javax.annotation.Nonnull;
+
 /**
  * Default implementation of the SQL row which is exposed to users. We merely wrap the internal row, but add more checks which
  * is important for user-facing code, but which could cause performance degradation if implemented in the internal classes.
@@ -42,6 +44,7 @@ public class SqlRowImpl implements SqlRow {
         return row.get(columnIndex);
     }
 
+    @Nonnull
     @Override
     public SqlRowMetadata getRowMetadata() {
         return rowMetadata;

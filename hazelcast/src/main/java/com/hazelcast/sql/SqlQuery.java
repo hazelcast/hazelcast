@@ -18,6 +18,7 @@ package com.hazelcast.sql;
 
 import com.hazelcast.config.SqlConfig;
 
+import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -63,6 +64,7 @@ public class SqlQuery {
      *
      * @return SQL query.
      */
+    @Nonnull
     public String getSql() {
         return sql;
     }
@@ -90,6 +92,7 @@ public class SqlQuery {
      *
      * @return Query parameters.
      */
+    @Nonnull
     public List<Object> getParameters() {
         return parameters != null ? parameters : Collections.emptyList();
     }
@@ -108,6 +111,7 @@ public class SqlQuery {
      * @param parameters Query parameters.
      * @return This instance for chaining.
      */
+    @Nonnull
     public SqlQuery setParameters(List<Object> parameters) {
         if (parameters == null || parameters.isEmpty()) {
             this.parameters = null;
@@ -126,6 +130,7 @@ public class SqlQuery {
      * @param parameter Parameter.
      * @return This instance for chaining.
      */
+    @Nonnull
     public SqlQuery addParameter(Object parameter) {
         if (parameters == null) {
             parameters = new ArrayList<>(1);
@@ -143,6 +148,7 @@ public class SqlQuery {
      * @see #addParameter(Object)
      * @return This instance for chaining.
      */
+    @Nonnull
     public SqlQuery clearParameters() {
         this.parameters = null;
 
@@ -172,6 +178,7 @@ public class SqlQuery {
      * @param timeout Query timeout in milliseconds, {@code 0} for no timeout, {@code -1} to user member's default timeout.
      * @return This instance for chaining.
      */
+    @Nonnull
     public SqlQuery setTimeout(long timeout) {
         if (timeout < 0 && timeout != TIMEOUT_NOT_SET) {
             throw new IllegalArgumentException("Timeout should be non-negative or -1: " + timeout);
@@ -211,6 +218,7 @@ public class SqlQuery {
      * @param cursorBufferSize Cursor buffer size (measured in the number of rows).
      * @return This instance for chaining.
      */
+    @Nonnull
     public SqlQuery setCursorBufferSize(int cursorBufferSize) {
         if (cursorBufferSize <= 0) {
             throw new IllegalArgumentException("Cursor buffer size should be positive: " + cursorBufferSize);
@@ -226,6 +234,7 @@ public class SqlQuery {
      *
      * @return Copy of this instance.
      */
+    @Nonnull
     public SqlQuery copy() {
         return new SqlQuery(sql, parameters, timeout, cursorBufferSize);
     }
