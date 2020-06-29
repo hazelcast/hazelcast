@@ -17,6 +17,7 @@
 package com.hazelcast.sql;
 
 import com.hazelcast.core.HazelcastException;
+import com.hazelcast.spi.annotation.PrivateApi;
 
 import javax.annotation.Nonnull;
 import java.util.UUID;
@@ -29,6 +30,7 @@ public class SqlException extends HazelcastException {
     private final UUID originatingMemberId;
     private final int code;
 
+    @PrivateApi
     public SqlException(@Nonnull UUID originatingMemberId, int code, String message, Throwable cause) {
         super(message, cause);
 
