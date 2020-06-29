@@ -243,6 +243,9 @@ public class SqlBasicTest extends SqlTestSupport {
                 }
 
                 uniqueKeys.add(key0);
+
+                assertThrows(IndexOutOfBoundsException.class, () -> row.getObject(-1));
+                assertThrows(IndexOutOfBoundsException.class, () -> row.getObject(row.getRowMetadata().getColumnCount()));
             }
 
             assertThrows(NoSuchElementException.class, rowIterator::next);
