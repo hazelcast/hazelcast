@@ -20,6 +20,7 @@ import com.hazelcast.config.SqlConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.util.Preconditions;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
@@ -126,7 +127,9 @@ public class SqlServiceImpl implements SqlService, Consumer<Packet> {
 
     @Nonnull
     @Override
-    public SqlResult query(SqlQuery query) {
+    public SqlResult query(@Nonnull SqlQuery query) {
+        Preconditions.checkNotNull(query, "Query cannot be null");
+
         try {
             if (nodeEngine.getLocalMember().isLiteMember()) {
                 throw QueryException.error("SQL queries cannot be executed on lite members");

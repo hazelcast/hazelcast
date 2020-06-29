@@ -18,6 +18,7 @@ package com.hazelcast.sql;
 
 import com.hazelcast.core.HazelcastException;
 
+import javax.annotation.Nonnull;
 import java.util.UUID;
 
 /**
@@ -38,6 +39,7 @@ public class SqlException extends HazelcastException {
     /**
      * @return ID of the member where the error occurred.
      */
+    @Nonnull
     public UUID getOriginatingMemberId() {
         return originatingMemberId;
     }

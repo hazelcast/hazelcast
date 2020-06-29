@@ -23,14 +23,21 @@ import javax.annotation.Nonnull;
  */
 public interface SqlService {
     /**
-     * Execute query.
+     * Convenient method to execute a query with the given parameters.
+     * <p>
+     * Converts passed SQL string and parameters into an {@link SqlQuery} object and invokes {@link #query(SqlQuery)}.
      *
+     * @see SqlQuery
+     * @see #query(SqlQuery)
      * @param sql SQL.
      * @param params Parameters.
-     * @return Cursor.
+     * @return Result.
+     * @throws NullPointerException If sql is null
+     * @throws IllegalArgumentException If sql is empty
+     * @throws SqlException In case of execution error
      */
     @Nonnull
-    default SqlResult query(String sql, Object... params) {
+    default SqlResult query(@Nonnull String sql, Object... params) {
         SqlQuery query = new SqlQuery(sql);
 
         if (params != null) {
@@ -43,11 +50,13 @@ public interface SqlService {
     }
 
     /**
-     * Execute query.
+     * Executes query.
      *
      * @param query Query.
-     * @return Cursor.
+     * @return Result.
+     * @throws NullPointerException If query is null
+     * @throws SqlException In case of execution error
      */
     @Nonnull
-    SqlResult query(SqlQuery query);
+    SqlResult query(@Nonnull SqlQuery query);
 }

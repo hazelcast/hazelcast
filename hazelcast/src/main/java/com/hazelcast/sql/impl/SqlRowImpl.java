@@ -22,6 +22,7 @@ import com.hazelcast.sql.SqlRowMetadata;
 import com.hazelcast.sql.impl.row.Row;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 /**
  * Default implementation of the SQL row which is exposed to users. We merely wrap the internal row, but add more checks which
@@ -37,6 +38,7 @@ public class SqlRowImpl implements SqlRow {
         this.row = row;
     }
 
+    @Nullable
     @Override
     public Object getObject(int columnIndex) {
         checkIndex(columnIndex);

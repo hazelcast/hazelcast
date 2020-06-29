@@ -17,6 +17,7 @@
 package com.hazelcast.sql;
 
 import com.hazelcast.config.SqlConfig;
+import com.hazelcast.internal.util.Preconditions;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
@@ -76,10 +77,15 @@ public class SqlQuery {
      *
      * @param sql SQL query.
      * @return This instance for chaining.
+     * @throws NullPointerException If passed SQL query is null
+     * @throws IllegalArgumentException If passed SQL query is empty
      */
-    public SqlQuery setSql(String sql) {
-        if (sql == null || sql.length() == 0) {
-            throw new IllegalArgumentException("SQL cannot be null or empty.");
+    @Nonnull
+    public SqlQuery setSql(@Nonnull String sql) {
+        Preconditions.checkNotNull(sql, "SQL cannot be null");
+
+        if (sql.length() == 0) {
+            throw new IllegalArgumentException("SQL cannot be empty");
         }
 
         this.sql = sql;
