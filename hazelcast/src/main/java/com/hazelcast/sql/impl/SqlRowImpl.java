@@ -42,7 +42,7 @@ public class SqlRowImpl implements SqlRow {
 
     @Nullable
     @Override
-    public Object getObject(int columnIndex) {
+    public <T> T getObject(int columnIndex) {
         checkIndex(columnIndex);
 
         return getObject0(columnIndex);
@@ -50,13 +50,13 @@ public class SqlRowImpl implements SqlRow {
 
     @Nullable
     @Override
-    public Object getObject(@Nonnull String columnName) {
+    public <T> T getObject(@Nonnull String columnName) {
         int columnIndex = resolveIndex(columnName);
 
         return getObject0(columnIndex);
     }
 
-    private Object getObject0(int columnIndex) {
+    private <T> T getObject0(int columnIndex) {
         return row.get(columnIndex);
     }
 

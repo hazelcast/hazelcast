@@ -184,7 +184,7 @@ public class SqlBasicTest extends SqlTestSupport {
 
                 assertEquals(rowMetadata, res.getRowMetadata());
 
-                Long key0 = (Long) row.getObject(rowMetadata.findColumn(adjustFieldName("key")));
+                Long key0 = row.getObject(rowMetadata.findColumn(adjustFieldName("key")));
                 assert key0 != null;
 
                 AbstractPojoKey key = key(key0);
