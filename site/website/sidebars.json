@@ -13,8 +13,8 @@
         "type": "subcategory",
         "label": "Change Data Capture",
         "ids": [
-          "tutorials/cdc/cdc-mysql",
-          "tutorials/cdc/cdc-postgres"
+          "tutorials/cdc",
+          "tutorials/cdc-postgres"
         ]
       },
       "tutorials/map-join",
