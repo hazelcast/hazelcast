@@ -185,6 +185,21 @@ public final class SinkProcessors {
 
     /**
      * Returns a supplier of processors for
+     * {@link Sinks#mapWithEntryProcessor(int, String, FunctionEx, FunctionEx)}.
+     */
+    @Nonnull
+    public static <T, K, V, R> ProcessorMetaSupplier updateMapP(
+            int maxParallelAsyncOps,
+            @Nonnull String mapName,
+            @Nonnull FunctionEx<? super T, ? extends K> toKeyFn,
+            @Nonnull FunctionEx<? super T, ? extends EntryProcessor<K, V, R>> toEntryProcessorFn
+
+    ) {
+        return HazelcastWriters.updateMapSupplier(maxParallelAsyncOps, mapName, null, toKeyFn, toEntryProcessorFn);
+    }
+
+    /**
+     * Returns a supplier of processors for
      * {@link Sinks#remoteMapWithEntryProcessor(String, ClientConfig, FunctionEx,
      * FunctionEx)}.
      */

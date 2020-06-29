@@ -73,6 +73,23 @@ class RecordPartImpl implements RecordPart {
     }
 
     @Override
+    public int hashCode() {
+        return json.hashCode();
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null || getClass() != obj.getClass()) {
+            return false;
+        }
+        RecordPartImpl other = (RecordPartImpl) obj;
+        return Objects.equals(json, other.json);
+    }
+
+    @Override
     public String toString() {
         return toJson();
     }

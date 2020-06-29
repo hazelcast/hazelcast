@@ -43,9 +43,7 @@ import java.sql.Statement;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
-import java.util.Objects;
 import java.util.concurrent.ThreadLocalRandom;
-import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.jet.Util.entry;
 
@@ -56,13 +54,13 @@ public class PostgresCdcIntegrationTest extends AbstractPostgresCdcIntegrationTe
     public void customers() throws Exception {
         // given
         List<String> expectedRecords = Arrays.asList(
-                "1001/0:SYNC:Customer {id=1001, firstName=Sally, lastName=Thomas, email=sally.thomas@acme.com}",
-                "1002/0:SYNC:Customer {id=1002, firstName=George, lastName=Bailey, email=gbailey@foobar.com}",
-                "1003/0:SYNC:Customer {id=1003, firstName=Edward, lastName=Walker, email=ed@walker.com}",
-                "1004/0:SYNC:Customer {id=1004, firstName=Anne, lastName=Kretchmar, email=annek@noanswer.org}",
-                "1004/1:UPDATE:Customer {id=1004, firstName=Anne Marie, lastName=Kretchmar, email=annek@noanswer.org}",
-                "1005/0:INSERT:Customer {id=1005, firstName=Jason, lastName=Bourne, email=jason@bourne.org}",
-                "1005/1:DELETE:Customer {id=1005, firstName=Jason, lastName=Bourne, email=jason@bourne.org}"
+                "1001/0:SYNC:" + new Customer(1001, "Sally", "Thomas", "sally.thomas@acme.com"),
+                "1002/0:SYNC:" + new Customer(1002, "George", "Bailey", "gbailey@foobar.com"),
+                "1003/0:SYNC:" + new Customer(1003, "Edward", "Walker", "ed@walker.com"),
+                "1004/0:SYNC:" + new Customer(1004, "Anne", "Kretchmar", "annek@noanswer.org"),
+                "1004/1:UPDATE:" + new Customer(1004, "Anne Marie", "Kretchmar", "annek@noanswer.org"),
+                "1005/0:INSERT:" + new Customer(1005, "Jason", "Bourne", "jason@bourne.org"),
+                "1005/1:DELETE:" + new Customer(1005, "Jason", "Bourne", "jason@bourne.org")
         );
 
         Pipeline pipeline = Pipeline.create();
@@ -114,14 +112,10 @@ public class PostgresCdcIntegrationTest extends AbstractPostgresCdcIntegrationTe
     public void orders() {
         // given
         List<String> expectedRecords = Arrays.asList(
-                "10001/0:SYNC:Order {orderNumber=10001, orderDate=" + new Date(1452902400000L) +
-                        ", quantity=1, productId=102}",
-                "10002/0:SYNC:Order {orderNumber=10002, orderDate=" + new Date(1452988800000L) +
-                        ", quantity=2, productId=105}",
-                "10003/0:SYNC:Order {orderNumber=10003, orderDate=" + new Date(1455840000000L) +
-                        ", quantity=2, productId=106}",
-                "10004/0:SYNC:Order {orderNumber=10004, orderDate=" + new Date(1456012800000L) +
-                        ", quantity=1, productId=107}"
+                "10001/0:SYNC:" + new Order(10001, new Date(1452902400000L), 1001, 1, 102),
+                "10002/0:SYNC:" + new Order(10002, new Date(1452988800000L) , 1002, 2, 105),
+                "10003/0:SYNC:" + new Order(10003, new Date(1455840000000L), 1002, 2, 106),
+                "10004/0:SYNC:" + new Order(10004, new Date(1456012800000L), 1003, 1, 107)
         );
 
         Pipeline pipeline = Pipeline.create();
@@ -303,99 +297,6 @@ public class PostgresCdcIntegrationTest extends AbstractPostgresCdcIntegrationTe
         } else {
             return record.key().toObject(OrderPrimaryKey.class).id;
         }
-    }
-
-    private static class Customer {
-
-        @JsonProperty("id")
-        public int id;
-
-        @JsonProperty("first_name")
-        public String firstName;
-
-        @JsonProperty("last_name")
-        public String lastName;
-
-        @JsonProperty("email")
-        public String email;
-
-        Customer() {
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(email, firstName, id, lastName);
-        }
-
-        @Override
-        public boolean equals(Object obj) {
-            if (this == obj) {
-                return true;
-            }
-            if (obj == null || getClass() != obj.getClass()) {
-                return false;
-            }
-            Customer other = (Customer) obj;
-            return id == other.id
-                    && Objects.equals(firstName, other.firstName)
-                    && Objects.equals(lastName, other.lastName)
-                    && Objects.equals(email, other.email);
-        }
-
-        @Override
-        public String toString() {
-            return "Customer {id=" + id + ", firstName=" + firstName + ", lastName=" + lastName + ", email=" + email + '}';
-        }
-    }
-
-    private static class Order {
-
-        @JsonProperty("id")
-        public int orderNumber;
-
-        @JsonProperty("order_date")
-        public Date orderDate;
-
-        @JsonProperty("quantity")
-        public int quantity;
-
-        @JsonProperty("product_id")
-        public int productId;
-
-        Order() {
-        }
-
-        public void setOrderDate(Date orderDate) {
-            long days = orderDate.getTime();
-            this.orderDate = new Date(TimeUnit.DAYS.toMillis(days));
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(orderNumber, orderDate, quantity, productId);
-        }
-
-        @Override
-        public boolean equals(Object obj) {
-            if (this == obj) {
-                return true;
-            }
-            if (obj == null || getClass() != obj.getClass()) {
-                return false;
-            }
-            Order other = (Order) obj;
-            return orderNumber == other.orderNumber
-                    && Objects.equals(orderDate, other.orderDate)
-                    && Objects.equals(quantity, other.quantity)
-                    && Objects.equals(productId, other.productId);
-        }
-
-        @Override
-        public String toString() {
-            return "Order {orderNumber=" + orderNumber + ", orderDate=" + orderDate + ", quantity=" + quantity +
-                    ", productId=" + productId + '}';
-        }
-
     }
 
     private static class OrderPrimaryKey {

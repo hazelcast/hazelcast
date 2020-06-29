@@ -126,6 +126,22 @@ public final class HazelcastWriters {
     }
 
     @Nonnull
+    public static <T, K, V, R> ProcessorMetaSupplier updateMapSupplier(
+            int maxParallelAsyncOps,
+            @Nonnull String name,
+            @Nullable ClientConfig clientConfig,
+            @Nonnull FunctionEx<? super T, ? extends K> toKeyFn,
+            @Nonnull FunctionEx<? super T, ? extends EntryProcessor<K, V, R>> toEntryProcessorFn
+    ) {
+        checkSerializable(toKeyFn, "toKeyFn");
+        checkSerializable(toEntryProcessorFn, "toEntryProcessorFn");
+
+        return ProcessorMetaSupplier.of(AbstractHazelcastConnectorSupplier.of(asXmlString(clientConfig),
+                instance -> new UpdateMapWithEntryProcessorP<>(instance, maxParallelAsyncOps, name, toKeyFn,
+                        toEntryProcessorFn)));
+    }
+
+    @Nonnull
     public static ProcessorMetaSupplier writeCacheSupplier(@Nonnull String name, @Nullable ClientConfig clientConfig) {
         return ProcessorMetaSupplier.of(2, new WriteCachePSupplier<>(clientConfig, name));
     }
