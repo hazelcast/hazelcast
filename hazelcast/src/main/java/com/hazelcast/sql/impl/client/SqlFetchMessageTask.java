@@ -22,7 +22,6 @@ import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.serialization.Data;
-import com.hazelcast.sql.SqlService;
 import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.SqlInternalService;
 import com.hazelcast.sql.impl.row.Row;
@@ -76,7 +75,7 @@ public class SqlFetchMessageTask extends AbstractCallableMessageTask<SqlFetchCod
 
     @Override
     public String getServiceName() {
-        return SqlService.SERVICE_NAME;
+        return SqlInternalService.SERVICE_NAME;
     }
 
     @Override

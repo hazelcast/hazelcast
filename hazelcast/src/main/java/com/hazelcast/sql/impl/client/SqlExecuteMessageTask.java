@@ -22,7 +22,7 @@ import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.serialization.Data;
-import com.hazelcast.sql.SqlService;
+import com.hazelcast.sql.impl.SqlInternalService;
 import com.hazelcast.sql.impl.SqlResultImpl;
 import com.hazelcast.sql.impl.SqlServiceImpl;
 
@@ -79,7 +79,7 @@ public class SqlExecuteMessageTask extends AbstractCallableMessageTask<SqlExecut
 
     @Override
     public String getServiceName() {
-        return SqlService.SERVICE_NAME;
+        return SqlInternalService.SERVICE_NAME;
     }
 
     @Override

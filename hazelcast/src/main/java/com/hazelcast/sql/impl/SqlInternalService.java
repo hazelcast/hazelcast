@@ -43,6 +43,9 @@ import java.util.UUID;
  * Proxy for SQL service. Backed by either Calcite-based or no-op implementation.
  */
 public class SqlInternalService {
+
+    public static final String SERVICE_NAME = "hz:impl:sqlService";
+
     /** Default flow control factory. */
     private static final FlowControlFactory FLOW_CONTROL_FACTORY = SimpleFlowControlFactory.INSTANCE;
 

@@ -21,7 +21,6 @@ import com.hazelcast.client.impl.protocol.codec.SqlCloseCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
-import com.hazelcast.sql.SqlService;
 import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.SqlInternalService;
 
@@ -58,7 +57,7 @@ public class SqlCloseMessageTask extends AbstractCallableMessageTask<SqlCloseCod
 
     @Override
     public String getServiceName() {
-        return SqlService.SERVICE_NAME;
+        return SqlInternalService.SERVICE_NAME;
     }
 
     @Override
