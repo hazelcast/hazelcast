@@ -76,9 +76,9 @@ public enum SqlColumnType {
     }
 
     /**
-     * Gets Java class of the value of this SQL type.
+     * Gets the Java class of the value of this SQL type.
      *
-     * @return Java class of the value of this SQL type.
+     * @return the Java class of the value of this SQL type
      */
     @Nonnull
     public Class<?> getValueClass() {

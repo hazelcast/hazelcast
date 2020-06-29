@@ -42,7 +42,7 @@ public interface SqlResult extends Iterable<SqlRow>, AutoCloseable {
     /**
      * Gets row metadata.
      *
-     * @return Row metadata.
+     * @return row metadata
      */
     @Nonnull
     SqlRowMetadata getRowMetadata();
@@ -52,9 +52,9 @@ public interface SqlResult extends Iterable<SqlRow>, AutoCloseable {
      * <p>
      * The iterator may be requested only once.
      *
-     * @return Iterator.
-     * @throws IllegalStateException If the method is invoked more than once.
-     * @throws SqlException In case of an SQL-related error condition.
+     * @return iterator
+     * @throws IllegalStateException ff the method is invoked more than once
+     * @throws SqlException in case of an SQL-related error condition
      */
     @Nonnull
     @Override

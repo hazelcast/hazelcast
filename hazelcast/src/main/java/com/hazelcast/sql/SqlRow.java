@@ -28,11 +28,11 @@ public interface SqlRow {
      * <p>
      * The class of the returned value depends on the SQL type of the column. No implicit conversions are performed on the value.
      *
-     * @param columnIndex Column index, 0-based.
-     * @return Value of the column.
+     * @param columnIndex column index, zero-based.
+     * @return value of the column
      *
-     * @throws IndexOutOfBoundsException If the column index is out of bounds
-     * @throws ClassCastException If the type of the column type isn't assignable to the type {@code T}
+     * @throws IndexOutOfBoundsException if the column index is out of bounds
+     * @throws ClassCastException if the type of the column type isn't assignable to the type {@code T}
      *
      * @see #getMetadata()
      * @see SqlColumnMetadata#getType()
@@ -48,12 +48,12 @@ public interface SqlRow {
      * <p>
      * The class of the returned value depends on the SQL type of the column. No implicit conversions are performed on the value.
      *
-     * @param columnName Column name.
-     * @return Value of the column
+     * @param columnName column name
+     * @return value of the column
      *
-     * @throws NullPointerException If column name is null
-     * @throws IllegalArgumentException If a column with the given name is not found
-     * @throws ClassCastException If the type of the column type isn't assignable to the type {@code T}
+     * @throws NullPointerException if column name is null
+     * @throws IllegalArgumentException if a column with the given name is not found
+     * @throws ClassCastException if the type of the column type isn't assignable to the type {@code T}
      *
      * @see #getMetadata()
      * @see SqlRowMetadata#findColumn(String)
@@ -64,8 +64,11 @@ public interface SqlRow {
     <T> T getObject(@Nonnull String columnName);
 
     /**
+     * Gets row metadata.
+     *
+     * @return row metadata
+     *
      * @see SqlRowMetadata
-     * @return Row metadata.
      */
     @Nonnull
     SqlRowMetadata getMetadata();
