@@ -27,8 +27,8 @@ import com.hazelcast.sql.impl.QueryException;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 
 import static com.hazelcast.sql.impl.schema.map.options.PortableMapOptionsMetadataResolver.lookupClassDefinition;
 import static java.lang.String.format;
@@ -51,7 +51,7 @@ public class PortableUpsertTarget implements UpsertTarget {
     @Override
     public UpsertInjector createInjector(String path) {
         FieldDefinition fieldDefinition = requireNonNull(classDefinition.getField(path), "Missing field");
-        return value -> portable.add(fieldDefinition, value);
+        return value -> portable.set(fieldDefinition.getName(), value);
     }
 
     @Override
@@ -69,17 +69,14 @@ public class PortableUpsertTarget implements UpsertTarget {
     // TODO: replace with GenericRecord when available
     private final class GenericPortable implements VersionedPortable {
 
-        private final List<FieldDefinition> fieldDefinitions;
-        private final List<Object> values;
+        private final Map<String, Object> valuesByFields;
 
         private GenericPortable() {
-            this.fieldDefinitions = new ArrayList<>();
-            this.values = new ArrayList<>();
+            this.valuesByFields = new HashMap<>();
         }
 
-        private void add(FieldDefinition fieldDefinition, Object value) {
-            fieldDefinitions.add(fieldDefinition);
-            values.add(value);
+        private void set(String fieldName, Object value) {
+            valuesByFields.put(fieldName, value);
         }
 
         @Override
@@ -99,10 +96,9 @@ public class PortableUpsertTarget implements UpsertTarget {
 
         @Override
         public void writePortable(PortableWriter writer) throws IOException {
-            for (int i = 0; i < fieldDefinitions.size(); i++) {
-                FieldDefinition fieldDefinition = fieldDefinitions.get(i);
-                Object value = values.get(i);
-                write(writer, fieldDefinition, value);
+            for (int i = 0; i < classDefinition.getFieldCount(); i++) {
+                FieldDefinition fieldDefinition = classDefinition.getField(i);
+                write(writer, fieldDefinition, valuesByFields.get(fieldDefinition.getName()));
             }
         }
 
