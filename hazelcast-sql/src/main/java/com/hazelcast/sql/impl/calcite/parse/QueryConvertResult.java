@@ -21,7 +21,7 @@ import org.apache.calcite.rel.RelNode;
 import java.util.List;
 
 /**
- * Encapsulates result of a query conversion from SQL tree to relational tree.
+ * Encapsulates the result of a query conversion from SQL tree to a relational tree.
  */
 public class QueryConvertResult {
 

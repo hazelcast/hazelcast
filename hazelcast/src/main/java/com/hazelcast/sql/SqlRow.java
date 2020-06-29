@@ -32,7 +32,7 @@ public interface SqlRow {
      * @see SqlColumnMetadata#getType()
      * @param columnIndex Column index, 0-based.
      * @return Value of the column.
-     * @throws IndexOutOfBoundsException If column index is out of bounds.
+     * @throws IndexOutOfBoundsException If the column index is out of bounds.
      */
     @Nullable
     Object getObject(int columnIndex);

@@ -67,7 +67,7 @@ public final class QueryUtils {
     }
 
     /**
-     * Convert internal column type to public type.
+     * Convert internal column type to a public type.
      *
      * @param columnType Internal type.
      * @return Public type.
