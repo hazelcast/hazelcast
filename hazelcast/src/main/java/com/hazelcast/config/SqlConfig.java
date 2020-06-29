@@ -41,7 +41,7 @@ public class SqlConfig {
     private int operationPoolSize = DEFAULT_OPERATION_POOL_SIZE;
 
     /** Timeout in milliseconds that is applied to queries without an explicit timeout. */
-    private long queryTimeout = DEFAULT_QUERY_TIMEOUT;
+    private long queryTimeoutMillis = DEFAULT_QUERY_TIMEOUT;
 
     /**
      * Gets the number of threads responsible for query execution.
@@ -125,7 +125,7 @@ public class SqlConfig {
      * @return Timeout in milliseconds.
      */
     public long getQueryTimeoutMillis() {
-        return queryTimeout;
+        return queryTimeoutMillis;
     }
 
     /**
@@ -145,7 +145,7 @@ public class SqlConfig {
     public SqlConfig setQueryTimeoutMillis(long queryTimeout) {
         checkNotNegative(queryTimeout, "Query timeout cannot be negative");
 
-        this.queryTimeout = queryTimeout;
+        this.queryTimeoutMillis = queryTimeout;
 
         return this;
     }
@@ -155,7 +155,7 @@ public class SqlConfig {
         return "SqlConfig{"
             + "executorPoolSize=" + executorPoolSize
             + ", operationPoolSize=" + operationPoolSize
-            + ", queryTimeout=" + queryTimeout
+            + ", queryTimeoutMillis=" + queryTimeoutMillis
             + '}';
     }
 }
