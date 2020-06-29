@@ -82,6 +82,10 @@ public final class IOUtil {
     private IOUtil() {
     }
 
+    public static void test(){
+
+    }
+
     /**
      * Compacts or clears the buffer depending if bytes are remaining in the byte-buffer.
      *
