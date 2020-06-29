@@ -17,6 +17,7 @@
 package com.hazelcast.sql;
 
 import com.hazelcast.internal.util.Preconditions;
+import com.hazelcast.spi.annotation.PrivateApi;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
@@ -35,6 +36,7 @@ public final class SqlRowMetadata {
     private final List<SqlColumnMetadata> columns;
     private final Map<String, Integer> nameToIndex;
 
+    @PrivateApi
     @SuppressWarnings("ConstantConditions")
     public SqlRowMetadata(@Nonnull List<SqlColumnMetadata> columns) {
         assert columns != null && !columns.isEmpty();

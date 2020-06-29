@@ -16,6 +16,8 @@
 
 package com.hazelcast.sql;
 
+import com.hazelcast.spi.annotation.PrivateApi;
+
 import javax.annotation.Nonnull;
 
 /**
@@ -26,6 +28,7 @@ public final class SqlColumnMetadata {
     private final String name;
     private final SqlColumnType type;
 
+    @PrivateApi
     @SuppressWarnings("ConstantConditions")
     public SqlColumnMetadata(@Nonnull String name, @Nonnull SqlColumnType type) {
         assert name != null;
