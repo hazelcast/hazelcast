@@ -19,7 +19,6 @@ package com.hazelcast.internal.serialization.impl.portable;
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.internal.nio.BufferObjectDataInput;
 import com.hazelcast.internal.nio.BufferObjectDataOutput;
-import com.hazelcast.internal.serialization.impl.CachedGenericRecordQueryReader;
 import com.hazelcast.internal.serialization.impl.GenericRecordQueryReader;
 import com.hazelcast.internal.serialization.impl.InternalGenericRecord;
 import com.hazelcast.internal.serialization.impl.SerializationConstants;
@@ -44,12 +43,9 @@ public final class PortableSerializer implements StreamSerializer<Object> {
 
     private final PortableContextImpl context;
     private final Map<Integer, PortableFactory> factories = new HashMap<Integer, PortableFactory>();
-    private final boolean queryReadCacheEnabled;
 
-    public PortableSerializer(PortableContextImpl context, Map<Integer, ? extends PortableFactory> portableFactories,
-                              boolean queryReadCacheEnabled) {
+    public PortableSerializer(PortableContextImpl context, Map<Integer, ? extends PortableFactory> portableFactories) {
         this.context = context;
-        this.queryReadCacheEnabled = queryReadCacheEnabled;
         factories.putAll(portableFactories);
     }
 
@@ -147,11 +143,7 @@ public final class PortableSerializer implements StreamSerializer<Object> {
         BufferObjectDataInput input = (BufferObjectDataInput) in;
         ClassDefinition cd = setupPositionAndDefinition(input, factoryId, classId, version);
         InternalGenericRecord genericRecord = new DefaultPortableReader(this, input, cd, true);
-        if (queryReadCacheEnabled) {
-            return new CachedGenericRecordQueryReader(genericRecord);
-        } else {
-            return new GenericRecordQueryReader(genericRecord);
-        }
+        return new GenericRecordQueryReader(genericRecord);
     }
 
     DefaultPortableReader createMorphingReader(BufferObjectDataInput in) throws IOException {

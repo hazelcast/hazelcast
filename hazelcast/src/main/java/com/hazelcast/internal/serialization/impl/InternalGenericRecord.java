@@ -24,7 +24,6 @@ import java.io.IOException;
  * Additionally to GenericRecord, this one has more methods to be used in Query.
  *
  * @see GenericRecordQueryReader
- * @see CachedGenericRecordQueryReader
  *
  * read*FromArray methods will return `null`
  * 1. if the array is null or empty
