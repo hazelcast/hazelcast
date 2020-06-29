@@ -16,7 +16,9 @@
 
 package com.hazelcast.sql;
 
+import com.hazelcast.sql.impl.SqlRowImpl;
 import com.hazelcast.sql.impl.SqlTestSupport;
+import com.hazelcast.sql.impl.row.HeapRow;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -50,12 +52,27 @@ public class SqlMetadataTest extends SqlTestSupport {
     }
 
     @Test
+    public void testRow() {
+        SqlColumnMetadata column0Metadata = new SqlColumnMetadata("a", SqlColumnType.INT);
+        SqlColumnMetadata column1Metadata = new SqlColumnMetadata("b", SqlColumnType.VARCHAR);
+
+        SqlRow row = new SqlRowImpl(
+            new SqlRowMetadata(Arrays.asList(column0Metadata, column1Metadata)),
+            HeapRow.of(1, "2")
+        );
+
+        assertEquals("[a:INT=1, b:VARCHAR=2]", row.toString());
+    }
+
+    @Test
     public void testRowMetadata() {
         SqlColumnMetadata column0 = new SqlColumnMetadata("a", SqlColumnType.INT);
         SqlColumnMetadata column1 = new SqlColumnMetadata("b", SqlColumnType.BIGINT);
         SqlColumnMetadata column2 = new SqlColumnMetadata("c", SqlColumnType.VARCHAR);
 
         SqlRowMetadata row = new SqlRowMetadata(Arrays.asList(column0, column1));
+
+        assertEquals("[a:INT, b:BIGINT]", row.toString());
 
         assertEquals(2, row.getColumnCount());
         assertEquals(column0, row.getColumn(0));

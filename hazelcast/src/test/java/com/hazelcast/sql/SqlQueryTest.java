@@ -45,7 +45,7 @@ public class SqlQueryTest extends SqlTestSupport {
         assertEquals(SqlQuery.DEFAULT_CURSOR_BUFFER_SIZE, query.getCursorBufferSize());
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = NullPointerException.class)
     public void testSql_null() {
         new SqlQuery(null);
     }
