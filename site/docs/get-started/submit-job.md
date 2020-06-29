@@ -80,7 +80,7 @@ bin/jet submit <path_to_JAR_file>
 <!--Docker-->
 
 ```bash
-docker run -it -v <path_to_JAR_file>:/jars hazelcast/hazelcast-jet jet -a 172.17.0.2 submit /jars/<name_of_the_JAR_file>
+docker run -it -v <path_to_JAR_file>:/jars hazelcast/hazelcast-jet jet -t 172.17.0.2 submit /jars/<name_of_the_JAR_file>
 ```
 
 <!--END_DOCUSAURUS_CODE_TABS-->
@@ -97,7 +97,7 @@ bin/jet submit -c <main_class_name> <path_to_JAR_file>
 <!--Docker-->
 
 ```bash
-docker run -it -v <path_to_JAR_file>:/jars hazelcast/hazelcast-jet jet -a 172.17.0.2 submit -c <main_class_name> /jars/<name_of_the_JAR_file>
+docker run -it -v <path_to_JAR_file>:/jars hazelcast/hazelcast-jet jet -t 172.17.0.2 submit -c <main_class_name> /jars/<name_of_the_JAR_file>
 ```
 
 <!--END_DOCUSAURUS_CODE_TABS-->
@@ -120,7 +120,7 @@ ID                  STATUS             SUBMISSION TIME         NAME
 <!--Docker-->
 
 ```bash
-$ docker run -it hazelcast/hazelcast-jet jet -a 172.17.0.2 list-jobs
+$ docker run -it hazelcast/hazelcast-jet jet -t 172.17.0.2 list-jobs
 ID                  STATUS             SUBMISSION TIME         NAME
 03e3-b8f6-5340-0001 RUNNING            2020-02-13T09:36:46.898 N/A
 ```

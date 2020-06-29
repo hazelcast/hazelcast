@@ -136,7 +136,7 @@ World application from the distribution package:
 
 ```bash
 cd hazelcast-jet-enterprise-{jet-version}
-docker run -it -v "$(pwd)"/examples:/examples hazelcast/hazelcast-jet-enterprise jet -a 172.17.0.2 submit /examples/hello-world.jar
+docker run -it -v "$(pwd)"/examples:/examples hazelcast/hazelcast-jet-enterprise jet -t 172.17.0.2 submit /examples/hello-world.jar
 ```
 
 The command mounts the local `examples` directory from `hazelcast-jet-enterprise-{jet-version}`

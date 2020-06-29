@@ -101,7 +101,7 @@ Docker:
 
 ```bash
 cd <jet_home>
-docker run -it -v "$(pwd)"/examples:/examples hazelcast/hazelcast-jet jet -a 172.17.0.2 submit /examples/hello-world.jar
+docker run -it -v "$(pwd)"/examples:/examples hazelcast/hazelcast-jet jet -t 172.17.0.2 submit /examples/hello-world.jar
 ```
 
 The command mounts the local `examples` directory from `<jet_home>` to

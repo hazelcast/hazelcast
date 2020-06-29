@@ -26,7 +26,7 @@ ID                  STATUS             SUBMISSION TIME         NAME
 <!--Docker-->
 
 ```bash
-$ docker run -it hazelcast/hazelcast-jet jet -a 172.17.0.2 list-jobs
+$ docker run -it hazelcast/hazelcast-jet jet -t 172.17.0.2 list-jobs
 ID                  STATUS             SUBMISSION TIME         NAME
 03e3-b8f6-5340-0001 RUNNING            2020-02-13T09:36:46.898 N/A
 ```

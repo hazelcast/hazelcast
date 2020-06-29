@@ -50,8 +50,8 @@ The command also has some additional options:
 
 The `jet` command also some global options:
 
-* `-a`: comma separated addresses for the cluster
-* `-n`: cluster name, which must match what's configured on the cluster
+* `-t`: name and comma separated addresses for the cluster, which must match
+  what's configured on the cluster, cluster name is optional
 * `-f`: path to a client config file, which can be used instead of
   supplying an address and name.
 
@@ -59,8 +59,7 @@ Example:
 
 ```bash
 bin/jet \
-  -a 192.168.1.100:5701,192.168.1.101:5701 \
-  -n jet \
+  -t jet@192.168.1.100:5701,192.168.1.101:5701 \
   submit \
   -c <MainClass> \
   <jar file> \

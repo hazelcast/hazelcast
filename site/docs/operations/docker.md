@@ -79,7 +79,7 @@ Run the following command to submit the Hello World job to your Hazelcast
 Jet instance:
 
 ```bash
-docker run -it -v "$(pwd)"/examples:/examples hazelcast/hazelcast-jet jet -a 172.17.0.2 submit /examples/hello-world.jar
+docker run -it -v "$(pwd)"/examples:/examples hazelcast/hazelcast-jet jet -t 172.17.0.2 submit /examples/hello-world.jar
 ```
 
 The parameters are as follows:
@@ -88,7 +88,7 @@ The parameters are as follows:
   submit command by pressing Ctrl+C
 * `-v "$(pwd)"/examples:/examples` mounts folder `examples` from your
   current directory to `/examples` directory inside the container
-* `-a 172.17.0.2` - shortcut for `--addresses`, specifies an address of
+* `-t 172.17.0.2` - shortcut for `--targets`, specifies an address of
   running Hazelcast Jet instance, needs to be specified because the
   instance is not running on `localhost:5701`
 * `submit` command to submit a job
@@ -99,13 +99,13 @@ You can list the running jobs inside the cluster by running the
 following command:
 
 ```bash
-docker run hazelcast/hazelcast-jet jet -a 172.17.0.2 list-jobs
+docker run hazelcast/hazelcast-jet jet -t 172.17.0.2 list-jobs
 ```
 
 which gives an output similar to:
 
 ```text
-$ docker run hazelcast/hazelcast-jet jet -a 172.17.0.2 list-jobs
+$ docker run hazelcast/hazelcast-jet jet -t 172.17.0.2 list-jobs
 ID                  STATUS             SUBMISSION TIME         NAME
 045e-987c-1940-0001 RUNNING            2020-05-18T20:08:03.020 hello-world
 ```
@@ -113,7 +113,7 @@ ID                  STATUS             SUBMISSION TIME         NAME
 You can cancel a running job using the following command:
 
 ```bash
-docker run hazelcast/hazelcast-jet jet -a 172.17.0.2 cancel hello-world
+docker run hazelcast/hazelcast-jet jet -t 172.17.0.2 cancel hello-world
 ```
 
 ### Using Local Distribution
@@ -140,7 +140,7 @@ docker run hazelcast/hazelcast-jet
 And submit the job, specifying the cluster address:
 
 ```bash
-bin/jet -a 172.17.0.2 submit examples/hello-world.jar
+bin/jet -t 172.17.0.2 submit examples/hello-world.jar
 ```
 
 ## Configure Hazelcast Jet
@@ -183,7 +183,7 @@ Submit a job to the cluster, specifying cluster name in the jet command
 using `-n jet-1` option (shortcut for `--cluster-name`):
 
 ```bash
-docker run -it -v "$(pwd)"/examples:/examples hazelcast/hazelcast-jet jet -a 172.17.0.2 -n jet-1 submit /examples/hello-world.jar
+docker run -it -v "$(pwd)"/examples:/examples hazelcast/hazelcast-jet jet -t 172.17.0.2 -n jet-1 submit /examples/hello-world.jar
 ```
 
 ## Start Jet Cluster
@@ -308,7 +308,7 @@ ADD examples/hello-world.jar /examples/
 
 ENV ADDRESSES 172.17.0.2
 
-CMD ["sh", "-c", "jet -a $ADDRESSES submit /examples/hello-world.jar"]
+CMD ["sh", "-c", "jet -t $ADDRESSES submit /examples/hello-world.jar"]
 ```
 
 The first line specifies the `hazelcast/hazelcast-jet` image as base
@@ -336,7 +336,7 @@ Step 2/4 : ADD examples/hello-world.jar /examples/
 Step 3/4 : ENV ADDRESSES 172.17.0.2
  ---> Using cache
  ---> f96d01158d6e
-Step 4/4 : CMD ["sh", "-c", "jet -a $ADDRESSES submit /examples/hello-world.jar"]
+Step 4/4 : CMD ["sh", "-c", "jet -t $ADDRESSES submit /examples/hello-world.jar"]
  ---> Using cache
  ---> 6bc0f527b69c
 Successfully built 6bc0f527b69c
