@@ -17,14 +17,11 @@
 package com.hazelcast.sql;
 
 import javax.annotation.Nonnull;
-import java.io.Serializable;
 
 /**
  * SQL column metadata.
  */
-public class SqlColumnMetadata implements Serializable {
-
-    private static final long serialVersionUID = 1522422443380097801L;
+public class SqlColumnMetadata {
 
     private final String name;
     private final SqlColumnType type;

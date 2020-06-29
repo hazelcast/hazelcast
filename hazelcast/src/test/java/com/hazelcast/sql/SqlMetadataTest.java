@@ -47,8 +47,6 @@ public class SqlMetadataTest extends SqlTestSupport {
         checkEquals(column, new SqlColumnMetadata("a", SqlColumnType.INT), true);
         checkEquals(column, new SqlColumnMetadata("b", SqlColumnType.INT), false);
         checkEquals(column, new SqlColumnMetadata("a", SqlColumnType.BIGINT), false);
-
-        checkEquals(column, serialize(column), true);
     }
 
     @Test
@@ -74,8 +72,6 @@ public class SqlMetadataTest extends SqlTestSupport {
         checkEquals(row, new SqlRowMetadata(Collections.singletonList(column0)), false);
         checkEquals(row, new SqlRowMetadata(Arrays.asList(column0, column2)), false);
         checkEquals(row, new SqlRowMetadata(Arrays.asList(column0, column1, column2)), false);
-
-        checkEquals(row, serialize(row), true);
     }
 
     @Test
