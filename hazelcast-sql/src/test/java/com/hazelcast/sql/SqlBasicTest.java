@@ -246,7 +246,7 @@ public class SqlBasicTest extends SqlTestSupport {
                 uniqueKeys.add(key0);
 
                 assertThrows(IndexOutOfBoundsException.class, () -> row.getObject(-1));
-                assertThrows(IndexOutOfBoundsException.class, () -> row.getObject(row.getRowMetadata().getColumnCount()));
+                assertThrows(IndexOutOfBoundsException.class, () -> row.getObject(row.getMetadata().getColumnCount()));
                 assertThrows(NullPointerException.class, () -> row.getObject(null));
                 assertThrows(IllegalArgumentException.class, () -> row.getObject("unknown_field"));
             }
@@ -262,7 +262,7 @@ public class SqlBasicTest extends SqlTestSupport {
     private void checkRowValue(Object expectedValue, SqlRow row, String columnName) {
         columnName = adjustFieldName(columnName);
 
-        int columnIndex = row.getRowMetadata().findColumn(columnName);
+        int columnIndex = row.getMetadata().findColumn(columnName);
         assertNotEquals(SqlRowMetadata.COLUMN_NOT_FOUND, columnIndex);
         Object valueByIndex = row.getObject(columnIndex);
         assertEquals(expectedValue, valueByIndex);

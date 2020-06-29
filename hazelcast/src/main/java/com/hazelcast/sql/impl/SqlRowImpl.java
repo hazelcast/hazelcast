@@ -71,7 +71,7 @@ public class SqlRowImpl implements SqlRow {
 
     @Nonnull
     @Override
-    public SqlRowMetadata getRowMetadata() {
+    public SqlRowMetadata getMetadata() {
         return rowMetadata;
     }
 

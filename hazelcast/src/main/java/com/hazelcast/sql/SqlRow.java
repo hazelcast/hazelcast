@@ -28,7 +28,7 @@ public interface SqlRow {
      * <p>
      * The class of the returned value depends on the SQL type of the column.
      *
-     * @see #getRowMetadata()
+     * @see #getMetadata()
      * @see SqlColumnMetadata#getType()
      * @param columnIndex Column index, 0-based.
      * @return Value of the column.
@@ -45,7 +45,7 @@ public interface SqlRow {
      * <p>
      * The class of the returned value depends on the SQL type of the column.
      *
-     * @see #getRowMetadata()
+     * @see #getMetadata()
      * @see SqlRowMetadata#findColumn(String)
      * @see SqlColumnMetadata#getName()
      * @see SqlColumnMetadata#getType()
@@ -62,5 +62,5 @@ public interface SqlRow {
      * @return Row metadata.
      */
     @Nonnull
-    SqlRowMetadata getRowMetadata();
+    SqlRowMetadata getMetadata();
 }
