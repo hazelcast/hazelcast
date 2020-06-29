@@ -31,9 +31,6 @@ import org.apache.calcite.sql2rel.SqlToRelConverter;
 import org.apache.calcite.sql2rel.StandardConvertletTable;
 import org.apache.calcite.util.Pair;
 
-import java.util.ArrayList;
-import java.util.List;
-
 /**
  * Converts a parse tree into a relational tree.
  */
@@ -90,13 +87,7 @@ public class QueryConverter {
         RelNode relTrimmed = converter.trimUnusedFields(true, relDecorrelated);
 
         // 5. Collect original field names.
-        List<String> fieldNames = new ArrayList<>(root.fields.size());
-
-        for (Pair<Integer, String> field : root.fields) {
-            fieldNames.add(field.right);
-        }
-
-        return new QueryConvertResult(relTrimmed, fieldNames);
+        return new QueryConvertResult(relTrimmed, Pair.right(root.fields));
     }
 
     /**
