@@ -90,7 +90,7 @@ public class SqlRowImpl implements SqlRow {
             SqlColumnMetadata columnMetadata = rowMetadata.getColumn(i);
             Object columnValue = row.get(i);
 
-            joiner.add(columnMetadata.getName() + ":" + columnMetadata.getType() + "=" + columnValue);
+            joiner.add(columnMetadata.getName() + ' ' + columnMetadata.getType() + '=' + columnValue);
         }
 
         return joiner.toString();

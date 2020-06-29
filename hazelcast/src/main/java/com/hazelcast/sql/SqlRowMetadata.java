@@ -64,11 +64,7 @@ public class SqlRowMetadata {
      */
     @Nonnull
     public SqlColumnMetadata getColumn(int index) {
-        if (index < 0) {
-            throw new IndexOutOfBoundsException("Column index cannot be negative: " + index);
-        }
-
-        if (index >= columns.size()) {
+        if (index < 0 || index >= columns.size()) {
             throw new IndexOutOfBoundsException("Column index is out of bounds: " + index);
         }
 
@@ -113,7 +109,7 @@ public class SqlRowMetadata {
     @Override
     public String toString() {
         return columns.stream()
-            .map((column) -> column.getName() + ":" + column.getType())
+            .map((column) -> column.getName() + ' ' + column.getType())
             .collect(Collectors.joining(", ", "[", "]"));
     }
 }

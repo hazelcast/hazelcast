@@ -84,6 +84,6 @@ public class SqlColumnMetadata {
 
     @Override
     public String toString() {
-        return '[' + name + ':' + type + ']';
+        return name + ' ' + type;
     }
 }
