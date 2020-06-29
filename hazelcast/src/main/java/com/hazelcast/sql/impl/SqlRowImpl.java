@@ -17,13 +17,14 @@
 
 package com.hazelcast.sql.impl;
 
-import com.hazelcast.sql.SqlException;
+import com.hazelcast.sql.SqlColumnMetadata;
 import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.SqlRowMetadata;
 import com.hazelcast.sql.impl.row.Row;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.StringJoiner;
 
 /**
  * Default implementation of the SQL row which is exposed to users. We merely wrap the internal row, but add more checks which
@@ -79,5 +80,19 @@ public class SqlRowImpl implements SqlRow {
         if (index < 0 || index >= rowMetadata.getColumnCount()) {
             throw new IndexOutOfBoundsException("Column index is out of range: " + index);
         }
+    }
+
+    @Override
+    public String toString() {
+        StringJoiner joiner = new StringJoiner(", ", "[", "]");
+
+        for (int i = 0; i < rowMetadata.getColumnCount(); i++) {
+            SqlColumnMetadata columnMetadata = rowMetadata.getColumn(i);
+            Object columnValue = row.get(i);
+
+            joiner.add(columnMetadata.getName() + ":" + columnMetadata.getType() + "=" + columnValue);
+        }
+
+        return joiner.toString();
     }
 }
