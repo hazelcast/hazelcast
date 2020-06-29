@@ -17,6 +17,7 @@
 package com.hazelcast.sql.impl.schema.map.options;
 
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.extract.GenericQueryTargetDescriptor;
 import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.inject.JsonUpsertTargetDescriptor;
@@ -28,15 +29,18 @@ import com.hazelcast.sql.impl.type.QueryDataType;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import static com.hazelcast.sql.impl.connector.SqlConnector.JSON_SERIALIZATION_FORMAT;
+import static java.lang.String.format;
 
 // TODO: deduplicate with MapSampleMetadataResolver
 public final class JsonMapOptionsMetadataResolver implements MapOptionsMetadataResolver {
 
     public static final JsonMapOptionsMetadataResolver INSTANCE = new JsonMapOptionsMetadataResolver();
 
-    private JsonMapOptionsMetadataResolver() { }
+    private JsonMapOptionsMetadataResolver() {
+    }
 
     @Override
     public String supportedFormat() {
@@ -50,14 +54,22 @@ public final class JsonMapOptionsMetadataResolver implements MapOptionsMetadataR
             boolean isKey,
             InternalSerializationService serializationService
     ) {
+        Map<QueryPath, ExternalField> externalFieldsByPath =
+                extractFields(externalFields, isKey, name -> new QueryPath(name, false));
+
+        if (externalFieldsByPath.isEmpty()) {
+            throw QueryException.error(format("Empty %s column list", isKey ? "key" : "value"));
+        }
+
         LinkedHashMap<String, TableField> fields = new LinkedHashMap<>();
-        for (ExternalField externalField : externalFields) {
-            String name = externalField.name();
-            QueryDataType type = externalField.type();
+        for (Entry<QueryPath, ExternalField> externalField : externalFieldsByPath.entrySet()) {
+            QueryPath path = externalField.getKey();
+            QueryDataType type = externalField.getValue().type();
+            String name = externalField.getValue().name();
 
-            TableField tableField = new MapTableField(name, type, false, new QueryPath(name, isKey));
+            TableField field = new MapTableField(name, type, false, path);
 
-            fields.put(externalField.name(), tableField);
+            fields.put(field.getName(), field);
         }
 
         return new MapOptionsMetadata(

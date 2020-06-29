@@ -30,9 +30,9 @@ import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.sql.impl.schema.map.options.PortableMapOptionsMetadataResolver.lookupClassDefinition;
 import static java.lang.String.format;
+import static java.util.Objects.requireNonNull;
 
 // TODO: can it be non-thread safe ?
 public class PortableUpsertTarget implements UpsertTarget {
@@ -50,7 +50,7 @@ public class PortableUpsertTarget implements UpsertTarget {
 
     @Override
     public UpsertInjector createInjector(String path) {
-        FieldDefinition fieldDefinition = checkNotNull(classDefinition.getField(path), "Missing field");
+        FieldDefinition fieldDefinition = requireNonNull(classDefinition.getField(path), "Missing field");
         return value -> portable.add(fieldDefinition, value);
     }
 

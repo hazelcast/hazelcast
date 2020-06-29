@@ -16,6 +16,7 @@
 
 package com.hazelcast.sql.impl.calcite.parse;
 
+import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.calcite.sql.SqlCall;
 import org.apache.calcite.sql.SqlIdentifier;
 import org.apache.calcite.sql.SqlKind;
@@ -38,19 +39,25 @@ public class SqlTableColumn extends SqlCall {
 
     private final SqlIdentifier name;
     private final SqlDataType type;
+    private final SqlIdentifier externalName;
 
-    public SqlTableColumn(SqlIdentifier name, SqlDataType type, SqlParserPos pos) {
+    public SqlTableColumn(SqlIdentifier name, SqlDataType type, SqlIdentifier externalName, SqlParserPos pos) {
         super(pos);
         this.name = requireNonNull(name, "Column name should not be null");
         this.type = requireNonNull(type, "Column type should not be null");
+        this.externalName = externalName;
     }
 
     public String name() {
         return name.getSimple();
     }
 
-    public SqlDataType type() {
-        return type;
+    public QueryDataType type() {
+        return type.type();
+    }
+
+    public String externalName() {
+        return externalName == null ? null : externalName.toString();
     }
 
     @Override
@@ -62,7 +69,7 @@ public class SqlTableColumn extends SqlCall {
     @Override
     @Nonnull
     public List<SqlNode> getOperandList() {
-        return ImmutableNullableList.of(name, type);
+        return ImmutableNullableList.of(name, type, externalName);
     }
 
     @Override
@@ -70,6 +77,12 @@ public class SqlTableColumn extends SqlCall {
         name.unparse(writer, leftPrec, rightPrec);
         writer.print(" ");
         type.unparse(writer, leftPrec, rightPrec);
+        if (externalName != null) {
+            writer.print(" ");
+            writer.keyword("EXTERNAL");
+            writer.keyword("NAME");
+            externalName.unparse(writer, leftPrec, rightPrec);
+        }
     }
 }
 

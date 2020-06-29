@@ -24,9 +24,9 @@ import java.lang.reflect.Method;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import static com.hazelcast.sql.impl.schema.map.options.PojoMapOptionsMetadataResolver.extractField;
-import static com.hazelcast.sql.impl.schema.map.options.PojoMapOptionsMetadataResolver.extractSetter;
-import static com.hazelcast.sql.impl.schema.map.options.PojoMapOptionsMetadataResolver.loadClass;
+import static com.hazelcast.sql.impl.schema.map.options.JavaMapOptionsMetadataResolver.extractField;
+import static com.hazelcast.sql.impl.schema.map.options.JavaMapOptionsMetadataResolver.extractSetter;
+import static com.hazelcast.sql.impl.schema.map.options.JavaMapOptionsMetadataResolver.loadClass;
 import static java.lang.String.format;
 import static java.util.stream.Collectors.toMap;
 

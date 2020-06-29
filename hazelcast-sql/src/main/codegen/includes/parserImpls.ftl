@@ -89,12 +89,17 @@ SqlTableColumn TableColumn() :
 
     SqlIdentifier name;
     SqlDataType type;
+    SqlIdentifier externalName = null;
+
 }
 {
     name = SimpleIdentifier() { span = span(); }
     type = SqlDataType()
+    [
+        <EXTERNAL> <NAME> externalName = CompoundIdentifier()
+    ]
     {
-        return new SqlTableColumn(name, type, span.end(this));
+        return new SqlTableColumn(name, type, externalName, span.end(this));
     }
 }
 

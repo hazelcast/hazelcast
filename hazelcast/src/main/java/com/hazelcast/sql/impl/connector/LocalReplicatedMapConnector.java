@@ -28,7 +28,7 @@ import com.hazelcast.sql.impl.schema.map.ReplicatedMapTable;
 import com.hazelcast.sql.impl.schema.map.options.JsonMapOptionsMetadataResolver;
 import com.hazelcast.sql.impl.schema.map.options.MapOptionsMetadata;
 import com.hazelcast.sql.impl.schema.map.options.MapOptionsMetadataResolver;
-import com.hazelcast.sql.impl.schema.map.options.PojoMapOptionsMetadataResolver;
+import com.hazelcast.sql.impl.schema.map.options.JavaMapOptionsMetadataResolver;
 import com.hazelcast.sql.impl.schema.map.options.PortableMapOptionsMetadataResolver;
 
 import javax.annotation.Nonnull;
@@ -43,10 +43,10 @@ import static java.util.stream.Collectors.toMap;
 // TODO: do we want to keep it? maps are auto discovered...
 public class LocalReplicatedMapConnector extends SqlKeyValueConnector {
 
-    public static final String TYPE_NAME = "com.hazelcast.LocalReplicatedMap";
+    public static final String TYPE_NAME = "com.hazelcast.ReplicatedMap";
 
     private static final Map<String, MapOptionsMetadataResolver> METADATA_RESOLVERS = Stream.of(
-            PojoMapOptionsMetadataResolver.INSTANCE,
+            JavaMapOptionsMetadataResolver.INSTANCE,
             PortableMapOptionsMetadataResolver.INSTANCE,
             JsonMapOptionsMetadataResolver.INSTANCE
     ).collect(toMap(MapOptionsMetadataResolver::supportedFormat, Function.identity()));
@@ -60,27 +60,27 @@ public class LocalReplicatedMapConnector extends SqlKeyValueConnector {
     public Table createTable(
             @Nonnull NodeEngine nodeEngine,
             @Nonnull String schemaName,
-            @Nonnull String tableName,
+            @Nonnull String name,
             @Nonnull Map<String, String> options,
             @Nonnull List<ExternalField> externalFields
     ) {
-        String objectName = options.getOrDefault(TO_OBJECT_NAME, tableName);
-        InternalSerializationService serializationService =
-                (InternalSerializationService) nodeEngine.getSerializationService();
+        String mapName = options.getOrDefault(TO_OBJECT_NAME, name);
 
-        MapOptionsMetadata keyMetadata = resolveMetadata(externalFields, options, true, serializationService);
-        MapOptionsMetadata valueMetadata = resolveMetadata(externalFields, options, false, serializationService);
-        List<TableField> fields = mergeFields(externalFields, keyMetadata.getFields(), valueMetadata.getFields());
+        InternalSerializationService ss = (InternalSerializationService) nodeEngine.getSerializationService();
+
+        MapOptionsMetadata keyMetadata = resolveMetadata(externalFields, options, true, ss);
+        MapOptionsMetadata valueMetadata = resolveMetadata(externalFields, options, false, ss);
+        List<TableField> fields = mergeFields(keyMetadata.getFields(), valueMetadata.getFields());
 
         // TODO: deduplicate with ReplicatedMapTableResolver ???
         ReplicatedMapService service = nodeEngine.getService(ReplicatedMapService.SERVICE_NAME);
-        Collection<ReplicatedRecordStore> stores = service.getAllReplicatedRecordStores(objectName);
+        Collection<ReplicatedRecordStore> stores = service.getAllReplicatedRecordStores(mapName);
 
         long estimatedRowCount = stores.size() * nodeEngine.getPartitionService().getPartitionCount();
 
         return new ReplicatedMapTable(
                 schemaName,
-                objectName,
+                mapName,
                 fields,
                 new ConstantTableStatistics(estimatedRowCount),
                 keyMetadata.getQueryTargetDescriptor(),

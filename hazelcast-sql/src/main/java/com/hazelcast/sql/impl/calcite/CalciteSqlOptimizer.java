@@ -58,8 +58,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import static com.hazelcast.query.QueryConstants.KEY_ATTRIBUTE_NAME;
-import static com.hazelcast.query.QueryConstants.THIS_ATTRIBUTE_NAME;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 
@@ -188,19 +186,13 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
 
     private SchemaPlan createCreateExternalTablePlan(SqlCreateExternalTable sqlCreateTable) {
         List<ExternalField> externalFields = sqlCreateTable.columns()
-                .map(column -> new ExternalField(column.name(), column.type().type(),
-                        // TODO find a proper way to specify query path
-                        startsWithKeyOrThis(column.name()) ? column.name() : "this." + column.name()))
-                .collect(toList());
+            .map(column -> new ExternalField(column.name(), column.type(), column.externalName()))
+            .collect(toList());
         Map<String, String> options = sqlCreateTable.options()
                                                             .collect(toMap(SqlOption::key, SqlOption::value));
         ExternalTable schema = new ExternalTable(sqlCreateTable.name(), sqlCreateTable.type(), externalFields, options);
 
         return new CreateExternalTablePlan(catalog, schema, sqlCreateTable.getReplace(), sqlCreateTable.ifNotExists());
-    }
-
-    private boolean startsWithKeyOrThis(String name) {
-        return name.startsWith(KEY_ATTRIBUTE_NAME.value()) || name.startsWith(THIS_ATTRIBUTE_NAME.value());
     }
 
     private SchemaPlan createRemoveExternalTablePlan(SqlDropExternalTable sqlDropTable) {

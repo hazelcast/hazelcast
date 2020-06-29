@@ -31,7 +31,7 @@ import com.hazelcast.sql.impl.schema.map.PartitionedMapTable;
 import com.hazelcast.sql.impl.schema.map.options.JsonMapOptionsMetadataResolver;
 import com.hazelcast.sql.impl.schema.map.options.MapOptionsMetadata;
 import com.hazelcast.sql.impl.schema.map.options.MapOptionsMetadataResolver;
-import com.hazelcast.sql.impl.schema.map.options.PojoMapOptionsMetadataResolver;
+import com.hazelcast.sql.impl.schema.map.options.JavaMapOptionsMetadataResolver;
 import com.hazelcast.sql.impl.schema.map.options.PortableMapOptionsMetadataResolver;
 
 import javax.annotation.Nonnull;
@@ -50,11 +50,10 @@ import static java.util.stream.Collectors.toMap;
 // TODO: do we want to keep it? maps are auto discovered...
 public class LocalPartitionedMapConnector extends SqlKeyValueConnector {
 
-    // TODO rename to com.hazelcast.IMap
-    public static final String TYPE_NAME = "com.hazelcast.LocalPartitionedMap";
+    public static final String TYPE_NAME = "com.hazelcast.IMap";
 
     private static final Map<String, MapOptionsMetadataResolver> METADATA_RESOLVERS = Stream.of(
-            PojoMapOptionsMetadataResolver.INSTANCE,
+            JavaMapOptionsMetadataResolver.INSTANCE,
             PortableMapOptionsMetadataResolver.INSTANCE,
             JsonMapOptionsMetadataResolver.INSTANCE
     ).collect(toMap(MapOptionsMetadataResolver::supportedFormat, Function.identity()));
@@ -78,7 +77,7 @@ public class LocalPartitionedMapConnector extends SqlKeyValueConnector {
 
         MapOptionsMetadata keyMetadata = resolveMetadata(externalFields, options, true, ss);
         MapOptionsMetadata valueMetadata = resolveMetadata(externalFields, options, false, ss);
-        List<TableField> fields = mergeFields(externalFields, keyMetadata.getFields(), valueMetadata.getFields());
+        List<TableField> fields = mergeFields(keyMetadata.getFields(), valueMetadata.getFields());
 
         // TODO: deduplicate with PartitionedMapTableResolver ???
         MapService service = nodeEngine.getService(MapService.SERVICE_NAME);

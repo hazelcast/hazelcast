@@ -17,20 +17,16 @@
 package com.hazelcast.sql.impl.schema.map.options;
 
 import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.sql.impl.extract.GenericQueryTargetDescriptor;
+import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.extract.QueryPath;
-import com.hazelcast.sql.impl.inject.ObjectUpsertTargetDescriptor;
 import com.hazelcast.sql.impl.schema.ExternalTable.ExternalField;
-import com.hazelcast.sql.impl.schema.TableField;
-import com.hazelcast.sql.impl.schema.map.MapTableField;
 
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 
-import static com.hazelcast.query.QueryConstants.KEY_ATTRIBUTE_NAME;
-import static com.hazelcast.query.QueryConstants.THIS_ATTRIBUTE_NAME;
-import static java.util.Collections.singletonMap;
+import static java.lang.String.format;
 
 // TODO: deduplicate with MapSampleMetadataResolver
 public interface MapOptionsMetadataResolver {
@@ -44,37 +40,46 @@ public interface MapOptionsMetadataResolver {
             InternalSerializationService serializationService
     );
 
-    /**
-     * Resolve the key or value field assuming it is primitive. Return null if
-     * the `__key` or `this` column is missing.
-     */
-    static MapOptionsMetadata resolvePrimitive(
+    default Map<QueryPath, ExternalField> extractFields(
             List<ExternalField> externalFields,
-            boolean isKey
+            boolean key,
+            Function<String, QueryPath> defaultPathSupplier
     ) {
-        String fieldName = isKey ? KEY_ATTRIBUTE_NAME.value() : THIS_ATTRIBUTE_NAME.value();
-        ExternalField externalField = findExternalField(externalFields, fieldName);
-        if (externalField == null) {
-            return null;
+        Map<QueryPath, ExternalField> fieldsByPath = new LinkedHashMap<>();
+        for (ExternalField externalField : externalFields) {
+            String externalName = externalField.externalName();
+
+            QueryPath path;
+            if (externalName == null) {
+                path = defaultPathSupplier.apply(externalField.name());
+            } else if (QueryPath.KEY.equals(externalName)) {
+                path = QueryPath.KEY_PATH;
+            } else if (QueryPath.VALUE.equals(externalName)) {
+                path = QueryPath.VALUE_PATH;
+            } else if (externalName.startsWith(QueryPath.KEY_PREFIX) || externalName.startsWith(QueryPath.VALUE_PREFIX)) {
+                // TODO: should be supported? move the validation to SqlTableColumn ?
+                if (externalName.chars().filter(ch -> ch == '.').count() > 1) {
+                    throw QueryException.error(
+                            format("Invalid field external name - '%s'. Nested fields are not supported.", externalName)
+                    );
+                }
+                path = QueryPath.create(externalName);
+            } else {
+                throw QueryException.error(
+                        format("External name should start with either '%s' or '%s'", QueryPath.KEY, QueryPath.VALUE)
+                );
+            }
+
+            if (path.isKey() == key) {
+                ExternalField existingExternalField = fieldsByPath.putIfAbsent(path, externalField);
+                if (existingExternalField != null) {
+                    throw QueryException.error(
+                            format("Ambiguous mapping for fields - '%s', '%s'",
+                                    existingExternalField.name(), externalField.name())
+                    );
+                }
+            }
         }
-
-        TableField tableField = new MapTableField(
-                externalField.name(),
-                externalField.type(),
-                false,
-                isKey ? QueryPath.KEY_PATH : QueryPath.VALUE_PATH
-        );
-        return new MapOptionsMetadata(
-                GenericQueryTargetDescriptor.INSTANCE,
-                ObjectUpsertTargetDescriptor.INSTANCE,
-                new LinkedHashMap<>(singletonMap(tableField.getName(), tableField))
-        );
-    }
-
-    static ExternalField findExternalField(List<ExternalField> externalFields, String fieldName) {
-        return externalFields.stream()
-                .filter(externalField -> fieldName.equalsIgnoreCase(externalField.name()))
-                .findAny()
-                .orElse(null);
+        return fieldsByPath;
     }
 }

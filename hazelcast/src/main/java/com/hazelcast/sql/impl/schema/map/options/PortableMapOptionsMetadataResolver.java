@@ -32,6 +32,7 @@ import com.hazelcast.sql.impl.type.QueryDataType;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import static com.hazelcast.sql.impl.connector.SqlConnector.PORTABLE_SERIALIZATION_FORMAT;
 import static com.hazelcast.sql.impl.connector.SqlKeyValueConnector.TO_KEY_CLASS_ID;
@@ -47,7 +48,8 @@ public final class PortableMapOptionsMetadataResolver implements MapOptionsMetad
 
     public static final PortableMapOptionsMetadataResolver INSTANCE = new PortableMapOptionsMetadataResolver();
 
-    private PortableMapOptionsMetadataResolver() { }
+    private PortableMapOptionsMetadataResolver() {
+    }
 
     @Override
     public String supportedFormat() {
@@ -69,11 +71,9 @@ public final class PortableMapOptionsMetadataResolver implements MapOptionsMetad
         String classVersion = options.get(classVersionProperty);
 
         if (factoryId == null || classId == null || classVersion == null) {
-            throw QueryException.error("Unable to resolve table metadata."
-                    + "'" + factoryIdProperty + "', "
-                    + "'" + classIdProperty + "', "
-                    + "'" + classVersionProperty
-                    + "' options should be specified.");
+            throw QueryException.error(
+                    format("Unable to resolve table metadata. Missing ['%s'|'%s'|'%s'] option(s)",
+                            factoryIdProperty, classIdProperty, classVersionProperty));
         }
 
         ClassDefinition classDefinition = lookupClassDefinition(
@@ -82,7 +82,7 @@ public final class PortableMapOptionsMetadataResolver implements MapOptionsMetad
                 Integer.parseInt(classId),
                 Integer.parseInt(classVersion)
         );
-        return resolvePortable(classDefinition, isKey);
+        return resolvePortable(externalFields, classDefinition, isKey);
     }
 
     // TODO: extract to util class ???
@@ -104,26 +104,37 @@ public final class PortableMapOptionsMetadataResolver implements MapOptionsMetad
         return classDefinition;
     }
 
-    private static MapOptionsMetadata resolvePortable(
+    private MapOptionsMetadata resolvePortable(
+            List<ExternalField> externalFields,
             ClassDefinition classDefinition,
             boolean isKey
     ) {
+        Map<QueryPath, ExternalField> externalFieldsByPath =
+                extractFields(externalFields, isKey, name -> new QueryPath(name, false));
+
         LinkedHashMap<String, TableField> fields = new LinkedHashMap<>();
 
-        for (int i = 0; i < classDefinition.getFieldCount(); i++) {
-            FieldDefinition fieldDefinition = classDefinition.getField(i);
+        for (Entry<String, FieldType> entry : resolvePortable(classDefinition).entrySet()) {
+            QueryPath path = new QueryPath(entry.getKey(), isKey);
+            QueryDataType type = resolvePortableType(entry.getValue());
 
-            String name = fieldDefinition.getName();
-            FieldType portableType = fieldDefinition.getType();
+            ExternalField externalField = externalFieldsByPath.get(path);
+            if (externalField != null && !externalField.type().equals(type)) {
+                throw QueryException.error(
+                        format("Mismatch between declared and inferred type - '%s'", externalField.name())
+                );
+            }
+            String name = externalField == null ? entry.getKey() : externalField.name();
 
-            TableField tableField = new MapTableField(
-                    name,
-                    resolvePortableType(portableType),
-                    false,
-                    new QueryPath(name, isKey)
-            );
+            TableField field = new MapTableField(name, type, false, path);
 
-            fields.putIfAbsent(name, tableField);
+            fields.putIfAbsent(field.getName(), field);
+        }
+
+        for (ExternalField ef : externalFieldsByPath.values()) {
+            if (!fields.containsKey(ef.name())) {
+                throw QueryException.error(format("Unmapped field - '%s'", ef.name()));
+            }
         }
 
         return new MapOptionsMetadata(
@@ -135,6 +146,15 @@ public final class PortableMapOptionsMetadataResolver implements MapOptionsMetad
                 ),
                 fields
         );
+    }
+
+    private static Map<String, FieldType> resolvePortable(ClassDefinition classDefinition) {
+        Map<String, FieldType> fields = new LinkedHashMap<>();
+        for (int i = 0; i < classDefinition.getFieldCount(); i++) {
+            FieldDefinition fieldDefinition = classDefinition.getField(i);
+            fields.putIfAbsent(fieldDefinition.getName(), fieldDefinition.getType());
+        }
+        return fields;
     }
 
     @SuppressWarnings("checkstyle:ReturnCount")

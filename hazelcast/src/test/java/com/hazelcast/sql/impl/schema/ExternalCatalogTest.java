@@ -21,7 +21,6 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.SqlTestSupport;
 import com.hazelcast.sql.impl.connector.LocalPartitionedMapConnector;
-import com.hazelcast.sql.impl.schema.ExternalTable.ExternalField;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import org.junit.AfterClass;
@@ -31,10 +30,14 @@ import org.junit.Test;
 import java.util.Map;
 import java.util.NoSuchElementException;
 
+import static com.hazelcast.sql.impl.connector.SqlConnector.JAVA_SERIALIZATION_FORMAT;
+import static com.hazelcast.sql.impl.connector.SqlKeyValueConnector.TO_KEY_CLASS;
+import static com.hazelcast.sql.impl.connector.SqlKeyValueConnector.TO_SERIALIZATION_KEY_FORMAT;
+import static com.hazelcast.sql.impl.connector.SqlKeyValueConnector.TO_SERIALIZATION_VALUE_FORMAT;
+import static com.hazelcast.sql.impl.connector.SqlKeyValueConnector.TO_VALUE_CLASS;
 import static com.hazelcast.sql.impl.type.QueryDataType.INT;
 import static com.hazelcast.sql.impl.type.QueryDataType.VARCHAR;
-import static java.util.Collections.emptyMap;
-import static java.util.stream.Collectors.toList;
+import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.toMap;
 import static org.junit.Assert.assertEquals;
 
@@ -57,7 +60,7 @@ public class ExternalCatalogTest extends SqlTestSupport {
     @Test(expected = QueryException.class)
     public void throws_whenTriesToCreateDuplicateTable() {
         // given
-        String name = "my_table_to_create";
+        String name = "table_to_create";
         ExternalCatalog catalog = new ExternalCatalog(nodeEngine(instance));
         catalog.createTable(table(name), false, false);
 
@@ -69,12 +72,12 @@ public class ExternalCatalogTest extends SqlTestSupport {
     @Test
     public void replaces_whenTableAlreadyExists() {
         // given
-        String name = "my_table_to_be_replaced";
+        String name = "table_to_be_replaced";
         ExternalCatalog catalog = new ExternalCatalog(nodeEngine(instance));
-        catalog.createTable(table(name, ImmutableMap.of("__key", INT, "this", VARCHAR)), true, false);
+        catalog.createTable(table(name, Integer.class, String.class), true, false);
 
         // when
-        ExternalTable table = table(name, ImmutableMap.of("__key", VARCHAR, "this", INT));
+        ExternalTable table = table(name, String.class, Integer.class);
         catalog.createTable(table, true, false);
 
         // then
@@ -84,12 +87,12 @@ public class ExternalCatalogTest extends SqlTestSupport {
     @Test
     public void doesNotThrow_whenTableAlreadyExists() {
         // given
-        String name = "my_table_if_not_exists";
+        String name = "table_if_not_exists";
         ExternalCatalog catalog = new ExternalCatalog(nodeEngine(instance));
-        catalog.createTable(table(name, ImmutableMap.of("__key", INT, "this", VARCHAR)), false, true);
+        catalog.createTable(table(name, Integer.class, String.class), false, true);
 
         // when
-        ExternalTable table = table(name, ImmutableMap.of("__key", VARCHAR, "this", INT));
+        ExternalTable table = table(name, String.class, Integer.class);
         catalog.createTable(table, false, true);
 
         // then
@@ -103,7 +106,7 @@ public class ExternalCatalogTest extends SqlTestSupport {
 
         // when
         // then
-        catalog.removeTable("my_table_to_be_removed", false);
+        catalog.removeTable("table_to_be_removed", false);
     }
 
     @Test
@@ -113,21 +116,24 @@ public class ExternalCatalogTest extends SqlTestSupport {
 
         // when
         // then
-        catalog.removeTable("my_table_if_exists", true);
+        catalog.removeTable("table_if_exists", true);
     }
 
     private static ExternalTable table(String name) {
-        return table(name, ImmutableMap.of("__key", INT, "this", VARCHAR));
+        return table(name, Integer.class, String.class);
     }
 
-    private static ExternalTable table(String name, Map<String, QueryDataType> fields) {
+    private static ExternalTable table(String name, Class<?> keyClass, Class<?> valueClass) {
         return new ExternalTable(
                 name,
                 LocalPartitionedMapConnector.TYPE_NAME,
-                fields.entrySet().stream()
-                      .map(entry -> new ExternalField(entry.getKey(), entry.getValue(), "this." + entry.getKey()))
-                      .collect(toList()),
-                emptyMap()
+                emptyList(),
+                ImmutableMap.of(
+                        TO_SERIALIZATION_KEY_FORMAT, JAVA_SERIALIZATION_FORMAT,
+                        TO_KEY_CLASS, keyClass.getName(),
+                        TO_SERIALIZATION_VALUE_FORMAT, JAVA_SERIALIZATION_FORMAT,
+                        TO_VALUE_CLASS, valueClass.getName()
+                )
         );
     }
 
