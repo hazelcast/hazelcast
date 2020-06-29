@@ -314,7 +314,7 @@ public class HazelcastClientProxy implements HazelcastInstance, SerializationSer
     }
 
     @Override
-    public SqlService getSqlService() {
-        return getClient().getSqlService();
+    public SqlService getSql() {
+        return getClient().getSql();
     }
 }
