@@ -26,7 +26,7 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * Definition of the SQL query.
+ * Definition of a SQL query.
  * <p>
  * This object is mutable. Properties are read once before the execution is started.
  * Changes to properties do not affect the behavior of already running queries.
@@ -73,7 +73,7 @@ public class SqlQuery {
     /**
      * Sets the SQL query to be executed.
      * <p>
-     * SQL query cannot be null or empty.
+     * The SQL query cannot be null or empty.
      *
      * @param sql SQL query.
      * @return This instance for chaining.
@@ -94,7 +94,7 @@ public class SqlQuery {
     }
 
     /**
-     * Gets query parameters.
+     * Gets the query parameters.
      *
      * @return Query parameters.
      */
@@ -104,13 +104,13 @@ public class SqlQuery {
     }
 
     /**
-     * Sets query parameters.
+     * Sets the query parameters.
      * <p>
-     * You may define parameter placeholders in the query with the {@code "?"} character. For every placeholder, a parameter's
+     * You may define parameter placeholders in the query with the {@code "?"} character. For every placeholder, a parameter
      * value must be provided.
      * <p>
      * When the method is called, the content of the parameters list is copied. Subsequent changes to the original list don't
-     * change query parameters.
+     * change the query parameters.
      *
      * @see #addParameter(Object)
      * @see #clearParameters()
@@ -129,7 +129,7 @@ public class SqlQuery {
     }
 
     /**
-     * Adds a single parameter to the end of parameters list.
+     * Adds a single parameter to the end of the parameters list.
      *
      * @see #setParameters(List)
      * @see #clearParameters()
@@ -175,10 +175,10 @@ public class SqlQuery {
      * <p>
      * If the timeout is reached for a running query, it will be cancelled forcefully.
      * <p>
-     * Zero value means no timeout. {@code -1} means that the value from {@link SqlConfig#getQueryTimeout()} will be used. Other
-     * negative values are prohibited.
+     * Zero value means no timeout. {@value #TIMEOUT_NOT_SET} means that the value from {@link SqlConfig#getQueryTimeout()} will
+     * be used. Other negative values are prohibited.
      * <p>
-     * Defaults to {@code -1}, which means that the value from {@link SqlConfig#getQueryTimeout()} will be used.
+     * Defaults to {@value #TIMEOUT_NOT_SET}.
      *
      * @see SqlConfig#getQueryTimeout()
      * @param timeout Query timeout in milliseconds, {@code 0} for no timeout, {@code -1} to user member's default timeout.
@@ -207,9 +207,9 @@ public class SqlQuery {
     /**
      * Sets the cursor buffer size (measured in the number of rows).
      * <p>
-     * When a query is submitted for execution, the {@link SqlResult} is returned as a result. When rows are ready to be
+     * When a query is submitted for execution, a {@link SqlResult} is returned as a result. When rows are ready to be
      * consumed, they are put into an internal buffer of the cursor. This parameter defines the maximum number of rows in
-     * the buffer. When the threshold is reached, the backpressure mechanism will slow down the query execution, possibly to a
+     * that buffer. When the threshold is reached, the backpressure mechanism will slow down the query execution, possibly to a
      * complete halt, to prevent out-of-memory.
      * <p>
      * Only positive values are allowed.
@@ -217,7 +217,7 @@ public class SqlQuery {
      * The default value is expected to work well for the most workloads. A bigger buffer size may give you a slight performance
      * boost for queries with large result sets at the cost of increased memory consumption.
      * <p>
-     * Defaults to {@link #DEFAULT_CURSOR_BUFFER_SIZE}.
+     * Defaults to {@value #DEFAULT_CURSOR_BUFFER_SIZE}.
      *
      * @see SqlService#query(SqlQuery)
      * @see SqlResult
@@ -236,7 +236,7 @@ public class SqlQuery {
     }
 
     /**
-     * Creates copy of this instance.
+     * Creates a copy of this instance.
      *
      * @return Copy of this instance.
      */
