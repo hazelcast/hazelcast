@@ -72,6 +72,7 @@ import com.hazelcast.config.RingbufferStoreConfig;
 import com.hazelcast.config.ScheduledExecutorConfig;
 import com.hazelcast.config.SecurityConfig;
 import com.hazelcast.config.SerializationConfig;
+import com.hazelcast.config.SqlConfig;
 import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.internal.config.ServicesConfig;
 import com.hazelcast.config.SetConfig;
@@ -990,6 +991,17 @@ public class ClientDynamicClusterConfig extends Config {
         throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 
+    @Override
+    @Nonnull
+    public SqlConfig getSqlConfig() {
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
+    }
+
+    @Override
+    @Nonnull
+    public Config setSqlConfig(@Nonnull SqlConfig sqlConfig) {
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
+    }
 
     @Override
     public String toString() {
