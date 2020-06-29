@@ -53,7 +53,7 @@ public final class SqlRowMetadata {
     /**
      * Gets the number of columns in the row.
      *
-     * @return The number of columns in the row.
+     * @return the number of columns in the row
      */
     public int getColumnCount() {
         return columns.size();
@@ -62,8 +62,9 @@ public final class SqlRowMetadata {
     /**
      * Get column metadata.
      *
-     * @param index Column index, 0-based.
-     * @return Column metadata.
+     * @param index column index, zero-based
+     * @return column metadata
+     * @throws IndexOutOfBoundsException If the column index is out of bounds
      */
     @Nonnull
     public SqlColumnMetadata getColumn(int index) {
@@ -78,10 +79,11 @@ public final class SqlRowMetadata {
      * Find index of the column with the given name. Returned index can be used to get column value
      * from {@link SqlRow}.
      *
+     * @param columnName column name (case sensitive)
+     * @return column index or {@link #COLUMN_NOT_FOUND} if a column with the given name is not found
+     * @throws NullPointerException if column name is null
+     *
      * @see SqlRow
-     * @param columnName Column name (case sensitive).
-     * @return Column index or {@link #COLUMN_NOT_FOUND} if a column with the given name is not found.
-     * @throws NullPointerException If column name is null.
      */
     public int findColumn(@Nonnull String columnName) {
         Preconditions.checkNotNull(columnName, "Column name cannot be null");

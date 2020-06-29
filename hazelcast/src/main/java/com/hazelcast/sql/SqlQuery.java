@@ -66,7 +66,7 @@ public class SqlQuery {
     /**
      * Gets the SQL query to be executed.
      *
-     * @return SQL query.
+     * @return SQL query
      */
     @Nonnull
     public String getSql() {
@@ -78,10 +78,10 @@ public class SqlQuery {
      * <p>
      * The SQL query cannot be null or empty.
      *
-     * @param sql SQL query.
-     * @return This instance for chaining.
-     * @throws NullPointerException If passed SQL query is null
-     * @throws IllegalArgumentException If passed SQL query is empty
+     * @param sql SQL query
+     * @return this instance for chaining
+     * @throws NullPointerException if passed SQL query is null
+     * @throws IllegalArgumentException if passed SQL query is empty
      */
     @Nonnull
     public SqlQuery setSql(@Nonnull String sql) {
@@ -99,7 +99,7 @@ public class SqlQuery {
     /**
      * Gets the query parameters.
      *
-     * @return Query parameters.
+     * @return query parameters
      */
     @Nonnull
     public List<Object> getParameters() {
@@ -115,10 +115,11 @@ public class SqlQuery {
      * When the method is called, the content of the parameters list is copied. Subsequent changes to the original list don't
      * change the query parameters.
      *
+     * @param parameters query parameters
+     * @return this instance for chaining
+     *
      * @see #addParameter(Object)
      * @see #clearParameters()
-     * @param parameters Query parameters.
-     * @return This instance for chaining.
      */
     @Nonnull
     public SqlQuery setParameters(List<Object> parameters) {
@@ -134,10 +135,11 @@ public class SqlQuery {
     /**
      * Adds a single parameter to the end of the parameters list.
      *
+     * @param parameter parameter
+     * @return this instance for chaining
+     *
      * @see #setParameters(List)
      * @see #clearParameters()
-     * @param parameter Parameter.
-     * @return This instance for chaining.
      */
     @Nonnull
     public SqlQuery addParameter(Object parameter) {
@@ -153,9 +155,10 @@ public class SqlQuery {
     /**
      * Clear query parameters.
      *
+     * @return this instance for chaining
+     *
      * @see #setParameters(List)
      * @see #addParameter(Object)
-     * @return This instance for chaining.
      */
     @Nonnull
     public SqlQuery clearParameters() {
@@ -167,7 +170,7 @@ public class SqlQuery {
     /**
      * Gets the query timeout in milliseconds.
      *
-     * @return Query timeout in milliseconds.
+     * @return query timeout in milliseconds
      */
     public long getTimeoutMillis() {
         return timeout;
@@ -183,9 +186,10 @@ public class SqlQuery {
      * <p>
      * Defaults to {@value #TIMEOUT_NOT_SET}.
      *
+     * @param timeout query timeout in milliseconds, {@code 0} for no timeout, {@code -1} to user member's default timeout
+     * @return this instance for chaining
+     *
      * @see SqlConfig#getQueryTimeoutMillis()
-     * @param timeout Query timeout in milliseconds, {@code 0} for no timeout, {@code -1} to user member's default timeout.
-     * @return This instance for chaining.
      */
     @Nonnull
     public SqlQuery setTimeoutMillis(long timeout) {
@@ -201,7 +205,7 @@ public class SqlQuery {
     /**
      * Gets the cursor buffer size (measured in the number of rows).
      *
-     * @return Cursor buffer size (measured in the number of rows).
+     * @return cursor buffer size (measured in the number of rows)
      */
     public int getCursorBufferSize() {
         return cursorBufferSize;
@@ -222,10 +226,11 @@ public class SqlQuery {
      * <p>
      * Defaults to {@value #DEFAULT_CURSOR_BUFFER_SIZE}.
      *
+     * @param cursorBufferSize cursor buffer size (measured in the number of rows)
+     * @return this instance for chaining
+     *
      * @see SqlService#query(SqlQuery)
      * @see SqlResult
-     * @param cursorBufferSize Cursor buffer size (measured in the number of rows).
-     * @return This instance for chaining.
      */
     @Nonnull
     public SqlQuery setCursorBufferSize(int cursorBufferSize) {
@@ -239,9 +244,9 @@ public class SqlQuery {
     }
 
     /**
-     * Creates a copy of this instance.
+     * Creates a copy of this instance
      *
-     * @return Copy of this instance.
+     * @return Copy of this instance
      */
     @Nonnull
     public SqlQuery copy() {

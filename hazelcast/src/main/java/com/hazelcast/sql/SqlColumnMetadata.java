@@ -41,7 +41,7 @@ public final class SqlColumnMetadata {
     /**
      * Get column name.
      *
-     * @return Column name.
+     * @return column name
      */
     @Nonnull
     public String getName() {
@@ -51,7 +51,7 @@ public final class SqlColumnMetadata {
     /**
      * Gets column type.
      *
-     * @return Column type.
+     * @return column type
      */
     @Nonnull
     public SqlColumnType getType() {

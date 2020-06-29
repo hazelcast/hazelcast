@@ -106,15 +106,16 @@ public interface SqlService {
      * <p>
      * Converts passed SQL string and parameters into an {@link SqlQuery} object and invokes {@link #query(SqlQuery)}.
      *
+     * @param sql SQL string
+     * @param params parameters
+     * @return result
+     * @throws NullPointerException if the SQL string is null
+     * @throws IllegalArgumentException if the SQL string is empty
+     * @throws SqlException in case of execution error
+     *
      * @see SqlService
      * @see SqlQuery
      * @see #query(SqlQuery)
-     * @param sql SQL.
-     * @param params Parameters.
-     * @return Result.
-     * @throws NullPointerException If sql is null
-     * @throws IllegalArgumentException If sql is empty
-     * @throws SqlException In case of execution error
      */
     @Nonnull
     default SqlResult query(@Nonnull String sql, Object... params) {
@@ -132,11 +133,12 @@ public interface SqlService {
     /**
      * Executes a distributed query.
      *
+     * @param query query to be executed
+     * @return result
+     * @throws NullPointerException if the query is null
+     * @throws SqlException in case of execution error
+     *
      * @see SqlService
-     * @param query Query object
-     * @return Result.
-     * @throws NullPointerException If query is null
-     * @throws SqlException In case of execution error
      */
     @Nonnull
     SqlResult query(@Nonnull SqlQuery query);
