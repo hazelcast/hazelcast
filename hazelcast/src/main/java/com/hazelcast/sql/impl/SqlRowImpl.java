@@ -49,7 +49,7 @@ public class SqlRowImpl implements SqlRow {
 
     private void checkIndex(int index) {
         if (index < 0 || index >= rowMetadata.getColumnCount()) {
-            throw new IllegalArgumentException("Column index is out of range: " + index);
+            throw new IndexOutOfBoundsException("Column index is out of range: " + index);
         }
     }
 }
