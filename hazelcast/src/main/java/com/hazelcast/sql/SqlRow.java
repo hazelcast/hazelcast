@@ -28,11 +28,14 @@ public interface SqlRow {
      * <p>
      * The class of the returned value depends on the SQL type of the column. No implicit conversions are performed on the value.
      *
-     * @see #getMetadata()
-     * @see SqlColumnMetadata#getType()
      * @param columnIndex Column index, 0-based.
      * @return Value of the column.
-     * @throws IndexOutOfBoundsException If the column index is out of bounds.
+     *
+     * @throws IndexOutOfBoundsException If the column index is out of bounds
+     * @throws ClassCastException If the type of the column type isn't assignable to the type {@code T}
+     *
+     * @see #getMetadata()
+     * @see SqlColumnMetadata#getType()
      */
     @Nullable
     <T> T getObject(int columnIndex);
@@ -45,14 +48,17 @@ public interface SqlRow {
      * <p>
      * The class of the returned value depends on the SQL type of the column. No implicit conversions are performed on the value.
      *
+     * @param columnName Column name.
+     * @return Value of the column
+     *
+     * @throws NullPointerException If column name is null
+     * @throws IllegalArgumentException If a column with the given name is not found
+     * @throws ClassCastException If the type of the column type isn't assignable to the type {@code T}
+     *
      * @see #getMetadata()
      * @see SqlRowMetadata#findColumn(String)
      * @see SqlColumnMetadata#getName()
      * @see SqlColumnMetadata#getType()
-     * @param columnName Column name.
-     * @return Value of the column
-     * @throws NullPointerException If column name is null
-     * @throws IllegalArgumentException If a column with the given name is not found
      */
     @Nullable
     <T> T getObject(@Nonnull String columnName);
