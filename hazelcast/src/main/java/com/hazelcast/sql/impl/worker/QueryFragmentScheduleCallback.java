@@ -33,7 +33,7 @@ public interface QueryFragmentScheduleCallback {
      * Schedule the fragment for execution.
      *
      * @param force {@code true} to ensure that the fragment is re-executed after the call to the "schedule" even if there
-     *     are no new exchange operations. This is required by the result consumer.     *
+     *     are no new exchange operations. This is required by the result consumer.
      * @see BlockingRootResultConsumer
      * @return {@code true} if the fragment was scheduled, {@code false} if already scheduled.
      */

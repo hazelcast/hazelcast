@@ -113,7 +113,7 @@ public class QueryDataType implements IdentifiedDataSerializable {
 
     /**
      * Normalize the given value to a value returned by this instance. If the value doesn't match
-     * the type expected by the converter, and exception is thrown.
+     * the type expected by the converter, an exception is thrown.
      *
      * @param value Value
      * @return Normalized value
@@ -127,7 +127,7 @@ public class QueryDataType implements IdentifiedDataSerializable {
         Class<?> valueClass = value.getClass();
 
         if (!converter.getValueClass().isAssignableFrom(valueClass)) {
-            // Expected and actual class doesn't match. Throw an error.
+            // Expected and actual class don't match. Throw an error.
             throw new QueryDataTypeMismatchException(converter.getValueClass(), valueClass);
         }
 
