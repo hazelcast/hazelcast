@@ -313,6 +313,7 @@ public class HazelcastClientProxy implements HazelcastInstance, SerializationSer
         return "HazelcastClientInstance {NOT ACTIVE}";
     }
 
+    @Nonnull
     @Override
     public SqlService getSql() {
         return getClient().getSql();

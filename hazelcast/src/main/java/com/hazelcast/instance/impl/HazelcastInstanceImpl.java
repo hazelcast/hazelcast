@@ -410,6 +410,7 @@ public class HazelcastInstanceImpl implements HazelcastInstance, SerializationSe
         return cpSubsystem;
     }
 
+    @Nonnull
     @Override
     public SqlService getSql() {
         return node.getNodeEngine().getSqlService();

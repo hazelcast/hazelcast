@@ -293,6 +293,7 @@ public final class HazelcastInstanceProxy implements HazelcastInstance, Serializ
         return getOriginal().getCPSubsystem();
     }
 
+    @Nonnull
     @Override
     public SqlService getSql() {
         return getOriginal().getSql();

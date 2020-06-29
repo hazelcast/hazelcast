@@ -44,6 +44,7 @@ public interface SqlResult extends Iterable<SqlRow>, AutoCloseable {
      *
      * @return Row metadata.
      */
+    @Nonnull
     SqlRowMetadata getRowMetadata();
 
     /**

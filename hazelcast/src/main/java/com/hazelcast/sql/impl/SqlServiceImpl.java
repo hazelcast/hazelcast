@@ -33,6 +33,7 @@ import com.hazelcast.sql.impl.optimizer.SqlPlan;
 import com.hazelcast.sql.impl.plan.Plan;
 import com.hazelcast.sql.impl.state.QueryState;
 
+import javax.annotation.Nonnull;
 import java.lang.reflect.Constructor;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -123,6 +124,7 @@ public class SqlServiceImpl implements SqlService, Consumer<Packet> {
         return optimizer;
     }
 
+    @Nonnull
     @Override
     public SqlResult query(SqlQuery query) {
         try {
