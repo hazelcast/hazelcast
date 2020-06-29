@@ -72,7 +72,15 @@ public class SqlServiceImpl implements SqlService, Consumer<Packet> {
 
         int executorPoolSize = config.getExecutorPoolSize();
         int operationPoolSize = config.getOperationPoolSize();
-        long queryTimeout = config.getQueryTimeout();
+        long queryTimeout = config.getQueryTimeoutMillis();
+
+        if (executorPoolSize == SqlConfig.DEFAULT_EXECUTOR_POOL_SIZE) {
+            executorPoolSize = Runtime.getRuntime().availableProcessors();
+        }
+
+        if (operationPoolSize == SqlConfig.DEFAULT_OPERATION_POOL_SIZE) {
+            operationPoolSize = Runtime.getRuntime().availableProcessors();
+        }
 
         assert executorPoolSize > 0;
         assert operationPoolSize > 0;
@@ -135,7 +143,7 @@ public class SqlServiceImpl implements SqlService, Consumer<Packet> {
                 throw QueryException.error("SQL queries cannot be executed on lite members");
             }
 
-            long timeout = query.getTimeout();
+            long timeout = query.getTimeoutMillis();
 
             if (timeout == SqlQuery.TIMEOUT_NOT_SET) {
                 timeout = queryTimeout;

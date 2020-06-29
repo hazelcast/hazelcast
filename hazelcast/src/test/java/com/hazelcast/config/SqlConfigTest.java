@@ -34,7 +34,7 @@ public class SqlConfigTest {
 
         assertEquals(SqlConfig.DEFAULT_EXECUTOR_POOL_SIZE, config.getExecutorPoolSize());
         assertEquals(SqlConfig.DEFAULT_OPERATION_POOL_SIZE, config.getOperationPoolSize());
-        assertEquals(SqlConfig.DEFAULT_QUERY_TIMEOUT, config.getQueryTimeout());
+        assertEquals(SqlConfig.DEFAULT_QUERY_TIMEOUT, config.getQueryTimeoutMillis());
     }
 
     @Test
@@ -42,11 +42,15 @@ public class SqlConfigTest {
         SqlConfig config = new SqlConfig()
             .setExecutorPoolSize(10)
             .setOperationPoolSize(20)
-            .setQueryTimeout(30L);
+            .setQueryTimeoutMillis(30L);
 
         assertEquals(10, config.getExecutorPoolSize());
         assertEquals(20, config.getOperationPoolSize());
-        assertEquals(30L, config.getQueryTimeout());
+        assertEquals(30L, config.getQueryTimeoutMillis());
+    }
+
+    public void testExecutorPoolSizeDefault() {
+        new SqlConfig().setExecutorPoolSize(-1);
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -56,6 +60,10 @@ public class SqlConfigTest {
 
     @Test(expected = IllegalArgumentException.class)
     public void testExecutorPoolSizeNegative() {
+        new SqlConfig().setExecutorPoolSize(-2);
+    }
+
+    public void testOperationPoolSizeDefault() {
         new SqlConfig().setExecutorPoolSize(-1);
     }
 
@@ -66,16 +74,16 @@ public class SqlConfigTest {
 
     @Test(expected = IllegalArgumentException.class)
     public void testOperationPoolSizeNegative() {
-        new SqlConfig().setOperationPoolSize(-1);
+        new SqlConfig().setOperationPoolSize(-2);
     }
 
     @Test
     public void testQueryTimeoutZero() {
-        new SqlConfig().setQueryTimeout(0);
+        new SqlConfig().setQueryTimeoutMillis(0);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testQueryTimeoutNegative() {
-        new SqlConfig().setQueryTimeout(-1L);
+        new SqlConfig().setQueryTimeoutMillis(-1L);
     }
 }

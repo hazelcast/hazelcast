@@ -79,7 +79,7 @@ public class SqlErrorTest extends SqlTestSupport {
         blocker.unblockAfter(5000L);
 
         // Execute query on the instance1.
-        SqlException error = assertSqlException(instance1, query().setTimeout(100L));
+        SqlException error = assertSqlException(instance1, query().setTimeoutMillis(100L));
 
         assertEquals(SqlErrorCode.TIMEOUT, error.getCode());
         assertEquals(instance1.getLocalEndpoint().getUuid(), error.getOriginatingMemberId());
