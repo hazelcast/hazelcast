@@ -18,7 +18,7 @@ package com.hazelcast.sql.impl.expression.predicate;
 
 import com.hazelcast.sql.impl.SqlDataSerializerHook;
 import com.hazelcast.sql.impl.SqlTestSupport;
-import com.hazelcast.sql.impl.expression.ColumnExpression;
+import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.SimpleExpressionEvalContext;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -28,39 +28,46 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static com.hazelcast.sql.impl.expression.predicate.ComparisonMode.EQUALS;
+import static com.hazelcast.sql.impl.expression.predicate.ComparisonMode.GREATER_THAN;
+import static com.hazelcast.sql.impl.expression.predicate.ComparisonMode.LESS_THAN;
+import static com.hazelcast.sql.impl.type.QueryDataType.BIGINT;
+import static com.hazelcast.sql.impl.type.QueryDataType.INT;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class IsNullPredicateTest extends SqlTestSupport {
+public class ComparisonPredicateTest extends SqlTestSupport {
 
     // NOTE: This test class verifies only basic functionality, look for more
     // extensive tests in hazelcast-sql module.
 
     @Test
-    public void testIsNullPredicate() {
-        IsNullPredicate predicate = IsNullPredicate.create(ColumnExpression.create(0, QueryDataType.VARCHAR));
-
-        assertFalse(predicate.eval(row("test"), SimpleExpressionEvalContext.create()));
-        assertTrue(predicate.eval(row(new Object[]{null}), SimpleExpressionEvalContext.create()));
+    public void testCreationAndEval() {
+        assertFalse(comparison(0, 1, INT, EQUALS).eval(row("foo"), SimpleExpressionEvalContext.create()));
+        assertTrue(comparison(0, 1, INT, LESS_THAN).eval(row("foo"), SimpleExpressionEvalContext.create()));
     }
 
     @Test
     public void testEquality() {
-        ColumnExpression<?> column1 = ColumnExpression.create(1, QueryDataType.VARCHAR);
-        ColumnExpression<?> column2 = ColumnExpression.create(2, QueryDataType.VARCHAR);
-
-        checkEquals(IsNullPredicate.create(column1), IsNullPredicate.create(column1), true);
-        checkEquals(IsNullPredicate.create(column1), IsNullPredicate.create(column2), false);
+        checkEquals(comparison(0, 1, INT, EQUALS), comparison(0, 1, INT, EQUALS), true);
+        checkEquals(comparison(0, 1, INT, EQUALS), comparison(0, 1, INT, GREATER_THAN), false);
+        checkEquals(comparison(0, 1, INT, EQUALS), comparison(0, 1, BIGINT, EQUALS), false);
+        checkEquals(comparison(0, 1, INT, EQUALS), comparison(1, 1, INT, EQUALS), false);
+        checkEquals(comparison(0, 1, INT, EQUALS), comparison(1, 0, INT, EQUALS), false);
     }
 
     @Test
     public void testSerialization() {
-        IsNullPredicate original = IsNullPredicate.create(ColumnExpression.create(1, QueryDataType.VARCHAR));
-        IsNullPredicate restored = serializeAndCheck(original, SqlDataSerializerHook.EXPRESSION_IS_NULL);
+        ComparisonPredicate original = comparison(0, 1, INT, EQUALS);
+        ComparisonPredicate restored = serializeAndCheck(original, SqlDataSerializerHook.EXPRESSION_COMPARISON);
 
         checkEquals(original, restored, true);
+    }
+
+    private static ComparisonPredicate comparison(Object lhs, Object rhs, QueryDataType type, ComparisonMode mode) {
+        return ComparisonPredicate.create(ConstantExpression.create(lhs, type), ConstantExpression.create(rhs, type), mode);
     }
 
 }

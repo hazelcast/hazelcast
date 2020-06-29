@@ -16,8 +16,10 @@
 
 package com.hazelcast.sql.impl.expression.math;
 
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.sql.SqlErrorCode;
 import com.hazelcast.sql.impl.QueryException;
+import com.hazelcast.sql.impl.SqlDataSerializerHook;
 import com.hazelcast.sql.impl.expression.BiExpressionWithType;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
@@ -35,9 +37,8 @@ import static com.hazelcast.sql.impl.expression.math.ExpressionMath.DECIMAL_MATH
 /**
  * Implements evaluation of SQL divide operator.
  */
-public class DivideFunction<T> extends BiExpressionWithType<T> {
+public class DivideFunction<T> extends BiExpressionWithType<T> implements IdentifiedDataSerializable {
 
-    @SuppressWarnings("unused")
     public DivideFunction() {
         // No-op.
     }
@@ -48,6 +49,16 @@ public class DivideFunction<T> extends BiExpressionWithType<T> {
 
     public static DivideFunction<?> create(Expression<?> operand1, Expression<?> operand2, QueryDataType resultType) {
         return new DivideFunction<>(operand1, operand2, resultType);
+    }
+
+    @Override
+    public int getFactoryId() {
+        return SqlDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getClassId() {
+        return SqlDataSerializerHook.EXPRESSION_DIVIDE;
     }
 
     @SuppressWarnings("unchecked")

@@ -18,6 +18,8 @@ package com.hazelcast.sql.impl.expression.predicate;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.sql.impl.SqlDataSerializerHook;
 import com.hazelcast.sql.impl.expression.BiExpression;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
@@ -33,11 +35,10 @@ import java.util.Objects;
  *
  * @see ComparisonMode
  */
-public class ComparisonPredicate extends BiExpression<Boolean> {
+public class ComparisonPredicate extends BiExpression<Boolean> implements IdentifiedDataSerializable {
 
     private ComparisonMode mode;
 
-    @SuppressWarnings("unused")
     public ComparisonPredicate() {
         // No-op.
     }
@@ -50,6 +51,16 @@ public class ComparisonPredicate extends BiExpression<Boolean> {
     public static ComparisonPredicate create(Expression<?> left, Expression<?> right, ComparisonMode comparisonMode) {
         assert left.getType().equals(right.getType());
         return new ComparisonPredicate(left, right, comparisonMode);
+    }
+
+    @Override
+    public int getFactoryId() {
+        return SqlDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getClassId() {
+        return SqlDataSerializerHook.EXPRESSION_COMPARISON;
     }
 
     @SuppressWarnings({"rawtypes", "unchecked"})

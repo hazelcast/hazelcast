@@ -18,6 +18,8 @@ package com.hazelcast.sql.impl.expression;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.sql.impl.SqlDataSerializerHook;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
@@ -32,12 +34,11 @@ import java.util.Objects;
  *
  * @param <T> Return type.
  */
-public class ConstantExpression<T> implements Expression<T> {
+public class ConstantExpression<T> implements Expression<T>, IdentifiedDataSerializable {
 
     private QueryDataType type;
     private T value;
 
-    @SuppressWarnings("unused")
     public ConstantExpression() {
         // No-op.
     }
@@ -62,6 +63,16 @@ public class ConstantExpression<T> implements Expression<T> {
         value = typeConverter.convertToSelf(valueConverter, value);
 
         return new ConstantExpression<>(value, type);
+    }
+
+    @Override
+    public int getFactoryId() {
+        return SqlDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getClassId() {
+        return SqlDataSerializerHook.EXPRESSION_CONSTANT;
     }
 
     @Override
