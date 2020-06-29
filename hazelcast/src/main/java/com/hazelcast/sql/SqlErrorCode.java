@@ -23,9 +23,6 @@ public final class SqlErrorCode {
     /** Generic error. */
     public static final int GENERIC = -1;
 
-    /** Query completed successfully. */
-    public static final int OK = 0;
-
     /** Member cannot be reached. */
     public static final int MEMBER_CONNECTION = 1001;
 
