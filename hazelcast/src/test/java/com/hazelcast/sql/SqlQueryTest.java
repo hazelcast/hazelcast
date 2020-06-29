@@ -41,7 +41,7 @@ public class SqlQueryTest extends SqlTestSupport {
 
         assertEquals(SQL, query.getSql());
         assertEquals(0, query.getParameters().size());
-        assertEquals(SqlQuery.DEFAULT_TIMEOUT, query.getTimeout());
+        assertEquals(SqlQuery.DEFAULT_TIMEOUT, query.getTimeoutMillis());
         assertEquals(SqlQuery.DEFAULT_CURSOR_BUFFER_SIZE, query.getCursorBufferSize());
     }
 
@@ -85,19 +85,19 @@ public class SqlQueryTest extends SqlTestSupport {
 
     @Test
     public void testTimeout() {
-        SqlQuery query = create().setTimeout(1);
-        assertEquals(1, query.getTimeout());
+        SqlQuery query = create().setTimeoutMillis(1);
+        assertEquals(1, query.getTimeoutMillis());
 
-        query.setTimeout(0);
-        assertEquals(0, query.getTimeout());
+        query.setTimeoutMillis(0);
+        assertEquals(0, query.getTimeoutMillis());
 
-        query.setTimeout(SqlQuery.TIMEOUT_NOT_SET);
-        assertEquals(SqlQuery.TIMEOUT_NOT_SET, query.getTimeout());
+        query.setTimeoutMillis(SqlQuery.TIMEOUT_NOT_SET);
+        assertEquals(SqlQuery.TIMEOUT_NOT_SET, query.getTimeoutMillis());
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testTimeout_negative() {
-        create().setTimeout(-2);
+        create().setTimeoutMillis(-2);
     }
 
     @Test
@@ -121,7 +121,7 @@ public class SqlQueryTest extends SqlTestSupport {
         SqlQuery original = create();
         checkEquals(original, original.copy(), true);
 
-        original.setParameters(Arrays.asList(1, 2)).setTimeout(3L).setCursorBufferSize(4);
+        original.setParameters(Arrays.asList(1, 2)).setTimeoutMillis(3L).setCursorBufferSize(4);
         checkEquals(original, original.copy(), true);
     }
 
@@ -131,26 +131,26 @@ public class SqlQueryTest extends SqlTestSupport {
         SqlQuery another = create();
         checkEquals(query, another, true);
 
-        query.setParameters(Arrays.asList(1, 2)).setTimeout(10L).setCursorBufferSize(20);
-        another.setParameters(Arrays.asList(1, 2)).setTimeout(10L).setCursorBufferSize(20);
+        query.setParameters(Arrays.asList(1, 2)).setTimeoutMillis(10L).setCursorBufferSize(20);
+        another.setParameters(Arrays.asList(1, 2)).setTimeoutMillis(10L).setCursorBufferSize(20);
         checkEquals(query, another, true);
 
-        another.setSql(SQL + "1").setParameters(Arrays.asList(1, 2)).setTimeout(10L).setCursorBufferSize(20);
+        another.setSql(SQL + "1").setParameters(Arrays.asList(1, 2)).setTimeoutMillis(10L).setCursorBufferSize(20);
         checkEquals(query, another, false);
 
-        another.setSql(SQL).setParameters(Arrays.asList(1, 2, 3)).setTimeout(10L).setCursorBufferSize(20);
+        another.setSql(SQL).setParameters(Arrays.asList(1, 2, 3)).setTimeoutMillis(10L).setCursorBufferSize(20);
         checkEquals(query, another, false);
 
-        another.setSql(SQL).setParameters(Arrays.asList(1, 2)).setTimeout(11L).setCursorBufferSize(20);
+        another.setSql(SQL).setParameters(Arrays.asList(1, 2)).setTimeoutMillis(11L).setCursorBufferSize(20);
         checkEquals(query, another, false);
 
-        another.setSql(SQL).setParameters(Arrays.asList(1, 2)).setTimeout(10L).setCursorBufferSize(21);
+        another.setSql(SQL).setParameters(Arrays.asList(1, 2)).setTimeoutMillis(10L).setCursorBufferSize(21);
         checkEquals(query, another, false);
     }
 
     @Test
     public void testToString() {
-        SqlQuery query = create().setParameters(Arrays.asList(1, 2)).setTimeout(3L).setCursorBufferSize(4);
+        SqlQuery query = create().setParameters(Arrays.asList(1, 2)).setTimeoutMillis(3L).setCursorBufferSize(4);
 
         String string = query.toString();
 

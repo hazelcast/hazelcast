@@ -166,7 +166,7 @@ public class SqlQuery {
      *
      * @return Query timeout in milliseconds.
      */
-    public long getTimeout() {
+    public long getTimeoutMillis() {
         return timeout;
     }
 
@@ -175,17 +175,17 @@ public class SqlQuery {
      * <p>
      * If the timeout is reached for a running query, it will be cancelled forcefully.
      * <p>
-     * Zero value means no timeout. {@value #TIMEOUT_NOT_SET} means that the value from {@link SqlConfig#getQueryTimeout()} will
-     * be used. Other negative values are prohibited.
+     * Zero value means no timeout. {@value #TIMEOUT_NOT_SET} means that the value from
+     * {@link SqlConfig#getQueryTimeoutMillis()} will be used. Other negative values are prohibited.
      * <p>
      * Defaults to {@value #TIMEOUT_NOT_SET}.
      *
-     * @see SqlConfig#getQueryTimeout()
+     * @see SqlConfig#getQueryTimeoutMillis()
      * @param timeout Query timeout in milliseconds, {@code 0} for no timeout, {@code -1} to user member's default timeout.
      * @return This instance for chaining.
      */
     @Nonnull
-    public SqlQuery setTimeout(long timeout) {
+    public SqlQuery setTimeoutMillis(long timeout) {
         if (timeout < 0 && timeout != TIMEOUT_NOT_SET) {
             throw new IllegalArgumentException("Timeout should be non-negative or -1: " + timeout);
         }
