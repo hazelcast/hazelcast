@@ -45,6 +45,7 @@ public class SqlMetadataTest extends SqlTestSupport {
 
         assertEquals("a", column.getName());
         assertEquals(SqlColumnType.INT, column.getType());
+        assertEquals("a INT", column.toString());
 
         checkEquals(column, new SqlColumnMetadata("a", SqlColumnType.INT), true);
         checkEquals(column, new SqlColumnMetadata("b", SqlColumnType.INT), false);
@@ -61,7 +62,7 @@ public class SqlMetadataTest extends SqlTestSupport {
             HeapRow.of(1, "2")
         );
 
-        assertEquals("[a:INT=1, b:VARCHAR=2]", row.toString());
+        assertEquals("[a INT=1, b VARCHAR=2]", row.toString());
     }
 
     @Test
@@ -72,7 +73,7 @@ public class SqlMetadataTest extends SqlTestSupport {
 
         SqlRowMetadata row = new SqlRowMetadata(Arrays.asList(column0, column1));
 
-        assertEquals("[a:INT, b:BIGINT]", row.toString());
+        assertEquals("[a INT, b BIGINT]", row.toString());
 
         assertEquals(2, row.getColumnCount());
         assertEquals(column0, row.getColumn(0));
