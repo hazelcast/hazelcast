@@ -16,6 +16,8 @@
 
 package com.hazelcast.sql;
 
+import com.hazelcast.internal.util.Preconditions;
+
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -78,11 +80,14 @@ public class SqlRowMetadata {
      * from {@link SqlRow}.
      *
      * @see SqlRow
-     * @param name Column name (case sensitive).
+     * @param columnName Column name (case sensitive).
      * @return Column index or {@link #COLUMN_NOT_FOUND} if a column with the given name is not found.
+     * @throws NullPointerException If column name is null.
      */
-    public int findColumn(String name) {
-        Integer index = nameToIndex.get(name);
+    public int findColumn(@Nonnull String columnName) {
+        Preconditions.checkNotNull(columnName, "Column name cannot be null");
+
+        Integer index = nameToIndex.get(columnName);
 
         return index != null ? index : COLUMN_NOT_FOUND;
     }

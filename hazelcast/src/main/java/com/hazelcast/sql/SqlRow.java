@@ -38,6 +38,26 @@ public interface SqlRow {
     Object getObject(int columnIndex);
 
     /**
+     * Gets the value of the column by column name.
+     * <p>
+     * Column name should be one of those defined in {@link SqlRowMetadata}, case-sensitive. You may also use
+     * {@link SqlRowMetadata#findColumn(String)} to test for column existence.
+     * <p>
+     * The class of the returned value depends on the SQL type of the column.
+     *
+     * @see #getRowMetadata()
+     * @see SqlRowMetadata#findColumn(String)
+     * @see SqlColumnMetadata#getName()
+     * @see SqlColumnMetadata#getType()
+     * @param columnName Column name.
+     * @return Value of the column
+     * @throws NullPointerException If column name is null
+     * @throws IllegalArgumentException If a column with the given name is not found
+     */
+    @Nullable
+    Object getObject(@Nonnull String columnName);
+
+    /**
      * @see SqlRowMetadata
      * @return Row metadata.
      */
