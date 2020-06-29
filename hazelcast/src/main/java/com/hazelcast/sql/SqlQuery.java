@@ -21,7 +21,6 @@ import com.hazelcast.internal.util.Preconditions;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
@@ -45,7 +44,7 @@ public class SqlQuery {
     public static final int DEFAULT_CURSOR_BUFFER_SIZE = 4096;
 
     private String sql;
-    private List<Object> parameters;
+    private List<Object> parameters = new ArrayList<>();
     private long timeout = DEFAULT_TIMEOUT;
     private int cursorBufferSize = DEFAULT_CURSOR_BUFFER_SIZE;
 
@@ -103,7 +102,7 @@ public class SqlQuery {
      */
     @Nonnull
     public List<Object> getParameters() {
-        return parameters != null ? parameters : Collections.emptyList();
+        return parameters;
     }
 
     /**
@@ -124,7 +123,7 @@ public class SqlQuery {
     @Nonnull
     public SqlQuery setParameters(List<Object> parameters) {
         if (parameters == null || parameters.isEmpty()) {
-            this.parameters = null;
+            this.parameters = new ArrayList<>();
         } else {
             this.parameters = new ArrayList<>(parameters);
         }
@@ -143,10 +142,6 @@ public class SqlQuery {
      */
     @Nonnull
     public SqlQuery addParameter(Object parameter) {
-        if (parameters == null) {
-            parameters = new ArrayList<>(1);
-        }
-
         parameters.add(parameter);
 
         return this;
@@ -162,7 +157,7 @@ public class SqlQuery {
      */
     @Nonnull
     public SqlQuery clearParameters() {
-        this.parameters = null;
+        this.parameters = new ArrayList<>();
 
         return this;
     }
@@ -250,7 +245,7 @@ public class SqlQuery {
      */
     @Nonnull
     public SqlQuery copy() {
-        return new SqlQuery(sql, new ArrayList<>(getParameters()), timeout, cursorBufferSize);
+        return new SqlQuery(sql, new ArrayList<>(parameters), timeout, cursorBufferSize);
     }
 
     @Override
@@ -266,7 +261,7 @@ public class SqlQuery {
         SqlQuery sqlQuery = (SqlQuery) o;
 
         return Objects.equals(sql, sqlQuery.sql)
-            && Objects.equals(getParameters(), sqlQuery.getParameters())
+            && Objects.equals(parameters, sqlQuery.parameters)
             && timeout == sqlQuery.timeout
             && cursorBufferSize == sqlQuery.cursorBufferSize;
     }
@@ -275,7 +270,7 @@ public class SqlQuery {
     public int hashCode() {
         int result = sql != null ? sql.hashCode() : 0;
 
-        result = 31 * result + getParameters().hashCode();
+        result = 31 * result + parameters.hashCode();
         result = 31 * result + (int) (timeout ^ (timeout >>> 32));
         result = 31 * result + cursorBufferSize;
 
@@ -286,7 +281,7 @@ public class SqlQuery {
     public String toString() {
         return "SqlQuery{"
             + "sql=" + sql
-            + ", parameters=" + getParameters()
+            + ", parameters=" + parameters
             + ", timeout=" + timeout
             + ", cursorBufferSize=" + cursorBufferSize
             + '}';

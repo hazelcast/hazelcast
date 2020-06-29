@@ -24,8 +24,8 @@ import com.hazelcast.internal.util.Preconditions;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlQuery;
+import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlService;
 import com.hazelcast.sql.impl.optimizer.DisabledSqlOptimizer;
 import com.hazelcast.sql.impl.optimizer.OptimizationTask;
@@ -37,7 +37,6 @@ import com.hazelcast.sql.impl.state.QueryState;
 import javax.annotation.Nonnull;
 import java.lang.reflect.Constructor;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.logging.Level;
@@ -166,13 +165,7 @@ public class SqlServiceImpl implements SqlService, Consumer<Packet> {
             throw QueryException.error("SQL statement cannot be empty.");
         }
 
-        List<Object> params0;
-
-        if (params == null || params.isEmpty()) {
-            params0 = Collections.emptyList();
-        } else {
-            params0 = new ArrayList<>(params);
-        }
+        List<Object> params0 = new ArrayList<>(params);
 
         if (timeout < 0) {
             throw QueryException.error("Timeout cannot be negative: " + timeout);
