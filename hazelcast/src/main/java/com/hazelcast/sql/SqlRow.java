@@ -17,6 +17,7 @@
 package com.hazelcast.sql;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 /**
  * SQL row.
@@ -33,6 +34,7 @@ public interface SqlRow {
      * @return Value of the column.
      * @throws IndexOutOfBoundsException If column index is out of bounds.
      */
+    @Nullable
     Object getObject(int columnIndex);
 
     /**

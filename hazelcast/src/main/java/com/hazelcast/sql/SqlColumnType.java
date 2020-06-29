@@ -16,6 +16,7 @@
 
 package com.hazelcast.sql;
 
+import javax.annotation.Nonnull;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -65,7 +66,7 @@ public enum SqlColumnType {
     /** TIMESTAMP_WITH_TIME_ZONE type, represented by {@link java.time.OffsetDateTime} */
     TIMESTAMP_WITH_TIME_ZONE(OffsetDateTime.class),
 
-    /** OBJECT type. */
+    /** OBJECT type, could be represented by any Java class. */
     OBJECT(Object.class);
 
     private final Class<?> valueClass;
@@ -79,6 +80,7 @@ public enum SqlColumnType {
      *
      * @return Java class of the value of this SQL type.
      */
+    @Nonnull
     public Class<?> getValueClass() {
         return valueClass;
     }
