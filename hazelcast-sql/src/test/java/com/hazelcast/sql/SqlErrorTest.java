@@ -33,6 +33,9 @@ import org.junit.runner.RunWith;
 
 import javax.annotation.Nonnull;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertTrue;
 import static junit.framework.TestCase.fail;
@@ -60,11 +63,7 @@ public class SqlErrorTest extends SqlTestSupport {
         HazelcastInstance instance1 = factory.newHazelcastInstance();
         HazelcastInstance instance2 = factory.newHazelcastInstance();
 
-        IMap<Long, Long> map = instance1.getMap(MAP_NAME);
-
-        for (long i = 0; i < DATA_SET_SIZE; i++) {
-            map.put(i, i);
-        }
+        populate(instance1);
 
         // Block batches from instance2 to instance1.
         BlockingExec.Blocker blocker = new BlockingExec.Blocker();
@@ -101,11 +100,7 @@ public class SqlErrorTest extends SqlTestSupport {
         HazelcastInstance instance1 = factory.newHazelcastInstance();
         HazelcastInstance instance2 = factory.newHazelcastInstance();
 
-        IMap<Long, Long> map = instance1.getMap(MAP_NAME);
-
-        for (long i = 0; i < DATA_SET_SIZE; i++) {
-            map.put(i, i);
-        }
+        populate(instance1);
 
         // Throw an error from local executor
         String errorMessage = "Test error";
@@ -133,11 +128,7 @@ public class SqlErrorTest extends SqlTestSupport {
         // Start one instance and fill it with data
         HazelcastInstance instance1 = factory.newHazelcastInstance();
 
-        IMap<Long, Long> map = instance1.getMap(MAP_NAME);
-
-        for (long i = 0; i < DATA_SET_SIZE; i++) {
-            map.put(i, i);
-        }
+        populate(instance1);
 
         // Block query execution for a while.
         BlockingExec.Blocker blocker = new BlockingExec.Blocker();
@@ -181,11 +172,7 @@ public class SqlErrorTest extends SqlTestSupport {
         HazelcastInstance instance1 = factory.newHazelcastInstance();
         HazelcastInstance instance2 = factory.newHazelcastInstance();
 
-        IMap<Long, Long> map = instance1.getMap(MAP_NAME);
-
-        for (long i = 0; i < DATA_SET_SIZE; i++) {
-            map.put(i, i);
-        }
+        populate(instance1);
 
         // Block query execution for a while
         HazelcastInstance instance = local ? instance1 : instance2;
@@ -222,11 +209,7 @@ public class SqlErrorTest extends SqlTestSupport {
         HazelcastInstance instance1 = factory.newHazelcastInstance();
         HazelcastInstance instance2 = factory.newHazelcastInstance();
 
-        IMap<Long, Long> map = instance1.getMap(MAP_NAME);
-
-        for (long i = 0; i < DATA_SET_SIZE; i++) {
-            map.put(i, i);
-        }
+        populate(instance1);
 
         // Block query execution on a remote member
         BlockingExec.Blocker blocker = new BlockingExec.Blocker();
@@ -288,11 +271,7 @@ public class SqlErrorTest extends SqlTestSupport {
         HazelcastInstance liteMember = factory.newHazelcastInstance(getConfig().setLiteMember(true));
 
         // Insert data
-        IMap<Long, Long> map = liteMember.getMap(MAP_NAME);
-
-        for (long i = 0; i < DATA_SET_SIZE; i++) {
-            map.put(i, i);
-        }
+        populate(liteMember);
 
         // Try query from the lite member.
         SqlException error = assertSqlException(liteMember, query());
@@ -365,5 +344,15 @@ public class SqlErrorTest extends SqlTestSupport {
 
     private static SqlQuery query() {
         return new SqlQuery("SELECT __key, this FROM " + MAP_NAME);
+    }
+
+    private void populate(HazelcastInstance instance) {
+        Map<Long, Long> map = new HashMap<>();
+
+        for (long i = 0; i < DATA_SET_SIZE; i++) {
+            map.put(i, i);
+        }
+
+        instance.getMap(MAP_NAME).putAll(map);
     }
 }
