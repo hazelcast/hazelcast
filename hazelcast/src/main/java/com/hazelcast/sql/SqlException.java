@@ -29,7 +29,7 @@ public class SqlException extends HazelcastException {
     private final UUID originatingMemberId;
     private final int code;
 
-    public SqlException(UUID originatingMemberId, int code, String message, Throwable cause) {
+    public SqlException(@Nonnull UUID originatingMemberId, int code, String message, Throwable cause) {
         super(message, cause);
 
         this.originatingMemberId = originatingMemberId;

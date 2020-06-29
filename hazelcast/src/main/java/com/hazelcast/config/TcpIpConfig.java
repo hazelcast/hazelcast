@@ -61,7 +61,7 @@ public class TcpIpConfig {
      * @param connectionTimeoutSeconds the connection timeout in seconds
      * @return the updated TcpIpConfig
      * @throws IllegalArgumentException if connectionTimeoutSeconds is smaller than 0
-     * @see #getConnectionTimeoutSeconds()
+     * @see #getConnectimeouttionTimeoutSeconds()
      */
     public TcpIpConfig setConnectionTimeoutSeconds(final int connectionTimeoutSeconds) {
         if (connectionTimeoutSeconds < 0) {

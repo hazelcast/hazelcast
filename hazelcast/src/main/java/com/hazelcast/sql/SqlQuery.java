@@ -35,6 +35,9 @@ public class SqlQuery {
     /** Value for the timeout that is not set. */
     public static final long TIMEOUT_NOT_SET = -1;
 
+    /** Value for the timeout that is disabled. */
+    public static final long TIMEOUT_DISABLED = 0;
+
     /** Default timeout. */
     public static final long DEFAULT_TIMEOUT = TIMEOUT_NOT_SET;
 
@@ -46,7 +49,7 @@ public class SqlQuery {
     private long timeout = DEFAULT_TIMEOUT;
     private int cursorBufferSize = DEFAULT_CURSOR_BUFFER_SIZE;
 
-    public SqlQuery(String sql) {
+    public SqlQuery(@Nonnull String sql) {
         setSql(sql);
     }
 
@@ -242,7 +245,7 @@ public class SqlQuery {
      */
     @Nonnull
     public SqlQuery copy() {
-        return new SqlQuery(sql, parameters, timeout, cursorBufferSize);
+        return new SqlQuery(sql, new ArrayList<>(getParameters()), timeout, cursorBufferSize);
     }
 
     @Override

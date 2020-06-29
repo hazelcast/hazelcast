@@ -28,14 +28,15 @@ import java.util.stream.Collectors;
 /**
  * SQL row metadata.
  */
-public class SqlRowMetadata {
+public final class SqlRowMetadata {
     /** Constant indicating that the column is not found. */
     public static final int COLUMN_NOT_FOUND = -1;
 
     private final List<SqlColumnMetadata> columns;
     private final Map<String, Integer> nameToIndex;
 
-    public SqlRowMetadata(List<SqlColumnMetadata> columns) {
+    @SuppressWarnings("ConstantConditions")
+    public SqlRowMetadata(@Nonnull List<SqlColumnMetadata> columns) {
         assert columns != null && !columns.isEmpty();
 
         this.columns = new ArrayList<>(columns);

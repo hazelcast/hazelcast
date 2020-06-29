@@ -21,12 +21,13 @@ import javax.annotation.Nonnull;
 /**
  * SQL column metadata.
  */
-public class SqlColumnMetadata {
+public final class SqlColumnMetadata {
 
     private final String name;
     private final SqlColumnType type;
 
-    public SqlColumnMetadata(String name, SqlColumnType type) {
+    @SuppressWarnings("ConstantConditions")
+    public SqlColumnMetadata(@Nonnull String name, @Nonnull SqlColumnType type) {
         assert name != null;
         assert type != null;
 
