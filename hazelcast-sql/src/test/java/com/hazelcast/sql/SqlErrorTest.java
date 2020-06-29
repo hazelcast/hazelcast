@@ -320,7 +320,7 @@ public class SqlErrorTest extends SqlTestSupport {
         map.put(1L, 1L);
         map.put(2L, 2L);
 
-        try (SqlResult res = instance.getSqlService().query(query().setCursorBufferSize(1))) {
+        try (SqlResult res = instance.getSql().query(query().setCursorBufferSize(1))) {
             res.close();
 
             try {
@@ -352,7 +352,7 @@ public class SqlErrorTest extends SqlTestSupport {
 
     @SuppressWarnings("UnusedReturnValue")
     private static int execute(HazelcastInstance instance, SqlQuery query) {
-        try (SqlResult res = instance.getSqlService().query(query)) {
+        try (SqlResult res = instance.getSql().query(query)) {
             int count = 0;
 
             for (SqlRow ignore : res) {

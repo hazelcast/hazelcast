@@ -458,7 +458,7 @@ public interface HazelcastInstance {
      *
      * @return SQL service.
      */
-    SqlService getSqlService();
+    SqlService getSql();
 
     /**
      * Shuts down this HazelcastInstance. For more information see {@link com.hazelcast.core.LifecycleService#shutdown()}.

@@ -807,7 +807,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
     }
 
     @Override
-    public SqlService getSqlService() {
+    public SqlService getSql() {
         throw new UnsupportedOperationException("SQL is not supported on client members yet.");
     }
 

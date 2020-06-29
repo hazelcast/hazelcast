@@ -285,8 +285,8 @@ class HazelcastOSGiInstanceImpl
     }
 
     @Override
-    public SqlService getSqlService() {
-        return delegatedInstance.getSqlService();
+    public SqlService getSql() {
+        return delegatedInstance.getSql();
     }
 
     @Override

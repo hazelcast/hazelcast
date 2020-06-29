@@ -167,7 +167,7 @@ public class SqlTestSupport extends HazelcastTestSupport {
 
     public static void setExecHook(HazelcastInstance instance, CreateExecPlanNodeVisitorHook hook) {
         QueryOperationHandlerImpl operationHandler =
-            ((SqlServiceImpl) instance.getSqlService()).getInternalService().getOperationHandler();
+            ((SqlServiceImpl) instance.getSql()).getInternalService().getOperationHandler();
 
         operationHandler.setExecHook(hook);
     }

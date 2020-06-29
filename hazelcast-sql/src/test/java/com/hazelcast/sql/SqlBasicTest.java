@@ -295,9 +295,9 @@ public class SqlBasicTest extends SqlTestSupport {
         String sql = sql();
 
         if (cursorBufferSize == SqlQuery.DEFAULT_CURSOR_BUFFER_SIZE) {
-            return instance.getSqlService().query(sql);
+            return instance.getSql().query(sql);
         } else {
-            return instance.getSqlService().query(new SqlQuery(sql).setCursorBufferSize(cursorBufferSize));
+            return instance.getSql().query(new SqlQuery(sql).setCursorBufferSize(cursorBufferSize));
         }
     }
 
