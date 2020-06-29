@@ -32,28 +32,28 @@ import javax.annotation.Nonnull;
  * <a href="https://calcite.apache.org">Apache Calcite</a>. The {@code hazelcast-sql} must be in the classpath, otherwise
  * an exception will be thrown.
  * <p>
- * During optimization a query is converted into a direct acyclic graph (DAG) that is sent to cluster members for execution.
- * Query results are sent back to the originating member asynchronously, and returned to the user via {@link SqlResult}.
+ * During optimization a query is converted into a directed acyclic graph (DAG) that is sent to cluster members for execution.
+ * Query results are sent back to the originating member asynchronously and returned to the user via {@link SqlResult}.
  *
- * <h1>Querying IMap</h1>
+ * <h1>Querying an IMap</h1>
  * Every IMap instance is exposed as a table with the same name in the {@code partitioned} schema. The {@code partitioned}
- * schema is included into a default search path, therefore an IMap could be referenced in an SQL query with or without schema
- * name.
+ * schema is included into a default search path, therefore an IMap could be referenced in an SQL query with or without the
+ * schema name.
  * <h2>Column resolution</h2>
  * Every table backed by an IMap has a set of columns that are resolved automatically. Column resolution uses IMap entries
- * located on the member that initiates the query. The engine extracts columns from a key and a value, and then merges them
+ * located on the member that initiates the query. The engine extracts columns from a key and a value and then merges them
  * into a single column set. In case the key and the value have columns with the same name, the key takes precedence.
  * <p>
  * Columns are extracted from objects as follows:
  * <ul>
  *     <li>For non-Portable objects, public getters and fields are used to populate the column list. For getters, the first
  *     letter is converted to lower case. A getter takes precedence over a field in case of naming conflict</li>
- *     <li>For {@link Portable} objects, field names used in {@link Portable#writePortable(PortableWriter)}</li> method
- *     are used to populate the column list
+ *     <li>For {@link Portable} objects, field names used in the {@link Portable#writePortable(PortableWriter)} method
+ *     are used to populate the column list</li>
  * </ul>
- * The whole key and value objects could be accessed through a special fields {@code __key} and {@code this} respectively. If
- * key (value) object has fields, then the whole key (value) field is exposed as normal field. Otherwise the field is hidden.
- * Hidden fields could be accessed directly, but are not returned by {@code SELECT * FROM ...} queries.
+ * The whole key and value objects could be accessed through a special fields {@code __key} and {@code this}, respectively. If
+ * key (value) object has fields, then the whole key (value) field is exposed as a normal field. Otherwise the field is hidden.
+ * Hidden fields can be accessed directly, but are not returned by {@code SELECT * FROM ...} queries.
  * <p>
  * If the member that initiates a query doesn't have local entries for the given IMap, the query fails.
  * <p>
@@ -82,12 +82,12 @@ import javax.annotation.Nonnull;
  * <h2>Consistency</h2>
  * Results returned from IMap query are weakly consistent:
  * <ul>
- *     <li>If an entry was not updated during iteration, it is guaranteed to be returned exactly once. If an en</li>
- *     <li>If an entry was modified during iteration, it might be returned zero, one or several time</li>
+ *     <li>If an entry was not updated during iteration, it is guaranteed to be returned exactly once</li>
+ *     <li>If an entry was modified during iteration, it might be returned zero, one or several times</li>
  * </ul>
  * <h1>Usage</h1>
- * When query is executed, an {@link SqlResult} is returned. You may get row iterator from the result. The result must be closed
- * in the end. The code snippet below demonstrates a typical usage pattern:
+ * When a query is executed, an {@link SqlResult} is returned. You may get row iterator from the result. The result must be closed
+ * at the end. The code snippet below demonstrates a typical usage pattern:
  * <pre>
  *     HazelcastInstance instance = ...;
  *
