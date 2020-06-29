@@ -87,9 +87,7 @@ public class SqlRowMetadata {
     public int findColumn(@Nonnull String columnName) {
         Preconditions.checkNotNull(columnName, "Column name cannot be null");
 
-        Integer index = nameToIndex.get(columnName);
-
-        return index != null ? index : COLUMN_NOT_FOUND;
+        return nameToIndex.getOrDefault(columnName, COLUMN_NOT_FOUND);
     }
 
     @Override
