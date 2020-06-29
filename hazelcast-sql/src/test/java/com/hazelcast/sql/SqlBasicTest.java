@@ -148,6 +148,7 @@ public class SqlBasicTest extends SqlTestSupport {
         instance.getMap(MAP_BINARY).clear();
     }
 
+    @SuppressWarnings("ConstantConditions")
     @Test
     public void testSelect() {
         // Get proper map
@@ -246,6 +247,8 @@ public class SqlBasicTest extends SqlTestSupport {
 
                 assertThrows(IndexOutOfBoundsException.class, () -> row.getObject(-1));
                 assertThrows(IndexOutOfBoundsException.class, () -> row.getObject(row.getRowMetadata().getColumnCount()));
+                assertThrows(NullPointerException.class, () -> row.getObject(null));
+                assertThrows(IllegalArgumentException.class, () -> row.getObject("unknown_field"));
             }
 
             assertThrows(NoSuchElementException.class, rowIterator::next);
@@ -260,10 +263,12 @@ public class SqlBasicTest extends SqlTestSupport {
         columnName = adjustFieldName(columnName);
 
         int columnIndex = row.getRowMetadata().findColumn(columnName);
+        assertNotEquals(SqlRowMetadata.COLUMN_NOT_FOUND, columnIndex);
+        Object valueByIndex = row.getObject(columnIndex);
+        assertEquals(expectedValue, valueByIndex);
 
-        Object value = row.getObject(columnIndex);
-
-        assertEquals(expectedValue, value);
+        Object valueByName = row.getObject(columnIndex);
+        assertEquals(expectedValue, valueByName);
     }
 
     private void checkRowMetadata(SqlRowMetadata rowMetadata) {

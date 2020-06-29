@@ -17,6 +17,7 @@
 
 package com.hazelcast.sql.impl;
 
+import com.hazelcast.sql.SqlException;
 import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.SqlRowMetadata;
 import com.hazelcast.sql.impl.row.Row;
@@ -43,7 +44,29 @@ public class SqlRowImpl implements SqlRow {
     public Object getObject(int columnIndex) {
         checkIndex(columnIndex);
 
+        return getObject0(columnIndex);
+    }
+
+    @Nullable
+    @Override
+    public Object getObject(@Nonnull String columnName) {
+        int columnIndex = resolveIndex(columnName);
+
+        return getObject0(columnIndex);
+    }
+
+    private Object getObject0(int columnIndex) {
         return row.get(columnIndex);
+    }
+
+    private int resolveIndex(String columnName) {
+        int index = rowMetadata.findColumn(columnName);
+
+        if (index == SqlRowMetadata.COLUMN_NOT_FOUND) {
+            throw new IllegalArgumentException("Column \"" + columnName + "\" doesn't exist");
+        }
+
+        return index;
     }
 
     @Nonnull
