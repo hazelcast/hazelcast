@@ -18,7 +18,6 @@ package com.hazelcast.sql;
 
 import com.hazelcast.config.SqlConfig;
 
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -30,7 +29,7 @@ import java.util.Objects;
  * This object is mutable. Properties are read once before the execution is started.
  * Changes to properties do not affect the behavior of already running queries.
  */
-public class SqlQuery implements Serializable {
+public class SqlQuery {
     /** Value for the timeout that is not set. */
     public static final long TIMEOUT_NOT_SET = -1;
 
@@ -39,8 +38,6 @@ public class SqlQuery implements Serializable {
 
     /** Default page size. */
     public static final int DEFAULT_CURSOR_BUFFER_SIZE = 4096;
-
-    private static final long serialVersionUID = -2553856965040677191L;
 
     private String sql;
     private List<Object> parameters;

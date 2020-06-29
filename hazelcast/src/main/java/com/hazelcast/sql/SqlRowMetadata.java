@@ -17,7 +17,6 @@
 package com.hazelcast.sql;
 
 import javax.annotation.Nonnull;
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -27,11 +26,9 @@ import java.util.stream.Collectors;
 /**
  * SQL row metadata.
  */
-public class SqlRowMetadata implements Serializable {
+public class SqlRowMetadata {
     /** Constant indicating that the column is not found. */
     public static final int COLUMN_NOT_FOUND = -1;
-
-    private static final long serialVersionUID = 1595632576318481583L;
 
     private final List<SqlColumnMetadata> columns;
     private final Map<String, Integer> nameToIndex;
