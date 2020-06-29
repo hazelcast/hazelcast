@@ -23,13 +23,11 @@ import java.io.IOException;
 import java.util.Objects;
 
 /**
- * Expression with two operands.
+ * Base class for expressions acting on two operands.
  */
 public abstract class BiExpression<T> implements Expression<T> {
-    /** First operand. */
-    protected Expression<?> operand1;
 
-    /** Second operand. */
+    protected Expression<?> operand1;
     protected Expression<?> operand2;
 
     protected BiExpression() {

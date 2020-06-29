@@ -64,6 +64,10 @@ import static org.apache.calcite.sql.type.SqlTypeName.DECIMAL;
 import static org.apache.calcite.sql.type.SqlTypeName.DOUBLE;
 import static org.apache.calcite.sql.type.SqlTypeName.NULL;
 
+/**
+ * Provides custom coercion strategies supporting {@link HazelcastIntegerType}
+ * and assigning more precise types comparing to the standard Calcite coercion.
+ */
 public final class HazelcastTypeCoercion extends TypeCoercionImpl {
 
     private static final HazelcastTypeFactory TYPE_FACTORY = HazelcastTypeFactory.INSTANCE;
@@ -222,7 +226,7 @@ public final class HazelcastTypeCoercion extends TypeCoercionImpl {
         }
 
         if (isParameter(node)) {
-            // never cast parameters
+            // never cast parameters, just assign types to them
             return false;
         }
 
@@ -259,7 +263,7 @@ public final class HazelcastTypeCoercion extends TypeCoercionImpl {
     @SuppressWarnings({"checkstyle:CyclomaticComplexity", "checkstyle:MethodLength", "checkstyle:NPathComplexity",
             "checkstyle:NestedIfDepth"})
     private RelDataType[] inferTypes(SqlValidatorScope scope, List<SqlNode> operands, boolean assumeNumeric) {
-        // Infer return type from columns and sub-expressions.
+        // Infer common type from columns and sub-expressions.
 
         RelDataType commonType = null;
         boolean seenParameters = false;
@@ -279,7 +283,7 @@ public final class HazelcastTypeCoercion extends TypeCoercionImpl {
             }
         }
 
-        // Continue inference on numeric literals.
+        // Continue common type inference on numeric literals.
 
         for (SqlNode operand : operands) {
             RelDataType operandType = validator.deriveType(scope, operand);
@@ -298,7 +302,7 @@ public final class HazelcastTypeCoercion extends TypeCoercionImpl {
             commonType = commonType == null ? operandType : withHigherPrecedenceForLiterals(operandType, commonType);
         }
 
-        // Continue inference on non-numeric literals.
+        // Continue common type inference on non-numeric literals.
 
         for (SqlNode operand : operands) {
             RelDataType operandType = validator.deriveType(scope, operand);
@@ -350,12 +354,16 @@ public final class HazelcastTypeCoercion extends TypeCoercionImpl {
             RelDataType operandType = validator.deriveType(scope, operand);
 
             if (isParameter(operand)) {
+                // Just assign the common type to parameters.
+
                 types[i] = TYPE_FACTORY.createTypeWithNullability(commonType, true);
                 nullable = true;
             } else if (isLiteral(operand)) {
                 SqlLiteral literal = (SqlLiteral) operand;
 
                 if (literal.getValue() == null) {
+                    // Just assign the common type to NULLs.
+
                     types[i] = TYPE_FACTORY.createTypeWithNullability(commonType, true);
                     nullable = true;
                 } else if (isNumeric(operandType) || (isChar(operandType) && isNumeric(commonType))) {

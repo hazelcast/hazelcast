@@ -19,6 +19,8 @@ package com.hazelcast.sql.impl.calcite.validate;
 import com.hazelcast.sql.SqlErrorCode;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.type.converter.StringConverter;
+import org.apache.calcite.runtime.CalciteContextException;
+import org.apache.calcite.sql.SqlDynamicParam;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlLiteral;
 import org.apache.calcite.sql.SqlNode;
@@ -31,19 +33,42 @@ import static org.apache.calcite.sql.type.SqlTypeName.DECIMAL;
 import static org.apache.calcite.sql.type.SqlTypeName.NUMERIC_TYPES;
 import static org.apache.calcite.util.Static.RESOURCE;
 
+/**
+ * Utility methods to work with {@link SqlNode}s.
+ */
 public final class SqlNodeUtil {
 
     private SqlNodeUtil() {
     }
 
+    /**
+     * @return {@code true} if the given node is a {@link SqlDynamicParam
+     * dynamic parameter}, {@code false} otherwise.
+     */
     public static boolean isParameter(SqlNode node) {
         return node.getKind() == SqlKind.DYNAMIC_PARAM;
     }
 
+    /**
+     * @return {@code true} if the given node is a {@link SqlLiteral literal},
+     * {@code false} otherwise.
+     */
     public static boolean isLiteral(SqlNode node) {
         return node.getKind() == SqlKind.LITERAL;
     }
 
+    /**
+     * Obtains a numeric value of the given node if it's a numeric or string
+     * {@link SqlLiteral literal}.
+     * <p>
+     *
+     * @param node the node to obtain the numeric value of.
+     * @return the obtained numeric value or {@code null} if the given node is
+     * not a numeric or string literal.
+     * @throws CalciteContextException if the given node is a string literal
+     *                                 that doesn't have a valid numeric
+     *                                 representation.
+     */
     public static BigDecimal numericValue(SqlNode node) {
         if (node.getKind() != SqlKind.LITERAL) {
             return null;

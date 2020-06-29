@@ -17,7 +17,7 @@
 package com.hazelcast.sql.impl.expression.predicate;
 
 /**
- * Comparison predicate type.
+ * Defines comparison modes supported by {@link ComparisonPredicate}.
  */
 public enum ComparisonMode {
     EQUALS(0),

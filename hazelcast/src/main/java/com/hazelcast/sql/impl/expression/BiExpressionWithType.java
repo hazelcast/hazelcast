@@ -23,6 +23,10 @@ import com.hazelcast.sql.impl.type.QueryDataType;
 import java.io.IOException;
 import java.util.Objects;
 
+/**
+ * Base class for expressions acting on two operands and having a variable result
+ * type.
+ */
 public abstract class BiExpressionWithType<T> extends BiExpression<T> {
 
     protected QueryDataType resultType;

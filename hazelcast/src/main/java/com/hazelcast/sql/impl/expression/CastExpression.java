@@ -21,7 +21,7 @@ import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.sql.impl.type.converter.Converter;
 
 /**
- * Expression which converts data from one type to another.
+ * Implements evaluation of SQL CAST operator.
  */
 public class CastExpression<T> extends UniExpressionWithType<T> {
 

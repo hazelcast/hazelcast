@@ -48,7 +48,14 @@ import static org.apache.calcite.sql.type.SqlTypeName.INTERVAL_TYPES;
 import static org.apache.calcite.sql.type.SqlTypeName.REAL;
 import static org.apache.calcite.sql.type.SqlTypeName.VARCHAR;
 
-public class HazelcastSqlToRelConverter extends SqlToRelConverter {
+/**
+ * Custom Hazelcast sql-to-rel converter.
+ * <p>
+ * Currently, this custom sql-to-rel converter is used to workaround quirks of
+ * the default Calcite sql-to-rel converter and to facilitate generation of
+ * literals and casts with a more precise types assigned during the validation.
+ */
+public final class HazelcastSqlToRelConverter extends SqlToRelConverter {
 
     public HazelcastSqlToRelConverter(RelOptTable.ViewExpander viewExpander, SqlValidator validator,
                                       Prepare.CatalogReader catalogReader, RelOptCluster cluster,
@@ -130,6 +137,8 @@ public class HazelcastSqlToRelConverter extends SqlToRelConverter {
         RelDataType type = validator.getValidatedNodeType(literal);
         SqlTypeName literalTypeName = literal.getTypeName();
 
+        // Extract the literal value.
+
         Object value;
         if (CHAR_TYPES.contains(literalTypeName)) {
             if (isNumeric(type)) {
@@ -145,11 +154,17 @@ public class HazelcastSqlToRelConverter extends SqlToRelConverter {
             value = literal.getValue();
         }
 
+        // Convert REAL/DOUBLE values from BigDecimal representation to
+        // REAL/DOUBLE and back, otherwise Calcite might think two floating point
+        // values having the same REAL/DOUBLE representation are distinct since
+        // their BigDecimal representations might differ.
         if (type.getSqlTypeName() == DOUBLE) {
             value = BigDecimal.valueOf(BigDecimalConverter.INSTANCE.asDouble(value));
         } else if (type.getSqlTypeName() == REAL) {
             value = new BigDecimal(Float.toString(BigDecimalConverter.INSTANCE.asReal(value)));
         }
+
+        // Generate the literal.
 
         // Internally, all string literals in Calcite have CHAR type, but we
         // interpret all strings as having VARCHAR type. By allowing the casting

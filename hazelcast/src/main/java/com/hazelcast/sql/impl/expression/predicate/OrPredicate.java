@@ -23,7 +23,7 @@ import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
 /**
- * OR predicate.
+ * Implements evaluation of SQL OR predicate.
  */
 public class OrPredicate extends VariExpression<Boolean> {
 

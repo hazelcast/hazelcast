@@ -37,6 +37,9 @@ import static com.hazelcast.sql.impl.expression.math.ExpressionMath.DECIMAL_MATH
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.INTERVAL_DAY_SECOND;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.INTERVAL_YEAR_MONTH;
 
+/**
+ * Implements evaluation of SQL minus operator.
+ */
 public class MinusFunction<T> extends BiExpressionWithType<T> {
 
     @SuppressWarnings("unused")
@@ -62,10 +65,6 @@ public class MinusFunction<T> extends BiExpressionWithType<T> {
     @SuppressWarnings("unchecked")
     @Override
     public T eval(Row row, ExpressionEvalContext context) {
-        QueryDataTypeFamily family = resultType.getTypeFamily();
-        // expressions having NULL type should be replaced with just NULL literal
-        assert family != QueryDataTypeFamily.NULL;
-
         Object left = operand1.eval(row, context);
         if (left == null) {
             return null;
@@ -76,6 +75,7 @@ public class MinusFunction<T> extends BiExpressionWithType<T> {
             return null;
         }
 
+        QueryDataTypeFamily family = resultType.getTypeFamily();
         if (family.isTemporal()) {
             return (T) evalTemporal(left, operand1.getType(), right, operand2.getType(), resultType);
         } else {

@@ -29,7 +29,9 @@ import java.io.IOException;
 import java.util.Objects;
 
 /**
- * Comparison predicates: {@code =}, {@code <>}, {@code <}, {@code <=}, {@code >}, {@code >=}.
+ * Implements evaluation of SQL comparison predicates.
+ *
+ * @see ComparisonMode
  */
 public class ComparisonPredicate extends BiExpression<Boolean> {
 

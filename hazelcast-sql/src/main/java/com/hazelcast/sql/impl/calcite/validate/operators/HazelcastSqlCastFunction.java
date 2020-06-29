@@ -16,6 +16,7 @@
 
 package com.hazelcast.sql.impl.calcite.validate.operators;
 
+import com.hazelcast.sql.impl.type.converter.Converter;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.sql.SqlCallBinding;
 import org.apache.calcite.sql.fun.SqlCastFunction;
@@ -23,7 +24,12 @@ import org.apache.calcite.sql.fun.SqlCastFunction;
 import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeSystem.canCast;
 import static org.apache.calcite.util.Static.RESOURCE;
 
-public class HazelcastSqlCastFunction extends SqlCastFunction {
+/**
+ * Custom Hazelcast {@link SqlCastFunction} to override the default operand type
+ * checking strategy to make sure the casting behaviour is exactly the same as
+ * defined by {@link Converter}s.
+ */
+public final class HazelcastSqlCastFunction extends SqlCastFunction {
 
     @Override
     public boolean checkOperandTypes(SqlCallBinding binding, boolean throwOnFailure) {

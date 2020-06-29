@@ -26,7 +26,7 @@ import com.hazelcast.sql.impl.type.QueryDataType;
 import java.io.IOException;
 
 /**
- * CASE-WHEN expression.
+ * Implements evaluation of SQL CASE operator.
  */
 public class CaseExpression<T> implements Expression<T> {
 

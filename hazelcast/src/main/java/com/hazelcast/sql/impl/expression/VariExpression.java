@@ -23,7 +23,7 @@ import java.io.IOException;
 import java.util.Arrays;
 
 /**
- * Expression with variadic operands.
+ * Base class for expressions acting on variable number of operands.
  */
 public abstract class VariExpression<T> implements Expression<T> {
 

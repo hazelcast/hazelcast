@@ -23,7 +23,7 @@ import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
 /**
- * Not predicate.
+ * Implements evaluation of SQL NOT predicate.
  */
 public class NotPredicate extends UniExpression<Boolean> {
 

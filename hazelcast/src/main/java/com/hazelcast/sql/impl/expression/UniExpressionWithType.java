@@ -24,10 +24,11 @@ import java.io.IOException;
 import java.util.Objects;
 
 /**
- * Expression with result type field.
+ * Base class for expressions acting on a single operand and having a variable
+ * result type.
  */
 public abstract class UniExpressionWithType<T> extends UniExpression<T> {
-    /** Result type. */
+
     protected QueryDataType resultType;
 
     protected UniExpressionWithType() {
@@ -43,7 +44,6 @@ public abstract class UniExpressionWithType<T> extends UniExpression<T> {
     public QueryDataType getType() {
         return resultType;
     }
-
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
@@ -87,4 +87,5 @@ public abstract class UniExpressionWithType<T> extends UniExpression<T> {
     public String toString() {
         return getClass().getSimpleName() + "{operand=" + operand + ", resultType=" + resultType + '}';
     }
+
 }

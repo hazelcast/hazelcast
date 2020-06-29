@@ -23,7 +23,7 @@ import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
 /**
- * AND predicate.
+ * Implements evaluation of SQL AND predicate.
  */
 public class AndPredicate extends VariExpression<Boolean> {
 
