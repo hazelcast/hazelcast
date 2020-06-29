@@ -14,7 +14,7 @@ are categorized into the following:
 
 The items in the lists follow this format:
 
-[module] Description [PR_or_issue_number]
+[module] Description (PR_or_issue_number)
 
 For major features that have an associated design document, [TDD_number]
 appears at the start of the description.
@@ -22,6 +22,53 @@ appears at the start of the description.
 To expand an issue number into a full GitHub link, use this template:
 
 https://github.com/hazelcast/hazelcast-jet/issues/<issue number>
+
+** Hazelcast Jet 4.2 **
+
+Members of the open source community that appear in these release notes:
+
+@caioguedes
+
+Thank you for your valuable contributions!
+
+1. New Features
+
+[core] [011] Add JSON file source as well as built-in functions for parsing JSON strings (#2218, #2270)
+[pipeline-api] [008] Add support for stage rebalancing (#2149)
+[cdc] [005] New Change Data Capture Source for MySQL (#2142)
+[cdc] [005] New Change Data Capture Source for PostgreSQL (#2247)
+[cdc] [005] CDC Map Sink for keeping a Map in sync with a stream of changes from the database (#2262)
+[elasticsearch] [003] Added source and sink connectors for Elasticsearch 5, 6, 7 (#2098, #2286, #2287)
+
+2. Enhancements
+
+[core] Support Hazelcast Serialization for ProcessorSupplier (#2298)
+[core] Increase default parallelism for file and Avro source to 4 (#2359)
+[pipeline-api] Support for keyFn and valueFn in map sink (#2198)
+[jet-cli] Introduce --targets as the default command for specifying where to connect and
+   add it as a mixins for all comments (@caioguedes #2276)
+[jet-cli] Add support for JET_MODULES environment variable to import modules automatically
+   without having to copy them (#2314)
+[jet-cli] Support PROMETHEUS_PORT environment variable to start Jet with prometheus metrics
+   enabled (#2328)
+[jet-cli] Add jvm.options file which can be used to specify JVM options during startup (#2349)
+[docker] Several Docker image improvements (hazelcast-jet-docker#27)
+[grpc] Performance improvements to gRPC module (#2245)
+
+3. Fixes
+
+[core] Fix potential ClassCastException in onSnapshotPhase2Completed() (#2338)
+[core] Fix JobConfig.attachFile path resolution on Windows (#2357)
+[jet-cli] Fix bad rolling filename causing misplaced files (#2270)
+[jet-cli] Use exec in jet-start to support ctrl-C in docker environment [#2307)
+[avro] Add missing serializer for Avro Utf-8 class (#2358)
+
+4. Breaking Changes
+
+[pipeline-api] Deprecated keyed variants of mapUsingService() as the new rebalance()
+  operator can be used instead (#2149)
+[jet-cli] Deprecated --address and --cluster-name options from command-line as --targets
+  should now be used instead. (#2276)
 
 ** Hazelcast Jet 4.1.1 **
 

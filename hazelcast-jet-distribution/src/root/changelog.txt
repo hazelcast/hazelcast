@@ -1,8 +1,26 @@
 ** Hazelcast Jet 4.2 **
 
-* Generic Debezium-Jet connector and its MySQL & Postgres versions have
-  been wrapped with a proprietary API to make them more convenient to
-  use and more production-ready.
+* We added Change Data Capture (CDC) support for PostgreSQL and MySql. New
+  connectors use Debezium to provide a high-level API for processing the
+  stream of changes from relational databases. A new map sink can be used to
+  automatically keep the map in-sync with changes from the database.
+* We added new source and sink connectors for Elasticsearch 5, 6 and 7
+  with support for slicing and co-located reading for maximum read performance
+  and extended Elasticsearch's client retry mechanism for reliable writing.
+* We improved JSON support through a new file source which can read JSON files
+  directly and also added built-in Jet methods for parsing and mapping JSON strings.
+* We introduced .relabance() operator which can be used for distributing items
+  across the cluster.
+* We made some improvements to Jet startup scripts:
+  - You can now use the PROMETHEUS_PORT to start Jet with prometheus metrics enabled.
+  - You can use the jvm.options file to edit the startup JVM parameters.
+  - You can now use the JET_MODULES environment variable to add modules when using docker
+    or jet-start script.
+* We did several rounds of improvements to the documentation:
+  - Improvements to Docker and Kubernetes instructions
+  - New guidance on Garbage Collector choice and settings
+  - New and improved tutorials for CDC
+  - New documentation for Python module and early results support in windowing
 
 ** Hazelcast Jet 4.1 **
 
