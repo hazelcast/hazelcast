@@ -26,7 +26,7 @@ public interface SqlRow {
     /**
      * Gets the value of the column by index.
      * <p>
-     * The class of the returned value depends on the SQL type of the column.
+     * The class of the returned value depends on the SQL type of the column. No implicit conversions are performed on the value.
      *
      * @see #getMetadata()
      * @see SqlColumnMetadata#getType()
@@ -35,7 +35,7 @@ public interface SqlRow {
      * @throws IndexOutOfBoundsException If the column index is out of bounds.
      */
     @Nullable
-    Object getObject(int columnIndex);
+    <T> T getObject(int columnIndex);
 
     /**
      * Gets the value of the column by column name.
@@ -43,7 +43,7 @@ public interface SqlRow {
      * Column name should be one of those defined in {@link SqlRowMetadata}, case-sensitive. You may also use
      * {@link SqlRowMetadata#findColumn(String)} to test for column existence.
      * <p>
-     * The class of the returned value depends on the SQL type of the column.
+     * The class of the returned value depends on the SQL type of the column. No implicit conversions are performed on the value.
      *
      * @see #getMetadata()
      * @see SqlRowMetadata#findColumn(String)
@@ -55,7 +55,7 @@ public interface SqlRow {
      * @throws IllegalArgumentException If a column with the given name is not found
      */
     @Nullable
-    Object getObject(@Nonnull String columnName);
+    <T> T getObject(@Nonnull String columnName);
 
     /**
      * @see SqlRowMetadata
