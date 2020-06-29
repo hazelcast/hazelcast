@@ -16,12 +16,15 @@
 
 package com.hazelcast.jet.core;
 
+import com.hazelcast.test.HazelcastSerialClassRunner;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
 import java.util.concurrent.locks.LockSupport;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
+@RunWith(HazelcastSerialClassRunner.class)
 public class JobRestartStressTest extends JobRestartStressTestBase {
     @Test
     public void stressTest_restart() throws Exception {

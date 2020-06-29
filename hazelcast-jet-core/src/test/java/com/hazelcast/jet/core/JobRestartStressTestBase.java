@@ -54,7 +54,7 @@ public class JobRestartStressTestBase extends JetTestSupport {
         TestProcessors.reset(2);
 
         DAG dag = new DAG();
-        dag.newVertex("generator", DummyStatefulP::new)
+        dag.newVertex("dummy-stateful-p", DummyStatefulP::new)
            .localParallelism(1);
 
         Job[] job = {instance1.newJob(dag,
@@ -64,13 +64,10 @@ public class JobRestartStressTestBase extends JetTestSupport {
         logger.info("waiting for 1st snapshot");
         waitForFirstSnapshot(jobRepository, job[0].getId(), 5, false);
         logger.info("first snapshot found");
-        spawn(() -> {
-            for (int i = 0; i < 10; i++) {
-                job[0] = action.apply(tuple3(instance1, dag, job[0]));
-                waitForNextSnapshot(jobRepository, job[0].getId(), 5, false);
-            }
-            return null;
-        }).get();
+        for (int i = 0; i < 10; i++) {
+            job[0] = action.apply(tuple3(instance1, dag, job[0]));
+            waitForNextSnapshot(jobRepository, job[0].getId(), 5, false);
+        }
 
         cancelAndJoin(job[0]);
     }

@@ -440,6 +440,7 @@ public final class TestProcessors {
             return flatMapper.tryProcess(watermark);
         }
     }
+
     /**
      * A source processor that saves dummy constant data to the snapshot and
      * asserts that it receives the same data. It emits no output and never

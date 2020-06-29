@@ -54,6 +54,7 @@ import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.jet.Util.idToString;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
+import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -261,6 +262,7 @@ public abstract class JetTestSupport extends HazelcastTestSupport {
         long originalSnapshotId = jr.getJobExecutionRecord(jobId).snapshotId();
         // wait until there is at least one more snapshot
         long[] snapshotId = {-1};
+        long start = System.nanoTime();
         assertTrueEventually(() -> {
             JobExecutionRecord record = jr.getJobExecutionRecord(jobId);
             assertNotNull("jobExecutionRecord is null", record);
@@ -269,7 +271,8 @@ public abstract class JetTestSupport extends HazelcastTestSupport {
                     snapshotId[0] > originalSnapshotId);
             assertTrue("stats are 0", allowEmptySnapshot || record.snapshotStats().numBytes() > 0);
         }, timeoutSeconds);
-        logger.info("Next snapshot found (id=" + snapshotId[0] + ", previous id=" + originalSnapshotId + ")");
+        logger.info("Next snapshot found after " + NANOSECONDS.toMillis(System.nanoTime() - start) + " ms (id="
+                + snapshotId[0] + ", previous id=" + originalSnapshotId + ")");
     }
 
     /**
