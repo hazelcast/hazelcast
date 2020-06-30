@@ -38,6 +38,7 @@ import com.hazelcast.replicatedmap.ReplicatedMap;
 import com.hazelcast.replicatedmap.ReplicatedMapCantBeCreatedOnLiteMemberException;
 import com.hazelcast.ringbuffer.Ringbuffer;
 import com.hazelcast.scheduledexecutor.IScheduledExecutorService;
+import com.hazelcast.spi.annotation.Beta;
 import com.hazelcast.sql.SqlService;
 import com.hazelcast.splitbrainprotection.SplitBrainProtectionService;
 import com.hazelcast.topic.ITopic;
@@ -460,6 +461,7 @@ public interface HazelcastInstance {
      *
      * @see SqlService
      */
+    @Beta
     @Nonnull SqlService getSql();
 
     /**
