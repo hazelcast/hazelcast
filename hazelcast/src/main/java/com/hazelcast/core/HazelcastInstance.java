@@ -454,9 +454,9 @@ public interface HazelcastInstance {
     @Nonnull CPSubsystem getCPSubsystem();
 
     /**
-     * Returns a service to execute distirbuted SQL queries.
+     * Returns a service to execute distributed SQL queries.
      *
-     * @return SQL service.
+     * @return SQL service
      *
      * @see SqlService
      */
