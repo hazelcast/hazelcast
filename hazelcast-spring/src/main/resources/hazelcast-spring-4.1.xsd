@@ -4976,7 +4976,7 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
-            <xs:element name="query-timeout-millis" type="xs:unsignedLong" minOccurs="0" maxOccurs="1">
+            <xs:element name="query-timeout-millis" type="xs:unsignedLong" minOccurs="0" maxOccurs="1" default="0">
                 <xs:annotation>
                     <xs:documentation>
                         Sets the timeout in milliseconds that is applied to queries without an explicit timeout.
