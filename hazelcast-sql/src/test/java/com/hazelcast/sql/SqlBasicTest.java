@@ -71,6 +71,7 @@ import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
 
 /**
  * Test that covers basic column read operations through SQL.
@@ -185,7 +186,7 @@ public class SqlBasicTest extends SqlTestSupport {
                 assertEquals(rowMetadata, res.getRowMetadata());
 
                 Long key0 = row.getObject(rowMetadata.findColumn(adjustFieldName("key")));
-                assert key0 != null;
+                assertNotNull(key0);
 
                 AbstractPojoKey key = key(key0);
                 AbstractPojo val = map.get(key);
