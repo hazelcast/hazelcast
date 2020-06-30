@@ -18,23 +18,25 @@ package com.hazelcast.sql.impl.expression.predicate;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.sql.impl.SqlDataSerializerHook;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
 import java.io.IOException;
+import java.util.Arrays;
 
 /**
  * Implements evaluation of SQL CASE operator.
  */
-public class CaseExpression<T> implements Expression<T> {
+public class CaseExpression<T> implements Expression<T>, IdentifiedDataSerializable {
 
     private Expression<Boolean>[] conditions;
     private Expression<?>[] results;
     private QueryDataType resultType;
 
-    @SuppressWarnings("unused")
     public CaseExpression() {
         // No-op.
     }
@@ -68,6 +70,16 @@ public class CaseExpression<T> implements Expression<T> {
 
         // Done.
         return new CaseExpression<>(conditions, results, resultType);
+    }
+
+    @Override
+    public int getFactoryId() {
+        return SqlDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getClassId() {
+        return SqlDataSerializerHook.EXPRESSION_CASE;
     }
 
     @SuppressWarnings("unchecked")
@@ -127,6 +139,37 @@ public class CaseExpression<T> implements Expression<T> {
         results[len] = in.readObject();
 
         resultType = in.readObject();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        CaseExpression<?> that = (CaseExpression<?>) o;
+
+        if (!Arrays.equals(conditions, that.conditions)) {
+            return false;
+        }
+
+        if (!Arrays.equals(results, that.results)) {
+            return false;
+        }
+
+        return resultType.equals(that.resultType);
+    }
+
+    @Override
+    public int hashCode() {
+        int result = Arrays.hashCode(conditions);
+        result = 31 * result + Arrays.hashCode(results);
+        result = 31 * result + resultType.hashCode();
+        return result;
     }
 
 }

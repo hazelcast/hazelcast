@@ -16,8 +16,10 @@
 
 package com.hazelcast.sql.impl.expression.math;
 
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.sql.SqlErrorCode;
 import com.hazelcast.sql.impl.QueryException;
+import com.hazelcast.sql.impl.SqlDataSerializerHook;
 import com.hazelcast.sql.impl.expression.BiExpressionWithType;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
@@ -37,9 +39,8 @@ import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.INTERVAL_YEAR_MONT
 /**
  * Implements evaluation of SQL multiply operator.
  */
-public class MultiplyFunction<T> extends BiExpressionWithType<T> {
+public class MultiplyFunction<T> extends BiExpressionWithType<T> implements IdentifiedDataSerializable {
 
-    @SuppressWarnings("unused")
     public MultiplyFunction() {
         // No-op.
     }
@@ -57,6 +58,16 @@ public class MultiplyFunction<T> extends BiExpressionWithType<T> {
         }
 
         return new MultiplyFunction<>(operand1, operand2, resultType);
+    }
+
+    @Override
+    public int getFactoryId() {
+        return SqlDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getClassId() {
+        return SqlDataSerializerHook.EXPRESSION_MULTIPLY;
     }
 
     @SuppressWarnings("unchecked")

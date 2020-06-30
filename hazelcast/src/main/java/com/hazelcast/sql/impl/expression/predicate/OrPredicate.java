@@ -16,6 +16,8 @@
 
 package com.hazelcast.sql.impl.expression.predicate;
 
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.sql.impl.SqlDataSerializerHook;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.expression.VariExpression;
@@ -25,7 +27,7 @@ import com.hazelcast.sql.impl.type.QueryDataType;
 /**
  * Implements evaluation of SQL OR predicate.
  */
-public class OrPredicate extends VariExpression<Boolean> {
+public class OrPredicate extends VariExpression<Boolean> implements IdentifiedDataSerializable {
 
     public OrPredicate() {
         // No-op.
@@ -37,6 +39,16 @@ public class OrPredicate extends VariExpression<Boolean> {
 
     public static OrPredicate create(Expression<?>... operands) {
         return new OrPredicate(operands);
+    }
+
+    @Override
+    public int getFactoryId() {
+        return SqlDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getClassId() {
+        return SqlDataSerializerHook.EXPRESSION_OR;
     }
 
     @Override

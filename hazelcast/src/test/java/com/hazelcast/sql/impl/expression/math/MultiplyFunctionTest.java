@@ -14,11 +14,12 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.expression;
+package com.hazelcast.sql.impl.expression.math;
 
 import com.hazelcast.sql.impl.SqlDataSerializerHook;
 import com.hazelcast.sql.impl.SqlTestSupport;
-import com.hazelcast.sql.impl.row.HeapRow;
+import com.hazelcast.sql.impl.expression.ConstantExpression;
+import com.hazelcast.sql.impl.expression.SimpleExpressionEvalContext;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -29,38 +30,39 @@ import org.junit.runner.RunWith;
 import static com.hazelcast.sql.impl.type.QueryDataType.BIGINT;
 import static com.hazelcast.sql.impl.type.QueryDataType.INT;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertSame;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class ColumnExpressionTest extends SqlTestSupport {
+public class MultiplyFunctionTest extends SqlTestSupport {
 
     // NOTE: This test class verifies only basic functionality, look for more
     // extensive tests in hazelcast-sql module.
 
     @Test
-    public void testColumnExpression() {
-        int index = 1;
-
-        ColumnExpression<?> expression = ColumnExpression.create(index, INT);
-
+    public void testCreationAndEval() {
+        MultiplyFunction<?> expression =
+                MultiplyFunction.create(ConstantExpression.create(3, INT), ConstantExpression.create(2, INT), INT);
         assertEquals(INT, expression.getType());
-
-        HeapRow row = HeapRow.of(new Object(), new Object(), new Object());
-        assertSame(row.get(index), expression.eval(row, SimpleExpressionEvalContext.create()));
+        assertEquals(6, expression.eval(row("foo"), SimpleExpressionEvalContext.create()));
     }
 
     @Test
     public void testEquality() {
-        checkEquals(ColumnExpression.create(1, INT), ColumnExpression.create(1, INT), true);
-        checkEquals(ColumnExpression.create(1, INT), ColumnExpression.create(1, BIGINT), false);
-        checkEquals(ColumnExpression.create(1, INT), ColumnExpression.create(2, INT), false);
+        checkEquals(MultiplyFunction.create(ConstantExpression.create(3, INT), ConstantExpression.create(2, INT), INT),
+                MultiplyFunction.create(ConstantExpression.create(3, INT), ConstantExpression.create(2, INT), INT), true);
+
+        checkEquals(MultiplyFunction.create(ConstantExpression.create(3, INT), ConstantExpression.create(2, INT), INT),
+                MultiplyFunction.create(ConstantExpression.create(3, INT), ConstantExpression.create(2, INT), BIGINT), false);
+
+        checkEquals(MultiplyFunction.create(ConstantExpression.create(3, INT), ConstantExpression.create(2, INT), INT),
+                MultiplyFunction.create(ConstantExpression.create(3, INT), ConstantExpression.create(100, INT), INT), false);
     }
 
     @Test
     public void testSerialization() {
-        ColumnExpression<?> original = ColumnExpression.create(1, INT);
-        ColumnExpression<?> restored = serializeAndCheck(original, SqlDataSerializerHook.EXPRESSION_COLUMN);
+        MultiplyFunction<?> original =
+                MultiplyFunction.create(ConstantExpression.create(3, INT), ConstantExpression.create(2, INT), INT);
+        MultiplyFunction<?> restored = serializeAndCheck(original, SqlDataSerializerHook.EXPRESSION_MULTIPLY);
 
         checkEquals(original, restored, true);
     }
