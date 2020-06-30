@@ -335,8 +335,8 @@ public class CacheProxy<K, V> extends CacheProxySupport<K, V>
         checkNotNull(listener, "CachePartitionLostListener can't be null");
 
         EventFilter filter = new CachePartitionLostEventFilter();
+        listener = injectDependencies(listener);
         InternalCachePartitionLostListenerAdapter listenerAdapter = new InternalCachePartitionLostListenerAdapter(listener);
-        injectDependencies(listener);
         EventRegistration registration = getService().getNodeEngine().getEventService()
                 .registerListener(AbstractCacheService.SERVICE_NAME, name, filter, listenerAdapter);
 

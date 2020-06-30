@@ -278,9 +278,10 @@ abstract class CacheProxySupport<K, V>
         }
     }
 
-    protected void injectDependencies(Object obj) {
+    @SuppressWarnings("unchecked")
+    protected <T> T injectDependencies(Object obj) {
         ManagedContext managedContext = serializationService.getManagedContext();
-        managedContext.initialize(obj);
+        return (T) managedContext.initialize(obj);
     }
 
     protected <T> InvocationFuture<T> invoke(Operation op, Data keyData, boolean completionOperation) {
@@ -565,7 +566,7 @@ abstract class CacheProxySupport<K, V>
                 throw ExceptionUtil.rethrow(e);
             }
         }
-        injectDependencies(listener);
+        listener = injectDependencies(listener);
         return listener;
     }
 

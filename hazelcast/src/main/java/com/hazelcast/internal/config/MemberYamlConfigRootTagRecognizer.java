@@ -14,23 +14,18 @@
  * limitations under the License.
  */
 
-package com.hazelcast.map;
+package com.hazelcast.internal.config;
 
-import java.util.Map.Entry;
-import java.util.concurrent.TimeUnit;
+import com.hazelcast.config.ConfigRecognizer;
 
 /**
- * Interface to provide parity with IMap set and put operations. For use in EntryProcessors.
- *
- * @see com.hazelcast.map.IMap#set(Object, Object, long, TimeUnit)
- * @see com.hazelcast.map.IMap#put(Object, Object, long, TimeUnit)
- *
- * @param <K> key type
- * @param <V> value type
+ * This {@link ConfigRecognizer} implementation recognizes Hazelcast
+ * member YAML configuration by checking if the defined root node is
+ * "hazelcast" or not. For the implementation details please refer to
+ * the {@link AbstractYamlConfigRootTagRecognizer} documentation.
  */
-public interface ExtendedMapEntry<K, V> extends Entry<K, V> {
-
-    /** Set the value and set the TTL to a non-default value for the IMap */
-    V setValue(V value, long ttl, TimeUnit ttlUnit);
-
+public class MemberYamlConfigRootTagRecognizer extends AbstractYamlConfigRootTagRecognizer {
+    public MemberYamlConfigRootTagRecognizer() {
+        super(ConfigSections.HAZELCAST.getName());
+    }
 }
