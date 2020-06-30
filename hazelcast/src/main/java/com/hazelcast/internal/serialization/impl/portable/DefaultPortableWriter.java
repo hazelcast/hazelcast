@@ -312,7 +312,7 @@ public class DefaultPortableWriter implements PortableWriter {
         return out;
     }
 
-    protected void end() throws IOException {
+    void end() throws IOException {
         // write final offset
         int position = out.position();
         out.writeInt(begin, position);

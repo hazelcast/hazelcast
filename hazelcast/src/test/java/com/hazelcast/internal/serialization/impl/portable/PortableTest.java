@@ -216,7 +216,10 @@ public class PortableTest {
         serializationConfig
                 .addClassDefinition(
                         new ClassDefinitionBuilder(PORTABLE_FACTORY_ID, TestSerializationConstants.RAW_DATA_PORTABLE, portableVersion)
-                                .addLongField("l").addCharArrayField("c").addPortableField("p", createNamedPortableClassDefinition(portableVersion)).build());
+                                .addLongField("l").addCharArrayField("c").addPortableField("p", createNamedPortableClassDefinition(portableVersion)).build())
+                .addClassDefinition(
+                        new ClassDefinitionBuilder(PORTABLE_FACTORY_ID, TestSerializationConstants.NAMED_PORTABLE, portableVersion)
+                                .addUTFField("name").addIntField("myint").build());
 
         SerializationService serializationService
                 = new DefaultSerializationServiceBuilder().setConfig(serializationConfig).build();

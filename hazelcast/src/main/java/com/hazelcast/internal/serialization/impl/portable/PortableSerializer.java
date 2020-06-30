@@ -21,6 +21,7 @@ import com.hazelcast.internal.nio.BufferObjectDataInput;
 import com.hazelcast.internal.nio.BufferObjectDataOutput;
 import com.hazelcast.internal.serialization.impl.GenericRecordQueryReader;
 import com.hazelcast.internal.serialization.impl.InternalGenericRecord;
+import com.hazelcast.internal.serialization.impl.InternalValueReader;
 import com.hazelcast.internal.serialization.impl.SerializationConstants;
 import com.hazelcast.internal.serialization.impl.SerializationUtil;
 import com.hazelcast.nio.ObjectDataInput;
@@ -29,7 +30,6 @@ import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.GenericRecord;
 import com.hazelcast.nio.serialization.GenericRecordBuilder;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
-import com.hazelcast.internal.serialization.impl.InternalValueReader;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableFactory;
 import com.hazelcast.nio.serialization.StreamSerializer;
@@ -206,7 +206,6 @@ public final class PortableSerializer implements StreamSerializer<Object> {
     void writePortableGenericRecordInternal(ObjectDataOutput out, PortableGenericRecord record) throws IOException {
         ClassDefinition cd = record.getClassDefinition();
         out.writeInt(cd.getVersion());
-        context.registerClassDefinition(cd);
 
         BufferObjectDataOutput output = (BufferObjectDataOutput) out;
         DefaultPortableWriter writer = new DefaultPortableWriter(this, output, cd);

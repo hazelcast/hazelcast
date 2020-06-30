@@ -180,9 +180,8 @@ public class PortableGenericRecord implements GenericRecord {
 
     @Override
     public String toString() {
-        return "PortableGenericRecord{" +
-                "classDefinition=" + classDefinition +
-                ", objects=" + Arrays.toString(objects) +
-                '}';
+        return "PortableGenericRecord{classDefinition=" + classDefinition
+                + ", objects=" + Arrays.toString(objects)
+                + '}';
     }
 }
