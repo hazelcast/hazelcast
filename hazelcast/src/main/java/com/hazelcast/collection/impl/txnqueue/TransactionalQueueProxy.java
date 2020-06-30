@@ -22,7 +22,10 @@ import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.transaction.impl.Transaction;
 
 import javax.annotation.Nonnull;
+import java.util.Collection;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static java.lang.Thread.currentThread;
@@ -100,6 +103,19 @@ public class TransactionalQueueProxy<E> extends TransactionalQueueProxySupport<E
         checkTransactionState();
         Data data = peekInternal(unit.toMillis(timeout));
         return (E) toObjectIfNeeded(data);
+    }
+
+    @Override
+    public boolean containsAll(Collection<? extends E> collection) {
+        return containsAll(collection, 0, TimeUnit.MILLISECONDS);
+    }
+
+    @Override
+    public boolean containsAll(Collection<? extends E> collection, long timeout, @Nonnull TimeUnit unit) {
+        checkTransactionState();
+        NodeEngine nodeEngine = getNodeEngine();
+        List<Data> data = collection.stream().map(nodeEngine::toData).collect(Collectors.toList());
+        return containsAllInternal(data, unit.toMillis(timeout));
     }
 
     @Override

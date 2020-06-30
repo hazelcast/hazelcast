@@ -66,8 +66,8 @@ public class QueueContainer implements IdentifiedDataSerializable {
     /**
      * Contains item ID to queue item mappings for current transactions
      */
-    private final Map<Long, TxQueueItem> txMap = new HashMap<Long, TxQueueItem>();
-    private final Map<Long, Data> dataMap = new HashMap<Long, Data>();
+    private final Map<Long, TxQueueItem> txMap = new HashMap<>();
+    private final Map<Long, Data> dataMap = new HashMap<>();
     private QueueWaitNotifyKey pollWaitNotifyKey;
     private QueueWaitNotifyKey offerWaitNotifyKey;
     private LinkedList<QueueItem> itemQueue;
@@ -360,6 +360,24 @@ public class QueueContainer implements IdentifiedDataSerializable {
                 store.store(item.getItemId(), data);
             } catch (Exception e) {
                 logger.warning("Exception during store", e);
+            }
+        }
+        return true;
+    }
+
+    public boolean txnCommitContainsAll(List<Data> data) {
+        for (Data datum : data) {
+            if (itemQueueContains(datum)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private boolean itemQueueContains(Data datum) {
+        for (QueueItem item : getItemQueue()) {
+            if (datum.equals(item.getData())) {
+                return false;
             }
         }
         return true;
@@ -889,9 +907,9 @@ public class QueueContainer implements IdentifiedDataSerializable {
      */
     public Deque<QueueItem> getItemQueue() {
         if (itemQueue == null) {
-            itemQueue = new LinkedList<QueueItem>();
+            itemQueue = new LinkedList<>();
             if (backupMap != null && !backupMap.isEmpty()) {
-                List<QueueItem> values = new ArrayList<QueueItem>(backupMap.values());
+                List<QueueItem> values = new ArrayList<>(backupMap.values());
                 Collections.sort(values);
                 itemQueue.addAll(values);
                 QueueItem lastItem = itemQueue.peekLast();

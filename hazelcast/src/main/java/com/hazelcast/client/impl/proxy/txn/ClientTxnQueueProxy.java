@@ -17,6 +17,7 @@
 package com.hazelcast.client.impl.proxy.txn;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.codec.TransactionalQueueContainsAllCodec;
 import com.hazelcast.client.impl.protocol.codec.TransactionalQueueOfferCodec;
 import com.hazelcast.client.impl.protocol.codec.TransactionalQueuePeekCodec;
 import com.hazelcast.client.impl.protocol.codec.TransactionalQueuePollCodec;
@@ -28,7 +29,10 @@ import com.hazelcast.transaction.TransactionalQueue;
 import com.hazelcast.internal.serialization.Data;
 
 import javax.annotation.Nonnull;
+import java.util.Collection;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import static com.hazelcast.internal.util.ThreadUtil.getThreadId;
 import static java.lang.Thread.currentThread;
@@ -112,6 +116,20 @@ public class ClientTxnQueueProxy<E> extends ClientTxnProxy implements Transactio
         ClientMessage request = TransactionalQueueSizeCodec.encodeRequest(name, getTransactionId(), getThreadId());
         ClientMessage response = invoke(request);
         return TransactionalQueueSizeCodec.decodeResponse(response).response;
+    }
+
+    @Override
+    public boolean containsAll(Collection<? extends E> collection) {
+        return containsAll(collection, 0, TimeUnit.MILLISECONDS);
+    }
+
+    @Override
+    public boolean containsAll(Collection<? extends E> collection, long timeout, @Nonnull TimeUnit unit) {
+        List<Data> items = collection.stream().map(this::toData).collect(Collectors.toList());
+        ClientMessage request = TransactionalQueueContainsAllCodec.encodeRequest(
+            name, getTransactionId(), getThreadId(), items, unit.toMillis(timeout));
+        ClientMessage response = invoke(request);
+        return TransactionalQueueContainsAllCodec.decodeResponse(response).response;
     }
 
     @Override
