@@ -41,7 +41,6 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.Random;
-import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -84,13 +83,10 @@ public class TransactionQueueTest extends HazelcastTestSupport {
         final int itemCount = 200;
         final HazelcastInstance instance = createHazelcastInstance();
 
-        Future<Integer> f = spawn(new Callable<Integer>() {
-            @Override
-            public Integer call() throws Exception {
-                IQueue<Object> queue = instance.getQueue(name);
-                queue.take();
-                return queue.size();
-            }
+        Future<Integer> f = spawn(() -> {
+            IQueue<Object> queue = instance.getQueue(name);
+            queue.take();
+            return queue.size();
         });
 
         TransactionContext context = instance.newTransactionContext();
@@ -134,12 +130,9 @@ public class TransactionQueueTest extends HazelcastTestSupport {
         final String item = randomString();
         HazelcastInstance instance = createHazelcastInstance();
         final IQueue<String> queue = instance.getQueue(name);
-        spawn(new Runnable() {
-            @Override
-            public void run() {
-                sleepSeconds(1);
-                queue.offer(item);
-            }
+        spawn(() -> {
+            sleepSeconds(1);
+            queue.offer(item);
         });
 
         TransactionContext context = instance.newTransactionContext();
@@ -168,20 +161,17 @@ public class TransactionQueueTest extends HazelcastTestSupport {
         firstContext.getQueue(name).poll();
 
         final CountDownLatch latch = new CountDownLatch(1);
-        Thread thread = new Thread() {
-            @Override
-            public void run() {
-                TransactionContext secondContext = instance.newTransactionContext();
-                secondContext.beginTransaction();
-                secondContext.getQueue(name).poll();
-                try {
-                    latch.await();
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-                secondContext.rollbackTransaction();
+        Thread thread = new Thread(() -> {
+            TransactionContext secondContext = instance.newTransactionContext();
+            secondContext.beginTransaction();
+            secondContext.getQueue(name).poll();
+            try {
+                latch.await();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
             }
-        };
+            secondContext.rollbackTransaction();
+        });
         thread.start();
         firstContext.rollbackTransaction();
         latch.countDown();
@@ -244,15 +234,12 @@ public class TransactionQueueTest extends HazelcastTestSupport {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(insCount);
         final HazelcastInstance[] instances = factory.newInstances(config);
         final CountDownLatch latch = new CountDownLatch(1);
-        new Thread(new Runnable() {
-            public void run() {
-                try {
-                    latch.await(5, SECONDS);
-                    sleepMillis(3000);
-                    getQueue(instances, name0).offer("item0");
-                } catch (InterruptedException ignored) {
-                } catch (HazelcastInstanceNotActiveException ignored) {
-                }
+        new Thread(() -> {
+            try {
+                latch.await(5, SECONDS);
+                sleepMillis(3000);
+                getQueue(instances, name0).offer("item0");
+            } catch (InterruptedException | HazelcastInstanceNotActiveException ignored) {
             }
         }).start();
 
@@ -409,12 +396,9 @@ public class TransactionQueueTest extends HazelcastTestSupport {
 
             // When a node goes down, backup of the transaction commits all prepared stated transactions
             // Since it relies on 'memberRemoved' event, it is async. That's why we should assert eventually
-            assertTrueEventually(new AssertTask() {
-                @Override
-                public void run() {
-                    assertEquals(numberOfMessages, instance1.getQueue(outQueueName).size());
-                    assertTrue(instance1.getQueue(inQueueName).isEmpty());
-                }
+            assertTrueEventually(() -> {
+                assertEquals(numberOfMessages, instance1.getQueue(outQueueName).size());
+                assertTrue(instance1.getQueue(inQueueName).isEmpty());
             });
         } finally {
             interruptThreads(instance1Threads);
@@ -453,13 +437,10 @@ public class TransactionQueueTest extends HazelcastTestSupport {
         final String queueName = generateKeyOwnedBy(remote);
 
         // first we add an item
-        local.executeTransaction(new TransactionalTask<Object>() {
-            @Override
-            public Object execute(TransactionalTaskContext context) throws TransactionException {
-                TransactionalQueue<String> queue = context.getQueue(queueName);
-                queue.offer("item");
-                return null;
-            }
+        local.executeTransaction(context -> {
+            TransactionalQueue<String> queue = context.getQueue(queueName);
+            queue.offer("item");
+            return null;
         });
 
         // we remove the item and then do a rollback. This causes the local (backup) to become out
@@ -529,16 +510,13 @@ public class TransactionQueueTest extends HazelcastTestSupport {
         final HazelcastInstance instance = createHazelcastInstance();
         final String name = randomString();
         final CountDownLatch offerReserveLatch = new CountDownLatch(1);
-        spawn(new Runnable() {
-            @Override
-            public void run() {
-                TransactionContext context = instance.newTransactionContext();
-                context.beginTransaction();
-                context.getQueue(name).offer(randomString());
-                offerReserveLatch.countDown();
-                sleepAtLeastSeconds(2);
-                context.commitTransaction();
-            }
+        spawn(() -> {
+            TransactionContext context = instance.newTransactionContext();
+            context.beginTransaction();
+            context.getQueue(name).offer(randomString());
+            offerReserveLatch.countDown();
+            sleepAtLeastSeconds(2);
+            context.commitTransaction();
         });
         assertOpenEventually(offerReserveLatch, 10);
         TransactionContext context = instance.newTransactionContext();
@@ -573,19 +551,9 @@ public class TransactionQueueTest extends HazelcastTestSupport {
         master.getLifecycleService().terminate();
 
         final IQueue<Integer> queue2 = instance.getQueue(name);
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertEquals(1, queue2.size());
-            }
-        });
+        assertTrueEventually(() -> assertEquals(1, queue2.size()));
 
-        assertTrueAllTheTime(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertEquals(1, queue2.size());
-            }
-        }, 3);
+        assertTrueAllTheTime(() -> assertEquals(1, queue2.size()), 3);
     }
 
     private void assertTransactionMapSize(HazelcastInstance instance, String name, int size) {
@@ -654,20 +622,9 @@ public class TransactionQueueTest extends HazelcastTestSupport {
         final EventCountingItemListener listener = new EventCountingItemListener();
         queue.addItemListener(listener, true);
 
-        hz.executeTransaction(new TransactionalTask<Object>() {
-            @Override
-            public Object execute(TransactionalTaskContext ctx) throws TransactionException {
-                TransactionalQueue<Object> queue = ctx.getQueue(name);
-                return queue.offer("item");
-            }
-        });
+        hz.executeTransaction(ctx -> ctx.getQueue(name).offer("item"));
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertEquals(1, listener.adds.get());
-            }
-        });
+        assertTrueEventually(() -> assertEquals(1, listener.adds.get()));
     }
 
     @Test
@@ -682,21 +639,10 @@ public class TransactionQueueTest extends HazelcastTestSupport {
         final EventCountingItemListener listener = new EventCountingItemListener();
         queue.addItemListener(listener, true);
 
-        Object item = hz.executeTransaction(new TransactionalTask<Object>() {
-            @Override
-            public Object execute(TransactionalTaskContext ctx) throws TransactionException {
-                TransactionalQueue<Object> queue = ctx.getQueue(name);
-                return queue.poll();
-            }
-        });
+        Object item = hz.executeTransaction(ctx -> ctx.getQueue(name).poll());
         assertEquals("item", item);
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertEquals(1, listener.removes.get());
-            }
-        });
+        assertTrueEventually(() -> assertEquals(1, listener.removes.get()));
     }
 
     @Test
@@ -710,21 +656,10 @@ public class TransactionQueueTest extends HazelcastTestSupport {
         final EventCountingItemListener listener = new EventCountingItemListener();
         queue.addItemListener(listener, true);
 
-        Object item = hz.executeTransaction(new TransactionalTask<Object>() {
-            @Override
-            public Object execute(TransactionalTaskContext ctx) throws TransactionException {
-                TransactionalQueue<Object> queue = ctx.getQueue(name);
-                return queue.poll();
-            }
-        });
+        Object item = hz.executeTransaction(ctx -> ctx.getQueue(name).poll());
         assertNull(item);
 
-        assertTrueAllTheTime(new AssertTask() {
-            @Override
-            public void run() {
-                assertEquals(0, listener.removes.get());
-            }
-        }, 5);
+        assertTrueAllTheTime(() -> assertEquals(0, listener.removes.get()), 5);
     }
 
     private static class EventCountingItemListener implements ItemListener<Object> {

@@ -393,6 +393,7 @@ import com.hazelcast.client.impl.protocol.codec.TransactionalMultiMapRemoveCodec
 import com.hazelcast.client.impl.protocol.codec.TransactionalMultiMapRemoveEntryCodec;
 import com.hazelcast.client.impl.protocol.codec.TransactionalMultiMapSizeCodec;
 import com.hazelcast.client.impl.protocol.codec.TransactionalMultiMapValueCountCodec;
+import com.hazelcast.client.impl.protocol.codec.TransactionalQueueAddAllCodec;
 import com.hazelcast.client.impl.protocol.codec.TransactionalQueueOfferCodec;
 import com.hazelcast.client.impl.protocol.codec.TransactionalQueuePeekCodec;
 import com.hazelcast.client.impl.protocol.codec.TransactionalQueuePollCodec;
@@ -762,6 +763,7 @@ import com.hazelcast.client.impl.protocol.task.transactionalmultimap.Transaction
 import com.hazelcast.client.impl.protocol.task.transactionalmultimap.TransactionalMultiMapRemoveMessageTask;
 import com.hazelcast.client.impl.protocol.task.transactionalmultimap.TransactionalMultiMapSizeMessageTask;
 import com.hazelcast.client.impl.protocol.task.transactionalmultimap.TransactionalMultiMapValueCountMessageTask;
+import com.hazelcast.client.impl.protocol.task.transactionalqueue.TransactionalQueueAddAllMessageTask;
 import com.hazelcast.client.impl.protocol.task.transactionalqueue.TransactionalQueueOfferMessageTask;
 import com.hazelcast.client.impl.protocol.task.transactionalqueue.TransactionalQueuePeekMessageTask;
 import com.hazelcast.client.impl.protocol.task.transactionalqueue.TransactionalQueuePollMessageTask;
@@ -1135,6 +1137,8 @@ public class DefaultMessageTaskFactoryProvider implements MessageTaskFactoryProv
                 (cm, con) -> new TransactionalQueuePollMessageTask(cm, node, con));
         factories.put(TransactionalQueueTakeCodec.REQUEST_MESSAGE_TYPE,
                 (cm, con) -> new TransactionalQueueTakeMessageTask(cm, node, con));
+        factories.put(TransactionalQueueAddAllCodec.REQUEST_MESSAGE_TYPE,
+                (cm, con) -> new TransactionalQueueAddAllMessageTask(cm, node, con));
     }
 
     private void initializeMultiMapTaskFactories() {

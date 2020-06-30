@@ -34,15 +34,15 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  */
 
 /**
- * Inserts the specified element into this queue, waiting up to the specified wait time if necessary for space to
- * become available.
+ * Inserts the specified collection of elements into this queue, waiting up to the specified wait time if necessary
+ * for space to become available.
  */
-@Generated("aa2cf06bda5894e69f94d3c35dc1d677")
-public final class TransactionalQueueOfferCodec {
-    //hex: 0x120100
-    public static final int REQUEST_MESSAGE_TYPE = 1179904;
-    //hex: 0x120101
-    public static final int RESPONSE_MESSAGE_TYPE = 1179905;
+@Generated("a312ba638b98d51c019d361f0dd912c5")
+public final class TransactionalQueueAddAllCodec {
+    //hex: 0x120600
+    public static final int REQUEST_MESSAGE_TYPE = 1181184;
+    //hex: 0x120601
+    public static final int RESPONSE_MESSAGE_TYPE = 1181185;
     private static final int REQUEST_TXN_ID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_THREAD_ID_FIELD_OFFSET = REQUEST_TXN_ID_FIELD_OFFSET + UUID_SIZE_IN_BYTES;
     private static final int REQUEST_TIMEOUT_FIELD_OFFSET = REQUEST_THREAD_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
@@ -50,7 +50,7 @@ public final class TransactionalQueueOfferCodec {
     private static final int RESPONSE_RESPONSE_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_RESPONSE_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
 
-    private TransactionalQueueOfferCodec() {
+    private TransactionalQueueAddAllCodec() {
     }
 
     @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
@@ -72,9 +72,9 @@ public final class TransactionalQueueOfferCodec {
         public long threadId;
 
         /**
-         * The element to add
+         * The elements to add
          */
-        public com.hazelcast.internal.serialization.Data item;
+        public java.util.List<com.hazelcast.internal.serialization.Data> items;
 
         /**
          * How long to wait before giving up, in milliseconds
@@ -82,10 +82,10 @@ public final class TransactionalQueueOfferCodec {
         public long timeout;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String name, java.util.UUID txnId, long threadId, com.hazelcast.internal.serialization.Data item, long timeout) {
+    public static ClientMessage encodeRequest(java.lang.String name, java.util.UUID txnId, long threadId, java.util.Collection<com.hazelcast.internal.serialization.Data> items, long timeout) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
-        clientMessage.setOperationName("TransactionalQueue.Offer");
+        clientMessage.setOperationName("TransactionalQueue.AddAll");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
         encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
@@ -94,11 +94,11 @@ public final class TransactionalQueueOfferCodec {
         encodeLong(initialFrame.content, REQUEST_TIMEOUT_FIELD_OFFSET, timeout);
         clientMessage.add(initialFrame);
         StringCodec.encode(clientMessage, name);
-        DataCodec.encode(clientMessage, item);
+        ListMultiFrameCodec.encode(clientMessage, items, DataCodec::encode);
         return clientMessage;
     }
 
-    public static TransactionalQueueOfferCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
+    public static TransactionalQueueAddAllCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         RequestParameters request = new RequestParameters();
         ClientMessage.Frame initialFrame = iterator.next();
@@ -106,7 +106,7 @@ public final class TransactionalQueueOfferCodec {
         request.threadId = decodeLong(initialFrame.content, REQUEST_THREAD_ID_FIELD_OFFSET);
         request.timeout = decodeLong(initialFrame.content, REQUEST_TIMEOUT_FIELD_OFFSET);
         request.name = StringCodec.decode(iterator);
-        request.item = DataCodec.decode(iterator);
+        request.items = ListMultiFrameCodec.decode(iterator, DataCodec::decode);
         return request;
     }
 
@@ -129,7 +129,7 @@ public final class TransactionalQueueOfferCodec {
         return clientMessage;
     }
 
-    public static TransactionalQueueOfferCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
+    public static TransactionalQueueAddAllCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         ResponseParameters response = new ResponseParameters();
         ClientMessage.Frame initialFrame = iterator.next();

@@ -42,6 +42,8 @@ import com.hazelcast.collection.impl.queue.operations.RemoveOperation;
 import com.hazelcast.collection.impl.queue.operations.SizeOperation;
 import com.hazelcast.collection.impl.txnqueue.TxQueueItem;
 import com.hazelcast.collection.impl.txnqueue.operations.QueueTransactionRollbackOperation;
+import com.hazelcast.collection.impl.txnqueue.operations.TxnAddAllBackupOperation;
+import com.hazelcast.collection.impl.txnqueue.operations.TxnAddAllOperation;
 import com.hazelcast.collection.impl.txnqueue.operations.TxnCommitBackupOperation;
 import com.hazelcast.collection.impl.txnqueue.operations.TxnCommitOperation;
 import com.hazelcast.collection.impl.txnqueue.operations.TxnOfferBackupOperation;
@@ -127,6 +129,9 @@ public final class QueueDataSerializerHook implements DataSerializerHook {
     public static final int MERGE = 44;
     public static final int MERGE_BACKUP = 45;
 
+    public static final int TXN_ADD_ALL = 46;
+    public static final int TXN_ADD_ALL_BACKUP = 47;
+
     public int getFactoryId() {
         return F_ID;
     }
@@ -134,7 +139,7 @@ public final class QueueDataSerializerHook implements DataSerializerHook {
     public DataSerializableFactory createFactory() {
 
         //noinspection unchecked
-        ConstructorFunction<Integer, IdentifiedDataSerializable>[] constructors = new ConstructorFunction[MERGE_BACKUP + 1];
+        ConstructorFunction<Integer, IdentifiedDataSerializable>[] constructors = new ConstructorFunction[TXN_ADD_ALL_BACKUP + 1];
         constructors[OFFER] = arg -> new OfferOperation();
         constructors[OFFER_BACKUP] = arg -> new OfferBackupOperation();
         constructors[POLL] = arg -> new PollOperation();
@@ -180,6 +185,8 @@ public final class QueueDataSerializerHook implements DataSerializerHook {
         constructors[TXN_COMMIT_BACKUP] = arg -> new TxnCommitBackupOperation();
         constructors[MERGE] = arg -> new QueueMergeOperation();
         constructors[MERGE_BACKUP] = arg -> new QueueMergeBackupOperation();
+        constructors[TXN_ADD_ALL] = arg -> new TxnAddAllOperation();
+        constructors[TXN_ADD_ALL_BACKUP] = arg -> new TxnAddAllBackupOperation();
 
         return new ArrayDataSerializableFactory(constructors);
     }

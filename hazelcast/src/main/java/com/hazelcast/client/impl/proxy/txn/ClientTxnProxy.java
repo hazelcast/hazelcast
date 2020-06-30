@@ -71,7 +71,7 @@ abstract class ClientTxnProxy implements TransactionalObject {
         return transactionContext.getClient().getSerializationService().toData(obj);
     }
 
-    Object toObject(Data data) {
+    <T> T toObject(Data data) {
         return transactionContext.getClient().getSerializationService().toObject(data);
     }
 
