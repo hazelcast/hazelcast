@@ -28,14 +28,14 @@ public class QueryClientState {
     private final UUID clientId;
 
     /** Cursor. */
-    private final SqlResultImpl cursor;
+    private final SqlResultImpl sqlResult;
 
     /** Iterator. */
     private Iterator<SqlRow> iterator;
 
-    public QueryClientState(UUID clientId, SqlResultImpl cursor) {
+    public QueryClientState(UUID clientId, SqlResultImpl sqlResult) {
         this.clientId = clientId;
-        this.cursor = cursor;
+        this.sqlResult = sqlResult;
     }
 
     public UUID getClientId() {
@@ -43,16 +43,16 @@ public class QueryClientState {
     }
 
     public QueryId getQueryId() {
-        return cursor.getQueryId();
+        return sqlResult.getQueryId();
     }
 
-    public SqlResultImpl getCursor() {
-        return cursor;
+    public SqlResultImpl getSqlResult() {
+        return sqlResult;
     }
 
     public Iterator<SqlRow> getIterator() {
         if (iterator == null) {
-            iterator = cursor.iterator();
+            iterator = sqlResult.iterator();
         }
 
         return iterator;

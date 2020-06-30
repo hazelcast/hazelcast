@@ -81,7 +81,7 @@ public class QueryClientStateRegistry {
             return;
         }
 
-        clientCursor.getCursor().close();
+        clientCursor.getSqlResult().close();
 
         deleteClientCursor(clientCursor);
     }
@@ -94,7 +94,7 @@ public class QueryClientStateRegistry {
         List<QueryClientState> victims = new ArrayList<>();
 
         for (QueryClientState clientCursor : clientCursors.values()) {
-            if (activeClientIds.contains(clientCursor.getClientId())) {
+            if (!activeClientIds.contains(clientCursor.getClientId())) {
                 victims.add(clientCursor);
             }
         }
@@ -102,7 +102,7 @@ public class QueryClientStateRegistry {
         for (QueryClientState victim : victims) {
             QueryException error = QueryException.clientLeave(victim.getClientId());
 
-            victim.getCursor().closeOnError(error);
+            victim.getSqlResult().closeOnError(error);
 
             deleteClientCursor(victim);
         }
