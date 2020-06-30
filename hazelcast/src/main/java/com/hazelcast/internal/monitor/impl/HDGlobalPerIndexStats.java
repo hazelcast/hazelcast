@@ -50,11 +50,11 @@ public final class HDGlobalPerIndexStats extends GlobalPerIndexStats {
     }
 
     private void updateMemoryCost(long delta) {
-        MEMORY_COST.lazySet(HDGlobalPerIndexStats.this, memoryCost + delta);
+        MEMORY_COST.addAndGet(HDGlobalPerIndexStats.this, delta);
     }
 
     private void resetMemoryCost() {
-        MEMORY_COST.lazySet(HDGlobalPerIndexStats.this, 0);
+        memoryCost = 0;
     }
 
     private class MemoryAllocatorWithStats implements MemoryAllocator {
