@@ -15,6 +15,7 @@
  */
 package com.hazelcast.internal.util.phonehome;
 
+import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.collection.impl.list.ListService;
 import com.hazelcast.collection.impl.queue.QueueService;
 import com.hazelcast.collection.impl.set.SetService;
@@ -43,6 +44,7 @@ class DistributedObjectCounterCollector implements MetricsCollector {
         SERVICE_NAME_TO_METRIC_NAME.put(MultiMapService.SERVICE_NAME, "mmct");
         SERVICE_NAME_TO_METRIC_NAME.put(ListService.SERVICE_NAME, "lict");
         SERVICE_NAME_TO_METRIC_NAME.put(RingbufferService.SERVICE_NAME, "rbct");
+        SERVICE_NAME_TO_METRIC_NAME.put(CacheService.SERVICE_NAME, "cact");
     }
 
     @Override
