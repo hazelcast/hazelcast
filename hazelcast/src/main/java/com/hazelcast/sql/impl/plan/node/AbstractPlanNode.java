@@ -22,7 +22,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import java.io.IOException;
 
 /**
- * Base class for all plan nodes which expose ID and schema.
+ * Base class for all plan nodes which exposes ID and schema.
  */
 public abstract class AbstractPlanNode implements PlanNode {
 

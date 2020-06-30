@@ -20,12 +20,13 @@ import com.hazelcast.config.SqlConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.util.Preconditions;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.exception.ServiceNotFoundException;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlQuery;
+import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlService;
 import com.hazelcast.sql.impl.explain.QueryExplainResult;
 import com.hazelcast.sql.impl.optimizer.DisabledSqlOptimizer;
@@ -36,6 +37,7 @@ import com.hazelcast.sql.impl.plan.Plan;
 import com.hazelcast.sql.impl.schema.SchemaPlan;
 import com.hazelcast.sql.impl.state.QueryState;
 
+import javax.annotation.Nonnull;
 import java.lang.reflect.Constructor;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -51,7 +53,7 @@ public class SqlServiceImpl implements SqlService, Consumer<Packet> {
     private static final int OUTBOX_BATCH_SIZE = 512 * 1024;
 
     /** Default state check frequency. */
-    private static final long STATE_CHECK_FREQUENCY = 10_000L;
+    private static final long STATE_CHECK_FREQUENCY = 1_000L;
 
     private static final String OPTIMIZER_CLASS_PROPERTY_NAME = "hazelcast.sql.optimizerClass";
     private static final String SQL_MODULE_OPTIMIZER_CLASS = "com.hazelcast.sql.impl.calcite.CalciteSqlOptimizer";
@@ -69,24 +71,25 @@ public class SqlServiceImpl implements SqlService, Consumer<Packet> {
     public SqlServiceImpl(NodeEngineImpl nodeEngine) {
         this.nodeEngine = nodeEngine;
         logger = nodeEngine.getLogger(getClass());
+
         SqlConfig config = nodeEngine.getConfig().getSqlConfig();
 
-        int operationThreadCount = config.getOperationThreadCount();
-        int fragmentThreadCount = config.getThreadCount();
-        long queryTimeout = config.getQueryTimeout();
+        int executorPoolSize = config.getExecutorPoolSize();
+        int operationPoolSize = config.getOperationPoolSize();
+        long queryTimeout = config.getQueryTimeoutMillis();
         long maxMemory = config.getMaxMemory();
 
-        if (operationThreadCount <= 0) {
-            throw new HazelcastException("SqlConfig.operationThreadCount must be positive: " + config.getOperationThreadCount());
+        if (executorPoolSize == SqlConfig.DEFAULT_EXECUTOR_POOL_SIZE) {
+            executorPoolSize = Runtime.getRuntime().availableProcessors();
         }
 
-        if (fragmentThreadCount <= 0) {
-            throw new HazelcastException("SqlConfig.threadCount must be positive: " + config.getThreadCount());
+        if (operationPoolSize == SqlConfig.DEFAULT_OPERATION_POOL_SIZE) {
+            operationPoolSize = Runtime.getRuntime().availableProcessors();
         }
 
-        if (queryTimeout < 0) {
-            throw new HazelcastException("SqlConfig.queryTimeout cannot be positive: " + config.getQueryTimeout());
-        }
+        assert executorPoolSize > 0;
+        assert operationPoolSize > 0;
+        assert queryTimeout >= 0L;
 
         this.queryTimeout = queryTimeout;
 
@@ -99,8 +102,8 @@ public class SqlServiceImpl implements SqlService, Consumer<Packet> {
             instanceName,
             nodeServiceProvider,
             serializationService,
-            operationThreadCount,
-            fragmentThreadCount,
+            operationPoolSize,
+            executorPoolSize,
             OUTBOX_BATCH_SIZE,
             STATE_CHECK_FREQUENCY,
             maxMemory
@@ -147,14 +150,17 @@ public class SqlServiceImpl implements SqlService, Consumer<Packet> {
         return optimizer;
     }
 
+    @Nonnull
     @Override
-    public SqlResult query(SqlQuery query) {
-        if (nodeEngine.getLocalMember().isLiteMember()) {
-            throw QueryException.error("SQL queries cannot be executed on lite members.");
-        }
+    public SqlResult query(@Nonnull SqlQuery query) {
+        Preconditions.checkNotNull(query, "Query cannot be null");
 
         try {
-            long timeout = query.getTimeout();
+            if (nodeEngine.getLocalMember().isLiteMember()) {
+                throw QueryException.error("SQL queries cannot be executed on lite members");
+            }
+
+            long timeout = query.getTimeoutMillis();
 
             if (timeout == SqlQuery.TIMEOUT_NOT_SET) {
                 timeout = queryTimeout;

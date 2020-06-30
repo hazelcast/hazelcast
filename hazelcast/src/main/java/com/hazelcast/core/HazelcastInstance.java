@@ -454,11 +454,13 @@ public interface HazelcastInstance {
     @Nonnull CPSubsystem getCPSubsystem();
 
     /**
-     * Returns SQL service.
+     * Returns a service to execute distributed SQL queries.
      *
-     * @return SQL service.
+     * @return SQL service
+     *
+     * @see SqlService
      */
-    SqlService getSqlService();
+    @Nonnull SqlService getSql();
 
     /**
      * Shuts down this HazelcastInstance. For more information see {@link com.hazelcast.core.LifecycleService#shutdown()}.

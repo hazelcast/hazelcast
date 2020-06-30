@@ -47,7 +47,7 @@ public final class QueryExplain {
             HeapRow row = new HeapRow(1);
             row.set(0, elementString);
 
-            rows.add(new SqlRowImpl(row));
+            rows.add(new SqlRowImpl(QueryExplainResult.ROW_METADATA, row));
         }
 
         return rows;

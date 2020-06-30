@@ -87,6 +87,7 @@ public class QueryConverter {
         // primarily in projections. This steps removes unused fields from the tree.
         RelNode relTrimmed = converter.trimUnusedFields(true, relDecorrelated);
 
+        // 5. Collect original field names.
         return new QueryConvertResult(relTrimmed, Pair.right(root.fields));
     }
 

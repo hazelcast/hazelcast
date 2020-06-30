@@ -17,8 +17,14 @@
 
 package com.hazelcast.sql.impl;
 
+import com.hazelcast.sql.SqlColumnMetadata;
 import com.hazelcast.sql.SqlRow;
+import com.hazelcast.sql.SqlRowMetadata;
 import com.hazelcast.sql.impl.row.Row;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import java.util.StringJoiner;
 
 /**
  * Default implementation of the SQL row which is exposed to users. We merely wrap the internal row, but add more checks which
@@ -26,29 +32,71 @@ import com.hazelcast.sql.impl.row.Row;
  */
 public class SqlRowImpl implements SqlRow {
 
+    private final SqlRowMetadata rowMetadata;
     private final Row row;
-    private final int columnCount;
 
-    public SqlRowImpl(Row row) {
+    public SqlRowImpl(SqlRowMetadata rowMetadata, Row row) {
+        this.rowMetadata = rowMetadata;
         this.row = row;
-
-        columnCount = row.getColumnCount();
     }
 
+    @Nullable
     @Override
-    public Object getObject(int index) {
-        checkIndex(index);
+    public <T> T getObject(int columnIndex) {
+        checkIndex(columnIndex);
 
-        return row.get(index);
+        return getObject0(columnIndex);
+    }
+
+    @Nullable
+    @Override
+    public <T> T getObject(@Nonnull String columnName) {
+        int columnIndex = resolveIndex(columnName);
+
+        return getObject0(columnIndex);
+    }
+
+    private <T> T getObject0(int columnIndex) {
+        return row.get(columnIndex);
+    }
+
+    private int resolveIndex(String columnName) {
+        int index = rowMetadata.findColumn(columnName);
+
+        if (index == SqlRowMetadata.COLUMN_NOT_FOUND) {
+            throw new IllegalArgumentException("Column \"" + columnName + "\" doesn't exist");
+        }
+
+        return index;
+    }
+
+    @Nonnull
+    @Override
+    public SqlRowMetadata getMetadata() {
+        return rowMetadata;
     }
 
     private void checkIndex(int index) {
-        if (index < 0 || index >= columnCount) {
-            throw new IllegalArgumentException("Column index is out of range: " + index);
+        if (index < 0 || index >= rowMetadata.getColumnCount()) {
+            throw new IndexOutOfBoundsException("Column index is out of range: " + index);
         }
     }
 
     public Row getDelegate() {
         return row;
+    }
+
+    @Override
+    public String toString() {
+        StringJoiner joiner = new StringJoiner(", ", "[", "]");
+
+        for (int i = 0; i < rowMetadata.getColumnCount(); i++) {
+            SqlColumnMetadata columnMetadata = rowMetadata.getColumn(i);
+            Object columnValue = row.get(i);
+
+            joiner.add(columnMetadata.getName() + ' ' + columnMetadata.getType() + '=' + columnValue);
+        }
+
+        return joiner.toString();
     }
 }

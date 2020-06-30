@@ -116,7 +116,7 @@ public class AggregateSqlTest extends CalciteSqlTestSupport {
         assertEquals(collectors.size(), rows.size());
 
         for (SqlRow row : rows) {
-            long deptId = (long) row.getObject(0);
+            long deptId = row.getObject(0);
             PersonSalaryCollector collector = collectors.get(deptId);
             assertNotNull(collector);
 
@@ -152,7 +152,7 @@ public class AggregateSqlTest extends CalciteSqlTestSupport {
         assertEquals(collectors.size(), rows.size());
 
         for (SqlRow row : rows) {
-            String deptTitle = (String) row.getObject(0);
+            String deptTitle = row.getObject(0);
             PersonSalaryCollector collector = collectors.get(deptTitle);
             assertNotNull(collector);
 

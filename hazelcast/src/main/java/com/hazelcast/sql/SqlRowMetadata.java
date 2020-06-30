@@ -16,25 +16,44 @@
 
 package com.hazelcast.sql;
 
+import com.hazelcast.internal.util.Preconditions;
+import com.hazelcast.spi.annotation.PrivateApi;
+
+import javax.annotation.Nonnull;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * SQL row metadata.
  */
-public class SqlRowMetadata {
+public final class SqlRowMetadata {
+    /** Constant indicating that the column is not found. */
+    public static final int COLUMN_NOT_FOUND = -1;
 
     private final List<SqlColumnMetadata> columns;
+    private final Map<String, Integer> nameToIndex;
 
-    public SqlRowMetadata(List<SqlColumnMetadata> columns) {
+    @PrivateApi
+    @SuppressWarnings("ConstantConditions")
+    public SqlRowMetadata(@Nonnull List<SqlColumnMetadata> columns) {
         assert columns != null && !columns.isEmpty();
 
-        this.columns = columns;
+        this.columns = new ArrayList<>(columns);
+
+        nameToIndex = new HashMap<>(columns.size());
+
+        for (int i = 0; i < columns.size(); i++) {
+            nameToIndex.put(columns.get(i).getName(), i);
+        }
     }
 
     /**
      * Gets the number of columns in the row.
      *
-     * @return The number of columns in the row.
+     * @return the number of columns in the row
      */
     public int getColumnCount() {
         return columns.size();
@@ -43,18 +62,59 @@ public class SqlRowMetadata {
     /**
      * Get column metadata.
      *
-     * @param index Column index, 0-based.
-     * @return Column metadata.
+     * @param index column index, zero-based
+     * @return column metadata
+     * @throws IndexOutOfBoundsException If the column index is out of bounds
      */
+    @Nonnull
     public SqlColumnMetadata getColumn(int index) {
-        if (index < 0) {
-            throw new IllegalArgumentException("Column index cannot be negative: " + index);
-        }
-
-        if (index >= columns.size()) {
+        if (index < 0 || index >= columns.size()) {
             throw new IndexOutOfBoundsException("Column index is out of bounds: " + index);
         }
 
         return columns.get(index);
+    }
+
+    /**
+     * Find index of the column with the given name. Returned index can be used to get column value
+     * from {@link SqlRow}.
+     *
+     * @param columnName column name (case sensitive)
+     * @return column index or {@link #COLUMN_NOT_FOUND} if a column with the given name is not found
+     * @throws NullPointerException if column name is null
+     *
+     * @see SqlRow
+     */
+    public int findColumn(@Nonnull String columnName) {
+        Preconditions.checkNotNull(columnName, "Column name cannot be null");
+
+        return nameToIndex.getOrDefault(columnName, COLUMN_NOT_FOUND);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        SqlRowMetadata that = (SqlRowMetadata) o;
+
+        return columns.equals(that.columns);
+    }
+
+    @Override
+    public int hashCode() {
+        return columns.hashCode();
+    }
+
+    @Override
+    public String toString() {
+        return columns.stream()
+            .map((column) -> column.getName() + ' ' + column.getType())
+            .collect(Collectors.joining(", ", "[", "]"));
     }
 }

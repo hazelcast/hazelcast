@@ -16,6 +16,7 @@
 
 package com.hazelcast.sql;
 
+import javax.annotation.Nonnull;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -26,46 +27,46 @@ import java.time.OffsetDateTime;
  * SQL column type.
  */
 public enum SqlColumnType {
-    /** VARCHAR type. */
+    /** VARCHAR type, represented by {@link java.lang.String} */
     VARCHAR(String.class),
 
-    /** BOOLEAN type. */
+    /** BOOLEAN type, represented by {@link java.lang.Boolean} */
     BOOLEAN(Boolean.class),
 
-    /** TINYINT type. */
-    TINYINT(Short.class),
+    /** TINYINT type, represented by {@link java.lang.Byte} */
+    TINYINT(Byte.class),
 
-    /** SMALLINT type. */
+    /** SMALLINT type, represented by {@link java.lang.Short} */
     SMALLINT(Short.class),
 
-    /** INT type. */
+    /** INT type, represented by {@link java.lang.Integer} */
     INT(Integer.class),
 
-    /** BIGINT type. */
+    /** BIGINT type, represented by {@link java.lang.Long} */
     BIGINT(Long.class),
 
-    /** DECIMAL type. */
+    /** DECIMAL type, represented by {@link java.math.BigDecimal} */
     DECIMAL(BigDecimal.class),
 
-    /** REAL type. */
+    /** REAL type, represented by {@link java.lang.Float} */
     REAL(Float.class),
 
-    /** DOUBLE type. */
+    /** DOUBLE type, represented by {@link java.lang.Double} */
     DOUBLE(Double.class),
 
-    /** DATE type. */
+    /** DATE type, represented by {@link java.time.LocalDate} */
     DATE(LocalDate.class),
 
-    /** TIME type. */
+    /** TIME type, represented by {@link java.time.LocalTime} */
     TIME(LocalTime.class),
 
-    /** TIMESTAMP type. */
+    /** TIMESTAMP type,, represented by {@link java.time.LocalDateTime} */
     TIMESTAMP(LocalDateTime.class),
 
-    /** TIMESTAMP_WITH_TIME_ZONE type. */
+    /** TIMESTAMP_WITH_TIME_ZONE type, represented by {@link java.time.OffsetDateTime} */
     TIMESTAMP_WITH_TIME_ZONE(OffsetDateTime.class),
 
-    /** OBJECT type. */
+    /** OBJECT type, could be represented by any Java class. */
     OBJECT(Object.class);
 
     private final Class<?> valueClass;
@@ -75,10 +76,11 @@ public enum SqlColumnType {
     }
 
     /**
-     * Gets Java class of the value of this SQL type.
+     * Gets the Java class of the value of this SQL type.
      *
-     * @return Java class of the value of this SQL type.
+     * @return the Java class of the value of this SQL type
      */
+    @Nonnull
     public Class<?> getValueClass() {
         return valueClass;
     }

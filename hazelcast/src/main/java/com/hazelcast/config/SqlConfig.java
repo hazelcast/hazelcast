@@ -18,15 +18,18 @@ package com.hazelcast.config;
 
 import com.hazelcast.sql.SqlQuery;
 
+import static com.hazelcast.internal.util.Preconditions.checkNotNegative;
+import static com.hazelcast.internal.util.Preconditions.checkPositive;
+
 /**
  * SQL service configuration.
  */
 public class SqlConfig {
-    /** Default number of threads responsible for query processing. */
-    public static final int DEFAULT_THREAD_COUNT = Runtime.getRuntime().availableProcessors();
+    /** Default number of threads responsible for query execution. */
+    public static final int DEFAULT_EXECUTOR_POOL_SIZE = -1;
 
     /** Default number of threads responsible for network operations processing. */
-    public static final int DEFAULT_OPERATION_THREAD_COUNT = Math.min(8, Runtime.getRuntime().availableProcessors());
+    public static final int DEFAULT_OPERATION_POOL_SIZE = -1;
 
     /** Default timeout in milliseconds that is applied to queries without explicit timeout. */
     public static final int DEFAULT_QUERY_TIMEOUT = 0;
@@ -35,32 +38,32 @@ public class SqlConfig {
     /** Default max memory. */
     public static final long DEFAULT_MAX_MEMORY = Runtime.getRuntime().maxMemory() / 2;
 
-    /** Number of threads responsible for query processing. */
-    private int threadCount = DEFAULT_THREAD_COUNT;
+    /** Number of threads responsible for query execution. */
+    private int executorPoolSize = DEFAULT_EXECUTOR_POOL_SIZE;
 
-    /** Number of threads responsible for query operation handling. */
-    private int operationThreadCount = DEFAULT_OPERATION_THREAD_COUNT;
+    /** Number of threads responsible for network operations processing. */
+    private int operationPoolSize = DEFAULT_OPERATION_POOL_SIZE;
 
     /** Timeout in milliseconds that is applied to queries without an explicit timeout. */
-    private long queryTimeout = DEFAULT_QUERY_TIMEOUT;
+    private long queryTimeoutMillis = DEFAULT_QUERY_TIMEOUT;
 
     /** Max memory in bytes for SQL processing. */
     private long maxMemory = DEFAULT_MAX_MEMORY;
 
     /**
-     * Gets the number of threads responsible for query processing.
+     * Gets the number of threads responsible for query execution.
      *
-     * @return Number of threads responsible for query processing.
+     * @return Number of threads responsible for query execution.
      */
-    public int getThreadCount() {
-        return threadCount;
+    public int getExecutorPoolSize() {
+        return executorPoolSize;
     }
 
     /**
-     * Sets the number of threads responsible for query processing.
+     * Sets the number of threads responsible for query execution.
      * <p>
-     * Hazelcast executes queries in parallel to achieve high throughput. This parameter defines the maximum number of threads
-     * that may execute queries simultaneously. Normally the value of this parameter should be equal to the number of CPU cores.
+     * The default value {@code -1} sets the pool size equal to the number of CPU cores, and should be good enough
+     * for the most workloads.
      * <p>
      * Setting the value to less than the number of CPU cores will limit the degree of parallelism of the SQL subsystem. This
      * may be beneficial if you would like to prioritize other CPU-intensive workloads on the same machine.
@@ -68,13 +71,18 @@ public class SqlConfig {
      * It is not recommended to set the value of this parameter greater than the number of CPU cores because it may decrease
      * the system's overall performance due to excessive context switches.
      * <p>
-     * Defaults to {@link #DEFAULT_THREAD_COUNT}.
+     * Defaults to {@code -1}.
      *
-     * @param threadCount Number of threads responsible for query processing.
+     * @param executorPoolSize Number of threads responsible for query execution.
      * @return This instance for chaining.
      */
-    public SqlConfig setThreadCount(int threadCount) {
-        this.threadCount = threadCount;
+    public SqlConfig setExecutorPoolSize(int executorPoolSize) {
+        if (executorPoolSize < DEFAULT_EXECUTOR_POOL_SIZE || executorPoolSize == 0) {
+            checkPositive(executorPoolSize, "Executor pool size should be positive or -1: " + executorPoolSize);
+        }
+
+        this.executorPoolSize = executorPoolSize;
+
         return this;
     }
 
@@ -83,32 +91,38 @@ public class SqlConfig {
      *
      * @return Number of threads responsible for network operations processing.
      */
-    public int getOperationThreadCount() {
-        return operationThreadCount;
+    public int getOperationPoolSize() {
+        return operationPoolSize;
     }
 
     /**
-     * Sets the number of threads responsible for operation processing.
+     * Sets the number of threads responsible for network operations processing.
      * <p>
      * When Hazelcast members execute a query, they send commands to each other over the network to coordinate the execution.
      * This includes requests to start or stop query execution, or a request to process a batch of data. These commands are
      * processed in a separate operation thread pool, to avoid frequent interruption of running query fragments.
      * <p>
-     * This parameter defines the number of threads in the operation thread pool. The default value should be good enough for
-     * the most workloads. You may want to increase the default value if you run very small queries, or the machine has a big
-     * number of CPU cores.
+     * The default value {@code -1} sets the pool size equal to the number of CPU cores, and should be good enough
+     * for the most workloads.
      * <p>
-     * It is not recommended to set the value of this parameter greater than the number of CPU cores because it may decrease
-     * the system's overall performance due to excessive context switches.
-     *
+     * Setting the value to less than the number of CPU cores may improve the overall performance on machines
+     * with large CPU count, because it will decrease the number of context switches.
      * <p>
-     * Defaults to {@link #DEFAULT_OPERATION_THREAD_COUNT}.
+     * It is not recommended to set the value of this parameter greater than the number of CPU cores because it
+     * may decrease the system's overall performance due to excessive context switches.
+     * <p>
+     * Defaults to {@code -1}.
      *
-     * @param operationThreadCount Number of threads responsible for operation processing.
+     * @param operationPoolSize Number of threads responsible for network operations processing.
      * @return This instance for chaining.
      */
-    public SqlConfig setOperationThreadCount(int operationThreadCount) {
-        this.operationThreadCount = operationThreadCount;
+    public SqlConfig setOperationPoolSize(int operationPoolSize) {
+        if (operationPoolSize < DEFAULT_OPERATION_POOL_SIZE || operationPoolSize == 0) {
+            checkPositive(operationPoolSize, "Operation pool size should be positive or -1: " + operationPoolSize);
+        }
+
+        this.operationPoolSize = operationPoolSize;
+
         return this;
     }
 
@@ -117,26 +131,28 @@ public class SqlConfig {
      *
      * @return Timeout in milliseconds.
      */
-    public long getQueryTimeout() {
-        return queryTimeout;
+    public long getQueryTimeoutMillis() {
+        return queryTimeoutMillis;
     }
 
     /**
      * Sets the timeout in milliseconds that is applied to queries without an explicit timeout.
      * <p>
-     * It is possible to set a query timeout through {@link SqlQuery#setTimeout(long)}. If the query timeout is not set, then
-     * the value of this parameter will be used.
+     * It is possible to set a query timeout through the {@link SqlQuery#setTimeoutMillis(long)} method. If the query timeout is
+     * not set, then the value of this parameter will be used.
      * <p>
      * Zero value means no timeout. Negative values are prohibited.
      * <p>
      * Defaults to {@link #DEFAULT_QUERY_TIMEOUT}.
      *
-     * @see SqlQuery#setTimeout(long)
+     * @see SqlQuery#setTimeoutMillis(long)
      * @param queryTimeout Timeout in milliseconds.
      * @return This instance for chaining.
      */
-    public SqlConfig setQueryTimeout(long queryTimeout) {
-        this.queryTimeout = queryTimeout;
+    public SqlConfig setQueryTimeoutMillis(long queryTimeout) {
+        checkNotNegative(queryTimeout, "Query timeout cannot be negative");
+
+        this.queryTimeoutMillis = queryTimeout;
 
         return this;
     }
@@ -170,7 +186,11 @@ public class SqlConfig {
 
     @Override
     public String toString() {
-        return "SqlConfig{threadCount=" + threadCount + ", operationThreadCount=" + operationThreadCount
-            + ", queryTimeout=" + queryTimeout + ", maxMemory=" + maxMemory + '}';
+        return "SqlConfig{"
+            + "executorPoolSize=" + executorPoolSize
+            + ", operationPoolSize=" + operationPoolSize
+            + ", queryTimeoutMillis=" + queryTimeoutMillis
+            + ", maxMemory=" + maxMemory
+            + '}';
     }
 }

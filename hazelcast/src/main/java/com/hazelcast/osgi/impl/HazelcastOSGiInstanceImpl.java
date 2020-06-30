@@ -284,9 +284,10 @@ class HazelcastOSGiInstanceImpl
         return delegatedInstance.getCPSubsystem();
     }
 
+    @Nonnull
     @Override
-    public SqlService getSqlService() {
-        return delegatedInstance.getSqlService();
+    public SqlService getSql() {
+        return delegatedInstance.getSql();
     }
 
     @Override

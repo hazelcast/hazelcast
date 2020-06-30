@@ -47,7 +47,7 @@ public class JsonUpsertTarget implements UpsertTarget {
             } else if (value instanceof Double) {
                 json.add(path, (Double) value);
             } else {
-                json.add(path, (String) QueryDataType.VARCHAR.convert(value));
+                json.add(path, (String) QueryDataType.VARCHAR.normalize(value));
             }
         };
     }

@@ -16,11 +16,26 @@
 
 package com.hazelcast.sql.impl.worker;
 
+import com.hazelcast.sql.impl.exec.root.BlockingRootResultConsumer;
+
 public interface QueryFragmentScheduleCallback {
+    /**
+     * Schedule the fragment for execution without the {@code force} flag.
+     *
+     * @see #schedule(boolean)
+     * @return {@code true} if the fragment was scheduled, {@code false} if already scheduled.
+     */
+    default boolean schedule() {
+        return schedule(false);
+    }
+
     /**
      * Schedule the fragment for execution.
      *
+     * @param force {@code true} to ensure that the fragment is re-executed after the call to the "schedule" even if there
+     *     are no new exchange operations. This is required by the result consumer.
+     * @see BlockingRootResultConsumer
      * @return {@code true} if the fragment was scheduled, {@code false} if already scheduled.
      */
-    boolean schedule();
+    boolean schedule(boolean force);
 }

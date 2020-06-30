@@ -16,6 +16,7 @@
 
 package com.hazelcast.sql.impl.worker;
 
+import com.hazelcast.sql.impl.exec.Exec;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.state.QueryStateCallback;
 
@@ -49,8 +50,12 @@ public final class QueryFragmentContext implements ExpressionEvalContext {
         return arguments.get(index);
     }
 
+    /**
+     * Reschedule fragment execution. Guarantees that {@link Exec#advance()} will be called after this call if the fragment
+     * is not completed yet.
+     */
     public void schedule() {
-        scheduleCallback.schedule();
+        scheduleCallback.schedule(true);
     }
 
     public void checkCancelled() {

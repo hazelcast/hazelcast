@@ -39,9 +39,9 @@ public class JdbcGateway {
     }
 
     public JdbcCursor execute(String sql, List<Object> args, int pageSize, long timeout) {
-        SqlQuery query = new SqlQuery(sql).setParameters(args).setCursorBufferSize(pageSize).setTimeout(timeout);
+        SqlQuery query = new SqlQuery(sql).setParameters(args).setCursorBufferSize(pageSize).setTimeoutMillis(timeout);
 
-        SqlClientResultImpl cursor = (SqlClientResultImpl) client.getSqlService().query(query);
+        SqlClientResultImpl cursor = (SqlClientResultImpl) client.getSql().query(query);
         Iterator<SqlRow> iterator = cursor.iterator();
 
         return new JdbcCursor(cursor, iterator);

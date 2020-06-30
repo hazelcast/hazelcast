@@ -22,13 +22,13 @@ import java.util.Iterator;
 /**
  * SQL query result. Represents a stream of rows.
  * <p>
- * Use {@link #iterator()} to iterate over rows. The iterator could be requested only once.
+ * Use {@link #iterator()} to iterate over the rows. The iterator can be requested only once.
  * <p>
  * Use {@link #close()} to release the resources associated with the result.
  * <p>
  * Typical usage pattern:
  * <pre>
- * try (SqlResult result = hazelcastInstance.getSqlQuery().query("SELECT ...")) {
+ * try (SqlResult result = hazelcastInstance.getSql().query("SELECT ...")) {
  *     for (SqlRow row : result) {
  *         // Process the row.
  *     }
@@ -42,25 +42,28 @@ public interface SqlResult extends Iterable<SqlRow>, AutoCloseable {
     /**
      * Gets row metadata.
      *
-     * @return Row metadata.
+     * @return row metadata
      */
+    @Nonnull
     SqlRowMetadata getRowMetadata();
 
     /**
-     * Returns the iterator over query rows.
+     * Returns the iterator over the result rows.
      * <p>
      * The iterator may be requested only once.
      *
-     * @return Iterator.
+     * @return iterator
+     * @throws IllegalStateException ff the method is invoked more than once
+     * @throws SqlException in case of an SQL-related error condition
      */
-    @Override
     @Nonnull
+    @Override
     Iterator<SqlRow> iterator();
 
     /**
      * Release the resources associated with the query result.
      * <p>
-     * The query engine delivers results asynchronously. The query may become inactive even before all rows are
+     * The query engine delivers the results asynchronously. The query may become inactive even before all rows are
      * consumed. The invocation of this command will cancel the execution of the query on all members if the query
      * is still active. Otherwise it is no-op.
      */

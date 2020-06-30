@@ -39,7 +39,7 @@ public class SingleValueResult implements SqlResult {
         QueryDataType queryDataType = QueryDataTypeUtils.resolveTypeForClass(value.getClass());
         this.metadata = QueryUtils.getColumnMetadata(COLUMN_NAME, queryDataType);
 
-        SqlRow row = new SqlRowImpl(new HeapRow(new Object[]{value}));
+        SqlRow row = new SqlRowImpl(new SqlRowMetadata(Collections.singletonList(metadata)), new HeapRow(new Object[]{value}));
         this.iterator = Collections.singleton(row).iterator();
     }
 

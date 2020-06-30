@@ -37,6 +37,7 @@ import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import static junit.framework.TestCase.assertEquals;
@@ -85,7 +86,12 @@ public class JoinSqlJdbcTest extends CalciteSqlTestSupport {
                         row.set(0, name);
                         row.set(1, deptTitle);
 
-                        jdbcRows.add(new SqlRowImpl(row));
+                        SqlRowMetadata rowMetadata = new SqlRowMetadata(Arrays.asList(
+                            new SqlColumnMetadata("name", SqlColumnType.VARCHAR),
+                            new SqlColumnMetadata("deptTitle", SqlColumnType.VARCHAR)
+                        ));
+
+                        jdbcRows.add(new SqlRowImpl(rowMetadata, row));
                     }
                 }
             }

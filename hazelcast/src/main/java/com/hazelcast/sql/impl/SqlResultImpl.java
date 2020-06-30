@@ -43,13 +43,14 @@ public class SqlResultImpl implements SqlResult {
         rowMetadata = state.getInitiatorState().getRowMetadata();
     }
 
+    @Nonnull
     @Override
     public SqlRowMetadata getRowMetadata() {
         return rowMetadata;
     }
 
-    @Override
     @Nonnull
+    @Override
     public Iterator<SqlRow> iterator() {
         if (iterator == null) {
             Iterator<SqlRow> iterator0 = new RowToSqlRowIterator(getQueryInitiatorState().getResultProducer().iterator());
@@ -58,7 +59,7 @@ public class SqlResultImpl implements SqlResult {
 
             return iterator0;
         } else {
-            throw QueryException.error("Iterator can be requested only once.");
+            throw new IllegalStateException("Iterator can be requested only once.");
         }
     }
 
@@ -103,7 +104,7 @@ public class SqlResultImpl implements SqlResult {
         @Override
         public SqlRow next() {
             try {
-                return new SqlRowImpl(delegate.next());
+                return new SqlRowImpl(rowMetadata, delegate.next());
             } catch (NoSuchElementException e) {
                 throw e;
             } catch (Exception e) {

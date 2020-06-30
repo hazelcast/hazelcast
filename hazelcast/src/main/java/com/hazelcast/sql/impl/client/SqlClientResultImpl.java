@@ -61,6 +61,7 @@ public class SqlClientResultImpl implements SqlResult {
         this.pageSize = pageSize;
     }
 
+    @Nonnull
     @Override
     public SqlRowMetadata getRowMetadata() {
         // TODO: Implement.
@@ -167,7 +168,8 @@ public class SqlClientResultImpl implements SqlResult {
 
             Row row = currentPage.get(currentPagePosition++);
 
-            return new SqlRowImpl(row);
+            // TODO: Pass metadata!
+            return new SqlRowImpl(getRowMetadata(), row);
         }
 
         /**

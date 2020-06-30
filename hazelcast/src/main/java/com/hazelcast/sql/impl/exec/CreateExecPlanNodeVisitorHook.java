@@ -14,24 +14,15 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl;
+package com.hazelcast.sql.impl.exec;
 
-import com.hazelcast.sql.impl.worker.QueryFragmentScheduleCallback;
-
-import java.util.concurrent.atomic.AtomicInteger;
-
-public class LoggingQueryFragmentScheduleCallback implements QueryFragmentScheduleCallback {
-
-    private final AtomicInteger count = new AtomicInteger();
-
-    @Override
-    public boolean schedule(boolean force) {
-        count.incrementAndGet();
-
-        return true;
-    }
-
-    public int getCount() {
-        return count.get();
-    }
+/**
+ * An interface that could be injected to alter produced Execs.
+ */
+public interface CreateExecPlanNodeVisitorHook {
+    /**
+     * @param exec Current exec.
+     * @return Altered exec.
+     */
+    Exec onExec(Exec exec);
 }

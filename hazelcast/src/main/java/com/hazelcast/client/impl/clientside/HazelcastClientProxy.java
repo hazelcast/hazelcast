@@ -31,9 +31,6 @@ import com.hazelcast.core.DistributedObjectListener;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ICacheManager;
 import com.hazelcast.core.IExecutorService;
-import com.hazelcast.map.IMap;
-import com.hazelcast.sql.SqlService;
-import com.hazelcast.topic.ITopic;
 import com.hazelcast.core.LifecycleService;
 import com.hazelcast.cp.CPSubsystem;
 import com.hazelcast.crdt.pncounter.PNCounter;
@@ -42,6 +39,7 @@ import com.hazelcast.flakeidgen.FlakeIdGenerator;
 import com.hazelcast.instance.impl.TerminatedLifecycleService;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.logging.LoggingService;
+import com.hazelcast.map.IMap;
 import com.hazelcast.multimap.MultiMap;
 import com.hazelcast.partition.PartitionService;
 import com.hazelcast.replicatedmap.ReplicatedMap;
@@ -49,6 +47,8 @@ import com.hazelcast.ringbuffer.Ringbuffer;
 import com.hazelcast.scheduledexecutor.IScheduledExecutorService;
 import com.hazelcast.spi.impl.SerializationServiceSupport;
 import com.hazelcast.splitbrainprotection.SplitBrainProtectionService;
+import com.hazelcast.sql.SqlService;
+import com.hazelcast.topic.ITopic;
 import com.hazelcast.transaction.HazelcastXAResource;
 import com.hazelcast.transaction.TransactionContext;
 import com.hazelcast.transaction.TransactionException;
@@ -313,8 +313,9 @@ public class HazelcastClientProxy implements HazelcastInstance, SerializationSer
         return "HazelcastClientInstance {NOT ACTIVE}";
     }
 
+    @Nonnull
     @Override
-    public SqlService getSqlService() {
-        return getClient().getSqlService();
+    public SqlService getSql() {
+        return getClient().getSql();
     }
 }

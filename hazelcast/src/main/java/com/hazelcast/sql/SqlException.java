@@ -17,7 +17,9 @@
 package com.hazelcast.sql;
 
 import com.hazelcast.core.HazelcastException;
+import com.hazelcast.spi.annotation.PrivateApi;
 
+import javax.annotation.Nonnull;
 import java.util.UUID;
 
 /**
@@ -28,7 +30,8 @@ public class SqlException extends HazelcastException {
     private final UUID originatingMemberId;
     private final int code;
 
-    public SqlException(UUID originatingMemberId, int code, String message, Throwable cause) {
+    @PrivateApi
+    public SqlException(@Nonnull UUID originatingMemberId, int code, String message, Throwable cause) {
         super(message, cause);
 
         this.originatingMemberId = originatingMemberId;
@@ -36,14 +39,23 @@ public class SqlException extends HazelcastException {
     }
 
     /**
-     * @return ID of the member where the error occurred.
+     * Gets ID of the member that caused or initiated an error condition.
+     *
+     * @return ID of the member that caused or initiated an error condition
      */
+    @Nonnull
     public UUID getOriginatingMemberId() {
         return originatingMemberId;
     }
 
     /**
-     * @return Error code from {@link SqlErrorCode}.
+     * Gets the error code associated with the exception.
+     * <p>
+     * The returned value is one of the constants defined in the {@link SqlErrorCode} class.
+     *
+     * @return the error code associated with the exception
+     *
+     * @see SqlErrorCode
      */
     public int getCode() {
         return code;

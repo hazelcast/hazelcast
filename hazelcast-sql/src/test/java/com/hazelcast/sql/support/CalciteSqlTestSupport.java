@@ -34,13 +34,13 @@ import java.util.List;
 public class CalciteSqlTestSupport extends SqlTestSupport {
     @SuppressWarnings("unchecked")
     protected <T extends SqlPlan> T getPlan(HazelcastInstance target, String sql) {
-        SqlServiceImpl sqlService = (SqlServiceImpl) target.getSqlService();
+        SqlServiceImpl sqlService = (SqlServiceImpl) target.getSql();
 
         return (T) sqlService.getOptimizer().prepare(new OptimizationTask.Builder(sql).build());
     }
 
     protected SqlResult executeQuery(HazelcastInstance target, String sql) {
-        return target.getSqlService().query(sql);
+        return target.getSql().query(sql);
     }
 
     protected SqlResultImpl executeQueryEx(HazelcastInstance target, String sql) {

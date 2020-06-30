@@ -14,24 +14,26 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl;
+package com.hazelcast.sql.impl.type;
 
-import com.hazelcast.sql.impl.worker.QueryFragmentScheduleCallback;
+/**
+ * Exception thrown in case of data type mismatch.
+ */
+public class QueryDataTypeMismatchException extends RuntimeException {
 
-import java.util.concurrent.atomic.AtomicInteger;
+    private final Class<?> expectedClass;
+    private final Class<?> actualClass;
 
-public class LoggingQueryFragmentScheduleCallback implements QueryFragmentScheduleCallback {
-
-    private final AtomicInteger count = new AtomicInteger();
-
-    @Override
-    public boolean schedule(boolean force) {
-        count.incrementAndGet();
-
-        return true;
+    public QueryDataTypeMismatchException(Class<?> expectedClass, Class<?> actualClass) {
+        this.expectedClass = expectedClass;
+        this.actualClass = actualClass;
     }
 
-    public int getCount() {
-        return count.get();
+    public Class<?> getExpectedClass() {
+        return expectedClass;
+    }
+
+    public Class<?> getActualClass() {
+        return actualClass;
     }
 }

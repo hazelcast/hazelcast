@@ -23,7 +23,6 @@ import com.hazelcast.replicatedmap.impl.ReplicatedMapProxy;
 import com.hazelcast.sql.impl.NodeServiceProvider;
 import com.hazelcast.sql.impl.exec.agg.AggregateExec;
 import com.hazelcast.sql.impl.exec.fetch.FetchExec;
-import com.hazelcast.sql.impl.exec.root.RootResultConsumer;
 import com.hazelcast.sql.impl.exec.scan.index.MapIndexScanExec;
 import com.hazelcast.sql.impl.exec.io.BroadcastSendExec;
 import com.hazelcast.sql.impl.exec.io.InboundHandler;
@@ -91,12 +90,6 @@ public class CreateExecPlanNodeVisitor implements PlanNodeVisitor {
     /** Local member ID. */
     private final UUID localMemberId;
 
-    /** Root result consumer. */
-    private final RootResultConsumer rootResultConsumer;
-
-    /** Root batch size. */
-    private final int rootBatchSize;
-
     /** Operation. */
     private final QueryExecuteOperation operation;
 
@@ -108,6 +101,9 @@ public class CreateExecPlanNodeVisitor implements PlanNodeVisitor {
 
     /** Recommended outbox batch size in bytes. */
     private final int outboxBatchSize;
+
+    /** Hook to alter produced Exec (for testing purposes). */
+    private final CreateExecPlanNodeVisitorHook hook;
 
     /** Stack of elements to be merged. */
     private final ArrayList<Exec> stack = new ArrayList<>(1);
@@ -126,23 +122,21 @@ public class CreateExecPlanNodeVisitor implements PlanNodeVisitor {
         NodeServiceProvider nodeServiceProvider,
         InternalSerializationService serializationService,
         UUID localMemberId,
-        RootResultConsumer rootResultConsumer,
-        int rootBatchSize,
         QueryExecuteOperation operation,
         FlowControlFactory flowControlFactory,
         PartitionIdSet localParts,
-        int outboxBatchSize
+        int outboxBatchSize,
+        CreateExecPlanNodeVisitorHook hook
     ) {
         this.operationHandler = operationHandler;
         this.nodeServiceProvider = nodeServiceProvider;
         this.serializationService = serializationService;
         this.localMemberId = localMemberId;
-        this.rootResultConsumer = rootResultConsumer;
-        this.rootBatchSize = rootBatchSize;
         this.operation = operation;
         this.flowControlFactory = flowControlFactory;
         this.localParts = localParts;
         this.outboxBatchSize = outboxBatchSize;
+        this.hook = hook;
     }
 
     @Override
@@ -152,8 +146,8 @@ public class CreateExecPlanNodeVisitor implements PlanNodeVisitor {
         exec = new RootExec(
             node.getId(),
             pop(),
-            rootResultConsumer,
-            rootBatchSize
+            operation.getRootConsumer(),
+            operation.getRootBatchSize()
         );
     }
 
@@ -563,6 +557,12 @@ public class CreateExecPlanNodeVisitor implements PlanNodeVisitor {
      * Public for testing purposes only.
      */
     public void push(Exec exec) {
+        CreateExecPlanNodeVisitorHook hook0 = hook;
+
+        if (hook0 != null) {
+            exec = hook0.onExec(exec);
+        }
+
         stack.add(exec);
     }
 

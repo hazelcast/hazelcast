@@ -53,6 +53,7 @@ import static java.time.ZoneOffset.UTC;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.Assert.assertEquals;
 
 public class SchemaTest extends CalciteSqlTestSupport {
 
@@ -277,20 +278,30 @@ public class SchemaTest extends CalciteSqlTestSupport {
         assertThat((LocalDate) rows.get(0).getObject(13)).isEqualTo(allTypes.getLocalDate());
         assertThat((LocalDateTime) rows.get(0).getObject(14)).isEqualTo(allTypes.getLocalDateTime());
 
-        assertThat(rows.get(0).getObject(15))
-                .isEqualTo(OffsetDateTime.ofInstant(allTypes.getDate().toInstant(), ZoneId.systemDefault()));
+        assertEquals(
+            rows.get(0).getObject(15),
+            OffsetDateTime.ofInstant(allTypes.getDate().toInstant(), ZoneId.systemDefault())
+        );
 
-        assertThat(rows.get(0).getObject(16))
-                .isEqualTo(allTypes.getCalendar().toZonedDateTime().toOffsetDateTime());
+        assertEquals(
+            rows.get(0).getObject(16),
+            allTypes.getCalendar().toZonedDateTime().toOffsetDateTime()
+        );
 
-        assertThat(rows.get(0).getObject(17))
-                .isEqualTo(OffsetDateTime.ofInstant(allTypes.getInstant(), ZoneId.systemDefault()));
+        assertEquals(
+            rows.get(0).getObject(17),
+            OffsetDateTime.ofInstant(allTypes.getInstant(), ZoneId.systemDefault())
+        );
 
-        assertThat(rows.get(0).getObject(18))
-                .isEqualTo(allTypes.getZonedDateTime().toOffsetDateTime());
+        assertEquals(
+            rows.get(0).getObject(18),
+            allTypes.getZonedDateTime().toOffsetDateTime()
+        );
 
-        assertThat(rows.get(0).getObject(19))
-                .isEqualTo(allTypes.offsetDateTime);
+        assertEquals(
+            rows.get(0).getObject(19),
+            allTypes.offsetDateTime
+        );
     }
 
     @Test

@@ -809,8 +809,9 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         return concurrencyDetection;
     }
 
+    @Nonnull
     @Override
-    public SqlService getSqlService() {
+    public SqlService getSql() {
         return sqlService;
     }
 

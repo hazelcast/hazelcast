@@ -2613,15 +2613,6 @@ public class Config {
         return this;
     }
 
-    public SqlConfig getSqlConfig() {
-        return sqlConfig;
-    }
-
-    public Config setSqlConfig(SqlConfig sqlConfig) {
-        this.sqlConfig = sqlConfig;
-        return this;
-    }
-
     /**
      * Returns the metrics collection config.
      */
@@ -2637,6 +2628,24 @@ public class Config {
     public Config setMetricsConfig(@Nonnull MetricsConfig metricsConfig) {
         Preconditions.checkNotNull(metricsConfig, "metricsConfig");
         this.metricsConfig = metricsConfig;
+        return this;
+    }
+
+    /**
+     * @return Return SQL config.
+     */
+    @Nonnull
+    public SqlConfig getSqlConfig() {
+        return sqlConfig;
+    }
+
+    /**
+     * Sets SQL config.
+     */
+    @Nonnull
+    public Config setSqlConfig(@Nonnull SqlConfig sqlConfig) {
+        Preconditions.checkNotNull(sqlConfig, "sqlConfig");
+        this.sqlConfig = sqlConfig;
         return this;
     }
 

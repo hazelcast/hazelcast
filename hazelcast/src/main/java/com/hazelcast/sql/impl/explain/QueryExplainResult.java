@@ -35,7 +35,7 @@ public class QueryExplainResult implements SqlResult {
     private static final String COLUMN_NAME = "ITEM";
 
     private static final SqlColumnMetadata COLUMN_METADATA = new SqlColumnMetadata(COLUMN_NAME, SqlColumnType.VARCHAR);
-    private static final SqlRowMetadata ROW_METADATA = new SqlRowMetadata(Collections.singletonList(COLUMN_METADATA));
+    static final SqlRowMetadata ROW_METADATA = new SqlRowMetadata(Collections.singletonList(COLUMN_METADATA));
 
     private final List<SqlRow> rows;
 
@@ -43,6 +43,7 @@ public class QueryExplainResult implements SqlResult {
         this.rows = rows;
     }
 
+    @Nonnull
     @Override
     public SqlRowMetadata getRowMetadata() {
         return ROW_METADATA;
