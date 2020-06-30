@@ -18,6 +18,7 @@ package com.hazelcast.sql;
 
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableWriter;
+import com.hazelcast.spi.annotation.Beta;
 
 import javax.annotation.Nonnull;
 
@@ -100,6 +101,7 @@ import javax.annotation.Nonnull;
  *     }
  * </pre>
  */
+@Beta
 public interface SqlService {
     /**
      * Convenient method to execute a distributed query with the given parameters.
