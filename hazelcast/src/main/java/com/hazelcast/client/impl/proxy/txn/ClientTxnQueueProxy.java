@@ -20,6 +20,7 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.TransactionalQueueOfferCodec;
 import com.hazelcast.client.impl.protocol.codec.TransactionalQueuePeekCodec;
 import com.hazelcast.client.impl.protocol.codec.TransactionalQueuePollCodec;
+import com.hazelcast.client.impl.protocol.codec.TransactionalQueueRetainAllCodec;
 import com.hazelcast.client.impl.protocol.codec.TransactionalQueueSizeCodec;
 import com.hazelcast.client.impl.protocol.codec.TransactionalQueueTakeCodec;
 import com.hazelcast.client.impl.spi.ClientTransactionContext;
@@ -28,10 +29,14 @@ import com.hazelcast.transaction.TransactionalQueue;
 import com.hazelcast.internal.serialization.Data;
 
 import javax.annotation.Nonnull;
+import java.util.Collection;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import static com.hazelcast.internal.util.ThreadUtil.getThreadId;
 import static java.lang.Thread.currentThread;
+import static java.util.Arrays.asList;
 
 /**
  * Proxy implementation of {@link TransactionalQueue}.
@@ -121,5 +126,18 @@ public class ClientTxnQueueProxy<E> extends ClientTxnProxy implements Transactio
 
     @Override
     void onDestroy() {
+    }
+
+    @Override
+    public boolean retainAll(E... items) {
+        return retainAll(asList(items));
+    }
+
+    @Override
+    public boolean retainAll(Collection<? extends E> items) {
+        List<Data> data = items.stream().map(this::toData).collect(Collectors.toList());
+        ClientMessage request = TransactionalQueueRetainAllCodec.encodeRequest(name, getTransactionId(), getThreadId(), data);
+        ClientMessage response = invoke(request);
+        return TransactionalQueueRetainAllCodec.decodeResponse(response).response;
     }
 }
