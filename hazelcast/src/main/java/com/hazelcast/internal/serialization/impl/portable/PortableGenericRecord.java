@@ -25,6 +25,7 @@ import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import javax.annotation.Nonnull;
+import java.util.Arrays;
 
 public class PortableGenericRecord implements GenericRecord {
 
@@ -177,4 +178,11 @@ public class PortableGenericRecord implements GenericRecord {
         return fd;
     }
 
+    @Override
+    public String toString() {
+        return "PortableGenericRecord{" +
+                "classDefinition=" + classDefinition +
+                ", objects=" + Arrays.toString(objects) +
+                '}';
+    }
 }
