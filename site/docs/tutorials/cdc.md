@@ -1,5 +1,4 @@
 ---
-id: cdc
 title: Change Data Capture from MySQL
 sidebar_label: MySQL
 description: How to monitor Change Data Capture data from a MySQL database in Jet.
@@ -567,5 +566,3 @@ docker ps -a
 
 Of course, if any are still running, simply stop them using
 `docker stop <name>` or `docker stop <containerId>`.
-
-[Back to main](../cdc.md)

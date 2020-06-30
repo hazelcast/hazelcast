@@ -542,5 +542,3 @@ docker ps -a
 
 Of course, if any are still running, simply stop them using
 `docker stop <name>` or `docker stop <containerId>`.
-
-[Back to main](../cdc.md)

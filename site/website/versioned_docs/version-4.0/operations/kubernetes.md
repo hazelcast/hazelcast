@@ -448,7 +448,7 @@ navigate to *Jobs* section on left menu. You should be able to see your
 job running/completed successfully like below and inspect the logs if
 you like.
 
-![minikube-dashboard](../assets/minikube-dashboard.png)
+![minikube-dashboard](/docs/assets/minikube-dashboard.png)
 
 ## Access From Outside The Kubernetes
 
