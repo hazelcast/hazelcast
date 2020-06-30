@@ -269,9 +269,10 @@ abstract class ClientCacheProxySupport<K, V> extends ClientProxy implements ICac
         }
     }
 
-    protected void injectDependencies(Object obj) {
+    @SuppressWarnings("unchecked")
+    protected <T> T injectDependencies(T obj) {
         ManagedContext managedContext = getSerializationService().getManagedContext();
-        managedContext.initialize(obj);
+        return (T) managedContext.initialize(obj);
     }
 
     protected long nowInNanosOrDefault() {
@@ -970,11 +971,11 @@ abstract class ClientCacheProxySupport<K, V> extends ClientProxy implements ICac
     }
 
     private void submitLoadAllTask(ClientMessage request, CompletionListener completionListener, final List<Data> binaryKeys) {
-        final CompletionListener listener = completionListener != null ? completionListener : NULL_COMPLETION_LISTENER;
+        final CompletionListener listener = completionListener != null
+            ? injectDependencies(completionListener)
+            : NULL_COMPLETION_LISTENER;
         ClientDelegatingFuture<V> delegatingFuture = null;
         try {
-            injectDependencies(completionListener);
-
             final long startNanos = nowInNanosOrDefault();
             ClientInvocationFuture future = new ClientInvocation(getClient(), request, getName()).invoke();
             delegatingFuture = newDelegatingFuture(future, clientMessage -> Boolean.TRUE);

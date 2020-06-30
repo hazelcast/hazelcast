@@ -74,11 +74,11 @@ public class HazelcastClientManagedContextTest extends HazelcastTestSupport {
 
     @Test
     public void testInitialize() {
-        serializationService.getManagedContext().initialize(userClass);
+        DependencyInjectionUserClass initializedUserClass = (DependencyInjectionUserClass) serializationService.getManagedContext().initialize(userClass);
 
-        assertEquals(client, userClass.hazelcastInstance);
-        assertNull("The client doesn't inject the Node", userClass.node);
-        assertEquals(serializationService, userClass.serializationService);
+        assertEquals(client, initializedUserClass.hazelcastInstance);
+        assertNull("The client doesn't inject the Node", initializedUserClass.node);
+        assertEquals(serializationService, initializedUserClass.serializationService);
         assertTrue(userContext.wasCalled);
     }
 

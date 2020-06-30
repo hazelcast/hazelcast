@@ -32,6 +32,7 @@ import com.hazelcast.map.EventJournalMapEvent;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.map.QueryCache;
+import com.hazelcast.map.impl.ComputeEntryProcessor;
 import com.hazelcast.map.impl.ComputeIfPresentEntryProcessor;
 import com.hazelcast.map.impl.ComputeIfAbsentEntryProcessor;
 import com.hazelcast.map.impl.KeyValueConsumingEntryProcessor;
@@ -964,8 +965,9 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
                     + " must be greater or equal to minSize " + minSize);
         }
         final ManagedContext context = serializationService.getManagedContext();
-        context.initialize(predicate);
-        context.initialize(projection);
+        predicate = (java.util.function.Predicate<? super EventJournalMapEvent<K, V>>) context.initialize(predicate);
+        projection = (java.util.function.Function<? super EventJournalMapEvent<K, V>, ? extends T>)
+            context.initialize(projection);
         final MapEventJournalReadOperation<K, V, T> op = new MapEventJournalReadOperation<>(
                 name, startSequence, minSize, maxSize, predicate, projection);
         op.setPartitionId(partitionId);
@@ -1124,4 +1126,46 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
         }
     }
 
+    public V compute(@Nonnull K key, @Nonnull BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
+        checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
+        checkNotNull(key, NULL_BIFUNCTION_IS_NOT_ALLOWED);
+
+        if (SerializationUtil.isClassStaticAndSerializable(remappingFunction)
+                && isClusterVersionGreaterOrEqual(Versions.V4_1)) {
+            ComputeEntryProcessor<K, V> ep = new ComputeEntryProcessor<>(remappingFunction);
+            return executeOnKey(key, ep);
+        } else {
+            return computeLocally(key, remappingFunction);
+        }
+    }
+
+    private V computeLocally(K key,
+                                      BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
+
+        while (true) {
+            Data oldValueAsData = toData(getInternal(key));
+            V oldValueClone = toObject(oldValueAsData);
+            V newValue = remappingFunction.apply(key, oldValueClone);
+
+            if (oldValueAsData != null) {
+                if (newValue != null) {
+                    if (replaceInternal(key, oldValueAsData, toData(newValue))) {
+                        return newValue;
+                    }
+                } else if (removeInternal(key, oldValueAsData)) {
+                    return null;
+                }
+            } else {
+                if (newValue != null) {
+                    Data result =  putIfAbsentInternal(key, toData(newValue), UNSET, TimeUnit.MILLISECONDS, UNSET,
+                            TimeUnit.MILLISECONDS);
+                    if (result == null) {
+                        return newValue;
+                    }
+                } else {
+                    return null;
+                }
+            }
+        }
+    }
 }

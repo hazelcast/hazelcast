@@ -56,10 +56,10 @@ public final class ClientExecutionServiceImpl implements TaskScheduler, StaticMe
         logger = loggingService.getLogger(TaskScheduler.class);
         internalExecutor = new LoggingScheduledExecutor(logger, internalPoolSize,
                 new PoolExecutorThreadFactory(name + ".internal-", classLoader), (r, executor) -> {
-                    String message = "Internal executor rejected task: " + r + ", because client is shutting down...";
-                    logger.finest(message);
-                    throw new RejectedExecutionException(message);
-                });
+            String message = "Internal executor rejected task: " + r + ", because client is shutting down...";
+            logger.finest(message);
+            throw new RejectedExecutionException(message);
+        });
     }
 
     @Override
@@ -83,11 +83,11 @@ public final class ClientExecutionServiceImpl implements TaskScheduler, StaticMe
     }
 
     public void shutdown() {
-        shutdownExecutor("internal", internalExecutor, logger);
+        internalExecutor.shutdown();
+        awaitExecutorTermination("internal", internalExecutor, logger);
     }
 
-    public static void shutdownExecutor(String name, ExecutorService executor, ILogger logger) {
-        executor.shutdown();
+    public static void awaitExecutorTermination(String name, ExecutorService executor, ILogger logger) {
         try {
             boolean success = executor.awaitTermination(TERMINATE_TIMEOUT_SECONDS, TimeUnit.SECONDS);
             if (!success) {

@@ -18,6 +18,7 @@ package com.hazelcast.client;
 
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ClientSecurityConfig;
+import com.hazelcast.client.config.ConnectionRetryConfig;
 import com.hazelcast.client.impl.spi.impl.ClientExecutionServiceImpl;
 import com.hazelcast.client.properties.ClientProperty;
 import com.hazelcast.client.test.TestHazelcastFactory;
@@ -812,5 +813,26 @@ public class ClientRegressionWithMockNetworkTest extends HazelcastTestSupport {
 
         topic.removeMessageListener(id);
         assertFalse(isClientDisconnected.get());
+    }
+
+    @Test(timeout = 20000)
+    public void testClientShutdown_shouldNotWaitForNextConnectionAttempt() throws InterruptedException {
+        HazelcastInstance server = hazelcastFactory.newHazelcastInstance();
+
+        ClientConfig clientConfig = new ClientConfig();
+        ConnectionRetryConfig connectionRetryConfig = clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig();
+        connectionRetryConfig.setInitialBackoffMillis(240000);
+        connectionRetryConfig.setMaxBackoffMillis(300000);
+        connectionRetryConfig.setMultiplier(1);
+        connectionRetryConfig.setClusterConnectTimeoutMillis(Integer.MAX_VALUE);
+
+
+        HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
+
+        //client will get into retry
+        server.shutdown();
+        // we expect this shutdown not to wait for 4 minutes (240000).
+        // Test will timeout in 20 seconds. Note that global executor shutdown in ClientExecutionServiceImpl timeout is 30 seconds
+        client.shutdown();
     }
 }
