@@ -26,31 +26,31 @@ import java.util.Map;
 public class PojoUpsertTargetDescriptor implements UpsertTargetDescriptor {
 
     private String className;
-    private Map<String, String> typeNamesByFields;
+    private Map<String, String> typeNamesByPaths;
 
     @SuppressWarnings("unused")
     PojoUpsertTargetDescriptor() {
     }
 
-    public PojoUpsertTargetDescriptor(String className, Map<String, String> typeNamesByFields) {
+    public PojoUpsertTargetDescriptor(String className, Map<String, String> typeNamesByPaths) {
         this.className = className;
-        this.typeNamesByFields = typeNamesByFields;
+        this.typeNamesByPaths = typeNamesByPaths;
     }
 
     @Override
     public UpsertTarget create(InternalSerializationService serializationService) {
-        return new PojoUpsertTarget(className, typeNamesByFields);
+        return new PojoUpsertTarget(className, typeNamesByPaths);
     }
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeUTF(className);
-        out.writeObject(typeNamesByFields);
+        out.writeObject(typeNamesByPaths);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         className = in.readUTF();
-        typeNamesByFields = in.readObject();
+        typeNamesByPaths = in.readObject();
     }
 }
