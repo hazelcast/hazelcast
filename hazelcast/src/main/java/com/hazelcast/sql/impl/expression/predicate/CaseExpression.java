@@ -172,4 +172,10 @@ public class CaseExpression<T> implements Expression<T>, IdentifiedDataSerializa
         return result;
     }
 
+    @Override
+    public String toString() {
+        return "CaseExpression{" + "conditions=" + Arrays.toString(conditions) + ", results=" + Arrays.toString(results)
+                + ", resultType=" + resultType + '}';
+    }
+
 }

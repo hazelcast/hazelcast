@@ -118,11 +118,6 @@ public final class HazelcastTypeSystem extends RelDataTypeSystemImpl {
      * @return {@code true} if the cast is possible, {@code false} otherwise.
      */
     public static boolean canCast(RelDataType from, RelDataType to) {
-        if (typeName(from) == NULL) {
-            // NULL can be casted to any type
-            return true;
-        }
-
         QueryDataType queryFrom = SqlToQueryType.map(typeName(from));
         QueryDataType queryTo = SqlToQueryType.map(typeName(to));
         return queryFrom.getConverter().canConvertTo(queryTo.getTypeFamily());
@@ -174,19 +169,12 @@ public final class HazelcastTypeSystem extends RelDataTypeSystemImpl {
         // Convert literal value to 'from' type and then to 'to' type.
 
         Object fromValue;
-        Object toValue;
         try {
             fromValue = fromConverter.convertToSelf(valueConverter, value);
-            toValue = toConverter.convertToSelf(fromConverter, fromValue);
+            toConverter.convertToSelf(fromConverter, fromValue);
         } catch (QueryException e) {
             assert e.getCode() == SqlErrorCode.DATA_EXCEPTION;
             return false;
-        }
-
-        if (toValue instanceof BigDecimal) {
-            // make sure the resulting decimal is valid
-            BigDecimal numeric = (BigDecimal) toValue;
-            return numeric.precision() <= HazelcastTypeSystem.MAX_DECIMAL_PRECISION;
         }
 
         return true;
