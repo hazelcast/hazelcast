@@ -131,10 +131,14 @@ public final class PortableMapOptionsMetadataResolver implements MapOptionsMetad
             fields.putIfAbsent(field.getName(), field);
         }
 
-        for (ExternalField ef : externalFieldsByPath.values()) {
-            if (!fields.containsKey(ef.name())) {
-                throw QueryException.error(format("Unmapped field - '%s'", ef.name()));
-            }
+        for (Entry<QueryPath, ExternalField> entry : externalFieldsByPath.entrySet()) {
+            QueryPath path = entry.getKey();
+            String name = entry.getValue().name();
+            QueryDataType type = entry.getValue().type();
+
+            TableField field = new MapTableField(name, type, false, path);
+
+            fields.put(field.getName(), field);
         }
 
         return new MapOptionsMetadata(

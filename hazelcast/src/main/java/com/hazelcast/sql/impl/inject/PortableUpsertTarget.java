@@ -27,12 +27,9 @@ import com.hazelcast.sql.impl.QueryException;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
-import java.util.HashMap;
-import java.util.Map;
 
 import static com.hazelcast.sql.impl.schema.map.options.PortableMapOptionsMetadataResolver.lookupClassDefinition;
 import static java.lang.String.format;
-import static java.util.Objects.requireNonNull;
 
 // TODO: can it be non-thread safe ?
 public class PortableUpsertTarget implements UpsertTarget {
@@ -50,13 +47,21 @@ public class PortableUpsertTarget implements UpsertTarget {
 
     @Override
     public UpsertInjector createInjector(String path) {
-        FieldDefinition fieldDefinition = requireNonNull(classDefinition.getField(path), "Missing field");
-        return value -> portable.set(fieldDefinition.getName(), value);
+        int fieldIndex = classDefinition.hasField(path) ? classDefinition.getField(path).getIndex() : -1;
+        return value -> {
+            if (fieldIndex == -1 && value != null) {
+                throw QueryException.dataException(format("Unable to inject non null (%s) '%s'", value, path));
+            }
+
+            if (fieldIndex > -1) {
+                portable.set(fieldIndex, value);
+            }
+        };
     }
 
     @Override
     public void init() {
-        portable = new GenericPortable();
+        portable = new GenericPortable(classDefinition.getFieldCount());
     }
 
     @Override
@@ -69,14 +74,14 @@ public class PortableUpsertTarget implements UpsertTarget {
     // TODO: replace with GenericRecord when available
     private final class GenericPortable implements VersionedPortable {
 
-        private final Map<String, Object> valuesByFields;
+        private final Object[] values;
 
-        private GenericPortable() {
-            this.valuesByFields = new HashMap<>();
+        private GenericPortable(int size) {
+            this.values = new Object[size];
         }
 
-        private void set(String fieldName, Object value) {
-            valuesByFields.put(fieldName, value);
+        private void set(int fieldIndex, Object value) {
+            values[fieldIndex] = value;
         }
 
         @Override
@@ -98,7 +103,7 @@ public class PortableUpsertTarget implements UpsertTarget {
         public void writePortable(PortableWriter writer) throws IOException {
             for (int i = 0; i < classDefinition.getFieldCount(); i++) {
                 FieldDefinition fieldDefinition = classDefinition.getField(i);
-                write(writer, fieldDefinition, valuesByFields.get(fieldDefinition.getName()));
+                write(writer, fieldDefinition, values[i]);
             }
         }
 
