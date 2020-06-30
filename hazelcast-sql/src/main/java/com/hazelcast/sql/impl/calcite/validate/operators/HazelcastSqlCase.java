@@ -23,14 +23,23 @@ import org.apache.calcite.sql.SqlOperator;
 import org.apache.calcite.sql.fun.SqlCase;
 import org.apache.calcite.sql.parser.SqlParserPos;
 
+import javax.annotation.Nonnull;
+
+/**
+ * Custom Hazelcast {@link SqlCase} node to report {@link HazelcastSqlCaseOperator
+ * custom Hazelcast CASE operator} as its operator to override the default
+ * return type inference strategy.
+ *
+ * @see HazelcastSqlCaseOperator#inferReturnType(org.apache.calcite.sql.SqlOperatorBinding)
+ */
 public final class HazelcastSqlCase extends SqlCase {
 
     public HazelcastSqlCase(SqlParserPos pos, SqlNode value, SqlNodeList whenList, SqlNodeList thenList, SqlNode elseExpr) {
         super(pos, value, whenList, thenList, elseExpr);
     }
 
-    @SuppressWarnings("NullableProblems")
     @Override
+    @Nonnull
     public SqlOperator getOperator() {
         return HazelcastSqlOperatorTable.CASE;
     }

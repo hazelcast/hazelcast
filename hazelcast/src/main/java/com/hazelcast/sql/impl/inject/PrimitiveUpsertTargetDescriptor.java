@@ -20,16 +20,16 @@ import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 
-public class ObjectUpsertTargetDescriptor implements UpsertTargetDescriptor {
+public class PrimitiveUpsertTargetDescriptor implements UpsertTargetDescriptor {
 
-    public static final UpsertTargetDescriptor INSTANCE = new ObjectUpsertTargetDescriptor();
+    public static final UpsertTargetDescriptor INSTANCE = new PrimitiveUpsertTargetDescriptor();
 
-    ObjectUpsertTargetDescriptor() {
+    PrimitiveUpsertTargetDescriptor() {
     }
 
     @Override
     public UpsertTarget create(InternalSerializationService serializationService) {
-        return new ObjectUpsertTarget();
+        return new PrimitiveUpsertTarget();
     }
 
     @Override

@@ -25,9 +25,11 @@ import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.extract.GenericQueryTargetDescriptor;
 import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.inject.PojoUpsertTargetDescriptor;
+import com.hazelcast.sql.impl.inject.PrimitiveUpsertTargetDescriptor;
 import com.hazelcast.sql.impl.schema.ExternalTable.ExternalField;
 import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.schema.map.MapTableField;
+import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.sql.impl.type.QueryDataTypeUtils;
 
 import java.lang.reflect.Field;
@@ -37,18 +39,21 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 
-import static com.hazelcast.sql.impl.connector.SqlConnector.POJO_SERIALIZATION_FORMAT;
+import static com.hazelcast.sql.impl.connector.SqlConnector.JAVA_SERIALIZATION_FORMAT;
 import static com.hazelcast.sql.impl.connector.SqlKeyValueConnector.TO_KEY_CLASS;
 import static com.hazelcast.sql.impl.connector.SqlKeyValueConnector.TO_VALUE_CLASS;
+import static com.hazelcast.sql.impl.extract.QueryPath.VALUE_PATH;
 import static java.lang.Character.toLowerCase;
 import static java.lang.Character.toUpperCase;
 import static java.lang.String.format;
+import static java.util.Collections.singletonMap;
 
 // TODO: deduplicate with MapSampleMetadataResolver
-public final class PojoMapOptionsMetadataResolver implements MapOptionsMetadataResolver {
+public final class JavaMapOptionsMetadataResolver implements MapOptionsMetadataResolver {
 
-    public static final PojoMapOptionsMetadataResolver INSTANCE = new PojoMapOptionsMetadataResolver();
+    public static final JavaMapOptionsMetadataResolver INSTANCE = new JavaMapOptionsMetadataResolver();
 
     private static final String METHOD_PREFIX_GET = "get";
     private static final String METHOD_PREFIX_IS = "is";
@@ -58,11 +63,12 @@ public final class PojoMapOptionsMetadataResolver implements MapOptionsMetadataR
     private static final String METHOD_GET_CLASS_ID = "getClassId";
     private static final String METHOD_GET_CLASS_VERSION = "getVersion";
 
-    private PojoMapOptionsMetadataResolver() { }
+    private JavaMapOptionsMetadataResolver() {
+    }
 
     @Override
     public String supportedFormat() {
-        return POJO_SERIALIZATION_FORMAT;
+        return JAVA_SERIALIZATION_FORMAT;
     }
 
     @Override
@@ -76,11 +82,17 @@ public final class PojoMapOptionsMetadataResolver implements MapOptionsMetadataR
         String className = options.get(classNameProperty);
 
         if (className == null) {
-            throw QueryException.error("Unable to resolve table metadata. Missing '" + classNameProperty + "' option");
+            throw QueryException.error(format("Unable to resolve table metadata. Missing '%s' option", classNameProperty));
         }
 
         Class<?> clazz = loadClass(className);
-        return resolveClass(clazz, isKey);
+
+        QueryDataType type = QueryDataTypeUtils.resolveTypeForClass(clazz);
+        if (type != QueryDataType.OBJECT) {
+            return resolvePrimitive(externalFields, type, isKey);
+        } else {
+            return resolveObject(externalFields, clazz, isKey);
+        }
     }
 
     // TODO: extract to util class ???
@@ -94,27 +106,92 @@ public final class PojoMapOptionsMetadataResolver implements MapOptionsMetadataR
         }
     }
 
-    @SuppressWarnings("checkstyle:CyclomaticComplexity")
-    private static MapOptionsMetadata resolveClass(
+    private MapOptionsMetadata resolvePrimitive(
+            List<ExternalField> externalFields,
+            QueryDataType type,
+            boolean isKey
+    ) {
+        Map<QueryPath, ExternalField> externalFieldsByPath =
+                extractFields(externalFields, isKey, name -> VALUE_PATH);
+
+        QueryPath path = isKey ? QueryPath.KEY_PATH : QueryPath.VALUE_PATH;
+
+        ExternalField externalField = externalFieldsByPath.get(path);
+        if (externalField != null && !externalField.type().equals(type)) {
+            throw QueryException.error(
+                    format("Mismatch between declared and inferred type - '%s'", externalField.name())
+            );
+        }
+        String name = externalField == null ? (isKey ? QueryPath.KEY : QueryPath.VALUE) : externalField.name();
+
+        TableField field = new MapTableField(name, type, false, path);
+
+        for (ExternalField ef : externalFieldsByPath.values()) {
+            if (!field.getName().equals(ef.name())) {
+                throw QueryException.error(format("Unmapped field - '%s'", ef.name()));
+            }
+        }
+
+        return new MapOptionsMetadata(
+                GenericQueryTargetDescriptor.INSTANCE,
+                PrimitiveUpsertTargetDescriptor.INSTANCE,
+                new LinkedHashMap<>(singletonMap(field.getName(), field))
+        );
+    }
+
+    private MapOptionsMetadata resolveObject(
+            List<ExternalField> externalFields,
             Class<?> clazz,
             boolean isKey
     ) {
-        Map<String, String> typeNamesByFields = new HashMap<>();
+        Map<QueryPath, ExternalField> externalFieldsByPath =
+                extractFields(externalFields, isKey, name -> new QueryPath(name, false));
+
+        Map<String, String> typeNamesByPaths = new HashMap<>();
         LinkedHashMap<String, TableField> fields = new LinkedHashMap<>();
+
+        for (Entry<String, Class<?>> entry : resolveClass(clazz).entrySet()) {
+            QueryPath path = new QueryPath(entry.getKey(), isKey);
+            QueryDataType type = QueryDataTypeUtils.resolveTypeForClass(entry.getValue());
+
+            ExternalField externalField = externalFieldsByPath.get(path);
+            if (externalField != null && !externalField.type().equals(type)) {
+                throw QueryException.error(
+                        format("Mismatch between declared and inferred type - '%s'", externalField.name())
+                );
+            }
+            String name = externalField == null ? entry.getKey() : externalField.name();
+
+            TableField field = new MapTableField(name, type, false, path);
+
+            typeNamesByPaths.putIfAbsent(path.getPath(), entry.getValue().getName());
+            fields.putIfAbsent(field.getName(), field);
+        }
+
+        for (ExternalField ef : externalFieldsByPath.values()) {
+            if (!fields.containsKey(ef.name())) {
+                throw QueryException.error(format("Unmapped field - '%s'", ef.name()));
+            }
+        }
+
+        return new MapOptionsMetadata(
+                GenericQueryTargetDescriptor.INSTANCE,
+                new PojoUpsertTargetDescriptor(clazz.getName(), typeNamesByPaths),
+                new LinkedHashMap<>(fields)
+        );
+    }
+
+    private static Map<String, Class<?>> resolveClass(
+            Class<?> clazz
+    ) {
+        Map<String, Class<?>> fields = new LinkedHashMap<>();
 
         for (Method method : clazz.getMethods()) {
             BiTuple<String, Class<?>> property = extractProperty(clazz, method);
             if (property == null) {
                 continue;
             }
-
-            String propertyName = property.element1();
-            Class<?> propertyClass = property.element2();
-
-            TableField tableField = toField(propertyName, propertyClass, isKey);
-
-            typeNamesByFields.putIfAbsent(propertyName, propertyClass.getName());
-            fields.putIfAbsent(propertyName, tableField);
+            fields.putIfAbsent(property.element1(), property.element2());
         }
 
         Class<?> classToInspect = clazz;
@@ -123,23 +200,12 @@ public final class PojoMapOptionsMetadataResolver implements MapOptionsMetadataR
                 if (skipField(field)) {
                     continue;
                 }
-
-                String fieldName = field.getName();
-                Class<?> fieldClass = field.getType();
-
-                TableField tableField = toField(fieldName, fieldClass, isKey);
-
-                typeNamesByFields.putIfAbsent(fieldName, fieldClass.getName());
-                fields.putIfAbsent(fieldName, tableField);
+                fields.putIfAbsent(field.getName(), field.getType());
             }
             classToInspect = classToInspect.getSuperclass();
         }
 
-        return new MapOptionsMetadata(
-                GenericQueryTargetDescriptor.INSTANCE,
-                new PojoUpsertTargetDescriptor(clazz.getName(), typeNamesByFields),
-                new LinkedHashMap<>(fields)
-        );
+        return fields;
     }
 
     @SuppressWarnings({"checkstyle:CyclomaticComplexity", "checkstyle:ReturnCount", "checkstyle:NPathComplexity"})
@@ -266,9 +332,5 @@ public final class PojoMapOptionsMetadataResolver implements MapOptionsMetadataR
         }
 
         return false;
-    }
-
-    private static MapTableField toField(String name, Class<?> clazz, boolean isKey) {
-        return new MapTableField(name, QueryDataTypeUtils.resolveTypeForClass(clazz), false, new QueryPath(name, isKey));
     }
 }

@@ -16,16 +16,17 @@
 
 package com.hazelcast.sql.impl.expression;
 
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.sql.impl.SqlDataSerializerHook;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.sql.impl.type.converter.Converter;
 
 /**
- * Expression which converts data from one type to another.
+ * Implements evaluation of SQL CAST operator.
  */
-public class CastExpression<T> extends UniExpressionWithType<T> {
+public class CastExpression<T> extends UniExpressionWithType<T> implements IdentifiedDataSerializable {
 
-    @SuppressWarnings("unused")
     public CastExpression() {
         // No-op.
     }
@@ -36,6 +37,16 @@ public class CastExpression<T> extends UniExpressionWithType<T> {
 
     public static CastExpression<?> create(Expression<?> operand, QueryDataType resultType) {
         return new CastExpression<>(operand, resultType);
+    }
+
+    @Override
+    public int getFactoryId() {
+        return SqlDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getClassId() {
+        return SqlDataSerializerHook.EXPRESSION_CAST;
     }
 
     @SuppressWarnings("unchecked")

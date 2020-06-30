@@ -18,9 +18,8 @@ package com.hazelcast.sql.impl.expression.predicate;
 
 import com.hazelcast.sql.impl.SqlDataSerializerHook;
 import com.hazelcast.sql.impl.SqlTestSupport;
-import com.hazelcast.sql.impl.expression.ColumnExpression;
+import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.SimpleExpressionEvalContext;
-import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -28,39 +27,39 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static com.hazelcast.sql.impl.type.QueryDataType.BOOLEAN;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class IsNullPredicateTest extends SqlTestSupport {
+public class NotPredicateTest extends SqlTestSupport {
 
     // NOTE: This test class verifies only basic functionality, look for more
     // extensive tests in hazelcast-sql module.
 
     @Test
-    public void testIsNullPredicate() {
-        IsNullPredicate predicate = IsNullPredicate.create(ColumnExpression.create(0, QueryDataType.VARCHAR));
-
-        assertFalse(predicate.eval(row("test"), SimpleExpressionEvalContext.create()));
-        assertTrue(predicate.eval(row(new Object[]{null}), SimpleExpressionEvalContext.create()));
+    public void testCreationAndEval() {
+        assertFalse(not(true).eval(row("foo"), SimpleExpressionEvalContext.create()));
+        assertTrue(not(false).eval(row("foo"), SimpleExpressionEvalContext.create()));
     }
 
     @Test
     public void testEquality() {
-        ColumnExpression<?> column1 = ColumnExpression.create(1, QueryDataType.VARCHAR);
-        ColumnExpression<?> column2 = ColumnExpression.create(2, QueryDataType.VARCHAR);
-
-        checkEquals(IsNullPredicate.create(column1), IsNullPredicate.create(column1), true);
-        checkEquals(IsNullPredicate.create(column1), IsNullPredicate.create(column2), false);
+        checkEquals(not(true), not(true), true);
+        checkEquals(not(true), not(false), false);
     }
 
     @Test
     public void testSerialization() {
-        IsNullPredicate original = IsNullPredicate.create(ColumnExpression.create(1, QueryDataType.VARCHAR));
-        IsNullPredicate restored = serializeAndCheck(original, SqlDataSerializerHook.EXPRESSION_IS_NULL);
+        NotPredicate original = not(true);
+        NotPredicate restored = serializeAndCheck(original, SqlDataSerializerHook.EXPRESSION_NOT);
 
         checkEquals(original, restored, true);
+    }
+
+    private static NotPredicate not(Boolean value) {
+        return NotPredicate.create(ConstantExpression.create(value, BOOLEAN));
     }
 
 }

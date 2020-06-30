@@ -27,18 +27,40 @@ import org.apache.calcite.util.ConversionUtil;
 import java.nio.charset.Charset;
 import java.util.List;
 
+import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeSystem.MAX_DECIMAL_PRECISION;
+import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeSystem.MAX_DECIMAL_SCALE;
 import static org.apache.calcite.sql.type.SqlTypeName.DECIMAL;
 import static org.apache.calcite.sql.type.SqlTypeName.DOUBLE;
 import static org.apache.calcite.sql.type.SqlTypeName.REAL;
 
+/**
+ * Custom Hazelcast type factory.
+ * <p>
+ * The main purpose of this factory is to plug {@link HazelcastIntegerType} into
+ * Calcite runtime.
+ */
 public final class HazelcastTypeFactory extends SqlTypeFactoryImpl {
 
+    /**
+     * Shared Hazelcast type factory instance.
+     */
     public static final HazelcastTypeFactory INSTANCE = new HazelcastTypeFactory();
 
     private HazelcastTypeFactory() {
         super(HazelcastTypeSystem.INSTANCE);
     }
 
+    /**
+     * Creates a new type of the given type name and nullability.
+     * <p>
+     * Combines the functionality of {@link #createSqlType(SqlTypeName)} and
+     * {@link #createTypeWithNullability(RelDataType, boolean)} into a single
+     * call.
+     *
+     * @param typeName the type of the new type.
+     * @param nullable the nullability of the new type.
+     * @return the new type created.
+     */
     public RelDataType createSqlType(SqlTypeName typeName, boolean nullable) {
         RelDataType type = createSqlType(typeName);
         assert !type.isNullable();
@@ -166,7 +188,7 @@ public final class HazelcastTypeFactory extends SqlTypeFactoryImpl {
     private RelDataType createDecimal() {
         // Produces a strange type: DECIMAL(38, 38), but since we are not tracking
         // precision and scale for DECIMALs, that's fine for our purposes.
-        return super.createSqlType(DECIMAL, HazelcastTypeSystem.MAX_DECIMAL_PRECISION, HazelcastTypeSystem.MAX_DECIMAL_SCALE);
+        return super.createSqlType(DECIMAL, MAX_DECIMAL_PRECISION, MAX_DECIMAL_SCALE);
     }
 
     private RelDataType createIntervalYearMonth() {

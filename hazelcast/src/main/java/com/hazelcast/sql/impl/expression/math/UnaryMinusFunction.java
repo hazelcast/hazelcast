@@ -16,8 +16,10 @@
 
 package com.hazelcast.sql.impl.expression.math;
 
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.sql.SqlErrorCode;
 import com.hazelcast.sql.impl.QueryException;
+import com.hazelcast.sql.impl.SqlDataSerializerHook;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.expression.UniExpressionWithType;
@@ -28,14 +30,12 @@ import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 import java.math.BigDecimal;
 
 import static com.hazelcast.sql.impl.expression.math.ExpressionMath.DECIMAL_MATH_CONTEXT;
-import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.NULL;
 
 /**
- * Unary minus operation.
+ * Implements evaluation of SQL unary minus operator.
  */
-public class UnaryMinusFunction<T> extends UniExpressionWithType<T> {
+public class UnaryMinusFunction<T> extends UniExpressionWithType<T> implements IdentifiedDataSerializable {
 
-    @SuppressWarnings("unused")
     public UnaryMinusFunction() {
         // No-op.
     }
@@ -48,17 +48,25 @@ public class UnaryMinusFunction<T> extends UniExpressionWithType<T> {
         return new UnaryMinusFunction<>(operand, resultType);
     }
 
+    @Override
+    public int getFactoryId() {
+        return SqlDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getClassId() {
+        return SqlDataSerializerHook.EXPRESSION_UNARY_MINUS;
+    }
+
     @SuppressWarnings("unchecked")
     @Override
     public T eval(Row row, ExpressionEvalContext context) {
-        QueryDataTypeFamily family = resultType.getTypeFamily();
-        assert family != NULL;
-
         Object value = operand.eval(row, context);
         if (value == null) {
             return null;
         }
 
+        QueryDataTypeFamily family = resultType.getTypeFamily();
         return (T) evalNumeric((Number) value, family);
     }
 

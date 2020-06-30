@@ -43,7 +43,9 @@ import java.util.GregorianCalendar;
 import java.util.List;
 import java.util.Map;
 
-import static com.hazelcast.sql.impl.connector.SqlConnector.POJO_SERIALIZATION_FORMAT;
+import static com.hazelcast.sql.impl.connector.SqlConnector.JAVA_SERIALIZATION_FORMAT;
+import static com.hazelcast.sql.impl.connector.SqlKeyValueConnector.TO_KEY_CLASS;
+import static com.hazelcast.sql.impl.connector.SqlKeyValueConnector.TO_SERIALIZATION_KEY_FORMAT;
 import static com.hazelcast.sql.impl.connector.SqlKeyValueConnector.TO_SERIALIZATION_VALUE_FORMAT;
 import static com.hazelcast.sql.impl.connector.SqlKeyValueConnector.TO_VALUE_CLASS;
 import static java.lang.String.format;
@@ -77,11 +79,8 @@ public class SchemaTest extends CalciteSqlTestSupport {
         // then
         assertThatThrownBy(() -> executeQuery(
                 member,
-                format("CREATE EXTERNAL TABLE %s ("
-                                + " __key INT,"
-                                + " this VARCHAR,"
-                                + " superfluous VARCHAR" // cannot be mapped to neither key nor value
-                                + ") TYPE \"%s\"",
+                format("CREATE EXTERNAL TABLE %s "
+                                + "TYPE \"%s\"",
                         name, LocalPartitionedMapConnector.TYPE_NAME
                 ))
         ).isInstanceOf(SqlException.class);
@@ -95,11 +94,19 @@ public class SchemaTest extends CalciteSqlTestSupport {
         // when
         List<SqlRow> updateRows = getQueryRows(
                 member,
-                format("CREATE EXTERNAL TABLE %s ("
-                                + " __key INT,"
-                                + " this VARCHAR"
-                                + ") TYPE \"%s\"",
-                        name, LocalPartitionedMapConnector.TYPE_NAME
+                format("CREATE EXTERNAL TABLE %s "
+                                + "TYPE \"%s\" "
+                                + "OPTIONS ("
+                                + " \"%s\" '%s',"
+                                + " \"%s\" '%s',"
+                                + " \"%s\" '%s',"
+                                + " \"%s\" '%s'"
+                                + ")",
+                        name, LocalPartitionedMapConnector.TYPE_NAME,
+                        TO_SERIALIZATION_KEY_FORMAT, JAVA_SERIALIZATION_FORMAT,
+                        TO_KEY_CLASS, Integer.class.getName(),
+                        TO_SERIALIZATION_VALUE_FORMAT, JAVA_SERIALIZATION_FORMAT,
+                        TO_VALUE_CLASS, String.class.getName()
                 ));
 
         // then
@@ -107,7 +114,7 @@ public class SchemaTest extends CalciteSqlTestSupport {
         assertThat((int) updateRows.get(0).getObject(0)).isEqualTo(0);
 
         // when
-        List<SqlRow> queryRows = getQueryRows(member, format("SELECT __key FROM public.%s", name));
+        List<SqlRow> queryRows = getQueryRows(member, format("SELECT __key, this FROM public.%s", name));
 
         // then
         assertThat(queryRows).isEmpty();
@@ -123,18 +130,26 @@ public class SchemaTest extends CalciteSqlTestSupport {
         // when create table statement is executed on one member
         executeQuery(
                 instances[0],
-                format("CREATE EXTERNAL TABLE %s ("
-                                + " __key INT,"
-                                + " this VARCHAR"
-                                + ") TYPE \"%s\"",
-                        name, LocalPartitionedMapConnector.TYPE_NAME
+                format("CREATE EXTERNAL TABLE %s "
+                                + "TYPE \"%s\" "
+                                + "OPTIONS ("
+                                + " \"%s\" '%s',"
+                                + " \"%s\" '%s',"
+                                + " \"%s\" '%s',"
+                                + " \"%s\" '%s'"
+                                + ")",
+                        name, LocalPartitionedMapConnector.TYPE_NAME,
+                        TO_SERIALIZATION_KEY_FORMAT, JAVA_SERIALIZATION_FORMAT,
+                        TO_KEY_CLASS, Integer.class.getName(),
+                        TO_SERIALIZATION_VALUE_FORMAT, JAVA_SERIALIZATION_FORMAT,
+                        TO_VALUE_CLASS, String.class.getName()
                 ));
 
         // then schema is available on another one
         // TODO: fix it properly - sticky client, different catalog storage ???
         assertTrueEventually(
                 "Table is not available on the second node", () ->
-                        assertThatCode(() -> getQueryRows(instances[1], format("SELECT __key FROM public.%s", name)))
+                        assertThatCode(() -> getQueryRows(instances[1], format("SELECT * FROM public.%s", name)))
                                 .doesNotThrowAnyException()
         );
     }
@@ -145,15 +160,18 @@ public class SchemaTest extends CalciteSqlTestSupport {
         String name = "PriorityTable";
         executeQuery(
                 member,
-                format("CREATE EXTERNAL TABLE %s ("
-                                + " __key INT"
-                                + ") TYPE \"%s\" "
+                format("CREATE EXTERNAL TABLE %s "
+                                + "TYPE \"%s\" "
                                 + "OPTIONS ("
+                                + " \"%s\" '%s',"
+                                + " \"%s\" '%s',"
                                 + " \"%s\" '%s',"
                                 + " \"%s\" '%s'"
                                 + ")",
                         name, LocalPartitionedMapConnector.TYPE_NAME,
-                        TO_SERIALIZATION_VALUE_FORMAT, POJO_SERIALIZATION_FORMAT,
+                        TO_SERIALIZATION_KEY_FORMAT, JAVA_SERIALIZATION_FORMAT,
+                        TO_KEY_CLASS, Integer.class.getName(),
+                        TO_SERIALIZATION_VALUE_FORMAT, JAVA_SERIALIZATION_FORMAT,
                         TO_VALUE_CLASS, Person.class.getName()
 
                 ));
@@ -171,15 +189,18 @@ public class SchemaTest extends CalciteSqlTestSupport {
     public void testSelectAllSupportedTypes() {
         // given
         String name = "AllFieldsTable";
-        executeQuery(member, format("CREATE EXTERNAL TABLE %s ("
-                        + " __key DECIMAL(10, 0)"
-                        + ") TYPE \"%s\" "
+        executeQuery(member, format("CREATE EXTERNAL TABLE %s "
+                        + "TYPE \"%s\" "
                         + "OPTIONS ("
+                        + " \"%s\" '%s',"
+                        + " \"%s\" '%s',"
                         + " \"%s\" '%s',"
                         + " \"%s\" '%s'"
                         + ")",
                 name, LocalPartitionedMapConnector.TYPE_NAME,
-                TO_SERIALIZATION_VALUE_FORMAT, POJO_SERIALIZATION_FORMAT,
+                TO_SERIALIZATION_KEY_FORMAT, JAVA_SERIALIZATION_FORMAT,
+                TO_KEY_CLASS, BigInteger.class.getName(),
+                TO_SERIALIZATION_VALUE_FORMAT, JAVA_SERIALIZATION_FORMAT,
                 TO_VALUE_CLASS, AllTypesValue.class.getName()
 
         ));
@@ -278,11 +299,19 @@ public class SchemaTest extends CalciteSqlTestSupport {
         String name = "ToBeDroppedTable";
         executeQuery(
                 member,
-                format("CREATE EXTERNAL TABLE %s ("
-                                + " __key INT,"
-                                + " this VARCHAR"
-                                + ") TYPE \"%s\"",
-                        name, LocalPartitionedMapConnector.TYPE_NAME
+                format("CREATE EXTERNAL TABLE %s "
+                                + "TYPE \"%s\" "
+                                + "OPTIONS ("
+                                + " \"%s\" '%s',"
+                                + " \"%s\" '%s',"
+                                + " \"%s\" '%s',"
+                                + " \"%s\" '%s'"
+                                + ")",
+                        name, LocalPartitionedMapConnector.TYPE_NAME,
+                        TO_SERIALIZATION_KEY_FORMAT, JAVA_SERIALIZATION_FORMAT,
+                        TO_KEY_CLASS, Integer.class.getName(),
+                        TO_SERIALIZATION_VALUE_FORMAT, JAVA_SERIALIZATION_FORMAT,
+                        TO_VALUE_CLASS, Person.class.getName()
                 ));
 
         // when

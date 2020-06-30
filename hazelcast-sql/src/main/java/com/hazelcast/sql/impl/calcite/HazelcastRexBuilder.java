@@ -26,6 +26,12 @@ import org.apache.calcite.rex.RexNode;
 import static org.apache.calcite.sql.type.SqlTypeName.ANY;
 import static org.apache.calcite.sql.type.SqlTypeName.REAL;
 
+/**
+ * Custom Hazelcast expression builder.
+ * <p>
+ * Currently, this custom expression builder is used just to workaround quirks
+ * of the default Calcite expression builder.
+ */
 public final class HazelcastRexBuilder extends RexBuilder {
 
     public HazelcastRexBuilder(RelDataTypeFactory typeFactory) {
@@ -37,7 +43,7 @@ public final class HazelcastRexBuilder extends RexBuilder {
     public RexNode makeLiteral(Object value, RelDataType type, boolean allowCast) {
         // XXX: Calcite evaluates casts like CAST(0 AS ANY) statically and
         // assigns imprecise types: BIGINT for any integer value and DOUBLE for
-        // any floating point value (except BigDecimal). The code bellow fixes
+        // any floating-point value (except BigDecimal). The code bellow fixes
         // that.
 
         if (type.getSqlTypeName() == ANY && value instanceof Number) {

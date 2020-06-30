@@ -71,22 +71,31 @@ public class HazelcastSqlValidator extends SqlValidatorImpl {
 
     private final Map<SqlNode, RelDataType> knownNodeTypes = new HashMap<>();
 
-    public HazelcastSqlValidator(
-        SqlOperatorTable opTab,
-        SqlValidatorCatalogReader catalogReader,
-        RelDataTypeFactory typeFactory,
-        SqlConformance conformance
-    ) {
+    public HazelcastSqlValidator(SqlOperatorTable opTab, SqlValidatorCatalogReader catalogReader, RelDataTypeFactory typeFactory,
+                                 SqlConformance conformance) {
         super(opTab, catalogReader, typeFactory, CONFIG.withSqlConformance(conformance));
         assert typeFactory instanceof HazelcastTypeFactory;
         setTypeCoercion(new HazelcastTypeCoercion(this));
     }
 
+    /**
+     * Sets a known type of the given node to the given type in this validator.
+     *
+     * @param node the node to set the known type of.
+     * @param type the type to set the know node type to.
+     */
     public void setKnownNodeType(SqlNode node, RelDataType type) {
         assert !getUnknownType().equals(type);
         knownNodeTypes.put(node, type);
     }
 
+    /**
+     * Obtains a type known by this validator for the given node.
+     *
+     * @param node the node to obtain the type of.
+     * @return the node type known by this validator or {@code null} if the type
+     * of the given node is not known yet.
+     */
     public RelDataType getKnownNodeType(SqlNode node) {
         return knownNodeTypes.get(node);
     }
@@ -96,6 +105,9 @@ public class HazelcastSqlValidator extends SqlValidatorImpl {
         super.validateQuery(node, scope, targetRowType);
 
         if (node instanceof SqlSelect) {
+            // Derive the types for offset-fetch expressions, Calcite doesn't do
+            // that automatically.
+
             SqlSelect select = (SqlSelect) node;
 
             SqlNode offset = select.getOffset();
@@ -120,14 +132,8 @@ public class HazelcastSqlValidator extends SqlValidatorImpl {
     }
 
     @Override
-    protected void addToSelectList(
-        List<SqlNode> list,
-        Set<String> aliases,
-        List<Map.Entry<String, RelDataType>> fieldList,
-        SqlNode exp,
-        SelectScope scope,
-        boolean includeSystemVars
-    ) {
+    protected void addToSelectList(List<SqlNode> list, Set<String> aliases, List<Map.Entry<String, RelDataType>> fieldList,
+                                   SqlNode exp, SelectScope scope, boolean includeSystemVars) {
         if (isHiddenColumn(exp, scope)) {
             return;
         }
@@ -177,7 +183,8 @@ public class HazelcastSqlValidator extends SqlValidatorImpl {
         SqlNode rewritten = super.performUnconditionalRewrites(node, underFrom);
 
         if (rewritten != null && rewritten.isA(SqlKind.TOP_LEVEL)) {
-            rewritten.accept(HazelcastOperatorVisitor.INSTANCE);
+            // rewrite operators to Hazelcast ones starting at every top node
+            rewritten.accept(HazelcastOperatorTableVisitor.INSTANCE);
         }
 
         return rewritten;

@@ -18,6 +18,8 @@ package com.hazelcast.sql.impl.expression;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.sql.impl.SqlDataSerializerHook;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
@@ -27,19 +29,32 @@ import java.util.Objects;
 /**
  * Dynamic parameter expression.
  */
-public class ParameterExpression<T> implements Expression<T> {
+public class ParameterExpression<T> implements Expression<T>, IdentifiedDataSerializable {
 
     private int index;
     private QueryDataType type;
 
-    @SuppressWarnings("unused")
     public ParameterExpression() {
         // No-op.
     }
 
-    public ParameterExpression(int index, QueryDataType type) {
+    private ParameterExpression(int index, QueryDataType type) {
         this.index = index;
         this.type = type;
+    }
+
+    public static ParameterExpression<?> create(int index, QueryDataType type) {
+        return new ParameterExpression<>(index, type);
+    }
+
+    @Override
+    public int getFactoryId() {
+        return SqlDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getClassId() {
+        return SqlDataSerializerHook.EXPRESSION_PARAMETER;
     }
 
     @SuppressWarnings("unchecked")
@@ -82,7 +97,7 @@ public class ParameterExpression<T> implements Expression<T> {
 
         ParameterExpression<?> that = (ParameterExpression<?>) o;
 
-        return index == that.index;
+        return index == that.index && type.equals(that.type);
     }
 
     @Override

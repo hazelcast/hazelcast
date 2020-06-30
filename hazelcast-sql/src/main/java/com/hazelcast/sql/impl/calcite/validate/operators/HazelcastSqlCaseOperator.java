@@ -16,8 +16,8 @@
 
 package com.hazelcast.sql.impl.calcite.validate.operators;
 
-import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeSystem;
 import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlValidator;
+import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeSystem;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.sql.SqlCall;
 import org.apache.calcite.sql.SqlCallBinding;
@@ -39,6 +39,12 @@ import org.apache.calcite.sql.validate.SqlValidatorScope;
 
 import static org.apache.calcite.util.Static.RESOURCE;
 
+/**
+ * Custom Hazelcast {@link SqlCaseOperator} to override the default return type
+ * inference strategy for CASE.
+ *
+ * @see HazelcastSqlCase
+ */
 public final class HazelcastSqlCaseOperator extends SqlOperator {
 
     public HazelcastSqlCaseOperator() {

@@ -23,6 +23,7 @@ import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.SqlNodeList;
 import org.apache.calcite.sql.SqlOperator;
 import org.apache.calcite.sql.fun.SqlCase;
+import org.apache.calcite.sql.fun.SqlStdOperatorTable;
 import org.apache.calcite.sql.util.SqlBasicVisitor;
 import org.apache.calcite.sql.validate.SqlNameMatcher;
 import org.apache.calcite.sql.validate.SqlNameMatchers;
@@ -32,14 +33,20 @@ import java.util.List;
 
 /**
  * Rewrites operators in SqlNode tree from Calcite ones to Hazelcast ones.
+ *
+ * @see SqlStdOperatorTable
+ * @see HazelcastSqlOperatorTable
  */
-public final class HazelcastOperatorVisitor extends SqlBasicVisitor<Void> {
+public final class HazelcastOperatorTableVisitor extends SqlBasicVisitor<Void> {
 
-    public static final SqlBasicVisitor<Void> INSTANCE = new HazelcastOperatorVisitor();
+    /**
+     * Shared Hazelcast operator visitor instance.
+     */
+    public static final SqlBasicVisitor<Void> INSTANCE = new HazelcastOperatorTableVisitor();
 
     private static final SqlNameMatcher NAME_MATCHER = SqlNameMatchers.withCaseSensitive(false);
 
-    private HazelcastOperatorVisitor() {
+    private HazelcastOperatorTableVisitor() {
     }
 
     @Override

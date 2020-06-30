@@ -16,6 +16,8 @@
 
 package com.hazelcast.sql.impl.expression.predicate;
 
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.sql.impl.SqlDataSerializerHook;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.expression.UniExpression;
@@ -23,20 +25,30 @@ import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
 /**
- * Not predicate.
+ * Implements evaluation of SQL NOT predicate.
  */
-public class NotPredicate extends UniExpression<Boolean> {
+public class NotPredicate extends UniExpression<Boolean> implements IdentifiedDataSerializable {
 
     public NotPredicate() {
         // No-op.
     }
 
-    public NotPredicate(Expression<?> operand) {
+    private NotPredicate(Expression<?> operand) {
         super(operand);
     }
 
     public static NotPredicate create(Expression<?> operand) {
         return new NotPredicate(operand);
+    }
+
+    @Override
+    public int getFactoryId() {
+        return SqlDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getClassId() {
+        return SqlDataSerializerHook.EXPRESSION_NOT;
     }
 
     @Override

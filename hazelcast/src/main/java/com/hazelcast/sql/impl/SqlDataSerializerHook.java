@@ -22,8 +22,21 @@ import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
 import com.hazelcast.internal.util.ConstructorFunction;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.sql.impl.expression.CastExpression;
 import com.hazelcast.sql.impl.expression.ColumnExpression;
+import com.hazelcast.sql.impl.expression.ConstantExpression;
+import com.hazelcast.sql.impl.expression.ParameterExpression;
+import com.hazelcast.sql.impl.expression.math.DivideFunction;
+import com.hazelcast.sql.impl.expression.math.MinusFunction;
+import com.hazelcast.sql.impl.expression.math.MultiplyFunction;
+import com.hazelcast.sql.impl.expression.math.PlusFunction;
+import com.hazelcast.sql.impl.expression.math.UnaryMinusFunction;
+import com.hazelcast.sql.impl.expression.predicate.AndPredicate;
+import com.hazelcast.sql.impl.expression.predicate.CaseExpression;
+import com.hazelcast.sql.impl.expression.predicate.ComparisonPredicate;
 import com.hazelcast.sql.impl.expression.predicate.IsNullPredicate;
+import com.hazelcast.sql.impl.expression.predicate.NotPredicate;
+import com.hazelcast.sql.impl.expression.predicate.OrPredicate;
 import com.hazelcast.sql.impl.extract.GenericQueryTargetDescriptor;
 import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.operation.QueryBatchExchangeOperation;
@@ -34,8 +47,8 @@ import com.hazelcast.sql.impl.operation.QueryExecuteOperation;
 import com.hazelcast.sql.impl.operation.QueryExecuteOperationFragment;
 import com.hazelcast.sql.impl.operation.QueryFlowControlExchangeOperation;
 import com.hazelcast.sql.impl.plan.node.FilterPlanNode;
-import com.hazelcast.sql.impl.plan.node.ProjectPlanNode;
 import com.hazelcast.sql.impl.plan.node.MapScanPlanNode;
+import com.hazelcast.sql.impl.plan.node.ProjectPlanNode;
 import com.hazelcast.sql.impl.plan.node.RootPlanNode;
 import com.hazelcast.sql.impl.plan.node.io.ReceivePlanNode;
 import com.hazelcast.sql.impl.plan.node.io.RootSendPlanNode;
@@ -88,7 +101,21 @@ public class SqlDataSerializerHook implements DataSerializerHook {
 
     public static final int QUERY_PATH = 23;
 
-    public static final int LEN = QUERY_PATH + 1;
+    public static final int EXPRESSION_CONSTANT = 24;
+    public static final int EXPRESSION_PARAMETER = 25;
+    public static final int EXPRESSION_CAST = 26;
+    public static final int EXPRESSION_DIVIDE = 27;
+    public static final int EXPRESSION_MINUS = 28;
+    public static final int EXPRESSION_MULTIPLY = 29;
+    public static final int EXPRESSION_PLUS = 30;
+    public static final int EXPRESSION_UNARY_MINUS = 31;
+    public static final int EXPRESSION_AND = 32;
+    public static final int EXPRESSION_OR = 33;
+    public static final int EXPRESSION_NOT = 34;
+    public static final int EXPRESSION_COMPARISON = 35;
+    public static final int EXPRESSION_CASE = 36;
+
+    public static final int LEN = EXPRESSION_CASE + 1;
 
     @Override
     public int getFactoryId() {
@@ -131,6 +158,20 @@ public class SqlDataSerializerHook implements DataSerializerHook {
         constructors[TARGET_DESCRIPTOR_GENERIC] = arg -> GenericQueryTargetDescriptor.INSTANCE;
 
         constructors[QUERY_PATH] = arg -> new QueryPath();
+
+        constructors[EXPRESSION_CONSTANT] = arg -> new ConstantExpression<>();
+        constructors[EXPRESSION_PARAMETER] = arg -> new ParameterExpression<>();
+        constructors[EXPRESSION_CAST] = arg -> new CastExpression<>();
+        constructors[EXPRESSION_DIVIDE] = arg -> new DivideFunction<>();
+        constructors[EXPRESSION_MINUS] = arg -> new MinusFunction<>();
+        constructors[EXPRESSION_MULTIPLY] = arg -> new MultiplyFunction<>();
+        constructors[EXPRESSION_PLUS] = arg -> new PlusFunction<>();
+        constructors[EXPRESSION_UNARY_MINUS] = arg -> new UnaryMinusFunction<>();
+        constructors[EXPRESSION_AND] = arg -> new AndPredicate();
+        constructors[EXPRESSION_OR] = arg -> new OrPredicate();
+        constructors[EXPRESSION_NOT] = arg -> new NotPredicate();
+        constructors[EXPRESSION_COMPARISON] = arg -> new ComparisonPredicate();
+        constructors[EXPRESSION_CASE] = arg -> new CaseExpression<>();
 
         return new ArrayDataSerializableFactory(constructors);
     }
