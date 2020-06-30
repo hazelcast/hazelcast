@@ -70,6 +70,7 @@ public class QueueContainer implements IdentifiedDataSerializable {
     private final Map<Long, Data> dataMap = new HashMap<Long, Data>();
     private QueueWaitNotifyKey pollWaitNotifyKey;
     private QueueWaitNotifyKey offerWaitNotifyKey;
+    private QueueWaitNotifyKey removeAllWaitNotifyKey;
     private LinkedList<QueueItem> itemQueue;
     private Map<Long, QueueItem> backupMap;
     private QueueConfig config;
@@ -99,6 +100,7 @@ public class QueueContainer implements IdentifiedDataSerializable {
         this.name = name;
         this.pollWaitNotifyKey = new QueueWaitNotifyKey(name, "poll");
         this.offerWaitNotifyKey = new QueueWaitNotifyKey(name, "offer");
+        this.removeAllWaitNotifyKey = new QueueWaitNotifyKey(name, "removeAll");
         setConfig(config, nodeEngine, service);
     }
 
@@ -972,6 +974,10 @@ public class QueueContainer implements IdentifiedDataSerializable {
         return offerWaitNotifyKey;
     }
 
+    public QueueWaitNotifyKey getRemoveAllWaitNotifyKey() {
+        return removeAllWaitNotifyKey;
+    }
+
     public QueueConfig getConfig() {
         return config;
     }
@@ -1060,6 +1066,7 @@ public class QueueContainer implements IdentifiedDataSerializable {
         name = in.readUTF();
         pollWaitNotifyKey = new QueueWaitNotifyKey(name, "poll");
         offerWaitNotifyKey = new QueueWaitNotifyKey(name, "offer");
+        removeAllWaitNotifyKey = new QueueWaitNotifyKey(name, "removeAll");
         int size = in.readInt();
         for (int j = 0; j < size; j++) {
             QueueItem item = in.readObject();
@@ -1098,5 +1105,41 @@ public class QueueContainer implements IdentifiedDataSerializable {
 
     void setId(long itemId) {
         idGenerator = Math.max(itemId + 1, idGenerator);
+    }
+
+    public List<QueueItem> txnCommitRemoveAll(Collection<Data> data) {
+        List<QueueItem> result = txnCommitRemoveAllBackup(data);
+        scheduleEvictionIfEmpty();
+        return result;
+    }
+
+    public List<QueueItem> txnCommitRemoveAllBackup(Collection<Data> data) {
+        List<QueueItem> items = new ArrayList<>();
+        Iterator<QueueItem> iterator = getItemQueue().iterator();
+        while (iterator.hasNext()) {
+            QueueItem item = iterator.next();
+            for (Data datum : data) {
+                if (item.getData().equals(datum)) {
+                    items.add(item);
+                    iterator.remove();
+                }
+            }
+        }
+        for (QueueItem item : items) {
+            long itemId = item.getItemId();
+            TxQueueItem txQueueItem = txMap.remove(itemId);
+            if (txQueueItem == null) {
+                logger.warning("txnCommitRemoveAll operation-> No txn item for itemId: " + itemId);
+            } else {
+                if (store.isEnabled()) {
+                    try {
+                        store.delete(txQueueItem.getItemId());
+                    } catch (Exception e) {
+                        logger.severe("Error during store delete: " + txQueueItem.getItemId(), e);
+                    }
+                }
+            }
+        }
+        return items;
     }
 }
