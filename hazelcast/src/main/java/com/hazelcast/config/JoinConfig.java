@@ -192,6 +192,24 @@ public class JoinConfig {
     }
 
     /**
+     * Any other join configuration takes precedence over auto-discovery, so auto-discovery is enabled only when no other join
+     * strategy is enabled.
+     *
+     * @return true if auto-detection is enabled
+     */
+    public boolean isAutoDetectionEnabled() {
+        return autoDetectionConfig.isEnabled()
+                && !multicastConfig.isEnabled()
+                && !tcpIpConfig.isEnabled()
+                && !awsConfig.isEnabled()
+                && !gcpConfig.isEnabled()
+                && !azureConfig.isEnabled()
+                && !kubernetesConfig.isEnabled()
+                && !eurekaConfig.isEnabled()
+                && !discoveryConfig.isEnabled();
+    }
+
+    /**
      * Verifies this JoinConfig is valid. At most a single joiner should be active.
      *
      * @throws InvalidConfigurationException when the join config is not valid

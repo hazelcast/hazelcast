@@ -257,7 +257,7 @@ public class Node {
             DiscoveryConfig discoveryConfig = new DiscoveryConfigReadOnly(joinConfig.getDiscoveryConfig());
             List<DiscoveryStrategyConfig> aliasedDiscoveryConfigs =
                     AliasedDiscoveryConfigUtils.createDiscoveryStrategyConfigs(joinConfig);
-            boolean isAutoDetectionEnabled = joinConfig.getAutoDetectionConfig().isEnabled();
+            boolean isAutoDetectionEnabled = joinConfig.isAutoDetectionEnabled();
             discoveryService = createDiscoveryService(discoveryConfig, aliasedDiscoveryConfigs, isAutoDetectionEnabled,
                     localMember);
             clusterService = new ClusterServiceImpl(this, localMember);
@@ -437,7 +437,7 @@ public class Node {
             multicastServiceThread.start();
         }
         if (properties.getBoolean(DISCOVERY_SPI_ENABLED) || isAnyAliasedConfigEnabled(join)
-                || (join.getAutoDetectionConfig().isEnabled() && !isEmptyDiscoveryStrategies())) {
+                || (join.isAutoDetectionEnabled() && !isEmptyDiscoveryStrategies())) {
             discoveryService.start();
 
             // Discover local metadata from environment and merge into member attributes
@@ -814,7 +814,7 @@ public class Node {
             logger.info("Creating TcpIpJoiner");
             return new TcpIpJoiner(this);
         } else if (properties.getBoolean(DISCOVERY_SPI_ENABLED) || isAnyAliasedConfigEnabled(join)
-                || join.getAutoDetectionConfig().isEnabled()) {
+                || join.isAutoDetectionEnabled()) {
             logger.info("Activating Discovery SPI Joiner");
             return new DiscoveryJoiner(this, discoveryService, usePublicAddress(join));
         }
@@ -822,8 +822,9 @@ public class Node {
     }
 
     public boolean shouldUseMulticastJoiner() {
-        return config.getNetworkConfig().getJoin().getMulticastConfig().isEnabled()
-                || (config.getNetworkConfig().getJoin().getAutoDetectionConfig().isEnabled() && isEmptyDiscoveryStrategies());
+        JoinConfig join = config.getNetworkConfig().getJoin();
+        return join.getMulticastConfig().isEnabled()
+                || (join.isAutoDetectionEnabled() && isEmptyDiscoveryStrategies());
     }
 
     private boolean isEmptyDiscoveryStrategies() {

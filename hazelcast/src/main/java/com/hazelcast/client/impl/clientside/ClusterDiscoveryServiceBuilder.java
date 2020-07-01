@@ -226,7 +226,7 @@ class ClusterDiscoveryServiceBuilder {
                 ClientAliasedDiscoveryConfigUtils.createDiscoveryStrategyConfigs(config);
 
         if (!properties.getBoolean(ClientProperty.DISCOVERY_SPI_ENABLED) && aliasedDiscoveryConfigs.isEmpty()
-                && !config.getNetworkConfig().getAutoDetectionConfig().isEnabled()) {
+                && !config.getNetworkConfig().isAutoDetectionEnabled()) {
             return null;
         }
 
@@ -239,7 +239,7 @@ class ClusterDiscoveryServiceBuilder {
             factory = new DefaultDiscoveryServiceProvider();
         }
 
-        boolean isAutoDetectionEnabled = networkConfig.getAutoDetectionConfig().isEnabled();
+        boolean isAutoDetectionEnabled = networkConfig.isAutoDetectionEnabled();
         DiscoveryServiceSettings settings = new DiscoveryServiceSettings()
                 .setConfigClassLoader(config.getClassLoader())
                 .setLogger(logger)

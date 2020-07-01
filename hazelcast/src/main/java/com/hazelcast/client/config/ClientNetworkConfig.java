@@ -118,6 +118,24 @@ public class ClientNetworkConfig {
     }
 
     /**
+     * Any other connect configuration takes precedence over auto-discovery, so auto-discovery is enabled only when no other
+     * strategy is enabled.
+     *
+     * @return true if auto-detection is enabled
+     */
+    public boolean isAutoDetectionEnabled() {
+        return autoDetectionConfig.isEnabled()
+                && addressList.isEmpty()
+                && !cloudConfig.isEnabled()
+                && !awsConfig.isEnabled()
+                && !gcpConfig.isEnabled()
+                && !azureConfig.isEnabled()
+                && !kubernetesConfig.isEnabled()
+                && !eurekaConfig.isEnabled()
+                && !discoveryConfig.isEnabled();
+    }
+
+    /**
      * Defines the Auto Detection configuration.
      *
      * @param autoDetectionConfig Auto Detection configuration
