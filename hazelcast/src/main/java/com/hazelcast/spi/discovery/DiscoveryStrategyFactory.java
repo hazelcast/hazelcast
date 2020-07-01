@@ -99,11 +99,36 @@ public interface DiscoveryStrategyFactory {
      * Discovery strategies can have different levels. They can be at the level of Cloud Virtual Machines, for example, AWS EC2
      * Instance or GCP Virtual Machine. They can also be at the level of some specific platform or framework, like Kubernetes.
      * <p>
-     * It decides on the priority in the auto detection mechanism, because you can have a Kubernetes environment installed on
-     * AWS EC2 Instances and then Hazelcast Kubernetes Discovery Strategy should take precedence over AWS Discovery Strategy.
+     * It decides on the priority in the auto detection mechanism. As an example, let's take Kubernetes environment installed
+     * on AWS EC2 instances. In this case two plugins are auto-detected: hazelcast-aws and hazelcast-kubernetes.
+     * This level decides which one to pick:
+     * <ul>
+     *     <li>hazelcast-aws implements level {@code CLOUD_VM}</li>
+     *     <li>hazelcast-kubernetes implements level {@code PLATFORM}</li>
+     * </ul>
+     * {@code PLATFORM} has higher priority than {@code CLOUD_VM}, so hazelcast-kubernetes plugin is selected.
      */
     enum DiscoveryStrategyLevel {
-        UNKNOWN(0), CLOUD_VM(10), PLATFORM(20), CUSTOM(50);
+
+        /**
+         * Level unknown, lowest priority.
+         */
+        UNKNOWN(0),
+
+        /**
+         * VM Machine level, for example, hazelcast-aws or hazelcast-azure.
+         */
+        CLOUD_VM(10),
+
+        /**
+         * Platform level, for example, hazelcast-kubernetes.
+         */
+        PLATFORM(20),
+
+        /**
+         * Custom strategy level, highest priority.
+         */
+        CUSTOM(50);
 
         private int priority;
 
