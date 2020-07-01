@@ -129,6 +129,10 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         return config;
     }
 
+    boolean globalIndex() {
+        return true;
+    }
+
     @Test
     public void testExecuteOnEntriesWithEntryListener() {
         HazelcastInstance instance = createHazelcastInstance(getConfig());
@@ -219,9 +223,10 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         Map<String, Boolean> entries = map.executeOnEntries(new TestLoggingEntryProcessor(), predicate);
 
         assertEquals("The predicate should only relate to one entry!", 1, entries.size());
-        // for native memory EP with index query the predicate won't be applied since everything happens on partition-threads
-        // so there is no chance of data being modified after the index has been queried.
-        int predicateApplied = inMemoryFormat == NATIVE ? 0 : 1;
+        // for native memory with partitioned index EP with index query the predicate won't be applied since
+        // everything happens on partition-threads so there is no chance of data being modified after the
+        // index has been queried.
+        int predicateApplied = globalIndex() ? 1 : 0;
         assertEquals("The predicate's apply method should only be invoked once!", predicateApplied, predicate.getApplied());
         assertTrue("The predicate should only be used via index service!", predicate.isFilteredAndApplied(predicateApplied));
     }
@@ -1325,9 +1330,10 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         ApplyCountAwareIndexedTestPredicate predicate = new ApplyCountAwareIndexedTestPredicate("__key", 1);
         map.executeOnEntries(new DeleteEntryProcessor<>(), predicate);
 
-        // for native memory EP with index query the predicate won't be applied since everything happens on partition-threads
-        // so there is no chance of data being modified after the index has been queried.
-        final int expectedApplyCount = inMemoryFormat == NATIVE ? 0 : 2;
+        // for native memory with partitioned index EP with index query the predicate won't be applied since
+        // everything happens on partition-threads so there is no chance of data being modified after
+        // the index has been queried.
+        final int expectedApplyCount = globalIndex() ? 2 : 0;
         assertTrueEventually(() -> assertEquals("Expecting two predicate#apply method call one on owner, other one on backup",
                 expectedApplyCount, PREDICATE_APPLY_COUNT.get()));
     }
