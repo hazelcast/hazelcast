@@ -44,4 +44,9 @@ public class AutoDetectionConfig {
         this.enabled = enabled;
         return this;
     }
+
+    @Override
+    public String toString() {
+        return "AutoDetectionConfig{enabled=" + enabled + '}';
+    }
 }
