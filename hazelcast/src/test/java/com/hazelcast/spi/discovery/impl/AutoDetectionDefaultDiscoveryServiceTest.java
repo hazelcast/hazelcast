@@ -25,7 +25,6 @@ import com.hazelcast.spi.discovery.DiscoveryNode;
 import com.hazelcast.spi.discovery.DiscoveryStrategy;
 import com.hazelcast.spi.discovery.DiscoveryStrategyFactory;
 import com.hazelcast.spi.discovery.integration.DiscoveryServiceSettings;
-import com.hazelcast.spi.discovery.multicast.MulticastDiscoveryStrategy;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
@@ -62,11 +61,6 @@ public class AutoDetectionDefaultDiscoveryServiceTest {
         settings.setDiscoveryConfig(new DiscoveryConfig());
         settings.setAutoDetectionEnabled(true);
         return settings;
-    }
-
-    @Test
-    public void selectMulticastByDefault() {
-        assertDiscoveryStrategy(MulticastDiscoveryStrategy.class);
     }
 
     @Test

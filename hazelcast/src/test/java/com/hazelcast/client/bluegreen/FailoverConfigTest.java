@@ -81,8 +81,8 @@ public class FailoverConfigTest {
                 "getAddresses", "isRedoOperation", "setRedoOperation", "getSocketOptions", "setSocketOptions",
                 "getDiscoveryConfig", "setDiscoveryConfig", "getSSLConfig", "setSSLConfig", "setAwsConfig", "getAwsConfig",
                 "setGcpConfig", "getGcpConfig", "setAzureConfig", "getAzureConfig", "setKubernetesConfig", "getKubernetesConfig",
-                "setEurekaConfig", "getEurekaConfig", "setAutoDetectionConfig", "getAutoDetectionConfig", "getCloudConfig",
-                "setCloudConfig", "getOutboundPortDefinitions", "getOutboundPorts", "setOutboundPortDefinitions",
+                "setEurekaConfig", "getEurekaConfig", "setAutoDetectionConfig", "getAutoDetectionConfig", "isAutoDetectionEnabled",
+                "getCloudConfig", "setCloudConfig", "getOutboundPortDefinitions", "getOutboundPorts", "setOutboundPortDefinitions",
                 "setOutboundPorts", "addOutboundPort", "addOutboundPortDefinition", "getClientIcmpPingConfig",
                 "setClientIcmpPingConfig", "equals", "hashCode", "toString");
         Method[] declaredMethods = ClientNetworkConfig.class.getDeclaredMethods();
