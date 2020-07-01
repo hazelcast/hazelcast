@@ -421,22 +421,6 @@ public class TcpClientConnectionManager implements ClientConnectionManager {
         return false;
     }
 
-    private Connection connect(Address address) {
-        try {
-            logger.info("Trying to connect to " + address);
-            return getOrConnect(address);
-        } catch (InvalidConfigurationException e) {
-            logger.warning("Exception during initial connection to " + address + ": " + e);
-            throw rethrow(e);
-        } catch (ClientNotAllowedInClusterException e) {
-            logger.warning("Exception during initial connection to " + address + ": " + e);
-            throw e;
-        } catch (Exception e) {
-            logger.warning("Exception during initial connection to " + address + ": " + e);
-            return null;
-        }
-    }
-
     private void fireLifecycleEvent(LifecycleState state) {
         LifecycleServiceImpl lifecycleService = (LifecycleServiceImpl) client.getLifecycleService();
         lifecycleService.fireLifecycleEvent(state);
@@ -444,27 +428,30 @@ public class TcpClientConnectionManager implements ClientConnectionManager {
 
     private boolean doConnectToCandidateCluster(CandidateClusterContext context) {
         Set<Address> triedAddresses = new HashSet<>();
-        try {
-            waitStrategy.reset();
-            do {
-                Collection<Address> addresses = getPossibleMemberAddresses(context.getAddressProvider());
-                for (Address address : addresses) {
-                    checkClientActive();
-                    triedAddresses.add(address);
-
-                    Connection connection = connect(address);
-                    if (connection != null) {
-                        return true;
-                    }
-                }
-                // If the address providers load no addresses (which seems to be possible), then the above loop is not entered
-                // and the lifecycle check is missing, hence we need to repeat the same check at this point.
+        waitStrategy.reset();
+        exit:
+        do {
+            Collection<Address> addresses = getPossibleMemberAddresses(context.getAddressProvider());
+            for (Address address : addresses) {
                 checkClientActive();
-            } while (waitStrategy.sleep());
-        } catch (ClientNotAllowedInClusterException | InvalidConfigurationException e) {
-            logger.warning("Stopped trying on the cluster: " + context.getClusterName()
-                    + " reason: " + e.getMessage());
-        }
+                triedAddresses.add(address);
+
+                try {
+                    logger.info("Trying to connect to " + address);
+                    getOrConnect(address);
+                    return true;
+                } catch (InvalidConfigurationException | ClientNotAllowedInClusterException | AuthenticationException e) {
+                    logger.warning("Stopped trying on the cluster: " + context.getClusterName()
+                            + " reason: " + e.getMessage());
+                    break exit;
+                } catch (Exception e) {
+                    logger.warning("Exception during initial connection to " + address + ": " + e);
+                }
+            }
+            // If the address providers load no addresses (which seems to be possible), then the above loop is not entered
+            // and the lifecycle check is missing, hence we need to repeat the same check at this point.
+            checkClientActive();
+        } while (waitStrategy.sleep());
 
         logger.info("Unable to connect to any address from the cluster with name: " + context.getClusterName()
                 + ". The following addresses were tried: " + triedAddresses);

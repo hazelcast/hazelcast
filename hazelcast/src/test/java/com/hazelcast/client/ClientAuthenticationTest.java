@@ -61,6 +61,17 @@ public class ClientAuthenticationTest extends HazelcastTestSupport {
         hazelcastFactory.newHazelcastClient(clientConfig);
     }
 
+    @Test(expected = IllegalStateException.class)
+    public void testFailImmediately_onAuthenticationMismatch() {
+        hazelcastFactory.newHazelcastInstance();
+
+        ClientConfig clientConfig = new ClientConfig();
+        clientConfig.setClusterName("wrongClusterName");
+        clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig()
+                .setClusterConnectTimeoutMillis(Integer.MAX_VALUE);
+        hazelcastFactory.newHazelcastClient(clientConfig);
+    }
+
     @Test
     public void testAuthenticationWithCustomCredentials_when_singleNode() {
         DataSerializableFactory factory = new CustomCredentialsIdentifiedFactory();
