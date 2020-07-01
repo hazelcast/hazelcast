@@ -197,6 +197,7 @@ public class JoinConfig {
      *
      * @return true if auto-detection is enabled
      */
+    @SuppressWarnings("checkstyle:booleanexpressioncomplexity")
     public boolean isAutoDetectionEnabled() {
         return autoDetectionConfig.isEnabled()
                 && !multicastConfig.isEnabled()

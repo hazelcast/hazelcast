@@ -123,6 +123,7 @@ public class ClientNetworkConfig {
      *
      * @return true if auto-detection is enabled
      */
+    @SuppressWarnings("checkstyle:booleanexpressioncomplexity")
     public boolean isAutoDetectionEnabled() {
         return autoDetectionConfig.isEnabled()
                 && addressList.isEmpty()
