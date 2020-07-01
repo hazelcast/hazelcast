@@ -19,7 +19,6 @@ package com.hazelcast.wan.impl.merkletree;
 import com.hazelcast.internal.util.collection.OAHashSet;
 
 import java.util.Arrays;
-import java.util.function.Consumer;
 
 import static com.hazelcast.internal.nio.Bits.INT_SIZE_IN_BYTES;
 import static com.hazelcast.internal.nio.Bits.LONG_SIZE_IN_BYTES;
