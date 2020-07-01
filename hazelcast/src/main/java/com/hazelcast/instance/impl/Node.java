@@ -82,6 +82,7 @@ import com.hazelcast.security.Credentials;
 import com.hazelcast.security.SecurityContext;
 import com.hazelcast.security.SecurityService;
 import com.hazelcast.spi.discovery.SimpleDiscoveryNode;
+import com.hazelcast.spi.discovery.impl.DefaultDiscoveryService;
 import com.hazelcast.spi.discovery.impl.DefaultDiscoveryServiceProvider;
 import com.hazelcast.spi.discovery.integration.DiscoveryMode;
 import com.hazelcast.spi.discovery.integration.DiscoveryService;
@@ -430,12 +431,13 @@ public class Node {
         clusterService.sendLocalMembershipEvent();
         server.start();
         JoinConfig join = getActiveMemberNetworkConfig(config).getJoin();
-        if (join.getMulticastConfig().isEnabled()) {
+        if (shouldUseMulticastJoiner()) {
             final Thread multicastServiceThread = new Thread(multicastService,
                     createThreadName(hazelcastInstance.getName(), "MulticastThread"));
             multicastServiceThread.start();
         }
-        if (properties.getBoolean(DISCOVERY_SPI_ENABLED) || isAnyAliasedConfigEnabled(join) || isAutoDetectionEnabled(join)) {
+        if (properties.getBoolean(DISCOVERY_SPI_ENABLED) || isAnyAliasedConfigEnabled(join)
+                || (join.getAutoDetectionConfig().isEnabled() && !isEmptyDiscoveryStrategies())) {
             discoveryService.start();
 
             // Discover local metadata from environment and merge into member attributes
@@ -805,26 +807,32 @@ public class Node {
         JoinConfig join = getActiveMemberNetworkConfig(config).getJoin();
         join.verify();
 
-        if (join.getMulticastConfig().isEnabled() && multicastService != null) {
+        if (shouldUseMulticastJoiner()) {
             logger.info("Creating MulticastJoiner");
             return new MulticastJoiner(this);
         } else if (join.getTcpIpConfig().isEnabled()) {
             logger.info("Creating TcpIpJoiner");
             return new TcpIpJoiner(this);
         } else if (properties.getBoolean(DISCOVERY_SPI_ENABLED) || isAnyAliasedConfigEnabled(join)
-                || isAutoDetectionEnabled(join)) {
+                || join.getAutoDetectionConfig().isEnabled()) {
             logger.info("Activating Discovery SPI Joiner");
             return new DiscoveryJoiner(this, discoveryService, usePublicAddress(join));
         }
         return null;
     }
 
-    private static boolean isAnyAliasedConfigEnabled(JoinConfig join) {
-        return !AliasedDiscoveryConfigUtils.createDiscoveryStrategyConfigs(join).isEmpty();
+    public boolean shouldUseMulticastJoiner() {
+        return config.getNetworkConfig().getJoin().getMulticastConfig().isEnabled()
+                || (config.getNetworkConfig().getJoin().getAutoDetectionConfig().isEnabled() && isEmptyDiscoveryStrategies());
     }
 
-    private static boolean isAutoDetectionEnabled(JoinConfig join) {
-        return join.getAutoDetectionConfig().isEnabled();
+    private boolean isEmptyDiscoveryStrategies() {
+        return discoveryService instanceof DefaultDiscoveryService
+                && !((DefaultDiscoveryService) discoveryService).getDiscoveryStrategies().iterator().hasNext();
+    }
+
+    private static boolean isAnyAliasedConfigEnabled(JoinConfig join) {
+        return !AliasedDiscoveryConfigUtils.createDiscoveryStrategyConfigs(join).isEmpty();
     }
 
     private boolean usePublicAddress(JoinConfig join) {

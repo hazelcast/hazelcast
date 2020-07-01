@@ -42,6 +42,7 @@ import com.hazelcast.nio.SocketInterceptor;
 import com.hazelcast.security.ICredentialsFactory;
 import com.hazelcast.security.UsernamePasswordCredentials;
 import com.hazelcast.spi.discovery.DiscoveryNode;
+import com.hazelcast.spi.discovery.impl.DefaultDiscoveryService;
 import com.hazelcast.spi.discovery.impl.DefaultDiscoveryServiceProvider;
 import com.hazelcast.spi.discovery.integration.DiscoveryMode;
 import com.hazelcast.spi.discovery.integration.DiscoveryService;
@@ -248,8 +249,16 @@ class ClusterDiscoveryServiceBuilder {
                 .setAutoDetectionEnabled(isAutoDetectionEnabled);
 
         DiscoveryService discoveryService = factory.newDiscoveryService(settings);
+        if (isAutoDetectionEnabled && isEmptyDiscoveryStrategies(discoveryService)) {
+            return null;
+        }
         discoveryService.start();
         return discoveryService;
+    }
+
+    private boolean isEmptyDiscoveryStrategies(DiscoveryService discoveryService) {
+        return discoveryService instanceof DefaultDiscoveryService
+                && !((DefaultDiscoveryService) discoveryService).getDiscoveryStrategies().iterator().hasNext();
     }
 
     private ICredentialsFactory initCredentialsFactory(ClientConfig config) {

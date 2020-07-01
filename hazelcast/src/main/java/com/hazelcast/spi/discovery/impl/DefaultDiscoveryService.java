@@ -149,6 +149,8 @@ public class DefaultDiscoveryService
                     logger.info(String.format("Auto-detection selected discovery strategy: %s", autoDetectedFactory.getClass()));
                     discoveryStrategies
                             .add(autoDetectedFactory.newDiscoveryStrategy(discoveryNode, logger, Collections.emptyMap()));
+                } else {
+                    logger.info("No discovery strategy is applicable for auto-detection");
                 }
             }
             return discoveryStrategies;
