@@ -10,7 +10,7 @@ This post is a part of a series:
 
 - Part 1 (you are here)
 - [Part 2](/blog/2020/06/09/jdk-gc-benchmarks-part2)
-- [Part 3](/blog/2020-06-23/jdk-gc-benchmarks-rematch)
+- [Part 3](/blog/2020/06/23/jdk-gc-benchmarks-rematch)
 
 The Java runtime has been evolving more rapidly in recent years and,
 after 15 years, we finally got a new default garbage collector: the

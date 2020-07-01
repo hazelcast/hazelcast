@@ -10,7 +10,7 @@ This post is a part of a series:
 
 - [Part 1](/blog/2020/06/09/jdk-gc-benchmarks-part1)
 - Part 2 (you are here)
-- [Part 3](/blog/2020-06-23/jdk-gc-benchmarks-rematch)
+- [Part 3](/blog/2020/06/23/jdk-gc-benchmarks-rematch)
 
 ## Batch Pipeline Benchmark
 
