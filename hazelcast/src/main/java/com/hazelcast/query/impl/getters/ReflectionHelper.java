@@ -85,7 +85,7 @@ public final class ReflectionHelper {
         return null;
     }
 
-    public static Getter createGetter(Object obj, String attribute) {
+    public static Getter createGetter(Object obj, String attribute, boolean failOnMissingAttribute) {
         if (obj == null || obj == NULL) {
             return NULL_GETTER;
         }
@@ -160,8 +160,12 @@ public final class ReflectionHelper {
                     }
                 }
                 if (localGetter == null) {
-                    throw new IllegalArgumentException("There is no suitable accessor for '"
-                            + baseName + "' on class '" + clazz.getName() + "'");
+                    if (failOnMissingAttribute) {
+                        throw new IllegalArgumentException("There is no suitable accessor for '"
+                                + baseName + "' on class '" + clazz.getName() + "'");
+                    } else {
+                        return NULL_GETTER;
+                    }
                 }
                 parent = localGetter;
             }
@@ -172,8 +176,8 @@ public final class ReflectionHelper {
         }
     }
 
-    public static Object extractValue(Object object, String attributeName) throws Exception {
-        return createGetter(object, attributeName).getValue(object);
+    public static Object extractValue(Object object, String attributeName, boolean failOnMissingAttribute) throws Exception {
+        return createGetter(object, attributeName, failOnMissingAttribute).getValue(object);
     }
 
     public static <T> T invokeMethod(Object object, String methodName) throws RuntimeException {

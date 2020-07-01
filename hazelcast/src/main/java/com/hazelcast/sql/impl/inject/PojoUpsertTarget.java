@@ -34,19 +34,19 @@ import static java.util.stream.Collectors.toMap;
 public class PojoUpsertTarget implements UpsertTarget {
 
     private final Class<?> clazz;
-    private final Map<String, Class<?>> typeNamesByPaths;
+    private final Map<String, Class<?>> typesByPaths;
 
     private Object pojo;
 
-    PojoUpsertTarget(String className, Map<String, String> typeNamesByFields) {
+    PojoUpsertTarget(String className, Map<String, String> typeNamesByPaths) {
         this.clazz = loadClass(className);
-        this.typeNamesByPaths = typeNamesByFields.entrySet().stream()
-                                              .collect(toMap(Entry::getKey, entry -> loadClass(entry.getValue())));
+        this.typesByPaths = typeNamesByPaths.entrySet().stream()
+                                             .collect(toMap(Entry::getKey, entry -> loadClass(entry.getValue())));
     }
 
     @Override
     public UpsertInjector createInjector(String path) {
-        Method method = extractSetter(clazz, path, typeNamesByPaths.get(path));
+        Method method = extractSetter(clazz, path, typesByPaths.get(path));
         if (method != null) {
             return createMethodInjector(method, path);
         } else {
