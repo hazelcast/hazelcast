@@ -19,19 +19,18 @@ package com.hazelcast.map.impl.recordstore;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.internal.iteration.IterationPointer;
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.map.impl.EntryCostEstimator;
 import com.hazelcast.map.impl.iterator.MapEntriesWithCursor;
 import com.hazelcast.map.impl.iterator.MapKeysWithCursor;
 import com.hazelcast.map.impl.record.Record;
+import com.hazelcast.internal.serialization.Data;
 
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Consumer;
 
 import static com.hazelcast.config.InMemoryFormat.BINARY;
 import static com.hazelcast.map.impl.OwnedEntryCostEstimatorFactory.createMapSizeEstimator;
@@ -178,16 +177,5 @@ public class StorageImpl<R extends Record> implements Storage<Data, R> {
     @Override
     public Data toBackingDataKeyFormat(Data key) {
         return key;
-    }
-
-    @Override
-    public void forEachKeyWithHashCodeBetween(int minHash, int maxHash, Consumer<Object> consumer) {
-        records.cachedEntrySet().iterator().forEachRemaining(e -> {
-            Data key = e.getKey();
-            int hashCode = key.hashCode();
-            if (hashCode > minHash && hashCode <= maxHash) {
-                consumer.accept(key);
-            }
-        });
     }
 }

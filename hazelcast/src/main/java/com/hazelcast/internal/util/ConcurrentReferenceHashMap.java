@@ -295,7 +295,7 @@ public class ConcurrentReferenceHashMap<K, V> extends AbstractMap<K, V>
         return segments[(hash >>> segmentShift) & segmentMask];
     }
 
-    public int hashOf(Object key) {
+    protected int hashOf(Object key) {
         return hash(identityComparisons ? System.identityHashCode(key) : key.hashCode());
     }
 

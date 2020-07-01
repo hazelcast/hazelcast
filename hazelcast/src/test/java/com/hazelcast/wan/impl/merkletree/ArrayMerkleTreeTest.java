@@ -25,7 +25,6 @@ import org.junit.runner.RunWith;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -61,11 +60,11 @@ public class ArrayMerkleTreeTest {
             merkleTree2.updateAdd(i, i);
         }
 
-        assertTrue(merkleTree2.footprint() > merkleTree1.footprint());
+        assertEquals(merkleTree2.footprint(), merkleTree1.footprint());
     }
 
     @Test
-    public void testFootprintChanges() {
+    public void testFootprintDoesNotChange() {
         MerkleTree merkleTree = new ArrayMerkleTree(3);
 
         long footprintBeforeAdd = merkleTree.footprint();
@@ -74,7 +73,7 @@ public class ArrayMerkleTreeTest {
         }
         long footprintAfterAdd = merkleTree.footprint();
 
-        assertTrue(footprintAfterAdd > footprintBeforeAdd);
+        assertEquals(footprintAfterAdd, footprintBeforeAdd);
     }
 
     @Test

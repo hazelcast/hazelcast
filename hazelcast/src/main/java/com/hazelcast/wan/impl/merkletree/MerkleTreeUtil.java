@@ -45,7 +45,7 @@ public final class MerkleTreeUtil {
      * @param level The level
      * @return the breadth-first order of the leaf for the given {@code hash}
      */
-    static int getLeafOrderForHash(int hash, int level) {
+    public static int getLeafOrderForHash(int hash, int level) {
         long hashStepForLevel = getNodeHashRangeOnLevel(level);
         long hashDistanceFromMin = ((long) hash) - Integer.MIN_VALUE;
         int steps = (int) (hashDistanceFromMin / hashStepForLevel);
@@ -71,7 +71,7 @@ public final class MerkleTreeUtil {
      * @param nodeOrder The breadth-first order of the node
      * @return the lower bound of the hash range
      */
-    public static int getNodeRangeLow(int nodeOrder) {
+    static int getNodeRangeLow(int nodeOrder) {
         int level = getLevelOfNode(nodeOrder);
         int leftMostLeafOrder = getLeftMostNodeOrderOnLevel(level);
         int levelHashStep = (int) getNodeHashRangeOnLevel(level);
@@ -86,7 +86,7 @@ public final class MerkleTreeUtil {
      * @param nodeOrder The breadth-first order of the node
      * @return the upper bound of the hash range
      */
-    public static int getNodeRangeHigh(int nodeOrder) {
+    static int getNodeRangeHigh(int nodeOrder) {
         int level = getLevelOfNode(nodeOrder);
         int leftMostLeafOrder = getLeftMostNodeOrderOnLevel(level);
         int levelHashStep = (int) getNodeHashRangeOnLevel(level);
