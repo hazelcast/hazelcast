@@ -235,7 +235,8 @@ public class MultiMapContainer extends MultiMapContainerSupport {
                                SplitBrainMergePolicy<Collection<Object>, MultiMapMergeTypes<Object, Object>,
                                        Collection<Object>> mergePolicy) {
         SerializationService serializationService = nodeEngine.getSerializationService();
-        serializationService.getManagedContext().initialize(mergePolicy);
+        mergePolicy = (SplitBrainMergePolicy<Collection<Object>, MultiMapMergeTypes<Object, Object>, Collection<Object>>)
+            serializationService.getManagedContext().initialize(mergePolicy);
 
         MultiMapMergeTypes<Object, Object> mergingEntry = createMergingEntry(serializationService, mergeContainer);
         MultiMapValue existingValue = getMultiMapValueOrNull(mergeContainer.getKey());

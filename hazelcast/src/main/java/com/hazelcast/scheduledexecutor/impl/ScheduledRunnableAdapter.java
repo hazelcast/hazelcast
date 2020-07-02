@@ -68,7 +68,7 @@ public class ScheduledRunnableAdapter<V>
     @Override
     public void setNode(Node node) {
         ManagedContext managedContext = node.getSerializationService().getManagedContext();
-        managedContext.initialize(task);
+        task = (Runnable) managedContext.initialize(task);
     }
 
     @Override

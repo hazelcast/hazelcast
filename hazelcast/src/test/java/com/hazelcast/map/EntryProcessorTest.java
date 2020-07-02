@@ -29,10 +29,14 @@ import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.internal.json.Json;
 import com.hazelcast.internal.json.JsonValue;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.map.impl.MapService;
+import com.hazelcast.map.impl.PartitionContainer;
 import com.hazelcast.map.impl.operation.MultipleEntryWithPredicateOperation;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
+import com.hazelcast.map.impl.record.Record;
+import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.map.listener.EntryAddedListener;
 import com.hazelcast.map.listener.EntryRemovedListener;
 import com.hazelcast.map.listener.EntryUpdatedListener;
@@ -69,6 +73,7 @@ import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
 import java.io.IOException;
 import java.io.Serializable;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
@@ -1039,6 +1044,54 @@ public class EntryProcessorTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testIssue16987_customTtls() {
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
+        Config cfg = getConfig();
+        cfg.getMapConfig(MAP_NAME).setReadBackupData(true);
+
+        HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
+        HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
+
+        IMap<Integer, Integer> instance1Map = instance1.getMap(MAP_NAME);
+        instance1Map.put(1, 1);
+        instance1Map.setTtl(1, 1337, TimeUnit.SECONDS);
+
+        EntryView<Integer, Integer> view = instance1Map.getEntryView(1);
+        assertEquals(1337000L, view.getTtl());
+        assertEquals(1, view.getValue().intValue());
+
+        instance1Map.executeOnKey(1, new TTLChangingEntryProcessor<>(3, Duration.ofSeconds(1234)));
+
+        view = instance1Map.getEntryView(1);
+        assertEquals("ttl was not updated", 1234000L, view.getTtl());
+
+        Data key = new DefaultSerializationServiceBuilder().build().toData(1);
+        if (instance1.getPartitionService().getPartition(1).getOwner().localMember()) {
+            assertTtlFromLocalRecordStore(instance2, key, 1234000L);
+        } else {
+            assertTtlFromLocalRecordStore(instance1, key, 1234000L);
+        }
+    }
+
+    private void assertTtlFromLocalRecordStore(HazelcastInstance instance, Data key, long expectedTtl) {
+        MapProxyImpl<Integer, Integer> map = (MapProxyImpl) instance.getMap(MAP_NAME);
+        MapService mapService = map.getNodeEngine().getService(MapService.SERVICE_NAME);
+        PartitionContainer[] partitionContainers = mapService.getMapServiceContext().getPartitionContainers();
+        for (PartitionContainer partitionContainer : partitionContainers) {
+            RecordStore rs = partitionContainer.getExistingRecordStore(MAP_NAME);
+            if (rs != null) {
+                Record record = rs.getRecordOrNull(key);
+
+                if (record != null) {
+                    assertEquals(expectedTtl, record.getTtl());
+                    return;
+                }
+            }
+        }
+        fail("Backup not found.");
+    }
+
+    @Test
     public void testExecuteOnKeys() throws Exception {
         testExecuteOrSubmitOnKeys(false);
     }
@@ -1413,6 +1466,23 @@ public class EntryProcessorTest extends HazelcastTestSupport {
             entry.setValue(null);
             return null;
         }
+    }
+
+    private static class TTLChangingEntryProcessor<K, V> implements EntryProcessor<K, V, V> {
+
+        private V newValue;
+        private Duration newTtl;
+
+        TTLChangingEntryProcessor(V newValue, Duration newTtl) {
+            this.newValue = newValue;
+            this.newTtl = newTtl;
+        }
+
+        @Override
+        public V process(Entry<K, V> entry) {
+            return ((ExtendedMapEntry<K, V>) entry).setValue(newValue, newTtl.toMillis(), TimeUnit.MILLISECONDS);
+        }
+
     }
 
     /**

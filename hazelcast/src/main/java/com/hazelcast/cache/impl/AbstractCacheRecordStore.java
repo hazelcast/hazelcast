@@ -54,6 +54,7 @@ import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.internal.util.comparators.ValueComparator;
 import com.hazelcast.internal.util.comparators.ValueComparatorUtil;
 import com.hazelcast.map.impl.MapEntries;
+import com.hazelcast.spi.eviction.EvictionPolicyComparator;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.eventservice.EventRegistration;
@@ -93,6 +94,7 @@ import static com.hazelcast.cache.impl.CacheEventContextUtil.createCacheUpdatedE
 import static com.hazelcast.cache.impl.operation.MutableOperation.IGNORE_COMPLETION;
 import static com.hazelcast.cache.impl.record.CacheRecord.TIME_NOT_AVAILABLE;
 import static com.hazelcast.cache.impl.record.CacheRecordFactory.isExpiredAt;
+import com.hazelcast.config.CacheConfigAccessor;
 import static com.hazelcast.config.CacheConfigAccessor.getTenantControl;
 import static com.hazelcast.internal.config.ConfigValidator.checkCacheEvictionConfig;
 import static com.hazelcast.internal.nio.IOUtil.closeResource;
@@ -101,6 +103,7 @@ import static com.hazelcast.internal.util.MapUtil.createHashMap;
 import static com.hazelcast.internal.util.SetUtil.createHashSet;
 import static com.hazelcast.internal.util.ThreadUtil.assertRunningOnPartitionThread;
 import static com.hazelcast.spi.impl.merge.MergingValueFactory.createMergingEntry;
+import java.io.IOException;
 import static java.util.Collections.emptySet;
 
 @SuppressWarnings({"checkstyle:methodcount", "checkstyle:classfanoutcomplexity"})
@@ -147,7 +150,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     protected InvalidationQueue<ExpiredKey> expiredKeys = new InvalidationQueue<ExpiredKey>();
     protected boolean hasEntryWithExpiration;
 
-    @SuppressWarnings({"checkstyle:npathcomplexity", "checkstyle:executablestatementcount"})
+    @SuppressWarnings({"checkstyle:npathcomplexity", "checkstyle:executablestatementcount", "checkstyle:methodlength"})
     public AbstractCacheRecordStore(String cacheNameWithPrefix, int partitionId, NodeEngine nodeEngine,
                                     AbstractCacheService cacheService) {
         this.name = cacheNameWithPrefix;
@@ -161,53 +164,67 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
             throw new CacheNotExistsException("Cache " + cacheNameWithPrefix + " is already destroyed or not created yet, on "
                     + nodeEngine.getLocalMember());
         }
-        this.eventJournalConfig = cacheConfig.getEventJournalConfig();
-        this.evictionConfig = cacheConfig.getEvictionConfig();
-        if (evictionConfig == null) {
-            throw new IllegalStateException("Eviction config cannot be null!");
+        Closeable tenantContext = CacheConfigAccessor.getTenantControl(cacheConfig).setTenant(true);
+        try {
+            this.eventJournalConfig = cacheConfig.getEventJournalConfig();
+            this.evictionConfig = cacheConfig.getEvictionConfig();
+            if (evictionConfig == null) {
+                throw new IllegalStateException("Eviction config cannot be null!");
+            }
+            this.wanReplicationEnabled = cacheService.isWanReplicationEnabled(cacheNameWithPrefix);
+            this.disablePerEntryInvalidationEvents = cacheConfig.isDisablePerEntryInvalidationEvents();
+            initializeStatisticsAndFactories(cacheNameWithPrefix);
+
+            EvictionPolicyComparator evictionPolicyComparator = createEvictionPolicyComparator(evictionConfig);
+            evictionPolicyComparator = injectDependencies(evictionPolicyComparator);
+            this.evictionPolicyEvaluator = new EvictionPolicyEvaluator<>(evictionPolicyComparator);
+            this.cacheContext = cacheService.getOrCreateCacheContext(cacheNameWithPrefix);
+            this.records = createRecordCacheMap();
+            this.evictionChecker = createCacheEvictionChecker(evictionConfig.getSize(), evictionConfig.getMaxSizePolicy());
+            this.evictionStrategy = createEvictionStrategy(evictionConfig);
+            this.objectNamespace = CacheService.getObjectNamespace(cacheNameWithPrefix);
+            this.persistWanReplicatedData = canPersistWanReplicatedData(cacheConfig, nodeEngine);
+            this.cacheRecordFactory = new CacheRecordFactory(cacheConfig.getInMemoryFormat(), ss);
+            this.valueComparator = getValueComparatorOf(cacheConfig.getInMemoryFormat());
+            this.clearExpiredRecordsTask = cacheService.getExpirationManager().getTask();
+
+            registerResourceIfItIsClosable(cacheWriter);
+            registerResourceIfItIsClosable(cacheLoader);
+            registerResourceIfItIsClosable(defaultExpiryPolicy);
+            init();
+        } finally {
+            try {
+                tenantContext.close();
+            } catch (IOException ex) {
+                ExceptionUtil.rethrow(ex);
+            }
         }
-        this.wanReplicationEnabled = cacheService.isWanReplicationEnabled(cacheNameWithPrefix);
-        this.disablePerEntryInvalidationEvents = cacheConfig.isDisablePerEntryInvalidationEvents();
+    }
+
+    private void initializeStatisticsAndFactories(String cacheNameWithPrefix) {
         if (cacheConfig.isStatisticsEnabled()) {
             statistics = cacheService.createCacheStatIfAbsent(cacheNameWithPrefix);
         }
         if (cacheConfig.getCacheLoaderFactory() != null) {
             Factory<CacheLoader> cacheLoaderFactory = cacheConfig.getCacheLoaderFactory();
-            injectDependencies(cacheLoaderFactory);
+            cacheLoaderFactory = injectDependencies(cacheLoaderFactory);
             cacheLoader = cacheLoaderFactory.create();
-            injectDependencies(cacheLoader);
+            cacheLoader = injectDependencies(cacheLoader);
         }
         if (cacheConfig.getCacheWriterFactory() != null) {
             Factory<CacheWriter> cacheWriterFactory = cacheConfig.getCacheWriterFactory();
-            injectDependencies(cacheWriterFactory);
+            cacheWriterFactory = injectDependencies(cacheWriterFactory);
             cacheWriter = cacheWriterFactory.create();
-            injectDependencies(cacheWriter);
+            cacheWriter = injectDependencies(cacheWriter);
         }
         if (cacheConfig.getExpiryPolicyFactory() != null) {
             Factory<ExpiryPolicy> expiryPolicyFactory = cacheConfig.getExpiryPolicyFactory();
-            injectDependencies(expiryPolicyFactory);
+            expiryPolicyFactory = injectDependencies(expiryPolicyFactory);
             defaultExpiryPolicy = expiryPolicyFactory.create();
-            injectDependencies(defaultExpiryPolicy);
+            defaultExpiryPolicy = injectDependencies(defaultExpiryPolicy);
         } else {
             throw new IllegalStateException("Expiry policy factory cannot be null!");
         }
-
-        this.cacheContext = cacheService.getOrCreateCacheContext(cacheNameWithPrefix);
-        this.records = createRecordCacheMap();
-        this.evictionChecker = createCacheEvictionChecker(evictionConfig.getSize(), evictionConfig.getMaxSizePolicy());
-        this.evictionPolicyEvaluator = createEvictionPolicyEvaluator(evictionConfig);
-        this.evictionStrategy = createEvictionStrategy(evictionConfig);
-        this.objectNamespace = CacheService.getObjectNamespace(cacheNameWithPrefix);
-        this.persistWanReplicatedData = canPersistWanReplicatedData(cacheConfig, nodeEngine);
-        this.cacheRecordFactory = new CacheRecordFactory(cacheConfig.getInMemoryFormat(), ss);
-        this.valueComparator = getValueComparatorOf(cacheConfig.getInMemoryFormat());
-        this.clearExpiredRecordsTask = cacheService.getExpirationManager().getTask();
-
-        injectDependencies(evictionPolicyEvaluator.getEvictionPolicyComparator());
-        registerResourceIfItIsClosable(cacheWriter);
-        registerResourceIfItIsClosable(cacheLoader);
-        registerResourceIfItIsClosable(defaultExpiryPolicy);
-        init();
     }
 
     // Overridden in EE
@@ -264,9 +281,10 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
         return owner != null && owner.equals(thisAddress);
     }
 
-    private void injectDependencies(Object obj) {
+    @SuppressWarnings("unchecked")
+    private <T> T injectDependencies(T obj) {
         ManagedContext managedContext = ss.getManagedContext();
-        managedContext.initialize(obj);
+        return (T) managedContext.initialize(obj);
     }
 
     private void registerResourceIfItIsClosable(Object resource) {
@@ -332,12 +350,12 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
         return null;
     }
 
-    protected EvictionPolicyEvaluator<Data, R> createEvictionPolicyEvaluator(EvictionConfig evictionConfig) {
+    protected EvictionPolicyComparator createEvictionPolicyComparator(EvictionConfig evictionConfig) {
         checkCacheEvictionConfig(evictionConfig);
 
         Closeable tenantContext = getTenantControl(cacheConfig).setTenant(false);
         try {
-            return EvictionPolicyEvaluatorProvider.getEvictionPolicyEvaluator(evictionConfig, nodeEngine.getConfigClassLoader());
+            return EvictionPolicyEvaluatorProvider.getEvictionPolicyComparator(evictionConfig, nodeEngine.getConfigClassLoader());
         } finally {
             closeResource(tenantContext);
         }
@@ -1747,8 +1765,8 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
         final long now = Clock.currentTimeMillis();
         final long startNanos = isStatisticsEnabled() ? Timer.nanos() : 0;
 
-        injectDependencies(mergingEntry);
-        injectDependencies(mergePolicy);
+        mergingEntry = injectDependencies(mergingEntry);
+        mergePolicy = injectDependencies(mergePolicy);
 
         boolean merged = false;
         Data key = (Data) mergingEntry.getRawKey();
@@ -1827,7 +1845,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
             statistics.addGetTimeNanos(Timer.nanosElapsed(startNanos));
         }
         CacheEntryProcessorEntry entry = createCacheEntryProcessorEntry(key, record, now, completionId);
-        injectDependencies(entryProcessor);
+        entryProcessor = injectDependencies(entryProcessor);
         Object result = entryProcessor.process(entry, arguments);
         entry.applyChanges();
         return result;

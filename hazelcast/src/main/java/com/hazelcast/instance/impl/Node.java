@@ -74,6 +74,7 @@ import com.hazelcast.internal.usercodedeployment.UserCodeDeploymentClassLoader;
 import com.hazelcast.internal.util.Clock;
 import com.hazelcast.internal.util.FutureUtil;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.logging.impl.LoggingServiceImpl;
 import com.hazelcast.partition.MigrationListener;
@@ -221,6 +222,7 @@ public class Node {
 
         ServerSocketRegistry serverSocketRegistry = new ServerSocketRegistry(addressPicker.getServerSocketChannels(),
                 !config.getAdvancedNetworkConfig().isEnabled());
+        ILogger tmpLogger = null;
 
         try {
             boolean liteMember = config.isLiteMember();
@@ -237,7 +239,8 @@ public class Node {
                     .instance(hazelcastInstance)
                     .build();
             loggingService.setThisMember(localMember);
-            logger = loggingService.getLogger(Node.class.getName());
+            tmpLogger = loggingService.getLogger(Node.class.getName());
+            logger = tmpLogger;
 
             nodeExtension.printNodeInfo();
             nodeExtension.beforeStart();
@@ -266,6 +269,14 @@ public class Node {
             multicastService = createMulticastService(addressPicker.getBindAddress(MEMBER), this, config, logger);
             joiner = nodeContext.createJoiner(this);
         } catch (Throwable e) {
+            try {
+                if (tmpLogger == null) {
+                    tmpLogger = Logger.getLogger(Node.class);
+                }
+                tmpLogger.severe("Node creation failed", e);
+            } catch (Exception e1) {
+                e.addSuppressed(e1);
+            }
             serverSocketRegistry.destroy();
             try {
                 shutdownServices(true);

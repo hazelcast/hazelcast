@@ -21,6 +21,7 @@ import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.WanBatchPublisherConfig;
 import com.hazelcast.config.WanCustomPublisherConfig;
 import com.hazelcast.config.WanReplicationConfig;
+import com.hazelcast.core.ManagedContext;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.management.events.AddWanConfigIgnoredEvent;
 import com.hazelcast.internal.management.events.WanConsistencyCheckIgnoredEvent;
@@ -137,7 +138,8 @@ public class WanReplicationServiceImpl implements WanReplicationService,
         for (Entry<String, WanPublisher> publisherEntry : publishers.entrySet()) {
             String publisherId = publisherEntry.getKey();
             WanPublisher publisher = publisherEntry.getValue();
-            node.getSerializationService().getManagedContext().initialize(publisher);
+            ManagedContext managedContext = node.getSerializationService().getManagedContext();
+            publisher = (WanPublisher) managedContext.initialize(publisher);
             publisher.init(wanReplicationConfig, publisherConfigs.get(publisherId));
         }
 

@@ -279,8 +279,9 @@ public class ScheduledExecutorContainer {
             ScheduledExecutorMergeTypes mergingEntry,
             SplitBrainMergePolicy<ScheduledTaskDescriptor, ScheduledExecutorMergeTypes, ScheduledTaskDescriptor> mergePolicy) {
         SerializationService serializationService = nodeEngine.getSerializationService();
-        serializationService.getManagedContext().initialize(mergingEntry);
-        serializationService.getManagedContext().initialize(mergePolicy);
+        mergingEntry = (ScheduledExecutorMergeTypes) serializationService.getManagedContext().initialize(mergingEntry);
+        mergePolicy = (SplitBrainMergePolicy<ScheduledTaskDescriptor, ScheduledExecutorMergeTypes, ScheduledTaskDescriptor>)
+            serializationService.getManagedContext().initialize(mergePolicy);
 
         // try to find an existing task with the same definition
         ScheduledTaskDescriptor mergingTask = ((ScheduledExecutorMergingEntryImpl) mergingEntry).getRawValue();

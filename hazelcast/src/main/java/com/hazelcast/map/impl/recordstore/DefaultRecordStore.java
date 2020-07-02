@@ -182,8 +182,8 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     }
 
     @Override
-    public Record putBackup(Data key, Object value, CallerProvenance provenance) {
-        return putBackupInternal(key, value, UNSET, UNSET,
+    public Record putBackup(Data key, Object value, long ttl, long maxIdle, CallerProvenance provenance) {
+        return putBackupInternal(key, value, ttl, maxIdle,
                 false, provenance, null);
     }
 
@@ -790,8 +790,9 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         checkIfLoaded();
         long now = getNow();
 
-        serializationService.getManagedContext().initialize(mergingEntry);
-        serializationService.getManagedContext().initialize(mergePolicy);
+        mergingEntry = (MapMergeTypes<Object, Object>) serializationService.getManagedContext().initialize(mergingEntry);
+        mergePolicy = (SplitBrainMergePolicy<Object, MapMergeTypes<Object, Object>, Object>)
+            serializationService.getManagedContext().initialize(mergePolicy);
 
         Data key = (Data) mergingEntry.getRawKey();
         Record record = getRecordOrNull(key, now, false);
