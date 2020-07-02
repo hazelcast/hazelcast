@@ -220,7 +220,6 @@ public class Diagnostics {
         }
 
         this.diagnosticsLog = stdout ? new DiagnosticsStdout(this) :  new DiagnosticsLogFile(this);
-        
         this.scheduler = new ScheduledThreadPoolExecutor(1, new DiagnosticSchedulerThreadFactory());
 
         logger.info("Diagnostics started");
