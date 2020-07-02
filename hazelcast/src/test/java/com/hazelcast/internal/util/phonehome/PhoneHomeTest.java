@@ -366,11 +366,14 @@ public class PhoneHomeTest extends HazelcastTestSupport {
 
         CachingProvider cachingProvider = createServerCachingProvider(node.hazelcastInstance);
         CacheManager cacheManager = cachingProvider.getCacheManager();
-        cacheManager.createCache("hazelcast", new CacheConfig<>("hazelcast").setWanReplicationRef(new WanReplicationRef()));
+        CacheSimpleConfig cacheSimpleConfig = new CacheSimpleConfig();
+        cacheSimpleConfig.setName("hazelcast");
+        cacheSimpleConfig.setWanReplicationRef(new WanReplicationRef());
+        cacheManager.createCache("hazelcast", new CacheConfig<>("hazelcast"));
+        node.getConfig().addCacheConfig(cacheSimpleConfig);
         parameters = phoneHome.phoneHome(true);
         assertEquals(parameters.get("cawact"), "1");
 
     }
-
 }
 
