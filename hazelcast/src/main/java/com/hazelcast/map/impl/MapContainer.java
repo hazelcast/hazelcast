@@ -270,7 +270,7 @@ public class MapContainer {
     }
 
     /**
-     * @return the global index, if the global index is in use (on-heap) or null.
+     * @return the global index, if the global index is in use or null.
      */
     public Indexes getIndexes() {
         return globalIndexes;
