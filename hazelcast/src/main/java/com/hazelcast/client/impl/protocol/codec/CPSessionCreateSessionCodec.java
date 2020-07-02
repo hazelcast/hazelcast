@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Creates a session for the caller on the given CP group.
  */
-@Generated("17bd6e68119468fae06c47696b32e26f")
+@Generated("d10330ddb06db063318f45314a950a39")
 public final class CPSessionCreateSessionCodec {
     //hex: 0x1F0100
     public static final int REQUEST_MESSAGE_TYPE = 2031872;
@@ -90,21 +90,19 @@ public final class CPSessionCreateSessionCodec {
 
     @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class ResponseParameters {
+            /**
+             * Id of the session.
+             */
+            public long sessionId;
+            /**
+             * Time to live value in milliseconds that must be respected by the caller.
+             */
+            public long ttlMillis;
+            /**
+             * Time between heartbeats in milliseconds that must be respected by the caller.
+             */
+            public long heartbeatMillis;
 
-        /**
-         * Id of the session.
-         */
-        public long sessionId;
-
-        /**
-         * Time to live value in milliseconds that must be respected by the caller.
-         */
-        public long ttlMillis;
-
-        /**
-         * Time between heartbeats in milliseconds that must be respected by the caller.
-         */
-        public long heartbeatMillis;
     }
 
     public static ClientMessage encodeResponse(long sessionId, long ttlMillis, long heartbeatMillis) {
@@ -130,3 +128,4 @@ public final class CPSessionCreateSessionCodec {
     }
 
 }
+

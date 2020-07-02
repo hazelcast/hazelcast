@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Changes the cluster version.
  */
-@Generated("7ea3867c0fae8b55b99feda494a55da1")
+@Generated("f406ea4de2b5c01cb5f49248eb6c83be")
 public final class MCChangeClusterVersionCodec {
     //hex: 0x201000
     public static final int REQUEST_MESSAGE_TYPE = 2101248;
@@ -88,6 +88,7 @@ public final class MCChangeClusterVersionCodec {
 
     @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class ResponseParameters {
+
     }
 
     public static ClientMessage encodeResponse() {
@@ -108,3 +109,4 @@ public final class MCChangeClusterVersionCodec {
     }
 
 }
+

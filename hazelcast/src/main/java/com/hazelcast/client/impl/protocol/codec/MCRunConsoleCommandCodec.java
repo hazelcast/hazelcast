@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Runs given console command on the member it's called on.
  */
-@Generated("b6e67b6468dd48ccc1a550ac4865b1d3")
+@Generated("fa7d4006c37bbd558129a452edd172db")
 public final class MCRunConsoleCommandCodec {
     //hex: 0x201200
     public static final int REQUEST_MESSAGE_TYPE = 2101760;
@@ -85,14 +85,11 @@ public final class MCRunConsoleCommandCodec {
         return request;
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class ResponseParameters {
-
-        /**
-         * Execution result: console command output.
-         */
-        public java.lang.String result;
-    }
+    /**
+     * Execution result: console command output.
+     */
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"UUF_UNUSED_PUBLIC_OR_PROTECTED_FIELD"})
+    public java.lang.String result;
 
     public static ClientMessage encodeResponse(java.lang.String result) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
@@ -104,13 +101,12 @@ public final class MCRunConsoleCommandCodec {
         return clientMessage;
     }
 
-    public static MCRunConsoleCommandCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
+    public static java.lang.String decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        ResponseParameters response = new ResponseParameters();
         //empty initial frame
         iterator.next();
-        response.result = StringCodec.decode(iterator);
-        return response;
+        return StringCodec.decode(iterator);
     }
 
 }
+

@@ -39,7 +39,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * in the collection, and vice-versa. This method is always executed by a distributed query, so it may throw a
  * QueryResultSizeExceededException if query result size limit is configured.
  */
-@Generated("509588cbc03611aa840cc34a85d03ea6")
+@Generated("029b97c0520d70806fef59e0187dc376")
 public final class MapValuesWithPagingPredicateCodec {
     //hex: 0x013500
     public static final int REQUEST_MESSAGE_TYPE = 79104;
@@ -90,16 +90,15 @@ public final class MapValuesWithPagingPredicateCodec {
 
     @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class ResponseParameters {
+            /**
+             * values for the query.
+             */
+            public java.util.List<com.hazelcast.internal.serialization.Data> response;
+            /**
+             * The updated anchor list.
+             */
+            public com.hazelcast.client.impl.protocol.codec.holder.AnchorDataListHolder anchorDataList;
 
-        /**
-         * values for the query.
-         */
-        public java.util.List<com.hazelcast.internal.serialization.Data> response;
-
-        /**
-         * The updated anchor list.
-         */
-        public com.hazelcast.client.impl.protocol.codec.holder.AnchorDataListHolder anchorDataList;
     }
 
     public static ClientMessage encodeResponse(java.util.Collection<com.hazelcast.internal.serialization.Data> response, com.hazelcast.client.impl.protocol.codec.holder.AnchorDataListHolder anchorDataList) {
@@ -124,3 +123,4 @@ public final class MapValuesWithPagingPredicateCodec {
     }
 
 }
+

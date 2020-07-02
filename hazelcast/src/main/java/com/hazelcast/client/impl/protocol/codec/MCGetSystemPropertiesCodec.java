@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Gets the system properties of the member it's called on.
  */
-@Generated("b7641cda4818b24e7820da66f9c15c3b")
+@Generated("f026dd0dad3484209cab8d5a1edefd6a")
 public final class MCGetSystemPropertiesCodec {
     //hex: 0x200A00
     public static final int REQUEST_MESSAGE_TYPE = 2099712;
@@ -71,14 +71,11 @@ public final class MCGetSystemPropertiesCodec {
         return request;
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class ResponseParameters {
-
-        /**
-         * System properties of the member.
-         */
-        public java.util.List<java.util.Map.Entry<java.lang.String, java.lang.String>> systemProperties;
-    }
+    /**
+     * System properties of the member.
+     */
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"UUF_UNUSED_PUBLIC_OR_PROTECTED_FIELD"})
+    public java.util.List<java.util.Map.Entry<java.lang.String, java.lang.String>> systemProperties;
 
     public static ClientMessage encodeResponse(java.util.Collection<java.util.Map.Entry<java.lang.String, java.lang.String>> systemProperties) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
@@ -90,13 +87,12 @@ public final class MCGetSystemPropertiesCodec {
         return clientMessage;
     }
 
-    public static MCGetSystemPropertiesCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
+    public static java.util.List<java.util.Map.Entry<java.lang.String, java.lang.String>> decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        ResponseParameters response = new ResponseParameters();
         //empty initial frame
         iterator.next();
-        response.systemProperties = EntryListCodec.decode(iterator, StringCodec::decode, StringCodec::decode);
-        return response;
+        return EntryListCodec.decode(iterator, StringCodec::decode, StringCodec::decode);
     }
 
 }
+

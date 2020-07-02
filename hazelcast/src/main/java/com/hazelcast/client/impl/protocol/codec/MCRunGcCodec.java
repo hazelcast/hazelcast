@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Requests garbage collection to be performed on the member it's called on.
  */
-@Generated("50d72627f27a9f13650f4c8c67afe329")
+@Generated("7b11c090ed53101976374a2c499c9ba1")
 public final class MCRunGcCodec {
     //hex: 0x200600
     public static final int REQUEST_MESSAGE_TYPE = 2098688;
@@ -73,6 +73,7 @@ public final class MCRunGcCodec {
 
     @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class ResponseParameters {
+
     }
 
     public static ClientMessage encodeResponse() {
@@ -93,3 +94,4 @@ public final class MCRunGcCodec {
     }
 
 }
+

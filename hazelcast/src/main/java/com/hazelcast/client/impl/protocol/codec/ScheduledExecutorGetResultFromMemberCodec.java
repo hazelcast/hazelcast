@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Fetches the result of the task ({@link java.util.concurrent.Callable})
  * The call will blocking until the result is ready.
  */
-@Generated("26bf204dcc99e03107e2d285526c133c")
+@Generated("fa208713832b6fe2b6f5fed1a4db3278")
 public final class ScheduledExecutorGetResultFromMemberCodec {
     //hex: 0x1A1000
     public static final int REQUEST_MESSAGE_TYPE = 1708032;
@@ -93,14 +93,11 @@ public final class ScheduledExecutorGetResultFromMemberCodec {
         return request;
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class ResponseParameters {
-
-        /**
-         * The result of the completed task, in serialized form ({
-         */
-        public @Nullable com.hazelcast.internal.serialization.Data response;
-    }
+    /**
+     * The result of the completed task, in serialized form ({
+     */
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"UUF_UNUSED_PUBLIC_OR_PROTECTED_FIELD"})
+    public @Nullable com.hazelcast.internal.serialization.Data response;
 
     public static ClientMessage encodeResponse(@Nullable com.hazelcast.internal.serialization.Data response) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
@@ -112,13 +109,12 @@ public final class ScheduledExecutorGetResultFromMemberCodec {
         return clientMessage;
     }
 
-    public static ScheduledExecutorGetResultFromMemberCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
+    public static com.hazelcast.internal.serialization.Data decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        ResponseParameters response = new ResponseParameters();
         //empty initial frame
         iterator.next();
-        response.response = CodecUtil.decodeNullable(iterator, DataCodec::decode);
-        return response;
+        return CodecUtil.decodeNullable(iterator, DataCodec::decode);
     }
 
 }
+

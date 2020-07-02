@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Interrupts hot restart backup
  */
-@Generated("3fd328894e8f3de4c6589dfcc89aaf3c")
+@Generated("93901c54d0050dad8a06347f0d9eb931")
 public final class MCInterruptHotRestartBackupCodec {
     //hex: 0x202000
     public static final int REQUEST_MESSAGE_TYPE = 2105344;
@@ -73,6 +73,7 @@ public final class MCInterruptHotRestartBackupCodec {
 
     @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class ResponseParameters {
+
     }
 
     public static ClientMessage encodeResponse() {
@@ -93,3 +94,4 @@ public final class MCInterruptHotRestartBackupCodec {
     }
 
 }
+

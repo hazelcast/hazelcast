@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Changes the state of a cluster.
  */
-@Generated("95c129d5f6561a8155677798092fe3b3")
+@Generated("3765ed22ceccd912dd25bb97f339d498")
 public final class MCChangeClusterStateCodec {
     //hex: 0x200200
     public static final int REQUEST_MESSAGE_TYPE = 2097664;
@@ -85,6 +85,7 @@ public final class MCChangeClusterStateCodec {
 
     @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class ResponseParameters {
+
     }
 
     public static ClientMessage encodeResponse() {
@@ -105,3 +106,4 @@ public final class MCChangeClusterStateCodec {
     }
 
 }
+

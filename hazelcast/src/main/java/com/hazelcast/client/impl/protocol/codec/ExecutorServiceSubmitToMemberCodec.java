@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Submits the task to member specified by the address.
  */
-@Generated("c79987702b593de5a57ec4d55c4e5aaa")
+@Generated("7ab63dfb8013f0b124adf1be48990ce9")
 public final class ExecutorServiceSubmitToMemberCodec {
     //hex: 0x080600
     public static final int REQUEST_MESSAGE_TYPE = 525824;
@@ -100,14 +100,11 @@ public final class ExecutorServiceSubmitToMemberCodec {
         return request;
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class ResponseParameters {
-
-        /**
-         * The result of the callable execution.
-         */
-        public @Nullable com.hazelcast.internal.serialization.Data response;
-    }
+    /**
+     * The result of the callable execution.
+     */
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"UUF_UNUSED_PUBLIC_OR_PROTECTED_FIELD"})
+    public @Nullable com.hazelcast.internal.serialization.Data response;
 
     public static ClientMessage encodeResponse(@Nullable com.hazelcast.internal.serialization.Data response) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
@@ -119,13 +116,12 @@ public final class ExecutorServiceSubmitToMemberCodec {
         return clientMessage;
     }
 
-    public static ExecutorServiceSubmitToMemberCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
+    public static com.hazelcast.internal.serialization.Data decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        ResponseParameters response = new ResponseParameters();
         //empty initial frame
         iterator.next();
-        response.response = CodecUtil.decodeNullable(iterator, DataCodec::decode);
-        return response;
+        return CodecUtil.decodeNullable(iterator, DataCodec::decode);
     }
 
 }
+

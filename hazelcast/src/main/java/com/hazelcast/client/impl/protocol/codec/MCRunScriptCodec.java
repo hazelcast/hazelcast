@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Runs given script on the member it's called on.
  */
-@Generated("852283d0c6c65b3a4403783a90aa0231")
+@Generated("dd89898694d03db645545712a2f42a7b")
 public final class MCRunScriptCodec {
     //hex: 0x201100
     public static final int REQUEST_MESSAGE_TYPE = 2101504;
@@ -85,14 +85,11 @@ public final class MCRunScriptCodec {
         return request;
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class ResponseParameters {
-
-        /**
-         * Execution result: script output.
-         */
-        public @Nullable java.lang.String result;
-    }
+    /**
+     * Execution result: script output.
+     */
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"UUF_UNUSED_PUBLIC_OR_PROTECTED_FIELD"})
+    public @Nullable java.lang.String result;
 
     public static ClientMessage encodeResponse(@Nullable java.lang.String result) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
@@ -104,13 +101,12 @@ public final class MCRunScriptCodec {
         return clientMessage;
     }
 
-    public static MCRunScriptCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
+    public static java.lang.String decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        ResponseParameters response = new ResponseParameters();
         //empty initial frame
         iterator.next();
-        response.result = CodecUtil.decodeNullable(iterator, StringCodec::decode);
-        return response;
+        return CodecUtil.decodeNullable(iterator, StringCodec::decode);
     }
 
 }
+

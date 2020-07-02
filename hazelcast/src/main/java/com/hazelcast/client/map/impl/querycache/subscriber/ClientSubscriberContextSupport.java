@@ -38,7 +38,7 @@ public class ClientSubscriberContextSupport implements SubscriberContextSupport 
 
     @Override
     public Boolean resolveResponseForRecoveryOperation(Object object) {
-        return ContinuousQuerySetReadCursorCodec.decodeResponse((ClientMessage) object).response;
+        return ContinuousQuerySetReadCursorCodec.decodeResponse((ClientMessage) object);
     }
 
     @Override

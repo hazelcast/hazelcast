@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Gets the current metadata of a cluster.
  */
-@Generated("a87b4046ecb197e914e371539dad1708")
+@Generated("9a7538ee4e183fa1907e071b62bcab14")
 public final class MCGetClusterMetadataCodec {
     //hex: 0x200E00
     public static final int REQUEST_MESSAGE_TYPE = 2100736;
@@ -75,31 +75,28 @@ public final class MCGetClusterMetadataCodec {
 
     @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class ResponseParameters {
+            /**
+             * Current state of the cluster:
+             * 0 - ACTIVE
+             * 1 - NO_MIGRATION
+             * 2 - FROZEN
+             * 3 - PASSIVE
+             * 4 - IN_TRANSITION (not allowed)
+             */
+            public byte currentState;
+            /**
+             * Current version of the member.
+             */
+            public java.lang.String memberVersion;
+            /**
+             * Current Jet version of the member.
+             */
+            public @Nullable java.lang.String jetVersion;
+            /**
+             * Cluster-wide time in milliseconds.
+             */
+            public long clusterTime;
 
-        /**
-         * Current state of the cluster:
-         * 0 - ACTIVE
-         * 1 - NO_MIGRATION
-         * 2 - FROZEN
-         * 3 - PASSIVE
-         * 4 - IN_TRANSITION (not allowed)
-         */
-        public byte currentState;
-
-        /**
-         * Current version of the member.
-         */
-        public java.lang.String memberVersion;
-
-        /**
-         * Current Jet version of the member.
-         */
-        public @Nullable java.lang.String jetVersion;
-
-        /**
-         * Cluster-wide time in milliseconds.
-         */
-        public long clusterTime;
     }
 
     public static ClientMessage encodeResponse(byte currentState, java.lang.String memberVersion, @Nullable java.lang.String jetVersion, long clusterTime) {
@@ -127,3 +124,4 @@ public final class MCGetClusterMetadataCodec {
     }
 
 }
+

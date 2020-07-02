@@ -42,7 +42,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * true are returned. Using filters is a good way to prevent getting items that are of no value to the receiver.
  * This reduces the amount of IO and the number of operations being executed, and can result in a significant performance improvement.
  */
-@Generated("6fcbf354596dc57f8b1516bad85de897")
+@Generated("b2ec01374fdae1ddf7b25edf880ec95b")
 public final class RingbufferReadManyCodec {
     //hex: 0x170900
     public static final int REQUEST_MESSAGE_TYPE = 1509632;
@@ -118,26 +118,23 @@ public final class RingbufferReadManyCodec {
 
     @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class ResponseParameters {
+            /**
+             * Number of items that have been read before filtering.
+             */
+            public int readCount;
+            /**
+             * List of items that have beee read.
+             */
+            public java.util.List<com.hazelcast.internal.serialization.Data> items;
+            /**
+             * List of sequence numbers for the items that have been read.
+             */
+            public @Nullable long[] itemSeqs;
+            /**
+             * Sequence number of the item following the last read item.
+             */
+            public long nextSeq;
 
-        /**
-         * Number of items that have been read before filtering.
-         */
-        public int readCount;
-
-        /**
-         * List of items that have beee read.
-         */
-        public java.util.List<com.hazelcast.internal.serialization.Data> items;
-
-        /**
-         * List of sequence numbers for the items that have been read.
-         */
-        public @Nullable long[] itemSeqs;
-
-        /**
-         * Sequence number of the item following the last read item.
-         */
-        public long nextSeq;
     }
 
     public static ClientMessage encodeResponse(int readCount, java.util.Collection<com.hazelcast.internal.serialization.Data> items, @Nullable long[] itemSeqs, long nextSeq) {
@@ -165,3 +162,4 @@ public final class RingbufferReadManyCodec {
     }
 
 }
+

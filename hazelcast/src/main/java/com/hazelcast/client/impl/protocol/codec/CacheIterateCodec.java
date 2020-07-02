@@ -39,7 +39,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * CacheEntryRemoveListeners notified. java.util.Iterator#next() may return null if the entry is no longer present,
  * has expired or has been evicted.
  */
-@Generated("cc9455f61831e6e46ea2187740cc0810")
+@Generated("bf1912ebd67cc1518c8b6dce0f2ca525")
 public final class CacheIterateCodec {
     //hex: 0x130E00
     public static final int REQUEST_MESSAGE_TYPE = 1248768;
@@ -97,16 +97,15 @@ public final class CacheIterateCodec {
 
     @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class ResponseParameters {
+            /**
+             * The index-size pairs that define the state of iteration
+             */
+            public java.util.List<java.util.Map.Entry<java.lang.Integer, java.lang.Integer>> iterationPointers;
+            /**
+             * The keys fetched from the cache.
+             */
+            public java.util.List<com.hazelcast.internal.serialization.Data> keys;
 
-        /**
-         * The index-size pairs that define the state of iteration
-         */
-        public java.util.List<java.util.Map.Entry<java.lang.Integer, java.lang.Integer>> iterationPointers;
-
-        /**
-         * The keys fetched from the cache.
-         */
-        public java.util.List<com.hazelcast.internal.serialization.Data> keys;
     }
 
     public static ClientMessage encodeResponse(java.util.Collection<java.util.Map.Entry<java.lang.Integer, java.lang.Integer>> iterationPointers, java.util.Collection<com.hazelcast.internal.serialization.Data> keys) {
@@ -131,3 +130,4 @@ public final class CacheIterateCodec {
     }
 
 }
+

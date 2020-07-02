@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Shuts down the member it's called on.
  */
-@Generated("b06c35a2a316412d1f30530307f2556f")
+@Generated("0b6b68a9ebc40a6e320f058d243f36b2")
 public final class MCShutdownMemberCodec {
     //hex: 0x200800
     public static final int REQUEST_MESSAGE_TYPE = 2099200;
@@ -73,6 +73,7 @@ public final class MCShutdownMemberCodec {
 
     @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class ResponseParameters {
+
     }
 
     public static ClientMessage encodeResponse() {
@@ -93,3 +94,4 @@ public final class MCShutdownMemberCodec {
     }
 
 }
+

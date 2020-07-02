@@ -16,7 +16,7 @@
 
 package com.hazelcast.client.cp.internal.datastructures.atomiclong;
 
-import com.hazelcast.client.impl.clientside.ClientMessageDecoder;
+import com.hazelcast.client.impl.ClientDelegatingFuture;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.AtomicLongAddAndGetCodec;
 import com.hazelcast.client.impl.protocol.codec.AtomicLongAlterCodec;
@@ -30,10 +30,9 @@ import com.hazelcast.client.impl.spi.ClientContext;
 import com.hazelcast.client.impl.spi.ClientProxy;
 import com.hazelcast.client.impl.spi.impl.ClientInvocation;
 import com.hazelcast.client.impl.spi.impl.ClientInvocationFuture;
-import com.hazelcast.client.impl.ClientDelegatingFuture;
-import com.hazelcast.cp.IAtomicLong;
 import com.hazelcast.core.IFunction;
 import com.hazelcast.cp.CPGroupId;
+import com.hazelcast.cp.IAtomicLong;
 import com.hazelcast.cp.internal.RaftGroupId;
 import com.hazelcast.cp.internal.datastructures.atomiclong.AtomicLongService;
 import com.hazelcast.internal.serialization.Data;
@@ -47,56 +46,6 @@ import static com.hazelcast.cp.internal.datastructures.atomiclong.operation.Alte
  */
 @SuppressWarnings("checkstyle:methodcount")
 public class AtomicLongProxy extends ClientProxy implements IAtomicLong {
-
-    private static final ClientMessageDecoder ADD_AND_GET_DECODER = new ClientMessageDecoder() {
-        @Override
-        public Long decodeClientMessage(ClientMessage clientMessage) {
-            return AtomicLongAddAndGetCodec.decodeResponse(clientMessage).response;
-        }
-    };
-
-    private static final ClientMessageDecoder COMPARE_AND_SET_DECODER = new ClientMessageDecoder() {
-        @Override
-        public Boolean decodeClientMessage(ClientMessage clientMessage) {
-            return AtomicLongCompareAndSetCodec.decodeResponse(clientMessage).response;
-        }
-    };
-
-    private static final ClientMessageDecoder GET_AND_ADD_DECODER = new ClientMessageDecoder() {
-        @Override
-        public Long decodeClientMessage(ClientMessage clientMessage) {
-            return AtomicLongGetAndAddCodec.decodeResponse(clientMessage).response;
-        }
-    };
-
-    private static final ClientMessageDecoder GET_AND_SET_DECODER = new ClientMessageDecoder() {
-        @Override
-        public Long decodeClientMessage(ClientMessage clientMessage) {
-            return AtomicLongGetAndSetCodec.decodeResponse(clientMessage).response;
-        }
-    };
-
-    private static final ClientMessageDecoder GET_DECODER = new ClientMessageDecoder() {
-        @Override
-        public Long decodeClientMessage(ClientMessage clientMessage) {
-            return AtomicLongGetCodec.decodeResponse(clientMessage).response;
-        }
-    };
-
-    private static final ClientMessageDecoder APPLY_DECODER = new ClientMessageDecoder() {
-        @Override
-        public Object decodeClientMessage(ClientMessage clientMessage) {
-            return AtomicLongApplyCodec.decodeResponse(clientMessage).response;
-        }
-    };
-
-    private static final ClientMessageDecoder ALTER_DECODER = new ClientMessageDecoder() {
-        @Override
-        public Long decodeClientMessage(ClientMessage clientMessage) {
-            return AtomicLongAlterCodec.decodeResponse(clientMessage).response;
-        }
-    };
-
 
     private final RaftGroupId groupId;
     private final String objectName;
@@ -176,14 +125,14 @@ public class AtomicLongProxy extends ClientProxy implements IAtomicLong {
     public InternalCompletableFuture<Long> addAndGetAsync(long delta) {
         ClientMessage request = AtomicLongAddAndGetCodec.encodeRequest(groupId, objectName, delta);
         ClientInvocationFuture future = new ClientInvocation(getClient(), request, name).invoke();
-        return new ClientDelegatingFuture<>(future, getSerializationService(), ADD_AND_GET_DECODER);
+        return new ClientDelegatingFuture<>(future, getSerializationService(), AtomicLongAddAndGetCodec::decodeResponse);
     }
 
     @Override
     public InternalCompletableFuture<Boolean> compareAndSetAsync(long expect, long update) {
         ClientMessage request = AtomicLongCompareAndSetCodec.encodeRequest(groupId, objectName, expect, update);
         ClientInvocationFuture future = new ClientInvocation(getClient(), request, name).invoke();
-        return new ClientDelegatingFuture<>(future, getSerializationService(), COMPARE_AND_SET_DECODER);
+        return new ClientDelegatingFuture<>(future, getSerializationService(), AtomicLongCompareAndSetCodec::decodeResponse);
     }
 
     @Override
@@ -195,21 +144,21 @@ public class AtomicLongProxy extends ClientProxy implements IAtomicLong {
     public InternalCompletableFuture<Long> getAsync() {
         ClientMessage request = AtomicLongGetCodec.encodeRequest(groupId, objectName);
         ClientInvocationFuture future = new ClientInvocation(getClient(), request, name).invoke();
-        return new ClientDelegatingFuture<>(future, getSerializationService(), GET_DECODER);
+        return new ClientDelegatingFuture<>(future, getSerializationService(), AtomicLongGetCodec::decodeResponse);
     }
 
     @Override
     public InternalCompletableFuture<Long> getAndAddAsync(long delta) {
         ClientMessage request = AtomicLongGetAndAddCodec.encodeRequest(groupId, objectName, delta);
         ClientInvocationFuture future = new ClientInvocation(getClient(), request, name).invoke();
-        return new ClientDelegatingFuture<>(future, getSerializationService(), GET_AND_ADD_DECODER);
+        return new ClientDelegatingFuture<>(future, getSerializationService(), AtomicLongGetAndAddCodec::decodeResponse);
     }
 
     @Override
     public InternalCompletableFuture<Long> getAndSetAsync(long newValue) {
         ClientMessage request = AtomicLongGetAndSetCodec.encodeRequest(groupId, objectName, newValue);
         ClientInvocationFuture future = new ClientInvocation(getClient(), request, name).invoke();
-        return new ClientDelegatingFuture<>(future, getSerializationService(), GET_AND_SET_DECODER);
+        return new ClientDelegatingFuture<>(future, getSerializationService(), AtomicLongGetAndSetCodec::decodeResponse);
     }
 
     @Override
@@ -237,7 +186,7 @@ public class AtomicLongProxy extends ClientProxy implements IAtomicLong {
         Data f = getSerializationService().toData(function);
         ClientMessage request = AtomicLongAlterCodec.encodeRequest(groupId, objectName, f, NEW_VALUE.value());
         ClientInvocationFuture future = new ClientInvocation(getClient(), request, name).invoke();
-        return new ClientDelegatingFuture<>(future, getSerializationService(), ALTER_DECODER);
+        return new ClientDelegatingFuture<>(future, getSerializationService(), AtomicLongAlterCodec::decodeResponse);
     }
 
     @Override
@@ -245,7 +194,7 @@ public class AtomicLongProxy extends ClientProxy implements IAtomicLong {
         Data f = getSerializationService().toData(function);
         ClientMessage request = AtomicLongAlterCodec.encodeRequest(groupId, objectName, f, OLD_VALUE.value());
         ClientInvocationFuture future = new ClientInvocation(getClient(), request, name).invoke();
-        return new ClientDelegatingFuture<>(future, getSerializationService(), ALTER_DECODER);
+        return new ClientDelegatingFuture<>(future, getSerializationService(), AtomicLongAlterCodec::decodeResponse);
     }
 
     @Override
@@ -253,7 +202,7 @@ public class AtomicLongProxy extends ClientProxy implements IAtomicLong {
         Data f = getSerializationService().toData(function);
         ClientMessage request = AtomicLongApplyCodec.encodeRequest(groupId, objectName, f);
         ClientInvocationFuture future = new ClientInvocation(getClient(), request, name).invoke();
-        return new ClientDelegatingFuture<>(future, getSerializationService(), APPLY_DECODER);
+        return new ClientDelegatingFuture<>(future, getSerializationService(), AtomicLongApplyCodec::decodeResponse);
     }
 
     @Override

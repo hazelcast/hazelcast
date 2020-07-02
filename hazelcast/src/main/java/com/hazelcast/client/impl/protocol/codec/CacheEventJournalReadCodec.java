@@ -43,7 +43,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * The predicate, filter and projection may be {@code null} in which case all elements are returned
  * and no projection is applied.
  */
-@Generated("e3d181eb8d7401296fedd82c44503694")
+@Generated("8bc4e50f90e028b716f9816b42881481")
 public final class CacheEventJournalReadCodec {
     //hex: 0x132000
     public static final int REQUEST_MESSAGE_TYPE = 1253376;
@@ -126,26 +126,23 @@ public final class CacheEventJournalReadCodec {
 
     @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class ResponseParameters {
+            /**
+             * Number of items that have been read.
+             */
+            public int readCount;
+            /**
+             * List of items that have been read.
+             */
+            public java.util.List<com.hazelcast.internal.serialization.Data> items;
+            /**
+             * Sequence numbers of items in the event journal.
+             */
+            public @Nullable long[] itemSeqs;
+            /**
+             * Sequence number of the item following the last read item.
+             */
+            public long nextSeq;
 
-        /**
-         * Number of items that have been read.
-         */
-        public int readCount;
-
-        /**
-         * List of items that have been read.
-         */
-        public java.util.List<com.hazelcast.internal.serialization.Data> items;
-
-        /**
-         * Sequence numbers of items in the event journal.
-         */
-        public @Nullable long[] itemSeqs;
-
-        /**
-         * Sequence number of the item following the last read item.
-         */
-        public long nextSeq;
     }
 
     public static ClientMessage encodeResponse(int readCount, java.util.Collection<com.hazelcast.internal.serialization.Data> items, @Nullable long[] itemSeqs, long nextSeq) {
@@ -173,3 +170,4 @@ public final class CacheEventJournalReadCodec {
     }
 
 }
+

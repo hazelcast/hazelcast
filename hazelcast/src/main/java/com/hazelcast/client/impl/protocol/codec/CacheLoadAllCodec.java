@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Loads all the keys into the CacheRecordStore in batch.
  */
-@Generated("e81c25247a394cf761c3de9d35d58734")
+@Generated("2cf5189b0162139dc689be4cc09f144a")
 public final class CacheLoadAllCodec {
     //hex: 0x131000
     public static final int REQUEST_MESSAGE_TYPE = 1249280;
@@ -95,6 +95,7 @@ public final class CacheLoadAllCodec {
 
     @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class ResponseParameters {
+
     }
 
     public static ClientMessage encodeResponse() {
@@ -115,3 +116,4 @@ public final class CacheLoadAllCodec {
     }
 
 }
+

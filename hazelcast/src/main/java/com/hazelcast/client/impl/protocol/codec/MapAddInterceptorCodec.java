@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Adds an interceptor for this map. Added interceptor will intercept operations
  * and execute user defined methods and will cancel operations if user defined method throw exception.
  */
-@Generated("eacc3a41c4c4139ab129e93b656d937e")
+@Generated("331e582eefb39e47ba423e963a3a1759")
 public final class MapAddInterceptorCodec {
     //hex: 0x011400
     public static final int REQUEST_MESSAGE_TYPE = 70656;
@@ -86,14 +86,11 @@ public final class MapAddInterceptorCodec {
         return request;
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class ResponseParameters {
-
-        /**
-         * id of registered interceptor.
-         */
-        public java.lang.String response;
-    }
+    /**
+     * id of registered interceptor.
+     */
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"UUF_UNUSED_PUBLIC_OR_PROTECTED_FIELD"})
+    public java.lang.String response;
 
     public static ClientMessage encodeResponse(java.lang.String response) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
@@ -105,13 +102,12 @@ public final class MapAddInterceptorCodec {
         return clientMessage;
     }
 
-    public static MapAddInterceptorCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
+    public static java.lang.String decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        ResponseParameters response = new ResponseParameters();
         //empty initial frame
         iterator.next();
-        response.response = StringCodec.decode(iterator);
-        return response;
+        return StringCodec.decode(iterator);
     }
 
 }
+

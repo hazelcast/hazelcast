@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Clears the XA transaction with the given xid from remote member.
  */
-@Generated("7e90b0a5e32ae2d54401154ac54ca165")
+@Generated("b2d0a56d3e5d6d7129757740ee10aa2f")
 public final class XATransactionClearRemoteCodec {
     //hex: 0x140100
     public static final int REQUEST_MESSAGE_TYPE = 1310976;
@@ -80,6 +80,7 @@ public final class XATransactionClearRemoteCodec {
 
     @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class ResponseParameters {
+
     }
 
     public static ClientMessage encodeResponse() {
@@ -100,3 +101,4 @@ public final class XATransactionClearRemoteCodec {
     }
 
 }
+

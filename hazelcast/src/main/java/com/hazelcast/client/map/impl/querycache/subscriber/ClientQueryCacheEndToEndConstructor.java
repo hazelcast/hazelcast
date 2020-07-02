@@ -51,11 +51,10 @@ public class ClientQueryCacheEndToEndConstructor extends AbstractQueryCacheEndTo
         ClientMessage response = (ClientMessage) invokerWrapper.invoke(publisherCreateMessage, urgent);
 
         if (info.isIncludeValue()) {
-            Collection<Map.Entry<Data, Data>> result =
-                    ContinuousQueryPublisherCreateWithValueCodec.decodeResponse(response).response;
+            Collection<Map.Entry<Data, Data>> result = ContinuousQueryPublisherCreateWithValueCodec.decodeResponse(response);
             prepopulate(queryCache, result);
         } else {
-            List<Data> result = ContinuousQueryPublisherCreateCodec.decodeResponse(response).response;
+            List<Data> result = ContinuousQueryPublisherCreateCodec.decodeResponse(response);
             prepopulate(queryCache, result);
         }
 

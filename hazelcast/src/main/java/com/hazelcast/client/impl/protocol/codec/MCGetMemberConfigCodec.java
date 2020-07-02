@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Gets the effective config of a member rendered as XML.
  */
-@Generated("ada90cc84d53540ac967d710919b6571")
+@Generated("ea687a91f08f2d7e6b7ccc49da7615cd")
 public final class MCGetMemberConfigCodec {
     //hex: 0x200500
     public static final int REQUEST_MESSAGE_TYPE = 2098432;
@@ -71,14 +71,11 @@ public final class MCGetMemberConfigCodec {
         return request;
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class ResponseParameters {
-
-        /**
-         * Effective config of a member rendered as XML.
-         */
-        public java.lang.String configXml;
-    }
+    /**
+     * Effective config of a member rendered as XML.
+     */
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"UUF_UNUSED_PUBLIC_OR_PROTECTED_FIELD"})
+    public java.lang.String configXml;
 
     public static ClientMessage encodeResponse(java.lang.String configXml) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
@@ -90,13 +87,12 @@ public final class MCGetMemberConfigCodec {
         return clientMessage;
     }
 
-    public static MCGetMemberConfigCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
+    public static java.lang.String decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        ResponseParameters response = new ResponseParameters();
         //empty initial frame
         iterator.next();
-        response.configXml = StringCodec.decode(iterator);
-        return response;
+        return StringCodec.decode(iterator);
     }
 
 }
+

@@ -112,12 +112,12 @@ public class ClientScheduledFutureProxy<V>
         if (uuid != null) {
             ClientMessage request = ScheduledExecutorGetDelayFromMemberCodec.encodeRequest(schedulerName, taskName, uuid);
             ClientMessage response = invokeOnMember(request, uuid);
-            long nanos = ScheduledExecutorGetDelayFromMemberCodec.decodeResponse(response).response;
+            long nanos = ScheduledExecutorGetDelayFromMemberCodec.decodeResponse(response);
             return unit.convert(nanos, TimeUnit.NANOSECONDS);
         } else {
             ClientMessage request = ScheduledExecutorGetDelayFromPartitionCodec.encodeRequest(schedulerName, taskName);
             ClientMessage response = invokeOnPartition(request, partitionId);
-            long nanos = ScheduledExecutorGetDelayFromPartitionCodec.decodeResponse(response).response;
+            long nanos = ScheduledExecutorGetDelayFromPartitionCodec.decodeResponse(response);
             return unit.convert(nanos, TimeUnit.NANOSECONDS);
         }
     }
@@ -146,12 +146,12 @@ public class ClientScheduledFutureProxy<V>
             ClientMessage request = ScheduledExecutorCancelFromMemberCodec.encodeRequest(schedulerName, taskName,
                     uuid, false);
             ClientMessage response = invokeOnMember(request, uuid);
-            return ScheduledExecutorCancelFromMemberCodec.decodeResponse(response).response;
+            return ScheduledExecutorCancelFromMemberCodec.decodeResponse(response);
         } else {
             ClientMessage request = ScheduledExecutorCancelFromPartitionCodec.encodeRequest(schedulerName,
                     taskName, false);
             ClientMessage response = invokeOnPartition(request, partitionId);
-            return ScheduledExecutorCancelFromPartitionCodec.decodeResponse(response).response;
+            return ScheduledExecutorCancelFromPartitionCodec.decodeResponse(response);
         }
     }
 
@@ -166,11 +166,11 @@ public class ClientScheduledFutureProxy<V>
             ClientMessage request = ScheduledExecutorIsCancelledFromMemberCodec.encodeRequest(schedulerName,
                     taskName, uuid);
             ClientMessage response = invokeOnMember(request, uuid);
-            return ScheduledExecutorIsCancelledFromMemberCodec.decodeResponse(response).response;
+            return ScheduledExecutorIsCancelledFromMemberCodec.decodeResponse(response);
         } else {
             ClientMessage request = ScheduledExecutorIsCancelledFromPartitionCodec.encodeRequest(schedulerName, taskName);
             ClientMessage response = invokeOnPartition(request, partitionId);
-            return ScheduledExecutorIsCancelledFromPartitionCodec.decodeResponse(response).response;
+            return ScheduledExecutorIsCancelledFromPartitionCodec.decodeResponse(response);
         }
     }
 
@@ -184,11 +184,11 @@ public class ClientScheduledFutureProxy<V>
         if (uuid != null) {
             ClientMessage request = ScheduledExecutorIsDoneFromMemberCodec.encodeRequest(schedulerName, taskName, uuid);
             ClientMessage response = invokeOnMember(request, uuid);
-            return ScheduledExecutorIsDoneFromMemberCodec.decodeResponse(response).response;
+            return ScheduledExecutorIsDoneFromMemberCodec.decodeResponse(response);
         } else {
             ClientMessage request = ScheduledExecutorIsDoneFromPartitionCodec.encodeRequest(schedulerName, taskName);
             ClientMessage response = invokeOnPartition(request, partitionId);
-            return ScheduledExecutorIsDoneFromPartitionCodec.decodeResponse(response).response;
+            return ScheduledExecutorIsDoneFromPartitionCodec.decodeResponse(response);
         }
     }
 
@@ -202,13 +202,13 @@ public class ClientScheduledFutureProxy<V>
             ClientMessage request = ScheduledExecutorGetResultFromMemberCodec.encodeRequest(schedulerName, taskName, uuid);
             ClientInvocationFuture future = new ClientInvocation(getClient(), request, schedulerName, uuid).invoke();
             ClientMessage response = future.get(timeout, unit);
-            Data data = ScheduledExecutorGetResultFromMemberCodec.decodeResponse(response).response;
+            Data data = ScheduledExecutorGetResultFromMemberCodec.decodeResponse(response);
             return toObject(data);
         } else {
             ClientMessage request = ScheduledExecutorGetResultFromPartitionCodec.encodeRequest(schedulerName, taskName);
             ClientInvocationFuture future = new ClientInvocation(getClient(), request, schedulerName, partitionId).invoke();
             ClientMessage response = future.get(timeout, unit);
-            Data data = ScheduledExecutorGetResultFromPartitionCodec.decodeResponse(response).response;
+            Data data = ScheduledExecutorGetResultFromPartitionCodec.decodeResponse(response);
             return toObject(data);
         }
     }

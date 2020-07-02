@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * If a reliable topic configuration with the given {@code name} already exists, then
  * the new configuration is ignored and the existing one is preserved.
  */
-@Generated("3c7dfeaeef9cd07289beabaa8c41276a")
+@Generated("98cc125eb069b5676f8ee4c98da5eeda")
 public final class DynamicConfigAddReliableTopicConfigCodec {
     //hex: 0x1B0D00
     public static final int REQUEST_MESSAGE_TYPE = 1772800;
@@ -120,6 +120,7 @@ public final class DynamicConfigAddReliableTopicConfigCodec {
 
     @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class ResponseParameters {
+
     }
 
     public static ClientMessage encodeResponse() {
@@ -140,3 +141,4 @@ public final class DynamicConfigAddReliableTopicConfigCodec {
     }
 
 }
+

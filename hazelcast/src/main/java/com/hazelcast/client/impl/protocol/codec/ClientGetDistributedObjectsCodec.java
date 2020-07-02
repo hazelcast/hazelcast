@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Gets the list of distributed objects in the cluster.
  */
-@Generated("df3c6c6f35c09da82da7613c452c8556")
+@Generated("b9b51512850fea0745a45e5700e8e6ae")
 public final class ClientGetDistributedObjectsCodec {
     //hex: 0x000800
     public static final int REQUEST_MESSAGE_TYPE = 2048;
@@ -71,14 +71,11 @@ public final class ClientGetDistributedObjectsCodec {
         return request;
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class ResponseParameters {
-
-        /**
-         * An array of distributed object info in the cluster.
-         */
-        public java.util.List<com.hazelcast.client.impl.client.DistributedObjectInfo> response;
-    }
+    /**
+     * An array of distributed object info in the cluster.
+     */
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"UUF_UNUSED_PUBLIC_OR_PROTECTED_FIELD"})
+    public java.util.List<com.hazelcast.client.impl.client.DistributedObjectInfo> response;
 
     public static ClientMessage encodeResponse(java.util.Collection<com.hazelcast.client.impl.client.DistributedObjectInfo> response) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
@@ -90,13 +87,12 @@ public final class ClientGetDistributedObjectsCodec {
         return clientMessage;
     }
 
-    public static ClientGetDistributedObjectsCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
+    public static java.util.List<com.hazelcast.client.impl.client.DistributedObjectInfo> decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        ResponseParameters response = new ResponseParameters();
         //empty initial frame
         iterator.next();
-        response.response = ListMultiFrameCodec.decode(iterator, DistributedObjectInfoCodec::decode);
-        return response;
+        return ListMultiFrameCodec.decode(iterator, DistributedObjectInfoCodec::decode);
     }
 
 }
+

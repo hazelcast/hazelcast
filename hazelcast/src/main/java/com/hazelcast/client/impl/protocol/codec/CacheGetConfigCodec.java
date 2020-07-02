@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Gets the cache configuration with the given name from members.
  */
-@Generated("de4d95368a1fd885b356246c61413295")
+@Generated("0499cf73c32237344cfa684aa3928210")
 public final class CacheGetConfigCodec {
     //hex: 0x130C00
     public static final int REQUEST_MESSAGE_TYPE = 1248256;
@@ -85,14 +85,11 @@ public final class CacheGetConfigCodec {
         return request;
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class ResponseParameters {
-
-        /**
-         * The cache configuration.
-         */
-        public @Nullable com.hazelcast.client.impl.protocol.codec.holder.CacheConfigHolder response;
-    }
+    /**
+     * The cache configuration.
+     */
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"UUF_UNUSED_PUBLIC_OR_PROTECTED_FIELD"})
+    public @Nullable com.hazelcast.client.impl.protocol.codec.holder.CacheConfigHolder response;
 
     public static ClientMessage encodeResponse(@Nullable com.hazelcast.client.impl.protocol.codec.holder.CacheConfigHolder response) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
@@ -104,13 +101,12 @@ public final class CacheGetConfigCodec {
         return clientMessage;
     }
 
-    public static CacheGetConfigCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
+    public static com.hazelcast.client.impl.protocol.codec.holder.CacheConfigHolder decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        ResponseParameters response = new ResponseParameters();
         //empty initial frame
         iterator.next();
-        response.response = CodecUtil.decodeNullable(iterator, CacheConfigHolderCodec::decode);
-        return response;
+        return CodecUtil.decodeNullable(iterator, CacheConfigHolderCodec::decode);
     }
 
 }
+

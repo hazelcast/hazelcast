@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * If a PN counter configuration with the given {@code name} already exists, then
  * the new configuration is ignored and the existing one is preserved.
  */
-@Generated("1fbeb34b3bb255979ebcd21c4aed3b24")
+@Generated("09e0c0bd9cbeb2a6f7d094333cfcaea5")
 public final class DynamicConfigAddPNCounterConfigCodec {
     //hex: 0x1B1000
     public static final int REQUEST_MESSAGE_TYPE = 1773568;
@@ -106,6 +106,7 @@ public final class DynamicConfigAddPNCounterConfigCodec {
 
     @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class ResponseParameters {
+
     }
 
     public static ClientMessage encodeResponse() {
@@ -126,3 +127,4 @@ public final class DynamicConfigAddPNCounterConfigCodec {
     }
 
 }
+

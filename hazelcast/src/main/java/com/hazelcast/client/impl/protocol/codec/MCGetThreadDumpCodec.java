@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Takes a thread dump of the member it's called on.
  */
-@Generated("ca7ae20159260673f9df18e0d3a10823")
+@Generated("a8841aca97cf589815067f3ea43b2ffa")
 public final class MCGetThreadDumpCodec {
     //hex: 0x200700
     public static final int REQUEST_MESSAGE_TYPE = 2098944;
@@ -78,14 +78,11 @@ public final class MCGetThreadDumpCodec {
         return request;
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class ResponseParameters {
-
-        /**
-         * Thread dump of the member's JVM.
-         */
-        public java.lang.String threadDump;
-    }
+    /**
+     * Thread dump of the member's JVM.
+     */
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"UUF_UNUSED_PUBLIC_OR_PROTECTED_FIELD"})
+    public java.lang.String threadDump;
 
     public static ClientMessage encodeResponse(java.lang.String threadDump) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
@@ -97,13 +94,12 @@ public final class MCGetThreadDumpCodec {
         return clientMessage;
     }
 
-    public static MCGetThreadDumpCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
+    public static java.lang.String decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        ResponseParameters response = new ResponseParameters();
         //empty initial frame
         iterator.next();
-        response.threadDump = StringCodec.decode(iterator);
-        return response;
+        return StringCodec.decode(iterator);
     }
 
 }
+

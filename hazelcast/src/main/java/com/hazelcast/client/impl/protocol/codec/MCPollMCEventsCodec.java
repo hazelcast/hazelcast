@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Polls events available on member. Once read, events are removed from
  * member's internal queue.
  */
-@Generated("fd9008fc4d686b8cd0a5b23bb2a3d616")
+@Generated("8f129ede10c438562a50c9ae8aa6f03f")
 public final class MCPollMCEventsCodec {
     //hex: 0x201800
     public static final int REQUEST_MESSAGE_TYPE = 2103296;
@@ -72,14 +72,11 @@ public final class MCPollMCEventsCodec {
         return request;
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class ResponseParameters {
-
-        /**
-         * List of events.
-         */
-        public java.util.List<com.hazelcast.internal.management.dto.MCEventDTO> events;
-    }
+    /**
+     * List of events.
+     */
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"UUF_UNUSED_PUBLIC_OR_PROTECTED_FIELD"})
+    public java.util.List<com.hazelcast.internal.management.dto.MCEventDTO> events;
 
     public static ClientMessage encodeResponse(java.util.Collection<com.hazelcast.internal.management.dto.MCEventDTO> events) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
@@ -91,13 +88,12 @@ public final class MCPollMCEventsCodec {
         return clientMessage;
     }
 
-    public static MCPollMCEventsCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
+    public static java.util.List<com.hazelcast.internal.management.dto.MCEventDTO> decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        ResponseParameters response = new ResponseParameters();
         //empty initial frame
         iterator.next();
-        response.events = ListMultiFrameCodec.decode(iterator, MCEventCodec::decode);
-        return response;
+        return ListMultiFrameCodec.decode(iterator, MCEventCodec::decode);
     }
 
 }
+

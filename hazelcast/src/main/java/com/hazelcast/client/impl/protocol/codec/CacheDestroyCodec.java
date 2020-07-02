@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Closes the cache. Clears the internal content and releases any resource.
  */
-@Generated("97d99aaef8739eca644024b110dba536")
+@Generated("b67563c1a156e96b79e5da7a0b0a2dae")
 public final class CacheDestroyCodec {
     //hex: 0x130700
     public static final int REQUEST_MESSAGE_TYPE = 1246976;
@@ -80,6 +80,7 @@ public final class CacheDestroyCodec {
 
     @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class ResponseParameters {
+
     }
 
     public static ClientMessage encodeResponse() {
@@ -100,3 +101,4 @@ public final class CacheDestroyCodec {
     }
 
 }
+

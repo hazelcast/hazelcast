@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Removes the given unreachable CP member from the active CP members
  * list and all CP groups it belongs to.
  */
-@Generated("95f7469bb890a2b18e040e4ab36a4320")
+@Generated("3b71d7d96905703df30ec851804fb848")
 public final class MCRemoveCPMemberCodec {
     //hex: 0x201B00
     public static final int REQUEST_MESSAGE_TYPE = 2104064;
@@ -81,6 +81,7 @@ public final class MCRemoveCPMemberCodec {
 
     @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class ResponseParameters {
+
     }
 
     public static ClientMessage encodeResponse() {
@@ -101,3 +102,4 @@ public final class MCRemoveCPMemberCodec {
     }
 
 }
+

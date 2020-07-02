@@ -40,7 +40,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * registrations, so if you register the listener twice, it will get events twice.Listeners registered from
  * HazelcastClient may miss some of the cache partition lost events due to design limitations.
  */
-@Generated("b06b697a6212a1e93182badf746f9ead")
+@Generated("59b94c6c842bceb72bfda5123588c67f")
 public final class CacheAddPartitionLostListenerCodec {
     //hex: 0x131900
     public static final int REQUEST_MESSAGE_TYPE = 1251584;
@@ -96,14 +96,11 @@ public final class CacheAddPartitionLostListenerCodec {
         return request;
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class ResponseParameters {
-
-        /**
-         * returns the registration id for the CachePartitionLostListener.
-         */
-        public java.util.UUID response;
-    }
+    /**
+     * returns the registration id for the CachePartitionLostListener.
+     */
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"UUF_UNUSED_PUBLIC_OR_PROTECTED_FIELD"})
+    public java.util.UUID response;
 
     public static ClientMessage encodeResponse(java.util.UUID response) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
@@ -115,12 +112,10 @@ public final class CacheAddPartitionLostListenerCodec {
         return clientMessage;
     }
 
-    public static CacheAddPartitionLostListenerCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
+    public static java.util.UUID decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        ResponseParameters response = new ResponseParameters();
         ClientMessage.Frame initialFrame = iterator.next();
-        response.response = decodeUUID(initialFrame.content, RESPONSE_RESPONSE_FIELD_OFFSET);
-        return response;
+        return decodeUUID(initialFrame.content, RESPONSE_RESPONSE_FIELD_OFFSET);
     }
 
     public static ClientMessage encodeCachePartitionLostEvent(int partitionId, java.util.UUID uuid) {
@@ -158,3 +153,4 @@ public final class CacheAddPartitionLostListenerCodec {
         public abstract void handleCachePartitionLostEvent(int partitionId, java.util.UUID uuid);
     }
 }
+

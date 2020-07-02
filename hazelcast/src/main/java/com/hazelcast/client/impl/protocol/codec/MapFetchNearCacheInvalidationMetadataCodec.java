@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Fetches invalidation metadata from partitions of map.
  */
-@Generated("0af416b7370821a27216962988c125b7")
+@Generated("d573b9552b78fd3025deab0188b518d7")
 public final class MapFetchNearCacheInvalidationMetadataCodec {
     //hex: 0x013D00
     public static final int REQUEST_MESSAGE_TYPE = 81152;
@@ -87,16 +87,15 @@ public final class MapFetchNearCacheInvalidationMetadataCodec {
 
     @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class ResponseParameters {
+            /**
+             * Map of partition ids and sequence number of invalidations mapped by the map name.
+             */
+            public java.util.List<java.util.Map.Entry<java.lang.String, java.util.List<java.util.Map.Entry<java.lang.Integer, java.lang.Long>>>> namePartitionSequenceList;
+            /**
+             * Map of member UUIDs mapped by the partition ids of invalidations.
+             */
+            public java.util.List<java.util.Map.Entry<java.lang.Integer, java.util.UUID>> partitionUuidList;
 
-        /**
-         * Map of partition ids and sequence number of invalidations mapped by the map name.
-         */
-        public java.util.List<java.util.Map.Entry<java.lang.String, java.util.List<java.util.Map.Entry<java.lang.Integer, java.lang.Long>>>> namePartitionSequenceList;
-
-        /**
-         * Map of member UUIDs mapped by the partition ids of invalidations.
-         */
-        public java.util.List<java.util.Map.Entry<java.lang.Integer, java.util.UUID>> partitionUuidList;
     }
 
     public static ClientMessage encodeResponse(java.util.Collection<java.util.Map.Entry<java.lang.String, java.util.List<java.util.Map.Entry<java.lang.Integer, java.lang.Long>>>> namePartitionSequenceList, java.util.Collection<java.util.Map.Entry<java.lang.Integer, java.util.UUID>> partitionUuidList) {
@@ -121,3 +120,4 @@ public final class MapFetchNearCacheInvalidationMetadataCodec {
     }
 
 }
+

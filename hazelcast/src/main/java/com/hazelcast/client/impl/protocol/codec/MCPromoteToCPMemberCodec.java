@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Promotes the local member to the CP role.
  */
-@Generated("515b34a3f7c98267ff8b148f790e11c9")
+@Generated("a41c6c45b76fe9c814104dc58bba21a5")
 public final class MCPromoteToCPMemberCodec {
     //hex: 0x201A00
     public static final int REQUEST_MESSAGE_TYPE = 2103808;
@@ -73,6 +73,7 @@ public final class MCPromoteToCPMemberCodec {
 
     @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class ResponseParameters {
+
     }
 
     public static ClientMessage encodeResponse() {
@@ -93,3 +94,4 @@ public final class MCPromoteToCPMemberCodec {
     }
 
 }
+

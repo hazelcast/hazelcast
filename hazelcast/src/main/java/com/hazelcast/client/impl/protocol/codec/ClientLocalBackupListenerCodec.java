@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Adds listener for backup acks
  */
-@Generated("265faf35e3ad5b60b2b1ee500f1f6831")
+@Generated("d2d6f8db92c031a2ce5bc6d896a6e49a")
 public final class ClientLocalBackupListenerCodec {
     //hex: 0x000F00
     public static final int REQUEST_MESSAGE_TYPE = 3840;
@@ -77,14 +77,11 @@ public final class ClientLocalBackupListenerCodec {
         return request;
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class ResponseParameters {
-
-        /**
-         * Returns the registration id for the listener.
-         */
-        public java.util.UUID response;
-    }
+    /**
+     * Returns the registration id for the listener.
+     */
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"UUF_UNUSED_PUBLIC_OR_PROTECTED_FIELD"})
+    public java.util.UUID response;
 
     public static ClientMessage encodeResponse(java.util.UUID response) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
@@ -96,12 +93,10 @@ public final class ClientLocalBackupListenerCodec {
         return clientMessage;
     }
 
-    public static ClientLocalBackupListenerCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
+    public static java.util.UUID decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        ResponseParameters response = new ResponseParameters();
         ClientMessage.Frame initialFrame = iterator.next();
-        response.response = decodeUUID(initialFrame.content, RESPONSE_RESPONSE_FIELD_OFFSET);
-        return response;
+        return decodeUUID(initialFrame.content, RESPONSE_RESPONSE_FIELD_OFFSET);
     }
 
     public static ClientMessage encodeBackupEvent(long sourceInvocationCorrelationId) {
@@ -136,3 +131,4 @@ public final class ClientLocalBackupListenerCodec {
         public abstract void handleBackupEvent(long sourceInvocationCorrelationId);
     }
 }
+

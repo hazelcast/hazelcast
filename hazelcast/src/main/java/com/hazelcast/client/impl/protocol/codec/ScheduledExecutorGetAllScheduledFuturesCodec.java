@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Returns all scheduled tasks in for a given scheduler in the given member.
  */
-@Generated("507e50d38e6b46b0fd0b159715a58198")
+@Generated("9d11ca3dcf5bb21c6b1ab24b0e76597c")
 public final class ScheduledExecutorGetAllScheduledFuturesCodec {
     //hex: 0x1A0400
     public static final int REQUEST_MESSAGE_TYPE = 1704960;
@@ -78,14 +78,11 @@ public final class ScheduledExecutorGetAllScheduledFuturesCodec {
         return request;
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class ResponseParameters {
-
-        /**
-         * A list of scheduled task handlers used to construct the future proxies.
-         */
-        public java.util.Collection<com.hazelcast.scheduledexecutor.ScheduledTaskHandler> handlers;
-    }
+    /**
+     * A list of scheduled task handlers used to construct the future proxies.
+     */
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"UUF_UNUSED_PUBLIC_OR_PROTECTED_FIELD"})
+    public java.util.Collection<com.hazelcast.scheduledexecutor.ScheduledTaskHandler> handlers;
 
     public static ClientMessage encodeResponse(java.util.Collection<com.hazelcast.scheduledexecutor.ScheduledTaskHandler> handlers) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
@@ -97,13 +94,12 @@ public final class ScheduledExecutorGetAllScheduledFuturesCodec {
         return clientMessage;
     }
 
-    public static ScheduledExecutorGetAllScheduledFuturesCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
+    public static java.util.Collection<com.hazelcast.scheduledexecutor.ScheduledTaskHandler> decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        ResponseParameters response = new ResponseParameters();
         //empty initial frame
         iterator.next();
-        response.handlers = ListMultiFrameCodec.decode(iterator, ScheduledTaskHandlerCodec::decode);
-        return response;
+        return ListMultiFrameCodec.decode(iterator, ScheduledTaskHandlerCodec::decode);
     }
 
 }
+

@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Wipes and resets the whole CP Subsystem state and initializes it
  * as if the Hazelcast cluster is starting up initially.
  */
-@Generated("605f76cec07fc7d338793bee776553a6")
+@Generated("bac1705bb140b642c4340ab3a933d1f5")
 public final class MCResetCPSubsystemCodec {
     //hex: 0x201C00
     public static final int REQUEST_MESSAGE_TYPE = 2104320;
@@ -74,6 +74,7 @@ public final class MCResetCPSubsystemCodec {
 
     @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class ResponseParameters {
+
     }
 
     public static ClientMessage encodeResponse() {
@@ -94,3 +95,4 @@ public final class MCResetCPSubsystemCodec {
     }
 
 }
+
