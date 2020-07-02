@@ -114,7 +114,7 @@ public class DiagnosticsLogTest extends HazelcastTestSupport {
         HazelcastInstance hz = createHazelcastInstance(config);
 
         diagnostics = AbstractDiagnosticsPluginTest.getDiagnostics(hz);
-        diagnosticsLogFile = diagnostics.diagnosticsLogFile;
+        diagnosticsLogFile = (DiagnosticsLogFile) diagnostics.diagnosticsLog;
         metricsRegistry = getMetricsRegistry(hz);
     }
 
