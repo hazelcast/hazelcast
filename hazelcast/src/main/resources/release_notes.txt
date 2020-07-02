@@ -1,4 +1,4 @@
-This document lists the new features, enhancements, fixed issues and, removed or deprecated features for Hazelcast IMDG 4.0.1 release. The numbers in the square brackets refer to the issues in Hazelcast's GitHub repositories.
+This document lists the new features, enhancements, fixed issues and, removed or deprecated features for Hazelcast IMDG 4.0.x releases. The numbers in the square brackets refer to the issues in Hazelcast's GitHub repositories.
 
 ==== 4.0.2 ====
 
