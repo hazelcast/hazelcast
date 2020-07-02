@@ -38,7 +38,7 @@ import static com.hazelcast.internal.util.MapUtil.toIntSize;
  * @see CacheSizeOperationFactory
  */
 public class CacheSizeMessageTask
-        extends AbstractCacheAllPartitionsTask<CacheSizeCodec.RequestParameters> {
+        extends AbstractCacheAllPartitionsTask<String> {
 
     public CacheSizeMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -46,7 +46,7 @@ public class CacheSizeMessageTask
 
     @Override
     protected OperationFactory createOperationFactory() {
-        CacheOperationProvider operationProvider = getOperationProvider(parameters.name);
+        CacheOperationProvider operationProvider = getOperationProvider(parameters);
         return operationProvider.createSizeOperationFactory();
     }
 
@@ -62,7 +62,7 @@ public class CacheSizeMessageTask
     }
 
     @Override
-    protected CacheSizeCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+    protected String decodeClientMessage(ClientMessage clientMessage) {
         return CacheSizeCodec.decodeRequest(clientMessage);
     }
 
@@ -73,11 +73,11 @@ public class CacheSizeMessageTask
 
     @Override
     public Permission getRequiredPermission() {
-        return new CachePermission(parameters.name, ActionConstants.ACTION_READ);
+        return new CachePermission(parameters, ActionConstants.ACTION_READ);
     }
 
     @Override
     public String getDistributedObjectName() {
-        return parameters.name;
+        return parameters;
     }
 }

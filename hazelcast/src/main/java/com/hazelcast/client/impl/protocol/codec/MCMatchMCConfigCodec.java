@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Checks if local MC config (client filter list) has the same ETag as provided.
  */
-@Generated("b9828d22e2a0ae20b35b0a0d0581622d")
+@Generated("6fa1fc0605187db0e1e8151b644d324a")
 public final class MCMatchMCConfigCodec {
     //hex: 0x200C00
     public static final int REQUEST_MESSAGE_TYPE = 2100224;
@@ -49,14 +49,11 @@ public final class MCMatchMCConfigCodec {
     private MCMatchMCConfigCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class RequestParameters {
-
-        /**
-         * ETag value of current MC config.
-         */
-        public java.lang.String eTag;
-    }
+    /**
+     * ETag value of current MC config.
+     */
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"UUF_UNUSED_PUBLIC_OR_PROTECTED_FIELD"})
+    public java.lang.String eTag;
 
     public static ClientMessage encodeRequest(java.lang.String eTag) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
@@ -70,13 +67,11 @@ public final class MCMatchMCConfigCodec {
         return clientMessage;
     }
 
-    public static MCMatchMCConfigCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
+    public static java.lang.String decodeRequest(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        RequestParameters request = new RequestParameters();
         //empty initial frame
         iterator.next();
-        request.eTag = StringCodec.decode(iterator);
-        return request;
+        return StringCodec.decode(iterator);
     }
 
     /**

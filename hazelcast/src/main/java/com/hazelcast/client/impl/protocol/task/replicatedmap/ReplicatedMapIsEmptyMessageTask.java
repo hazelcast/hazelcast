@@ -30,7 +30,7 @@ import com.hazelcast.spi.impl.operationservice.Operation;
 import java.security.Permission;
 
 public class ReplicatedMapIsEmptyMessageTask
-        extends AbstractPartitionMessageTask<ReplicatedMapIsEmptyCodec.RequestParameters> {
+        extends AbstractPartitionMessageTask<String> {
 
     public ReplicatedMapIsEmptyMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -38,11 +38,11 @@ public class ReplicatedMapIsEmptyMessageTask
 
     @Override
     protected Operation prepareOperation() {
-        return new IsEmptyOperation(parameters.name);
+        return new IsEmptyOperation(parameters);
     }
 
     @Override
-    protected ReplicatedMapIsEmptyCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+    protected String decodeClientMessage(ClientMessage clientMessage) {
         return ReplicatedMapIsEmptyCodec.decodeRequest(clientMessage);
     }
 
@@ -58,12 +58,12 @@ public class ReplicatedMapIsEmptyMessageTask
 
     @Override
     public Permission getRequiredPermission() {
-        return new ReplicatedMapPermission(parameters.name, ActionConstants.ACTION_READ);
+        return new ReplicatedMapPermission(parameters, ActionConstants.ACTION_READ);
     }
 
     @Override
     public String getDistributedObjectName() {
-        return parameters.name;
+        return parameters;
     }
 
     @Override

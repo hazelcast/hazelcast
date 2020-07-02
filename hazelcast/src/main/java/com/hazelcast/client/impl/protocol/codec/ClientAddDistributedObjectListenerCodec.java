@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Adds a distributed object listener to the cluster. This listener will be notified
  * when a distributed object is created or destroyed.
  */
-@Generated("34668c873e98146cb6e09b634407aa70")
+@Generated("c78c5a74485a1a06723385a4daa14aa5")
 public final class ClientAddDistributedObjectListenerCodec {
     //hex: 0x000900
     public static final int REQUEST_MESSAGE_TYPE = 2304;
@@ -56,15 +56,12 @@ public final class ClientAddDistributedObjectListenerCodec {
     private ClientAddDistributedObjectListenerCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class RequestParameters {
-
-        /**
-         * If set to true, the server adds the listener only to itself, otherwise the listener is is added for all
-         * members in the cluster.
-         */
-        public boolean localOnly;
-    }
+    /**
+     * If set to true, the server adds the listener only to itself, otherwise the listener is is added for all
+     * members in the cluster.
+     */
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"UUF_UNUSED_PUBLIC_OR_PROTECTED_FIELD"})
+    public boolean localOnly;
 
     public static ClientMessage encodeRequest(boolean localOnly) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
@@ -78,12 +75,10 @@ public final class ClientAddDistributedObjectListenerCodec {
         return clientMessage;
     }
 
-    public static ClientAddDistributedObjectListenerCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
+    public static boolean decodeRequest(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        RequestParameters request = new RequestParameters();
         ClientMessage.Frame initialFrame = iterator.next();
-        request.localOnly = decodeBoolean(initialFrame.content, REQUEST_LOCAL_ONLY_FIELD_OFFSET);
-        return request;
+        return decodeBoolean(initialFrame.content, REQUEST_LOCAL_ONLY_FIELD_OFFSET);
     }
 
     /**

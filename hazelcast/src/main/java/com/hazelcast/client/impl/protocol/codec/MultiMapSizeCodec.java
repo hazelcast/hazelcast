@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Returns the number of key-value pairs in the multimap.
  */
-@Generated("1342df39a7bfac7d382966b6621bbfe1")
+@Generated("d0a4512383b7b66b8eababac15331a8c")
 public final class MultiMapSizeCodec {
     //hex: 0x020A00
     public static final int REQUEST_MESSAGE_TYPE = 133632;
@@ -49,14 +49,11 @@ public final class MultiMapSizeCodec {
     private MultiMapSizeCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class RequestParameters {
-
-        /**
-         * Name of the MultiMap
-         */
-        public java.lang.String name;
-    }
+    /**
+     * Name of the MultiMap
+     */
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"UUF_UNUSED_PUBLIC_OR_PROTECTED_FIELD"})
+    public java.lang.String name;
 
     public static ClientMessage encodeRequest(java.lang.String name) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
@@ -70,13 +67,11 @@ public final class MultiMapSizeCodec {
         return clientMessage;
     }
 
-    public static MultiMapSizeCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
+    public static java.lang.String decodeRequest(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        RequestParameters request = new RequestParameters();
         //empty initial frame
         iterator.next();
-        request.name = StringCodec.decode(iterator);
-        return request;
+        return StringCodec.decode(iterator);
     }
 
     /**

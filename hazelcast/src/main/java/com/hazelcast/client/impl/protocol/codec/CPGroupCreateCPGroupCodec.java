@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Creates a new CP group with the given name
  */
-@Generated("13e6b30aed0e807be06a0f0c990d1a2b")
+@Generated("015171e482c41748b5bcae35732dcb39")
 public final class CPGroupCreateCPGroupCodec {
     //hex: 0x1E0100
     public static final int REQUEST_MESSAGE_TYPE = 1966336;
@@ -48,14 +48,11 @@ public final class CPGroupCreateCPGroupCodec {
     private CPGroupCreateCPGroupCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class RequestParameters {
-
-        /**
-         * The proxy name of this data structure instance
-         */
-        public java.lang.String proxyName;
-    }
+    /**
+     * The proxy name of this data structure instance
+     */
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"UUF_UNUSED_PUBLIC_OR_PROTECTED_FIELD"})
+    public java.lang.String proxyName;
 
     public static ClientMessage encodeRequest(java.lang.String proxyName) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
@@ -69,13 +66,11 @@ public final class CPGroupCreateCPGroupCodec {
         return clientMessage;
     }
 
-    public static CPGroupCreateCPGroupCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
+    public static java.lang.String decodeRequest(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        RequestParameters request = new RequestParameters();
         //empty initial frame
         iterator.next();
-        request.proxyName = StringCodec.decode(iterator);
-        return request;
+        return StringCodec.decode(iterator);
     }
 
     /**

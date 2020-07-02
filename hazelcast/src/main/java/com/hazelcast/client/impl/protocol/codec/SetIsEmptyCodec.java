@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Returns true if this set contains no elements.
  */
-@Generated("abae91f35b21d1955821c5e68fa70494")
+@Generated("0d65a9c5f36f53edb44297e77a6f4f83")
 public final class SetIsEmptyCodec {
     //hex: 0x060D00
     public static final int REQUEST_MESSAGE_TYPE = 396544;
@@ -49,14 +49,11 @@ public final class SetIsEmptyCodec {
     private SetIsEmptyCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class RequestParameters {
-
-        /**
-         * Name of the Set
-         */
-        public java.lang.String name;
-    }
+    /**
+     * Name of the Set
+     */
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"UUF_UNUSED_PUBLIC_OR_PROTECTED_FIELD"})
+    public java.lang.String name;
 
     public static ClientMessage encodeRequest(java.lang.String name) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
@@ -70,13 +67,11 @@ public final class SetIsEmptyCodec {
         return clientMessage;
     }
 
-    public static SetIsEmptyCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
+    public static java.lang.String decodeRequest(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        RequestParameters request = new RequestParameters();
         //empty initial frame
         iterator.next();
-        request.name = StringCodec.decode(iterator);
-        return request;
+        return StringCodec.decode(iterator);
     }
 
     /**

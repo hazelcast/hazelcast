@@ -34,7 +34,7 @@ import java.util.Map;
 import java.util.function.Supplier;
 
 
-public class CreateProxiesMessageTask extends AbstractMultiTargetMessageTask<ClientCreateProxiesCodec.RequestParameters>
+public class CreateProxiesMessageTask extends AbstractMultiTargetMessageTask<List<Map.Entry<String, String>>>
         implements Supplier<Operation> {
 
     public CreateProxiesMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
@@ -47,8 +47,8 @@ public class CreateProxiesMessageTask extends AbstractMultiTargetMessageTask<Cli
 
     @Override
     public Operation get() {
-        List<ProxyInfo> proxyInfos = new ArrayList<ProxyInfo>(parameters.proxies.size());
-        for (Map.Entry<String, String> proxy : parameters.proxies) {
+        List<ProxyInfo> proxyInfos = new ArrayList<ProxyInfo>(parameters.size());
+        for (Map.Entry<String, String> proxy : parameters) {
             proxyInfos.add(new ProxyInfo(proxy.getValue(), proxy.getKey(), endpoint.getUuid()));
         }
         return new PostJoinProxyOperation(proxyInfos);
@@ -70,7 +70,7 @@ public class CreateProxiesMessageTask extends AbstractMultiTargetMessageTask<Cli
     }
 
     @Override
-    protected ClientCreateProxiesCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+    protected List<Map.Entry<String, String>> decodeClientMessage(ClientMessage clientMessage) {
         return ClientCreateProxiesCodec.decodeRequest(clientMessage);
     }
 

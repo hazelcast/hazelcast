@@ -39,7 +39,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * This method is always executed by a distributed query, so it may throw a QueryResultSizeExceededException
  * if query result size limit is configured.
  */
-@Generated("cef0d0be77de9e829d9bb72a5329fb27")
+@Generated("8f7ef8ad28f584fbceba51e33dd82534")
 public final class MapEntrySetCodec {
     //hex: 0x012500
     public static final int REQUEST_MESSAGE_TYPE = 75008;
@@ -51,14 +51,11 @@ public final class MapEntrySetCodec {
     private MapEntrySetCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class RequestParameters {
-
-        /**
-         * name of map
-         */
-        public java.lang.String name;
-    }
+    /**
+     * name of map
+     */
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"UUF_UNUSED_PUBLIC_OR_PROTECTED_FIELD"})
+    public java.lang.String name;
 
     public static ClientMessage encodeRequest(java.lang.String name) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
@@ -72,13 +69,11 @@ public final class MapEntrySetCodec {
         return clientMessage;
     }
 
-    public static MapEntrySetCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
+    public static java.lang.String decodeRequest(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        RequestParameters request = new RequestParameters();
         //empty initial frame
         iterator.next();
-        request.name = StringCodec.decode(iterator);
-        return request;
+        return StringCodec.decode(iterator);
     }
 
     /**

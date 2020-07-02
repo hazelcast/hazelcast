@@ -40,7 +40,7 @@ import java.security.Permission;
  * @since 3.9
  */
 public class CacheEventJournalSubscribeTask
-        extends AbstractCacheMessageTask<CacheEventJournalSubscribeCodec.RequestParameters> {
+        extends AbstractCacheMessageTask<String> {
 
     public CacheEventJournalSubscribeTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -48,11 +48,11 @@ public class CacheEventJournalSubscribeTask
 
     @Override
     protected Operation prepareOperation() {
-        return new CacheEventJournalSubscribeOperation(parameters.name);
+        return new CacheEventJournalSubscribeOperation(parameters);
     }
 
     @Override
-    protected CacheEventJournalSubscribeCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+    protected String decodeClientMessage(ClientMessage clientMessage) {
         return CacheEventJournalSubscribeCodec.decodeRequest(clientMessage);
     }
 
@@ -68,12 +68,12 @@ public class CacheEventJournalSubscribeTask
     }
 
     public Permission getRequiredPermission() {
-        return new CachePermission(parameters.name, ActionConstants.ACTION_LISTEN);
+        return new CachePermission(parameters, ActionConstants.ACTION_LISTEN);
     }
 
     @Override
     public String getDistributedObjectName() {
-        return parameters.name;
+        return parameters;
     }
 
     @Override

@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Returns true if the semaphore is JDK compatible
  */
-@Generated("cf8c128e6e0f6232d41611424dfde2cb")
+@Generated("7e147f531fe9ad3975ab41c1788baeb7")
 public final class SemaphoreGetSemaphoreTypeCodec {
     //hex: 0x0C0700
     public static final int REQUEST_MESSAGE_TYPE = 788224;
@@ -49,14 +49,11 @@ public final class SemaphoreGetSemaphoreTypeCodec {
     private SemaphoreGetSemaphoreTypeCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class RequestParameters {
-
-        /**
-         * Name of the ISemaphore proxy
-         */
-        public java.lang.String proxyName;
-    }
+    /**
+     * Name of the ISemaphore proxy
+     */
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"UUF_UNUSED_PUBLIC_OR_PROTECTED_FIELD"})
+    public java.lang.String proxyName;
 
     public static ClientMessage encodeRequest(java.lang.String proxyName) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
@@ -70,13 +67,11 @@ public final class SemaphoreGetSemaphoreTypeCodec {
         return clientMessage;
     }
 
-    public static SemaphoreGetSemaphoreTypeCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
+    public static java.lang.String decodeRequest(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        RequestParameters request = new RequestParameters();
         //empty initial frame
         iterator.next();
-        request.proxyName = StringCodec.decode(iterator);
-        return request;
+        return StringCodec.decode(iterator);
     }
 
     /**

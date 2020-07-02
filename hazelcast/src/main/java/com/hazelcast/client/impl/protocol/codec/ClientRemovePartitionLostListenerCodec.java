@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Removes the specified partition lost listener. If there is no such listener added before, this call does no change
  * in the cluster and returns false.
  */
-@Generated("e5f9d4b03d5158fb07f8ca7e67d55648")
+@Generated("37c5771a2bac5111d18bf6c5e92f38d8")
 public final class ClientRemovePartitionLostListenerCodec {
     //hex: 0x000700
     public static final int REQUEST_MESSAGE_TYPE = 1792;
@@ -51,14 +51,11 @@ public final class ClientRemovePartitionLostListenerCodec {
     private ClientRemovePartitionLostListenerCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class RequestParameters {
-
-        /**
-         * The id assigned during the listener registration.
-         */
-        public java.util.UUID registrationId;
-    }
+    /**
+     * The id assigned during the listener registration.
+     */
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"UUF_UNUSED_PUBLIC_OR_PROTECTED_FIELD"})
+    public java.util.UUID registrationId;
 
     public static ClientMessage encodeRequest(java.util.UUID registrationId) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
@@ -72,12 +69,10 @@ public final class ClientRemovePartitionLostListenerCodec {
         return clientMessage;
     }
 
-    public static ClientRemovePartitionLostListenerCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
+    public static java.util.UUID decodeRequest(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        RequestParameters request = new RequestParameters();
         ClientMessage.Frame initialFrame = iterator.next();
-        request.registrationId = decodeUUID(initialFrame.content, REQUEST_REGISTRATION_ID_FIELD_OFFSET);
-        return request;
+        return decodeUUID(initialFrame.content, REQUEST_REGISTRATION_ID_FIELD_OFFSET);
     }
 
     /**

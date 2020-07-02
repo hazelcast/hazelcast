@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Changes the state of a cluster.
  */
-@Generated("3765ed22ceccd912dd25bb97f339d498")
+@Generated("19cd508ecabf2f78df274e2fac27b07d")
 public final class MCChangeClusterStateCodec {
     //hex: 0x200200
     public static final int REQUEST_MESSAGE_TYPE = 2097664;
@@ -49,19 +49,16 @@ public final class MCChangeClusterStateCodec {
     private MCChangeClusterStateCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class RequestParameters {
-
-        /**
-         * New state of the cluster:
-         * 0 - ACTIVE
-         * 1 - NO_MIGRATION
-         * 2 - FROZEN
-         * 3 - PASSIVE
-         * 4 - IN_TRANSITION (not allowed)
-         */
-        public int newState;
-    }
+    /**
+     * New state of the cluster:
+     * 0 - ACTIVE
+     * 1 - NO_MIGRATION
+     * 2 - FROZEN
+     * 3 - PASSIVE
+     * 4 - IN_TRANSITION (not allowed)
+     */
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"UUF_UNUSED_PUBLIC_OR_PROTECTED_FIELD"})
+    public int newState;
 
     public static ClientMessage encodeRequest(int newState) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
@@ -75,12 +72,10 @@ public final class MCChangeClusterStateCodec {
         return clientMessage;
     }
 
-    public static MCChangeClusterStateCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
+    public static int decodeRequest(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        RequestParameters request = new RequestParameters();
         ClientMessage.Frame initialFrame = iterator.next();
-        request.newState = decodeInt(initialFrame.content, REQUEST_NEW_STATE_FIELD_OFFSET);
-        return request;
+        return decodeInt(initialFrame.content, REQUEST_NEW_STATE_FIELD_OFFSET);
     }
 
     @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})

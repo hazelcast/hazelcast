@@ -34,7 +34,7 @@ import java.security.Permission;
  * {@link com.hazelcast.client.impl.protocol.codec.ListMessageType#LIST_CLEAR}
  */
 public class ListClearMessageTask
-        extends AbstractPartitionMessageTask<ListClearCodec.RequestParameters> {
+        extends AbstractPartitionMessageTask<String> {
 
     public ListClearMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -42,11 +42,11 @@ public class ListClearMessageTask
 
     @Override
     protected Operation prepareOperation() {
-        return new CollectionClearOperation(parameters.name);
+        return new CollectionClearOperation(parameters);
     }
 
     @Override
-    protected ListClearCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+    protected String decodeClientMessage(ClientMessage clientMessage) {
         return ListClearCodec.decodeRequest(clientMessage);
     }
 
@@ -67,7 +67,7 @@ public class ListClearMessageTask
 
     @Override
     public Permission getRequiredPermission() {
-        return new ListPermission(parameters.name, ActionConstants.ACTION_REMOVE);
+        return new ListPermission(parameters, ActionConstants.ACTION_REMOVE);
     }
 
     @Override
@@ -77,7 +77,7 @@ public class ListClearMessageTask
 
     @Override
     public String getDistributedObjectName() {
-        return parameters.name;
+        return parameters;
     }
 
 }

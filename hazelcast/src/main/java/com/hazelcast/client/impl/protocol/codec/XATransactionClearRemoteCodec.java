@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Clears the XA transaction with the given xid from remote member.
  */
-@Generated("b2d0a56d3e5d6d7129757740ee10aa2f")
+@Generated("620212ebc209b6e13a73d5c746fc97c7")
 public final class XATransactionClearRemoteCodec {
     //hex: 0x140100
     public static final int REQUEST_MESSAGE_TYPE = 1310976;
@@ -48,14 +48,11 @@ public final class XATransactionClearRemoteCodec {
     private XATransactionClearRemoteCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class RequestParameters {
-
-        /**
-         * Java XA transaction id as defined in interface javax.transaction.xa.Xid.
-         */
-        public com.hazelcast.transaction.impl.xa.SerializableXID xid;
-    }
+    /**
+     * Java XA transaction id as defined in interface javax.transaction.xa.Xid.
+     */
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"UUF_UNUSED_PUBLIC_OR_PROTECTED_FIELD"})
+    public com.hazelcast.transaction.impl.xa.SerializableXID xid;
 
     public static ClientMessage encodeRequest(javax.transaction.xa.Xid xid) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
@@ -69,13 +66,11 @@ public final class XATransactionClearRemoteCodec {
         return clientMessage;
     }
 
-    public static XATransactionClearRemoteCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
+    public static com.hazelcast.transaction.impl.xa.SerializableXID decodeRequest(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        RequestParameters request = new RequestParameters();
         //empty initial frame
         iterator.next();
-        request.xid = XidCodec.decode(iterator);
-        return request;
+        return XidCodec.decode(iterator);
     }
 
     @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})

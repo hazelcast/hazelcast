@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Informs the member to roll back work done on behalf of a transaction.
  */
-@Generated("57163c7c12aa17aa42857920e56506d2")
+@Generated("db990cdb5f45bf119b40a3f6b0815f6e")
 public final class XATransactionRollbackCodec {
     //hex: 0x140700
     public static final int REQUEST_MESSAGE_TYPE = 1312512;
@@ -49,14 +49,11 @@ public final class XATransactionRollbackCodec {
     private XATransactionRollbackCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class RequestParameters {
-
-        /**
-         * The id of the transaction to rollback.
-         */
-        public java.util.UUID transactionId;
-    }
+    /**
+     * The id of the transaction to rollback.
+     */
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"UUF_UNUSED_PUBLIC_OR_PROTECTED_FIELD"})
+    public java.util.UUID transactionId;
 
     public static ClientMessage encodeRequest(java.util.UUID transactionId) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
@@ -70,12 +67,10 @@ public final class XATransactionRollbackCodec {
         return clientMessage;
     }
 
-    public static XATransactionRollbackCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
+    public static java.util.UUID decodeRequest(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        RequestParameters request = new RequestParameters();
         ClientMessage.Frame initialFrame = iterator.next();
-        request.transactionId = decodeUUID(initialFrame.content, REQUEST_TRANSACTION_ID_FIELD_OFFSET);
-        return request;
+        return decodeUUID(initialFrame.content, REQUEST_TRANSACTION_ID_FIELD_OFFSET);
     }
 
     @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})

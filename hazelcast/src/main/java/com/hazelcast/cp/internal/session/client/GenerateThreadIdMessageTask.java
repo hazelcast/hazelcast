@@ -18,8 +18,8 @@ package com.hazelcast.cp.internal.session.client;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.CPSessionGenerateThreadIdCodec;
-import com.hazelcast.client.impl.protocol.codec.CPSessionGenerateThreadIdCodec.RequestParameters;
 import com.hazelcast.cp.CPGroupId;
+import com.hazelcast.cp.internal.RaftGroupId;
 import com.hazelcast.cp.internal.RaftOp;
 import com.hazelcast.cp.internal.session.operation.GenerateThreadIdOp;
 import com.hazelcast.instance.impl.Node;
@@ -28,7 +28,7 @@ import com.hazelcast.internal.nio.Connection;
 /**
  * Client message task for {@link GenerateThreadIdOp}
  */
-public class GenerateThreadIdMessageTask extends AbstractSessionMessageTask<RequestParameters, Long> {
+public class GenerateThreadIdMessageTask extends AbstractSessionMessageTask<RaftGroupId, Long> {
 
     public GenerateThreadIdMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -36,7 +36,7 @@ public class GenerateThreadIdMessageTask extends AbstractSessionMessageTask<Requ
 
     @Override
     CPGroupId getGroupId() {
-        return parameters.groupId;
+        return parameters;
     }
 
     @Override
@@ -45,7 +45,7 @@ public class GenerateThreadIdMessageTask extends AbstractSessionMessageTask<Requ
     }
 
     @Override
-    protected CPSessionGenerateThreadIdCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+    protected RaftGroupId decodeClientMessage(ClientMessage clientMessage) {
         return CPSessionGenerateThreadIdCodec.decodeRequest(clientMessage);
     }
 

@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Gets the config of a map on the member it's called on.
  */
-@Generated("70e3eef789f802f6c1f0cf4396f51d72")
+@Generated("0e2ac5b9a89379c93f29e871bd7a92e7")
 public final class MCGetMapConfigCodec {
     //hex: 0x200300
     public static final int REQUEST_MESSAGE_TYPE = 2097920;
@@ -57,14 +57,11 @@ public final class MCGetMapConfigCodec {
     private MCGetMapConfigCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class RequestParameters {
-
-        /**
-         * Name of the map.
-         */
-        public java.lang.String mapName;
-    }
+    /**
+     * Name of the map.
+     */
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"UUF_UNUSED_PUBLIC_OR_PROTECTED_FIELD"})
+    public java.lang.String mapName;
 
     public static ClientMessage encodeRequest(java.lang.String mapName) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
@@ -78,13 +75,11 @@ public final class MCGetMapConfigCodec {
         return clientMessage;
     }
 
-    public static MCGetMapConfigCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
+    public static java.lang.String decodeRequest(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        RequestParameters request = new RequestParameters();
         //empty initial frame
         iterator.next();
-        request.mapName = StringCodec.decode(iterator);
-        return request;
+        return StringCodec.decode(iterator);
     }
 
     @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})

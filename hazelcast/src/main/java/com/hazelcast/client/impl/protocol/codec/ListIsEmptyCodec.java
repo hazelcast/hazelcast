@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Returns true if this list contains no elements
  */
-@Generated("9019c52e0d27940969bcdb9c93c100ef")
+@Generated("580d9e016013a6ed2c6b14e1ed45a3bc")
 public final class ListIsEmptyCodec {
     //hex: 0x050D00
     public static final int REQUEST_MESSAGE_TYPE = 331008;
@@ -49,14 +49,11 @@ public final class ListIsEmptyCodec {
     private ListIsEmptyCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class RequestParameters {
-
-        /**
-         * Name of the List
-         */
-        public java.lang.String name;
-    }
+    /**
+     * Name of the List
+     */
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"UUF_UNUSED_PUBLIC_OR_PROTECTED_FIELD"})
+    public java.lang.String name;
 
     public static ClientMessage encodeRequest(java.lang.String name) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
@@ -70,13 +67,11 @@ public final class ListIsEmptyCodec {
         return clientMessage;
     }
 
-    public static ListIsEmptyCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
+    public static java.lang.String decodeRequest(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        RequestParameters request = new RequestParameters();
         //empty initial frame
         iterator.next();
-        request.name = StringCodec.decode(iterator);
-        return request;
+        return StringCodec.decode(iterator);
     }
 
     /**

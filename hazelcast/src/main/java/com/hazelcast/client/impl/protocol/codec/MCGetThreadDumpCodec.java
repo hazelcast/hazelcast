@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Takes a thread dump of the member it's called on.
  */
-@Generated("a8841aca97cf589815067f3ea43b2ffa")
+@Generated("e06c4d17544f7066272d57d2e4a73b2e")
 public final class MCGetThreadDumpCodec {
     //hex: 0x200700
     public static final int REQUEST_MESSAGE_TYPE = 2098944;
@@ -49,14 +49,11 @@ public final class MCGetThreadDumpCodec {
     private MCGetThreadDumpCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class RequestParameters {
-
-        /**
-         * Whether only dead-locked threads or all threads should be dumped.
-         */
-        public boolean dumpDeadLocks;
-    }
+    /**
+     * Whether only dead-locked threads or all threads should be dumped.
+     */
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"UUF_UNUSED_PUBLIC_OR_PROTECTED_FIELD"})
+    public boolean dumpDeadLocks;
 
     public static ClientMessage encodeRequest(boolean dumpDeadLocks) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
@@ -70,12 +67,10 @@ public final class MCGetThreadDumpCodec {
         return clientMessage;
     }
 
-    public static MCGetThreadDumpCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
+    public static boolean decodeRequest(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        RequestParameters request = new RequestParameters();
         ClientMessage.Frame initialFrame = iterator.next();
-        request.dumpDeadLocks = decodeBoolean(initialFrame.content, REQUEST_DUMP_DEAD_LOCKS_FIELD_OFFSET);
-        return request;
+        return decodeBoolean(initialFrame.content, REQUEST_DUMP_DEAD_LOCKS_FIELD_OFFSET);
     }
 
     /**

@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Return true if this map contains no key-value mappings
  */
-@Generated("f9b66ad9a3763b7bff0c684f0b5ad027")
+@Generated("7c13a5438a04ac84a8896fa2093ac069")
 public final class ReplicatedMapIsEmptyCodec {
     //hex: 0x0D0300
     public static final int REQUEST_MESSAGE_TYPE = 852736;
@@ -49,14 +49,11 @@ public final class ReplicatedMapIsEmptyCodec {
     private ReplicatedMapIsEmptyCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class RequestParameters {
-
-        /**
-         * Name of the ReplicatedMap
-         */
-        public java.lang.String name;
-    }
+    /**
+     * Name of the ReplicatedMap
+     */
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"UUF_UNUSED_PUBLIC_OR_PROTECTED_FIELD"})
+    public java.lang.String name;
 
     public static ClientMessage encodeRequest(java.lang.String name) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
@@ -70,13 +67,11 @@ public final class ReplicatedMapIsEmptyCodec {
         return clientMessage;
     }
 
-    public static ReplicatedMapIsEmptyCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
+    public static java.lang.String decodeRequest(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        RequestParameters request = new RequestParameters();
         //empty initial frame
         iterator.next();
-        request.name = StringCodec.decode(iterator);
-        return request;
+        return StringCodec.decode(iterator);
     }
 
     /**

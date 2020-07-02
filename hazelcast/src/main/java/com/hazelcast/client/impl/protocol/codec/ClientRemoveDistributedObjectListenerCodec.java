@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Removes the specified distributed object listener. If there is no such listener added before, this call does no
  * change in the cluster and returns false.
  */
-@Generated("1cf5d8683b59113274813b3a406a71a6")
+@Generated("ecaa3e073933563a8ef1dd56361dbbc1")
 public final class ClientRemoveDistributedObjectListenerCodec {
     //hex: 0x000A00
     public static final int REQUEST_MESSAGE_TYPE = 2560;
@@ -51,14 +51,11 @@ public final class ClientRemoveDistributedObjectListenerCodec {
     private ClientRemoveDistributedObjectListenerCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class RequestParameters {
-
-        /**
-         * The id assigned during the registration.
-         */
-        public java.util.UUID registrationId;
-    }
+    /**
+     * The id assigned during the registration.
+     */
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"UUF_UNUSED_PUBLIC_OR_PROTECTED_FIELD"})
+    public java.util.UUID registrationId;
 
     public static ClientMessage encodeRequest(java.util.UUID registrationId) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
@@ -72,12 +69,10 @@ public final class ClientRemoveDistributedObjectListenerCodec {
         return clientMessage;
     }
 
-    public static ClientRemoveDistributedObjectListenerCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
+    public static java.util.UUID decodeRequest(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        RequestParameters request = new RequestParameters();
         ClientMessage.Frame initialFrame = iterator.next();
-        request.registrationId = decodeUUID(initialFrame.content, REQUEST_REGISTRATION_ID_FIELD_OFFSET);
-        return request;
+        return decodeUUID(initialFrame.content, REQUEST_REGISTRATION_ID_FIELD_OFFSET);
     }
 
     /**

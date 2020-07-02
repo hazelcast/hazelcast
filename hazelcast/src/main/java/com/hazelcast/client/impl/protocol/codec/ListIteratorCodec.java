@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Returns an iterator over the elements in this list in proper sequence.
  */
-@Generated("6daaac9e8ec714b5b202f35d312141ee")
+@Generated("a874b22ac67dcf488de641be5ee688d6")
 public final class ListIteratorCodec {
     //hex: 0x051600
     public static final int REQUEST_MESSAGE_TYPE = 333312;
@@ -48,14 +48,11 @@ public final class ListIteratorCodec {
     private ListIteratorCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class RequestParameters {
-
-        /**
-         * Name of the List
-         */
-        public java.lang.String name;
-    }
+    /**
+     * Name of the List
+     */
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"UUF_UNUSED_PUBLIC_OR_PROTECTED_FIELD"})
+    public java.lang.String name;
 
     public static ClientMessage encodeRequest(java.lang.String name) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
@@ -69,13 +66,11 @@ public final class ListIteratorCodec {
         return clientMessage;
     }
 
-    public static ListIteratorCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
+    public static java.lang.String decodeRequest(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        RequestParameters request = new RequestParameters();
         //empty initial frame
         iterator.next();
-        request.name = StringCodec.decode(iterator);
-        return request;
+        return StringCodec.decode(iterator);
     }
 
     /**

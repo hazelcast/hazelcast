@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Adds a partition lost listener to the cluster.
  */
-@Generated("c99b21b8392f98366da1c2ce13dc54b2")
+@Generated("b2aef1cea5e44a9659317d6c3adbc3c1")
 public final class ClientAddPartitionLostListenerCodec {
     //hex: 0x000600
     public static final int REQUEST_MESSAGE_TYPE = 1536;
@@ -57,15 +57,12 @@ public final class ClientAddPartitionLostListenerCodec {
     private ClientAddPartitionLostListenerCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class RequestParameters {
-
-        /**
-         * if true only node that has the partition sends the request, if false
-         * sends all partition lost events.
-         */
-        public boolean localOnly;
-    }
+    /**
+     * if true only node that has the partition sends the request, if false
+     * sends all partition lost events.
+     */
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"UUF_UNUSED_PUBLIC_OR_PROTECTED_FIELD"})
+    public boolean localOnly;
 
     public static ClientMessage encodeRequest(boolean localOnly) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
@@ -79,12 +76,10 @@ public final class ClientAddPartitionLostListenerCodec {
         return clientMessage;
     }
 
-    public static ClientAddPartitionLostListenerCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
+    public static boolean decodeRequest(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        RequestParameters request = new RequestParameters();
         ClientMessage.Frame initialFrame = iterator.next();
-        request.localOnly = decodeBoolean(initialFrame.content, REQUEST_LOCAL_ONLY_FIELD_OFFSET);
-        return request;
+        return decodeBoolean(initialFrame.content, REQUEST_LOCAL_ONLY_FIELD_OFFSET);
     }
 
     /**

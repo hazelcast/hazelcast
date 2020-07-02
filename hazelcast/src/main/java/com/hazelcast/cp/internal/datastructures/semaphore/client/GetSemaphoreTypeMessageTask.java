@@ -29,7 +29,7 @@ import java.security.Permission;
 /**
  * Client message task for querying semaphore JDK compatibility
  */
-public class GetSemaphoreTypeMessageTask extends AbstractMessageTask<SemaphoreGetSemaphoreTypeCodec.RequestParameters> {
+public class GetSemaphoreTypeMessageTask extends AbstractMessageTask<String> {
 
     public GetSemaphoreTypeMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -37,13 +37,13 @@ public class GetSemaphoreTypeMessageTask extends AbstractMessageTask<SemaphoreGe
 
     @Override
     protected void processMessage() {
-        SemaphoreConfig config = nodeEngine.getConfig().getCPSubsystemConfig().findSemaphoreConfig(parameters.proxyName);
+        SemaphoreConfig config = nodeEngine.getConfig().getCPSubsystemConfig().findSemaphoreConfig(parameters);
         boolean jdkCompatible = (config != null && config.isJDKCompatible());
         sendResponse(jdkCompatible);
     }
 
     @Override
-    protected SemaphoreGetSemaphoreTypeCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+    protected String decodeClientMessage(ClientMessage clientMessage) {
         return SemaphoreGetSemaphoreTypeCodec.decodeRequest(clientMessage);
     }
 
@@ -64,7 +64,7 @@ public class GetSemaphoreTypeMessageTask extends AbstractMessageTask<SemaphoreGe
 
     @Override
     public String getDistributedObjectName() {
-        return parameters.proxyName;
+        return parameters;
     }
 
     @Override

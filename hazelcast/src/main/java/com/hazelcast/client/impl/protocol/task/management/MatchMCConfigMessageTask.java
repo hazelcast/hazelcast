@@ -18,7 +18,6 @@ package com.hazelcast.client.impl.protocol.task.management;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MCMatchMCConfigCodec;
-import com.hazelcast.client.impl.protocol.codec.MCMatchMCConfigCodec.RequestParameters;
 import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.management.ManagementCenterService;
@@ -26,7 +25,7 @@ import com.hazelcast.internal.nio.Connection;
 
 import java.security.Permission;
 
-public class MatchMCConfigMessageTask extends AbstractCallableMessageTask<RequestParameters> {
+public class MatchMCConfigMessageTask extends AbstractCallableMessageTask<String> {
 
     public MatchMCConfigMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -35,11 +34,11 @@ public class MatchMCConfigMessageTask extends AbstractCallableMessageTask<Reques
     @Override
     protected Object call() throws Exception {
         ManagementCenterService mcService = nodeEngine.getManagementCenterService();
-        return mcService != null && parameters.eTag.equals(mcService.getLastMCConfigETag());
+        return mcService != null && parameters.equals(mcService.getLastMCConfigETag());
     }
 
     @Override
-    protected RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+    protected String decodeClientMessage(ClientMessage clientMessage) {
         return MCMatchMCConfigCodec.decodeRequest(clientMessage);
     }
 
@@ -70,7 +69,7 @@ public class MatchMCConfigMessageTask extends AbstractCallableMessageTask<Reques
 
     @Override
     public Object[] getParameters() {
-        return new Object[]{parameters.eTag};
+        return new Object[]{parameters};
     }
 
     @Override

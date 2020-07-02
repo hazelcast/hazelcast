@@ -38,14 +38,14 @@ import java.util.Map;
  * @see CacheClearOperationFactory
  */
 public class CacheClearMessageTask
-        extends AbstractCacheAllPartitionsTask<CacheClearCodec.RequestParameters> {
+        extends AbstractCacheAllPartitionsTask<String> {
 
     public CacheClearMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected CacheClearCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+    protected String decodeClientMessage(ClientMessage clientMessage) {
         return CacheClearCodec.decodeRequest(clientMessage);
     }
 
@@ -56,7 +56,7 @@ public class CacheClearMessageTask
 
     @Override
     protected OperationFactory createOperationFactory() {
-        CacheOperationProvider operationProvider = getOperationProvider(parameters.name);
+        CacheOperationProvider operationProvider = getOperationProvider(parameters);
         return operationProvider.createClearOperationFactory();
     }
 
@@ -67,7 +67,7 @@ public class CacheClearMessageTask
             if (entry.getValue() == null) {
                 continue;
             }
-            final CacheClearResponse cacheClearResponse = (CacheClearResponse) nodeEngine.toObject(entry.getValue());
+            final CacheClearResponse cacheClearResponse = nodeEngine.toObject(entry.getValue());
             final Object response = cacheClearResponse.getResponse();
             if (response instanceof CacheException) {
                 throw (CacheException) response;
@@ -79,7 +79,7 @@ public class CacheClearMessageTask
 
     @Override
     public Permission getRequiredPermission() {
-        return new CachePermission(parameters.name, ActionConstants.ACTION_REMOVE);
+        return new CachePermission(parameters, ActionConstants.ACTION_REMOVE);
     }
 
     @Override
@@ -89,7 +89,7 @@ public class CacheClearMessageTask
 
     @Override
     public String getDistributedObjectName() {
-        return parameters.name;
+        return parameters;
     }
 
     @Override

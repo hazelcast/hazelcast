@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Generates a new ID for the caller thread. The ID is unique in the given
  * CP group.
  */
-@Generated("633fbb8198ff17ebcb4205b81c4f9bf1")
+@Generated("2498a40fe81cdd1da5bda9c6fb3f4e67")
 public final class CPSessionGenerateThreadIdCodec {
     //hex: 0x1F0400
     public static final int REQUEST_MESSAGE_TYPE = 2032640;
@@ -50,14 +50,11 @@ public final class CPSessionGenerateThreadIdCodec {
     private CPSessionGenerateThreadIdCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class RequestParameters {
-
-        /**
-         * ID of the CP group
-         */
-        public com.hazelcast.cp.internal.RaftGroupId groupId;
-    }
+    /**
+     * ID of the CP group
+     */
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"UUF_UNUSED_PUBLIC_OR_PROTECTED_FIELD"})
+    public com.hazelcast.cp.internal.RaftGroupId groupId;
 
     public static ClientMessage encodeRequest(com.hazelcast.cp.internal.RaftGroupId groupId) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
@@ -71,13 +68,11 @@ public final class CPSessionGenerateThreadIdCodec {
         return clientMessage;
     }
 
-    public static CPSessionGenerateThreadIdCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
+    public static com.hazelcast.cp.internal.RaftGroupId decodeRequest(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        RequestParameters request = new RequestParameters();
         //empty initial frame
         iterator.next();
-        request.groupId = RaftGroupIdCodec.decode(iterator);
-        return request;
+        return RaftGroupIdCodec.decode(iterator);
     }
 
     /**

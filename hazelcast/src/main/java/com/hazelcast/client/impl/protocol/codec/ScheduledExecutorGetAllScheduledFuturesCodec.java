@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Returns all scheduled tasks in for a given scheduler in the given member.
  */
-@Generated("9d11ca3dcf5bb21c6b1ab24b0e76597c")
+@Generated("a311c33827cc6f85336cc7b0e9580869")
 public final class ScheduledExecutorGetAllScheduledFuturesCodec {
     //hex: 0x1A0400
     public static final int REQUEST_MESSAGE_TYPE = 1704960;
@@ -48,14 +48,11 @@ public final class ScheduledExecutorGetAllScheduledFuturesCodec {
     private ScheduledExecutorGetAllScheduledFuturesCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class RequestParameters {
-
-        /**
-         * The name of the scheduler.
-         */
-        public java.lang.String schedulerName;
-    }
+    /**
+     * The name of the scheduler.
+     */
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"UUF_UNUSED_PUBLIC_OR_PROTECTED_FIELD"})
+    public java.lang.String schedulerName;
 
     public static ClientMessage encodeRequest(java.lang.String schedulerName) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
@@ -69,13 +66,11 @@ public final class ScheduledExecutorGetAllScheduledFuturesCodec {
         return clientMessage;
     }
 
-    public static ScheduledExecutorGetAllScheduledFuturesCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
+    public static java.lang.String decodeRequest(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        RequestParameters request = new RequestParameters();
         //empty initial frame
         iterator.next();
-        request.schedulerName = StringCodec.decode(iterator);
-        return request;
+        return StringCodec.decode(iterator);
     }
 
     /**
