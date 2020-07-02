@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Locks the key and then gets and returns the value to which the specified key is mapped. Lock will be released at
  * the end of the transaction (either commit or rollback).
  */
-@Generated("2d549dfac01bde1ecaf8110efc8d3e1e")
+@Generated("9ec11909be82598be938494fb66afa78")
 public final class TransactionalMapGetForUpdateCodec {
     //hex: 0x0E0300
     public static final int REQUEST_MESSAGE_TYPE = 918272;
@@ -125,4 +125,3 @@ public final class TransactionalMapGetForUpdateCodec {
     }
 
 }
-

@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Applies given MC config (client filter list).
  */
-@Generated("22cc6646f0ad7076f60901d68360633d")
+@Generated("bd88d5e834ff22cedf457ab45817ef62")
 public final class MCApplyMCConfigCodec {
     //hex: 0x200D00
     public static final int REQUEST_MESSAGE_TYPE = 2100480;
@@ -95,10 +95,6 @@ public final class MCApplyMCConfigCodec {
         return request;
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class ResponseParameters {
-
-    }
 
     public static ClientMessage encodeResponse() {
         ClientMessage clientMessage = ClientMessage.createForEncode();
@@ -109,13 +105,5 @@ public final class MCApplyMCConfigCodec {
         return clientMessage;
     }
 
-    public static MCApplyMCConfigCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
-        ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        ResponseParameters response = new ResponseParameters();
-        //empty initial frame
-        iterator.next();
-        return response;
-    }
 
 }
-

@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Creates a session for the caller on the given CP group.
  */
-@Generated("d10330ddb06db063318f45314a950a39")
+@Generated("2460a9a52bb8207d56e2d334b1589d6b")
 public final class CPSessionCreateSessionCodec {
     //hex: 0x1F0100
     public static final int REQUEST_MESSAGE_TYPE = 2031872;
@@ -128,4 +128,3 @@ public final class CPSessionCreateSessionCodec {
     }
 
 }
-

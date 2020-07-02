@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Creates a cluster-wide proxy with the given name and service.
  */
-@Generated("78fc7d12ea8e04c5c849213545878a23")
+@Generated("d41d0a02a0a7e7aef6a9027cb3606618")
 public final class ClientCreateProxyCodec {
     //hex: 0x000400
     public static final int REQUEST_MESSAGE_TYPE = 1024;
@@ -100,10 +100,6 @@ public final class ClientCreateProxyCodec {
         return request;
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class ResponseParameters {
-
-    }
 
     public static ClientMessage encodeResponse() {
         ClientMessage clientMessage = ClientMessage.createForEncode();
@@ -114,13 +110,5 @@ public final class ClientCreateProxyCodec {
         return clientMessage;
     }
 
-    public static ClientCreateProxyCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
-        ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        ResponseParameters response = new ResponseParameters();
-        //empty initial frame
-        iterator.next();
-        return response;
-    }
 
 }
-

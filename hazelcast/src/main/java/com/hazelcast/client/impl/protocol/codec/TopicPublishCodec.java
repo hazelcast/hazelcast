@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Publishes the message to all subscribers of this topic
  */
-@Generated("4f7e06c619508d8fc265736071a7cab9")
+@Generated("a37e14ded1bc489985d34def8d90631a")
 public final class TopicPublishCodec {
     //hex: 0x040100
     public static final int REQUEST_MESSAGE_TYPE = 262400;
@@ -85,10 +85,6 @@ public final class TopicPublishCodec {
         return request;
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class ResponseParameters {
-
-    }
 
     public static ClientMessage encodeResponse() {
         ClientMessage clientMessage = ClientMessage.createForEncode();
@@ -99,13 +95,5 @@ public final class TopicPublishCodec {
         return clientMessage;
     }
 
-    public static TopicPublishCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
-        ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        ResponseParameters response = new ResponseParameters();
-        //empty initial frame
-        iterator.next();
-        return response;
-    }
 
 }
-

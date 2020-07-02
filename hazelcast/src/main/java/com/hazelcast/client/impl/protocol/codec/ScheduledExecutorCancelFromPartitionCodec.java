@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Cancels further execution and scheduling of the task
  */
-@Generated("c498a1781890e28c18e8b5fe590d7a0a")
+@Generated("9da97a6955e51330d7ea8ef4513c5e1f")
 public final class ScheduledExecutorCancelFromPartitionCodec {
     //hex: 0x1A0900
     public static final int REQUEST_MESSAGE_TYPE = 1706240;
@@ -116,4 +116,3 @@ public final class ScheduledExecutorCancelFromPartitionCodec {
     }
 
 }
-

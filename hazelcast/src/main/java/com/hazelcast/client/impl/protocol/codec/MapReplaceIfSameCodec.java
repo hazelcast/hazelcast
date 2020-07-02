@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Replaces the the entry for a key only if existing values equal to the testValue
  */
-@Generated("4a5994b392f2ab9ffadfb2da89cdbf39")
+@Generated("fcec939539ca5fdd027445d6123138be")
 public final class MapReplaceIfSameCodec {
     //hex: 0x010500
     public static final int REQUEST_MESSAGE_TYPE = 66816;
@@ -130,4 +130,3 @@ public final class MapReplaceIfSameCodec {
     }
 
 }
-

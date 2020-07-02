@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * If this map has a MapStore, this method flushes all the local dirty entries by calling MapStore.storeAll()
  * and/or MapStore.deleteAll().
  */
-@Generated("4e5b93891828cb335d55a4fbd6e4e4b6")
+@Generated("6b5fb847ef16348485377ee664a3b29e")
 public final class MapFlushCodec {
     //hex: 0x010A00
     public static final int REQUEST_MESSAGE_TYPE = 68096;
@@ -74,10 +74,6 @@ public final class MapFlushCodec {
         return StringCodec.decode(iterator);
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class ResponseParameters {
-
-    }
 
     public static ClientMessage encodeResponse() {
         ClientMessage clientMessage = ClientMessage.createForEncode();
@@ -88,13 +84,5 @@ public final class MapFlushCodec {
         return clientMessage;
     }
 
-    public static MapFlushCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
-        ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        ResponseParameters response = new ResponseParameters();
-        //empty initial frame
-        iterator.next();
-        return response;
-    }
 
 }
-

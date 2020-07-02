@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * If a list configuration with the given {@code name} already exists, then
  * the new configuration is ignored and the existing one is preserved.
  */
-@Generated("d423f32dd6d124dc1ef9b67242632ffd")
+@Generated("1845de393c4f8535623021a54e28a785")
 public final class DynamicConfigAddListConfigCodec {
     //hex: 0x1B0400
     public static final int REQUEST_MESSAGE_TYPE = 1770496;
@@ -143,10 +143,6 @@ public final class DynamicConfigAddListConfigCodec {
         return request;
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class ResponseParameters {
-
-    }
 
     public static ClientMessage encodeResponse() {
         ClientMessage clientMessage = ClientMessage.createForEncode();
@@ -157,13 +153,5 @@ public final class DynamicConfigAddListConfigCodec {
         return clientMessage;
     }
 
-    public static DynamicConfigAddListConfigCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
-        ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        ResponseParameters response = new ResponseParameters();
-        //empty initial frame
-        iterator.next();
-        return response;
-    }
 
 }
-

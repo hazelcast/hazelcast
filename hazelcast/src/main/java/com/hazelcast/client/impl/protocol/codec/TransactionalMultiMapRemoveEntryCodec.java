@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Removes all the entries associated with the given key.
  */
-@Generated("0e5365e1c8dc921e24bb243a17065c29")
+@Generated("c7de6f0ecf477b3e6d7dfb212741b087")
 public final class TransactionalMultiMapRemoveEntryCodec {
     //hex: 0x0F0400
     public static final int REQUEST_MESSAGE_TYPE = 984064;
@@ -131,4 +131,3 @@ public final class TransactionalMultiMapRemoveEntryCodec {
     }
 
 }
-

@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Returns true if this list contains all of the elements of the specified collection.
  */
-@Generated("fb3dfc58362ca1e3203a8067ad2f7801")
+@Generated("c7f88af5c538ab8837b765959b5b985f")
 public final class ListContainsAllCodec {
     //hex: 0x050300
     public static final int REQUEST_MESSAGE_TYPE = 328448;
@@ -110,4 +110,3 @@ public final class ListContainsAllCodec {
     }
 
 }
-

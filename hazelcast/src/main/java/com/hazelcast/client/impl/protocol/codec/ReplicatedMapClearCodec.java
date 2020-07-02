@@ -39,7 +39,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * it is retried for at most 3 times (on the failing nodes only). If it does not work after the third time, this
  * method throws a OPERATION_TIMEOUT back to the caller.
  */
-@Generated("38b7c434166b3405dc1d9e1825f90d07")
+@Generated("90d7bc41ef6cd26cc4386229cd38490c")
 public final class ReplicatedMapClearCodec {
     //hex: 0x0D0900
     public static final int REQUEST_MESSAGE_TYPE = 854272;
@@ -76,10 +76,6 @@ public final class ReplicatedMapClearCodec {
         return StringCodec.decode(iterator);
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class ResponseParameters {
-
-    }
 
     public static ClientMessage encodeResponse() {
         ClientMessage clientMessage = ClientMessage.createForEncode();
@@ -90,13 +86,5 @@ public final class ReplicatedMapClearCodec {
         return clientMessage;
     }
 
-    public static ReplicatedMapClearCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
-        ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        ResponseParameters response = new ResponseParameters();
-        //empty initial frame
-        iterator.next();
-        return response;
-    }
 
 }
-

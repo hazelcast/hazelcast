@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Returns the current list of CP members.
  */
-@Generated("c6aadb35ce1797f3389c98d4d02ab6cb")
+@Generated("7543e1758505510ea826b9e5935a4607")
 public final class MCGetCPMembersCodec {
     //hex: 0x201900
     public static final int REQUEST_MESSAGE_TYPE = 2103552;
@@ -48,9 +48,6 @@ public final class MCGetCPMembersCodec {
     private MCGetCPMembersCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class RequestParameters {
-    }
 
     public static ClientMessage encodeRequest() {
         ClientMessage clientMessage = ClientMessage.createForEncode();
@@ -63,13 +60,6 @@ public final class MCGetCPMembersCodec {
         return clientMessage;
     }
 
-    public static MCGetCPMembersCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
-        ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        RequestParameters request = new RequestParameters();
-        //empty initial frame
-        iterator.next();
-        return request;
-    }
 
     /**
      * List of CP member UUIDs. The mapping is from the UUID of the CP member to UUID of that member on the
@@ -96,4 +86,3 @@ public final class MCGetCPMembersCodec {
     }
 
 }
-

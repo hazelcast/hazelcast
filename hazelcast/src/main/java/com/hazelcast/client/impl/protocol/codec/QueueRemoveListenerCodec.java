@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Removes the specified item listener. If there is no such listener added before, this call does no change in the
  * cluster and returns false.
  */
-@Generated("8c699d76326cb95dd1db11331d71ab47")
+@Generated("713aea2c690116e1c20702e6369c19c5")
 public final class QueueRemoveListenerCodec {
     //hex: 0x031200
     public static final int REQUEST_MESSAGE_TYPE = 201216;
@@ -110,4 +110,3 @@ public final class QueueRemoveListenerCodec {
     }
 
 }
-

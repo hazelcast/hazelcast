@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Informs the member to roll back work done on behalf of a transaction.
  */
-@Generated("db990cdb5f45bf119b40a3f6b0815f6e")
+@Generated("8bd29f845955c24b2c65248338e11bc5")
 public final class XATransactionRollbackCodec {
     //hex: 0x140700
     public static final int REQUEST_MESSAGE_TYPE = 1312512;
@@ -73,10 +73,6 @@ public final class XATransactionRollbackCodec {
         return decodeUUID(initialFrame.content, REQUEST_TRANSACTION_ID_FIELD_OFFSET);
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class ResponseParameters {
-
-    }
 
     public static ClientMessage encodeResponse() {
         ClientMessage clientMessage = ClientMessage.createForEncode();
@@ -87,13 +83,5 @@ public final class XATransactionRollbackCodec {
         return clientMessage;
     }
 
-    public static XATransactionRollbackCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
-        ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        ResponseParameters response = new ResponseParameters();
-        //empty initial frame
-        iterator.next();
-        return response;
-    }
 
 }
-

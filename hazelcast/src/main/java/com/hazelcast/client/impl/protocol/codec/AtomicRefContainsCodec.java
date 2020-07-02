@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Checks if the reference contains the value.
  */
-@Generated("47b48635ae1b6a83fe11c36050cfd031")
+@Generated("23208db3143d39d9305c8c91b89cc06b")
 public final class AtomicRefContainsCodec {
     //hex: 0x0A0300
     public static final int REQUEST_MESSAGE_TYPE = 656128;
@@ -116,4 +116,3 @@ public final class AtomicRefContainsCodec {
     }
 
 }
-

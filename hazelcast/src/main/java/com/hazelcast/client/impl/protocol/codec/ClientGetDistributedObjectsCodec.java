@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Gets the list of distributed objects in the cluster.
  */
-@Generated("b9b51512850fea0745a45e5700e8e6ae")
+@Generated("08629ffae7286b82dd9d2fae21d15e94")
 public final class ClientGetDistributedObjectsCodec {
     //hex: 0x000800
     public static final int REQUEST_MESSAGE_TYPE = 2048;
@@ -48,9 +48,6 @@ public final class ClientGetDistributedObjectsCodec {
     private ClientGetDistributedObjectsCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class RequestParameters {
-    }
 
     public static ClientMessage encodeRequest() {
         ClientMessage clientMessage = ClientMessage.createForEncode();
@@ -63,13 +60,6 @@ public final class ClientGetDistributedObjectsCodec {
         return clientMessage;
     }
 
-    public static ClientGetDistributedObjectsCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
-        ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        RequestParameters request = new RequestParameters();
-        //empty initial frame
-        iterator.next();
-        return request;
-    }
 
     /**
      * An array of distributed object info in the cluster.
@@ -95,4 +85,3 @@ public final class ClientGetDistributedObjectsCodec {
     }
 
 }
-

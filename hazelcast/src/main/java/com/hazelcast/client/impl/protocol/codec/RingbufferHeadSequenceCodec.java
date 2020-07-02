@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * are found. If the RingBuffer is empty, the head will be one more than the tail.
  * The initial value of the head is 0 (1 more than tail).
  */
-@Generated("fc6ad204b912e3c06b560bcedc8cc1d1")
+@Generated("4293f43147fd4605a95a8c50f45b4193")
 public final class RingbufferHeadSequenceCodec {
     //hex: 0x170300
     public static final int REQUEST_MESSAGE_TYPE = 1508096;
@@ -99,4 +99,3 @@ public final class RingbufferHeadSequenceCodec {
     }
 
 }
-

@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Estimates the cardinality of the aggregation so far.
  * If it was previously estimated and never invalidated, then the cached version is used.
  */
-@Generated("50448590ebb018b0c37db40d58ec18f1")
+@Generated("7e57c139c88cea583b594bdda7253709")
 public final class CardinalityEstimatorEstimateCodec {
     //hex: 0x190200
     public static final int REQUEST_MESSAGE_TYPE = 1638912;
@@ -98,4 +98,3 @@ public final class CardinalityEstimatorEstimateCodec {
     }
 
 }
-

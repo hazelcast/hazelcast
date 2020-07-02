@@ -40,7 +40,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Scope of the lock is this map only. Acquired lock is only for the key in this map. Locks are re-entrant,
  * so if the key is locked N times then it should be unlocked N times before another thread can acquire it.
  */
-@Generated("4e0a33e8d757c8ec17e3cb2ea45bb2b5")
+@Generated("d0a4e384350e6a2747e30252a023f7c7")
 public final class MapLockCodec {
     //hex: 0x011000
     public static final int REQUEST_MESSAGE_TYPE = 69632;
@@ -112,10 +112,6 @@ public final class MapLockCodec {
         return request;
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class ResponseParameters {
-
-    }
 
     public static ClientMessage encodeResponse() {
         ClientMessage clientMessage = ClientMessage.createForEncode();
@@ -126,13 +122,5 @@ public final class MapLockCodec {
         return clientMessage;
     }
 
-    public static MapLockCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
-        ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        ResponseParameters response = new ResponseParameters();
-        //empty initial frame
-        iterator.next();
-        return response;
-    }
 
 }
-

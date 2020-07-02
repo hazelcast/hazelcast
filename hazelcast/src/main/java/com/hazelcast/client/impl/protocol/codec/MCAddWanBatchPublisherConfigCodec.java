@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Add a new WAN batch publisher configuration
  */
-@Generated("634b2ccd5f2fc06d4bbf5df6d72cfc9e")
+@Generated("c7a8bf983f232cd860a380697fb9b212")
 public final class MCAddWanBatchPublisherConfigCodec {
     //hex: 0x201500
     public static final int REQUEST_MESSAGE_TYPE = 2102528;
@@ -192,4 +192,3 @@ public final class MCAddWanBatchPublisherConfigCodec {
     }
 
 }
-

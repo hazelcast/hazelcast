@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Adds an index to this map with specified configuration.
  */
-@Generated("96b1e3267cc130ffa662b37921057745")
+@Generated("a5e2bcfbc68cb5985c70282a63a660df")
 public final class MapAddIndexCodec {
     //hex: 0x012900
     public static final int REQUEST_MESSAGE_TYPE = 76032;
@@ -85,10 +85,6 @@ public final class MapAddIndexCodec {
         return request;
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class ResponseParameters {
-
-    }
 
     public static ClientMessage encodeResponse() {
         ClientMessage clientMessage = ClientMessage.createForEncode();
@@ -99,13 +95,5 @@ public final class MapAddIndexCodec {
         return clientMessage;
     }
 
-    public static MapAddIndexCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
-        ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        ResponseParameters response = new ResponseParameters();
-        //empty initial frame
-        iterator.next();
-        return response;
-    }
 
 }
-

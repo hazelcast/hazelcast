@@ -39,7 +39,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * v in the specified map. The behavior of this operation is undefined if the specified map is modified while the
  * operation is in progress.
  */
-@Generated("7a241fb431089f66050bb069de7da0b5")
+@Generated("c61b8b54368bc478a477bff807d0a1e6")
 public final class ReplicatedMapPutAllCodec {
     //hex: 0x0D0800
     public static final int REQUEST_MESSAGE_TYPE = 854016;
@@ -88,10 +88,6 @@ public final class ReplicatedMapPutAllCodec {
         return request;
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class ResponseParameters {
-
-    }
 
     public static ClientMessage encodeResponse() {
         ClientMessage clientMessage = ClientMessage.createForEncode();
@@ -102,13 +98,5 @@ public final class ReplicatedMapPutAllCodec {
         return clientMessage;
     }
 
-    public static ReplicatedMapPutAllCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
-        ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        ResponseParameters response = new ResponseParameters();
-        //empty initial frame
-        iterator.next();
-        return response;
-    }
 
 }
-

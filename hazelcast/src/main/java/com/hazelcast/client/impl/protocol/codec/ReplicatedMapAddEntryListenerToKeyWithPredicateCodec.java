@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Adds an continuous entry listener for this map. The listener will be notified for map add/remove/update/evict
  * events filtered by the given predicate.
  */
-@Generated("2e6b6c24b688e58a96d2f87f15db247f")
+@Generated("48c2e80d6005210e32c35cd175b6feeb")
 public final class ReplicatedMapAddEntryListenerToKeyWithPredicateCodec {
     //hex: 0x0D0A00
     public static final int REQUEST_MESSAGE_TYPE = 854528;
@@ -190,4 +190,3 @@ public final class ReplicatedMapAddEntryListenerToKeyWithPredicateCodec {
         public abstract void handleEntryEvent(@Nullable com.hazelcast.internal.serialization.Data key, @Nullable com.hazelcast.internal.serialization.Data value, @Nullable com.hazelcast.internal.serialization.Data oldValue, @Nullable com.hazelcast.internal.serialization.Data mergingValue, int eventType, java.util.UUID uuid, int numberOfAffectedEntries);
     }
 }
-

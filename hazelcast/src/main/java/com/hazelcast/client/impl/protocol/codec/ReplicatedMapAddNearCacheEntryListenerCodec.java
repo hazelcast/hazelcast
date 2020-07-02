@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Adds a near cache entry listener for this map. This listener will be notified when an entry is added/removed/updated/evicted/expired etc. so that the near cache entries can be invalidated.
  */
-@Generated("bc390a02f11ab96c3864301f27dd7e90")
+@Generated("1e040aca21edab575a3316cd58f7f180")
 public final class ReplicatedMapAddNearCacheEntryListenerCodec {
     //hex: 0x0D1200
     public static final int REQUEST_MESSAGE_TYPE = 856576;
@@ -183,4 +183,3 @@ public final class ReplicatedMapAddNearCacheEntryListenerCodec {
         public abstract void handleEntryEvent(@Nullable com.hazelcast.internal.serialization.Data key, @Nullable com.hazelcast.internal.serialization.Data value, @Nullable com.hazelcast.internal.serialization.Data oldValue, @Nullable com.hazelcast.internal.serialization.Data mergingValue, int eventType, java.util.UUID uuid, int numberOfAffectedEntries);
     }
 }
-

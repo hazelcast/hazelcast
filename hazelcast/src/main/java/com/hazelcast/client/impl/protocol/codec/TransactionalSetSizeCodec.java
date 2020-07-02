@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Returns the size of the set.
  */
-@Generated("3560a96b45628afca711fb1659603ede")
+@Generated("56b4a00259fd0d1d0b5fc13f1949f784")
 public final class TransactionalSetSizeCodec {
     //hex: 0x100300
     public static final int REQUEST_MESSAGE_TYPE = 1049344;
@@ -117,4 +117,3 @@ public final class TransactionalSetSizeCodec {
     }
 
 }
-

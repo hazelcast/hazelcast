@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Adds listener for backup acks
  */
-@Generated("d2d6f8db92c031a2ce5bc6d896a6e49a")
+@Generated("bfe8d3ce71c6ae8da263122802662a9a")
 public final class ClientLocalBackupListenerCodec {
     //hex: 0x000F00
     public static final int REQUEST_MESSAGE_TYPE = 3840;
@@ -54,9 +54,6 @@ public final class ClientLocalBackupListenerCodec {
     private ClientLocalBackupListenerCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class RequestParameters {
-    }
 
     public static ClientMessage encodeRequest() {
         ClientMessage clientMessage = ClientMessage.createForEncode();
@@ -69,13 +66,6 @@ public final class ClientLocalBackupListenerCodec {
         return clientMessage;
     }
 
-    public static ClientLocalBackupListenerCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
-        ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        RequestParameters request = new RequestParameters();
-        //empty initial frame
-        iterator.next();
-        return request;
-    }
 
     /**
      * Returns the registration id for the listener.
@@ -131,4 +121,3 @@ public final class ClientLocalBackupListenerCodec {
         public abstract void handleBackupEvent(long sourceInvocationCorrelationId);
     }
 }
-

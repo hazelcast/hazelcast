@@ -114,8 +114,6 @@ public class MemberCompatibilityTest_2_0 {
     @Test
     public void test_ClientAddClusterViewListenerCodec_decodeRequest() {
         int fileClientMessageIndex = 4;
-        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        ClientAddClusterViewListenerCodec.RequestParameters parameters = ClientAddClusterViewListenerCodec.decodeRequest(fromFile);
     }
 
     @Test
@@ -217,8 +215,6 @@ public class MemberCompatibilityTest_2_0 {
     @Test
     public void test_ClientGetDistributedObjectsCodec_decodeRequest() {
         int fileClientMessageIndex = 17;
-        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        ClientGetDistributedObjectsCodec.RequestParameters parameters = ClientGetDistributedObjectsCodec.decodeRequest(fromFile);
     }
 
     @Test
@@ -270,8 +266,6 @@ public class MemberCompatibilityTest_2_0 {
     @Test
     public void test_ClientPingCodec_decodeRequest() {
         int fileClientMessageIndex = 24;
-        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        ClientPingCodec.RequestParameters parameters = ClientPingCodec.decodeRequest(fromFile);
     }
 
     @Test
@@ -333,8 +327,6 @@ public class MemberCompatibilityTest_2_0 {
     @Test
     public void test_ClientLocalBackupListenerCodec_decodeRequest() {
         int fileClientMessageIndex = 32;
-        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        ClientLocalBackupListenerCodec.RequestParameters parameters = ClientLocalBackupListenerCodec.decodeRequest(fromFile);
     }
 
     @Test
@@ -356,8 +348,6 @@ public class MemberCompatibilityTest_2_0 {
     @Test
     public void test_ClientTriggerPartitionAssignmentCodec_decodeRequest() {
         int fileClientMessageIndex = 35;
-        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        ClientTriggerPartitionAssignmentCodec.RequestParameters parameters = ClientTriggerPartitionAssignmentCodec.decodeRequest(fromFile);
     }
 
     @Test
@@ -5387,8 +5377,6 @@ public class MemberCompatibilityTest_2_0 {
     @Test
     public void test_XATransactionCollectTransactionsCodec_decodeRequest() {
         int fileClientMessageIndex = 605;
-        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        XATransactionCollectTransactionsCodec.RequestParameters parameters = XATransactionCollectTransactionsCodec.decodeRequest(fromFile);
     }
 
     @Test
@@ -6902,8 +6890,6 @@ public class MemberCompatibilityTest_2_0 {
     @Test
     public void test_MCGetMemberConfigCodec_decodeRequest() {
         int fileClientMessageIndex = 767;
-        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        MCGetMemberConfigCodec.RequestParameters parameters = MCGetMemberConfigCodec.decodeRequest(fromFile);
     }
 
     @Test
@@ -6917,8 +6903,6 @@ public class MemberCompatibilityTest_2_0 {
     @Test
     public void test_MCRunGcCodec_decodeRequest() {
         int fileClientMessageIndex = 769;
-        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        MCRunGcCodec.RequestParameters parameters = MCRunGcCodec.decodeRequest(fromFile);
     }
 
     @Test
@@ -6947,8 +6931,6 @@ public class MemberCompatibilityTest_2_0 {
     @Test
     public void test_MCShutdownMemberCodec_decodeRequest() {
         int fileClientMessageIndex = 773;
-        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        MCShutdownMemberCodec.RequestParameters parameters = MCShutdownMemberCodec.decodeRequest(fromFile);
     }
 
     @Test
@@ -6962,8 +6944,6 @@ public class MemberCompatibilityTest_2_0 {
     @Test
     public void test_MCPromoteLiteMemberCodec_decodeRequest() {
         int fileClientMessageIndex = 775;
-        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        MCPromoteLiteMemberCodec.RequestParameters parameters = MCPromoteLiteMemberCodec.decodeRequest(fromFile);
     }
 
     @Test
@@ -6977,8 +6957,6 @@ public class MemberCompatibilityTest_2_0 {
     @Test
     public void test_MCGetSystemPropertiesCodec_decodeRequest() {
         int fileClientMessageIndex = 777;
-        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        MCGetSystemPropertiesCodec.RequestParameters parameters = MCGetSystemPropertiesCodec.decodeRequest(fromFile);
     }
 
     @Test
@@ -6992,8 +6970,6 @@ public class MemberCompatibilityTest_2_0 {
     @Test
     public void test_MCGetTimedMemberStateCodec_decodeRequest() {
         int fileClientMessageIndex = 779;
-        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        MCGetTimedMemberStateCodec.RequestParameters parameters = MCGetTimedMemberStateCodec.decodeRequest(fromFile);
     }
 
     @Test
@@ -7040,8 +7016,6 @@ public class MemberCompatibilityTest_2_0 {
     @Test
     public void test_MCGetClusterMetadataCodec_decodeRequest() {
         int fileClientMessageIndex = 785;
-        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        MCGetClusterMetadataCodec.RequestParameters parameters = MCGetClusterMetadataCodec.decodeRequest(fromFile);
     }
 
     @Test
@@ -7055,8 +7029,6 @@ public class MemberCompatibilityTest_2_0 {
     @Test
     public void test_MCShutdownClusterCodec_decodeRequest() {
         int fileClientMessageIndex = 787;
-        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        MCShutdownClusterCodec.RequestParameters parameters = MCShutdownClusterCodec.decodeRequest(fromFile);
     }
 
     @Test
@@ -7218,8 +7190,6 @@ public class MemberCompatibilityTest_2_0 {
     @Test
     public void test_MCPollMCEventsCodec_decodeRequest() {
         int fileClientMessageIndex = 805;
-        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        MCPollMCEventsCodec.RequestParameters parameters = MCPollMCEventsCodec.decodeRequest(fromFile);
     }
 
     @Test
@@ -7233,8 +7203,6 @@ public class MemberCompatibilityTest_2_0 {
     @Test
     public void test_MCGetCPMembersCodec_decodeRequest() {
         int fileClientMessageIndex = 807;
-        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        MCGetCPMembersCodec.RequestParameters parameters = MCGetCPMembersCodec.decodeRequest(fromFile);
     }
 
     @Test
@@ -7248,8 +7216,6 @@ public class MemberCompatibilityTest_2_0 {
     @Test
     public void test_MCPromoteToCPMemberCodec_decodeRequest() {
         int fileClientMessageIndex = 809;
-        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        MCPromoteToCPMemberCodec.RequestParameters parameters = MCPromoteToCPMemberCodec.decodeRequest(fromFile);
     }
 
     @Test
@@ -7278,8 +7244,6 @@ public class MemberCompatibilityTest_2_0 {
     @Test
     public void test_MCResetCPSubsystemCodec_decodeRequest() {
         int fileClientMessageIndex = 813;
-        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        MCResetCPSubsystemCodec.RequestParameters parameters = MCResetCPSubsystemCodec.decodeRequest(fromFile);
     }
 
     @Test
@@ -7293,8 +7257,6 @@ public class MemberCompatibilityTest_2_0 {
     @Test
     public void test_MCTriggerPartialStartCodec_decodeRequest() {
         int fileClientMessageIndex = 815;
-        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        MCTriggerPartialStartCodec.RequestParameters parameters = MCTriggerPartialStartCodec.decodeRequest(fromFile);
     }
 
     @Test
@@ -7308,8 +7270,6 @@ public class MemberCompatibilityTest_2_0 {
     @Test
     public void test_MCTriggerForceStartCodec_decodeRequest() {
         int fileClientMessageIndex = 817;
-        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        MCTriggerForceStartCodec.RequestParameters parameters = MCTriggerForceStartCodec.decodeRequest(fromFile);
     }
 
     @Test
@@ -7323,8 +7283,6 @@ public class MemberCompatibilityTest_2_0 {
     @Test
     public void test_MCTriggerHotRestartBackupCodec_decodeRequest() {
         int fileClientMessageIndex = 819;
-        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        MCTriggerHotRestartBackupCodec.RequestParameters parameters = MCTriggerHotRestartBackupCodec.decodeRequest(fromFile);
     }
 
     @Test
@@ -7338,8 +7296,6 @@ public class MemberCompatibilityTest_2_0 {
     @Test
     public void test_MCInterruptHotRestartBackupCodec_decodeRequest() {
         int fileClientMessageIndex = 821;
-        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        MCInterruptHotRestartBackupCodec.RequestParameters parameters = MCInterruptHotRestartBackupCodec.decodeRequest(fromFile);
     }
 
     @Test

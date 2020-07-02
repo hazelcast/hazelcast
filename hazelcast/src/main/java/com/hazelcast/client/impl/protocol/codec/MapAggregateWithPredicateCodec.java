@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Applies the aggregation logic on map entries filtered with the Predicate and returns the result
  */
-@Generated("3c7b52b25cb492c273a1479e482badbe")
+@Generated("e899cafcdb43dfc815e4d9112598bfef")
 public final class MapAggregateWithPredicateCodec {
     //hex: 0x013A00
     public static final int REQUEST_MESSAGE_TYPE = 80384;
@@ -116,4 +116,3 @@ public final class MapAggregateWithPredicateCodec {
     }
 
 }
-

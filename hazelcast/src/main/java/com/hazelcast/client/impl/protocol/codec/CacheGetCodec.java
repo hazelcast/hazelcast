@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * null is returned. If the cache is configured for read-through operation mode, the underlying configured
  * javax.cache.integration.CacheLoader might be called to retrieve the value of the key from any kind of external resource.
  */
-@Generated("ca1ee4642a472c80b77c7df56c718df1")
+@Generated("b96d4ca10b6354d0fc8d8e9e1f9f7709")
 public final class CacheGetCodec {
     //hex: 0x130D00
     public static final int REQUEST_MESSAGE_TYPE = 1248512;
@@ -119,4 +119,3 @@ public final class CacheGetCodec {
     }
 
 }
-

@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Checks the lock for the specified key. If the lock is acquired, this method returns true, else it returns false.
  */
-@Generated("19ef7bdbf92bea2060de4fe77514a628")
+@Generated("c3d12628bd19df5f3bf028817858a04e")
 public final class MultiMapIsLockedCodec {
     //hex: 0x021200
     public static final int REQUEST_MESSAGE_TYPE = 135680;
@@ -109,4 +109,3 @@ public final class MultiMapIsLockedCodec {
     }
 
 }
-

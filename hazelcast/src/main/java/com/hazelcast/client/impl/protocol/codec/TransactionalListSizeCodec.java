@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Returns the size of the list
  */
-@Generated("9c2af4f2189b1a16e9f22b9ee80ca593")
+@Generated("1c209ebc876e1cb4e9a9c10014b3bc92")
 public final class TransactionalListSizeCodec {
     //hex: 0x110300
     public static final int REQUEST_MESSAGE_TYPE = 1114880;
@@ -117,4 +117,3 @@ public final class TransactionalListSizeCodec {
     }
 
 }
-

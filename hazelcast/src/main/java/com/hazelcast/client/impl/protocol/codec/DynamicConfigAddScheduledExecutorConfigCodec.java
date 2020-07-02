@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * If a scheduled executor configuration with the given {@code name} already exists, then
  * the new configuration is ignored and the existing one is preserved.
  */
-@Generated("e00a6a00bd883ecb1bba867c222c0af9")
+@Generated("c816fc6ca659f34e73281f88535f4588")
 public final class DynamicConfigAddScheduledExecutorConfigCodec {
     //hex: 0x1B0A00
     public static final int REQUEST_MESSAGE_TYPE = 1772032;
@@ -128,10 +128,6 @@ public final class DynamicConfigAddScheduledExecutorConfigCodec {
         return request;
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class ResponseParameters {
-
-    }
 
     public static ClientMessage encodeResponse() {
         ClientMessage clientMessage = ClientMessage.createForEncode();
@@ -142,13 +138,5 @@ public final class DynamicConfigAddScheduledExecutorConfigCodec {
         return clientMessage;
     }
 
-    public static DynamicConfigAddScheduledExecutorConfigCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
-        ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        ResponseParameters response = new ResponseParameters();
-        //empty initial frame
-        iterator.next();
-        return response;
-    }
 
 }
-

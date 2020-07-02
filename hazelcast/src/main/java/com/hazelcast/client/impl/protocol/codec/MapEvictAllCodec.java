@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * called by this method. If you do want to deleteAll to be called use the clear method. The EVICT_ALL event is
  * fired for any registered listeners.
  */
-@Generated("6c5abf74d7123193ec3ae1867943cf27")
+@Generated("80ab79687c9cd4cf6918e3ef771364c0")
 public final class MapEvictAllCodec {
     //hex: 0x011F00
     public static final int REQUEST_MESSAGE_TYPE = 73472;
@@ -75,10 +75,6 @@ public final class MapEvictAllCodec {
         return StringCodec.decode(iterator);
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class ResponseParameters {
-
-    }
 
     public static ClientMessage encodeResponse() {
         ClientMessage clientMessage = ClientMessage.createForEncode();
@@ -89,13 +85,5 @@ public final class MapEvictAllCodec {
         return clientMessage;
     }
 
-    public static MapEvictAllCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
-        ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        ResponseParameters response = new ResponseParameters();
-        //empty initial frame
-        iterator.next();
-        return response;
-    }
 
 }
-

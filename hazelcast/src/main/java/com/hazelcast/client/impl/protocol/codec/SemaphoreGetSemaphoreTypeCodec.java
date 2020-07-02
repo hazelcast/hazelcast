@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Returns true if the semaphore is JDK compatible
  */
-@Generated("7e147f531fe9ad3975ab41c1788baeb7")
+@Generated("1a3814774feff60eede061ec1921c877")
 public final class SemaphoreGetSemaphoreTypeCodec {
     //hex: 0x0C0700
     public static final int REQUEST_MESSAGE_TYPE = 788224;
@@ -97,4 +97,3 @@ public final class SemaphoreGetSemaphoreTypeCodec {
     }
 
 }
-

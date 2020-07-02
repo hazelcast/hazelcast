@@ -39,7 +39,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * The behavior of this operation is undefined if the specified collection is modified while the operation is in progress.
  * (Note that this will occur if the specified collection is this list, and it's nonempty.)
  */
-@Generated("93b81b3f2d418ff9e2c92c1312b52ecb")
+@Generated("5945a2c3a824763eaf28a9679827a12b")
 public final class ListAddAllCodec {
     //hex: 0x050600
     public static final int REQUEST_MESSAGE_TYPE = 329216;
@@ -112,4 +112,3 @@ public final class ListAddAllCodec {
     }
 
 }
-

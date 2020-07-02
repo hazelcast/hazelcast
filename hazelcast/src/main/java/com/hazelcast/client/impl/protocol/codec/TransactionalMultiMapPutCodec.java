@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Stores a key-value pair in the multimap.
  */
-@Generated("22ec43640a7975b9c5bb80ce9b0d2ce8")
+@Generated("f546e87dcf766746512f70114d31c0d3")
 public final class TransactionalMultiMapPutCodec {
     //hex: 0x0F0100
     public static final int REQUEST_MESSAGE_TYPE = 983296;
@@ -131,4 +131,3 @@ public final class TransactionalMultiMapPutCodec {
     }
 
 }
-

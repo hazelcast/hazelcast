@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Submits the task to partition for execution, partition is chosen based on multiple criteria of the given task.
  */
-@Generated("d939688b10972b45bdbd4ba194c33be4")
+@Generated("b0b9a62d695a07aca714d1ffa06d4e12")
 public final class ScheduledExecutorSubmitToPartitionCodec {
     //hex: 0x1A0200
     public static final int REQUEST_MESSAGE_TYPE = 1704448;
@@ -115,10 +115,6 @@ public final class ScheduledExecutorSubmitToPartitionCodec {
         return request;
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class ResponseParameters {
-
-    }
 
     public static ClientMessage encodeResponse() {
         ClientMessage clientMessage = ClientMessage.createForEncode();
@@ -129,13 +125,5 @@ public final class ScheduledExecutorSubmitToPartitionCodec {
         return clientMessage;
     }
 
-    public static ScheduledExecutorSubmitToPartitionCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
-        ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        ResponseParameters response = new ResponseParameters();
-        //empty initial frame
-        iterator.next();
-        return response;
-    }
 
 }
-

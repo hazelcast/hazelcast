@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Dispose the task from the scheduler
  */
-@Generated("4fb4c784dc5ea2b292a02e96aaffd8f1")
+@Generated("018a48fd41becb51e7cf3caecc117525")
 public final class ScheduledExecutorDisposeFromMemberCodec {
     //hex: 0x1A1200
     public static final int REQUEST_MESSAGE_TYPE = 1708544;
@@ -92,10 +92,6 @@ public final class ScheduledExecutorDisposeFromMemberCodec {
         return request;
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class ResponseParameters {
-
-    }
 
     public static ClientMessage encodeResponse() {
         ClientMessage clientMessage = ClientMessage.createForEncode();
@@ -106,13 +102,5 @@ public final class ScheduledExecutorDisposeFromMemberCodec {
         return clientMessage;
     }
 
-    public static ScheduledExecutorDisposeFromMemberCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
-        ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        ResponseParameters response = new ResponseParameters();
-        //empty initial frame
-        iterator.next();
-        return response;
-    }
 
 }
-

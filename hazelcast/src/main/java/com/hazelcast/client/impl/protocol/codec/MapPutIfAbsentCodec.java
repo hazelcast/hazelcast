@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Puts an entry into this map with a given ttl (time to live) value if the specified key is not already associated
  * with a value. Entry will expire and get evicted after the ttl.
  */
-@Generated("16d71f77854062a271eed062cb2761d8")
+@Generated("b5a783b61b63395def23c2427f382a0f")
 public final class MapPutIfAbsentCodec {
     //hex: 0x010E00
     public static final int REQUEST_MESSAGE_TYPE = 69120;
@@ -132,4 +132,3 @@ public final class MapPutIfAbsentCodec {
     }
 
 }
-

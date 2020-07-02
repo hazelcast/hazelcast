@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Initiates an orderly shutdown in which previously submitted tasks are executed, but no new tasks will be accepted.
  * Invocation has no additional effect if already shut down.
  */
-@Generated("28a1589a3cef2ff91d3061e27668ee0c")
+@Generated("c2ce7e799553ad36b8f935a5b7453c60")
 public final class ScheduledExecutorShutdownCodec {
     //hex: 0x1A0100
     public static final int REQUEST_MESSAGE_TYPE = 1704192;
@@ -86,10 +86,6 @@ public final class ScheduledExecutorShutdownCodec {
         return request;
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class ResponseParameters {
-
-    }
 
     public static ClientMessage encodeResponse() {
         ClientMessage clientMessage = ClientMessage.createForEncode();
@@ -100,13 +96,5 @@ public final class ScheduledExecutorShutdownCodec {
         return clientMessage;
     }
 
-    public static ScheduledExecutorShutdownCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
-        ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        ResponseParameters response = new ResponseParameters();
-        //empty initial frame
-        iterator.next();
-        return response;
-    }
 
 }
-

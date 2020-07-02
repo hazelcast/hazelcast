@@ -18,7 +18,6 @@ package com.hazelcast.client.impl.protocol.task.management;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MCPromoteToCPMemberCodec;
-import com.hazelcast.client.impl.protocol.codec.MCPromoteToCPMemberCodec.RequestParameters;
 import com.hazelcast.client.impl.protocol.task.AbstractAsyncMessageTask;
 import com.hazelcast.cp.CPSubsystemManagementService;
 import com.hazelcast.instance.impl.Node;
@@ -28,7 +27,7 @@ import com.hazelcast.internal.nio.Connection;
 import java.security.Permission;
 import java.util.concurrent.CompletableFuture;
 
-public class PromoteToCPMemberMessageTask extends AbstractAsyncMessageTask<RequestParameters, Void> {
+public class PromoteToCPMemberMessageTask extends AbstractAsyncMessageTask<Void, Void> {
 
     public PromoteToCPMemberMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -42,8 +41,8 @@ public class PromoteToCPMemberMessageTask extends AbstractAsyncMessageTask<Reque
     }
 
     @Override
-    protected RequestParameters decodeClientMessage(ClientMessage clientMessage) {
-        return MCPromoteToCPMemberCodec.decodeRequest(clientMessage);
+    protected Void decodeClientMessage(ClientMessage clientMessage) {
+        return null;
     }
 
     @Override

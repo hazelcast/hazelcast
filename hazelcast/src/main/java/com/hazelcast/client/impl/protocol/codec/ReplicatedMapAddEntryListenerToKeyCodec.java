@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Adds the specified entry listener for the specified key. The listener will be notified for all
  * add/remove/update/evict events of the specified key only.
  */
-@Generated("721f066e29d1699d80d4355530755e0f")
+@Generated("6b1841453973cd45d7f085841da49255")
 public final class ReplicatedMapAddEntryListenerToKeyCodec {
     //hex: 0x0D0C00
     public static final int REQUEST_MESSAGE_TYPE = 855040;
@@ -183,4 +183,3 @@ public final class ReplicatedMapAddEntryListenerToKeyCodec {
         public abstract void handleEntryEvent(@Nullable com.hazelcast.internal.serialization.Data key, @Nullable com.hazelcast.internal.serialization.Data value, @Nullable com.hazelcast.internal.serialization.Data oldValue, @Nullable com.hazelcast.internal.serialization.Data mergingValue, int eventType, java.util.UUID uuid, int numberOfAffectedEntries);
     }
 }
-

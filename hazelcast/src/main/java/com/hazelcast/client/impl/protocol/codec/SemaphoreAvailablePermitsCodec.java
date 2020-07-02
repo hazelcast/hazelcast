@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Returns the number of available permits.
  */
-@Generated("bb9599eded85928b698a5601f9af053b")
+@Generated("a6383edd81cf674ee801a8871f275cfd")
 public final class SemaphoreAvailablePermitsCodec {
     //hex: 0x0C0600
     public static final int REQUEST_MESSAGE_TYPE = 787968;
@@ -109,4 +109,3 @@ public final class SemaphoreAvailablePermitsCodec {
     }
 
 }
-

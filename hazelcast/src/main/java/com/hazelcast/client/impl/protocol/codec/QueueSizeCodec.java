@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Returns the number of elements in this collection.  If this collection contains more than Integer.MAX_VALUE
  * elements, returns Integer.MAX_VALUE
  */
-@Generated("76cfaa730b039425aacc0bc8538a4b4b")
+@Generated("4d8fc587aacf51d24acea809f546474c")
 public final class QueueSizeCodec {
     //hex: 0x030300
     public static final int REQUEST_MESSAGE_TYPE = 197376;
@@ -98,4 +98,3 @@ public final class QueueSizeCodec {
     }
 
 }
-

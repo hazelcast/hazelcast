@@ -39,7 +39,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * if the old value is not needed.
  * The object to be set will be accessible only in the current transaction context until the transaction is committed.
  */
-@Generated("ffd28f45d0762afe6bae14a17f944584")
+@Generated("8800537ea86da33988ca48dc9ec119f5")
 public final class TransactionalMapSetCodec {
     //hex: 0x0E0700
     public static final int REQUEST_MESSAGE_TYPE = 919296;
@@ -110,10 +110,6 @@ public final class TransactionalMapSetCodec {
         return request;
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class ResponseParameters {
-
-    }
 
     public static ClientMessage encodeResponse() {
         ClientMessage clientMessage = ClientMessage.createForEncode();
@@ -124,13 +120,5 @@ public final class TransactionalMapSetCodec {
         return clientMessage;
     }
 
-    public static TransactionalMapSetCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
-        ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        ResponseParameters response = new ResponseParameters();
-        //empty initial frame
-        iterator.next();
-        return response;
-    }
 
 }
-

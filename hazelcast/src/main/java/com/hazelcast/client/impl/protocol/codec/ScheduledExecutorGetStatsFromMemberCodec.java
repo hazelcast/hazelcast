@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Returns statistics of the task
  */
-@Generated("debbaaedcdd0194dec86a8308d62bcdf")
+@Generated("221d955c81f04113bafee1b6eaeec550")
 public final class ScheduledExecutorGetStatsFromMemberCodec {
     //hex: 0x1A0600
     public static final int REQUEST_MESSAGE_TYPE = 1705472;
@@ -149,4 +149,3 @@ public final class ScheduledExecutorGetStatsFromMemberCodec {
     }
 
 }
-

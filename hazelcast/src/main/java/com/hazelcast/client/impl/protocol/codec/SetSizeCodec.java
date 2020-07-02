@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Returns the number of elements in this set (its cardinality). If this set contains more than Integer.MAX_VALUE
  * elements, returns Integer.MAX_VALUE.
  */
-@Generated("f9cf89dbbba67c0c104bba45d3ea285f")
+@Generated("f4ed176e7069c0244af3bc7a3874b4b2")
 public final class SetSizeCodec {
     //hex: 0x060100
     public static final int REQUEST_MESSAGE_TYPE = 393472;
@@ -98,4 +98,3 @@ public final class SetSizeCodec {
     }
 
 }
-

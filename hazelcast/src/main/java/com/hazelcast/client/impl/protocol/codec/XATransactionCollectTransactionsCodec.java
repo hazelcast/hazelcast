@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Obtains a list of prepared transaction from the cluster.
  */
-@Generated("7e7292201aaa596b32c62af3ea09c2ed")
+@Generated("30c070529f97a87dc3a3e96e912d2757")
 public final class XATransactionCollectTransactionsCodec {
     //hex: 0x140200
     public static final int REQUEST_MESSAGE_TYPE = 1311232;
@@ -48,9 +48,6 @@ public final class XATransactionCollectTransactionsCodec {
     private XATransactionCollectTransactionsCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class RequestParameters {
-    }
 
     public static ClientMessage encodeRequest() {
         ClientMessage clientMessage = ClientMessage.createForEncode();
@@ -63,13 +60,6 @@ public final class XATransactionCollectTransactionsCodec {
         return clientMessage;
     }
 
-    public static XATransactionCollectTransactionsCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
-        ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        RequestParameters request = new RequestParameters();
-        //empty initial frame
-        iterator.next();
-        return request;
-    }
 
     /**
      * Array of Xids.
@@ -95,4 +85,3 @@ public final class XATransactionCollectTransactionsCodec {
     }
 
 }
-

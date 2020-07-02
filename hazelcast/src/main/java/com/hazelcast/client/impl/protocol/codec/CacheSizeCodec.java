@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Total entry count
  */
-@Generated("712a4dc81e73a133d1f40d2ed85a4818")
+@Generated("e1f6dbcadf456507eae9436c7662472b")
 public final class CacheSizeCodec {
     //hex: 0x131800
     public static final int REQUEST_MESSAGE_TYPE = 1251328;
@@ -97,4 +97,3 @@ public final class CacheSizeCodec {
     }
 
 }
-

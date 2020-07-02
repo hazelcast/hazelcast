@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Enables or disables the statistics or the management support for the
  * cache with the given name on a member with the given address.
  */
-@Generated("75ce247da7ca9ba117ae6a128b3141d7")
+@Generated("35b5f4217421f91736957ff7be33f6a8")
 public final class CacheManagementConfigCodec {
     //hex: 0x131100
     public static final int REQUEST_MESSAGE_TYPE = 1249536;
@@ -102,10 +102,6 @@ public final class CacheManagementConfigCodec {
         return request;
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class ResponseParameters {
-
-    }
 
     public static ClientMessage encodeResponse() {
         ClientMessage clientMessage = ClientMessage.createForEncode();
@@ -116,13 +112,5 @@ public final class CacheManagementConfigCodec {
         return clientMessage;
     }
 
-    public static CacheManagementConfigCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
-        ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        ResponseParameters response = new ResponseParameters();
-        //empty initial frame
-        iterator.next();
-        return response;
-    }
 
 }
-

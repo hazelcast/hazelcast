@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Creates a new CP group with the given name
  */
-@Generated("015171e482c41748b5bcae35732dcb39")
+@Generated("57f39747cc01e7824ecd0e3baabe7dea")
 public final class CPGroupCreateCPGroupCodec {
     //hex: 0x1E0100
     public static final int REQUEST_MESSAGE_TYPE = 1966336;
@@ -97,4 +97,3 @@ public final class CPGroupCreateCPGroupCodec {
     }
 
 }
-

@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Clears the multimap. Removes all key-value pairs.
  */
-@Generated("882b7500fece82741a7f36132dc065dc")
+@Generated("319a5ab8e1d0392271a514adfc7d3999")
 public final class MultiMapClearCodec {
     //hex: 0x020B00
     public static final int REQUEST_MESSAGE_TYPE = 133888;
@@ -73,10 +73,6 @@ public final class MultiMapClearCodec {
         return StringCodec.decode(iterator);
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class ResponseParameters {
-
-    }
 
     public static ClientMessage encodeResponse() {
         ClientMessage clientMessage = ClientMessage.createForEncode();
@@ -87,13 +83,5 @@ public final class MultiMapClearCodec {
         return clientMessage;
     }
 
-    public static MultiMapClearCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
-        ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        ResponseParameters response = new ResponseParameters();
-        //empty initial frame
-        iterator.next();
-        return response;
-    }
 
 }
-

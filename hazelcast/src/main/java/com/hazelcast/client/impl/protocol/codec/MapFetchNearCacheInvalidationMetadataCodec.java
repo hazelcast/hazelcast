@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Fetches invalidation metadata from partitions of map.
  */
-@Generated("d573b9552b78fd3025deab0188b518d7")
+@Generated("22a7ac5f56da321e2a8529c5f8b39398")
 public final class MapFetchNearCacheInvalidationMetadataCodec {
     //hex: 0x013D00
     public static final int REQUEST_MESSAGE_TYPE = 81152;
@@ -120,4 +120,3 @@ public final class MapFetchNearCacheInvalidationMetadataCodec {
     }
 
 }
-

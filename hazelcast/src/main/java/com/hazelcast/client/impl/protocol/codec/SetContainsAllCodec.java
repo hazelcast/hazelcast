@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Returns true if this set contains all of the elements of the specified collection. If the specified collection is
  * also a set, this method returns true if it is a subset of this set.
  */
-@Generated("996b3cac15c02587b5e14cbbb562c898")
+@Generated("0bac24efa21527899ef11c19f3356618")
 public final class SetContainsAllCodec {
     //hex: 0x060300
     public static final int REQUEST_MESSAGE_TYPE = 393984;
@@ -111,4 +111,3 @@ public final class SetContainsAllCodec {
     }
 
 }
-

@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Inserts the specified element into this queue, waiting if necessary for space to become available.
  */
-@Generated("bc31e036adbd94e3ad611b47e60cfa69")
+@Generated("4385a79ad5910397809120d9a04deb15")
 public final class QueuePutCodec {
     //hex: 0x030200
     public static final int REQUEST_MESSAGE_TYPE = 197120;
@@ -85,10 +85,6 @@ public final class QueuePutCodec {
         return request;
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class ResponseParameters {
-
-    }
 
     public static ClientMessage encodeResponse() {
         ClientMessage clientMessage = ClientMessage.createForEncode();
@@ -99,13 +95,5 @@ public final class QueuePutCodec {
         return clientMessage;
     }
 
-    public static QueuePutCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
-        ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        ResponseParameters response = new ResponseParameters();
-        //empty initial frame
-        iterator.next();
-        return response;
-    }
 
 }
-

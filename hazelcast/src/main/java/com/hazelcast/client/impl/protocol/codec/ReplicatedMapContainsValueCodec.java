@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Returns true if this map maps one or more keys to the specified value.
  * This operation will probably require time linear in the map size for most implementations of the Map interface.
  */
-@Generated("d9674f33ac8d3fa4ca63b58e9ac4db43")
+@Generated("5cb3b37603ff5cd196cae515f007e814")
 public final class ReplicatedMapContainsValueCodec {
     //hex: 0x0D0500
     public static final int REQUEST_MESSAGE_TYPE = 853248;
@@ -110,4 +110,3 @@ public final class ReplicatedMapContainsValueCodec {
     }
 
 }
-

@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Retrieves and removes the head of this queue.  This method differs from poll only in that it throws an exception
  * if this queue is empty.
  */
-@Generated("3fc7e004048aee0587bff99c4e00d0b1")
+@Generated("9a7ee2db46b07f3b429fe3682837c5b9")
 public final class QueueRemoveCodec {
     //hex: 0x030400
     public static final int REQUEST_MESSAGE_TYPE = 197632;
@@ -110,4 +110,3 @@ public final class QueueRemoveCodec {
     }
 
 }
-

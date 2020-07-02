@@ -39,7 +39,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * then the current thread becomes disabled for thread scheduling purposes
  * and lies dormant until other threads release enough permits.
  */
-@Generated("5ed6af77ddfcc5fedef9bf5b67e6035a")
+@Generated("219a81e6894e7c5a350bf41853cc6c3d")
 public final class SemaphoreAcquireCodec {
     //hex: 0x0C0200
     public static final int REQUEST_MESSAGE_TYPE = 786944;
@@ -152,4 +152,3 @@ public final class SemaphoreAcquireCodec {
     }
 
 }
-

@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * If a queue configuration with the given {@code name} already exists, then
  * the new configuration is ignored and the existing one is preserved.
  */
-@Generated("02132f72493134a75dafa0872b9fe9d3")
+@Generated("b423e3ae9a52a533c9e3c8ecff443e1a")
 public final class DynamicConfigAddQueueConfigCodec {
     //hex: 0x1B0B00
     public static final int REQUEST_MESSAGE_TYPE = 1772288;
@@ -157,10 +157,6 @@ public final class DynamicConfigAddQueueConfigCodec {
         return request;
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class ResponseParameters {
-
-    }
 
     public static ClientMessage encodeResponse() {
         ClientMessage clientMessage = ClientMessage.createForEncode();
@@ -171,13 +167,5 @@ public final class DynamicConfigAddQueueConfigCodec {
         return clientMessage;
     }
 
-    public static DynamicConfigAddQueueConfigCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
-        ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        ResponseParameters response = new ResponseParameters();
-        //empty initial frame
-        iterator.next();
-        return response;
-    }
 
 }
-

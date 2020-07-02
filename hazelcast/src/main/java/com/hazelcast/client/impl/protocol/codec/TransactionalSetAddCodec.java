@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Add new item to transactional set.
  */
-@Generated("4d7cc4919b89c2631a8749d2ea656678")
+@Generated("0fa7840101b4aaa4ef8fd6e0aeb2ae06")
 public final class TransactionalSetAddCodec {
     //hex: 0x100100
     public static final int REQUEST_MESSAGE_TYPE = 1048832;
@@ -124,4 +124,3 @@ public final class TransactionalSetAddCodec {
     }
 
 }
-

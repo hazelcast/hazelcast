@@ -51,7 +51,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * waiting time elapses then the value false is returned.  If the time is
  * less than or equal to zero, the method will not wait at all.
  */
-@Generated("7d83568393ded4ec66c45f1b792491e2")
+@Generated("9a14979293a50c88040a865a2ba61419")
 public final class CountDownLatchAwaitCodec {
     //hex: 0x0B0200
     public static final int REQUEST_MESSAGE_TYPE = 721408;
@@ -140,4 +140,3 @@ public final class CountDownLatchAwaitCodec {
     }
 
 }
-

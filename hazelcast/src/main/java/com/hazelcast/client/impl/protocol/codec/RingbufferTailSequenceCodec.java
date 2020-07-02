@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Returns the sequence of the tail. The tail is the side of the ringbuffer where the items are added to.
  * The initial value of the tail is -1.
  */
-@Generated("0ff3eaec60b277460599897812be0ecd")
+@Generated("61d12ec2eff2d6a1384211840f052a72")
 public final class RingbufferTailSequenceCodec {
     //hex: 0x170200
     public static final int REQUEST_MESSAGE_TYPE = 1507840;
@@ -98,4 +98,3 @@ public final class RingbufferTailSequenceCodec {
     }
 
 }
-

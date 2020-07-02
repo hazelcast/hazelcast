@@ -40,7 +40,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Exceptions related to a proxy creation failure is not send to the client.
  * A proxy creation failure does not cancel this operation, all proxies will be attempted to be created.
  */
-@Generated("50e5a694bca37b0f43a8c414d4ba1f9c")
+@Generated("3c40865009f7ed37704e62d57772d32d")
 public final class ClientCreateProxiesCodec {
     //hex: 0x000E00
     public static final int REQUEST_MESSAGE_TYPE = 3584;
@@ -80,10 +80,6 @@ public final class ClientCreateProxiesCodec {
         return EntryListCodec.decode(iterator, StringCodec::decode, StringCodec::decode);
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class ResponseParameters {
-
-    }
 
     public static ClientMessage encodeResponse() {
         ClientMessage clientMessage = ClientMessage.createForEncode();
@@ -94,13 +90,5 @@ public final class ClientCreateProxiesCodec {
         return clientMessage;
     }
 
-    public static ClientCreateProxiesCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
-        ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        ResponseParameters response = new ResponseParameters();
-        //empty initial frame
-        iterator.next();
-        return response;
-    }
 
 }
-

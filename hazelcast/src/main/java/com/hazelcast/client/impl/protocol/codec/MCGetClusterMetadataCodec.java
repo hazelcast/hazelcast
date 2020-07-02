@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Gets the current metadata of a cluster.
  */
-@Generated("9a7538ee4e183fa1907e071b62bcab14")
+@Generated("df5fbb0c0ade77089ecee7bad6c5db9d")
 public final class MCGetClusterMetadataCodec {
     //hex: 0x200E00
     public static final int REQUEST_MESSAGE_TYPE = 2100736;
@@ -50,9 +50,6 @@ public final class MCGetClusterMetadataCodec {
     private MCGetClusterMetadataCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class RequestParameters {
-    }
 
     public static ClientMessage encodeRequest() {
         ClientMessage clientMessage = ClientMessage.createForEncode();
@@ -65,13 +62,6 @@ public final class MCGetClusterMetadataCodec {
         return clientMessage;
     }
 
-    public static MCGetClusterMetadataCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
-        ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        RequestParameters request = new RequestParameters();
-        //empty initial frame
-        iterator.next();
-        return request;
-    }
 
     @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class ResponseParameters {
@@ -124,4 +114,3 @@ public final class MCGetClusterMetadataCodec {
     }
 
 }
-

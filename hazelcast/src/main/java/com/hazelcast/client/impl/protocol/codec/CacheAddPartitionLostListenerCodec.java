@@ -40,7 +40,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * registrations, so if you register the listener twice, it will get events twice.Listeners registered from
  * HazelcastClient may miss some of the cache partition lost events due to design limitations.
  */
-@Generated("59b94c6c842bceb72bfda5123588c67f")
+@Generated("5855b2ae8808a28b6c303d1506b53169")
 public final class CacheAddPartitionLostListenerCodec {
     //hex: 0x131900
     public static final int REQUEST_MESSAGE_TYPE = 1251584;
@@ -153,4 +153,3 @@ public final class CacheAddPartitionLostListenerCodec {
         public abstract void handleCachePartitionLostEvent(int partitionId, java.util.UUID uuid);
     }
 }
-

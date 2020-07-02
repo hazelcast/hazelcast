@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Gets the current value.
  */
-@Generated("28b94d1f571c29a4ba368028dbabc287")
+@Generated("5a31de85d2a164c3d3e605ca22216def")
 public final class AtomicRefGetCodec {
     //hex: 0x0A0400
     public static final int REQUEST_MESSAGE_TYPE = 656384;
@@ -109,4 +109,3 @@ public final class AtomicRefGetCodec {
     }
 
 }
-

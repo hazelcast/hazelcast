@@ -39,7 +39,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * set so that its value is the union of the two sets. The behavior of this operation is undefined if the specified
  * collection is modified while the operation is in progress.
  */
-@Generated("a521dd3f092dde35ed6050e1c8ff777e")
+@Generated("a894a28021a50eef0fc94d93096e8576")
 public final class SetAddAllCodec {
     //hex: 0x060600
     public static final int REQUEST_MESSAGE_TYPE = 394752;
@@ -112,4 +112,3 @@ public final class SetAddAllCodec {
     }
 
 }
-

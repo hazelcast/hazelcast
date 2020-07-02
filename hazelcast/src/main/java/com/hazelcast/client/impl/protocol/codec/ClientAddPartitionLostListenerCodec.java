@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Adds a partition lost listener to the cluster.
  */
-@Generated("b2aef1cea5e44a9659317d6c3adbc3c1")
+@Generated("93b69b13dfcdf47ca72e87bb56c1c252")
 public final class ClientAddPartitionLostListenerCodec {
     //hex: 0x000600
     public static final int REQUEST_MESSAGE_TYPE = 1536;
@@ -142,4 +142,3 @@ public final class ClientAddPartitionLostListenerCodec {
         public abstract void handlePartitionLostEvent(int partitionId, int lostBackupCount, @Nullable java.util.UUID source);
     }
 }
-

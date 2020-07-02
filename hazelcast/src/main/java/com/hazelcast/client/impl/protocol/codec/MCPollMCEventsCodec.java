@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Polls events available on member. Once read, events are removed from
  * member's internal queue.
  */
-@Generated("8f129ede10c438562a50c9ae8aa6f03f")
+@Generated("21af039053315899ab5c29784333eecd")
 public final class MCPollMCEventsCodec {
     //hex: 0x201800
     public static final int REQUEST_MESSAGE_TYPE = 2103296;
@@ -49,9 +49,6 @@ public final class MCPollMCEventsCodec {
     private MCPollMCEventsCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class RequestParameters {
-    }
 
     public static ClientMessage encodeRequest() {
         ClientMessage clientMessage = ClientMessage.createForEncode();
@@ -64,13 +61,6 @@ public final class MCPollMCEventsCodec {
         return clientMessage;
     }
 
-    public static MCPollMCEventsCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
-        ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        RequestParameters request = new RequestParameters();
-        //empty initial frame
-        iterator.next();
-        return request;
-    }
 
     /**
      * List of events.
@@ -96,4 +86,3 @@ public final class MCPollMCEventsCodec {
     }
 
 }
-

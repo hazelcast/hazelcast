@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * If the specified collection is also a set, this operation effectively modifies this set so that its value is the
  * asymmetric set difference of the two sets.
  */
-@Generated("840870b668117441ade0d5b570b114ad")
+@Generated("e06fa7e0d56fd2a0442dcfe8818060ca")
 public final class SetCompareAndRemoveAllCodec {
     //hex: 0x060700
     public static final int REQUEST_MESSAGE_TYPE = 395008;
@@ -111,4 +111,3 @@ public final class SetCompareAndRemoveAllCodec {
     }
 
 }
-

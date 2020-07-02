@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * For every entry in the key set, the following are called: any registered CacheEntryRemovedListeners if the cache
  * is a write-through cache, the CacheWriter. If the key set is empty, the CacheWriter is not called.
  */
-@Generated("afd7d73b4eeb82c5bb7ae5f7efcf33a1")
+@Generated("0f9cc4d83528195fcaa92d4b8de8b129")
 public final class CacheRemoveAllKeysCodec {
     //hex: 0x130300
     public static final int REQUEST_MESSAGE_TYPE = 1245952;
@@ -95,10 +95,6 @@ public final class CacheRemoveAllKeysCodec {
         return request;
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class ResponseParameters {
-
-    }
 
     public static ClientMessage encodeResponse() {
         ClientMessage clientMessage = ClientMessage.createForEncode();
@@ -109,13 +105,5 @@ public final class CacheRemoveAllKeysCodec {
         return clientMessage;
     }
 
-    public static CacheRemoveAllKeysCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
-        ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        ResponseParameters response = new ResponseParameters();
-        //empty initial frame
-        iterator.next();
-        return response;
-    }
 
 }
-

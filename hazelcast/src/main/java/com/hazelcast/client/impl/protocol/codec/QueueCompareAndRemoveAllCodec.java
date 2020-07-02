@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Removes all of this collection's elements that are also contained in the specified collection (optional operation).
  * After this call returns, this collection will contain no elements in common with the specified collection.
  */
-@Generated("75b68655d99294d12dc3935492702faf")
+@Generated("30522eda50948b8812cd8a8ccbe03a2e")
 public final class QueueCompareAndRemoveAllCodec {
     //hex: 0x030D00
     public static final int REQUEST_MESSAGE_TYPE = 199936;
@@ -110,4 +110,3 @@ public final class QueueCompareAndRemoveAllCodec {
     }
 
 }
-

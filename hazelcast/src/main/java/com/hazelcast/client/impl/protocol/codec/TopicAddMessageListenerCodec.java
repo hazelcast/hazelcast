@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Subscribes to this topic. When someone publishes a message on this topic. onMessage() function of the given
  * MessageListener is called. More than one message listener can be added on one instance.
  */
-@Generated("e3970954523e22b084b71f1d88cedf61")
+@Generated("ec7efec4931212c2ea4f10a86a3a2ce9")
 public final class TopicAddMessageListenerCodec {
     //hex: 0x040200
     public static final int REQUEST_MESSAGE_TYPE = 262656;
@@ -153,4 +153,3 @@ public final class TopicAddMessageListenerCodec {
         public abstract void handleTopicEvent(com.hazelcast.internal.serialization.Data item, long publishTime, java.util.UUID uuid);
     }
 }
-

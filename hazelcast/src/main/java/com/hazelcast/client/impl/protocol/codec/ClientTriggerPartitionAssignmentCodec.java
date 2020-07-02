@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Triggers partition assignment manually on the cluster.
  * Note that Partition based operations triggers this automatically
  */
-@Generated("79b73d7324849375911999699e86fcf2")
+@Generated("a9e3b73ad03971f06b74a032c0dcda49")
 public final class ClientTriggerPartitionAssignmentCodec {
     //hex: 0x001000
     public static final int REQUEST_MESSAGE_TYPE = 4096;
@@ -49,9 +49,6 @@ public final class ClientTriggerPartitionAssignmentCodec {
     private ClientTriggerPartitionAssignmentCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class RequestParameters {
-    }
 
     public static ClientMessage encodeRequest() {
         ClientMessage clientMessage = ClientMessage.createForEncode();
@@ -64,18 +61,7 @@ public final class ClientTriggerPartitionAssignmentCodec {
         return clientMessage;
     }
 
-    public static ClientTriggerPartitionAssignmentCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
-        ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        RequestParameters request = new RequestParameters();
-        //empty initial frame
-        iterator.next();
-        return request;
-    }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class ResponseParameters {
-
-    }
 
     public static ClientMessage encodeResponse() {
         ClientMessage clientMessage = ClientMessage.createForEncode();
@@ -86,13 +72,5 @@ public final class ClientTriggerPartitionAssignmentCodec {
         return clientMessage;
     }
 
-    public static ClientTriggerPartitionAssignmentCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
-        ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        ResponseParameters response = new ResponseParameters();
-        //empty initial frame
-        iterator.next();
-        return response;
-    }
 
 }
-

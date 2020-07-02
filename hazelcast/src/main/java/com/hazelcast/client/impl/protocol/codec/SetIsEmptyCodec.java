@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Returns true if this set contains no elements.
  */
-@Generated("0d65a9c5f36f53edb44297e77a6f4f83")
+@Generated("784857ba008d9630bcd2e044901f7e98")
 public final class SetIsEmptyCodec {
     //hex: 0x060D00
     public static final int REQUEST_MESSAGE_TYPE = 396544;
@@ -97,4 +97,3 @@ public final class SetIsEmptyCodec {
     }
 
 }
-

@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Triggers hot restart backup
  */
-@Generated("f86eab591bd8ed7c2d7643bbcd073487")
+@Generated("120dcd3bd5a45c2088282c6f729f0079")
 public final class MCTriggerHotRestartBackupCodec {
     //hex: 0x201F00
     public static final int REQUEST_MESSAGE_TYPE = 2105088;
@@ -48,9 +48,6 @@ public final class MCTriggerHotRestartBackupCodec {
     private MCTriggerHotRestartBackupCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class RequestParameters {
-    }
 
     public static ClientMessage encodeRequest() {
         ClientMessage clientMessage = ClientMessage.createForEncode();
@@ -63,18 +60,7 @@ public final class MCTriggerHotRestartBackupCodec {
         return clientMessage;
     }
 
-    public static MCTriggerHotRestartBackupCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
-        ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        RequestParameters request = new RequestParameters();
-        //empty initial frame
-        iterator.next();
-        return request;
-    }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class ResponseParameters {
-
-    }
 
     public static ClientMessage encodeResponse() {
         ClientMessage clientMessage = ClientMessage.createForEncode();
@@ -85,13 +71,5 @@ public final class MCTriggerHotRestartBackupCodec {
         return clientMessage;
     }
 
-    public static MCTriggerHotRestartBackupCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
-        ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        ResponseParameters response = new ResponseParameters();
-        //empty initial frame
-        iterator.next();
-        return response;
-    }
 
 }
-

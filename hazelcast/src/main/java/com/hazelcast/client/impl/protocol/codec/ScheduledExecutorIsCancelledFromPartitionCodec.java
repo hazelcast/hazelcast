@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Checks whether a task as identified from the given handler is already cancelled.
  */
-@Generated("c6b2158991d52d49e8ab8168c54c3870")
+@Generated("0871d9505ae94f3bc9d8166485fd5046")
 public final class ScheduledExecutorIsCancelledFromPartitionCodec {
     //hex: 0x1A0B00
     public static final int REQUEST_MESSAGE_TYPE = 1706752;
@@ -109,4 +109,3 @@ public final class ScheduledExecutorIsCancelledFromPartitionCodec {
     }
 
 }
-

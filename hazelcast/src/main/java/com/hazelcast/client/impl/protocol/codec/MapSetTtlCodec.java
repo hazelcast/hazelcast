@@ -48,7 +48,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * <p>
  * Time resolution for TTL is seconds. The given TTL value is rounded to the next closest second value.
  */
-@Generated("90037c5c4b91b851f7e0a444309fe1c0")
+@Generated("0ba8f99d97c84d01d9331982afb65979")
 public final class MapSetTtlCodec {
     //hex: 0x014300
     public static final int REQUEST_MESSAGE_TYPE = 82688;
@@ -128,4 +128,3 @@ public final class MapSetTtlCodec {
     }
 
 }
-

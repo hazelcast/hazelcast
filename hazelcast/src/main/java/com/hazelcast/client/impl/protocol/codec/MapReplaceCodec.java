@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Replaces the entry for a key only if currently mapped to a given value.
  */
-@Generated("334f72e82dac9d3f13cac6fd3c27efcc")
+@Generated("e0945e8a9ae4979f1ad9c37aa616d514")
 public final class MapReplaceCodec {
     //hex: 0x010400
     public static final int REQUEST_MESSAGE_TYPE = 66560;
@@ -123,4 +123,3 @@ public final class MapReplaceCodec {
     }
 
 }
-

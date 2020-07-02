@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Sends a ping to the given connection.
  */
-@Generated("5e9751c6afe0e6ed010412ba12169e51")
+@Generated("bf5f89a7c79f6fadce14467a6cebb7d8")
 public final class ClientPingCodec {
     //hex: 0x000B00
     public static final int REQUEST_MESSAGE_TYPE = 2816;
@@ -48,9 +48,6 @@ public final class ClientPingCodec {
     private ClientPingCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class RequestParameters {
-    }
 
     public static ClientMessage encodeRequest() {
         ClientMessage clientMessage = ClientMessage.createForEncode();
@@ -63,18 +60,7 @@ public final class ClientPingCodec {
         return clientMessage;
     }
 
-    public static ClientPingCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
-        ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        RequestParameters request = new RequestParameters();
-        //empty initial frame
-        iterator.next();
-        return request;
-    }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class ResponseParameters {
-
-    }
 
     public static ClientMessage encodeResponse() {
         ClientMessage clientMessage = ClientMessage.createForEncode();
@@ -85,13 +71,5 @@ public final class ClientPingCodec {
         return clientMessage;
     }
 
-    public static ClientPingCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
-        ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        ResponseParameters response = new ResponseParameters();
-        //empty initial frame
-        iterator.next();
-        return response;
-    }
 
 }
-

@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Closes the given session on the given CP group
  */
-@Generated("5db8795ab12f66c1ef0ab07e465120e3")
+@Generated("b119b3584d0392d9154d1af7cf317dbb")
 public final class CPSessionCloseSessionCodec {
     //hex: 0x1F0200
     public static final int REQUEST_MESSAGE_TYPE = 2032128;
@@ -110,4 +110,3 @@ public final class CPSessionCloseSessionCodec {
     }
 
 }
-

@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Retrieves, but does not remove, the head of this queue, or returns null if this queue is empty.
  */
-@Generated("59e5d3d91447587031cc0e36c9652f9e")
+@Generated("c4fa2d229b8687c253b5ad6e8a45a5c6")
 public final class QueuePeekCodec {
     //hex: 0x030700
     public static final int REQUEST_MESSAGE_TYPE = 198400;
@@ -97,4 +97,3 @@ public final class QueuePeekCodec {
     }
 
 }
-

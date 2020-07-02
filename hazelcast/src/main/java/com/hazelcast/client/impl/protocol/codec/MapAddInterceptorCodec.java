@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Adds an interceptor for this map. Added interceptor will intercept operations
  * and execute user defined methods and will cancel operations if user defined method throw exception.
  */
-@Generated("331e582eefb39e47ba423e963a3a1759")
+@Generated("ed73aaf5160c14e1bea0c3ee43d11cbb")
 public final class MapAddInterceptorCodec {
     //hex: 0x011400
     public static final int REQUEST_MESSAGE_TYPE = 70656;
@@ -110,4 +110,3 @@ public final class MapAddInterceptorCodec {
     }
 
 }
-

@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Each item is a Map.Entry<String, byte[]> in the list.
  * key of entry is full class name, and byte[] is the class definition.
  */
-@Generated("27fb96f9ecf049e39b4f22dda8251597")
+@Generated("c765c00909d3b12c7414bcd8e3988292")
 public final class ClientDeployClassesCodec {
     //hex: 0x000D00
     public static final int REQUEST_MESSAGE_TYPE = 3328;
@@ -75,10 +75,6 @@ public final class ClientDeployClassesCodec {
         return EntryListCodec.decode(iterator, StringCodec::decode, ByteArrayCodec::decode);
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class ResponseParameters {
-
-    }
 
     public static ClientMessage encodeResponse() {
         ClientMessage clientMessage = ClientMessage.createForEncode();
@@ -89,13 +85,5 @@ public final class ClientDeployClassesCodec {
         return clientMessage;
     }
 
-    public static ClientDeployClassesCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
-        ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        ResponseParameters response = new ResponseParameters();
-        //empty initial frame
-        iterator.next();
-        return response;
-    }
 
 }
-

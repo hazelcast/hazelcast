@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Triggers force start
  */
-@Generated("fe34def7ac0482e1af28afd6ad48ad91")
+@Generated("cdccbc6f54df2471aa118aa43d5a8582")
 public final class MCTriggerForceStartCodec {
     //hex: 0x201E00
     public static final int REQUEST_MESSAGE_TYPE = 2104832;
@@ -49,9 +49,6 @@ public final class MCTriggerForceStartCodec {
     private MCTriggerForceStartCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class RequestParameters {
-    }
 
     public static ClientMessage encodeRequest() {
         ClientMessage clientMessage = ClientMessage.createForEncode();
@@ -64,13 +61,6 @@ public final class MCTriggerForceStartCodec {
         return clientMessage;
     }
 
-    public static MCTriggerForceStartCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
-        ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        RequestParameters request = new RequestParameters();
-        //empty initial frame
-        iterator.next();
-        return request;
-    }
 
     /**
      * True if the forced start was successfully initiated, false otherwise
@@ -95,4 +85,3 @@ public final class MCTriggerForceStartCodec {
     }
 
 }
-

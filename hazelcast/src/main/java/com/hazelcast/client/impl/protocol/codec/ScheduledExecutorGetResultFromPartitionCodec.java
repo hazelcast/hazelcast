@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Fetches the result of the task ({@link java.util.concurrent.Callable})
  * The call will blocking until the result is ready.
  */
-@Generated("74beea1bc64e9895cbe0e29c7c24499a")
+@Generated("ecd1e73cf42212ae3bef8c526ab88594")
 public final class ScheduledExecutorGetResultFromPartitionCodec {
     //hex: 0x1A0F00
     public static final int REQUEST_MESSAGE_TYPE = 1707776;
@@ -110,4 +110,3 @@ public final class ScheduledExecutorGetResultFromPartitionCodec {
     }
 
 }
-

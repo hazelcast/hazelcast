@@ -26,7 +26,7 @@ import com.hazelcast.internal.nio.Connection;
 import java.security.Permission;
 
 public class HotRestartTriggerPartialStartMessageTask
-        extends AbstractCallableMessageTask<MCTriggerPartialStartCodec.RequestParameters> {
+        extends AbstractCallableMessageTask<Void> {
 
     private final Node node;
 
@@ -46,8 +46,8 @@ public class HotRestartTriggerPartialStartMessageTask
     }
 
     @Override
-    protected MCTriggerPartialStartCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
-        return MCTriggerPartialStartCodec.decodeRequest(clientMessage);
+    protected Void decodeClientMessage(ClientMessage clientMessage) {
+        return null;
     }
 
     @Override

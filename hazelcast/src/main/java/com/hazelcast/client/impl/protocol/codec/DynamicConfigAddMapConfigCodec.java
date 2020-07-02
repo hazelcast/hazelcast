@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * If a map configuration with the given {@code name} already exists, then
  * the new configuration is ignored and the existing one is preserved.
  */
-@Generated("037f9c0b54f6dae07c0f0e5f663b9332")
+@Generated("48500a8ca2ec1aa1b08ffe9be8953e5e")
 public final class DynamicConfigAddMapConfigCodec {
     //hex: 0x1B0C00
     public static final int REQUEST_MESSAGE_TYPE = 1772544;
@@ -278,10 +278,6 @@ public final class DynamicConfigAddMapConfigCodec {
         return request;
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class ResponseParameters {
-
-    }
 
     public static ClientMessage encodeResponse() {
         ClientMessage clientMessage = ClientMessage.createForEncode();
@@ -292,13 +288,5 @@ public final class DynamicConfigAddMapConfigCodec {
         return clientMessage;
     }
 
-    public static DynamicConfigAddMapConfigCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
-        ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        ResponseParameters response = new ResponseParameters();
-        //empty initial frame
-        iterator.next();
-        return response;
-    }
 
 }
-

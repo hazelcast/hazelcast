@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Clear WAN replication queues for the given wan replication and publisher
  */
-@Generated("232ad3bd983755a876b24a61ff7ebcf9")
+@Generated("5dee62feaa9b615a8ea93f892942f767")
 public final class MCClearWanQueuesCodec {
     //hex: 0x201400
     public static final int REQUEST_MESSAGE_TYPE = 2102272;
@@ -85,10 +85,6 @@ public final class MCClearWanQueuesCodec {
         return request;
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class ResponseParameters {
-
-    }
 
     public static ClientMessage encodeResponse() {
         ClientMessage clientMessage = ClientMessage.createForEncode();
@@ -99,13 +95,5 @@ public final class MCClearWanQueuesCodec {
         return clientMessage;
     }
 
-    public static MCClearWanQueuesCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
-        ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        ResponseParameters response = new ResponseParameters();
-        //empty initial frame
-        iterator.next();
-        return response;
-    }
 
 }
-

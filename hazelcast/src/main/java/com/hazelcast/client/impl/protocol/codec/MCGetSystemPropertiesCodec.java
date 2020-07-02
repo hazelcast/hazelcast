@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Gets the system properties of the member it's called on.
  */
-@Generated("f026dd0dad3484209cab8d5a1edefd6a")
+@Generated("68d86484718f8424e3b10535277278f4")
 public final class MCGetSystemPropertiesCodec {
     //hex: 0x200A00
     public static final int REQUEST_MESSAGE_TYPE = 2099712;
@@ -48,9 +48,6 @@ public final class MCGetSystemPropertiesCodec {
     private MCGetSystemPropertiesCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class RequestParameters {
-    }
 
     public static ClientMessage encodeRequest() {
         ClientMessage clientMessage = ClientMessage.createForEncode();
@@ -63,13 +60,6 @@ public final class MCGetSystemPropertiesCodec {
         return clientMessage;
     }
 
-    public static MCGetSystemPropertiesCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
-        ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        RequestParameters request = new RequestParameters();
-        //empty initial frame
-        iterator.next();
-        return request;
-    }
 
     /**
      * System properties of the member.
@@ -95,4 +85,3 @@ public final class MCGetSystemPropertiesCodec {
     }
 
 }
-

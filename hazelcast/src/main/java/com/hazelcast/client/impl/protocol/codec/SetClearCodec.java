@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Removes all of the elements from this set (optional operation). The set will be empty after this call returns.
  */
-@Generated("7b98d86f68a0b7a02572f1e114606074")
+@Generated("5077d6c21ecba8461d679ef2acb84eb0")
 public final class SetClearCodec {
     //hex: 0x060900
     public static final int REQUEST_MESSAGE_TYPE = 395520;
@@ -73,10 +73,6 @@ public final class SetClearCodec {
         return StringCodec.decode(iterator);
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class ResponseParameters {
-
-    }
 
     public static ClientMessage encodeResponse() {
         ClientMessage clientMessage = ClientMessage.createForEncode();
@@ -87,13 +83,5 @@ public final class SetClearCodec {
         return clientMessage;
     }
 
-    public static SetClearCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
-        ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        ResponseParameters response = new ResponseParameters();
-        //empty initial frame
-        iterator.next();
-        return response;
-    }
 
 }
-

@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Returns true if this map contains no key-value mappings.
  */
-@Generated("c092c511c8cb4d61675388da5ab5f381")
+@Generated("0c3f9021a9db449e6104f4f5fe9236fa")
 public final class MapIsEmptyCodec {
     //hex: 0x012B00
     public static final int REQUEST_MESSAGE_TYPE = 76544;
@@ -97,4 +97,3 @@ public final class MapIsEmptyCodec {
     }
 
 }
-

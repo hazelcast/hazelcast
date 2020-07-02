@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Atomically sets the value to the given updated value only if the current
  * value the expected value.
  */
-@Generated("7a438ac5eb2aa31f00712bb5e5351a45")
+@Generated("8bfdb4b7938e18e396053f56d0938d73")
 public final class AtomicLongCompareAndSetCodec {
     //hex: 0x090400
     public static final int REQUEST_MESSAGE_TYPE = 590848;
@@ -126,4 +126,3 @@ public final class AtomicLongCompareAndSetCodec {
     }
 
 }
-

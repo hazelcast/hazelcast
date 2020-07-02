@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Retains only the elements in this collection that are contained in the specified collection (optional operation).
  * In other words, removes from this collection all of its elements that are not contained in the specified collection.
  */
-@Generated("fb3a5f79906c6380dbddc113ba3f7cf7")
+@Generated("a2ed069daec7562a9e79b953cfefda57")
 public final class QueueCompareAndRetainAllCodec {
     //hex: 0x030E00
     public static final int REQUEST_MESSAGE_TYPE = 200192;
@@ -110,4 +110,3 @@ public final class QueueCompareAndRetainAllCodec {
     }
 
 }
-

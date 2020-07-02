@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Returns the number of key-value mappings in this map.  If the map contains more than Integer.MAX_VALUE elements,
  * returns Integer.MAX_VALUE
  */
-@Generated("e73dab5cb59877d8088d376ea3b15e57")
+@Generated("e41ac960fa9c0a0f5a0177e4fb6f8ff0")
 public final class MapSizeCodec {
     //hex: 0x012A00
     public static final int REQUEST_MESSAGE_TYPE = 76288;
@@ -98,4 +98,3 @@ public final class MapSizeCodec {
     }
 
 }
-

@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Adds a MapListener for this map. To receive an event, you should implement a corresponding MapListener
  * sub-interface for that event.
  */
-@Generated("d63f38fb8ad7a8439ee349fc984663ad")
+@Generated("3b0404abaef0039d6ef42b4ca4bf2dbb")
 public final class MapAddEntryListenerToKeyWithPredicateCodec {
     //hex: 0x011600
     public static final int REQUEST_MESSAGE_TYPE = 71168;
@@ -207,4 +207,3 @@ public final class MapAddEntryListenerToKeyWithPredicateCodec {
         public abstract void handleEntryEvent(@Nullable com.hazelcast.internal.serialization.Data key, @Nullable com.hazelcast.internal.serialization.Data value, @Nullable com.hazelcast.internal.serialization.Data oldValue, @Nullable com.hazelcast.internal.serialization.Data mergingValue, int eventType, java.util.UUID uuid, int numberOfAffectedEntries);
     }
 }
-

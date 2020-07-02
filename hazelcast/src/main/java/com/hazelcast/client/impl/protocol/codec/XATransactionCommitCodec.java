@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Commits the global transaction specified by xid.
  */
-@Generated("d886934f569826acffbe2c7a4a4c9055")
+@Generated("609a2f67da4abcd2a10cc5ab9557ccc6")
 public final class XATransactionCommitCodec {
     //hex: 0x140400
     public static final int REQUEST_MESSAGE_TYPE = 1311744;
@@ -86,10 +86,6 @@ public final class XATransactionCommitCodec {
         return request;
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class ResponseParameters {
-
-    }
 
     public static ClientMessage encodeResponse() {
         ClientMessage clientMessage = ClientMessage.createForEncode();
@@ -100,13 +96,5 @@ public final class XATransactionCommitCodec {
         return clientMessage;
     }
 
-    public static XATransactionCommitCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
-        ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        ResponseParameters response = new ResponseParameters();
-        //empty initial frame
-        iterator.next();
-        return response;
-    }
 
 }
-

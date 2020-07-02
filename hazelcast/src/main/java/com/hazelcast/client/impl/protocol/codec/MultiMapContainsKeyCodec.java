@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Returns whether the multimap contains an entry with the key.
  */
-@Generated("eb6efe89c6da0d67a0b79c56ee0af436")
+@Generated("bbbb1eb8ae1cad794094a56261f2c03d")
 public final class MultiMapContainsKeyCodec {
     //hex: 0x020700
     public static final int REQUEST_MESSAGE_TYPE = 132864;
@@ -116,4 +116,3 @@ public final class MultiMapContainsKeyCodec {
     }
 
 }
-

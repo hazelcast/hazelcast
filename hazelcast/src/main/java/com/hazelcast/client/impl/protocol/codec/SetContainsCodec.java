@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Returns true if this set contains the specified element.
  */
-@Generated("14441f97ebc2c2113fb7769a7f0c04ac")
+@Generated("68466baa37cf709ead11e3c32ef8876b")
 public final class SetContainsCodec {
     //hex: 0x060200
     public static final int REQUEST_MESSAGE_TYPE = 393728;
@@ -109,4 +109,3 @@ public final class SetContainsCodec {
     }
 
 }
-

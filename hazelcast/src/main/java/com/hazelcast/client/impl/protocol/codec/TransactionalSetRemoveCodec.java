@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Remove item from transactional set.
  */
-@Generated("5734feb53eb1ba4f9211222e58274389")
+@Generated("c6e1373a729488605a104f26001ab0f6")
 public final class TransactionalSetRemoveCodec {
     //hex: 0x100200
     public static final int REQUEST_MESSAGE_TYPE = 1049088;
@@ -124,4 +124,3 @@ public final class TransactionalSetRemoveCodec {
     }
 
 }
-

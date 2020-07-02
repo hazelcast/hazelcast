@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Makes an authentication request to the cluster.
  */
-@Generated("349a8769b24abe268cee0676f0404c8f")
+@Generated("7681177a81e1c109a900ab1159fc793e")
 public final class ClientAuthenticationCodec {
     //hex: 0x000100
     public static final int REQUEST_MESSAGE_TYPE = 256;
@@ -214,4 +214,3 @@ public final class ClientAuthenticationCodec {
     }
 
 }
-

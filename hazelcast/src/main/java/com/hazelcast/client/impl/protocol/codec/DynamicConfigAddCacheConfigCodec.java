@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * If a cache configuration with the given {@code name} already exists, then
  * the new configuration is ignored and the existing one is preserved.
  */
-@Generated("d279acb49211c7b1730832245f9c8dd1")
+@Generated("5d12971490cbacdd30f6a5c50179c655")
 public final class DynamicConfigAddCacheConfigCodec {
     //hex: 0x1B0E00
     public static final int REQUEST_MESSAGE_TYPE = 1773056;
@@ -269,10 +269,6 @@ public final class DynamicConfigAddCacheConfigCodec {
         return request;
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class ResponseParameters {
-
-    }
 
     public static ClientMessage encodeResponse() {
         ClientMessage clientMessage = ClientMessage.createForEncode();
@@ -283,13 +279,5 @@ public final class DynamicConfigAddCacheConfigCodec {
         return clientMessage;
     }
 
-    public static DynamicConfigAddCacheConfigCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
-        ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        ResponseParameters response = new ResponseParameters();
-        //empty initial frame
-        iterator.next();
-        return response;
-    }
 
 }
-

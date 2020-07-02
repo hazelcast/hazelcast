@@ -40,7 +40,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * {@code LockOwnershipLostException}. Returns true if the lock is still
  * held by the caller after a successful unlock() call, false otherwise.
  */
-@Generated("eb13f004d2dc36fef73bed7501820279")
+@Generated("f8c886a1df043e308c6368e018ae43d5")
 public final class FencedLockUnlockCodec {
     //hex: 0x070300
     public static final int REQUEST_MESSAGE_TYPE = 459520;
@@ -137,4 +137,3 @@ public final class FencedLockUnlockCodec {
     }
 
 }
-

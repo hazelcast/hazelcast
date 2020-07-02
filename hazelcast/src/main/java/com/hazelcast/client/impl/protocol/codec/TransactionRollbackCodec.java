@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Rollbacks the transaction with the given id.
  */
-@Generated("015fddcd11ab00e3a0c049caee25479f")
+@Generated("b6dad086626933b8e68f6860d26053c3")
 public final class TransactionRollbackCodec {
     //hex: 0x150300
     public static final int REQUEST_MESSAGE_TYPE = 1377024;
@@ -86,10 +86,6 @@ public final class TransactionRollbackCodec {
         return request;
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class ResponseParameters {
-
-    }
 
     public static ClientMessage encodeResponse() {
         ClientMessage clientMessage = ClientMessage.createForEncode();
@@ -100,13 +96,5 @@ public final class TransactionRollbackCodec {
         return clientMessage;
     }
 
-    public static TransactionRollbackCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
-        ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        ResponseParameters response = new ResponseParameters();
-        //empty initial frame
-        iterator.next();
-        return response;
-    }
 
 }
-

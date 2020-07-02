@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Clears the XA transaction with the given xid from remote member.
  */
-@Generated("620212ebc209b6e13a73d5c746fc97c7")
+@Generated("469b7f5e642dfbd010a766e98a22083e")
 public final class XATransactionClearRemoteCodec {
     //hex: 0x140100
     public static final int REQUEST_MESSAGE_TYPE = 1310976;
@@ -73,10 +73,6 @@ public final class XATransactionClearRemoteCodec {
         return XidCodec.decode(iterator);
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class ResponseParameters {
-
-    }
 
     public static ClientMessage encodeResponse() {
         ClientMessage clientMessage = ClientMessage.createForEncode();
@@ -87,13 +83,5 @@ public final class XATransactionClearRemoteCodec {
         return clientMessage;
     }
 
-    public static XATransactionClearRemoteCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
-        ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        ResponseParameters response = new ResponseParameters();
-        //empty initial frame
-        iterator.next();
-        return response;
-    }
 
 }
-

@@ -39,7 +39,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * (This implies that the behavior of this call is undefined if the specified collection is this collection,
  * and this collection is nonempty.)
  */
-@Generated("55e8367d314ba8eb9f0dedc014942161")
+@Generated("c195ccba352a5b42a9eff92e074331c5")
 public final class QueueAddAllCodec {
     //hex: 0x031000
     public static final int REQUEST_MESSAGE_TYPE = 200704;
@@ -112,4 +112,3 @@ public final class QueueAddAllCodec {
     }
 
 }
-

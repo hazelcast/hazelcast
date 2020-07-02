@@ -39,7 +39,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * If the specified collection is also a set, this operation effectively modifies this set so that its value is the
  * intersection of the two sets.
  */
-@Generated("ccb216b013cadf2bba9d102a2d410ff9")
+@Generated("8645d3f794e38df2033924f806b4fd5c")
 public final class SetCompareAndRetainAllCodec {
     //hex: 0x060800
     public static final int REQUEST_MESSAGE_TYPE = 395264;
@@ -113,4 +113,3 @@ public final class SetCompareAndRetainAllCodec {
     }
 
 }
-

@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Adds an listener for this collection. Listener will be notified or all collection add/remove events.
  */
-@Generated("2c2f66e5007f6a76d1cd86a70f6c4c71")
+@Generated("48da37b0d7a65afbf54ce7700d2edcdf")
 public final class QueueAddListenerCodec {
     //hex: 0x031100
     public static final int REQUEST_MESSAGE_TYPE = 200960;
@@ -160,4 +160,3 @@ public final class QueueAddListenerCodec {
         public abstract void handleItemEvent(@Nullable com.hazelcast.internal.serialization.Data item, java.util.UUID uuid, int eventType);
     }
 }
-

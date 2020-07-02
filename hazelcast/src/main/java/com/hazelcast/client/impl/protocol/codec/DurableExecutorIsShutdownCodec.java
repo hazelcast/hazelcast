@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Returns true if this executor has been shut down.
  */
-@Generated("cc775144ccab2d5a6b7db3671b2f5f1b")
+@Generated("854b7ff82d1390a82468738b6508da74")
 public final class DurableExecutorIsShutdownCodec {
     //hex: 0x180200
     public static final int REQUEST_MESSAGE_TYPE = 1573376;
@@ -97,4 +97,3 @@ public final class DurableExecutorIsShutdownCodec {
     }
 
 }
-

@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Adds a distributed object listener to the cluster. This listener will be notified
  * when a distributed object is created or destroyed.
  */
-@Generated("c78c5a74485a1a06723385a4daa14aa5")
+@Generated("600e21a187bf2eb5f4c3765393d08eab")
 public final class ClientAddDistributedObjectListenerCodec {
     //hex: 0x000900
     public static final int REQUEST_MESSAGE_TYPE = 2304;
@@ -144,4 +144,3 @@ public final class ClientAddDistributedObjectListenerCodec {
         public abstract void handleDistributedObjectEvent(java.lang.String name, java.lang.String serviceName, java.lang.String eventType, java.util.UUID source);
     }
 }
-

@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Returns the collection of values associated with the key.
  */
-@Generated("038e27d129c23024461d9c16affffef9")
+@Generated("9c6f93af5ee250603c7aa93302a2c5b9")
 public final class TransactionalMultiMapGetCodec {
     //hex: 0x0F0200
     public static final int REQUEST_MESSAGE_TYPE = 983552;
@@ -124,4 +124,3 @@ public final class TransactionalMultiMapGetCodec {
     }
 
 }
-

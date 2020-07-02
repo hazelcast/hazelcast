@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * If a replicated map configuration with the given {@code name} already exists, then
  * the new configuration is ignored and the existing one is preserved.
  */
-@Generated("d12fa55ddfe3c694c57390c6ce3bf53b")
+@Generated("d65654b9fa009b6dadb98b808ff5b3f6")
 public final class DynamicConfigAddReplicatedMapConfigCodec {
     //hex: 0x1B0600
     public static final int REQUEST_MESSAGE_TYPE = 1771008;
@@ -137,10 +137,6 @@ public final class DynamicConfigAddReplicatedMapConfigCodec {
         return request;
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class ResponseParameters {
-
-    }
 
     public static ClientMessage encodeResponse() {
         ClientMessage clientMessage = ClientMessage.createForEncode();
@@ -151,13 +147,5 @@ public final class DynamicConfigAddReplicatedMapConfigCodec {
         return clientMessage;
     }
 
-    public static DynamicConfigAddReplicatedMapConfigCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
-        ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        ResponseParameters response = new ResponseParameters();
-        //empty initial frame
-        iterator.next();
-        return response;
-    }
 
 }
-

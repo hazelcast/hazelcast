@@ -30,7 +30,7 @@ import java.util.function.Consumer;
 import static com.hazelcast.spi.impl.InternalCompletableFuture.newCompletedFuture;
 
 public class AddBackupListenerMessageTask
-        extends AbstractAddListenerMessageTask<ClientLocalBackupListenerCodec.RequestParameters>
+        extends AbstractAddListenerMessageTask<Void>
         implements Consumer<Long> {
 
     public AddBackupListenerMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
@@ -66,8 +66,8 @@ public class AddBackupListenerMessageTask
     }
 
     @Override
-    protected ClientLocalBackupListenerCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
-        return ClientLocalBackupListenerCodec.decodeRequest(clientMessage);
+    protected Void decodeClientMessage(ClientMessage clientMessage) {
+        return null;
     }
 
     @Override

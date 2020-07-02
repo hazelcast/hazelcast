@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Adds an entry listener for this multimap. The listener will be notified for all multimap add/remove/update/evict events.
  */
-@Generated("f8bd5ee61c99034f00eed6879e44106a")
+@Generated("3abd67059597cbe3a7573716143540b1")
 public final class MultiMapAddEntryListenerCodec {
     //hex: 0x020E00
     public static final int REQUEST_MESSAGE_TYPE = 134656;
@@ -183,4 +183,3 @@ public final class MultiMapAddEntryListenerCodec {
         public abstract void handleEntryEvent(@Nullable com.hazelcast.internal.serialization.Data key, @Nullable com.hazelcast.internal.serialization.Data value, @Nullable com.hazelcast.internal.serialization.Data oldValue, @Nullable com.hazelcast.internal.serialization.Data mergingValue, int eventType, java.util.UUID uuid, int numberOfAffectedEntries);
     }
 }
-

@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Atomically removes the entry for a key only if currently mapped to some value.
  */
-@Generated("46a49e8902e08b31ef83babe325ca0e2")
+@Generated("815801e6a3fca05a8afbf59ea9514a33")
 public final class CacheGetAndRemoveCodec {
     //hex: 0x130A00
     public static final int REQUEST_MESSAGE_TYPE = 1247744;
@@ -117,4 +117,3 @@ public final class CacheGetAndRemoveCodec {
     }
 
 }
-

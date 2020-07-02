@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Requests garbage collection to be performed on the member it's called on.
  */
-@Generated("7b11c090ed53101976374a2c499c9ba1")
+@Generated("f9cf16c174e9f25b4b894ae0d26de44d")
 public final class MCRunGcCodec {
     //hex: 0x200600
     public static final int REQUEST_MESSAGE_TYPE = 2098688;
@@ -48,9 +48,6 @@ public final class MCRunGcCodec {
     private MCRunGcCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class RequestParameters {
-    }
 
     public static ClientMessage encodeRequest() {
         ClientMessage clientMessage = ClientMessage.createForEncode();
@@ -63,18 +60,7 @@ public final class MCRunGcCodec {
         return clientMessage;
     }
 
-    public static MCRunGcCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
-        ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        RequestParameters request = new RequestParameters();
-        //empty initial frame
-        iterator.next();
-        return request;
-    }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class ResponseParameters {
-
-    }
 
     public static ClientMessage encodeResponse() {
         ClientMessage clientMessage = ClientMessage.createForEncode();
@@ -85,13 +71,5 @@ public final class MCRunGcCodec {
         return clientMessage;
     }
 
-    public static MCRunGcCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
-        ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        ResponseParameters response = new ResponseParameters();
-        //empty initial frame
-        iterator.next();
-        return response;
-    }
 
 }
-

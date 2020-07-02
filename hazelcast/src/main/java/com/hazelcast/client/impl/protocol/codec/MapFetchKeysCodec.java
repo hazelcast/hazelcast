@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Fetches specified number of keys from the specified partition starting from specified table index.
  */
-@Generated("38abddd7a1652049e48f4f9b315d85a6")
+@Generated("aa396410f30950ed2b2eedf5fb7412f4")
 public final class MapFetchKeysCodec {
     //hex: 0x013700
     public static final int REQUEST_MESSAGE_TYPE = 79616;
@@ -127,4 +127,3 @@ public final class MapFetchKeysCodec {
     }
 
 }
-

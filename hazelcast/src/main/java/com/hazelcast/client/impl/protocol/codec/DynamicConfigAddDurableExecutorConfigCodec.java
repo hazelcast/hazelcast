@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * If a durable executor configuration with the given {@code name} already exists, then
  * the new configuration is ignored and the existing one is preserved.
  */
-@Generated("c580069a6f1fb5275c8652a9e23eb57b")
+@Generated("014426d6895e623c3d4f4050cb3d44ad")
 public final class DynamicConfigAddDurableExecutorConfigCodec {
     //hex: 0x1B0900
     public static final int REQUEST_MESSAGE_TYPE = 1771776;
@@ -112,10 +112,6 @@ public final class DynamicConfigAddDurableExecutorConfigCodec {
         return request;
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class ResponseParameters {
-
-    }
 
     public static ClientMessage encodeResponse() {
         ClientMessage clientMessage = ClientMessage.createForEncode();
@@ -126,13 +122,5 @@ public final class DynamicConfigAddDurableExecutorConfigCodec {
         return clientMessage;
     }
 
-    public static DynamicConfigAddDurableExecutorConfigCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
-        ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        ResponseParameters response = new ResponseParameters();
-        //empty initial frame
-        iterator.next();
-        return response;
-    }
 
 }
-

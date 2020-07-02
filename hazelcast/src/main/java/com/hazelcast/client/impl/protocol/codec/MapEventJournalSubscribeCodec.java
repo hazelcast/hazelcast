@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * This includes retrieving the event journal sequences of the
  * oldest and newest event in the journal.
  */
-@Generated("00e8f407c0be531b899e7279cdcd0242")
+@Generated("3d2364f27d45ce8d0d9d3aab6536fd5d")
 public final class MapEventJournalSubscribeCodec {
     //hex: 0x014100
     public static final int REQUEST_MESSAGE_TYPE = 82176;
@@ -111,4 +111,3 @@ public final class MapEventJournalSubscribeCodec {
     }
 
 }
-

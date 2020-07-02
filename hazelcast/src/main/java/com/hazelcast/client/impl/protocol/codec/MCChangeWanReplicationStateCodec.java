@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Stop, pause or resume WAN replication for the given WAN replication and publisher
  */
-@Generated("57243f31377792f63e0c80dfd41b2433")
+@Generated("04eb850936367132e2f280ea4900e703")
 public final class MCChangeWanReplicationStateCodec {
     //hex: 0x201300
     public static final int REQUEST_MESSAGE_TYPE = 2102016;
@@ -95,10 +95,6 @@ public final class MCChangeWanReplicationStateCodec {
         return request;
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class ResponseParameters {
-
-    }
 
     public static ClientMessage encodeResponse() {
         ClientMessage clientMessage = ClientMessage.createForEncode();
@@ -109,13 +105,5 @@ public final class MCChangeWanReplicationStateCodec {
         return clientMessage;
     }
 
-    public static MCChangeWanReplicationStateCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
-        ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        ResponseParameters response = new ResponseParameters();
-        //empty initial frame
-        iterator.next();
-        return response;
-    }
 
 }
-
