@@ -60,7 +60,7 @@ public final class SqlRowMetadata {
     }
 
     /**
-     * Get column metadata.
+     * Gets column metadata.
      *
      * @param index column index, zero-based
      * @return column metadata

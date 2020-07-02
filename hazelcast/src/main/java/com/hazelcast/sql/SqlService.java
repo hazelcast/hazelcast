@@ -21,9 +21,13 @@ import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.spi.annotation.Beta;
 
 import javax.annotation.Nonnull;
+import java.util.List;
 
 /**
  * Service to execute distributed SQL queries.
+ * <p>
+ * The service is in beta state. Behavior and API might be changed in future releases. Binary compatibility is not
+ * guaranteed between minor and patch releases.
  * <h1>Overview</h1>
  * Hazelcast is able to execute distributed SQL queries over the following entities:
  * <ul>
@@ -109,7 +113,7 @@ public interface SqlService {
      * Converts passed SQL string and parameters into an {@link SqlQuery} object and invokes {@link #query(SqlQuery)}.
      *
      * @param sql SQL string
-     * @param params parameters
+     * @param params query parameters that will be passed to {@link SqlQuery#setParameters(List)}
      * @return result
      * @throws NullPointerException if the SQL string is null
      * @throws IllegalArgumentException if the SQL string is empty

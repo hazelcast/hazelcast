@@ -53,7 +53,7 @@ public interface SqlResult extends Iterable<SqlRow>, AutoCloseable {
      * The iterator may be requested only once.
      *
      * @return iterator
-     * @throws IllegalStateException ff the method is invoked more than once
+     * @throws IllegalStateException if the method is invoked more than once
      * @throws SqlException in case of an SQL-related error condition
      */
     @Nonnull
