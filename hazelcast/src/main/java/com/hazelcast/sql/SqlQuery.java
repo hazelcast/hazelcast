@@ -30,7 +30,7 @@ import java.util.Objects;
  * This object is mutable. Properties are read once before the execution is started.
  * Changes to properties do not affect the behavior of already running queries.
  */
-public class SqlQuery {
+public final class SqlQuery {
     /** Value for the timeout that is not set. */
     public static final long TIMEOUT_NOT_SET = -1;
 
@@ -40,7 +40,7 @@ public class SqlQuery {
     /** Default timeout. */
     public static final long DEFAULT_TIMEOUT = TIMEOUT_NOT_SET;
 
-    /** Default page size. */
+    /** Default cursor buffer size. */
     public static final int DEFAULT_CURSOR_BUFFER_SIZE = 4096;
 
     private String sql;
@@ -148,7 +148,7 @@ public class SqlQuery {
     }
 
     /**
-     * Clear query parameters.
+     * Clears query parameters.
      *
      * @return this instance for chaining
      *
