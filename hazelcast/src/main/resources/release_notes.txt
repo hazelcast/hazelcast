@@ -16,7 +16,7 @@ enough. It can be configured using the following properties:
   ** `hazelcast.wan.consumer.ack.delay.backoff.max`
   ** `hazelcast.wan.consumer.ack.delay.backoff.multiplier`
 
-  See link:https://github.com/hazelcast/hazelcast/blob/4.0.2/hazelcast/src/main/java/com/hazelcast/spi/properties/ClusterProperty.java#L1112[here] for their explanations. [#17088]
+  See https://github.com/hazelcast/hazelcast/blob/4.0.2/hazelcast/src/main/java/com/hazelcast/spi/properties/ClusterProperty.java#L1112 for their explanations. [#17088]
 * Removed a constraint which was rejecting all the operations
 except the ones marked with `AllowedDuringPassiveState` while a
 member is shutting down. With this enhancement, operations are allowed
