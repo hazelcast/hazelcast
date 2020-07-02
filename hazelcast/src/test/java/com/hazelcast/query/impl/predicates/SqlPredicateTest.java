@@ -449,6 +449,20 @@ public class SqlPredicateTest {
     public void testSqlPredicateEscape() {
         assertEquals("(active=true AND name=abc x'yz 1'23)", sql("active AND name='abc x''yz 1''23'"));
         assertEquals("(active=true AND name=)", sql("active AND name=''"));
+        assertSqlMatching("name = 'Larry''s'", createValue("Larry's"));
+        assertSqlMatching("name = ''", createValue(""));
+        assertSqlMatching("name = '\"'", createValue("\""));
+        assertSqlMatching("name LIKE 'Stri%'", createValue("String"));
+        assertSqlMatching("name LIKE 'Stri%'", createValue("Stri"));
+        assertSqlMatching("name LIKE 'Stri\\%'", createValue("Stri%"));
+        assertSqlNotMatching("name LIKE 'Stri\\%'", createValue("String"));
+        assertSqlMatching("name LIKE 'Stg''.'", createValue("Stg'."));
+        assertSqlNotMatching("name LIKE 'Stg''.'", createValue("Stg'1"));
+        assertSqlMatching("name LIKE 'Strin_'", createValue("String"));
+        assertSqlNotMatching("name LIKE 'Strin\\_'", createValue("String"));
+        assertSqlMatching("name LIKE 'Strin\\_'", createValue("Strin_"));
+        assertSqlNotMatching("name LIKE 'Strin*'", createValue("Strinn"));
+        assertSqlMatching("name LIKE 'Strin*'", createValue("Strin*"));
     }
 
     @Test(expected = IllegalArgumentException.class)
