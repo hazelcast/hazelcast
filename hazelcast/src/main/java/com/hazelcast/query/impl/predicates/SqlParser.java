@@ -41,6 +41,7 @@ class SqlParser {
     private static final int IN_PRECEDENCE = 10;
     private static final int LIKE_PRECEDENCE = 10;
     private static final int ILIKE_PRECEDENCE = 10;
+    private static final int ESCAPE_PRECEDENCE = 15;
     private static final int REGEX_PRECEDENCE = 10;
     private static final int AND_PRECEDENCE = 5;
     private static final int OR_PRECEDENCE = 3;
@@ -64,6 +65,7 @@ class SqlParser {
         precedence.put("in", IN_PRECEDENCE);
         precedence.put("like", LIKE_PRECEDENCE);
         precedence.put("ilike", ILIKE_PRECEDENCE);
+        precedence.put("escape", ESCAPE_PRECEDENCE);
         precedence.put("regex", REGEX_PRECEDENCE);
         precedence.put("and", AND_PRECEDENCE);
         precedence.put("or", OR_PRECEDENCE);

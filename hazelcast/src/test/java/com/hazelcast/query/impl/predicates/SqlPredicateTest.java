@@ -465,6 +465,15 @@ public class SqlPredicateTest {
         assertSqlMatching("name LIKE 'Strin*'", createValue("Strin*"));
     }
 
+    @Test
+    public void testSqlPredicateEscapeKeyword() {
+        assertSqlMatching("name LIKE 'Stg/%%' ESCAPE '/'", createValue("Stg%abc"));
+        assertSqlMatching("name LIKE 'Stg123%_123_' ESCAPE '123'", createValue("Stg%a_"));
+        assertSqlMatching("name LIKE 'Stg\\%' ESCAPE '\\'", createValue("Stg%"));
+        assertSqlMatching("name ILIKE 'Stg/%_' ESCAPE '/' AND (age = '24' OR active = 'true')", createValue("stg%1"));
+        assertSqlMatching("(age = '24' OR active = 'true') AND name ILIKE 'Stg/%_' ESCAPE '/'", createValue("stg%1"));
+    }
+
     @Test(expected = IllegalArgumentException.class)
     public void testInvalidSqlPredicate1() {
         new SqlPredicate("invalid sql");

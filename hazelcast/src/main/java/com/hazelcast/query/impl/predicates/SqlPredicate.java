@@ -189,6 +189,12 @@ public class SqlPredicate
                         createComparison(mapPhrases, tokens, i, LESS_EQUAL_FACTORY);
                     } else if ("<".equals(token)) {
                         createComparison(mapPhrases, tokens, i, LESS_THAN_FACTORY);
+                    } else if ("ESCAPE".equalsIgnoreCase(token)) {
+                        int position = (i - 2);
+                        validateOperandPosition(position);
+                        String first = (String) toValue(tokens.remove(position), mapPhrases);
+                        String second = (String) toValue(tokens.remove(position), mapPhrases);
+                        tokens.set(position, first.replace(second, "\\"));
                     } else if ("LIKE".equalsIgnoreCase(token)) {
                         int position = (i - 2);
                         validateOperandPosition(position);
