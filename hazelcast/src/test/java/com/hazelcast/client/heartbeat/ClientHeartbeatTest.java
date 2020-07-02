@@ -384,6 +384,7 @@ public class ClientHeartbeatTest extends ClientTestSupport {
         instanceB.shutdown();
         assertOpenEventually(" A | C", bRemovedLatch);
         instanceA.shutdown();
+        assertOpenEventually("_ | C", aRemovedLatch);
 
         assertOpenEventually("Client should connect to C and see C as memberAdded", switchedToCLatch);
     }
