@@ -41,7 +41,7 @@ import static java.lang.String.format;
  * <p>
  * Should only be called from the {@link Diagnostics}.
  */
-final class DiagnosticsLogFile {
+final class DiagnosticsLogFile implements DiagnosticsLog {
 
     private static final int ONE_MB = 1024 * 1024;
 
@@ -98,6 +98,7 @@ final class DiagnosticsLogFile {
 
     private File newFile(int index) {
         createDirectoryIfDoesNotExist();
+        logger.info("Diagnostics log directory is [" + diagnostics.directory + "]");
         return new File(diagnostics.directory, format(fileName, index));
     }
 
