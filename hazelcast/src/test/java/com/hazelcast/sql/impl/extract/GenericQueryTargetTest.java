@@ -38,6 +38,7 @@ import org.junit.runner.RunWith;
 import java.io.IOException;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -89,9 +90,7 @@ public class GenericQueryTargetTest extends SqlTestSupport {
 
         // Bad field extractor (name).
         QueryExtractor badFieldNameExtractor = target.createExtractor("field2", QueryDataType.INT);
-        error = assertThrows(QueryException.class, badFieldNameExtractor::get);
-        assertEquals(SqlErrorCode.DATA_EXCEPTION, error.getCode());
-        assertTrue(error.getMessage().startsWith("Failed to extract map entry " + (target.isKey() ? "key" : "value") + " field"));
+        assertNull(badFieldNameExtractor.get());
     }
 
     private static Data toData(TestObject object) {
