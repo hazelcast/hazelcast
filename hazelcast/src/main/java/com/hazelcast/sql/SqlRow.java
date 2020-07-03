@@ -17,7 +17,6 @@
 package com.hazelcast.sql;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 
 /**
  * SQL row.
@@ -37,7 +36,6 @@ public interface SqlRow {
      * @see #getMetadata()
      * @see SqlColumnMetadata#getType()
      */
-    @Nullable
     <T> T getObject(int columnIndex);
 
     /**
@@ -60,7 +58,6 @@ public interface SqlRow {
      * @see SqlColumnMetadata#getName()
      * @see SqlColumnMetadata#getType()
      */
-    @Nullable
     <T> T getObject(@Nonnull String columnName);
 
     /**
