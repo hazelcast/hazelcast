@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * This method returns a clone of original mapping, modifying the returned value does not change the actual value
  * in the map. One should put modified value back to make changes visible to all nodes.
  */
-@Generated("58dde4ca73d0deda74f447c767686ea0")
+@Generated("a72815b1d7045ddbc5517df6b1a3e3be")
 public final class MapGetEntryViewCodec {
     //hex: 0x011D00
     public static final int REQUEST_MESSAGE_TYPE = 72960;
@@ -97,14 +97,14 @@ public final class MapGetEntryViewCodec {
 
     @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class ResponseParameters {
-            /**
-             * Entry view of the specified key.
-             */
-            public @Nullable com.hazelcast.map.impl.SimpleEntryView<com.hazelcast.internal.serialization.Data, com.hazelcast.internal.serialization.Data> response;
-            /**
-             * Last set max idle in millis.
-             */
-            public long maxIdle;
+        /**
+         * Entry view of the specified key.
+         */
+        public @Nullable com.hazelcast.map.impl.SimpleEntryView<com.hazelcast.internal.serialization.Data, com.hazelcast.internal.serialization.Data> response;
+        /**
+         * Last set max idle in millis.
+         */
+        public long maxIdle;
 
     }
 

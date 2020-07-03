@@ -43,7 +43,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * The predicate, filter and projection may be {@code null} in which case all elements are returned
  * and no projection is applied.
  */
-@Generated("a4003957d6688603cf9d1669fb8875d1")
+@Generated("8aba3eb9e5e6869153de52badf6771da")
 public final class CacheEventJournalReadCodec {
     //hex: 0x132000
     public static final int REQUEST_MESSAGE_TYPE = 1253376;
@@ -126,22 +126,22 @@ public final class CacheEventJournalReadCodec {
 
     @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class ResponseParameters {
-            /**
-             * Number of items that have been read.
-             */
-            public int readCount;
-            /**
-             * List of items that have been read.
-             */
-            public java.util.List<com.hazelcast.internal.serialization.Data> items;
-            /**
-             * Sequence numbers of items in the event journal.
-             */
-            public @Nullable long[] itemSeqs;
-            /**
-             * Sequence number of the item following the last read item.
-             */
-            public long nextSeq;
+        /**
+         * Number of items that have been read.
+         */
+        public int readCount;
+        /**
+         * List of items that have been read.
+         */
+        public java.util.List<com.hazelcast.internal.serialization.Data> items;
+        /**
+         * Sequence numbers of items in the event journal.
+         */
+        public @Nullable long[] itemSeqs;
+        /**
+         * Sequence number of the item following the last read item.
+         */
+        public long nextSeq;
 
     }
 

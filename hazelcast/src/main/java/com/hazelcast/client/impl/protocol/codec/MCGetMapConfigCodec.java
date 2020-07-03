@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Gets the config of a map on the member it's called on.
  */
-@Generated("759c0253c81dee78009e373aab7a8ca6")
+@Generated("d0d20e51e3b6d7d729c7d6707a4990e0")
 public final class MCGetMapConfigCodec {
     //hex: 0x200300
     public static final int REQUEST_MESSAGE_TYPE = 2097920;
@@ -84,63 +84,63 @@ public final class MCGetMapConfigCodec {
 
     @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class ResponseParameters {
-            /**
-             * The in memory storage format of the map:
-             * 0 - Binary
-             * 1 - Object
-             * 2 - Native
-             */
-            public int inMemoryFormat;
-            /**
-             * Backup count of the map.
-             */
-            public int backupCount;
-            /**
-             * Async backup count of the map.
-             */
-            public int asyncBackupCount;
-            /**
-             * Time to live seconds for the map entries.
-             */
-            public int timeToLiveSeconds;
-            /**
-             * Maximum idle seconds for the map entries.
-             */
-            public int maxIdleSeconds;
-            /**
-             * Maximum size of the map.
-             */
-            public int maxSize;
-            /**
-             * The maximum size policy of the map:
-             * 0 - PER_NODE
-             * 1 - PER_PARTITION
-             * 2 - USED_HEAP_PERCENTAGE
-             * 3 - USED_HEAP_SIZE
-             * 4 - FREE_HEAP_PERCENTAGE
-             * 5 - FREE_HEAP_SIZE
-             * 6 - USED_NATIVE_MEMORY_SIZE
-             * 7 - USED_NATIVE_MEMORY_PERCENTAGE
-             * 8 - FREE_NATIVE_MEMORY_SIZE
-             * 9 - FREE_NATIVE_MEMORY_PERCENTAGE
-             */
-            public int maxSizePolicy;
-            /**
-             * Whether reading from backup data is allowed.
-             */
-            public boolean readBackupData;
-            /**
-             * The eviction policy of the map:
-             * 0 - LRU
-             * 1 - LFU
-             * 2 - NONE
-             * 3 - RANDOM
-             */
-            public int evictionPolicy;
-            /**
-             * Classname of the SplitBrainMergePolicy for the map.
-             */
-            public java.lang.String mergePolicy;
+        /**
+         * The in memory storage format of the map:
+         * 0 - Binary
+         * 1 - Object
+         * 2 - Native
+         */
+        public int inMemoryFormat;
+        /**
+         * Backup count of the map.
+         */
+        public int backupCount;
+        /**
+         * Async backup count of the map.
+         */
+        public int asyncBackupCount;
+        /**
+         * Time to live seconds for the map entries.
+         */
+        public int timeToLiveSeconds;
+        /**
+         * Maximum idle seconds for the map entries.
+         */
+        public int maxIdleSeconds;
+        /**
+         * Maximum size of the map.
+         */
+        public int maxSize;
+        /**
+         * The maximum size policy of the map:
+         * 0 - PER_NODE
+         * 1 - PER_PARTITION
+         * 2 - USED_HEAP_PERCENTAGE
+         * 3 - USED_HEAP_SIZE
+         * 4 - FREE_HEAP_PERCENTAGE
+         * 5 - FREE_HEAP_SIZE
+         * 6 - USED_NATIVE_MEMORY_SIZE
+         * 7 - USED_NATIVE_MEMORY_PERCENTAGE
+         * 8 - FREE_NATIVE_MEMORY_SIZE
+         * 9 - FREE_NATIVE_MEMORY_PERCENTAGE
+         */
+        public int maxSizePolicy;
+        /**
+         * Whether reading from backup data is allowed.
+         */
+        public boolean readBackupData;
+        /**
+         * The eviction policy of the map:
+         * 0 - LRU
+         * 1 - LFU
+         * 2 - NONE
+         * 3 - RANDOM
+         */
+        public int evictionPolicy;
+        /**
+         * Classname of the SplitBrainMergePolicy for the map.
+         */
+        public java.lang.String mergePolicy;
 
     }
 

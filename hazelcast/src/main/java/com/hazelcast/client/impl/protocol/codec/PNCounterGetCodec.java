@@ -43,7 +43,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * If smart routing is disabled, the actual member processing the client
  * message may act as a proxy.
  */
-@Generated("1918e0ba6e88edf26c8c99b925952d42")
+@Generated("01798b2d5b04f626f52bf23f81dc36ef")
 public final class PNCounterGetCodec {
     //hex: 0x1D0100
     public static final int REQUEST_MESSAGE_TYPE = 1900800;
@@ -103,18 +103,18 @@ public final class PNCounterGetCodec {
 
     @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class ResponseParameters {
-            /**
-             * Value of the counter.
-             */
-            public long value;
-            /**
-             * last observed replica timestamps (vector clock)
-             */
-            public java.util.List<java.util.Map.Entry<java.util.UUID, java.lang.Long>> replicaTimestamps;
-            /**
-             * Number of replicas that keep the state of this counter.
-             */
-            public int replicaCount;
+        /**
+         * Value of the counter.
+         */
+        public long value;
+        /**
+         * last observed replica timestamps (vector clock)
+         */
+        public java.util.List<java.util.Map.Entry<java.util.UUID, java.lang.Long>> replicaTimestamps;
+        /**
+         * Number of replicas that keep the state of this counter.
+         */
+        public int replicaCount;
 
     }
 

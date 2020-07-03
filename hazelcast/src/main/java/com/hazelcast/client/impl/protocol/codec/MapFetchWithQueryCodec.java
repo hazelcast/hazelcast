@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Fetches the specified number of entries from the specified partition starting from specified table index
  * that match the predicate and applies the projection logic on them.
  */
-@Generated("dec5a8444398127baae6fc9eb3d7571d")
+@Generated("2c56f6c9801a38a8728cefcb1ed7c43f")
 public final class MapFetchWithQueryCodec {
     //hex: 0x014000
     public static final int REQUEST_MESSAGE_TYPE = 81920;
@@ -109,14 +109,14 @@ public final class MapFetchWithQueryCodec {
 
     @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class ResponseParameters {
-            /**
-             * List of fetched entries.
-             */
-            public java.util.List<com.hazelcast.internal.serialization.Data> results;
-            /**
-             * The index-size pairs that define the state of iteration
-             */
-            public java.util.List<java.util.Map.Entry<java.lang.Integer, java.lang.Integer>> iterationPointers;
+        /**
+         * List of fetched entries.
+         */
+        public java.util.List<com.hazelcast.internal.serialization.Data> results;
+        /**
+         * The index-size pairs that define the state of iteration
+         */
+        public java.util.List<java.util.Map.Entry<java.lang.Integer, java.lang.Integer>> iterationPointers;
 
     }
 

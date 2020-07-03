@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * This includes retrieving the event journal sequences of the
  * oldest and newest event in the journal.
  */
-@Generated("3d2364f27d45ce8d0d9d3aab6536fd5d")
+@Generated("b21fd0691ff469d5c214dc4003f62a8a")
 public final class MapEventJournalSubscribeCodec {
     //hex: 0x014100
     public static final int REQUEST_MESSAGE_TYPE = 82176;
@@ -79,14 +79,14 @@ public final class MapEventJournalSubscribeCodec {
 
     @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class ResponseParameters {
-            /**
-             * Sequence id of the oldest event in the event journal.
-             */
-            public long oldestSequence;
-            /**
-             * Sequence id of the newest event in the event journal.
-             */
-            public long newestSequence;
+        /**
+         * Sequence id of the oldest event in the event journal.
+         */
+        public long oldestSequence;
+        /**
+         * Sequence id of the newest event in the event journal.
+         */
+        public long newestSequence;
 
     }
 

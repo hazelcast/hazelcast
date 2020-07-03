@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Fetches specified number of keys from the specified partition starting from specified table index.
  */
-@Generated("aa396410f30950ed2b2eedf5fb7412f4")
+@Generated("c9eca48390e2bb831ff8129c16bb45c4")
 public final class MapFetchKeysCodec {
     //hex: 0x013700
     public static final int REQUEST_MESSAGE_TYPE = 79616;
@@ -94,14 +94,14 @@ public final class MapFetchKeysCodec {
 
     @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class ResponseParameters {
-            /**
-             * The index-size pairs that define the state of iteration
-             */
-            public java.util.List<java.util.Map.Entry<java.lang.Integer, java.lang.Integer>> iterationPointers;
-            /**
-             * List of keys.
-             */
-            public java.util.List<com.hazelcast.internal.serialization.Data> keys;
+        /**
+         * The index-size pairs that define the state of iteration
+         */
+        public java.util.List<java.util.Map.Entry<java.lang.Integer, java.lang.Integer>> iterationPointers;
+        /**
+         * List of keys.
+         */
+        public java.util.List<com.hazelcast.internal.serialization.Data> keys;
 
     }
 

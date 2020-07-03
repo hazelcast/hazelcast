@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Returns statistics of the task
  */
-@Generated("221d955c81f04113bafee1b6eaeec550")
+@Generated("2a2dea4cc8fcbb3950f8e5c261daacb1")
 public final class ScheduledExecutorGetStatsFromMemberCodec {
     //hex: 0x1A0600
     public static final int REQUEST_MESSAGE_TYPE = 1705472;
@@ -99,26 +99,26 @@ public final class ScheduledExecutorGetStatsFromMemberCodec {
 
     @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class ResponseParameters {
-            /**
-             * Last period of time the task was idle, waiting to get scheduled.
-             */
-            public long lastIdleTimeNanos;
-            /**
-             * Total amount of time the task was idle, waiting to get scheduled in.
-             */
-            public long totalIdleTimeNanos;
-            /**
-             * How many times the task was ran/called.
-             */
-            public long totalRuns;
-            /**
-             * The total amount of time the task spent while scheduled in.
-             */
-            public long totalRunTimeNanos;
-            /**
-             * The duration of the task's last execution.
-             */
-            public long lastRunDurationNanos;
+        /**
+         * Last period of time the task was idle, waiting to get scheduled.
+         */
+        public long lastIdleTimeNanos;
+        /**
+         * Total amount of time the task was idle, waiting to get scheduled in.
+         */
+        public long totalIdleTimeNanos;
+        /**
+         * How many times the task was ran/called.
+         */
+        public long totalRuns;
+        /**
+         * The total amount of time the task spent while scheduled in.
+         */
+        public long totalRunTimeNanos;
+        /**
+         * The duration of the task's last execution.
+         */
+        public long lastRunDurationNanos;
 
     }
 

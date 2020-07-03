@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Gets the current metadata of a cluster.
  */
-@Generated("df5fbb0c0ade77089ecee7bad6c5db9d")
+@Generated("858f74447e9446e0bc16a7ec0d2a2115")
 public final class MCGetClusterMetadataCodec {
     //hex: 0x200E00
     public static final int REQUEST_MESSAGE_TYPE = 2100736;
@@ -65,27 +65,27 @@ public final class MCGetClusterMetadataCodec {
 
     @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class ResponseParameters {
-            /**
-             * Current state of the cluster:
-             * 0 - ACTIVE
-             * 1 - NO_MIGRATION
-             * 2 - FROZEN
-             * 3 - PASSIVE
-             * 4 - IN_TRANSITION (not allowed)
-             */
-            public byte currentState;
-            /**
-             * Current version of the member.
-             */
-            public java.lang.String memberVersion;
-            /**
-             * Current Jet version of the member.
-             */
-            public @Nullable java.lang.String jetVersion;
-            /**
-             * Cluster-wide time in milliseconds.
-             */
-            public long clusterTime;
+        /**
+         * Current state of the cluster:
+         * 0 - ACTIVE
+         * 1 - NO_MIGRATION
+         * 2 - FROZEN
+         * 3 - PASSIVE
+         * 4 - IN_TRANSITION (not allowed)
+         */
+        public byte currentState;
+        /**
+         * Current version of the member.
+         */
+        public java.lang.String memberVersion;
+        /**
+         * Current Jet version of the member.
+         */
+        public @Nullable java.lang.String jetVersion;
+        /**
+         * Cluster-wide time in milliseconds.
+         */
+        public long clusterTime;
 
     }
 
