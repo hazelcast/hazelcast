@@ -326,14 +326,7 @@
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
-            <version>1.7.25</version>
-            <scope>provided</scope>
-            <optional>true</optional>
-        </dependency>
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-simple</artifactId>
-            <version>1.5.8</version>
+            <version>${slf4j.api.version}</version>
             <scope>provided</scope>
             <optional>true</optional>
         </dependency>
@@ -391,15 +384,6 @@
             <scope>provided</scope>
             <optional>true</optional>
         </dependency>
-
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-api</artifactId>
-            <version>${slf4j.api.version}</version>
-            <scope>provided</scope>
-            <optional>true</optional>
-        </dependency>
-
         <dependency>
             <groupId>net.spy</groupId>
             <artifactId>spymemcached</artifactId>
