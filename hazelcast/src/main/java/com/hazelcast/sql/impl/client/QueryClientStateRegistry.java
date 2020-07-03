@@ -18,10 +18,10 @@ package com.hazelcast.sql.impl.client;
 
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.SqlRow;
+import com.hazelcast.sql.impl.AbstractSqlResult;
+import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.QueryId;
-import com.hazelcast.sql.impl.SqlResultImpl;
 import com.hazelcast.sql.impl.SqlRowImpl;
 import com.hazelcast.sql.impl.row.Row;
 
@@ -32,6 +32,8 @@ import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
+import static java.util.concurrent.TimeUnit.SECONDS;
+
 /**
  * Registry of active client cursors.
  */
@@ -41,7 +43,7 @@ public class QueryClientStateRegistry {
 
     public SqlPage registerAndFetch(
         UUID clientId,
-        SqlResultImpl cursor,
+        AbstractSqlResult cursor,
         int cursorBufferSize,
         InternalSerializationService serializationService
     ) {
@@ -100,6 +102,7 @@ public class QueryClientStateRegistry {
         int cursorBufferSize,
         InternalSerializationService serializationService
     ) {
+        long endTime = System.nanoTime() + SECONDS.toNanos(1);
         while (iterator.hasNext()) {
             SqlRow row = iterator.next();
             Row rowInternal = ((SqlRowImpl) row).getDelegate();
@@ -107,7 +110,8 @@ public class QueryClientStateRegistry {
 
             page.add(rowData);
 
-            if (page.size() == cursorBufferSize) {
+            // TODO we call nanoTime for each item - use batching
+            if (page.size() == cursorBufferSize || System.nanoTime() >= endTime) {
                 break;
             }
         }

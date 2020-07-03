@@ -18,7 +18,6 @@ package com.hazelcast.sql.impl.exec.root;
 
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.row.Row;
-import com.hazelcast.sql.impl.worker.QueryFragmentContext;
 
 import java.util.Iterator;
 import java.util.List;
@@ -35,7 +34,7 @@ public class BlockingRootResultConsumer implements RootResultConsumer {
     private final InternalIterator iterator = new InternalIterator();
 
     /** Query context to schedule root execution when the next batch is needed. */
-    private volatile QueryFragmentContext context;
+    private volatile Runnable scheduleCallback;
 
     /** The batch that is currently being consumed. */
     private List<Row> currentBatch;
@@ -47,8 +46,8 @@ public class BlockingRootResultConsumer implements RootResultConsumer {
     private QueryException doneError;
 
     @Override
-    public void setup(QueryFragmentContext context) {
-        this.context = context;
+    public void setup(Runnable scheduleCallback) {
+        this.scheduleCallback = scheduleCallback;
     }
 
     @Override
@@ -136,9 +135,9 @@ public class BlockingRootResultConsumer implements RootResultConsumer {
 
         // We may reach this place only if some rows are already produced, and this is possible only after the setup,
         // so the context should be initialized.
-        assert context != null;
+        assert scheduleCallback != null;
 
-        context.schedule();
+        scheduleCallback.run();
     }
 
     @Override

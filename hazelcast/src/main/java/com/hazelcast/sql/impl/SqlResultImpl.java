@@ -16,7 +16,6 @@
 
 package com.hazelcast.sql.impl;
 
-import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.SqlRowMetadata;
 import com.hazelcast.sql.impl.plan.Plan;
@@ -31,7 +30,7 @@ import java.util.NoSuchElementException;
 /**
  * Cursor implementation.
  */
-public class SqlResultImpl implements SqlResult {
+public class SqlResultImpl extends AbstractSqlResult {
 
     private final QueryState state;
     private final SqlRowMetadata rowMetadata;
@@ -53,19 +52,12 @@ public class SqlResultImpl implements SqlResult {
     @Override
     public Iterator<SqlRow> iterator() {
         if (iterator == null) {
-            Iterator<SqlRow> iterator0 = new RowToSqlRowIterator(getQueryInitiatorState().getResultProducer().iterator());
+            iterator = new RowToSqlRowIterator(getQueryInitiatorState().getResultProducer().iterator());
 
-            iterator = iterator0;
-
-            return iterator0;
+            return iterator;
         } else {
             throw new IllegalStateException("Iterator can be requested only once.");
         }
-    }
-
-    @Override
-    public void close() {
-        closeOnError(QueryException.cancelledByUser());
     }
 
     public void closeOnError(QueryException error) {
