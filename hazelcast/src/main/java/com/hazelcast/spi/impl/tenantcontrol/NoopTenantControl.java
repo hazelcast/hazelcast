@@ -16,10 +16,13 @@
 
 package com.hazelcast.spi.impl.tenantcontrol;
 
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.SerializableByConvention;
 import com.hazelcast.spi.tenantcontrol.TenantControl;
 
 import java.io.Closeable;
+import java.io.IOException;
 
 /**
  * Default no-op implementation of TenantControl
@@ -33,7 +36,24 @@ public final class NoopTenantControl implements TenantControl {
     }
 
     @Override
+    public void register() {
+    }
+
+    @Override
     public void unregister() {
+    }
+
+    @Override
+    public boolean isClassesAlwaysAvailable() {
+        return true;
+    }
+
+    @Override
+    public void writeData(ObjectDataOutput out) throws IOException {
+    }
+
+    @Override
+    public void readData(ObjectDataInput in) throws IOException {
     }
 
     private static final class NoopCloseable implements Closeable {

@@ -712,13 +712,13 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> implements Spli
             target.setValueClassName(getValueClassName());
         }
 
-        target.cacheLoaderFactory = cacheLoaderFactory.shallowCopy();
-        target.cacheWriterFactory = cacheWriterFactory.shallowCopy();
-        target.expiryPolicyFactory = expiryPolicyFactory.shallowCopy();
+        target.cacheLoaderFactory = cacheLoaderFactory.shallowCopy(resolved, serializationService);
+        target.cacheWriterFactory = cacheWriterFactory.shallowCopy(resolved, serializationService);
+        target.expiryPolicyFactory = expiryPolicyFactory.shallowCopy(resolved, serializationService);
 
         target.listenerConfigurations = createConcurrentSet();
         for (DeferredValue<CacheEntryListenerConfiguration<K, V>> lazyEntryListenerConfig : listenerConfigurations) {
-            target.listenerConfigurations.add(lazyEntryListenerConfig.shallowCopy());
+            target.listenerConfigurations.add(lazyEntryListenerConfig.shallowCopy(resolved, serializationService));
         }
 
         target.setManagementEnabled(isManagementEnabled());

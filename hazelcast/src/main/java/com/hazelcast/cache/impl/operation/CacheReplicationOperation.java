@@ -20,8 +20,10 @@ import com.hazelcast.cache.impl.CacheDataSerializerHook;
 import com.hazelcast.cache.impl.CachePartitionSegment;
 import com.hazelcast.cache.impl.ICacheRecordStore;
 import com.hazelcast.cache.impl.ICacheService;
+import com.hazelcast.cache.impl.PreJoinCacheConfig;
 import com.hazelcast.cache.impl.record.CacheRecord;
 import com.hazelcast.config.CacheConfig;
+import com.hazelcast.config.CacheConfigAccessor;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -110,31 +112,24 @@ public class CacheReplicationOperation extends Operation implements IdentifiedDa
     public void run() throws Exception {
         ICacheService service = getService();
         for (Map.Entry<String, Map<Data, CacheRecord>> entry : data.entrySet()) {
-            // establish thread-local context for this cache's tenant application before possibly creating records
-            // This is so CDI / JPA / EJB methods can be called from other than JavaEE threads
-            Closeable tenantContext = getTenantControl(service.getCacheConfig(entry.getKey())).setTenant(true);
             ICacheRecordStore cache;
-            try {
-                cache = service.getOrCreateRecordStore(entry.getKey(), getPartitionId());
-                cache.reset();
-                Map<Data, CacheRecord> map = entry.getValue();
+            cache = service.getOrCreateRecordStore(entry.getKey(), getPartitionId());
+            cache.reset();
+            Map<Data, CacheRecord> map = entry.getValue();
 
-                Iterator<Map.Entry<Data, CacheRecord>> iterator = map.entrySet().iterator();
-                while (iterator.hasNext()) {
-                    if (cache.evictIfRequired()) {
-                        // No need to continue replicating records anymore.
-                        // We are already over eviction threshold, each put record will cause another eviction.
-                        break;
-                    }
-
-                    Map.Entry<Data, CacheRecord> next = iterator.next();
-                    Data key = next.getKey();
-                    CacheRecord record = next.getValue();
-                    iterator.remove();
-                    cache.putRecord(key, record, false);
+            Iterator<Map.Entry<Data, CacheRecord>> iterator = map.entrySet().iterator();
+            while (iterator.hasNext()) {
+                if (cache.evictIfRequired()) {
+                    // No need to continue replicating records anymore.
+                    // We are already over eviction threshold, each put record will cause another eviction.
+                    break;
                 }
-            } finally {
-                tenantContext.close();
+
+                Map.Entry<Data, CacheRecord> next = iterator.next();
+                Data key = next.getKey();
+                CacheRecord record = next.getValue();
+                iterator.remove();
+                cache.putRecord(key, record, false);
             }
         }
         data.clear();
@@ -155,7 +150,11 @@ public class CacheReplicationOperation extends Operation implements IdentifiedDa
         int confSize = configs.size();
         out.writeInt(confSize);
         for (CacheConfig config : configs) {
-            out.writeObject(config);
+            if(!CacheConfigAccessor.getTenantControl(config).isClassesAlwaysAvailable()) {
+                out.writeObject(PreJoinCacheConfig.of(config));
+            } else {
+                out.writeObject(config);
+            }
         }
         int count = data.size();
         out.writeInt(count);
@@ -188,7 +187,11 @@ public class CacheReplicationOperation extends Operation implements IdentifiedDa
         int confSize = in.readInt();
         for (int i = 0; i < confSize; i++) {
             final CacheConfig config = in.readObject();
-            configs.add(config);
+            if(!CacheConfigAccessor.getTenantControl(config).isClassesAlwaysAvailable()) {
+                configs.add(PreJoinCacheConfig.asCacheConfig(config));
+            } else {
+                configs.add(config);
+            }
         }
         int count = in.readInt();
         for (int i = 0; i < count; i++) {

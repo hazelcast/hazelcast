@@ -49,6 +49,7 @@ public class CacheDestroyEventContext implements DestroyEventContext<Cache>, Ide
             CacheService cacheService = (CacheService) cache.getService();
             CacheConfig cacheConfig = cacheService.getCacheConfig(cache.getPrefixedName());
             setTenantControl(cacheConfig, NOOP_TENANT_CONTROL);
+            cacheService.reSerializeCacheConfig(cacheConfig);
         }
     }
 

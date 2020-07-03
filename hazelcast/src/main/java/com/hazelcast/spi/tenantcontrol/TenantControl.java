@@ -16,11 +16,11 @@
 
 package com.hazelcast.spi.tenantcontrol;
 
+import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.spi.annotation.Beta;
 import com.hazelcast.spi.impl.tenantcontrol.NoopTenantControl;
 
 import java.io.Closeable;
-import java.io.Serializable;
 
 /**
  * Hooks for multi-tenancy for application servers
@@ -33,7 +33,7 @@ import java.io.Serializable;
  * @author lprimak
  */
 @Beta
-public interface TenantControl extends Serializable {
+public interface TenantControl extends DataSerializable {
 
     /**
      * Default no-op tenant control
@@ -57,6 +57,11 @@ public interface TenantControl extends Serializable {
     Closeable setTenant(boolean createRequestScope);
 
     /**
+     * To be called when Hazelcast object is created
+     */
+    void register();
+
+    /**
      * To be called when the Hazelcast object attached to this tenant is destroyed.
      * The implementor may unregister it's own event listeners here.
      * This is used with conjunction with DestroyEvent, because
@@ -66,4 +71,11 @@ public interface TenantControl extends Serializable {
      * This is so the TenantControl itself can be garbage collected
      */
     void unregister();
+
+    /**
+     * If not, CacheConfigs are always sent over the wire as PreJoin ops
+     *
+     * @return true is the associated applications are always loaded and running
+     */
+    boolean isClassesAlwaysAvailable();
 }
