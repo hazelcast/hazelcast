@@ -97,7 +97,6 @@ public abstract class AbstractAdvancedNetworkIntegrationTest {
     void configureTcpIpConfig(Config config) {
         JoinConfig join = config.getAdvancedNetworkConfig().getJoin();
         join.getTcpIpConfig().addMember("127.0.0.1:" + NOT_OPENED_PORT).setEnabled(true);
-        join.getMulticastConfig().setEnabled(false);
     }
 
     Config prepareJoinConfigForSecondMember(int port) {
@@ -105,7 +104,6 @@ public abstract class AbstractAdvancedNetworkIntegrationTest {
         config.getAdvancedNetworkConfig().setEnabled(true);
         JoinConfig join = config.getAdvancedNetworkConfig().getJoin();
         join.getTcpIpConfig().addMember("127.0.0.1:" + port).setEnabled(true);
-        join.getMulticastConfig().setEnabled(false);
         config.setProperty(ClusterProperty.MAX_JOIN_SECONDS.getName(), "3");
         return config;
     }
