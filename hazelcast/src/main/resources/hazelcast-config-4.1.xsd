@@ -71,6 +71,7 @@
                 <xs:element name="advanced-network" type="advanced-network" minOccurs="0" maxOccurs="1"/>
                 <xs:element name="cp-subsystem" type="cp-subsystem" minOccurs="0" maxOccurs="1"/>
                 <xs:element name="metrics" type="metrics" minOccurs="0" maxOccurs="1"/>
+                <xs:element name="sql" type="sql" minOccurs="0" maxOccurs="1"/>
             </xs:choice>
             <xs:attribute name="id" type="xs:string" use="optional" default="default"/>
         </xs:complexType>
@@ -3962,7 +3963,7 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
-            
+
             <xs:element name="node-id-offset" type="xs:long" minOccurs="0" default="0">
                 <xs:annotation>
                     <xs:documentation>
@@ -3973,7 +3974,7 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
-            
+
             <xs:element name="bits-sequence" minOccurs="0" default="6">
                 <xs:annotation>
                     <xs:documentation>
@@ -4815,6 +4816,57 @@
         </xs:attribute>
     </xs:complexType>
 
+    <xs:complexType name="sql">
+        <xs:annotation>
+            <xs:documentation>
+                SQL service configuration.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:all>
+            <xs:element name="executor-pool-size" type="xs:int" minOccurs="0" maxOccurs="1" default="-1">
+                <xs:annotation>
+                    <xs:documentation>
+                        Sets the number of threads responsible for query execution.
+                        The default value -1 sets the pool size equal to the number of CPU cores, and should be good enough
+                        for the most workloads.
+                        Setting the value to less than the number of CPU cores will limit the degree of parallelism of the SQL
+                        subsystem. This may be beneficial if you would like to prioritize other CPU-intensive workloads on the
+                        same machine.
+                        It is not recommended to set the value of this parameter greater than the number of CPU cores because it
+                        may decrease the system's overall performance due to excessive context switches.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="operation-pool-size" type="xs:int" minOccurs="0" maxOccurs="1" default="-1">
+                <xs:annotation>
+                    <xs:documentation>
+                        Sets the number of threads responsible for network operations processing.
+                        When Hazelcast members execute a query, they send commands to each other over the network to coordinate
+                        the execution. This includes requests to start or stop query execution, or a request to process a batch
+                        of data. These commands are processed in a separate operation thread pool, to avoid frequent interruption
+                        of running query fragments.
+                        The default value -1 sets the pool size equal to the number of CPU cores, and should be good enough
+                        for the most workloads.
+                        Setting the value to less than the number of CPU cores may improve the overall performance on machines
+                        with large CPU count, because it will decrease the number of context switches.
+                        It is not recommended to set the value of this parameter greater than the number of CPU cores because it
+                        may decrease the system's overall performance due to excessive context switches.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="query-timeout-millis" type="xs:unsignedLong" minOccurs="0" maxOccurs="1" default="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        Sets the timeout in milliseconds that is applied to queries without an explicit timeout.
+                        It is possible to set a query timeout through the SqlQuery.setTimeout(long) method. If the query
+                        timeout is not set, then the value of this parameter will be used.
+                        Zero value means no timeout. Negative values are prohibited.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:all>
+    </xs:complexType>
+
     <xs:complexType name="realms">
         <xs:sequence>
             <xs:element name="realm" type="realm" minOccurs="0" maxOccurs="unbounded"/>
@@ -4855,7 +4907,7 @@
                 <xs:choice maxOccurs="unbounded">
                     <xs:element name="url" type="xs:string"/>
                     <xs:element name="socket-factory-class-name" type="xs:string" minOccurs="0"/>
-        
+
                     <xs:element name="parse-dn" type="xs:boolean" minOccurs="0"/>
                     <xs:element name="role-context" type="xs:string" minOccurs="0"/>
                     <xs:element name="role-filter" type="xs:string" minOccurs="0"/>
@@ -4865,7 +4917,7 @@
                     <xs:element name="role-recursion-max-depth" type="xs:int" minOccurs="0"/>
                     <xs:element name="role-search-scope" type="ldap-search-scope" minOccurs="0"/>
                     <xs:element name="user-name-attribute" type="xs:string" minOccurs="0"/>
-        
+
                     <xs:element name="system-user-dn" type="xs:string" minOccurs="0"/>
                     <xs:element name="system-user-password" type="xs:string" minOccurs="0"/>
                     <xs:element name="system-authentication" type="xs:string" minOccurs="0"/>

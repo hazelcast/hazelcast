@@ -67,7 +67,6 @@ import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -386,10 +385,11 @@ public class MapScanExecTest extends SqlTestSupport {
 
         QueryException exception = assertThrows(QueryException.class, exec::advance);
         assertEquals(SqlErrorCode.DATA_EXCEPTION, exception.getCode());
-
-        QueryException cause = (QueryException) exception.getCause();
-        assertEquals(SqlErrorCode.DATA_EXCEPTION, cause.getCode());
-        assertTrue(cause.getMessage().contains("Cannot convert BIGINT to TIMESTAMP"));
+        assertEquals(
+            "Failed to extract map entry value field \"val2\" because of type mismatch "
+                + "[expectedClass=java.time.LocalDateTime, actualClass=java.lang.Long]",
+            exception.getMessage()
+        );
     }
 
     /**
@@ -426,7 +426,7 @@ public class MapScanExecTest extends SqlTestSupport {
 
     /**
      * Simulates the case when partitions are migrated during query execution. Tp achieve this we load keys into local
-     * paritions in a way that iteration stops before the first partition is read. Then we start the new member, that
+     * partitions in a way that iteration stops before the first partition is read. Then we start the new member, that
      * chagnes the migration stamp. Then we try to read the remaining data.
      */
     @Test

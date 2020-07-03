@@ -18,6 +18,7 @@ package com.hazelcast.sql.impl.extract;
 
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
@@ -54,7 +55,24 @@ public class GenericQueryTarget implements QueryTarget, GenericTargetAccessor {
     @Override
     public Object getTarget() {
         if (target == null) {
-            target = rawTarget instanceof Data ? serializationService.toObject(rawTarget) : rawTarget;
+            // General rule: Portable must be Data, other objects must be deserialized.
+            if (rawTarget instanceof Data) {
+                Data rawTarget0 = (Data) rawTarget;
+
+                if (rawTarget0.isPortable()) {
+                    target = rawTarget;
+                } else {
+                    // Deserialize non-Portable.
+                    target = serializationService.toObject(rawTarget);
+                }
+            } else {
+                if (rawTarget instanceof Portable) {
+                    // Serialize Portable to Data.
+                    target = serializationService.toData(rawTarget);
+                } else {
+                    target = rawTarget;
+                }
+            }
         }
 
         return target;

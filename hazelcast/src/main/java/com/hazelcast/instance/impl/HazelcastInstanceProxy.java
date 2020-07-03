@@ -45,6 +45,7 @@ import com.hazelcast.ringbuffer.Ringbuffer;
 import com.hazelcast.scheduledexecutor.IScheduledExecutorService;
 import com.hazelcast.spi.impl.SerializationServiceSupport;
 import com.hazelcast.splitbrainprotection.SplitBrainProtectionService;
+import com.hazelcast.sql.SqlService;
 import com.hazelcast.topic.ITopic;
 import com.hazelcast.transaction.HazelcastXAResource;
 import com.hazelcast.transaction.TransactionContext;
@@ -290,6 +291,12 @@ public final class HazelcastInstanceProxy implements HazelcastInstance, Serializ
     @Override
     public CPSubsystem getCPSubsystem() {
         return getOriginal().getCPSubsystem();
+    }
+
+    @Nonnull
+    @Override
+    public SqlService getSql() {
+        return getOriginal().getSql();
     }
 
     @Override

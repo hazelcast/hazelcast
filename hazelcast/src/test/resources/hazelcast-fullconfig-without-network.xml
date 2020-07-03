@@ -973,4 +973,10 @@
         <jmx enabled="false"/>
         <collection-frequency-seconds>24</collection-frequency-seconds>
     </metrics>
+
+    <sql>
+        <executor-pool-size>16</executor-pool-size>
+        <operation-pool-size>8</operation-pool-size>
+        <query-timeout-millis>0</query-timeout-millis>
+    </sql>
 </hazelcast>

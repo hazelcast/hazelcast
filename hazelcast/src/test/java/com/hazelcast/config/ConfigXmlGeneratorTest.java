@@ -1797,6 +1797,21 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testSqlConfig() {
+        Config confiig = new Config();
+
+        confiig.getSqlConfig().setExecutorPoolSize(10);
+        confiig.getSqlConfig().setOperationPoolSize(20);
+        confiig.getSqlConfig().setQueryTimeoutMillis(30L);
+
+        SqlConfig generatedConfig = getNewConfigViaXMLGenerator(confiig).getSqlConfig();
+
+        assertEquals(confiig.getSqlConfig().getExecutorPoolSize(), generatedConfig.getExecutorPoolSize());
+        assertEquals(confiig.getSqlConfig().getOperationPoolSize(), generatedConfig.getOperationPoolSize());
+        assertEquals(confiig.getSqlConfig().getQueryTimeoutMillis(), generatedConfig.getQueryTimeoutMillis());
+    }
+
+    @Test
     public void testMemcacheProtocolConfig() {
         MemcacheProtocolConfig memcacheProtocolConfig = new MemcacheProtocolConfig().setEnabled(true);
         Config config = new Config();

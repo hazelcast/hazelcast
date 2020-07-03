@@ -964,6 +964,12 @@
                 <hz:jmx enabled="false"/>
                 <hz:collection-frequency-seconds>24</hz:collection-frequency-seconds>
             </hz:metrics>
+
+            <hz:sql>
+                <hz:executor-pool-size>10</hz:executor-pool-size>
+                <hz:operation-pool-size>20</hz:operation-pool-size>
+                <hz:query-timeout-millis>30</hz:query-timeout-millis>
+            </hz:sql>
         </hz:config>
     </hz:hazelcast>
 

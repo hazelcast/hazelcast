@@ -18,9 +18,16 @@ package com.hazelcast.sql.impl.type.converter;
 
 import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 
+import java.math.BigDecimal;
+
 public abstract class AbstractDecimalConverter extends Converter {
     protected AbstractDecimalConverter(int id) {
         super(id, QueryDataTypeFamily.DECIMAL);
+    }
+
+    @Override
+    public Class<?> getNormalizedValueClass() {
+        return BigDecimal.class;
     }
 
     @Override

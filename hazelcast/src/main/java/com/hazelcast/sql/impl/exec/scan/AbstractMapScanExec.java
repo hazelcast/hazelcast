@@ -91,12 +91,12 @@ public abstract class AbstractMapScanExec extends AbstractExec {
      * 1) Check filter
      * 2) Extract projections
      *
-     * @param rawkey Key (data or object)
+     * @param rawKey Key (data or object)
      * @param rawValue Value (data or object)
      * @return Row that is ready for processing by parent operators or {@code null} if the row hasn't passed the filter.
      */
-    protected Row prepareRow(Object rawkey, Object rawValue) {
-        row.setKeyValue(rawkey, rawValue);
+    protected Row prepareRow(Object rawKey, Object rawValue) {
+        row.setKeyValue(rawKey, rawValue);
 
         // Filter.
         if (filter != null && !filter.eval(row, ctx)) {

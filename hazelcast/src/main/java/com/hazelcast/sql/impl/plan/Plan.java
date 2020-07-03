@@ -17,6 +17,7 @@
 package com.hazelcast.sql.impl.plan;
 
 import com.hazelcast.internal.util.collection.PartitionIdSet;
+import com.hazelcast.sql.SqlRowMetadata;
 import com.hazelcast.sql.impl.optimizer.SqlPlan;
 import com.hazelcast.sql.impl.optimizer.SqlPlanType;
 import com.hazelcast.sql.impl.plan.node.PlanNode;
@@ -48,13 +49,16 @@ public class Plan implements SqlPlan {
     /** Map from inbound edge ID to number of members which will write into it. */
     private final Map<Integer, Integer> inboundEdgeMemberCountMap;
 
+    private final SqlRowMetadata rowMetadata;
+
     public Plan(
         Map<UUID, PartitionIdSet> partMap,
         List<PlanNode> fragments,
         List<PlanFragmentMapping> fragmentMappings,
         Map<Integer, Integer> outboundEdgeMap,
         Map<Integer, Integer> inboundEdgeMap,
-        Map<Integer, Integer> inboundEdgeMemberCountMap
+        Map<Integer, Integer> inboundEdgeMemberCountMap,
+        SqlRowMetadata rowMetadata
     ) {
         this.partMap = partMap;
         this.fragments = fragments;
@@ -62,6 +66,7 @@ public class Plan implements SqlPlan {
         this.outboundEdgeMap = outboundEdgeMap;
         this.inboundEdgeMap = inboundEdgeMap;
         this.inboundEdgeMemberCountMap = inboundEdgeMemberCountMap;
+        this.rowMetadata = rowMetadata;
     }
 
     @Override
@@ -99,5 +104,9 @@ public class Plan implements SqlPlan {
 
     public Map<Integer, Integer> getInboundEdgeMemberCountMap() {
         return inboundEdgeMemberCountMap;
+    }
+
+    public SqlRowMetadata getRowMetadata() {
+        return rowMetadata;
     }
 }

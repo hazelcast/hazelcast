@@ -16,12 +16,17 @@
 
 package com.hazelcast.sql.impl;
 
+import com.hazelcast.config.SqlConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.util.Preconditions;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.sql.SqlQuery;
+import com.hazelcast.sql.SqlResult;
+import com.hazelcast.sql.SqlService;
 import com.hazelcast.sql.impl.optimizer.DisabledSqlOptimizer;
 import com.hazelcast.sql.impl.optimizer.OptimizationTask;
 import com.hazelcast.sql.impl.optimizer.SqlOptimizer;
@@ -29,7 +34,9 @@ import com.hazelcast.sql.impl.optimizer.SqlPlan;
 import com.hazelcast.sql.impl.plan.Plan;
 import com.hazelcast.sql.impl.state.QueryState;
 
+import javax.annotation.Nonnull;
 import java.lang.reflect.Constructor;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.logging.Level;
@@ -37,12 +44,12 @@ import java.util.logging.Level;
 /**
  * Base SQL service implementation that bridges optimizer implementation, public and private APIs.
  */
-public class SqlServiceImpl implements Consumer<Packet> {
+public class SqlServiceImpl implements SqlService, Consumer<Packet> {
     /** Outbox batch size in bytes. */
     private static final int OUTBOX_BATCH_SIZE = 512 * 1024;
 
     /** Default state check frequency. */
-    private static final long STATE_CHECK_FREQUENCY = 10_000L;
+    private static final long STATE_CHECK_FREQUENCY = 1_000L;
 
     private static final String OPTIMIZER_CLASS_PROPERTY_NAME = "hazelcast.sql.optimizerClass";
     private static final String SQL_MODULE_OPTIMIZER_CLASS = "com.hazelcast.sql.impl.calcite.CalciteSqlOptimizer";
@@ -50,6 +57,9 @@ public class SqlServiceImpl implements Consumer<Packet> {
     private SqlOptimizer optimizer;
     private final ILogger logger;
     private final NodeEngineImpl nodeEngine;
+    private final long queryTimeout;
+
+    private final NodeServiceProviderImpl nodeServiceProvider;
 
     private volatile SqlInternalService internalService;
 
@@ -57,11 +67,27 @@ public class SqlServiceImpl implements Consumer<Packet> {
         this.nodeEngine = nodeEngine;
         logger = nodeEngine.getLogger(getClass());
 
-        // These two parameters will be taken from the config, when public API is ready.
-        int operationThreadCount = Runtime.getRuntime().availableProcessors();
-        int fragmentThreadCount = Runtime.getRuntime().availableProcessors();
+        SqlConfig config = nodeEngine.getConfig().getSqlConfig();
 
-        NodeServiceProviderImpl nodeServiceProvider = new NodeServiceProviderImpl(nodeEngine);
+        int executorPoolSize = config.getExecutorPoolSize();
+        int operationPoolSize = config.getOperationPoolSize();
+        long queryTimeout = config.getQueryTimeoutMillis();
+
+        if (executorPoolSize == SqlConfig.DEFAULT_EXECUTOR_POOL_SIZE) {
+            executorPoolSize = Runtime.getRuntime().availableProcessors();
+        }
+
+        if (operationPoolSize == SqlConfig.DEFAULT_OPERATION_POOL_SIZE) {
+            operationPoolSize = Runtime.getRuntime().availableProcessors();
+        }
+
+        assert executorPoolSize > 0;
+        assert operationPoolSize > 0;
+        assert queryTimeout >= 0L;
+
+        this.queryTimeout = queryTimeout;
+
+        nodeServiceProvider = new NodeServiceProviderImpl(nodeEngine);
 
         String instanceName = nodeEngine.getHazelcastInstance().getName();
         InternalSerializationService serializationService = (InternalSerializationService) nodeEngine.getSerializationService();
@@ -70,13 +96,11 @@ public class SqlServiceImpl implements Consumer<Packet> {
             instanceName,
             nodeServiceProvider,
             serializationService,
-            operationThreadCount,
-            fragmentThreadCount,
+            operationPoolSize,
+            executorPoolSize,
             OUTBOX_BATCH_SIZE,
             STATE_CHECK_FREQUENCY
         );
-
-        optimizer = createOptimizer(nodeEngine);
     }
 
     public void start() {
@@ -108,21 +132,76 @@ public class SqlServiceImpl implements Consumer<Packet> {
         return optimizer;
     }
 
+    @Nonnull
+    @Override
+    public SqlResult query(@Nonnull SqlQuery query) {
+        Preconditions.checkNotNull(query, "Query cannot be null");
+
+        try {
+            if (nodeEngine.getLocalMember().isLiteMember()) {
+                throw QueryException.error("SQL queries cannot be executed on lite members");
+            }
+
+            long timeout = query.getTimeoutMillis();
+
+            if (timeout == SqlQuery.TIMEOUT_NOT_SET) {
+                timeout = queryTimeout;
+            }
+
+            return query0(query.getSql(), query.getParameters(), timeout, query.getCursorBufferSize());
+        } catch (Exception e) {
+            throw QueryUtils.toPublicException(e, nodeServiceProvider.getLocalMemberId());
+        }
+    }
+
     @Override
     public void accept(Packet packet) {
         internalService.onPacket(packet);
     }
 
-    QueryState executeImdg(Plan plan, List<Object> params, long timeout, int pageSize) {
-        return internalService.execute(plan, params, timeout, pageSize);
+    private SqlResult query0(String sql, List<Object> params, long timeout, int pageSize) {
+        // Validate and normalize.
+        if (sql == null || sql.isEmpty()) {
+            throw QueryException.error("SQL statement cannot be empty.");
+        }
+
+        List<Object> params0 = new ArrayList<>(params);
+
+        if (timeout < 0) {
+            throw QueryException.error("Timeout cannot be negative: " + timeout);
+        }
+
+        if (pageSize <= 0) {
+            throw QueryException.error("Page size must be positive: " + pageSize);
+        }
+
+        // Execute.
+        SqlPlan plan = prepare(sql);
+
+        return execute(plan, params0, timeout, pageSize);
     }
 
-    SqlPlan prepare(String sql) {
+    private SqlResult execute(SqlPlan plan, List<Object> params, long timeout, int pageSize) {
+        switch (plan.getType()) {
+            case IMDG:
+                return executeImdg((Plan) plan, params, timeout, pageSize);
+            default:
+                throw new IllegalArgumentException("Unknown plan type - " + plan.getType());
+        }
+    }
+
+    private SqlResult executeImdg(Plan plan, List<Object> params, long timeout, int pageSize) {
+        QueryState state = internalService.execute(plan, params, timeout, pageSize);
+
+        return new SqlResultImpl(state);
+    }
+
+    private SqlPlan prepare(String sql) {
         return optimizer.prepare(new OptimizationTask.Builder(sql).build());
     }
 
     /**
-     * Create either normal or no-op optimizer instance.
+     * Create either normal or not-implemented optimizer instance.
      *
      * @param nodeEngine Node engine.
      * @return Optimizer.

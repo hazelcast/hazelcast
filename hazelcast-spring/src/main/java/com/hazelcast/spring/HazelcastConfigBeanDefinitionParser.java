@@ -30,6 +30,7 @@ import com.hazelcast.config.CacheSimpleEntryListenerConfig;
 import com.hazelcast.config.CardinalityEstimatorConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.CredentialsFactoryConfig;
+import com.hazelcast.config.SqlConfig;
 import com.hazelcast.config.WanBatchPublisherConfig;
 import com.hazelcast.config.WanCustomPublisherConfig;
 import com.hazelcast.config.DurableExecutorConfig;
@@ -333,6 +334,8 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                         handleCPSubSystem(node);
                     } else if ("metrics".equals(nodeName)) {
                         handleMetrics(node);
+                    } else if ("sql".equals(nodeName)) {
+                        handleSql(node);
                     }
                 }
             }
@@ -2081,6 +2084,26 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             }
 
             configBuilder.addPropertyValue("metricsConfig", metricsConfigBuilder.getBeanDefinition());
+        }
+
+        private void handleSql(Node node) {
+            BeanDefinitionBuilder sqlConfigBuilder = createBeanBuilder(SqlConfig.class);
+
+            fillValues(node, sqlConfigBuilder, "executorPoolSize", "operationPoolSize", "queryTimeoutMillis");
+
+            for (Node child : childElements(node)) {
+                String nodeName = cleanNodeName(child);
+                String value = getTextContent(child).trim();
+                if ("executor-pool-size".equals(nodeName)) {
+                    sqlConfigBuilder.addPropertyValue("executorPoolSize", getIntegerValue("executor-pool-size", value));
+                } else if ("operation-pool-size".equals(nodeName)) {
+                    sqlConfigBuilder.addPropertyValue("operationPoolSize", getIntegerValue("operation-pool-size", value));
+                } else if ("query-timeout-millis".equals(nodeName)) {
+                    sqlConfigBuilder.addPropertyValue("queryTimeoutMillis", getLongValue("query-timeout-millis", value));
+                }
+            }
+
+            configBuilder.addPropertyValue("sqlConfig", sqlConfigBuilder.getBeanDefinition());
         }
     }
 }

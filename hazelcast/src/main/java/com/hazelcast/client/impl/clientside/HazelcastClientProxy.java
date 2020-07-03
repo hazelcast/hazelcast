@@ -47,6 +47,7 @@ import com.hazelcast.ringbuffer.Ringbuffer;
 import com.hazelcast.scheduledexecutor.IScheduledExecutorService;
 import com.hazelcast.spi.impl.SerializationServiceSupport;
 import com.hazelcast.splitbrainprotection.SplitBrainProtectionService;
+import com.hazelcast.sql.SqlService;
 import com.hazelcast.topic.ITopic;
 import com.hazelcast.transaction.HazelcastXAResource;
 import com.hazelcast.transaction.TransactionContext;
@@ -310,5 +311,11 @@ public class HazelcastClientProxy implements HazelcastInstance, SerializationSer
             return hazelcastInstance.toString();
         }
         return "HazelcastClientInstance {NOT ACTIVE}";
+    }
+
+    @Nonnull
+    @Override
+    public SqlService getSql() {
+        return getClient().getSql();
     }
 }

@@ -103,7 +103,7 @@ public class BlockingRootResultConsumerTest extends HazelcastTestSupport {
         BlockingRootResultConsumer consumer = new BlockingRootResultConsumer();
         AtomicInteger scheduleInvocationCount = new AtomicInteger();
 
-        QueryFragmentScheduleCallback scheduleCallback = () -> {
+        QueryFragmentScheduleCallback scheduleCallback = (force) -> {
             assertFalse(batches.isEmpty());
 
             List<Row> batch = batches.poll();
@@ -150,7 +150,7 @@ public class BlockingRootResultConsumerTest extends HazelcastTestSupport {
         AtomicInteger scheduleInvocationCount = new AtomicInteger();
         QueryException error = QueryException.error("Test");
 
-        QueryFragmentScheduleCallback scheduleCallback = () -> {
+        QueryFragmentScheduleCallback scheduleCallback = (force) -> {
             // Trigger an error asynchronously.
             new Thread(() -> consumer.onError(error)).start();
 

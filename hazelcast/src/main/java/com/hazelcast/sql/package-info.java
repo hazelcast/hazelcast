@@ -15,6 +15,6 @@
  */
 
 /**
- * This package contains SQL API.
+ * This package contains the SQL API.
  */
 package com.hazelcast.sql;

@@ -3442,4 +3442,26 @@
         <collection-frequency-seconds>10</collection-frequency-seconds>
     </metrics>
 
+    <!--
+        ===== HAZELCAST SQL CONFIGURATION =====
+
+        Configuration element's name is <sql>.
+
+        It has the following sub-elements:
+        * <executor-pool-sizer>:
+            Defines the number of threads responsible for query execution.
+
+        * <operation-pool-size>
+            Defines the number of threads responsible for network operations processing.
+
+        * <query-timeout>
+            Defines the timeout in milliseconds that is applied to queries without an explicit timeout.
+
+    -->
+    <sql>
+        <executor-pool-size>8</executor-pool-size>
+        <operation-pool-size>8</operation-pool-size>
+        <query-timeout-millis>0</query-timeout-millis>
+    </sql>
+
 </hazelcast>
