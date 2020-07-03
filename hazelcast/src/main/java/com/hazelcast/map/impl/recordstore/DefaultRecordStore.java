@@ -182,8 +182,8 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     }
 
     @Override
-    public Record putBackup(Data key, Object value, CallerProvenance provenance) {
-        return putBackupInternal(key, value, UNSET, UNSET,
+    public Record putBackup(Data key, Object value, long ttl, long maxIdle, CallerProvenance provenance) {
+        return putBackupInternal(key, value, ttl, maxIdle,
                 false, provenance, null);
     }
 
