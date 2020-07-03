@@ -37,9 +37,11 @@ import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Consumer;
 
 import static com.hazelcast.test.HazelcastTestSupport.assertOpenEventually;
 import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
+import static com.hazelcast.test.HazelcastTestSupport.smallInstanceConfig;
 import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertTrue;
 import static org.junit.Assert.assertFalse;
@@ -173,7 +175,7 @@ public class ClientReliableTopicOnClusterRestartTest {
 
     @Test
     public void shouldFail_OnClusterRestart_whenDataLoss_notLossTolerant() throws InterruptedException {
-        HazelcastInstance member = hazelcastFactory.newHazelcastInstance();
+        HazelcastInstance member = hazelcastFactory.newHazelcastInstance(smallInstanceConfig());
         ClientConfig clientConfig = new ClientConfig();
         clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setClusterConnectTimeoutMillis(Long.MAX_VALUE);
         int invocationTimeoutSeconds = 2;
@@ -188,22 +190,11 @@ public class ClientReliableTopicOnClusterRestartTest {
 
         final ITopic<String> topic = client.getReliableTopic(topicName);
 
-        DurableMessageListener<String> listener = new DurableMessageListener<String>() {
-            @Override
-            public void onMessage(Message<String> message) {
-                messageCount.incrementAndGet();
-            }
-
-            @Override
-            public boolean isLossTolerant() {
-                return false;
-            }
-        };
-        final UUID registrationId = topic.addMessageListener(listener);
+        final UUID registrationId = topic.addMessageListener(createListener(false, m -> messageCount.incrementAndGet()));
 
         member.shutdown();
 
-        member = hazelcastFactory.newHazelcastInstance();
+        member = hazelcastFactory.newHazelcastInstance(smallInstanceConfig());
 
         // wait some time for re-subscription
         Thread.sleep(TimeUnit.SECONDS.toMillis(invocationTimeoutSeconds));
@@ -212,9 +203,24 @@ public class ClientReliableTopicOnClusterRestartTest {
         member.getReliableTopic(topicName).publish("message");
 
         assertTrueEventually(() -> {
-            ClientReliableTopicProxy proxy = (ClientReliableTopicProxy) topic;
+            ClientReliableTopicProxy<?> proxy = (ClientReliableTopicProxy<?>) topic;
             assertTrue(proxy.isListenerCancelled(registrationId));
-        }, 10);
+        });
         assertEquals(0, messageCount.get());
+    }
+
+    private <T> DurableMessageListener<T> createListener(boolean lossTolerant,
+                                                         Consumer<Message<T>> messageListener) {
+        return new DurableMessageListener<T>() {
+            @Override
+            public void onMessage(Message<T> message) {
+                messageListener.accept(message);
+            }
+
+            @Override
+            public boolean isLossTolerant() {
+                return lossTolerant;
+            }
+        };
     }
 }
