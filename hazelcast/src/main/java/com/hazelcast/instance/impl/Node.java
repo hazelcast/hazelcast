@@ -442,7 +442,7 @@ public class Node {
         clusterService.sendLocalMembershipEvent();
         server.start();
         JoinConfig join = getActiveMemberNetworkConfig(config).getJoin();
-        if (shouldUseMulticastJoiner()) {
+        if (shouldUseMulticastJoiner(join)) {
             final Thread multicastServiceThread = new Thread(multicastService,
                     createThreadName(hazelcastInstance.getName(), "MulticastThread"));
             multicastServiceThread.start();
@@ -818,7 +818,7 @@ public class Node {
         JoinConfig join = getActiveMemberNetworkConfig(config).getJoin();
         join.verify();
 
-        if (shouldUseMulticastJoiner()) {
+        if (shouldUseMulticastJoiner(join)) {
             logger.info("Creating MulticastJoiner");
             return new MulticastJoiner(this);
         } else if (join.getTcpIpConfig().isEnabled()) {
@@ -832,8 +832,7 @@ public class Node {
         return null;
     }
 
-    public boolean shouldUseMulticastJoiner() {
-        JoinConfig join = config.getNetworkConfig().getJoin();
+    public boolean shouldUseMulticastJoiner(JoinConfig join) {
         return join.getMulticastConfig().isEnabled()
                 || (join.isAutoDetectionEnabled() && isEmptyDiscoveryStrategies());
     }
