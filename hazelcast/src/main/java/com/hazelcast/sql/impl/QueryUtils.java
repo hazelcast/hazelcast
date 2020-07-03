@@ -64,7 +64,7 @@ public final class QueryUtils {
                 originatingMemberId = localMemberId;
             }
 
-            return new SqlException(originatingMemberId, e0.getCode(), e.getMessage(), e);
+            return new SqlException(originatingMemberId, e0.getCode(), e0.getMessage(), e);
         } else {
             return new SqlException(localMemberId, SqlErrorCode.GENERIC, e.getMessage(), e);
         }
@@ -83,7 +83,7 @@ public final class QueryUtils {
     }
 
     /**
-     * Convert internal column type to public type.
+     * Convert internal column type to a public type.
      *
      * @param columnType Internal type.
      * @return Public type.

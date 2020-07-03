@@ -918,3 +918,8 @@ hazelcast:
     jmx:
       enabled: false
     collection-frequency-seconds: 24
+
+  sql:
+    executor-pool-size: 16
+    operation-pool-size: 8
+    query-timeout-millis: 0
