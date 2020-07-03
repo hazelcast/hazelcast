@@ -18,6 +18,7 @@ package com.hazelcast.sql.impl.plan;
 
 import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.sql.SqlRowMetadata;
+import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.optimizer.SqlPlan;
 import com.hazelcast.sql.impl.optimizer.SqlPlanType;
 import com.hazelcast.sql.impl.plan.node.PlanNode;
@@ -51,6 +52,8 @@ public class Plan implements SqlPlan {
 
     private final SqlRowMetadata rowMetadata;
 
+    private final QueryParameterMetadata parameterMetadata;
+
     public Plan(
         Map<UUID, PartitionIdSet> partMap,
         List<PlanNode> fragments,
@@ -58,7 +61,8 @@ public class Plan implements SqlPlan {
         Map<Integer, Integer> outboundEdgeMap,
         Map<Integer, Integer> inboundEdgeMap,
         Map<Integer, Integer> inboundEdgeMemberCountMap,
-        SqlRowMetadata rowMetadata
+        SqlRowMetadata rowMetadata,
+        QueryParameterMetadata parameterMetadata
     ) {
         this.partMap = partMap;
         this.fragments = fragments;
@@ -67,6 +71,7 @@ public class Plan implements SqlPlan {
         this.inboundEdgeMap = inboundEdgeMap;
         this.inboundEdgeMemberCountMap = inboundEdgeMemberCountMap;
         this.rowMetadata = rowMetadata;
+        this.parameterMetadata = parameterMetadata;
     }
 
     @Override
@@ -109,4 +114,9 @@ public class Plan implements SqlPlan {
     public SqlRowMetadata getRowMetadata() {
         return rowMetadata;
     }
+
+    public QueryParameterMetadata getParameterMetadata() {
+        return parameterMetadata;
+    }
+
 }

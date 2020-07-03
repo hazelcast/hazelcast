@@ -29,6 +29,8 @@ import com.hazelcast.sql.impl.plan.Plan;
 import com.hazelcast.sql.impl.state.QueryState;
 import com.hazelcast.sql.impl.state.QueryStateRegistry;
 import com.hazelcast.sql.impl.state.QueryStateRegistryUpdater;
+import com.hazelcast.sql.impl.type.converter.Converter;
+import com.hazelcast.sql.impl.type.converter.Converters;
 
 import java.util.HashMap;
 import java.util.List;
@@ -123,9 +125,7 @@ public class SqlInternalService {
      * @return Query state.
      */
     public QueryState execute(Plan plan, List<Object> params, long timeout, int pageSize) {
-        if (!params.isEmpty()) {
-            throw new UnsupportedOperationException("SQL queries with parameters are not supported yet!");
-        }
+        prepareParameters(plan, params);
 
         // Get local member ID and check if it is still part of the plan.
         UUID localMemberId = nodeServiceProvider.getLocalMemberId();
@@ -209,4 +209,27 @@ public class SqlInternalService {
     public QueryClientStateRegistry getClientStateRegistry() {
         return clientStateRegistry;
     }
+
+    private void prepareParameters(Plan plan, List<Object> params) {
+        assert params != null;
+        QueryParameterMetadata parameterMetadata = plan.getParameterMetadata();
+
+        int parameterCount = parameterMetadata.getParameterCount();
+        if (parameterCount != params.size()) {
+            throw QueryException.error("Unexpected parameter count: expected " + parameterCount + ", got " + params.size());
+        }
+
+        for (int i = 0; i < params.size(); ++i) {
+            Object value = params.get(i);
+            if (value == null) {
+                continue;
+            }
+
+            Converter valueConverter = Converters.getConverter(value.getClass());
+            Converter typeConverter = parameterMetadata.getParameterType(i).getConverter();
+            value = typeConverter.convertToSelf(valueConverter, value);
+            params.set(i, value);
+        }
+    }
+
 }

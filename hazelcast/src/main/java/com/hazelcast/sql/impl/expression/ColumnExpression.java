@@ -29,7 +29,7 @@ import java.util.Objects;
 /**
  * Column access expression.
  */
-public class ColumnExpression<T> implements Expression<T>, IdentifiedDataSerializable {
+public final class ColumnExpression<T> implements Expression<T>, IdentifiedDataSerializable {
     /** Index in the row. */
     private int index;
 

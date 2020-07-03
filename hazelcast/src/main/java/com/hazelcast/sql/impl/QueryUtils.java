@@ -144,6 +144,10 @@ public final class QueryUtils {
 
                 break;
 
+            case NULL:
+                type = SqlColumnType.NULL;
+                break;
+
             default:
                 assert columnType == QueryDataType.OBJECT;
 

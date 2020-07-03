@@ -20,6 +20,8 @@ import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 
 import java.math.BigDecimal;
 
+import static com.hazelcast.sql.impl.expression.math.ExpressionMath.DECIMAL_MATH_CONTEXT;
+
 /**
  * Converter for {@link java.lang.Double} type.
  */
@@ -38,27 +40,58 @@ public final class DoubleConverter extends Converter {
 
     @Override
     public byte asTinyint(Object val) {
-        return (byte) cast(val);
+        double casted = cast(val);
+        byte converted = (byte) casted;
+
+        if (converted != (int) casted || !Double.isFinite(casted)) {
+            throw cannotConvert(QueryDataTypeFamily.TINYINT, val);
+        }
+
+        return converted;
     }
 
     @Override
     public short asSmallint(Object val) {
-        return (short) cast(val);
+        double casted = cast(val);
+        short converted = (short) casted;
+
+        if (converted != (int) casted || !Double.isFinite(casted)) {
+            throw cannotConvert(QueryDataTypeFamily.SMALLINT, val);
+        }
+
+        return converted;
     }
 
     @Override
     public int asInt(Object val) {
-        return (int) cast(val);
+        double casted = cast(val);
+        int converted = (int) casted;
+
+        if (converted != (long) casted || !Double.isFinite(casted)) {
+            throw cannotConvert(QueryDataTypeFamily.INT, val);
+        }
+
+        return converted;
     }
 
     @Override
     public long asBigint(Object val) {
-        return (long) cast(val);
+        double casted = cast(val);
+        double truncated = casted > 0.0 ? Math.floor(casted) : Math.ceil(casted);
+        long converted = (long) truncated;
+
+        // No checks for NaNs and infinities are needed: NaNs are zeros and
+        // infinities are Long.MAX/MIN_VALUE when converted to long.
+        if ((double) converted != truncated) {
+            throw cannotConvert(QueryDataTypeFamily.BIGINT, val);
+        }
+
+        return converted;
     }
 
     @Override
     public BigDecimal asDecimal(Object val) {
-        return BigDecimal.valueOf(cast(val));
+        return new BigDecimal(Double.toString(cast(val)), DECIMAL_MATH_CONTEXT);
     }
 
     @Override
@@ -84,4 +117,5 @@ public final class DoubleConverter extends Converter {
     private double cast(Object val) {
         return (double) val;
     }
+
 }

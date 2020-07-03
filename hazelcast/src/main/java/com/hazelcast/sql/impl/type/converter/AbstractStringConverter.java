@@ -27,6 +27,8 @@ import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.time.format.DateTimeParseException;
 
+import static com.hazelcast.sql.impl.expression.math.ExpressionMath.DECIMAL_MATH_CONTEXT;
+
 /**
  * Common converter for string-based classes.
  */
@@ -92,7 +94,7 @@ public abstract class AbstractStringConverter extends Converter {
     @Override
     public final BigDecimal asDecimal(Object val) {
         try {
-            return new BigDecimal(cast(val));
+            return new BigDecimal(cast(val), DECIMAL_MATH_CONTEXT);
         } catch (NumberFormatException e) {
             throw cannotConvert(QueryDataTypeFamily.DECIMAL, val);
         }

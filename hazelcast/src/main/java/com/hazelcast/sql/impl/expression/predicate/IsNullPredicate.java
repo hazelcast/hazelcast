@@ -24,7 +24,11 @@ import com.hazelcast.sql.impl.expression.UniExpression;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
-public class IsNullPredicate extends UniExpression<Boolean> implements IdentifiedDataSerializable {
+/**
+ * Implements evaluation of SQL IS NULL predicate.
+ */
+public final class IsNullPredicate extends UniExpression<Boolean> implements IdentifiedDataSerializable {
+
     public IsNullPredicate() {
         // No-op.
     }
@@ -56,4 +60,5 @@ public class IsNullPredicate extends UniExpression<Boolean> implements Identifie
     public int getClassId() {
         return SqlDataSerializerHook.EXPRESSION_IS_NULL;
     }
+
 }

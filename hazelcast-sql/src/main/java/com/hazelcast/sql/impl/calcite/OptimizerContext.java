@@ -32,8 +32,8 @@ import com.hazelcast.sql.impl.calcite.schema.HazelcastSchemaUtils;
 import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlConformance;
 import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlOperatorTable;
 import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlValidator;
+import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeFactory;
 import com.hazelcast.sql.impl.schema.TableResolver;
-import org.apache.calcite.adapter.java.JavaTypeFactory;
 import org.apache.calcite.config.CalciteConnectionConfig;
 import org.apache.calcite.jdbc.HazelcastRootCalciteSchema;
 import org.apache.calcite.plan.Contexts;
@@ -47,7 +47,6 @@ import org.apache.calcite.rel.metadata.ChainedRelMetadataProvider;
 import org.apache.calcite.rel.metadata.DefaultRelMetadataProvider;
 import org.apache.calcite.rel.metadata.JaninoRelMetadataProvider;
 import org.apache.calcite.rel.metadata.RelMetadataProvider;
-import org.apache.calcite.rex.RexBuilder;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.SqlOperatorTable;
 import org.apache.calcite.sql.fun.SqlStdOperatorTable;
@@ -74,15 +73,23 @@ public final class OptimizerContext {
     private final QueryParser parser;
     private final QueryConverter converter;
     private final QueryPlanner planner;
+    private final SqlValidator validator;
 
     private OptimizerContext(
         QueryParser parser,
         QueryConverter converter,
-        QueryPlanner planner
+        QueryPlanner planner,
+        SqlValidator validator
     ) {
         this.parser = parser;
         this.converter = converter;
         this.planner = planner;
+        this.validator = validator;
+    }
+
+    // for testing purposes only
+    public SqlValidator getValidator() {
+        return validator;
     }
 
     /**
@@ -114,7 +121,7 @@ public final class OptimizerContext {
     ) {
         DistributionTraitDef distributionTraitDef = new DistributionTraitDef(memberCount);
 
-        JavaTypeFactory typeFactory = new HazelcastTypeFactory();
+        HazelcastTypeFactory typeFactory = HazelcastTypeFactory.INSTANCE;
         Prepare.CatalogReader catalogReader = createCatalogReader(typeFactory, CONNECTION_CONFIG, rootSchema, schemaPaths);
         SqlValidator validator = createValidator(typeFactory, catalogReader);
         VolcanoPlanner volcanoPlanner = createPlanner(CONNECTION_CONFIG, distributionTraitDef);
@@ -124,7 +131,7 @@ public final class OptimizerContext {
         QueryConverter converter = new QueryConverter(catalogReader, validator, cluster);
         QueryPlanner planner = new QueryPlanner(volcanoPlanner);
 
-        return new OptimizerContext(parser, converter, planner);
+        return new OptimizerContext(parser, converter, planner, validator);
     }
 
     /**
@@ -160,7 +167,7 @@ public final class OptimizerContext {
     }
 
     private static Prepare.CatalogReader createCatalogReader(
-        JavaTypeFactory typeFactory,
+        HazelcastTypeFactory typeFactory,
         CalciteConnectionConfig config,
         HazelcastSchema rootSchema,
         List<List<String>> schemaPaths
@@ -173,7 +180,7 @@ public final class OptimizerContext {
         );
     }
 
-    private static SqlValidator createValidator(JavaTypeFactory typeFactory, Prepare.CatalogReader catalogReader) {
+    private static SqlValidator createValidator(HazelcastTypeFactory typeFactory, Prepare.CatalogReader catalogReader) {
         SqlOperatorTable opTab = ChainedSqlOperatorTable.of(
             HazelcastSqlOperatorTable.instance(),
             SqlStdOperatorTable.instance()
@@ -202,12 +209,12 @@ public final class OptimizerContext {
 
     private static HazelcastRelOptCluster createCluster(
         VolcanoPlanner planner,
-        JavaTypeFactory typeFactory,
+        HazelcastTypeFactory typeFactory,
         DistributionTraitDef distributionTraitDef
     ) {
         HazelcastRelOptCluster cluster = HazelcastRelOptCluster.create(
             planner,
-            new RexBuilder(typeFactory),
+            new HazelcastRexBuilder(typeFactory),
             distributionTraitDef
         );
 

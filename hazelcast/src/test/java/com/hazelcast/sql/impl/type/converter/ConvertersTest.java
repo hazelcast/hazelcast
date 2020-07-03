@@ -50,7 +50,7 @@ import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.DATE;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.DECIMAL;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.DOUBLE;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.INT;
-import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.LATE;
+import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.NULL;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.OBJECT;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.REAL;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.SMALLINT;
@@ -62,7 +62,6 @@ import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.VARCHAR;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.values;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 @SuppressWarnings("SimplifiableJUnitAssertion")
@@ -71,8 +70,6 @@ import static org.junit.Assert.fail;
 public class ConvertersTest {
     @Test
     public void testGetById() {
-        checkGetById(LateConverter.INSTANCE);
-
         checkGetById(StringConverter.INSTANCE);
         checkGetById(CharacterConverter.INSTANCE);
 
@@ -96,6 +93,8 @@ public class ConvertersTest {
         checkGetById(ZonedDateTimeConverter.INSTANCE);
 
         checkGetById(ObjectConverter.INSTANCE);
+
+        checkGetById(NullConverter.INSTANCE);
     }
 
     @Test
@@ -123,6 +122,9 @@ public class ConvertersTest {
         checkGetByClass(ZonedDateTimeConverter.INSTANCE, ZonedDateTime.class);
 
         checkGetByClass(ObjectConverter.INSTANCE, Object.class, SqlCustomClass.class);
+
+        checkGetByClass(NullConverter.INSTANCE, void.class);
+        checkGetByClass(NullConverter.INSTANCE, Void.class);
     }
 
     @Test
@@ -173,6 +175,7 @@ public class ConvertersTest {
         assertEquals("1", converter.asVarchar((short) 1));
 
         assertEquals(1, converter.asTinyint((short) 1));
+        checkDataException(() -> converter.asTinyint(Short.MAX_VALUE));
         assertEquals(1, converter.asSmallint((short) 1));
         assertEquals(1, converter.asInt((short) 1));
         assertEquals(1L, converter.asBigint((short) 1));
@@ -196,7 +199,9 @@ public class ConvertersTest {
         assertEquals("1", converter.asVarchar(1));
 
         assertEquals(1, converter.asTinyint(1));
+        checkDataException(() -> converter.asTinyint(Integer.MAX_VALUE));
         assertEquals(1, converter.asSmallint(1));
+        checkDataException(() -> converter.asSmallint(Integer.MAX_VALUE));
         assertEquals(1, converter.asInt(1));
         assertEquals(1L, converter.asBigint(1));
         assertEquals(BigDecimal.ONE, converter.asDecimal(1));
@@ -219,8 +224,11 @@ public class ConvertersTest {
         assertEquals("1", converter.asVarchar(1L));
 
         assertEquals(1, converter.asTinyint(1L));
+        checkDataException(() -> converter.asTinyint(Long.MAX_VALUE));
         assertEquals(1, converter.asSmallint(1L));
+        checkDataException(() -> converter.asSmallint(Long.MAX_VALUE));
         assertEquals(1, converter.asInt(1L));
+        checkDataException(() -> converter.asInt(Long.MAX_VALUE));
         assertEquals(1L, converter.asBigint(1L));
         assertEquals(BigDecimal.ONE, converter.asDecimal(1L));
 
@@ -239,12 +247,18 @@ public class ConvertersTest {
         checkConverter(converter, Converter.ID_BIG_INTEGER, DECIMAL, BigInteger.class);
         checkConverterConversions(converter, VARCHAR, TINYINT, SMALLINT, INT, BIGINT, REAL, DOUBLE, OBJECT);
 
+        BigInteger bigValue = BigInteger.valueOf(Long.MAX_VALUE).add(BigInteger.ONE);
+
         assertEquals("1", converter.asVarchar(BigInteger.ONE));
 
         assertEquals(1, converter.asTinyint(BigInteger.ONE));
+        checkDataException(() -> converter.asTinyint(bigValue));
         assertEquals(1, converter.asSmallint(BigInteger.ONE));
+        checkDataException(() -> converter.asSmallint(bigValue));
         assertEquals(1, converter.asInt(BigInteger.ONE));
+        checkDataException(() -> converter.asInt(bigValue));
         assertEquals(1L, converter.asBigint(BigInteger.ONE));
+        checkDataException(() -> converter.asBigint(bigValue));
         assertEquals(BigDecimal.ONE, converter.asDecimal(BigInteger.ONE));
 
         assertEquals(1.0f, converter.asReal(BigInteger.ONE), 0);
@@ -263,13 +277,18 @@ public class ConvertersTest {
         checkConverterConversions(converter, VARCHAR, TINYINT, SMALLINT, INT, BIGINT, REAL, DOUBLE, OBJECT);
 
         BigDecimal val = BigDecimal.valueOf(11, 1);
+        BigDecimal bigValue = BigDecimal.valueOf(Long.MAX_VALUE).add(new BigDecimal("1.1"));
 
         assertEquals("1.1", converter.asVarchar(val));
 
         assertEquals(1, converter.asTinyint(val));
+        checkDataException(() -> converter.asTinyint(bigValue));
         assertEquals(1, converter.asSmallint(val));
+        checkDataException(() -> converter.asSmallint(bigValue));
         assertEquals(1, converter.asInt(val));
+        checkDataException(() -> converter.asInt(bigValue));
         assertEquals(1L, converter.asBigint(val));
+        checkDataException(() -> converter.asBigint(bigValue));
         assertEquals(val, converter.asDecimal(val));
 
         assertEquals(1.1f, converter.asReal(val), 0);
@@ -288,14 +307,19 @@ public class ConvertersTest {
         checkConverterConversions(converter, VARCHAR, TINYINT, SMALLINT, INT, BIGINT, DECIMAL, DOUBLE, OBJECT);
 
         float val = 1.1f;
+        float bigValue = Long.MAX_VALUE * 2.5f;
 
         assertEquals("1.1", converter.asVarchar(val));
 
         assertEquals(1, converter.asTinyint(val));
+        checkDataException(() -> converter.asTinyint(bigValue));
         assertEquals(1, converter.asSmallint(val));
+        checkDataException(() -> converter.asSmallint(bigValue));
         assertEquals(1, converter.asInt(val));
+        checkDataException(() -> converter.asInt(bigValue));
         assertEquals(1L, converter.asBigint(val));
-        assertEquals(BigDecimal.valueOf(val), converter.asDecimal(val));
+        checkDataException(() -> converter.asBigint(bigValue));
+        assertEquals(new BigDecimal(Float.toString(val)), converter.asDecimal(val));
 
         assertEquals(1.1f, converter.asReal(val), 0);
         assertEquals(1.1f, converter.asDouble(val), 0);
@@ -313,13 +337,18 @@ public class ConvertersTest {
         checkConverterConversions(converter, VARCHAR, TINYINT, SMALLINT, INT, BIGINT, DECIMAL, REAL, OBJECT);
 
         double val = 1.1d;
+        double bigValue = Long.MAX_VALUE * 2.5d;
 
         assertEquals("1.1", converter.asVarchar(val));
 
         assertEquals(1, converter.asTinyint(val));
+        checkDataException(() -> converter.asTinyint(bigValue));
         assertEquals(1, converter.asSmallint(val));
+        checkDataException(() -> converter.asSmallint(bigValue));
         assertEquals(1, converter.asInt(val));
+        checkDataException(() -> converter.asInt(bigValue));
         assertEquals(1L, converter.asBigint(val));
+        checkDataException(() -> converter.asBigint(bigValue));
         assertEquals(BigDecimal.valueOf(val), converter.asDecimal(val));
 
         assertEquals(1.1f, converter.asReal(val), 0);
@@ -466,8 +495,22 @@ public class ConvertersTest {
         StringConverter c = StringConverter.INSTANCE;
 
         checkConverter(c, Converter.ID_STRING, VARCHAR, String.class);
-        checkConverterConversions(c,
-            BOOLEAN, TINYINT, SMALLINT, INT, BIGINT, DECIMAL, REAL, DOUBLE, TIME, DATE, TIMESTAMP, TIMESTAMP_WITH_TIME_ZONE, OBJECT);
+        checkConverterConversions(
+            c,
+            BOOLEAN,
+            TINYINT,
+            SMALLINT,
+            INT,
+            BIGINT,
+            DECIMAL,
+            REAL,
+            DOUBLE,
+            TIME,
+            DATE,
+            TIMESTAMP,
+            TIMESTAMP_WITH_TIME_ZONE,
+            OBJECT
+        );
 
         // Boolean
         assertEquals(false, c.asBoolean("false"));
@@ -479,18 +522,23 @@ public class ConvertersTest {
 
         // Numeric
         String invalid = "invalid";
+        String bigValue = BigDecimal.valueOf(Long.MAX_VALUE).add(new BigDecimal("1.1")).toPlainString();
 
         assertEquals((byte) 1, c.asTinyint("1"));
         checkDataException(() -> c.asTinyint(invalid));
+        checkDataException(() -> c.asTinyint(bigValue));
 
         assertEquals((short) 1, c.asSmallint("1"));
         checkDataException(() -> c.asSmallint(invalid));
+        checkDataException(() -> c.asSmallint(bigValue));
 
         assertEquals(1, c.asInt("1"));
         checkDataException(() -> c.asInt(invalid));
+        checkDataException(() -> c.asInt(bigValue));
 
         assertEquals(1L, c.asBigint("1"));
         checkDataException(() -> c.asBigint(invalid));
+        checkDataException(() -> c.asBigint(bigValue));
 
         assertEquals(new BigDecimal("1.1"), c.asDecimal("1.1"));
         checkDataException(() -> c.asDecimal(invalid));
@@ -546,8 +594,22 @@ public class ConvertersTest {
         CharacterConverter c = CharacterConverter.INSTANCE;
 
         checkConverter(c, Converter.ID_CHARACTER, VARCHAR, Character.class);
-        checkConverterConversions(c,
-            BOOLEAN, TINYINT, SMALLINT, INT, BIGINT, DECIMAL, REAL, DOUBLE, TIME, DATE, TIMESTAMP, TIMESTAMP_WITH_TIME_ZONE, OBJECT);
+        checkConverterConversions(
+            c,
+            BOOLEAN,
+            TINYINT,
+            SMALLINT,
+            INT,
+            BIGINT,
+            DECIMAL,
+            REAL,
+            DOUBLE,
+            TIME,
+            DATE,
+            TIMESTAMP,
+            TIMESTAMP_WITH_TIME_ZONE,
+            OBJECT
+        );
 
         char invalid = 'c';
 
@@ -582,8 +644,22 @@ public class ConvertersTest {
         ObjectConverter c = ObjectConverter.INSTANCE;
 
         checkConverter(c, Converter.ID_OBJECT, OBJECT, Object.class);
-        checkConverterConversions(c,
-            BOOLEAN, TINYINT, SMALLINT, INT, BIGINT, DECIMAL, REAL, DOUBLE, TIME, DATE, TIMESTAMP, TIMESTAMP_WITH_TIME_ZONE, VARCHAR);
+        checkConverterConversions(
+            c,
+            BOOLEAN,
+            TINYINT,
+            SMALLINT,
+            INT,
+            BIGINT,
+            DECIMAL,
+            REAL,
+            DOUBLE,
+            TIME,
+            DATE,
+            TIMESTAMP,
+            TIMESTAMP_WITH_TIME_ZONE,
+            VARCHAR
+        );
 
         checkObjectConverter(c);
 
@@ -591,18 +667,28 @@ public class ConvertersTest {
     }
 
     @Test
-    public void testLateConverter() {
-        LateConverter c = LateConverter.INSTANCE;
-
-        checkConverter(c, Converter.ID_LATE, LATE, null);
+    public void testNullConverter() {
+        NullConverter c = NullConverter.INSTANCE;
+        checkConverter(c, Converter.ID_NULL, NULL, Void.class);
         checkConverterConversions(c, BOOLEAN, TINYINT, SMALLINT, INT, BIGINT, DECIMAL, REAL, DOUBLE, TIME, DATE, TIMESTAMP,
-            TIMESTAMP_WITH_TIME_ZONE, VARCHAR, OBJECT);
+                TIMESTAMP_WITH_TIME_ZONE, VARCHAR, OBJECT);
 
-        checkObjectConverter(c);
+        checkUnsupportedException(() -> c.asBoolean(null));
+        checkUnsupportedException(() -> c.asTinyint(null));
+        checkUnsupportedException(() -> c.asSmallint(null));
+        checkUnsupportedException(() -> c.asInt(null));
+        checkUnsupportedException(() -> c.asBigint(null));
+        checkUnsupportedException(() -> c.asDecimal(null));
+        checkUnsupportedException(() -> c.asReal(null));
+        checkUnsupportedException(() -> c.asDouble(null));
+        checkUnsupportedException(() -> c.asTime(null));
+        checkUnsupportedException(() -> c.asDate(null));
+        checkUnsupportedException(() -> c.asTimestamp(null));
+        checkUnsupportedException(() -> c.asTimestampWithTimezone(null));
+        checkUnsupportedException(() -> c.asVarchar(null));
+        checkUnsupportedException(() -> c.asObject(null));
 
-        MockConverter mockConverter = new MockConverter();
-        c.convertToSelf(mockConverter, new Object());
-        assertTrue(mockConverter.isInvokedSelf());
+        checkUnsupportedException(() -> c.convertToSelf(c, null));
     }
 
     private void checkDataException(Runnable runnable) {
@@ -612,6 +698,16 @@ public class ConvertersTest {
             fail("Must fail");
         } catch (QueryException e) {
             assertEquals(SqlErrorCode.DATA_EXCEPTION, e.getCode());
+        }
+    }
+
+    private void checkUnsupportedException(Runnable runnable) {
+        try {
+            runnable.run();
+
+            fail("Must fail");
+        } catch (UnsupportedOperationException ignore) {
+            // do nothing
         }
     }
 
@@ -640,22 +736,27 @@ public class ConvertersTest {
 
         // Numeric
         String invalid = "invalid";
+        String bigValue = BigDecimal.valueOf(Long.MAX_VALUE).add(new BigDecimal("1.1")).toPlainString();
 
         assertEquals((byte) 1, c.asTinyint(1));
         assertEquals((byte) 1, c.asTinyint("1"));
         checkDataException(() -> c.asTinyint(invalid));
+        checkDataException(() -> c.asTinyint(bigValue));
 
         assertEquals((short) 1, c.asSmallint(1));
         assertEquals((short) 1, c.asSmallint("1"));
         checkDataException(() -> c.asSmallint(invalid));
+        checkDataException(() -> c.asSmallint(bigValue));
 
         assertEquals(1, c.asInt(1));
         assertEquals(1, c.asInt("1"));
         checkDataException(() -> c.asInt(invalid));
+        checkDataException(() -> c.asInt(bigValue));
 
         assertEquals(1L, c.asBigint(1));
         assertEquals(1L, c.asBigint("1"));
         checkDataException(() -> c.asBigint(invalid));
+        checkDataException(() -> c.asBigint(bigValue));
 
         assertEquals(new BigDecimal("1.1"), c.asDecimal(new BigDecimal("1.1")));
         assertEquals(new BigDecimal("1.1"), c.asDecimal("1.1"));

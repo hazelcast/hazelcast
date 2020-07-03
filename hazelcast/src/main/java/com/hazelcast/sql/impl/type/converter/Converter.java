@@ -37,27 +37,27 @@ import java.time.OffsetDateTime;
  */
 @SuppressWarnings("checkstyle:MethodCount")
 public abstract class Converter {
-    protected static final int ID_LATE = 0;
-    protected static final int ID_BOOLEAN = 1;
-    protected static final int ID_BYTE = 2;
-    protected static final int ID_SHORT = 3;
-    protected static final int ID_INTEGER = 4;
-    protected static final int ID_LONG = 5;
-    protected static final int ID_BIG_INTEGER = 6;
-    protected static final int ID_BIG_DECIMAL = 7;
-    protected static final int ID_FLOAT = 8;
-    protected static final int ID_DOUBLE = 9;
-    protected static final int ID_CHARACTER = 10;
-    protected static final int ID_STRING = 11;
-    protected static final int ID_DATE = 12;
-    protected static final int ID_CALENDAR = 13;
-    protected static final int ID_LOCAL_DATE = 14;
-    protected static final int ID_LOCAL_TIME = 15;
-    protected static final int ID_LOCAL_DATE_TIME = 16;
-    protected static final int ID_INSTANT = 17;
-    protected static final int ID_OFFSET_DATE_TIME = 18;
-    protected static final int ID_ZONED_DATE_TIME = 19;
-    protected static final int ID_OBJECT = 20;
+    protected static final int ID_BOOLEAN = 0;
+    protected static final int ID_BYTE = 1;
+    protected static final int ID_SHORT = 2;
+    protected static final int ID_INTEGER = 3;
+    protected static final int ID_LONG = 4;
+    protected static final int ID_BIG_INTEGER = 5;
+    protected static final int ID_BIG_DECIMAL = 6;
+    protected static final int ID_FLOAT = 7;
+    protected static final int ID_DOUBLE = 8;
+    protected static final int ID_CHARACTER = 9;
+    protected static final int ID_STRING = 10;
+    protected static final int ID_DATE = 11;
+    protected static final int ID_CALENDAR = 12;
+    protected static final int ID_LOCAL_DATE = 13;
+    protected static final int ID_LOCAL_TIME = 14;
+    protected static final int ID_LOCAL_DATE_TIME = 15;
+    protected static final int ID_INSTANT = 16;
+    protected static final int ID_OFFSET_DATE_TIME = 17;
+    protected static final int ID_ZONED_DATE_TIME = 18;
+    protected static final int ID_OBJECT = 19;
+    protected static final int ID_NULL = 20;
 
     private final int id;
     private final QueryDataTypeFamily typeFamily;

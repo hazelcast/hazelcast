@@ -25,19 +25,12 @@ import org.junit.runner.RunWith;
 
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.BIGINT;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.BOOLEAN;
-import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.DATE;
-import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.DECIMAL;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.DOUBLE;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.INT;
-import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.LATE;
-import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.OBJECT;
+import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.NULL;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.REAL;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.SMALLINT;
-import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.TIME;
-import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.TIMESTAMP;
-import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.TIMESTAMP_WITH_TIME_ZONE;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.TINYINT;
-import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.VARCHAR;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.values;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -71,23 +64,8 @@ public class QueryDataTypeFamilyTest {
         assertTrue(INT.getEstimatedSize() < BIGINT.getEstimatedSize());
 
         assertTrue(REAL.getEstimatedSize() < DOUBLE.getEstimatedSize());
+
+        assertTrue(NULL.getEstimatedSize() > 0);
     }
 
-    @Test
-    public void testPrecedence() {
-        assertTrue(LATE.getPrecedence() < VARCHAR.getPrecedence());
-        assertTrue(VARCHAR.getPrecedence() < BOOLEAN.getPrecedence());
-        assertTrue(BOOLEAN.getPrecedence() < TINYINT.getPrecedence());
-        assertTrue(TINYINT.getPrecedence() < SMALLINT.getPrecedence());
-        assertTrue(SMALLINT.getPrecedence() < INT.getPrecedence());
-        assertTrue(INT.getPrecedence() < BIGINT.getPrecedence());
-        assertTrue(BIGINT.getPrecedence() < DECIMAL.getPrecedence());
-        assertTrue(DECIMAL.getPrecedence() < REAL.getPrecedence());
-        assertTrue(REAL.getPrecedence() < DOUBLE.getPrecedence());
-        assertTrue(DOUBLE.getPrecedence() < TIME.getPrecedence());
-        assertTrue(TIME.getPrecedence() < DATE.getPrecedence());
-        assertTrue(DATE.getPrecedence() < TIMESTAMP.getPrecedence());
-        assertTrue(TIMESTAMP.getPrecedence() < TIMESTAMP_WITH_TIME_ZONE.getPrecedence());
-        assertTrue(TIMESTAMP_WITH_TIME_ZONE.getPrecedence() < OBJECT.getPrecedence());
-    }
 }

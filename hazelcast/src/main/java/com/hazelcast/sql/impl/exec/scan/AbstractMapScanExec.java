@@ -20,6 +20,7 @@ import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.sql.impl.exec.AbstractExec;
 import com.hazelcast.sql.impl.expression.Expression;
+import com.hazelcast.sql.impl.expression.predicate.TernaryLogic;
 import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.extract.QueryTargetDescriptor;
 import com.hazelcast.sql.impl.row.EmptyRow;
@@ -99,7 +100,7 @@ public abstract class AbstractMapScanExec extends AbstractExec {
         row.setKeyValue(rawKey, rawValue);
 
         // Filter.
-        if (filter != null && !filter.eval(row, ctx)) {
+        if (filter != null && TernaryLogic.isNotTrue(filter.eval(row, ctx))) {
             return null;
         }
 

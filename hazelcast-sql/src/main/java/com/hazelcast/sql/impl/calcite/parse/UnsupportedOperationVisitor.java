@@ -18,6 +18,7 @@ package com.hazelcast.sql.impl.calcite.parse;
 
 import org.apache.calcite.runtime.CalciteContextException;
 import org.apache.calcite.runtime.Resources;
+import org.apache.calcite.sql.SqlBasicTypeNameSpec;
 import org.apache.calcite.sql.SqlCall;
 import org.apache.calcite.sql.SqlDataTypeSpec;
 import org.apache.calcite.sql.SqlDynamicParam;
@@ -39,6 +40,7 @@ import java.util.Set;
 /**
  * Visitor that throws exceptions for unsupported SQL features.
  */
+@SuppressWarnings("checkstyle:ExecutableStatementCount")
 public final class UnsupportedOperationVisitor implements SqlVisitor<Void> {
 
     public static final UnsupportedOperationVisitor INSTANCE = new UnsupportedOperationVisitor();
@@ -55,11 +57,26 @@ public final class UnsupportedOperationVisitor implements SqlVisitor<Void> {
         // of Apache Calcite.
         SUPPORTED_KINDS = new HashSet<>();
 
+        // Predicates
+        SUPPORTED_KINDS.add(SqlKind.AND);
+        SUPPORTED_KINDS.add(SqlKind.OR);
+        SUPPORTED_KINDS.add(SqlKind.NOT);
+
         // Arithmetics
         SUPPORTED_KINDS.add(SqlKind.PLUS);
+        SUPPORTED_KINDS.add(SqlKind.MINUS);
+        SUPPORTED_KINDS.add(SqlKind.TIMES);
+        SUPPORTED_KINDS.add(SqlKind.DIVIDE);
+        SUPPORTED_KINDS.add(SqlKind.MINUS_PREFIX);
+        SUPPORTED_KINDS.add(SqlKind.PLUS_PREFIX);
 
         // "IS" predicates
+        SUPPORTED_KINDS.add(SqlKind.IS_TRUE);
+        SUPPORTED_KINDS.add(SqlKind.IS_NOT_TRUE);
+        SUPPORTED_KINDS.add(SqlKind.IS_FALSE);
+        SUPPORTED_KINDS.add(SqlKind.IS_NOT_FALSE);
         SUPPORTED_KINDS.add(SqlKind.IS_NULL);
+        SUPPORTED_KINDS.add(SqlKind.IS_NOT_NULL);
 
         // Comparisons predicates
         SUPPORTED_KINDS.add(SqlKind.EQUALS);
@@ -71,6 +88,8 @@ public final class UnsupportedOperationVisitor implements SqlVisitor<Void> {
 
         // Miscellaneous
         SUPPORTED_KINDS.add(SqlKind.AS);
+        SUPPORTED_KINDS.add(SqlKind.CAST);
+        SUPPORTED_KINDS.add(SqlKind.CASE);
     }
 
     private UnsupportedOperationVisitor() {
@@ -106,16 +125,46 @@ public final class UnsupportedOperationVisitor implements SqlVisitor<Void> {
         return null;
     }
 
+    @SuppressWarnings("checkstyle:CyclomaticComplexity")
     @Override
     public Void visit(SqlDataTypeSpec type) {
-        throw error(type, RESOURCE.custom("Type specification is not supported"));
+        if (!(type.getTypeNameSpec() instanceof SqlBasicTypeNameSpec)) {
+            throw error(type, RESOURCE.custom("Complex type specifications are not supported"));
+        }
+
+        SqlTypeName typeName = SqlTypeName.get(type.getTypeName().getSimple());
+        switch (typeName) {
+            case BOOLEAN:
+            case TINYINT:
+            case SMALLINT:
+            case INTEGER:
+            case BIGINT:
+            case DECIMAL:
+            case REAL:
+            case DOUBLE:
+            case VARCHAR:
+            // CHAR is missing here intentionally, to avoid constructs like
+            // CAST(foo as CHAR).
+            case ANY:
+            case NULL:
+            case TIME:
+            case TIME_WITH_LOCAL_TIME_ZONE:
+            case DATE:
+            case TIMESTAMP:
+            case TIMESTAMP_WITH_LOCAL_TIME_ZONE:
+                return null;
+
+            default:
+                throw error(type, RESOURCE.notSupported(typeName.getName()));
+        }
     }
 
     @Override
     public Void visit(SqlDynamicParam param) {
-        throw error(param, RESOURCE.custom("Parameters are not supported"));
+        return null;
     }
 
+    @SuppressWarnings("checkstyle:CyclomaticComplexity")
     @Override
     public Void visit(SqlLiteral literal) {
         SqlTypeName typeName = literal.getTypeName();
@@ -127,6 +176,20 @@ public final class UnsupportedOperationVisitor implements SqlVisitor<Void> {
             case INTEGER:
             case BIGINT:
             case DECIMAL:
+            case REAL:
+            case DOUBLE:
+            case VARCHAR:
+            // CHAR is present here to support string literals: Calcite expects
+            // string literals to be of CHAR type, not VARCHAR. Validated type
+            // of string literals is still VARCHAR in HazelcastSqlValidator.
+            case CHAR:
+            case ANY:
+            case NULL:
+            case TIME:
+            case TIME_WITH_LOCAL_TIME_ZONE:
+            case DATE:
+            case TIMESTAMP:
+            case TIMESTAMP_WITH_LOCAL_TIME_ZONE:
                 return null;
 
             default:
@@ -153,7 +216,7 @@ public final class UnsupportedOperationVisitor implements SqlVisitor<Void> {
                 return;
 
             default:
-                throw unsupported(call, call.getKind());
+                throw unsupported(call);
         }
     }
 
@@ -173,6 +236,11 @@ public final class UnsupportedOperationVisitor implements SqlVisitor<Void> {
         if (select.getOffset() != null) {
             throw unsupported(select.getOffset(), "OFFSET");
         }
+    }
+
+    private CalciteContextException unsupported(SqlCall call) {
+        String name = call.getOperator().getName();
+        return unsupported(call, name.replace("$", "").replace('_', ' '));
     }
 
     private CalciteContextException unsupported(SqlNode node, SqlKind kind) {

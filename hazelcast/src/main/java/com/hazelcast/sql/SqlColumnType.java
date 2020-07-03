@@ -67,7 +67,12 @@ public enum SqlColumnType {
     TIMESTAMP_WITH_TIME_ZONE(12, OffsetDateTime.class),
 
     /** OBJECT type, could be represented by any Java class. */
-    OBJECT(13, Object.class);
+    OBJECT(13, Object.class),
+
+    /**
+     * The type of the generic SQL {@code NULL} literal.
+     */
+    NULL(14, void.class);
 
     private static final SqlColumnType[] CACHED_VALUES = values();
 

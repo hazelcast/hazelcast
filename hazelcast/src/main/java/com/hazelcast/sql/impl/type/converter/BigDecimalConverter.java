@@ -16,6 +16,8 @@
 
 package com.hazelcast.sql.impl.type.converter;
 
+import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
+
 import java.math.BigDecimal;
 
 /**
@@ -36,22 +38,42 @@ public final class BigDecimalConverter extends AbstractDecimalConverter {
 
     @Override
     public byte asTinyint(Object val) {
-        return cast(val).byteValue();
+        BigDecimal casted = cast(val);
+        try {
+            return casted.setScale(0, BigDecimal.ROUND_DOWN).byteValueExact();
+        } catch (ArithmeticException e) {
+            throw cannotConvert(QueryDataTypeFamily.TINYINT, val);
+        }
     }
 
     @Override
     public short asSmallint(Object val) {
-        return cast(val).shortValue();
+        BigDecimal casted = cast(val);
+        try {
+            return casted.setScale(0, BigDecimal.ROUND_DOWN).shortValueExact();
+        } catch (ArithmeticException e) {
+            throw cannotConvert(QueryDataTypeFamily.SMALLINT, val);
+        }
     }
 
     @Override
     public int asInt(Object val) {
-        return cast(val).intValue();
+        BigDecimal casted = cast(val);
+        try {
+            return casted.setScale(0, BigDecimal.ROUND_DOWN).intValueExact();
+        } catch (ArithmeticException e) {
+            throw cannotConvert(QueryDataTypeFamily.INT, val);
+        }
     }
 
     @Override
     public long asBigint(Object val) {
-        return cast(val).longValue();
+        BigDecimal casted = cast(val);
+        try {
+            return casted.setScale(0, BigDecimal.ROUND_DOWN).longValueExact();
+        } catch (ArithmeticException e) {
+            throw cannotConvert(QueryDataTypeFamily.BIGINT, val);
+        }
     }
 
     @Override
@@ -77,4 +99,5 @@ public final class BigDecimalConverter extends AbstractDecimalConverter {
     private BigDecimal cast(Object val) {
         return (BigDecimal) val;
     }
+
 }
