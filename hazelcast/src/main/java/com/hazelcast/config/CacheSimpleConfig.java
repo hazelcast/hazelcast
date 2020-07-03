@@ -124,7 +124,9 @@ public class CacheSimpleConfig implements SplitBrainMergeTypeProvider, Identifie
         this.cacheLoaderFactory = cacheSimpleConfig.cacheLoaderFactory;
         this.cacheWriterFactory = cacheSimpleConfig.cacheWriterFactory;
         this.expiryPolicyFactoryConfig = cacheSimpleConfig.expiryPolicyFactoryConfig;
-        this.cacheEntryListeners = cacheSimpleConfig.cacheEntryListeners;
+        this.cacheEntryListeners = cacheSimpleConfig.cacheEntryListeners == null
+                ? null
+                : new ArrayList<CacheSimpleEntryListenerConfig>(cacheSimpleConfig.cacheEntryListeners);
         this.asyncBackupCount = cacheSimpleConfig.asyncBackupCount;
         this.backupCount = cacheSimpleConfig.backupCount;
         this.inMemoryFormat = cacheSimpleConfig.inMemoryFormat;
@@ -133,10 +135,11 @@ public class CacheSimpleConfig implements SplitBrainMergeTypeProvider, Identifie
             this.evictionConfig = cacheSimpleConfig.evictionConfig;
         }
         this.wanReplicationRef = cacheSimpleConfig.wanReplicationRef;
-        this.partitionLostListenerConfigs =
-                new ArrayList<CachePartitionLostListenerConfig>(cacheSimpleConfig.getPartitionLostListenerConfigs());
         this.quorumName = cacheSimpleConfig.quorumName;
         this.mergePolicy = cacheSimpleConfig.mergePolicy;
+        this.partitionLostListenerConfigs = cacheSimpleConfig.partitionLostListenerConfigs == null
+                ? null
+                : new ArrayList<CachePartitionLostListenerConfig>(cacheSimpleConfig.partitionLostListenerConfigs);
         this.hotRestartConfig = new HotRestartConfig(cacheSimpleConfig.hotRestartConfig);
         this.disablePerEntryInvalidationEvents = cacheSimpleConfig.disablePerEntryInvalidationEvents;
     }
