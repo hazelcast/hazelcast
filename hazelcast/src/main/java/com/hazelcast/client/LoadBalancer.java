@@ -43,9 +43,10 @@ public interface LoadBalancer {
     void init(Cluster cluster, ClientConfig config);
 
     /**
-     * Returns the next member to route to.
+     * Returns the next data member to route to.
      *
-     * @return Returns the next member or null if no member is available
+     * @param dataMember {@code true} if only data members should be considered
+     * @return Returns the next data member or null if no member is available
      */
-    Member next();
+    Member next(boolean dataMember);
 }

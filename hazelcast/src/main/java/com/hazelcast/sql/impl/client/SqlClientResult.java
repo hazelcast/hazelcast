@@ -17,12 +17,11 @@
 package com.hazelcast.sql.impl.client;
 
 import com.hazelcast.internal.nio.Connection;
-import com.hazelcast.internal.util.BiTuple;
-import com.hazelcast.sql.SqlColumnMetadata;
-import com.hazelcast.sql.SqlColumnType;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.SqlRowMetadata;
+import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.SqlRowImpl;
 import com.hazelcast.sql.impl.row.Row;
@@ -36,42 +35,39 @@ import java.util.NoSuchElementException;
 /**
  * Client-side cursor.
  */
-public class SqlClientResultImpl implements SqlResult {
+public class SqlClientResult implements SqlResult {
+
     private final SqlClientService service;
     private final Connection connection;
     private final QueryId queryId;
-    private final int columnCount;
+    private final SqlRowMetadata rowMetadata;
     private final ClientIterator iterator = new ClientIterator();
 
-    private int pageSize;
+    private int cursorBufferSize;
     private boolean closed;
     private boolean iteratorAccessed;
 
-    public SqlClientResultImpl(
+    public SqlClientResult(
         SqlClientService service,
         Connection connection,
         QueryId queryId,
-        int columnCount,
-        int pageSize
+        SqlRowMetadata rowMetadata,
+        SqlPage page,
+        int cursorBufferSize
     ) {
         this.service = service;
         this.connection = connection;
         this.queryId = queryId;
-        this.columnCount = columnCount;
-        this.pageSize = pageSize;
+        this.rowMetadata = rowMetadata;
+        this.cursorBufferSize = cursorBufferSize;
+
+        iterator.onNextPage(page);
     }
 
     @Nonnull
     @Override
     public SqlRowMetadata getRowMetadata() {
-        // TODO: Implement.
-        List<SqlColumnMetadata> columnMetadata = new ArrayList<>(columnCount);
-
-        for (int i = 0; i < columnCount; i++) {
-            columnMetadata.add(new SqlColumnMetadata("col-" + i, SqlColumnType.OBJECT));
-        }
-
-        return new SqlRowMetadata(columnMetadata);
+        return rowMetadata;
     }
 
     @Override
@@ -79,8 +75,6 @@ public class SqlClientResultImpl implements SqlResult {
     public Iterator<SqlRow> iterator() {
         if (!iteratorAccessed) {
             iteratorAccessed = true;
-
-            fetchNextPage(iterator);
 
             return iterator;
         } else {
@@ -104,42 +98,48 @@ public class SqlClientResultImpl implements SqlResult {
         }
     }
 
-    public int getPageSize() {
-        return pageSize;
+    public int getCursorBufferSize() {
+        return cursorBufferSize;
     }
 
-    public void setPageSize(int pageSize) {
-        assert pageSize >= 0;
+    public void setCursorBufferSize(int cursorBufferSize) {
+        assert cursorBufferSize >= 0;
 
-        this.pageSize = pageSize;
+        this.cursorBufferSize = cursorBufferSize;
     }
 
     private void fetchNextPage(ClientIterator iterator) {
-        BiTuple<List<Row>, Boolean> nextPage = service.fetch(connection, queryId, pageSize);
+        SqlPage page = service.fetch(connection, queryId, cursorBufferSize);
 
-        iterator.onNextPage(nextPage.element1, nextPage.element2);
+        iterator.onNextPage(page);
+    }
+
+    private List<Row> convertPageRows(List<Data> serializedRows) {
+        List<Row> rows = new ArrayList<>(serializedRows.size());
+
+        for (Data serializedRow : serializedRows) {
+            rows.add(service.deserializeRow(serializedRow));
+        }
+
+        return rows;
     }
 
     /**
      * Implementation of lazy iterator, which fetches results as needed.
      */
     private class ClientIterator implements Iterator<SqlRow> {
-        /** Current page. */
-        private List<Row> currentPage;
 
-        /** Position in the current page. */
-        private int currentPagePosition;
-
-        /** Last page flag. */
+        private List<Row> currentRows;
+        private int currentPosition;
         private boolean last;
 
         @Override
         public boolean hasNext() {
             if (closed) {
-                throw new IllegalStateException("Cursor was closed.");
+                throw service.rethrow(QueryException.cancelledByUser());
             }
 
-            if (currentPagePosition == currentPage.size()) {
+            while (currentPosition == currentRows.size()) {
                 // Reached end of the page. Try fetching the next one if possible.
                 if (!last) {
                     fetchNextPage(this);
@@ -149,15 +149,7 @@ public class SqlClientResultImpl implements SqlResult {
                 }
             }
 
-            // It may happen that the next page has no results. It should be the last page then.
-            if (currentPage.size() == currentPagePosition) {
-                assert currentPage.size() == 0;
-                assert last;
-
-                return false;
-            } else {
-                return true;
-            }
+            return true;
         }
 
         @Override
@@ -166,22 +158,16 @@ public class SqlClientResultImpl implements SqlResult {
                 throw new NoSuchElementException();
             }
 
-            Row row = currentPage.get(currentPagePosition++);
+            Row row = currentRows.get(currentPosition++);
 
-            // TODO: Pass metadata!
-            return new SqlRowImpl(getRowMetadata(), row);
+            return new SqlRowImpl(rowMetadata, row);
         }
 
-        /**
-         * Accept the next page.
-         *
-         * @param page Page.
-         * @param last Last page flag.
-         */
-        private void onNextPage(List<Row> page, boolean last) {
-            currentPage = page;
-            currentPagePosition = 0;
-            this.last = last;
+        private void onNextPage(SqlPage page) {
+            currentRows = convertPageRows(page.getRows());
+            currentPosition = 0;
+
+            this.last = page.isLast();
         }
     }
 }

@@ -145,7 +145,7 @@ public class SqlInternalService {
         UUID localMemberId = nodeServiceProvider.getLocalMemberId();
 
         if (!plan.getPartitionMap().containsKey(localMemberId)) {
-            throw QueryException.memberLeave(localMemberId);
+            throw QueryException.memberConnection(localMemberId);
         }
 
         // Prepare mappings.

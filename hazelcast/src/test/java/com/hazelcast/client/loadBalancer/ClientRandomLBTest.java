@@ -19,12 +19,14 @@ package com.hazelcast.client.loadBalancer;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.util.RandomLB;
 import com.hazelcast.cluster.Cluster;
-import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.cluster.Member;
+import com.hazelcast.config.Config;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.After;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -36,18 +38,25 @@ import static org.junit.Assert.assertNull;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class ClientRandomLBTest {
 
+    private final TestHazelcastInstanceFactory factory = new TestHazelcastInstanceFactory();
+
+    @After
+    public void after() {
+        factory.terminateAll();
+    }
+
     @Test
     public void testRandomLB_withoutMembers() {
         RandomLB lb = new RandomLB();
-        Member m = lb.next();
-        assertNull(m);
+
+        assertNull(lb.next(false));
+        assertNull(lb.next(true));
     }
 
     @Test
     public void testRandomLB_withMembers() {
         RandomLB randomLB = new RandomLB();
 
-        TestHazelcastInstanceFactory factory = new TestHazelcastInstanceFactory();
         HazelcastInstance server = factory.newHazelcastInstance();
         Cluster cluster = server.getCluster();
 
@@ -57,9 +66,26 @@ public class ClientRandomLBTest {
         randomLB.init(cluster, clientConfig);
 
         Member member = cluster.getLocalMember();
-        Member nextMember = randomLB.next();
 
-        assertEquals(member, nextMember);
-        factory.terminateAll();
+        assertEquals(member, randomLB.next(false));
+        assertEquals(member, randomLB.next(true));
+    }
+
+    @Test
+    public void testRandomLB_withLiteMembers() {
+        RandomLB randomLB = new RandomLB();
+
+        HazelcastInstance server = factory.newHazelcastInstance(new Config().setLiteMember(true));
+        Cluster cluster = server.getCluster();
+
+        ClientConfig clientConfig = new ClientConfig();
+        clientConfig.setLoadBalancer(randomLB);
+
+        randomLB.init(cluster, clientConfig);
+
+        Member member = cluster.getLocalMember();
+
+        assertEquals(member, randomLB.next(false));
+        assertNull(randomLB.next(true));
     }
 }

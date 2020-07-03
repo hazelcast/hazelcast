@@ -21,15 +21,10 @@ import com.hazelcast.client.impl.protocol.codec.SqlFetchCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
-import com.hazelcast.internal.serialization.Data;
-import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.SqlInternalService;
-import com.hazelcast.sql.impl.row.Row;
 
 import java.security.Permission;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.UUID;
 
 /**
  * SQL query fetch task.
@@ -41,12 +36,24 @@ public class SqlFetchMessageTask extends AbstractCallableMessageTask<SqlFetchCod
 
     @Override
     protected Object call() throws Exception {
-        QueryId queryId = serializationService.toObject(parameters.queryId);
-        int pageSize = parameters.pageSize;
-
+        UUID localMemberId = nodeEngine.getLocalMember().getUuid();
         SqlInternalService service = nodeEngine.getSqlService().getInternalService();
 
-        return service.getClientStateRegistry().fetch(endpoint.getUuid(), queryId, pageSize);
+        SqlPage page = null;
+        SqlError error = null;
+
+        try {
+            page = service.getClientStateRegistry().fetch(
+                endpoint.getUuid(),
+                parameters.queryId,
+                parameters.cursorBufferSize,
+                serializationService
+            );
+        } catch (Exception e) {
+            error = SqlClientUtils.exceptionToClientError(e, localMemberId);
+        }
+
+        return new SqlFetchResponse(page, error);
     }
 
     @Override
@@ -56,21 +63,9 @@ public class SqlFetchMessageTask extends AbstractCallableMessageTask<SqlFetchCod
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        SqlClientPage page = ((SqlClientPage) response);
+        SqlFetchResponse response0 = ((SqlFetchResponse) response);
 
-        List<Data> rows;
-
-        if (page.getRows().isEmpty()) {
-            rows = Collections.emptyList();
-        } else {
-            rows = new ArrayList<>(page.getRows().size());
-
-            for (Row row : page.getRows()) {
-                rows.add(serializationService.toData(row));
-            }
-        }
-
-        return SqlFetchCodec.encodeResponse(rows, page.isLast());
+        return SqlFetchCodec.encodeResponse(response0.getPage(), response0.getError());
     }
 
     @Override
@@ -90,13 +85,11 @@ public class SqlFetchMessageTask extends AbstractCallableMessageTask<SqlFetchCod
 
     @Override
     public Object[] getParameters() {
-        // TODO: Do we need it?
-        return new Object[] { parameters.queryId, parameters.pageSize } ;
+        return new Object[] { parameters.queryId, parameters.cursorBufferSize } ;
     }
 
     @Override
     public Permission getRequiredPermission() {
-        // TODO: What kind of permission is needed here?
         return null;
     }
 }

@@ -16,22 +16,26 @@
 
 package com.hazelcast.sql.impl.client;
 
-import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.sql.SqlException;
+import com.hazelcast.sql.impl.QueryUtils;
 
-public class SqlClientExecuteResponse {
-    private Data queryId;
-    private int columnCount;
+import java.util.UUID;
 
-    public SqlClientExecuteResponse(Data queryId, int columnCount) {
-        this.queryId = queryId;
-        this.columnCount = columnCount;
+/**
+ * Static helpers for SQL client.
+ */
+public final class SqlClientUtils {
+    private SqlClientUtils() {
+        // No-op.
     }
 
-    public Data getQueryId() {
-        return queryId;
-    }
+    public static SqlError exceptionToClientError(Exception exception, UUID localMemberId) {
+        SqlException sqlException = QueryUtils.toPublicException(exception, localMemberId);
 
-    public int getColumnCount() {
-        return columnCount;
+        return new SqlError(
+            sqlException.getCode(),
+            sqlException.getMessage(),
+            sqlException.getOriginatingMemberId()
+        );
     }
 }

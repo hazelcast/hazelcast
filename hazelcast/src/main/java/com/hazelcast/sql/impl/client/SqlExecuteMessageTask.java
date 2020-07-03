@@ -22,6 +22,7 @@ import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.sql.SqlQuery;
 import com.hazelcast.sql.impl.SqlInternalService;
 import com.hazelcast.sql.impl.SqlResultImpl;
 import com.hazelcast.sql.impl.SqlServiceImpl;
@@ -38,31 +39,40 @@ public class SqlExecuteMessageTask extends AbstractCallableMessageTask<SqlExecut
 
     @Override
     protected Object call() throws Exception {
-        String query = parameters.query;
-        Object[] params;
+        try {
+            SqlQuery query = new SqlQuery(parameters.sql);
 
-        if (parameters.parameters != null && !parameters.parameters.isEmpty()) {
-            params = new Object[parameters.parameters.size()];
-
-            int idx = 0;
-
-            for (Data param : parameters.parameters) {
-                 params[idx++] = serializationService.toObject(param);
+            if (parameters.parameters != null && !parameters.parameters.isEmpty()) {
+                for (Data param : parameters.parameters) {
+                    query.addParameter(serializationService.toObject(param));
+                }
             }
-        } else {
-            params = null;
+
+            query.setTimeoutMillis(parameters.timeoutMillis);
+            query.setCursorBufferSize(parameters.cursorBufferSize);
+
+            SqlServiceImpl sqlService = nodeEngine.getSqlService();
+
+            SqlResultImpl cursor = (SqlResultImpl) sqlService.query(query);
+
+            SqlPage page = sqlService.getInternalService().getClientStateRegistry().registerAndFetch(
+                endpoint.getUuid(),
+                cursor,
+                parameters.cursorBufferSize,
+                serializationService
+            );
+
+            return new SqlExecuteResponse(
+                cursor.getQueryId(),
+                cursor.getRowMetadata(),
+                page,
+                null
+            );
+        } catch (Exception e) {
+            SqlError error = SqlClientUtils.exceptionToClientError(e, nodeEngine.getLocalMember().getUuid());
+
+            return new SqlExecuteResponse(null, null, null, error);
         }
-
-        SqlServiceImpl sqlService = nodeEngine.getSqlService();
-
-        SqlResultImpl cursor = (SqlResultImpl) sqlService.query(query, params);
-
-        sqlService.getInternalService().getClientStateRegistry().register(endpoint.getUuid(), cursor);
-
-        return new SqlClientExecuteResponse(
-            serializationService.toData(cursor.getQueryId()),
-            cursor.getRowMetadata().getColumnCount()
-        );
     }
 
     @Override
@@ -72,9 +82,14 @@ public class SqlExecuteMessageTask extends AbstractCallableMessageTask<SqlExecut
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        SqlClientExecuteResponse response0 = (SqlClientExecuteResponse) response;
+        SqlExecuteResponse response0 = (SqlExecuteResponse) response;
 
-        return SqlExecuteCodec.encodeResponse(response0.getQueryId(), response0.getColumnCount());
+        return SqlExecuteCodec.encodeResponse(
+            response0.getQueryId(),
+            response0.getRowMetadata(),
+            response0.getPage(),
+            response0.getError()
+        );
     }
 
     @Override
@@ -94,12 +109,16 @@ public class SqlExecuteMessageTask extends AbstractCallableMessageTask<SqlExecut
 
     @Override
     public Object[] getParameters() {
-        return new Object[] { parameters.query, parameters.parameters } ;
+        return new Object[] {
+            parameters.sql,
+            parameters.parameters,
+            parameters.timeoutMillis,
+            parameters.cursorBufferSize
+        } ;
     }
 
     @Override
     public Permission getRequiredPermission() {
-        // TODO: Permission to read queried maps.
         return null;
     }
 }

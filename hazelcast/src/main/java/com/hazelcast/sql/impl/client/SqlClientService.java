@@ -28,79 +28,98 @@ import com.hazelcast.client.impl.spi.impl.ClientInvocationFuture;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.internal.util.BiTuple;
-import com.hazelcast.sql.SqlResult;
+import com.hazelcast.sql.SqlErrorCode;
+import com.hazelcast.sql.SqlException;
 import com.hazelcast.sql.SqlQuery;
+import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlService;
+import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.QueryId;
+import com.hazelcast.sql.impl.QueryUtils;
 import com.hazelcast.sql.impl.row.Row;
 
+import javax.annotation.Nonnull;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
-
-import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
+import java.util.UUID;
 
 /**
  * Client-side implementation of SQL service.
  */
-// TODO: Need to improve query ID serialization: either make it first-class citizen for the protocol, or use another UUID
-//  to remap from QueryId to more light-weight UUID. The latter might be not good from the manageability standpoint, as user
-//  will have two IDs at hands.
 public class SqlClientService implements SqlService {
-    /** Decoder for execute request. */
-    private static final ClientMessageDecoder<SqlClientExecuteResponse> EXECUTE_DECODER =
-        clientMessage -> {
-            SqlExecuteCodec.ResponseParameters response = SqlExecuteCodec.decodeResponse(clientMessage);
 
-            return new SqlClientExecuteResponse(response.queryId, response.columnCount);
-        };
+    private static final ClientMessageDecoder<SqlExecuteResponse> EXECUTE_DECODER = clientMessage -> {
+        SqlExecuteCodec.ResponseParameters response = SqlExecuteCodec.decodeResponse(clientMessage);
 
-    /** Decoder for fetch request. */
-    private static final ClientMessageDecoder<BiTuple<List<Data>, Boolean>> FETCH_DECODER = clientMessage -> {
-        SqlFetchCodec.ResponseParameters response = SqlFetchCodec.decodeResponse(clientMessage);
-
-        return BiTuple.of(response.rows, response.last);
+        return new SqlExecuteResponse(response.queryId, response.rowMetadata, response.rowPage, response.error);
     };
 
-    /** Decoder for close request. */
+    private static final ClientMessageDecoder<SqlFetchResponse> FETCH_DECODER = clientMessage -> {
+        SqlFetchCodec.ResponseParameters response = SqlFetchCodec.decodeResponse(clientMessage);
+
+        return new SqlFetchResponse(response.rowPage, response.error);
+    };
+
     private static final ClientMessageDecoder<Void> CLOSE_DECODER = clientMessage -> {
         SqlCloseCodec.decodeResponse(clientMessage);
 
         return null;
     };
 
-    /** Client. */
     private final HazelcastClientInstanceImpl client;
 
     public SqlClientService(HazelcastClientInstanceImpl client) {
         this.client = client;
     }
 
+    @Nonnull
     @Override
-    public SqlResult query(SqlQuery query) {
-        List<Object> params = query.getParameters();
-        List<Data> params0;
+    public SqlResult query(@Nonnull SqlQuery query) {
+        Connection connection = client.getConnectionManager().getRandomConnection(true);
 
-        if (!params.isEmpty()) {
-            params0 = new ArrayList<>(params.size());
-
-            for (Object param : params) {
-                params0.add(toData(param));
-            }
-        } else {
-            params0 = null;
+        if (connection == null) {
+            throw rethrow(QueryException.error(
+                SqlErrorCode.MEMBER_CONNECTION,
+                "Client must be connected to at least one data member to execute SQL queries"
+            ));
         }
 
-        ClientMessage message = SqlExecuteCodec.encodeRequest(query.getSql(), params0);
+        try {
+            List<Object> params = query.getParameters();
+            List<Data> params0;
 
-        Connection connection = client.getConnectionManager().getRandomConnection();
+            if (!params.isEmpty()) {
+                params0 = new ArrayList<>(params.size());
 
-        SqlClientExecuteResponse response = invoke(message, connection, EXECUTE_DECODER);
+                for (Object param : params) {
+                    params0.add(serializeParameter(param));
+                }
+            } else {
+                params0 = null;
+            }
 
-        QueryId queryId = toObject(response.getQueryId());
+            ClientMessage message = SqlExecuteCodec.encodeRequest(
+                query.getSql(),
+                params0,
+                query.getTimeoutMillis(),
+                query.getCursorBufferSize()
+            );
 
-        return new SqlClientResultImpl(this, connection, queryId, response.getColumnCount(), query.getCursorBufferSize());
+            SqlExecuteResponse response = invoke(message, connection, EXECUTE_DECODER);
+
+            handleResponseError(response.getError());
+
+            return new SqlClientResult(
+                this,
+                connection,
+                response.getQueryId(),
+                response.getRowMetadata(),
+                response.getPage(),
+                query.getCursorBufferSize()
+            );
+        } catch (Exception e) {
+            throw rethrow(e, connection);
+        }
     }
 
     /**
@@ -110,60 +129,90 @@ public class SqlClientService implements SqlService {
      * @param queryId Query ID.
      * @return Pair: fetched rows + last page flag.
      */
-    public BiTuple<List<Row>, Boolean> fetch(Connection connection, QueryId queryId, int pageSize) {
-        ClientMessage message = SqlFetchCodec.encodeRequest(toData(queryId), pageSize);
+    public SqlPage fetch(Connection connection, QueryId queryId, int cursorBufferSize) {
+        try {
+            ClientMessage message = SqlFetchCodec.encodeRequest(queryId, cursorBufferSize);
 
-        BiTuple<List<Data>, Boolean> res = invoke(message, connection, FETCH_DECODER);
+            SqlFetchResponse res = invoke(message, connection, FETCH_DECODER);
 
-        List<Data> serializedRows = res.element1;
-        boolean last = res.element2;
+            handleResponseError(res.getError());
 
-        List<Row> rows;
-
-        if (serializedRows.isEmpty()) {
-            rows = Collections.emptyList();
-        } else {
-            rows = new ArrayList<>(serializedRows.size());
-
-            for (Data serializedRow : serializedRows) {
-                rows.add(toObject(serializedRow));
-            }
+            return res.getPage();
+        } catch (Exception e) {
+            throw rethrow(e, connection);
         }
-
-        return BiTuple.of(rows, last);
     }
 
     /**
      * Close remote query cursor.
      *
-     * @param conn Connection.
+     * @param connection Connection.
      * @param queryId Query ID.
      */
-    void close(Connection conn, QueryId queryId) {
-        ClientMessage request = SqlCloseCodec.encodeRequest(toData(queryId));
+    void close(Connection connection, QueryId queryId) {
+        try {
+            ClientMessage request = SqlCloseCodec.encodeRequest(queryId);
 
-        invoke(request, conn, CLOSE_DECODER);
+            invoke(request, connection, CLOSE_DECODER);
+        } catch (Exception e) {
+            throw rethrow(e, connection);
+        }
     }
 
-    private <T> Data toData(T o) {
-        return getSerializationService().toData(o);
+    private Data serializeParameter(Object parameter) {
+        try {
+            return getSerializationService().toData(parameter);
+        } catch (Exception e) {
+            throw rethrow(
+                QueryException.error("Failed to serialize query parameter " + parameter + ": " + e.getMessage())
+            );
+        }
     }
 
-    private <T> T toObject(Data data) {
-        return getSerializationService().toObject(data);
+    Row deserializeRow(Data data) {
+        try {
+            return getSerializationService().toObject(data);
+        } catch (Exception e) {
+            throw rethrow(
+                QueryException.error("Failed to deserialize query result row: " + e.getMessage())
+            );
+        }
+    }
+
+    private UUID getClientId() {
+        return client.getLocalEndpoint().getUuid();
     }
 
     private InternalSerializationService getSerializationService() {
         return client.getSerializationService();
     }
 
-    private <T> T invoke(ClientMessage request, Connection connection, ClientMessageDecoder<T> decoder) {
-        try {
-            ClientInvocation invocation = new ClientInvocation(client, request, null, connection);
-            ClientInvocationFuture fut = invocation.invoke();
-            return new ClientDelegatingFuture<T>(fut, getSerializationService(), decoder, false).get();
-        } catch (Exception e) {
-            throw rethrow(e);
+    private <T> T invoke(ClientMessage request, Connection connection, ClientMessageDecoder<T> decoder) throws Exception {
+        ClientInvocation invocation = new ClientInvocation(client, request, null, connection);
+
+        ClientInvocationFuture fut = invocation.invoke();
+
+        return new ClientDelegatingFuture<T>(fut, getSerializationService(), decoder, false).get();
+    }
+
+    private static void handleResponseError(SqlError error) {
+        if (error != null) {
+            throw new SqlException(error.getOriginatingMemberId(), error.getCode(), error.getMessage(), null);
         }
+    }
+
+    private SqlException rethrow(Exception cause, Connection connection) {
+        if (!connection.isAlive()) {
+            return QueryUtils.toPublicException(
+                QueryException.memberConnection(connection.getRemoteAddress()),
+                getClientId()
+            );
+        }
+
+        return rethrow(cause);
+    }
+
+    SqlException rethrow(Exception cause) {
+        throw QueryUtils.toPublicException(cause, getClientId());
     }
 }

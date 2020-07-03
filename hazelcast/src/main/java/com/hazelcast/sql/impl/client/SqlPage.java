@@ -16,30 +16,53 @@
 
 package com.hazelcast.sql.impl.client;
 
-import com.hazelcast.sql.impl.row.Row;
+import com.hazelcast.internal.serialization.Data;
 
 import java.util.List;
 
-/**
- * Single page which is going to be supplied to the client.
- */
-public class SqlClientPage {
-    /** Rows. */
-    private final List<Row> rows;
+public class SqlPage {
 
-    /** Whether this is the last page. */
+    private final List<Data> rows;
     private final boolean last;
 
-    public SqlClientPage(List<Row> rows, boolean last) {
+    public SqlPage(List<Data> rows, boolean last) {
         this.rows = rows;
         this.last = last;
     }
 
-    public List<Row> getRows() {
+    public List<Data> getRows() {
         return rows;
     }
 
     public boolean isLast() {
         return last;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        SqlPage page = (SqlPage) o;
+
+        if (last != page.last) {
+            return false;
+        }
+
+        return rows != null ? rows.equals(page.rows) : page.rows == null;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = rows != null ? rows.hashCode() : 0;
+
+        result = 31 * result + (last ? 1 : 0);
+
+        return result;
     }
 }

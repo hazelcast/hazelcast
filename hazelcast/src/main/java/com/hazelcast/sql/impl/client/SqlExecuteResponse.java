@@ -16,41 +16,36 @@
 
 package com.hazelcast.sql.impl.client;
 
-import com.hazelcast.sql.SqlRow;
+import com.hazelcast.sql.SqlRowMetadata;
 import com.hazelcast.sql.impl.QueryId;
-import com.hazelcast.sql.impl.SqlResultImpl;
 
-import java.util.Iterator;
-import java.util.UUID;
+public class SqlExecuteResponse {
 
-public class QueryClientState {
+    private final QueryId queryId;
+    private final SqlRowMetadata rowMetadata;
+    private final SqlPage page;
+    private final SqlError error;
 
-    private final UUID clientId;
-    private final SqlResultImpl sqlResult;
-    private Iterator<SqlRow> iterator;
-
-    public QueryClientState(UUID clientId, SqlResultImpl sqlResult) {
-        this.clientId = clientId;
-        this.sqlResult = sqlResult;
-    }
-
-    public UUID getClientId() {
-        return clientId;
+    public SqlExecuteResponse(QueryId queryId, SqlRowMetadata rowMetadata, SqlPage page, SqlError error) {
+        this.queryId = queryId;
+        this.rowMetadata = rowMetadata;
+        this.page = page;
+        this.error = error;
     }
 
     public QueryId getQueryId() {
-        return sqlResult.getQueryId();
+        return queryId;
     }
 
-    public SqlResultImpl getSqlResult() {
-        return sqlResult;
+    public SqlRowMetadata getRowMetadata() {
+        return rowMetadata;
     }
 
-    public Iterator<SqlRow> getIterator() {
-        if (iterator == null) {
-            iterator = sqlResult.iterator();
-        }
+    public SqlPage getPage() {
+        return page;
+    }
 
-        return iterator;
+    public SqlError getError() {
+        return error;
     }
 }

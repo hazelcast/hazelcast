@@ -14,26 +14,22 @@
  * limitations under the License.
  */
 
-package com.hazelcast.client.util;
+package com.hazelcast.sql.impl.client;
 
-import com.hazelcast.cluster.Member;
+public class SqlFetchResponse {
+    private final SqlPage page;
+    private final SqlError error;
 
-import java.util.Random;
+    public SqlFetchResponse(SqlPage page, SqlError error) {
+        this.page = page;
+        this.error = error;
+    }
 
-/**
- * A {@link com.hazelcast.client.LoadBalancer} that selects a random member to route to.
- */
-public class RandomLB extends AbstractLoadBalancer {
+    public SqlPage getPage() {
+        return page;
+    }
 
-    private final Random random = new Random();
-
-    @Override
-    public Member next(boolean dataMembers) {
-        Member[] members = getMembers(dataMembers);
-        if (members == null || members.length == 0) {
-            return null;
-        }
-        int index = random.nextInt(members.length);
-        return members[index];
+    public SqlError getError() {
+        return error;
     }
 }

@@ -19,7 +19,7 @@ package com.hazelcast.sql.jdbc.impl;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.sql.SqlQuery;
 import com.hazelcast.sql.SqlRow;
-import com.hazelcast.sql.impl.client.SqlClientResultImpl;
+import com.hazelcast.sql.impl.client.SqlClientResult;
 
 import java.util.Iterator;
 import java.util.List;
@@ -41,7 +41,7 @@ public class JdbcGateway {
     public JdbcCursor execute(String sql, List<Object> args, int pageSize, long timeout) {
         SqlQuery query = new SqlQuery(sql).setParameters(args).setCursorBufferSize(pageSize).setTimeoutMillis(timeout);
 
-        SqlClientResultImpl cursor = (SqlClientResultImpl) client.getSql().query(query);
+        SqlClientResult cursor = (SqlClientResult) client.getSql().query(query);
         Iterator<SqlRow> iterator = cursor.iterator();
 
         return new JdbcCursor(cursor, iterator);

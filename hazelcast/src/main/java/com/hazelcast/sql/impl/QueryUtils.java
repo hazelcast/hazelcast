@@ -53,7 +53,9 @@ public final class QueryUtils {
     }
 
     public static SqlException toPublicException(Exception e, UUID localMemberId) {
-        assert !(e instanceof SqlException) : "Do not wrap multiple times: " + e;
+        if (e instanceof SqlException) {
+            return (SqlException) e;
+        }
 
         if (e instanceof QueryException) {
             QueryException e0 = (QueryException) e;

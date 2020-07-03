@@ -17,30 +17,51 @@
 package com.hazelcast.client.loadBalancer;
 
 import com.hazelcast.client.util.StaticLB;
+import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.After;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class ClientStaticLBTest {
 
+    private final TestHazelcastInstanceFactory factory = new TestHazelcastInstanceFactory();
+
+    @After
+    public void after() {
+        factory.terminateAll();
+    }
+
     @Test
     public void testStaticLB_withMembers() {
-        TestHazelcastInstanceFactory factory = new TestHazelcastInstanceFactory();
         HazelcastInstance server = factory.newHazelcastInstance();
         Member member = server.getCluster().getLocalMember();
+
         StaticLB lb = new StaticLB(member);
-        Member nextMember = lb.next();
-        assertEquals(member, nextMember);
-        factory.terminateAll();
+
+        assertEquals(member, lb.next(false));
+        assertEquals(member, lb.next(true));
+    }
+
+    @Test
+    public void testStaticLB_withLiteMembers() {
+        HazelcastInstance server = factory.newHazelcastInstance(new Config().setLiteMember(true));
+        Member member = server.getCluster().getLocalMember();
+
+        StaticLB lb = new StaticLB(member);
+
+        assertEquals(member, lb.next(false));
+        assertNull(lb.next(true));
     }
 }

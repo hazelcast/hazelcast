@@ -173,4 +173,8 @@ public class SqlTestSupport extends HazelcastTestSupport {
 
         operationHandler.setExecHook(hook);
     }
+
+    public static SqlInternalService sqlInternalService(HazelcastInstance instance) {
+        return nodeEngine(instance).getSqlService().getInternalService();
+    }
 }

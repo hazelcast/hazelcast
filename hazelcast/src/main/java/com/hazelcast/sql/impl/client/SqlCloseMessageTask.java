@@ -21,7 +21,6 @@ import com.hazelcast.client.impl.protocol.codec.SqlCloseCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
-import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.SqlInternalService;
 
 import java.security.Permission;
@@ -36,11 +35,9 @@ public class SqlCloseMessageTask extends AbstractCallableMessageTask<SqlCloseCod
 
     @Override
     protected Object call() throws Exception {
-        QueryId queryId = serializationService.toObject(parameters.queryId);
-
         SqlInternalService service = nodeEngine.getSqlService().getInternalService();
 
-        service.getClientStateRegistry().close(endpoint.getUuid(), queryId);
+        service.getClientStateRegistry().close(endpoint.getUuid(), parameters.queryId);
 
         return null;
     }
@@ -72,13 +69,11 @@ public class SqlCloseMessageTask extends AbstractCallableMessageTask<SqlCloseCod
 
     @Override
     public Object[] getParameters() {
-        // TODO: Do we need it?
         return new Object[] { parameters.queryId } ;
     }
 
     @Override
     public Permission getRequiredPermission() {
-        // TODO: What kind of permission is needed here?
         return null;
     }
 }
