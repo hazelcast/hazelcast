@@ -29,6 +29,7 @@ import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -64,12 +65,14 @@ public class AutoDetectionDefaultDiscoveryServiceTest {
     }
 
     @Test
+    @Ignore
     public void selectStrategyWhenAutoDetectionApplicable() {
         TestDiscoveryStrategyFactory.isAutoDetectionApplicable = true;
         assertDiscoveryStrategy(TestDiscoveryStrategy.class);
     }
 
     @Test
+    @Ignore
     public void selectStrategyWithHigherPriority() {
         TestDiscoveryStrategyFactory.isAutoDetectionApplicable = true;
         TestHighPriorityDiscoveryStrategyFactory.isAutoDetectionApplicable = true;
