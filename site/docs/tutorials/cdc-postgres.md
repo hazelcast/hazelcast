@@ -4,15 +4,15 @@ sidebar_label: PostgreSQL
 description: How to monitor Change Data Capture data from a PostgreSQL database in Jet.
 ---
 
-**Change data capture** refers to the process of **observing changes
-made to a database** and extracting them in a form usable by other
-systems, for the purposes of replication, analysis and many more.
+**Change Data Capture** (CDC) refers to the process of **observing
+changes made to a database** and extracting them in a form usable by
+other systems, for the purposes of replication, analysis and many more.
+Basically anything that requires keeping multiple heterogeneous
+datastores in sync.
 
-Change Data Capture is especially important to Jet, because it allows
-for the **streaming of changes from databases**, which can be
-efficiently processed by Jet.
-
-Implementation of CDC in Jet is based on
+CDC is especially important to Jet, because it allows for the
+**streaming of changes from databases**, which can be efficiently
+processed by Jet. Jet's implementation is based on
 [Debezium](https://debezium.io/), which is an open source distributed
 platform for change data capture.
 
@@ -155,7 +155,7 @@ mv opt/hazelcast-jet-cdc-postgres-{jet-version}.jar lib
 bin/jet-start
 ```
 
-4. When you see output like this, Hazelcast Jet is up:
+4. When you see output like this, Jet is up:
 
 ```text
 Members {size:1, ver:1} [
@@ -286,7 +286,6 @@ public class JetJob {
                 .setDatabaseUser("postgres")
                 .setDatabasePassword("postgres")
                 .setDatabaseName("postgres")
-                .setClusterName("dbserver1")
                 .setTableWhitelist("inventory.customers")
                 .build();
 
@@ -409,7 +408,7 @@ need to do is to run the build command:
 gradle build
 ```
 
-This will produce a jar file called `cdc-tutorial-1.0-SNAPSHOT-all.jar`
+This will produce a jar file called `cdc-tutorial-1.0-SNAPSHOT.jar`
 in the `build/libs` folder of our project.
 
 <!--Maven-->
@@ -445,7 +444,7 @@ issue is following command:
 
 <!--END_DOCUSAURUS_CODE_TABS-->
 
-The output in the Jet members log should look something like this (we
+The output in the Jet member's log should look something like this (we
 also log what we put in the `IMap` sink thanks to the `peek()` stage
 we inserted):
 
@@ -532,13 +531,11 @@ command-line client too, since it's running in the same container):
 docker stop postgres
 ```
 
-Again, since we used the `--rm` flag when starting the connectors,
-Docker should remove them right after it stops them.
-We can verify that all of the other processes are stopped and removed:
+Again, since we've used the `--rm` flag when starting the connectors,
+Docker should remove them right after we stop them.
+We can verify that all processes are stopped and removed with following
+command:
 
 ```bash
 docker ps -a
 ```
-
-Of course, if any are still running, simply stop them using
-`docker stop <name>` or `docker stop <containerId>`.

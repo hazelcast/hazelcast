@@ -19,7 +19,10 @@ The MySQL CDC source needs a MySQL database user which will be used for
 connecting to the database. For how to create one, see the "CREATE USER
 Statement" in the MySQL Reference Manual
 ([5.7](https://dev.mysql.com/doc/refman/5.7/en/create-user.html),
-[8.0](https://dev.mysql.com/doc/refman/8.0/en/create-user.html)).
+[8.0](https://dev.mysql.com/doc/refman/8.0/en/create-user.html) - note
+that `mysql_native_password` is no longer the default authentication
+plugin in MySQL 8; you will need to specify it using the
+`IDENTIFIED WITH mysql_native_password BY '<password>'` construct).
 
 This database user will also need to have certain permissions enabled.
 Use the "GRANT Statement"

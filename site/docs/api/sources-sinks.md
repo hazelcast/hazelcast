@@ -1037,7 +1037,7 @@ Implementation of CDC in Jet is based on
 which can handle CDC events from [any database supported by
 Debezium](https://debezium.io/documentation/reference/1.1/connectors/index.html),
 but we're also striving to make CDC sources first class citizens in Jet.
-The one for MySQL is already one (since Jet version 4.2).
+The ones for MySQL & PostgreSQL already are (since Jet version 4.2).
 
 Setting up a streaming source of CDC data is just the matter of pointing
 it at the right database via configuration:
@@ -1071,8 +1071,12 @@ As of Jet version 4.2 we have following types of CDC sources:
 
 * [DebeziumCdcSources](/javadoc/{jet-version}/com/hazelcast/jet/cdc/DebeziumCdcSources.html):
   generic source for all databases supported by Debezium
-* [MySqlCdcSources](/javadoc/{jet-version}/com/hazelcast/jet/cdc/MySqlCdcSources.html):
+* [MySqlCdcSources](/javadoc/{jet-version}/com/hazelcast/jet/cdc/mysql/MySqlCdcSources.html):
   specific, first class Jet CDC source for MySQL databases (also based
+  on Debezium, but benefiting the full range of convenience Jet can
+  additionally provide)
+* [PostgresCdcSources](/javadoc/{jet-version}/com/hazelcast/jet/cdc/postgres/PostgresCdcSources.html):
+  specific, first class Jet CDC source for PostgreSQL databases (also based
   on Debezium, but benefiting the full range of convenience Jet can
   additionally provide)
 
@@ -1116,8 +1120,11 @@ p.readFrom(source)
 > be used to map only to objects which the IMDG backend can deserialize,
 > which unfortunately doesn't include user code submitted as a part of
 > the Jet job. So in the above example it's OK to have `String` email
-> values, but we wouldn't be able to use `Customer` directly. Hopefully
-> future Jet versions will address this problem.
+> values, but we wouldn't be able to use `Customer` directly.
+>
+> If user code has to be used, then the problem can be solved with the
+> help of IMDG's "User Code Deployment" feature. Example configs for
+> that can be seen in our [CDC Join Tutorial](../tutorials/cdc-join#7-start-hazelcast-jet).
 
 ### Elasticsearch
 
@@ -1537,6 +1544,7 @@ restarted in face of an intermittent failure.
 |`HadoopSources.inputFormat`|`hazelcast-jet-hadoop (hadoop)`|batch|N/A|
 |`KafkaSources.kafka`|`hazelcast-jet-kafka (kafka)`|stream|exactly-once|
 |`MySqlCdcSources.mysql`|`hazelcast-jet-cdc-mysql (cdc-mysql)`|stream|at-least-once|
+|`PostgresCdcSources.postgres`|`hazelcast-jet-cdc-postgres (cdc-postgres)`|stream|at-least-once|
 |`PulsarSources.pulsarConsumer`|`hazelcast-jet-contrib-pulsar`|stream|N/A|
 |`PulsarSources.pulsarReader`|`hazelcast-jet-contrib-pulsar`|stream|exactly-once|
 |`S3Sources.s3`|`hazelcast-jet-s3 (s3)`|batch|N/A|
