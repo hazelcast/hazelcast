@@ -100,6 +100,11 @@ public class QueryOperationChannelTest extends SqlTestSupport {
         }
 
         @Override
+        public Collection<UUID> getClientMembersIds() {
+            return null;
+        }
+
+        @Override
         public Connection getConnection(UUID memberId) {
             return connection;
         }

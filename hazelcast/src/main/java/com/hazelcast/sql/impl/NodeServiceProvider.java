@@ -35,6 +35,13 @@ public interface NodeServiceProvider extends ClockProvider, LocalMemberIdProvide
     Collection<UUID> getDataMemberIds();
 
     /**
+     * Get IDs of active client members.
+     *
+     * @return ID of client members.
+     */
+    Collection<UUID> getClientMembersIds();
+
+    /**
      * Get connection to member.
      *
      * @param memberId Member ID.

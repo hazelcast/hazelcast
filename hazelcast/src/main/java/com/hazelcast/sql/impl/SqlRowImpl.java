@@ -82,6 +82,10 @@ public class SqlRowImpl implements SqlRow {
         }
     }
 
+    public Row getDelegate() {
+        return row;
+    }
+
     @Override
     public String toString() {
         StringJoiner joiner = new StringJoiner(", ", "[", "]");

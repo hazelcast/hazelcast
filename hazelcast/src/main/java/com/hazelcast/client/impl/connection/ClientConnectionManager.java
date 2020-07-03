@@ -64,6 +64,16 @@ public interface ClientConnectionManager extends ConnectionListenable<ClientConn
      *
      * @return random ClientConnection if available, null otherwise
      */
-    ClientConnection getRandomConnection();
+    default ClientConnection getRandomConnection() {
+        return getRandomConnection(false);
+    }
 
+    /**
+     * For the smart client, Random ClientConnection is chosen via LoadBalancer
+     * For the unisocket client, the only ClientConnection will be returned
+     *
+     * @param dataMember {@code true} only data members should be considered
+     * @return random ClientConnection if available, null otherwise
+     */
+    ClientConnection getRandomConnection(boolean dataMember);
 }

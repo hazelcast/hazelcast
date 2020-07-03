@@ -139,7 +139,7 @@ public class QueryOperationHandlerImpl implements QueryOperationHandler, QuerySt
             Connection connection = getConnection(targetMemberId);
 
             if (connection == null) {
-                throw QueryException.memberLeave(targetMemberId);
+                throw QueryException.memberConnection(targetMemberId);
             }
 
             return new QueryOperationChannelImpl(this, sourceMemberId, connection);

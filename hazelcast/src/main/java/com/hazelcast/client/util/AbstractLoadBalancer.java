@@ -24,6 +24,8 @@ import com.hazelcast.cluster.InitialMembershipListener;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.cluster.MembershipEvent;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -32,8 +34,9 @@ import java.util.concurrent.atomic.AtomicReference;
  */
 public abstract class AbstractLoadBalancer implements LoadBalancer, InitialMembershipListener {
 
-    private final AtomicReference<Member[]> membersRef = new AtomicReference<Member[]>(new Member[0]);
+    private static final Member[] EMPTY_MEMBERS = new Member[0];
 
+    private final AtomicReference<Members> membersRef = new AtomicReference<>(new Members(EMPTY_MEMBERS, EMPTY_MEMBERS));
     private volatile Cluster clusterRef;
 
     @Override
@@ -44,12 +47,17 @@ public abstract class AbstractLoadBalancer implements LoadBalancer, InitialMembe
 
     private void setMembersRef() {
         Set<Member> memberSet = clusterRef.getMembers();
+
         Member[] members = memberSet.toArray(new Member[0]);
-        membersRef.set(members);
+        Member[] dataMembers = dataMembers(members);
+
+        membersRef.set(new Members(members, dataMembers));
     }
 
-    protected Member[] getMembers() {
-        return membersRef.get();
+    protected Member[] getMembers(boolean dataMembers) {
+        Members members = membersRef.get();
+
+        return dataMembers ? members.getDataMembers() : members.getMembers();
     }
 
     @Override
@@ -67,4 +75,38 @@ public abstract class AbstractLoadBalancer implements LoadBalancer, InitialMembe
         setMembersRef();
     }
 
+    private static Member[] dataMembers(Member[] members) {
+        List<Member> dataMembers = new ArrayList<>(members.length);
+
+        for (Member member : members) {
+            if (!member.isLiteMember()) {
+                dataMembers.add(member);
+            }
+        }
+
+        if (dataMembers.isEmpty()) {
+            return EMPTY_MEMBERS;
+        }
+
+        return dataMembers.toArray(new Member[0]);
+    }
+
+    private static final class Members {
+
+        private final Member[] members;
+        private final Member[] dataMembers;
+
+        private Members(Member[] members, Member[] dataMembers) {
+            this.members = members;
+            this.dataMembers = dataMembers;
+        }
+
+        private Member[] getMembers() {
+            return members;
+        }
+
+        private Member[] getDataMembers() {
+            return dataMembers;
+        }
+    }
 }

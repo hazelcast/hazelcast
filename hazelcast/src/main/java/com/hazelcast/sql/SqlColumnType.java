@@ -28,51 +28,79 @@ import java.time.OffsetDateTime;
  */
 public enum SqlColumnType {
     /** VARCHAR type, represented by {@link java.lang.String} */
-    VARCHAR(String.class),
+    VARCHAR(0, String.class),
 
     /** BOOLEAN type, represented by {@link java.lang.Boolean} */
-    BOOLEAN(Boolean.class),
+    BOOLEAN(1, Boolean.class),
 
     /** TINYINT type, represented by {@link java.lang.Byte} */
-    TINYINT(Byte.class),
+    TINYINT(2, Byte.class),
 
     /** SMALLINT type, represented by {@link java.lang.Short} */
-    SMALLINT(Short.class),
+    SMALLINT(3, Short.class),
 
     /** INT type, represented by {@link java.lang.Integer} */
-    INT(Integer.class),
+    INT(4, Integer.class),
 
     /** BIGINT type, represented by {@link java.lang.Long} */
-    BIGINT(Long.class),
+    BIGINT(5, Long.class),
 
     /** DECIMAL type, represented by {@link java.math.BigDecimal} */
-    DECIMAL(BigDecimal.class),
+    DECIMAL(6, BigDecimal.class),
 
     /** REAL type, represented by {@link java.lang.Float} */
-    REAL(Float.class),
+    REAL(7, Float.class),
 
     /** DOUBLE type, represented by {@link java.lang.Double} */
-    DOUBLE(Double.class),
+    DOUBLE(8, Double.class),
 
     /** DATE type, represented by {@link java.time.LocalDate} */
-    DATE(LocalDate.class),
+    DATE(9, LocalDate.class),
 
     /** TIME type, represented by {@link java.time.LocalTime} */
-    TIME(LocalTime.class),
+    TIME(10, LocalTime.class),
 
     /** TIMESTAMP type,, represented by {@link java.time.LocalDateTime} */
-    TIMESTAMP(LocalDateTime.class),
+    TIMESTAMP(11, LocalDateTime.class),
 
     /** TIMESTAMP_WITH_TIME_ZONE type, represented by {@link java.time.OffsetDateTime} */
-    TIMESTAMP_WITH_TIME_ZONE(OffsetDateTime.class),
+    TIMESTAMP_WITH_TIME_ZONE(12, OffsetDateTime.class),
 
     /** OBJECT type, could be represented by any Java class. */
-    OBJECT(Object.class);
+    OBJECT(13, Object.class);
 
+    private static final SqlColumnType[] CACHED_VALUES = values();
+
+    private final int id;
     private final Class<?> valueClass;
 
-    SqlColumnType(Class<?> valueClass) {
+    SqlColumnType(int id, Class<?> valueClass) {
+        this.id = id;
         this.valueClass = valueClass;
+    }
+
+    /**
+     * Returns the IndexType as an enum.
+     *
+     * @return the IndexType as an enum
+     */
+    public static SqlColumnType getById(final int id) {
+        for (SqlColumnType type : CACHED_VALUES) {
+            if (type.id == id) {
+                return type;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Gets the ID for the given {@link SqlColumnType}.
+     *
+     * @return the ID
+     */
+    public int getId() {
+        return id;
     }
 
     /**

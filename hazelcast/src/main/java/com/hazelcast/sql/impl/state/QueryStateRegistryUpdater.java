@@ -19,6 +19,7 @@ package com.hazelcast.sql.impl.state;
 import com.hazelcast.sql.impl.NodeServiceProvider;
 import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.QueryUtils;
+import com.hazelcast.sql.impl.client.QueryClientStateRegistry;
 import com.hazelcast.sql.impl.operation.QueryCheckOperation;
 import com.hazelcast.sql.impl.operation.QueryOperationHandler;
 
@@ -40,6 +41,9 @@ public class QueryStateRegistryUpdater {
     /** State to be checked. */
     private final QueryStateRegistry stateRegistry;
 
+    /** Client state registry. */
+    private final QueryClientStateRegistry clientStateRegistry;
+
     /** Operation handler. */
     private final QueryOperationHandler operationHandler;
 
@@ -53,6 +57,7 @@ public class QueryStateRegistryUpdater {
         String instanceName,
         NodeServiceProvider nodeServiceProvider,
         QueryStateRegistry stateRegistry,
+        QueryClientStateRegistry clientStateRegistry,
         QueryOperationHandler operationHandler,
         long stateCheckFrequency
     ) {
@@ -62,6 +67,7 @@ public class QueryStateRegistryUpdater {
 
         this.nodeServiceProvider = nodeServiceProvider;
         this.stateRegistry = stateRegistry;
+        this.clientStateRegistry = clientStateRegistry;
         this.operationHandler = operationHandler;
         this.stateCheckFrequency = stateCheckFrequency;
 
@@ -111,6 +117,7 @@ public class QueryStateRegistryUpdater {
                     Thread.sleep(stateCheckFrequency);
 
                     checkMemberState();
+                    checkClientState();
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
 
@@ -151,6 +158,12 @@ public class QueryStateRegistryUpdater {
 
                 operationHandler.submit(localMemberId, checkEntry.getKey(), operation);
             }
+        }
+
+        private void checkClientState() {
+            Collection<UUID> activeClientIds = nodeServiceProvider.getClientMembersIds();
+
+            clientStateRegistry.update(activeClientIds);
         }
 
         public void stop() {

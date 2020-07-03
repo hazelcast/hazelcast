@@ -58,6 +58,13 @@ import com.hazelcast.map.impl.querycache.event.DefaultQueryCacheEventData;
 import com.hazelcast.map.impl.querycache.event.QueryCacheEventData;
 import com.hazelcast.scheduledexecutor.ScheduledTaskHandler;
 import com.hazelcast.scheduledexecutor.impl.ScheduledTaskHandlerImpl;
+import com.hazelcast.sql.SqlColumnMetadata;
+import com.hazelcast.sql.SqlColumnType;
+import com.hazelcast.sql.SqlErrorCode;
+import com.hazelcast.sql.SqlRowMetadata;
+import com.hazelcast.sql.impl.QueryId;
+import com.hazelcast.sql.impl.client.SqlError;
+import com.hazelcast.sql.impl.client.SqlPage;
 import com.hazelcast.transaction.impl.xa.SerializableXID;
 import com.hazelcast.version.MemberVersion;
 
@@ -792,4 +799,11 @@ public class ReferenceObjects {
     public static AnchorDataListHolder anAnchorDataListHolder = new AnchorDataListHolder(aListOfIntegers, aListOfDataToData);
     public static PagingPredicateHolder aPagingPredicateHolder = new PagingPredicateHolder(anAnchorDataListHolder, aData, aData,
             anInt, anInt, aByte, aData);
+
+    public static QueryId anSqlQueryId = new QueryId(aLong, aLong, aLong, aLong);
+    public static SqlColumnMetadata anSqlColumnMetadata = CustomTypeFactory.createSqlColumnMetadata(aString, SqlColumnType.BOOLEAN.getId());
+    public static List<SqlColumnMetadata> aListOfSqlColumnMetadata = Collections.singletonList(anSqlColumnMetadata);
+    public static SqlRowMetadata anSqlRowMetadata = new SqlRowMetadata(aListOfSqlColumnMetadata);
+    public static SqlError anSqlError = new SqlError(anInt, aString, aUUID);
+    public static SqlPage anSqlPage = new SqlPage(aListOfData, aBoolean);
 }

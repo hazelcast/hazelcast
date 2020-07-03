@@ -19,12 +19,14 @@ package com.hazelcast.client.loadBalancer;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.util.RoundRobinLB;
 import com.hazelcast.cluster.Cluster;
+import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.After;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -36,18 +38,24 @@ import static org.junit.Assert.assertNull;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class ClientRoundRobinLBTest {
 
+    private final TestHazelcastInstanceFactory factory = new TestHazelcastInstanceFactory();
+
+    @After
+    public void after() {
+        factory.terminateAll();
+    }
+
     @Test
     public void testRoundRobinLB_withoutMembers() {
         RoundRobinLB lb = new RoundRobinLB();
-        Member m = lb.next();
-        assertNull(m);
+
+        assertNull(lb.next(false));
     }
 
     @Test
     public void testRoundRobinLB_withMembers() {
         RoundRobinLB roundRobinLB = new RoundRobinLB();
-        TestHazelcastInstanceFactory factory = new TestHazelcastInstanceFactory();
-        final HazelcastInstance server = factory.newHazelcastInstance();
+        HazelcastInstance server = factory.newHazelcastInstance();
 
         Cluster cluster = server.getCluster();
 
@@ -57,9 +65,26 @@ public class ClientRoundRobinLBTest {
         roundRobinLB.init(cluster, clientConfig);
 
         Member member = cluster.getLocalMember();
-        Member nextMember = roundRobinLB.next();
 
-        assertEquals(member, nextMember);
-        factory.terminateAll();
+        assertEquals(member, roundRobinLB.next(false));
+        assertEquals(member, roundRobinLB.next(true));
+    }
+
+    @Test
+    public void testRoundRobinLB_withLiteMembers() {
+        RoundRobinLB roundRobinLB = new RoundRobinLB();
+        HazelcastInstance server = factory.newHazelcastInstance(new Config().setLiteMember(true));
+
+        Cluster cluster = server.getCluster();
+
+        ClientConfig clientConfig = new ClientConfig();
+        clientConfig.setLoadBalancer(roundRobinLB);
+
+        roundRobinLB.init(cluster, clientConfig);
+
+        Member member = cluster.getLocalMember();
+
+        assertEquals(member, roundRobinLB.next(false));
+        assertNull(roundRobinLB.next(true));
     }
 }

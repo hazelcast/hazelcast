@@ -52,7 +52,6 @@ public class QueryStateRegistryTest extends SqlTestSupport {
         QueryResultProducer resultProducer = new BlockingRootResultConsumer();
         QueryStateCompletionCallback completionCallback = new TestQueryStateCompletionCallback();
 
-        // Test with registration.
         QueryState state = registry.onInitiatorQueryStarted(
             localMemberId,
             timeout,

@@ -273,7 +273,7 @@ public final class QueryState implements QueryStateCallback {
 
         assert !missingMemberIds.isEmpty();
 
-        cancel(QueryException.memberLeave(missingMemberIds));
+        cancel(QueryException.memberConnection(missingMemberIds));
 
         return true;
     }

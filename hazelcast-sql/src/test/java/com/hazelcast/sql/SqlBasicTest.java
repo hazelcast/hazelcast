@@ -16,6 +16,8 @@
 
 package com.hazelcast.sql;
 
+import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapConfig;
@@ -31,7 +33,6 @@ import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.sql.impl.SqlTestSupport;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
-import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.AfterClass;
@@ -95,9 +96,10 @@ public class SqlBasicTest extends SqlTestSupport {
 
     private static final int[] PAGE_SIZES = { 1, 16, 256, 4096 };
     private static final int[] DATA_SET_SIZES = { 1, 256, 4096 };
-    private static final TestHazelcastInstanceFactory FACTORY = new TestHazelcastInstanceFactory(2);
+    private static final TestHazelcastFactory FACTORY = new TestHazelcastFactory(2);
 
-    private static HazelcastInstance instance;
+    private static HazelcastInstance member;
+    protected static HazelcastInstance client;
 
     @Parameter
     public int cursorBufferSize;
@@ -135,9 +137,10 @@ public class SqlBasicTest extends SqlTestSupport {
 
     @BeforeClass
     public static void beforeClass() {
-        instance = FACTORY.newHazelcastInstance(config());
+        member = FACTORY.newHazelcastInstance(memberConfig());
+        FACTORY.newHazelcastInstance(memberConfig());
 
-        FACTORY.newHazelcastInstance(config());
+        client = FACTORY.newHazelcastClient(clientConfig());
     }
 
     @AfterClass
@@ -147,15 +150,19 @@ public class SqlBasicTest extends SqlTestSupport {
 
     @Before
     public void before() {
-        instance.getMap(MAP_OBJECT).clear();
-        instance.getMap(MAP_BINARY).clear();
+        member.getMap(MAP_OBJECT).clear();
+        member.getMap(MAP_BINARY).clear();
+    }
+
+    protected HazelcastInstance getTarget() {
+        return member;
     }
 
     @SuppressWarnings("ConstantConditions")
     @Test
     public void testSelect() {
         // Get proper map
-        IMap<Object, AbstractPojo> map = instance.getMap(mapName());
+        IMap<Object, AbstractPojo> map = getTarget().getMap(mapName());
 
         // Populate map with values
         Map<Object, AbstractPojo> data = new HashMap<>();
@@ -307,9 +314,9 @@ public class SqlBasicTest extends SqlTestSupport {
         String sql = sql();
 
         if (cursorBufferSize == SqlQuery.DEFAULT_CURSOR_BUFFER_SIZE) {
-            return instance.getSql().query(sql);
+            return getTarget().getSql().query(sql);
         } else {
-            return instance.getSql().query(new SqlQuery(sql).setCursorBufferSize(cursorBufferSize));
+            return getTarget().getSql().query(new SqlQuery(sql).setCursorBufferSize(cursorBufferSize));
         }
     }
 
@@ -395,8 +402,6 @@ public class SqlBasicTest extends SqlTestSupport {
                 SqlColumnType.OBJECT
             );
         }
-
-
     }
 
     private String sql() {
@@ -459,7 +464,7 @@ public class SqlBasicTest extends SqlTestSupport {
         }
     }
 
-    private static Config config() {
+    private static SerializationConfig serializationConfig() {
         SerializationConfig serializationConfig = new SerializationConfig();
 
         serializationConfig.addPortableFactory(PORTABLE_FACTORY_ID, classId -> {
@@ -484,13 +489,21 @@ public class SqlBasicTest extends SqlTestSupport {
             throw new IllegalArgumentException("Unsupported class ID: " + classId);
         });
 
-        Config config = new Config().setSerializationConfig(serializationConfig);
+        return serializationConfig;
+    }
+
+    private static Config memberConfig() {
+        Config config = new Config().setSerializationConfig(serializationConfig());
 
         config
             .addMapConfig(new MapConfig(MAP_OBJECT).setInMemoryFormat(InMemoryFormat.OBJECT))
             .addMapConfig(new MapConfig(MAP_BINARY).setInMemoryFormat(InMemoryFormat.BINARY));
 
         return config;
+    }
+
+    private static ClientConfig clientConfig() {
+        return new ClientConfig().setSerializationConfig(serializationConfig());
     }
 
     private String adjustFieldName(String fieldName) {

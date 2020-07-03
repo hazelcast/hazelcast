@@ -35,6 +35,8 @@ import com.hazelcast.map.impl.SimpleEntryView;
 import com.hazelcast.map.impl.querycache.event.DefaultQueryCacheEventData;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.sql.SqlColumnMetadata;
+import com.hazelcast.sql.SqlColumnType;
 
 import java.net.UnknownHostException;
 import java.util.List;
@@ -44,6 +46,7 @@ import static com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.T
 import static com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig.ExpiryPolicyType;
 import static com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.DurationConfig;
 
+@SuppressWarnings("checkstyle:ClassDataAbstractionCoupling")
 public final class CustomTypeFactory {
 
     private CustomTypeFactory() {
@@ -196,5 +199,15 @@ public final class CustomTypeFactory {
             throw new HazelcastException("Unexpected protocol type = [" + type + "]");
         }
         return EndpointQualifier.resolve(protocolType, identifier);
+    }
+
+    public static SqlColumnMetadata createSqlColumnMetadata(String name, int type) {
+        SqlColumnType sqlColumnType = SqlColumnType.getById(type);
+
+        if (sqlColumnType == null) {
+            throw new HazelcastException("Unexpected SQL column type type = [" + type + "]");
+        }
+
+        return new SqlColumnMetadata(name, sqlColumnType);
     }
 }

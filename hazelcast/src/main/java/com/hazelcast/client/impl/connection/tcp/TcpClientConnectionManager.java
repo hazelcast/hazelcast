@@ -85,6 +85,7 @@ import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -756,9 +757,9 @@ public class TcpClientConnectionManager implements ClientConnectionManager {
     }
 
     @Override
-    public ClientConnection getRandomConnection() {
+    public ClientConnection getRandomConnection(boolean dataMember) {
         if (isSmartRoutingEnabled) {
-            Member member = loadBalancer.next();
+            Member member = loadBalancer.next(dataMember);
             if (member != null) {
                 ClientConnection connection = getConnection(member.getUuid());
                 if (connection != null) {
@@ -767,8 +768,25 @@ public class TcpClientConnectionManager implements ClientConnectionManager {
             }
         }
 
-        Iterator<TcpClientConnection> iterator = activeConnections.values().iterator();
-        return iterator.hasNext() ? iterator.next() : null;
+        Iterator<Map.Entry<UUID, TcpClientConnection>> iterator = activeConnections.entrySet().iterator();
+
+        Map.Entry<UUID, TcpClientConnection> connectionEntry = iterator.hasNext() ? iterator.next() : null;
+
+        if (connectionEntry != null) {
+            if (dataMember) {
+                UUID memberId = connectionEntry.getKey();
+
+                Member member = client.getClientClusterService().getMember(memberId);
+
+                if (member == null || member.isLiteMember()) {
+                    return null;
+                }
+            }
+
+            return connectionEntry.getValue();
+        } else {
+            return null;
+        }
     }
 
     private void authenticateOnCluster(TcpClientConnection connection) {
