@@ -28,6 +28,9 @@ import com.hazelcast.client.impl.spi.impl.ListenerMessageCodec;
 import com.hazelcast.client.properties.ClientProperty;
 import com.hazelcast.client.test.ClientTestSupport;
 import com.hazelcast.client.test.TestHazelcastFactory;
+import com.hazelcast.cluster.Member;
+import com.hazelcast.cluster.MembershipEvent;
+import com.hazelcast.cluster.MembershipListener;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.LifecycleEvent;
@@ -57,6 +60,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
+import static com.hazelcast.test.SplitBrainTestSupport.blockCommunicationBetween;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -323,5 +327,65 @@ public class ClientHeartbeatTest extends ClientTestSupport {
                 return ClientRemovePartitionLostListenerCodec.decodeResponse(clientMessage).response;
             }
         };
+    }
+
+    @Test
+    public void testClientMembershipEvents_onSplitBrain() {
+        Config config = new Config();
+        HazelcastInstance instanceA = hazelcastFactory.newHazelcastInstance(config);
+
+        ClientConfig clientConfig = new ClientConfig();
+        clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig()
+                .setClusterConnectTimeoutMillis(Integer.MAX_VALUE);
+        HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
+
+        HazelcastInstance instanceB = hazelcastFactory.newHazelcastInstance(config);
+        HazelcastInstance instanceC = hazelcastFactory.newHazelcastInstance(config);
+
+        Member memberA = instanceA.getCluster().getLocalMember();
+        Member memberB = instanceB.getCluster().getLocalMember();
+        Member memberC = instanceC.getCluster().getLocalMember();
+
+        CountDownLatch splitLatch = new CountDownLatch(1);
+        CountDownLatch bRemovedLatch = new CountDownLatch(1);
+        CountDownLatch aRemovedLatch = new CountDownLatch(1);
+
+        CountDownLatch switchedToCLatch = new CountDownLatch(1);
+        client.getCluster().addMembershipListener(new MembershipListener() {
+            @Override
+            public void memberAdded(MembershipEvent membershipEvent) {
+                if (memberC.equals(membershipEvent.getMember())) {
+                    switchedToCLatch.countDown();
+                }
+            }
+
+            @Override
+            public void memberRemoved(MembershipEvent membershipEvent) {
+                if (memberC.equals(membershipEvent.getMember())) {
+                    splitLatch.countDown();
+                }
+
+                if (memberB.equals(membershipEvent.getMember())) {
+                    bRemovedLatch.countDown();
+                }
+
+                if (memberA.equals(membershipEvent.getMember())) {
+                    aRemovedLatch.countDown();
+                }
+            }
+        });
+
+        blockCommunicationBetween(instanceA, instanceC);
+        closeConnectionBetween(instanceA, instanceC);
+        blockCommunicationBetween(instanceB, instanceC);
+        closeConnectionBetween(instanceB, instanceC);
+
+        assertOpenEventually(" A B | C", splitLatch);
+        instanceB.shutdown();
+        assertOpenEventually(" A | C", bRemovedLatch);
+        instanceA.shutdown();
+        assertOpenEventually("_ | C", aRemovedLatch);
+
+        assertOpenEventually("Client should connect to C and see C as memberAdded", switchedToCLatch);
     }
 }
