@@ -47,6 +47,8 @@ public enum DiagnosticsOutputType {
      * logging configuration to forward the diagnostics to any output supported
      * by the logging framework. You may also want to use some additional configuration
      * to control how the output format.
+     * Using the logging framework introduces a slight overhead in comparison
+     * to using other output types but allows for greater flexibility.
      *
      * @see com.hazelcast.spi.properties.ClusterProperty#LOGGING_ENABLE_DETAILS
      * @see Diagnostics#INCLUDE_EPOCH_TIME
