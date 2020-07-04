@@ -17,6 +17,8 @@ package com.hazelcast.internal.util.phonehome;
 
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
 import com.hazelcast.config.AttributeConfig;
+import com.hazelcast.config.CacheConfig;
+import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.QueryCacheConfig;
 import com.hazelcast.config.WanReplicationRef;
@@ -26,9 +28,12 @@ import com.hazelcast.multimap.MultiMap;
 import com.hazelcast.ringbuffer.Ringbuffer;
 import com.hazelcast.test.HazelcastTestSupport;
 
+import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 
+import javax.cache.CacheManager;
+import javax.cache.spi.CachingProvider;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
@@ -41,6 +46,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.getRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.verify;
+import static com.hazelcast.cache.CacheTestSupport.createServerCachingProvider;
 import static com.hazelcast.test.Accessors.getNode;
 
 public class PhoneHomeIntegrationTest extends HazelcastTestSupport {
@@ -48,13 +54,21 @@ public class PhoneHomeIntegrationTest extends HazelcastTestSupport {
     @Rule
     public WireMockRule wireMockRule = new WireMockRule();
 
+    private Node node;
+    private PhoneHome phoneHome;
+
+    @Before
+    public void initialise() {
+        HazelcastInstance hz = createHazelcastInstance();
+        node = getNode(hz);
+        phoneHome = new PhoneHome(node, "http://localhost:8080/ping");
+
+    }
+
     @Test()
     public void testMapMetrics() {
-        HazelcastInstance hz = createHazelcastInstance();
-        Node node = getNode(hz);
-        PhoneHome phoneHome = new PhoneHome(node, "http://localhost:8080/ping");
-        Map<String, String> map1 = hz.getMap("hazelcast");
-        Map<String, String> map2 = hz.getMap("phonehome");
+        Map<String, String> map1 = node.hazelcastInstance.getMap("hazelcast");
+        Map<String, String> map2 = node.hazelcastInstance.getMap("phonehome");
         node.getConfig().getMapConfig("hazelcast").setReadBackupData(true);
         node.getConfig().getMapConfig("phonehome").getMapStoreConfig().setEnabled(true);
         node.getConfig().getMapConfig("hazelcast").addQueryCacheConfig(new QueryCacheConfig("queryconfig"));
@@ -84,15 +98,12 @@ public class PhoneHomeIntegrationTest extends HazelcastTestSupport {
 
     @Test
     public void testCountDistributedObjects() {
-        HazelcastInstance hz = createHazelcastInstance();
-        Node node = getNode(hz);
-        PhoneHome phoneHome = new PhoneHome(node, "http://localhost:8080/ping");
-        Map<Object, Object> map1 = hz.getMap("hazelcast");
-        Set<Object> set1 = hz.getSet("hazelcast");
-        Queue<Object> queue1 = hz.getQueue("hazelcast");
-        MultiMap<Object, Object> multimap1 = hz.getMultiMap("hazelcast");
-        List<Object> list1 = hz.getList("hazelcast");
-        Ringbuffer<Object> ringbuffer1 = hz.getRingbuffer("hazelcast");
+        Map<Object, Object> map1 = node.hazelcastInstance.getMap("hazelcast");
+        Set<Object> set1 = node.hazelcastInstance.getSet("hazelcast");
+        Queue<Object> queue1 = node.hazelcastInstance.getQueue("hazelcast");
+        MultiMap<Object, Object> multimap1 = node.hazelcastInstance.getMultiMap("hazelcast");
+        List<Object> list1 = node.hazelcastInstance.getList("hazelcast");
+        Ringbuffer<Object> ringbuffer1 = node.hazelcastInstance.getRingbuffer("hazelcast");
 
         stubFor(get(urlPathEqualTo("/ping"))
                 .willReturn(aResponse()
@@ -108,6 +119,26 @@ public class PhoneHomeIntegrationTest extends HazelcastTestSupport {
                 .withQueryParam("lict", equalTo("1"))
                 .withQueryParam("rbct", equalTo("1")));
 
+    }
+
+    @Test
+    public void testCacheMetrics() {
+        CachingProvider cachingProvider = createServerCachingProvider(node.hazelcastInstance);
+        CacheManager cacheManager = cachingProvider.getCacheManager();
+        CacheSimpleConfig cacheSimpleConfig = new CacheSimpleConfig();
+        cacheSimpleConfig.setName("hazelcast");
+        cacheSimpleConfig.setWanReplicationRef(new WanReplicationRef());
+        cacheManager.createCache("hazelcast", new CacheConfig<>("hazelcast"));
+        node.getConfig().addCacheConfig(cacheSimpleConfig);
+
+        stubFor(get(urlPathEqualTo("/ping"))
+                .willReturn(aResponse()
+                        .withStatus(200)));
+
+        phoneHome.phoneHome(false);
+        verify(1, getRequestedFor(urlPathEqualTo("/ping"))
+                .withQueryParam("cact", equalTo("1"))
+                .withQueryParam("cawact", equalTo("1")));
     }
 
 }
