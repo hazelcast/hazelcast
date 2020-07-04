@@ -61,11 +61,7 @@ public class DiagnosticsLoggerTest extends HazelcastTestSupport {
             String content = diagnosticsOutput.toString();
             assertNotNull(content);
 
-            //assertContains(content, "SystemProperties[");
-            //assertContains(content, "BuildInfo[");
-            //assertContains(content, "ConfigProperties[");
             assertContains(content, "Metric[");
-
         });
     }
 }
