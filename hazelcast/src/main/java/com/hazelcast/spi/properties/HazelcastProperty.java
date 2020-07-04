@@ -48,6 +48,10 @@ public final class HazelcastProperty {
         this.timeUnit = null;
     }
 
+    public HazelcastProperty(String name, Enum<?> defaultEnum) {
+        this(name, defaultEnum.name());
+    }
+
     public HazelcastProperty(String name, boolean defaultValue) {
         this(name, defaultValue ? "true" : "false");
     }

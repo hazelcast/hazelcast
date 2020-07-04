@@ -286,8 +286,8 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
 
     private Diagnostics initDiagnostics() {
         String name = "diagnostics-client-" + id + "-" + currentTimeMillis();
-        ILogger logger = loggingService.getLogger(Diagnostics.class);
-        return new Diagnostics(name, logger, instanceName, properties);
+
+        return new Diagnostics(name, loggingService, instanceName, properties);
     }
 
     private MetricsRegistryImpl initMetricsRegistry() {
