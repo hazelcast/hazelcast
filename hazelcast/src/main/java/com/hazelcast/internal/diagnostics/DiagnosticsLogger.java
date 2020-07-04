@@ -18,8 +18,8 @@ package com.hazelcast.internal.diagnostics;
 
 import com.hazelcast.logging.ILogger;
 
+import java.io.CharArrayWriter;
 import java.io.PrintWriter;
-import java.io.StringWriter;
 
 /**
  * Forwards the diagnostic plugin output to a Hazelcast {@link ILogger}.
@@ -29,7 +29,7 @@ final class DiagnosticsLogger implements DiagnosticsLog {
     private final ILogger logger;
     private final ILogger diagnosticsLogger;
     private final DiagnosticsLogWriterImpl logWriter;
-    private final StringWriter stringWriter;
+    private final CharArrayWriter writer;
     private boolean staticPluginsRendered;
 
     DiagnosticsLogger(Diagnostics diagnostics) {
@@ -37,8 +37,8 @@ final class DiagnosticsLogger implements DiagnosticsLog {
         this.logger = diagnostics.logger;
         this.diagnosticsLogger = diagnostics.loggingService.getLogger("com.hazelcast.diagnostics");
         this.logWriter = new DiagnosticsLogWriterImpl(diagnostics.includeEpochTime);
-        this.stringWriter = new StringWriter();
-        logWriter.init(new PrintWriter(stringWriter));
+        this.writer = new CharArrayWriter();
+        logWriter.init(new PrintWriter(writer));
         logger.info("Sending diagnostics to the 'com.hazelcast.diagnostics' logger");
     }
 
@@ -50,10 +50,10 @@ final class DiagnosticsLogger implements DiagnosticsLog {
             }
 
             renderPlugin(plugin);
-            if (stringWriter.getBuffer().length() > 0) {
-                String message = stringWriter.toString();
+            if (writer.size() > 0) {
+                String message = writer.toString();
                 diagnosticsLogger.fine(message);
-                stringWriter.getBuffer().setLength(0);
+                writer.reset();
             }
         } catch (RuntimeException e) {
             logger.warning("Failed to write to log: ", e);
