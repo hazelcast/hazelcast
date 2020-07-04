@@ -39,7 +39,7 @@ final class DiagnosticsLogger implements DiagnosticsLog {
         this.logWriter = new DiagnosticsLogWriterImpl(diagnostics.includeEpochTime);
         this.stringWriter = new StringWriter();
         logWriter.init(new PrintWriter(stringWriter));
-        logger.info("Sending diagnostics to the Hazelcast logger");
+        logger.info("Sending diagnostics to the 'com.hazelcast.diagnostics' logger");
     }
 
     public void write(DiagnosticsPlugin plugin) {
