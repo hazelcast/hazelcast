@@ -53,6 +53,8 @@ import java.util.Map;
 import java.util.Set;
 
 import static com.hazelcast.cache.impl.CacheProxyUtil.validateNotNull;
+import com.hazelcast.config.CacheConfigAccessor;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import static com.hazelcast.util.ExceptionUtil.rethrowAllowedTypeFirst;
 import static com.hazelcast.util.MapUtil.createHashMap;
 import static com.hazelcast.util.Preconditions.checkNotNull;
@@ -395,5 +397,11 @@ public class CacheProxy<K, V> extends AbstractCacheProxy<K, V>
                 nameWithPrefix, startSequence, minSize, maxSize, predicate, projection);
         op.setPartitionId(partitionId);
         return getNodeEngine().getOperationService().invokeOnPartition(op);
+    }
+
+    public void reSerializeCacheConfig() {
+        cacheConfig = PreJoinCacheConfig.of(cacheConfig, (InternalSerializationService)getNodeEngine()
+                .getSerializationService()).asCacheConfig();
+        CacheConfigAccessor.getTenantControl(cacheConfig).tenantUnavailable();
     }
 }

@@ -29,6 +29,7 @@ import com.hazelcast.spi.FragmentedMigrationAwareService;
 import com.hazelcast.spi.ManagedService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.RemoteService;
+import com.hazelcast.spi.tenantcontrol.TenantControlFactory;
 
 import java.util.Collection;
 
@@ -153,4 +154,5 @@ public interface ICacheService
     <K, V> void createCacheConfigOnAllMembers(PreJoinCacheConfig<K, V> cacheConfig);
 
     <K, V> void setTenantControl(CacheConfig<K, V> cacheConfig);
+    TenantControlFactory getTenantControlFactory();
 }

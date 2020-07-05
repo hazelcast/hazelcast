@@ -30,6 +30,7 @@ import javax.cache.configuration.CacheEntryListenerConfiguration;
 import java.io.IOException;
 
 import static com.hazelcast.internal.cluster.Versions.V3_12;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 
 /**
  * This subclass of {@link CacheConfig} is used to communicate cache configurations in pre-join cache operations when cluster
@@ -58,7 +59,11 @@ public class PreJoinCacheConfig<K, V> extends CacheConfig<K, V> implements Versi
     }
 
     public PreJoinCacheConfig(CacheConfig cacheConfig, boolean resolved) {
-        cacheConfig.copy(this, resolved);
+        this(cacheConfig, resolved, null);
+    }
+
+    public PreJoinCacheConfig(CacheConfig cacheConfig, boolean resolved, InternalSerializationService backupSerializationService) {
+        cacheConfig.copy(this, resolved, backupSerializationService);
     }
 
     @Override
@@ -167,10 +172,14 @@ public class PreJoinCacheConfig<K, V> extends CacheConfig<K, V> implements Versi
     }
 
     public static PreJoinCacheConfig of(CacheConfig cacheConfig) {
+        return of(cacheConfig, null);
+    }
+
+    public static PreJoinCacheConfig of(CacheConfig cacheConfig, InternalSerializationService serializationService) {
         if (cacheConfig instanceof PreJoinCacheConfig) {
             return (PreJoinCacheConfig) cacheConfig;
         } else {
-            return new PreJoinCacheConfig(cacheConfig, false);
+            return new PreJoinCacheConfig(cacheConfig, false, serializationService);
         }
     }
 }

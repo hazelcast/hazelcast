@@ -44,16 +44,20 @@ public final class NoopTenantControl implements TenantControl {
     }
 
     @Override
-    public boolean isClassesAlwaysAvailable() {
-        return true;
-    }
-
-    @Override
     public void writeData(ObjectDataOutput out) throws IOException {
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
+    }
+
+    @Override
+    public void tenantUnavailable() {
+    }
+
+    @Override
+    public boolean isAvailable() {
+        return true;
     }
 
     private static final class NoopCloseable implements Closeable {

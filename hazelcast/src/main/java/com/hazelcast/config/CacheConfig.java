@@ -53,6 +53,7 @@ import java.util.Set;
 import static com.hazelcast.config.CacheSimpleConfig.DEFAULT_BACKUP_COUNT;
 import static com.hazelcast.config.CacheSimpleConfig.DEFAULT_IN_MEMORY_FORMAT;
 import static com.hazelcast.config.CacheSimpleConfig.MIN_BACKUP_COUNT;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import static com.hazelcast.spi.tenantcontrol.TenantControl.NOOP_TENANT_CONTROL;
 import static com.hazelcast.util.Preconditions.checkAsyncBackupCount;
 import static com.hazelcast.util.Preconditions.checkBackupCount;
@@ -694,9 +695,10 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> implements Spli
      *                  or will be resolved to loaded classes and the actual {@code keyType} and {@code valueType} will be copied.
      *                  Otherwise, this configuration's {@code keyClassName} and {@code valueClassName} will be copied to the
      *                  target config, to be resolved at a later time.
+     * @param backupSerializationService in case serialiation service isn't initialized
      * @return          the target config
      */
-    public <T extends CacheConfig<K, V>> T copy(T target, boolean resolved) {
+    public <T extends CacheConfig<K, V>> T copy(T target, boolean resolved, InternalSerializationService backupSerializationService) {
         target.setTenantControl(getTenantControl());
         target.setAsyncBackupCount(getAsyncBackupCount());
         target.setBackupCount(getBackupCount());
@@ -712,13 +714,15 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> implements Spli
             target.setValueClassName(getValueClassName());
         }
 
-        target.cacheLoaderFactory = cacheLoaderFactory.shallowCopy(resolved, serializationService);
-        target.cacheWriterFactory = cacheWriterFactory.shallowCopy(resolved, serializationService);
-        target.expiryPolicyFactory = expiryPolicyFactory.shallowCopy(resolved, serializationService);
+        final InternalSerializationService useSerializationService = serializationService != null? serializationService : backupSerializationService;
+
+        target.cacheLoaderFactory = cacheLoaderFactory.shallowCopy(resolved, useSerializationService);
+        target.cacheWriterFactory = cacheWriterFactory.shallowCopy(resolved, useSerializationService);
+        target.expiryPolicyFactory = expiryPolicyFactory.shallowCopy(resolved, useSerializationService);
 
         target.listenerConfigurations = createConcurrentSet();
         for (DeferredValue<CacheEntryListenerConfiguration<K, V>> lazyEntryListenerConfig : listenerConfigurations) {
-            target.listenerConfigurations.add(lazyEntryListenerConfig.shallowCopy(resolved, serializationService));
+            target.listenerConfigurations.add(lazyEntryListenerConfig.shallowCopy(resolved, useSerializationService));
         }
 
         target.setManagementEnabled(isManagementEnabled());
@@ -734,8 +738,12 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> implements Spli
         target.setWanReplicationRef(getWanReplicationRef());
         target.setWriteThrough(isWriteThrough());
         target.setClassLoader(classLoader);
-        target.serializationService = serializationService;
+        target.serializationService = useSerializationService;
         return target;
+    }
+
+    public <T extends CacheConfig<K, V>> T copy(T target, boolean resolved) {
+        return copy(target, resolved, null);
     }
 
     private void copyListeners(CacheSimpleConfig simpleConfig)

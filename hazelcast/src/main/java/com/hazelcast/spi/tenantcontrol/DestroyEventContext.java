@@ -16,27 +16,21 @@
 
 package com.hazelcast.spi.tenantcontrol;
 
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.spi.annotation.Beta;
 
 /**
  * Hook to decouple Hazelcast object from the tenant
- * @param <T> context type
  */
 @Beta
-public interface DestroyEventContext<T> {
+public interface DestroyEventContext {
 
     /**
      * Called to decouple Hazelcast object from the tenant
      *
-     * @param context to use to destroy the Hazelcast object
+     * @param instance to use to decouple the Hazelcast object from tenant
      */
-    void destroy(T context);
-
-    /**
-     * @return context type so the tenant control implementor knows
-     * what context to send to the destroy() method
-     */
-    Class<? extends T> getContextType();
+    void tenantUnavailable(HazelcastInstance instance);
 
     /**
      *

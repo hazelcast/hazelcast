@@ -81,6 +81,7 @@ import static com.hazelcast.cache.impl.PreJoinCacheConfig.asCacheConfig;
 import static com.hazelcast.config.CacheConfigAccessor.getTenantControl;
 import static com.hazelcast.internal.config.ConfigValidator.checkCacheConfig;
 import static com.hazelcast.internal.config.MergePolicyValidator.checkMergePolicySupportsInMemoryFormat;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import static com.hazelcast.spi.tenantcontrol.TenantControl.NOOP_TENANT_CONTROL;
 import static com.hazelcast.spi.tenantcontrol.TenantControlFactory.NOOP_TENANT_CONTROL_FACTORY;
 import static com.hazelcast.util.FutureUtil.RETHROW_EVERYTHING;
@@ -92,6 +93,7 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
 
     public static final String TENANT_CONTROL_FACTORY = "com.hazelcast.spi.tenantcontrol.TenantControlFactory";
     private static final String SETUP_REF = "setupRef";
+    private TenantControlFactory tenantControlFactory;
 
     /**
      * Map from full prefixed cache name to {@link CacheConfig}
@@ -166,7 +168,7 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
         this.logger = nodeEngine.getLogger(getClass());
         this.eventJournal = new RingbufferCacheEventJournalImpl(nodeEngine);
         this.mergePolicyProvider = new CacheMergePolicyProvider(nodeEngine);
-
+        this.tenantControlFactory = initTenantControlFactory();
         postInit(nodeEngine, properties);
     }
 
@@ -215,6 +217,22 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
         for (String objectName : configs.keySet()) {
             sendInvalidationEvent(objectName, null, SOURCE_NOT_AVAILABLE);
         }
+    }
+
+    private TenantControlFactory initTenantControlFactory() {
+        TenantControlFactory factory = null;
+        try {
+            factory = ServiceLoader.load(TenantControlFactory.class,
+                    TENANT_CONTROL_FACTORY, nodeEngine.getConfigClassLoader());
+        } catch (Exception e) {
+            if (logger.isFinestEnabled()) {
+                logger.finest("Could not load service provider for TenantControl", e);
+            }
+        }
+        if (factory == null) {
+            factory = NOOP_TENANT_CONTROL_FACTORY;
+        }
+        return factory;
     }
 
     @Override
@@ -501,24 +519,19 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
         }
         // associate cache config with the current thread's tenant
         // and add hook so when the tenant is destroyed, so is the cache config
-        TenantControlFactory tenantControlFactory = null;
-        try {
-            tenantControlFactory = ServiceLoader.load(TenantControlFactory.class,
-                    TENANT_CONTROL_FACTORY, nodeEngine.getConfigClassLoader());
-        } catch (Exception e) {
-            if (logger.isFinestEnabled()) {
-                logger.finest("Could not load service provider for TenantControl", e);
-            }
-        }
-        if (tenantControlFactory == null) {
-            tenantControlFactory = NOOP_TENANT_CONTROL_FACTORY;
-        }
-        CacheConfigAccessor.setTenantControl(cacheConfig, tenantControlFactory.saveCurrentTenant(
+        CacheConfigAccessor.setTenantControl(cacheConfig, getTenantControlFactory().saveCurrentTenant(
                 new CacheDestroyEventContext(cacheConfig.getName())));
     }
 
+    @Override
+    public TenantControlFactory getTenantControlFactory() {
+        return tenantControlFactory;
+    }
+
     public void reSerializeCacheConfig(CacheConfig cacheConfig) {
-        configs.replace(cacheConfig.getNameWithPrefix(), PreJoinCacheConfig.of(cacheConfig).asCacheConfig());
+        getTenantControl(configs.replace(cacheConfig.getNameWithPrefix(),
+                PreJoinCacheConfig.of(cacheConfig, (InternalSerializationService)nodeEngine.getSerializationService())
+                        .asCacheConfig())).tenantUnavailable();
     }
 
     @Override

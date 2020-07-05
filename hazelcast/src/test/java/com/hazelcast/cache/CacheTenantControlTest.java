@@ -67,6 +67,7 @@ public class CacheTenantControlTest extends HazelcastTestSupport {
     private static final AtomicInteger closeTenantCount = new AtomicInteger();
     private static final AtomicInteger registerTenantCount = new AtomicInteger();
     private static final AtomicInteger unregisterTenantCount = new AtomicInteger();
+    private static final AtomicInteger clearedTenantCount = new AtomicInteger();
     static final AtomicReference<DestroyEventContext> destroyEventContext = new AtomicReference<DestroyEventContext>(null);
 
     @Parameter
@@ -98,6 +99,7 @@ public class CacheTenantControlTest extends HazelcastTestSupport {
         closeTenantCount.set(0);
         registerTenantCount.set(0);
         unregisterTenantCount.set(0);
+        clearedTenantCount.set(0);
     }
 
     @Test
@@ -162,10 +164,9 @@ public class CacheTenantControlTest extends HazelcastTestSupport {
         cache.get(1);
         cache.getAndPut(1, 2);
 
-        destroyEventContext.get().destroy(cache);
+        destroyEventContext.get().tenantUnavailable(hz);
 
-        assertEquals(TenantControl.NOOP_TENANT_CONTROL,
-                getTenantControl(getCacheService(hz).getCacheConfig(cache.getPrefixedName())));
+        assertInstanceOf(CountingTenantControl.class, getTenantControl(getCacheService(hz).getCacheConfig(cache.getPrefixedName())));
     }
 
     private void assertTenantControlCreated(HazelcastInstance instance) {
@@ -203,16 +204,21 @@ public class CacheTenantControlTest extends HazelcastTestSupport {
         }
 
         @Override
-        public boolean isClassesAlwaysAvailable() {
-            return false;
-        }
-
-        @Override
         public void writeData(ObjectDataOutput out) throws IOException {
         }
 
         @Override
         public void readData(ObjectDataInput in) throws IOException {
+        }
+
+        @Override
+        public void tenantUnavailable() {
+            clearedTenantCount.incrementAndGet();
+        }
+
+        @Override
+        public boolean isAvailable() {
+            return true;
         }
     }
 
@@ -222,6 +228,11 @@ public class CacheTenantControlTest extends HazelcastTestSupport {
             saveCurrentCount.incrementAndGet();
             destroyEventContext.set(event);
             return new CountingTenantControl();
+        }
+
+        @Override
+        public boolean isClassesAlwaysAvailable() {
+            return false;
         }
     }
 }

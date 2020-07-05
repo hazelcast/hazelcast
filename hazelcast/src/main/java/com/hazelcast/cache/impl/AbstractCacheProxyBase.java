@@ -69,7 +69,7 @@ abstract class AbstractCacheProxyBase<K, V>
     private static final double SIZING_FUDGE_FACTOR = 1.3;
 
     protected final ILogger logger;
-    protected final CacheConfig<K, V> cacheConfig;
+    protected CacheConfig<K, V> cacheConfig;
     protected final String name;
     protected final String nameWithPrefix;
     protected final ICacheService cacheService;

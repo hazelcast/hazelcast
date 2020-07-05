@@ -21,11 +21,9 @@ import static com.hazelcast.cache.HazelcastCacheManager.CACHE_MANAGER_PREFIX;
 import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.cache.impl.HazelcastServerCachingProvider;
 import com.hazelcast.config.CacheConfig;
-import com.hazelcast.config.CacheConfigAccessor;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.spi.tenantcontrol.TenantControl;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import static com.hazelcast.test.HazelcastTestSupport.getNodeEngineImpl;
@@ -91,11 +89,10 @@ public class CacheTenantUnavailableTest extends HazelcastTestSupport {
         disallowClassNames.clear();
         assertInstanceOf(ValueType.class, cache2.get(new KeyType()));
 
-        destroyEventContext.get().destroy(cache2);
+        destroyEventContext.get().tenantUnavailable(hz2);
         disallowClassNames.add(KeyType.class.getName());
 
         cacheConfig = cacheService.getCacheConfig(CACHE_MANAGER_PREFIX + cacheName);
-        TenantControl tenantControl = CacheConfigAccessor.getTenantControl(cacheConfig);
         cacheService.setTenantControl(cacheConfig);
         Cache cache3 = cacheManager.getCache(cacheName);
         assertInstanceOf(ValueType.class, cache3.get(new KeyType()));

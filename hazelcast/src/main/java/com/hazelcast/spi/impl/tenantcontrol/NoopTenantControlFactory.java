@@ -31,4 +31,9 @@ public class NoopTenantControlFactory implements TenantControlFactory {
     public TenantControl saveCurrentTenant(DestroyEventContext event) {
         return NOOP_TENANT_CONTROL;
     }
+
+    @Override
+    public boolean isClassesAlwaysAvailable() {
+        return true;
+    }
 }

@@ -23,7 +23,6 @@ import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.cache.impl.PreJoinCacheConfig;
 import com.hazelcast.cache.impl.record.CacheRecord;
 import com.hazelcast.config.CacheConfig;
-import com.hazelcast.config.CacheConfigAccessor;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -66,6 +65,7 @@ public class CacheReplicationOperation extends Operation implements IdentifiedDa
     private final List<CacheConfig> configs = new ArrayList<CacheConfig>();
     private final Map<String, Map<Data, CacheRecord>> data = new HashMap<String, Map<Data, CacheRecord>>();
     private final CacheNearCacheStateHolder nearCacheStateHolder = new CacheNearCacheStateHolder(this);
+    private boolean classesAlwaysAvailable = true;
 
     public CacheReplicationOperation() {
     }
@@ -93,6 +93,7 @@ public class CacheReplicationOperation extends Operation implements IdentifiedDa
 
         configs.addAll(segment.getCacheConfigs());
         nearCacheStateHolder.prepare(segment, namespaces);
+        classesAlwaysAvailable = segment.getCacheService().getTenantControlFactory().isClassesAlwaysAvailable();
     }
 
     protected void storeRecordsToReplicate(ICacheRecordStore recordStore) {
@@ -150,7 +151,7 @@ public class CacheReplicationOperation extends Operation implements IdentifiedDa
         int confSize = configs.size();
         out.writeInt(confSize);
         for (CacheConfig config : configs) {
-            if(!CacheConfigAccessor.getTenantControl(config).isClassesAlwaysAvailable()) {
+            if(!classesAlwaysAvailable) {
                 out.writeObject(PreJoinCacheConfig.of(config));
             } else {
                 out.writeObject(config);
@@ -187,7 +188,7 @@ public class CacheReplicationOperation extends Operation implements IdentifiedDa
         int confSize = in.readInt();
         for (int i = 0; i < confSize; i++) {
             final CacheConfig config = in.readObject();
-            if(!CacheConfigAccessor.getTenantControl(config).isClassesAlwaysAvailable()) {
+            if(!classesAlwaysAvailable) {
                 configs.add(PreJoinCacheConfig.asCacheConfig(config));
             } else {
                 configs.add(config);

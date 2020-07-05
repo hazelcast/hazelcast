@@ -27,11 +27,11 @@ public class LatencyTrackingCacheLoader<K, V> implements CacheLoader<K, V> {
 
     static final String KEY = "CacheLoaderLatency";
 
-    private final CacheLoader<K, V> delegate;
+    private final TenantContextual<CacheLoader<K, V>> delegate;
     private final LatencyProbe loadProbe;
     private final LatencyProbe loadAllProbe;
 
-    public LatencyTrackingCacheLoader(CacheLoader<K, V> delegate, StoreLatencyPlugin plugin, String cacheName) {
+    public LatencyTrackingCacheLoader(TenantContextual<CacheLoader<K, V>> delegate, StoreLatencyPlugin plugin, String cacheName) {
         this.delegate = delegate;
         this.loadProbe = plugin.newProbe(KEY, cacheName, "load");
         this.loadAllProbe = plugin.newProbe(KEY, cacheName, "loadAll");
@@ -41,7 +41,7 @@ public class LatencyTrackingCacheLoader<K, V> implements CacheLoader<K, V> {
     public V load(K k) throws CacheLoaderException {
         long startNanos = System.nanoTime();
         try {
-            return delegate.load(k);
+            return delegate.get().load(k);
         } finally {
             loadProbe.recordValue(System.nanoTime() - startNanos);
         }
@@ -51,7 +51,7 @@ public class LatencyTrackingCacheLoader<K, V> implements CacheLoader<K, V> {
     public Map<K, V> loadAll(Iterable<? extends K> iterable) throws CacheLoaderException {
         long startNanos = System.nanoTime();
         try {
-            return delegate.loadAll(iterable);
+            return delegate.get().loadAll(iterable);
         } finally {
             loadAllProbe.recordValue(System.nanoTime() - startNanos);
         }

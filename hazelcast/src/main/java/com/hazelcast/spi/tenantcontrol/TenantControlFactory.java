@@ -53,4 +53,11 @@ public interface TenantControlFactory {
      * @return new TenantControl instance with the saved state of the current tenant
      */
     TenantControl saveCurrentTenant(DestroyEventContext event);
+
+    /**
+     * If not, CacheConfigs are always sent over the wire as PreJoin ops
+     *
+     * @return true is the associated applications are always loaded and running
+     */
+    boolean isClassesAlwaysAvailable();
 }

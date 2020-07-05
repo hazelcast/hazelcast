@@ -73,9 +73,14 @@ public interface TenantControl extends DataSerializable {
     void unregister();
 
     /**
-     * If not, CacheConfigs are always sent over the wire as PreJoin ops
+     * Checks if tenant app is loaded at the current time and classes are available
      *
-     * @return true is the associated applications are always loaded and running
+     * @return true if tenant is loaded and classes are available
      */
-    boolean isClassesAlwaysAvailable();
+    boolean isAvailable();
+
+    /**
+     * tenant is no longer available, clear the tenant control of stale classes / class loaders
+     */
+    public void tenantUnavailable();
 }
