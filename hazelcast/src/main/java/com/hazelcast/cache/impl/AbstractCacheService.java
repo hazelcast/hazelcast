@@ -93,7 +93,6 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
 
     public static final String TENANT_CONTROL_FACTORY = "com.hazelcast.spi.tenantcontrol.TenantControlFactory";
     private static final String SETUP_REF = "setupRef";
-    private TenantControlFactory tenantControlFactory;
 
     /**
      * Map from full prefixed cache name to {@link CacheConfig}
@@ -152,6 +151,7 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
     protected CacheSplitBrainHandlerService splitBrainHandlerService;
     protected CacheClearExpiredRecordsTask clearExpiredRecordsTask;
     protected ExpirationManager expirationManager;
+    protected TenantControlFactory tenantControlFactory;
 
     @Override
     public final void init(NodeEngine nodeEngine, Properties properties) {
@@ -530,7 +530,7 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
 
     public void reSerializeCacheConfig(CacheConfig cacheConfig) {
         getTenantControl(configs.replace(cacheConfig.getNameWithPrefix(),
-                PreJoinCacheConfig.of(cacheConfig, (InternalSerializationService)nodeEngine.getSerializationService())
+                PreJoinCacheConfig.of(cacheConfig, (InternalSerializationService) nodeEngine.getSerializationService())
                         .asCacheConfig())).tenantUnavailable();
     }
 

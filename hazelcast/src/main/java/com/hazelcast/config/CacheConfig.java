@@ -698,7 +698,8 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> implements Spli
      * @param backupSerializationService in case serialiation service isn't initialized
      * @return          the target config
      */
-    public <T extends CacheConfig<K, V>> T copy(T target, boolean resolved, InternalSerializationService backupSerializationService) {
+    public <T extends CacheConfig<K, V>> T copy(T target, boolean resolved,
+            InternalSerializationService backupSerializationService) {
         target.setTenantControl(getTenantControl());
         target.setAsyncBackupCount(getAsyncBackupCount());
         target.setBackupCount(getBackupCount());
@@ -714,7 +715,8 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> implements Spli
             target.setValueClassName(getValueClassName());
         }
 
-        final InternalSerializationService useSerializationService = serializationService != null? serializationService : backupSerializationService;
+        final InternalSerializationService useSerializationService = serializationService != null
+                ? serializationService : backupSerializationService;
 
         target.cacheLoaderFactory = cacheLoaderFactory.shallowCopy(resolved, useSerializationService);
         target.cacheWriterFactory = cacheWriterFactory.shallowCopy(resolved, useSerializationService);

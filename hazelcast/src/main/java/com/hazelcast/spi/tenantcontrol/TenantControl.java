@@ -82,5 +82,5 @@ public interface TenantControl extends DataSerializable {
     /**
      * tenant is no longer available, clear the tenant control of stale classes / class loaders
      */
-    public void tenantUnavailable();
+    void tenantUnavailable();
 }

@@ -62,7 +62,8 @@ public class PreJoinCacheConfig<K, V> extends CacheConfig<K, V> implements Versi
         this(cacheConfig, resolved, null);
     }
 
-    public PreJoinCacheConfig(CacheConfig cacheConfig, boolean resolved, InternalSerializationService backupSerializationService) {
+    public PreJoinCacheConfig(CacheConfig cacheConfig, boolean resolved,
+            InternalSerializationService backupSerializationService) {
         cacheConfig.copy(this, resolved, backupSerializationService);
     }
 

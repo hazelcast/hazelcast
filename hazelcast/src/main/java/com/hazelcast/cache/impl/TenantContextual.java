@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.hazelcast.cache.impl;
 
 import com.hazelcast.spi.tenantcontrol.TenantControl;
@@ -32,7 +33,7 @@ public class TenantContextual<Factory> {
     private final Callable<Factory> initFunction;
     private final Callable<Boolean> existsFunction;
     private final TenantControl tenantControl;
-    private boolean initialized = false;
+    private boolean initialized;
 
     public TenantContextual(Callable<Factory> initFunction, Callable<Boolean> existsFunction, TenantControl tenantControl) {
         this.initFunction = initFunction;
@@ -45,10 +46,10 @@ public class TenantContextual<Factory> {
      * @return underlying factory, within Tenant Control
      */
     public Factory get() {
-        if(initialized == false) {
+        if (!initialized) {
             Closeable tenantContext = null;
             try {
-                if(exists()) {
+                if (exists()) {
                     tenantContext = tenantControl.setTenant(true);
                     factory = initFunction.call();
                 }
@@ -57,7 +58,7 @@ public class TenantContextual<Factory> {
                 ExceptionUtil.rethrow(ex);
             } finally {
                 try {
-                    if(tenantContext != null) {
+                    if (tenantContext != null) {
                         tenantContext.close();
                     }
                 } catch (IOException ex) {

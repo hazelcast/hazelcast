@@ -85,8 +85,8 @@ public final class DeferredValue<V> {
             copy.serializedValueExists = true;
             copy.serializedValue = serializedValue;
         }
-        if(resolved == false && serializationService != null) {
-            if(!serializedValueExists) {
+        if (!resolved && serializationService != null) {
+            if (!serializedValueExists) {
                 copy.serializedValueExists = true;
                 copy.serializedValue = getSerializedValue(serializationService);
             }
