@@ -58,13 +58,13 @@ public final class QueryId implements IdentifiedDataSerializable {
      * @return Query ID.
      */
     public static QueryId create(UUID memberId) {
-        UUID qryId = UuidUtil.newUnsecureUUID();
+        UUID localId = UuidUtil.newUnsecureUUID();
 
         return new QueryId(
             memberId.getMostSignificantBits(),
             memberId.getLeastSignificantBits(),
-            qryId.getMostSignificantBits(),
-            qryId.getLeastSignificantBits()
+            localId.getMostSignificantBits(),
+            localId.getLeastSignificantBits()
         );
     }
 
