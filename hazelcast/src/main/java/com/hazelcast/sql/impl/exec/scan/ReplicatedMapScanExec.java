@@ -19,20 +19,11 @@ package com.hazelcast.sql.impl.exec.scan;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapProxy;
-import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
-import com.hazelcast.replicatedmap.impl.record.ReplicatedRecord;
-import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
-import com.hazelcast.sql.impl.exec.IterationResult;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.extract.QueryTargetDescriptor;
-import com.hazelcast.sql.impl.row.Row;
-import com.hazelcast.sql.impl.row.RowBatch;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Iterator;
 import java.util.List;
 
 /**
@@ -40,17 +31,8 @@ import java.util.List;
  */
 @SuppressWarnings("rawtypes")
 public class ReplicatedMapScanExec extends AbstractMapScanExec {
-    /** Map. */
+
     private final ReplicatedMapProxy map;
-
-    /** All rows fetched on first access. */
-    private Collection<Row> rows;
-
-    /** Iterator over rows. */
-    private Iterator<Row> rowsIter;
-
-    /** Current row. */
-    private Row currentRow;
 
     public ReplicatedMapScanExec(
         int id,
@@ -68,54 +50,27 @@ public class ReplicatedMapScanExec extends AbstractMapScanExec {
         this.map = map;
     }
 
-    @SuppressWarnings("rawtypes")
     @Override
-    public IterationResult advance0() {
-        if (rows == null) {
-            rows = new ArrayList<>();
-
-            ReplicatedMapService svc = (ReplicatedMapService) map.getService();
-
-            Collection<ReplicatedRecordStore> stores = svc.getAllReplicatedRecordStores(mapName);
-
-            for (ReplicatedRecordStore store : stores) {
-                Iterator<ReplicatedRecord> iter = store.recordIterator();
-
-                while (iter.hasNext()) {
-                    ReplicatedRecord record = iter.next();
-
-                    Row row = prepareRow(record.getKey(), record.getValue());
-
-                    if (row != null) {
-                        rows.add(row);
-                    }
-                }
-            }
-
-            rowsIter = rows.iterator();
-        }
-
-        if (rowsIter.hasNext()) {
-            currentRow = rowsIter.next();
-
-            return IterationResult.FETCHED;
-        } else {
-            currentRow = null;
-
-            return IterationResult.FETCHED_DONE;
-        }
+    protected int getMigrationStamp() {
+        // TODO: Not implemented yet
+        return 0;
     }
 
     @Override
-    public RowBatch currentBatch0() {
-        return currentRow;
+    protected boolean validateMigrationStamp(int migrationStamp) {
+        // TODO: Not implemented yet
+        return true;
     }
 
     @Override
-    protected void reset0() {
-        rows = null;
-        rowsIter = null;
-        currentRow = null;
+    protected KeyValueIterator createIterator() {
+        return new ReplicatedMapScanExecIterator(map);
+    }
+
+    @Override
+    protected boolean isDestroyed() {
+        // TODO: Not implemented yet
+        return false;
     }
 
     @Override
