@@ -388,12 +388,12 @@ public class MapSampleMetadataResolverTest extends MapSchemaTestSupport {
         checkFields(
                 metadata,
                 field("_boolean", QueryDataType.BOOLEAN, true),
-                dynamicallyTyped("_int", QueryDataType.DOUBLE, true),
-                dynamicallyTyped("_long", QueryDataType.DOUBLE, true),
-                dynamicallyTyped("_float", QueryDataType.DOUBLE, true),
-                dynamicallyTyped("_double", QueryDataType.DOUBLE, true),
+                dynamicallyTypedField("_int", QueryDataType.DOUBLE, true),
+                dynamicallyTypedField("_long", QueryDataType.DOUBLE, true),
+                dynamicallyTypedField("_float", QueryDataType.DOUBLE, true),
+                dynamicallyTypedField("_double", QueryDataType.DOUBLE, true),
                 field("_string", QueryDataType.VARCHAR, true),
-                dynamicallyTyped("_null", QueryDataType.OBJECT, true),
+                dynamicallyTypedField("_null", QueryDataType.OBJECT, true),
                 hiddenField(KEY, QueryDataType.OBJECT, true)
         );
 
@@ -403,12 +403,12 @@ public class MapSampleMetadataResolverTest extends MapSchemaTestSupport {
         checkFields(
                 metadata,
                 field("_boolean", QueryDataType.BOOLEAN, false),
-                dynamicallyTyped("_int", QueryDataType.DOUBLE, false),
-                dynamicallyTyped("_long", QueryDataType.DOUBLE, false),
-                dynamicallyTyped("_float", QueryDataType.DOUBLE, false),
-                dynamicallyTyped("_double", QueryDataType.DOUBLE, false),
+                dynamicallyTypedField("_int", QueryDataType.DOUBLE, false),
+                dynamicallyTypedField("_long", QueryDataType.DOUBLE, false),
+                dynamicallyTypedField("_float", QueryDataType.DOUBLE, false),
+                dynamicallyTypedField("_double", QueryDataType.DOUBLE, false),
                 field("_string", QueryDataType.VARCHAR, false),
-                dynamicallyTyped("_null", QueryDataType.OBJECT, false),
+                dynamicallyTypedField("_null", QueryDataType.OBJECT, false),
                 hiddenField(VALUE, QueryDataType.OBJECT, false)
         );
     }

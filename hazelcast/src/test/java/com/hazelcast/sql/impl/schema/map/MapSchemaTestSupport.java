@@ -38,7 +38,7 @@ public class MapSchemaTestSupport extends SqlTestSupport {
         return field0(name, type, key, true, true);
     }
 
-    public static MapTableField dynamicallyTyped(String name, QueryDataType type, boolean key) {
+    public static MapTableField dynamicallyTypedField(String name, QueryDataType type, boolean key) {
         return field0(name, type, key, false, false);
     }
 
