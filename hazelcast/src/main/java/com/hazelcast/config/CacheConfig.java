@@ -44,7 +44,6 @@ import javax.cache.expiry.ModifiedExpiryPolicy;
 import javax.cache.expiry.TouchedExpiryPolicy;
 import javax.cache.integration.CacheLoader;
 import javax.cache.integration.CacheWriter;
-import java.io.Closeable;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -54,6 +53,7 @@ import static com.hazelcast.config.CacheSimpleConfig.DEFAULT_BACKUP_COUNT;
 import static com.hazelcast.config.CacheSimpleConfig.DEFAULT_IN_MEMORY_FORMAT;
 import static com.hazelcast.config.CacheSimpleConfig.MIN_BACKUP_COUNT;
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.spi.tenantcontrol.TenantControl.Closeable;
 import static com.hazelcast.spi.tenantcontrol.TenantControl.NOOP_TENANT_CONTROL;
 import static com.hazelcast.util.Preconditions.checkAsyncBackupCount;
 import static com.hazelcast.util.Preconditions.checkBackupCount;
@@ -557,8 +557,7 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> implements Spli
         // set the thread-context and class loading context for this cache's tenant application
         // This way user customizations (loader factories, listeners) and keyType/valueType
         // can be CDI / EJB / JPA objects
-        Closeable tenantContext = tenantControl.setTenant(false);
-        try {
+        try (Closeable tenantContext = tenantControl.setTenant(false)) {
             evictionConfig = in.readObject();
             wanReplicationRef = in.readObject();
 
@@ -580,8 +579,6 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> implements Spli
             if (listNotEmpty) {
                 readListenerConfigurations(in);
             }
-        } finally {
-            tenantContext.close();
         }
 
         mergePolicy = in.readUTF();
