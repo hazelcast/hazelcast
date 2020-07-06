@@ -31,8 +31,6 @@ import com.hazelcast.spi.ObjectNamespace;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.ServiceNamespace;
 
-import java.io.Closeable;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -42,8 +40,9 @@ import java.util.List;
 import java.util.Map;
 
 import static com.hazelcast.config.CacheConfigAccessor.getTenantControl;
-import static com.hazelcast.nio.IOUtil.closeResource;
+import com.hazelcast.spi.tenantcontrol.TenantControl.Closeable;
 import static com.hazelcast.util.MapUtil.createHashMap;
+import java.io.IOException;
 
 /**
  * Replication operation is the data migration operation of {@link com.hazelcast.cache.impl.CacheRecordStore}.
@@ -82,11 +81,8 @@ public class CacheReplicationOperation extends Operation implements IdentifiedDa
 
             CacheConfig cacheConfig = recordStore.getConfig();
             if (cacheConfig.getTotalBackupCount() >= replicaIndex) {
-                Closeable tenantContext = getTenantControl(cacheConfig).setTenant(false);
-                try {
+                try (Closeable tenantContext = getTenantControl(cacheConfig).setTenant(false)) {
                     storeRecordsToReplicate(recordStore);
-                } finally {
-                    closeResource(tenantContext);
                 }
             }
         }

@@ -20,8 +20,6 @@ import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.spi.annotation.Beta;
 import com.hazelcast.spi.impl.tenantcontrol.NoopTenantControl;
 
-import java.io.Closeable;
-
 /**
  * Hooks for multi-tenancy for application servers
  * Hazelcast uses separate threads to invoke operations
@@ -34,7 +32,6 @@ import java.io.Closeable;
  */
 @Beta
 public interface TenantControl extends DataSerializable {
-
     /**
      * Default no-op tenant control
      */
@@ -83,4 +80,15 @@ public interface TenantControl extends DataSerializable {
      * tenant is no longer available, clear the tenant control of stale classes / class loaders
      */
     void tenantUnavailable();
+
+    /**
+     * same to Java's Closeable interface, except close() method does not throw IOException
+     */
+    interface Closeable extends AutoCloseable {
+        /**
+         * Same as Java's close() except no exception is thrown
+         */
+        @Override
+        void close();
+    }
 }

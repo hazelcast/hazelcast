@@ -37,11 +37,10 @@ import com.hazelcast.spi.impl.AbstractNamedOperation;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.ExceptionUtil;
 
-import java.io.Closeable;
-
 import static com.hazelcast.cache.impl.CacheEntryViews.createDefaultEntryView;
 import static com.hazelcast.config.CacheConfigAccessor.getTenantControl;
 import static com.hazelcast.internal.util.ToHeapDataConverter.toHeapData;
+import com.hazelcast.spi.tenantcontrol.TenantControl.Closeable;
 
 /**
  * Base Cache Operation. Cache operations are named operations. Key based operations are subclasses of this base

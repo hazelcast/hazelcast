@@ -97,7 +97,6 @@ import static com.hazelcast.cache.impl.record.CacheRecordFactory.isExpiredAt;
 import com.hazelcast.config.CacheConfigAccessor;
 import static com.hazelcast.config.CacheConfigAccessor.getTenantControl;
 import static com.hazelcast.internal.config.ConfigValidator.checkEvictionConfig;
-import static com.hazelcast.nio.IOUtil.closeResource;
 import static com.hazelcast.spi.impl.merge.MergingValueFactory.createMergingEntry;
 import com.hazelcast.spi.tenantcontrol.TenantControl;
 import static com.hazelcast.util.EmptyStatement.ignore;
@@ -351,11 +350,8 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
 
     protected EvictionPolicyEvaluator<Data, R> createEvictionPolicyEvaluator(EvictionConfig evictionConfig) {
         checkEvictionConfig(evictionConfig, false);
-        Closeable tenantContext = getTenantControl(cacheConfig).setTenant(false);
-        try {
+        try (TenantControl.Closeable tenantContext = getTenantControl(cacheConfig).setTenant(false)) {
             return EvictionPolicyEvaluatorProvider.getEvictionPolicyEvaluator(evictionConfig, nodeEngine.getConfigClassLoader());
-        } finally {
-            closeResource(tenantContext);
         }
     }
 

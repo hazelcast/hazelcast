@@ -17,12 +17,10 @@
 package com.hazelcast.cache.impl;
 
 import com.hazelcast.spi.tenantcontrol.TenantControl;
-import com.hazelcast.util.ExceptionUtil;
-import com.hazelcast.util.function.Supplier;
-import java.io.Closeable;
-import java.io.IOException;
+import com.hazelcast.spi.tenantcontrol.TenantControl.Closeable;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.Supplier;
 
 /**
  * Represents a value that requires tenant control context to be accessed
@@ -51,27 +49,18 @@ public class TenantContextual<T> {
     public T get() {
         boolean localInitialized = this.initialized;
         if (!localInitialized) {
-            Closeable tenantContext = null;
             try {
                 lock.lock();
                 if (!initialized) {
                     if (exists()) {
-                        tenantContext = tenantControl.setTenant(true);
-                        contextual = initFunction.get();
+                        try (Closeable tenantContext = tenantControl.setTenant(true)) {
+                            contextual = initFunction.get();
+                        }
                     }
                     initialized = true;
                 }
-            } catch (Exception ex) {
-                ExceptionUtil.rethrow(ex);
             } finally {
                 lock.unlock();
-                try {
-                    if (tenantContext != null) {
-                        tenantContext.close();
-                    }
-                } catch (IOException ex) {
-                    ExceptionUtil.rethrow(ex);
-                }
             }
         }
         return contextual;
@@ -83,12 +72,7 @@ public class TenantContextual<T> {
      * @return true if the underlying object exists (it not null)
      */
     public Boolean exists() {
-        try {
-            return existsFunction.get();
-        } catch (Exception ex) {
-            ExceptionUtil.rethrow(ex);
-        }
-        return false;
+        return existsFunction.get();
     }
 
     /**
