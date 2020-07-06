@@ -18,24 +18,27 @@ package com.hazelcast.cache.impl;
 
 import com.hazelcast.spi.tenantcontrol.TenantControl;
 import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.util.function.Supplier;
 import java.io.Closeable;
 import java.io.IOException;
-import java.util.concurrent.Callable;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * Represents a value that requires tenant control context to be accessed
  *
  * @author lprimak
- * @param <Factory> object type
+ * @param <T> object type
  */
-public class TenantContextual<Factory> {
-    private Factory factory;
-    private final Callable<Factory> initFunction;
-    private final Callable<Boolean> existsFunction;
+public class TenantContextual<T> {
+    private T contextual;
+    private volatile boolean initialized;
+    private final Supplier<T> initFunction;
+    private final Supplier<Boolean> existsFunction;
     private final TenantControl tenantControl;
-    private boolean initialized;
+    private final Lock lock = new ReentrantLock();
 
-    public TenantContextual(Callable<Factory> initFunction, Callable<Boolean> existsFunction, TenantControl tenantControl) {
+    public TenantContextual(Supplier<T> initFunction, Supplier<Boolean> existsFunction, TenantControl tenantControl) {
         this.initFunction = initFunction;
         this.existsFunction = existsFunction;
         this.tenantControl = tenantControl;
@@ -43,20 +46,25 @@ public class TenantContextual<Factory> {
 
     /**
      *
-     * @return underlying factory, within Tenant Control
+     * @return underlying object, initialize within Tenant Control when necessary
      */
-    public Factory get() {
-        if (!initialized) {
+    public T get() {
+        boolean localInitialized = this.initialized;
+        if (!localInitialized) {
             Closeable tenantContext = null;
             try {
-                if (exists()) {
-                    tenantContext = tenantControl.setTenant(true);
-                    factory = initFunction.call();
+                lock.lock();
+                if (!initialized) {
+                    if (exists()) {
+                        tenantContext = tenantControl.setTenant(true);
+                        contextual = initFunction.get();
+                    }
+                    initialized = true;
                 }
-                initialized = true;
             } catch (Exception ex) {
                 ExceptionUtil.rethrow(ex);
             } finally {
+                lock.unlock();
                 try {
                     if (tenantContext != null) {
                         tenantContext.close();
@@ -66,7 +74,7 @@ public class TenantContextual<Factory> {
                 }
             }
         }
-        return factory;
+        return contextual;
     }
 
     /**
@@ -76,7 +84,7 @@ public class TenantContextual<Factory> {
      */
     public Boolean exists() {
         try {
-            return existsFunction.call();
+            return existsFunction.get();
         } catch (Exception ex) {
             ExceptionUtil.rethrow(ex);
         }
@@ -90,10 +98,10 @@ public class TenantContextual<Factory> {
      * @param delegate
      * @return newly-created delegate
      */
-    public TenantContextual<Factory> delegate(Factory delegate) {
-        TenantContextual<Factory> contextual = new TenantContextual(initFunction, existsFunction, tenantControl);
-        contextual.initialized = true;
-        contextual.factory = delegate;
-        return contextual;
+    public TenantContextual<T> delegate(T delegate) {
+        TenantContextual<T> newContextual = new TenantContextual(initFunction, existsFunction, tenantControl);
+        newContextual.initialized = true;
+        newContextual.contextual = delegate;
+        return newContextual;
     }
 }
