@@ -106,8 +106,7 @@ public class QueryClientStateRegistry {
         InternalSerializationService serializationService
     ) {
         long endTime = System.nanoTime() + SECONDS.toNanos(1);
-        boolean hasNext;
-        while (hasNext = iterator.hasNext()) {
+        while (iterator.hasNext()) {
             SqlRow row = iterator.next();
             Row rowInternal = ((SqlRowImpl) row).getDelegate();
             Data rowData = serializationService.toData(rowInternal);
@@ -116,13 +115,13 @@ public class QueryClientStateRegistry {
 
             // TODO we call nanoTime for each item - use batching
             if (page.size() == cursorBufferSize || System.nanoTime() >= endTime) {
-                break;
+                // note that we might return false even if there's no next page. We don't actively check `hasNext()`
+                // here because it could block
+                return false;
             }
         }
 
-        // note that we might return false even if there's no next page. We don't actively check `hasNext()`
-        // here because it could block, we've already spent more than a second in the call
-        return !hasNext;
+        return true;
     }
 
     public void close(UUID clientId, QueryId queryId) {
