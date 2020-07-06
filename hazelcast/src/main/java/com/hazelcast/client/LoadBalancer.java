@@ -26,7 +26,7 @@ import com.hazelcast.cluster.Member;
  * It is up to the implementation to use different load balancing policies.
  * <p>
  * If Client is configured with {@link ClientNetworkConfig#isSmartRouting()},
- * only the operations that are not key based will be router to the endpoint returned by the LoadBalancer. If it is
+ * only the operations that are not key based will be routed to the endpoint returned by the LoadBalancer. If it is
  * not {@link ClientNetworkConfig#isSmartRouting()}, {@link LoadBalancer} will not be used.
  * <p>
  *
@@ -53,7 +53,7 @@ public interface LoadBalancer {
      * Returns the next data member to route to.
      *
      * @return Returns the next data member or null if no data member is available
-     * @throws UnsupportedOperationException if the operation is not supported by thins instance
+     * @throws UnsupportedOperationException if the operation is not supported by this instance
      */
     default Member nextDataMember() {
         throw new UnsupportedOperationException();
