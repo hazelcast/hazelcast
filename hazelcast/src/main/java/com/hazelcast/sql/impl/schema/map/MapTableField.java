@@ -31,7 +31,6 @@ public class MapTableField extends TableField {
     /** Indicates whether value for the field requires any conversion on extraction/injection. */
     private final boolean requiresConversion;
 
-    /**  */
     public MapTableField(String name, QueryDataType type, boolean hidden, QueryPath path) {
         this(name, type, hidden, path, false);
     }
