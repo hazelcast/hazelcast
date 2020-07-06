@@ -161,7 +161,7 @@ public class QueryStateRegistryUpdater {
         }
 
         private void checkClientState() {
-            Collection<UUID> activeClientIds = nodeServiceProvider.getClientMembersIds();
+            Collection<UUID> activeClientIds = nodeServiceProvider.getClientIds();
 
             clientStateRegistry.update(activeClientIds);
         }

@@ -47,7 +47,7 @@ import static org.junit.runners.Parameterized.Parameters;
 import static org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
 /**
- * Test for different error conditions (client member).
+ * Test for different error conditions (client).
  */
 @RunWith(Parameterized.class)
 @UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
@@ -121,7 +121,7 @@ public class SqlErrorClientTest extends SqlErrorAbstractTest {
         client = factory.newHazelcastClient();
 
         SqlException error = assertSqlException(client, query());
-        assertEquals(SqlErrorCode.MEMBER_CONNECTION, error.getCode());
+        assertEquals(SqlErrorCode.CONNECTION_PROBLEM, error.getCode());
         assertEquals("Client must be connected to at least one data member to execute SQL queries", error.getMessage());
     }
 
@@ -166,7 +166,7 @@ public class SqlErrorClientTest extends SqlErrorAbstractTest {
         }).start();
 
         SqlException error = assertSqlException(client, query());
-        assertEquals(SqlErrorCode.MEMBER_CONNECTION, error.getCode());
+        assertEquals(SqlErrorCode.CONNECTION_PROBLEM, error.getCode());
     }
 
     @Test
@@ -191,7 +191,7 @@ public class SqlErrorClientTest extends SqlErrorAbstractTest {
 
             fail("Should fail");
         } catch (SqlException e) {
-            assertEquals(SqlErrorCode.MEMBER_CONNECTION, e.getCode());
+            assertEquals(SqlErrorCode.CONNECTION_PROBLEM, e.getCode());
         }
     }
 
@@ -211,7 +211,7 @@ public class SqlErrorClientTest extends SqlErrorAbstractTest {
 
             fail("Should fail");
         } catch (SqlException e) {
-            assertEquals(SqlErrorCode.MEMBER_CONNECTION, e.getCode());
+            assertEquals(SqlErrorCode.CONNECTION_PROBLEM, e.getCode());
         }
     }
 

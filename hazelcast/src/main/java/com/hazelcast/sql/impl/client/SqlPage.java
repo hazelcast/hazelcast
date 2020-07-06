@@ -19,6 +19,7 @@ package com.hazelcast.sql.impl.client;
 import com.hazelcast.internal.serialization.Data;
 
 import java.util.List;
+import java.util.Objects;
 
 public class SqlPage {
 
@@ -54,7 +55,7 @@ public class SqlPage {
             return false;
         }
 
-        return rows != null ? rows.equals(page.rows) : page.rows == null;
+        return Objects.equals(rows, page.rows);
     }
 
     @Override

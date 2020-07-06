@@ -63,19 +63,19 @@ public final class QueryException extends HazelcastException {
     }
 
     public static QueryException memberConnection(UUID memberId) {
-        return error(SqlErrorCode.MEMBER_CONNECTION, "Member cannot be reached: " + memberId);
+        return error(SqlErrorCode.CONNECTION_PROBLEM, "Member cannot be reached: " + memberId);
     }
 
     public static QueryException memberConnection(Address address) {
-        return error(SqlErrorCode.MEMBER_CONNECTION, "Member cannot be reached: " + address);
+        return error(SqlErrorCode.CONNECTION_PROBLEM, "Member cannot be reached: " + address);
     }
 
     public static QueryException memberConnection(Collection<UUID> memberIds) {
-        return error(SqlErrorCode.MEMBER_CONNECTION, "Members cannot be reached: " + memberIds);
+        return error(SqlErrorCode.CONNECTION_PROBLEM, "Members cannot be reached: " + memberIds);
     }
 
     public static QueryException clientMemberConnection(UUID clientId) {
-        return error(SqlErrorCode.MEMBER_CONNECTION, "Client member cannot be reached: " + clientId);
+        return error(SqlErrorCode.CONNECTION_PROBLEM, "Client cannot be reached: " + clientId);
     }
 
     public static QueryException timeout(long timeout) {
