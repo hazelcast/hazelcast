@@ -24,6 +24,8 @@ import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.sql.impl.SqlDataSerializerHook;
 
 import java.io.IOException;
+import java.util.Collections;
+import java.util.Set;
 
 /**
  * Generic descriptor that imposes no limitations on the underlying target.
@@ -32,13 +34,19 @@ public class GenericQueryTargetDescriptor implements QueryTargetDescriptor, Iden
 
     public static final GenericQueryTargetDescriptor INSTANCE = new GenericQueryTargetDescriptor();
 
+    private Set<String> dynamicallyTypedPaths;
+
     public GenericQueryTargetDescriptor() {
-        // No-op.
+        this(Collections.emptySet());
+    }
+
+    public GenericQueryTargetDescriptor(Set<String> dynamicallyTypedPaths) {
+        this.dynamicallyTypedPaths = dynamicallyTypedPaths;
     }
 
     @Override
     public QueryTarget create(InternalSerializationService serializationService, Extractors extractors, boolean isKey) {
-        return new GenericQueryTarget(serializationService, extractors, isKey);
+        return new GenericQueryTarget(serializationService, extractors, isKey, dynamicallyTypedPaths);
     }
 
     @Override
@@ -53,12 +61,12 @@ public class GenericQueryTargetDescriptor implements QueryTargetDescriptor, Iden
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        // No-op.
+        out.writeObject(dynamicallyTypedPaths);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        // No-op.
+        dynamicallyTypedPaths = in.readObject();
     }
 
     @Override

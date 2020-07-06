@@ -18,7 +18,7 @@ package com.hazelcast.sql.impl.schema.map.options;
 
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.sql.impl.QueryException;
-import com.hazelcast.sql.impl.extract.JsonQueryTargetDescriptor;
+import com.hazelcast.sql.impl.extract.GenericQueryTargetDescriptor;
 import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.inject.JsonUpsertTargetDescriptor;
 import com.hazelcast.sql.impl.schema.ExternalTable.ExternalField;
@@ -70,7 +70,7 @@ public final class JsonMapOptionsMetadataResolver implements MapOptionsMetadataR
             throw QueryException.error(format("Empty %s column list", isKey ? "key" : "value"));
         }
 
-        Set<String> staticallyTypedPaths = new HashSet<>();
+        Set<String> dynamicallyTypedPaths = new HashSet<>();
         LinkedHashMap<String, TableField> fields = new LinkedHashMap<>();
 
         for (Entry<QueryPath, ExternalField> externalField : externalFieldsByPath.entrySet()) {
@@ -81,14 +81,14 @@ public final class JsonMapOptionsMetadataResolver implements MapOptionsMetadataR
 
             MapTableField field = new MapTableField(name, type, false, path, staticallyTyped);
 
-            if (field.isStaticallyTyped()) {
-                staticallyTypedPaths.add(field.getPath().getPath());
+            if (!field.isStaticallyTyped()) {
+                dynamicallyTypedPaths.add(field.getPath().getPath());
             }
             fields.put(field.getName(), field);
         }
 
         return new MapOptionsMetadata(
-                new JsonQueryTargetDescriptor(staticallyTypedPaths),
+                new GenericQueryTargetDescriptor(dynamicallyTypedPaths),
                 JsonUpsertTargetDescriptor.INSTANCE,
                 fields
         );

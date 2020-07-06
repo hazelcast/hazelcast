@@ -29,7 +29,6 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.extract.GenericQueryTargetDescriptor;
-import com.hazelcast.sql.impl.extract.JsonQueryTargetDescriptor;
 import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.schema.map.MapTableField;
@@ -168,7 +167,7 @@ public final class MapSampleMetadataResolver {
     }
 
     private static MapSampleMetadata resolveJson(HazelcastJsonValue json, boolean isKey) {
-        Set<String> staticallyTypedPaths = new HashSet<>();
+        Set<String> dynamicallyTypedPaths = new HashSet<>();
         Map<String, TableField> fields = new TreeMap<>();
 
         // Add regular fields.
@@ -181,8 +180,8 @@ public final class MapSampleMetadataResolver {
 
             MapTableField field = new MapTableField(name, type, false, path, staticallyTyped);
 
-            if (field.isStaticallyTyped()) {
-                staticallyTypedPaths.add(field.getPath().getPath());
+            if (!field.isStaticallyTyped()) {
+                dynamicallyTypedPaths.add(field.getPath().getPath());
             }
             fields.putIfAbsent(field.getName(), field);
         }
@@ -193,7 +192,7 @@ public final class MapSampleMetadataResolver {
         fields.put(topName, new MapTableField(topName, QueryDataType.OBJECT, !fields.isEmpty(), topPath));
 
         return new MapSampleMetadata(
-                new JsonQueryTargetDescriptor(staticallyTypedPaths),
+                new GenericQueryTargetDescriptor(dynamicallyTypedPaths),
                 new LinkedHashMap<>(fields)
         );
     }
