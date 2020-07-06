@@ -16,6 +16,11 @@
 
 package com.hazelcast.collection.impl.queue;
 
+import static com.hazelcast.collection.impl.collection.CollectionContainer.ID_PROMOTION_OFFSET;
+import static com.hazelcast.internal.util.MapUtil.createHashMap;
+import static com.hazelcast.internal.util.MapUtil.createLinkedHashMap;
+import static com.hazelcast.internal.util.SetUtil.createHashSet;
+
 import com.hazelcast.collection.impl.txnqueue.TxQueueItem;
 import com.hazelcast.config.QueueConfig;
 import com.hazelcast.config.QueueStoreConfig;
@@ -30,7 +35,6 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.transaction.TransactionException;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -46,11 +50,6 @@ import java.util.PriorityQueue;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
-
-import static com.hazelcast.collection.impl.collection.CollectionContainer.ID_PROMOTION_OFFSET;
-import static com.hazelcast.internal.util.MapUtil.createHashMap;
-import static com.hazelcast.internal.util.MapUtil.createLinkedHashMap;
-import static com.hazelcast.internal.util.SetUtil.createHashSet;
 
 /**
  * The {@code QueueContainer} contains the actual queue and provides functionalities such as :
@@ -276,6 +275,18 @@ public class QueueContainer implements IdentifiedDataSerializable {
     }
 
     @SuppressWarnings("unchecked")
+    /*private void addTxItemOrdered(TxQueueItem txQueueItem) {
+        ListIterator<QueueItem> iterator = ((List<QueueItem>) getItemQueue()).listIterator();
+        while (iterator.hasNext()) {
+            QueueItem queueItem = iterator.next();
+            if (txQueueItem.itemId < queueItem.itemId) {
+                iterator.previous();
+                break;
+            }
+        }
+        iterator.add(txQueueItem);
+    }*/
+
     private void addTxItemOrdered(TxQueueItem txQueueItem) {
         ListIterator<QueueItem> iterator = ((List<QueueItem>) getItemQueue()).listIterator();
         while (iterator.hasNext()) {

@@ -16,6 +16,8 @@
 
 package com.hazelcast.client.impl.clientside;
 
+import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
+
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddCacheConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddCardinalityEstimatorConfigCodec;
@@ -72,18 +74,16 @@ import com.hazelcast.config.RingbufferStoreConfig;
 import com.hazelcast.config.ScheduledExecutorConfig;
 import com.hazelcast.config.SecurityConfig;
 import com.hazelcast.config.SerializationConfig;
-import com.hazelcast.config.WanReplicationConfig;
-import com.hazelcast.internal.config.ServicesConfig;
 import com.hazelcast.config.SetConfig;
 import com.hazelcast.config.SplitBrainProtectionConfig;
 import com.hazelcast.config.TopicConfig;
 import com.hazelcast.config.UserCodeDeploymentConfig;
+import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.core.ManagedContext;
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.config.ServicesConfig;
 import com.hazelcast.internal.serialization.Data;
-
-import javax.annotation.Nonnull;
+import com.hazelcast.internal.serialization.SerializationService;
 import java.io.File;
 import java.net.URL;
 import java.util.ArrayList;
@@ -91,8 +91,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentMap;
-
-import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
+import javax.annotation.Nonnull;
 
 /**
  * Client implementation of member side config. Clients use this to submit new data structure configurations into
@@ -180,7 +179,7 @@ public class ClientDynamicClusterConfig extends Config {
                 queueConfig.getBackupCount(), queueConfig.getAsyncBackupCount(), queueConfig.getMaxSize(),
                 queueConfig.getEmptyQueueTtl(), queueConfig.isStatisticsEnabled(), queueConfig.getSplitBrainProtectionName(),
                 queueStoreConfigHolder, queueConfig.getMergePolicyConfig().getPolicy(),
-                queueConfig.getMergePolicyConfig().getBatchSize());
+                queueConfig.getMergePolicyConfig().getBatchSize(), queueConfig.getComparatorClassName(), queueConfig.isDuplicateAllowed());
         invoke(request);
         return this;
     }
