@@ -25,7 +25,6 @@ import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.QueryUtils;
-import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.schema.ConstantTableStatistics;
 import com.hazelcast.sql.impl.schema.ExternalCatalog;
 import com.hazelcast.sql.impl.schema.Table;
@@ -124,15 +123,12 @@ public class PartitionedMapTableResolver extends AbstractMapTableResolver {
 
             long estimatedRowCount = MapTableUtils.estimatePartitionedMapRowCount(nodeEngine, context, name);
 
-            // Map fields to ordinals.
-            Map<QueryPath, Integer> pathToOrdinalMap = MapTableUtils.mapPathsToOrdinals(resolved.getFields());
-
             // Resolve indexes.
-            List<MapTableIndex> indexes = MapTableUtils.getPartitionedMapIndexes(mapContainer, name, pathToOrdinalMap);
+            List<MapTableIndex> indexes = MapTableUtils.getPartitionedMapIndexes(mapContainer, name, resolved.getFields());
 
             // Resolve distribution field ordinal.
             int distributionFieldOrdinal =
-                MapTableUtils.getPartitionedMapDistributionField(mapContainer, context, pathToOrdinalMap);
+                MapTableUtils.getPartitionedMapDistributionField(mapContainer, context, resolved.getFields());
 
             // Done.
             return new PartitionedMapTable(

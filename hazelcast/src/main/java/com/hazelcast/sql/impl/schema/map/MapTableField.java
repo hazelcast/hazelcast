@@ -27,14 +27,28 @@ public class MapTableField extends TableField {
     /** Path to the field. */
     private final QueryPath path;
 
+    /**
+     * Indicates whether value for a given field is NOT subjected to any conversions on extraction/injection.
+     */
+    private final boolean staticallyTyped;
+
     public MapTableField(String name, QueryDataType type, boolean hidden, QueryPath path) {
+        this(name, type, hidden, path, true);
+    }
+
+    public MapTableField(String name, QueryDataType type, boolean hidden, QueryPath path, boolean staticallyTyped) {
         super(name, type, hidden);
 
         this.path = path;
+        this.staticallyTyped = staticallyTyped;
     }
 
     public QueryPath getPath() {
         return path;
+    }
+
+    public boolean isStaticallyTyped() {
+        return staticallyTyped;
     }
 
     @Override
@@ -49,7 +63,11 @@ public class MapTableField extends TableField {
 
         MapTableField field = (MapTableField) o;
 
-        return name.equals(field.name) && type.equals(field.type) && path.equals(field.path) && hidden == field.hidden;
+        return name.equals(field.name)
+                && type.equals(field.type)
+                && path.equals(field.path)
+                && hidden == field.hidden
+                && staticallyTyped == field.staticallyTyped;
     }
 
     @Override
@@ -59,12 +77,19 @@ public class MapTableField extends TableField {
         result = 31 * result + type.hashCode();
         result = 31 * result + path.hashCode();
         result = 31 * result + Boolean.hashCode(hidden);
+        result = 31 * result + Boolean.hashCode(staticallyTyped);
 
         return result;
     }
 
     @Override
     public String toString() {
-        return "MapTableField{name=" + name + ", type=" + type + ", path=" + path + ", hidden=" + hidden + '}';
+        return "MapTableField{"
+                + "name=" + name
+                + ", type=" + type
+                + ", path=" + path
+                + ", hidden=" + hidden
+                + ", staticallyTyped=" + staticallyTyped
+                + '}';
     }
 }

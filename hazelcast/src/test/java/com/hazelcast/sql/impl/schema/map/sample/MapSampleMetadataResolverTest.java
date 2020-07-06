@@ -387,12 +387,12 @@ public class MapSampleMetadataResolverTest extends MapSchemaTestSupport {
 
         checkFields(
                 metadata,
-                field("_boolean", QueryDataType.BOOLEAN, true),
+                staticallyTypedField("_boolean", QueryDataType.BOOLEAN, true),
                 field("_int", QueryDataType.DOUBLE, true),
                 field("_long", QueryDataType.DOUBLE, true),
                 field("_float", QueryDataType.DOUBLE, true),
                 field("_double", QueryDataType.DOUBLE, true),
-                field("_string", QueryDataType.VARCHAR, true),
+                staticallyTypedField("_string", QueryDataType.VARCHAR, true),
                 field("_null", QueryDataType.OBJECT, true),
                 hiddenField(KEY, QueryDataType.OBJECT, true)
         );
@@ -402,12 +402,12 @@ public class MapSampleMetadataResolverTest extends MapSchemaTestSupport {
 
         checkFields(
                 metadata,
-                field("_boolean", QueryDataType.BOOLEAN, false),
+                staticallyTypedField("_boolean", QueryDataType.BOOLEAN, false),
                 field("_int", QueryDataType.DOUBLE, false),
                 field("_long", QueryDataType.DOUBLE, false),
                 field("_float", QueryDataType.DOUBLE, false),
                 field("_double", QueryDataType.DOUBLE, false),
-                field("_string", QueryDataType.VARCHAR, false),
+                staticallyTypedField("_string", QueryDataType.VARCHAR, false),
                 field("_null", QueryDataType.OBJECT, false),
                 hiddenField(VALUE, QueryDataType.OBJECT, false)
         );

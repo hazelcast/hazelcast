@@ -33,21 +33,21 @@ public class JsonUpsertTarget implements UpsertTarget {
     public UpsertInjector createInjector(String path) {
         return value -> {
             if (value instanceof Boolean) {
-                json.add(path, (Boolean) value);
+                json.add(path, (boolean) value);
             } else if (value instanceof Byte) {
-                json.add(path, (Byte) value);
+                json.add(path, (byte) value);
             } else if (value instanceof Short) {
-                json.add(path, (Short) value);
+                json.add(path, (short) value);
             } else if (value instanceof Integer) {
-                json.add(path, (Integer) value);
+                json.add(path, (int) value);
             } else if (value instanceof Long) {
-                json.add(path, (Long) value);
+                json.add(path, (long) value);
             } else if (value instanceof Float) {
-                json.add(path, (Float) value);
+                json.add(path, (float) value);
             } else if (value instanceof Double) {
-                json.add(path, (Double) value);
+                json.add(path, (double) value);
             } else {
-                json.add(path, (String) QueryDataType.VARCHAR.normalize(value));
+                json.add(path, (String) QueryDataType.VARCHAR.convert(value));
             }
         };
     }

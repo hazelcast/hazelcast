@@ -98,22 +98,23 @@ public class SqlDataSerializerHook implements DataSerializerHook {
     public static final int EXPRESSION_IS_NULL = 21;
 
     public static final int TARGET_DESCRIPTOR_GENERIC = 22;
+    public static final int TARGET_DESCRIPTOR_JSON = 23;
 
-    public static final int QUERY_PATH = 23;
+    public static final int QUERY_PATH = 24;
 
-    public static final int EXPRESSION_CONSTANT = 24;
-    public static final int EXPRESSION_PARAMETER = 25;
-    public static final int EXPRESSION_CAST = 26;
-    public static final int EXPRESSION_DIVIDE = 27;
-    public static final int EXPRESSION_MINUS = 28;
-    public static final int EXPRESSION_MULTIPLY = 29;
-    public static final int EXPRESSION_PLUS = 30;
-    public static final int EXPRESSION_UNARY_MINUS = 31;
-    public static final int EXPRESSION_AND = 32;
-    public static final int EXPRESSION_OR = 33;
-    public static final int EXPRESSION_NOT = 34;
-    public static final int EXPRESSION_COMPARISON = 35;
-    public static final int EXPRESSION_CASE = 36;
+    public static final int EXPRESSION_CONSTANT = 25;
+    public static final int EXPRESSION_PARAMETER = 26;
+    public static final int EXPRESSION_CAST = 27;
+    public static final int EXPRESSION_DIVIDE = 28;
+    public static final int EXPRESSION_MINUS = 29;
+    public static final int EXPRESSION_MULTIPLY = 30;
+    public static final int EXPRESSION_PLUS = 31;
+    public static final int EXPRESSION_UNARY_MINUS = 32;
+    public static final int EXPRESSION_AND = 33;
+    public static final int EXPRESSION_OR = 34;
+    public static final int EXPRESSION_NOT = 35;
+    public static final int EXPRESSION_COMPARISON = 36;
+    public static final int EXPRESSION_CASE = 37;
 
     public static final int LEN = EXPRESSION_CASE + 1;
 

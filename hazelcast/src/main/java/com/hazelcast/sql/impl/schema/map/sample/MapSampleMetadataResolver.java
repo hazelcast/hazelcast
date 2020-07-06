@@ -29,24 +29,34 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.extract.GenericQueryTargetDescriptor;
+import com.hazelcast.sql.impl.extract.JsonQueryTargetDescriptor;
 import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.schema.map.MapTableField;
 import com.hazelcast.sql.impl.type.QueryDataType;
+import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 import com.hazelcast.sql.impl.type.QueryDataTypeUtils;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.util.EnumSet;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
+
+import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.BOOLEAN;
+import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.VARCHAR;
 
 /**
  * Helper class that resolves a map-backed table from a key/value sample.
  */
 // TODO: deduplicate with MapOptionsMetadataResolvers
 public final class MapSampleMetadataResolver {
+
+    private static final EnumSet<QueryDataTypeFamily> STATIC_JSON_TYPES = EnumSet.of(BOOLEAN, VARCHAR);
 
     private static final String METHOD_PREFIX_GET = "get";
     private static final String METHOD_PREFIX_IS = "is";
@@ -158,15 +168,23 @@ public final class MapSampleMetadataResolver {
     }
 
     private static MapSampleMetadata resolveJson(HazelcastJsonValue json, boolean isKey) {
+        Set<String> staticallyTypedFieldPaths = new HashSet<>();
         Map<String, TableField> fields = new TreeMap<>();
 
         // Add regular fields.
         JsonObject object = Json.parse(json.toString()).asObject();
         for (Member member : object) {
-            String name = member.getName();
+            QueryPath path = new QueryPath(member.getName(), isKey);
             QueryDataType type = resolveJsonType(member.getValue());
+            String name = member.getName();
+            boolean staticallyTyped = STATIC_JSON_TYPES.contains(type.getTypeFamily());
 
-            fields.putIfAbsent(name, new MapTableField(name, type, false, new QueryPath(name, isKey)));
+            MapTableField field = new MapTableField(name, type, false, path, staticallyTyped);
+
+            if (field.isStaticallyTyped()) {
+                staticallyTypedFieldPaths.add(field.getPath().getPath());
+            }
+            fields.putIfAbsent(field.getName(), field);
         }
 
         // Add top-level object.
@@ -174,7 +192,10 @@ public final class MapSampleMetadataResolver {
         QueryPath topPath = isKey ? QueryPath.KEY_PATH : QueryPath.VALUE_PATH;
         fields.put(topName, new MapTableField(topName, QueryDataType.OBJECT, !fields.isEmpty(), topPath));
 
-        return new MapSampleMetadata(GenericQueryTargetDescriptor.INSTANCE, new LinkedHashMap<>(fields));
+        return new MapSampleMetadata(
+                new JsonQueryTargetDescriptor(staticallyTypedFieldPaths),
+                new LinkedHashMap<>(fields)
+        );
     }
 
     @SuppressWarnings("checkstyle:ReturnCount")

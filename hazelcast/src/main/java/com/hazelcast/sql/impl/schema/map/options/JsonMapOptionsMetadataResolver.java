@@ -18,7 +18,7 @@ package com.hazelcast.sql.impl.schema.map.options;
 
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.sql.impl.QueryException;
-import com.hazelcast.sql.impl.extract.GenericQueryTargetDescriptor;
+import com.hazelcast.sql.impl.extract.JsonQueryTargetDescriptor;
 import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.inject.JsonUpsertTargetDescriptor;
 import com.hazelcast.sql.impl.schema.ExternalTable.ExternalField;
@@ -26,18 +26,27 @@ import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.schema.map.MapTableField;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 
 import static com.hazelcast.sql.impl.connector.SqlConnector.JSON_SERIALIZATION_FORMAT;
 import static java.lang.String.format;
+import static java.util.Arrays.asList;
 
 // TODO: deduplicate with MapSampleMetadataResolver
 public final class JsonMapOptionsMetadataResolver implements MapOptionsMetadataResolver {
 
     public static final JsonMapOptionsMetadataResolver INSTANCE = new JsonMapOptionsMetadataResolver();
+
+    private static final Set<Class<?>> STATIC_TYPES = new HashSet<>(asList(
+            QueryDataType.BOOLEAN.getConverter().getValueClass(),
+            QueryDataType.BIGINT.getConverter().getValueClass(),
+            QueryDataType.VARCHAR.getConverter().getValueClass()
+    ));
 
     private JsonMapOptionsMetadataResolver() {
     }
@@ -61,19 +70,25 @@ public final class JsonMapOptionsMetadataResolver implements MapOptionsMetadataR
             throw QueryException.error(format("Empty %s column list", isKey ? "key" : "value"));
         }
 
+        Set<String> staticallyTypedFieldPaths = new HashSet<>();
         LinkedHashMap<String, TableField> fields = new LinkedHashMap<>();
+
         for (Entry<QueryPath, ExternalField> externalField : externalFieldsByPath.entrySet()) {
             QueryPath path = externalField.getKey();
             QueryDataType type = externalField.getValue().type();
             String name = externalField.getValue().name();
+            boolean staticallyTyped = STATIC_TYPES.contains(type.getConverter().getValueClass());
 
-            TableField field = new MapTableField(name, type, false, path);
+            MapTableField field = new MapTableField(name, type, false, path, staticallyTyped);
 
+            if (field.isStaticallyTyped()) {
+                staticallyTypedFieldPaths.add(field.getPath().getPath());
+            }
             fields.put(field.getName(), field);
         }
 
         return new MapOptionsMetadata(
-                GenericQueryTargetDescriptor.INSTANCE,
+                new JsonQueryTargetDescriptor(staticallyTypedFieldPaths),
                 JsonUpsertTargetDescriptor.INSTANCE,
                 fields
         );

@@ -83,8 +83,10 @@ public final class MapTableUtils {
     public static List<MapTableIndex> getPartitionedMapIndexes(
         MapContainer mapContainer,
         String mapName,
-        Map<QueryPath, Integer> pathToOrdinalMap
+        List<TableField> fields
     ) {
+        Map<QueryPath, Integer> pathToOrdinalMap = mapPathsToOrdinals(fields);
+
         List<MapTableIndex> res = new ArrayList<>(mapContainer.getIndexDefinitions().size());
 
         for (IndexConfig indexConfig : mapContainer.getIndexDefinitions().values()) {
@@ -97,6 +99,11 @@ public final class MapTableUtils {
 
                 if (ordinal == null) {
                     // No mapping for the field. Stop.
+                    break;
+                }
+
+                if (!((MapTableField) fields.get(ordinal)).isStaticallyTyped()) {
+                    // Field possibly converted. Stop to not confuse optimizer and produce incorrect results.
                     break;
                 }
 
@@ -118,8 +125,10 @@ public final class MapTableUtils {
     public static int getPartitionedMapDistributionField(
         MapContainer mapContainer,
         MapServiceContext context,
-        Map<QueryPath, Integer> pathToOrdinalMap
+        List<TableField> fields
     ) {
+        Map<QueryPath, Integer> pathToOrdinalMap = mapPathsToOrdinals(fields);
+
         int distributionFieldOrdinal = PartitionedMapTable.DISTRIBUTION_FIELD_ORDINAL_NONE;
 
         MapConfig mapConfig = mapContainer.getMapConfig();
@@ -134,7 +143,7 @@ public final class MapTableUtils {
             QueryPath fieldPath = new QueryPath(field, true);
             Integer fieldOrdinal = pathToOrdinalMap.get(fieldPath);
 
-            if (fieldOrdinal != null) {
+            if (fieldOrdinal != null && ((MapTableField) fields.get(fieldOrdinal)).isStaticallyTyped()) {
                 distributionFieldOrdinal = fieldOrdinal;
             }
         }
@@ -148,7 +157,7 @@ public final class MapTableUtils {
      * @param fields Fields.
      * @return Map from field path to ordinal.
      */
-    public static Map<QueryPath, Integer> mapPathsToOrdinals(List<TableField> fields) {
+    private static Map<QueryPath, Integer> mapPathsToOrdinals(List<TableField> fields) {
         Map<QueryPath, Integer> res = new HashMap<>();
 
         for (int i = 0; i < fields.size(); i++) {
