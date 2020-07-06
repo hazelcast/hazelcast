@@ -27,9 +27,7 @@ public class MapTableField extends TableField {
     /** Path to the field. */
     private final QueryPath path;
 
-    /**
-     * Indicates whether value for a given field is NOT subjected to any conversions on extraction/injection.
-     */
+    /** Indicates whether value for the field is NOT subjected to any conversions on extraction/injection. */
     private final boolean staticallyTyped;
 
     public MapTableField(String name, QueryDataType type, boolean hidden, QueryPath path) {

@@ -70,7 +70,7 @@ public final class JsonMapOptionsMetadataResolver implements MapOptionsMetadataR
             throw QueryException.error(format("Empty %s column list", isKey ? "key" : "value"));
         }
 
-        Set<String> staticallyTypedFieldPaths = new HashSet<>();
+        Set<String> staticallyTypedPaths = new HashSet<>();
         LinkedHashMap<String, TableField> fields = new LinkedHashMap<>();
 
         for (Entry<QueryPath, ExternalField> externalField : externalFieldsByPath.entrySet()) {
@@ -82,13 +82,13 @@ public final class JsonMapOptionsMetadataResolver implements MapOptionsMetadataR
             MapTableField field = new MapTableField(name, type, false, path, staticallyTyped);
 
             if (field.isStaticallyTyped()) {
-                staticallyTypedFieldPaths.add(field.getPath().getPath());
+                staticallyTypedPaths.add(field.getPath().getPath());
             }
             fields.put(field.getName(), field);
         }
 
         return new MapOptionsMetadata(
-                new JsonQueryTargetDescriptor(staticallyTypedFieldPaths),
+                new JsonQueryTargetDescriptor(staticallyTypedPaths),
                 JsonUpsertTargetDescriptor.INSTANCE,
                 fields
         );

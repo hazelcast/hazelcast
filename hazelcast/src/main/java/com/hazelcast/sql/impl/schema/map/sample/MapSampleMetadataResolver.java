@@ -168,7 +168,7 @@ public final class MapSampleMetadataResolver {
     }
 
     private static MapSampleMetadata resolveJson(HazelcastJsonValue json, boolean isKey) {
-        Set<String> staticallyTypedFieldPaths = new HashSet<>();
+        Set<String> staticallyTypedPaths = new HashSet<>();
         Map<String, TableField> fields = new TreeMap<>();
 
         // Add regular fields.
@@ -182,7 +182,7 @@ public final class MapSampleMetadataResolver {
             MapTableField field = new MapTableField(name, type, false, path, staticallyTyped);
 
             if (field.isStaticallyTyped()) {
-                staticallyTypedFieldPaths.add(field.getPath().getPath());
+                staticallyTypedPaths.add(field.getPath().getPath());
             }
             fields.putIfAbsent(field.getName(), field);
         }
@@ -193,7 +193,7 @@ public final class MapSampleMetadataResolver {
         fields.put(topName, new MapTableField(topName, QueryDataType.OBJECT, !fields.isEmpty(), topPath));
 
         return new MapSampleMetadata(
-                new JsonQueryTargetDescriptor(staticallyTypedFieldPaths),
+                new JsonQueryTargetDescriptor(staticallyTypedPaths),
                 new LinkedHashMap<>(fields)
         );
     }

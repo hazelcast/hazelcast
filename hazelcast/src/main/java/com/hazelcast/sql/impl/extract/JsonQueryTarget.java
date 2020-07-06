@@ -27,14 +27,16 @@ import java.util.Set;
 
 public class JsonQueryTarget implements QueryTarget {
 
-    private final Set<String> staticallyTypedFieldPaths;
+    private final Set<String> staticallyTypedPaths;
+
     private final Extractors extractors;
     private final boolean key;
 
     private Object target;
 
-    public JsonQueryTarget(Set<String> staticallyTypedFieldPaths, Extractors extractors, boolean key) {
-        this.staticallyTypedFieldPaths = staticallyTypedFieldPaths;
+    public JsonQueryTarget(Set<String> staticallyTypedPaths, Extractors extractors, boolean key) {
+        this.staticallyTypedPaths = staticallyTypedPaths;
+
         this.extractors = extractors;
         this.key = key;
     }
@@ -53,10 +55,10 @@ public class JsonQueryTarget implements QueryTarget {
     public QueryExtractor createExtractor(String path, QueryDataType type) {
         if (path == null) {
             return createObjectExtractor(type);
-        } else if (staticallyTypedFieldPaths.contains(path)) {
+        } else if (staticallyTypedPaths.contains(path)) {
             return createFieldExtractor(path, type);
         } else {
-            return createConvertingFieldExtractor(path, type);
+            return createDynamicFieldExtractor(path, type);
         }
     }
 
@@ -92,7 +94,7 @@ public class JsonQueryTarget implements QueryTarget {
         };
     }
 
-    private QueryExtractor createConvertingFieldExtractor(String path, QueryDataType type) {
+    private QueryExtractor createDynamicFieldExtractor(String path, QueryDataType type) {
         return () -> {
             try {
                 return type.convert(extractors.extract(target, path, null));

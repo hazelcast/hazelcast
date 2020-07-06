@@ -28,19 +28,19 @@ import java.util.Set;
 
 public class JsonQueryTargetDescriptor implements QueryTargetDescriptor, IdentifiedDataSerializable {
 
-    private Set<String> staticallyTypedFieldPaths;
+    private Set<String> staticallyTypedPaths;
 
     @SuppressWarnings("unused")
     public JsonQueryTargetDescriptor() {
     }
 
-    public JsonQueryTargetDescriptor(Set<String> staticallyTypedFieldPaths) {
-        this.staticallyTypedFieldPaths = staticallyTypedFieldPaths;
+    public JsonQueryTargetDescriptor(Set<String> staticallyTypedPaths) {
+        this.staticallyTypedPaths = staticallyTypedPaths;
     }
 
     @Override
     public QueryTarget create(InternalSerializationService serializationService, Extractors extractors, boolean isKey) {
-        return new JsonQueryTarget(staticallyTypedFieldPaths, extractors, isKey);
+        return new JsonQueryTarget(staticallyTypedPaths, extractors, isKey);
     }
 
     @Override
@@ -55,11 +55,11 @@ public class JsonQueryTargetDescriptor implements QueryTargetDescriptor, Identif
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeObject(staticallyTypedFieldPaths);
+        out.writeObject(staticallyTypedPaths);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        staticallyTypedFieldPaths = in.readObject();
+        staticallyTypedPaths = in.readObject();
     }
 }
