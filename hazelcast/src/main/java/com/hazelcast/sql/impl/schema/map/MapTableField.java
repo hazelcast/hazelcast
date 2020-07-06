@@ -24,29 +24,35 @@ import com.hazelcast.sql.impl.type.QueryDataType;
  * Field of IMap or ReplicatedMap.
  */
 public class MapTableField extends TableField {
+
     /** Path to the field. */
     private final QueryPath path;
 
-    /** Indicates whether value for the field is NOT subjected to any conversions on extraction/injection. */
-    private final boolean staticallyTyped;
+    /** Indicates whether value for the field requires any conversion on extraction/injection. */
+    private final boolean requiresConversion;
 
+    /**  */
     public MapTableField(String name, QueryDataType type, boolean hidden, QueryPath path) {
-        this(name, type, hidden, path, true);
+        this(name, type, hidden, path, false);
     }
 
-    public MapTableField(String name, QueryDataType type, boolean hidden, QueryPath path, boolean staticallyTyped) {
+    public MapTableField(String name, QueryDataType type, boolean hidden, QueryPath path, boolean requiresConversion) {
         super(name, type, hidden);
 
         this.path = path;
-        this.staticallyTyped = staticallyTyped;
+        this.requiresConversion = requiresConversion;
     }
 
     public QueryPath getPath() {
         return path;
     }
 
+    public boolean isRequiringConversion() {
+        return requiresConversion;
+    }
+
     public boolean isStaticallyTyped() {
-        return staticallyTyped;
+        return !requiresConversion && type.isStatic();
     }
 
     @Override
@@ -65,7 +71,7 @@ public class MapTableField extends TableField {
                 && type.equals(field.type)
                 && path.equals(field.path)
                 && hidden == field.hidden
-                && staticallyTyped == field.staticallyTyped;
+                && requiresConversion == field.requiresConversion;
     }
 
     @Override
@@ -75,7 +81,7 @@ public class MapTableField extends TableField {
         result = 31 * result + type.hashCode();
         result = 31 * result + path.hashCode();
         result = 31 * result + Boolean.hashCode(hidden);
-        result = 31 * result + Boolean.hashCode(staticallyTyped);
+        result = 31 * result + Boolean.hashCode(requiresConversion);
 
         return result;
     }
@@ -87,7 +93,7 @@ public class MapTableField extends TableField {
                 + ", type=" + type
                 + ", path=" + path
                 + ", hidden=" + hidden
-                + ", staticallyTyped=" + staticallyTyped
+                + ", requiresConversion=" + requiresConversion
                 + '}';
     }
 }

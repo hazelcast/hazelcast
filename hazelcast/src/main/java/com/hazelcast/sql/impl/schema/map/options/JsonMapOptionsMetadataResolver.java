@@ -35,18 +35,11 @@ import java.util.Set;
 
 import static com.hazelcast.sql.impl.connector.SqlConnector.JSON_SERIALIZATION_FORMAT;
 import static java.lang.String.format;
-import static java.util.Arrays.asList;
 
 // TODO: deduplicate with MapSampleMetadataResolver
 public final class JsonMapOptionsMetadataResolver implements MapOptionsMetadataResolver {
 
     public static final JsonMapOptionsMetadataResolver INSTANCE = new JsonMapOptionsMetadataResolver();
-
-    private static final Set<Class<?>> STATIC_TYPES = new HashSet<>(asList(
-            QueryDataType.BOOLEAN.getConverter().getValueClass(),
-            QueryDataType.BIGINT.getConverter().getValueClass(),
-            QueryDataType.VARCHAR.getConverter().getValueClass()
-    ));
 
     private JsonMapOptionsMetadataResolver() {
     }
@@ -70,27 +63,38 @@ public final class JsonMapOptionsMetadataResolver implements MapOptionsMetadataR
             throw QueryException.error(format("Empty %s column list", isKey ? "key" : "value"));
         }
 
-        Set<String> dynamicallyTypedPaths = new HashSet<>();
         LinkedHashMap<String, TableField> fields = new LinkedHashMap<>();
+        Set<String> pathsRequiringConversion = new HashSet<>();
 
         for (Entry<QueryPath, ExternalField> externalField : externalFieldsByPath.entrySet()) {
             QueryPath path = externalField.getKey();
             QueryDataType type = externalField.getValue().type();
             String name = externalField.getValue().name();
-            boolean staticallyTyped = STATIC_TYPES.contains(type.getConverter().getValueClass());
+            boolean requiresConversion = doesRequireConversion(type);
 
-            MapTableField field = new MapTableField(name, type, false, path, staticallyTyped);
+            MapTableField field = new MapTableField(name, type, false, path, requiresConversion);
 
-            if (!field.isStaticallyTyped()) {
-                dynamicallyTypedPaths.add(field.getPath().getPath());
+            if (fields.putIfAbsent(field.getName(), field) == null && field.isRequiringConversion()) {
+                pathsRequiringConversion.add(field.getPath().getPath());
             }
-            fields.put(field.getName(), field);
         }
 
         return new MapOptionsMetadata(
-                new GenericQueryTargetDescriptor(dynamicallyTypedPaths),
+                new GenericQueryTargetDescriptor(pathsRequiringConversion),
                 JsonUpsertTargetDescriptor.INSTANCE,
                 fields
         );
+    }
+
+    private static boolean doesRequireConversion(QueryDataType type) {
+        switch (type.getTypeFamily()) {
+            case BOOLEAN:
+            // assuming values are homomorphic
+            case BIGINT:
+            case VARCHAR:
+                return !type.isStatic();
+            default:
+                return true;
+        }
     }
 }

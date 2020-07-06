@@ -105,6 +105,10 @@ public class QueryDataType implements IdentifiedDataSerializable, Serializable {
         return converter;
     }
 
+    public boolean isStatic() {
+        return converter.getValueClass().equals(converter.getNormalizedValueClass());
+    }
+
     /**
      * Normalize the given value to a value returned by this instance. If the value doesn't match
      * the type expected by the converter, an exception is thrown.

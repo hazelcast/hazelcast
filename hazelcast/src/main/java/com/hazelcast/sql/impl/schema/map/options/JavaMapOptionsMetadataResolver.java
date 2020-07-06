@@ -133,7 +133,7 @@ public final class JavaMapOptionsMetadataResolver implements MapOptionsMetadataR
         }
 
         return new MapOptionsMetadata(
-                GenericQueryTargetDescriptor.INSTANCE,
+                GenericQueryTargetDescriptor.DEFAULT,
                 PrimitiveUpsertTargetDescriptor.INSTANCE,
                 new LinkedHashMap<>(singletonMap(field.getName(), field))
         );
@@ -147,8 +147,8 @@ public final class JavaMapOptionsMetadataResolver implements MapOptionsMetadataR
         Map<QueryPath, ExternalField> externalFieldsByPath =
                 extractFields(externalFields, isKey, name -> new QueryPath(name, false));
 
-        Map<String, String> typeNamesByPaths = new HashMap<>();
         LinkedHashMap<String, TableField> fields = new LinkedHashMap<>();
+        Map<String, String> typeNamesByPaths = new HashMap<>();
 
         for (Entry<String, Class<?>> entry : resolveClass(clazz).entrySet()) {
             QueryPath path = new QueryPath(entry.getKey(), isKey);
@@ -162,10 +162,11 @@ public final class JavaMapOptionsMetadataResolver implements MapOptionsMetadataR
             }
             String name = externalField == null ? entry.getKey() : externalField.name();
 
-            TableField field = new MapTableField(name, type, false, path);
+            MapTableField field = new MapTableField(name, type, false, path);
 
-            typeNamesByPaths.putIfAbsent(path.getPath(), entry.getValue().getName());
-            fields.putIfAbsent(field.getName(), field);
+            if (fields.putIfAbsent(field.getName(), field) == null) {
+                typeNamesByPaths.put(field.getPath().getPath(), entry.getValue().getName());
+            }
         }
 
         for (Entry<QueryPath, ExternalField> entry : externalFieldsByPath.entrySet()) {
@@ -179,7 +180,7 @@ public final class JavaMapOptionsMetadataResolver implements MapOptionsMetadataR
         }
 
         return new MapOptionsMetadata(
-                GenericQueryTargetDescriptor.INSTANCE,
+                GenericQueryTargetDescriptor.DEFAULT,
                 new PojoUpsertTargetDescriptor(clazz.getName(), typeNamesByPaths),
                 new LinkedHashMap<>(fields)
         );

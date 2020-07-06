@@ -28,7 +28,7 @@ public class GenericFieldExtractor extends AbstractGenericExtractor {
 
     private final Extractors extractors;
     private final String path;
-    private final boolean dynamicallyTyped;
+    private final boolean requiresConversion;
 
     public GenericFieldExtractor(
         boolean key,
@@ -36,20 +36,20 @@ public class GenericFieldExtractor extends AbstractGenericExtractor {
         QueryDataType type,
         Extractors extractors,
         String path,
-        boolean dynamicallyTyped
+        boolean requiresConversion
     ) {
         super(key, targetAccessor, type);
 
         this.extractors = extractors;
         this.path = path;
-        this.dynamicallyTyped = dynamicallyTyped;
+        this.requiresConversion = requiresConversion;
     }
 
     @Override
     public Object get() {
         try {
             Object value = extractors.extract(getTarget(), path, null, false);
-            return dynamicallyTyped ? type.convert(value) : type.normalize(value);
+            return requiresConversion ? type.convert(value) : type.normalize(value);
         } catch (QueryDataTypeMismatchException e) {
             throw QueryException.dataException("Failed to extract map entry " + (key ? "key" : "value") + " field \""
                 + path + "\" because of type mismatch [expectedClass=" + e.getExpectedClass().getName()

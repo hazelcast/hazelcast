@@ -25,6 +25,7 @@ import com.hazelcast.sql.impl.SqlDataSerializerHook;
 
 import java.io.IOException;
 import java.util.Collections;
+import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -32,21 +33,21 @@ import java.util.Set;
  */
 public class GenericQueryTargetDescriptor implements QueryTargetDescriptor, IdentifiedDataSerializable {
 
-    public static final GenericQueryTargetDescriptor INSTANCE = new GenericQueryTargetDescriptor();
+    public static final GenericQueryTargetDescriptor DEFAULT = new GenericQueryTargetDescriptor();
 
-    private Set<String> dynamicallyTypedPaths;
+    private Set<String> pathsRequiringConversion;
 
     public GenericQueryTargetDescriptor() {
         this(Collections.emptySet());
     }
 
-    public GenericQueryTargetDescriptor(Set<String> dynamicallyTypedPaths) {
-        this.dynamicallyTypedPaths = dynamicallyTypedPaths;
+    public GenericQueryTargetDescriptor(Set<String> pathsRequiringConversion) {
+        this.pathsRequiringConversion = pathsRequiringConversion;
     }
 
     @Override
     public QueryTarget create(InternalSerializationService serializationService, Extractors extractors, boolean isKey) {
-        return new GenericQueryTarget(serializationService, extractors, isKey, dynamicallyTypedPaths);
+        return new GenericQueryTarget(serializationService, extractors, isKey, pathsRequiringConversion);
     }
 
     @Override
@@ -61,21 +62,24 @@ public class GenericQueryTargetDescriptor implements QueryTargetDescriptor, Iden
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeObject(dynamicallyTypedPaths);
+        out.writeObject(pathsRequiringConversion);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        dynamicallyTypedPaths = in.readObject();
+        pathsRequiringConversion = in.readObject();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        GenericQueryTargetDescriptor that = (GenericQueryTargetDescriptor) o;
+        return Objects.equals(pathsRequiringConversion, that.pathsRequiringConversion);
     }
 
     @Override
     public int hashCode() {
-        return 0;
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        return obj instanceof GenericQueryTargetDescriptor;
+        return Objects.hash(pathsRequiringConversion);
     }
 }

@@ -30,7 +30,7 @@ public class GenericQueryTarget implements QueryTarget, GenericTargetAccessor {
     private final Extractors extractors;
     private final boolean key;
 
-    private final Set<String> dynamicallyTypedPaths;
+    private final Set<String> pathsRequiringConversion;
 
     private Object rawTarget;
     private Object target;
@@ -39,13 +39,13 @@ public class GenericQueryTarget implements QueryTarget, GenericTargetAccessor {
             InternalSerializationService serializationService,
             Extractors extractors,
             boolean key,
-            Set<String> dynamicallyTypedPaths
+            Set<String> pathsRequiringConversion
     ) {
         this.serializationService = serializationService;
         this.extractors = extractors;
         this.key = key;
 
-        this.dynamicallyTypedPaths = dynamicallyTypedPaths;
+        this.pathsRequiringConversion = pathsRequiringConversion;
     }
 
     @Override
@@ -59,7 +59,7 @@ public class GenericQueryTarget implements QueryTarget, GenericTargetAccessor {
         if (path == null) {
             return new GenericTargetExtractor(key, this, type);
         } else {
-            return new GenericFieldExtractor(key, this, type, extractors, path, dynamicallyTypedPaths.contains(path));
+            return new GenericFieldExtractor(key, this, type, extractors, path, pathsRequiringConversion.contains(path));
         }
     }
 
