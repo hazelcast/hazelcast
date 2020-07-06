@@ -30,7 +30,7 @@ public interface RootResultConsumer extends QueryResultProducer {
      *
      * @param scheduleCallback A callback to ask for more rows to be consumed
      */
-    void setup(Runnable scheduleCallback);
+    void setup(ScheduleCallback scheduleCallback);
 
     /**
      * Consume rows from the root operator. The implementation should either consume all rows, or none. If the rows are consumed,

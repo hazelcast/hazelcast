@@ -122,7 +122,7 @@ public class RootExecTest extends SqlTestSupport {
         }
 
         @Override
-        public void setup(Runnable scheduleCallback) {
+        public void setup(ScheduleCallback scheduleCallback) {
             // No-op.
         }
 

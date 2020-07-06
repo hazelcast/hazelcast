@@ -35,6 +35,7 @@ import com.hazelcast.sql.impl.exec.io.flowcontrol.simple.SimpleFlowControl;
 import com.hazelcast.sql.impl.exec.io.flowcontrol.simple.SimpleFlowControlFactory;
 import com.hazelcast.sql.impl.exec.root.RootExec;
 import com.hazelcast.sql.impl.exec.root.RootResultConsumer;
+import com.hazelcast.sql.impl.exec.root.ScheduleCallback;
 import com.hazelcast.sql.impl.exec.scan.MapScanExec;
 import com.hazelcast.sql.impl.expression.ColumnExpression;
 import com.hazelcast.sql.impl.expression.ConstantPredicateExpression;
@@ -579,7 +580,7 @@ public class CreateExecPlanNodeVisitorTest extends SqlTestSupport {
 
     private static class TestRootResultConsumer implements RootResultConsumer {
         @Override
-        public void setup(Runnable scheduleCallback) {
+        public void setup(ScheduleCallback scheduleCallback) {
             // No-op.
         }
 

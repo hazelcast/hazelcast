@@ -34,19 +34,19 @@ public class BlockingRootResultConsumer implements RootResultConsumer {
     private final InternalIterator iterator = new InternalIterator();
 
     /** Query context to schedule root execution when the next batch is needed. */
-    private volatile Runnable scheduleCallback;
+    private volatile ScheduleCallback scheduleCallback;
 
     /** The batch that is currently being consumed. */
     private List<Row> currentBatch;
 
-    /** When "true" no more batches are expected. */
+    /** When "true", no more batches are expected. */
     private boolean done;
 
     /** Error which occurred during query execution. */
     private QueryException doneError;
 
     @Override
-    public void setup(Runnable scheduleCallback) {
+    public void setup(ScheduleCallback scheduleCallback) {
         this.scheduleCallback = scheduleCallback;
     }
 

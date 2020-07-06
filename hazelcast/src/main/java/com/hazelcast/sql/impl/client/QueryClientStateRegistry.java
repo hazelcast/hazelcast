@@ -96,6 +96,9 @@ public class QueryClientStateRegistry {
         return new SqlPage(page, last);
     }
 
+    /**
+     * @return true, if this is the last page. False when we don't know.
+     */
     private boolean fetchPage(
         Iterator<SqlRow> iterator,
         List<Data> page,
@@ -103,7 +106,8 @@ public class QueryClientStateRegistry {
         InternalSerializationService serializationService
     ) {
         long endTime = System.nanoTime() + SECONDS.toNanos(1);
-        while (iterator.hasNext()) {
+        boolean hasNext;
+        while (hasNext = iterator.hasNext()) {
             SqlRow row = iterator.next();
             Row rowInternal = ((SqlRowImpl) row).getDelegate();
             Data rowData = serializationService.toData(rowInternal);
@@ -116,7 +120,9 @@ public class QueryClientStateRegistry {
             }
         }
 
-        return !iterator.hasNext();
+        // note that we might return false even if there's no next page. We don't actively check `hasNext()`
+        // here because it could block, we've already spent more than a second in the call
+        return !hasNext;
     }
 
     public void close(UUID clientId, QueryId queryId) {
