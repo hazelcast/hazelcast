@@ -49,8 +49,8 @@ public class ClientRandomLBTest {
     public void testRandomLB_withoutMembers() {
         RandomLB lb = new RandomLB();
 
-        assertNull(lb.next(false));
-        assertNull(lb.next(true));
+        assertNull(lb.next());
+        assertNull(lb.nextDataMember());
     }
 
     @Test
@@ -67,8 +67,8 @@ public class ClientRandomLBTest {
 
         Member member = cluster.getLocalMember();
 
-        assertEquals(member, randomLB.next(false));
-        assertEquals(member, randomLB.next(true));
+        assertEquals(member, randomLB.next());
+        assertEquals(member, randomLB.nextDataMember());
     }
 
     @Test
@@ -85,7 +85,7 @@ public class ClientRandomLBTest {
 
         Member member = cluster.getLocalMember();
 
-        assertEquals(member, randomLB.next(false));
-        assertNull(randomLB.next(true));
+        assertEquals(member, randomLB.next());
+        assertNull(randomLB.nextDataMember());
     }
 }

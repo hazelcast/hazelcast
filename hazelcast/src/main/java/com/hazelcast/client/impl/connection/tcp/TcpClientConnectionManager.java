@@ -759,7 +759,18 @@ public class TcpClientConnectionManager implements ClientConnectionManager {
     @Override
     public ClientConnection getRandomConnection(boolean dataMember) {
         if (isSmartRoutingEnabled) {
-            Member member = loadBalancer.next(dataMember);
+            Member member;
+
+            if (dataMember) {
+                if (loadBalancer.canGetNextDataMember()) {
+                    member = loadBalancer.nextDataMember();
+                } else {
+                    member = null;
+                }
+            } else {
+                member = loadBalancer.next();
+            }
+
             if (member != null) {
                 ClientConnection connection = getConnection(member.getUuid());
                 if (connection != null) {

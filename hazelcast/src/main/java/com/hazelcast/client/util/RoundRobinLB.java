@@ -25,7 +25,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * to a next member to send a request to.
  * <p/>
  * Round robin is done based on best effort basis, the order of members for concurrent calls to
- * the {@link #next(boolean)} is not guaranteed.
+ * the {@link #next()} is not guaranteed.
  */
 public class RoundRobinLB extends AbstractLoadBalancer {
 
@@ -40,8 +40,22 @@ public class RoundRobinLB extends AbstractLoadBalancer {
     }
 
     @Override
-    public Member next(boolean dataMembers) {
-        Member[] members = getMembers(dataMembers);
+    public Member next() {
+        return nextInternal(false);
+    }
+
+    @Override
+    public Member nextDataMember() {
+        return nextInternal(true);
+    }
+
+    @Override
+    public boolean canGetNextDataMember() {
+        return true;
+    }
+
+    private Member nextInternal(boolean dataMembers) {
+        Member[] members = dataMembers ? getDataMembers() : getMembers();
         if (members == null || members.length == 0) {
             return null;
         }

@@ -55,8 +55,8 @@ public class ClientUniSocketTxnTest extends ClientTestSupport {
         //try to force second member to connect when exist
         config.setLoadBalancer(new AbstractLoadBalancer() {
             @Override
-            public Member next(boolean dataMembers) {
-                Member[] members = getMembers(dataMembers);
+            public Member next() {
+                Member[] members = getMembers();
                 if (members == null || members.length == 0) {
                     return null;
                 }
@@ -64,6 +64,23 @@ public class ClientUniSocketTxnTest extends ClientTestSupport {
                     return members[1];
                 }
                 return members[0];
+            }
+
+            @Override
+            public Member nextDataMember() {
+                Member[] members = getDataMembers();
+                if (members == null || members.length == 0) {
+                    return null;
+                }
+                if (members.length == 2) {
+                    return members[1];
+                }
+                return members[0];
+            }
+
+            @Override
+            public boolean canGetNextDataMember() {
+                return true;
             }
         });
         final HazelcastInstance client = hazelcastFactory.newHazelcastClient(config);

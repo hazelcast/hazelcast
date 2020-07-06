@@ -62,12 +62,26 @@ public class ClientTxnTest extends HazelcastTestSupport {
         //always start the txn on first member
         config.setLoadBalancer(new AbstractLoadBalancer() {
             @Override
-            public Member next(boolean dataMembers) {
-                Member[] members = getMembers(dataMembers);
+            public Member next() {
+                Member[] members = getMembers();
                 if (members == null || members.length == 0) {
                     return null;
                 }
                 return members[0];
+            }
+
+            @Override
+            public Member nextDataMember() {
+                Member[] members = getDataMembers();
+                if (members == null || members.length == 0) {
+                    return null;
+                }
+                return members[0];
+            }
+
+            @Override
+            public boolean canGetNextDataMember() {
+                return true;
             }
         });
         client = hazelcastFactory.newHazelcastClient(config);

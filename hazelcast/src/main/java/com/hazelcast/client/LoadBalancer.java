@@ -43,10 +43,31 @@ public interface LoadBalancer {
     void init(Cluster cluster, ClientConfig config);
 
     /**
+     * Returns the next member to route to.
+     *
+     * @return Returns the next member or null if no member is available
+     */
+    Member next();
+
+    /**
      * Returns the next data member to route to.
      *
-     * @param dataMember {@code true} if only data members should be considered
-     * @return Returns the next data member or null if no member is available
+     * @return Returns the next data member or null if no data member is available
+     * @throws UnsupportedOperationException if the operation is not supported by thins instance
      */
-    Member next(boolean dataMember);
+    default Member nextDataMember() {
+        throw new UnsupportedOperationException();
+    }
+
+    /**
+     * Returns whether this instance supports getting data members through a call to {@link #nextDataMember()}.
+     * <p>
+     * This method is used by components that require communication with data members only, such as the SQL engine.
+     *
+     * @return {@code true} if this instance supports getting data members through a call to {@link #nextDataMember()}
+     * @see #nextDataMember()
+     */
+    default boolean canGetNextDataMember() {
+        return false;
+    }
 }
