@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Applies the projection logic on map entries filtered with the Predicate and returns the result
  */
-@Generated("43f18b0bac7c049c1897c2a96a42acd1")
+@Generated("fe55c43b2db1cc3492f3340d24b70b98")
 public final class MapProjectWithPredicateCodec {
     //hex: 0x013C00
     public static final int REQUEST_MESSAGE_TYPE = 80896;
@@ -92,12 +92,6 @@ public final class MapProjectWithPredicateCodec {
         return request;
     }
 
-    /**
-     * the resulted collection upon transformation to the type of the projection
-     */
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"UUF_UNUSED_PUBLIC_OR_PROTECTED_FIELD"})
-    public java.util.List<com.hazelcast.internal.serialization.Data> response;
-
     public static ClientMessage encodeResponse(java.util.Collection<com.hazelcast.internal.serialization.Data> response) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
@@ -108,6 +102,9 @@ public final class MapProjectWithPredicateCodec {
         return clientMessage;
     }
 
+    /**
+    * the resulted collection upon transformation to the type of the projection
+    */
     public static java.util.List<com.hazelcast.internal.serialization.Data> decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         //empty initial frame

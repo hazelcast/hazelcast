@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Returns the index of the first occurrence of the specified element in this list, or -1 if this list does not
  * contain the element.
  */
-@Generated("29b1f86a500bf2df79db92a91676d6b8")
+@Generated("07749f835db3528c9dcdc5a3d9866e98")
 public final class ListIndexOfCodec {
     //hex: 0x051400
     public static final int REQUEST_MESSAGE_TYPE = 332800;
@@ -87,13 +87,6 @@ public final class ListIndexOfCodec {
         return request;
     }
 
-    /**
-     * The index of the first occurrence of the specified element in
-     * this list, or -1 if this list does not contain the element
-     */
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"UUF_UNUSED_PUBLIC_OR_PROTECTED_FIELD"})
-    public int response;
-
     public static ClientMessage encodeResponse(int response) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
@@ -104,6 +97,10 @@ public final class ListIndexOfCodec {
         return clientMessage;
     }
 
+    /**
+    * The index of the first occurrence of the specified element in
+    * this list, or -1 if this list does not contain the element
+    */
     public static int decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         ClientMessage.Frame initialFrame = iterator.next();

@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Submits the task to a member for execution. Member is provided with its uuid.
  */
-@Generated("2960f1595311abb26aef5d377769b1c8")
+@Generated("b298bb4b22ff8aa221b4c64bfa2d73f2")
 public final class ScheduledExecutorSubmitToMemberCodec {
     //hex: 0x1A0300
     public static final int REQUEST_MESSAGE_TYPE = 1704704;
@@ -122,7 +122,6 @@ public final class ScheduledExecutorSubmitToMemberCodec {
         request.task = DataCodec.decode(iterator);
         return request;
     }
-
 
     public static ClientMessage encodeResponse() {
         ClientMessage clientMessage = ClientMessage.createForEncode();

@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Loads the given keys. This is a batch load operation so that an implementation can optimize the multiple loads.
  */
-@Generated("601b2bf37b805e2d4d14b23f71199d1d")
+@Generated("03b3a05ff8153f5a1d3ec0c7e01082dc")
 public final class MapLoadGivenKeysCodec {
     //hex: 0x012100
     public static final int REQUEST_MESSAGE_TYPE = 73984;
@@ -91,7 +91,6 @@ public final class MapLoadGivenKeysCodec {
         request.keys = ListMultiFrameCodec.decode(iterator, DataCodec::decode);
         return request;
     }
-
 
     public static ClientMessage encodeResponse() {
         ClientMessage clientMessage = ClientMessage.createForEncode();

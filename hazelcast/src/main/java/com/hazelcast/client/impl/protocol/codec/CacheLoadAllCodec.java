@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Loads all the keys into the CacheRecordStore in batch.
  */
-@Generated("fbb9a6af597c45887fa649def8003449")
+@Generated("68f54842385720aa9c34a6870ce496fd")
 public final class CacheLoadAllCodec {
     //hex: 0x131000
     public static final int REQUEST_MESSAGE_TYPE = 1249280;
@@ -92,7 +92,6 @@ public final class CacheLoadAllCodec {
         request.keys = ListMultiFrameCodec.decode(iterator, DataCodec::decode);
         return request;
     }
-
 
     public static ClientMessage encodeResponse() {
         ClientMessage clientMessage = ClientMessage.createForEncode();

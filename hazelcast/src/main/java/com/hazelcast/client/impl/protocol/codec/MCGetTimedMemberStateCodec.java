@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Gets the latest TimedMemberState of the member it's called on.
  */
-@Generated("16d4fc6a348457c853e0e07ef08f4f0e")
+@Generated("7745d6f1692b0447a7616d31540b5cb2")
 public final class MCGetTimedMemberStateCodec {
     //hex: 0x200B00
     public static final int REQUEST_MESSAGE_TYPE = 2099968;
@@ -61,12 +61,6 @@ public final class MCGetTimedMemberStateCodec {
     }
 
 
-    /**
-     * Latest TimedMemberState of the member, serialized as JSON.
-     */
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"UUF_UNUSED_PUBLIC_OR_PROTECTED_FIELD"})
-    public @Nullable java.lang.String timedMemberStateJson;
-
     public static ClientMessage encodeResponse(@Nullable java.lang.String timedMemberStateJson) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
@@ -77,6 +71,9 @@ public final class MCGetTimedMemberStateCodec {
         return clientMessage;
     }
 
+    /**
+    * Latest TimedMemberState of the member, serialized as JSON.
+    */
     public static java.lang.String decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         //empty initial frame

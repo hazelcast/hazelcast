@@ -42,7 +42,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * is closed between reentrant acquires, the call fails with
  * {@code LockOwnershipLostException}.
  */
-@Generated("61b2814dafef28547642657b7cfdca1f")
+@Generated("e97dc2ef85216fa0945c9cc89eb0e81d")
 public final class FencedLockLockCodec {
     //hex: 0x070100
     public static final int REQUEST_MESSAGE_TYPE = 459008;
@@ -115,13 +115,6 @@ public final class FencedLockLockCodec {
         return request;
     }
 
-    /**
-     * a valid fencing token (positive number) if the lock
-     * is acquired, otherwise -1.
-     */
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"UUF_UNUSED_PUBLIC_OR_PROTECTED_FIELD"})
-    public long response;
-
     public static ClientMessage encodeResponse(long response) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
@@ -132,6 +125,10 @@ public final class FencedLockLockCodec {
         return clientMessage;
     }
 
+    /**
+    * a valid fencing token (positive number) if the lock
+    * is acquired, otherwise -1.
+    */
     public static long decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         ClientMessage.Frame initialFrame = iterator.next();

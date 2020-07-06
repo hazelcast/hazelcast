@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Gets the list of distributed objects in the cluster.
  */
-@Generated("08629ffae7286b82dd9d2fae21d15e94")
+@Generated("f921737ff0d33af2372e34b323197a54")
 public final class ClientGetDistributedObjectsCodec {
     //hex: 0x000800
     public static final int REQUEST_MESSAGE_TYPE = 2048;
@@ -61,12 +61,6 @@ public final class ClientGetDistributedObjectsCodec {
     }
 
 
-    /**
-     * An array of distributed object info in the cluster.
-     */
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"UUF_UNUSED_PUBLIC_OR_PROTECTED_FIELD"})
-    public java.util.List<com.hazelcast.client.impl.client.DistributedObjectInfo> response;
-
     public static ClientMessage encodeResponse(java.util.Collection<com.hazelcast.client.impl.client.DistributedObjectInfo> response) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
@@ -77,6 +71,9 @@ public final class ClientGetDistributedObjectsCodec {
         return clientMessage;
     }
 
+    /**
+    * An array of distributed object info in the cluster.
+    */
     public static java.util.List<com.hazelcast.client.impl.client.DistributedObjectInfo> decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         //empty initial frame

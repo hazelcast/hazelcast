@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Returns true if this map contains a mapping for the specified key.
  */
-@Generated("f7d3b07434f803d70eafd9e6fc8f6dca")
+@Generated("dda68b75ee68db26259e1027dacaa6c2")
 public final class ReplicatedMapContainsKeyCodec {
     //hex: 0x0D0400
     public static final int REQUEST_MESSAGE_TYPE = 852992;
@@ -86,12 +86,6 @@ public final class ReplicatedMapContainsKeyCodec {
         return request;
     }
 
-    /**
-     * <tt>True</tt> if this map contains a mapping for the specified key
-     */
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"UUF_UNUSED_PUBLIC_OR_PROTECTED_FIELD"})
-    public boolean response;
-
     public static ClientMessage encodeResponse(boolean response) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
@@ -102,6 +96,9 @@ public final class ReplicatedMapContainsKeyCodec {
         return clientMessage;
     }
 
+    /**
+    * <tt>True</tt> if this map contains a mapping for the specified key
+    */
     public static boolean decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         ClientMessage.Frame initialFrame = iterator.next();

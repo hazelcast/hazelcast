@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Clears the contents of the cache, without notifying listeners or CacheWriters.
  */
-@Generated("9211b62a2015473ca4b36a2c75b4ae68")
+@Generated("527f6df7bcf1bd441b37d430bf255b48")
 public final class CacheClearCodec {
     //hex: 0x130200
     public static final int REQUEST_MESSAGE_TYPE = 1245696;
@@ -72,7 +72,6 @@ public final class CacheClearCodec {
         iterator.next();
         return StringCodec.decode(iterator);
     }
-
 
     public static ClientMessage encodeResponse() {
         ClientMessage clientMessage = ClientMessage.createForEncode();

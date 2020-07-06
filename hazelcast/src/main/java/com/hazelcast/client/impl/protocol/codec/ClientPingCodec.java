@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Sends a ping to the given connection.
  */
-@Generated("bf5f89a7c79f6fadce14467a6cebb7d8")
+@Generated("a4672984603df3c1cc3a5ebaf6e2bb08")
 public final class ClientPingCodec {
     //hex: 0x000B00
     public static final int REQUEST_MESSAGE_TYPE = 2816;
@@ -59,7 +59,6 @@ public final class ClientPingCodec {
         clientMessage.add(initialFrame);
         return clientMessage;
     }
-
 
 
     public static ClientMessage encodeResponse() {

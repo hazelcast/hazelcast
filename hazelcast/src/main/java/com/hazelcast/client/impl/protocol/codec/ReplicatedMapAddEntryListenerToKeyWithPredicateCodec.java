@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Adds an continuous entry listener for this map. The listener will be notified for map add/remove/update/evict
  * events filtered by the given predicate.
  */
-@Generated("48c2e80d6005210e32c35cd175b6feeb")
+@Generated("21ccd0cef983edab7bf93472ac2cd772")
 public final class ReplicatedMapAddEntryListenerToKeyWithPredicateCodec {
     //hex: 0x0D0A00
     public static final int REQUEST_MESSAGE_TYPE = 854528;
@@ -108,12 +108,6 @@ public final class ReplicatedMapAddEntryListenerToKeyWithPredicateCodec {
         return request;
     }
 
-    /**
-     * A unique string  which is used as a key to remove the listener.
-     */
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"UUF_UNUSED_PUBLIC_OR_PROTECTED_FIELD"})
-    public java.util.UUID response;
-
     public static ClientMessage encodeResponse(java.util.UUID response) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
@@ -124,6 +118,9 @@ public final class ReplicatedMapAddEntryListenerToKeyWithPredicateCodec {
         return clientMessage;
     }
 
+    /**
+    * A unique string  which is used as a key to remove the listener.
+    */
     public static java.util.UUID decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         ClientMessage.Frame initialFrame = iterator.next();

@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Creates a new CP group with the given name
  */
-@Generated("57f39747cc01e7824ecd0e3baabe7dea")
+@Generated("8c71ae8afb174b0578e79f74d1eae391")
 public final class CPGroupCreateCPGroupCodec {
     //hex: 0x1E0100
     public static final int REQUEST_MESSAGE_TYPE = 1966336;
@@ -73,12 +73,6 @@ public final class CPGroupCreateCPGroupCodec {
         return StringCodec.decode(iterator);
     }
 
-    /**
-     * ID of the CP group that contains the CP object
-     */
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"UUF_UNUSED_PUBLIC_OR_PROTECTED_FIELD"})
-    public com.hazelcast.cp.internal.RaftGroupId groupId;
-
     public static ClientMessage encodeResponse(com.hazelcast.cp.internal.RaftGroupId groupId) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
@@ -89,6 +83,9 @@ public final class CPGroupCreateCPGroupCodec {
         return clientMessage;
     }
 
+    /**
+    * ID of the CP group that contains the CP object
+    */
     public static com.hazelcast.cp.internal.RaftGroupId decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         //empty initial frame

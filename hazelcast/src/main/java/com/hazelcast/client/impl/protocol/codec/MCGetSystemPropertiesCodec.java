@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Gets the system properties of the member it's called on.
  */
-@Generated("68d86484718f8424e3b10535277278f4")
+@Generated("66700404d830fba5021ba8e352ac9134")
 public final class MCGetSystemPropertiesCodec {
     //hex: 0x200A00
     public static final int REQUEST_MESSAGE_TYPE = 2099712;
@@ -61,12 +61,6 @@ public final class MCGetSystemPropertiesCodec {
     }
 
 
-    /**
-     * System properties of the member.
-     */
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"UUF_UNUSED_PUBLIC_OR_PROTECTED_FIELD"})
-    public java.util.List<java.util.Map.Entry<java.lang.String, java.lang.String>> systemProperties;
-
     public static ClientMessage encodeResponse(java.util.Collection<java.util.Map.Entry<java.lang.String, java.lang.String>> systemProperties) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
@@ -77,6 +71,9 @@ public final class MCGetSystemPropertiesCodec {
         return clientMessage;
     }
 
+    /**
+    * System properties of the member.
+    */
     public static java.util.List<java.util.Map.Entry<java.lang.String, java.lang.String>> decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         //empty initial frame

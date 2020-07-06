@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Initiate WAN consistency check for a specific map
  */
-@Generated("f74dd9a919b68f8828df6ae1498fbdd6")
+@Generated("57a9700193357b17b3567c3df6eb5d39")
 public final class MCCheckWanConsistencyCodec {
     //hex: 0x201700
     public static final int REQUEST_MESSAGE_TYPE = 2103040;
@@ -93,13 +93,6 @@ public final class MCCheckWanConsistencyCodec {
         return request;
     }
 
-    /**
-     * UUID of the consistency check request or null if consistency
-     * check is ignored because of the configuration
-     */
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"UUF_UNUSED_PUBLIC_OR_PROTECTED_FIELD"})
-    public @Nullable java.util.UUID uuid;
-
     public static ClientMessage encodeResponse(@Nullable java.util.UUID uuid) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
@@ -110,6 +103,10 @@ public final class MCCheckWanConsistencyCodec {
         return clientMessage;
     }
 
+    /**
+    * UUID of the consistency check request or null if consistency
+    * check is ignored because of the configuration
+    */
     public static java.util.UUID decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         ClientMessage.Frame initialFrame = iterator.next();

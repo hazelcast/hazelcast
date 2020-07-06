@@ -39,7 +39,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * v in the specified map. The behavior of this operation is undefined if the specified map is modified while the
  * operation is in progress.
  */
-@Generated("c61b8b54368bc478a477bff807d0a1e6")
+@Generated("dc1ce69b9cf295c419c4c19ca3d5f1af")
 public final class ReplicatedMapPutAllCodec {
     //hex: 0x0D0800
     public static final int REQUEST_MESSAGE_TYPE = 854016;
@@ -87,7 +87,6 @@ public final class ReplicatedMapPutAllCodec {
         request.entries = EntryListCodec.decode(iterator, DataCodec::decode, DataCodec::decode);
         return request;
     }
-
 
     public static ClientMessage encodeResponse() {
         ClientMessage clientMessage = ClientMessage.createForEncode();

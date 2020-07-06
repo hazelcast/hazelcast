@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Inserts the specified element into this queue, waiting up to the specified wait time if necessary for space to
  * become available.
  */
-@Generated("e7cc5688335310aeeec89c03aa8740e6")
+@Generated("cd80b03b8954a730849cbd31d1527be3")
 public final class TransactionalQueueOfferCodec {
     //hex: 0x120100
     public static final int REQUEST_MESSAGE_TYPE = 1179904;
@@ -110,12 +110,6 @@ public final class TransactionalQueueOfferCodec {
         return request;
     }
 
-    /**
-     * <tt>true</tt> if successful, or <tt>false</tt> if the specified waiting time elapses before space is available
-     */
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"UUF_UNUSED_PUBLIC_OR_PROTECTED_FIELD"})
-    public boolean response;
-
     public static ClientMessage encodeResponse(boolean response) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
@@ -126,6 +120,9 @@ public final class TransactionalQueueOfferCodec {
         return clientMessage;
     }
 
+    /**
+    * <tt>true</tt> if successful, or <tt>false</tt> if the specified waiting time elapses before space is available
+    */
     public static boolean decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         ClientMessage.Frame initialFrame = iterator.next();

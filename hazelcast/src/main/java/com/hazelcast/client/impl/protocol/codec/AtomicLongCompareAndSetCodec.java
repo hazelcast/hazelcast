@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Atomically sets the value to the given updated value only if the current
  * value the expected value.
  */
-@Generated("8bfdb4b7938e18e396053f56d0938d73")
+@Generated("27ceb296b20b0341fa91c230a9892c9a")
 public final class AtomicLongCompareAndSetCodec {
     //hex: 0x090400
     public static final int REQUEST_MESSAGE_TYPE = 590848;
@@ -102,13 +102,6 @@ public final class AtomicLongCompareAndSetCodec {
         return request;
     }
 
-    /**
-     * true if successful; or false if the actual value
-     * was not equal to the expected value.
-     */
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"UUF_UNUSED_PUBLIC_OR_PROTECTED_FIELD"})
-    public boolean response;
-
     public static ClientMessage encodeResponse(boolean response) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
@@ -119,6 +112,10 @@ public final class AtomicLongCompareAndSetCodec {
         return clientMessage;
     }
 
+    /**
+    * true if successful; or false if the actual value
+    * was not equal to the expected value.
+    */
     public static boolean decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         ClientMessage.Frame initialFrame = iterator.next();

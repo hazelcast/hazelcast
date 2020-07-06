@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Stores a key-value pair in the multimap.
  */
-@Generated("f546e87dcf766746512f70114d31c0d3")
+@Generated("7a1ac5242da2bf918ba878b9148d3225")
 public final class TransactionalMultiMapPutCodec {
     //hex: 0x0F0100
     public static final int REQUEST_MESSAGE_TYPE = 983296;
@@ -108,12 +108,6 @@ public final class TransactionalMultiMapPutCodec {
         return request;
     }
 
-    /**
-     * True if the size of the multimap is increased, false if the multimap already contains the key-value pair.
-     */
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"UUF_UNUSED_PUBLIC_OR_PROTECTED_FIELD"})
-    public boolean response;
-
     public static ClientMessage encodeResponse(boolean response) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
@@ -124,6 +118,9 @@ public final class TransactionalMultiMapPutCodec {
         return clientMessage;
     }
 
+    /**
+    * True if the size of the multimap is increased, false if the multimap already contains the key-value pair.
+    */
     public static boolean decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         ClientMessage.Frame initialFrame = iterator.next();

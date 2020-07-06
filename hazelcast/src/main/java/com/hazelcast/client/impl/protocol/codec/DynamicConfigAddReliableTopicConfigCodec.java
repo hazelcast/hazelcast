@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * If a reliable topic configuration with the given {@code name} already exists, then
  * the new configuration is ignored and the existing one is preserved.
  */
-@Generated("eaf3c73a084b34288c5f7637ae3f7282")
+@Generated("0844658110b57daff20c516decfeddb7")
 public final class DynamicConfigAddReliableTopicConfigCodec {
     //hex: 0x1B0D00
     public static final int REQUEST_MESSAGE_TYPE = 1772800;
@@ -117,7 +117,6 @@ public final class DynamicConfigAddReliableTopicConfigCodec {
         request.executor = CodecUtil.decodeNullable(iterator, DataCodec::decode);
         return request;
     }
-
 
     public static ClientMessage encodeResponse() {
         ClientMessage clientMessage = ClientMessage.createForEncode();

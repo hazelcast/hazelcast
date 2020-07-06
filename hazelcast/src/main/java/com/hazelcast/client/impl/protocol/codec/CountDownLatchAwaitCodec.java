@@ -51,7 +51,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * waiting time elapses then the value false is returned.  If the time is
  * less than or equal to zero, the method will not wait at all.
  */
-@Generated("9a14979293a50c88040a865a2ba61419")
+@Generated("9f4433392910229dd72a86fc713379f4")
 public final class CountDownLatchAwaitCodec {
     //hex: 0x0B0200
     public static final int REQUEST_MESSAGE_TYPE = 721408;
@@ -116,13 +116,6 @@ public final class CountDownLatchAwaitCodec {
         return request;
     }
 
-    /**
-     * true if the count reached zero, false if
-     * the waiting time elapsed before the count reached 0
-     */
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"UUF_UNUSED_PUBLIC_OR_PROTECTED_FIELD"})
-    public boolean response;
-
     public static ClientMessage encodeResponse(boolean response) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
@@ -133,6 +126,10 @@ public final class CountDownLatchAwaitCodec {
         return clientMessage;
     }
 
+    /**
+    * true if the count reached zero, false if
+    * the waiting time elapsed before the count reached 0
+    */
     public static boolean decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         ClientMessage.Frame initialFrame = iterator.next();
