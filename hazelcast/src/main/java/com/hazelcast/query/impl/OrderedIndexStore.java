@@ -45,7 +45,7 @@ public class OrderedIndexStore extends BaseSingleValueIndexStore {
     private volatile Map<Data, QueryableEntry> recordsWithNullValue;
 
     public OrderedIndexStore(IndexCopyBehavior copyOn) {
-        super(copyOn);
+        super(copyOn, true);
         assert copyOn != null;
         if (copyOn == IndexCopyBehavior.COPY_ON_WRITE) {
             addFunctor = new CopyOnWriteAddFunctor();
@@ -190,7 +190,6 @@ public class OrderedIndexStore extends BaseSingleValueIndexStore {
             } else if (order > 0) {
                 return emptySet();
             }
-
             MultiResultSet results = createMultiResultSet();
             SortedMap<Comparable, Map<Data, QueryableEntry>> subMap = recordMap.subMap(from, fromInclusive, to, toInclusive);
             for (Map<Data, QueryableEntry> value : subMap.values()) {

@@ -22,12 +22,13 @@ import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.MapConfig;
-import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.config.WanConsumerConfig;
+import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.config.WanReplicationRef;
 import com.hazelcast.config.WanSyncConfig;
 import com.hazelcast.internal.nio.ClassLoaderUtil;
 import com.hazelcast.internal.partition.IPartitionService;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.services.ObjectNamespace;
@@ -45,7 +46,6 @@ import com.hazelcast.map.impl.query.QueryEntryFactory;
 import com.hazelcast.map.impl.record.DataRecordFactory;
 import com.hazelcast.map.impl.record.ObjectRecordFactory;
 import com.hazelcast.map.impl.record.RecordFactory;
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.partition.PartitioningStrategy;
 import com.hazelcast.query.impl.Index;
 import com.hazelcast.query.impl.Indexes;
@@ -76,8 +76,7 @@ import static java.lang.System.getProperty;
  * supporting structures for all of the maps' functionalities.
  */
 @SuppressWarnings({"WeakerAccess", "checkstyle:classfanoutcomplexity"})
-public class
-MapContainer {
+public class MapContainer {
 
     protected final String name;
     protected final String splitBrainProtectionName;
@@ -150,7 +149,7 @@ MapContainer {
      * @return a new Indexes object
      */
     public Indexes createIndexes(boolean global) {
-        return Indexes.newBuilder(serializationService, mapServiceContext.getIndexCopyBehavior())
+        return Indexes.newBuilder(serializationService, mapServiceContext.getIndexCopyBehavior(), mapConfig.getInMemoryFormat())
                 .global(global)
                 .extractors(extractors)
                 .statsEnabled(mapConfig.isStatisticsEnabled())
@@ -178,8 +177,7 @@ MapContainer {
     }
 
     public boolean shouldUseGlobalIndex() {
-        // for non-native memory populate a single global index
-        return !mapConfig.getInMemoryFormat().equals(NATIVE);
+        return mapConfig.getInMemoryFormat() != NATIVE || mapServiceContext.globalIndexEnabled();
     }
 
     protected static MemoryInfoAccessor getMemoryInfoAccessor() {
@@ -272,7 +270,7 @@ MapContainer {
     }
 
     /**
-     * @return the global index, if the global index is in use (on-heap) or null.
+     * @return the global index, if the global index is in use or null.
      */
     public Indexes getIndexes() {
         return globalIndexes;
