@@ -28,7 +28,7 @@ import java.util.List;
  * attributes natively. For such indexes {@link MultiResult}s are split into
  * individual values and each value is inserted/removed separately.
  * <p>
- * All operations on the index store like insert/remove/getRecords are
+ * All operations on the off-heap index store like insert/remove/getRecords are
  * not guarded by a global lock. The subclasses must either implement thread-safe
  * access operations or the index should be used as single-threaded by design.
  */
