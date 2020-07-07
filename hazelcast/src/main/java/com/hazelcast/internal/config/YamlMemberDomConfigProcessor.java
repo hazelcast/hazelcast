@@ -138,7 +138,8 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
 
             if (PermissionConfig.PermissionType.CONFIG == type
                     || PermissionConfig.PermissionType.ALL == type
-                    || PermissionConfig.PermissionType.TRANSACTION == type) {
+                    || PermissionConfig.PermissionType.TRANSACTION == type
+                    || PermissionConfig.PermissionType.SQL == type) {
                 handleSecurityPermission(child, type);
             } else {
                 handleSecurityPermissionGroup(child, type);

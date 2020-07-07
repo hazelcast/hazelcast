@@ -21,6 +21,7 @@ import com.hazelcast.client.impl.protocol.codec.SqlFetchCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.security.permission.SqlPermission;
 import com.hazelcast.sql.impl.SqlInternalService;
 
 import java.security.Permission;
@@ -90,6 +91,6 @@ public class SqlFetchMessageTask extends AbstractCallableMessageTask<SqlFetchCod
 
     @Override
     public Permission getRequiredPermission() {
-        return null;
+        return new SqlPermission();
     }
 }

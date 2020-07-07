@@ -825,6 +825,8 @@ hazelcast:
           principal: "*"
           actions:
             - all
+      sql:
+        principal: dev
     client-block-unmapped-actions: true
 
   member-attributes:

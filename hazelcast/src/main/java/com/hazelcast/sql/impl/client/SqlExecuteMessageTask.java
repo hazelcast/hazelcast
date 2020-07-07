@@ -22,6 +22,7 @@ import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.security.permission.SqlPermission;
 import com.hazelcast.sql.SqlQuery;
 import com.hazelcast.sql.impl.SqlInternalService;
 import com.hazelcast.sql.impl.SqlResultImpl;
@@ -117,6 +118,6 @@ public class SqlExecuteMessageTask extends AbstractCallableMessageTask<SqlExecut
 
     @Override
     public Permission getRequiredPermission() {
-        return null;
+        return new SqlPermission();
     }
 }

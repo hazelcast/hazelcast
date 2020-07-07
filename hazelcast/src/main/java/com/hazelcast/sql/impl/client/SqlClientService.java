@@ -36,6 +36,7 @@ import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.QueryUtils;
 
 import javax.annotation.Nonnull;
+import java.security.AccessControlException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -185,7 +186,7 @@ public class SqlClientService implements SqlService {
         }
     }
 
-    private SqlException rethrow(Exception cause, Connection connection) {
+    private RuntimeException rethrow(Exception cause, Connection connection) {
         if (!connection.isAlive()) {
             return QueryUtils.toPublicException(
                 QueryException.memberConnection(connection.getRemoteAddress()),
@@ -196,7 +197,12 @@ public class SqlClientService implements SqlService {
         return rethrow(cause);
     }
 
-    SqlException rethrow(Exception cause) {
+    RuntimeException rethrow(Exception cause) {
+        // Make sure that AccessControlException is thrown as a top-level exception
+        if (cause.getCause() instanceof AccessControlException) {
+            return (AccessControlException) cause.getCause();
+        }
+
         throw QueryUtils.toPublicException(cause, getClientId());
     }
 }
