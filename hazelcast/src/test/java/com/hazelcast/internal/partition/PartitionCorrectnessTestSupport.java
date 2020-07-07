@@ -76,7 +76,7 @@ public abstract class PartitionCorrectnessTestSupport extends HazelcastTestSuppo
     @Parameterized.Parameter(1)
     public int nodeCount;
 
-    protected int partitionCount = 11;
+    protected int partitionCount = 111;
 
     @Before
     public void setup() {
