@@ -42,10 +42,8 @@ public class SqlExecuteMessageTask extends AbstractCallableMessageTask<SqlExecut
         try {
             SqlQuery query = new SqlQuery(parameters.sql);
 
-            if (parameters.parameters != null && !parameters.parameters.isEmpty()) {
-                for (Data param : parameters.parameters) {
-                    query.addParameter(serializationService.toObject(param));
-                }
+            for (Data param : parameters.parameters) {
+                query.addParameter(serializationService.toObject(param));
             }
 
             query.setTimeoutMillis(parameters.timeoutMillis);

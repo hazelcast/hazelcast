@@ -297,7 +297,7 @@ public class SqlErrorClientTest extends SqlErrorAbstractTest {
             } catch (SqlException e) {
                 assertEquals(SqlErrorCode.GENERIC, e.getCode());
                 assertEquals(client.getLocalEndpoint().getUuid(), e.getOriginatingMemberId());
-                assertTrue(e.getMessage().contains("Failed to deserialize query result row"));
+                assertTrue(e.getMessage().contains("Failed to deserialize query result value"));
             }
         } finally {
             BadValue.READ_ERROR.set(false);

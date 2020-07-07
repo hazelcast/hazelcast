@@ -36,7 +36,6 @@ import com.hazelcast.sql.SqlService;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.QueryUtils;
-import com.hazelcast.sql.impl.row.Row;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
@@ -86,16 +85,11 @@ public class SqlClientService implements SqlService {
 
         try {
             List<Object> params = query.getParameters();
-            List<Data> params0;
 
-            if (!params.isEmpty()) {
-                params0 = new ArrayList<>(params.size());
+            List<Data> params0 = new ArrayList<>(params.size());
 
-                for (Object param : params) {
-                    params0.add(serializeParameter(param));
-                }
-            } else {
-                params0 = null;
+            for (Object param : params) {
+                params0.add(serializeParameter(param));
             }
 
             ClientMessage message = SqlExecuteCodec.encodeRequest(
@@ -169,12 +163,12 @@ public class SqlClientService implements SqlService {
         }
     }
 
-    Row deserializeRow(Data data) {
+    Object deserializeRowValue(Data data) {
         try {
             return getSerializationService().toObject(data);
         } catch (Exception e) {
             throw rethrow(
-                QueryException.error("Failed to deserialize query result row: " + e.getMessage())
+                QueryException.error("Failed to deserialize query result value: " + e.getMessage())
             );
         }
     }

@@ -18,17 +18,15 @@ package com.hazelcast.sql.impl.client;
 
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.SqlRow;
+import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.SqlResultImpl;
-import com.hazelcast.sql.impl.SqlRowImpl;
-import com.hazelcast.sql.impl.row.Row;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -36,7 +34,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * Registry of active client cursors.
  */
 public class QueryClientStateRegistry {
-    /** Registered client cursors. */
+
     private final ConcurrentHashMap<QueryId, QueryClientState> clientCursors = new ConcurrentHashMap<>();
 
     public SqlPage registerAndFetch(
@@ -84,7 +82,7 @@ public class QueryClientStateRegistry {
     ) {
         Iterator<SqlRow> iterator = clientCursor.getIterator();
 
-        List<Data> page = new ArrayList<>(cursorBufferSize);
+        List<SqlPageRow> page = new ArrayList<>(cursorBufferSize);
         boolean last = fetchPage(iterator, page, cursorBufferSize, serializationService);
 
         if (last) {
@@ -94,18 +92,17 @@ public class QueryClientStateRegistry {
         return new SqlPage(page, last);
     }
 
-    private boolean fetchPage(
+    private static boolean fetchPage(
         Iterator<SqlRow> iterator,
-        List<Data> page,
+        List<SqlPageRow> page,
         int cursorBufferSize,
         InternalSerializationService serializationService
     ) {
         while (iterator.hasNext()) {
             SqlRow row = iterator.next();
-            Row rowInternal = ((SqlRowImpl) row).getDelegate();
-            Data rowData = serializationService.toData(rowInternal);
+            SqlPageRow convertedRow = convertRow(row, serializationService);
 
-            page.add(rowData);
+            page.add(convertedRow);
 
             if (page.size() == cursorBufferSize) {
                 break;
@@ -113,6 +110,18 @@ public class QueryClientStateRegistry {
         }
 
         return !iterator.hasNext();
+    }
+
+    private static SqlPageRow convertRow(SqlRow row, InternalSerializationService serializationService) {
+        int columnCount = row.getMetadata().getColumnCount();
+
+        List<Data> values = new ArrayList<>(columnCount);
+
+        for (int i = 0; i < columnCount; i++) {
+            values.add(serializationService.toData(row.getObject(i)));
+        }
+
+        return new SqlPageRow(values);
     }
 
     public void close(UUID clientId, QueryId queryId) {
@@ -129,7 +138,7 @@ public class QueryClientStateRegistry {
         clientCursors.clear();
     }
 
-    public void update(Collection<UUID> activeClientIds) {
+    public void update(Set<UUID> activeClientIds) {
         List<QueryClientState> victims = new ArrayList<>();
 
         for (QueryClientState clientCursor : clientCursors.values()) {

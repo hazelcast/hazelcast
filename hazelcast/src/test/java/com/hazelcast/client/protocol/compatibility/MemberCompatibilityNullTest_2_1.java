@@ -7444,7 +7444,7 @@ public class MemberCompatibilityNullTest_2_1 {
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         SqlExecuteCodec.RequestParameters parameters = SqlExecuteCodec.decodeRequest(fromFile);
         assertTrue(isEqual(aString, parameters.sql));
-        assertTrue(isEqual(null, parameters.parameters));
+        assertTrue(isEqual(aListOfData, parameters.parameters));
         assertTrue(isEqual(aLong, parameters.timeoutMillis));
         assertTrue(isEqual(anInt, parameters.cursorBufferSize));
     }

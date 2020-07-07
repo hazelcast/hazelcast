@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Starts execution of an SQL query.
  */
-@Generated("6f156807f870d81090672c8cb4707f2a")
+@Generated("017d0cb35472f4379a288c919f7e30da")
 public final class SqlExecuteCodec {
     //hex: 0x210100
     public static final int REQUEST_MESSAGE_TYPE = 2162944;
@@ -61,7 +61,7 @@ public final class SqlExecuteCodec {
         /**
          * Query parameters.
          */
-        public @Nullable java.util.List<com.hazelcast.internal.serialization.Data> parameters;
+        public java.util.List<com.hazelcast.internal.serialization.Data> parameters;
 
         /**
          * Timeout in milliseconds.
@@ -74,7 +74,7 @@ public final class SqlExecuteCodec {
         public int cursorBufferSize;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String sql, @Nullable java.util.Collection<com.hazelcast.internal.serialization.Data> parameters, long timeoutMillis, int cursorBufferSize) {
+    public static ClientMessage encodeRequest(java.lang.String sql, java.util.Collection<com.hazelcast.internal.serialization.Data> parameters, long timeoutMillis, int cursorBufferSize) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
         clientMessage.setOperationName("Sql.Execute");
@@ -85,7 +85,7 @@ public final class SqlExecuteCodec {
         encodeInt(initialFrame.content, REQUEST_CURSOR_BUFFER_SIZE_FIELD_OFFSET, cursorBufferSize);
         clientMessage.add(initialFrame);
         StringCodec.encode(clientMessage, sql);
-        ListMultiFrameCodec.encodeNullable(clientMessage, parameters, DataCodec::encode);
+        ListMultiFrameCodec.encode(clientMessage, parameters, DataCodec::encode);
         return clientMessage;
     }
 
@@ -96,7 +96,7 @@ public final class SqlExecuteCodec {
         request.timeoutMillis = decodeLong(initialFrame.content, REQUEST_TIMEOUT_MILLIS_FIELD_OFFSET);
         request.cursorBufferSize = decodeInt(initialFrame.content, REQUEST_CURSOR_BUFFER_SIZE_FIELD_OFFSET);
         request.sql = StringCodec.decode(iterator);
-        request.parameters = ListMultiFrameCodec.decodeNullable(iterator, DataCodec::decode);
+        request.parameters = ListMultiFrameCodec.decode(iterator, DataCodec::decode);
         return request;
     }
 

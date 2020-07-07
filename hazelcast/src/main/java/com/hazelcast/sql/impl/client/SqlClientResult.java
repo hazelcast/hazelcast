@@ -24,6 +24,7 @@ import com.hazelcast.sql.SqlRowMetadata;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.SqlRowImpl;
+import com.hazelcast.sql.impl.row.HeapRow;
 import com.hazelcast.sql.impl.row.Row;
 
 import javax.annotation.Nonnull;
@@ -114,11 +115,18 @@ public class SqlClientResult implements SqlResult {
         iterator.onNextPage(page);
     }
 
-    private List<Row> convertPageRows(List<Data> serializedRows) {
+    private List<Row> convertPageRows(List<SqlPageRow> serializedRows) {
         List<Row> rows = new ArrayList<>(serializedRows.size());
 
-        for (Data serializedRow : serializedRows) {
-            rows.add(service.deserializeRow(serializedRow));
+        for (SqlPageRow serializedRow : serializedRows) {
+            List<Data> serializedValues = serializedRow.getValues();
+            Object[] values = new Object[serializedValues.size()];
+
+            for (int i = 0; i < serializedValues.size(); i++) {
+                values[i] = service.deserializeRowValue(serializedValues.get(i));
+            }
+
+            rows.add(new HeapRow(values));
         }
 
         return rows;

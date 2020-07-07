@@ -6933,7 +6933,7 @@ public class ClientCompatibilityNullTest_2_1 {
     @Test
     public void test_SqlExecuteCodec_encodeRequest() {
         int fileClientMessageIndex = 825;
-        ClientMessage encoded = SqlExecuteCodec.encodeRequest(aString, null, aLong, anInt);
+        ClientMessage encoded = SqlExecuteCodec.encodeRequest(aString, aListOfData, aLong, anInt);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }

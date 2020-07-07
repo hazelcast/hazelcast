@@ -16,25 +16,20 @@
 
 package com.hazelcast.sql.impl.client;
 
+import com.hazelcast.internal.serialization.Data;
+
 import java.util.List;
-import java.util.Objects;
 
-public class SqlPage {
+public class SqlPageRow {
 
-    private final List<SqlPageRow> rows;
-    private final boolean last;
+    private final List<Data> values;
 
-    public SqlPage(List<SqlPageRow> rows, boolean last) {
-        this.rows = rows;
-        this.last = last;
+    public SqlPageRow(List<Data> values) {
+        this.values = values;
     }
 
-    public List<SqlPageRow> getRows() {
-        return rows;
-    }
-
-    public boolean isLast() {
-        return last;
+    public List<Data> getValues() {
+        return values;
     }
 
     @Override
@@ -47,21 +42,13 @@ public class SqlPage {
             return false;
         }
 
-        SqlPage page = (SqlPage) o;
+        SqlPageRow that = (SqlPageRow) o;
 
-        if (last != page.last) {
-            return false;
-        }
-
-        return Objects.equals(rows, page.rows);
+        return values.equals(that.values);
     }
 
     @Override
     public int hashCode() {
-        int result = rows != null ? rows.hashCode() : 0;
-
-        result = 31 * result + (last ? 1 : 0);
-
-        return result;
+        return values.hashCode();
     }
 }

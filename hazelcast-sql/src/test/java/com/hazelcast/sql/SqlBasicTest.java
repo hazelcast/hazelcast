@@ -98,7 +98,8 @@ public class SqlBasicTest extends SqlTestSupport {
     private static final int[] DATA_SET_SIZES = { 1, 256, 4096 };
     private static final TestHazelcastFactory FACTORY = new TestHazelcastFactory(2);
 
-    private static HazelcastInstance member;
+    private static HazelcastInstance member1;
+    private static HazelcastInstance member2;
     protected static HazelcastInstance client;
 
     @Parameter
@@ -137,8 +138,8 @@ public class SqlBasicTest extends SqlTestSupport {
 
     @BeforeClass
     public static void beforeClass() {
-        member = FACTORY.newHazelcastInstance(memberConfig());
-        FACTORY.newHazelcastInstance(memberConfig());
+        member1 = FACTORY.newHazelcastInstance(memberConfig());
+        member2 = FACTORY.newHazelcastInstance(memberConfig());
 
         client = FACTORY.newHazelcastClient(clientConfig());
     }
@@ -150,12 +151,12 @@ public class SqlBasicTest extends SqlTestSupport {
 
     @Before
     public void before() {
-        member.getMap(MAP_OBJECT).clear();
-        member.getMap(MAP_BINARY).clear();
+        member1.getMap(MAP_OBJECT).clear();
+        member1.getMap(MAP_BINARY).clear();
     }
 
     protected HazelcastInstance getTarget() {
-        return member;
+        return member1;
     }
 
     @SuppressWarnings("ConstantConditions")
@@ -178,7 +179,11 @@ public class SqlBasicTest extends SqlTestSupport {
         // Execute query
         boolean portable = serializationMode == SerializationMode.PORTABLE;
 
+        boolean multiPageClient;
+
         try (SqlResult res = query()) {
+            multiPageClient = memberClientCursors() > 0;
+
             SqlRowMetadata rowMetadata = res.getRowMetadata();
 
             checkRowMetadata(rowMetadata);
@@ -271,6 +276,26 @@ public class SqlBasicTest extends SqlTestSupport {
 
             assertEquals(dataSetSize, uniqueKeys.size());
         }
+
+        if (multiPageClient) {
+            // If this request spawns multiple pages, then:
+            // 1) Ensure that results are cleared when the whole result set is fetched
+            // 2) Ensure that results are cleared when the result set is closed in the middle.
+            assertEquals(0, memberClientCursors());
+
+            try (SqlResult res = query()) {
+                assertEquals(1, memberClientCursors());
+
+                res.close();
+
+                assertEquals(0, memberClientCursors());
+            }
+        }
+    }
+
+    private int memberClientCursors() {
+        return sqlInternalService(member1).getClientStateRegistry().getCursorCount()
+            + sqlInternalService(member2).getClientStateRegistry().getCursorCount();
     }
 
     private void checkRowValue(Object expectedValue, SqlRow row, String columnName) {
