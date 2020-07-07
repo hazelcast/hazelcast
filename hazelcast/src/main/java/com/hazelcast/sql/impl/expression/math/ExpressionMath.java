@@ -18,13 +18,11 @@ package com.hazelcast.sql.impl.expression.math;
 
 import com.hazelcast.sql.SqlErrorCode;
 import com.hazelcast.sql.impl.QueryException;
-import com.hazelcast.sql.impl.type.QueryDataType;
 
 import java.math.MathContext;
 import java.math.RoundingMode;
 
 import static com.hazelcast.sql.impl.type.QueryDataType.MAX_DECIMAL_PRECISION;
-import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.NULL;
 
 /**
  * Utility methods for math functions.
@@ -98,35 +96,6 @@ public final class ExpressionMath {
             throw QueryException.error(SqlErrorCode.DATA_EXCEPTION, "division by zero");
         }
         return result;
-    }
-
-    public static QueryDataType inferRemainderResultType(QueryDataType type1, QueryDataType type2) {
-        if (type1.getTypeFamily() == NULL || type2.getTypeFamily() == NULL) {
-            return QueryDataType.NULL;
-        }
-
-        // Handle numeric types.
-        if (type1 == QueryDataType.VARCHAR) {
-            type1 = QueryDataType.DECIMAL;
-        }
-
-        if (type2 == QueryDataType.VARCHAR) {
-            type2 = QueryDataType.DECIMAL;
-        }
-
-        if (!canConvertToNumber(type1)) {
-            throw QueryException.error("Operand 1 is not numeric.");
-        }
-
-        if (!canConvertToNumber(type2)) {
-            throw QueryException.error("Operand 2 is not numeric.");
-        }
-
-        return type1;
-    }
-
-    public static boolean canConvertToNumber(QueryDataType type) {
-        return type.getConverter().canConvertToDecimal();
     }
 
 }
