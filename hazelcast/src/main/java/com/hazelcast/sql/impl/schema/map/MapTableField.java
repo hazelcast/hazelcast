@@ -24,17 +24,34 @@ import com.hazelcast.sql.impl.type.QueryDataType;
  * Field of IMap or ReplicatedMap.
  */
 public class MapTableField extends TableField {
+
     /** Path to the field. */
     private final QueryPath path;
 
+    /** Indicates whether value for the field requires any conversion on extraction/injection. */
+    private final boolean requiresConversion;
+
     public MapTableField(String name, QueryDataType type, boolean hidden, QueryPath path) {
+        this(name, type, hidden, path, false);
+    }
+
+    public MapTableField(String name, QueryDataType type, boolean hidden, QueryPath path, boolean requiresConversion) {
         super(name, type, hidden);
 
         this.path = path;
+        this.requiresConversion = requiresConversion;
     }
 
     public QueryPath getPath() {
         return path;
+    }
+
+    public boolean isRequiringConversion() {
+        return requiresConversion;
+    }
+
+    public boolean isStaticallyTyped() {
+        return !requiresConversion && type.isStatic();
     }
 
     @Override
@@ -49,7 +66,11 @@ public class MapTableField extends TableField {
 
         MapTableField field = (MapTableField) o;
 
-        return name.equals(field.name) && type.equals(field.type) && path.equals(field.path) && hidden == field.hidden;
+        return name.equals(field.name)
+                && type.equals(field.type)
+                && path.equals(field.path)
+                && hidden == field.hidden
+                && requiresConversion == field.requiresConversion;
     }
 
     @Override
@@ -59,12 +80,19 @@ public class MapTableField extends TableField {
         result = 31 * result + type.hashCode();
         result = 31 * result + path.hashCode();
         result = 31 * result + Boolean.hashCode(hidden);
+        result = 31 * result + Boolean.hashCode(requiresConversion);
 
         return result;
     }
 
     @Override
     public String toString() {
-        return "MapTableField{name=" + name + ", type=" + type + ", path=" + path + ", hidden=" + hidden + '}';
+        return "MapTableField{"
+                + "name=" + name
+                + ", type=" + type
+                + ", path=" + path
+                + ", hidden=" + hidden
+                + ", requiresConversion=" + requiresConversion
+                + '}';
     }
 }

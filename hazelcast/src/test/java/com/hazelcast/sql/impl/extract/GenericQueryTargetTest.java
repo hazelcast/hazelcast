@@ -16,6 +16,7 @@
 
 package com.hazelcast.sql.impl.extract;
 
+import com.google.common.collect.ImmutableSet;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
@@ -56,7 +57,7 @@ public class GenericQueryTargetTest extends SqlTestSupport {
     }
 
     private void checkTarget(GenericQueryTarget target) {
-        TestObject object = new TestObject(1);
+        TestObject object = new TestObject(1, 2);
 
         checkTarget(target, object, object);
         checkTarget(target, object, toData(object));
@@ -70,6 +71,7 @@ public class GenericQueryTargetTest extends SqlTestSupport {
         QueryExtractor targetExtractor = target.createExtractor(null, QueryDataType.OBJECT);
         TestObject extractedObject = (TestObject) targetExtractor.get();
         assertEquals(originalObject.getField(), extractedObject.getField());
+        assertEquals(originalObject.getField2(), extractedObject.getField2());
 
         // Bad top-level extractor.
         QueryExtractor badTargetExtractor = target.createExtractor(null, QueryDataType.INT);
@@ -77,20 +79,32 @@ public class GenericQueryTargetTest extends SqlTestSupport {
         assertEquals(SqlErrorCode.DATA_EXCEPTION, error.getCode());
         assertTrue(error.getMessage().startsWith("Failed to extract map entry " + (target.isKey() ? "key" : "value")));
 
-        // Good field executor.
+        // Good field extractor.
         QueryExtractor fieldExtractor = target.createExtractor("field", QueryDataType.OBJECT);
         int extractedField = (Integer) fieldExtractor.get();
         assertEquals(originalObject.getField(), extractedField);
 
         // Bad field extractor (type).
-        QueryExtractor badFieldTypeExtractor = target.createExtractor("field", QueryDataType.DATE);
+        QueryExtractor badFieldTypeExtractor = target.createExtractor("field", QueryDataType.BIGINT);
         error = assertThrows(QueryException.class, badFieldTypeExtractor::get);
         assertEquals(SqlErrorCode.DATA_EXCEPTION, error.getCode());
         assertTrue(error.getMessage().startsWith("Failed to extract map entry " + (target.isKey() ? "key" : "value") + " field"));
 
         // Bad field extractor (name).
-        QueryExtractor badFieldNameExtractor = target.createExtractor("field2", QueryDataType.INT);
+        QueryExtractor badFieldNameExtractor = target.createExtractor("badField", QueryDataType.INT);
         assertNull(badFieldNameExtractor.get());
+
+        // Good converting field extractor.
+        QueryExtractor convertingFieldExtractor = target.createExtractor("field2", QueryDataType.BIGINT);
+        long convertedAndExtractedField = (Long) convertingFieldExtractor.get();
+        assertEquals(originalObject.getField2(), convertedAndExtractedField);
+
+        // Bad field extractor (inconvertible type).
+        QueryExtractor badFieldInconvertibleTypeExtractor = target.createExtractor("field2", QueryDataType.DATE);
+        error = assertThrows(QueryException.class, badFieldInconvertibleTypeExtractor::get);
+        assertEquals(SqlErrorCode.DATA_EXCEPTION, error.getCode());
+        assertTrue(error.getMessage().startsWith("Failed to extract map entry " + (target.isKey() ? "key" : "value")
+                + " field \"field2\": Cannot convert INT to DATE"));
     }
 
     private static Data toData(TestObject object) {
@@ -101,7 +115,7 @@ public class GenericQueryTargetTest extends SqlTestSupport {
         InternalSerializationService ss = new DefaultSerializationServiceBuilder().build();
         Extractors extractors = Extractors.newBuilder(ss).build();
 
-        GenericQueryTargetDescriptor descriptor = new GenericQueryTargetDescriptor();
+        GenericQueryTargetDescriptor descriptor = new GenericQueryTargetDescriptor(ImmutableSet.of("field2"));
 
         GenericQueryTarget target = (GenericQueryTarget) descriptor.create(ss, extractors, key);
 
@@ -114,27 +128,35 @@ public class GenericQueryTargetTest extends SqlTestSupport {
     private static class TestObject implements DataSerializable {
 
         private int field;
+        private int field2;
 
         private TestObject() {
             // No-op.
         }
 
-        private TestObject(int field) {
+        private TestObject(int field, int field2) {
             this.field = field;
+            this.field2 = field2;
         }
 
         private int getField() {
             return field;
         }
 
+        public int getField2() {
+            return field2;
+        }
+
         @Override
         public void writeData(ObjectDataOutput out) throws IOException {
             out.writeInt(field);
+            out.writeInt(field2);
         }
 
         @Override
         public void readData(ObjectDataInput in) throws IOException {
             field = in.readInt();
+            field2 = in.readInt();
         }
     }
 }

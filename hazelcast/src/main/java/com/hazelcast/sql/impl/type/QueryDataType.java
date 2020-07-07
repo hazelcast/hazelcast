@@ -105,6 +105,10 @@ public class QueryDataType implements IdentifiedDataSerializable, Serializable {
         return converter;
     }
 
+    public boolean isStatic() {
+        return converter.getValueClass().equals(converter.getNormalizedValueClass());
+    }
+
     /**
      * Normalize the given value to a value returned by this instance. If the value doesn't match
      * the type expected by the converter, an exception is thrown.
@@ -131,6 +135,27 @@ public class QueryDataType implements IdentifiedDataSerializable, Serializable {
         }
 
         return converter.convertToSelf(converter, value);
+    }
+
+    /**
+     * Normalize the given value to a value returned by this instance. If the value doesn't match
+     * the type expected by the converter, a conversion is performed.
+     *
+     * @param value Value
+     * @return Normalized value
+     */
+    public Object convert(Object value) {
+        if (value == null) {
+            return null;
+        }
+
+        Class<?> valueClass = value.getClass();
+
+        if (valueClass == converter.getNormalizedValueClass()) {
+            return value;
+        }
+
+        return converter.convertToSelf(Converters.getConverter(valueClass), value);
     }
 
     @Override

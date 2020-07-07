@@ -142,7 +142,7 @@ public final class PortableMapOptionsMetadataResolver implements MapOptionsMetad
         }
 
         return new MapOptionsMetadata(
-                GenericQueryTargetDescriptor.INSTANCE,
+                GenericQueryTargetDescriptor.DEFAULT,
                 new PortableUpsertTargetDescriptor(
                         classDefinition.getFactoryId(),
                         classDefinition.getClassId(),

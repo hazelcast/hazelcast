@@ -38,8 +38,10 @@ import com.hazelcast.sql.impl.type.QueryDataTypeUtils;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
 
 /**
@@ -119,7 +121,7 @@ public final class MapSampleMetadataResolver {
         QueryPath topPath = isKey ? QueryPath.KEY_PATH : QueryPath.VALUE_PATH;
         fields.put(topName, new MapTableField(topName, QueryDataType.OBJECT, !fields.isEmpty(), topPath));
 
-        return new MapSampleMetadata(GenericQueryTargetDescriptor.INSTANCE, new LinkedHashMap<>(fields));
+        return new MapSampleMetadata(GenericQueryTargetDescriptor.DEFAULT, new LinkedHashMap<>(fields));
     }
 
     @SuppressWarnings("checkstyle:ReturnCount")
@@ -159,14 +161,21 @@ public final class MapSampleMetadataResolver {
 
     private static MapSampleMetadata resolveJson(HazelcastJsonValue json, boolean isKey) {
         Map<String, TableField> fields = new TreeMap<>();
+        Set<String> pathsRequiringConversion = new HashSet<>();
 
         // Add regular fields.
         JsonObject object = Json.parse(json.toString()).asObject();
         for (Member member : object) {
-            String name = member.getName();
+            QueryPath path = new QueryPath(member.getName(), isKey);
             QueryDataType type = resolveJsonType(member.getValue());
+            String name = member.getName();
+            boolean requiresConversion = doesRequireConversion(type);
 
-            fields.putIfAbsent(name, new MapTableField(name, type, false, new QueryPath(name, isKey)));
+            MapTableField field = new MapTableField(name, type, false, path, requiresConversion);
+
+            if (fields.putIfAbsent(field.getName(), field) == null && field.isRequiringConversion()) {
+                pathsRequiringConversion.add(field.getPath().getPath());
+            }
         }
 
         // Add top-level object.
@@ -174,7 +183,10 @@ public final class MapSampleMetadataResolver {
         QueryPath topPath = isKey ? QueryPath.KEY_PATH : QueryPath.VALUE_PATH;
         fields.put(topName, new MapTableField(topName, QueryDataType.OBJECT, !fields.isEmpty(), topPath));
 
-        return new MapSampleMetadata(GenericQueryTargetDescriptor.INSTANCE, new LinkedHashMap<>(fields));
+        return new MapSampleMetadata(
+                new GenericQueryTargetDescriptor(pathsRequiringConversion),
+                new LinkedHashMap<>(fields)
+        );
     }
 
     @SuppressWarnings("checkstyle:ReturnCount")
@@ -187,6 +199,17 @@ public final class MapSampleMetadataResolver {
             return QueryDataType.VARCHAR;
         } else {
             return QueryDataType.OBJECT;
+        }
+    }
+
+    private static boolean doesRequireConversion(QueryDataType type) {
+        switch (type.getTypeFamily()) {
+            case BOOLEAN:
+            // case BIGINT: 1.0 is being stored as 1 leading effectively to reading value of type Long
+            case VARCHAR:
+                return false;
+            default:
+                return true;
         }
     }
 
@@ -240,7 +263,7 @@ public final class MapSampleMetadataResolver {
         QueryPath topPath = isKey ? QueryPath.KEY_PATH : QueryPath.VALUE_PATH;
         fields.put(topName, new MapTableField(topName, topType, !fields.isEmpty(), topPath));
 
-        return new MapSampleMetadata(GenericQueryTargetDescriptor.INSTANCE, new LinkedHashMap<>(fields));
+        return new MapSampleMetadata(GenericQueryTargetDescriptor.DEFAULT, new LinkedHashMap<>(fields));
     }
 
     private static String extractAttributeNameFromMethod(Class<?> clazz, Method method) {

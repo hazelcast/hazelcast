@@ -26,10 +26,12 @@ import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.schema.map.MapTableField;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 
 import static com.hazelcast.sql.impl.connector.SqlConnector.JSON_SERIALIZATION_FORMAT;
 import static java.lang.String.format;
@@ -62,20 +64,37 @@ public final class JsonMapOptionsMetadataResolver implements MapOptionsMetadataR
         }
 
         LinkedHashMap<String, TableField> fields = new LinkedHashMap<>();
+        Set<String> pathsRequiringConversion = new HashSet<>();
+
         for (Entry<QueryPath, ExternalField> externalField : externalFieldsByPath.entrySet()) {
             QueryPath path = externalField.getKey();
             QueryDataType type = externalField.getValue().type();
             String name = externalField.getValue().name();
+            boolean requiresConversion = doesRequireConversion(type);
 
-            TableField field = new MapTableField(name, type, false, path);
+            MapTableField field = new MapTableField(name, type, false, path, requiresConversion);
 
-            fields.put(field.getName(), field);
+            if (fields.putIfAbsent(field.getName(), field) == null && field.isRequiringConversion()) {
+                pathsRequiringConversion.add(field.getPath().getPath());
+            }
         }
 
         return new MapOptionsMetadata(
-                GenericQueryTargetDescriptor.INSTANCE,
+                new GenericQueryTargetDescriptor(pathsRequiringConversion),
                 JsonUpsertTargetDescriptor.INSTANCE,
                 fields
         );
+    }
+
+    private static boolean doesRequireConversion(QueryDataType type) {
+        switch (type.getTypeFamily()) {
+            case BOOLEAN:
+            // assuming values are homomorphic
+            case BIGINT:
+            case VARCHAR:
+                return !type.isStatic();
+            default:
+                return true;
+        }
     }
 }

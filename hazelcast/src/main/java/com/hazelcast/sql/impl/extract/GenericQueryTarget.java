@@ -22,19 +22,30 @@ import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
+import java.util.Set;
+
 public class GenericQueryTarget implements QueryTarget, GenericTargetAccessor {
 
     private final InternalSerializationService serializationService;
     private final Extractors extractors;
     private final boolean key;
 
+    private final Set<String> pathsRequiringConversion;
+
     private Object rawTarget;
     private Object target;
 
-    public GenericQueryTarget(InternalSerializationService serializationService, Extractors extractors, boolean key) {
+    public GenericQueryTarget(
+            InternalSerializationService serializationService,
+            Extractors extractors,
+            boolean key,
+            Set<String> pathsRequiringConversion
+    ) {
         this.serializationService = serializationService;
         this.extractors = extractors;
         this.key = key;
+
+        this.pathsRequiringConversion = pathsRequiringConversion;
     }
 
     @Override
@@ -48,7 +59,7 @@ public class GenericQueryTarget implements QueryTarget, GenericTargetAccessor {
         if (path == null) {
             return new GenericTargetExtractor(key, this, type);
         } else {
-            return new GenericFieldExtractor(key, this, type, extractors, path);
+            return new GenericFieldExtractor(key, this, type, extractors, path, pathsRequiringConversion.contains(path));
         }
     }
 

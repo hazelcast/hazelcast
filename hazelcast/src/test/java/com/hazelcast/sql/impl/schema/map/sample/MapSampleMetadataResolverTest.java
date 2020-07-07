@@ -388,12 +388,12 @@ public class MapSampleMetadataResolverTest extends MapSchemaTestSupport {
         checkFields(
                 metadata,
                 field("_boolean", QueryDataType.BOOLEAN, true),
-                field("_int", QueryDataType.DOUBLE, true),
-                field("_long", QueryDataType.DOUBLE, true),
-                field("_float", QueryDataType.DOUBLE, true),
-                field("_double", QueryDataType.DOUBLE, true),
+                convertedField("_int", QueryDataType.DOUBLE, true),
+                convertedField("_long", QueryDataType.DOUBLE, true),
+                convertedField("_float", QueryDataType.DOUBLE, true),
+                convertedField("_double", QueryDataType.DOUBLE, true),
                 field("_string", QueryDataType.VARCHAR, true),
-                field("_null", QueryDataType.OBJECT, true),
+                convertedField("_null", QueryDataType.OBJECT, true),
                 hiddenField(KEY, QueryDataType.OBJECT, true)
         );
 
@@ -403,12 +403,12 @@ public class MapSampleMetadataResolverTest extends MapSchemaTestSupport {
         checkFields(
                 metadata,
                 field("_boolean", QueryDataType.BOOLEAN, false),
-                field("_int", QueryDataType.DOUBLE, false),
-                field("_long", QueryDataType.DOUBLE, false),
-                field("_float", QueryDataType.DOUBLE, false),
-                field("_double", QueryDataType.DOUBLE, false),
+                convertedField("_int", QueryDataType.DOUBLE, false),
+                convertedField("_long", QueryDataType.DOUBLE, false),
+                convertedField("_float", QueryDataType.DOUBLE, false),
+                convertedField("_double", QueryDataType.DOUBLE, false),
                 field("_string", QueryDataType.VARCHAR, false),
-                field("_null", QueryDataType.OBJECT, false),
+                convertedField("_null", QueryDataType.OBJECT, false),
                 hiddenField(VALUE, QueryDataType.OBJECT, false)
         );
     }
@@ -464,7 +464,7 @@ public class MapSampleMetadataResolverTest extends MapSchemaTestSupport {
     private void checkJavaTypes(Object object, boolean key) {
         MapSampleMetadata metadata = MapSampleMetadataResolver.resolve(getSerializationService(), object, key);
 
-        assertEquals(GenericQueryTargetDescriptor.INSTANCE, metadata.getDescriptor());
+        assertEquals(GenericQueryTargetDescriptor.DEFAULT, metadata.getDescriptor());
 
         checkFields(
             metadata,

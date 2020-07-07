@@ -346,8 +346,8 @@ public class CreateExecPlanNodeVisitorTest extends SqlTestSupport {
         MapScanPlanNode scanNode = new MapScanPlanNode(
             nextNodeId(),
             mapName,
-            GenericQueryTargetDescriptor.INSTANCE,
-            GenericQueryTargetDescriptor.INSTANCE,
+            GenericQueryTargetDescriptor.DEFAULT,
+            GenericQueryTargetDescriptor.DEFAULT,
             Arrays.asList(valuePath("field1"), valuePath("field2")),
             Arrays.asList(QueryDataType.INT, QueryDataType.VARCHAR),
             Arrays.asList(0, 1),
