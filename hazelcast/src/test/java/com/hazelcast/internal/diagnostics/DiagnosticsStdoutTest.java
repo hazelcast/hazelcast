@@ -72,7 +72,7 @@ public class DiagnosticsStdoutTest extends HazelcastTestSupport {
 
         Config config = new Config()
                 .setProperty(Diagnostics.ENABLED.getName(), "true")
-                .setProperty(Diagnostics.STDOUT.getName(), "true")
+                .setProperty(Diagnostics.OUTPUT_TYPE.getName(), DiagnosticsOutputType.STDOUT.name())
                 .setProperty(MetricsPlugin.PERIOD_SECONDS.getName(), "1");
 
         createHazelcastInstance(config);
