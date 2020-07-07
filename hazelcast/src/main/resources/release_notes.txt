@@ -1,44 +1,17 @@
-This document lists the new features, enhancements, fixed issues and, removed or deprecated features for Hazelcast IMDG 4.0.1 release. The numbers in the square brackets refer to the issues in Hazelcast's GitHub repositories.
+This document lists the new features, enhancements, fixed issues and, removed or deprecated features for Hazelcast IMDG 4.0.2-Migration release. The numbers in the square brackets refer to the issues in Hazelcast's GitHub repositories.
 
+## Enhancements
 
-==== 4.0.1 ====
-
-1. Enhancements
-
-* Introduced trusted interfaces concept for the Management Center
-connections. It is now possible to restrict the source IP addresses
-from which the Management Center operations are allowed.
-See the Limiting Source Addresses section.
-* Added the `creationTime` field to the `Executor` JMX bean. [#16774]
-* Promoted the `IMap.putAllAsync()` and `IMap.submitToKeys()` methods to IMDG's public API. [#16771]
-* Upgraded the Spring, Hibernate 5 and Session Clusterin (hazelcast-wm) dependency
-versions for Hazelcast IMDG 4.x. [#16731]
-* Updated the related aspects of Hazelcast IMDG after the changes done on the client protocol
-side to add the ability to add new parameters, methods, services, events and custom types to codecs. [#16719]
-* Upgraded Log4J2 version to 2.13.0. [#16658]
-* Introduced the `hazelcast.logging.details.enabled` property to make the logging
-of cluster version, name and IP optional to decrease the noise in the logs when, for
-example, you have a single-member cluster. [#16630]
-* Updated the link:https://hazelcast.org/hub/?project=kubernetes-cloud-discovery[Hazelcast Kubernetes^]
-plugin to 2.0.1. [#16591]
-* Added the support for automatically detecting the classloader of a type for the user
-code deployment feature. [#16584]
-
-2. Fixes
-
-* Fixed an issue where the `Metrics` beans were missing the standard `Type`
-information when monitoring with JMX. [#16729]
-* Fixed an issue when a Raft leader stops receiving heartbeats from the majority
-and it switches to the follower role in the same term: during this switch, it was also
-deleting its own vote in the term. [#16645]
-* Fixed an invalidation issue when using a transactional map
-from a cache with a Near Cache: the cache invalidation event occurs when
-the `transactionalMap.put` method is called. As a result, the entry was getting
-invalidated before the change is committed to the map. [#16638]
-* Fixed an issue where the wait key of a blocking call within a Raft
-invocation was still being reported as a live operation, when the key times out. [#16615]
-* Fixed an issue where the upload of classes using the client user
-code deployment were not successful when they are retrieved not in their
-created order.  [#16611]
-* Fixed an issue where the `size()` method was returning a negative value
-when map, cache and multimap contain more than `Integer.MAX_VALUE` entries. [#14935]
+* Introduced WAN throttling mechanism: this prevents the WAN consumers
+from getting overloaded by the WAN producers if transferring the WAN events
+takes less time than processing them in the target cluster. This can be the case
+with WAN synchronization if the network latency is low enough. It can be configured
+using the following properties:
+  ** hazelcast.wan.consumer.invocation.threshold
+  ** hazelcast.wan.consumer.ack.delay.backoff.init
+  ** hazelcast.wan.consumer.ack.delay.backoff.max
+  ** hazelcast.wan.consumer.ack.delay.backoff.multiplier
+  [#17111]
+  See https://github.com/hazelcast/hazelcast/blob/4.0.2-migration/hazelcast/src/main/java/com/hazelcast/spi/properties/ClusterProperty.java#L1112 for their explanations.
+* Added a support for WAN Replication so that the PASSIVE (target) cluster
+is now able to process WAN replication events from a 3.x ACTIVE (source) cluster. [#16887]
