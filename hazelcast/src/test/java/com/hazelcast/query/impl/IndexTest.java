@@ -20,6 +20,7 @@ import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.IndexType;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.internal.monitor.impl.PerIndexStats;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.map.impl.record.DataRecordFactory;
@@ -27,7 +28,6 @@ import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.record.Records;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableFactory;
@@ -57,6 +57,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import static com.hazelcast.config.MapConfig.DEFAULT_IN_MEMORY_FORMAT;
 import static com.hazelcast.instance.impl.TestUtil.toData;
 import static com.hazelcast.query.impl.Indexes.SKIP_PARTITIONS_COUNT_CHECK;
 import static java.util.Arrays.asList;
@@ -101,7 +102,7 @@ public class IndexTest {
     public void testRemoveEnumIndex() {
         IndexConfig config = IndexUtils.createTestIndexConfig(IndexType.HASH, "favoriteCity");
 
-        Indexes is = Indexes.newBuilder(ss, copyBehavior).build();
+        Indexes is = Indexes.newBuilder(ss, copyBehavior, DEFAULT_IN_MEMORY_FORMAT).build();
         is.addOrGetIndex(config, null);
         Data key = ss.toData(1);
         Data value = ss.toData(new SerializableWithEnum(SerializableWithEnum.City.ISTANBUL));
@@ -116,7 +117,7 @@ public class IndexTest {
     public void testUpdateEnumIndex() {
         IndexConfig config = IndexUtils.createTestIndexConfig(IndexType.HASH, "favoriteCity");
 
-        Indexes is = Indexes.newBuilder(ss, copyBehavior).build();
+        Indexes is = Indexes.newBuilder(ss, copyBehavior, DEFAULT_IN_MEMORY_FORMAT).build();
         is.addOrGetIndex(config, null);
         Data key = ss.toData(1);
         Data value = ss.toData(new SerializableWithEnum(SerializableWithEnum.City.ISTANBUL));
@@ -135,7 +136,7 @@ public class IndexTest {
 
     @Test
     public void testIndex() throws QueryException {
-        Indexes is = Indexes.newBuilder(ss, copyBehavior).build();
+        Indexes is = Indexes.newBuilder(ss, copyBehavior, DEFAULT_IN_MEMORY_FORMAT).build();
         Index dIndex = is.addOrGetIndex(IndexUtils.createTestIndexConfig(IndexType.HASH, "d"), null);
         Index boolIndex = is.addOrGetIndex(IndexUtils.createTestIndexConfig(IndexType.HASH, "bool"), null);
         Index strIndex = is.addOrGetIndex(IndexUtils.createTestIndexConfig(IndexType.HASH, "str"), null);
@@ -198,7 +199,7 @@ public class IndexTest {
 
     @Test
     public void testIndexWithNull() throws QueryException {
-        Indexes is = Indexes.newBuilder(ss, copyBehavior).build();
+        Indexes is = Indexes.newBuilder(ss, copyBehavior, DEFAULT_IN_MEMORY_FORMAT).build();
         Index strIndex = is.addOrGetIndex(IndexUtils.createTestIndexConfig(IndexType.SORTED, "str"), null);
 
         Data value = ss.toData(new MainPortable(false, 1, null));
