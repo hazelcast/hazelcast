@@ -18,10 +18,10 @@ package com.hazelcast.sql.impl.client;
 
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.SqlRow;
+import com.hazelcast.sql.impl.AbstractSqlResult;
+import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.QueryId;
-import com.hazelcast.sql.impl.SqlResultImpl;
 import com.hazelcast.sql.impl.SqlRowImpl;
 import com.hazelcast.sql.impl.row.Row;
 
@@ -32,6 +32,8 @@ import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
+import static java.util.concurrent.TimeUnit.SECONDS;
+
 /**
  * Registry of active client cursors.
  */
@@ -41,7 +43,7 @@ public class QueryClientStateRegistry {
 
     public SqlPage registerAndFetch(
         UUID clientId,
-        SqlResultImpl cursor,
+        AbstractSqlResult cursor,
         int cursorBufferSize,
         InternalSerializationService serializationService
     ) {
@@ -94,12 +96,16 @@ public class QueryClientStateRegistry {
         return new SqlPage(page, last);
     }
 
+    /**
+     * @return true, if this is the last page. False when we don't know.
+     */
     private boolean fetchPage(
         Iterator<SqlRow> iterator,
         List<Data> page,
         int cursorBufferSize,
         InternalSerializationService serializationService
     ) {
+        long endTime = System.nanoTime() + SECONDS.toNanos(1);
         while (iterator.hasNext()) {
             SqlRow row = iterator.next();
             Row rowInternal = ((SqlRowImpl) row).getDelegate();
@@ -107,12 +113,15 @@ public class QueryClientStateRegistry {
 
             page.add(rowData);
 
-            if (page.size() == cursorBufferSize) {
-                break;
+            // TODO we call nanoTime for each item - use batching
+            if (page.size() == cursorBufferSize || System.nanoTime() >= endTime) {
+                // note that we might return false even if there's no next page. We don't actively check `hasNext()`
+                // here because it could block
+                return false;
             }
         }
 
-        return !iterator.hasNext();
+        return true;
     }
 
     public void close(UUID clientId, QueryId queryId) {

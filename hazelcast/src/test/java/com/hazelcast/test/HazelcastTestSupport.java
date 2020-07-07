@@ -298,12 +298,18 @@ public abstract class HazelcastTestSupport {
     public static void ignore(Throwable ignored) {
     }
 
+    /**
+     * Note: the {@code cancel()} method on the returned future has no effect.
+     */
     public static Future spawn(Runnable task) {
         FutureTask<Runnable> futureTask = new FutureTask<>(task, null);
         new Thread(futureTask).start();
         return futureTask;
     }
 
+    /**
+     * Note: the {@code cancel()} method on the returned future has no effect.
+     */
     public static <E> Future<E> spawn(Callable<E> task) {
         FutureTask<E> futureTask = new FutureTask<E>(task);
         new Thread(futureTask).start();
