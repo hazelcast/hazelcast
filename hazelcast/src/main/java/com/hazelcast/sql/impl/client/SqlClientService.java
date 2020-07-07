@@ -16,7 +16,6 @@
 
 package com.hazelcast.sql.impl.client;
 
-import com.hazelcast.client.impl.ClientDelegatingFuture;
 import com.hazelcast.client.impl.clientside.ClientMessageDecoder;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
@@ -186,7 +185,9 @@ public class SqlClientService implements SqlService {
 
         ClientInvocationFuture fut = invocation.invoke();
 
-        return new ClientDelegatingFuture<T>(fut, getSerializationService(), decoder, false).get();
+        ClientMessage clientMessage = fut.get();
+
+        return decoder.decodeClientMessage(clientMessage);
     }
 
     private static void handleResponseError(SqlError error) {
