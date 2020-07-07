@@ -24,30 +24,27 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
-import static java.util.stream.Collectors.toList;
-
 class CacheInfoCollector implements MetricsCollector {
-
-    private Collection<DistributedObject> caches;
 
     @Override
     public Map<String, String> computeMetrics(Node hazelcastNode) {
+        Map<String, String> cacheInfo = new HashMap<>(1);
 
         Collection<DistributedObject> distributedObjects = hazelcastNode.hazelcastInstance.getDistributedObjects();
-        caches = distributedObjects.stream().filter(distributedObject -> distributedObject.getServiceName().
-                equals(CacheService.SERVICE_NAME)).collect(toList());
-        Map<String, String> cacheInfo = new HashMap<>(1);
-        cacheInfo.put("cawact", String.valueOf(countCacheWithWANReplication(hazelcastNode)));
-        return cacheInfo;
-    }
+        long countCacheWithWANReplication = distributedObjects.stream().filter(distributedObject -> {
 
-    private long countCacheWithWANReplication(Node node) {
-        return caches.stream().filter(distributedObject -> {
-            CacheSimpleConfig config = node.getConfig().findCacheConfigOrNull(distributedObject.getName());
+            if (!distributedObject.getServiceName().equals(CacheService.SERVICE_NAME))
+                return false;
+
+            CacheSimpleConfig config = hazelcastNode.getConfig().findCacheConfigOrNull(distributedObject.getName());
             if (config != null) {
                 return config.getWanReplicationRef() != null;
             }
             return false;
+
         }).count();
+
+        cacheInfo.put("cawact", String.valueOf(countCacheWithWANReplication));
+        return cacheInfo;
     }
 }
