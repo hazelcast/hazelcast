@@ -33,12 +33,8 @@ class CacheInfoCollector implements MetricsCollector {
         long countCacheWithWANReplication = distributedObjects.stream()
                 .filter(distributedObject -> distributedObject.getServiceName().equals(CacheService.SERVICE_NAME))
                 .map(distributedObject -> hazelcastNode.getConfig().findCacheConfigOrNull(distributedObject.getName()))
-                .filter(cacheSimpleConfig -> {
-                    if (cacheSimpleConfig != null) {
-                        return cacheSimpleConfig.getWanReplicationRef() != null;
-                    }
-                    return false;
-                }).count();
+                .filter(cacheConfig -> cacheConfig != null && cacheConfig.getWanReplicationRef() != null)
+                .count();
 
         cacheInfo.put("cawact", String.valueOf(countCacheWithWANReplication));
         return cacheInfo;
