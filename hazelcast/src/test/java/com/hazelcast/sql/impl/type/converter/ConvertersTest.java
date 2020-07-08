@@ -313,12 +313,16 @@ public class ConvertersTest {
 
         assertEquals(1, converter.asTinyint(val));
         checkDataException(() -> converter.asTinyint(bigValue));
+        checkDataException(() -> converter.asTinyint(Byte.MAX_VALUE + 1.0f));
         assertEquals(1, converter.asSmallint(val));
         checkDataException(() -> converter.asSmallint(bigValue));
+        checkDataException(() -> converter.asSmallint(Short.MAX_VALUE + 1.0f));
         assertEquals(1, converter.asInt(val));
         checkDataException(() -> converter.asInt(bigValue));
+        checkDataException(() -> converter.asInt(Integer.MAX_VALUE + 1.0f));
         assertEquals(1L, converter.asBigint(val));
         checkDataException(() -> converter.asBigint(bigValue));
+        checkDataException(() -> converter.asBigint(Long.MAX_VALUE + Math.ulp((float) Long.MAX_VALUE)));
         assertEquals(new BigDecimal(Float.toString(val)), converter.asDecimal(val));
 
         assertEquals(1.1f, converter.asReal(val), 0);
@@ -343,12 +347,16 @@ public class ConvertersTest {
 
         assertEquals(1, converter.asTinyint(val));
         checkDataException(() -> converter.asTinyint(bigValue));
+        checkDataException(() -> converter.asTinyint(Byte.MAX_VALUE + 1.0d));
         assertEquals(1, converter.asSmallint(val));
         checkDataException(() -> converter.asSmallint(bigValue));
+        checkDataException(() -> converter.asSmallint(Short.MAX_VALUE + 1.0d));
         assertEquals(1, converter.asInt(val));
         checkDataException(() -> converter.asInt(bigValue));
+        checkDataException(() -> converter.asInt(Integer.MAX_VALUE + 1.0d));
         assertEquals(1L, converter.asBigint(val));
         checkDataException(() -> converter.asBigint(bigValue));
+        checkDataException(() -> converter.asBigint(Long.MAX_VALUE + Math.ulp((double) Long.MAX_VALUE)));
         assertEquals(BigDecimal.valueOf(val), converter.asDecimal(val));
 
         assertEquals(1.1f, converter.asReal(val), 0);
