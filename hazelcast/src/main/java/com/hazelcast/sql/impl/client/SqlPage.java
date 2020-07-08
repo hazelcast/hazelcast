@@ -19,6 +19,9 @@ package com.hazelcast.sql.impl.client;
 import java.util.List;
 import java.util.Objects;
 
+/**
+ * A finite set of rows returned to the client.
+ */
 public class SqlPage {
 
     private final List<SqlPageRow> rows;
