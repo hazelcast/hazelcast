@@ -40,7 +40,7 @@ import org.apache.calcite.sql.validate.SqlValidatorTable;
 import org.apache.calcite.util.Util;
 
 import java.math.BigDecimal;
-import java.util.HashMap;
+import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -68,7 +68,7 @@ public class HazelcastSqlValidator extends SqlValidatorImpl {
 
     private static final Config CONFIG = Config.DEFAULT.withIdentifierExpansion(true);
 
-    private final Map<SqlNode, RelDataType> knownNodeTypes = new HashMap<>();
+    private final Map<SqlNode, RelDataType> knownNodeTypes = new IdentityHashMap<>();
 
     public HazelcastSqlValidator(SqlOperatorTable opTab, SqlValidatorCatalogReader catalogReader,
                                  HazelcastTypeFactory typeFactory, SqlConformance conformance) {
