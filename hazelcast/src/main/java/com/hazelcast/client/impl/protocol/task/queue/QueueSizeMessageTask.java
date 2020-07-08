@@ -34,7 +34,7 @@ import java.security.Permission;
  * {@link com.hazelcast.client.impl.protocol.codec.QueueMessageType#QUEUE_SIZE}
  */
 public class QueueSizeMessageTask
-        extends AbstractPartitionMessageTask<QueueSizeCodec.RequestParameters> {
+        extends AbstractPartitionMessageTask<String> {
 
     public QueueSizeMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -42,11 +42,11 @@ public class QueueSizeMessageTask
 
     @Override
     protected Operation prepareOperation() {
-        return new SizeOperation(parameters.name);
+        return new SizeOperation(parameters);
     }
 
     @Override
-    protected QueueSizeCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+    protected String decodeClientMessage(ClientMessage clientMessage) {
         return QueueSizeCodec.decodeRequest(clientMessage);
     }
 
@@ -57,7 +57,7 @@ public class QueueSizeMessageTask
 
     @Override
     public Permission getRequiredPermission() {
-        return new QueuePermission(parameters.name, ActionConstants.ACTION_READ);
+        return new QueuePermission(parameters, ActionConstants.ACTION_READ);
     }
 
     @Override
@@ -77,6 +77,6 @@ public class QueueSizeMessageTask
 
     @Override
     public String getDistributedObjectName() {
-        return parameters.name;
+        return parameters;
     }
 }

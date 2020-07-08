@@ -199,7 +199,7 @@ public class ClientInvocationTest extends ClientTestSupport {
         ClientMessage request = MapSizeCodec.encodeRequest("test");
         int ownerlessPartition = 4000;
         ClientInvocation invocation = new ClientInvocation(client, request, "map", ownerlessPartition);
-        assertEquals(0, MapSizeCodec.decodeResponse(invocation.invoke().get()).response);
+        assertEquals(0, MapSizeCodec.decodeResponse(invocation.invoke().get()));
     }
 
     @Test
@@ -210,7 +210,7 @@ public class ClientInvocationTest extends ClientTestSupport {
 
         ClientMessage request = MapSizeCodec.encodeRequest("test");
         ClientInvocation invocation = new ClientInvocation(client, request, "map", unavailableTarget);
-        assertEquals(0, MapSizeCodec.decodeResponse(invocation.invoke().get()).response);
+        assertEquals(0, MapSizeCodec.decodeResponse(invocation.invoke().get()));
     }
 
     @Test(expected = OperationTimeoutException.class)

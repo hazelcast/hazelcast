@@ -212,7 +212,7 @@ public class ClientCacheClearTest extends CacheClearTest {
 
             @Override
             public UUID decodeAddResponse(ClientMessage clientMessage) {
-                return CacheAddNearCacheInvalidationListenerCodec.decodeResponse(clientMessage).response;
+                return CacheAddNearCacheInvalidationListenerCodec.decodeResponse(clientMessage);
             }
 
             @Override
@@ -222,7 +222,7 @@ public class ClientCacheClearTest extends CacheClearTest {
 
             @Override
             public boolean decodeRemoveResponse(ClientMessage clientMessage) {
-                return CacheRemoveEntryListenerCodec.decodeResponse(clientMessage).response;
+                return CacheRemoveEntryListenerCodec.decodeResponse(clientMessage);
             }
         };
     }

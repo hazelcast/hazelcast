@@ -18,11 +18,10 @@ package com.hazelcast.client.impl.protocol.task.crdt.pncounter;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.PNCounterGetConfiguredReplicaCountCodec;
-import com.hazelcast.client.impl.protocol.codec.PNCounterGetConfiguredReplicaCountCodec.RequestParameters;
 import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
 import com.hazelcast.crdt.pncounter.PNCounter;
-import com.hazelcast.internal.crdt.pncounter.PNCounterService;
 import com.hazelcast.instance.impl.Node;
+import com.hazelcast.internal.crdt.pncounter.PNCounterService;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.PNCounterPermission;
@@ -34,7 +33,7 @@ import java.security.Permission;
  * configured replica count for a {@link PNCounter}.
  */
 public class PNCounterGetConfiguredReplicaCountMessageTask
-        extends AbstractCallableMessageTask<RequestParameters> {
+        extends AbstractCallableMessageTask<String> {
 
 
     public PNCounterGetConfiguredReplicaCountMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
@@ -42,7 +41,7 @@ public class PNCounterGetConfiguredReplicaCountMessageTask
     }
 
     @Override
-    protected RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+    protected String decodeClientMessage(ClientMessage clientMessage) {
         return PNCounterGetConfiguredReplicaCountCodec.decodeRequest(clientMessage);
     }
 
@@ -53,7 +52,7 @@ public class PNCounterGetConfiguredReplicaCountMessageTask
 
     @Override
     protected Object call() throws Exception {
-        return nodeEngine.getConfig().findPNCounterConfig(parameters.name).getReplicaCount();
+        return nodeEngine.getConfig().findPNCounterConfig(parameters).getReplicaCount();
     }
 
     @Override
@@ -67,7 +66,7 @@ public class PNCounterGetConfiguredReplicaCountMessageTask
 
     @Override
     public Permission getRequiredPermission() {
-        return new PNCounterPermission(parameters.name, ActionConstants.ACTION_READ);
+        return new PNCounterPermission(parameters, ActionConstants.ACTION_READ);
     }
 
     @Override
@@ -77,6 +76,6 @@ public class PNCounterGetConfiguredReplicaCountMessageTask
 
     @Override
     public String getDistributedObjectName() {
-        return parameters.name;
+        return parameters;
     }
 }

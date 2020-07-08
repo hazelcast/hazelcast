@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Gets the config of a map on the member it's called on.
  */
-@Generated("95f82c6b77658a38b6264ef6e72e9eed")
+@Generated("2d430613080554784f077df4ba79bd58")
 public final class MCGetMapConfigCodec {
     //hex: 0x200300
     public static final int REQUEST_MESSAGE_TYPE = 2097920;
@@ -57,14 +57,11 @@ public final class MCGetMapConfigCodec {
     private MCGetMapConfigCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class RequestParameters {
-
-        /**
-         * Name of the map.
-         */
-        public java.lang.String mapName;
-    }
+    /**
+     * Name of the map.
+     */
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"UUF_UNUSED_PUBLIC_OR_PROTECTED_FIELD"})
+    public java.lang.String mapName;
 
     public static ClientMessage encodeRequest(java.lang.String mapName) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
@@ -78,18 +75,15 @@ public final class MCGetMapConfigCodec {
         return clientMessage;
     }
 
-    public static MCGetMapConfigCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
+    public static java.lang.String decodeRequest(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        RequestParameters request = new RequestParameters();
         //empty initial frame
         iterator.next();
-        request.mapName = StringCodec.decode(iterator);
-        return request;
+        return StringCodec.decode(iterator);
     }
 
     @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class ResponseParameters {
-
         /**
          * The in memory storage format of the map:
          * 0 - Binary
@@ -97,32 +91,26 @@ public final class MCGetMapConfigCodec {
          * 2 - Native
          */
         public int inMemoryFormat;
-
         /**
          * Backup count of the map.
          */
         public int backupCount;
-
         /**
          * Async backup count of the map.
          */
         public int asyncBackupCount;
-
         /**
          * Time to live seconds for the map entries.
          */
         public int timeToLiveSeconds;
-
         /**
          * Maximum idle seconds for the map entries.
          */
         public int maxIdleSeconds;
-
         /**
          * Maximum size of the map.
          */
         public int maxSize;
-
         /**
          * The maximum size policy of the map:
          * 0 - PER_NODE
@@ -137,12 +125,10 @@ public final class MCGetMapConfigCodec {
          * 9 - FREE_NATIVE_MEMORY_PERCENTAGE
          */
         public int maxSizePolicy;
-
         /**
          * Whether reading from backup data is allowed.
          */
         public boolean readBackupData;
-
         /**
          * The eviction policy of the map:
          * 0 - LRU
@@ -151,13 +137,11 @@ public final class MCGetMapConfigCodec {
          * 3 - RANDOM
          */
         public int evictionPolicy;
-
         /**
          * Classname of the SplitBrainMergePolicy for the map.
          */
         public java.lang.String mergePolicy;
     }
-
     public static ClientMessage encodeResponse(int inMemoryFormat, int backupCount, int asyncBackupCount, int timeToLiveSeconds, int maxIdleSeconds, int maxSize, int maxSizePolicy, boolean readBackupData, int evictionPolicy, java.lang.String mergePolicy) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);

@@ -34,7 +34,7 @@ import java.security.Permission;
  * {@link com.hazelcast.client.impl.protocol.codec.QueueMessageType#QUEUE_REMAININGCAPACITY}
  */
 public class QueueRemainingCapacityMessageTask
-        extends AbstractPartitionMessageTask<QueueRemainingCapacityCodec.RequestParameters> {
+        extends AbstractPartitionMessageTask<String> {
 
     public QueueRemainingCapacityMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -42,11 +42,11 @@ public class QueueRemainingCapacityMessageTask
 
     @Override
     protected Operation prepareOperation() {
-        return new RemainingCapacityOperation(parameters.name);
+        return new RemainingCapacityOperation(parameters);
     }
 
     @Override
-    protected QueueRemainingCapacityCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+    protected String decodeClientMessage(ClientMessage clientMessage) {
         return QueueRemainingCapacityCodec.decodeRequest(clientMessage);
     }
 
@@ -58,7 +58,7 @@ public class QueueRemainingCapacityMessageTask
 
     @Override
     public Permission getRequiredPermission() {
-        return new QueuePermission(parameters.name, ActionConstants.ACTION_READ);
+        return new QueuePermission(parameters, ActionConstants.ACTION_READ);
     }
 
     @Override
@@ -78,6 +78,6 @@ public class QueueRemainingCapacityMessageTask
 
     @Override
     public String getDistributedObjectName() {
-        return parameters.name;
+        return parameters;
     }
 }

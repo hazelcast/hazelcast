@@ -18,7 +18,6 @@ package com.hazelcast.client.impl.protocol.task.management;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MCGetTimedMemberStateCodec;
-import com.hazelcast.client.impl.protocol.codec.MCGetTimedMemberStateCodec.RequestParameters;
 import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.management.ManagementCenterService;
@@ -26,7 +25,7 @@ import com.hazelcast.internal.nio.Connection;
 
 import java.security.Permission;
 
-public class GetTimedMemberStateMessageTask extends AbstractCallableMessageTask<RequestParameters> {
+public class GetTimedMemberStateMessageTask extends AbstractCallableMessageTask<Void> {
 
     public GetTimedMemberStateMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -44,8 +43,8 @@ public class GetTimedMemberStateMessageTask extends AbstractCallableMessageTask<
     }
 
     @Override
-    protected RequestParameters decodeClientMessage(ClientMessage clientMessage) {
-        return MCGetTimedMemberStateCodec.decodeRequest(clientMessage);
+    protected Void decodeClientMessage(ClientMessage clientMessage) {
+        return null;
     }
 
     @Override

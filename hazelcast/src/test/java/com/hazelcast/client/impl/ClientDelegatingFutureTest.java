@@ -81,7 +81,7 @@ public class ClientDelegatingFutureTest {
                 logger,
                 callIdSequence);
         delegatingFuture = new ClientDelegatingFuture<>(invocationFuture, serializationService,
-                clientMessage -> MapGetCodec.decodeResponse(clientMessage).response, true);
+                MapGetCodec::decodeResponse, true);
     }
 
     @Test

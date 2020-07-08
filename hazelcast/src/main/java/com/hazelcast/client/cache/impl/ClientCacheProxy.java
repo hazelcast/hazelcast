@@ -590,7 +590,7 @@ public class ClientCacheProxy<K, V> extends ClientCacheProxySupport<K, V>
         try {
             ClientMessage request = CacheSizeCodec.encodeRequest(nameWithPrefix);
             ClientMessage resultMessage = invoke(request);
-            return CacheSizeCodec.decodeResponse(resultMessage).response;
+            return CacheSizeCodec.decodeResponse(resultMessage);
         } catch (Throwable t) {
             throw rethrowAllowedTypeFirst(t, CacheException.class);
         }

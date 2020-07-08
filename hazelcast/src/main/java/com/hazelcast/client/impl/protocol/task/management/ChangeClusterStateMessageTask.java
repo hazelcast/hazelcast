@@ -18,7 +18,6 @@ package com.hazelcast.client.impl.protocol.task.management;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MCChangeClusterStateCodec;
-import com.hazelcast.client.impl.protocol.codec.MCChangeClusterStateCodec.RequestParameters;
 import com.hazelcast.client.impl.protocol.task.AbstractInvocationMessageTask;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.instance.impl.Node;
@@ -32,14 +31,14 @@ import java.security.Permission;
 
 import static com.hazelcast.client.impl.protocol.codec.MCChangeClusterStateCodec.decodeRequest;
 
-public class ChangeClusterStateMessageTask extends AbstractInvocationMessageTask<RequestParameters> {
+public class ChangeClusterStateMessageTask extends AbstractInvocationMessageTask<Integer> {
 
     public ChangeClusterStateMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+    protected Integer decodeClientMessage(ClientMessage clientMessage) {
         return decodeRequest(clientMessage);
     }
 
@@ -56,7 +55,7 @@ public class ChangeClusterStateMessageTask extends AbstractInvocationMessageTask
 
     @Override
     protected Operation prepareOperation() {
-        return new ChangeClusterStateOperation(ClusterState.getById(parameters.newState));
+        return new ChangeClusterStateOperation(ClusterState.getById(parameters));
     }
 
     @Override
@@ -66,7 +65,7 @@ public class ChangeClusterStateMessageTask extends AbstractInvocationMessageTask
 
     @Override
     public Object[] getParameters() {
-        return new Object[]{parameters.newState};
+        return new Object[]{parameters};
     }
 
     @Override

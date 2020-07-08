@@ -46,34 +46,10 @@ import java.util.concurrent.locks.Condition;
  */
 public class FencedLockProxy extends ClientProxy implements FencedLock {
 
-    private static final ClientMessageDecoder LOCK_RESPONSE_DECODER = new ClientMessageDecoder() {
-        @Override
-        public Long decodeClientMessage(ClientMessage clientMessage) {
-            return FencedLockLockCodec.decodeResponse(clientMessage).response;
-        }
-    };
-
-    private static final ClientMessageDecoder TRY_RESPONSE_DECODER = new ClientMessageDecoder() {
-        @Override
-        public Long decodeClientMessage(ClientMessage clientMessage) {
-            return FencedLockTryLockCodec.decodeResponse(clientMessage).response;
-        }
-    };
-
-    private static final ClientMessageDecoder UNLOCK_RESPONSE_DECODER = new ClientMessageDecoder() {
-        @Override
-        public Boolean decodeClientMessage(ClientMessage clientMessage) {
-            return FencedLockUnlockCodec.decodeResponse(clientMessage).response;
-        }
-    };
-
-    private static final ClientMessageDecoder GET_LOCK_OWNERSHIP_STATE_RESPONSE_DECODER = new ClientMessageDecoder() {
-        @Override
-        public LockOwnershipState decodeClientMessage(ClientMessage clientMessage) {
-            FencedLockGetLockOwnershipCodec.ResponseParameters params = FencedLockGetLockOwnershipCodec
-                    .decodeResponse(clientMessage);
-            return new LockOwnershipState(params.fence, params.lockCount, params.sessionId, params.threadId);
-        }
+    private static final ClientMessageDecoder GET_LOCK_OWNERSHIP_STATE_RESPONSE_DECODER = clientMessage -> {
+        FencedLockGetLockOwnershipCodec.ResponseParameters params = FencedLockGetLockOwnershipCodec
+                .decodeResponse(clientMessage);
+        return new LockOwnershipState(params.fence, params.lockCount, params.sessionId, params.threadId);
     };
 
     private final FencedLockImpl lock;
@@ -175,7 +151,7 @@ public class FencedLockProxy extends ClientProxy implements FencedLock {
         protected InternalCompletableFuture<Long> doLock(long sessionId, long threadId, UUID invocationUid) {
             ClientMessage request = FencedLockLockCodec.encodeRequest(groupId, objectName, sessionId, threadId, invocationUid);
             ClientInvocationFuture future = new ClientInvocation(getClient(), request, name).invoke();
-            return new ClientDelegatingFuture<>(future, getSerializationService(), LOCK_RESPONSE_DECODER);
+            return new ClientDelegatingFuture<>(future, getSerializationService(), FencedLockLockCodec::decodeResponse);
         }
 
         @Override
@@ -184,7 +160,7 @@ public class FencedLockProxy extends ClientProxy implements FencedLock {
             ClientMessage request = FencedLockTryLockCodec.encodeRequest(groupId, objectName, sessionId, threadId,
                     invocationUid, timeoutMillis);
             ClientInvocationFuture future = new ClientInvocation(getClient(), request, name).invoke();
-            return new ClientDelegatingFuture<>(future, getSerializationService(), TRY_RESPONSE_DECODER);
+            return new ClientDelegatingFuture<>(future, getSerializationService(), FencedLockTryLockCodec::decodeResponse);
         }
 
         @Override
@@ -192,7 +168,7 @@ public class FencedLockProxy extends ClientProxy implements FencedLock {
             ClientMessage request = FencedLockUnlockCodec.encodeRequest(groupId, objectName, sessionId, threadId,
                     invocationUid);
             ClientInvocationFuture future = new ClientInvocation(getClient(), request, name).invoke();
-            return new ClientDelegatingFuture<>(future, getSerializationService(), UNLOCK_RESPONSE_DECODER);
+            return new ClientDelegatingFuture<>(future, getSerializationService(), FencedLockUnlockCodec::decodeResponse);
         }
 
         @Override

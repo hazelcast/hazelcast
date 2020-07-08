@@ -45,7 +45,7 @@ import java.util.function.Supplier;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 
 public class ScheduledExecutorGetAllScheduledMessageTask
-        extends AbstractMessageTask<ScheduledExecutorGetAllScheduledFuturesCodec.RequestParameters>
+        extends AbstractMessageTask<String>
         implements BlockingMessageTask {
 
     public ScheduledExecutorGetAllScheduledMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
@@ -61,7 +61,7 @@ public class ScheduledExecutorGetAllScheduledMessageTask
     }
 
     @Override
-    protected ScheduledExecutorGetAllScheduledFuturesCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+    protected String decodeClientMessage(ClientMessage clientMessage) {
         return ScheduledExecutorGetAllScheduledFuturesCodec.decodeRequest(clientMessage);
     }
 
@@ -78,12 +78,12 @@ public class ScheduledExecutorGetAllScheduledMessageTask
 
     @Override
     public Permission getRequiredPermission() {
-        return new ScheduledExecutorPermission(parameters.schedulerName, ActionConstants.ACTION_READ);
+        return new ScheduledExecutorPermission(parameters, ActionConstants.ACTION_READ);
     }
 
     @Override
     public String getDistributedObjectName() {
-        return parameters.schedulerName;
+        return parameters;
     }
 
     @Override
@@ -93,13 +93,13 @@ public class ScheduledExecutorGetAllScheduledMessageTask
 
     @Override
     public Object[] getParameters() {
-        return new Object[]{parameters.schedulerName};
+        return new Object[]{parameters};
     }
 
     private void retrieveAllMemberOwnedScheduled(List<ScheduledTaskHandler> accumulator) {
         try {
             InvokeOnMembers invokeOnMembers = new InvokeOnMembers(nodeEngine, getServiceName(),
-                    new GetAllScheduledOnMemberOperationFactory(parameters.schedulerName),
+                    new GetAllScheduledOnMemberOperationFactory(parameters),
                     nodeEngine.getClusterService().getMembers());
             accumulateTaskHandlersAsUrnValues(accumulator, invokeOnMembers.invoke());
         } catch (Exception e) {
@@ -110,7 +110,7 @@ public class ScheduledExecutorGetAllScheduledMessageTask
     private void retrieveAllPartitionOwnedScheduled(List<ScheduledTaskHandler> accumulator) {
         try {
             accumulateTaskHandlersAsUrnValues(accumulator, nodeEngine.getOperationService().invokeOnAllPartitions(
-                    getServiceName(), new GetAllScheduledOnPartitionOperationFactory(parameters.schedulerName)));
+                    getServiceName(), new GetAllScheduledOnPartitionOperationFactory(parameters)));
         } catch (Throwable t) {
             throw rethrow(t);
         }

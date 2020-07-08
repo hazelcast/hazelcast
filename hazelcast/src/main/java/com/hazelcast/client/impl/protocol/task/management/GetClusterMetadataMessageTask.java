@@ -19,7 +19,6 @@ package com.hazelcast.client.impl.protocol.task.management;
 import com.hazelcast.client.impl.management.MCClusterMetadata;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MCGetClusterMetadataCodec;
-import com.hazelcast.client.impl.protocol.codec.MCGetClusterMetadataCodec.RequestParameters;
 import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
 import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.instance.JetBuildInfo;
@@ -29,7 +28,7 @@ import com.hazelcast.internal.nio.Connection;
 
 import java.security.Permission;
 
-public class GetClusterMetadataMessageTask extends AbstractCallableMessageTask<RequestParameters> {
+public class GetClusterMetadataMessageTask extends AbstractCallableMessageTask<Void> {
     public GetClusterMetadataMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
@@ -46,8 +45,8 @@ public class GetClusterMetadataMessageTask extends AbstractCallableMessageTask<R
     }
 
     @Override
-    protected RequestParameters decodeClientMessage(ClientMessage clientMessage) {
-        return MCGetClusterMetadataCodec.decodeRequest(clientMessage);
+    protected Void decodeClientMessage(ClientMessage clientMessage) {
+        return null;
     }
 
     @Override

@@ -18,15 +18,15 @@ package com.hazelcast.client.impl.protocol.task.map;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MapClearCodec;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.instance.impl.Node;
+import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.map.impl.LocalMapStatsProvider;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.event.MapEventPublisher;
 import com.hazelcast.map.impl.operation.MapOperationProvider;
-import com.hazelcast.cluster.Address;
-import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.spi.impl.operationservice.OperationFactory;
@@ -37,7 +37,7 @@ import java.util.Map;
 import static com.hazelcast.core.EntryEventType.CLEAR_ALL;
 
 public class MapClearMessageTask
-        extends AbstractMapAllPartitionsMessageTask<MapClearCodec.RequestParameters> {
+        extends AbstractMapAllPartitionsMessageTask<String> {
 
     public MapClearMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -45,8 +45,8 @@ public class MapClearMessageTask
 
     @Override
     protected OperationFactory createOperationFactory() {
-        MapOperationProvider operationProvider = getOperationProvider(parameters.name);
-        return operationProvider.createClearOperationFactory(parameters.name);
+        MapOperationProvider operationProvider = getOperationProvider(parameters);
+        return operationProvider.createClearOperationFactory(parameters);
     }
 
     @Override
@@ -62,20 +62,20 @@ public class MapClearMessageTask
         if (clearedTotal > 0) {
             Address thisAddress = nodeEngine.getThisAddress();
             MapEventPublisher mapEventPublisher = mapServiceContext.getMapEventPublisher();
-            mapEventPublisher.publishMapEvent(thisAddress, parameters.name, CLEAR_ALL, clearedTotal);
+            mapEventPublisher.publishMapEvent(thisAddress, parameters, CLEAR_ALL, clearedTotal);
         }
 
         final MapService mapService = getService(MapService.SERVICE_NAME);
-        MapContainer mapContainer = mapService.getMapServiceContext().getMapContainer(parameters.name);
+        MapContainer mapContainer = mapService.getMapServiceContext().getMapContainer(parameters);
         if (mapContainer.getMapConfig().isStatisticsEnabled()) {
             LocalMapStatsProvider localMapStatsProvider = mapServiceContext.getLocalMapStatsProvider();
-            localMapStatsProvider.getLocalMapStatsImpl(parameters.name).incrementOtherOperations();
+            localMapStatsProvider.getLocalMapStatsImpl(parameters).incrementOtherOperations();
         }
         return null;
     }
 
     @Override
-    protected MapClearCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+    protected String decodeClientMessage(ClientMessage clientMessage) {
         return MapClearCodec.decodeRequest(clientMessage);
     }
 
@@ -89,12 +89,12 @@ public class MapClearMessageTask
     }
 
     public Permission getRequiredPermission() {
-        return new MapPermission(parameters.name, ActionConstants.ACTION_REMOVE);
+        return new MapPermission(parameters, ActionConstants.ACTION_REMOVE);
     }
 
     @Override
     public String getDistributedObjectName() {
-        return parameters.name;
+        return parameters;
     }
 
     @Override

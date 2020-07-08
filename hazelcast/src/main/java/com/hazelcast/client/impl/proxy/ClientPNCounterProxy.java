@@ -367,7 +367,7 @@ public class ClientPNCounterProxy extends ClientProxy implements PNCounter {
      */
     private List<Member> getReplicaAddresses(Collection<Member> excludedAddresses) {
         final Collection<Member> dataMembers = getContext().getClusterService()
-                                                           .getMembers(MemberSelectors.DATA_MEMBER_SELECTOR);
+                .getMembers(MemberSelectors.DATA_MEMBER_SELECTOR);
         final int maxConfiguredReplicaCount = getMaxConfiguredReplicaCount();
         final int currentReplicaCount = Math.min(maxConfiguredReplicaCount, dataMembers.size());
         final ArrayList<Member> replicaAddresses = new ArrayList<>(currentReplicaCount);
@@ -393,11 +393,9 @@ public class ClientPNCounterProxy extends ClientProxy implements PNCounter {
         if (maxConfiguredReplicaCount > 0) {
             return maxConfiguredReplicaCount;
         } else {
-            final ClientMessage request = PNCounterGetConfiguredReplicaCountCodec.encodeRequest(name);
-            final ClientMessage response = invoke(request);
-            final PNCounterGetConfiguredReplicaCountCodec.ResponseParameters resultParameters
-                    = PNCounterGetConfiguredReplicaCountCodec.decodeResponse(response);
-            maxConfiguredReplicaCount = resultParameters.response;
+            ClientMessage request = PNCounterGetConfiguredReplicaCountCodec.encodeRequest(name);
+            ClientMessage response = invoke(request);
+            maxConfiguredReplicaCount = PNCounterGetConfiguredReplicaCountCodec.decodeResponse(response);
         }
         return maxConfiguredReplicaCount;
     }

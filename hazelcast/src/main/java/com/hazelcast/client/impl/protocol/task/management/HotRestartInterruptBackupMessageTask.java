@@ -26,7 +26,7 @@ import com.hazelcast.internal.nio.Connection;
 import java.security.Permission;
 
 public class HotRestartInterruptBackupMessageTask
-        extends AbstractCallableMessageTask<MCInterruptHotRestartBackupCodec.RequestParameters> {
+        extends AbstractCallableMessageTask<Void> {
 
     private final Node node;
 
@@ -42,8 +42,8 @@ public class HotRestartInterruptBackupMessageTask
     }
 
     @Override
-    protected MCInterruptHotRestartBackupCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
-        return MCInterruptHotRestartBackupCodec.decodeRequest(clientMessage);
+    protected Void decodeClientMessage(ClientMessage clientMessage) {
+        return null;
     }
 
     @Override

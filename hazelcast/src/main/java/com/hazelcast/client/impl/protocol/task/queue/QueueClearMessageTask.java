@@ -34,7 +34,7 @@ import java.security.Permission;
  * {@link com.hazelcast.client.impl.protocol.codec.QueueMessageType#QUEUE_CLEAR}
  */
 public class QueueClearMessageTask
-        extends AbstractPartitionMessageTask<QueueClearCodec.RequestParameters> {
+        extends AbstractPartitionMessageTask<String> {
 
     public QueueClearMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -42,11 +42,11 @@ public class QueueClearMessageTask
 
     @Override
     protected Operation prepareOperation() {
-        return new ClearOperation(parameters.name);
+        return new ClearOperation(parameters);
     }
 
     @Override
-    protected QueueClearCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+    protected String decodeClientMessage(ClientMessage clientMessage) {
         return QueueClearCodec.decodeRequest(clientMessage);
     }
 
@@ -57,7 +57,7 @@ public class QueueClearMessageTask
 
     @Override
     public Permission getRequiredPermission() {
-        return new QueuePermission(parameters.name, ActionConstants.ACTION_REMOVE);
+        return new QueuePermission(parameters, ActionConstants.ACTION_REMOVE);
     }
 
     @Override
@@ -77,6 +77,6 @@ public class QueueClearMessageTask
 
     @Override
     public String getDistributedObjectName() {
-        return parameters.name;
+        return parameters;
     }
 }

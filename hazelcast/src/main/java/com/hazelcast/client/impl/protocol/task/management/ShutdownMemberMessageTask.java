@@ -18,7 +18,6 @@ package com.hazelcast.client.impl.protocol.task.management;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MCShutdownMemberCodec;
-import com.hazelcast.client.impl.protocol.codec.MCShutdownMemberCodec.RequestParameters;
 import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.management.ManagementCenterService;
@@ -26,7 +25,7 @@ import com.hazelcast.internal.nio.Connection;
 
 import java.security.Permission;
 
-public class ShutdownMemberMessageTask extends AbstractCallableMessageTask<RequestParameters> {
+public class ShutdownMemberMessageTask extends AbstractCallableMessageTask<Void> {
     public ShutdownMemberMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
@@ -38,8 +37,8 @@ public class ShutdownMemberMessageTask extends AbstractCallableMessageTask<Reque
     }
 
     @Override
-    protected RequestParameters decodeClientMessage(ClientMessage clientMessage) {
-        return MCShutdownMemberCodec.decodeRequest(clientMessage);
+    protected Void decodeClientMessage(ClientMessage clientMessage) {
+        return null;
     }
 
     @Override

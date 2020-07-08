@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Returns all scheduled tasks in for a given scheduler in the given member.
  */
-@Generated("507e50d38e6b46b0fd0b159715a58198")
+@Generated("b06bda1a65bad6eb8f24633dad046547")
 public final class ScheduledExecutorGetAllScheduledFuturesCodec {
     //hex: 0x1A0400
     public static final int REQUEST_MESSAGE_TYPE = 1704960;
@@ -48,14 +48,11 @@ public final class ScheduledExecutorGetAllScheduledFuturesCodec {
     private ScheduledExecutorGetAllScheduledFuturesCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class RequestParameters {
-
-        /**
-         * The name of the scheduler.
-         */
-        public java.lang.String schedulerName;
-    }
+    /**
+     * The name of the scheduler.
+     */
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"UUF_UNUSED_PUBLIC_OR_PROTECTED_FIELD"})
+    public java.lang.String schedulerName;
 
     public static ClientMessage encodeRequest(java.lang.String schedulerName) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
@@ -69,22 +66,11 @@ public final class ScheduledExecutorGetAllScheduledFuturesCodec {
         return clientMessage;
     }
 
-    public static ScheduledExecutorGetAllScheduledFuturesCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
+    public static java.lang.String decodeRequest(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        RequestParameters request = new RequestParameters();
         //empty initial frame
         iterator.next();
-        request.schedulerName = StringCodec.decode(iterator);
-        return request;
-    }
-
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class ResponseParameters {
-
-        /**
-         * A list of scheduled task handlers used to construct the future proxies.
-         */
-        public java.util.Collection<com.hazelcast.scheduledexecutor.ScheduledTaskHandler> handlers;
+        return StringCodec.decode(iterator);
     }
 
     public static ClientMessage encodeResponse(java.util.Collection<com.hazelcast.scheduledexecutor.ScheduledTaskHandler> handlers) {
@@ -97,13 +83,14 @@ public final class ScheduledExecutorGetAllScheduledFuturesCodec {
         return clientMessage;
     }
 
-    public static ScheduledExecutorGetAllScheduledFuturesCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
+    /**
+    * A list of scheduled task handlers used to construct the future proxies.
+    */
+    public static java.util.Collection<com.hazelcast.scheduledexecutor.ScheduledTaskHandler> decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        ResponseParameters response = new ResponseParameters();
         //empty initial frame
         iterator.next();
-        response.handlers = ListMultiFrameCodec.decode(iterator, ScheduledTaskHandlerCodec::decode);
-        return response;
+        return ListMultiFrameCodec.decode(iterator, ScheduledTaskHandlerCodec::decode);
     }
 
 }

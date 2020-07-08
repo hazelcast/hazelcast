@@ -44,11 +44,11 @@ import com.hazelcast.cluster.Member;
 import com.hazelcast.collection.IQueue;
 import com.hazelcast.collection.ItemEvent;
 import com.hazelcast.collection.ItemListener;
+import com.hazelcast.collection.LocalQueueStats;
 import com.hazelcast.collection.impl.common.DataAwareItemEvent;
 import com.hazelcast.collection.impl.queue.QueueIterator;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.ItemEventType;
-import com.hazelcast.collection.LocalQueueStats;
 import com.hazelcast.internal.serialization.Data;
 
 import javax.annotation.Nonnull;
@@ -90,7 +90,7 @@ public final class ClientQueueProxy<E> extends PartitionSpecificClientProxy impl
 
             @Override
             public UUID decodeAddResponse(ClientMessage clientMessage) {
-                return QueueAddListenerCodec.decodeResponse(clientMessage).response;
+                return QueueAddListenerCodec.decodeResponse(clientMessage);
             }
 
             @Override
@@ -100,7 +100,7 @@ public final class ClientQueueProxy<E> extends PartitionSpecificClientProxy impl
 
             @Override
             public boolean decodeRemoveResponse(ClientMessage clientMessage) {
-                return QueueRemoveListenerCodec.decodeResponse(clientMessage).response;
+                return QueueRemoveListenerCodec.decodeResponse(clientMessage);
             }
         };
     }
@@ -186,8 +186,7 @@ public final class ClientQueueProxy<E> extends PartitionSpecificClientProxy impl
         Data data = toData(e);
         ClientMessage request = QueueOfferCodec.encodeRequest(name, data, unit.toMillis(timeout));
         ClientMessage response = invokeOnPartitionInterruptibly(request);
-        QueueOfferCodec.ResponseParameters resultParameters = QueueOfferCodec.decodeResponse(response);
-        return resultParameters.response;
+        return QueueOfferCodec.decodeResponse(response);
     }
 
     @Nonnull
@@ -195,8 +194,7 @@ public final class ClientQueueProxy<E> extends PartitionSpecificClientProxy impl
     public E take() throws InterruptedException {
         ClientMessage request = QueueTakeCodec.encodeRequest(name);
         ClientMessage response = invokeOnPartitionInterruptibly(request);
-        QueueTakeCodec.ResponseParameters resultParameters = QueueTakeCodec.decodeResponse(response);
-        return toObject(resultParameters.response);
+        return toObject(QueueTakeCodec.decodeResponse(response));
     }
 
     @Override
@@ -205,16 +203,14 @@ public final class ClientQueueProxy<E> extends PartitionSpecificClientProxy impl
 
         ClientMessage request = QueuePollCodec.encodeRequest(name, unit.toMillis(timeout));
         ClientMessage response = invokeOnPartitionInterruptibly(request);
-        QueuePollCodec.ResponseParameters resultParameters = QueuePollCodec.decodeResponse(response);
-        return toObject(resultParameters.response);
+        return toObject(QueuePollCodec.decodeResponse(response));
     }
 
     @Override
     public int remainingCapacity() {
         ClientMessage request = QueueRemainingCapacityCodec.encodeRequest(name);
         ClientMessage response = invokeOnPartition(request);
-        QueueRemainingCapacityCodec.ResponseParameters resultParameters = QueueRemainingCapacityCodec.decodeResponse(response);
-        return resultParameters.response;
+        return QueueRemainingCapacityCodec.decodeResponse(response);
     }
 
     @Override
@@ -223,8 +219,7 @@ public final class ClientQueueProxy<E> extends PartitionSpecificClientProxy impl
         Data data = toData(o);
         ClientMessage request = QueueRemoveCodec.encodeRequest(name, data);
         ClientMessage response = invokeOnPartition(request);
-        QueueRemoveCodec.ResponseParameters resultParameters = QueueRemoveCodec.decodeResponse(response);
-        return resultParameters.response;
+        return QueueRemoveCodec.decodeResponse(response);
     }
 
     @Override
@@ -233,8 +228,7 @@ public final class ClientQueueProxy<E> extends PartitionSpecificClientProxy impl
         Data data = toData(o);
         ClientMessage request = QueueContainsCodec.encodeRequest(name, data);
         ClientMessage response = invokeOnPartition(request);
-        QueueContainsCodec.ResponseParameters resultParameters = QueueContainsCodec.decodeResponse(response);
-        return resultParameters.response;
+        return QueueContainsCodec.decodeResponse(response);
     }
 
     @Override
@@ -243,8 +237,7 @@ public final class ClientQueueProxy<E> extends PartitionSpecificClientProxy impl
 
         ClientMessage request = QueueDrainToCodec.encodeRequest(name);
         ClientMessage response = invokeOnPartition(request);
-        QueueDrainToCodec.ResponseParameters resultParameters = QueueDrainToCodec.decodeResponse(response);
-        Collection<Data> resultCollection = resultParameters.response;
+        Collection<Data> resultCollection = QueueDrainToCodec.decodeResponse(response);
         for (Data data : resultCollection) {
             E e = toObject(data);
             objects.add(e);
@@ -258,8 +251,7 @@ public final class ClientQueueProxy<E> extends PartitionSpecificClientProxy impl
 
         ClientMessage request = QueueDrainToMaxSizeCodec.encodeRequest(name, maxElements);
         ClientMessage response = invokeOnPartition(request);
-        QueueDrainToMaxSizeCodec.ResponseParameters resultParameters = QueueDrainToMaxSizeCodec.decodeResponse(response);
-        Collection<Data> resultCollection = resultParameters.response;
+        Collection<Data> resultCollection = QueueDrainToMaxSizeCodec.decodeResponse(response);
         for (Data data : resultCollection) {
             E e = toObject(data);
             c.add(e);
@@ -299,32 +291,28 @@ public final class ClientQueueProxy<E> extends PartitionSpecificClientProxy impl
     public E peek() {
         ClientMessage request = QueuePeekCodec.encodeRequest(name);
         ClientMessage response = invokeOnPartition(request);
-        QueuePeekCodec.ResponseParameters resultParameters = QueuePeekCodec.decodeResponse(response);
-        return toObject(resultParameters.response);
+        return toObject(QueuePeekCodec.decodeResponse(response));
     }
 
     @Override
     public int size() {
         ClientMessage request = QueueSizeCodec.encodeRequest(name);
         ClientMessage response = invokeOnPartition(request);
-        QueueSizeCodec.ResponseParameters resultParameters = QueueSizeCodec.decodeResponse(response);
-        return resultParameters.response;
+        return QueueSizeCodec.decodeResponse(response);
     }
 
     @Override
     public boolean isEmpty() {
         ClientMessage request = QueueIsEmptyCodec.encodeRequest(name);
         ClientMessage response = invokeOnPartition(request);
-        QueueIsEmptyCodec.ResponseParameters resultParameters = QueueIsEmptyCodec.decodeResponse(response);
-        return resultParameters.response;
+        return QueueIsEmptyCodec.decodeResponse(response);
     }
 
     @Override
     public Iterator<E> iterator() {
         ClientMessage request = QueueIteratorCodec.encodeRequest(name);
         ClientMessage response = invokeOnPartition(request);
-        QueueIteratorCodec.ResponseParameters resultParameters = QueueIteratorCodec.decodeResponse(response);
-        Collection<Data> resultCollection = resultParameters.response;
+        Collection<Data> resultCollection = QueueIteratorCodec.decodeResponse(response);
         return new QueueIterator<E>(resultCollection.iterator(), getSerializationService(), false);
     }
 
@@ -332,8 +320,7 @@ public final class ClientQueueProxy<E> extends PartitionSpecificClientProxy impl
     public Object[] toArray() {
         ClientMessage request = QueueIteratorCodec.encodeRequest(name);
         ClientMessage response = invokeOnPartition(request);
-        QueueIteratorCodec.ResponseParameters resultParameters = QueueIteratorCodec.decodeResponse(response);
-        Collection<Data> resultCollection = resultParameters.response;
+        Collection<Data> resultCollection = QueueIteratorCodec.decodeResponse(response);
         int i = 0;
         Object[] array = new Object[resultCollection.size()];
         for (Data data : resultCollection) {
@@ -349,8 +336,7 @@ public final class ClientQueueProxy<E> extends PartitionSpecificClientProxy impl
 
         ClientMessage request = QueueIteratorCodec.encodeRequest(name);
         ClientMessage response = invokeOnPartition(request);
-        QueueIteratorCodec.ResponseParameters resultParameters = QueueIteratorCodec.decodeResponse(response);
-        Collection<Data> resultCollection = resultParameters.response;
+        Collection<Data> resultCollection = QueueIteratorCodec.decodeResponse(response);
         int size = resultCollection.size();
         if (ts.length < size) {
             ts = (T[]) java.lang.reflect.Array.newInstance(ts.getClass().getComponentType(), size);
@@ -369,8 +355,7 @@ public final class ClientQueueProxy<E> extends PartitionSpecificClientProxy impl
         Collection<Data> dataCollection = objectToDataCollection(c, getSerializationService());
         ClientMessage request = QueueContainsAllCodec.encodeRequest(name, dataCollection);
         ClientMessage response = invokeOnPartition(request);
-        QueueContainsAllCodec.ResponseParameters resultParameters = QueueContainsAllCodec.decodeResponse(response);
-        return resultParameters.response;
+        return QueueContainsAllCodec.decodeResponse(response);
     }
 
     @Override
@@ -380,8 +365,7 @@ public final class ClientQueueProxy<E> extends PartitionSpecificClientProxy impl
         Collection<Data> dataCollection = objectToDataCollection(c, getSerializationService());
         ClientMessage request = QueueAddAllCodec.encodeRequest(name, dataCollection);
         ClientMessage response = invokeOnPartition(request);
-        QueueAddAllCodec.ResponseParameters resultParameters = QueueAddAllCodec.decodeResponse(response);
-        return resultParameters.response;
+        return QueueAddAllCodec.decodeResponse(response);
     }
 
     @Override
@@ -391,9 +375,7 @@ public final class ClientQueueProxy<E> extends PartitionSpecificClientProxy impl
         Collection<Data> dataCollection = objectToDataCollection(c, getSerializationService());
         ClientMessage request = QueueCompareAndRemoveAllCodec.encodeRequest(name, dataCollection);
         ClientMessage response = invokeOnPartition(request);
-        QueueCompareAndRemoveAllCodec.ResponseParameters resultParameters =
-                QueueCompareAndRemoveAllCodec.decodeResponse(response);
-        return resultParameters.response;
+        return QueueCompareAndRemoveAllCodec.decodeResponse(response);
     }
 
     @Override
@@ -403,9 +385,7 @@ public final class ClientQueueProxy<E> extends PartitionSpecificClientProxy impl
         Collection<Data> dataCollection = objectToDataCollection(c, getSerializationService());
         ClientMessage request = QueueCompareAndRetainAllCodec.encodeRequest(name, dataCollection);
         ClientMessage response = invokeOnPartition(request);
-        QueueCompareAndRetainAllCodec.ResponseParameters resultParameters =
-                QueueCompareAndRetainAllCodec.decodeResponse(response);
-        return resultParameters.response;
+        return QueueCompareAndRetainAllCodec.decodeResponse(response);
     }
 
     @Override

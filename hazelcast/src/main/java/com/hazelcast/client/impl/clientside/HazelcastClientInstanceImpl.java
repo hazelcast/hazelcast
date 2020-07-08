@@ -591,8 +591,6 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
             ClientMessage request = ClientGetDistributedObjectsCodec.encodeRequest();
             final Future<ClientMessage> future = new ClientInvocation(this, request, getName()).invoke();
             ClientMessage response = future.get();
-            ClientGetDistributedObjectsCodec.ResponseParameters resultParameters =
-                    ClientGetDistributedObjectsCodec.decodeResponse(response);
 
             Collection<? extends DistributedObject> distributedObjects = proxyManager.getDistributedObjects();
             Set<DistributedObjectInfo> localDistributedObjects = new HashSet<>();
@@ -600,8 +598,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
                 localDistributedObjects.add(new DistributedObjectInfo(localInfo.getServiceName(), localInfo.getName()));
             }
 
-            Collection<DistributedObjectInfo> newDistributedObjectInfo = resultParameters.response;
-            for (DistributedObjectInfo distributedObjectInfo : newDistributedObjectInfo) {
+            for (DistributedObjectInfo distributedObjectInfo : ClientGetDistributedObjectsCodec.decodeResponse(response)) {
                 localDistributedObjects.remove(distributedObjectInfo);
                 getDistributedObject(distributedObjectInfo.getServiceName(), distributedObjectInfo.getName(), false);
             }
