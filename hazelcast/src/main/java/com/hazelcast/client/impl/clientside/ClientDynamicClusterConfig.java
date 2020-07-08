@@ -179,7 +179,8 @@ public class ClientDynamicClusterConfig extends Config {
                 queueConfig.getBackupCount(), queueConfig.getAsyncBackupCount(), queueConfig.getMaxSize(),
                 queueConfig.getEmptyQueueTtl(), queueConfig.isStatisticsEnabled(), queueConfig.getSplitBrainProtectionName(),
                 queueStoreConfigHolder, queueConfig.getMergePolicyConfig().getPolicy(),
-                queueConfig.getMergePolicyConfig().getBatchSize(), queueConfig.getComparatorClassName(), queueConfig.isDuplicateAllowed());
+                queueConfig.getMergePolicyConfig().getBatchSize(), queueConfig.getComparatorClassName(),
+                queueConfig.isDuplicateAllowed());
         invoke(request);
         return this;
     }

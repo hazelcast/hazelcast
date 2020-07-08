@@ -630,7 +630,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
 
         Config config = buildConfig(xml);
         QueueConfig queueConfig = config.getQueueConfig("custom");
-        assertEquals("com.hazelcast.config.QueueTestComparator",queueConfig.getComparatorClassName());
+        assertEquals("com.hazelcast.config.QueueTestComparator", queueConfig.getComparatorClassName());
         assertFalse(queueConfig.isDuplicateAllowed());
         assertFalse(queueConfig.isStatisticsEnabled());
         assertEquals(100, queueConfig.getMaxSize());
