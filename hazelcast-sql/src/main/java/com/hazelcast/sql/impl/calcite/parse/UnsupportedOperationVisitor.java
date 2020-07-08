@@ -136,8 +136,6 @@ public final class UnsupportedOperationVisitor implements SqlVisitor<Void> {
         SUPPORTED_KINDS.add(SqlKind.LIKE);
         SUPPORTED_KINDS.add(SqlKind.POSITION);
         SUPPORTED_KINDS.add(SqlKind.TIMESTAMP_ADD);
-        SUPPORTED_KINDS.add(SqlKind.ROW);
-        SUPPORTED_KINDS.add(SqlKind.VALUES);
 
         // Supported operators
         SUPPORTED_OPERATORS = new HashSet<>();
@@ -326,14 +324,16 @@ public final class UnsupportedOperationVisitor implements SqlVisitor<Void> {
                 // TODO: Proper validation for DDL
                 break;
 
-            case INSERT:
-                // TODO: Proper validation for DML
-                runsOnImdg = false;
-                break;
-
             case OTHER:
             case OTHER_FUNCTION:
                 processOther(call);
+                break;
+
+            case ROW:
+            case VALUES:
+            case INSERT:
+                // TODO: Proper validation for DML
+                runsOnImdg = false;
                 break;
 
             case HINT:
