@@ -37,14 +37,13 @@ import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.transaction.TransactionException;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.ListIterator;
 import java.util.Map;
 import java.util.PriorityQueue;
 import java.util.Set;
@@ -275,28 +274,8 @@ public class QueueContainer implements IdentifiedDataSerializable {
     }
 
     @SuppressWarnings("unchecked")
-    /*private void addTxItemOrdered(TxQueueItem txQueueItem) {
-        ListIterator<QueueItem> iterator = ((List<QueueItem>) getItemQueue()).listIterator();
-        while (iterator.hasNext()) {
-            QueueItem queueItem = iterator.next();
-            if (txQueueItem.itemId < queueItem.itemId) {
-                iterator.previous();
-                break;
-            }
-        }
-        iterator.add(txQueueItem);
-    }*/
-
     private void addTxItemOrdered(TxQueueItem txQueueItem) {
-        ListIterator<QueueItem> iterator = ((List<QueueItem>) getItemQueue()).listIterator();
-        while (iterator.hasNext()) {
-            QueueItem queueItem = iterator.next();
-            if (txQueueItem.itemId < queueItem.itemId) {
-                iterator.previous();
-                break;
-            }
-        }
-        iterator.add(txQueueItem);
+        getItemQueue().add(txQueueItem);
     }
 
     // TX Offer
@@ -903,13 +882,13 @@ public class QueueContainer implements IdentifiedDataSerializable {
         if (itemQueue == null) {
             itemQueue = createPriorityQueue(config);
             if (backupMap != null && !backupMap.isEmpty()) {
-                List<QueueItem> values = new ArrayList<>(backupMap.values());
-                Collections.sort(values);
-                QueueItem lastItem = values.get(values.size() - 1);
+                itemQueue.addAll(backupMap.values());
+                QueueItem[] values = itemQueue.toArray(new QueueItem[itemQueue.size()]);
+                Arrays.sort(values);
+                QueueItem lastItem = values[values.length - 1];
                 if (lastItem != null) {
                     setId(lastItem.itemId + ID_PROMOTION_OFFSET);
                 }
-                itemQueue.addAll(values);
                 backupMap.clear();
                 backupMap = null;
             }
@@ -975,7 +954,19 @@ public class QueueContainer implements IdentifiedDataSerializable {
         QueueStoreConfig storeConfig = config.getQueueStoreConfig();
         SerializationService serializationService = nodeEngine.getSerializationService();
         ClassLoader classLoader = nodeEngine.getConfigClassLoader();
+
+        // recreate the priority underlying priority queue with supplied priorityQueue configuration
+        if (itemQueue != null) {
+            itemQueue = copyQueueItems(itemQueue);
+        }
+
         this.store = QueueStoreWrapper.create(name, storeConfig, serializationService, classLoader);
+    }
+
+    private PriorityQueue<QueueItem> copyQueueItems(PriorityQueue<QueueItem> itemQueue) {
+        PriorityQueue<QueueItem> itemQueueCopy = createPriorityQueue(config);
+        itemQueue.stream().forEach(itemQueueCopy::add);
+        return itemQueueCopy;
     }
 
     /**
@@ -1020,6 +1011,7 @@ public class QueueContainer implements IdentifiedDataSerializable {
         long totalAgedCountVal = Math.max(totalAgedCount, 1);
         stats.setAverageAge(totalAge / totalAgedCountVal);
     }
+
 
     /**
      * Schedules the queue for destruction if the queue is empty. Destroys the queue immediately the queue is empty and the
@@ -1086,6 +1078,9 @@ public class QueueContainer implements IdentifiedDataSerializable {
         pollWaitNotifyKey = new QueueWaitNotifyKey(name, "poll");
         offerWaitNotifyKey = new QueueWaitNotifyKey(name, "offer");
         int size = in.readInt();
+        // on cluster migration queue data are stored temporary to a default priority queue.
+        // those data are copied at a later point
+        itemQueue = new PriorityQueue<>();
         for (int j = 0; j < size; j++) {
             QueueItem item = in.readObject();
             getItemQueue().offer(item);
