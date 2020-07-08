@@ -19,15 +19,15 @@ package com.hazelcast.client.impl.protocol.task.map;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MapValuesCodec;
 import com.hazelcast.instance.impl.Node;
-import com.hazelcast.map.impl.MapService;
-import com.hazelcast.map.impl.query.QueryResultRow;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.util.IterationType;
+import com.hazelcast.map.impl.MapService;
+import com.hazelcast.map.impl.query.QueryResultRow;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
-import com.hazelcast.internal.util.IterationType;
 
 import java.security.Permission;
 import java.util.ArrayList;
@@ -37,7 +37,7 @@ import java.util.List;
 import static com.hazelcast.map.impl.LocalMapStatsUtil.incrementOtherOperationsCount;
 
 public class MapValuesMessageTask
-        extends DefaultMapQueryMessageTask<MapValuesCodec.RequestParameters> {
+        extends DefaultMapQueryMessageTask<String> {
 
     public MapValuesMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -49,7 +49,7 @@ public class MapValuesMessageTask
         for (QueryResultRow resultEntry : result) {
             values.add(resultEntry.getValue());
         }
-        incrementOtherOperationsCount((MapService) getService(MapService.SERVICE_NAME), parameters.name);
+        incrementOtherOperationsCount((MapService) getService(MapService.SERVICE_NAME), parameters);
         return values;
     }
 
@@ -64,7 +64,7 @@ public class MapValuesMessageTask
     }
 
     @Override
-    protected MapValuesCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+    protected String decodeClientMessage(ClientMessage clientMessage) {
         return MapValuesCodec.decodeRequest(clientMessage);
     }
 
@@ -75,12 +75,12 @@ public class MapValuesMessageTask
 
     @Override
     public Permission getRequiredPermission() {
-        return new MapPermission(parameters.name, ActionConstants.ACTION_READ);
+        return new MapPermission(parameters, ActionConstants.ACTION_READ);
     }
 
     @Override
     public String getDistributedObjectName() {
-        return parameters.name;
+        return parameters;
     }
 
     @Override

@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Returns statistics of the task
  */
-@Generated("93af741d34421d38a1bf363a81306db3")
+@Generated("1e530da47ff10d71d4698a4db236032c")
 public final class ScheduledExecutorGetStatsFromMemberCodec {
     //hex: 0x1A0600
     public static final int REQUEST_MESSAGE_TYPE = 1705472;
@@ -99,33 +99,27 @@ public final class ScheduledExecutorGetStatsFromMemberCodec {
 
     @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class ResponseParameters {
-
         /**
          * Last period of time the task was idle, waiting to get scheduled.
          */
         public long lastIdleTimeNanos;
-
         /**
          * Total amount of time the task was idle, waiting to get scheduled in.
          */
         public long totalIdleTimeNanos;
-
         /**
          * How many times the task was ran/called.
          */
         public long totalRuns;
-
         /**
          * The total amount of time the task spent while scheduled in.
          */
         public long totalRunTimeNanos;
-
         /**
          * The duration of the task's last execution.
          */
         public long lastRunDurationNanos;
     }
-
     public static ClientMessage encodeResponse(long lastIdleTimeNanos, long totalIdleTimeNanos, long totalRuns, long totalRunTimeNanos, long lastRunDurationNanos) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);

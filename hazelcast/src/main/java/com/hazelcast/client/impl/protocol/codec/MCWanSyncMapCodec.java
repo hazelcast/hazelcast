@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Initiate WAN sync for a specific map or all maps
  */
-@Generated("8298af5af597ceda211d93a69239ddb8")
+@Generated("0938d5f7d7908bae83719c30ff3ecefe")
 public final class MCWanSyncMapCodec {
     //hex: 0x201600
     public static final int REQUEST_MESSAGE_TYPE = 2102784;
@@ -102,15 +102,6 @@ public final class MCWanSyncMapCodec {
         return request;
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class ResponseParameters {
-
-        /**
-         * UUID of the synchronization
-         */
-        public java.util.UUID uuid;
-    }
-
     public static ClientMessage encodeResponse(java.util.UUID uuid) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
@@ -121,12 +112,13 @@ public final class MCWanSyncMapCodec {
         return clientMessage;
     }
 
-    public static MCWanSyncMapCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
+    /**
+    * UUID of the synchronization
+    */
+    public static java.util.UUID decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        ResponseParameters response = new ResponseParameters();
         ClientMessage.Frame initialFrame = iterator.next();
-        response.uuid = decodeUUID(initialFrame.content, RESPONSE_UUID_FIELD_OFFSET);
-        return response;
+        return decodeUUID(initialFrame.content, RESPONSE_UUID_FIELD_OFFSET);
     }
 
 }

@@ -30,7 +30,7 @@ import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import java.security.Permission;
 
 public class CacheDestroyMessageTask
-        extends AbstractInvocationMessageTask<CacheDestroyCodec.RequestParameters> {
+        extends AbstractInvocationMessageTask<String> {
 
     public CacheDestroyMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -46,11 +46,11 @@ public class CacheDestroyMessageTask
 
     @Override
     protected Operation prepareOperation() {
-        return new CacheDestroyOperation(parameters.name);
+        return new CacheDestroyOperation(parameters);
     }
 
     @Override
-    protected CacheDestroyCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+    protected String decodeClientMessage(ClientMessage clientMessage) {
         return CacheDestroyCodec.decodeRequest(clientMessage);
     }
 

@@ -34,7 +34,7 @@ import java.security.Permission;
  * {@link com.hazelcast.client.impl.protocol.codec.ListMessageType#LIST_SIZE}
  */
 public class ListSizeMessageTask
-        extends AbstractPartitionMessageTask<ListSizeCodec.RequestParameters> {
+        extends AbstractPartitionMessageTask<String> {
 
     public ListSizeMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -42,11 +42,11 @@ public class ListSizeMessageTask
 
     @Override
     protected Operation prepareOperation() {
-        return new CollectionSizeOperation(parameters.name);
+        return new CollectionSizeOperation(parameters);
     }
 
     @Override
-    protected ListSizeCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+    protected String decodeClientMessage(ClientMessage clientMessage) {
         return ListSizeCodec.decodeRequest(clientMessage);
     }
 
@@ -67,7 +67,7 @@ public class ListSizeMessageTask
 
     @Override
     public Permission getRequiredPermission() {
-        return new ListPermission(parameters.name, ActionConstants.ACTION_READ);
+        return new ListPermission(parameters, ActionConstants.ACTION_READ);
     }
 
     @Override
@@ -77,7 +77,7 @@ public class ListSizeMessageTask
 
     @Override
     public String getDistributedObjectName() {
-        return parameters.name;
+        return parameters;
     }
 
 }

@@ -33,7 +33,7 @@ import java.security.Permission;
  * SetSizeMessageTask
  */
 public class SetSizeMessageTask
-        extends AbstractPartitionMessageTask<SetSizeCodec.RequestParameters> {
+        extends AbstractPartitionMessageTask<String> {
 
     public SetSizeMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -41,11 +41,11 @@ public class SetSizeMessageTask
 
     @Override
     protected Operation prepareOperation() {
-        return new CollectionSizeOperation(parameters.name);
+        return new CollectionSizeOperation(parameters);
     }
 
     @Override
-    protected SetSizeCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+    protected String decodeClientMessage(ClientMessage clientMessage) {
         return SetSizeCodec.decodeRequest(clientMessage);
     }
 
@@ -65,7 +65,7 @@ public class SetSizeMessageTask
 
     @Override
     public Permission getRequiredPermission() {
-        return new SetPermission(parameters.name, ActionConstants.ACTION_READ);
+        return new SetPermission(parameters, ActionConstants.ACTION_READ);
     }
 
     @Override
@@ -75,7 +75,7 @@ public class SetSizeMessageTask
 
     @Override
     public String getDistributedObjectName() {
-        return parameters.name;
+        return parameters;
     }
 
 }

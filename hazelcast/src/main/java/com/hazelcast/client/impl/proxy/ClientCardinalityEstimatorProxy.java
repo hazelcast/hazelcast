@@ -17,7 +17,6 @@
 package com.hazelcast.client.impl.proxy;
 
 import com.hazelcast.cardinality.CardinalityEstimator;
-import com.hazelcast.client.impl.clientside.ClientMessageDecoder;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.CardinalityEstimatorAddCodec;
 import com.hazelcast.client.impl.protocol.codec.CardinalityEstimatorEstimateCodec;
@@ -34,20 +33,6 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNull;
  */
 public class ClientCardinalityEstimatorProxy
         extends PartitionSpecificClientProxy implements CardinalityEstimator {
-
-    private static final ClientMessageDecoder ADD_DECODER = new ClientMessageDecoder() {
-        @Override
-        public Void decodeClientMessage(ClientMessage clientMessage) {
-            return null;
-        }
-    };
-
-    private static final ClientMessageDecoder ESTIMATE_DECODER = new ClientMessageDecoder() {
-        @Override
-        public Long decodeClientMessage(ClientMessage clientMessage) {
-            return CardinalityEstimatorEstimateCodec.decodeResponse(clientMessage).response;
-        }
-    };
 
     public ClientCardinalityEstimatorProxy(String serviceName, String objectId, ClientContext context) {
         super(serviceName, objectId, context);
@@ -74,12 +59,12 @@ public class ClientCardinalityEstimatorProxy
 
         Data data = toData(obj);
         ClientMessage request = CardinalityEstimatorAddCodec.encodeRequest(name, data.hash64());
-        return invokeOnPartitionAsync(request, ADD_DECODER);
+        return invokeOnPartitionAsync(request, clientMessage -> null);
     }
 
     @Override
     public InternalCompletableFuture<Long> estimateAsync() {
         ClientMessage request = CardinalityEstimatorEstimateCodec.encodeRequest(name);
-        return invokeOnPartitionAsync(request, ESTIMATE_DECODER);
+        return invokeOnPartitionAsync(request, CardinalityEstimatorEstimateCodec::decodeResponse);
     }
 }

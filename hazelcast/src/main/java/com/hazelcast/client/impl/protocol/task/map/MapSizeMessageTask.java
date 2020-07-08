@@ -32,7 +32,7 @@ import static com.hazelcast.internal.util.MapUtil.toIntSize;
 import static com.hazelcast.map.impl.LocalMapStatsUtil.incrementOtherOperationsCount;
 
 public class MapSizeMessageTask
-        extends AbstractMapAllPartitionsMessageTask<MapSizeCodec.RequestParameters> {
+        extends AbstractMapAllPartitionsMessageTask<String> {
 
     public MapSizeMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -40,7 +40,7 @@ public class MapSizeMessageTask
 
     @Override
     protected OperationFactory createOperationFactory() {
-        String mapName = parameters.name;
+        String mapName = parameters;
         return getOperationProvider(mapName).createMapSizeOperationFactory(mapName);
     }
 
@@ -52,12 +52,12 @@ public class MapSizeMessageTask
             Integer size = (Integer) mapService.getMapServiceContext().toObject(result);
             total += size;
         }
-        incrementOtherOperationsCount(mapService, parameters.name);
+        incrementOtherOperationsCount(mapService, parameters);
         return toIntSize(total);
     }
 
     @Override
-    protected MapSizeCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+    protected String decodeClientMessage(ClientMessage clientMessage) {
         return MapSizeCodec.decodeRequest(clientMessage);
     }
 
@@ -72,12 +72,12 @@ public class MapSizeMessageTask
     }
 
     public Permission getRequiredPermission() {
-        return new MapPermission(parameters.name, ActionConstants.ACTION_READ);
+        return new MapPermission(parameters, ActionConstants.ACTION_READ);
     }
 
     @Override
     public String getDistributedObjectName() {
-        return parameters.name;
+        return parameters;
     }
 
     @Override

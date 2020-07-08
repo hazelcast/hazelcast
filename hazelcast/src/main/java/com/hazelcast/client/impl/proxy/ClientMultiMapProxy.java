@@ -193,8 +193,7 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
         Data valueData = toData(value);
         ClientMessage request = MultiMapPutCodec.encodeRequest(name, keyData, valueData, ThreadUtil.getThreadId());
         ClientMessage response = invoke(request, keyData);
-        MultiMapPutCodec.ResponseParameters resultParameters = MultiMapPutCodec.decodeResponse(response);
-        return resultParameters.response;
+        return MultiMapPutCodec.decodeResponse(response);
     }
 
     @Nonnull
@@ -205,8 +204,7 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
         Data keyData = toData(key);
         ClientMessage request = MultiMapGetCodec.encodeRequest(name, keyData, ThreadUtil.getThreadId());
         ClientMessage response = invoke(request, keyData);
-        MultiMapGetCodec.ResponseParameters resultParameters = MultiMapGetCodec.decodeResponse(response);
-        return new UnmodifiableLazyList(resultParameters.response, getSerializationService());
+        return new UnmodifiableLazyList(MultiMapGetCodec.decodeResponse(response), getSerializationService());
     }
 
     @Override
@@ -218,8 +216,7 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
         Data valueData = toData(value);
         ClientMessage request = MultiMapRemoveEntryCodec.encodeRequest(name, keyData, valueData, ThreadUtil.getThreadId());
         ClientMessage response = invoke(request, keyData);
-        MultiMapRemoveEntryCodec.ResponseParameters resultParameters = MultiMapRemoveEntryCodec.decodeResponse(response);
-        return resultParameters.response;
+        return MultiMapRemoveEntryCodec.decodeResponse(response);
     }
 
     @Nonnull
@@ -230,8 +227,7 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
         Data keyData = toData(key);
         ClientMessage request = MultiMapRemoveCodec.encodeRequest(name, keyData, ThreadUtil.getThreadId());
         ClientMessage response = invoke(request, keyData);
-        MultiMapRemoveCodec.ResponseParameters resultParameters = MultiMapRemoveCodec.decodeResponse(response);
-        return new UnmodifiableLazyList(resultParameters.response, getSerializationService());
+        return new UnmodifiableLazyList(MultiMapRemoveCodec.decodeResponse(response), getSerializationService());
     }
 
     public void delete(@Nonnull Object key) {
@@ -252,9 +248,7 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
     public Set<K> keySet() {
         ClientMessage request = MultiMapKeySetCodec.encodeRequest(name);
         ClientMessage response = invoke(request);
-        MultiMapKeySetCodec.ResponseParameters resultParameters = MultiMapKeySetCodec.decodeResponse(response);
-
-        return (Set<K>) new UnmodifiableLazySet(resultParameters.response, getSerializationService());
+        return (Set<K>) new UnmodifiableLazySet(MultiMapKeySetCodec.decodeResponse(response), getSerializationService());
     }
 
     @Nonnull
@@ -262,8 +256,7 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
     public Collection<V> values() {
         ClientMessage request = MultiMapValuesCodec.encodeRequest(name);
         ClientMessage response = invoke(request);
-        MultiMapValuesCodec.ResponseParameters resultParameters = MultiMapValuesCodec.decodeResponse(response);
-        return new UnmodifiableLazyList(resultParameters.response, getSerializationService());
+        return new UnmodifiableLazyList(MultiMapValuesCodec.decodeResponse(response), getSerializationService());
     }
 
     @Nonnull
@@ -271,9 +264,7 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
     public Set<Map.Entry<K, V>> entrySet() {
         ClientMessage request = MultiMapEntrySetCodec.encodeRequest(name);
         ClientMessage response = invoke(request);
-        MultiMapEntrySetCodec.ResponseParameters resultParameters = MultiMapEntrySetCodec.decodeResponse(response);
-
-        return (Set) new UnmodifiableLazySet(resultParameters.response, getSerializationService());
+        return (Set) new UnmodifiableLazySet(MultiMapEntrySetCodec.decodeResponse(response), getSerializationService());
     }
 
     @Override
@@ -283,8 +274,7 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
         Data keyData = toData(key);
         ClientMessage request = MultiMapContainsKeyCodec.encodeRequest(name, keyData, ThreadUtil.getThreadId());
         ClientMessage response = invoke(request, keyData);
-        MultiMapContainsKeyCodec.ResponseParameters resultParameters = MultiMapContainsKeyCodec.decodeResponse(response);
-        return resultParameters.response;
+        return MultiMapContainsKeyCodec.decodeResponse(response);
     }
 
     @Override
@@ -294,8 +284,7 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
         Data keyValue = toData(value);
         ClientMessage request = MultiMapContainsValueCodec.encodeRequest(name, keyValue);
         ClientMessage response = invoke(request);
-        MultiMapContainsValueCodec.ResponseParameters resultParameters = MultiMapContainsValueCodec.decodeResponse(response);
-        return resultParameters.response;
+        return MultiMapContainsValueCodec.decodeResponse(response);
     }
 
     @Override
@@ -307,16 +296,14 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
         Data valueData = toData(value);
         ClientMessage request = MultiMapContainsEntryCodec.encodeRequest(name, keyData, valueData, ThreadUtil.getThreadId());
         ClientMessage response = invoke(request, keyData);
-        MultiMapContainsEntryCodec.ResponseParameters resultParameters = MultiMapContainsEntryCodec.decodeResponse(response);
-        return resultParameters.response;
+        return MultiMapContainsEntryCodec.decodeResponse(response);
     }
 
     @Override
     public int size() {
         ClientMessage request = MultiMapSizeCodec.encodeRequest(name);
         ClientMessage response = invoke(request);
-        MultiMapSizeCodec.ResponseParameters resultParameters = MultiMapSizeCodec.decodeResponse(response);
-        return resultParameters.response;
+        return MultiMapSizeCodec.decodeResponse(response);
     }
 
     @Override
@@ -332,8 +319,7 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
         Data keyData = toData(key);
         ClientMessage request = MultiMapValueCountCodec.encodeRequest(name, keyData, ThreadUtil.getThreadId());
         ClientMessage response = invoke(request, keyData);
-        MultiMapValueCountCodec.ResponseParameters resultParameters = MultiMapValueCountCodec.decodeResponse(response);
-        return resultParameters.response;
+        return MultiMapValueCountCodec.decodeResponse(response);
     }
 
     @Nonnull
@@ -360,7 +346,7 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
 
             @Override
             public UUID decodeAddResponse(ClientMessage clientMessage) {
-                return MultiMapAddEntryListenerCodec.decodeResponse(clientMessage).response;
+                return MultiMapAddEntryListenerCodec.decodeResponse(clientMessage);
             }
 
             @Override
@@ -370,7 +356,7 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
 
             @Override
             public boolean decodeRemoveResponse(ClientMessage clientMessage) {
-                return MultiMapRemoveEntryListenerCodec.decodeResponse(clientMessage).response;
+                return MultiMapRemoveEntryListenerCodec.decodeResponse(clientMessage);
             }
         };
     }
@@ -401,7 +387,7 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
 
             @Override
             public UUID decodeAddResponse(ClientMessage clientMessage) {
-                return MultiMapAddEntryListenerToKeyCodec.decodeResponse(clientMessage).response;
+                return MultiMapAddEntryListenerToKeyCodec.decodeResponse(clientMessage);
             }
 
             @Override
@@ -411,7 +397,7 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
 
             @Override
             public boolean decodeRemoveResponse(ClientMessage clientMessage) {
-                return MultiMapRemoveEntryListenerCodec.decodeResponse(clientMessage).response;
+                return MultiMapRemoveEntryListenerCodec.decodeResponse(clientMessage);
             }
         };
     }
@@ -446,8 +432,7 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
         final Data keyData = toData(key);
         ClientMessage request = MultiMapIsLockedCodec.encodeRequest(name, keyData);
         ClientMessage response = invoke(request, keyData);
-        MultiMapIsLockedCodec.ResponseParameters resultParameters = MultiMapIsLockedCodec.decodeResponse(response);
-        return resultParameters.response;
+        return MultiMapIsLockedCodec.decodeResponse(response);
     }
 
     @Override
@@ -481,8 +466,7 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
         ClientMessage request = MultiMapTryLockCodec.encodeRequest(name, keyData, threadId, leaseTimeInMillis, timeoutInMillis,
                 lockReferenceIdGenerator.getNextReferenceId());
         ClientMessage response = invoke(request, keyData);
-        MultiMapTryLockCodec.ResponseParameters resultParameters = MultiMapTryLockCodec.decodeResponse(response);
-        return resultParameters.response;
+        return MultiMapTryLockCodec.decodeResponse(response);
     }
 
     @Override

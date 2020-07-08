@@ -32,7 +32,7 @@ import java.security.Permission;
 import java.util.Map;
 
 public class ReplicatedMapClearMessageTask
-        extends AbstractAllPartitionsMessageTask<ReplicatedMapClearCodec.RequestParameters> {
+        extends AbstractAllPartitionsMessageTask<String> {
 
     public ReplicatedMapClearMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -40,7 +40,7 @@ public class ReplicatedMapClearMessageTask
 
     @Override
     protected OperationFactory createOperationFactory() {
-        return new ClearOperationFactory(parameters.name);
+        return new ClearOperationFactory(parameters);
     }
 
     @Override
@@ -56,7 +56,7 @@ public class ReplicatedMapClearMessageTask
     }
 
     @Override
-    protected ReplicatedMapClearCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+    protected String decodeClientMessage(ClientMessage clientMessage) {
         return ReplicatedMapClearCodec.decodeRequest(clientMessage);
     }
 
@@ -72,7 +72,7 @@ public class ReplicatedMapClearMessageTask
 
     @Override
     public String getDistributedObjectName() {
-        return parameters.name;
+        return parameters;
     }
 
     @Override
@@ -82,7 +82,7 @@ public class ReplicatedMapClearMessageTask
 
     @Override
     public Permission getRequiredPermission() {
-        return new ReplicatedMapPermission(parameters.name, ActionConstants.ACTION_REMOVE);
+        return new ReplicatedMapPermission(parameters, ActionConstants.ACTION_REMOVE);
     }
 
     @Override

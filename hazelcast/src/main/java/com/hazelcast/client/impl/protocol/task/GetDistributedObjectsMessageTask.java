@@ -31,7 +31,7 @@ import java.util.Collection;
 import java.util.List;
 
 public class GetDistributedObjectsMessageTask
-        extends AbstractCallableMessageTask<ClientGetDistributedObjectsCodec.RequestParameters> {
+        extends AbstractCallableMessageTask<Void> {
 
     public GetDistributedObjectsMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -51,8 +51,8 @@ public class GetDistributedObjectsMessageTask
     }
 
     @Override
-    protected ClientGetDistributedObjectsCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
-        return ClientGetDistributedObjectsCodec.decodeRequest(clientMessage);
+    protected Void decodeClientMessage(ClientMessage clientMessage) {
+        return null;
     }
 
     @Override

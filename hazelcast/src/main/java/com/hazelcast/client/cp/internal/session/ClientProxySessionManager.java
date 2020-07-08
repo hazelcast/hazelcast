@@ -17,7 +17,6 @@
 package com.hazelcast.client.cp.internal.session;
 
 import com.hazelcast.client.impl.ClientDelegatingFuture;
-import com.hazelcast.client.impl.clientside.ClientMessageDecoder;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.CPSessionCloseSessionCodec;
@@ -48,12 +47,6 @@ public class ClientProxySessionManager extends AbstractProxySessionManager {
     private static final long SHUTDOWN_TIMEOUT_SECONDS = 60;
     private static final long SHUTDOWN_WAIT_SLEEP_MILLIS = 10;
 
-    private static final ClientMessageDecoder HEARTBEAT_RESPONSE_DECODER = clientMessage -> null;
-
-    private static final ClientMessageDecoder CLOSE_SESSION_RESPONSE_DECODER =
-            clientMessage -> CPSessionCloseSessionCodec.decodeResponse(clientMessage).response;
-
-
     private final HazelcastClientInstanceImpl client;
 
     public ClientProxySessionManager(HazelcastClientInstanceImpl client) {
@@ -65,7 +58,7 @@ public class ClientProxySessionManager extends AbstractProxySessionManager {
         ClientMessage request = CPSessionGenerateThreadIdCodec.encodeRequest(groupId);
         ClientMessage response = new ClientInvocation(client, request, "sessionManager").invoke().joinInternal();
 
-        return CPSessionGenerateThreadIdCodec.decodeResponse(response).response;
+        return CPSessionGenerateThreadIdCodec.decodeResponse(response);
     }
 
     @Override
@@ -85,14 +78,14 @@ public class ClientProxySessionManager extends AbstractProxySessionManager {
     protected InternalCompletableFuture<Object> heartbeat(RaftGroupId groupId, long sessionId) {
         ClientMessage request = CPSessionHeartbeatSessionCodec.encodeRequest(groupId, sessionId);
         ClientInvocationFuture future = new ClientInvocation(client, request, "sessionManager").invoke();
-        return new ClientDelegatingFuture<>(future, client.getSerializationService(), HEARTBEAT_RESPONSE_DECODER);
+        return new ClientDelegatingFuture<>(future, client.getSerializationService(), clientMessage -> null);
     }
 
     @Override
     protected InternalCompletableFuture<Object> closeSession(RaftGroupId groupId, Long sessionId) {
         ClientMessage request = CPSessionCloseSessionCodec.encodeRequest(groupId, sessionId);
         ClientInvocationFuture future = new ClientInvocation(client, request, "sessionManager").invoke();
-        return new ClientDelegatingFuture<>(future, client.getSerializationService(), CLOSE_SESSION_RESPONSE_DECODER);
+        return new ClientDelegatingFuture<>(future, client.getSerializationService(), CPSessionCloseSessionCodec::decodeResponse);
     }
 
     public void shutdownAndAwait() {

@@ -76,7 +76,7 @@ public class XATransactionProxy {
             startTime = Clock.currentTimeMillis();
             ClientMessage request = XATransactionCreateCodec.encodeRequest(xid, timeout);
             ClientMessage response = ClientTransactionUtil.invoke(request, txnId, client, connection);
-            txnId = XATransactionCreateCodec.decodeResponse(response).response;
+            txnId = XATransactionCreateCodec.decodeResponse(response);
             state = ACTIVE;
         } catch (Exception e) {
             throw rethrow(e);

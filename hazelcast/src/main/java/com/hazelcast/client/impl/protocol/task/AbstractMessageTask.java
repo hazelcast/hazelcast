@@ -303,6 +303,9 @@ public abstract class AbstractMessageTask<P> implements MessageTask, SecureReque
         if (!isAdvancedNetworkEnabled()) {
             return true;
         }
+        if (parameters == null) {
+            return true;
+        }
         Class<Address> addressClass = Address.class;
         Field[] fields = parameters.getClass().getDeclaredFields();
         Set<Address> addresses = new HashSet<Address>();

@@ -37,7 +37,7 @@ import java.util.List;
  * {@link com.hazelcast.client.impl.protocol.codec.QueueMessageType#QUEUE_DRAINTO}
  */
 public class QueueDrainMessageTask
-        extends AbstractPartitionMessageTask<QueueDrainToCodec.RequestParameters> {
+        extends AbstractPartitionMessageTask<String> {
 
     public QueueDrainMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -45,17 +45,17 @@ public class QueueDrainMessageTask
 
     @Override
     protected Operation prepareOperation() {
-        return new DrainOperation(parameters.name, -1);
+        return new DrainOperation(parameters, -1);
     }
 
     @Override
-    protected QueueDrainToCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+    protected String decodeClientMessage(ClientMessage clientMessage) {
         return QueueDrainToCodec.decodeRequest(clientMessage);
     }
 
     @Override
     public Permission getRequiredPermission() {
-        return new QueuePermission(parameters.name, ActionConstants.ACTION_REMOVE);
+        return new QueuePermission(parameters, ActionConstants.ACTION_REMOVE);
     }
 
     @Override
@@ -82,6 +82,6 @@ public class QueueDrainMessageTask
 
     @Override
     public String getDistributedObjectName() {
-        return parameters.name;
+        return parameters;
     }
 }
