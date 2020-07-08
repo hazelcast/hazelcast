@@ -65,15 +65,11 @@ public final class HazelcastOperatorTableVisitor extends SqlBasicVisitor<Void> {
         List<SqlNode> operands = call.getOperandList();
         for (int i = 0; i < operands.size(); ++i) {
             SqlNode operand = operands.get(i);
-            if (!(operand instanceof SqlCase) || operand instanceof HazelcastSqlCase) {
-                continue;
-            }
 
-            SqlCase sqlCase = (SqlCase) operand;
-            HazelcastSqlCase hazelcastSqlCase =
-                    new HazelcastSqlCase(sqlCase.getParserPosition(), sqlCase.getValueOperand(), sqlCase.getWhenOperands(),
-                            sqlCase.getThenOperands(), sqlCase.getElseOperand());
-            call.setOperand(i, hazelcastSqlCase);
+            SqlNode rewrittenCase = tryRewriteCase(operand);
+            if (rewrittenCase != null) {
+                call.setOperand(i, rewrittenCase);
+            }
         }
 
         if (call instanceof SqlBasicCall) {
@@ -94,16 +90,21 @@ public final class HazelcastOperatorTableVisitor extends SqlBasicVisitor<Void> {
     private static void rewriteNodeList(SqlNodeList nodeList) {
         for (int i = 0; i < nodeList.size(); ++i) {
             SqlNode node = nodeList.get(i);
-            if (!(node instanceof SqlCase) || node instanceof HazelcastSqlCase) {
-                continue;
-            }
 
-            SqlCase sqlCase = (SqlCase) node;
-            HazelcastSqlCase hazelcastSqlCase =
-                    new HazelcastSqlCase(sqlCase.getParserPosition(), sqlCase.getValueOperand(), sqlCase.getWhenOperands(),
-                            sqlCase.getThenOperands(), sqlCase.getElseOperand());
-            nodeList.set(i, hazelcastSqlCase);
+            SqlNode rewrittenCase = tryRewriteCase(node);
+            if (rewrittenCase != null) {
+                nodeList.set(i, rewrittenCase);
+            }
         }
+    }
+
+    private static SqlNode tryRewriteCase(SqlNode node) {
+        if (node instanceof SqlCase && !(node instanceof HazelcastSqlCase)) {
+            SqlCase sqlCase = (SqlCase) node;
+            return new HazelcastSqlCase(sqlCase.getParserPosition(), sqlCase.getValueOperand(), sqlCase.getWhenOperands(),
+                    sqlCase.getThenOperands(), sqlCase.getElseOperand());
+        }
+        return null;
     }
 
 }
