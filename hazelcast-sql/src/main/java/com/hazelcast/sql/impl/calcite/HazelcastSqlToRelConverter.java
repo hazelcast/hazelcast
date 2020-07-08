@@ -53,7 +53,7 @@ import static org.apache.calcite.sql.type.SqlTypeName.VARCHAR;
  * <p>
  * Currently, this custom sql-to-rel converter is used to workaround quirks of
  * the default Calcite sql-to-rel converter and to facilitate generation of
- * literals and casts with a more precise types assigned during the validation.
+ * literals and casts with more precise types assigned during the validation.
  */
 public final class HazelcastSqlToRelConverter extends SqlToRelConverter {
 
@@ -107,7 +107,7 @@ public final class HazelcastSqlToRelConverter extends SqlToRelConverter {
         }
 
         // Convert REAL/DOUBLE values from BigDecimal representation to
-        // REAL/DOUBLE and back, otherwise Calcite might think two floating point
+        // REAL/DOUBLE and back, otherwise Calcite might think two floating-point
         // values having the same REAL/DOUBLE representation are distinct since
         // their BigDecimal representations might differ.
         if (operand.isA(SqlKind.LITERAL) && isNumeric(from) && APPROX_TYPES.contains(to.getSqlTypeName())) {
@@ -155,7 +155,7 @@ public final class HazelcastSqlToRelConverter extends SqlToRelConverter {
         }
 
         // Convert REAL/DOUBLE values from BigDecimal representation to
-        // REAL/DOUBLE and back, otherwise Calcite might think two floating point
+        // REAL/DOUBLE and back, otherwise Calcite might think two floating-point
         // values having the same REAL/DOUBLE representation are distinct since
         // their BigDecimal representations might differ.
         if (type.getSqlTypeName() == DOUBLE) {
@@ -169,7 +169,7 @@ public final class HazelcastSqlToRelConverter extends SqlToRelConverter {
         // Internally, all string literals in Calcite have CHAR type, but we
         // interpret all strings as having VARCHAR type. By allowing the casting
         // for VARCHAR, we emit string literals of VARCHAR type. The cast itself
-        // is optimized away, so we left with just a literal.
+        // is optimized away, so we're left with just a literal.
         boolean allowCast = type.getSqlTypeName() == VARCHAR;
         return getRexBuilder().makeLiteral(value, type, allowCast);
     }

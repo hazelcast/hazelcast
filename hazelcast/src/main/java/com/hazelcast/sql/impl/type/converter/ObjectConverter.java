@@ -25,7 +25,7 @@ import java.time.LocalTime;
 import java.time.OffsetDateTime;
 
 /**
- * Converter for arbitrary objects which do not have more specific converter.
+ * Converter for arbitrary objects which do not have a more specific converter.
  */
 public final class ObjectConverter extends Converter {
 

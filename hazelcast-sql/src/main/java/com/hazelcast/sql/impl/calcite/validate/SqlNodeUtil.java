@@ -42,7 +42,7 @@ public final class SqlNodeUtil {
     }
 
     /**
-     * @return {@code true} if the given node is a {@link SqlDynamicParam
+     * @return {@code true} if the given node is a {@linkplain SqlDynamicParam
      * dynamic parameter}, {@code false} otherwise.
      */
     public static boolean isParameter(SqlNode node) {
@@ -50,7 +50,7 @@ public final class SqlNodeUtil {
     }
 
     /**
-     * @return {@code true} if the given node is a {@link SqlLiteral literal},
+     * @return {@code true} if the given node is a {@linkplain SqlLiteral literal},
      * {@code false} otherwise.
      */
     public static boolean isLiteral(SqlNode node) {
@@ -59,8 +59,7 @@ public final class SqlNodeUtil {
 
     /**
      * Obtains a numeric value of the given node if it's a numeric or string
-     * {@link SqlLiteral literal}.
-     * <p>
+     * {@linkplain SqlLiteral literal}.
      *
      * @param node the node to obtain the numeric value of.
      * @return the obtained numeric value or {@code null} if the given node is
