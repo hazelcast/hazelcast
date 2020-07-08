@@ -83,9 +83,9 @@ public final class HazelcastOperatorTableVisitor extends SqlBasicVisitor<Void> {
             List<SqlOperator> resolvedOperators = new ArrayList<>();
             HazelcastSqlOperatorTable.instance().lookupOperatorOverloads(operator.getNameAsId(), null, operator.getSyntax(),
                     resolvedOperators, NAME_MATCHER);
-            assert resolvedOperators.isEmpty() || resolvedOperators.size() == 1;
 
             if (!resolvedOperators.isEmpty()) {
+                assert resolvedOperators.size() == 1;
                 basicCall.setOperator(resolvedOperators.get(0));
             }
         }
