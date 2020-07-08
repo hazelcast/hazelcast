@@ -77,7 +77,7 @@ public class HazelcastSqlValidator extends SqlValidatorImpl {
     }
 
     /**
-     * Sets a known type of the given node to the given type in this validator.
+     * Sets {@code type} as the known type for {@code node}.
      *
      * @param node the node to set the known type of.
      * @param type the type to set the know node type to.
