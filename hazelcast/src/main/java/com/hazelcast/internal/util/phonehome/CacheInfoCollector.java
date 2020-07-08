@@ -16,7 +16,6 @@
 package com.hazelcast.internal.util.phonehome;
 
 import com.hazelcast.cache.impl.CacheService;
-import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.instance.impl.Node;
 
@@ -33,9 +32,8 @@ class CacheInfoCollector implements MetricsCollector {
         Collection<DistributedObject> distributedObjects = hazelcastNode.hazelcastInstance.getDistributedObjects();
         long countCacheWithWANReplication = distributedObjects.stream()
                 .filter(distributedObject -> distributedObject.getServiceName().equals(CacheService.SERVICE_NAME))
-                .filter(distributedObject -> {
-                    CacheSimpleConfig cacheSimpleConfig = hazelcastNode.getConfig()
-                            .findCacheConfigOrNull(distributedObject.getName());
+                .map(distributedObject -> hazelcastNode.getConfig().findCacheConfigOrNull(distributedObject.getName()))
+                .filter(cacheSimpleConfig -> {
                     if (cacheSimpleConfig != null) {
                         return cacheSimpleConfig.getWanReplicationRef() != null;
                     }
