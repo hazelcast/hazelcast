@@ -43,8 +43,8 @@ public class SqlClientResult implements SqlResult {
     private final QueryId queryId;
     private final SqlRowMetadata rowMetadata;
     private final ClientIterator iterator = new ClientIterator();
+    private final int cursorBufferSize;
 
-    private int cursorBufferSize;
     private boolean closed;
     private boolean iteratorAccessed;
 
@@ -97,16 +97,6 @@ public class SqlClientResult implements SqlResult {
         } finally {
             closed = true;
         }
-    }
-
-    public int getCursorBufferSize() {
-        return cursorBufferSize;
-    }
-
-    public void setCursorBufferSize(int cursorBufferSize) {
-        assert cursorBufferSize >= 0;
-
-        this.cursorBufferSize = cursorBufferSize;
     }
 
     private void fetchNextPage(ClientIterator iterator) {
