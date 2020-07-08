@@ -143,8 +143,6 @@ public final class UnsupportedOperationVisitor implements SqlVisitor<Void> {
             case REAL:
             case DOUBLE:
             case VARCHAR:
-            // CHAR is missing here intentionally, to avoid constructs like
-            // CAST(foo as CHAR).
             case ANY:
             case NULL:
             case TIME:
@@ -154,6 +152,8 @@ public final class UnsupportedOperationVisitor implements SqlVisitor<Void> {
             case TIMESTAMP_WITH_LOCAL_TIME_ZONE:
                 return null;
 
+            case CHAR:
+                // char should be not accessible by users, we have only VARCHAR
             default:
                 throw error(type, RESOURCE.notSupported(typeName.getName()));
         }
