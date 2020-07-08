@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.client;
+package com.hazelcast.sql.impl.state;
 
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
@@ -22,6 +22,8 @@ import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.SqlResultImpl;
+import com.hazelcast.sql.impl.client.SqlPage;
+import com.hazelcast.sql.impl.client.SqlPageRow;
 
 import java.util.ArrayList;
 import java.util.Iterator;

@@ -205,7 +205,7 @@ public final class CustomTypeFactory {
         SqlColumnType sqlColumnType = SqlColumnType.getById(type);
 
         if (sqlColumnType == null) {
-            throw new HazelcastException("Unexpected SQL column type type = [" + type + "]");
+            throw new HazelcastException("Unexpected SQL column type = [" + type + "]");
         }
 
         return new SqlColumnMetadata(name, sqlColumnType);
