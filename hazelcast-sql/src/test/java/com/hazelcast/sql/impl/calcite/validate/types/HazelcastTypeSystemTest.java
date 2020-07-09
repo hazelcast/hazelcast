@@ -21,6 +21,7 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.apache.calcite.rel.type.RelDataType;
+import org.apache.calcite.sql.SqlIdentifier;
 import org.apache.calcite.sql.SqlLiteral;
 import org.apache.calcite.sql.type.SqlTypeName;
 import org.apache.calcite.util.TimeString;
@@ -34,6 +35,7 @@ import java.util.Calendar;
 import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeSystem.canCast;
 import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeSystem.canConvert;
 import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeSystem.canRepresent;
+import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeSystem.isObject;
 import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeSystem.narrowestTypeFor;
 import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeSystem.withHigherPrecedence;
 import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeSystem.withHigherPrecedenceForLiterals;
@@ -73,6 +75,13 @@ public class HazelcastTypeSystemTest {
 
         assertEquals(QueryDataType.MAX_DECIMAL_PRECISION, HazelcastTypeSystem.INSTANCE.getMaxPrecision(DECIMAL));
         assertEquals(QueryDataType.MAX_DECIMAL_PRECISION, HazelcastTypeSystem.INSTANCE.getMaxScale(DECIMAL));
+    }
+
+    @Test
+    public void isObjectTest() {
+        assertTrue(isObject(new SqlIdentifier("object", ZERO)));
+        assertTrue(isObject(new SqlIdentifier("OBJECT", ZERO)));
+        assertFalse(isObject(new SqlIdentifier("foo", ZERO)));
     }
 
     @Test

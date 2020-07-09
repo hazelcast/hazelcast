@@ -27,6 +27,7 @@ import com.hazelcast.sql.impl.type.converter.Converters;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeSystem;
 import org.apache.calcite.rel.type.RelDataTypeSystemImpl;
+import org.apache.calcite.sql.SqlIdentifier;
 import org.apache.calcite.sql.SqlLiteral;
 import org.apache.calcite.sql.type.SqlTypeName;
 
@@ -101,7 +102,17 @@ public final class HazelcastTypeSystem extends RelDataTypeSystemImpl {
         }
     }
 
+    private static final String OBJECT_TYPE_NAME = "OBJECT";
+
     private HazelcastTypeSystem() {
+    }
+
+    /**
+     * @return {@code true} if the given identifier specifies OBJECT type,
+     * {@code false} otherwise.
+     */
+    public static boolean isObject(SqlIdentifier identifier) {
+        return identifier.isSimple() && OBJECT_TYPE_NAME.equalsIgnoreCase(identifier.getSimple());
     }
 
     /**

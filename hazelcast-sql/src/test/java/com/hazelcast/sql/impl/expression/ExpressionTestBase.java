@@ -113,7 +113,6 @@ import static org.apache.calcite.sql.type.SqlTypeName.NULL;
 import static org.apache.calcite.sql.type.SqlTypeName.NUMERIC_TYPES;
 import static org.apache.calcite.sql.type.SqlTypeName.REAL;
 import static org.apache.calcite.sql.type.SqlTypeName.SMALLINT;
-import static org.apache.calcite.sql.type.SqlTypeName.TIMESTAMP_WITH_LOCAL_TIME_ZONE;
 import static org.apache.calcite.sql.type.SqlTypeName.TINYINT;
 import static org.apache.calcite.sql.type.SqlTypeName.VARCHAR;
 import static org.junit.Assert.assertArrayEquals;
@@ -191,6 +190,12 @@ public abstract class ExpressionTestBase extends SqlTestSupport {
         for (SqlTypeName type : TYPE_NAMES) {
             if (type == NULL) {
                 // null is synthetic internal type
+                continue;
+            }
+
+            if (type == ANY) {
+                fields.put("object1", SqlToQueryType.map(type));
+                fields.put("object2", SqlToQueryType.map(type));
                 continue;
             }
 
@@ -316,8 +321,13 @@ public abstract class ExpressionTestBase extends SqlTestSupport {
             TYPES.add(new Operand(UNKNOWN_TYPE, type, unparse(type)));
 
             type = TYPE_FACTORY.createTypeWithNullability(type, true);
-            COLUMNS.add(new Operand(type, UNKNOWN_VALUE, typeName.getName().toLowerCase() + "1"));
-            COLUMNS.add(new Operand(type, UNKNOWN_VALUE, typeName.getName().toLowerCase() + "2"));
+            if (typeName == ANY) {
+                COLUMNS.add(new Operand(type, UNKNOWN_VALUE, "object1"));
+                COLUMNS.add(new Operand(type, UNKNOWN_VALUE, "object2"));
+            } else {
+                COLUMNS.add(new Operand(type, UNKNOWN_VALUE, typeName.getName().toLowerCase() + "1"));
+                COLUMNS.add(new Operand(type, UNKNOWN_VALUE, typeName.getName().toLowerCase() + "2"));
+            }
 
             if (typeName == BOOLEAN) {
                 BOOLEAN_COLUMN.add(new Operand(type, UNKNOWN_VALUE, typeName.getName().toLowerCase() + "1"));
@@ -1032,7 +1042,14 @@ public abstract class ExpressionTestBase extends SqlTestSupport {
     }
 
     private static String unparse(RelDataType type) {
-        return type.getSqlTypeName() == TIMESTAMP_WITH_LOCAL_TIME_ZONE ? "TIMESTAMP WITH LOCAL TIME ZONE" : type.toString();
+        switch (type.getSqlTypeName()) {
+            case ANY:
+                return "OBJECT";
+            case TIMESTAMP_WITH_LOCAL_TIME_ZONE:
+                return "TIMESTAMP WITH LOCAL TIME ZONE";
+            default:
+                return type.toString();
+        }
     }
 
     /**

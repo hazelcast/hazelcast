@@ -16,6 +16,7 @@
 
 package com.hazelcast.sql.impl.calcite.parse;
 
+import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeSystem;
 import org.apache.calcite.runtime.CalciteContextException;
 import org.apache.calcite.runtime.Resources;
 import org.apache.calcite.sql.SqlBasicTypeNameSpec;
@@ -29,6 +30,7 @@ import org.apache.calcite.sql.SqlLiteral;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.SqlNodeList;
 import org.apache.calcite.sql.SqlSelect;
+import org.apache.calcite.sql.SqlUserDefinedTypeNameSpec;
 import org.apache.calcite.sql.SqlUtil;
 import org.apache.calcite.sql.type.SqlTypeName;
 import org.apache.calcite.sql.util.SqlVisitor;
@@ -128,6 +130,10 @@ public final class UnsupportedOperationVisitor implements SqlVisitor<Void> {
     @SuppressWarnings("checkstyle:CyclomaticComplexity")
     @Override
     public Void visit(SqlDataTypeSpec type) {
+        if (type.getTypeNameSpec() instanceof SqlUserDefinedTypeNameSpec && HazelcastTypeSystem.isObject(type.getTypeName())) {
+            return null;
+        }
+
         if (!(type.getTypeNameSpec() instanceof SqlBasicTypeNameSpec)) {
             throw error(type, RESOURCE.custom("Complex type specifications are not supported"));
         }
@@ -143,7 +149,6 @@ public final class UnsupportedOperationVisitor implements SqlVisitor<Void> {
             case REAL:
             case DOUBLE:
             case VARCHAR:
-            case ANY:
             case NULL:
             case TIME:
             case TIME_WITH_LOCAL_TIME_ZONE:
@@ -154,6 +159,8 @@ public final class UnsupportedOperationVisitor implements SqlVisitor<Void> {
 
             case CHAR:
                 // char should be not accessible by users, we have only VARCHAR
+            case ANY:
+                // visible to users as OBJECT
             default:
                 throw error(type, RESOURCE.notSupported(typeName.getName()));
         }

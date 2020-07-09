@@ -51,9 +51,12 @@ public class CastTest extends ExpressionTestBase {
         assertRows(query(sql, "select __key from records where cast(int1 as double) < 1500"), keyRange(0, 500, 5000, 6000));
         assertRows(query(sql, "select __key, cast(__key as decimal) + 1.5 from records"), keyRange(0, 1000, 5000, 6000),
                 k -> BigDecimal.valueOf(k).add(BigDecimal.valueOf(1.5)));
+        assertRows(query(sql, "select __key, cast(__key + 1 as object) from records"), keyRange(0, 1000, 5000, 6000),
+                k -> k + 1L);
         assertQueryThrows(sql, "select * from records where cast(string1 as integer) = 0", "cannot convert varchar to int");
         assertQueryThrows(sql, "select __key, cast(int1 as null) from records", "was expecting one of");
         assertQueryThrows(sql, "select __key, cast('foo' as char) from records", "char is not supported");
+        assertQueryThrows(sql, "select __key, cast('foo' as any) from records", "any is not supported");
     }
 
     @Test
