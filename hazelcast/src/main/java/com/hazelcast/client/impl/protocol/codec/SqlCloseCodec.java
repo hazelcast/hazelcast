@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Closes server-side query cursor.
  */
-@Generated("7b2aceb72bcf7c0501344e926045bf57")
+@Generated("c5da2f088e04b28c7e03fe3b80932883")
 public final class SqlCloseCodec {
     //hex: 0x210300
     public static final int REQUEST_MESSAGE_TYPE = 2163456;
@@ -48,14 +48,11 @@ public final class SqlCloseCodec {
     private SqlCloseCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class RequestParameters {
-
-        /**
-         * Query ID.
-         */
-        public java.lang.String queryId;
-    }
+    /**
+     * Query ID.
+     */
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"UUF_UNUSED_PUBLIC_OR_PROTECTED_FIELD"})
+    public java.lang.String queryId;
 
     public static ClientMessage encodeRequest(java.lang.String queryId) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
@@ -69,17 +66,11 @@ public final class SqlCloseCodec {
         return clientMessage;
     }
 
-    public static SqlCloseCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
+    public static java.lang.String decodeRequest(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        RequestParameters request = new RequestParameters();
         //empty initial frame
         iterator.next();
-        request.queryId = StringCodec.decode(iterator);
-        return request;
-    }
-
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class ResponseParameters {
+        return StringCodec.decode(iterator);
     }
 
     public static ClientMessage encodeResponse() {
@@ -91,12 +82,5 @@ public final class SqlCloseCodec {
         return clientMessage;
     }
 
-    public static SqlCloseCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
-        ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        ResponseParameters response = new ResponseParameters();
-        //empty initial frame
-        iterator.next();
-        return response;
-    }
 
 }

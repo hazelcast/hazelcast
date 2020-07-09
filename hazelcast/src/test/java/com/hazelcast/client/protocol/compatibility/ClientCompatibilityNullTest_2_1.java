@@ -6514,8 +6514,6 @@ public class ClientCompatibilityNullTest_2_1 {
     @Test
     public void test_SqlCloseCodec_decodeResponse() {
         int fileClientMessageIndex = 830;
-        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        SqlCloseCodec.ResponseParameters parameters = SqlCloseCodec.decodeResponse(fromFile);
     }
 
     private void compareClientMessages(ClientMessage binaryMessage, ClientMessage encodedMessage) {

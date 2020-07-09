@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Fetches the next row page.
  */
-@Generated("be48316d3552cf44a4af13921dc65122")
+@Generated("bf06b5851fc99da5a60d6b94e7fb06e6")
 public final class SqlFetchCodec {
     //hex: 0x210200
     public static final int REQUEST_MESSAGE_TYPE = 2163200;
@@ -88,23 +88,19 @@ public final class SqlFetchCodec {
 
     @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class ResponseParameters {
-
         /**
          * Row page.
          */
         public @Nullable java.util.List<com.hazelcast.sql.impl.client.SqlClientRow> rowPage;
-
         /**
          * Whether the row page is the last.
          */
         public boolean rowPageLast;
-
         /**
          * Error object.
          */
         public @Nullable com.hazelcast.sql.impl.client.SqlError error;
     }
-
     public static ClientMessage encodeResponse(@Nullable java.util.List<com.hazelcast.sql.impl.client.SqlClientRow> rowPage, boolean rowPageLast, @Nullable com.hazelcast.sql.impl.client.SqlError error) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);

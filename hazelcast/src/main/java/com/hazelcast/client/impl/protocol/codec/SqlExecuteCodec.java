@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Starts execution of an SQL query.
  */
-@Generated("d2dfa50c447db4f2f1c78f67204bf25c")
+@Generated("0b1da76787a831ca4b3c15570797d374")
 public final class SqlExecuteCodec {
     //hex: 0x210100
     public static final int REQUEST_MESSAGE_TYPE = 2162944;
@@ -103,33 +103,27 @@ public final class SqlExecuteCodec {
 
     @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class ResponseParameters {
-
         /**
          * Query ID.
          */
         public @Nullable java.lang.String queryId;
-
         /**
          * Row metadata.
          */
         public @Nullable com.hazelcast.sql.SqlRowMetadata rowMetadata;
-
         /**
          * Row page.
          */
         public @Nullable java.util.List<com.hazelcast.sql.impl.client.SqlClientRow> rowPage;
-
         /**
          * Whether the row page is the last.
          */
         public boolean rowPageLast;
-
         /**
          * Error object.
          */
         public @Nullable com.hazelcast.sql.impl.client.SqlError error;
     }
-
     public static ClientMessage encodeResponse(@Nullable java.lang.String queryId, @Nullable com.hazelcast.sql.SqlRowMetadata rowMetadata, @Nullable java.util.List<com.hazelcast.sql.impl.client.SqlClientRow> rowPage, boolean rowPageLast, @Nullable com.hazelcast.sql.impl.client.SqlError error) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);

@@ -7364,8 +7364,7 @@ public class MemberCompatibilityNullTest_2_1 {
     public void test_SqlCloseCodec_decodeRequest() {
         int fileClientMessageIndex = 829;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        SqlCloseCodec.RequestParameters parameters = SqlCloseCodec.decodeRequest(fromFile);
-        assertTrue(isEqual(aString, parameters.queryId));
+        assertTrue(isEqual(aString, SqlCloseCodec.decodeRequest(fromFile)));
     }
 
     @Test

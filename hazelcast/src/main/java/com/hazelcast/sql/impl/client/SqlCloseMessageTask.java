@@ -28,7 +28,7 @@ import java.security.Permission;
 /**
  * SQL query close task.
  */
-public class SqlCloseMessageTask extends SqlAbstractMessageTask<SqlCloseCodec.RequestParameters> {
+public class SqlCloseMessageTask extends SqlAbstractMessageTask<String> {
     public SqlCloseMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
@@ -37,13 +37,13 @@ public class SqlCloseMessageTask extends SqlAbstractMessageTask<SqlCloseCodec.Re
     protected Object call() throws Exception {
         SqlInternalService service = nodeEngine.getSqlService().getInternalService();
 
-        service.getClientStateRegistry().close(endpoint.getUuid(), parameters.queryId);
+        service.getClientStateRegistry().close(endpoint.getUuid(), parameters);
 
         return null;
     }
 
     @Override
-    protected SqlCloseCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+    protected String decodeClientMessage(ClientMessage clientMessage) {
         return SqlCloseCodec.decodeRequest(clientMessage);
     }
 
@@ -69,7 +69,7 @@ public class SqlCloseMessageTask extends SqlAbstractMessageTask<SqlCloseCodec.Re
 
     @Override
     public Object[] getParameters() {
-        return new Object[] { parameters.queryId } ;
+        return new Object[] { parameters } ;
     }
 
     @Override
