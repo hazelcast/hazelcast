@@ -14,10 +14,8 @@
  * limitations under the License.
  */
 
-package com.hazelcast.map.impl.querycache;
+package com.hazelcast.map.impl.querycache.accumulator;
 
-import com.hazelcast.map.impl.querycache.accumulator.CyclicBuffer;
-import com.hazelcast.map.impl.querycache.accumulator.DefaultCyclicBuffer;
 import com.hazelcast.map.impl.querycache.event.sequence.Sequenced;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -33,7 +31,7 @@ import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class CyclicBufferTest {
+public class DefaultCyclicBufferTest {
 
     @Test(expected = IllegalArgumentException.class)
     public void testBufferCapacity_whenZero() {

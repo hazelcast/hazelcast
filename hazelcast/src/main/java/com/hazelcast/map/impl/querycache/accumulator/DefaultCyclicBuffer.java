@@ -46,7 +46,7 @@ public class DefaultCyclicBuffer<E extends Sequenced> implements CyclicBuffer<E>
         init(capacity);
     }
 
-    private synchronized void init(int maxSize) {
+    private void init(int maxSize) {
         this.capacity = nextPowerOfTwo(maxSize);
         this.buffer = (E[]) new Sequenced[capacity];
         this.tailSequence = new AtomicLong(UNSET);
@@ -54,7 +54,7 @@ public class DefaultCyclicBuffer<E extends Sequenced> implements CyclicBuffer<E>
     }
 
     @Override
-    public synchronized void add(E event) {
+    public void add(E event) {
         checkNotNull(event, "event cannot be null");
         checkPositive("sequence", event.getSequence());
 
@@ -85,7 +85,7 @@ public class DefaultCyclicBuffer<E extends Sequenced> implements CyclicBuffer<E>
     }
 
     @Override
-    public synchronized E get(long sequence) {
+    public E get(long sequence) {
         checkPositive("sequence", sequence);
 
         int index = findIndex(sequence);
@@ -97,7 +97,7 @@ public class DefaultCyclicBuffer<E extends Sequenced> implements CyclicBuffer<E>
     }
 
     @Override
-    public synchronized boolean setHead(long sequence) {
+    public boolean setHead(long sequence) {
         checkPositive("sequence", sequence);
 
         E e = get(sequence);
@@ -110,7 +110,7 @@ public class DefaultCyclicBuffer<E extends Sequenced> implements CyclicBuffer<E>
     }
 
     @Override
-    public synchronized E getAndAdvance() {
+    public E getAndAdvance() {
         long head = headSequence.get();
         long tail = tailSequence.get();
 
@@ -128,13 +128,13 @@ public class DefaultCyclicBuffer<E extends Sequenced> implements CyclicBuffer<E>
     }
 
     @Override
-    public synchronized void reset() {
+    public void reset() {
         init(this.capacity);
     }
 
 
     @Override
-    public synchronized int size() {
+    public int size() {
         long head = headSequence.get();
         long tail = tailSequence.get();
 
@@ -142,16 +142,11 @@ public class DefaultCyclicBuffer<E extends Sequenced> implements CyclicBuffer<E>
             return 0;
         }
 
-        int avail = (int) (tail - head + 1);
-        if (avail <= capacity) {
-            return avail;
-        } else {
-            return capacity;
-        }
+        return (int) (tail - head + 1);
     }
 
     @Override
-    public synchronized long getHeadSequence() {
+    public long getHeadSequence() {
         return headSequence.get();
     }
 
