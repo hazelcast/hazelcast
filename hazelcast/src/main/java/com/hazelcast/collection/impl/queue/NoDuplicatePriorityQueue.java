@@ -61,6 +61,7 @@ public final class NoDuplicatePriorityQueue extends PriorityQueue<QueueItem> {
         }
     }
 
+    @Override
     public QueueItem poll() {
         Lock lock = this.readWriteLock.writeLock();
         lock.lock();

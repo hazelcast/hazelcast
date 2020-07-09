@@ -77,7 +77,6 @@ import static com.hazelcast.internal.config.DomConfigHelper.getIntegerValue;
 import static com.hazelcast.internal.config.DomConfigHelper.getLongValue;
 import static com.hazelcast.internal.util.StringUtil.isNullOrEmpty;
 import static com.hazelcast.internal.util.StringUtil.lowerCaseInternal;
-import static com.hazelcast.internal.util.StringUtil.trim;
 import static com.hazelcast.internal.util.StringUtil.upperCaseInternal;
 import static java.lang.Boolean.parseBoolean;
 import static java.lang.Integer.parseInt;

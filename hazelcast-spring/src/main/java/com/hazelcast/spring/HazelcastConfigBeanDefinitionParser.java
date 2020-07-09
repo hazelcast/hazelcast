@@ -16,6 +16,19 @@
 
 package com.hazelcast.spring;
 
+import static com.hazelcast.internal.config.DomConfigHelper.childElementWithName;
+import static com.hazelcast.internal.config.DomConfigHelper.childElements;
+import static com.hazelcast.internal.config.DomConfigHelper.cleanNodeName;
+import static com.hazelcast.internal.config.DomConfigHelper.getBooleanValue;
+import static com.hazelcast.internal.config.DomConfigHelper.getDoubleValue;
+import static com.hazelcast.internal.config.DomConfigHelper.getIntegerValue;
+import static com.hazelcast.internal.config.DomConfigHelper.getLongValue;
+import static com.hazelcast.internal.util.StringUtil.isNullOrEmpty;
+import static com.hazelcast.internal.util.StringUtil.upperCaseInternal;
+import static java.lang.Boolean.parseBoolean;
+import static java.lang.Integer.parseInt;
+import static org.springframework.util.Assert.isTrue;
+
 import com.hazelcast.config.AdvancedNetworkConfig;
 import com.hazelcast.config.AliasedDiscoveryConfig;
 import com.hazelcast.config.AttributeConfig;
@@ -129,6 +142,12 @@ import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.internal.config.AliasedDiscoveryConfigUtils;
 import com.hazelcast.internal.util.StringUtil;
 import com.hazelcast.splitbrainprotection.SplitBrainProtectionOn;
+import java.io.File;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.support.AbstractBeanDefinition;
 import org.springframework.beans.factory.support.BeanDefinitionBuilder;
@@ -139,26 +158,6 @@ import org.springframework.beans.factory.xml.ParserContext;
 import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
-
-import java.io.File;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Set;
-import java.util.concurrent.TimeUnit;
-
-import static com.hazelcast.internal.config.DomConfigHelper.childElementWithName;
-import static com.hazelcast.internal.config.DomConfigHelper.childElements;
-import static com.hazelcast.internal.config.DomConfigHelper.cleanNodeName;
-import static com.hazelcast.internal.config.DomConfigHelper.getBooleanValue;
-import static com.hazelcast.internal.config.DomConfigHelper.getDoubleValue;
-import static com.hazelcast.internal.config.DomConfigHelper.getIntegerValue;
-import static com.hazelcast.internal.config.DomConfigHelper.getLongValue;
-import static com.hazelcast.internal.util.StringUtil.isNullOrEmpty;
-import static com.hazelcast.internal.util.StringUtil.upperCaseInternal;
-import static java.lang.Boolean.parseBoolean;
-import static java.lang.Integer.parseInt;
-import static org.springframework.util.Assert.isTrue;
 
 /**
  * BeanDefinitionParser for Hazelcast Config Configuration.

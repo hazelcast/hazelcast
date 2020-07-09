@@ -31,24 +31,22 @@ import java.util.Objects;
  */
 public final class ForwardingQueueItemComparator<T> implements Comparator<QueueItem> {
 
-    private final Comparator<T> comparator;
+    private final Comparator<T> customComparator;
     private final SerializationService serializationService;
 
-    public ForwardingQueueItemComparator(final Comparator<T> comparator,
+    public ForwardingQueueItemComparator(final Comparator<T> customComparator,
                                          final SerializationService serializationService) {
-        this.comparator = comparator;
+        Objects.requireNonNull(customComparator, "Custom comparator cannot be null.");
+        this.customComparator = customComparator;
         this.serializationService = serializationService;
     }
 
     @Override
     public int compare(QueueItem o1, QueueItem o2) {
-        if (comparator == null) {
-            return o1.compareTo(o2);
-        }
         T object1 = (T) serializationService.toObject(o1.getData());
         T object2 = (T) serializationService.toObject(o2.getData());
 
-        return this.comparator.compare(object1, object2);
+        return this.customComparator.compare(object1, object2);
     }
 
     @Override
@@ -65,11 +63,11 @@ public final class ForwardingQueueItemComparator<T> implements Comparator<QueueI
             return false;
         }
         ForwardingQueueItemComparator<?> that = (ForwardingQueueItemComparator<?>) o;
-        return Objects.equals(comparator, that.comparator);
+        return Objects.equals(customComparator, that.customComparator);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(comparator);
+        return Objects.hash(customComparator);
     }
 }

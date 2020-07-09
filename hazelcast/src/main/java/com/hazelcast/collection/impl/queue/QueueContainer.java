@@ -17,15 +17,18 @@
 package com.hazelcast.collection.impl.queue;
 
 import static com.hazelcast.collection.impl.collection.CollectionContainer.ID_PROMOTION_OFFSET;
+import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.internal.util.MapUtil.createHashMap;
 import static com.hazelcast.internal.util.MapUtil.createLinkedHashMap;
 import static com.hazelcast.internal.util.SetUtil.createHashSet;
+import static com.hazelcast.internal.util.StringUtil.isNullOrEmpty;
 
 import com.hazelcast.collection.impl.txnqueue.TxQueueItem;
 import com.hazelcast.config.QueueConfig;
 import com.hazelcast.config.QueueStoreConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.internal.monitor.impl.LocalQueueStatsImpl;
+import com.hazelcast.internal.nio.ClassLoaderUtil;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.util.Clock;
@@ -40,12 +43,16 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Map;
 import java.util.PriorityQueue;
+import java.util.Queue;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
@@ -68,7 +75,7 @@ public class QueueContainer implements IdentifiedDataSerializable {
     private final Map<Long, Data> dataMap = new HashMap<Long, Data>();
     private QueueWaitNotifyKey pollWaitNotifyKey;
     private QueueWaitNotifyKey offerWaitNotifyKey;
-    private PriorityQueue<QueueItem> itemQueue;
+    private Queue<QueueItem> itemQueue;
     private Map<Long, QueueItem> backupMap;
     private QueueConfig config;
     private QueueStoreWrapper store;
@@ -275,7 +282,7 @@ public class QueueContainer implements IdentifiedDataSerializable {
 
     @SuppressWarnings("unchecked")
     private void addTxItemOrdered(TxQueueItem txQueueItem) {
-        getItemQueue().add(txQueueItem);
+        new QueueItemGetter().add(txQueueItem);
     }
 
     // TX Offer
@@ -878,8 +885,48 @@ public class QueueContainer implements IdentifiedDataSerializable {
      *
      * @return the item queue
      */
-    public PriorityQueue<QueueItem> getItemQueue() {
+    public Queue<QueueItem> getItemQueue() {
         if (itemQueue == null) {
+            itemQueue = new ItemQueueFactory().createQueue();
+            if (!txMap.isEmpty()) {
+                long maxItemId = Long.MIN_VALUE;
+                for (TxQueueItem item : txMap.values()) {
+                    maxItemId = Math.max(maxItemId, item.itemId);
+                }
+                setId(maxItemId + ID_PROMOTION_OFFSET);
+            }
+        }
+        return itemQueue;
+    }
+
+    private class ItemQueueFactory {
+
+        public Queue createQueue() {
+            if (config.getComparatorClassName() != null) {
+                itemQueue = createPriorityQueue();
+            } else {
+                itemQueue = createLinkedList();
+            }
+            return itemQueue;
+        }
+
+        private Queue createLinkedList() {
+            itemQueue = new LinkedList();
+            if (backupMap != null && !backupMap.isEmpty()) {
+                List<QueueItem> values = new ArrayList<>(backupMap.values());
+                Collections.sort(values);
+                itemQueue.addAll(values);
+                QueueItem lastItem = ((LinkedList<QueueItem>) itemQueue).peekLast();
+                if (lastItem != null) {
+                    setId(lastItem.itemId + ID_PROMOTION_OFFSET);
+                }
+                backupMap.clear();
+                backupMap = null;
+            }
+            return itemQueue;
+        }
+
+        private Queue createPriorityQueue() {
             itemQueue = createPriorityQueue(config);
             if (backupMap != null && !backupMap.isEmpty()) {
                 itemQueue.addAll(backupMap.values());
@@ -892,28 +939,43 @@ public class QueueContainer implements IdentifiedDataSerializable {
                 backupMap.clear();
                 backupMap = null;
             }
-            if (!txMap.isEmpty()) {
-                long maxItemId = Long.MIN_VALUE;
-                for (TxQueueItem item : txMap.values()) {
-                    maxItemId = Math.max(maxItemId, item.itemId);
-                }
-                setId(maxItemId + ID_PROMOTION_OFFSET);
-            }
+            return itemQueue;
         }
-        return itemQueue;
+
+        /**
+         * Returns concrete {@link PriorityQueue} depending on what have been defined in queue configuration
+         */
+        private PriorityQueue<QueueItem> createPriorityQueue(QueueConfig config) {
+            Comparator comparator = getPriorityQueueComparator(config, config.getClass().getClassLoader());
+            ForwardingQueueItemComparator<?> forwardingQueueItemComparator = new ForwardingQueueItemComparator<>(comparator,
+                    nodeEngine.getSerializationService());
+            if (config.isDuplicateAllowed()) {
+                return new PriorityQueue<>(forwardingQueueItemComparator);
+            }
+            return new NoDuplicatePriorityQueue(forwardingQueueItemComparator);
+        }
     }
 
     /**
-     * Returns concrete {@link PriorityQueue} depending on what have been defined in queue configuration
+     * return ({@link java.util.Comparator}) instance of {@code QueueConfig#getComparatorClassName}.
+     * @param queueConfig {@link QueueConfig} for
+     *                    requested {@link Comparator}'s class name
+     * @param classLoader the {@link ClassLoader} to be
+     *                    used while creating custom {@link Comparator} from the supplied class name
+     * @return {@link Comparator} instance if it is defined, otherwise
+     * returns null to indicate there is no comparator defined
      */
-    private PriorityQueue<QueueItem> createPriorityQueue(QueueConfig config) {
-        Comparator comparator = QueueComparatorProvider.getPriorityQueueComparator(config, config.getClass().getClassLoader());
-        ForwardingQueueItemComparator<?> forwardingQueueItemComparator = new ForwardingQueueItemComparator<>(comparator,
-                nodeEngine.getSerializationService());
-        if (config.isDuplicateAllowed()) {
-            return new PriorityQueue<>(forwardingQueueItemComparator);
+    private static Comparator getPriorityQueueComparator(QueueConfig queueConfig,
+            ClassLoader classLoader) {
+        String priorityQueueComparatorClassName = queueConfig.getComparatorClassName();
+        if (!isNullOrEmpty(priorityQueueComparatorClassName)) {
+            try {
+                return ClassLoaderUtil.newInstance(classLoader, priorityQueueComparatorClassName);
+            } catch (Exception e) {
+                throw rethrow(e);
+            }
         }
-        return new NoDuplicatePriorityQueue(forwardingQueueItemComparator);
+        return null;
     }
 
     /**
@@ -963,8 +1025,8 @@ public class QueueContainer implements IdentifiedDataSerializable {
         this.store = QueueStoreWrapper.create(name, storeConfig, serializationService, classLoader);
     }
 
-    private PriorityQueue<QueueItem> copyQueueItems(PriorityQueue<QueueItem> itemQueue) {
-        PriorityQueue<QueueItem> itemQueueCopy = createPriorityQueue(config);
+    private Queue<QueueItem> copyQueueItems(Queue<QueueItem> itemQueue) {
+        Queue<QueueItem> itemQueueCopy = new ItemQueueFactory().createQueue();
         itemQueue.stream().forEach(itemQueueCopy::add);
         return itemQueueCopy;
     }
@@ -1046,15 +1108,42 @@ public class QueueContainer implements IdentifiedDataSerializable {
 
     public void rollbackTransaction(UUID transactionId) {
         Iterator<TxQueueItem> iterator = txMap.values().iterator();
-
+        QueueItemGetter queueItemGetter = new QueueItemGetter();
         while (iterator.hasNext()) {
             TxQueueItem item = iterator.next();
             if (transactionId.equals(item.getTransactionId())) {
                 iterator.remove();
                 if (item.isPollOperation()) {
-                    getItemQueue().offer(item);
+                    queueItemGetter.offer(item);
                     cancelEvictionIfExists();
                 }
+            }
+        }
+    }
+
+    private class QueueItemGetter {
+
+        public void offer(TxQueueItem item) {
+            if (config.getComparatorClassName() != null) {
+                getItemQueue().offer(item);
+            } else {
+                ((LinkedList) getItemQueue()).offerFirst(item);
+            }
+        }
+
+        public void add(TxQueueItem txQueueItem) {
+            if (config.getComparatorClassName() != null) {
+                ListIterator<QueueItem> iterator = ((List<QueueItem>) getItemQueue()).listIterator();
+                while (iterator.hasNext()) {
+                    QueueItem queueItem = iterator.next();
+                    if (txQueueItem.itemId < queueItem.itemId) {
+                        iterator.previous();
+                        break;
+                    }
+                }
+                iterator.add(txQueueItem);
+            } else {
+                getItemQueue().add(txQueueItem);
             }
         }
     }
@@ -1080,7 +1169,7 @@ public class QueueContainer implements IdentifiedDataSerializable {
         int size = in.readInt();
         // on cluster migration queue data are stored temporary to a default priority queue.
         // those data are copied at a later point
-        itemQueue = new PriorityQueue<>();
+        itemQueue = new LinkedList<>();
         for (int j = 0; j < size; j++) {
             QueueItem item = in.readObject();
             getItemQueue().offer(item);
