@@ -12,7 +12,8 @@ using the following properties:
   ** hazelcast.wan.consumer.ack.delay.backoff.max
   ** hazelcast.wan.consumer.ack.delay.backoff.multiplier
   [#17109]
-  See https://github.com/hazelcast/hazelcast/blob/3.12.8-migration/hazelcast/src/main/java/com/hazelcast/spi/properties/GroupProperty.java#L1057 for their explanations.
+  See https://github.com/hazelcast/hazelcast/blob/3.12.8-migration/hazelcast/src/main/java/com/hazelcast/spi/properties/GroupProperty.java#L1057 for their explanations. By default the throttling mechanism is enabled but it may be disabled
+  using the configuration properties.
 * Added a support for WAN Replication so that the PASSIVE (target) cluster
 is now able to process WAN replication events from a 4.0/4.1 ACTIVE (source) cluster. [#16972]
 
