@@ -19,6 +19,7 @@ package com.hazelcast.sql.impl.type.converter;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.SqlErrorCode;
 import com.hazelcast.sql.impl.SqlCustomClass;
+import com.hazelcast.sql.impl.expression.math.ExpressionMath;
 import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -323,7 +324,7 @@ public class ConvertersTest {
         assertEquals(1L, converter.asBigint(val));
         checkDataException(() -> converter.asBigint(bigValue));
         checkDataException(() -> converter.asBigint(Long.MAX_VALUE + Math.ulp((float) Long.MAX_VALUE)));
-        assertEquals(new BigDecimal(Float.toString(val)), converter.asDecimal(val));
+        assertEquals(new BigDecimal(val, ExpressionMath.DECIMAL_MATH_CONTEXT), converter.asDecimal(val));
 
         assertEquals(1.1f, converter.asReal(val), 0);
         assertEquals(1.1f, converter.asDouble(val), 0);
@@ -357,7 +358,7 @@ public class ConvertersTest {
         assertEquals(1L, converter.asBigint(val));
         checkDataException(() -> converter.asBigint(bigValue));
         checkDataException(() -> converter.asBigint(Long.MAX_VALUE + Math.ulp((double) Long.MAX_VALUE)));
-        assertEquals(BigDecimal.valueOf(val), converter.asDecimal(val));
+        assertEquals(new BigDecimal(val, ExpressionMath.DECIMAL_MATH_CONTEXT), converter.asDecimal(val));
 
         assertEquals(1.1f, converter.asReal(val), 0);
         assertEquals(1.1d, converter.asDouble(val), 0);

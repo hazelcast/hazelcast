@@ -89,9 +89,10 @@ public final class DoubleConverter extends Converter {
         return converted;
     }
 
+    @SuppressWarnings("UnpredictableBigDecimalConstructorCall")
     @Override
     public BigDecimal asDecimal(Object val) {
-        return new BigDecimal(Double.toString(cast(val)), DECIMAL_MATH_CONTEXT);
+        return new BigDecimal(cast(val), DECIMAL_MATH_CONTEXT);
     }
 
     @Override

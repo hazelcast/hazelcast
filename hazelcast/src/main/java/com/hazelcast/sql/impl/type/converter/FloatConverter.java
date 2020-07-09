@@ -89,9 +89,10 @@ public final class FloatConverter extends Converter {
         return converted;
     }
 
+    @SuppressWarnings("UnpredictableBigDecimalConstructorCall")
     @Override
     public BigDecimal asDecimal(Object val) {
-        return new BigDecimal(Float.toString(cast(val)), DECIMAL_MATH_CONTEXT);
+        return new BigDecimal(cast(val), DECIMAL_MATH_CONTEXT);
     }
 
     @Override
