@@ -18,6 +18,7 @@ package com.hazelcast.sql.impl.expression.math;
 
 import com.hazelcast.sql.SqlErrorCode;
 import com.hazelcast.sql.impl.QueryException;
+import com.hazelcast.sql.impl.type.QueryDataType;
 
 import java.math.MathContext;
 import java.math.RoundingMode;
@@ -31,6 +32,10 @@ public final class ExpressionMath {
 
     /**
      * Math context used by expressions while doing math on BigDecimal values.
+     * <p>
+     * The context uses {@link RoundingMode#HALF_UP HALF_UP} rounding mode, with
+     * which most users should be familiar from school, and limits the precision
+     * to {@link QueryDataType#MAX_DECIMAL_PRECISION}.
      */
     public static final MathContext DECIMAL_MATH_CONTEXT = new MathContext(MAX_DECIMAL_PRECISION, RoundingMode.HALF_UP);
 
