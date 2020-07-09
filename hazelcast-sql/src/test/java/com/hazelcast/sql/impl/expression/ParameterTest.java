@@ -41,6 +41,7 @@ public class ParameterTest extends ExpressionTestBase {
         assertRows(query(sql, "select __key, __key + ? from records", 10), keyRange(0, 1000, 5000, 6000), k -> k + 10L);
         assertQueryThrows(sql, "select ? + 1 from records", "unexpected parameter count");
         assertQueryThrows(sql, "select ? + ? from records", "illegal use of dynamic parameter", 1, 2);
+        assertQueryThrows(sql, "select ? + 1 from records", "failed to convert parameter at position 0", "foo");
         assertRows(query(sql, "select __key, ? + cast(? as bigint) from records", 10, 20), keyRange(0, 1000, 5000, 6000),
                 k -> 30L);
     }

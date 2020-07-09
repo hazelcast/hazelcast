@@ -18,7 +18,7 @@ package com.hazelcast.sql.impl;
 
 import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.sql.impl.state.QueryClientStateRegistry;
+import com.hazelcast.sql.SqlErrorCode;
 import com.hazelcast.sql.impl.exec.io.flowcontrol.FlowControlFactory;
 import com.hazelcast.sql.impl.exec.io.flowcontrol.simple.SimpleFlowControlFactory;
 import com.hazelcast.sql.impl.exec.root.BlockingRootResultConsumer;
@@ -26,6 +26,7 @@ import com.hazelcast.sql.impl.operation.QueryExecuteOperation;
 import com.hazelcast.sql.impl.operation.QueryExecuteOperationFactory;
 import com.hazelcast.sql.impl.operation.QueryOperationHandlerImpl;
 import com.hazelcast.sql.impl.plan.Plan;
+import com.hazelcast.sql.impl.state.QueryClientStateRegistry;
 import com.hazelcast.sql.impl.state.QueryState;
 import com.hazelcast.sql.impl.state.QueryStateRegistry;
 import com.hazelcast.sql.impl.state.QueryStateRegistryUpdater;
@@ -227,7 +228,12 @@ public class SqlInternalService {
 
             Converter valueConverter = Converters.getConverter(value.getClass());
             Converter typeConverter = parameterMetadata.getParameterType(i).getConverter();
-            value = typeConverter.convertToSelf(valueConverter, value);
+            try {
+                value = typeConverter.convertToSelf(valueConverter, value);
+            } catch (QueryException e) {
+                throw QueryException.error(SqlErrorCode.DATA_EXCEPTION,
+                        "Failed to convert parameter at position " + i + ": " + e.getMessage(), e);
+            }
             params.set(i, value);
         }
     }
