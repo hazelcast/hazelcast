@@ -32,7 +32,7 @@ import java.util.function.BiConsumer;
  */
 public final class ExceptionUtil {
 
-    private static final RuntimeExceptionFactory HAZELCAST_EXCEPTION_FACTORY = (throwable, message) -> {
+    public static final RuntimeExceptionFactory HAZELCAST_EXCEPTION_FACTORY = (throwable, message) -> {
         if (message != null) {
             return new HazelcastException(message, throwable);
         } else {
@@ -44,7 +44,7 @@ public final class ExceptionUtil {
      * Interface used by rethrow/peel to wrap the peeled exception
      */
     public interface RuntimeExceptionFactory {
-        RuntimeException create(Throwable throwable, String message);
+        Throwable create(Throwable throwable, String message);
     }
 
     private ExceptionUtil() {

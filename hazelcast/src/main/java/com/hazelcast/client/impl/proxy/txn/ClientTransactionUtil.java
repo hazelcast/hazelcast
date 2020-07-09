@@ -33,12 +33,7 @@ import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 public final class ClientTransactionUtil {
 
     private static final RuntimeExceptionFactory TRANSACTION_EXCEPTION_FACTORY =
-            new RuntimeExceptionFactory() {
-                @Override
-                public RuntimeException create(Throwable throwable, String message) {
-                    return new TransactionException(message, throwable);
-                }
-            };
+            (throwable, message) -> new TransactionException(message, throwable);
 
     private ClientTransactionUtil() {
     }
