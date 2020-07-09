@@ -79,6 +79,11 @@ public class StreamFilesPTest extends JetTestSupport {
 
     @Before
     public void before() throws Exception {
+        // On Windows, "file changed" events are not delivered unless enough data is written
+        // or the file is closed. Some tests in this class rely that after a flush, the line is picked
+        // up by the processor.
+        assumeThatNoWindowsOS();
+
         workDir = Files.createTempDirectory("jet-test-streamFilesPTest").toFile();
         driverThread = new Thread(this::driveProcessor, "driver@" + testName.getMethodName());
     }
@@ -88,9 +93,13 @@ public class StreamFilesPTest extends JetTestSupport {
         if (driverException != null) {
             throw driverException;
         }
-        driverThread.interrupt();
-        driverThread.join();
-        IOUtil.delete(workDir);
+        if (driverThread != null) {
+            driverThread.interrupt();
+            driverThread.join();
+        }
+        if (workDir != null) {
+            IOUtil.delete(workDir);
+        }
     }
 
     @Test

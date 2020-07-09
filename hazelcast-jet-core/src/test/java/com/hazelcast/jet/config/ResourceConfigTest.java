@@ -29,6 +29,7 @@ import org.junit.runner.RunWith;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
+import java.nio.file.Paths;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
@@ -178,7 +179,7 @@ public class ResourceConfigTest extends JetTestSupport {
     @Test
     public void when_addNonexistentJarWithFile_then_throwsException() {
         // Given
-        String path = "/i/do/not/exist";
+        String path = Paths.get("/i/do/not/exist").toString();
         File file = new File(path);
 
         // Then
@@ -224,7 +225,7 @@ public class ResourceConfigTest extends JetTestSupport {
     @Test
     public void when_addNonexistentJarWithPath_then_throwsException() {
         // Given
-        String path = "/i/do/not/exist";
+        String path = Paths.get("/i/do/not/exist").toString();
 
         // Then
         expectedException.expect(JetException.class);
@@ -312,7 +313,7 @@ public class ResourceConfigTest extends JetTestSupport {
     @Test
     public void when_addNonexistentZipOfJarsWithPath_then_throwsException() {
         // Given
-        String path = "/i/do/not/exist";
+        String path = Paths.get("/i/do/not/exist").toString();
 
         // Then
         expectedException.expect(JetException.class);
@@ -356,7 +357,7 @@ public class ResourceConfigTest extends JetTestSupport {
     @Test
     public void when_addNonexistentZipOfJarsWithFile_then_throwsException() {
         // Given
-        String path = "/i/do/not/exist";
+        String path = Paths.get("/i/do/not/exist").toString();
         File file = new File(path);
 
         // Then
@@ -402,7 +403,7 @@ public class ResourceConfigTest extends JetTestSupport {
     @Test
     public void when_addNonexistentResourceWithPath_then_throwsException() {
         // Given
-        String path = "/i/do/not/exist";
+        String path = Paths.get("/i/do/not/exist").toString();
 
         // Then
         expectedException.expect(JetException.class);
@@ -433,7 +434,7 @@ public class ResourceConfigTest extends JetTestSupport {
     public void when_addNonexistentResourceWithPathAndId_then_throwsException() {
         // Given
         String id = "exist";
-        String path = "/i/do/not/" + id;
+        String path = Paths.get("/i/do/not/" + id).toString();
 
         // Then
         expectedException.expect(JetException.class);
@@ -477,7 +478,7 @@ public class ResourceConfigTest extends JetTestSupport {
     @Test
     public void when_addNonexistentResourceWithFile_then_throwsException() {
         // Given
-        String path = "/i/do/not/exist";
+        String path = Paths.get("/i/do/not/exist").toString();
         File file = new File(path);
 
         // Then
@@ -508,7 +509,7 @@ public class ResourceConfigTest extends JetTestSupport {
     public void when_addNonexistentResourceWithFileAndId_then_throwsException() {
         // Given
         String id = "exist";
-        String path = "/i/do/not/" + id;
+        String path = Paths.get("/i/do/not/" + id).toString();
         File file = new File(path);
 
         // Then
@@ -687,7 +688,7 @@ public class ResourceConfigTest extends JetTestSupport {
     @Test
     public void when_attachNonexistentFileWithPath_then_throwsException() {
         // Given
-        String path = "/i/do/not/exist";
+        String path = Paths.get("/i/do/not/exist").toString();
 
         // Then
         expectedException.expect(JetException.class);
@@ -718,7 +719,7 @@ public class ResourceConfigTest extends JetTestSupport {
     public void when_attachNonexistentFileWithPathAndId_then_throwsException() {
         // Given
         String id = "exist";
-        String path = "/i/do/not/" + id;
+        String path = Paths.get("/i/do/not/" + id).toString();
 
         // Then
         expectedException.expect(JetException.class);
@@ -762,7 +763,7 @@ public class ResourceConfigTest extends JetTestSupport {
     @Test
     public void when_attachNonexistentFileWithFile_then_throwsException() {
         // Given
-        String path = "/i/do/not/exist";
+        String path = Paths.get("/i/do/not/exist").toString();
         File file = new File(path);
 
         // Then
@@ -793,7 +794,7 @@ public class ResourceConfigTest extends JetTestSupport {
     public void when_attachNonexistentFileWithFileAndId_then_throwsException() {
         // Given
         String id = "exist";
-        String path = "/i/do/not/" + id;
+        String path = Paths.get("/i/do/not/" + id).toString();
         File file = new File(path);
 
         // Then
@@ -858,7 +859,7 @@ public class ResourceConfigTest extends JetTestSupport {
 
         // Then
         expectedException.expect(JetException.class);
-        expectedException.expectMessage("Not an existing, readable directory: " + path);
+        expectedException.expectMessage("Not an existing, readable directory: ");
 
         // When
         config.attachDirectory(url);
@@ -918,7 +919,7 @@ public class ResourceConfigTest extends JetTestSupport {
 
         // Then
         expectedException.expect(JetException.class);
-        expectedException.expectMessage("Not an existing, readable directory: " + path);
+        expectedException.expectMessage("Not an existing, readable directory: ");
 
         // When
         config.attachDirectory(path);
@@ -949,7 +950,7 @@ public class ResourceConfigTest extends JetTestSupport {
 
         // Then
         expectedException.expect(JetException.class);
-        expectedException.expectMessage("Not an existing, readable directory: " + path);
+        expectedException.expectMessage("Not an existing, readable directory: ");
 
         // When
         config.attachDirectory(path, id);
@@ -994,7 +995,7 @@ public class ResourceConfigTest extends JetTestSupport {
 
         // Then
         expectedException.expect(JetException.class);
-        expectedException.expectMessage("Not an existing, readable directory: " + path);
+        expectedException.expectMessage("Not an existing, readable directory: ");
 
         // When
         config.attachDirectory(file);
@@ -1025,7 +1026,7 @@ public class ResourceConfigTest extends JetTestSupport {
 
         // Then
         expectedException.expect(JetException.class);
-        expectedException.expectMessage("Not an existing, readable directory: " + path);
+        expectedException.expectMessage("Not an existing, readable directory: ");
 
         // When
         config.attachDirectory(file, id);

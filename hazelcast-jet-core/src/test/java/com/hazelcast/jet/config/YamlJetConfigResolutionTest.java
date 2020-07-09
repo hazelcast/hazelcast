@@ -243,7 +243,5 @@ public class YamlJetConfigResolutionTest {
         JetConfig config = new YamlJetConfigBuilder().build();
 
         assertEquals("yaml", config.getProperties().get("vvv"));
-
     }
-
 }
