@@ -32,7 +32,7 @@ public final class ExpressionMath {
     /**
      * Math context used by expressions while doing math on BigDecimal values.
      */
-    public static final MathContext DECIMAL_MATH_CONTEXT = new MathContext(MAX_DECIMAL_PRECISION, RoundingMode.HALF_DOWN);
+    public static final MathContext DECIMAL_MATH_CONTEXT = new MathContext(MAX_DECIMAL_PRECISION, RoundingMode.HALF_UP);
 
     private ExpressionMath() {
         // No-op.

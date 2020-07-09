@@ -38,7 +38,7 @@ public class ExpressionMathTest {
     @Test
     public void testDecimalMathContext() {
         assertEquals(QueryDataType.MAX_DECIMAL_PRECISION, ExpressionMath.DECIMAL_MATH_CONTEXT.getPrecision());
-        assertEquals(RoundingMode.HALF_DOWN, ExpressionMath.DECIMAL_MATH_CONTEXT.getRoundingMode());
+        assertEquals(RoundingMode.HALF_UP, ExpressionMath.DECIMAL_MATH_CONTEXT.getRoundingMode());
 
         BigDecimal r = BigDecimal.valueOf(1).divide(BigDecimal.valueOf(3), ExpressionMath.DECIMAL_MATH_CONTEXT);
         assertEquals(QueryDataType.MAX_DECIMAL_PRECISION, r.precision());
