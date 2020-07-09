@@ -18,7 +18,6 @@ package com.hazelcast.sql.impl.client;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.SqlCloseCodec;
-import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.security.permission.SqlPermission;
@@ -29,7 +28,7 @@ import java.security.Permission;
 /**
  * SQL query close task.
  */
-public class SqlCloseMessageTask extends AbstractCallableMessageTask<SqlCloseCodec.RequestParameters> {
+public class SqlCloseMessageTask extends SqlAbstractMessageTask<SqlCloseCodec.RequestParameters> {
     public SqlCloseMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }

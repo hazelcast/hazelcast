@@ -59,6 +59,7 @@ import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.spi.impl.proxyservice.ProxyService;
 import com.hazelcast.spi.properties.ClusterProperty;
+import com.hazelcast.sql.impl.client.SqlAbstractMessageTask;
 import com.hazelcast.transaction.TransactionManagerService;
 
 import javax.annotation.Nonnull;
@@ -234,7 +235,8 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
     }
 
     private boolean isQuery(MessageTask messageTask) {
-        return messageTask instanceof AbstractMapQueryMessageTask;
+        return messageTask instanceof AbstractMapQueryMessageTask
+            || messageTask instanceof SqlAbstractMessageTask;
     }
 
     @Override

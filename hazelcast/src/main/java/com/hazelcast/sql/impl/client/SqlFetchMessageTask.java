@@ -18,7 +18,6 @@ package com.hazelcast.sql.impl.client;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.SqlFetchCodec;
-import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.security.permission.SqlPermission;
@@ -30,7 +29,7 @@ import java.util.UUID;
 /**
  * SQL query fetch task.
  */
-public class SqlFetchMessageTask extends AbstractCallableMessageTask<SqlFetchCodec.RequestParameters> {
+public class SqlFetchMessageTask extends SqlAbstractMessageTask<SqlFetchCodec.RequestParameters> {
     public SqlFetchMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
