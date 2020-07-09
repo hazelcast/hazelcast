@@ -42,7 +42,7 @@ public final class BigDecimalConverter extends AbstractDecimalConverter {
         try {
             return casted.setScale(0, BigDecimal.ROUND_DOWN).byteValueExact();
         } catch (ArithmeticException e) {
-            throw cannotConvert(QueryDataTypeFamily.TINYINT, val);
+            throw overflow(QueryDataTypeFamily.TINYINT, val);
         }
     }
 
@@ -52,7 +52,7 @@ public final class BigDecimalConverter extends AbstractDecimalConverter {
         try {
             return casted.setScale(0, BigDecimal.ROUND_DOWN).shortValueExact();
         } catch (ArithmeticException e) {
-            throw cannotConvert(QueryDataTypeFamily.SMALLINT, val);
+            throw overflow(QueryDataTypeFamily.SMALLINT, val);
         }
     }
 
@@ -62,7 +62,7 @@ public final class BigDecimalConverter extends AbstractDecimalConverter {
         try {
             return casted.setScale(0, BigDecimal.ROUND_DOWN).intValueExact();
         } catch (ArithmeticException e) {
-            throw cannotConvert(QueryDataTypeFamily.INT, val);
+            throw overflow(QueryDataTypeFamily.INT, val);
         }
     }
 
@@ -72,7 +72,7 @@ public final class BigDecimalConverter extends AbstractDecimalConverter {
         try {
             return casted.setScale(0, BigDecimal.ROUND_DOWN).longValueExact();
         } catch (ArithmeticException e) {
-            throw cannotConvert(QueryDataTypeFamily.BIGINT, val);
+            throw overflow(QueryDataTypeFamily.BIGINT, val);
         }
     }
 

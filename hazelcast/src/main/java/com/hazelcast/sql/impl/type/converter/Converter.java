@@ -318,6 +318,20 @@ public abstract class Converter {
         return QueryException.error(SqlErrorCode.DATA_EXCEPTION, message);
     }
 
+    protected final QueryException overflow(QueryDataTypeFamily target, Object val) {
+        return overflow(typeFamily, target, val);
+    }
+
+    protected final QueryException overflow(QueryDataTypeFamily source, QueryDataTypeFamily target, Object val) {
+        String message = "Overflow while converting " + source + " to " + target;
+
+        if (val != null) {
+            message += ": " + val;
+        }
+
+        return QueryException.error(SqlErrorCode.DATA_EXCEPTION, message);
+    }
+
     private static boolean canConvert(Method method) {
         return method.getAnnotation(NotConvertible.class) == null;
     }

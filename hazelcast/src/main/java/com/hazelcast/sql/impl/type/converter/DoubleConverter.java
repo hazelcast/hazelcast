@@ -44,7 +44,7 @@ public final class DoubleConverter extends Converter {
         byte converted = (byte) casted;
 
         if (converted != (int) casted || !Double.isFinite(casted)) {
-            throw cannotConvert(QueryDataTypeFamily.TINYINT, val);
+            throw overflow(QueryDataTypeFamily.TINYINT, val);
         }
 
         return converted;
@@ -56,7 +56,7 @@ public final class DoubleConverter extends Converter {
         short converted = (short) casted;
 
         if (converted != (int) casted || !Double.isFinite(casted)) {
-            throw cannotConvert(QueryDataTypeFamily.SMALLINT, val);
+            throw overflow(QueryDataTypeFamily.SMALLINT, val);
         }
 
         return converted;
@@ -68,7 +68,7 @@ public final class DoubleConverter extends Converter {
         int converted = (int) casted;
 
         if (converted != (long) casted || !Double.isFinite(casted)) {
-            throw cannotConvert(QueryDataTypeFamily.INT, val);
+            throw overflow(QueryDataTypeFamily.INT, val);
         }
 
         return converted;
@@ -83,7 +83,7 @@ public final class DoubleConverter extends Converter {
         // No checks for NaNs and infinities are needed: NaNs are zeros and
         // infinities are Long.MAX/MIN_VALUE when converted to long.
         if ((double) converted != truncated) {
-            throw cannotConvert(QueryDataTypeFamily.BIGINT, val);
+            throw overflow(QueryDataTypeFamily.BIGINT, val);
         }
 
         return converted;
