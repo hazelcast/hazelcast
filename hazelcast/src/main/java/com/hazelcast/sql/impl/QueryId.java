@@ -79,7 +79,7 @@ public final class QueryId implements IdentifiedDataSerializable {
 
         try {
             UUID memberId = UUID.fromString(input.substring(0, underscorePos));
-            UUID localId = UUID.fromString(input.substring(underscorePos + 1);
+            UUID localId = UUID.fromString(input.substring(underscorePos + 1));
 
             return new QueryId(
                 memberId.getMostSignificantBits(),
