@@ -344,8 +344,8 @@ public abstract class AbstractMessageTask<P> implements MessageTask, SecureReque
                 return t;
             }
         }
-
-        return peel(t);
+        //We are passing our own message factory, because we don't want checked exceptions to be wrapped to HazelcastException
+        return peel(t, null, null, (throwable, message) -> throwable);
     }
 
 
