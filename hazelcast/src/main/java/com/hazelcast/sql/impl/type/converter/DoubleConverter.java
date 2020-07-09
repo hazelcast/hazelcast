@@ -41,8 +41,10 @@ public final class DoubleConverter extends Converter {
     @Override
     public byte asTinyint(Object val) {
         double casted = cast(val);
+        // here the overflow may happen: (byte) casted = (byte) (int) casted
         byte converted = (byte) casted;
 
+        // casts from double to int are saturating
         if (converted != (int) casted || !Double.isFinite(casted)) {
             throw numericOverflow(QueryDataTypeFamily.TINYINT, val);
         }
@@ -53,8 +55,10 @@ public final class DoubleConverter extends Converter {
     @Override
     public short asSmallint(Object val) {
         double casted = cast(val);
+        // here the overflow may happen: (short) casted = (short) (int) casted
         short converted = (short) casted;
 
+        // casts from double to int are saturating
         if (converted != (int) casted || !Double.isFinite(casted)) {
             throw numericOverflow(QueryDataTypeFamily.SMALLINT, val);
         }
@@ -67,6 +71,7 @@ public final class DoubleConverter extends Converter {
         double casted = cast(val);
         int converted = (int) casted;
 
+        // casts from double to long are saturating
         if (converted != (long) casted || !Double.isFinite(casted)) {
             throw numericOverflow(QueryDataTypeFamily.INT, val);
         }
@@ -78,6 +83,7 @@ public final class DoubleConverter extends Converter {
     public long asBigint(Object val) {
         double casted = cast(val);
         double truncated = casted > 0.0 ? Math.floor(casted) : Math.ceil(casted);
+        // casts from double to long are saturating
         long converted = (long) truncated;
 
         // No checks for NaNs and infinities are needed: NaNs are zeros and

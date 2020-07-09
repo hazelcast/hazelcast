@@ -41,8 +41,10 @@ public final class FloatConverter extends Converter {
     @Override
     public byte asTinyint(Object val) {
         float casted = cast(val);
+        // here the overflow may happen: (byte) casted = (byte) (int) casted
         byte converted = (byte) casted;
 
+        // casts from float to int are saturating
         if (converted != (int) casted || !Float.isFinite(casted)) {
             throw numericOverflow(QueryDataTypeFamily.TINYINT, val);
         }
@@ -53,8 +55,10 @@ public final class FloatConverter extends Converter {
     @Override
     public short asSmallint(Object val) {
         float casted = cast(val);
+        // here the overflow may happen: (short) casted = (short) (int) casted
         short converted = (short) casted;
 
+        // casts from float to int are saturating
         if (converted != (int) casted || !Float.isFinite(casted)) {
             throw numericOverflow(QueryDataTypeFamily.SMALLINT, val);
         }
@@ -65,8 +69,10 @@ public final class FloatConverter extends Converter {
     @Override
     public int asInt(Object val) {
         float casted = cast(val);
+        // casts from float to int are saturating
         int converted = (int) casted;
 
+        // casts from float to long are saturating
         if (converted != (long) casted || !Float.isFinite(casted)) {
             throw numericOverflow(QueryDataTypeFamily.INT, val);
         }
@@ -78,6 +84,7 @@ public final class FloatConverter extends Converter {
     public long asBigint(Object val) {
         float casted = cast(val);
         float truncated = (float) (casted > 0.0 ? Math.floor(casted) : Math.ceil(casted));
+        // casts from float to long are saturating
         long converted = (long) truncated;
 
         // No checks for NaNs and infinities are needed: NaNs are zeros and
