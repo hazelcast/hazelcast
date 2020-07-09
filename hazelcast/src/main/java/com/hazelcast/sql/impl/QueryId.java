@@ -71,15 +71,15 @@ public final class QueryId implements IdentifiedDataSerializable {
     public static QueryId parse(String input) {
         assert input != null;
 
-        String[] parts = input.split("_");
+        int underscorePos = input.indexOf("_");
 
-        if (parts.length != 2) {
+        if (underscorePos < 0) {
             throw new IllegalArgumentException("Query ID is malformed: " + input);
         }
 
         try {
-            UUID memberId = UUID.fromString(parts[0]);
-            UUID localId = UUID.fromString(parts[1]);
+            UUID memberId = UUID.fromString(input.substring(0, underscorePos));
+            UUID localId = UUID.fromString(input.substring(underscorePos + 1);
 
             return new QueryId(
                 memberId.getMostSignificantBits(),
