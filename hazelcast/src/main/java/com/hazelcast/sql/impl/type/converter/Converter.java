@@ -318,12 +318,12 @@ public abstract class Converter {
         return QueryException.error(SqlErrorCode.DATA_EXCEPTION, message);
     }
 
-    protected final QueryException overflow(QueryDataTypeFamily target, Object val) {
-        return overflow(typeFamily, target, val);
+    protected final QueryException numericOverflow(QueryDataTypeFamily target, Object val) {
+        return numericOverflow(typeFamily, target, val);
     }
 
-    protected final QueryException overflow(QueryDataTypeFamily source, QueryDataTypeFamily target, Object val) {
-        String message = "Overflow while converting " + source + " to " + target;
+    protected final QueryException numericOverflow(QueryDataTypeFamily source, QueryDataTypeFamily target, Object val) {
+        String message = "Numeric overflow while converting " + source + " to " + target;
 
         if (val != null) {
             message += ": " + val;

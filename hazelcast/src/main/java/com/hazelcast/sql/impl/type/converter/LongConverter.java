@@ -44,7 +44,7 @@ public final class LongConverter extends Converter {
         byte converted = (byte) casted;
 
         if (converted != casted) {
-            throw overflow(QueryDataTypeFamily.TINYINT, val);
+            throw numericOverflow(QueryDataTypeFamily.TINYINT, val);
         }
 
         return converted;
@@ -56,7 +56,7 @@ public final class LongConverter extends Converter {
         short converted = (short) casted;
 
         if (converted != casted) {
-            throw overflow(QueryDataTypeFamily.SMALLINT, val);
+            throw numericOverflow(QueryDataTypeFamily.SMALLINT, val);
         }
 
         return converted;
@@ -68,7 +68,7 @@ public final class LongConverter extends Converter {
         int converted = (int) casted;
 
         if (converted != casted) {
-            throw overflow(QueryDataTypeFamily.INT, val);
+            throw numericOverflow(QueryDataTypeFamily.INT, val);
         }
 
         return converted;

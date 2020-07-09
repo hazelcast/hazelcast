@@ -44,7 +44,7 @@ public final class FloatConverter extends Converter {
         byte converted = (byte) casted;
 
         if (converted != (int) casted || !Float.isFinite(casted)) {
-            throw overflow(QueryDataTypeFamily.TINYINT, val);
+            throw numericOverflow(QueryDataTypeFamily.TINYINT, val);
         }
 
         return converted;
@@ -56,7 +56,7 @@ public final class FloatConverter extends Converter {
         short converted = (short) casted;
 
         if (converted != (int) casted || !Float.isFinite(casted)) {
-            throw overflow(QueryDataTypeFamily.SMALLINT, val);
+            throw numericOverflow(QueryDataTypeFamily.SMALLINT, val);
         }
 
         return converted;
@@ -68,7 +68,7 @@ public final class FloatConverter extends Converter {
         int converted = (int) casted;
 
         if (converted != (long) casted || !Float.isFinite(casted)) {
-            throw overflow(QueryDataTypeFamily.INT, val);
+            throw numericOverflow(QueryDataTypeFamily.INT, val);
         }
 
         return converted;
@@ -83,7 +83,7 @@ public final class FloatConverter extends Converter {
         // No checks for NaNs and infinities are needed: NaNs are zeros and
         // infinities are Long.MAX/MIN_VALUE when converted to long.
         if ((float) converted != truncated) {
-            throw overflow(QueryDataTypeFamily.BIGINT, val);
+            throw numericOverflow(QueryDataTypeFamily.BIGINT, val);
         }
 
         return converted;
