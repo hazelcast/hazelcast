@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Closes the given session on the given CP group
  */
-@Generated("82c85ba78d37ced64e16a023044d0cde")
+@Generated("4279a0c20dc40f09645690994ddf7091")
 public final class CPSessionCloseSessionCodec {
     //hex: 0x1F0200
     public static final int REQUEST_MESSAGE_TYPE = 2032128;
@@ -86,16 +86,6 @@ public final class CPSessionCloseSessionCodec {
         return request;
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class ResponseParameters {
-
-        /**
-         * true if the session is found & closed,
-         * false otherwise.
-         */
-        public boolean response;
-    }
-
     public static ClientMessage encodeResponse(boolean response) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
@@ -106,12 +96,14 @@ public final class CPSessionCloseSessionCodec {
         return clientMessage;
     }
 
-    public static CPSessionCloseSessionCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
+    /**
+    * true if the session is found & closed,
+    * false otherwise.
+    */
+    public static boolean decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        ResponseParameters response = new ResponseParameters();
         ClientMessage.Frame initialFrame = iterator.next();
-        response.response = decodeBoolean(initialFrame.content, RESPONSE_RESPONSE_FIELD_OFFSET);
-        return response;
+        return decodeBoolean(initialFrame.content, RESPONSE_RESPONSE_FIELD_OFFSET);
     }
 
 }

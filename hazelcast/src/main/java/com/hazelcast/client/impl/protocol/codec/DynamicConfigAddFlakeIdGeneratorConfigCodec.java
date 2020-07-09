@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * If a flake ID generator configuration for the same name already exists, then
  * the new configuration is ignored and the existing one is preserved.
  */
-@Generated("1281575601fc809deb44db80db8aaf11")
+@Generated("6df1468776a54af917c0b57125eceda9")
 public final class DynamicConfigAddFlakeIdGeneratorConfigCodec {
     //hex: 0x1B0F00
     public static final int REQUEST_MESSAGE_TYPE = 1773312;
@@ -143,10 +143,6 @@ public final class DynamicConfigAddFlakeIdGeneratorConfigCodec {
         return request;
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class ResponseParameters {
-    }
-
     public static ClientMessage encodeResponse() {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
@@ -156,12 +152,5 @@ public final class DynamicConfigAddFlakeIdGeneratorConfigCodec {
         return clientMessage;
     }
 
-    public static DynamicConfigAddFlakeIdGeneratorConfigCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
-        ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        ResponseParameters response = new ResponseParameters();
-        //empty initial frame
-        iterator.next();
-        return response;
-    }
 
 }

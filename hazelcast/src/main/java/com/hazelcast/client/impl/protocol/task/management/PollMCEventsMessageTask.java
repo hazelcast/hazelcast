@@ -18,7 +18,6 @@ package com.hazelcast.client.impl.protocol.task.management;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MCPollMCEventsCodec;
-import com.hazelcast.client.impl.protocol.codec.MCPollMCEventsCodec.RequestParameters;
 import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.management.ManagementCenterService;
@@ -31,7 +30,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-public class PollMCEventsMessageTask extends AbstractCallableMessageTask<RequestParameters> {
+public class PollMCEventsMessageTask extends AbstractCallableMessageTask<Void> {
 
     public PollMCEventsMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -52,8 +51,8 @@ public class PollMCEventsMessageTask extends AbstractCallableMessageTask<Request
     }
 
     @Override
-    protected RequestParameters decodeClientMessage(ClientMessage clientMessage) {
-        return MCPollMCEventsCodec.decodeRequest(clientMessage);
+    protected Void decodeClientMessage(ClientMessage clientMessage) {
+        return null;
     }
 
     @Override

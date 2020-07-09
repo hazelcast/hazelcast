@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Returns true if this map contains a mapping for the specified key.
  */
-@Generated("3209f3d3b59c01c7c1bd889f8761e811")
+@Generated("dda68b75ee68db26259e1027dacaa6c2")
 public final class ReplicatedMapContainsKeyCodec {
     //hex: 0x0D0400
     public static final int REQUEST_MESSAGE_TYPE = 852992;
@@ -86,15 +86,6 @@ public final class ReplicatedMapContainsKeyCodec {
         return request;
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class ResponseParameters {
-
-        /**
-         * <tt>True</tt> if this map contains a mapping for the specified key
-         */
-        public boolean response;
-    }
-
     public static ClientMessage encodeResponse(boolean response) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
@@ -105,12 +96,13 @@ public final class ReplicatedMapContainsKeyCodec {
         return clientMessage;
     }
 
-    public static ReplicatedMapContainsKeyCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
+    /**
+    * <tt>True</tt> if this map contains a mapping for the specified key
+    */
+    public static boolean decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        ResponseParameters response = new ResponseParameters();
         ClientMessage.Frame initialFrame = iterator.next();
-        response.response = decodeBoolean(initialFrame.content, RESPONSE_RESPONSE_FIELD_OFFSET);
-        return response;
+        return decodeBoolean(initialFrame.content, RESPONSE_RESPONSE_FIELD_OFFSET);
     }
 
 }

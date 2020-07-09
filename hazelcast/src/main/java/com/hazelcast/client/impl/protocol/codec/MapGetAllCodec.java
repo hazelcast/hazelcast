@@ -40,7 +40,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * matching to a different partition id shall be ignored. The API implementation using this request may need to send multiple
  * of these request messages for filling a request for a key set if the keys belong to different partitions.
  */
-@Generated("4965328f0ab43a586da2c942b60b7771")
+@Generated("389c69ff19f309ba22df448c190a7c0d")
 public final class MapGetAllCodec {
     //hex: 0x012300
     public static final int REQUEST_MESSAGE_TYPE = 74496;
@@ -89,15 +89,6 @@ public final class MapGetAllCodec {
         return request;
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class ResponseParameters {
-
-        /**
-         * values for the provided keys.
-         */
-        public java.util.List<java.util.Map.Entry<com.hazelcast.internal.serialization.Data, com.hazelcast.internal.serialization.Data>> response;
-    }
-
     public static ClientMessage encodeResponse(java.util.Collection<java.util.Map.Entry<com.hazelcast.internal.serialization.Data, com.hazelcast.internal.serialization.Data>> response) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
@@ -108,13 +99,14 @@ public final class MapGetAllCodec {
         return clientMessage;
     }
 
-    public static MapGetAllCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
+    /**
+    * values for the provided keys.
+    */
+    public static java.util.List<java.util.Map.Entry<com.hazelcast.internal.serialization.Data, com.hazelcast.internal.serialization.Data>> decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        ResponseParameters response = new ResponseParameters();
         //empty initial frame
         iterator.next();
-        response.response = EntryListCodec.decode(iterator, DataCodec::decode, DataCodec::decode);
-        return response;
+        return EntryListCodec.decode(iterator, DataCodec::decode, DataCodec::decode);
     }
 
 }

@@ -38,9 +38,9 @@ public abstract class BaseIndexStore implements IndexStore {
 
     static final float LOAD_FACTOR = 0.75F;
 
-    private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
-    private final ReentrantReadWriteLock.ReadLock readLock = lock.readLock();
-    private final ReentrantReadWriteLock.WriteLock writeLock = lock.writeLock();
+    private final ReentrantReadWriteLock lock;
+    private final ReentrantReadWriteLock.ReadLock readLock;
+    private final ReentrantReadWriteLock.WriteLock writeLock;
 
     private final CopyFunctor<Data, QueryableEntry> resultCopyFunctor;
 
@@ -49,17 +49,18 @@ public abstract class BaseIndexStore implements IndexStore {
      * for expiration (idle or tll), otherwise {@code false}.
      * <p>
      * The field is updated on every update of the index.
-     * <p>
-     * The filed's access is guarded by {@link BaseIndexStore#lock}.
      */
-    private boolean isIndexStoreExpirable;
+    private volatile boolean isIndexStoreExpirable;
 
-    BaseIndexStore(IndexCopyBehavior copyOn) {
+    BaseIndexStore(IndexCopyBehavior copyOn, boolean enableGlobalLock) {
         if (copyOn == IndexCopyBehavior.COPY_ON_WRITE || copyOn == IndexCopyBehavior.NEVER) {
             resultCopyFunctor = new PassThroughFunctor();
         } else {
             resultCopyFunctor = new CopyInputFunctor();
         }
+        lock = enableGlobalLock ? new ReentrantReadWriteLock() : null;
+        readLock = enableGlobalLock ? lock.readLock() : null;
+        writeLock = enableGlobalLock ? lock.writeLock() : null;
     }
 
     /**
@@ -80,19 +81,27 @@ public abstract class BaseIndexStore implements IndexStore {
     abstract Comparable canonicalizeScalarForStorage(Comparable value);
 
     void takeWriteLock() {
-        writeLock.lock();
+        if (lock != null) {
+            writeLock.lock();
+        }
     }
 
     void releaseWriteLock() {
-        writeLock.unlock();
+        if (lock != null) {
+            writeLock.unlock();
+        }
     }
 
     void takeReadLock() {
-        readLock.lock();
+        if (lock != null) {
+            readLock.lock();
+        }
     }
 
     void releaseReadLock() {
-        readLock.unlock();
+        if (lock != null) {
+            readLock.unlock();
+        }
     }
 
     final void copyToMultiResultSet(MultiResultSet resultSet, Map<Data, QueryableEntry> records) {
@@ -136,7 +145,6 @@ public abstract class BaseIndexStore implements IndexStore {
     }
 
     void markIndexStoreExpirableIfNecessary(QueryableEntry record) {
-        assert lock.isWriteLockedByCurrentThread();
         // StoreAdapter is not set in plenty of internal unit tests
         if (record.getStoreAdapter() != null) {
             isIndexStoreExpirable = record.getStoreAdapter().isExpirable();

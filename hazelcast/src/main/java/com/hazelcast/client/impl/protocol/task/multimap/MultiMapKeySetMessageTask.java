@@ -41,7 +41,7 @@ import java.util.Map;
  * {@link com.hazelcast.client.impl.protocol.codec.MultiMapMessageType#MULTIMAP_KEYSET}
  */
 public class MultiMapKeySetMessageTask
-        extends AbstractAllPartitionsMessageTask<MultiMapKeySetCodec.RequestParameters> {
+        extends AbstractAllPartitionsMessageTask<String> {
 
     public MultiMapKeySetMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -49,7 +49,7 @@ public class MultiMapKeySetMessageTask
 
     @Override
     protected OperationFactory createOperationFactory() {
-        return new MultiMapOperationFactory(parameters.name, MultiMapOperationFactory.OperationFactoryType.KEY_SET);
+        return new MultiMapOperationFactory(parameters, MultiMapOperationFactory.OperationFactoryType.KEY_SET);
     }
 
     @Override
@@ -70,7 +70,7 @@ public class MultiMapKeySetMessageTask
     }
 
     @Override
-    protected MultiMapKeySetCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+    protected String decodeClientMessage(ClientMessage clientMessage) {
         return MultiMapKeySetCodec.decodeRequest(clientMessage);
     }
 
@@ -86,12 +86,12 @@ public class MultiMapKeySetMessageTask
 
     @Override
     public Permission getRequiredPermission() {
-        return new MultiMapPermission(parameters.name, ActionConstants.ACTION_READ);
+        return new MultiMapPermission(parameters, ActionConstants.ACTION_READ);
     }
 
     @Override
     public String getDistributedObjectName() {
-        return parameters.name;
+        return parameters;
     }
 
     @Override

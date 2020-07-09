@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Returns true if this set contains the specified element.
  */
-@Generated("68566ba822c1835556f380a6542b2c6c")
+@Generated("971ace01aa909366698ad6f33fc6e6ee")
 public final class SetContainsCodec {
     //hex: 0x060200
     public static final int REQUEST_MESSAGE_TYPE = 393728;
@@ -86,15 +86,6 @@ public final class SetContainsCodec {
         return request;
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class ResponseParameters {
-
-        /**
-         * True if this set contains the specified element, false otherwise
-         */
-        public boolean response;
-    }
-
     public static ClientMessage encodeResponse(boolean response) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
@@ -105,12 +96,13 @@ public final class SetContainsCodec {
         return clientMessage;
     }
 
-    public static SetContainsCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
+    /**
+    * True if this set contains the specified element, false otherwise
+    */
+    public static boolean decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        ResponseParameters response = new ResponseParameters();
         ClientMessage.Frame initialFrame = iterator.next();
-        response.response = decodeBoolean(initialFrame.content, RESPONSE_RESPONSE_FIELD_OFFSET);
-        return response;
+        return decodeBoolean(initialFrame.content, RESPONSE_RESPONSE_FIELD_OFFSET);
     }
 
 }

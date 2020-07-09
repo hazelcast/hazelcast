@@ -34,7 +34,7 @@ import java.security.Permission;
  * {@link com.hazelcast.client.impl.protocol.codec.QueueMessageType#QUEUE_ISEMPTY}
  */
 public class QueueIsEmptyMessageTask
-        extends AbstractPartitionMessageTask<QueueIsEmptyCodec.RequestParameters> {
+        extends AbstractPartitionMessageTask<String> {
 
     public QueueIsEmptyMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -42,7 +42,7 @@ public class QueueIsEmptyMessageTask
 
     @Override
     protected Operation prepareOperation() {
-        return new IsEmptyOperation(parameters.name);
+        return new IsEmptyOperation(parameters);
     }
 
     @Override
@@ -51,13 +51,13 @@ public class QueueIsEmptyMessageTask
     }
 
     @Override
-    protected QueueIsEmptyCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+    protected String decodeClientMessage(ClientMessage clientMessage) {
         return QueueIsEmptyCodec.decodeRequest(clientMessage);
     }
 
     @Override
     public Permission getRequiredPermission() {
-        return new QueuePermission(parameters.name, ActionConstants.ACTION_READ);
+        return new QueuePermission(parameters, ActionConstants.ACTION_READ);
     }
 
     @Override
@@ -77,6 +77,6 @@ public class QueueIsEmptyMessageTask
 
     @Override
     public String getDistributedObjectName() {
-        return parameters.name;
+        return parameters;
     }
 }

@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Makes the query cache with the given name for a specific map publishable.
  */
-@Generated("8dabbe564b3692388f3f82327991afc8")
+@Generated("0c32280ae3454dfddb2bd160e9d65487")
 public final class ContinuousQueryMadePublishableCodec {
     //hex: 0x160300
     public static final int REQUEST_MESSAGE_TYPE = 1442560;
@@ -86,15 +86,6 @@ public final class ContinuousQueryMadePublishableCodec {
         return request;
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class ResponseParameters {
-
-        /**
-         * True if successfully set as publishable, false otherwise.
-         */
-        public boolean response;
-    }
-
     public static ClientMessage encodeResponse(boolean response) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
@@ -105,12 +96,13 @@ public final class ContinuousQueryMadePublishableCodec {
         return clientMessage;
     }
 
-    public static ContinuousQueryMadePublishableCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
+    /**
+    * True if successfully set as publishable, false otherwise.
+    */
+    public static boolean decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        ResponseParameters response = new ResponseParameters();
         ClientMessage.Frame initialFrame = iterator.next();
-        response.response = decodeBoolean(initialFrame.content, RESPONSE_RESPONSE_FIELD_OFFSET);
-        return response;
+        return decodeBoolean(initialFrame.content, RESPONSE_RESPONSE_FIELD_OFFSET);
     }
 
 }

@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Returns the remaining capacity of the ringbuffer. The returned value could be stale as soon as it is returned.
  * If ttl is not set, the remaining capacity will always be the capacity.
  */
-@Generated("448fd6a217c3413e04138299fdafb004")
+@Generated("631f7c04484d188464a0b94df27660a5")
 public final class RingbufferRemainingCapacityCodec {
     //hex: 0x170500
     public static final int REQUEST_MESSAGE_TYPE = 1508608;
@@ -50,14 +50,11 @@ public final class RingbufferRemainingCapacityCodec {
     private RingbufferRemainingCapacityCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class RequestParameters {
-
-        /**
-         * Name of the Ringbuffer
-         */
-        public java.lang.String name;
-    }
+    /**
+     * Name of the Ringbuffer
+     */
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"UUF_UNUSED_PUBLIC_OR_PROTECTED_FIELD"})
+    public java.lang.String name;
 
     public static ClientMessage encodeRequest(java.lang.String name) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
@@ -71,22 +68,11 @@ public final class RingbufferRemainingCapacityCodec {
         return clientMessage;
     }
 
-    public static RingbufferRemainingCapacityCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
+    public static java.lang.String decodeRequest(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        RequestParameters request = new RequestParameters();
         //empty initial frame
         iterator.next();
-        request.name = StringCodec.decode(iterator);
-        return request;
-    }
-
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class ResponseParameters {
-
-        /**
-         * the remaining capacity
-         */
-        public long response;
+        return StringCodec.decode(iterator);
     }
 
     public static ClientMessage encodeResponse(long response) {
@@ -99,12 +85,13 @@ public final class RingbufferRemainingCapacityCodec {
         return clientMessage;
     }
 
-    public static RingbufferRemainingCapacityCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
+    /**
+    * the remaining capacity
+    */
+    public static long decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        ResponseParameters response = new ResponseParameters();
         ClientMessage.Frame initialFrame = iterator.next();
-        response.response = decodeLong(initialFrame.content, RESPONSE_RESPONSE_FIELD_OFFSET);
-        return response;
+        return decodeLong(initialFrame.content, RESPONSE_RESPONSE_FIELD_OFFSET);
     }
 
 }

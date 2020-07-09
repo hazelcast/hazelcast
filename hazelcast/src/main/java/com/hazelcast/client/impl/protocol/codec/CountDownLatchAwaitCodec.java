@@ -51,7 +51,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * waiting time elapses then the value false is returned.  If the time is
  * less than or equal to zero, the method will not wait at all.
  */
-@Generated("42f3f3d59dd69497cc6c5cec02ddb615")
+@Generated("9f4433392910229dd72a86fc713379f4")
 public final class CountDownLatchAwaitCodec {
     //hex: 0x0B0200
     public static final int REQUEST_MESSAGE_TYPE = 721408;
@@ -116,16 +116,6 @@ public final class CountDownLatchAwaitCodec {
         return request;
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class ResponseParameters {
-
-        /**
-         * true if the count reached zero, false if
-         * the waiting time elapsed before the count reached 0
-         */
-        public boolean response;
-    }
-
     public static ClientMessage encodeResponse(boolean response) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
@@ -136,12 +126,14 @@ public final class CountDownLatchAwaitCodec {
         return clientMessage;
     }
 
-    public static CountDownLatchAwaitCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
+    /**
+    * true if the count reached zero, false if
+    * the waiting time elapsed before the count reached 0
+    */
+    public static boolean decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        ResponseParameters response = new ResponseParameters();
         ClientMessage.Frame initialFrame = iterator.next();
-        response.response = decodeBoolean(initialFrame.content, RESPONSE_RESPONSE_FIELD_OFFSET);
-        return response;
+        return decodeBoolean(initialFrame.content, RESPONSE_RESPONSE_FIELD_OFFSET);
     }
 
 }

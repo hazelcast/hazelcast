@@ -37,7 +37,7 @@ import java.util.UUID;
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 
 public class MapFlushMessageTask
-        extends AbstractCallableMessageTask<MapFlushCodec.RequestParameters> implements BlockingMessageTask {
+        extends AbstractCallableMessageTask<String> implements BlockingMessageTask {
 
     public MapFlushMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -50,7 +50,7 @@ public class MapFlushMessageTask
         NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
         ProxyService proxyService = nodeEngine.getProxyService();
         UUID source = endpoint.getUuid();
-        DistributedObject distributedObject = proxyService.getDistributedObject(SERVICE_NAME, parameters.name, source);
+        DistributedObject distributedObject = proxyService.getDistributedObject(SERVICE_NAME, parameters, source);
 
         MapProxyImpl mapProxy = (MapProxyImpl) distributedObject;
         mapProxy.flush();
@@ -60,7 +60,7 @@ public class MapFlushMessageTask
 
 
     @Override
-    protected MapFlushCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+    protected String decodeClientMessage(ClientMessage clientMessage) {
         return MapFlushCodec.decodeRequest(clientMessage);
     }
 
@@ -77,12 +77,12 @@ public class MapFlushMessageTask
 
     @Override
     public Permission getRequiredPermission() {
-        return new MapPermission(parameters.name, ActionConstants.ACTION_PUT);
+        return new MapPermission(parameters, ActionConstants.ACTION_PUT);
     }
 
     @Override
     public String getDistributedObjectName() {
-        return parameters.name;
+        return parameters;
     }
 
     @Override

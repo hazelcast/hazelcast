@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Applies the user defined EntryProcessor to the entries mapped by the collection of keys.The results mapped by
  * each key in the collection.
  */
-@Generated("505a081643404c1b0cd2f2f47e56e950")
+@Generated("cc74ae60ed0cda9dadab625a788f81a6")
 public final class MapExecuteOnKeysCodec {
     //hex: 0x013200
     public static final int REQUEST_MESSAGE_TYPE = 78336;
@@ -93,15 +93,6 @@ public final class MapExecuteOnKeysCodec {
         return request;
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class ResponseParameters {
-
-        /**
-         * results of entry process on the entries with the provided keys
-         */
-        public java.util.List<java.util.Map.Entry<com.hazelcast.internal.serialization.Data, com.hazelcast.internal.serialization.Data>> response;
-    }
-
     public static ClientMessage encodeResponse(java.util.Collection<java.util.Map.Entry<com.hazelcast.internal.serialization.Data, com.hazelcast.internal.serialization.Data>> response) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
@@ -112,13 +103,14 @@ public final class MapExecuteOnKeysCodec {
         return clientMessage;
     }
 
-    public static MapExecuteOnKeysCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
+    /**
+    * results of entry process on the entries with the provided keys
+    */
+    public static java.util.List<java.util.Map.Entry<com.hazelcast.internal.serialization.Data, com.hazelcast.internal.serialization.Data>> decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        ResponseParameters response = new ResponseParameters();
         //empty initial frame
         iterator.next();
-        response.response = EntryListCodec.decode(iterator, DataCodec::decode, DataCodec::decode);
-        return response;
+        return EntryListCodec.decode(iterator, DataCodec::decode, DataCodec::decode);
     }
 
 }

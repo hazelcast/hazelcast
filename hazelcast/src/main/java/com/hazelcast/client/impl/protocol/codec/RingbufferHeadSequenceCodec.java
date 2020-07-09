@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * are found. If the RingBuffer is empty, the head will be one more than the tail.
  * The initial value of the head is 0 (1 more than tail).
  */
-@Generated("154fcd329533b97d2b5af52c0222ddd3")
+@Generated("12195e1f18a986c7efb2d6e6bd6d88d9")
 public final class RingbufferHeadSequenceCodec {
     //hex: 0x170300
     public static final int REQUEST_MESSAGE_TYPE = 1508096;
@@ -51,14 +51,11 @@ public final class RingbufferHeadSequenceCodec {
     private RingbufferHeadSequenceCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class RequestParameters {
-
-        /**
-         * Name of the Ringbuffer
-         */
-        public java.lang.String name;
-    }
+    /**
+     * Name of the Ringbuffer
+     */
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"UUF_UNUSED_PUBLIC_OR_PROTECTED_FIELD"})
+    public java.lang.String name;
 
     public static ClientMessage encodeRequest(java.lang.String name) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
@@ -72,22 +69,11 @@ public final class RingbufferHeadSequenceCodec {
         return clientMessage;
     }
 
-    public static RingbufferHeadSequenceCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
+    public static java.lang.String decodeRequest(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        RequestParameters request = new RequestParameters();
         //empty initial frame
         iterator.next();
-        request.name = StringCodec.decode(iterator);
-        return request;
-    }
-
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class ResponseParameters {
-
-        /**
-         * the sequence of the head
-         */
-        public long response;
+        return StringCodec.decode(iterator);
     }
 
     public static ClientMessage encodeResponse(long response) {
@@ -100,12 +86,13 @@ public final class RingbufferHeadSequenceCodec {
         return clientMessage;
     }
 
-    public static RingbufferHeadSequenceCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
+    /**
+    * the sequence of the head
+    */
+    public static long decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        ResponseParameters response = new ResponseParameters();
         ClientMessage.Frame initialFrame = iterator.next();
-        response.response = decodeLong(initialFrame.content, RESPONSE_RESPONSE_FIELD_OFFSET);
-        return response;
+        return decodeLong(initialFrame.content, RESPONSE_RESPONSE_FIELD_OFFSET);
     }
 
 }

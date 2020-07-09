@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Alters the currently stored value by applying a function on it.
  */
-@Generated("0966a3c61fa0ca83906fc990f0522b17")
+@Generated("01abe0b71c221d34e8689cef9b2b58f1")
 public final class AtomicLongAlterCodec {
     //hex: 0x090200
     public static final int REQUEST_MESSAGE_TYPE = 590336;
@@ -100,15 +100,6 @@ public final class AtomicLongAlterCodec {
         return request;
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class ResponseParameters {
-
-        /**
-         * The old or the new value depending on the returnValueType parameter.
-         */
-        public long response;
-    }
-
     public static ClientMessage encodeResponse(long response) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
@@ -119,12 +110,13 @@ public final class AtomicLongAlterCodec {
         return clientMessage;
     }
 
-    public static AtomicLongAlterCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
+    /**
+    * The old or the new value depending on the returnValueType parameter.
+    */
+    public static long decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        ResponseParameters response = new ResponseParameters();
         ClientMessage.Frame initialFrame = iterator.next();
-        response.response = decodeLong(initialFrame.content, RESPONSE_RESPONSE_FIELD_OFFSET);
-        return response;
+        return decodeLong(initialFrame.content, RESPONSE_RESPONSE_FIELD_OFFSET);
     }
 
 }

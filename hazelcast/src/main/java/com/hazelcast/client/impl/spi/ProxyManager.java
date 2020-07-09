@@ -418,7 +418,7 @@ public final class ProxyManager {
 
         @Override
         public UUID decodeAddResponse(ClientMessage clientMessage) {
-            return ClientAddDistributedObjectListenerCodec.decodeResponse(clientMessage).response;
+            return ClientAddDistributedObjectListenerCodec.decodeResponse(clientMessage);
         }
 
         @Override
@@ -428,7 +428,7 @@ public final class ProxyManager {
 
         @Override
         public boolean decodeRemoveResponse(ClientMessage clientMessage) {
-            return ClientRemoveDistributedObjectListenerCodec.decodeResponse(clientMessage).response;
+            return ClientRemoveDistributedObjectListenerCodec.decodeResponse(clientMessage);
         }
     }
 

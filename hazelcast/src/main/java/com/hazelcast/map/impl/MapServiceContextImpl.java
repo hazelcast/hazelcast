@@ -863,6 +863,11 @@ class MapServiceContextImpl implements MapServiceContext {
     }
 
     @Override
+    public boolean globalIndexEnabled() {
+        return true;
+    }
+
+    @Override
     public ValueComparator getValueComparatorOf(InMemoryFormat inMemoryFormat) {
         return ValueComparatorUtil.getValueComparatorOf(inMemoryFormat);
     }

@@ -20,20 +20,21 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.XATransactionClearRemoteCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
 import com.hazelcast.instance.impl.Node;
-import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.security.permission.TransactionPermission;
 import com.hazelcast.spi.impl.operationservice.InvocationBuilder;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
+import com.hazelcast.transaction.impl.xa.SerializableXID;
 import com.hazelcast.transaction.impl.xa.XAService;
 import com.hazelcast.transaction.impl.xa.operations.ClearRemoteTransactionOperation;
 
 import java.security.Permission;
 
 public class XAClearRemoteTransactionMessageTask
-        extends AbstractCallableMessageTask<XATransactionClearRemoteCodec.RequestParameters> {
+        extends AbstractCallableMessageTask<SerializableXID> {
 
     private static final int TRY_COUNT = 100;
 
@@ -42,7 +43,7 @@ public class XAClearRemoteTransactionMessageTask
     }
 
     @Override
-    protected XATransactionClearRemoteCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+    protected SerializableXID decodeClientMessage(ClientMessage clientMessage) {
         return XATransactionClearRemoteCodec.decodeRequest(clientMessage);
     }
 
@@ -56,7 +57,7 @@ public class XAClearRemoteTransactionMessageTask
         OperationServiceImpl operationService = nodeEngine.getOperationService();
         InternalPartitionService partitionService = nodeEngine.getPartitionService();
 
-        Data xidData = serializationService.toData(parameters.xid);
+        Data xidData = serializationService.toData(parameters);
         Operation op = new ClearRemoteTransactionOperation(xidData);
         op.setCallerUuid(endpoint.getUuid());
         int partitionId = partitionService.getPartitionId(xidData);

@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Clears the multimap. Removes all key-value pairs.
  */
-@Generated("a22421c83fbfb6b71ac7a37f0005bf28")
+@Generated("285ff012f077f35c8d9771e8a8289455")
 public final class MultiMapClearCodec {
     //hex: 0x020B00
     public static final int REQUEST_MESSAGE_TYPE = 133888;
@@ -48,14 +48,11 @@ public final class MultiMapClearCodec {
     private MultiMapClearCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class RequestParameters {
-
-        /**
-         * Name of the MultiMap
-         */
-        public java.lang.String name;
-    }
+    /**
+     * Name of the MultiMap
+     */
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"UUF_UNUSED_PUBLIC_OR_PROTECTED_FIELD"})
+    public java.lang.String name;
 
     public static ClientMessage encodeRequest(java.lang.String name) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
@@ -69,17 +66,11 @@ public final class MultiMapClearCodec {
         return clientMessage;
     }
 
-    public static MultiMapClearCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
+    public static java.lang.String decodeRequest(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        RequestParameters request = new RequestParameters();
         //empty initial frame
         iterator.next();
-        request.name = StringCodec.decode(iterator);
-        return request;
-    }
-
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class ResponseParameters {
+        return StringCodec.decode(iterator);
     }
 
     public static ClientMessage encodeResponse() {
@@ -91,12 +82,5 @@ public final class MultiMapClearCodec {
         return clientMessage;
     }
 
-    public static MultiMapClearCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
-        ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        ResponseParameters response = new ResponseParameters();
-        //empty initial frame
-        iterator.next();
-        return response;
-    }
 
 }

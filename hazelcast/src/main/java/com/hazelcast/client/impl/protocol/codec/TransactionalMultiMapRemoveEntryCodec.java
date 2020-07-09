@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Removes all the entries associated with the given key.
  */
-@Generated("2d1d8710907a4c6cab9d79c3a45daf77")
+@Generated("f615e45f0295b2e88899e6db70a8459f")
 public final class TransactionalMultiMapRemoveEntryCodec {
     //hex: 0x0F0400
     public static final int REQUEST_MESSAGE_TYPE = 984064;
@@ -108,15 +108,6 @@ public final class TransactionalMultiMapRemoveEntryCodec {
         return request;
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class ResponseParameters {
-
-        /**
-         * True if the size of the multimap changed after the remove operation, false otherwise.
-         */
-        public boolean response;
-    }
-
     public static ClientMessage encodeResponse(boolean response) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
@@ -127,12 +118,13 @@ public final class TransactionalMultiMapRemoveEntryCodec {
         return clientMessage;
     }
 
-    public static TransactionalMultiMapRemoveEntryCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
+    /**
+    * True if the size of the multimap changed after the remove operation, false otherwise.
+    */
+    public static boolean decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        ResponseParameters response = new ResponseParameters();
         ClientMessage.Frame initialFrame = iterator.next();
-        response.response = decodeBoolean(initialFrame.content, RESPONSE_RESPONSE_FIELD_OFFSET);
-        return response;
+        return decodeBoolean(initialFrame.content, RESPONSE_RESPONSE_FIELD_OFFSET);
     }
 
 }

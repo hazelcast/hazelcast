@@ -26,7 +26,7 @@ import com.hazelcast.internal.nio.Connection;
 import java.security.Permission;
 
 public class HotRestartTriggerForceStartMessageTask
-        extends AbstractCallableMessageTask<MCTriggerForceStartCodec.RequestParameters> {
+        extends AbstractCallableMessageTask<Void> {
 
     private Node node;
 
@@ -46,8 +46,8 @@ public class HotRestartTriggerForceStartMessageTask
     }
 
     @Override
-    protected MCTriggerForceStartCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
-        return MCTriggerForceStartCodec.decodeRequest(clientMessage);
+    protected Void decodeClientMessage(ClientMessage clientMessage) {
+        return null;
     }
 
     @Override

@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Loads the given keys. This is a batch load operation so that an implementation can optimize the multiple loads.
  */
-@Generated("6d19792196b7aa790a0e3199c0341c87")
+@Generated("03b3a05ff8153f5a1d3ec0c7e01082dc")
 public final class MapLoadGivenKeysCodec {
     //hex: 0x012100
     public static final int REQUEST_MESSAGE_TYPE = 73984;
@@ -92,10 +92,6 @@ public final class MapLoadGivenKeysCodec {
         return request;
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class ResponseParameters {
-    }
-
     public static ClientMessage encodeResponse() {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
@@ -105,12 +101,5 @@ public final class MapLoadGivenKeysCodec {
         return clientMessage;
     }
 
-    public static MapLoadGivenKeysCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
-        ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        ResponseParameters response = new ResponseParameters();
-        //empty initial frame
-        iterator.next();
-        return response;
-    }
 
 }

@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Returns true if this map contains an entry for the specified value.
  */
-@Generated("18d5cbc3e3566f8f6bdb8b37050522b1")
+@Generated("72763646b585a86de341c61d085b4b85")
 public final class TransactionalMapContainsValueCodec {
     //hex: 0x0E1200
     public static final int REQUEST_MESSAGE_TYPE = 922112;
@@ -101,15 +101,6 @@ public final class TransactionalMapContainsValueCodec {
         return request;
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class ResponseParameters {
-
-        /**
-         * True if this map contains an entry for the specified key.
-         */
-        public boolean response;
-    }
-
     public static ClientMessage encodeResponse(boolean response) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
@@ -120,12 +111,13 @@ public final class TransactionalMapContainsValueCodec {
         return clientMessage;
     }
 
-    public static TransactionalMapContainsValueCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
+    /**
+    * True if this map contains an entry for the specified key.
+    */
+    public static boolean decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        ResponseParameters response = new ResponseParameters();
         ClientMessage.Frame initialFrame = iterator.next();
-        response.response = decodeBoolean(initialFrame.content, RESPONSE_RESPONSE_FIELD_OFFSET);
-        return response;
+        return decodeBoolean(initialFrame.content, RESPONSE_RESPONSE_FIELD_OFFSET);
     }
 
 }

@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Removes all of the elements from this collection (optional operation). The collection will be empty after this
  * method returns.
  */
-@Generated("e364f2ba8175a7f9431ec0cff3ca6ffd")
+@Generated("bd7872317b7b63a290f96e65ed38436f")
 public final class QueueClearCodec {
     //hex: 0x030F00
     public static final int REQUEST_MESSAGE_TYPE = 200448;
@@ -49,14 +49,11 @@ public final class QueueClearCodec {
     private QueueClearCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class RequestParameters {
-
-        /**
-         * Name of the Queue
-         */
-        public java.lang.String name;
-    }
+    /**
+     * Name of the Queue
+     */
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"UUF_UNUSED_PUBLIC_OR_PROTECTED_FIELD"})
+    public java.lang.String name;
 
     public static ClientMessage encodeRequest(java.lang.String name) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
@@ -70,17 +67,11 @@ public final class QueueClearCodec {
         return clientMessage;
     }
 
-    public static QueueClearCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
+    public static java.lang.String decodeRequest(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        RequestParameters request = new RequestParameters();
         //empty initial frame
         iterator.next();
-        request.name = StringCodec.decode(iterator);
-        return request;
-    }
-
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class ResponseParameters {
+        return StringCodec.decode(iterator);
     }
 
     public static ClientMessage encodeResponse() {
@@ -92,12 +83,5 @@ public final class QueueClearCodec {
         return clientMessage;
     }
 
-    public static QueueClearCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
-        ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        ResponseParameters response = new ResponseParameters();
-        //empty initial frame
-        iterator.next();
-        return response;
-    }
 
 }

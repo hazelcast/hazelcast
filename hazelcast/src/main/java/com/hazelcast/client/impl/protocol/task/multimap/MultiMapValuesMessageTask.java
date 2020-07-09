@@ -41,7 +41,7 @@ import java.util.Map;
  * {@link com.hazelcast.client.impl.protocol.codec.MultiMapMessageType#MULTIMAP_VALUES}
  */
 public class MultiMapValuesMessageTask
-        extends AbstractAllPartitionsMessageTask<MultiMapValuesCodec.RequestParameters> {
+        extends AbstractAllPartitionsMessageTask<String> {
 
     public MultiMapValuesMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -49,7 +49,7 @@ public class MultiMapValuesMessageTask
 
     @Override
     protected OperationFactory createOperationFactory() {
-        return new MultiMapOperationFactory(parameters.name, MultiMapOperationFactory.OperationFactoryType.VALUES);
+        return new MultiMapOperationFactory(parameters, MultiMapOperationFactory.OperationFactoryType.VALUES);
     }
 
     @Override
@@ -72,7 +72,7 @@ public class MultiMapValuesMessageTask
     }
 
     @Override
-    protected MultiMapValuesCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+    protected String decodeClientMessage(ClientMessage clientMessage) {
         return MultiMapValuesCodec.decodeRequest(clientMessage);
     }
 
@@ -88,12 +88,12 @@ public class MultiMapValuesMessageTask
 
     @Override
     public Permission getRequiredPermission() {
-        return new MultiMapPermission(parameters.name, ActionConstants.ACTION_READ);
+        return new MultiMapPermission(parameters, ActionConstants.ACTION_READ);
     }
 
     @Override
     public String getDistributedObjectName() {
-        return parameters.name;
+        return parameters;
     }
 
     @Override

@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Creates an XA transaction with the given parameters.
  */
-@Generated("0db4ba284934605014d30651e9debf79")
+@Generated("70278ae8ef7f760acbc1566756b4f443")
 public final class XATransactionCreateCodec {
     //hex: 0x140500
     public static final int REQUEST_MESSAGE_TYPE = 1312000;
@@ -86,15 +86,6 @@ public final class XATransactionCreateCodec {
         return request;
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class ResponseParameters {
-
-        /**
-         * The transaction unique identifier.
-         */
-        public java.util.UUID response;
-    }
-
     public static ClientMessage encodeResponse(java.util.UUID response) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
@@ -105,12 +96,13 @@ public final class XATransactionCreateCodec {
         return clientMessage;
     }
 
-    public static XATransactionCreateCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
+    /**
+    * The transaction unique identifier.
+    */
+    public static java.util.UUID decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        ResponseParameters response = new ResponseParameters();
         ClientMessage.Frame initialFrame = iterator.next();
-        response.response = decodeUUID(initialFrame.content, RESPONSE_RESPONSE_FIELD_OFFSET);
-        return response;
+        return decodeUUID(initialFrame.content, RESPONSE_RESPONSE_FIELD_OFFSET);
     }
 
 }

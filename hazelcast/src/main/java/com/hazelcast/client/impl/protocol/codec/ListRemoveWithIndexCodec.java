@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Removes the element at the specified position in this list (optional operation). Shifts any subsequent elements
  * to the left (subtracts one from their indices). Returns the element that was removed from the list.
  */
-@Generated("b4474ba0bb0dfd6eabb2928614afdea4")
+@Generated("417732db1e5ca3b6e888e6c8fddeff06")
 public final class ListRemoveWithIndexCodec {
     //hex: 0x051200
     public static final int REQUEST_MESSAGE_TYPE = 332288;
@@ -86,15 +86,6 @@ public final class ListRemoveWithIndexCodec {
         return request;
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class ResponseParameters {
-
-        /**
-         * The element previously at the specified position
-         */
-        public @Nullable com.hazelcast.internal.serialization.Data response;
-    }
-
     public static ClientMessage encodeResponse(@Nullable com.hazelcast.internal.serialization.Data response) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
@@ -105,13 +96,14 @@ public final class ListRemoveWithIndexCodec {
         return clientMessage;
     }
 
-    public static ListRemoveWithIndexCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
+    /**
+    * The element previously at the specified position
+    */
+    public static com.hazelcast.internal.serialization.Data decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        ResponseParameters response = new ResponseParameters();
         //empty initial frame
         iterator.next();
-        response.response = CodecUtil.decodeNullable(iterator, DataCodec::decode);
-        return response;
+        return CodecUtil.decodeNullable(iterator, DataCodec::decode);
     }
 
 }

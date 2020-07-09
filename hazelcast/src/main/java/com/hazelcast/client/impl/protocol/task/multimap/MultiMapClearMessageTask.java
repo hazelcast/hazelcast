@@ -36,14 +36,14 @@ import java.util.Map;
  * {@link com.hazelcast.client.impl.protocol.codec.MultiMapMessageType#MULTIMAP_CLEAR}
  */
 public class MultiMapClearMessageTask
-        extends AbstractAllPartitionsMessageTask<MultiMapClearCodec.RequestParameters> {
+        extends AbstractAllPartitionsMessageTask<String> {
 
     public MultiMapClearMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     protected OperationFactory createOperationFactory() {
-        return new MultiMapOperationFactory(parameters.name, MultiMapOperationFactory.OperationFactoryType.CLEAR);
+        return new MultiMapOperationFactory(parameters, MultiMapOperationFactory.OperationFactoryType.CLEAR);
     }
 
     @Override
@@ -53,13 +53,13 @@ public class MultiMapClearMessageTask
             totalAffectedEntries += (Integer) affectedEntries;
         }
         final MultiMapService service = getService(MultiMapService.SERVICE_NAME);
-        service.publishMultiMapEvent(parameters.name, EntryEventType.CLEAR_ALL, totalAffectedEntries);
+        service.publishMultiMapEvent(parameters, EntryEventType.CLEAR_ALL, totalAffectedEntries);
         return null;
     }
 
 
     @Override
-    protected MultiMapClearCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+    protected String decodeClientMessage(ClientMessage clientMessage) {
         return MultiMapClearCodec.decodeRequest(clientMessage);
     }
 
@@ -75,12 +75,12 @@ public class MultiMapClearMessageTask
 
     @Override
     public Permission getRequiredPermission() {
-        return new MultiMapPermission(parameters.name, ActionConstants.ACTION_REMOVE);
+        return new MultiMapPermission(parameters, ActionConstants.ACTION_REMOVE);
     }
 
     @Override
     public String getDistributedObjectName() {
-        return parameters.name;
+        return parameters;
     }
 
     @Override

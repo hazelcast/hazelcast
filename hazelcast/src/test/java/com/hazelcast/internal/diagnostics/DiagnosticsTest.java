@@ -16,8 +16,9 @@
 
 package com.hazelcast.internal.diagnostics;
 
-import com.hazelcast.config.Config;
 import com.hazelcast.cluster.Address;
+import com.hazelcast.config.Config;
+import com.hazelcast.logging.LoggingService;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -54,7 +55,7 @@ public class DiagnosticsTest extends HazelcastTestSupport {
         Config config = new Config().setProperty(Diagnostics.FILENAME_PREFIX.getName(), "foobar");
         HazelcastProperties hzProperties = new HazelcastProperties(config);
 
-        Diagnostics diagnostics = new Diagnostics("diagnostics", getLogger(Diagnostics.class), "hz", hzProperties);
+        Diagnostics diagnostics = new Diagnostics("diagnostics", mockLoggingService(), "hz", hzProperties);
         assertEquals("foobar-diagnostics", diagnostics.baseFileName);
     }
 
@@ -63,7 +64,7 @@ public class DiagnosticsTest extends HazelcastTestSupport {
         Config config = new Config();
         HazelcastProperties hzProperties = new HazelcastProperties(config);
 
-        Diagnostics diagnostics = new Diagnostics("diagnostics", getLogger(Diagnostics.class), "hz", hzProperties);
+        Diagnostics diagnostics = new Diagnostics("diagnostics", mockLoggingService(), "hz", hzProperties);
         assertEquals("diagnostics", diagnostics.baseFileName);
     }
 
@@ -141,6 +142,12 @@ public class DiagnosticsTest extends HazelcastTestSupport {
         String addressString = address.getHost().replace(":", "_") + "#" + address.getPort();
         String name = "diagnostics-" + addressString + "-" + currentTimeMillis();
 
-        return new Diagnostics(name, getLogger(Diagnostics.class), "hz", new HazelcastProperties(config));
+        return new Diagnostics(name, mockLoggingService(), "hz", new HazelcastProperties(config));
+    }
+
+    private LoggingService mockLoggingService() {
+        LoggingService mock = mock(LoggingService.class);
+        when(mock.getLogger(Diagnostics.class)).thenReturn(getLogger(Diagnostics.class));
+        return mock;
     }
 }

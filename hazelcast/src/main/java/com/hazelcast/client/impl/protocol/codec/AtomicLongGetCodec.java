@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Gets the current value.
  */
-@Generated("e371d638352ddfb2e3309a8a302ac24d")
+@Generated("516c77daaeb4d7a40b9ceadb2020454e")
 public final class AtomicLongGetCodec {
     //hex: 0x090500
     public static final int REQUEST_MESSAGE_TYPE = 591104;
@@ -86,15 +86,6 @@ public final class AtomicLongGetCodec {
         return request;
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class ResponseParameters {
-
-        /**
-         * The current value
-         */
-        public long response;
-    }
-
     public static ClientMessage encodeResponse(long response) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
@@ -105,12 +96,13 @@ public final class AtomicLongGetCodec {
         return clientMessage;
     }
 
-    public static AtomicLongGetCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
+    /**
+    * The current value
+    */
+    public static long decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        ResponseParameters response = new ResponseParameters();
         ClientMessage.Frame initialFrame = iterator.next();
-        response.response = decodeLong(initialFrame.content, RESPONSE_RESPONSE_FIELD_OFFSET);
-        return response;
+        return decodeLong(initialFrame.content, RESPONSE_RESPONSE_FIELD_OFFSET);
     }
 
 }

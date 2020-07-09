@@ -18,7 +18,6 @@ package com.hazelcast.client.impl.protocol.task.management;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MCPromoteLiteMemberCodec;
-import com.hazelcast.client.impl.protocol.codec.MCPromoteLiteMemberCodec.RequestParameters;
 import com.hazelcast.client.impl.protocol.task.AbstractInvocationMessageTask;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.management.ManagementCenterService;
@@ -29,7 +28,7 @@ import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.security.Permission;
 
-public class PromoteLiteMemberMessageTask extends AbstractInvocationMessageTask<RequestParameters> {
+public class PromoteLiteMemberMessageTask extends AbstractInvocationMessageTask<Void> {
 
     public PromoteLiteMemberMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -47,8 +46,8 @@ public class PromoteLiteMemberMessageTask extends AbstractInvocationMessageTask<
     }
 
     @Override
-    protected RequestParameters decodeClientMessage(ClientMessage clientMessage) {
-        return MCPromoteLiteMemberCodec.decodeRequest(clientMessage);
+    protected Void decodeClientMessage(ClientMessage clientMessage) {
+        return null;
     }
 
     @Override

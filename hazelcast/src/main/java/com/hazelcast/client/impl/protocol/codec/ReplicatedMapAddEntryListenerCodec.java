@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Adds an entry listener for this map. The listener will be notified for all map add/remove/update/evict events.
  */
-@Generated("d58ecafa2fb2089b3dde9d7830da48bb")
+@Generated("a4da54cc2b90b31978bcc42335112c7a")
 public final class ReplicatedMapAddEntryListenerCodec {
     //hex: 0x0D0D00
     public static final int REQUEST_MESSAGE_TYPE = 855296;
@@ -93,15 +93,6 @@ public final class ReplicatedMapAddEntryListenerCodec {
         return request;
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class ResponseParameters {
-
-        /**
-         * A unique string  which is used as a key to remove the listener.
-         */
-        public java.util.UUID response;
-    }
-
     public static ClientMessage encodeResponse(java.util.UUID response) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
@@ -112,12 +103,13 @@ public final class ReplicatedMapAddEntryListenerCodec {
         return clientMessage;
     }
 
-    public static ReplicatedMapAddEntryListenerCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
+    /**
+    * A unique string  which is used as a key to remove the listener.
+    */
+    public static java.util.UUID decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        ResponseParameters response = new ResponseParameters();
         ClientMessage.Frame initialFrame = iterator.next();
-        response.response = decodeUUID(initialFrame.content, RESPONSE_RESPONSE_FIELD_OFFSET);
-        return response;
+        return decodeUUID(initialFrame.content, RESPONSE_RESPONSE_FIELD_OFFSET);
     }
 
     public static ClientMessage encodeEntryEvent(@Nullable com.hazelcast.internal.serialization.Data key, @Nullable com.hazelcast.internal.serialization.Data value, @Nullable com.hazelcast.internal.serialization.Data oldValue, @Nullable com.hazelcast.internal.serialization.Data mergingValue, int eventType, java.util.UUID uuid, int numberOfAffectedEntries) {

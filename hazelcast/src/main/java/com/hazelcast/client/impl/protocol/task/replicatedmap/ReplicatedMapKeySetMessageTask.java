@@ -31,7 +31,7 @@ import com.hazelcast.spi.impl.operationservice.Operation;
 import java.security.Permission;
 
 public class ReplicatedMapKeySetMessageTask
-        extends AbstractPartitionMessageTask<ReplicatedMapKeySetCodec.RequestParameters> {
+        extends AbstractPartitionMessageTask<String> {
 
     public ReplicatedMapKeySetMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -39,11 +39,11 @@ public class ReplicatedMapKeySetMessageTask
 
     @Override
     protected Operation prepareOperation() {
-        return new KeySetOperation(parameters.name);
+        return new KeySetOperation(parameters);
     }
 
     @Override
-    protected ReplicatedMapKeySetCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+    protected String decodeClientMessage(ClientMessage clientMessage) {
         return ReplicatedMapKeySetCodec.decodeRequest(clientMessage);
     }
 
@@ -59,12 +59,12 @@ public class ReplicatedMapKeySetMessageTask
     }
 
     public Permission getRequiredPermission() {
-        return new ReplicatedMapPermission(parameters.name, ActionConstants.ACTION_READ);
+        return new ReplicatedMapPermission(parameters, ActionConstants.ACTION_READ);
     }
 
     @Override
     public String getDistributedObjectName() {
-        return parameters.name;
+        return parameters;
     }
 
     @Override

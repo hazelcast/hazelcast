@@ -17,6 +17,7 @@
 package com.hazelcast.internal.diagnostics;
 
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.LoggingService;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.properties.HazelcastProperty;
 
@@ -28,6 +29,7 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static com.hazelcast.internal.diagnostics.DiagnosticsOutputType.FILE;
 import static com.hazelcast.internal.diagnostics.DiagnosticsPlugin.DISABLED;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.ThreadUtil.createThreadName;
@@ -83,8 +85,7 @@ public class Diagnostics {
     /**
      * Configures if the epoch time should be included in the 'top' section.
      * This makes it easy to determine the time in epoch format and prevents
-     * needing to parse the date-format section. The default is {@code false}
-     * since it will cause more noise.
+     * needing to parse the date-format section. The default is {@code true}.
      */
     public static final HazelcastProperty INCLUDE_EPOCH_TIME = new HazelcastProperty("hazelcast.diagnostics.include.epoch", true);
 
@@ -105,17 +106,16 @@ public class Diagnostics {
             = new HazelcastProperty("hazelcast.diagnostics.filename.prefix");
 
     /**
-     * Send all the Diagnostics logs to the stdout, instead of storing on the file system.
-     * <p>
-     * The default is false.
+     * Configures the output for the diagnostics. The default value is
+     * {@link DiagnosticsOutputType#FILE} which is a set of files managed by the
+     * Hazelcast process.
      */
-    public static final HazelcastProperty STDOUT = new HazelcastProperty("hazelcast.diagnostics.stdout", false);
+    public static final HazelcastProperty OUTPUT_TYPE = new HazelcastProperty("hazelcast.diagnostics.stdout", FILE);
 
-    final AtomicReference<DiagnosticsPlugin[]> staticTasks = new AtomicReference<>(
-            new DiagnosticsPlugin[0]
-    );
+    final AtomicReference<DiagnosticsPlugin[]> staticTasks = new AtomicReference<>(new DiagnosticsPlugin[0]);
     final String baseFileName;
     final ILogger logger;
+    final LoggingService loggingService;
     final String hzName;
     final HazelcastProperties properties;
     final boolean includeEpochTime;
@@ -125,25 +125,26 @@ public class Diagnostics {
 
     private final ConcurrentMap<Class<? extends DiagnosticsPlugin>, DiagnosticsPlugin> pluginsMap = new ConcurrentHashMap<>();
     private final boolean enabled;
-    private final boolean stdout;
+    private final DiagnosticsOutputType outputType;
 
     private ScheduledExecutorService scheduler;
 
-    public Diagnostics(String baseFileName, ILogger logger, String hzName, HazelcastProperties properties) {
+    public Diagnostics(String baseFileName, LoggingService loggingService, String hzName, HazelcastProperties properties) {
         String optionalPrefix = properties.getString(FILENAME_PREFIX);
         this.baseFileName = optionalPrefix == null ? baseFileName : optionalPrefix + "-" + baseFileName;
-        this.logger = logger;
+        this.logger = loggingService.getLogger(Diagnostics.class);
+        this.loggingService = loggingService;
         this.hzName = hzName;
         this.properties = properties;
         this.includeEpochTime = properties.getBoolean(INCLUDE_EPOCH_TIME);
         this.directory = new File(properties.getString(DIRECTORY));
         this.enabled = properties.getBoolean(ENABLED);
-        this.stdout = properties.getBoolean(STDOUT);
+        this.outputType = properties.getEnum(OUTPUT_TYPE, DiagnosticsOutputType.class);
     }
 
     // just for testing (returns the current file the system is writing to)
     public File currentFile() throws UnsupportedOperationException {
-        if (stdout) {
+        if (outputType != FILE) {
             throw new UnsupportedOperationException();
         }
         return ((DiagnosticsLogFile) diagnosticsLog).file;
@@ -219,7 +220,7 @@ public class Diagnostics {
             return;
         }
 
-        this.diagnosticsLog = stdout ? new DiagnosticsStdout(this) :  new DiagnosticsLogFile(this);
+        this.diagnosticsLog = outputType.newLog(this);
         this.scheduler = new ScheduledThreadPoolExecutor(1, new DiagnosticSchedulerThreadFactory());
 
         logger.info("Diagnostics started");

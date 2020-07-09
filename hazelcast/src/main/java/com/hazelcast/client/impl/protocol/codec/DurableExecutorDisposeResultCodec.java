@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Disposes the result of the execution with the given sequence
  */
-@Generated("f768ecfc08f2fd467c048cfb843e6056")
+@Generated("a4710a31f935928d8a57c504c2d0633a")
 public final class DurableExecutorDisposeResultCodec {
     //hex: 0x180500
     public static final int REQUEST_MESSAGE_TYPE = 1574144;
@@ -85,10 +85,6 @@ public final class DurableExecutorDisposeResultCodec {
         return request;
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class ResponseParameters {
-    }
-
     public static ClientMessage encodeResponse() {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
@@ -98,12 +94,5 @@ public final class DurableExecutorDisposeResultCodec {
         return clientMessage;
     }
 
-    public static DurableExecutorDisposeResultCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
-        ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        ResponseParameters response = new ResponseParameters();
-        //empty initial frame
-        iterator.next();
-        return response;
-    }
 
 }

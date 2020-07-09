@@ -82,7 +82,7 @@ public final class BitmapIndexStore extends BaseIndexStore {
     private long internalKeyCounter;
 
     public BitmapIndexStore(IndexConfig config, InternalSerializationService serializationService, Extractors extractors) {
-        super(IndexCopyBehavior.NEVER);
+        super(IndexCopyBehavior.NEVER, true);
 
         this.keyAttribute = config.getBitmapIndexOptions().getUniqueKey();
         this.serializationService = serializationService;
@@ -506,5 +506,4 @@ public final class BitmapIndexStore extends BaseIndexStore {
         }
 
     }
-
 }

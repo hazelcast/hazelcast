@@ -26,7 +26,7 @@ import com.hazelcast.internal.nio.Connection;
 import java.security.Permission;
 
 public class ExecutorServiceShutdownMessageTask
-        extends AbstractCallableMessageTask<ExecutorServiceShutdownCodec.RequestParameters> {
+        extends AbstractCallableMessageTask<String> {
 
     public ExecutorServiceShutdownMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -35,12 +35,12 @@ public class ExecutorServiceShutdownMessageTask
     @Override
     protected Object call() throws Exception {
         final DistributedExecutorService service = getService(DistributedExecutorService.SERVICE_NAME);
-        service.shutdownExecutor(parameters.name);
+        service.shutdownExecutor(parameters);
         return null;
     }
 
     @Override
-    protected ExecutorServiceShutdownCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+    protected String decodeClientMessage(ClientMessage clientMessage) {
         return ExecutorServiceShutdownCodec.decodeRequest(clientMessage);
     }
 

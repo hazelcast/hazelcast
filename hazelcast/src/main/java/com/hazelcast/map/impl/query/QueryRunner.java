@@ -102,9 +102,22 @@ public class QueryRunner {
         return new ResultSegment(result, entries.getPointers());
     }
 
-    // MIGRATION SAFE QUERYING -> MIGRATION STAMPS ARE VALIDATED (does not have to run on a partition thread)
-    // full query = index query (if possible), then partition-scan query
+
     public Result runIndexOrPartitionScanQueryOnOwnedPartitions(Query query) {
+        Result result = runIndexOrPartitionScanQueryOnOwnedPartitions(query, true);
+        assert result != null;
+        return result;
+    }
+
+    /**
+     * MIGRATION SAFE QUERYING -> MIGRATION STAMPS ARE VALIDATED (does not have to run on a partition thread)
+     * full query = index query (if possible), then partition-scan query
+     * @param query the query to execute
+     * @param doPartitionScan whether to run full scan ion partitions if the global index run failed.
+     * @return the query result. {@code null} if the {@code doPartitionScan} is set and the execution on the
+     * global index failed.
+     */
+    public Result runIndexOrPartitionScanQueryOnOwnedPartitions(Query query, boolean doPartitionScan) {
         int migrationStamp = getMigrationStamp();
         PartitionIdSet initialPartitions = mapServiceContext.getOwnedPartitions();
         MapContainer mapContainer = mapServiceContext.getMapContainer(query.getMapName());
@@ -120,6 +133,10 @@ public class QueryRunner {
         // then we try to run using an index, but if that doesn't work, we'll try a full table scan
         Collection<QueryableEntry> entries = runUsingGlobalIndexSafely(predicate, mapContainer,
                 migrationStamp, initialPartitions.size());
+
+        if (entries == null && !doPartitionScan) {
+            return null;
+        }
 
         Result result;
         if (entries == null) {
