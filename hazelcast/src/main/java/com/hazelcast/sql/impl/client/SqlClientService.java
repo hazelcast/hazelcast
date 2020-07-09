@@ -91,6 +91,7 @@ public class SqlClientService implements SqlService {
                 response.queryId,
                 response.rowMetadata,
                 response.rowPage,
+                response.rowPageLast,
                 query.getCursorBufferSize()
             );
         } catch (Exception e) {
@@ -113,7 +114,7 @@ public class SqlClientService implements SqlService {
 
             handleResponseError(responseParameters.error);
 
-            return responseParameters.rowPage;
+            return new SqlPage(responseParameters.rowPage, responseParameters.rowPageLast);
         } catch (Exception e) {
             throw rethrow(e, connection);
         }

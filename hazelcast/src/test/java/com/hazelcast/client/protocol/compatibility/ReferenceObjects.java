@@ -62,8 +62,7 @@ import com.hazelcast.sql.SqlColumnMetadata;
 import com.hazelcast.sql.SqlColumnType;
 import com.hazelcast.sql.SqlRowMetadata;
 import com.hazelcast.sql.impl.client.SqlError;
-import com.hazelcast.sql.impl.client.SqlPage;
-import com.hazelcast.sql.impl.client.SqlPageRow;
+import com.hazelcast.sql.impl.client.SqlClientRow;
 import com.hazelcast.transaction.impl.xa.SerializableXID;
 import com.hazelcast.version.MemberVersion;
 
@@ -802,7 +801,6 @@ public class ReferenceObjects {
     public static List<SqlColumnMetadata> aListOfSqlColumnMetadata = Collections.singletonList(anSqlColumnMetadata);
     public static SqlRowMetadata anSqlRowMetadata = new SqlRowMetadata(aListOfSqlColumnMetadata);
     public static SqlError anSqlError = new SqlError(anInt, aString, aUUID);
-    public static SqlPageRow anSqlPageRow = new SqlPageRow(aListOfData);
-    public static List<SqlPageRow> aListOfSqlPageRow = Collections.singletonList(anSqlPageRow);
-    public static SqlPage anSqlPage = new SqlPage(aListOfSqlPageRow, aBoolean);
+    public static SqlClientRow anSqlRow = new SqlClientRow(aListOfData);
+    public static List<SqlClientRow> aListOfSqlRow = Collections.singletonList(anSqlRow);
 }

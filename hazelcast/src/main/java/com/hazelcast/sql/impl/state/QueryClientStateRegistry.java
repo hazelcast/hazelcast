@@ -22,7 +22,7 @@ import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.SqlResultImpl;
 import com.hazelcast.sql.impl.client.SqlPage;
-import com.hazelcast.sql.impl.client.SqlPageRow;
+import com.hazelcast.sql.impl.client.SqlClientRow;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -83,7 +83,7 @@ public class QueryClientStateRegistry {
     ) {
         Iterator<SqlRow> iterator = clientCursor.getIterator();
 
-        List<SqlPageRow> page = new ArrayList<>(cursorBufferSize);
+        List<SqlClientRow> page = new ArrayList<>(cursorBufferSize);
         boolean last = fetchPage(iterator, page, cursorBufferSize, serializationService);
 
         if (last) {
@@ -95,13 +95,13 @@ public class QueryClientStateRegistry {
 
     private static boolean fetchPage(
         Iterator<SqlRow> iterator,
-        List<SqlPageRow> page,
+        List<SqlClientRow> page,
         int cursorBufferSize,
         InternalSerializationService serializationService
     ) {
         while (iterator.hasNext()) {
             SqlRow row = iterator.next();
-            SqlPageRow convertedRow = convertRow(row, serializationService);
+            SqlClientRow convertedRow = convertRow(row, serializationService);
 
             page.add(convertedRow);
 
@@ -113,7 +113,7 @@ public class QueryClientStateRegistry {
         return !iterator.hasNext();
     }
 
-    private static SqlPageRow convertRow(SqlRow row, InternalSerializationService serializationService) {
+    private static SqlClientRow convertRow(SqlRow row, InternalSerializationService serializationService) {
         int columnCount = row.getMetadata().getColumnCount();
 
         List<Data> values = new ArrayList<>(columnCount);
@@ -122,7 +122,7 @@ public class QueryClientStateRegistry {
             values.add(serializationService.toData(row.getObject(i)));
         }
 
-        return new SqlPageRow(values);
+        return new SqlClientRow(values);
     }
 
     public void close(UUID clientId, String queryId) {

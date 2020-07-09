@@ -52,7 +52,8 @@ public class SqlClientResult implements SqlResult {
         Connection connection,
         String queryId,
         SqlRowMetadata rowMetadata,
-        SqlPage page,
+        List<SqlClientRow> rowPage,
+        boolean rowPageLast,
         int cursorBufferSize
     ) {
         this.service = service;
@@ -61,7 +62,7 @@ public class SqlClientResult implements SqlResult {
         this.rowMetadata = rowMetadata;
         this.cursorBufferSize = cursorBufferSize;
 
-        iterator.onNextPage(page);
+        iterator.onNextPage(rowPage, rowPageLast);
     }
 
     @Nonnull
@@ -101,13 +102,13 @@ public class SqlClientResult implements SqlResult {
     private void fetchNextPage(ClientIterator iterator) {
         SqlPage page = service.fetch(connection, queryId, cursorBufferSize);
 
-        iterator.onNextPage(page);
+        iterator.onNextPage(page.getRows(), page.isLast());
     }
 
-    private List<Row> convertPageRows(List<SqlPageRow> serializedRows) {
+    private List<Row> convertPageRows(List<SqlClientRow> serializedRows) {
         List<Row> rows = new ArrayList<>(serializedRows.size());
 
-        for (SqlPageRow serializedRow : serializedRows) {
+        for (SqlClientRow serializedRow : serializedRows) {
             List<Data> serializedValues = serializedRow.getValues();
             Object[] values = new Object[serializedValues.size()];
 
@@ -160,11 +161,11 @@ public class SqlClientResult implements SqlResult {
             return new SqlRowImpl(rowMetadata, row);
         }
 
-        private void onNextPage(SqlPage page) {
-            currentRows = convertPageRows(page.getRows());
+        private void onNextPage(List<SqlClientRow> rowPage, boolean rowPageLast) {
+            currentRows = convertPageRows(rowPage);
             currentPosition = 0;
 
-            this.last = page.isLast();
+            this.last = rowPageLast;
         }
     }
 }

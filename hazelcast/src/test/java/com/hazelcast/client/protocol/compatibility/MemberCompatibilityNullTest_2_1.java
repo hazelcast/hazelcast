@@ -7452,7 +7452,7 @@ public class MemberCompatibilityNullTest_2_1 {
     @Test
     public void test_SqlExecuteCodec_encodeResponse() {
         int fileClientMessageIndex = 826;
-        ClientMessage encoded = SqlExecuteCodec.encodeResponse(null, null, null, null);
+        ClientMessage encoded = SqlExecuteCodec.encodeResponse(null, null, null, aBoolean, null);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }
@@ -7469,7 +7469,7 @@ public class MemberCompatibilityNullTest_2_1 {
     @Test
     public void test_SqlFetchCodec_encodeResponse() {
         int fileClientMessageIndex = 828;
-        ClientMessage encoded = SqlFetchCodec.encodeResponse(null, null);
+        ClientMessage encoded = SqlFetchCodec.encodeResponse(null, aBoolean, null);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }

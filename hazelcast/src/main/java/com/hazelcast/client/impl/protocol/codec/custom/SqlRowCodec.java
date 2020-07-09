@@ -24,37 +24,28 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastFor
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
-@Generated("29cad5b3770f7cff5b885194695f2512")
-public final class SqlPageCodec {
-    private static final int LAST_FIELD_OFFSET = 0;
-    private static final int INITIAL_FRAME_SIZE = LAST_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
+@Generated("6b8d9f9f27c3371a55d9ea79d2c34883")
+public final class SqlRowCodec {
 
-    private SqlPageCodec() {
+    private SqlRowCodec() {
     }
 
-    public static void encode(ClientMessage clientMessage, com.hazelcast.sql.impl.client.SqlPage sqlPage) {
+    public static void encode(ClientMessage clientMessage, com.hazelcast.sql.impl.client.SqlClientRow sqlRow) {
         clientMessage.add(BEGIN_FRAME.copy());
 
-        ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[INITIAL_FRAME_SIZE]);
-        encodeBoolean(initialFrame.content, LAST_FIELD_OFFSET, sqlPage.isLast());
-        clientMessage.add(initialFrame);
-
-        ListMultiFrameCodec.encode(clientMessage, sqlPage.getRows(), SqlPageRowCodec::encode);
+        ListMultiFrameCodec.encode(clientMessage, sqlRow.getValues(), DataCodec::encode);
 
         clientMessage.add(END_FRAME.copy());
     }
 
-    public static com.hazelcast.sql.impl.client.SqlPage decode(ClientMessage.ForwardFrameIterator iterator) {
+    public static com.hazelcast.sql.impl.client.SqlClientRow decode(ClientMessage.ForwardFrameIterator iterator) {
         // begin frame
         iterator.next();
 
-        ClientMessage.Frame initialFrame = iterator.next();
-        boolean last = decodeBoolean(initialFrame.content, LAST_FIELD_OFFSET);
-
-        java.util.List<com.hazelcast.sql.impl.client.SqlPageRow> rows = ListMultiFrameCodec.decode(iterator, SqlPageRowCodec::decode);
+        java.util.List<com.hazelcast.internal.serialization.Data> values = ListMultiFrameCodec.decode(iterator, DataCodec::decode);
 
         fastForwardToEndFrame(iterator);
 
-        return new com.hazelcast.sql.impl.client.SqlPage(rows, last);
+        return new com.hazelcast.sql.impl.client.SqlClientRow(values);
     }
 }

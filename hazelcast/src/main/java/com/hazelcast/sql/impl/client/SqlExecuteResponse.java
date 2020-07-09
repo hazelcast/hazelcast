@@ -18,17 +18,27 @@ package com.hazelcast.sql.impl.client;
 
 import com.hazelcast.sql.SqlRowMetadata;
 
+import java.util.List;
+
 public class SqlExecuteResponse {
 
     private final String queryId;
     private final SqlRowMetadata rowMetadata;
-    private final SqlPage page;
+    private final List<SqlClientRow> rowPage;
+    private final boolean rowPageLast;
     private final SqlError error;
 
-    public SqlExecuteResponse(String queryId, SqlRowMetadata rowMetadata, SqlPage page, SqlError error) {
+    public SqlExecuteResponse(
+        String queryId,
+        SqlRowMetadata rowMetadata,
+        List<SqlClientRow> rowPage,
+        boolean rowPageLast,
+        SqlError error
+    ) {
         this.queryId = queryId;
         this.rowMetadata = rowMetadata;
-        this.page = page;
+        this.rowPage = rowPage;
+        this.rowPageLast = rowPageLast;
         this.error = error;
     }
 
@@ -40,8 +50,12 @@ public class SqlExecuteResponse {
         return rowMetadata;
     }
 
-    public SqlPage getPage() {
-        return page;
+    public List<SqlClientRow> getRowPage() {
+        return rowPage;
+    }
+
+    public boolean isRowPageLast() {
+        return rowPageLast;
     }
 
     public SqlError getError() {

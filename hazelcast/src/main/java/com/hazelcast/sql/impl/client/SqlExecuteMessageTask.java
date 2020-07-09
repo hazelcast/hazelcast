@@ -63,13 +63,14 @@ public class SqlExecuteMessageTask extends SqlAbstractMessageTask<SqlExecuteCode
             return new SqlExecuteResponse(
                 cursor.getQueryId().unparse(),
                 cursor.getRowMetadata(),
-                page,
+                page.getRows(),
+                page.isLast(),
                 null
             );
         } catch (Exception e) {
             SqlError error = SqlClientUtils.exceptionToClientError(e, nodeEngine.getLocalMember().getUuid());
 
-            return new SqlExecuteResponse(null, null, null, error);
+            return new SqlExecuteResponse(null, null, null, false, error);
         }
     }
 
@@ -85,7 +86,8 @@ public class SqlExecuteMessageTask extends SqlAbstractMessageTask<SqlExecuteCode
         return SqlExecuteCodec.encodeResponse(
             response0.getQueryId(),
             response0.getRowMetadata(),
-            response0.getPage(),
+            response0.getRowPage(),
+            response0.isRowPageLast(),
             response0.getError()
         );
     }

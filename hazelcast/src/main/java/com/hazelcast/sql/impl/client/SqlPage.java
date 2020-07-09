@@ -24,15 +24,15 @@ import java.util.Objects;
  */
 public class SqlPage {
 
-    private final List<SqlPageRow> rows;
+    private final List<SqlClientRow> rows;
     private final boolean last;
 
-    public SqlPage(List<SqlPageRow> rows, boolean last) {
+    public SqlPage(List<SqlClientRow> rows, boolean last) {
         this.rows = rows;
         this.last = last;
     }
 
-    public List<SqlPageRow> getRows() {
+    public List<SqlClientRow> getRows() {
         return rows;
     }
 

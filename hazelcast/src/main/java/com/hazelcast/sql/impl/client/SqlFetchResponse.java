@@ -16,17 +16,25 @@
 
 package com.hazelcast.sql.impl.client;
 
+import java.util.List;
+
 public class SqlFetchResponse {
-    private final SqlPage page;
+    private final List<SqlClientRow> rowPage;
+    private final boolean rowPageLast;
     private final SqlError error;
 
-    public SqlFetchResponse(SqlPage page, SqlError error) {
-        this.page = page;
+    public SqlFetchResponse(List<SqlClientRow> rowPage, boolean rowPageLast, SqlError error) {
+        this.rowPage = rowPage;
+        this.rowPageLast = rowPageLast;
         this.error = error;
     }
 
-    public SqlPage getPage() {
-        return page;
+    public List<SqlClientRow> getRowPage() {
+        return rowPage;
+    }
+
+    public boolean isRowPageLast() {
+        return rowPageLast;
     }
 
     public SqlError getError() {

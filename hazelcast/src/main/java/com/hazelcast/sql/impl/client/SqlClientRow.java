@@ -20,11 +20,11 @@ import com.hazelcast.internal.serialization.Data;
 
 import java.util.List;
 
-public class SqlPageRow {
+public class SqlClientRow {
 
     private final List<Data> values;
 
-    public SqlPageRow(List<Data> values) {
+    public SqlClientRow(List<Data> values) {
         this.values = values;
     }
 
@@ -42,7 +42,7 @@ public class SqlPageRow {
             return false;
         }
 
-        SqlPageRow that = (SqlPageRow) o;
+        SqlClientRow that = (SqlClientRow) o;
 
         return values.equals(that.values);
     }

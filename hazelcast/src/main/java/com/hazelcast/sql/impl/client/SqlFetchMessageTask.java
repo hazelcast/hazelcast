@@ -39,21 +39,20 @@ public class SqlFetchMessageTask extends SqlAbstractMessageTask<SqlFetchCodec.Re
         UUID localMemberId = nodeEngine.getLocalMember().getUuid();
         SqlInternalService service = nodeEngine.getSqlService().getInternalService();
 
-        SqlPage page = null;
-        SqlError error = null;
-
         try {
-            page = service.getClientStateRegistry().fetch(
+            SqlPage page = service.getClientStateRegistry().fetch(
                 endpoint.getUuid(),
                 parameters.queryId,
                 parameters.cursorBufferSize,
                 serializationService
             );
-        } catch (Exception e) {
-            error = SqlClientUtils.exceptionToClientError(e, localMemberId);
-        }
 
-        return new SqlFetchResponse(page, error);
+            return new SqlFetchResponse(page.getRows(), page.isLast(), null);
+        } catch (Exception e) {
+            SqlError error = SqlClientUtils.exceptionToClientError(e, localMemberId);
+
+            return new SqlFetchResponse(null, false, error);
+        }
     }
 
     @Override
@@ -65,7 +64,7 @@ public class SqlFetchMessageTask extends SqlAbstractMessageTask<SqlFetchCodec.Re
     protected ClientMessage encodeResponse(Object response) {
         SqlFetchResponse response0 = ((SqlFetchResponse) response);
 
-        return SqlFetchCodec.encodeResponse(response0.getPage(), response0.getError());
+        return SqlFetchCodec.encodeResponse(response0.getRowPage(), response0.isRowPageLast(), response0.getError());
     }
 
     @Override

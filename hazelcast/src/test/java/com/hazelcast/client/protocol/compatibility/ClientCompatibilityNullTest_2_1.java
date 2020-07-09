@@ -6946,6 +6946,7 @@ public class ClientCompatibilityNullTest_2_1 {
         assertTrue(isEqual(null, parameters.queryId));
         assertTrue(isEqual(null, parameters.rowMetadata));
         assertTrue(isEqual(null, parameters.rowPage));
+        assertTrue(isEqual(aBoolean, parameters.rowPageLast));
         assertTrue(isEqual(null, parameters.error));
     }
 
@@ -6963,6 +6964,7 @@ public class ClientCompatibilityNullTest_2_1 {
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         SqlFetchCodec.ResponseParameters parameters = SqlFetchCodec.decodeResponse(fromFile);
         assertTrue(isEqual(null, parameters.rowPage));
+        assertTrue(isEqual(aBoolean, parameters.rowPageLast));
         assertTrue(isEqual(null, parameters.error));
     }
 
