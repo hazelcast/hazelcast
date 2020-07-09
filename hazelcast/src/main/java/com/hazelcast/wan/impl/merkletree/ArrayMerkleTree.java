@@ -93,8 +93,6 @@ public class ArrayMerkleTree extends AbstractMerkleTreeView implements MerkleTre
         this.footprint = INT_SIZE_IN_BYTES * tree.length
                 // reference to the tree
                 + REFERENCE_COST_IN_BYTES
-                // reference to leafKeys array
-                + REFERENCE_COST_IN_BYTES
                 // depth
                 + INT_SIZE_IN_BYTES
                 // leafLevelOrder
