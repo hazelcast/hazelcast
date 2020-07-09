@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Closes server-side query cursor.
  */
-@Generated("15d0b162586e03214740301724f78af4")
+@Generated("7b2aceb72bcf7c0501344e926045bf57")
 public final class SqlCloseCodec {
     //hex: 0x210300
     public static final int REQUEST_MESSAGE_TYPE = 2163456;
@@ -54,10 +54,10 @@ public final class SqlCloseCodec {
         /**
          * Query ID.
          */
-        public com.hazelcast.sql.impl.QueryId queryId;
+        public java.lang.String queryId;
     }
 
-    public static ClientMessage encodeRequest(com.hazelcast.sql.impl.QueryId queryId) {
+    public static ClientMessage encodeRequest(java.lang.String queryId) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
         clientMessage.setOperationName("Sql.Close");
@@ -65,7 +65,7 @@ public final class SqlCloseCodec {
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
         encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         clientMessage.add(initialFrame);
-        SqlQueryIdCodec.encode(clientMessage, queryId);
+        StringCodec.encode(clientMessage, queryId);
         return clientMessage;
     }
 
@@ -74,7 +74,7 @@ public final class SqlCloseCodec {
         RequestParameters request = new RequestParameters();
         //empty initial frame
         iterator.next();
-        request.queryId = SqlQueryIdCodec.decode(iterator);
+        request.queryId = StringCodec.decode(iterator);
         return request;
     }
 

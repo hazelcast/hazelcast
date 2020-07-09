@@ -22,7 +22,6 @@ import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.SqlRowMetadata;
 import com.hazelcast.sql.impl.QueryException;
-import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.SqlRowImpl;
 import com.hazelcast.sql.impl.row.HeapRow;
 import com.hazelcast.sql.impl.row.Row;
@@ -40,7 +39,7 @@ public class SqlClientResult implements SqlResult {
 
     private final SqlClientService service;
     private final Connection connection;
-    private final QueryId queryId;
+    private final String queryId;
     private final SqlRowMetadata rowMetadata;
     private final ClientIterator iterator = new ClientIterator();
     private final int cursorBufferSize;
@@ -51,7 +50,7 @@ public class SqlClientResult implements SqlResult {
     public SqlClientResult(
         SqlClientService service,
         Connection connection,
-        QueryId queryId,
+        String queryId,
         SqlRowMetadata rowMetadata,
         SqlPage page,
         int cursorBufferSize

@@ -20,7 +20,6 @@ import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.impl.QueryException;
-import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.SqlResultImpl;
 import com.hazelcast.sql.impl.client.SqlPage;
 import com.hazelcast.sql.impl.client.SqlPageRow;
@@ -37,7 +36,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class QueryClientStateRegistry {
 
-    private final ConcurrentHashMap<QueryId, QueryClientState> clientCursors = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, QueryClientState> clientCursors = new ConcurrentHashMap<>();
 
     public SqlPage registerAndFetch(
         UUID clientId,
@@ -50,7 +49,7 @@ public class QueryClientStateRegistry {
         SqlPage page = fetchInternal(clientCursor, cursorBufferSize, serializationService);
 
         if (!page.isLast()) {
-            clientCursors.put(cursor.getQueryId(), clientCursor);
+            clientCursors.put(cursor.getQueryId().unparse(), clientCursor);
         }
 
         return page;
@@ -58,7 +57,7 @@ public class QueryClientStateRegistry {
 
     public SqlPage fetch(
         UUID clientId,
-        QueryId queryId,
+        String queryId,
         int cursorBufferSize,
         InternalSerializationService serializationService
     ) {
@@ -126,7 +125,7 @@ public class QueryClientStateRegistry {
         return new SqlPageRow(values);
     }
 
-    public void close(UUID clientId, QueryId queryId) {
+    public void close(UUID clientId, String queryId) {
         QueryClientState clientCursor = getClientCursor(clientId, queryId);
 
         if (clientCursor != null) {
@@ -158,10 +157,10 @@ public class QueryClientStateRegistry {
         }
     }
 
-    private QueryClientState getClientCursor(UUID clientId, QueryId queryId) {
+    private QueryClientState getClientCursor(UUID clientId, String queryId) {
         QueryClientState cursor = clientCursors.get(queryId);
 
-        if (cursor == null || (clientId != null && !cursor.getClientId().equals(clientId))) {
+        if (cursor == null || !cursor.getClientId().equals(clientId)) {
             return null;
         }
 

@@ -32,7 +32,6 @@ import com.hazelcast.sql.SqlQuery;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlService;
 import com.hazelcast.sql.impl.QueryException;
-import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.QueryUtils;
 
 import javax.annotation.Nonnull;
@@ -82,23 +81,16 @@ public class SqlClientService implements SqlService {
 
             ClientMessage responseMessage = invoke(requestMessage, connection);
 
-            SqlExecuteCodec.ResponseParameters responseParameters = SqlExecuteCodec.decodeResponse(responseMessage);
+            SqlExecuteCodec.ResponseParameters response = SqlExecuteCodec.decodeResponse(responseMessage);
 
-            SqlExecuteResponse response = new SqlExecuteResponse(
-                    responseParameters.queryId,
-                    responseParameters.rowMetadata,
-                    responseParameters.rowPage,
-                    responseParameters.error
-            );
-
-            handleResponseError(response.getError());
+            handleResponseError(response.error);
 
             return new SqlClientResult(
                 this,
                 connection,
-                response.getQueryId(),
-                response.getRowMetadata(),
-                response.getPage(),
+                response.queryId,
+                response.rowMetadata,
+                response.rowPage,
                 query.getCursorBufferSize()
             );
         } catch (Exception e) {
@@ -113,16 +105,15 @@ public class SqlClientService implements SqlService {
      * @param queryId Query ID.
      * @return Pair: fetched rows + last page flag.
      */
-    public SqlPage fetch(Connection connection, QueryId queryId, int cursorBufferSize) {
+    public SqlPage fetch(Connection connection, String queryId, int cursorBufferSize) {
         try {
             ClientMessage requestMessage = SqlFetchCodec.encodeRequest(queryId, cursorBufferSize);
             ClientMessage responseMessage = invoke(requestMessage, connection);
             SqlFetchCodec.ResponseParameters responseParameters = SqlFetchCodec.decodeResponse(responseMessage);
-            SqlFetchResponse response = new SqlFetchResponse(responseParameters.rowPage, responseParameters.error);
 
-            handleResponseError(response.getError());
+            handleResponseError(responseParameters.error);
 
-            return response.getPage();
+            return responseParameters.rowPage;
         } catch (Exception e) {
             throw rethrow(e, connection);
         }
@@ -134,7 +125,7 @@ public class SqlClientService implements SqlService {
      * @param connection Connection.
      * @param queryId Query ID.
      */
-    void close(Connection connection, QueryId queryId) {
+    void close(Connection connection, String queryId) {
         try {
             ClientMessage requestMessage = SqlCloseCodec.encodeRequest(queryId);
 

@@ -62,7 +62,7 @@ public class SqlExecuteMessageTask extends AbstractCallableMessageTask<SqlExecut
             );
 
             return new SqlExecuteResponse(
-                cursor.getQueryId(),
+                cursor.getQueryId().unparse(),
                 cursor.getRowMetadata(),
                 page,
                 null

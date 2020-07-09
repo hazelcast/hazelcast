@@ -7462,7 +7462,7 @@ public class MemberCompatibilityNullTest_2_1 {
         int fileClientMessageIndex = 827;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         SqlFetchCodec.RequestParameters parameters = SqlFetchCodec.decodeRequest(fromFile);
-        assertTrue(isEqual(anSqlQueryId, parameters.queryId));
+        assertTrue(isEqual(aString, parameters.queryId));
         assertTrue(isEqual(anInt, parameters.cursorBufferSize));
     }
 
@@ -7479,7 +7479,7 @@ public class MemberCompatibilityNullTest_2_1 {
         int fileClientMessageIndex = 829;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         SqlCloseCodec.RequestParameters parameters = SqlCloseCodec.decodeRequest(fromFile);
-        assertTrue(isEqual(anSqlQueryId, parameters.queryId));
+        assertTrue(isEqual(aString, parameters.queryId));
     }
 
     @Test

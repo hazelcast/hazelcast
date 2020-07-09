@@ -7452,7 +7452,7 @@ public class MemberCompatibilityTest_2_1 {
     @Test
     public void test_SqlExecuteCodec_encodeResponse() {
         int fileClientMessageIndex = 826;
-        ClientMessage encoded = SqlExecuteCodec.encodeResponse(anSqlQueryId, anSqlRowMetadata, anSqlPage, anSqlError);
+        ClientMessage encoded = SqlExecuteCodec.encodeResponse(aString, anSqlRowMetadata, anSqlPage, anSqlError);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }
@@ -7462,7 +7462,7 @@ public class MemberCompatibilityTest_2_1 {
         int fileClientMessageIndex = 827;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         SqlFetchCodec.RequestParameters parameters = SqlFetchCodec.decodeRequest(fromFile);
-        assertTrue(isEqual(anSqlQueryId, parameters.queryId));
+        assertTrue(isEqual(aString, parameters.queryId));
         assertTrue(isEqual(anInt, parameters.cursorBufferSize));
     }
 
@@ -7479,7 +7479,7 @@ public class MemberCompatibilityTest_2_1 {
         int fileClientMessageIndex = 829;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         SqlCloseCodec.RequestParameters parameters = SqlCloseCodec.decodeRequest(fromFile);
-        assertTrue(isEqual(anSqlQueryId, parameters.queryId));
+        assertTrue(isEqual(aString, parameters.queryId));
     }
 
     @Test

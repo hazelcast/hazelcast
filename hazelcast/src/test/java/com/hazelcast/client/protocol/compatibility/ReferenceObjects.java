@@ -61,7 +61,6 @@ import com.hazelcast.scheduledexecutor.impl.ScheduledTaskHandlerImpl;
 import com.hazelcast.sql.SqlColumnMetadata;
 import com.hazelcast.sql.SqlColumnType;
 import com.hazelcast.sql.SqlRowMetadata;
-import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.client.SqlError;
 import com.hazelcast.sql.impl.client.SqlPage;
 import com.hazelcast.sql.impl.client.SqlPageRow;
@@ -799,7 +798,6 @@ public class ReferenceObjects {
     public static PagingPredicateHolder aPagingPredicateHolder = new PagingPredicateHolder(anAnchorDataListHolder, aData, aData,
             anInt, anInt, aByte, aData);
 
-    public static QueryId anSqlQueryId = new QueryId(aLong, aLong, aLong, aLong);
     public static SqlColumnMetadata anSqlColumnMetadata = CustomTypeFactory.createSqlColumnMetadata(aString, SqlColumnType.BOOLEAN.getId());
     public static List<SqlColumnMetadata> aListOfSqlColumnMetadata = Collections.singletonList(anSqlColumnMetadata);
     public static SqlRowMetadata anSqlRowMetadata = new SqlRowMetadata(aListOfSqlColumnMetadata);

@@ -17,23 +17,22 @@
 package com.hazelcast.sql.impl.client;
 
 import com.hazelcast.sql.SqlRowMetadata;
-import com.hazelcast.sql.impl.QueryId;
 
 public class SqlExecuteResponse {
 
-    private final QueryId queryId;
+    private final String queryId;
     private final SqlRowMetadata rowMetadata;
     private final SqlPage page;
     private final SqlError error;
 
-    public SqlExecuteResponse(QueryId queryId, SqlRowMetadata rowMetadata, SqlPage page, SqlError error) {
+    public SqlExecuteResponse(String queryId, SqlRowMetadata rowMetadata, SqlPage page, SqlError error) {
         this.queryId = queryId;
         this.rowMetadata = rowMetadata;
         this.page = page;
         this.error = error;
     }
 
-    public QueryId getQueryId() {
+    public String getQueryId() {
         return queryId;
     }
 

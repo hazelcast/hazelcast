@@ -68,6 +68,30 @@ public final class QueryId implements IdentifiedDataSerializable {
         );
     }
 
+    public static QueryId parse(String input) {
+        assert input != null;
+
+        String[] parts = input.split("_");
+
+        if (parts.length != 2) {
+            throw new IllegalArgumentException("Query ID is malformed: " + input);
+        }
+
+        try {
+            UUID memberId = UUID.fromString(parts[0]);
+            UUID localId = UUID.fromString(parts[1]);
+
+            return new QueryId(
+                memberId.getMostSignificantBits(),
+                memberId.getLeastSignificantBits(),
+                localId.getMostSignificantBits(),
+                localId.getLeastSignificantBits()
+            );
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("Query ID is malformed: " + input, e);
+        }
+    }
+
     public UUID getMemberId() {
         return new UUID(memberIdHigh, memberIdLow);
     }
@@ -90,6 +114,16 @@ public final class QueryId implements IdentifiedDataSerializable {
 
     public long getLocalIdLow() {
         return localIdLow;
+    }
+
+    /**
+     * Converts the ID to a string form that could be used for future {@link QueryId#parse(String)} operation.
+     * <p>
+     * This method is implemented separately from toString() on purpose, because in theory they may return different
+     * results.
+     */
+    public String unparse() {
+        return toString();
     }
 
     @Override

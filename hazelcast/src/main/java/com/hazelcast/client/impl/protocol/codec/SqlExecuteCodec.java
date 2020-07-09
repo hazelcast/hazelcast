@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Starts execution of an SQL query.
  */
-@Generated("017d0cb35472f4379a288c919f7e30da")
+@Generated("c4d8fadb8a8901e1f3598dc898694aa0")
 public final class SqlExecuteCodec {
     //hex: 0x210100
     public static final int REQUEST_MESSAGE_TYPE = 2162944;
@@ -106,7 +106,7 @@ public final class SqlExecuteCodec {
         /**
          * Query ID.
          */
-        public @Nullable com.hazelcast.sql.impl.QueryId queryId;
+        public @Nullable java.lang.String queryId;
 
         /**
          * Row metadata.
@@ -124,13 +124,13 @@ public final class SqlExecuteCodec {
         public @Nullable com.hazelcast.sql.impl.client.SqlError error;
     }
 
-    public static ClientMessage encodeResponse(@Nullable com.hazelcast.sql.impl.QueryId queryId, @Nullable com.hazelcast.sql.SqlRowMetadata rowMetadata, @Nullable com.hazelcast.sql.impl.client.SqlPage rowPage, @Nullable com.hazelcast.sql.impl.client.SqlError error) {
+    public static ClientMessage encodeResponse(@Nullable java.lang.String queryId, @Nullable com.hazelcast.sql.SqlRowMetadata rowMetadata, @Nullable com.hazelcast.sql.impl.client.SqlPage rowPage, @Nullable com.hazelcast.sql.impl.client.SqlError error) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);
         clientMessage.add(initialFrame);
 
-        CodecUtil.encodeNullable(clientMessage, queryId, SqlQueryIdCodec::encode);
+        CodecUtil.encodeNullable(clientMessage, queryId, StringCodec::encode);
         CodecUtil.encodeNullable(clientMessage, rowMetadata, SqlRowMetadataCodec::encode);
         CodecUtil.encodeNullable(clientMessage, rowPage, SqlPageCodec::encode);
         CodecUtil.encodeNullable(clientMessage, error, SqlErrorCodec::encode);
@@ -142,7 +142,7 @@ public final class SqlExecuteCodec {
         ResponseParameters response = new ResponseParameters();
         //empty initial frame
         iterator.next();
-        response.queryId = CodecUtil.decodeNullable(iterator, SqlQueryIdCodec::decode);
+        response.queryId = CodecUtil.decodeNullable(iterator, StringCodec::decode);
         response.rowMetadata = CodecUtil.decodeNullable(iterator, SqlRowMetadataCodec::decode);
         response.rowPage = CodecUtil.decodeNullable(iterator, SqlPageCodec::decode);
         response.error = CodecUtil.decodeNullable(iterator, SqlErrorCodec::decode);
