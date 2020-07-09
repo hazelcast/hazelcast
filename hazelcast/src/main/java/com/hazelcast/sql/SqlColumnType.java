@@ -71,8 +71,10 @@ public enum SqlColumnType {
 
     /**
      * The type of the generic SQL {@code NULL} literal.
+     * <p>
+     * The only valid value of {@code NULL} type is {@code null}.
      */
-    NULL(14, void.class);
+    NULL(14, Void.class);
 
     private static final SqlColumnType[] CACHED_VALUES = values();
 
