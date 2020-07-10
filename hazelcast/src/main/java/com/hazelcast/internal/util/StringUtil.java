@@ -24,6 +24,7 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -398,5 +399,50 @@ public final class StringUtil {
             return str.substring(0, str.length() - 1);
         }
         return str;
+    }
+
+    /**
+     * Returns a string where named placeholders are replaced by values from the
+     * given {@code variableValues} map. The placeholder is defined as the
+     * variable name prefixed by ${@code placeholderNamespace}&#123; and followed
+     * by &#125;. For example, if the {@code placeholderNamespace} is {@code HZ_TEST}
+     * the placeholder for "instance_name" would be $HZ_TEST&#123;instance_name&#125;.
+     * <p>
+     * The variable replacement is fail-safe which means any incorrect syntax such
+     * as missing closing brackets or missing variable values is ignored.
+     *
+     * @param pattern              the pattern in which placeholders should be replaced
+     * @param placeholderNamespace the string inserted into the placeholder prefix to distinguish between
+     *                             different types of placeholders
+     * @param variableValues       the placeholder variable values
+     * @return the formatted string
+     */
+    public static String resolvePlaceholders(String pattern,
+                                             String placeholderNamespace,
+                                             Map<String, Object> variableValues) {
+        StringBuilder sb = new StringBuilder(pattern);
+        String placeholderPrefix = "$" + placeholderNamespace + "{";
+        int endIndex;
+        int startIndex = sb.indexOf(placeholderPrefix);
+
+        while (startIndex > -1) {
+            endIndex = sb.indexOf("}", startIndex);
+            if (endIndex == -1) {
+                // ignore bad syntax, search finished
+                break;
+            }
+
+            String variableName = sb.substring(startIndex + placeholderPrefix.length(), endIndex);
+            Object variableValue = variableValues.get(variableName);
+            // ignore missing values
+            if (variableValue != null) {
+                String valueStr = variableValue.toString();
+                sb.replace(startIndex, endIndex + 1, valueStr);
+                endIndex = startIndex + valueStr.length();
+            }
+
+            startIndex = sb.indexOf(placeholderPrefix, endIndex);
+        }
+        return sb.toString();
     }
 }

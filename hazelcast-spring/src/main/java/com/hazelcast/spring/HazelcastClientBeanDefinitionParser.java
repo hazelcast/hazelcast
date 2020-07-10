@@ -36,6 +36,7 @@ import com.hazelcast.config.AliasedDiscoveryConfig;
 import com.hazelcast.config.CredentialsFactoryConfig;
 import com.hazelcast.config.EntryListenerConfig;
 import com.hazelcast.config.InMemoryFormat;
+import com.hazelcast.config.InstanceTrackingConfig;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.LoginModuleConfig;
 import com.hazelcast.config.MetricsJmxConfig;
@@ -193,6 +194,8 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
                     configBuilder.addPropertyValue("backupAckToClientEnabled", getTextContent(node));
                 } else if ("metrics".equals(nodeName)) {
                     handleMetrics(node);
+                } else if ("instance-tracking".equals(nodeName)) {
+                    handleInstanceTracking(node);
                 }
             }
             return configBuilder.getBeanDefinition();
@@ -525,6 +528,21 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
                 labels.add(label);
             }
             configBuilder.addPropertyValue("labels", labels);
+        }
+
+        private void handleInstanceTracking(Node node) {
+            BeanDefinitionBuilder configBuilder = createBeanBuilder(InstanceTrackingConfig.class);
+            fillAttributeValues(node, configBuilder);
+
+            for (Node child : childElements(node)) {
+                final String name = cleanNodeName(child);
+                if ("file-name".equals(name)) {
+                    configBuilder.addPropertyValue("fileName", getTextContent(child));
+                } else if ("format-pattern".equals(name)) {
+                    configBuilder.addPropertyValue("formatPattern", getTextContent(child));
+                }
+            }
+            this.configBuilder.addPropertyValue("instanceTrackingConfig", configBuilder.getBeanDefinition());
         }
 
         private void handleMetrics(Node node) {

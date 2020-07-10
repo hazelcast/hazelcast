@@ -246,6 +246,7 @@ public class Node {
 
             nodeExtension.printNodeInfo();
             nodeExtension.beforeStart();
+            nodeExtension.logInstanceTrackingMetadata();
 
             serializationService = nodeExtension.createSerializationService();
             securityContext = config.getSecurityConfig().isEnabled() ? nodeExtension.getSecurityContext() : null;

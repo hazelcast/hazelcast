@@ -38,6 +38,7 @@ import com.hazelcast.config.DiscoveryStrategyConfig;
 import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.InMemoryFormat;
+import com.hazelcast.config.InstanceTrackingConfig;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.MaxSizePolicy;
@@ -66,6 +67,7 @@ import static com.hazelcast.client.config.impl.ClientConfigSections.CLUSTER_NAME
 import static com.hazelcast.client.config.impl.ClientConfigSections.CONNECTION_STRATEGY;
 import static com.hazelcast.client.config.impl.ClientConfigSections.FLAKE_ID_GENERATOR;
 import static com.hazelcast.client.config.impl.ClientConfigSections.INSTANCE_NAME;
+import static com.hazelcast.client.config.impl.ClientConfigSections.INSTANCE_TRACKING;
 import static com.hazelcast.client.config.impl.ClientConfigSections.LABELS;
 import static com.hazelcast.client.config.impl.ClientConfigSections.LISTENERS;
 import static com.hazelcast.client.config.impl.ClientConfigSections.LOAD_BALANCER;
@@ -168,6 +170,8 @@ public class ClientDomConfigProcessor extends AbstractDomConfigProcessor {
             clientConfig.setClusterName(getTextContent(node));
         } else if (METRICS.isEqual(nodeName)) {
             handleMetrics(node);
+        } else if (INSTANCE_TRACKING.isEqual(nodeName)) {
+            handleInstanceTracking(node);
         }
     }
 
@@ -714,6 +718,23 @@ public class ClientDomConfigProcessor extends AbstractDomConfigProcessor {
             if ("ports".equals(nodeName)) {
                 String value = getTextContent(n);
                 clientNetworkConfig.addOutboundPortDefinition(value);
+            }
+        }
+    }
+
+    private void handleInstanceTracking(Node node) {
+        InstanceTrackingConfig trackingConfig = clientConfig.getInstanceTrackingConfig();
+
+        Node attrEnabled = node.getAttributes().getNamedItem("enabled");
+        boolean enabled = getBooleanValue(getTextContent(attrEnabled));
+        trackingConfig.setEnabled(enabled);
+
+        for (Node n : childElements(node)) {
+            final String name = cleanNodeName(n);
+            if ("file-name".equals(name)) {
+                trackingConfig.setFileName(getTextContent(n));
+            } else if ("format-pattern".equals(name)) {
+                trackingConfig.setFormatPattern(getTextContent(n));
             }
         }
     }

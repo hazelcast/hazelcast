@@ -166,6 +166,7 @@ public class ConfigXmlGenerator {
         splitBrainProtectionXmlGenerator(gen, config);
         cpSubsystemConfig(gen, config);
         metricsConfig(gen, config);
+        instanceTrackingConfig(gen, config);
         sqlConfig(gen, config);
         userCodeDeploymentConfig(gen, config);
 
@@ -1572,6 +1573,14 @@ public class ConfigXmlGenerator {
         }
 
         gen.close().close();
+    }
+
+    private static void instanceTrackingConfig(XmlGenerator gen, Config config) {
+        InstanceTrackingConfig trackingConfig = config.getInstanceTrackingConfig();
+        gen.open("instance-tracking", "enabled", trackingConfig.isEnabled())
+           .node("file-name", trackingConfig.getFileName())
+           .node("format-pattern", trackingConfig.getFormatPattern())
+           .close();
     }
 
     private static void metricsConfig(XmlGenerator gen, Config config) {

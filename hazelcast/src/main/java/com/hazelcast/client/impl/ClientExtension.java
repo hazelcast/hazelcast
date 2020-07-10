@@ -45,6 +45,11 @@ public interface ClientExtension {
     void afterStart(HazelcastClientInstanceImpl client);
 
     /**
+     * Logs metadata about the instance to the configured instance tracking output.
+     */
+    void logInstanceTrackingMetadata();
+
+    /**
      * Creates a {@link InternalSerializationService} instance to be used by this client.
      *
      * @param version serialization version to be created. Values less than 1 will be ignored and max supported version

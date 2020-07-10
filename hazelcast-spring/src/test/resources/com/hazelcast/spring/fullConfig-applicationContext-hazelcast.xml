@@ -965,6 +965,11 @@
                 <hz:collection-frequency-seconds>24</hz:collection-frequency-seconds>
             </hz:metrics>
 
+            <hz:instance-tracking enabled="false">
+                <hz:file-name>/dummy/file</hz:file-name>
+                <hz:format-pattern>dummy-pattern with $HZ_INSTANCE_TRACKING{placeholder} and $RND{placeholder}</hz:format-pattern>
+            </hz:instance-tracking>
+
             <hz:sql>
                 <hz:executor-pool-size>10</hz:executor-pool-size>
                 <hz:operation-pool-size>20</hz:operation-pool-size>

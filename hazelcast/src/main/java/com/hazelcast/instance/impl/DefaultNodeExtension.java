@@ -22,6 +22,9 @@ import com.hazelcast.client.impl.ClusterViewListenerService;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.HotRestartPersistenceConfig;
+import com.hazelcast.config.InstanceTrackingConfig;
+import com.hazelcast.config.InstanceTrackingConfig.InstanceMode;
+import com.hazelcast.config.InstanceTrackingConfig.InstanceProductName;
 import com.hazelcast.config.SecurityConfig;
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.config.SymmetricEncryptionConfig;
@@ -72,17 +75,19 @@ import com.hazelcast.internal.networking.ChannelInitializer;
 import com.hazelcast.internal.networking.InboundHandler;
 import com.hazelcast.internal.networking.OutboundHandler;
 import com.hazelcast.internal.nio.ClassLoaderUtil;
-import com.hazelcast.internal.server.tcp.ChannelInitializerFunction;
-import com.hazelcast.internal.server.ServerContext;
-import com.hazelcast.internal.server.tcp.PacketDecoder;
-import com.hazelcast.internal.server.tcp.PacketEncoder;
-import com.hazelcast.internal.server.ServerConnection;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.SerializationServiceBuilder;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
+import com.hazelcast.internal.server.ServerConnection;
+import com.hazelcast.internal.server.ServerContext;
+import com.hazelcast.internal.server.tcp.ChannelInitializerFunction;
+import com.hazelcast.internal.server.tcp.PacketDecoder;
+import com.hazelcast.internal.server.tcp.PacketEncoder;
 import com.hazelcast.internal.util.ByteArrayProcessor;
 import com.hazelcast.internal.util.ConstructorFunction;
 import com.hazelcast.internal.util.ExceptionUtil;
+import com.hazelcast.internal.util.JVMUtil;
+import com.hazelcast.internal.util.MapUtil;
 import com.hazelcast.internal.util.PhoneHome;
 import com.hazelcast.internal.util.Preconditions;
 import com.hazelcast.internal.util.UuidUtil;
@@ -112,6 +117,13 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 import static com.hazelcast.config.ConfigAccessor.getActiveMemberNetworkConfig;
+import static com.hazelcast.config.InstanceTrackingConfig.InstanceTrackingProperties.LICENSED;
+import static com.hazelcast.config.InstanceTrackingConfig.InstanceTrackingProperties.MODE;
+import static com.hazelcast.config.InstanceTrackingConfig.InstanceTrackingProperties.PID;
+import static com.hazelcast.config.InstanceTrackingConfig.InstanceTrackingProperties.PRODUCT;
+import static com.hazelcast.config.InstanceTrackingConfig.InstanceTrackingProperties.START_TIMESTAMP;
+import static com.hazelcast.config.InstanceTrackingConfig.InstanceTrackingProperties.VERSION;
+import static com.hazelcast.internal.util.InstanceTrackingUtil.writeInstanceTrackingFile;
 import static com.hazelcast.map.impl.MapServiceConstructor.getDefaultMapServiceConstructor;
 
 @SuppressWarnings({"checkstyle:methodcount", "checkstyle:classfanoutcomplexity", "checkstyle:classdataabstractioncoupling"})
@@ -178,6 +190,34 @@ public class DefaultNodeExtension implements NodeExtension {
 
         String build = constructBuildString(buildInfo);
         printNodeInfoInternal(buildInfo, build);
+    }
+
+    @Override
+    public void logInstanceTrackingMetadata() {
+        InstanceTrackingConfig trackingConfig = node.getConfig().getInstanceTrackingConfig();
+        if (trackingConfig.isEnabled()) {
+            writeInstanceTrackingFile(trackingConfig.getFileName(), trackingConfig.getFormatPattern(),
+                    getTrackingFileProperties(node.getBuildInfo()), systemLogger);
+        }
+    }
+
+    /**
+     * Returns a map with supported instance tracking properties.
+     *
+     * @param buildInfo this node's build information
+     */
+    @SuppressWarnings("checkstyle:magicnumber")
+    protected Map<String, Object> getTrackingFileProperties(BuildInfo buildInfo) {
+        Map<String, Object> props = MapUtil.createHashMap(6);
+        props.put(PRODUCT.getPropertyName(), InstanceProductName.HAZELCAST.getProductName());
+        props.put(VERSION.getPropertyName(), buildInfo.getVersion());
+        props.put(MODE.getPropertyName(), Boolean.getBoolean("hazelcast.tracking.server")
+                ? InstanceMode.SERVER.getModeName()
+                : InstanceMode.EMBEDDED.getModeName());
+        props.put(START_TIMESTAMP.getPropertyName(), System.currentTimeMillis());
+        props.put(LICENSED.getPropertyName(), 0);
+        props.put(PID.getPropertyName(), JVMUtil.getPid());
+        return props;
     }
 
     protected void printBannersBeforeNodeInfo() {

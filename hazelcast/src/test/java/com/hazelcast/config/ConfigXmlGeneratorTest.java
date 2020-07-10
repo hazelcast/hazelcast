@@ -22,6 +22,7 @@ import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig;
 import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.DurationConfig;
 import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig;
 import com.hazelcast.config.ConfigCompatibilityChecker.CPSubsystemConfigChecker;
+import com.hazelcast.config.ConfigCompatibilityChecker.InstanceTrackingConfigChecker;
 import com.hazelcast.config.ConfigCompatibilityChecker.MetricsConfigChecker;
 import com.hazelcast.config.ConfigCompatibilityChecker.SplitBrainProtectionConfigChecker;
 import com.hazelcast.config.cp.CPSubsystemConfig;
@@ -982,11 +983,11 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
     @Test
     public void testRingbufferWithStoreFactoryImplementation() {
         RingbufferStoreConfig ringbufferStoreConfig = new RingbufferStoreConfig()
-            .setEnabled(true)
-            .setFactoryImplementation(new TestRingbufferStoreFactory())
-            .setProperty("p1", "v1")
-            .setProperty("p2", "v2")
-            .setProperty("p3", "v3");
+                .setEnabled(true)
+                .setFactoryImplementation(new TestRingbufferStoreFactory())
+                .setProperty("p1", "v1")
+                .setProperty("p2", "v2")
+                .setProperty("p3", "v3");
 
         testRingbuffer(ringbufferStoreConfig);
     }
@@ -1794,6 +1795,20 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         MetricsConfig generatedConfig = getNewConfigViaXMLGenerator(config).getMetricsConfig();
         assertTrue(generatedConfig + " should be compatible with " + config.getMetricsConfig(),
                 new MetricsConfigChecker().check(config.getMetricsConfig(), generatedConfig));
+    }
+
+    @Test
+    public void testInstanceTrackingConfig() {
+        Config config = new Config();
+
+        config.getInstanceTrackingConfig()
+              .setEnabled(false)
+              .setFileName("/dummy/file")
+              .setFormatPattern("dummy-pattern with $HZ_INSTANCE_TRACKING{placeholder} and $RND{placeholder}");
+
+        InstanceTrackingConfig generatedConfig = getNewConfigViaXMLGenerator(config).getInstanceTrackingConfig();
+        assertTrue(generatedConfig + " should be compatible with " + config.getInstanceTrackingConfig(),
+                new InstanceTrackingConfigChecker().check(config.getInstanceTrackingConfig(), generatedConfig));
     }
 
     @Test
