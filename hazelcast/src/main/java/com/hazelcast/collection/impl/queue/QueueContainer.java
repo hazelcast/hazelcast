@@ -902,7 +902,7 @@ public class QueueContainer implements IdentifiedDataSerializable {
     private class ItemQueueFactory {
 
         public Queue createQueue() {
-            if (config.getComparatorClassName() != null) {
+            if (config.isPriorityQueue()) {
                 itemQueue = createPriorityQueue();
             } else {
                 itemQueue = createLinkedList();
@@ -1124,7 +1124,7 @@ public class QueueContainer implements IdentifiedDataSerializable {
     private class QueueItemGetter {
 
         public void offer(TxQueueItem item) {
-            if (config.getComparatorClassName() != null) {
+            if (config.isPriorityQueue()) {
                 getItemQueue().offer(item);
             } else {
                 ((LinkedList) getItemQueue()).offerFirst(item);
@@ -1132,7 +1132,9 @@ public class QueueContainer implements IdentifiedDataSerializable {
         }
 
         public void add(TxQueueItem txQueueItem) {
-            if (config.getComparatorClassName() != null) {
+            if (config.isPriorityQueue()) {
+                getItemQueue().add(txQueueItem);
+            } else {
                 ListIterator<QueueItem> iterator = ((List<QueueItem>) getItemQueue()).listIterator();
                 while (iterator.hasNext()) {
                     QueueItem queueItem = iterator.next();
@@ -1142,8 +1144,6 @@ public class QueueContainer implements IdentifiedDataSerializable {
                     }
                 }
                 iterator.add(txQueueItem);
-            } else {
-                getItemQueue().add(txQueueItem);
             }
         }
     }

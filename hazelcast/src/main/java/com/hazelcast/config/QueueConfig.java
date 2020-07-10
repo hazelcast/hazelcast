@@ -16,23 +16,22 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.collection.IQueue;
-import com.hazelcast.internal.config.ConfigDataSerializerHook;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Objects;
-
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.readNullableList;
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.writeNullableList;
 import static com.hazelcast.internal.util.Preconditions.checkAsyncBackupCount;
 import static com.hazelcast.internal.util.Preconditions.checkBackupCount;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
+
+import com.hazelcast.collection.IQueue;
+import com.hazelcast.internal.config.ConfigDataSerializerHook;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Objects;
 
 /**
  * Contains the configuration for an {@link IQueue}.
@@ -326,6 +325,15 @@ public class QueueConfig implements IdentifiedDataSerializable, NamedConfig {
     public QueueConfig setMergePolicyConfig(MergePolicyConfig mergePolicyConfig) {
         this.mergePolicyConfig = checkNotNull(mergePolicyConfig, "mergePolicyConfig cannot be null");
         return this;
+    }
+
+    /**
+     * Check if underlying implementation is a {@code PriorityQueue}. Otherwise it is a FIFO queue
+     *
+     * @return {@code true} if priority queue has been configured, {@code false} otherwise
+     */
+    public boolean isPriorityQueue() {
+        return comparatorClassName != null;
     }
 
     /**
