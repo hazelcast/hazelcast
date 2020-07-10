@@ -84,6 +84,11 @@ public class SamplingNodeExtension implements NodeExtension {
     }
 
     @Override
+    public void logInstanceTrackingMetadata() {
+        nodeExtension.logInstanceTrackingMetadata();
+    }
+
+    @Override
     public void beforeJoin() {
         nodeExtension.beforeJoin();
     }

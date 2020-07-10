@@ -34,9 +34,9 @@ import com.hazelcast.internal.networking.ChannelInitializer;
 import com.hazelcast.internal.networking.InboundHandler;
 import com.hazelcast.internal.networking.OutboundHandler;
 import com.hazelcast.internal.nio.Connection;
-import com.hazelcast.internal.server.ServerContext;
-import com.hazelcast.internal.server.ServerConnection;
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.server.ServerConnection;
+import com.hazelcast.internal.server.ServerContext;
 import com.hazelcast.internal.util.ByteArrayProcessor;
 import com.hazelcast.nio.MemberSocketInterceptor;
 import com.hazelcast.security.SecurityContext;
@@ -63,6 +63,11 @@ public interface NodeExtension {
      * Called to print node information during startup
      */
     void printNodeInfo();
+
+    /**
+     * Logs metadata about the instance to the configured instance tracking output.
+     */
+    void logInstanceTrackingMetadata();
 
     /**
      * Called before node attempts to join to the cluster

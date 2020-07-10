@@ -27,6 +27,7 @@ import com.hazelcast.config.DiscoveryStrategyConfig;
 import com.hazelcast.config.EntryListenerConfig;
 import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.GlobalSerializerConfig;
+import com.hazelcast.config.InstanceTrackingConfig;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.LoginModuleConfig;
 import com.hazelcast.config.NativeMemoryConfig;
@@ -139,6 +140,7 @@ public final class ClientConfigXmlGenerator {
         flakeIdGenerator(gen, clientConfig.getFlakeIdGeneratorConfigMap());
         //Metrics
         metrics(gen, clientConfig.getMetricsConfig());
+        instanceTrackingConfig(gen, clientConfig.getInstanceTrackingConfig());
 
         //close HazelcastClient
         gen.close();
@@ -661,6 +663,13 @@ public final class ClientConfigXmlGenerator {
            .open("jmx", "enabled", metricsConfig.getJmxConfig().isEnabled())
            .close()
            .node("collection-frequency-seconds", metricsConfig.getCollectionFrequencySeconds())
+           .close();
+    }
+
+    private static void instanceTrackingConfig(XmlGenerator gen, InstanceTrackingConfig trackingConfig) {
+        gen.open("instance-tracking", "enabled", trackingConfig.isEnabled())
+           .node("file-name", trackingConfig.getFileName())
+           .node("format-pattern", trackingConfig.getFormatPattern())
            .close();
     }
 }

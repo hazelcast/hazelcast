@@ -327,4 +327,8 @@
         <collection-frequency-seconds>42</collection-frequency-seconds>
     </metrics>
 
+    <instance-tracking enabled="false">
+
+    </instance-tracking>
+
 </hazelcast-client>

@@ -47,4 +47,4 @@ echo "# JAVA_OPTS=$JAVA_OPTS"
 echo "# starting now...."
 echo "########################################"
 
-"$RUN_JAVA" -server $JAVA_OPTS com.hazelcast.core.server.HazelcastMemberStarter
+"$RUN_JAVA" -server $JAVA_OPTS -Dhazelcast.tracking.server=true com.hazelcast.core.server.HazelcastMemberStarter

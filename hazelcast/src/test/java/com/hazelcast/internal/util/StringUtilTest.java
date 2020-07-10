@@ -24,6 +24,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.HashMap;
 import java.util.Locale;
 
 import static com.hazelcast.internal.util.StringUtil.VERSION_PATTERN;
@@ -163,6 +164,62 @@ public class StringUtilTest extends HazelcastTestSupport {
         assertEquals("a", StringUtil.stripTrailingSlash("a/"));
         assertEquals("a/a", StringUtil.stripTrailingSlash("a/a"));
         assertEquals("a/", StringUtil.stripTrailingSlash("a//"));
+    }
+
+
+    @Test
+    public void testResolvePlaceholders() throws Exception {
+        assertResolvePlaceholder(
+                "noPlaceholders",
+                "noPlaceholders",
+                "", "param", "value");
+        assertResolvePlaceholder(
+                "param: value",
+                "param: ${param}",
+                "", "param", "value");
+        assertResolvePlaceholder(
+                "param: ${param",
+                "param: ${param",
+                "", "param", "value");
+        assertResolvePlaceholder(
+                "missing: ${missing}",
+                "missing: ${missing}",
+                "", "param", "value");
+        assertResolvePlaceholder(
+                "missing: ${missing}, param: value",
+                "missing: ${missing}, param: ${param}",
+                "", "param", "value");
+        assertResolvePlaceholder(
+                "broken: ${broken, param: ${param}",
+                "broken: ${broken, param: ${param}",
+                "", "param", "value");
+        assertResolvePlaceholder(
+                "param: value, broken: ${broken",
+                "param: ${param}, broken: ${broken",
+                "", "param", "value");
+        assertResolvePlaceholder(
+                "missing: ${missing}, param: value, broken: ${broken",
+                "missing: ${missing}, param: ${param}, broken: ${broken",
+                "", "param", "value");
+        assertResolvePlaceholder(
+                "param1: value1, param2: value2, param3: value3",
+                "param1: ${param1}, param2: ${param2}, param3: ${param3}",
+                "", "param1", "value1", "param2", "value2", "param3", "value3");
+        assertResolvePlaceholder(
+                "param: value, param: $OTHER_PREFIX{param}",
+                "param: $PREFIX{param}, param: $OTHER_PREFIX{param}",
+                "PREFIX", "param", "value");
+    }
+
+    private void assertResolvePlaceholder(String expected,
+                                          String pattern,
+                                          String placeholderNamespace,
+                                          Object... params) {
+        HashMap<String, Object> paramMap = new HashMap<>();
+        for (int i = 0; i < params.length; i += 2) {
+            paramMap.put(params[i].toString(), params[i + 1]);
+        }
+        assertEquals(expected, StringUtil.resolvePlaceholders(pattern, placeholderNamespace, paramMap));
     }
 
     private String[] arr(String... strings) {

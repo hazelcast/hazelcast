@@ -180,6 +180,8 @@ public class Config {
 
     private MetricsConfig metricsConfig = new MetricsConfig();
 
+    private InstanceTrackingConfig instanceTrackingConfig = new InstanceTrackingConfig();
+
     public Config() {
     }
 
@@ -2646,6 +2648,24 @@ public class Config {
     public Config setSqlConfig(@Nonnull SqlConfig sqlConfig) {
         Preconditions.checkNotNull(sqlConfig, "sqlConfig");
         this.sqlConfig = sqlConfig;
+        return this;
+    }
+
+    /**
+     * Returns the configuration for tracking use of this Hazelcast instance.
+     */
+    @Nonnull
+    public InstanceTrackingConfig getInstanceTrackingConfig() {
+        return instanceTrackingConfig;
+    }
+
+    /**
+     * Returns the configuration for tracking use of this Hazelcast instance.
+     */
+    @Nonnull
+    public Config setInstanceTrackingConfig(@Nonnull InstanceTrackingConfig instanceTrackingConfig) {
+        Preconditions.checkNotNull(instanceTrackingConfig, "instanceTrackingConfig");
+        this.instanceTrackingConfig = instanceTrackingConfig;
         return this;
     }
 

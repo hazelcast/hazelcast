@@ -71,6 +71,7 @@
                 <xs:element name="advanced-network" type="advanced-network" minOccurs="0" maxOccurs="1"/>
                 <xs:element name="cp-subsystem" type="cp-subsystem" minOccurs="0" maxOccurs="1"/>
                 <xs:element name="metrics" type="metrics" minOccurs="0" maxOccurs="1"/>
+                <xs:element name="instance-tracking" type="instance-tracking" minOccurs="0" maxOccurs="1"/>
                 <xs:element name="sql" type="sql" minOccurs="0" maxOccurs="1"/>
             </xs:choice>
             <xs:attribute name="id" type="xs:string" use="optional" default="default"/>
@@ -4812,6 +4813,70 @@
                     to be enabled via the enabled master-switch attribute.
                     May be overridden by 'hazelcast.metrics.jmx.enabled'
                     system property.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+
+    <xs:complexType name="instance-tracking">
+        <xs:annotation>
+            <xs:documentation>
+                Configures tracking of a running Hazelcast instance. For now, this is
+                limited to writing information about the Hazelcast instance to a file
+                while the instance is starting.
+                The file is overwritten on every start of the Hazelcast instance and if
+                multiple instance share the same file system, every instance will
+                overwrite the tracking file of a previously started instance.
+                If this instance is unable to write the file, the exception is logged and
+                the instance is allowed to start.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:all>
+            <xs:element name="file-name" type="xs:string" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        Sets the name of the file which will contain the tracking metadata. If left unset
+                        a file named "Hazelcast.process" will be created in the directory as returned by
+                        System.getProperty("java.io.tmpdir").
+                        The filename can contain placeholders that will be resolved in the same way
+                        as placeholders for the format pattern.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="format-pattern" type="xs:string" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        Sets the pattern used to render the contents of the instance tracking file.
+                        It may contain placeholders for these properties:
+                        - "product": The instance product name, e.g. "Hazelcast" or "Hazelcast Enterprise".
+                        - "version": The instance version.
+                        - "mode": The instance mode which can be "server", "embedded" or "client".
+                        - "start_timestamp": The timestamp of when the instance was started expressed the difference,
+                        measured in milliseconds, between the current time and midnight, January 1, 1970 UTC
+                        - "licensed": If this instance is using a license or not. The value 0 signifies
+                        that there is no license set and the value 1 signifies that a license is in use.
+                        - "pid": Attempts to get the process ID value. The algorithm does not guarantee to get the
+                        process ID on all JVMs and operating systems so please test before use. In case we are unable to
+                        get the PID, the value will be -1.
+
+                        The placeholders are defined by a $HZ_INSTANCE_TRACKING{ prefix and followed by }.
+                        For instance, a placeholder for the "start_timestamp" would be
+                        $HZ_INSTANCE_TRACKING{start_timestamp}.
+                        The placeholders are resolved in a fail-safe manner. Any incorrect syntax
+                        is ignored and only the known properties are resolved, placeholders for
+                        any parameters which do not have defined values will be ignored. This also
+                        means that if there is a missing closing bracket in one of the placeholders,
+                        the property name will be resolved as anything from the opening bracket
+                        to the next closing bracket, which might contain additional opening brackets.
+                        If unset, a JSON formatted output will be used.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:all>
+        <xs:attribute name="enabled" type="xs:boolean" default="false">
+            <xs:annotation>
+                <xs:documentation>
+                    Enables or disables instance tracking.
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>

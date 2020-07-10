@@ -62,6 +62,7 @@ public enum ConfigSections {
     ADVANCED_NETWORK("advanced-network", false),
     CP_SUBSYSTEM("cp-subsystem", false),
     METRICS("metrics", false),
+    INSTANCE_TRACKING("instance-tracking", false),
     SQL("sql", false);
 
     final boolean multipleOccurrence;

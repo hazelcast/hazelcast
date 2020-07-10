@@ -40,6 +40,6 @@ ECHO # JAVA_OPTS=%JAVA_OPTS%
 ECHO # starting now...."
 ECHO ########################################
 
-start "hazelcast-imdg" "%RUN_JAVA%" %JAVA_OPTS% -cp "%CLASSPATH%" "com.hazelcast.core.server.HazelcastMemberStarter"
+start "hazelcast-imdg" "%RUN_JAVA%" %JAVA_OPTS% -cp "%CLASSPATH%" -Dhazelcast.tracking.server=true "com.hazelcast.core.server.HazelcastMemberStarter"
 
 ENDLOCAL
