@@ -529,7 +529,7 @@ public class TestClientApplicationContext {
     public void testInstanceTracking() {
         InstanceTrackingConfig trackingConfig = instanceTrackingClient.getClientConfig().getInstanceTrackingConfig();
 
-        assertFalse(trackingConfig.isEnabled());
+        assertTrue(trackingConfig.isEnabled());
         assertEquals("/dummy/file", trackingConfig.getFileName());
         assertEquals("dummy-pattern with $HZ_INSTANCE_TRACKING{placeholder} and $RND{placeholder}",
                 trackingConfig.getFormatPattern());

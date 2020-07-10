@@ -38,7 +38,6 @@ import com.hazelcast.config.DiscoveryStrategyConfig;
 import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.InMemoryFormat;
-import com.hazelcast.config.InstanceTrackingConfig;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.MaxSizePolicy;
@@ -171,7 +170,7 @@ public class ClientDomConfigProcessor extends AbstractDomConfigProcessor {
         } else if (METRICS.isEqual(nodeName)) {
             handleMetrics(node);
         } else if (INSTANCE_TRACKING.isEqual(nodeName)) {
-            handleInstanceTracking(node);
+            handleInstanceTracking(node, clientConfig.getInstanceTrackingConfig());
         }
     }
 
@@ -718,23 +717,6 @@ public class ClientDomConfigProcessor extends AbstractDomConfigProcessor {
             if ("ports".equals(nodeName)) {
                 String value = getTextContent(n);
                 clientNetworkConfig.addOutboundPortDefinition(value);
-            }
-        }
-    }
-
-    private void handleInstanceTracking(Node node) {
-        InstanceTrackingConfig trackingConfig = clientConfig.getInstanceTrackingConfig();
-
-        Node attrEnabled = node.getAttributes().getNamedItem("enabled");
-        boolean enabled = getBooleanValue(getTextContent(attrEnabled));
-        trackingConfig.setEnabled(enabled);
-
-        for (Node n : childElements(node)) {
-            final String name = cleanNodeName(n);
-            if ("file-name".equals(name)) {
-                trackingConfig.setFileName(getTextContent(n));
-            } else if ("format-pattern".equals(name)) {
-                trackingConfig.setFormatPattern(getTextContent(n));
             }
         }
     }

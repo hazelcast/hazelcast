@@ -654,7 +654,7 @@ public class ClientConfigXmlGeneratorTest extends HazelcastTestSupport {
     @Test
     public void testInstanceTrackingConfig() {
         clientConfig.getInstanceTrackingConfig()
-                    .setEnabled(false)
+                    .setEnabled(true)
                     .setFileName("/dummy/file")
                     .setFormatPattern("dummy-pattern with $HZ_INSTANCE_TRACKING{placeholder} and $RND{placeholder}");
 
