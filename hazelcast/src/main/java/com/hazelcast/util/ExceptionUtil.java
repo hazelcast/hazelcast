@@ -46,7 +46,7 @@ public final class ExceptionUtil {
      * Interface used by rethrow/peel to wrap the peeled exception
      */
     public interface RuntimeExceptionFactory {
-        RuntimeException create(Throwable throwable, String message);
+        Throwable create(Throwable throwable, String message);
     }
 
     private ExceptionUtil() {
