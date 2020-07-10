@@ -103,7 +103,9 @@ public final class ConstantExpression<T> implements Expression<T>, IdentifiedDat
 
     @Override
     public int hashCode() {
-        return Objects.hash(type, value);
+        int result = type.hashCode();
+        result = 31 * result + (value != null ? value.hashCode() : 0);
+        return result;
     }
 
     @Override

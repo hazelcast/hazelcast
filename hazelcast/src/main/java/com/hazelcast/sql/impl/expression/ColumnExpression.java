@@ -24,7 +24,6 @@ import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
 import java.io.IOException;
-import java.util.Objects;
 
 /**
  * Column access expression.
@@ -83,7 +82,9 @@ public final class ColumnExpression<T> implements Expression<T>, IdentifiedDataS
 
     @Override
     public int hashCode() {
-        return Objects.hash(index, type);
+        int result = index;
+        result = 31 * result + type.hashCode();
+        return result;
     }
 
     @Override
