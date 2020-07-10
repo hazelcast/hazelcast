@@ -45,7 +45,6 @@ import com.hazelcast.config.HotRestartPersistenceConfig;
 import com.hazelcast.config.IcmpFailureDetectorConfig;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.IndexConfig;
-import com.hazelcast.config.InstanceTrackingConfig;
 import com.hazelcast.config.InterfacesConfig;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.ItemListenerConfig;
@@ -340,7 +339,7 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         } else if (METRICS.isEqual(nodeName)) {
             handleMetrics(node);
         } else if (INSTANCE_TRACKING.isEqual(nodeName)) {
-            handleInstanceTracking(node);
+            handleInstanceTracking(node, config.getInstanceTrackingConfig());
         } else if (SQL.isEqual(nodeName)) {
             handleSql(node);
         } else {
@@ -2927,23 +2926,6 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             if ("enabled".equals(att.getNodeName())) {
                 boolean enabled = getBooleanValue(getAttribute(node, "enabled"));
                 jmxConfig.setEnabled(enabled);
-            }
-        }
-    }
-
-    private void handleInstanceTracking(Node node) {
-        InstanceTrackingConfig trackingConfig = config.getInstanceTrackingConfig();
-
-        Node attrEnabled = node.getAttributes().getNamedItem("enabled");
-        boolean enabled = getBooleanValue(getTextContent(attrEnabled));
-        trackingConfig.setEnabled(enabled);
-
-        for (Node n : childElements(node)) {
-            final String name = cleanNodeName(n);
-            if ("file-name".equals(name)) {
-                trackingConfig.setFileName(getTextContent(n));
-            } else if ("format-pattern".equals(name)) {
-                trackingConfig.setFormatPattern(getTextContent(n));
             }
         }
     }

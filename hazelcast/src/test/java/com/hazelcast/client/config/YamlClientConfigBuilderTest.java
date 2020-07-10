@@ -430,12 +430,12 @@ public class YamlClientConfigBuilderTest extends AbstractClientConfigBuilderTest
         String yaml = ""
                 + "hazelcast-client:\n"
                 + "  instance-tracking:\n"
-                + "    enabled: false\n"
+                + "    enabled: true\n"
                 + "    file-name: /dummy/file\n"
                 + "    format-pattern: dummy-pattern with $HZ_INSTANCE_TRACKING{placeholder} and $RND{placeholder}";
         ClientConfig config = buildConfig(yaml);
         InstanceTrackingConfig trackingConfig = config.getInstanceTrackingConfig();
-        assertFalse(trackingConfig.isEnabled());
+        assertTrue(trackingConfig.isEnabled());
         assertEquals("/dummy/file", trackingConfig.getFileName());
         assertEquals("dummy-pattern with $HZ_INSTANCE_TRACKING{placeholder} and $RND{placeholder}",
                 trackingConfig.getFormatPattern());

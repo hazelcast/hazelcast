@@ -3440,14 +3440,14 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     @Test
     public void testInstanceTrackingConfig() {
         String xml = HAZELCAST_START_TAG
-                + "<instance-tracking enabled=\"false\">"
+                + "<instance-tracking enabled=\"true\">"
                 + "  <file-name>/dummy/file</file-name>"
                 + "  <format-pattern>dummy-pattern with $HZ_INSTANCE_TRACKING{placeholder} and $RND{placeholder}</format-pattern>"
                 + "</instance-tracking>"
                 + HAZELCAST_END_TAG;
         Config config = new InMemoryXmlConfig(xml);
         InstanceTrackingConfig trackingConfig = config.getInstanceTrackingConfig();
-        assertFalse(trackingConfig.isEnabled());
+        assertTrue(trackingConfig.isEnabled());
         assertEquals("/dummy/file", trackingConfig.getFileName());
         assertEquals("dummy-pattern with $HZ_INSTANCE_TRACKING{placeholder} and $RND{placeholder}",
                 trackingConfig.getFormatPattern());

@@ -1802,7 +1802,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         Config config = new Config();
 
         config.getInstanceTrackingConfig()
-              .setEnabled(false)
+              .setEnabled(true)
               .setFileName("/dummy/file")
               .setFormatPattern("dummy-pattern with $HZ_INSTANCE_TRACKING{placeholder} and $RND{placeholder}");
 

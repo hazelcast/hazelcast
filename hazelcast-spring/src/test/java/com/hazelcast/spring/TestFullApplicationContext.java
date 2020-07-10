@@ -1440,7 +1440,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
     @Test
     public void testInstanceTrackingConfig() {
         InstanceTrackingConfig trackingConfig = config.getInstanceTrackingConfig();
-        assertFalse(trackingConfig.isEnabled());
+        assertTrue(trackingConfig.isEnabled());
         assertEquals("/dummy/file", trackingConfig.getFileName());
         assertEquals("dummy-pattern with $HZ_INSTANCE_TRACKING{placeholder} and $RND{placeholder}",
                 trackingConfig.getFormatPattern());
