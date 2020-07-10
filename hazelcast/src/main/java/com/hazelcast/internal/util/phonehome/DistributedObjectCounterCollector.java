@@ -16,14 +16,19 @@
 package com.hazelcast.internal.util.phonehome;
 
 import com.hazelcast.cache.impl.CacheService;
+import com.hazelcast.cardinality.impl.CardinalityEstimatorService;
 import com.hazelcast.collection.impl.list.ListService;
 import com.hazelcast.collection.impl.queue.QueueService;
 import com.hazelcast.collection.impl.set.SetService;
 import com.hazelcast.core.DistributedObject;
+import com.hazelcast.flakeidgen.impl.FlakeIdGeneratorService;
 import com.hazelcast.instance.impl.Node;
+import com.hazelcast.internal.crdt.pncounter.PNCounterService;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.multimap.impl.MultiMapService;
+import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.ringbuffer.impl.RingbufferService;
+import com.hazelcast.topic.impl.TopicService;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -45,6 +50,11 @@ class DistributedObjectCounterCollector implements MetricsCollector {
         SERVICE_NAME_TO_METRIC_NAME.put(ListService.SERVICE_NAME, "lict");
         SERVICE_NAME_TO_METRIC_NAME.put(RingbufferService.SERVICE_NAME, "rbct");
         SERVICE_NAME_TO_METRIC_NAME.put(CacheService.SERVICE_NAME, "cact");
+        SERVICE_NAME_TO_METRIC_NAME.put(TopicService.SERVICE_NAME, "tpct");
+        SERVICE_NAME_TO_METRIC_NAME.put(ReplicatedMapService.SERVICE_NAME, "rpct");
+        SERVICE_NAME_TO_METRIC_NAME.put(CardinalityEstimatorService.SERVICE_NAME, "cect");
+        SERVICE_NAME_TO_METRIC_NAME.put(PNCounterService.SERVICE_NAME, "pncct");
+        SERVICE_NAME_TO_METRIC_NAME.put(FlakeIdGeneratorService.SERVICE_NAME, "figct");
     }
 
     @Override

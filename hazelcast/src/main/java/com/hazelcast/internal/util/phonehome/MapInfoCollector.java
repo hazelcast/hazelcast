@@ -15,6 +15,8 @@
  */
 package com.hazelcast.internal.util.phonehome;
 
+import com.hazelcast.config.EvictionPolicy;
+import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.DistributedObject;
 
@@ -29,94 +31,76 @@ import com.hazelcast.map.impl.MapService;
 
 class MapInfoCollector implements MetricsCollector {
 
-    Collection<DistributedObject> maps;
+    private static final int COUNT_OF_MAP_METRICS = 9;
+    Collection<MapConfig> mapConfigs;
 
     @Override
     public Map<String, String> computeMetrics(Node hazelcastNode) {
 
         Collection<DistributedObject> distributedObjects = hazelcastNode.hazelcastInstance.getDistributedObjects();
-        maps = distributedObjects.stream().filter(distributedObject -> distributedObject.getServiceName().
-                equals(MapService.SERVICE_NAME)).collect(toList());
-        Map<String, String> mapInfo = new HashMap<>();
 
-        mapInfo.put("mpbrct", String.valueOf(countMapWithBackupReadEnabled(hazelcastNode)));
-        mapInfo.put("mpmsct", String.valueOf(countMapWithMapStoreEnabled(hazelcastNode)));
-        mapInfo.put("mpaoqcct", String.valueOf(countMapWithAtleastOneQueryCache(hazelcastNode)));
-        mapInfo.put("mpaoict", String.valueOf(countMapWithAtleastOneIndex(hazelcastNode)));
-        mapInfo.put("mphect", String.valueOf(countMapWithHotRestartEnabled(hazelcastNode)));
-        mapInfo.put("mpwact", String.valueOf(countMapWithWANReplication(hazelcastNode)));
-        mapInfo.put("mpaocct", String.valueOf(countMapWithAtleastOneAttribute(hazelcastNode)));
+        mapConfigs = distributedObjects.stream()
+                .filter(distributedObject -> distributedObject.getServiceName().equals(MapService.SERVICE_NAME))
+                .map(distributedObject -> hazelcastNode.getConfig().getMapConfig(distributedObject.getName()))
+                .collect(toList());
+
+        Map<String, String> mapInfo = new HashMap<>(COUNT_OF_MAP_METRICS);
+
+        mapInfo.put("mpbrct", String.valueOf(countMapWithBackupReadEnabled()));
+        mapInfo.put("mpmsct", String.valueOf(countMapWithMapStoreEnabled()));
+        mapInfo.put("mpaoqcct", String.valueOf(countMapWithAtleastOneQueryCache()));
+        mapInfo.put("mpaoict", String.valueOf(countMapWithAtleastOneIndex()));
+        mapInfo.put("mphect", String.valueOf(countMapWithHotRestartEnabled()));
+        mapInfo.put("mpwact", String.valueOf(countMapWithWANReplication()));
+        mapInfo.put("mpaocct", String.valueOf(countMapWithAtleastOneAttribute()));
+        mapInfo.put("mpevct", String.valueOf(countMapUsingEviction()));
+        mapInfo.put("mpnmct", String.valueOf(countMapWithNativeInMemoryFormat()));
 
         return mapInfo;
     }
 
-    private long countMapWithBackupReadEnabled(Node node) {
-        return maps.stream().filter(distributedObject -> {
-            MapConfig config = node.getConfig().getMapConfig(distributedObject.getName());
-            if (config != null) {
-                return config.isReadBackupData();
-            }
-            return false;
-        }).count();
+    private long countMapWithBackupReadEnabled() {
+        return mapConfigs.stream()
+                .filter(mapConfig -> mapConfig != null && mapConfig.isReadBackupData()).count();
     }
 
-    private long countMapWithMapStoreEnabled(Node node) {
-        return maps.stream().filter(distributedObject -> {
-            MapConfig config = node.getConfig().getMapConfig(distributedObject.getName());
-            if (config != null) {
-                return config.getMapStoreConfig().isEnabled();
-            }
-            return false;
-        }).count();
+    private long countMapWithMapStoreEnabled() {
+        return mapConfigs.stream()
+                .filter(mapConfig -> mapConfig != null && mapConfig.getMapStoreConfig().isEnabled()).count();
     }
 
-    private long countMapWithAtleastOneQueryCache(Node node) {
-        return maps.stream().filter(distributedObject -> {
-            MapConfig config = node.getConfig().getMapConfig(distributedObject.getName());
-            if (config != null) {
-                return !config.getQueryCacheConfigs().isEmpty();
-            }
-            return false;
-        }).count();
+    private long countMapWithAtleastOneQueryCache() {
+        return mapConfigs.stream()
+                .filter(mapConfig -> mapConfig != null && !(mapConfig.getQueryCacheConfigs().isEmpty())).count();
     }
 
-    private long countMapWithAtleastOneIndex(Node node) {
-        return maps.stream().filter(distributedObject -> {
-            MapConfig config = node.getConfig().getMapConfig(distributedObject.getName());
-            if (config != null) {
-                return !config.getIndexConfigs().isEmpty();
-            }
-            return false;
-        }).count();
+    private long countMapWithAtleastOneIndex() {
+        return mapConfigs.stream()
+                .filter(mapConfig -> mapConfig != null && !(mapConfig.getIndexConfigs().isEmpty())).count();
     }
 
-    private long countMapWithHotRestartEnabled(Node node) {
-        return maps.stream().filter(distributedObject -> {
-            MapConfig config = node.getConfig().getMapConfig(distributedObject.getName());
-            if (config != null) {
-                return config.getHotRestartConfig().isEnabled();
-            }
-            return false;
-        }).count();
+    private long countMapWithHotRestartEnabled() {
+        return mapConfigs.stream()
+                .filter(mapConfig -> mapConfig != null && mapConfig.getHotRestartConfig().isEnabled()).count();
     }
 
-    private long countMapWithWANReplication(Node node) {
-        return maps.stream().filter(distributedObject -> {
-            MapConfig config = node.getConfig().getMapConfig(distributedObject.getName());
-            if (config != null) {
-                return config.getWanReplicationRef() != null;
-            }
-            return false;
-        }).count();
+    private long countMapWithWANReplication() {
+        return mapConfigs.stream()
+                .filter(mapConfig -> mapConfig != null && mapConfig.getWanReplicationRef() != null).count();
     }
 
-    private long countMapWithAtleastOneAttribute(Node node) {
-        return maps.stream().filter(distributedObject -> {
-            MapConfig config = node.getConfig().getMapConfig(distributedObject.getName());
-            if (config != null) {
-                return !config.getAttributeConfigs().isEmpty();
-            }
-            return false;
-        }).count();
+    private long countMapWithAtleastOneAttribute() {
+        return mapConfigs.stream()
+                .filter(mapConfig -> mapConfig != null && !(mapConfig.getAttributeConfigs().isEmpty())).count();
+    }
+
+    private long countMapUsingEviction() {
+        return mapConfigs.stream().filter(mapConfig -> mapConfig != null
+                && mapConfig.getEvictionConfig().getEvictionPolicy() != EvictionPolicy.NONE).count();
+    }
+
+    private long countMapWithNativeInMemoryFormat() {
+        return mapConfigs.stream()
+                .filter(mapConfig -> mapConfig != null && mapConfig.getInMemoryFormat() == InMemoryFormat.NATIVE).count();
     }
 }

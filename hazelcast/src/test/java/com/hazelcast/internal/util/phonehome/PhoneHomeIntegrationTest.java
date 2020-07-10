@@ -16,18 +16,28 @@
 package com.hazelcast.internal.util.phonehome;
 
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
+import com.hazelcast.cardinality.CardinalityEstimator;
+import com.hazelcast.collection.IQueue;
+import com.hazelcast.collection.ISet;
 import com.hazelcast.config.AttributeConfig;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.CacheSimpleConfig;
+import com.hazelcast.config.EvictionPolicy;
+import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.QueryCacheConfig;
 import com.hazelcast.config.WanReplicationRef;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.crdt.pncounter.PNCounter;
+import com.hazelcast.flakeidgen.FlakeIdGenerator;
 import com.hazelcast.instance.impl.Node;
+import com.hazelcast.map.IMap;
 import com.hazelcast.multimap.MultiMap;
+import com.hazelcast.replicatedmap.ReplicatedMap;
 import com.hazelcast.ringbuffer.Ringbuffer;
 import com.hazelcast.test.HazelcastTestSupport;
 
+import com.hazelcast.topic.ITopic;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -35,9 +45,6 @@ import org.junit.Test;
 import javax.cache.CacheManager;
 import javax.cache.spi.CachingProvider;
 import java.util.List;
-import java.util.Map;
-import java.util.Queue;
-import java.util.Set;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
@@ -67,8 +74,8 @@ public class PhoneHomeIntegrationTest extends HazelcastTestSupport {
 
     @Test()
     public void testMapMetrics() {
-        Map<String, String> map1 = node.hazelcastInstance.getMap("hazelcast");
-        Map<String, String> map2 = node.hazelcastInstance.getMap("phonehome");
+        IMap<String, String> map1 = node.hazelcastInstance.getMap("hazelcast");
+        IMap<String, String> map2 = node.hazelcastInstance.getMap("phonehome");
         node.getConfig().getMapConfig("hazelcast").setReadBackupData(true);
         node.getConfig().getMapConfig("phonehome").getMapStoreConfig().setEnabled(true);
         node.getConfig().getMapConfig("hazelcast").addQueryCacheConfig(new QueryCacheConfig("queryconfig"));
@@ -76,6 +83,8 @@ public class PhoneHomeIntegrationTest extends HazelcastTestSupport {
         node.getConfig().getMapConfig("hazelcast").getIndexConfigs().add(new IndexConfig());
         node.getConfig().getMapConfig("hazelcast").setWanReplicationRef(new WanReplicationRef());
         node.getConfig().getMapConfig("hazelcast").getAttributeConfigs().add(new AttributeConfig());
+        node.getConfig().getMapConfig("hazelcast").getEvictionConfig().setEvictionPolicy(EvictionPolicy.LRU);
+        node.getConfig().getMapConfig("hazelcast").setInMemoryFormat(InMemoryFormat.NATIVE);
 
 
         stubFor(get(urlPathEqualTo("/ping"))
@@ -92,18 +101,26 @@ public class PhoneHomeIntegrationTest extends HazelcastTestSupport {
                 .withQueryParam("mpaoict", equalTo("1"))
                 .withQueryParam("mphect", equalTo("1"))
                 .withQueryParam("mpwact", equalTo("1"))
-                .withQueryParam("mpaocct", equalTo("1")));
+                .withQueryParam("mpaocct", equalTo("1"))
+                .withQueryParam("mpevct", equalTo("1"))
+                .withQueryParam("mpnmct", equalTo("1")));
 
     }
 
     @Test
     public void testCountDistributedObjects() {
-        Map<Object, Object> map1 = node.hazelcastInstance.getMap("hazelcast");
-        Set<Object> set1 = node.hazelcastInstance.getSet("hazelcast");
-        Queue<Object> queue1 = node.hazelcastInstance.getQueue("hazelcast");
-        MultiMap<Object, Object> multimap1 = node.hazelcastInstance.getMultiMap("hazelcast");
-        List<Object> list1 = node.hazelcastInstance.getList("hazelcast");
-        Ringbuffer<Object> ringbuffer1 = node.hazelcastInstance.getRingbuffer("hazelcast");
+        IMap<Object, Object> map = node.hazelcastInstance.getMap("hazelcast");
+        ISet<Object> set = node.hazelcastInstance.getSet("hazelcast");
+        IQueue<Object> queue = node.hazelcastInstance.getQueue("hazelcast");
+        MultiMap<Object, Object> multimap = node.hazelcastInstance.getMultiMap("hazelcast");
+        List<Object> list = node.hazelcastInstance.getList("hazelcast");
+        Ringbuffer<Object> ringbuffer = node.hazelcastInstance.getRingbuffer("hazelcast");
+        ITopic<String> topic = node.hazelcastInstance.getTopic("hazelcast");
+        ReplicatedMap<String, String> replicatedMap = node.hazelcastInstance.getReplicatedMap("hazelcast");
+        CardinalityEstimator cardinalityEstimator = node.hazelcastInstance.getCardinalityEstimator("hazelcast");
+        PNCounter pnCounter = node.hazelcastInstance.getPNCounter("hazelcast");
+        FlakeIdGenerator flakeIdGenerator = node.hazelcastInstance.getFlakeIdGenerator("hazelcast");
+
 
         stubFor(get(urlPathEqualTo("/ping"))
                 .willReturn(aResponse()
@@ -117,7 +134,12 @@ public class PhoneHomeIntegrationTest extends HazelcastTestSupport {
                 .withQueryParam("quct", equalTo("1"))
                 .withQueryParam("mmct", equalTo("1"))
                 .withQueryParam("lict", equalTo("1"))
-                .withQueryParam("rbct", equalTo("1")));
+                .withQueryParam("rbct", equalTo("1"))
+                .withQueryParam("tpct", equalTo("1"))
+                .withQueryParam("rpct", equalTo("1"))
+                .withQueryParam("cect", equalTo("1"))
+                .withQueryParam("pncct", equalTo("1"))
+                .withQueryParam("figct", equalTo("1")));
 
     }
 

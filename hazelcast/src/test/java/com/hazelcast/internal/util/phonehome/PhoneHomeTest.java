@@ -15,25 +15,33 @@
  */
 package com.hazelcast.internal.util.phonehome;
 
+import com.hazelcast.cardinality.CardinalityEstimator;
 import com.hazelcast.collection.IList;
 import com.hazelcast.collection.IQueue;
 import com.hazelcast.collection.ISet;
 import com.hazelcast.config.AttributeConfig;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.CacheSimpleConfig;
+import com.hazelcast.config.EvictionConfig;
+import com.hazelcast.config.EvictionPolicy;
+import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.IndexType;
 import com.hazelcast.config.QueryCacheConfig;
 import com.hazelcast.config.WanReplicationRef;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.crdt.pncounter.PNCounter;
+import com.hazelcast.flakeidgen.FlakeIdGenerator;
 import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.multimap.MultiMap;
+import com.hazelcast.replicatedmap.ReplicatedMap;
 import com.hazelcast.ringbuffer.Ringbuffer;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.topic.ITopic;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -257,6 +265,45 @@ public class PhoneHomeTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testMapCountUsingEviction() {
+        Map<String, String> parameters;
+        parameters = phoneHome.phoneHome(true);
+        assertEquals(parameters.get("mpevct"), "0");
+
+        Map<String, String> map1 = node.hazelcastInstance.getMap("hazelcast");
+        parameters = phoneHome.phoneHome(true);
+        assertEquals(parameters.get("mpevct"), "0");
+
+        EvictionConfig config = new EvictionConfig();
+        config.setEvictionPolicy(EvictionPolicy.LRU);
+        node.getConfig().getMapConfig("hazelcast").setEvictionConfig(config);
+        parameters = phoneHome.phoneHome(true);
+        assertEquals(parameters.get("mpevct"), "1");
+
+        config.setEvictionPolicy(EvictionPolicy.NONE);
+        node.getConfig().getMapConfig("hazelcast").setEvictionConfig(config);
+        parameters = phoneHome.phoneHome(true);
+        assertEquals(parameters.get("mpevct"), "0");
+
+    }
+
+    @Test
+    public void testMapCountWithNativeInMemory() {
+        Map<String, String> parameters;
+        parameters = phoneHome.phoneHome(true);
+        assertEquals(parameters.get("mpnmct"), "0");
+
+        Map<String, String> map1 = node.hazelcastInstance.getMap("hazelcast");
+        parameters = phoneHome.phoneHome(true);
+        assertEquals(parameters.get("mpnmct"), "0");
+
+        node.getConfig().getMapConfig("hazelcast").setInMemoryFormat(InMemoryFormat.NATIVE);
+        parameters = phoneHome.phoneHome(true);
+        assertEquals(parameters.get("mpnmct"), "1");
+
+    }
+
+    @Test
     public void testSetCount() {
         Map<String, String> parameters;
         parameters = phoneHome.phoneHome(true);
@@ -375,5 +422,86 @@ public class PhoneHomeTest extends HazelcastTestSupport {
         assertEquals(parameters.get("cawact"), "1");
 
     }
+
+    @Test
+    public void testTopicCount() {
+        Map<String, String> parameters;
+        parameters = phoneHome.phoneHome(true);
+        assertEquals(parameters.get("tpct"), "0");
+
+        ITopic<String> topic1 = node.hazelcastInstance.getTopic("hazelcast");
+        parameters = phoneHome.phoneHome(true);
+        assertEquals(parameters.get("tpct"), "1");
+
+        ITopic<String> topic2 = node.hazelcastInstance.getTopic("phonehome");
+        parameters = phoneHome.phoneHome(true);
+        assertEquals(parameters.get("tpct"), "2");
+
+    }
+
+    @Test
+    public void testReplicatedMapCount() {
+        Map<String, String> parameters;
+        parameters = phoneHome.phoneHome(true);
+        assertEquals(parameters.get("rpct"), "0");
+
+        ReplicatedMap<String, String> replicatedMap1 = node.hazelcastInstance.getReplicatedMap("hazelcast");
+        parameters = phoneHome.phoneHome(true);
+        assertEquals(parameters.get("rpct"), "1");
+
+        ReplicatedMap<String, String> replicatedMap2 = node.hazelcastInstance.getReplicatedMap("phonehome");
+        parameters = phoneHome.phoneHome(true);
+        assertEquals(parameters.get("rpct"), "2");
+
+    }
+
+    @Test
+    public void testCardinalityEstimatorMapCount() {
+        Map<String, String> parameters;
+        parameters = phoneHome.phoneHome(true);
+        assertEquals(parameters.get("cect"), "0");
+
+        CardinalityEstimator cardinalityEstimator1 = node.hazelcastInstance.getCardinalityEstimator("hazelcast");
+        parameters = phoneHome.phoneHome(true);
+        assertEquals(parameters.get("cect"), "1");
+
+        CardinalityEstimator cardinalityEstimator2 = node.hazelcastInstance.getCardinalityEstimator("phonehome");
+        parameters = phoneHome.phoneHome(true);
+        assertEquals(parameters.get("cect"), "2");
+
+    }
+
+    @Test
+    public void testPNCounterCount() {
+        Map<String, String> parameters;
+        parameters = phoneHome.phoneHome(true);
+        assertEquals(parameters.get("pncct"), "0");
+
+        PNCounter pnCounter1 = node.hazelcastInstance.getPNCounter("hazelcast");
+        parameters = phoneHome.phoneHome(true);
+        assertEquals(parameters.get("pncct"), "1");
+
+        PNCounter pnCounter2 = node.hazelcastInstance.getPNCounter("phonehome");
+        parameters = phoneHome.phoneHome(true);
+        assertEquals(parameters.get("pncct"), "2");
+
+    }
+
+    @Test
+    public void testFlakeIDGeneratorCount() {
+        Map<String, String> parameters;
+        parameters = phoneHome.phoneHome(true);
+        assertEquals(parameters.get("figct"), "0");
+
+        FlakeIdGenerator flakeIdGenerator1 = node.hazelcastInstance.getFlakeIdGenerator("hazelcast");
+        parameters = phoneHome.phoneHome(true);
+        assertEquals(parameters.get("figct"), "1");
+
+        FlakeIdGenerator flakeIdGenerator2 = node.hazelcastInstance.getFlakeIdGenerator("phonehome");
+        parameters = phoneHome.phoneHome(true);
+        assertEquals(parameters.get("figct"), "2");
+
+    }
+
 }
 
