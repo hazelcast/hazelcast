@@ -20,7 +20,6 @@ import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.NodeEngine;
-import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.topic.ITopic;
 import com.hazelcast.topic.LocalTopicStats;
 import com.hazelcast.topic.MessageListener;
@@ -28,10 +27,10 @@ import com.hazelcast.topic.MessageListener;
 import javax.annotation.Nonnull;
 import java.util.Collection;
 import java.util.UUID;
+import java.util.concurrent.CompletionStage;
 
 import static com.hazelcast.internal.util.Preconditions.checkNoNullInside;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
-import static com.hazelcast.spi.impl.InternalCompletableFuture.newDelegatingFuture;
 
 /**
  * Topic proxy used when global ordering is disabled (nodes get
@@ -57,10 +56,10 @@ public class TopicProxy<E> extends TopicProxySupport implements ITopic<E> {
     }
 
     @Override
-    public InternalCompletableFuture<E> publishAsync(@Nonnull E message) {
+    public CompletionStage<E> publishAsync(@Nonnull E message) {
         checkNotNull(message, NULL_MESSAGE_IS_NOT_ALLOWED);
-        Operation op = new PublishOperation(getName(), toData(message));
-        return newDelegatingFuture(serializationService, putAsyncInternal(op));
+        publish(message);
+        return InternalCompletableFuture.completedFuture(null);
     }
 
     @Nonnull
@@ -89,15 +88,15 @@ public class TopicProxy<E> extends TopicProxySupport implements ITopic<E> {
     }
 
     @Override
-    public InternalCompletableFuture<E> publishAllAsync(@Nonnull Collection<? extends E> messages) {
+    public CompletionStage<E> publishAllAsync(@Nonnull Collection<? extends E> messages) {
         checkNotNull(messages, NULL_MESSAGE_IS_NOT_ALLOWED);
         checkNoNullInside(messages, NULL_MESSAGE_IS_NOT_ALLOWED);
-        Operation op = new PublishAllOperation(getName(), toDataArray(messages));
-        return newDelegatingFuture(serializationService, putAsyncInternal(op));
+        publishAll(messages);
+        return InternalCompletableFuture.completedFuture(null);
     }
 
 
-    private Data[] toDataArray(Collection<? extends E> collection) {
+    protected Data[] toDataArray(Collection<? extends E> collection) {
         Data[] items = new Data[collection.size()];
         int k = 0;
         for (E item : collection) {

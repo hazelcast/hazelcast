@@ -22,6 +22,7 @@ import javax.annotation.Nonnull;
 import java.util.Collection;
 import java.util.UUID;
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.ExecutionException;
 
 /**
  * Hazelcast provides distribution mechanism for publishing messages that are
@@ -115,7 +116,7 @@ public interface ITopic<E> extends DistributedObject {
      * @throws TopicOverloadException if the consumer is too slow
      *                                (only works in combination with reliable topic)
      */
-    void publishAll(@Nonnull Collection<? extends E> messages);
+    void publishAll(@Nonnull Collection<? extends E> messages) throws ExecutionException, InterruptedException;
 
     /**
      * Publishes all messages to all subscribers of this topic.
