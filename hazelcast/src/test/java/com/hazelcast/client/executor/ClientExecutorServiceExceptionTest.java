@@ -90,8 +90,6 @@ public class ClientExecutorServiceExceptionTest {
         HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
         IExecutorService executorService = client.getExecutorService("test");
 
-        HazelcastInstance instance2 = hazelcastFactory.newHazelcastInstance();
-        Member member2 = instance2.getCluster().getLocalMember();
-        assertEquals("SUCCESS", executorService.submitToMember(new SecondTimeSuccessCallable(), member2).get());
+        assertEquals("SUCCESS", executorService.submit(new SecondTimeSuccessCallable()).get());
     }
 }
