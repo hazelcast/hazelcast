@@ -97,9 +97,9 @@ public class QueueItem implements IdentifiedDataSerializable, Comparable<QueueIt
 
     @Override
     public int compareTo(QueueItem other) {
-        if (getItemId() < other.getItemId()) {
+        if (itemId < other.getItemId()) {
             return -1;
-        } else if (getItemId() > other.getItemId()) {
+        } else if (itemId > other.getItemId()) {
             return 1;
         }
         return 0;

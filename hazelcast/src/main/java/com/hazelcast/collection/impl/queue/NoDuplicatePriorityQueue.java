@@ -16,22 +16,21 @@
 
 package com.hazelcast.collection.impl.queue;
 
+import com.hazelcast.internal.serialization.BinaryInterface;
 import com.hazelcast.internal.serialization.Data;
-
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.PriorityQueue;
 import java.util.Set;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
  * A {@link PriorityQueue} which did not allowed duplicate values.
  * Duplicate check is not done on QueueItem but on {@link QueueItem#getData()}
  */
+@BinaryInterface
 public final class NoDuplicatePriorityQueue extends PriorityQueue<QueueItem> {
+
     private Set<Data> dataSet = new HashSet();
-    private final ReentrantReadWriteLock readWriteLock = new ReentrantReadWriteLock();
 
     /**
      * Constructs an instance of {@code NoDuplicatePriorityQueue}
@@ -44,36 +43,24 @@ public final class NoDuplicatePriorityQueue extends PriorityQueue<QueueItem> {
 
     @Override
     public boolean offer(QueueItem e) {
-        Lock lock = this.readWriteLock.writeLock();
         Data otherData = e.getData();
         if (dataSet.contains(otherData)) {
             return false;
         }
-        lock.lock();
-        try {
-            boolean added = super.offer(e);
-            if (added) {
-                dataSet.add(otherData);
-            }
-            return added;
-        } finally {
-            lock.unlock();
+        boolean added = super.offer(e);
+        if (added) {
+            dataSet.add(otherData);
         }
+        return added;
     }
 
     @Override
     public QueueItem poll() {
-        Lock lock = this.readWriteLock.writeLock();
-        lock.lock();
-        try {
-            final QueueItem element = super.poll();
-            if (element != null) {
-                dataSet.remove(element.getData());
-            }
-            return element;
-        } finally {
-            lock.unlock();
+        final QueueItem element = super.poll();
+        if (element != null) {
+            dataSet.remove(element.getData());
         }
+        return element;
     }
 
     @Override
@@ -84,16 +71,10 @@ public final class NoDuplicatePriorityQueue extends PriorityQueue<QueueItem> {
     @Override
     public boolean remove(Object o) {
         Data otherData = ((QueueItem) o).getData();
-        Lock lock = this.readWriteLock.writeLock();
-        lock.lock();
-        try {
-            boolean removed = super.remove(o);
-            if (removed) {
-                dataSet.remove(otherData);
-            }
-            return removed;
-        } finally {
-            lock.unlock();
+        boolean removed = super.remove(o);
+        if (removed) {
+            dataSet.remove(otherData);
         }
+        return removed;
     }
 }

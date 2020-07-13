@@ -56,8 +56,8 @@
                 <hz:size unit="MEGABYTES" value="${native.memory.size}"/>
             </hz:native-memory>
             <hz:queue name="testQueue">
-                <hz:duplicate-allowed>false</hz:duplicate-allowed>
                 <hz:comparator-class-name>com.hazelcast.config.QueueItemTestComparator</hz:comparator-class-name>
+                <hz:duplicate-allowed>false</hz:duplicate-allowed>
             </hz:queue>
 
         </hz:config>
