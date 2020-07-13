@@ -86,7 +86,7 @@ public final class ScheduledExecutorSubmitToPartitionCodec {
         public long periodInMillis;
 
         /**
-         * indicate the task as auto disposable
+         * * A boolean flag to indicate whether the task should be destroyed automatically after execution.
          */
         public boolean autoDisposable;
 

@@ -43,11 +43,10 @@ public class ScheduledExecutorSubmitToTargetMessageTask
 
     @Override
     protected Operation prepareOperation() {
-        boolean autoDisposable = parameters.isAutoDisposableExists && parameters.autoDisposable;
         Callable callable = serializationService.toObject(parameters.task);
         TaskDefinition def = new TaskDefinition(TaskDefinition.Type.getById(parameters.type),
                 parameters.taskName, callable, parameters.initialDelayInMillis, parameters.periodInMillis,
-                TimeUnit.MILLISECONDS, autoDisposable);
+                TimeUnit.MILLISECONDS, isAutoDisposable());
         return new ScheduleTaskOperation(parameters.schedulerName, def);
     }
 
@@ -88,12 +87,15 @@ public class ScheduledExecutorSubmitToTargetMessageTask
 
     @Override
     public Object[] getParameters() {
-        boolean autoDisposable = parameters.isAutoDisposableExists && parameters.autoDisposable;
         Callable callable = serializationService.toObject(parameters.task);
         TaskDefinition def = new TaskDefinition(TaskDefinition.Type.getById(parameters.type),
                 parameters.taskName, callable, parameters.initialDelayInMillis, parameters.periodInMillis,
-                TimeUnit.MILLISECONDS, autoDisposable);
+                TimeUnit.MILLISECONDS, isAutoDisposable());
         Member member = nodeEngine.getClusterService().getMember(parameters.memberUuid);
         return new Object[]{parameters.schedulerName, member.getAddress(), def};
+    }
+
+    private boolean isAutoDisposable() {
+        return parameters.isAutoDisposableExists && parameters.autoDisposable;
     }
 }

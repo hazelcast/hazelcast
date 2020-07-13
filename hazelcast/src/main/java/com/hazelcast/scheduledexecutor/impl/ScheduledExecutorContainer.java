@@ -218,8 +218,7 @@ public class ScheduledExecutorContainer {
             descriptor.setTaskResult(resolution);
         }
 
-        if((descriptor.isDone())
-                && descriptor.getDefinition().isAutoDisposable()){
+        if (descriptor.getDefinition().isAutoDisposable() && descriptor.isDone()) {
             dispose(taskName);
         }
     }

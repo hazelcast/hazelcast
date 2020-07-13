@@ -60,12 +60,14 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import static com.hazelcast.internal.partition.IPartition.MAX_BACKUP_COUNT;
+import static com.hazelcast.scheduledexecutor.TaskUtils.autoDisposable;
 import static com.hazelcast.scheduledexecutor.TaskUtils.named;
 import static com.hazelcast.spi.properties.ClusterProperty.PARTITION_COUNT;
 import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static java.lang.String.format;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
+import static org.hamcrest.CoreMatchers.isA;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
@@ -555,6 +557,34 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
                 + "for this member and scheduled executor (foobar).");
     }
 
+    @Test
+    public void capacity_whenAutoDisposable() throws Exception {
+        String schedulerName = "foobar";
+        int capacity = 10;
+
+        ScheduledExecutorConfig sec = new ScheduledExecutorConfig()
+                .setName(schedulerName)
+                .setDurability(1)
+                .setPoolSize(1)
+                .setCapacity(capacity);
+
+        Config config = new Config().addScheduledExecutorConfig(sec);
+
+        HazelcastInstance[] instances = createClusterWithCount(1, config);
+        IScheduledExecutorService service = instances[0].getScheduledExecutorService(schedulerName);
+        String keyOwner = "hitSamePartitionToCheckCapacity";
+
+        for (int i = 0; i < capacity; i++) {
+            service.scheduleOnKeyOwner(autoDisposable(new PlainCallableTask()), keyOwner, 0, TimeUnit.SECONDS);
+        }
+        Thread.sleep(2000);
+        for (int i = 0; i < capacity; i++) {
+            service.scheduleOnKeyOwner(autoDisposable(new PlainCallableTask()), keyOwner, 0, TimeUnit.SECONDS);
+        }
+
+        // no exceptions thrown
+    }
+
     protected void assertCapacityReached(IScheduledExecutorService service, String key, String expectedError) {
         try {
             if (key == null) {
@@ -872,6 +902,49 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
 
         first.cancel(false);
         first.get();
+    }
+
+    @Test
+    public void schedule_whenAutoDisposable_thenGet() throws Exception {
+        HazelcastInstance[] instances = createClusterWithCount(2);
+        IScheduledExecutorService executorService = getScheduledExecutor(instances, "s");
+
+        IScheduledFuture<Double> future = executorService.schedule(autoDisposable(new PlainCallableTask()), 1, SECONDS);
+
+        expected.expect(ExecutionException.class);
+        expected.expectCause(isA(StaleTaskException.class));
+        Thread.sleep(2000);
+        future.get();
+    }
+
+
+    @Test
+    public void scheduleOnMember_whenAutoDisposable_thenGet() throws Exception {
+        HazelcastInstance[] instances = createClusterWithCount(2);
+        Member localMember = instances[0].getCluster().getLocalMember();
+        IScheduledExecutorService executorService = getScheduledExecutor(instances, "s");
+
+        IScheduledFuture<Double> future = executorService.scheduleOnMember(
+                autoDisposable(new PlainCallableTask()), localMember, 1, SECONDS);
+
+        expected.expect(ExecutionException.class);
+        expected.expectCause(isA(StaleTaskException.class));
+        Thread.sleep(2000);
+        future.get();
+    }
+
+    @Test
+    public void scheduleOnKeyOwner_whenAutoDisposable_thenGet() throws Exception {
+        HazelcastInstance[] instances = createClusterWithCount(2);
+        IScheduledExecutorService executorService = getScheduledExecutor(instances, "s");
+        String key = generateKeyOwnedBy(instances[1]);
+
+        IScheduledFuture<Double> future = executorService.scheduleOnKeyOwner(autoDisposable(new PlainCallableTask()), key, 1, SECONDS);
+
+        expected.expect(ExecutionException.class);
+        expected.expectCause(isA(StaleTaskException.class));
+        Thread.sleep(2000);
+        future.get();
     }
 
     @Test(expected = TimeoutException.class)

@@ -72,7 +72,8 @@ public class TaskDefinition<V>
         this.autoDisposable = autoDisposable;
     }
 
-    public TaskDefinition(Type type, String name, Callable<V> command, long initialDelay, long period, TimeUnit unit, boolean autoDisposable) {
+    public TaskDefinition(Type type, String name, Callable<V> command, long initialDelay, long period,
+                          TimeUnit unit, boolean autoDisposable) {
         this.type = type;
         this.name = name;
         this.command = command;

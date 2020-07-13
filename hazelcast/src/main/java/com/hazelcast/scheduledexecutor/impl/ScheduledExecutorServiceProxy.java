@@ -22,6 +22,7 @@ import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.partition.PartitionAware;
+import com.hazelcast.scheduledexecutor.AutoDisposableTask;
 import com.hazelcast.splitbrainprotection.SplitBrainProtectionException;
 import com.hazelcast.scheduledexecutor.IScheduledExecutorService;
 import com.hazelcast.scheduledexecutor.IScheduledFuture;
@@ -128,7 +129,8 @@ public class ScheduledExecutorServiceProxy
         int partitionId = getTaskOrKeyPartitionId(command, name);
         boolean autoDisposable = isAutoDisposable(command);
 
-        TaskDefinition<V> definition = new TaskDefinition<>(TaskDefinition.Type.SINGLE_RUN, name, command, delay, unit, autoDisposable);
+        TaskDefinition<V> definition = new TaskDefinition<>(TaskDefinition.Type.SINGLE_RUN, name, command, delay,
+                unit, autoDisposable);
 
         return submitOnPartitionSync(name, new ScheduleTaskOperation(getName(), definition), partitionId);
     }
@@ -143,10 +145,10 @@ public class ScheduledExecutorServiceProxy
 
         String name = extractNameOrGenerateOne(command);
         int partitionId = getTaskOrKeyPartitionId(command, name);
-        boolean autoDisposable = isAutoDisposable(command);
         ScheduledRunnableAdapter<?> adapter = createScheduledRunnableAdapter(command);
+
         TaskDefinition definition =
-                new TaskDefinition(TaskDefinition.Type.AT_FIXED_RATE, name, adapter, initialDelay, period, unit, autoDisposable);
+                new TaskDefinition(TaskDefinition.Type.AT_FIXED_RATE, name, adapter, initialDelay, period, unit, false);
 
         return submitOnPartitionSync(name, new ScheduleTaskOperation(getName(), definition), partitionId);
     }
@@ -216,7 +218,9 @@ public class ScheduledExecutorServiceProxy
         String name = extractNameOrGenerateOne(command);
         int partitionId = getKeyPartitionId(key);
         boolean autoDisposable = isAutoDisposable(command);
-        TaskDefinition definition = new TaskDefinition(TaskDefinition.Type.SINGLE_RUN, name, command, delay, unit, autoDisposable);
+
+        TaskDefinition definition = new TaskDefinition(TaskDefinition.Type.SINGLE_RUN, name, command, delay,
+                unit, autoDisposable);
         return submitOnPartitionSync(name, new ScheduleTaskOperation(getName(), definition), partitionId);
     }
 
@@ -232,10 +236,10 @@ public class ScheduledExecutorServiceProxy
 
         String name = extractNameOrGenerateOne(command);
         int partitionId = getKeyPartitionId(key);
-        boolean autoDisposable = isAutoDisposable(command);
         ScheduledRunnableAdapter<?> adapter = createScheduledRunnableAdapter(command);
+
         TaskDefinition definition =
-                new TaskDefinition(TaskDefinition.Type.AT_FIXED_RATE, name, adapter, initialDelay, period, unit, autoDisposable);
+                new TaskDefinition(TaskDefinition.Type.AT_FIXED_RATE, name, adapter, initialDelay, period, unit, false);
 
         return submitOnPartitionSync(name, new ScheduleTaskOperation(getName(), definition), partitionId);
     }
@@ -296,10 +300,12 @@ public class ScheduledExecutorServiceProxy
         command = initializeManagedContext(command);
 
         String name = extractNameOrGenerateOne(command);
-        boolean autoDisposable = isAutoDisposable(command);
         Map<Member, IScheduledFuture<V>> futures = createHashMap(members.size());
+        boolean autoDisposable = isAutoDisposable(command);
+
         for (Member member : members) {
-            TaskDefinition<V> definition = new TaskDefinition<>(TaskDefinition.Type.SINGLE_RUN, name, command, delay, unit, autoDisposable);
+            TaskDefinition<V> definition = new TaskDefinition<>(TaskDefinition.Type.SINGLE_RUN, name, command, delay,
+                    unit, autoDisposable);
 
             futures.put(member,
                     submitOnMemberSync(name, new ScheduleTaskOperation(getName(), definition), member));
@@ -321,11 +327,11 @@ public class ScheduledExecutorServiceProxy
 
         String name = extractNameOrGenerateOne(command);
         ScheduledRunnableAdapter<?> adapter = createScheduledRunnableAdapter(command);
-        boolean autoDisposable = isAutoDisposable(command);
         Map<Member, IScheduledFuture<V>> futures = createHashMapAdapter(members.size());
+
         for (Member member : members) {
             TaskDefinition definition =
-                    new TaskDefinition(TaskDefinition.Type.AT_FIXED_RATE, name, adapter, initialDelay, period, unit, autoDisposable);
+                    new TaskDefinition(TaskDefinition.Type.AT_FIXED_RATE, name, adapter, initialDelay, period, unit, false);
 
             futures.put(member, submitOnMemberSync(name, new ScheduleTaskOperation(getName(), definition), member));
         }
@@ -522,7 +528,10 @@ public class ScheduledExecutorServiceProxy
         }
     }
 
-    private boolean isAutoDisposable(Object command){
-        return false;
+    private boolean isAutoDisposable(Object command) {
+        if (command instanceof AbstractTaskDecorator) {
+            return ((AbstractTaskDecorator) command).isDecoratedWith(AutoDisposableTask.class);
+        }
+        return command instanceof AutoDisposableTask;
     }
 }

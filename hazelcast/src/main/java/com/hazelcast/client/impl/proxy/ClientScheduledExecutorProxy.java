@@ -34,6 +34,7 @@ import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.partition.PartitionAware;
+import com.hazelcast.scheduledexecutor.AutoDisposableTask;
 import com.hazelcast.scheduledexecutor.IScheduledExecutorService;
 import com.hazelcast.scheduledexecutor.IScheduledFuture;
 import com.hazelcast.scheduledexecutor.NamedTask;
@@ -113,6 +114,7 @@ public class ClientScheduledExecutorProxy
         String name = extractNameOrGenerateOne(command);
         int partitionId = getTaskOrKeyPartitionId(command, name);
         boolean autoDisposable = isAutoDisposable(command);
+
         TaskDefinition<V> definition = new TaskDefinition<>(TaskDefinition.Type.SINGLE_RUN, name, command, delay,
                 unit, autoDisposable);
         return scheduleOnPartition(name, definition, partitionId);
@@ -128,10 +130,9 @@ public class ClientScheduledExecutorProxy
         String name = extractNameOrGenerateOne(command);
         int partitionId = getTaskOrKeyPartitionId(command, name);
         Callable adapter = createScheduledRunnableAdapter(command);
-        boolean autoDisposable = isAutoDisposable(command);
 
         TaskDefinition definition = new TaskDefinition(TaskDefinition.Type.AT_FIXED_RATE, name, adapter,
-                initialDelay, period, unit, autoDisposable);
+                initialDelay, period, unit, false);
 
         return scheduleOnPartition(name, definition, partitionId);
     }
@@ -206,10 +207,9 @@ public class ClientScheduledExecutorProxy
         String name = extractNameOrGenerateOne(command);
         int partitionId = getKeyPartitionId(key);
         Callable adapter = createScheduledRunnableAdapter(command);
-        boolean autoDisposable = isAutoDisposable(command);
 
         TaskDefinition definition = new TaskDefinition(TaskDefinition.Type.AT_FIXED_RATE, name, adapter,
-                initialDelay, period, unit, autoDisposable);
+                initialDelay, period, unit, false);
         return scheduleOnPartition(name, definition, partitionId);
     }
 
@@ -281,11 +281,10 @@ public class ClientScheduledExecutorProxy
         String name = extractNameOrGenerateOne(command);
         Callable adapter = createScheduledRunnableAdapter(command);
         Map<Member, IScheduledFuture<V>> futures = new HashMap<>();
-        boolean autoDisposable = isAutoDisposable(command);
 
         for (Member member : members) {
             TaskDefinition definition = new TaskDefinition(
-                    TaskDefinition.Type.AT_FIXED_RATE, name, adapter, initialDelay, period, unit, autoDisposable);
+                    TaskDefinition.Type.AT_FIXED_RATE, name, adapter, initialDelay, period, unit, false);
 
             futures.put(member, scheduleOnMember(name, member, definition));
         }
@@ -395,12 +394,19 @@ public class ClientScheduledExecutorProxy
     }
 
     private String extractNameOrGenerateOne(Object command) {
-        String name = null;
-        if (command instanceof NamedTask) {
-            name = ((NamedTask) command).getName();
-        }
+        String taskName = getNamedTaskName(command);
+        return taskName != null ? taskName : UuidUtil.newUnsecureUuidString();
+    }
 
-        return name != null ? name : UuidUtil.newUnsecureUuidString();
+    private String getNamedTaskName(Object command) {
+        if (command instanceof AbstractTaskDecorator) {
+            AbstractTaskDecorator<?> decoratedTask = (AbstractTaskDecorator<?>) command;
+            NamedTask namedTask = decoratedTask.undecorateTo(NamedTask.class);
+            if (namedTask != null) {
+                return namedTask.getName();
+            }
+        }
+        return null;
     }
 
     private @Nonnull
@@ -447,8 +453,10 @@ public class ClientScheduledExecutorProxy
         }
     }
 
-
     private boolean isAutoDisposable(Object command) {
-        return false;
+        if (command instanceof AbstractTaskDecorator) {
+            return ((AbstractTaskDecorator) command).isDecoratedWith(AutoDisposableTask.class);
+        }
+        return command instanceof AutoDisposableTask;
     }
 }
