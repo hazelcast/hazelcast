@@ -95,6 +95,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.function.Function;
 
+import static com.hazelcast.sql.impl.calcite.SqlToQueryType.map;
 import static com.hazelcast.sql.impl.calcite.SqlToQueryType.mapRowType;
 import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeSystem.narrowestTypeFor;
 import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeSystem.withHigherPrecedence;
@@ -697,7 +698,16 @@ public abstract class ExpressionTestBase extends SqlTestSupport {
 
             if (VERIFY_EVALUATION) {
                 RelNode relNode = optimizerContext.convert(sqlNode).getRel();
-                Expression<?> expression = convertToExpression(relNode, validator.getParameterRowType(sqlNode));
+
+                Project project = (Project) relNode;
+                assert project.getProjects().size() == 1;
+                RexNode rexNode = project.getProjects().get(0);
+                assertEquals(expectedReturnType, rexNode.getType());
+
+                Expression<?> expression = convertToExpression(project, validator.getParameterRowType(sqlNode));
+                QueryDataType expectedReturnQueryType = map(expectedReturnType.getSqlTypeName());
+                QueryDataType actualReturnQueryType = expression.getType();
+                assertEquals(expectedReturnQueryType, actualReturnQueryType);
 
                 verifyEvaluation(expected, operands, expression, expectedValues, evaluationId);
             }
@@ -1074,11 +1084,8 @@ public abstract class ExpressionTestBase extends SqlTestSupport {
         };
     }
 
-    private static Expression<?> convertToExpression(RelNode relNode, RelDataType parameterRowType) {
-        assert relNode instanceof Project;
-        Project project = (Project) relNode;
+    private static Expression<?> convertToExpression(Project project, RelDataType parameterRowType) {
         assert project.getProjects().size() == 1;
-
         RexNode rexNode = project.getProjects().get(0);
 
         QueryParameterMetadata parameterMetadata = new QueryParameterMetadata(mapRowType(parameterRowType));
