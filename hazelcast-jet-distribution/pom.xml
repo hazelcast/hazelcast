@@ -136,6 +136,7 @@
                 </executions>
                 <configuration>
                     <includeDependencySources>true</includeDependencySources>
+                    <includeTransitiveDependencySources>true</includeTransitiveDependencySources>
                     <dependencySourceIncludes>
                         <dependencySourceInclude>com.hazelcast:*</dependencySourceInclude>
                         <dependencySourceInclude>com.hazelcast.jet:*</dependencySourceInclude>
@@ -261,11 +262,6 @@
             <groupId>org.apache.logging.log4j</groupId>
             <artifactId>log4j-slf4j-impl</artifactId>
             <version>${log4j2.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.hazelcast.jet</groupId>
-            <artifactId>hazelcast-jet-core</artifactId>
-            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>com.hazelcast.jet</groupId>
