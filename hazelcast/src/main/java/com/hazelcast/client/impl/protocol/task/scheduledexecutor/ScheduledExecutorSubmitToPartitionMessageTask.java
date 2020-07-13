@@ -41,10 +41,11 @@ public class ScheduledExecutorSubmitToPartitionMessageTask
 
     @Override
     protected Operation prepareOperation() {
+        boolean autoDisposable = parameters.isAutoDisposableExists && parameters.autoDisposable;
         Callable callable = serializationService.toObject(parameters.task);
         TaskDefinition def = new TaskDefinition(TaskDefinition.Type.getById(parameters.type),
                 parameters.taskName, callable, parameters.initialDelayInMillis, parameters.periodInMillis,
-                TimeUnit.MILLISECONDS);
+                TimeUnit.MILLISECONDS, autoDisposable);
         return new ScheduleTaskOperation(parameters.schedulerName, def);
     }
 
@@ -80,10 +81,11 @@ public class ScheduledExecutorSubmitToPartitionMessageTask
 
     @Override
     public Object[] getParameters() {
+        boolean autoDisposable = parameters.isAutoDisposableExists && parameters.autoDisposable;
         Callable callable = serializationService.toObject(parameters.task);
         TaskDefinition def = new TaskDefinition(TaskDefinition.Type.getById(parameters.type),
                 parameters.taskName, callable, parameters.initialDelayInMillis, parameters.periodInMillis,
-                TimeUnit.MILLISECONDS);
+                TimeUnit.MILLISECONDS, autoDisposable);
         return new Object[] { parameters.schedulerName, def };
     }
 }

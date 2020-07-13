@@ -38,6 +38,7 @@ import com.hazelcast.scheduledexecutor.IScheduledExecutorService;
 import com.hazelcast.scheduledexecutor.IScheduledFuture;
 import com.hazelcast.scheduledexecutor.NamedTask;
 import com.hazelcast.scheduledexecutor.ScheduledTaskHandler;
+import com.hazelcast.scheduledexecutor.impl.AbstractTaskDecorator;
 import com.hazelcast.scheduledexecutor.impl.ScheduledRunnableAdapter;
 import com.hazelcast.scheduledexecutor.impl.ScheduledTaskHandlerImpl;
 import com.hazelcast.scheduledexecutor.impl.TaskDefinition;
@@ -111,7 +112,9 @@ public class ClientScheduledExecutorProxy
 
         String name = extractNameOrGenerateOne(command);
         int partitionId = getTaskOrKeyPartitionId(command, name);
-        TaskDefinition<V> definition = new TaskDefinition<>(TaskDefinition.Type.SINGLE_RUN, name, command, delay, unit);
+        boolean autoDisposable = isAutoDisposable(command);
+        TaskDefinition<V> definition = new TaskDefinition<>(TaskDefinition.Type.SINGLE_RUN, name, command, delay,
+                unit, autoDisposable);
         return scheduleOnPartition(name, definition, partitionId);
     }
 
@@ -125,8 +128,10 @@ public class ClientScheduledExecutorProxy
         String name = extractNameOrGenerateOne(command);
         int partitionId = getTaskOrKeyPartitionId(command, name);
         Callable adapter = createScheduledRunnableAdapter(command);
+        boolean autoDisposable = isAutoDisposable(command);
+
         TaskDefinition definition = new TaskDefinition(TaskDefinition.Type.AT_FIXED_RATE, name, adapter,
-                initialDelay, period, unit);
+                initialDelay, period, unit, autoDisposable);
 
         return scheduleOnPartition(name, definition, partitionId);
     }
@@ -182,8 +187,10 @@ public class ClientScheduledExecutorProxy
 
         String name = extractNameOrGenerateOne(command);
         int partitionId = getKeyPartitionId(key);
+        boolean autoDisposable = isAutoDisposable(command);
+
         TaskDefinition definition = new TaskDefinition(TaskDefinition.Type.SINGLE_RUN, name, command,
-                delay, unit);
+                delay, unit, autoDisposable);
         return scheduleOnPartition(name, definition, partitionId);
     }
 
@@ -199,8 +206,10 @@ public class ClientScheduledExecutorProxy
         String name = extractNameOrGenerateOne(command);
         int partitionId = getKeyPartitionId(key);
         Callable adapter = createScheduledRunnableAdapter(command);
+        boolean autoDisposable = isAutoDisposable(command);
+
         TaskDefinition definition = new TaskDefinition(TaskDefinition.Type.AT_FIXED_RATE, name, adapter,
-                initialDelay, period, unit);
+                initialDelay, period, unit, autoDisposable);
         return scheduleOnPartition(name, definition, partitionId);
     }
 
@@ -247,9 +256,11 @@ public class ClientScheduledExecutorProxy
 
         String name = extractNameOrGenerateOne(command);
         Map<Member, IScheduledFuture<V>> futures = new HashMap<>();
+        boolean autoDisposable = isAutoDisposable(command);
+
         for (Member member : members) {
             TaskDefinition definition = new TaskDefinition(
-                    TaskDefinition.Type.SINGLE_RUN, name, command, delay, unit);
+                    TaskDefinition.Type.SINGLE_RUN, name, command, delay, unit, autoDisposable);
 
             futures.put(member, scheduleOnMember(name, member, definition));
         }
@@ -270,9 +281,11 @@ public class ClientScheduledExecutorProxy
         String name = extractNameOrGenerateOne(command);
         Callable adapter = createScheduledRunnableAdapter(command);
         Map<Member, IScheduledFuture<V>> futures = new HashMap<>();
+        boolean autoDisposable = isAutoDisposable(command);
+
         for (Member member : members) {
             TaskDefinition definition = new TaskDefinition(
-                    TaskDefinition.Type.AT_FIXED_RATE, name, adapter, initialDelay, period, unit);
+                    TaskDefinition.Type.AT_FIXED_RATE, name, adapter, initialDelay, period, unit, autoDisposable);
 
             futures.put(member, scheduleOnMember(name, member, definition));
         }
@@ -397,7 +410,7 @@ public class ClientScheduledExecutorProxy
         ClientMessage request = ScheduledExecutorSubmitToPartitionCodec.encodeRequest(getName(),
                 definition.getType().getId(), definition.getName(), commandData,
                 unit.toMillis(definition.getInitialDelay()),
-                unit.toMillis(definition.getPeriod()));
+                unit.toMillis(definition.getPeriod()), definition.isAutoDisposable());
         try {
             new ClientInvocation(getClient(), request, getName(), partitionId).invoke().get();
         } catch (Exception e) {
@@ -414,7 +427,7 @@ public class ClientScheduledExecutorProxy
         ClientMessage request = ScheduledExecutorSubmitToMemberCodec.encodeRequest(getName(), member.getUuid(),
                 definition.getType().getId(), definition.getName(), commandData,
                 unit.toMillis(definition.getInitialDelay()),
-                unit.toMillis(definition.getPeriod()));
+                unit.toMillis(definition.getPeriod()), definition.isAutoDisposable());
         try {
             new ClientInvocation(getClient(), request, getName(), member.getUuid()).invoke().get();
         } catch (Exception e) {
@@ -432,5 +445,10 @@ public class ClientScheduledExecutorProxy
         } catch (Exception e) {
             throw rethrow(e);
         }
+    }
+
+
+    private boolean isAutoDisposable(Object command) {
+        return false;
     }
 }
