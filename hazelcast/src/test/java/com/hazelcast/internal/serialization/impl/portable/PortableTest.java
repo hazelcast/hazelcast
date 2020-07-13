@@ -185,12 +185,15 @@ public class PortableTest {
 
     @Test
     public void testClassDefinitionConfigWithErrors() throws Exception {
+        int portableVersion = 1;
         SerializationConfig serializationConfig = new SerializationConfig();
         serializationConfig.addPortableFactory(PORTABLE_FACTORY_ID, new TestPortableFactory());
         serializationConfig.setPortableVersion(1);
-        serializationConfig.addClassDefinition(
-                new ClassDefinitionBuilder(PORTABLE_FACTORY_ID, TestSerializationConstants.RAW_DATA_PORTABLE, 1)
-                        .addLongField("l").addCharArrayField("c").addPortableField("p", createNamedPortableClassDefinition(1)).build());
+        serializationConfig
+                .addClassDefinition(
+                        new ClassDefinitionBuilder(PORTABLE_FACTORY_ID, TestSerializationConstants.RAW_DATA_PORTABLE, portableVersion)
+                                .addLongField("l").addCharArrayField("c").addPortableField("p",
+                                new ClassDefinitionBuilder(PORTABLE_FACTORY_ID, TestSerializationConstants.NAMED_PORTABLE, portableVersion).build()).build());
 
         try {
             new DefaultSerializationServiceBuilder().setConfig(serializationConfig).build();
