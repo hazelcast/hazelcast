@@ -17,6 +17,7 @@
 package com.hazelcast.nio.serialization;
 
 import java.util.Set;
+import java.util.List;
 
 /**
  * ClassDefinition defines a class schema for Portable classes. It allows to query field names, types, class ID etc.
@@ -26,6 +27,15 @@ import java.util.Set;
  * @see ClassDefinitionBuilder
  */
 public interface ClassDefinition {
+
+    /**
+     * Gets the List<ClassDefinition> for a nested class definitions.
+     *
+     * @return list of nested class definitions
+     */
+    List<ClassDefinition> getNestedClassDefinitions();
+
+    void removeFieldDef(FieldDefinition fd);
 
     /**
      * Gets the FieldDefinition for a particular field.
@@ -83,6 +93,13 @@ public interface ClassDefinition {
      * @return total field count
      */
     int getFieldCount();
+
+    /**
+     * Returns the nested class definition count.
+     *
+     * @return nested class definition count
+     */
+    int getNestedClassDefCount();
 
     /**
      * Returns the factory ID.

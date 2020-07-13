@@ -269,6 +269,18 @@ public class SerializationServiceV1 extends AbstractSerializationService {
                         + factoryId + ", class-id " + classId);
             }
             classDefMap.put(classId, cd);
+            int nClassDefCount = cd.getNestedClassDefCount();
+            for (int i = 0; i < nClassDefCount; i++) {
+                ClassDefinition ncd = cd.getNestedClassDefinitions().get(i);
+                if (ncd.getFieldCount() != 0) {
+                    if (classDefMap.containsKey(ncd.getClassId())) {
+                        throw new HazelcastSerializationException("Duplicate registration found for factory-id : "
+                                + factoryId + ", class-id " + ncd.getClassId());
+                    }
+                    classDefMap.put(ncd.getClassId(), ncd);
+                }
+
+            }
         }
         for (ClassDefinition classDefinition : classDefinitions) {
             registerClassDefinition(classDefinition, factoryMap, checkClassDefErrors);
@@ -287,7 +299,6 @@ public class SerializationServiceV1 extends AbstractSerializationService {
                 if (classDefinitionMap != null) {
                     ClassDefinition nestedCd = classDefinitionMap.get(classId);
                     if (nestedCd != null) {
-                        registerClassDefinition(nestedCd, factoryMap, checkClassDefErrors);
                         portableContext.registerClassDefinition(nestedCd);
                         continue;
                     }
