@@ -20,7 +20,6 @@ import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IExecutorService;
-import com.hazelcast.core.Member;
 import com.hazelcast.spi.exception.RetryableIOException;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -67,8 +66,6 @@ public class ClientExecutorServiceExceptionTest {
         HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
         IExecutorService executorService = client.getExecutorService("test");
 
-        HazelcastInstance instance2 = hazelcastFactory.newHazelcastInstance();
-        Member member2 = instance2.getCluster().getLocalMember();
-        assertEquals("SUCCESS", executorService.submitToMember(new SecondTimeSuccessCallable(), member2).get());
+        assertEquals("SUCCESS", executorService.submit(new SecondTimeSuccessCallable()).get());
     }
 }
