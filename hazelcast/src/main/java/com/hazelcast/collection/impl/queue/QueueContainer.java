@@ -945,7 +945,7 @@ public class QueueContainer implements IdentifiedDataSerializable {
         /**
          * Returns concrete {@link PriorityQueue} depending on what have been defined in queue configuration
          */
-        private PriorityQueue<QueueItem> createPriorityQueue(QueueConfig config) {
+        private Queue<QueueItem> createPriorityQueue(QueueConfig config) {
             Comparator comparator = getPriorityQueueComparator(config, config.getClass().getClassLoader());
             ForwardingQueueItemComparator<?> forwardingQueueItemComparator = new ForwardingQueueItemComparator<>(comparator,
                     nodeEngine.getSerializationService());
