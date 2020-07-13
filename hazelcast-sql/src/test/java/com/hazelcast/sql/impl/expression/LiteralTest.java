@@ -16,7 +16,6 @@
 
 package com.hazelcast.sql.impl.expression;
 
-import com.hazelcast.sql.SqlService;
 import com.hazelcast.sql.impl.SqlDataSerializerHook;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -36,14 +35,6 @@ import static org.junit.Assert.assertEquals;
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class LiteralTest extends ExpressionTestBase {
-
-    @Test
-    public void testEndToEnd() {
-        SqlService sql = createEndToEndRecords();
-        assertRows(query(sql, "select __key, __key + 1 + '1.1' from records"), keyRange(0, 1000, 5000, 6000), k -> k + 2.1);
-        assertRows(query(sql, "select __key, null from records"), keyRange(0, 1000, 5000, 6000), k -> null);
-        assertQueryThrows(sql, "select 1 + 'not a number' from records", "can not be parsed");
-    }
 
     @Test
     public void verify() {
