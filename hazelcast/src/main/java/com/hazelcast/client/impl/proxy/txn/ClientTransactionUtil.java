@@ -32,7 +32,7 @@ import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
  */
 public final class ClientTransactionUtil {
 
-    private static final BiFunction<Throwable, String, Throwable> TRANSACTION_EXCEPTION_WRAPPER =
+    private static final BiFunction<Throwable, String, RuntimeException> TRANSACTION_EXCEPTION_WRAPPER =
             (throwable, message) -> new TransactionException(message, throwable);
 
     private ClientTransactionUtil() {
