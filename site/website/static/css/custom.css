@@ -1,9 +1,86 @@
 body {
   font-family: Source Sans Pro, Ubuntu, sans-serif;
-  /* font-weight: lighter; */
   background-color: #fffdfa;
   color: #073642;
-  font-size: 1.05em;
+  font-size: 17px;
+}
+
+a.button {
+  font-weight: bold;
+}
+
+.homeContainer {
+  background-color: #073642;
+}
+
+.homeContainer, .projectTitle {
+  color: #eee8d5;
+  padding-top: 25px;
+  padding-bottom: 25px;
+}
+
+.homeContainer a.button {
+  background-color: #cb4b16;
+  border-color: #cb4b16;
+  color: #eee8d5;
+}
+
+
+.darkBackground {
+  background-color: #073642;
+}
+
+.darkBackground a {
+  color: #268bd2;
+}
+
+.lightBackground {
+  color: #073642;
+  background-color: #fffdfa;
+}
+
+
+.projectTitle {
+  font-weight: 800;
+  max-width: 800px;
+  margin: auto;
+}
+
+.projectTitle small {
+  line-height: 1.5em;
+}
+
+.imageAlignLeft .blockImage {
+  max-width: 300px;
+}
+.imageAlignRight .blockImage {
+  max-width: 300px;
+}
+
+.useCases .gridBlock {
+  max-width: 920px;
+  margin: auto;
+  padding-top: 40px;
+  padding-bottom: 40px;
+}
+
+.useCases .imageAlignLeft .blockImage {
+  /* max-width: 200px; */
+  /* margin: auto; */
+}
+
+.useCases .imageAlignRight .blockImage {
+  /* max-width: 200px; */
+  /* margin: auto; */
+}
+
+.useCases h2 {
+  /* font-size: 20px; */
+}
+
+.logos {
+  max-width: 640px;
+  margin: auto;
 }
 
 .fixedHeaderContainer {
@@ -14,29 +91,6 @@ body {
   color: #707482;
   text-decoration: none;
   border-bottom: 1px solid #2d7de4;
-}
-
-.projectTitle {
-  color: #073642;
-  font-weight: 800;
-}
-
-.projectLogo {
-  height: 85%;
-}
-
-a.button {
-  font-weight: bold;
-}
-
-.promoRow a.button {
-  color: #ff5f00;
-  border-color: #ff5f00;
-}
-
-.promoRow a.button:hover {
-  background-color: #ff5f00;
-  color: #fffdfa;
 }
 
 .navigationSlider .slidingNav ul li a {
@@ -60,15 +114,6 @@ a.button {
   background: none;
 }
 
-.imageAlignTop .blockImage {
-  height: 160px;
-  max-width: 160px;
-}
-
-.imageAlignRight .blockImage {
-  max-height: 200px;
-  max-width: 200px;
-}
 
 .nav-footer {
   background-color: #002b36;
@@ -117,9 +162,6 @@ a.button {
 .card .buttonWrapper {
   text-align: center;
   margin: 10px;
-}
-
-.mainContainer .container {
 }
 
 @media only screen and (min-device-width: 360px) and (max-device-width: 736px) {

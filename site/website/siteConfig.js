@@ -15,7 +15,7 @@ const isLocalhost = Boolean(
 
 const siteConfig = {
     title: 'Hazelcast Jet', // Title for your website.
-    tagline: 'Open-Source Distributed Stream Processing',
+    tagline: 'Open-Source Distributed Computing Platform',
     url: 'https://jet-start.sh', // Your website URL
     baseUrl: '/', // Base URL for your project */
     // For github.io type URLs, you would set the url and baseUrl like:
@@ -54,7 +54,7 @@ const siteConfig = {
 
     /* Colors for website */
     colors: {
-        primaryColor: '#2d7de4',
+        primaryColor: '#268bd2',
         secondaryColor: '#e5e5e5',
     },
 
