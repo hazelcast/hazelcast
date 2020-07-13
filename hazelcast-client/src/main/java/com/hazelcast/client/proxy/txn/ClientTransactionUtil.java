@@ -21,7 +21,7 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.spi.impl.ClientInvocation;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.transaction.TransactionException;
-import com.hazelcast.util.ExceptionUtil.RuntimeExceptionFactory;
+import com.hazelcast.util.ExceptionUtil.ExceptionWrapper;
 
 import java.util.concurrent.Future;
 
@@ -32,8 +32,8 @@ import static com.hazelcast.util.ExceptionUtil.rethrow;
  */
 public final class ClientTransactionUtil {
 
-    private static final RuntimeExceptionFactory TRANSACTION_EXCEPTION_FACTORY =
-            new RuntimeExceptionFactory() {
+    private static final ExceptionWrapper<RuntimeException> TRANSACTION_EXCEPTION_WRAPPER =
+            new ExceptionWrapper<RuntimeException>() {
                 @Override
                 public RuntimeException create(Throwable throwable, String message) {
                     return new TransactionException(message, throwable);
@@ -56,7 +56,7 @@ public final class ClientTransactionUtil {
             final Future<ClientMessage> future = clientInvocation.invoke();
             return future.get();
         } catch (Exception e) {
-            throw rethrow(e, TRANSACTION_EXCEPTION_FACTORY);
+            throw rethrow(e, TRANSACTION_EXCEPTION_WRAPPER);
         }
     }
 }

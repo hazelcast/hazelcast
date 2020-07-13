@@ -53,8 +53,8 @@ import static com.hazelcast.util.ExceptionUtil.peel;
  */
 public abstract class AbstractMessageTask<P> implements MessageTask, SecureRequest {
 
-    private static final ExceptionUtil.RuntimeExceptionFactory NON_WRAPPING_FACTORY =
-            new ExceptionUtil.RuntimeExceptionFactory() {
+    private static final ExceptionUtil.ExceptionWrapper<Throwable> NOOP_WRAPPER =
+            new ExceptionUtil.ExceptionWrapper<Throwable>() {
                 @Override
                 public Throwable create(Throwable throwable, String message) {
                     return throwable;
@@ -298,6 +298,6 @@ public abstract class AbstractMessageTask<P> implements MessageTask, SecureReque
             }
         }
 
-        return peel(t, null, null, NON_WRAPPING_FACTORY);
+        return peel(t, null, null, NOOP_WRAPPER);
     }
 }
