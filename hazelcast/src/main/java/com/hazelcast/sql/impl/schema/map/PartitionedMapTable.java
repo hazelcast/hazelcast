@@ -22,6 +22,7 @@ import com.hazelcast.sql.impl.inject.UpsertTargetDescriptor;
 import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.schema.TableStatistics;
 
+import java.util.Collections;
 import java.util.List;
 
 import static com.hazelcast.sql.impl.QueryUtils.SCHEMA_NAME_PARTITIONED;
@@ -62,7 +63,7 @@ public class PartitionedMapTable extends AbstractMapTable {
     public List<MapTableIndex> getIndexes() {
         checkException();
 
-        return indexes;
+        return indexes != null ? indexes : Collections.emptyList();
     }
 
     public boolean hasDistributionField() {

@@ -32,11 +32,13 @@ import com.hazelcast.query.impl.getters.MultiResult;
 import com.hazelcast.query.impl.predicates.PredicateDataSerializerHook;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
+import java.util.Iterator;
 import java.util.Set;
 
 import static com.hazelcast.internal.util.SetUtil.createHashSet;
 import static com.hazelcast.query.impl.CompositeValue.NEGATIVE_INFINITY;
 import static com.hazelcast.query.impl.TypeConverters.NULL_CONVERTER;
+import static java.util.Collections.emptyIterator;
 import static java.util.Collections.emptySet;
 
 /**
@@ -174,6 +176,15 @@ public abstract class AbstractIndex implements InternalIndex {
     }
 
     @Override
+    public Iterator<QueryableEntry> getRecordIterator(Comparable value) {
+        if (converter == null) {
+            return emptyIterator();
+        }
+
+        return indexStore.getRecordIterator(convert(value));
+    }
+
+    @Override
     public Set<QueryableEntry> getRecords(Comparable value) {
         long timestamp = stats.makeTimestamp();
 
@@ -211,6 +222,20 @@ public abstract class AbstractIndex implements InternalIndex {
     }
 
     @Override
+    public Iterator<QueryableEntry> getRecordIterator(
+        Comparable from,
+        boolean fromInclusive,
+        Comparable to,
+        boolean toInclusive
+    ) {
+        if (converter == null) {
+            return emptyIterator();
+        }
+
+        return indexStore.getRecordIterator(convert(from), fromInclusive, convert(to), toInclusive);
+    }
+
+    @Override
     public Set<QueryableEntry> getRecords(Comparable from, boolean fromInclusive, Comparable to, boolean toInclusive) {
         long timestamp = stats.makeTimestamp();
 
@@ -222,6 +247,15 @@ public abstract class AbstractIndex implements InternalIndex {
         Set<QueryableEntry> result = indexStore.getRecords(convert(from), fromInclusive, convert(to), toInclusive);
         stats.onIndexHit(timestamp, result.size());
         return result;
+    }
+
+    @Override
+    public Iterator<QueryableEntry> getRecordIterator(Comparison comparison, Comparable value) {
+        if (converter == null) {
+            return emptyIterator();
+        }
+
+        return indexStore.getRecordIterator(comparison, convert(value));
     }
 
     @Override

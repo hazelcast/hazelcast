@@ -24,6 +24,7 @@ import com.hazelcast.query.Predicate;
 
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Set;
 
 /**
@@ -144,6 +145,13 @@ public class GlobalQueryContextWithStats extends QueryContext {
         }
 
         @Override
+        public Iterator<QueryableEntry> getRecordIterator(Comparable value) {
+            Iterator<QueryableEntry> result = delegate.getRecordIterator(value);
+            hasQueries = true;
+            return result;
+        }
+
+        @Override
         public Set<QueryableEntry> getRecords(Comparable value) {
             Set<QueryableEntry> result = delegate.getRecords(value);
             hasQueries = true;
@@ -158,8 +166,27 @@ public class GlobalQueryContextWithStats extends QueryContext {
         }
 
         @Override
+        public Iterator<QueryableEntry> getRecordIterator(
+            Comparable from,
+            boolean fromInclusive,
+            Comparable to,
+            boolean toInclusive
+        ) {
+            Iterator<QueryableEntry> result = delegate.getRecordIterator(from, fromInclusive, to, toInclusive);
+            hasQueries = true;
+            return result;
+        }
+
+        @Override
         public Set<QueryableEntry> getRecords(Comparable from, boolean fromInclusive, Comparable to, boolean toInclusive) {
             Set<QueryableEntry> result = delegate.getRecords(from, fromInclusive, to, toInclusive);
+            hasQueries = true;
+            return result;
+        }
+
+        @Override
+        public Iterator<QueryableEntry> getRecordIterator(Comparison comparison, Comparable value) {
+            Iterator<QueryableEntry> result = delegate.getRecordIterator(comparison, value);
             hasQueries = true;
             return result;
         }

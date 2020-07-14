@@ -21,20 +21,25 @@ import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.query.impl.Comparison;
 import com.hazelcast.query.impl.InternalIndex;
 import com.hazelcast.query.impl.QueryableEntry;
+import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.exec.scan.KeyValueIterator;
+import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 
 import java.util.Iterator;
+import java.util.List;
 import java.util.Set;
 
 /**
  * Iterator for index-based partitioned map access.
  */
 @SuppressWarnings("rawtypes")
+// TODO: Proper conversions of value
 public class MapIndexScanExecIterator implements KeyValueIterator {
 
     private final MapContainer map;
     private final String indexName;
-    private final IndexFilter indexFilter;
+    private final List<IndexFilter> indexFilters;
+    private final ExpressionEvalContext evalContext;
 
     private final Iterator<QueryableEntry> iterator;
 
@@ -43,12 +48,20 @@ public class MapIndexScanExecIterator implements KeyValueIterator {
     private Data nextKey;
     private Object nextValue;
 
-    public MapIndexScanExecIterator(MapContainer map, String indexName, IndexFilter indexFilter) {
+    public MapIndexScanExecIterator(
+        MapContainer map,
+        String indexName,
+        List<IndexFilter> indexFilters,
+        ExpressionEvalContext evalContext
+    ) {
         this.map = map;
         this.indexName = indexName;
-        this.indexFilter = indexFilter;
+        this.indexFilters = indexFilters;
+        this.evalContext = evalContext;
 
-        iterator = getIndexEntries().iterator();
+        iterator = getIndexEntries();
+
+        advance0();
     }
 
     @Override
@@ -92,44 +105,74 @@ public class MapIndexScanExecIterator implements KeyValueIterator {
         }
     }
 
-    private Set<QueryableEntry> getIndexEntries() {
-        // TODO: Either obtain the index in advance, or check for its existence here.
+    private Iterator<QueryableEntry> getIndexEntries() {
         MapContainer mapContainer = map.getMapServiceContext().getMapContainer(map.getName());
         InternalIndex index = mapContainer.getIndexes().getIndex(indexName);
 
-        // TODO: Unsafe conversion. Need to check whether the entry on planning stage?
-        Comparable value = (Comparable) indexFilter.getValue();
-
-        // TODO: Return an iterator here. No sets!
-        Set<QueryableEntry> res;
-
-        switch (indexFilter.getType()) {
-            case GREATER_THAN:
-                res = index.getRecords(Comparison.GREATER, value);
-
-                break;
-
-            case GREATER_THAN_OR_EQUAL:
-                res = index.getRecords(Comparison.GREATER_OR_EQUAL, value);
-
-                break;
-
-            case LESS_THAN:
-                res = index.getRecords(Comparison.LESS, value);
-
-                break;
-
-            case LESS_THAN_OR_EQUAL:
-                res = index.getRecords(Comparison.LESS_OR_EQUAL, value);
-
-                break;
-
-            default:
-                assert indexFilter.getType() == IndexFilterType.EQUALS;
-
-                res = index.getRecords(value);
+        // TODO: Check index existence earlier?
+        if (index == null) {
+            // TODO: Proper error
+            throw QueryException.error("Index doesn't exist: " + indexName);
         }
 
-        return res;
+        switch (lastFilter().getType()) {
+            case EQUALS:
+                return processEquals(index);
+
+            case IN:
+                return processIn(index);
+
+            default:
+                assert lastFilter().getType() == IndexFilterType.RANGE;
+
+                return processRange(index);
+        }
+    }
+
+    private Iterator<QueryableEntry> processRange(InternalIndex index) {
+        if (indexFilters.size() > 1) {
+            // TODO
+            throw new UnsupportedOperationException("Implement me!");
+        }
+
+        IndexFilter lastFilter = lastFilter();
+
+        Comparable from = lastFilter.getFrom() != null ? (Comparable) lastFilter.getFrom().eval(null, evalContext) : null;
+        Comparable to = lastFilter.getTo() != null ? (Comparable) lastFilter.getTo().eval(null, evalContext) : null;
+
+        if (from != null && to == null) {
+            Object res = index.getRecords(lastFilter.isFromInclusive() ? Comparison.GREATER_OR_EQUAL : Comparison.GREATER, from);
+
+            return index.getRecordIterator(lastFilter.isFromInclusive() ? Comparison.GREATER_OR_EQUAL : Comparison.GREATER, from);
+        }
+
+        // TODO: Fix this!
+        return index.getRecordIterator(from, lastFilter.isFromInclusive(), to, lastFilter.isToInclusive());
+    }
+
+    private Iterator<QueryableEntry> processEquals(InternalIndex index) {
+        if (indexFilters.size() > 1) {
+            // TODO
+            throw new UnsupportedOperationException("Implement me!");
+        }
+
+        return index.getRecordIterator((Comparable) lastFilter().getFrom().eval(null, evalContext));
+    }
+
+    @SuppressWarnings("unchecked")
+    private Iterator<QueryableEntry> processIn(InternalIndex index) {
+        if (indexFilters.size() > 1) {
+            // TODO
+            throw new UnsupportedOperationException("Implement me!");
+        }
+
+        Set<Comparable> values = (Set<Comparable>) lastFilter().getFrom().eval(null, evalContext);
+
+        // TODO: Implement on the index storage leve;
+        throw new UnsupportedOperationException("Implement me");
+    }
+
+    private IndexFilter lastFilter() {
+        return indexFilters.get(indexFilters.size() - 1);
     }
 }

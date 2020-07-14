@@ -14,36 +14,24 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.exec.scan.index;
+package com.hazelcast.sql.impl.calcite.opt.physical.index;
+
+import com.hazelcast.sql.impl.plan.node.PlanNodeFieldTypeProvider;
+import com.hazelcast.sql.impl.type.QueryDataType;
 
 /**
- * Index filter type.
+ * Specialized field type provider that do not expect any fields.
  */
-public enum IndexFilterType {
+public class IndexFieldTypeProvider implements PlanNodeFieldTypeProvider {
 
-    EQUALS(0),
-    IN(1),
-    RANGE(2);
+    public static final IndexFieldTypeProvider INSTANCE = new IndexFieldTypeProvider();
 
-    private final int id;
-
-    IndexFilterType(int id) {
-        this.id = id;
+    private IndexFieldTypeProvider() {
+        // No-op.
     }
 
-    public int getId() {
-        return id;
-    }
-
-    public static IndexFilterType getById(int id) {
-        // TODO: AFAIK values() creates an intermediate array, isn't it?
-        for (IndexFilterType value : values()) {
-            if (value.id == id) {
-                return value;
-            }
-        }
-
-        // TODO: Unsupported type! Handle properly for serialization.
-        return null;
+    @Override
+    public QueryDataType getType(int index) {
+        throw new IllegalStateException("The operation should not be called.");
     }
 }

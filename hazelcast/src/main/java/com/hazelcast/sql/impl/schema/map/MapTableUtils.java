@@ -115,7 +115,7 @@ public final class MapTableUtils {
                 break;
             }
 
-            res.add(new MapTableIndex(mapName, indexConfig.getType(), indexFieldOrdinals));
+            res.add(new MapTableIndex(indexConfig.getName(), indexConfig.getType(), indexFieldOrdinals));
         }
 
         return res;

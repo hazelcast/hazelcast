@@ -16,6 +16,7 @@
 
 package com.hazelcast.sql.impl.plan.node;
 
+import com.hazelcast.internal.serialization.impl.SerializationUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.sql.impl.exec.scan.index.IndexFilter;
@@ -32,11 +33,9 @@ import java.util.Objects;
  * Node to scan a partitioned map.
  */
 public class MapIndexScanPlanNode extends AbstractMapScanPlanNode {
-    /** Index name. */
-    private String indexName;
 
-    /** Index filter. */
-    private IndexFilter indexFilter;
+    private String indexName;
+    private List<IndexFilter> indexFilters;
 
     public MapIndexScanPlanNode() {
         // No-op.
@@ -52,21 +51,21 @@ public class MapIndexScanPlanNode extends AbstractMapScanPlanNode {
         List<QueryDataType> fieldTypes,
         List<Integer> projects,
         String indexName,
-        IndexFilter indexFilter,
+        List<IndexFilter> indexFilters,
         Expression<Boolean> remainderFilter
     ) {
         super(id, mapName, keyDescriptor, valueDescriptor, fieldPaths, fieldTypes, projects, remainderFilter);
 
         this.indexName = indexName;
-        this.indexFilter = indexFilter;
+        this.indexFilters = indexFilters;
     }
 
     public String getIndexName() {
         return indexName;
     }
 
-    public IndexFilter getIndexFilter() {
-        return indexFilter;
+    public List<IndexFilter> getIndexFilters() {
+        return indexFilters;
     }
 
     @Override
@@ -79,7 +78,7 @@ public class MapIndexScanPlanNode extends AbstractMapScanPlanNode {
         super.writeData0(out);
 
         out.writeUTF(indexName);
-        indexFilter.writeData(out);
+        SerializationUtil.writeList(indexFilters, out);
     }
 
     @Override
@@ -87,14 +86,12 @@ public class MapIndexScanPlanNode extends AbstractMapScanPlanNode {
         super.readData0(in);
 
         indexName = in.readUTF();
-
-        indexFilter = new IndexFilter();
-        indexFilter.readData(in);
+        indexFilters = SerializationUtil.readList(in);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, mapName, fieldPaths, projects, indexName, indexFilter, filter);
+        return Objects.hash(id, mapName, fieldPaths, projects, indexName, indexFilters, filter);
     }
 
     @Override
@@ -114,14 +111,14 @@ public class MapIndexScanPlanNode extends AbstractMapScanPlanNode {
             && fieldPaths.equals(that.fieldPaths)
             && projects.equals(that.projects)
             && indexName.equals(that.indexName)
-            && indexFilter.equals(that.indexFilter)
+            && Objects.equals(indexFilters, that.indexFilters)
             && Objects.equals(filter, that.filter);
     }
 
     @Override
     public String toString() {
         return getClass().getSimpleName() + "{id=" + id + ", mapName=" + mapName + ", fieldPaths=" + fieldPaths
-            + ", projects=" + projects + ", indexName=" + indexName + ", indexFilter=" + indexFilter
+            + ", projects=" + projects + ", indexName=" + indexName + ", indexFilters=" + indexFilters
             + ", remainderFilter=" + filter + '}';
     }
 }

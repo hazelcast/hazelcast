@@ -22,6 +22,7 @@ import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.QueryException;
 
+import java.util.Iterator;
 import java.util.Set;
 
 /**
@@ -109,6 +110,8 @@ public interface Index {
      */
     Set<QueryableEntry> evaluate(Predicate predicate);
 
+    Iterator<QueryableEntry> getRecordIterator(Comparable value);
+
     /**
      * Produces a result set containing entries whose attribute values are equal
      * to the given value.
@@ -127,6 +130,8 @@ public interface Index {
      */
     Set<QueryableEntry> getRecords(Comparable[] values);
 
+    Iterator<QueryableEntry> getRecordIterator(Comparable from, boolean fromInclusive, Comparable to, boolean toInclusive);
+
     /**
      * Produces a result set by performing a range query on this index with the
      * range defined by the passed arguments.
@@ -140,6 +145,8 @@ public interface Index {
      * @return the produced result set.
      */
     Set<QueryableEntry> getRecords(Comparable from, boolean fromInclusive, Comparable to, boolean toInclusive);
+
+    Iterator<QueryableEntry> getRecordIterator(Comparison comparison, Comparable value);
 
     /**
      * Produces a result set containing entries whose attribute values are

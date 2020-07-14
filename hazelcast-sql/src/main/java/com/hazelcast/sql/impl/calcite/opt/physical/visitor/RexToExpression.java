@@ -521,5 +521,4 @@ public final class RexToExpression {
 
         throw QueryException.error("Unsupported literal symbol: " + literal);
     }
-
 }

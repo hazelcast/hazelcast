@@ -22,6 +22,7 @@ import com.hazelcast.query.Predicate;
 
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -137,6 +138,15 @@ public class UnorderedIndexStore extends BaseSingleValueIndexStore {
     }
 
     @Override
+    public Iterator<QueryableEntry> getRecordIterator(Comparable value) {
+        if (value == NULL) {
+            return recordsWithNullValue.values().iterator();
+        } else {
+            return recordMap.get(canonicalize(value)).values().iterator();
+        }
+    }
+
+    @Override
     public Set<QueryableEntry> getRecords(Comparable value) {
         takeReadLock();
         try {
@@ -171,6 +181,11 @@ public class UnorderedIndexStore extends BaseSingleValueIndexStore {
         } finally {
             releaseReadLock();
         }
+    }
+
+    @Override
+    public Iterator<QueryableEntry> getRecordIterator(Comparison comparison, Comparable value) {
+        throw new UnsupportedOperationException();
     }
 
     @Override
@@ -209,6 +224,16 @@ public class UnorderedIndexStore extends BaseSingleValueIndexStore {
         } finally {
             releaseReadLock();
         }
+    }
+
+    @Override
+    public Iterator<QueryableEntry> getRecordIterator(
+        Comparable from,
+        boolean fromInclusive,
+        Comparable to,
+        boolean toInclusive
+    ) {
+        throw new UnsupportedOperationException();
     }
 
     @SuppressWarnings({"checkstyle:npathcomplexity"})

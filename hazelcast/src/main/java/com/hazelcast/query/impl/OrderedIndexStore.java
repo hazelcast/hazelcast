@@ -22,13 +22,16 @@ import com.hazelcast.query.Predicate;
 
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListMap;
 
 import static com.hazelcast.query.impl.AbstractIndex.NULL;
+import static java.util.Collections.emptyIterator;
 import static java.util.Collections.emptySet;
 
 /**
@@ -111,6 +114,15 @@ public class OrderedIndexStore extends BaseSingleValueIndexStore {
     }
 
     @Override
+    public Iterator<QueryableEntry> getRecordIterator(Comparable value) {
+        if (value == NULL) {
+            return recordsWithNullValue.values().iterator();
+        } else {
+            return recordMap.get(value).values().iterator();
+        }
+    }
+
+    @Override
     public Set<QueryableEntry> getRecords(Comparable value) {
         takeReadLock();
         try {
@@ -147,6 +159,30 @@ public class OrderedIndexStore extends BaseSingleValueIndexStore {
     }
 
     @Override
+    public Iterator<QueryableEntry> getRecordIterator(Comparison comparison, Comparable searchedValue) {
+        Iterator<Map<Data, QueryableEntry>> iterator;
+
+        switch (comparison) {
+            case LESS:
+                iterator = recordMap.headMap(searchedValue, false).values().iterator();
+                break;
+            case LESS_OR_EQUAL:
+                iterator = recordMap.headMap(searchedValue, true).values().iterator();
+                break;
+            case GREATER:
+                iterator = recordMap.tailMap(searchedValue, false).values().iterator();
+                break;
+            case GREATER_OR_EQUAL:
+                iterator = recordMap.tailMap(searchedValue, true).values().iterator();
+                break;
+            default:
+                throw new IllegalArgumentException("Unrecognized comparison: " + comparison);
+        }
+
+        return new FlatIterator(iterator);
+    }
+
+    @Override
     public Set<QueryableEntry> getRecords(Comparison comparison, Comparable searchedValue) {
         takeReadLock();
         try {
@@ -175,6 +211,27 @@ public class OrderedIndexStore extends BaseSingleValueIndexStore {
         } finally {
             releaseReadLock();
         }
+    }
+
+    @Override
+    public Iterator<QueryableEntry> getRecordIterator(
+        Comparable from,
+        boolean fromInclusive,
+        Comparable to,
+        boolean toInclusive
+    ) {
+        int order = Comparables.compare(from, to);
+
+        if (order == 0) {
+            if (!fromInclusive || !toInclusive) {
+                return emptyIterator();
+            }
+            return recordMap.get(from).values().iterator();
+        } else if (order > 0) {
+            return emptyIterator();
+        }
+
+        return new FlatIterator(recordMap.subMap(from, fromInclusive, to, toInclusive).values().iterator());
     }
 
     @Override
@@ -322,4 +379,54 @@ public class OrderedIndexStore extends BaseSingleValueIndexStore {
 
     }
 
+    @SuppressWarnings("rawtypes")
+    private static final class FlatIterator implements Iterator<QueryableEntry> {
+
+        private final Iterator<Map<Data, QueryableEntry>> iterator;
+        private Iterator<QueryableEntry> currentIterator;
+
+        private FlatIterator(Iterator<Map<Data, QueryableEntry>> iterator) {
+            this.iterator = iterator;
+
+            advance();
+        }
+
+        @Override
+        public boolean hasNext() {
+            return currentIterator != null;
+        }
+
+        @Override
+        public QueryableEntry next() {
+            if (!hasNext()) {
+                throw new NoSuchElementException();
+            }
+
+            QueryableEntry entry = currentIterator.next();
+
+            if (!currentIterator.hasNext()) {
+                currentIterator = null;
+
+                advance();
+            }
+
+            return entry;
+        }
+
+        private void advance() {
+            assert currentIterator == null;
+
+            while (iterator.hasNext()) {
+                Map<Data, QueryableEntry> map = iterator.next();
+
+                Iterator<QueryableEntry> currentIterator0 = map.values().iterator();
+
+                if (currentIterator0.hasNext()) {
+                    currentIterator = currentIterator0;
+
+                    break;
+                }
+            }
+        }
+    }
 }

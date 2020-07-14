@@ -51,7 +51,6 @@ import org.apache.calcite.plan.Convention;
 import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.plan.volcano.VolcanoPlanner;
 import org.apache.calcite.rel.RelNode;
-import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.sql.SqlNode;
 
 import java.util.ArrayList;
@@ -164,10 +163,18 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
 
         if (parseResult.isImdg()) {
             // 5. Perform optimization.
-            PhysicalRel physicalRel = optimize(context, convertResult.getRel());
+            QueryDataType[] mappedParameterRowType = SqlToQueryType.mapRowType(parseResult.getParameterRowType());
+            QueryParameterMetadata parameterMetadata = new QueryParameterMetadata(mappedParameterRowType);
+
+            PhysicalRel physicalRel = optimize(context, convertResult.getRel(), parameterMetadata);
 
             // 6. Create plan.
-            return createImdgPlan(task.getSql(), parseResult.getParameterRowType(), physicalRel, convertResult.getFieldNames());
+            return createImdgPlan(
+                task.getSql(),
+                parameterMetadata,
+                physicalRel,
+                convertResult.getFieldNames()
+            );
         } else {
             return jetSqlBackend.optimizeAndCreatePlan(nodeEngine, context, convertResult.getRel(),
                     convertResult.getFieldNames());
@@ -199,7 +206,14 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         return new RemoveExternalTablePlan(catalog, sqlDropTable.name(), sqlDropTable.ifExists());
     }
 
-    private PhysicalRel optimize(OptimizerContext context, RelNode rel) {
+    private PhysicalRel optimize(
+        OptimizerContext context,
+        RelNode rel,
+        QueryParameterMetadata parameterMetadata
+    ) {
+        // Make parameter metadata available to planner.
+        context.setParameterMetadata(parameterMetadata);
+
         // Logical part.
         RelNode logicalRel = context.optimize(rel, LogicalRules.getRuleSet(), OptUtils.toLogicalConvention(rel.getTraitSet()));
 
@@ -220,16 +234,18 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
      * @param rel Rel.
      * @return Plan.
      */
-    private Plan createImdgPlan(String sql, RelDataType parameterRowType, PhysicalRel rel, List<String> rootColumnNames) {
+    private Plan createImdgPlan(
+        String sql,
+        QueryParameterMetadata parameterMetadata,
+        PhysicalRel rel,
+        List<String> rootColumnNames
+    ) {
         // Assign IDs to nodes.
         NodeIdVisitor idVisitor = new NodeIdVisitor();
         rel.visit(idVisitor);
         Map<PhysicalRel, List<Integer>> relIdMap = idVisitor.getIdMap();
 
         // Create the plan.
-        QueryDataType[] mappedParameterRowType = SqlToQueryType.mapRowType(parameterRowType);
-        QueryParameterMetadata parameterMetadata = new QueryParameterMetadata(mappedParameterRowType);
-
         PlanCreateVisitor visitor = new PlanCreateVisitor(
             nodeEngine.getLocalMember().getUuid(),
             PlanCreateVisitor.createPartitionMap(nodeEngine),

@@ -22,6 +22,8 @@ import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.sql.SqlResult;
+import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.impl.exec.CreateExecPlanNodeVisitorHook;
 import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.operation.QueryOperationHandlerImpl;
@@ -176,5 +178,17 @@ public class SqlTestSupport extends HazelcastTestSupport {
 
     public static SqlInternalService sqlInternalService(HazelcastInstance instance) {
         return nodeEngine(instance).getSqlService().getInternalService();
+    }
+
+    public List<SqlRow> execute(HazelcastInstance member, String sql) {
+        List<SqlRow> rows = new ArrayList<>();
+
+        try (SqlResult res = member.getSql().query(sql)) {
+            for (SqlRow row : res) {
+                rows.add(row);
+            }
+        }
+
+        return rows;
     }
 }

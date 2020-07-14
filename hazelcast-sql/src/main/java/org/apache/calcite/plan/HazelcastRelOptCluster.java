@@ -16,6 +16,7 @@
 
 package org.apache.calcite.plan;
 
+import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.calcite.opt.distribution.DistributionTraitDef;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.type.RelDataTypeFactory;
@@ -33,6 +34,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 public final class HazelcastRelOptCluster extends RelOptCluster {
     /** Distribution trait definition that is used during query execution. */
     private final DistributionTraitDef distributionTraitDef;
+
+    /** Metadata about parameters. */
+    private QueryParameterMetadata parameterMetadata;
 
     private HazelcastRelOptCluster(
         RelOptPlanner planner,
@@ -64,6 +68,14 @@ public final class HazelcastRelOptCluster extends RelOptCluster {
 
     public DistributionTraitDef getDistributionTraitDef() {
         return distributionTraitDef;
+    }
+
+    public QueryParameterMetadata getParameterMetadata() {
+        return parameterMetadata;
+    }
+
+    public void setParameterMetadata(QueryParameterMetadata parameterMetadata) {
+        this.parameterMetadata = parameterMetadata;
     }
 
     @Override

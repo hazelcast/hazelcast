@@ -19,50 +19,81 @@ package com.hazelcast.sql.impl.exec.scan.index;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.sql.impl.expression.Expression;
 
 import java.io.IOException;
 
 /**
  * Index filter which is transferred over a wire.
  */
+// TODO: Use IDS
 public class IndexFilter implements DataSerializable {
-    /** Condition type. */
-    private IndexFilterType type;
 
-    /** Value. */
-    private Object value;
+    private IndexFilterType type;
+    private Expression from;
+    private boolean fromInclusive;
+    private Expression to;
+    private boolean toInclusive;
 
     public IndexFilter() {
         // No-op.
     }
 
-    public IndexFilter(IndexFilterType type, Object value) {
+    private IndexFilter(IndexFilterType type, Expression from, boolean fromInclusive, Expression to, boolean toInclusive) {
         this.type = type;
-        this.value = value;
+        this.from = from;
+        this.fromInclusive = fromInclusive;
+        this.to = to;
+        this.toInclusive = toInclusive;
+    }
+
+    public static IndexFilter forEquals(Expression value) {
+        return new IndexFilter(IndexFilterType.EQUALS, value, false, null, false);
+    }
+
+    public static IndexFilter forIn(Expression value) {
+        return new IndexFilter(IndexFilterType.IN, value, false, null, false);
+    }
+
+    public static IndexFilter forRange(Expression from, boolean fromInclusive, Expression to, boolean toInclusive) {
+        return new IndexFilter(IndexFilterType.RANGE, from, fromInclusive, to, toInclusive);
     }
 
     public IndexFilterType getType() {
         return type;
     }
 
-    public Object getValue() {
-        return value;
+    public Expression getFrom() {
+        return from;
+    }
+
+    public boolean isFromInclusive() {
+        return fromInclusive;
+    }
+
+    public Expression getTo() {
+        return to;
+    }
+
+    public boolean isToInclusive() {
+        return toInclusive;
     }
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeInt(type.getId());
-        out.writeObject(value);
+        out.writeObject(from);
+        out.writeBoolean(fromInclusive);
+        out.writeObject(to);
+        out.writeBoolean(toInclusive);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         type = IndexFilterType.getById(in.readInt());
-        value = in.readObject();
-    }
-
-    @Override
-    public String toString() {
-        return getClass().getSimpleName() + "{type=" + type + ", value=" + value + '}';
+        from = in.readObject();
+        fromInclusive = in.readBoolean();
+        to = in.readObject();
+        toInclusive = in.readBoolean();
     }
 }

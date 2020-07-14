@@ -34,7 +34,7 @@ import java.util.List;
 public class MapIndexScanExec extends MapScanExec {
 
     private final String indexName;
-    private final IndexFilter indexFilter;
+    private final List<IndexFilter> indexFilters;
 
     @SuppressWarnings("checkstyle:ParameterNumber")
     public MapIndexScanExec(
@@ -49,7 +49,7 @@ public class MapIndexScanExec extends MapScanExec {
         Expression<Boolean> filter,
         InternalSerializationService serializationService,
         String indexName,
-        IndexFilter indexFilter
+        List<IndexFilter> indexFilters
     ) {
         // TODO: How to deal with passed partitions? Should we check that they are still owned during setup?
         super(
@@ -66,18 +66,18 @@ public class MapIndexScanExec extends MapScanExec {
         );
 
         this.indexName = indexName;
-        this.indexFilter = indexFilter;
+        this.indexFilters = indexFilters;
     }
 
     @Override
     protected KeyValueIterator createIterator() {
-        return new MapIndexScanExecIterator(map, indexName, indexFilter);
+        return new MapIndexScanExecIterator(map, indexName, indexFilters, ctx);
     }
 
     @Override
     public String toString() {
         return getClass().getSimpleName() + "{mapName=" + mapName + ", fieldPaths=" + fieldPaths + ", projects=" + projects
-            + "indexName=" + indexName + ", indexFilter=" + indexFilter + ", remainderFilter=" + filter
+            + "indexName=" + indexName + ", indexFilters=" + indexFilters + ", remainderFilter=" + filter
             + ", partitionCount=" + partitions.size() + '}';
     }
 }

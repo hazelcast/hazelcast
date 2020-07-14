@@ -381,8 +381,9 @@ public class CreateExecPlanNodeVisitor implements PlanNodeVisitor {
                     node.getFieldTypes(),
                     node.getProjects(),
                     node.getFilter(),
-                    serializationService, node.getIndexName(),
-                    node.getIndexFilter()
+                    serializationService,
+                    node.getIndexName(),
+                    node.getIndexFilters()
                 );
             }
         }

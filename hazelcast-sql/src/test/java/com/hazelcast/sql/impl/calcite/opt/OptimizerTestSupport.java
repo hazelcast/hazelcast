@@ -16,6 +16,7 @@
 
 package com.hazelcast.sql.impl.calcite.opt;
 
+import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.SqlTestSupport;
 import com.hazelcast.sql.impl.calcite.OptimizerContext;
 import com.hazelcast.sql.impl.calcite.TestMapTable;
@@ -62,26 +63,29 @@ import static junit.framework.TestCase.assertEquals;
  * Base class to test optimizers.
  */
 public abstract class OptimizerTestSupport extends SqlTestSupport {
-    protected RelNode optimizeLogical(String sql) {
-        return optimize(sql, 1, false).getLogical();
+    protected RelNode optimizeLogical(String sql, QueryDataType... parameterTypes) {
+        return optimize(sql, 1, false, parameterTypes).getLogical();
     }
 
-    protected RelNode optimizePhysical(String sql) {
-        return optimize(sql, 1, true).getPhysical();
+    protected RelNode optimizePhysical(String sql, QueryDataType... parameterTypes) {
+        return optimize(sql, 1, true, parameterTypes).getPhysical();
     }
 
-    protected RelNode optimizeLogical(String sql, int nodeCount) {
-        return optimize(sql, nodeCount, false).getLogical();
+    protected RelNode optimizeLogical(String sql, int nodeCount, QueryDataType... parameterTypes) {
+        return optimize(sql, nodeCount, false, parameterTypes).getLogical();
     }
 
-    protected RelNode optimizePhysical(String sql, int nodeCount) {
-        return optimize(sql, nodeCount, true).getPhysical();
+    protected RelNode optimizePhysical(String sql, int nodeCount, QueryDataType... parameterTypes) {
+        return optimize(sql, nodeCount, true, parameterTypes).getPhysical();
     }
 
-    private Result optimize(String sql, int nodeCount, boolean physical) {
+    private Result optimize(String sql, int nodeCount, boolean physical, QueryDataType... parameterTypes) {
         HazelcastSchema schema = createDefaultSchema();
 
-        return optimize(sql, schema, nodeCount, physical);
+        QueryParameterMetadata parameterMetadata = parameterTypes == null || parameterTypes.length == 0 ? null :
+            new QueryParameterMetadata(parameterTypes);
+
+        return optimize(sql, schema, nodeCount, physical, parameterMetadata);
     }
 
     /**
@@ -91,7 +95,13 @@ public abstract class OptimizerTestSupport extends SqlTestSupport {
      * @param schema Schema.
      * @return Result.
      */
-    protected static Result optimize(String sql, HazelcastSchema schema, int nodeCount, boolean physical) {
+    protected static Result optimize(
+        String sql,
+        HazelcastSchema schema,
+        int nodeCount,
+        boolean physical,
+        QueryParameterMetadata parameterMetadata
+    ) {
         OptimizerContext context = OptimizerContext.create(
             null,
             HazelcastSchemaUtils.createCatalog(schema),
@@ -99,7 +109,7 @@ public abstract class OptimizerTestSupport extends SqlTestSupport {
             nodeCount
         );
 
-        return optimize(sql, context, physical);
+        return optimize(sql, context, physical, parameterMetadata);
     }
 
     /**
@@ -109,11 +119,16 @@ public abstract class OptimizerTestSupport extends SqlTestSupport {
      * @param context Context.
      * @return Result.
      */
-    private static Result optimize(String sql, OptimizerContext context, boolean physical) {
+    private static Result optimize(
+        String sql,
+        OptimizerContext context,
+        boolean physical,
+        QueryParameterMetadata parameterMetadata
+    ) {
         SqlNode node = context.parse(sql, false).getNode();
         RelNode convertedRel = context.convert(node).getRel();
         LogicalRel logicalRel = optimizeLogicalInternal(context, convertedRel);
-        PhysicalRel physicalRel = physical ? optimizePhysicalInternal(context, logicalRel) : null;
+        PhysicalRel physicalRel = physical ? optimizePhysicalInternal(context, logicalRel, parameterMetadata) : null;
 
         return new Result(node, convertedRel, logicalRel, physicalRel);
     }
@@ -124,11 +139,17 @@ public abstract class OptimizerTestSupport extends SqlTestSupport {
         return new RootLogicalRel(logicalRel.getCluster(), logicalRel.getTraitSet(), logicalRel);
     }
 
-    private static PhysicalRel optimizePhysicalInternal(OptimizerContext context, RelNode node) {
+    private static PhysicalRel optimizePhysicalInternal(
+        OptimizerContext context,
+        RelNode node,
+        QueryParameterMetadata parameterMetadata
+    ) {
         RelTraitSet physicalTraitSet = OptUtils.toPhysicalConvention(
             node.getTraitSet(),
             OptUtils.getDistributionDef(node).getTraitRoot()
         );
+
+        context.setParameterMetadata(parameterMetadata);
 
         return (PhysicalRel) context.optimize(node, PhysicalRules.getRuleSet(), physicalTraitSet);
     }

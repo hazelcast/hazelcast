@@ -340,6 +340,7 @@ public final class HazelcastTypeCoercion extends TypeCoercionImpl {
             commonType = TYPE_FACTORY.createSqlType(DOUBLE);
         }
 
+        // TODO: This breaks index usage for parameters
         // widen integer common type: ? + 1 -> BIGINT instead of TINYINT
         if ((seenParameters || seenChar) && isInteger(commonType)) {
             commonType = TYPE_FACTORY.createSqlType(BIGINT);

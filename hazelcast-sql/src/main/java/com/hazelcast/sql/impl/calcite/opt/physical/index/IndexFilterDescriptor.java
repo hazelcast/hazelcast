@@ -19,27 +19,31 @@ package com.hazelcast.sql.impl.calcite.opt.physical.index;
 import com.hazelcast.sql.impl.exec.scan.index.IndexFilter;
 import org.apache.calcite.rex.RexNode;
 
+import java.util.Collections;
+import java.util.List;
+
 public class IndexFilterDescriptor {
+    /** Filter that will be used during query execution. */
+    private final IndexFilter filter;
 
-    private final IndexFilter indexFilter;
-    private final RexNode indexExp;
-    private final RexNode remainderExp;
+    /** Calcite expressions that formed the filter */
+    private final List<RexNode> expressions;
 
-    public IndexFilterDescriptor(IndexFilter indexFilter, RexNode indexExp, RexNode remainderExp) {
-        this.indexFilter = indexFilter;
-        this.indexExp = indexExp;
-        this.remainderExp = remainderExp;
+    public IndexFilterDescriptor(IndexFilter filter, RexNode expression) {
+        this.filter = filter;
+        this.expressions = Collections.singletonList(expression);
     }
 
-    public IndexFilter getIndexFilter() {
-        return indexFilter;
+    public IndexFilterDescriptor(IndexFilter filter, List<RexNode> expressions) {
+        this.filter = filter;
+        this.expressions = expressions;
     }
 
-    public RexNode getIndexExp() {
-        return indexExp;
+    public IndexFilter getFilter() {
+        return filter;
     }
 
-    public RexNode getRemainderExp() {
-        return remainderExp;
+    public List<RexNode> getExpressions() {
+        return expressions;
     }
 }
