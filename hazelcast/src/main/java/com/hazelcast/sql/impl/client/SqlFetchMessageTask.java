@@ -17,7 +17,7 @@
 package com.hazelcast.sql.impl.client;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.codec.SqlFetchCodec;
+import com.hazelcast.client.impl.protocol.codec.SqlBetaFetchCodec;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.security.permission.SqlPermission;
@@ -29,7 +29,7 @@ import java.util.UUID;
 /**
  * SQL query fetch task.
  */
-public class SqlFetchMessageTask extends SqlAbstractMessageTask<SqlFetchCodec.RequestParameters> {
+public class SqlFetchMessageTask extends SqlAbstractMessageTask<SqlBetaFetchCodec.RequestParameters> {
     public SqlFetchMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
@@ -56,15 +56,15 @@ public class SqlFetchMessageTask extends SqlAbstractMessageTask<SqlFetchCodec.Re
     }
 
     @Override
-    protected SqlFetchCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
-        return SqlFetchCodec.decodeRequest(clientMessage);
+    protected SqlBetaFetchCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return SqlBetaFetchCodec.decodeRequest(clientMessage);
     }
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
         SqlFetchResponse response0 = ((SqlFetchResponse) response);
 
-        return SqlFetchCodec.encodeResponse(response0.getRowPage(), response0.isRowPageLast(), response0.getError());
+        return SqlBetaFetchCodec.encodeResponse(response0.getRowPage(), response0.isRowPageLast(), response0.getError());
     }
 
     @Override

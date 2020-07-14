@@ -34,44 +34,32 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  */
 
 /**
- * Closes server-side query cursor.
+ * A message to test for missing server-side handler
  */
-@Generated("c5da2f088e04b28c7e03fe3b80932883")
-public final class SqlCloseCodec {
-    //hex: 0x210300
-    public static final int REQUEST_MESSAGE_TYPE = 2163456;
-    //hex: 0x210301
-    public static final int RESPONSE_MESSAGE_TYPE = 2163457;
+@Generated("03e464961c8ddeb300a85769a64d9972")
+public final class SqlBetaMissingCodec {
+    //hex: 0x210100
+    public static final int REQUEST_MESSAGE_TYPE = 2162944;
+    //hex: 0x210101
+    public static final int RESPONSE_MESSAGE_TYPE = 2162945;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
 
-    private SqlCloseCodec() {
+    private SqlBetaMissingCodec() {
     }
 
-    /**
-     * Query ID.
-     */
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"UUF_UNUSED_PUBLIC_OR_PROTECTED_FIELD"})
-    public java.lang.String queryId;
 
-    public static ClientMessage encodeRequest(java.lang.String queryId) {
+    public static ClientMessage encodeRequest() {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
-        clientMessage.setOperationName("Sql.Close");
+        clientMessage.setOperationName("SqlBeta.Missing");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
         encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         clientMessage.add(initialFrame);
-        StringCodec.encode(clientMessage, queryId);
         return clientMessage;
     }
 
-    public static java.lang.String decodeRequest(ClientMessage clientMessage) {
-        ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        //empty initial frame
-        iterator.next();
-        return StringCodec.decode(iterator);
-    }
 
     public static ClientMessage encodeResponse() {
         ClientMessage clientMessage = ClientMessage.createForEncode();

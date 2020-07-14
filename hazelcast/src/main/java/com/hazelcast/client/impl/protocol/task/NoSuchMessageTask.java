@@ -24,6 +24,12 @@ import java.security.Permission;
 
 public class NoSuchMessageTask extends AbstractMessageTask<ClientMessage> {
 
+    private static final int SERVICE_ID_MASK = 0x00FF0000;
+    private static final int SERVICE_ID_SHIFT = 16;
+
+    /** ID of the SQL beta service. Should match the ID declared in SqlBeta.yaml */
+    private static final int SQL_BETA_SERVICE_ID = 33;
+
     public NoSuchMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
@@ -40,7 +46,7 @@ public class NoSuchMessageTask extends AbstractMessageTask<ClientMessage> {
 
     @Override
     protected void processMessage() {
-        String message = "Unrecognized client message received with type: 0x" + Integer.toHexString(parameters.getMessageType());
+        String message = createMessage();
         logger.finest(message);
         throw new UnsupportedOperationException(message);
     }
@@ -73,5 +79,22 @@ public class NoSuchMessageTask extends AbstractMessageTask<ClientMessage> {
     @Override
     public Permission getRequiredPermission() {
         return null;
+    }
+
+    private String createMessage() {
+        int messageType = parameters.getMessageType();
+        int serviceId = (messageType & SERVICE_ID_MASK) >> SERVICE_ID_SHIFT;
+
+        if (serviceId == SQL_BETA_SERVICE_ID) {
+            // Special error message for the SQL beta service that do not maintain compatibility between versions.
+            String memberVersion = nodeEngine.getVersion().toString();
+            String clientVersion = endpoint.getClientVersion();
+
+            return "Cannot process SQL client operation due to version mismatch "
+                + "(please ensure that a client and a member have the same version) "
+                + "[memberVersion=" + memberVersion + ", clientVersion=" + clientVersion + ']';
+        }
+
+        return "Unrecognized client message received with type: 0x" + Integer.toHexString(messageType);
     }
 }

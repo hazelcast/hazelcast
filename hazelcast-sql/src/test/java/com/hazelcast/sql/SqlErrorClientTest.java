@@ -21,6 +21,7 @@ import com.hazelcast.map.IMap;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.sql.impl.client.SqlClientService;
 import com.hazelcast.sql.impl.state.QueryClientStateRegistry;
 import com.hazelcast.sql.impl.exec.BlockingExec;
 import com.hazelcast.sql.impl.exec.scan.MapScanExec;
@@ -301,6 +302,21 @@ public class SqlErrorClientTest extends SqlErrorAbstractTest {
             }
         } finally {
             BadValue.READ_ERROR.set(false);
+        }
+    }
+
+    @Test
+    public void testMissingHandler() {
+        instance1 = factory.newHazelcastInstance();
+        client = newClient();
+
+        try {
+            ((SqlClientService) client.getSql()).missing();
+
+            fail("Must fail");
+        } catch (Exception e) {
+            assertTrue(e.getMessage().contains("Cannot process SQL client operation due to version mismatch "
+                + "(please ensure that a client and a member have the same version)"));
         }
     }
 

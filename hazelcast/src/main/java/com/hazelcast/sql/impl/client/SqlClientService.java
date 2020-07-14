@@ -18,9 +18,10 @@ package com.hazelcast.sql.impl.client;
 
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.codec.SqlCloseCodec;
-import com.hazelcast.client.impl.protocol.codec.SqlExecuteCodec;
-import com.hazelcast.client.impl.protocol.codec.SqlFetchCodec;
+import com.hazelcast.client.impl.protocol.codec.SqlBetaCloseCodec;
+import com.hazelcast.client.impl.protocol.codec.SqlBetaExecuteCodec;
+import com.hazelcast.client.impl.protocol.codec.SqlBetaFetchCodec;
+import com.hazelcast.client.impl.protocol.codec.SqlBetaMissingCodec;
 import com.hazelcast.client.impl.spi.impl.ClientInvocation;
 import com.hazelcast.client.impl.spi.impl.ClientInvocationFuture;
 import com.hazelcast.internal.nio.Connection;
@@ -72,7 +73,7 @@ public class SqlClientService implements SqlService {
                 params0.add(serializeParameter(param));
             }
 
-            ClientMessage requestMessage = SqlExecuteCodec.encodeRequest(
+            ClientMessage requestMessage = SqlBetaExecuteCodec.encodeRequest(
                 query.getSql(),
                 params0,
                 query.getTimeoutMillis(),
@@ -81,7 +82,7 @@ public class SqlClientService implements SqlService {
 
             ClientMessage responseMessage = invoke(requestMessage, connection);
 
-            SqlExecuteCodec.ResponseParameters response = SqlExecuteCodec.decodeResponse(responseMessage);
+            SqlBetaExecuteCodec.ResponseParameters response = SqlBetaExecuteCodec.decodeResponse(responseMessage);
 
             handleResponseError(response.error);
 
@@ -108,9 +109,9 @@ public class SqlClientService implements SqlService {
      */
     public SqlPage fetch(Connection connection, String queryId, int cursorBufferSize) {
         try {
-            ClientMessage requestMessage = SqlFetchCodec.encodeRequest(queryId, cursorBufferSize);
+            ClientMessage requestMessage = SqlBetaFetchCodec.encodeRequest(queryId, cursorBufferSize);
             ClientMessage responseMessage = invoke(requestMessage, connection);
-            SqlFetchCodec.ResponseParameters responseParameters = SqlFetchCodec.decodeResponse(responseMessage);
+            SqlBetaFetchCodec.ResponseParameters responseParameters = SqlBetaFetchCodec.decodeResponse(responseMessage);
 
             handleResponseError(responseParameters.error);
 
@@ -128,11 +129,34 @@ public class SqlClientService implements SqlService {
      */
     void close(Connection connection, String queryId) {
         try {
-            ClientMessage requestMessage = SqlCloseCodec.encodeRequest(queryId);
+            ClientMessage requestMessage = SqlBetaCloseCodec.encodeRequest(queryId);
 
             invoke(requestMessage, connection);
         } catch (Exception e) {
             throw rethrow(e, connection);
+        }
+    }
+
+    /**
+     * Invokes a method that do not have an associated handler on the server side.
+     * For testing purposes only.
+     */
+    public void missing() {
+        Connection connection = client.getConnectionManager().getRandomConnection(false);
+
+        if (connection == null) {
+            throw rethrow(QueryException.error(
+                SqlErrorCode.CONNECTION_PROBLEM,
+                "Client is not connected to topology"
+            ));
+        }
+
+        try {
+            ClientMessage requestMessage = SqlBetaMissingCodec.encodeRequest();
+
+            invoke(requestMessage, connection);
+        } catch (Exception e) {
+            throw rethrow(e);
         }
     }
 
