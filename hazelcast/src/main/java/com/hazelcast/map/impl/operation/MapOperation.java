@@ -44,6 +44,7 @@ import java.util.List;
 import java.util.logging.Level;
 
 import static com.hazelcast.config.InMemoryFormat.NATIVE;
+import static com.hazelcast.config.InMemoryFormat.OBJECT;
 import static com.hazelcast.internal.util.CollectionUtil.isEmpty;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.internal.util.ToHeapDataConverter.toHeapData;
@@ -222,6 +223,10 @@ public abstract class MapOperation extends AbstractNamedOperation
     @Override
     public String getServiceName() {
         return MapService.SERVICE_NAME;
+    }
+
+    protected boolean isObjectInMemoryFormat() {
+        return mapContainer.getMapConfig().getInMemoryFormat() == OBJECT;
     }
 
     public boolean isPostProcessing(RecordStore recordStore) {

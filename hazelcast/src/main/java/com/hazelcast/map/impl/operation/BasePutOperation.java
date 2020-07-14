@@ -17,8 +17,8 @@
 package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.core.EntryEventType;
-import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.spi.impl.operationservice.BackupAwareOperation;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
@@ -37,13 +37,13 @@ public abstract class BasePutOperation
 
     @Override
     protected void afterRunInternal() {
-        Object value = isPostProcessing(recordStore)
-                ? recordStore.getRecord(dataKey).getValue() : dataValue;
+        Object newValue = getValueForFiltering();
+        Object newDataValue = getDataValueForPublishing();
         mapServiceContext.interceptAfterPut(mapContainer.getInterceptorRegistry(), dataValue);
         mapEventPublisher.publishEvent(getCallerAddress(), name, getEventType(),
-                dataKey, oldValue, value);
+                dataKey, oldValue, newValue, newDataValue);
         invalidateNearCache(dataKey);
-        publishWanUpdate(dataKey, value);
+        publishWanUpdate(dataKey, newDataValue);
         evict(dataKey);
     }
 

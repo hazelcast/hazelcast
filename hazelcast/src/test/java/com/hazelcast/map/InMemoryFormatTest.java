@@ -21,17 +21,26 @@ import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.NearCacheConfig;
+import com.hazelcast.core.EntryAdapter;
+import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.monitor.impl.MemberPartitionStateImpl;
+import com.hazelcast.map.listener.EntryAddedListener;
+import com.hazelcast.map.listener.MapListener;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.partition.PartitionService;
+import com.hazelcast.query.Predicate;
+import com.hazelcast.query.PredicateBuilder;
+import com.hazelcast.query.PredicateBuilder.EntryObject;
+import com.hazelcast.query.Predicates;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.After;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -39,8 +48,11 @@ import org.junit.runner.RunWith;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.HashSet;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static com.hazelcast.query.Predicates.newPredicateBuilder;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotSame;
@@ -49,6 +61,11 @@ import static org.junit.Assert.assertTrue;
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class InMemoryFormatTest extends HazelcastTestSupport {
+
+    @After
+    public void reset() {
+        SerializationValue.reset();
+    }
 
     /**
      * if statistics enabled InMemoryFormat.Object does not work
@@ -69,6 +86,58 @@ public class InMemoryFormatTest extends HazelcastTestSupport {
         // EntryProcessor should not trigger de-serialization
         map.executeOnKey("key", entry -> null);
         assertEquals(1, SerializationValue.deSerializeCount.get());
+    }
+
+    /**
+     * Listeners do not need to deserialize when using predicates with
+     * InMemoryFormat.Object
+     */
+    @Test
+    public void testIssue17206() throws Exception {
+        final String mapName = randomString();
+        Config config = new Config();
+        final MapConfig mapConfig = new MapConfig(mapName);
+        mapConfig.setInMemoryFormat(InMemoryFormat.OBJECT);
+        config.addMapConfig(mapConfig);
+        final HazelcastInstance instance = createHazelcastInstance(config);
+        final IMap<String, SerializationValue> map = instance.getMap(mapName);
+        final SerializationValue serializationValue = new SerializationValue();
+
+        CountDownLatch latch1 = new CountDownLatch(1);
+        CountDownLatch latch2 = new CountDownLatch(1);
+        CountDownLatch latch3 = new CountDownLatch(1);
+
+        // Setup predicates that will match our object
+        Predicate<String, SerializationValue> p1 = newPredicateBuilder()
+                .getEntryObject()
+                .get("attribute").isNotNull();
+        Predicate<String, SerializationValue> p2 = newPredicateBuilder()
+                .getEntryObject()
+                .get("attribute").equal("dummy");
+
+        map.addEntryListener(
+                (EntryAddedListener<String, SerializationValue>) event -> latch1.countDown(),
+                p1,
+                true);
+        map.addEntryListener(
+                (EntryAddedListener<String, SerializationValue>) event -> latch2.countDown(),
+                p2,
+                true);
+        map.addEntryListener(
+                (EntryAddedListener<String, SerializationValue>) event -> latch3.countDown(),
+                true);
+
+        map.put("key", serializationValue);
+
+        assertTrue(latch1.await(30, TimeUnit.SECONDS));
+        assertTrue(latch2.await(30, TimeUnit.SECONDS));
+        assertTrue(latch3.await(30, TimeUnit.SECONDS));
+
+        // EntryAddedListener should not trigger de-serialization
+        // or re-serialization.  Serialization happens only one time
+        // between client and server.
+        assertEquals(1, SerializationValue.deSerializeCount.get());
+        assertEquals(1, SerializationValue.serializeCount.get());
     }
 
     @Test
@@ -193,17 +262,34 @@ public class InMemoryFormatTest extends HazelcastTestSupport {
     public static class SerializationValue implements DataSerializable {
 
         static AtomicInteger deSerializeCount = new AtomicInteger();
+        static AtomicInteger serializeCount = new AtomicInteger();
+        // An attribute to use with predicates above
+        private String attribute = "dummy";
 
         public SerializationValue() {
         }
 
+        public String getAttribute() {
+            return attribute;
+        }
+
+        public void setAttribute(String attribute) {
+            this.attribute = attribute;
+        }
+
         @Override
         public void writeData(final ObjectDataOutput out) throws IOException {
+            serializeCount.incrementAndGet();
         }
 
         @Override
         public void readData(final ObjectDataInput in) throws IOException {
             deSerializeCount.incrementAndGet();
+        }
+
+        public static void reset() {
+            serializeCount.set(0);
+            deSerializeCount.set(0);
         }
     }
 

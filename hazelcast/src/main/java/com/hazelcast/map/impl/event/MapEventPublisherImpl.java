@@ -180,20 +180,29 @@ public class MapEventPublisherImpl implements MapEventPublisher {
 
     @Override
     public void publishEvent(Address caller, String mapName, EntryEventType eventType,
-                             Data dataKey, Object oldValue, Object dataValue) {
-        publishEvent(caller, mapName, eventType, dataKey, oldValue, dataValue, null);
+                             Data dataKey, Object oldValue, Object newValue) {
+        publishEvent(caller, mapName, eventType, dataKey, oldValue, newValue, newValue, null);
+    }
+
+    @Override
+    public void publishEvent(Address caller, String mapName, EntryEventType eventType,
+                             Data dataKey, Object oldValue, Object newValue,
+                             Object newDataValue) {
+        publishEvent(caller, mapName, eventType, dataKey, oldValue, newValue, newDataValue, null);
     }
 
 
     @Override
     public void publishEvent(Address caller, String mapName, EntryEventType eventType,
-                             Data dataKey, Object oldValue, Object value, Object mergingValue) {
+                             Data dataKey, Object oldValue, Object newValue, Object newValueData,
+                             Object mergingValue) {
         Collection<EventRegistration> registrations = getRegistrations(mapName);
         if (isEmpty(registrations)) {
             return;
         }
 
-        publishEvent(registrations, caller, mapName, eventType, dataKey, oldValue, value, mergingValue);
+        publishEvent(registrations, caller, mapName, eventType, dataKey, oldValue, newValue, newValueData,
+                mergingValue);
     }
 
     /**
@@ -211,19 +220,21 @@ public class MapEventPublisherImpl implements MapEventPublisher {
      * @param dataKey       the key of the event map entry
      * @param oldValue      the old value of the map entry
      * @param newValue      the new value of the map entry
+     * @param newValueData  the new value of the map entry, possibly encoded as
+     *                      {@link Data} to reduce re-serialization costs
      * @param mergingValue  the value used when performing a merge
      *                      operation in case of a {@link EntryEventType#MERGED} event.
      *                      This value together with the old value produced the new value.
      */
     private void publishEvent(Collection<EventRegistration> registrations, Address caller, String mapName,
                               EntryEventType eventType, Data dataKey, Object oldValue, Object newValue,
-                              Object mergingValue) {
+                              Object newValueData, Object mergingValue) {
         EntryEventDataCache eventDataCache = filteringStrategy.getEntryEventDataCache();
 
         int orderKey = pickOrderKey(dataKey);
 
         for (EventRegistration registration : registrations) {
-            publishEventQuietly(caller, mapName, eventType, dataKey, oldValue, newValue,
+            publishEventQuietly(caller, mapName, eventType, dataKey, oldValue, newValue, newValueData,
                     mergingValue, eventDataCache, orderKey, registration);
         }
 
@@ -235,7 +246,7 @@ public class MapEventPublisherImpl implements MapEventPublisher {
 
     @SuppressWarnings("checkstyle:parameternumber")
     private void publishEventQuietly(Address caller, String mapName, EntryEventType eventType, Data dataKey, Object oldValue,
-                                     Object newValue, Object mergingValue, EntryEventDataCache eventDataCache, int orderKey,
+                                     Object newValue, Object newValueData, Object mergingValue, EntryEventDataCache eventDataCache, int orderKey,
                                      EventRegistration registration) {
         try {
             EventFilter filter = registration.getFilter();
@@ -247,7 +258,7 @@ public class MapEventPublisherImpl implements MapEventPublisher {
             }
 
             EntryEventData eventDataToBePublished = eventDataCache
-                    .getOrCreateEventData(mapName, caller, dataKey, newValue, oldValue, mergingValue, eventTypeForPublishing,
+                    .getOrCreateEventData(mapName, caller, dataKey, newValueData, oldValue, mergingValue, eventTypeForPublishing,
                             isIncludeValue(filter));
             eventService.publishEvent(SERVICE_NAME, registration, eventDataToBePublished, orderKey);
         } catch (Exception ex) {
