@@ -1,6 +1,8 @@
 ---
 title: Deployment On Kubernetes
-description: Using Kubernetes for orchestrating Jet clusters. 
+description: Using Kubernetes for orchestrating Jet clusters.
+id: version-4.2-kubernetes
+original_id: kubernetes
 ---
 
 Hazelcast Jet has built-in support for Kubernetes deployments. It only
@@ -308,8 +310,8 @@ In a different terminal window, unpack and navigate to the distribution
 folder with the commands below:
 
 ```bash
-tar xf hazelcast-jet-{jet-version}.tar.gz
-cd hazelcast-jet-{jet-version}/
+tar xf hazelcast-jet-4.2.tar.gz
+cd hazelcast-jet-4.2/
 ```
 
 Verify that CLI can connect to the cluster with the command below:
@@ -317,7 +319,7 @@ Verify that CLI can connect to the cluster with the command below:
 ```bash
 $ bin/jet cluster
 State: ACTIVE
-Version: {jet-version}
+Version: 4.2
 Size: 2
 
 ADDRESS                  UUID

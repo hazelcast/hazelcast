@@ -1,6 +1,8 @@
 ---
-title: Install Kubernetes Operator 
+title: Install Kubernetes Operator
 description: A step-by-step guide on how to install Hazelcast Jet Kubernetes Operator on your Kubernetes Cluster.
+id: version-4.2-operator
+original_id: operator
 ---
 
 The [Operator Framework](https://github.com/operator-framework) is an
@@ -214,8 +216,8 @@ In a different terminal window, unpack and navigate to the distribution
 folder with the commands below:
 
 ```bash
-tar xf hazelcast-jet-{jet-version}.tar.gz
-cd hazelcast-jet-{jet-version}/
+tar xf hazelcast-jet-4.2.tar.gz
+cd hazelcast-jet-4.2/
 ```
 
 Verify that CLI can connect to the cluster with the command below:
@@ -223,7 +225,7 @@ Verify that CLI can connect to the cluster with the command below:
 ```bash
 $ bin/jet cluster
 State: ACTIVE
-Version: {jet-version}
+Version: 4.2
 Size: 2
 
 ADDRESS                  UUID

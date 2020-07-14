@@ -1,6 +1,8 @@
 ---
 title: Installation on Red Hat OpenShift
 description: Step-by-step guide to install Hazelcast Jet Enteprise Operator on Red Hat Openshift and deploying a sample job.
+id: version-4.2-operator-openshift
+original_id: operator-openshift
 ---
 
 [OpenShift](https://www.openshift.com/learn/what-is-openshift) is a
@@ -220,8 +222,8 @@ In a different terminal window, unpack and navigate to the distribution
 folder with the commands below:
 
 ```bash
-tar xf hazelcast-jet-{jet-version}.tar.gz
-cd hazelcast-jet-{jet-version}/
+tar xf hazelcast-jet-4.2.tar.gz
+cd hazelcast-jet-4.2/
 ```
 
 Verify that CLI can connect to the cluster with the command below:
@@ -229,7 +231,7 @@ Verify that CLI can connect to the cluster with the command below:
 ```bash
 $ bin/jet cluster
 State: ACTIVE
-Version: {jet-version}
+Version: 4.2
 Size: 2
 
 ADDRESS                  UUID
