@@ -36,6 +36,7 @@ import com.hazelcast.security.Credentials;
 import com.hazelcast.security.SecurityContext;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.util.ExceptionUtil;
 
 import java.lang.reflect.Field;
 import java.security.Permission;
@@ -52,6 +53,13 @@ import static com.hazelcast.util.ExceptionUtil.peel;
  */
 public abstract class AbstractMessageTask<P> implements MessageTask, SecureRequest {
 
+    private static final ExceptionUtil.ExceptionWrapper<Throwable> NOOP_WRAPPER =
+            new ExceptionUtil.ExceptionWrapper<Throwable>() {
+                @Override
+                public Throwable create(Throwable throwable, String message) {
+                    return throwable;
+                }
+            };
     private static final List<Class<? extends Throwable>> NON_PEELABLE_EXCEPTIONS =
             Arrays.asList(Error.class, MemberLeftException.class);
 
@@ -218,7 +226,8 @@ public abstract class AbstractMessageTask<P> implements MessageTask, SecureReque
 
     protected void sendClientMessage(Throwable throwable) {
         ClientExceptions exceptionFactory = clientEngine.getClientExceptions();
-        ClientMessage exception = exceptionFactory.createExceptionMessage(peelIfNeeded(throwable));
+        Throwable throwable1 = peelIfNeeded(throwable);
+        ClientMessage exception = exceptionFactory.createExceptionMessage(throwable1);
         sendClientMessage(exception);
     }
 
@@ -289,6 +298,6 @@ public abstract class AbstractMessageTask<P> implements MessageTask, SecureReque
             }
         }
 
-        return peel(t);
+        return peel(t, null, null, NOOP_WRAPPER);
     }
 }
