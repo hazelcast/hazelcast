@@ -31,6 +31,7 @@ import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.ClassDefinitionBuilder;
 import com.hazelcast.nio.serialization.GenericRecord;
 import com.hazelcast.nio.serialization.GenericRecordBuilder;
+import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.test.HazelcastTestSupport;
 import org.junit.Test;
 
@@ -258,6 +259,35 @@ public abstract class AbstractGenericRecordTest extends HazelcastTestSupport {
 
         Future<Integer> actual = service.submitToMember(new GetInt(), instances[0].getCluster().getLocalMember());
         assertEquals(expected.myint, actual.get().intValue());
+    }
+
+    @Test(expected = HazelcastSerializationException.class)
+    public void testInconsistentClassDefinition() {
+        createCluster();
+        ClassDefinition namedPortableClassDefinition =
+                new ClassDefinitionBuilder(TestSerializationConstants.PORTABLE_FACTORY_ID, TestSerializationConstants.NAMED_PORTABLE)
+                        .addUTFField("name").addIntField("myint").build();
+
+        ClassDefinition inConsistentNamedPortableClassDefinition =
+                new ClassDefinitionBuilder(TestSerializationConstants.PORTABLE_FACTORY_ID, TestSerializationConstants.NAMED_PORTABLE)
+                        .addUTFField("WrongName").addIntField("myint").build();
+
+
+        GenericRecord namedRecord = GenericRecordBuilder.portable(namedPortableClassDefinition)
+                .writeUTF("name", "foo")
+                .writeInt("myint", 123).build();
+
+
+        GenericRecord inConsistentNamedRecord = GenericRecordBuilder.portable(inConsistentNamedPortableClassDefinition)
+                .writeUTF("WrongName", "foo")
+                .writeInt("myint", 123).build();
+
+
+        HazelcastInstance instance = createAccessorInstance(serializationConfig);
+        IMap<Object, Object> map = instance.getMap("test");
+        map.put(1, namedRecord);
+
+        map.put(2, inConsistentNamedRecord);
     }
 
 }

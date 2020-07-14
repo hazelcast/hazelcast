@@ -133,9 +133,11 @@ public class SerializationServiceV1 extends AbstractSerializationService {
 
     private final PortableContextImpl portableContext;
     private final PortableSerializer portableSerializer;
+    private final boolean checkClassDefErrors;
 
     SerializationServiceV1(AbstractBuilder<?> builder) {
         super(builder);
+        checkClassDefErrors = builder.checkClassDefErrors;
         PortableHookLoader loader = new PortableHookLoader(builder.portableFactories, builder.getClassLoader());
         portableContext = new PortableContextImpl(this, builder.portableVersion);
         for (ClassDefinition cd : loader.getDefinitions()) {
@@ -143,7 +145,7 @@ public class SerializationServiceV1 extends AbstractSerializationService {
         }
         dataSerializerAdapter = createSerializerAdapter(
                 new DataSerializableSerializer(builder.dataSerializableFactories, builder.getClassLoader()));
-        portableSerializer = new PortableSerializer(portableContext, loader.getFactories());
+        portableSerializer = new PortableSerializer(portableContext, loader.getFactories(), checkClassDefErrors);
         portableSerializerAdapter = createSerializerAdapter(portableSerializer);
 
         javaSerializerAdapter = createSerializerAdapter(
@@ -257,7 +259,7 @@ public class SerializationServiceV1 extends AbstractSerializationService {
         safeRegister(HazelcastJsonValue.class, new HazelcastJsonValueSerializer());
     }
 
-    public void registerClassDefinitions(Collection<ClassDefinition> classDefinitions, boolean checkClassDefErrors) {
+    public void registerClassDefinitions(Collection<ClassDefinition> classDefinitions) {
         Map<Integer, Map<Integer, ClassDefinition>> factoryMap = createHashMap(classDefinitions.size());
         for (ClassDefinition cd : classDefinitions) {
             int factoryId = cd.getFactoryId();
@@ -270,12 +272,11 @@ public class SerializationServiceV1 extends AbstractSerializationService {
             classDefMap.put(classId, cd);
         }
         for (ClassDefinition classDefinition : classDefinitions) {
-            registerClassDefinition(classDefinition, factoryMap, checkClassDefErrors);
+            registerClassDefinition(classDefinition, factoryMap);
         }
     }
 
-    private void registerClassDefinition(ClassDefinition cd, Map<Integer, Map<Integer, ClassDefinition>> factoryMap,
-                                         boolean checkClassDefErrors) {
+    private void registerClassDefinition(ClassDefinition cd, Map<Integer, Map<Integer, ClassDefinition>> factoryMap) {
         Set<String> fieldNames = cd.getFieldNames();
         for (String fieldName : fieldNames) {
             FieldDefinition fd = cd.getField(fieldName);
@@ -286,7 +287,7 @@ public class SerializationServiceV1 extends AbstractSerializationService {
                 if (classDefinitionMap != null) {
                     ClassDefinition nestedCd = classDefinitionMap.get(classId);
                     if (nestedCd != null) {
-                        registerClassDefinition(nestedCd, factoryMap, checkClassDefErrors);
+                        registerClassDefinition(nestedCd, factoryMap);
                         portableContext.registerClassDefinition(nestedCd);
                         continue;
                     }
@@ -346,6 +347,7 @@ public class SerializationServiceV1 extends AbstractSerializationService {
         private boolean enableCompression;
         private boolean enableSharedObject;
         private ClassNameFilter classNameFilter;
+        private boolean checkClassDefErrors;
 
         protected AbstractBuilder() {
         }
@@ -382,6 +384,11 @@ public class SerializationServiceV1 extends AbstractSerializationService {
 
         public final T withClassNameFilter(ClassNameFilter classNameFilter) {
             this.classNameFilter = classNameFilter;
+            return self();
+        }
+
+        public final T withCheckClassDefErrors(boolean checkClassDefErrors) {
+            this.checkClassDefErrors = checkClassDefErrors;
             return self();
         }
     }

@@ -296,8 +296,9 @@ public class DefaultSerializationServiceBuilder implements SerializationServiceB
                     .withEnableSharedObject(enableSharedObject)
                     .withNotActiveExceptionSupplier(notActiveExceptionSupplier)
                     .withClassNameFilter(classNameFilter)
+                    .withCheckClassDefErrors(checkClassDefErrors)
                     .build();
-                serializationServiceV1.registerClassDefinitions(classDefinitions, checkClassDefErrors);
+                serializationServiceV1.registerClassDefinitions(classDefinitions);
                 return serializationServiceV1;
 
             // future version note: add new versions here by adding cases for each version and instantiate it properly

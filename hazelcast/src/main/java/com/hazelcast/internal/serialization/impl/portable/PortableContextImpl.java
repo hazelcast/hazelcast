@@ -44,8 +44,7 @@ public final class PortableContextImpl implements PortableContext {
     private static final Pattern NESTED_FIELD_PATTERN = Pattern.compile("\\.");
 
     private final int version;
-    private final ConcurrentHashMap<Integer, ClassDefinitionContext> classDefContextMap =
-            new ConcurrentHashMap<Integer, ClassDefinitionContext>();
+    private final ConcurrentHashMap<Integer, ClassDefinitionContext> classDefContextMap = new ConcurrentHashMap<>();
 
     private final InternalSerializationService serializationService;
 
