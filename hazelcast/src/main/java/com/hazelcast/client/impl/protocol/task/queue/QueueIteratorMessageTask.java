@@ -37,7 +37,7 @@ import java.util.List;
  * {@link com.hazelcast.client.impl.protocol.codec.QueueMessageType#QUEUE_ITERATOR}
  */
 public class QueueIteratorMessageTask
-        extends AbstractPartitionMessageTask<QueueIteratorCodec.RequestParameters> {
+        extends AbstractPartitionMessageTask<String> {
 
     public QueueIteratorMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -45,17 +45,17 @@ public class QueueIteratorMessageTask
 
     @Override
     protected Operation prepareOperation() {
-        return new IteratorOperation(parameters.name);
+        return new IteratorOperation(parameters);
     }
 
     @Override
-    protected QueueIteratorCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+    protected String decodeClientMessage(ClientMessage clientMessage) {
         return QueueIteratorCodec.decodeRequest(clientMessage);
     }
 
     @Override
     public Permission getRequiredPermission() {
-        return new QueuePermission(parameters.name, ActionConstants.ACTION_READ);
+        return new QueuePermission(parameters, ActionConstants.ACTION_READ);
     }
 
     @Override
@@ -82,6 +82,6 @@ public class QueueIteratorMessageTask
 
     @Override
     public String getDistributedObjectName() {
-        return parameters.name;
+        return parameters;
     }
 }

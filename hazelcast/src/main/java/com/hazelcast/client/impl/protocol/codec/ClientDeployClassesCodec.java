@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Each item is a Map.Entry<String, byte[]> in the list.
  * key of entry is full class name, and byte[] is the class definition.
  */
-@Generated("f8c8ce291fb75fb37a8f859816f7a1e8")
+@Generated("a90f7a338188dec6bbbda5f884b0d181")
 public final class ClientDeployClassesCodec {
     //hex: 0x000D00
     public static final int REQUEST_MESSAGE_TYPE = 3328;
@@ -50,14 +50,11 @@ public final class ClientDeployClassesCodec {
     private ClientDeployClassesCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class RequestParameters {
-
-        /**
-         * list of class definitions
-         */
-        public java.util.List<java.util.Map.Entry<java.lang.String, byte[]>> classDefinitions;
-    }
+    /**
+     * list of class definitions
+     */
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"UUF_UNUSED_PUBLIC_OR_PROTECTED_FIELD"})
+    public java.util.List<java.util.Map.Entry<java.lang.String, byte[]>> classDefinitions;
 
     public static ClientMessage encodeRequest(java.util.Collection<java.util.Map.Entry<java.lang.String, byte[]>> classDefinitions) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
@@ -71,17 +68,11 @@ public final class ClientDeployClassesCodec {
         return clientMessage;
     }
 
-    public static ClientDeployClassesCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
+    public static java.util.List<java.util.Map.Entry<java.lang.String, byte[]>> decodeRequest(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        RequestParameters request = new RequestParameters();
         //empty initial frame
         iterator.next();
-        request.classDefinitions = EntryListCodec.decode(iterator, StringCodec::decode, ByteArrayCodec::decode);
-        return request;
-    }
-
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class ResponseParameters {
+        return EntryListCodec.decode(iterator, StringCodec::decode, ByteArrayCodec::decode);
     }
 
     public static ClientMessage encodeResponse() {
@@ -93,12 +84,5 @@ public final class ClientDeployClassesCodec {
         return clientMessage;
     }
 
-    public static ClientDeployClassesCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
-        ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        ResponseParameters response = new ResponseParameters();
-        //empty initial frame
-        iterator.next();
-        return response;
-    }
 
 }

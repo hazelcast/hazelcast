@@ -34,11 +34,11 @@ import com.hazelcast.client.impl.protocol.codec.TransactionalMapSizeCodec;
 import com.hazelcast.client.impl.protocol.codec.TransactionalMapValuesCodec;
 import com.hazelcast.client.impl.protocol.codec.TransactionalMapValuesWithPredicateCodec;
 import com.hazelcast.client.impl.spi.ClientTransactionContext;
-import com.hazelcast.transaction.TransactionalMap;
-import com.hazelcast.map.impl.MapService;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.map.impl.MapService;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.spi.impl.UnmodifiableLazyList;
+import com.hazelcast.transaction.TransactionalMap;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -69,7 +69,7 @@ public class ClientTxnMapProxy<K, V> extends ClientTxnProxy implements Transacti
         ClientMessage request = TransactionalMapContainsKeyCodec
                 .encodeRequest(name, getTransactionId(), getThreadId(), toData(key));
         ClientMessage response = invoke(request);
-        return TransactionalMapContainsKeyCodec.decodeResponse(response).response;
+        return TransactionalMapContainsKeyCodec.decodeResponse(response);
     }
 
     @Override
@@ -78,7 +78,7 @@ public class ClientTxnMapProxy<K, V> extends ClientTxnProxy implements Transacti
 
         ClientMessage request = TransactionalMapGetCodec.encodeRequest(name, getTransactionId(), getThreadId(), toData(key));
         ClientMessage response = invoke(request);
-        return (V) toObject(TransactionalMapGetCodec.decodeResponse(response).response);
+        return (V) toObject(TransactionalMapGetCodec.decodeResponse(response));
     }
 
     @Override
@@ -88,14 +88,14 @@ public class ClientTxnMapProxy<K, V> extends ClientTxnProxy implements Transacti
         ClientMessage request = TransactionalMapGetForUpdateCodec
                 .encodeRequest(name, getTransactionId(), getThreadId(), toData(key));
         ClientMessage response = invoke(request);
-        return (V) toObject(TransactionalMapGetForUpdateCodec.decodeResponse(response).response);
+        return (V) toObject(TransactionalMapGetForUpdateCodec.decodeResponse(response));
     }
 
     @Override
     public int size() {
         ClientMessage request = TransactionalMapSizeCodec.encodeRequest(name, getTransactionId(), getThreadId());
         ClientMessage response = invoke(request);
-        return TransactionalMapSizeCodec.decodeResponse(response).response;
+        return TransactionalMapSizeCodec.decodeResponse(response);
     }
 
     @Override
@@ -116,7 +116,7 @@ public class ClientTxnMapProxy<K, V> extends ClientTxnProxy implements Transacti
         ClientMessage request = TransactionalMapPutCodec
                 .encodeRequest(name, getTransactionId(), getThreadId(), toData(key), toData(value), timeunit.toMillis(ttl));
         ClientMessage response = invoke(request);
-        return (V) toObject(TransactionalMapPutCodec.decodeResponse(response).response);
+        return (V) toObject(TransactionalMapPutCodec.decodeResponse(response));
     }
 
     @Override
@@ -137,7 +137,7 @@ public class ClientTxnMapProxy<K, V> extends ClientTxnProxy implements Transacti
         ClientMessage request = TransactionalMapPutIfAbsentCodec
                 .encodeRequest(name, getTransactionId(), getThreadId(), toData(key), toData(value));
         ClientMessage response = invoke(request);
-        return (V) toObject(TransactionalMapPutIfAbsentCodec.decodeResponse(response).response);
+        return (V) toObject(TransactionalMapPutIfAbsentCodec.decodeResponse(response));
     }
 
     @Override
@@ -148,7 +148,7 @@ public class ClientTxnMapProxy<K, V> extends ClientTxnProxy implements Transacti
         ClientMessage request = TransactionalMapReplaceCodec
                 .encodeRequest(name, getTransactionId(), getThreadId(), toData(key), toData(value));
         ClientMessage response = invoke(request);
-        return (V) toObject(TransactionalMapReplaceCodec.decodeResponse(response).response);
+        return (V) toObject(TransactionalMapReplaceCodec.decodeResponse(response));
     }
 
     @Override
@@ -160,7 +160,7 @@ public class ClientTxnMapProxy<K, V> extends ClientTxnProxy implements Transacti
         ClientMessage request = TransactionalMapReplaceIfSameCodec
                 .encodeRequest(name, getTransactionId(), getThreadId(), toData(key), toData(oldValue), toData(newValue));
         ClientMessage response = invoke(request);
-        return TransactionalMapReplaceIfSameCodec.decodeResponse(response).response;
+        return TransactionalMapReplaceIfSameCodec.decodeResponse(response);
     }
 
     @Override
@@ -169,7 +169,7 @@ public class ClientTxnMapProxy<K, V> extends ClientTxnProxy implements Transacti
 
         ClientMessage request = TransactionalMapRemoveCodec.encodeRequest(name, getTransactionId(), getThreadId(), toData(key));
         ClientMessage response = invoke(request);
-        return (V) toObject(TransactionalMapRemoveCodec.decodeResponse(response).response);
+        return (V) toObject(TransactionalMapRemoveCodec.decodeResponse(response));
     }
 
     @Override
@@ -188,7 +188,7 @@ public class ClientTxnMapProxy<K, V> extends ClientTxnProxy implements Transacti
         ClientMessage request = TransactionalMapRemoveIfSameCodec
                 .encodeRequest(name, getTransactionId(), getThreadId(), toData(key), toData(value));
         ClientMessage response = invoke(request);
-        return TransactionalMapRemoveIfSameCodec.decodeResponse(response).response;
+        return TransactionalMapRemoveIfSameCodec.decodeResponse(response);
     }
 
     @Override
@@ -196,7 +196,7 @@ public class ClientTxnMapProxy<K, V> extends ClientTxnProxy implements Transacti
     public Set<K> keySet() {
         ClientMessage request = TransactionalMapKeySetCodec.encodeRequest(name, getTransactionId(), getThreadId());
         ClientMessage response = invoke(request);
-        Collection<Data> dataKeySet = TransactionalMapKeySetCodec.decodeResponse(response).response;
+        Collection<Data> dataKeySet = TransactionalMapKeySetCodec.decodeResponse(response);
 
         HashSet<K> keySet = new HashSet<K>(dataKeySet.size());
         for (Data data : dataKeySet) {
@@ -213,7 +213,7 @@ public class ClientTxnMapProxy<K, V> extends ClientTxnProxy implements Transacti
         ClientMessage request = TransactionalMapKeySetWithPredicateCodec
                 .encodeRequest(name, getTransactionId(), getThreadId(), toData(predicate));
         ClientMessage response = invoke(request);
-        Collection<Data> dataKeySet = TransactionalMapKeySetWithPredicateCodec.decodeResponse(response).response;
+        Collection<Data> dataKeySet = TransactionalMapKeySetWithPredicateCodec.decodeResponse(response);
 
         HashSet<K> keySet = new HashSet<K>(dataKeySet.size());
         for (Data data : dataKeySet) {
@@ -227,7 +227,7 @@ public class ClientTxnMapProxy<K, V> extends ClientTxnProxy implements Transacti
     public Collection<V> values() {
         ClientMessage request = TransactionalMapValuesCodec.encodeRequest(name, getTransactionId(), getThreadId());
         ClientMessage response = invoke(request);
-        List dataValues = TransactionalMapValuesCodec.decodeResponse(response).response;
+        List dataValues = TransactionalMapValuesCodec.decodeResponse(response);
         return new UnmodifiableLazyList(dataValues, getSerializationService());
     }
 
@@ -239,7 +239,7 @@ public class ClientTxnMapProxy<K, V> extends ClientTxnProxy implements Transacti
         ClientMessage request = TransactionalMapValuesWithPredicateCodec
                 .encodeRequest(name, getTransactionId(), getThreadId(), toData(predicate));
         ClientMessage response = invoke(request);
-        Collection<Data> dataValues = TransactionalMapValuesWithPredicateCodec.decodeResponse(response).response;
+        Collection<Data> dataValues = TransactionalMapValuesWithPredicateCodec.decodeResponse(response);
 
         List<V> values = new ArrayList<V>(dataValues.size());
         for (Data value : dataValues) {

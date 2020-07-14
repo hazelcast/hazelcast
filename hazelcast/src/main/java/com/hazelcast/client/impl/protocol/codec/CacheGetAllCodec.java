@@ -39,7 +39,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * configured javax.cache.integration.CacheLoader might be called to retrieve the values of the keys from any kind
  * of external resource.
  */
-@Generated("6991edf7a180e3f9e09d40b140bdda26")
+@Generated("971482091094574aef70809b5c6ba61e")
 public final class CacheGetAllCodec {
     //hex: 0x130900
     public static final int REQUEST_MESSAGE_TYPE = 1247488;
@@ -96,16 +96,6 @@ public final class CacheGetAllCodec {
         return request;
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class ResponseParameters {
-
-        /**
-         * A map of entries that were found for the given keys. Keys not found
-         * in the cache are not in the returned map.
-         */
-        public java.util.List<java.util.Map.Entry<com.hazelcast.internal.serialization.Data, com.hazelcast.internal.serialization.Data>> response;
-    }
-
     public static ClientMessage encodeResponse(java.util.Collection<java.util.Map.Entry<com.hazelcast.internal.serialization.Data, com.hazelcast.internal.serialization.Data>> response) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
@@ -116,13 +106,15 @@ public final class CacheGetAllCodec {
         return clientMessage;
     }
 
-    public static CacheGetAllCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
+    /**
+    * A map of entries that were found for the given keys. Keys not found
+    * in the cache are not in the returned map.
+    */
+    public static java.util.List<java.util.Map.Entry<com.hazelcast.internal.serialization.Data, com.hazelcast.internal.serialization.Data>> decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        ResponseParameters response = new ResponseParameters();
         //empty initial frame
         iterator.next();
-        response.response = EntryListCodec.decode(iterator, DataCodec::decode, DataCodec::decode);
-        return response;
+        return EntryListCodec.decode(iterator, DataCodec::decode, DataCodec::decode);
     }
 
 }

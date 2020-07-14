@@ -100,7 +100,8 @@ public class IndexingMutationObserver<R extends Record> implements MutationObser
 
     @Override
     public void onDestroy(boolean isDuringShutdown, boolean internal) {
-        clearGlobalIndexes(isDuringShutdown);
+        boolean destroyGlobalIndexes = isDuringShutdown || mapContainer.isDestroyed();
+        clearGlobalIndexes(destroyGlobalIndexes);
         clearPartitionedIndexes(true);
     }
 

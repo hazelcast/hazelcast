@@ -355,7 +355,7 @@ abstract class ClientCacheProxySupport<K, V> extends ClientProxy implements ICac
         int completionId = withCompletionEvent ? nextCompletionId() : -1;
         ClientMessage request = CacheGetAndRemoveCodec.encodeRequest(nameWithPrefix, keyData, completionId);
         ClientInvocationFuture future = invoke(request, keyData, completionId);
-        return newDelegatingFuture(future, clientMessage -> CacheGetAndRemoveCodec.decodeResponse(clientMessage).response);
+        return newDelegatingFuture(future, CacheGetAndRemoveCodec::decodeResponse);
     }
 
     protected boolean removeSync(K key, V oldValue,
@@ -421,7 +421,7 @@ abstract class ClientCacheProxySupport<K, V> extends ClientProxy implements ICac
         int completionId = withCompletionEvent ? nextCompletionId() : -1;
         ClientMessage request = CacheRemoveCodec.encodeRequest(nameWithPrefix, keyData, oldValueData, completionId);
         ClientInvocationFuture future = invoke(request, keyData, completionId);
-        return newDelegatingFuture(future, clientMessage -> CacheRemoveCodec.decodeResponse(clientMessage).response);
+        return newDelegatingFuture(future, CacheRemoveCodec::decodeResponse);
     }
 
     protected boolean replaceSync(K key, V oldValue, V newValue,
@@ -501,8 +501,7 @@ abstract class ClientCacheProxySupport<K, V> extends ClientProxy implements ICac
                 expiryPolicyData, completionId);
 
         ClientDelegatingFuture<Boolean> delegatingFuture
-                = newDelegatingFuture(invoke(request, keyData, completionId),
-                message -> CacheReplaceCodec.decodeResponse(message).response);
+                = newDelegatingFuture(invoke(request, keyData, completionId), CacheReplaceCodec::decodeResponse);
 
         return addCallback(delegatingFuture, statsCallback);
     }
@@ -551,7 +550,7 @@ abstract class ClientCacheProxySupport<K, V> extends ClientProxy implements ICac
                 newValueData, expiryPolicyData, completionId);
         ClientInvocationFuture future = invoke(request, keyData, completionId);
         ClientDelegatingFuture<T> delegatingFuture
-                = newDelegatingFuture(future, message -> CacheGetAndReplaceCodec.decodeResponse(message).response);
+                = newDelegatingFuture(future, CacheGetAndReplaceCodec::decodeResponse);
         return addCallback(delegatingFuture, statsCallback);
     }
 
@@ -615,7 +614,7 @@ abstract class ClientCacheProxySupport<K, V> extends ClientProxy implements ICac
                             Data expiryPolicyData, boolean isGet) throws InterruptedException, ExecutionException {
         ClientInvocationFuture invocationFuture = putInternal(keyData, valueData, expiryPolicyData, isGet, true);
         ClientDelegatingFuture<V> delegatingFuture =
-                newDelegatingFuture(invocationFuture, clientMessage -> CachePutCodec.decodeResponse(clientMessage).response);
+                newDelegatingFuture(invocationFuture, CachePutCodec::decodeResponse);
         return delegatingFuture.get();
     }
 
@@ -641,7 +640,7 @@ abstract class ClientCacheProxySupport<K, V> extends ClientProxy implements ICac
                                              BiConsumer<V, Throwable> statsCallback) {
         ClientInvocationFuture invocationFuture = putInternal(keyData, valueData, expiryPolicyData, isGet, withCompletionEvent);
         InternalCompletableFuture future
-                = newDelegatingFuture(invocationFuture, message -> CachePutCodec.decodeResponse(message).response);
+                = newDelegatingFuture(invocationFuture, CachePutCodec::decodeResponse);
 
         return addCallback(future, statsCallback);
     }
@@ -710,7 +709,7 @@ abstract class ClientCacheProxySupport<K, V> extends ClientProxy implements ICac
         ClientMessage request = CachePutIfAbsentCodec.encodeRequest(nameWithPrefix, keyData,
                 valueData, expiryPolicyData, completionId);
         ClientInvocationFuture future = invoke(request, keyData, completionId);
-        return newDelegatingFuture(future, message -> CachePutIfAbsentCodec.decodeResponse(message).response);
+        return newDelegatingFuture(future, CachePutIfAbsentCodec::decodeResponse);
     }
 
     protected BiConsumer<V, Throwable> newStatsCallbackOrNull(boolean isGet) {
@@ -732,7 +731,7 @@ abstract class ClientCacheProxySupport<K, V> extends ClientProxy implements ICac
         ClientMessage request = CacheSetExpiryPolicyCodec.encodeRequest(nameWithPrefix, list, expiryPolicyData);
         ClientInvocationFuture future = invoke(request, keyData, IGNORE_COMPLETION);
         ClientDelegatingFuture<Boolean> delegatingFuture =
-                newDelegatingFuture(future, clientMessage -> CacheSetExpiryPolicyCodec.decodeResponse(clientMessage).response);
+                newDelegatingFuture(future, CacheSetExpiryPolicyCodec::decodeResponse);
         try {
             return delegatingFuture.get();
         } catch (Throwable e) {
@@ -856,7 +855,7 @@ abstract class ClientCacheProxySupport<K, V> extends ClientProxy implements ICac
         ClientMessage request = CacheGetAllCodec.encodeRequest(nameWithPrefix, dataKeys, expiryPolicyData);
         ClientMessage responseMessage = invoke(request);
 
-        List<Map.Entry<Data, Data>> response = CacheGetAllCodec.decodeResponse(responseMessage).response;
+        List<Map.Entry<Data, Data>> response = CacheGetAllCodec.decodeResponse(responseMessage);
         for (Map.Entry<Data, Data> entry : response) {
             resultingKeyValuePairs.add(entry.getKey());
             resultingKeyValuePairs.add(entry.getValue());
@@ -954,7 +953,7 @@ abstract class ClientCacheProxySupport<K, V> extends ClientProxy implements ICac
         Data keyData = toData(key);
         ClientMessage request = CacheContainsKeyCodec.encodeRequest(nameWithPrefix, keyData);
         ClientMessage result = invoke(request, keyData);
-        return CacheContainsKeyCodec.decodeResponse(result).response;
+        return CacheContainsKeyCodec.decodeResponse(result);
     }
 
     protected void loadAllInternal(Set<? extends K> keys, List<Data> dataKeys, boolean replaceExistingValues,
@@ -1022,7 +1021,7 @@ abstract class ClientCacheProxySupport<K, V> extends ClientProxy implements ICac
         try {
             InternalCompletableFuture<ClientMessage> future = invoke(request, keyData, completionId);
             ClientMessage response = getSafely(future);
-            Data data = CacheEntryProcessorCodec.decodeResponse(response).response;
+            Data data = CacheEntryProcessorCodec.decodeResponse(response);
             // at client side, we don't know what entry processor does so we ignore it from statistics perspective
             return toObject(data);
         } catch (CacheException ce) {
@@ -1061,7 +1060,7 @@ abstract class ClientCacheProxySupport<K, V> extends ClientProxy implements ICac
 
         ClientInvocation clientInvocation = new ClientInvocation(getClient(), request, name, partitionId);
         ClientInvocationFuture future = clientInvocation.invoke();
-        return newDelegatingFuture(future, message -> CacheGetCodec.decodeResponse(message).response, deserializeResponse);
+        return newDelegatingFuture(future, CacheGetCodec::decodeResponse, deserializeResponse);
     }
 
     private List<Data>[] groupKeysToPartitions(Set<? extends K> keys, Set<Data> serializedKeys) {

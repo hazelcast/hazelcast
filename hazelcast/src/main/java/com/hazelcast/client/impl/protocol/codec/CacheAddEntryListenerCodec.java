@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Adds an entry listener for this cache. For the types of events that the listener
  * will be notified for, see the documentation of the type field of the Cache event below.
  */
-@Generated("38e9a0b8b11aaf0dc00697daff457bf1")
+@Generated("e5b08e560dc8ad6bcea41c7cda211aca")
 public final class CacheAddEntryListenerCodec {
     //hex: 0x130100
     public static final int REQUEST_MESSAGE_TYPE = 1245440;
@@ -93,15 +93,6 @@ public final class CacheAddEntryListenerCodec {
         return request;
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class ResponseParameters {
-
-        /**
-         * Registration id for the registered listener.
-         */
-        public java.util.UUID response;
-    }
-
     public static ClientMessage encodeResponse(java.util.UUID response) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
@@ -112,12 +103,13 @@ public final class CacheAddEntryListenerCodec {
         return clientMessage;
     }
 
-    public static CacheAddEntryListenerCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
+    /**
+    * Registration id for the registered listener.
+    */
+    public static java.util.UUID decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        ResponseParameters response = new ResponseParameters();
         ClientMessage.Frame initialFrame = iterator.next();
-        response.response = decodeUUID(initialFrame.content, RESPONSE_RESPONSE_FIELD_OFFSET);
-        return response;
+        return decodeUUID(initialFrame.content, RESPONSE_RESPONSE_FIELD_OFFSET);
     }
 
     public static ClientMessage encodeCacheEvent(int type, java.util.Collection<com.hazelcast.cache.impl.CacheEventData> keys, int completionId) {

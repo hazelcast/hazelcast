@@ -591,6 +591,11 @@ public final class MetricDescriptorConstants {
     public static final String WAN_METRIC_MERKLE_SYNC_MAX_LEAF_ENTRY_COUNT = "maxLeafEntryCount";
     public static final String WAN_METRIC_MERKLE_SYNC_AVG_ENTRIES_PER_LEAF = "avgEntriesPerLeaf";
     public static final String WAN_METRIC_MERKLE_SYNC_STD_DEV_ENTRIES_PER_LEAF = "stdDevEntriesPerLeaf";
+    public static final String WAN_METRIC_ACK_DELAY_TOTAL_COUNT = "ackDelayTotalCount";
+    public static final String WAN_METRIC_ACK_DELAY_TOTAL_MILLIS = "ackDelayTotalMillis";
+    public static final String WAN_METRIC_ACK_DELAY_CURRENT_MILLIS = "ackDelayCurrentMillis";
+    public static final String WAN_METRIC_ACK_DELAY_LAST_START = "ackDelayLastStart";
+    public static final String WAN_METRIC_ACK_DELAY_LAST_END = "ackDelayLastEnd";
     // ===[/WAN]========================================================
 
     public static final String GENERAL_DISCRIMINATOR_NAME = "name";

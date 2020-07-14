@@ -128,7 +128,7 @@ public class ScriptingProtectionTest extends HazelcastTestSupport {
         return new ClientDelegatingFuture<>(
                 invocation.invoke(),
                 ((HazelcastClientProxy) client).client.getSerializationService(),
-                clientMessage -> MCRunScriptCodec.decodeResponse(clientMessage).result
+                MCRunScriptCodec::decodeResponse
         );
     }
 }

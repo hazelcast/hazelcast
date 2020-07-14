@@ -28,7 +28,7 @@ import java.security.Permission;
 import static com.hazelcast.durableexecutor.impl.DistributedDurableExecutorService.SERVICE_NAME;
 
 public class DurableExecutorIsShutdownMessageTask
-        extends AbstractCallableMessageTask<DurableExecutorIsShutdownCodec.RequestParameters> {
+        extends AbstractCallableMessageTask<String> {
 
     public DurableExecutorIsShutdownMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -37,11 +37,11 @@ public class DurableExecutorIsShutdownMessageTask
     @Override
     protected Object call() throws Exception {
         DistributedDurableExecutorService service = getService(SERVICE_NAME);
-        return service.isShutdown(parameters.name);
+        return service.isShutdown(parameters);
     }
 
     @Override
-    protected DurableExecutorIsShutdownCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+    protected String decodeClientMessage(ClientMessage clientMessage) {
         return DurableExecutorIsShutdownCodec.decodeRequest(clientMessage);
     }
 
@@ -62,7 +62,7 @@ public class DurableExecutorIsShutdownMessageTask
 
     @Override
     public String getDistributedObjectName() {
-        return parameters.name;
+        return parameters;
     }
 
     @Override

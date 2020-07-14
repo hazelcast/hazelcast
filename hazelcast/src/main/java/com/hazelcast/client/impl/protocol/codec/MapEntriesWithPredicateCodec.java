@@ -39,7 +39,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * in the collection, and vice-versa. This method is always executed by a distributed query, so it may throw a
  * QueryResultSizeExceededException if query result size limit is configured.
  */
-@Generated("ef1a258056cfe8dabd4cf49922d6d3fc")
+@Generated("243cfa331a0b7450a22af143c88accbf")
 public final class MapEntriesWithPredicateCodec {
     //hex: 0x012800
     public static final int REQUEST_MESSAGE_TYPE = 75776;
@@ -88,15 +88,6 @@ public final class MapEntriesWithPredicateCodec {
         return request;
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class ResponseParameters {
-
-        /**
-         * result key-value entry collection of the query.
-         */
-        public java.util.List<java.util.Map.Entry<com.hazelcast.internal.serialization.Data, com.hazelcast.internal.serialization.Data>> response;
-    }
-
     public static ClientMessage encodeResponse(java.util.Collection<java.util.Map.Entry<com.hazelcast.internal.serialization.Data, com.hazelcast.internal.serialization.Data>> response) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
@@ -107,13 +98,14 @@ public final class MapEntriesWithPredicateCodec {
         return clientMessage;
     }
 
-    public static MapEntriesWithPredicateCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
+    /**
+    * result key-value entry collection of the query.
+    */
+    public static java.util.List<java.util.Map.Entry<com.hazelcast.internal.serialization.Data, com.hazelcast.internal.serialization.Data>> decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        ResponseParameters response = new ResponseParameters();
         //empty initial frame
         iterator.next();
-        response.response = EntryListCodec.decode(iterator, DataCodec::decode, DataCodec::decode);
-        return response;
+        return EntryListCodec.decode(iterator, DataCodec::decode, DataCodec::decode);
     }
 
 }

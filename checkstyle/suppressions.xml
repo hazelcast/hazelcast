@@ -179,8 +179,9 @@
               files="com[\\/]hazelcast[\\/]client[\\/]impl[\\/]protocol[\\/]ClientExceptions.java"/>
     <suppress checks="MethodCount" files="com[\\/]hazelcast[\\/]client[\\/]impl[\\/]protocol[\\/]ClientMessage"/>
     <suppress checks="MethodCount" files="com[\\/]hazelcast[\\/]client[\\/]impl[\\/]protocol[\\/]util[\\/]MessageFlyweight"/>
-    <suppress checks="UnusedImport" files="com[\\/]hazelcast[\\/]client[\\/]impl[\\/]protocol[\\/]codec[\\/]"/>
-    <suppress checks="UnusedImport" files="com[\\/]hazelcast[\\/]internal[\\/]longregister[\\/]client[\\/]codec[\\/]"/>
+    <suppress checks="UnusedImport|DeclarationOrder" files="com[\\/]hazelcast[\\/]client[\\/]impl[\\/]protocol[\\/]codec[\\/]"/>
+    <suppress checks="UnusedImport|DeclarationOrder"
+              files="com[\\/]hazelcast[\\/]internal[\\/]longregister[\\/]client[\\/]codec[\\/]"/>
 
     <!-- Query -->
     <suppress checks="MethodLength|CyclomaticComplexity|NPathComplexity" files="com[\\/]hazelcast[\\/]query[\\/]SqlPredicate"/>

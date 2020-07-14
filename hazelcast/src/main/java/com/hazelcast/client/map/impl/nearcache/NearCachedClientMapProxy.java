@@ -20,7 +20,6 @@ import com.hazelcast.client.impl.ClientDelegatingFuture;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MapAddNearCacheInvalidationListenerCodec;
 import com.hazelcast.client.impl.protocol.codec.MapGetCodec;
-import com.hazelcast.client.impl.protocol.codec.MapRemoveCodec;
 import com.hazelcast.client.impl.protocol.codec.MapRemoveEntryListenerCodec;
 import com.hazelcast.client.impl.proxy.ClientMapProxy;
 import com.hazelcast.client.impl.spi.ClientContext;
@@ -167,7 +166,7 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
         if (reservationId != NOT_RESERVED) {
             invocationFuture.whenCompleteAsync((response, t) -> {
                 if (t == null) {
-                    Object newDecodedResponse = MapGetCodec.decodeResponse(response).response;
+                    Object newDecodedResponse = MapGetCodec.decodeResponse(response);
                     nearCache.tryPublishReserved(ncKey, newDecodedResponse, reservationId, false);
                 } else {
                     invalidateNearCache(ncKey);
@@ -176,19 +175,17 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
         }
 
         return new ClientDelegatingFuture<>(getAsyncInternal(key),
-                getSerializationService(), clientMessage -> MapGetCodec.decodeResponse(clientMessage).response);
+                getSerializationService(), MapGetCodec::decodeResponse);
     }
 
     @Override
-    protected MapRemoveCodec.ResponseParameters removeInternal(Object key) {
+    protected Data removeInternal(Object key) {
         key = toNearCacheKey(key);
-        MapRemoveCodec.ResponseParameters responseParameters;
         try {
-            responseParameters = super.removeInternal(key);
+            return super.removeInternal(key);
         } finally {
             invalidateNearCache(key);
         }
-        return responseParameters;
     }
 
     @Override
@@ -638,7 +635,7 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
 
             @Override
             public UUID decodeAddResponse(ClientMessage clientMessage) {
-                return MapAddNearCacheInvalidationListenerCodec.decodeResponse(clientMessage).response;
+                return MapAddNearCacheInvalidationListenerCodec.decodeResponse(clientMessage);
             }
 
             @Override
@@ -648,7 +645,7 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
 
             @Override
             public boolean decodeRemoveResponse(ClientMessage clientMessage) {
-                return MapRemoveEntryListenerCodec.decodeResponse(clientMessage).response;
+                return MapRemoveEntryListenerCodec.decodeResponse(clientMessage);
             }
         };
     }

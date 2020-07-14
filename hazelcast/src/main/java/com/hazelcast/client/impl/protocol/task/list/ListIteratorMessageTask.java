@@ -35,7 +35,7 @@ import java.security.Permission;
  * {@link com.hazelcast.client.impl.protocol.codec.ListMessageType#LIST_ITERATOR}
  */
 public class ListIteratorMessageTask
-        extends AbstractPartitionMessageTask<ListIteratorCodec.RequestParameters> {
+        extends AbstractPartitionMessageTask<String> {
 
     public ListIteratorMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -43,11 +43,11 @@ public class ListIteratorMessageTask
 
     @Override
     protected Operation prepareOperation() {
-        return new ListSubOperation(parameters.name, -1, -1);
+        return new ListSubOperation(parameters, -1, -1);
     }
 
     @Override
-    protected ListIteratorCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+    protected String decodeClientMessage(ClientMessage clientMessage) {
         return ListIteratorCodec.decodeRequest(clientMessage);
     }
 
@@ -68,7 +68,7 @@ public class ListIteratorMessageTask
 
     @Override
     public Permission getRequiredPermission() {
-        return new ListPermission(parameters.name, ActionConstants.ACTION_READ);
+        return new ListPermission(parameters, ActionConstants.ACTION_READ);
     }
 
     @Override
@@ -78,7 +78,7 @@ public class ListIteratorMessageTask
 
     @Override
     public String getDistributedObjectName() {
-        return parameters.name;
+        return parameters;
     }
 
 }

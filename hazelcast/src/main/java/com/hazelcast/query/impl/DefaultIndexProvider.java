@@ -37,5 +37,4 @@ public class DefaultIndexProvider implements IndexProvider {
     ) {
         return new IndexImpl(config, ss, extractors, copyBehavior, stats);
     }
-
 }

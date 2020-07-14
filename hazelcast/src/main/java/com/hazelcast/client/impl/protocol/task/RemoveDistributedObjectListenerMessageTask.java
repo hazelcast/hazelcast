@@ -23,9 +23,10 @@ import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.spi.impl.proxyservice.impl.ProxyServiceImpl;
 
 import java.security.Permission;
+import java.util.UUID;
 
 public class RemoveDistributedObjectListenerMessageTask
-        extends AbstractCallableMessageTask<ClientRemoveDistributedObjectListenerCodec.RequestParameters> {
+        extends AbstractCallableMessageTask<UUID> {
 
     public RemoveDistributedObjectListenerMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -34,17 +35,17 @@ public class RemoveDistributedObjectListenerMessageTask
     @Override
     protected Object call()
             throws Exception {
-        endpoint.removeDestroyAction(parameters.registrationId);
-        return clientEngine.getProxyService().removeProxyListener(parameters.registrationId);
+        endpoint.removeDestroyAction(parameters);
+        return clientEngine.getProxyService().removeProxyListener(parameters);
     }
 
     @Override
     public Object[] getParameters() {
-        return new Object[]{parameters.registrationId};
+        return new Object[]{parameters};
     }
 
     @Override
-    protected ClientRemoveDistributedObjectListenerCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+    protected UUID decodeClientMessage(ClientMessage clientMessage) {
         return ClientRemoveDistributedObjectListenerCodec.decodeRequest(clientMessage);
     }
 

@@ -59,6 +59,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.instance.impl.HazelcastInstanceProxy;
 import com.hazelcast.internal.cluster.impl.VersionMismatchException;
+import com.hazelcast.internal.management.dto.MCEventDTO;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -71,6 +72,7 @@ import org.junit.runner.RunWith;
 
 import java.security.AccessControlException;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
@@ -79,7 +81,6 @@ import static com.hazelcast.internal.util.StringUtil.isNullOrEmptyAfterTrim;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -224,14 +225,13 @@ public class MCMessageTasksTest extends HazelcastTestSupport {
                 null
         );
 
-        ClientDelegatingFuture<MCGetMemberConfigCodec.ResponseParameters> future = new ClientDelegatingFuture<>(
+        ClientDelegatingFuture<String> future = new ClientDelegatingFuture<>(
                 invocation.invoke(),
                 getClientImpl().getSerializationService(),
                 MCGetMemberConfigCodec::decodeResponse
         );
 
-        MCGetMemberConfigCodec.ResponseParameters response = future.get(ASSERT_TRUE_EVENTUALLY_TIMEOUT, SECONDS);
-        assertFalse(isNullOrEmptyAfterTrim(response.configXml));
+        assertFalse(isNullOrEmptyAfterTrim(future.get(ASSERT_TRUE_EVENTUALLY_TIMEOUT, SECONDS)));
     }
 
     @Test
@@ -242,14 +242,12 @@ public class MCMessageTasksTest extends HazelcastTestSupport {
                 null
         );
 
-        ClientDelegatingFuture<MCGetSystemPropertiesCodec.ResponseParameters> future = new ClientDelegatingFuture<>(
-                invocation.invoke(),
-                getClientImpl().getSerializationService(),
+        ClientDelegatingFuture<java.util.List<java.util.Map.Entry<java.lang.String, java.lang.String>>> future
+                = new ClientDelegatingFuture<>(invocation.invoke(), getClientImpl().getSerializationService(),
                 MCGetSystemPropertiesCodec::decodeResponse
         );
 
-        MCGetSystemPropertiesCodec.ResponseParameters response = future.get(ASSERT_TRUE_EVENTUALLY_TIMEOUT, SECONDS);
-        assertFalse(response.systemProperties.isEmpty());
+        assertFalse(future.get(ASSERT_TRUE_EVENTUALLY_TIMEOUT, SECONDS).isEmpty());
     }
 
     @Test
@@ -260,14 +258,13 @@ public class MCMessageTasksTest extends HazelcastTestSupport {
                 null
         );
 
-        ClientDelegatingFuture<MCGetThreadDumpCodec.ResponseParameters> future = new ClientDelegatingFuture<>(
+        ClientDelegatingFuture<String> future = new ClientDelegatingFuture<>(
                 invocation.invoke(),
                 getClientImpl().getSerializationService(),
                 MCGetThreadDumpCodec::decodeResponse
         );
 
-        MCGetThreadDumpCodec.ResponseParameters response = future.get(ASSERT_TRUE_EVENTUALLY_TIMEOUT, SECONDS);
-        assertFalse(isNullOrEmptyAfterTrim(response.threadDump));
+        assertFalse(isNullOrEmptyAfterTrim(future.get(ASSERT_TRUE_EVENTUALLY_TIMEOUT, SECONDS)));
     }
 
     @Test
@@ -278,14 +275,13 @@ public class MCMessageTasksTest extends HazelcastTestSupport {
                 null
         );
 
-        ClientDelegatingFuture<MCGetTimedMemberStateCodec.ResponseParameters> future = new ClientDelegatingFuture<>(
+        ClientDelegatingFuture<String> future = new ClientDelegatingFuture<>(
                 invocation.invoke(),
                 getClientImpl().getSerializationService(),
                 MCGetTimedMemberStateCodec::decodeResponse
         );
 
-        MCGetTimedMemberStateCodec.ResponseParameters response = future.get(ASSERT_TRUE_EVENTUALLY_TIMEOUT, SECONDS);
-        assertFalse(isNullOrEmptyAfterTrim(response.timedMemberStateJson));
+        assertFalse(isNullOrEmptyAfterTrim(future.get(ASSERT_TRUE_EVENTUALLY_TIMEOUT, SECONDS)));
     }
 
     @Test
@@ -296,14 +292,13 @@ public class MCMessageTasksTest extends HazelcastTestSupport {
                 null
         );
 
-        ClientDelegatingFuture<MCInterruptHotRestartBackupCodec.ResponseParameters> future = new ClientDelegatingFuture<>(
+        ClientDelegatingFuture<Void> future = new ClientDelegatingFuture<>(
                 invocation.invoke(),
                 getClientImpl().getSerializationService(),
-                MCInterruptHotRestartBackupCodec::decodeResponse
+                clientMessage -> null
         );
 
-        MCInterruptHotRestartBackupCodec.ResponseParameters response = future.get(ASSERT_TRUE_EVENTUALLY_TIMEOUT, SECONDS);
-        assertNotNull(response);
+        future.get(ASSERT_TRUE_EVENTUALLY_TIMEOUT, SECONDS);
     }
 
     @Test
@@ -314,14 +309,13 @@ public class MCMessageTasksTest extends HazelcastTestSupport {
                 null
         );
 
-        ClientDelegatingFuture<MCTriggerHotRestartBackupCodec.ResponseParameters> future = new ClientDelegatingFuture<>(
+        ClientDelegatingFuture<Void> future = new ClientDelegatingFuture<>(
                 invocation.invoke(),
                 getClientImpl().getSerializationService(),
-                MCTriggerHotRestartBackupCodec::decodeResponse
+                clientMessage -> null
         );
 
-        MCTriggerHotRestartBackupCodec.ResponseParameters response = future.get(ASSERT_TRUE_EVENTUALLY_TIMEOUT, SECONDS);
-        assertNotNull(response);
+        future.get(ASSERT_TRUE_EVENTUALLY_TIMEOUT, SECONDS);
     }
 
     @Test
@@ -332,14 +326,13 @@ public class MCMessageTasksTest extends HazelcastTestSupport {
                 null
         );
 
-        ClientDelegatingFuture<MCTriggerForceStartCodec.ResponseParameters> future = new ClientDelegatingFuture<>(
+        ClientDelegatingFuture<Boolean> future = new ClientDelegatingFuture<>(
                 invocation.invoke(),
                 getClientImpl().getSerializationService(),
                 MCTriggerForceStartCodec::decodeResponse
         );
 
-        MCTriggerForceStartCodec.ResponseParameters response = future.get(ASSERT_TRUE_EVENTUALLY_TIMEOUT, SECONDS);
-        assertFalse(response.result);
+        assertFalse(future.get(ASSERT_TRUE_EVENTUALLY_TIMEOUT, SECONDS));
     }
 
     @Test
@@ -350,14 +343,13 @@ public class MCMessageTasksTest extends HazelcastTestSupport {
                 null
         );
 
-        ClientDelegatingFuture<MCTriggerPartialStartCodec.ResponseParameters> future = new ClientDelegatingFuture<>(
+        ClientDelegatingFuture<Boolean> future = new ClientDelegatingFuture<>(
                 invocation.invoke(),
                 getClientImpl().getSerializationService(),
                 MCTriggerPartialStartCodec::decodeResponse
         );
 
-        MCTriggerPartialStartCodec.ResponseParameters response = future.get(ASSERT_TRUE_EVENTUALLY_TIMEOUT, SECONDS);
-        assertFalse(response.result);
+        assertFalse(future.get(ASSERT_TRUE_EVENTUALLY_TIMEOUT, SECONDS));
     }
 
     @Test
@@ -368,14 +360,13 @@ public class MCMessageTasksTest extends HazelcastTestSupport {
                 null
         );
 
-        ClientDelegatingFuture<MCMatchMCConfigCodec.ResponseParameters> future = new ClientDelegatingFuture<>(
+        ClientDelegatingFuture<Boolean> future = new ClientDelegatingFuture<>(
                 invocation.invoke(),
                 getClientImpl().getSerializationService(),
                 MCMatchMCConfigCodec::decodeResponse
         );
 
-        MCMatchMCConfigCodec.ResponseParameters response = future.get(ASSERT_TRUE_EVENTUALLY_TIMEOUT, SECONDS);
-        assertFalse(response.result);
+        assertFalse(future.get(ASSERT_TRUE_EVENTUALLY_TIMEOUT, SECONDS));
     }
 
     @Test
@@ -386,14 +377,13 @@ public class MCMessageTasksTest extends HazelcastTestSupport {
                 null
         );
 
-        ClientDelegatingFuture<MCPollMCEventsCodec.ResponseParameters> future = new ClientDelegatingFuture<>(
+        ClientDelegatingFuture<List<MCEventDTO>> future = new ClientDelegatingFuture<>(
                 invocation.invoke(),
                 getClientImpl().getSerializationService(),
                 MCPollMCEventsCodec::decodeResponse
         );
 
-        MCPollMCEventsCodec.ResponseParameters response = future.get(ASSERT_TRUE_EVENTUALLY_TIMEOUT, SECONDS);
-        assertTrue(response.events.isEmpty());
+        assertTrue(future.get(ASSERT_TRUE_EVENTUALLY_TIMEOUT, SECONDS).isEmpty());
     }
 
     @Test
@@ -425,14 +415,13 @@ public class MCMessageTasksTest extends HazelcastTestSupport {
                 null
         );
 
-        ClientDelegatingFuture<MCRunConsoleCommandCodec.ResponseParameters> future = new ClientDelegatingFuture<>(
+        ClientDelegatingFuture<String> future = new ClientDelegatingFuture<>(
                 invocation.invoke(),
                 getClientImpl().getSerializationService(),
                 MCRunConsoleCommandCodec::decodeResponse
         );
 
-        MCRunConsoleCommandCodec.ResponseParameters response = future.get(ASSERT_TRUE_EVENTUALLY_TIMEOUT, SECONDS);
-        assertFalse(isNullOrEmptyAfterTrim(response.result));
+        assertFalse(isNullOrEmptyAfterTrim(future.get(ASSERT_TRUE_EVENTUALLY_TIMEOUT, SECONDS)));
     }
 
     @Test
@@ -443,14 +432,13 @@ public class MCMessageTasksTest extends HazelcastTestSupport {
                 null
         );
 
-        ClientDelegatingFuture<MCRunGcCodec.ResponseParameters> future = new ClientDelegatingFuture<>(
+        ClientDelegatingFuture<Void> future = new ClientDelegatingFuture<>(
                 invocation.invoke(),
                 getClientImpl().getSerializationService(),
-                MCRunGcCodec::decodeResponse
+                clientMessage -> null
         );
 
-        MCRunGcCodec.ResponseParameters response = future.get(ASSERT_TRUE_EVENTUALLY_TIMEOUT, SECONDS);
-        assertNotNull(response);
+        future.get(ASSERT_TRUE_EVENTUALLY_TIMEOUT, SECONDS);
     }
 
     @Test
@@ -502,14 +490,13 @@ public class MCMessageTasksTest extends HazelcastTestSupport {
                 null
         );
 
-        ClientDelegatingFuture<MCUpdateMapConfigCodec.ResponseParameters> future = new ClientDelegatingFuture<>(
+        ClientDelegatingFuture<Void> future = new ClientDelegatingFuture<>(
                 invocation.invoke(),
                 getClientImpl().getSerializationService(),
-                MCUpdateMapConfigCodec::decodeResponse
+                clientMessage -> null
         );
 
-        MCUpdateMapConfigCodec.ResponseParameters response = future.get(ASSERT_TRUE_EVENTUALLY_TIMEOUT, SECONDS);
-        assertNotNull(response);
+        future.get(ASSERT_TRUE_EVENTUALLY_TIMEOUT, SECONDS);
     }
 
     @Test

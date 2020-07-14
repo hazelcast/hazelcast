@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Gets the current metadata of a cluster.
  */
-@Generated("a87b4046ecb197e914e371539dad1708")
+@Generated("449215b6571720704a1879192fe72bf3")
 public final class MCGetClusterMetadataCodec {
     //hex: 0x200E00
     public static final int REQUEST_MESSAGE_TYPE = 2100736;
@@ -50,9 +50,6 @@ public final class MCGetClusterMetadataCodec {
     private MCGetClusterMetadataCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class RequestParameters {
-    }
 
     public static ClientMessage encodeRequest() {
         ClientMessage clientMessage = ClientMessage.createForEncode();
@@ -65,17 +62,9 @@ public final class MCGetClusterMetadataCodec {
         return clientMessage;
     }
 
-    public static MCGetClusterMetadataCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
-        ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        RequestParameters request = new RequestParameters();
-        //empty initial frame
-        iterator.next();
-        return request;
-    }
 
     @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class ResponseParameters {
-
         /**
          * Current state of the cluster:
          * 0 - ACTIVE
@@ -85,23 +74,19 @@ public final class MCGetClusterMetadataCodec {
          * 4 - IN_TRANSITION (not allowed)
          */
         public byte currentState;
-
         /**
          * Current version of the member.
          */
         public java.lang.String memberVersion;
-
         /**
          * Current Jet version of the member.
          */
         public @Nullable java.lang.String jetVersion;
-
         /**
          * Cluster-wide time in milliseconds.
          */
         public long clusterTime;
     }
-
     public static ClientMessage encodeResponse(byte currentState, java.lang.String memberVersion, @Nullable java.lang.String jetVersion, long clusterTime) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);

@@ -67,7 +67,7 @@ public class SessionlessSemaphoreProxy extends ClientProxy implements ISemaphore
         ClientMessage request = SemaphoreInitCodec.encodeRequest(groupId, objectName, permits);
         HazelcastClientInstanceImpl client = getClient();
         ClientMessage response = new ClientInvocation(client, request, objectName).invoke().joinInternal();
-        return SemaphoreInitCodec.decodeResponse(response).response;
+        return SemaphoreInitCodec.decodeResponse(response);
     }
 
     @Override
@@ -120,7 +120,7 @@ public class SessionlessSemaphoreProxy extends ClientProxy implements ISemaphore
         HazelcastClientInstanceImpl client = getClient();
         try {
             ClientMessage response = new ClientInvocation(client, request, objectName).invoke().joinInternal();
-            return SemaphoreAcquireCodec.decodeResponse(response).response;
+            return SemaphoreAcquireCodec.decodeResponse(response);
         } catch (WaitKeyCancelledException e) {
             throw new IllegalStateException("Semaphore[" + objectName + "] not acquired because the acquire call "
                     + "on the CP group is cancelled, possibly because of another indeterminate call from the same thread.");
@@ -150,7 +150,7 @@ public class SessionlessSemaphoreProxy extends ClientProxy implements ISemaphore
         ClientMessage request = SemaphoreAvailablePermitsCodec.encodeRequest(groupId, objectName);
         HazelcastClientInstanceImpl client = getClient();
         ClientMessage response = new ClientInvocation(client, request, objectName).invoke().joinInternal();
-        return SemaphoreAvailablePermitsCodec.decodeResponse(response).response;
+        return SemaphoreAvailablePermitsCodec.decodeResponse(response);
     }
 
     @Override
@@ -162,7 +162,7 @@ public class SessionlessSemaphoreProxy extends ClientProxy implements ISemaphore
                 invocationUid);
         HazelcastClientInstanceImpl client = getClient();
         ClientMessage response = new ClientInvocation(client, request, objectName).invoke().joinInternal();
-        return SemaphoreDrainCodec.decodeResponse(response).response;
+        return SemaphoreDrainCodec.decodeResponse(response);
     }
 
     @Override

@@ -46,7 +46,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * structurally modified in any way other than via the returned list.(Structural modifications are those that change
  * the size of this list, or otherwise perturb it in such a fashion that iterations in progress may yield incorrect results.)
  */
-@Generated("7172069b4ca1ccc03e2e191b16699d1c")
+@Generated("afc3aa3bc4a4285221c0cd9210584cb6")
 public final class ListSubCodec {
     //hex: 0x051500
     public static final int REQUEST_MESSAGE_TYPE = 333056;
@@ -103,15 +103,6 @@ public final class ListSubCodec {
         return request;
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class ResponseParameters {
-
-        /**
-         * A view of the specified range within this list
-         */
-        public java.util.List<com.hazelcast.internal.serialization.Data> response;
-    }
-
     public static ClientMessage encodeResponse(java.util.Collection<com.hazelcast.internal.serialization.Data> response) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
@@ -122,13 +113,14 @@ public final class ListSubCodec {
         return clientMessage;
     }
 
-    public static ListSubCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
+    /**
+    * A view of the specified range within this list
+    */
+    public static java.util.List<com.hazelcast.internal.serialization.Data> decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        ResponseParameters response = new ResponseParameters();
         //empty initial frame
         iterator.next();
-        response.response = ListMultiFrameCodec.decode(iterator, DataCodec::decode);
-        return response;
+        return ListMultiFrameCodec.decode(iterator, DataCodec::decode);
     }
 
 }

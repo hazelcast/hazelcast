@@ -35,7 +35,7 @@ import java.security.Permission;
  * {@link com.hazelcast.client.impl.protocol.codec.QueueMessageType#QUEUE_PEEK}
  */
 public class QueuePeekMessageTask
-        extends AbstractPartitionMessageTask<QueuePeekCodec.RequestParameters> {
+        extends AbstractPartitionMessageTask<String> {
 
     public QueuePeekMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -43,11 +43,11 @@ public class QueuePeekMessageTask
 
     @Override
     protected Operation prepareOperation() {
-        return new PeekOperation(parameters.name);
+        return new PeekOperation(parameters);
     }
 
     @Override
-    protected QueuePeekCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+    protected String decodeClientMessage(ClientMessage clientMessage) {
         return QueuePeekCodec.decodeRequest(clientMessage);
     }
 
@@ -58,7 +58,7 @@ public class QueuePeekMessageTask
 
     @Override
     public Permission getRequiredPermission() {
-        return new QueuePermission(parameters.name, ActionConstants.ACTION_READ);
+        return new QueuePermission(parameters, ActionConstants.ACTION_READ);
     }
 
     @Override
@@ -78,6 +78,6 @@ public class QueuePeekMessageTask
 
     @Override
     public String getDistributedObjectName() {
-        return parameters.name;
+        return parameters;
     }
 }

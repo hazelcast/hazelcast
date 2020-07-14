@@ -314,7 +314,7 @@ public class ClientHeartbeatTest extends ClientTestSupport {
 
             @Override
             public UUID decodeAddResponse(ClientMessage clientMessage) {
-                return ClientAddPartitionLostListenerCodec.decodeResponse(clientMessage).response;
+                return ClientAddPartitionLostListenerCodec.decodeResponse(clientMessage);
             }
 
             @Override
@@ -324,7 +324,7 @@ public class ClientHeartbeatTest extends ClientTestSupport {
 
             @Override
             public boolean decodeRemoveResponse(ClientMessage clientMessage) {
-                return ClientRemovePartitionLostListenerCodec.decodeResponse(clientMessage).response;
+                return ClientRemovePartitionLostListenerCodec.decodeResponse(clientMessage);
             }
         };
     }

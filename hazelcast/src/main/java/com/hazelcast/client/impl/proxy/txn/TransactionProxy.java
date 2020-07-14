@@ -87,8 +87,7 @@ final class TransactionProxy {
             ClientMessage request = TransactionCreateCodec.encodeRequest(options.getTimeoutMillis(),
                     options.getDurability(), options.getTransactionType().id(), threadId);
             ClientMessage response = ClientTransactionUtil.invoke(request, getTxnId(), client, connection);
-            TransactionCreateCodec.ResponseParameters result = TransactionCreateCodec.decodeResponse(response);
-            txnId = result.response;
+            txnId = TransactionCreateCodec.decodeResponse(response);
             state = ACTIVE;
         } catch (Exception e) {
             TRANSACTION_EXISTS.set(null);

@@ -160,9 +160,7 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
             Data keyData = toData(key);
             ClientMessage request = ReplicatedMapPutCodec.encodeRequest(name, keyData, valueData, timeUnit.toMillis(ttl));
             ClientMessage response = invoke(request, keyData);
-            ReplicatedMapPutCodec.ResponseParameters result = ReplicatedMapPutCodec.decodeResponse(response);
-
-            return toObject(result.response);
+            return toObject(ReplicatedMapPutCodec.decodeResponse(response));
         } finally {
             invalidate(key);
         }
@@ -172,16 +170,14 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
     public int size() {
         ClientMessage request = ReplicatedMapSizeCodec.encodeRequest(name);
         ClientMessage response = invokeOnPartition(request, targetPartitionId);
-        ReplicatedMapSizeCodec.ResponseParameters result = ReplicatedMapSizeCodec.decodeResponse(response);
-        return result.response;
+        return ReplicatedMapSizeCodec.decodeResponse(response);
     }
 
     @Override
     public boolean isEmpty() {
         ClientMessage request = ReplicatedMapIsEmptyCodec.encodeRequest(name);
         ClientMessage response = invokeOnPartition(request, targetPartitionId);
-        ReplicatedMapIsEmptyCodec.ResponseParameters result = ReplicatedMapIsEmptyCodec.decodeResponse(response);
-        return result.response;
+        return ReplicatedMapIsEmptyCodec.decodeResponse(response);
     }
 
     @Override
@@ -190,8 +186,7 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
         Data keyData = toData(key);
         ClientMessage request = ReplicatedMapContainsKeyCodec.encodeRequest(name, keyData);
         ClientMessage response = invoke(request, keyData);
-        ReplicatedMapContainsKeyCodec.ResponseParameters result = ReplicatedMapContainsKeyCodec.decodeResponse(response);
-        return result.response;
+        return ReplicatedMapContainsKeyCodec.decodeResponse(response);
     }
 
     @Override
@@ -200,8 +195,7 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
         Data valueData = toData(value);
         ClientMessage request = ReplicatedMapContainsValueCodec.encodeRequest(name, valueData);
         ClientMessage response = invokeOnPartition(request, targetPartitionId);
-        ReplicatedMapContainsValueCodec.ResponseParameters result = ReplicatedMapContainsValueCodec.decodeResponse(response);
-        return result.response;
+        return ReplicatedMapContainsValueCodec.decodeResponse(response);
     }
 
     @Override
@@ -219,8 +213,7 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
             ClientMessage request = ReplicatedMapGetCodec.encodeRequest(name, keyData);
             ClientMessage response = invoke(request, keyData);
 
-            ReplicatedMapGetCodec.ResponseParameters result = ReplicatedMapGetCodec.decodeResponse(response);
-            V value = toObject(result.response);
+            V value = toObject(ReplicatedMapGetCodec.decodeResponse(response));
             tryPublishReserved(key, value, reservationId);
             return value;
         } catch (Throwable t) {
@@ -242,8 +235,7 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
             Data keyData = toData(key);
             ClientMessage request = ReplicatedMapRemoveCodec.encodeRequest(name, keyData);
             ClientMessage response = invoke(request, keyData);
-            ReplicatedMapRemoveCodec.ResponseParameters result = ReplicatedMapRemoveCodec.decodeResponse(response);
-            return toObject(result.response);
+            return toObject(ReplicatedMapRemoveCodec.decodeResponse(response));
         } finally {
             invalidate(key);
         }
@@ -306,7 +298,7 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
 
             @Override
             public UUID decodeAddResponse(ClientMessage clientMessage) {
-                return ReplicatedMapAddEntryListenerCodec.decodeResponse(clientMessage).response;
+                return ReplicatedMapAddEntryListenerCodec.decodeResponse(clientMessage);
             }
 
             @Override
@@ -316,7 +308,7 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
 
             @Override
             public boolean decodeRemoveResponse(ClientMessage clientMessage) {
-                return ReplicatedMapRemoveEntryListenerCodec.decodeResponse(clientMessage).response;
+                return ReplicatedMapRemoveEntryListenerCodec.decodeResponse(clientMessage);
             }
         };
     }
@@ -341,7 +333,7 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
 
             @Override
             public UUID decodeAddResponse(ClientMessage clientMessage) {
-                return ReplicatedMapAddEntryListenerToKeyCodec.decodeResponse(clientMessage).response;
+                return ReplicatedMapAddEntryListenerToKeyCodec.decodeResponse(clientMessage);
             }
 
             @Override
@@ -351,7 +343,7 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
 
             @Override
             public boolean decodeRemoveResponse(ClientMessage clientMessage) {
-                return ReplicatedMapRemoveEntryListenerCodec.decodeResponse(clientMessage).response;
+                return ReplicatedMapRemoveEntryListenerCodec.decodeResponse(clientMessage);
             }
         };
     }
@@ -376,7 +368,7 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
 
             @Override
             public UUID decodeAddResponse(ClientMessage clientMessage) {
-                return ReplicatedMapAddEntryListenerWithPredicateCodec.decodeResponse(clientMessage).response;
+                return ReplicatedMapAddEntryListenerWithPredicateCodec.decodeResponse(clientMessage);
             }
 
             @Override
@@ -386,7 +378,7 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
 
             @Override
             public boolean decodeRemoveResponse(ClientMessage clientMessage) {
-                return ReplicatedMapRemoveEntryListenerCodec.decodeResponse(clientMessage).response;
+                return ReplicatedMapRemoveEntryListenerCodec.decodeResponse(clientMessage);
             }
         };
     }
@@ -418,7 +410,7 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
 
             @Override
             public UUID decodeAddResponse(ClientMessage clientMessage) {
-                return ReplicatedMapAddEntryListenerToKeyWithPredicateCodec.decodeResponse(clientMessage).response;
+                return ReplicatedMapAddEntryListenerToKeyWithPredicateCodec.decodeResponse(clientMessage);
             }
 
             @Override
@@ -428,7 +420,7 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
 
             @Override
             public boolean decodeRemoveResponse(ClientMessage clientMessage) {
-                return ReplicatedMapRemoveEntryListenerCodec.decodeResponse(clientMessage).response;
+                return ReplicatedMapRemoveEntryListenerCodec.decodeResponse(clientMessage);
             }
         };
     }
@@ -439,9 +431,7 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
     public Set<K> keySet() {
         ClientMessage request = ReplicatedMapKeySetCodec.encodeRequest(name);
         ClientMessage response = invokeOnPartition(request, targetPartitionId);
-        ReplicatedMapKeySetCodec.ResponseParameters result = ReplicatedMapKeySetCodec.decodeResponse(response);
-
-        return (Set<K>) new UnmodifiableLazySet(result.response, getSerializationService());
+        return (Set<K>) new UnmodifiableLazySet(ReplicatedMapKeySetCodec.decodeResponse(response), getSerializationService());
     }
 
     @Nonnull
@@ -455,8 +445,7 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
     public Collection<V> values() {
         ClientMessage request = ReplicatedMapValuesCodec.encodeRequest(name);
         ClientMessage response = invokeOnPartition(request, targetPartitionId);
-        ReplicatedMapValuesCodec.ResponseParameters result = ReplicatedMapValuesCodec.decodeResponse(response);
-        return new UnmodifiableLazyList(result.response, getSerializationService());
+        return new UnmodifiableLazyList(ReplicatedMapValuesCodec.decodeResponse(response), getSerializationService());
     }
 
     @Nonnull
@@ -473,8 +462,7 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
     public Set<Entry<K, V>> entrySet() {
         ClientMessage request = ReplicatedMapEntrySetCodec.encodeRequest(name);
         ClientMessage response = invokeOnPartition(request, targetPartitionId);
-        ReplicatedMapEntrySetCodec.ResponseParameters result = ReplicatedMapEntrySetCodec.decodeResponse(response);
-        return (Set) new UnmodifiableLazySet(result.response, getSerializationService());
+        return (Set) new UnmodifiableLazySet(ReplicatedMapEntrySetCodec.decodeResponse(response), getSerializationService());
     }
 
     public UUID addNearCacheInvalidationListener(EventHandler handler) {
@@ -499,7 +487,7 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
 
             @Override
             public UUID decodeAddResponse(ClientMessage clientMessage) {
-                return ReplicatedMapAddNearCacheEntryListenerCodec.decodeResponse(clientMessage).response;
+                return ReplicatedMapAddNearCacheEntryListenerCodec.decodeResponse(clientMessage);
             }
 
             @Override
@@ -509,7 +497,7 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
 
             @Override
             public boolean decodeRemoveResponse(ClientMessage clientMessage) {
-                return ReplicatedMapRemoveEntryListenerCodec.decodeResponse(clientMessage).response;
+                return ReplicatedMapRemoveEntryListenerCodec.decodeResponse(clientMessage);
             }
         };
     }

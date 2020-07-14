@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Returns the number of elements in this list.  If this list contains more than Integer.MAX_VALUE elements, returns
  * Integer.MAX_VALUE.
  */
-@Generated("004368e04de30d648ae12bbd7de0e505")
+@Generated("6562a3c9a3480ead3d16c5cc5372421f")
 public final class ListSizeCodec {
     //hex: 0x050100
     public static final int REQUEST_MESSAGE_TYPE = 327936;
@@ -50,14 +50,11 @@ public final class ListSizeCodec {
     private ListSizeCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class RequestParameters {
-
-        /**
-         * Name of List
-         */
-        public java.lang.String name;
-    }
+    /**
+     * Name of List
+     */
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"UUF_UNUSED_PUBLIC_OR_PROTECTED_FIELD"})
+    public java.lang.String name;
 
     public static ClientMessage encodeRequest(java.lang.String name) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
@@ -71,22 +68,11 @@ public final class ListSizeCodec {
         return clientMessage;
     }
 
-    public static ListSizeCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
+    public static java.lang.String decodeRequest(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        RequestParameters request = new RequestParameters();
         //empty initial frame
         iterator.next();
-        request.name = StringCodec.decode(iterator);
-        return request;
-    }
-
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class ResponseParameters {
-
-        /**
-         * The number of elements in this list
-         */
-        public int response;
+        return StringCodec.decode(iterator);
     }
 
     public static ClientMessage encodeResponse(int response) {
@@ -99,12 +85,13 @@ public final class ListSizeCodec {
         return clientMessage;
     }
 
-    public static ListSizeCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
+    /**
+    * The number of elements in this list
+    */
+    public static int decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        ResponseParameters response = new ResponseParameters();
         ClientMessage.Frame initialFrame = iterator.next();
-        response.response = decodeInt(initialFrame.content, RESPONSE_RESPONSE_FIELD_OFFSET);
-        return response;
+        return decodeInt(initialFrame.content, RESPONSE_RESPONSE_FIELD_OFFSET);
     }
 
 }

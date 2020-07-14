@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * {@code expiryPolicy} takes precedence for these particular {@code keys} against any cache wide expiry policy.
  * If some keys in {@code keys} do not exist or are already expired, this call has no effect for those.
  */
-@Generated("ee7ef9d3402bf9e627abfa55af477450")
+@Generated("3222084ade35f432912b7b5a33e16cdf")
 public final class CacheSetExpiryPolicyCodec {
     //hex: 0x132100
     public static final int REQUEST_MESSAGE_TYPE = 1253632;
@@ -95,15 +95,6 @@ public final class CacheSetExpiryPolicyCodec {
         return request;
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class ResponseParameters {
-
-        /**
-         * {
-         */
-        public boolean response;
-    }
-
     public static ClientMessage encodeResponse(boolean response) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
@@ -114,12 +105,13 @@ public final class CacheSetExpiryPolicyCodec {
         return clientMessage;
     }
 
-    public static CacheSetExpiryPolicyCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
+    /**
+    * {
+    */
+    public static boolean decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        ResponseParameters response = new ResponseParameters();
         ClientMessage.Frame initialFrame = iterator.next();
-        response.response = decodeBoolean(initialFrame.content, RESPONSE_RESPONSE_FIELD_OFFSET);
-        return response;
+        return decodeBoolean(initialFrame.content, RESPONSE_RESPONSE_FIELD_OFFSET);
     }
 
 }

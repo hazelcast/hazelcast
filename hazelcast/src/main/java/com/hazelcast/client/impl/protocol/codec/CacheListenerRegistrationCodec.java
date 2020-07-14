@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Tries to register the listener configuration for the cache specified by its name
  * to the given member.
  */
-@Generated("fc11b831bdf5590be9fc1b64a59d553d")
+@Generated("eda0c21be0373c6408b63c074666465f")
 public final class CacheListenerRegistrationCodec {
     //hex: 0x130F00
     public static final int REQUEST_MESSAGE_TYPE = 1249024;
@@ -102,10 +102,6 @@ public final class CacheListenerRegistrationCodec {
         return request;
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class ResponseParameters {
-    }
-
     public static ClientMessage encodeResponse() {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
@@ -115,12 +111,5 @@ public final class CacheListenerRegistrationCodec {
         return clientMessage;
     }
 
-    public static CacheListenerRegistrationCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
-        ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        ResponseParameters response = new ResponseParameters();
-        //empty initial frame
-        iterator.next();
-        return response;
-    }
 
 }

@@ -34,7 +34,7 @@ import java.security.Permission;
  * {@link com.hazelcast.client.impl.protocol.codec.ListMessageType#LIST_ADDLISTENER}
  */
 public class ListIsEmptyMessageTask
-        extends AbstractPartitionMessageTask<ListIsEmptyCodec.RequestParameters> {
+        extends AbstractPartitionMessageTask<String> {
 
     public ListIsEmptyMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -42,11 +42,11 @@ public class ListIsEmptyMessageTask
 
     @Override
     protected Operation prepareOperation() {
-        return new CollectionIsEmptyOperation(parameters.name);
+        return new CollectionIsEmptyOperation(parameters);
     }
 
     @Override
-    protected ListIsEmptyCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+    protected String decodeClientMessage(ClientMessage clientMessage) {
         return ListIsEmptyCodec.decodeRequest(clientMessage);
     }
 
@@ -62,7 +62,7 @@ public class ListIsEmptyMessageTask
 
     @Override
     public Permission getRequiredPermission() {
-        return new ListPermission(parameters.name, ActionConstants.ACTION_READ);
+        return new ListPermission(parameters, ActionConstants.ACTION_READ);
     }
 
     @Override
@@ -72,7 +72,7 @@ public class ListIsEmptyMessageTask
 
     @Override
     public String getDistributedObjectName() {
-        return parameters.name;
+        return parameters;
     }
 
     @Override

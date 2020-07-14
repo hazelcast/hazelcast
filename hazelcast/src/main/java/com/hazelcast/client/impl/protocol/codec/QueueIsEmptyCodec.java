@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Returns true if this collection contains no elements.
  */
-@Generated("924d87b6a853aac5d5d9499a25111dd0")
+@Generated("9ae6451ea8f3debbbeb0d5690ff13251")
 public final class QueueIsEmptyCodec {
     //hex: 0x031400
     public static final int REQUEST_MESSAGE_TYPE = 201728;
@@ -49,14 +49,11 @@ public final class QueueIsEmptyCodec {
     private QueueIsEmptyCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class RequestParameters {
-
-        /**
-         * Name of the Queue
-         */
-        public java.lang.String name;
-    }
+    /**
+     * Name of the Queue
+     */
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"UUF_UNUSED_PUBLIC_OR_PROTECTED_FIELD"})
+    public java.lang.String name;
 
     public static ClientMessage encodeRequest(java.lang.String name) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
@@ -70,22 +67,11 @@ public final class QueueIsEmptyCodec {
         return clientMessage;
     }
 
-    public static QueueIsEmptyCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
+    public static java.lang.String decodeRequest(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        RequestParameters request = new RequestParameters();
         //empty initial frame
         iterator.next();
-        request.name = StringCodec.decode(iterator);
-        return request;
-    }
-
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class ResponseParameters {
-
-        /**
-         * <tt>True</tt> if this collection contains no elements
-         */
-        public boolean response;
+        return StringCodec.decode(iterator);
     }
 
     public static ClientMessage encodeResponse(boolean response) {
@@ -98,12 +84,13 @@ public final class QueueIsEmptyCodec {
         return clientMessage;
     }
 
-    public static QueueIsEmptyCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
+    /**
+    * <tt>True</tt> if this collection contains no elements
+    */
+    public static boolean decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        ResponseParameters response = new ResponseParameters();
         ClientMessage.Frame initialFrame = iterator.next();
-        response.response = decodeBoolean(initialFrame.content, RESPONSE_RESPONSE_FIELD_OFFSET);
-        return response;
+        return decodeBoolean(initialFrame.content, RESPONSE_RESPONSE_FIELD_OFFSET);
     }
 
 }

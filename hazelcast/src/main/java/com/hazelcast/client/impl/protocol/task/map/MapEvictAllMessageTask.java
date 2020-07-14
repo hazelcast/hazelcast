@@ -35,7 +35,7 @@ import java.util.Map;
 import static com.hazelcast.core.EntryEventType.EVICT_ALL;
 
 public class MapEvictAllMessageTask
-        extends AbstractMapAllPartitionsMessageTask<MapEvictAllCodec.RequestParameters> {
+        extends AbstractMapAllPartitionsMessageTask<String> {
 
     public MapEvictAllMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -43,8 +43,8 @@ public class MapEvictAllMessageTask
 
     @Override
     protected OperationFactory createOperationFactory() {
-        MapOperationProvider operationProvider = getOperationProvider(parameters.name);
-        return operationProvider.createEvictAllOperationFactory(parameters.name);
+        MapOperationProvider operationProvider = getOperationProvider(parameters);
+        return operationProvider.createEvictAllOperationFactory(parameters);
     }
 
     @Override
@@ -61,14 +61,14 @@ public class MapEvictAllMessageTask
         if (evictedTotal > 0) {
             Address thisAddress = mapServiceContext.getNodeEngine().getThisAddress();
             MapEventPublisher mapEventPublisher = mapServiceContext.getMapEventPublisher();
-            mapEventPublisher.publishMapEvent(thisAddress, parameters.name, EVICT_ALL, evictedTotal);
+            mapEventPublisher.publishMapEvent(thisAddress, parameters, EVICT_ALL, evictedTotal);
         }
 
         return null;
     }
 
     @Override
-    protected MapEvictAllCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+    protected String decodeClientMessage(ClientMessage clientMessage) {
         return MapEvictAllCodec.decodeRequest(clientMessage);
     }
 
@@ -82,12 +82,12 @@ public class MapEvictAllMessageTask
     }
 
     public Permission getRequiredPermission() {
-        return new MapPermission(parameters.name, ActionConstants.ACTION_REMOVE);
+        return new MapPermission(parameters, ActionConstants.ACTION_REMOVE);
     }
 
     @Override
     public String getDistributedObjectName() {
-        return parameters.name;
+        return parameters;
     }
 
     @Override
