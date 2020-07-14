@@ -33,7 +33,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
@@ -61,7 +60,7 @@ import java.util.Map;
  */
 public class QueryResult implements Result<QueryResult>, IdentifiedDataSerializable, Iterable<QueryResultRow> {
 
-    private List rows = new LinkedList();
+    private List rows = new ArrayList();
 
     private Collection<Integer> partitionIds;
     private IterationType iterationType;
