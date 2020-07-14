@@ -41,6 +41,7 @@
                     </execution>
                 </executions>
                 <configuration>
+                    <forceCreation>true</forceCreation>
                     <archive>
                         <index>true</index>
                         <compress>true</compress>
