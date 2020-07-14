@@ -19,16 +19,11 @@ package com.hazelcast.client.impl.protocol.task;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.sql.impl.client.SqlClientService;
 
 import java.security.Permission;
 
 public class NoSuchMessageTask extends AbstractMessageTask<ClientMessage> {
-
-    private static final int SERVICE_ID_MASK = 0x00FF0000;
-    private static final int SERVICE_ID_SHIFT = 16;
-
-    /** ID of the SQL beta service. Should match the ID declared in SqlBeta.yaml */
-    private static final int SQL_BETA_SERVICE_ID = 33;
 
     public NoSuchMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -83,9 +78,8 @@ public class NoSuchMessageTask extends AbstractMessageTask<ClientMessage> {
 
     private String createMessage() {
         int messageType = parameters.getMessageType();
-        int serviceId = (messageType & SERVICE_ID_MASK) >> SERVICE_ID_SHIFT;
 
-        if (serviceId == SQL_BETA_SERVICE_ID) {
+        if (SqlClientService.isSqlMessage(messageType)) {
             // Special error message for the SQL beta service that do not maintain compatibility between versions.
             String memberVersion = nodeEngine.getVersion().toString();
             String clientVersion = endpoint.getClientVersion();

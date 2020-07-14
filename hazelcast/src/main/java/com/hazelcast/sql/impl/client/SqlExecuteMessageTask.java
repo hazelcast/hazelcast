@@ -17,7 +17,7 @@
 package com.hazelcast.sql.impl.client;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.codec.SqlBetaExecuteCodec;
+import com.hazelcast.client.impl.protocol.codec.SqlExecuteCodec;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.serialization.Data;
@@ -32,7 +32,7 @@ import java.security.Permission;
 /**
  * SQL query execute task.
  */
-public class SqlExecuteMessageTask extends SqlAbstractMessageTask<SqlBetaExecuteCodec.RequestParameters> {
+public class SqlExecuteMessageTask extends SqlAbstractMessageTask<SqlExecuteCodec.RequestParameters> {
     public SqlExecuteMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
@@ -75,15 +75,15 @@ public class SqlExecuteMessageTask extends SqlAbstractMessageTask<SqlBetaExecute
     }
 
     @Override
-    protected SqlBetaExecuteCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
-        return SqlBetaExecuteCodec.decodeRequest(clientMessage);
+    protected SqlExecuteCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return SqlExecuteCodec.decodeRequest(clientMessage);
     }
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
         SqlExecuteResponse response0 = (SqlExecuteResponse) response;
 
-        return SqlBetaExecuteCodec.encodeResponse(
+        return SqlExecuteCodec.encodeResponse(
             response0.getQueryId(),
             response0.getRowMetadata(),
             response0.getRowPage(),

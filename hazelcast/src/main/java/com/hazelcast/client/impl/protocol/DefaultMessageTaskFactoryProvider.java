@@ -361,9 +361,9 @@ import com.hazelcast.client.impl.protocol.codec.SetIsEmptyCodec;
 import com.hazelcast.client.impl.protocol.codec.SetRemoveCodec;
 import com.hazelcast.client.impl.protocol.codec.SetRemoveListenerCodec;
 import com.hazelcast.client.impl.protocol.codec.SetSizeCodec;
-import com.hazelcast.client.impl.protocol.codec.SqlBetaCloseCodec;
-import com.hazelcast.client.impl.protocol.codec.SqlBetaExecuteCodec;
-import com.hazelcast.client.impl.protocol.codec.SqlBetaFetchCodec;
+import com.hazelcast.client.impl.protocol.codec.SqlCloseCodec;
+import com.hazelcast.client.impl.protocol.codec.SqlExecuteCodec;
+import com.hazelcast.client.impl.protocol.codec.SqlFetchCodec;
 import com.hazelcast.client.impl.protocol.codec.TopicAddMessageListenerCodec;
 import com.hazelcast.client.impl.protocol.codec.TopicPublishCodec;
 import com.hazelcast.client.impl.protocol.codec.TopicRemoveMessageListenerCodec;
@@ -1789,11 +1789,11 @@ public class DefaultMessageTaskFactoryProvider implements MessageTaskFactoryProv
     }
 
     private void initializeSqlTaskFactories() {
-        factories.put(SqlBetaExecuteCodec.REQUEST_MESSAGE_TYPE,
+        factories.put(SqlExecuteCodec.REQUEST_MESSAGE_TYPE,
                 (cm, con) -> new SqlExecuteMessageTask(cm, node, con));
-        factories.put(SqlBetaFetchCodec.REQUEST_MESSAGE_TYPE,
+        factories.put(SqlFetchCodec.REQUEST_MESSAGE_TYPE,
                 (cm, con) -> new SqlFetchMessageTask(cm, node, con));
-        factories.put(SqlBetaCloseCodec.REQUEST_MESSAGE_TYPE,
+        factories.put(SqlCloseCodec.REQUEST_MESSAGE_TYPE,
                 (cm, con) -> new SqlCloseMessageTask(cm, node, con));
     }
 

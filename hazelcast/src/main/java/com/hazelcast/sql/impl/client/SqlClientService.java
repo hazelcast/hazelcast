@@ -18,21 +18,22 @@ package com.hazelcast.sql.impl.client;
 
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.codec.SqlBetaCloseCodec;
-import com.hazelcast.client.impl.protocol.codec.SqlBetaExecuteCodec;
-import com.hazelcast.client.impl.protocol.codec.SqlBetaFetchCodec;
-import com.hazelcast.client.impl.protocol.codec.SqlBetaMissingCodec;
+import com.hazelcast.client.impl.protocol.codec.SqlCloseCodec;
+import com.hazelcast.client.impl.protocol.codec.SqlExecuteCodec;
+import com.hazelcast.client.impl.protocol.codec.SqlFetchCodec;
 import com.hazelcast.client.impl.spi.impl.ClientInvocation;
 import com.hazelcast.client.impl.spi.impl.ClientInvocationFuture;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.sql.SqlErrorCode;
 import com.hazelcast.sql.SqlException;
 import com.hazelcast.sql.SqlQuery;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlService;
 import com.hazelcast.sql.impl.QueryException;
+import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.QueryUtils;
 
 import javax.annotation.Nonnull;
@@ -45,6 +46,17 @@ import java.util.UUID;
  * Client-side implementation of SQL service.
  */
 public class SqlClientService implements SqlService {
+
+    private static final int SERVICE_ID_MASK = 0x00FF0000;
+    private static final int SERVICE_ID_SHIFT = 16;
+
+    private static final int METHOD_ID_MASK = 0x0000FF00;
+    private static final int METHOD_ID_SHIFT = 8;
+
+    /** ID of the SQL beta service. Should match the ID declared in Sql.yaml */
+    private static final int SQL_SERVICE_ID = 33;
+
+    private static final int INVALID_MESSAGE_ID = 255;
 
     private final HazelcastClientInstanceImpl client;
 
@@ -73,7 +85,7 @@ public class SqlClientService implements SqlService {
                 params0.add(serializeParameter(param));
             }
 
-            ClientMessage requestMessage = SqlBetaExecuteCodec.encodeRequest(
+            ClientMessage requestMessage = SqlExecuteCodec.encodeRequest(
                 query.getSql(),
                 params0,
                 query.getTimeoutMillis(),
@@ -82,7 +94,7 @@ public class SqlClientService implements SqlService {
 
             ClientMessage responseMessage = invoke(requestMessage, connection);
 
-            SqlBetaExecuteCodec.ResponseParameters response = SqlBetaExecuteCodec.decodeResponse(responseMessage);
+            SqlExecuteCodec.ResponseParameters response = SqlExecuteCodec.decodeResponse(responseMessage);
 
             handleResponseError(response.error);
 
@@ -109,9 +121,9 @@ public class SqlClientService implements SqlService {
      */
     public SqlPage fetch(Connection connection, String queryId, int cursorBufferSize) {
         try {
-            ClientMessage requestMessage = SqlBetaFetchCodec.encodeRequest(queryId, cursorBufferSize);
+            ClientMessage requestMessage = SqlFetchCodec.encodeRequest(queryId, cursorBufferSize);
             ClientMessage responseMessage = invoke(requestMessage, connection);
-            SqlBetaFetchCodec.ResponseParameters responseParameters = SqlBetaFetchCodec.decodeResponse(responseMessage);
+            SqlFetchCodec.ResponseParameters responseParameters = SqlFetchCodec.decodeResponse(responseMessage);
 
             handleResponseError(responseParameters.error);
 
@@ -129,7 +141,7 @@ public class SqlClientService implements SqlService {
      */
     void close(Connection connection, String queryId) {
         try {
-            ClientMessage requestMessage = SqlBetaCloseCodec.encodeRequest(queryId);
+            ClientMessage requestMessage = SqlCloseCodec.encodeRequest(queryId);
 
             invoke(requestMessage, connection);
         } catch (Exception e) {
@@ -152,7 +164,12 @@ public class SqlClientService implements SqlService {
         }
 
         try {
-            ClientMessage requestMessage = SqlBetaMissingCodec.encodeRequest();
+            ClientMessage requestMessage = SqlCloseCodec.encodeRequest(QueryId.create(UuidUtil.newSecureUUID()).unparse());
+
+            int messageType = requestMessage.getMessageType();
+            int messageTypeWithInvalidMethodId = (messageType & (~METHOD_ID_MASK)) | (INVALID_MESSAGE_ID << METHOD_ID_SHIFT);
+
+            requestMessage.setMessageType(messageTypeWithInvalidMethodId);
 
             invoke(requestMessage, connection);
         } catch (Exception e) {
@@ -220,5 +237,11 @@ public class SqlClientService implements SqlService {
         }
 
         throw QueryUtils.toPublicException(cause, getClientId());
+    }
+
+    public static boolean isSqlMessage(int messageType) {
+        int serviceId = (messageType & SERVICE_ID_MASK) >> SERVICE_ID_SHIFT;
+
+        return serviceId == SQL_SERVICE_ID;
     }
 }
