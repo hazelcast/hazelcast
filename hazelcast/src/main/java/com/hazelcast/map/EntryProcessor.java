@@ -60,7 +60,7 @@ import java.util.Map.Entry;
  * concurrency control needs to be provided to coordinate access to mutable state. Another option is to rely
  * on {@code ThreadLocal}s.
  * <p>
- * Since Hazelcast 4.1, an instance of {@link ExtendedMapEntry} is provided as argument in {@link #process(Entry)}
+ * Since Hazelcast 4.0.3, an instance of {@link ExtendedMapEntry} is provided as argument in {@link #process(Entry)}
  * method:
  * <pre>
  * {@code
