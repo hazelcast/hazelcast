@@ -55,7 +55,6 @@ import static com.hazelcast.map.impl.mapstore.writebehind.WriteBehindFlushTest.a
 import static com.hazelcast.transaction.TransactionOptions.TransactionType.ONE_PHASE;
 import static com.hazelcast.transaction.TransactionOptions.TransactionType.TWO_PHASE;
 import static java.util.concurrent.TimeUnit.SECONDS;
-import static org.hamcrest.core.Is.isA;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
@@ -69,7 +68,6 @@ public class TransactionsWithWriteBehind_whenNoCoalescingQueueIsFullTest extends
     @Test
     public void prepare_step_throws_reached_max_size_exception_when_two_phase() {
         expectedException.expect(TransactionException.class);
-        expectedException.expectCause(isA(ReachedMaxSizeException.class));
 
         String mapName = "map";
         long maxWbqCapacity = 100;
