@@ -244,6 +244,10 @@ public abstract class OptimizerTestSupport extends SqlTestSupport {
     public static void assertPlan(RelNode rel, PlanRows expected) {
         PlanRows actual = plan(rel);
 
+        assertPlan(actual, expected);
+    }
+
+    public static void assertPlan(PlanRows actual, PlanRows expected) {
         int expectedRowCount = expected.getRowCount();
         int actualRowCount = actual.getRowCount();
 

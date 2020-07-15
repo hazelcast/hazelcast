@@ -135,7 +135,8 @@ public class MapIndexScanPhysicalRel extends AbstractMapScanRel implements Physi
         return computeSelfCost(
             planner,
             scanRowCount,
-            CostUtils.INDEX_SCAN_CPU_MULTIPLIER, hasFilter,
+            CostUtils.indexScanCpuMultiplier(index.getType()),
+            hasFilter,
             filterRowCount,
             getTableUnwrapped().getProjects().size()
         );
