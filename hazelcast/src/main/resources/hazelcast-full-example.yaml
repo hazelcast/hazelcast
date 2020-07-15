@@ -903,15 +903,22 @@ hazelcast:
   #
   # ===== HAZELCAST QUEUE CONFIGURATION =====
   #
-  # Configuration element's name is "queue". It has the optional attribute "name" with which you
-  # can specify the name of your queue. Its default value is "default".
-  # It has the following elements:
+  # Configuration element's name is "queue".
+  # It has following optional attributes:
+  # * "name"
+  # with which you can specify the name of your queue. Its default value is "default".
+  # * "queue-type"
+  # with which you can specify the type of your queue.
+  # Available values are as follows:
+  # - LINKED_LIST (default): FIFO based queue.
+  # - PRIORITY_QUEUE: Priority based queue.
   # * "comparator-class-name":
   # Full qualified name comparator's class name to be used for the priority queue.
   # If nothing is provided, then the queue will behaves as a FiFo queue, using queue item id for comparison
   # * "duplicate-allowed":
   # When you set it to false, it implies usage of NoDuplicatePriorityQueue which filters duplicates on queue item data.
   # Default value is true with the behaviour of standard JDK priority queue which allows duplicates.
+  # It has the following elements:
   # * "statistics-enabled":
   # When you enable it, you can retrieve queue statistics. Its default value is true.
   # * "max-size":

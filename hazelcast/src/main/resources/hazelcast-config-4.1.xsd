@@ -642,22 +642,6 @@
                 </xs:annotation>
             </xs:element>
             <xs:element name="merge-policy" type="merge-policy" minOccurs="0" maxOccurs="1"/>
-            <xs:element name="comparator-class-name" type="xs:string" minOccurs="0" maxOccurs="1">
-                <xs:annotation>
-                    <xs:documentation>
-                        Fully-qualified comparator's class name to be used for the priority queue.
-                        If nothing is provided, then queue behaves as a FiFo queue.
-                    </xs:documentation>
-                </xs:annotation>
-            </xs:element>
-            <xs:element name="duplicate-allowed" type="xs:boolean" minOccurs="0" maxOccurs="1" default="true">
-                <xs:annotation>
-                    <xs:documentation>
-                        True (default) This is the standard behaviour of a priority queue.
-                        False implies a use of NoDuplicatePriorityQueue which filters duplicates on queue item data.
-                    </xs:documentation>
-                </xs:annotation>
-            </xs:element>
         </xs:all>
         <xs:attribute name="name" use="optional" default="default">
             <xs:annotation>
@@ -668,6 +652,37 @@
             <xs:simpleType>
                 <xs:restriction base="xs:string"/>
             </xs:simpleType>
+        </xs:attribute>
+        <xs:attribute name="queue-type">
+            <xs:annotation>
+                <xs:documentation>
+                    Queue Type: supported types are LINKED_LIST and PRIORITY_QUEUE
+                    This defaults to PRIORITY_QUEUE when one of "comparator-class-name"
+                    or "duplicate-allowed" is defined. Hence it is a LINKED_LIST
+                </xs:documentation>
+            </xs:annotation>
+            <xs:simpleType>
+                <xs:restriction base="non-space-string">
+                    <xs:enumeration value="PRIORITY_QUEUE"/>
+                    <xs:enumeration value="LINKED_LIST"/>
+                </xs:restriction>
+            </xs:simpleType>
+        </xs:attribute>
+        <xs:attribute name="comparator-class-name" type="xs:string">
+            <xs:annotation>
+                <xs:documentation>
+                    Fully-qualified comparator's class name to be used for the priority queue.
+                    If nothing is provided, then queue behaves as a FiFo queue.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="duplicate-allowed" type="xs:boolean" default="true">
+            <xs:annotation>
+                <xs:documentation>
+                    True (default) This is the standard behaviour of a priority queue.
+                    False implies a use of NoDuplicatePriorityQueue which filters duplicates on queue item data.
+                </xs:documentation>
+            </xs:annotation>
         </xs:attribute>
     </xs:complexType>
     <xs:complexType name="list">

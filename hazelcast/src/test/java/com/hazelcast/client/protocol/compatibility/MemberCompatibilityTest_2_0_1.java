@@ -6486,6 +6486,9 @@ public class MemberCompatibilityTest_2_0_1 {
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         DynamicConfigAddQueueConfigCodec.RequestParameters parameters = DynamicConfigAddQueueConfigCodec.decodeRequest(fromFile);
         assertTrue(isEqual(aString, parameters.name));
+        assertTrue(isEqual(aString, parameters.queueType));
+        assertTrue(isEqual(aString, parameters.comparatorClassName));
+        assertTrue(isEqual(aBoolean, parameters.duplicateAllowed));
         assertTrue(isEqual(aListOfListenerConfigHolders, parameters.listenerConfigs));
         assertTrue(isEqual(anInt, parameters.backupCount));
         assertTrue(isEqual(anInt, parameters.asyncBackupCount));
@@ -6496,8 +6499,6 @@ public class MemberCompatibilityTest_2_0_1 {
         assertTrue(isEqual(aQueueStoreConfigHolder, parameters.queueStoreConfig));
         assertTrue(isEqual(aString, parameters.mergePolicy));
         assertTrue(isEqual(anInt, parameters.mergeBatchSize));
-        assertTrue(isEqual(aString, parameters.comparatorClassName));
-        assertTrue(isEqual(aBoolean, parameters.duplicateAllowed));
     }
 
     @Test

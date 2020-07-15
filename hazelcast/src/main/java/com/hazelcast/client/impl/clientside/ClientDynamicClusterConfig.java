@@ -178,12 +178,13 @@ public class ClientDynamicClusterConfig extends Config {
         List<ListenerConfigHolder> listenerConfigs = adaptListenerConfigs(queueConfig.getItemListenerConfigs());
         QueueStoreConfigHolder queueStoreConfigHolder = QueueStoreConfigHolder.of(queueConfig.getQueueStoreConfig(),
                 serializationService);
-        ClientMessage request = DynamicConfigAddQueueConfigCodec.encodeRequest(queueConfig.getName(), listenerConfigs,
-                queueConfig.getBackupCount(), queueConfig.getAsyncBackupCount(), queueConfig.getMaxSize(),
-                queueConfig.getEmptyQueueTtl(), queueConfig.isStatisticsEnabled(), queueConfig.getSplitBrainProtectionName(),
+        ClientMessage request = DynamicConfigAddQueueConfigCodec.encodeRequest(queueConfig.getName(),
+                queueConfig.getQueueType().name(), queueConfig.getComparatorClassName(),
+                queueConfig.isDuplicateAllowed(), listenerConfigs, queueConfig.getBackupCount(),
+                queueConfig.getAsyncBackupCount(), queueConfig.getMaxSize(), queueConfig.getEmptyQueueTtl(),
+                queueConfig.isStatisticsEnabled(), queueConfig.getSplitBrainProtectionName(),
                 queueStoreConfigHolder, queueConfig.getMergePolicyConfig().getPolicy(),
-                queueConfig.getMergePolicyConfig().getBatchSize(), queueConfig.getComparatorClassName(),
-                queueConfig.isDuplicateAllowed());
+                queueConfig.getMergePolicyConfig().getBatchSize());
         invoke(request);
         return this;
     }

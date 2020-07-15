@@ -16,6 +16,17 @@
 
 package com.hazelcast.internal.config;
 
+import static com.hazelcast.internal.config.DomConfigHelper.childElements;
+import static com.hazelcast.internal.config.DomConfigHelper.cleanNodeName;
+import static com.hazelcast.internal.config.DomConfigHelper.getBooleanValue;
+import static com.hazelcast.internal.config.DomConfigHelper.getIntegerValue;
+import static com.hazelcast.internal.config.yaml.W3cDomUtil.getWrappedYamlMapping;
+import static com.hazelcast.internal.config.yaml.W3cDomUtil.getWrappedYamlSequence;
+import static com.hazelcast.internal.util.StringUtil.lowerCaseInternal;
+import static com.hazelcast.internal.util.StringUtil.upperCaseInternal;
+import static com.hazelcast.internal.yaml.YamlUtil.asScalar;
+import static java.lang.Integer.parseInt;
+
 import com.hazelcast.config.AttributeConfig;
 import com.hazelcast.config.CachePartitionLostListenerConfig;
 import com.hazelcast.config.CacheSimpleConfig;
@@ -84,25 +95,13 @@ import com.hazelcast.internal.yaml.YamlNode;
 import com.hazelcast.internal.yaml.YamlScalar;
 import com.hazelcast.internal.yaml.YamlSequence;
 import com.hazelcast.query.impl.IndexUtils;
-import org.w3c.dom.NamedNodeMap;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
-
 import java.nio.ByteOrder;
 import java.util.Map;
 import java.util.Properties;
 import java.util.function.Function;
-
-import static com.hazelcast.internal.config.DomConfigHelper.childElements;
-import static com.hazelcast.internal.config.DomConfigHelper.cleanNodeName;
-import static com.hazelcast.internal.config.DomConfigHelper.getBooleanValue;
-import static com.hazelcast.internal.config.DomConfigHelper.getIntegerValue;
-import static com.hazelcast.internal.config.yaml.W3cDomUtil.getWrappedYamlMapping;
-import static com.hazelcast.internal.config.yaml.W3cDomUtil.getWrappedYamlSequence;
-import static com.hazelcast.internal.util.StringUtil.lowerCaseInternal;
-import static com.hazelcast.internal.util.StringUtil.upperCaseInternal;
-import static com.hazelcast.internal.yaml.YamlUtil.asScalar;
-import static java.lang.Integer.parseInt;
+import org.w3c.dom.NamedNodeMap;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 
 @SuppressWarnings({"checkstyle:methodcount",
                    "checkstyle:cyclomaticcomplexity",
@@ -242,6 +241,7 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
         for (Node queueNode : childElements(node)) {
             QueueConfig queueConfig = new QueueConfig();
             queueConfig.setName(queueNode.getNodeName());
+            handlePriorityQueueConfig(queueNode, queueConfig);
             handleQueueNode(queueNode, queueConfig);
         }
     }

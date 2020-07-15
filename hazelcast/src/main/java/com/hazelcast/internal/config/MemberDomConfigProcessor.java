@@ -82,6 +82,7 @@ import static java.lang.Boolean.parseBoolean;
 import static java.lang.Integer.parseInt;
 import static java.lang.Long.parseLong;
 
+import com.hazelcast.collection.impl.queue.QueueType;
 import com.hazelcast.config.AliasedDiscoveryConfig;
 import com.hazelcast.config.AttributeConfig;
 import com.hazelcast.config.AuditlogConfig;
@@ -1593,7 +1594,26 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         String name = getTextContent(attName);
         QueueConfig qConfig = new QueueConfig();
         qConfig.setName(name);
+        handlePriorityQueueConfig(node, qConfig);
+
         handleQueueNode(node, qConfig);
+    }
+
+    protected void handlePriorityQueueConfig(Node node, QueueConfig qConfig) {
+        final String queueType = getAttribute(node, "queue-type");
+        if (queueType != null) {
+            qConfig.setQueueType(QueueType.valueOf(upperCaseInternal(queueType)));
+        }
+        final String comparatorClassName = getAttribute(node, "comparator-class-name");
+        if (comparatorClassName != null) {
+            if (!StringUtil.isNullOrEmptyAfterTrim(comparatorClassName)) {
+                qConfig.setComparatorClassName(comparatorClassName);
+            }
+        }
+        final String duplicateAllowed = getAttribute(node, "duplicate-allowed");
+        if (duplicateAllowed != null) {
+            qConfig.setDuplicateAllowed(getBooleanValue(duplicateAllowed));
+        }
     }
 
     void handleQueueNode(Node node, final QueueConfig qConfig) {
@@ -1626,10 +1646,6 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             } else if ("merge-policy".equals(nodeName)) {
                 MergePolicyConfig mergePolicyConfig = createMergePolicyConfig(n);
                 qConfig.setMergePolicyConfig(mergePolicyConfig);
-            } else if ("comparator-class-name".equals(nodeName)) {
-                qConfig.setComparatorClassName(value);
-            } else if ("duplicate-allowed".equals(nodeName)) {
-                qConfig.setDuplicateAllowed(getBooleanValue(value));
             }
         }
         config.addQueueConfig(qConfig);

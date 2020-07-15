@@ -16,6 +16,22 @@
 
 package com.hazelcast.config;
 
+import static com.hazelcast.config.EvictionPolicy.LRU;
+import static com.hazelcast.config.MaxSizePolicy.ENTRY_COUNT;
+import static com.hazelcast.config.PermissionConfig.PermissionType.CACHE;
+import static com.hazelcast.config.PermissionConfig.PermissionType.CONFIG;
+import static com.hazelcast.config.WanQueueFullBehavior.DISCARD_AFTER_MUTATION;
+import static com.hazelcast.config.WanQueueFullBehavior.THROW_EXCEPTION;
+import static com.hazelcast.config.XmlYamlConfigBuilderEqualsTest.readResourceToString;
+import static java.io.File.createTempFile;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 import com.google.common.collect.ImmutableSet;
 import com.hazelcast.config.LoginModuleConfig.LoginModuleUsage;
 import com.hazelcast.config.cp.CPSubsystemConfig;
@@ -36,11 +52,6 @@ import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.topic.TopicOverloadPolicy;
 import com.hazelcast.wan.WanPublisherState;
-import org.junit.Ignore;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
-
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.InputStream;
@@ -547,6 +558,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "hazelcast:\n"
                 + "  queue:\n"
                 + "    custom:\n"
+                + "      queue-type: PRIORITY_QUEUE\n"
                 + "      comparator-class-name: com.hazelcast.config.QueueTestComparator\n"
                 + "      duplicate-allowed: false\n"
                 + "      statistics-enabled: false\n"

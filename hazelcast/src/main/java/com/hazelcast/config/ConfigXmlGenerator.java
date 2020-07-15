@@ -666,9 +666,8 @@ public class ConfigXmlGenerator {
     private static void queueXmlGenerator(XmlGenerator gen, Config config) {
         Collection<QueueConfig> qCfgs = config.getQueueConfigs().values();
         for (QueueConfig q : qCfgs) {
-            gen.open("queue", "name", q.getName())
-                    .node("comparator-class-name", q.getComparatorClassName())
-                    .node("duplicate-allowed", q.isDuplicateAllowed())
+            gen.open("queue", "name", q.getName(), "queue-type", q.getQueueType(),
+                    "comparator-class-name", q.getComparatorClassName(), "duplicate-allowed", q.isDuplicateAllowed())
                     .node("statistics-enabled", q.isStatisticsEnabled())
                     .node("max-size", q.getMaxSize())
                     .node("backup-count", q.getBackupCount())

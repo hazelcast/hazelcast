@@ -33,6 +33,7 @@ import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
 import com.google.common.collect.ImmutableSet;
+import com.hazelcast.collection.impl.queue.QueueType;
 import com.hazelcast.config.LoginModuleConfig.LoginModuleUsage;
 import com.hazelcast.config.PermissionConfig.PermissionType;
 import com.hazelcast.config.cp.CPSubsystemConfig;
@@ -618,9 +619,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     @Test
     public void readQueueConfig() {
         String xml = HAZELCAST_START_TAG
-                + "      <queue name=\"custom\">"
-                + "        <comparator-class-name>com.hazelcast.config.QueueTestComparator</comparator-class-name>"
-                + "        <duplicate-allowed>false</duplicate-allowed>"
+                + "      <queue name=\"custom\" queue-type=\"PRIORITY_QUEUE\" comparator-class-name=\"com.hazelcast.config.QueueTestComparator\" duplicate-allowed=\"false\">"
                 + "        <statistics-enabled>false</statistics-enabled>"
                 + "        <max-size>100</max-size>"
                 + "        <backup-count>2</backup-count>"
@@ -644,6 +643,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
 
         Config config = buildConfig(xml);
         QueueConfig queueConfig = config.getQueueConfig("custom");
+        assertEquals(queueConfig.getQueueType(), QueueType.PRIORITY_QUEUE);
         assertEquals("com.hazelcast.config.QueueTestComparator", queueConfig.getComparatorClassName());
         assertFalse(queueConfig.isDuplicateAllowed());
         assertFalse(queueConfig.isStatisticsEnabled());
