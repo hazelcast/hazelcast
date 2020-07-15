@@ -6,213 +6,159 @@
 
 This document describes the design of the client protocol and the corresponding server-side implementation.    
 
-The rest of this document is organized as follows. In section 1 we describe the protocol. In section 2 we discuss the 
-server-side design and implementation concerns. In section 3 we summarize current limitation.
+The rest of this document is organized as follows. In section 1 we describe the requirements to the implementation. In 
+section 2 we describe the protocol design and implementation concerns. In section 3 we summarize the limitations of the current
+implementation.
 
-## 1 Protocol
+## 1 Requirements
 
-### 1.1 Actors
+### 1.1 Pagination
+
+The result set might be large enough so that it doesn't fit to client's memory. 
+
+Therefore, data should be returned to the client in pages.
+
+### 1.2 Message Routing
 
 The Hazelcast Mustang engine is a distributed SQL query engine. When a query is submitted for execution, the engine splits
 it into several fragments. The fragments are executed on cluster members. 
 
 Members executing one or more fragments of the given query are called **participants**. The participant that started execution 
-of the query is called **initiator**. Perticipants exchange data with each other. On the final execution stage participants send
-data to the initiator to build the final result set. Thus, only the initiator can return the final result set.   
+of the query is called **initiator**. Participants exchange data with each other. On the final execution stage participants send
+data to the initiator to build the final result set. Only the initiator can return the final result set. 
 
-## 2 Server-side Implementation
+Therefore, the implementation should be able to route all requests related to the given query to the query initiator. 
 
-Hazelcast uses a dedicated thread pool for message send and receive, which will be referred to as **IO Pool** in this paper.
-Each thread from the IO pool maintains a subset of connections to remote members. Consider that we have a sender member (S)
-and a receiver member (R). The typical execution flow is organized as follows:
-1. The message is added to the queue of a single IO thread, and the thread is notified
-1. The sender IO thread wakes up and sends the message over the network
-1. A receiver IO thread is notified by the operating system on receive
-1. The receiver IO thread wakes up, determines the next execution stage, adds the message to the stage's queue and notifies the
-stage
-1. The next execution stage processes the message
+### 1.3 Lite Members
 
-*Snippet 1: Message execution flow*
+At the moment lite members cannot start queries. I.e. a lite member can never be a query initiator. Note that this limitation
+is different from other Hazelcast subsystems. Normally, if the operation cannot be executed on the lite member, it is handed 
+over to the normal member transparently. This is not the case for the SQL purely due to time constraints: we do no have enough
+time to implement it in 4.1. This limitation will be removed in future versions.
+
+Therefore, the client should never route query execute requests to the lite members in the 4.1 release. 
+
+### 1.4 Resource Cleanup
+
+When a query is started on the initiator, certain amount of system resources are allocated. The resources are released either
+when all rows are consumed by the user, or when the explicit `close` command is invoked by the user.
+
+Therefore, the implementation must support a distinct `close` command. Also, the implementation must release the resources when
+the client disconnects.
+
+## 2 Protocol
+
+The protocol contains three commands: `execute`, `fetch`, and `close`.
+
+### 2.1 Common Entities
+
+The protocol contains the following common entities that are used across different commands:
+- **Query ID** - an opaque query identifier of type `String` that is used to locate the server-side cursor on the member
+- **Data page** - a finite collection of rows fetched from the initiator, together with the "end of data" marker. If the 
+"end of data" condition is observed, the cursor is closed on the server automatically and no separate `close` is needed.
+- **SqlRow** - an object containing row data. At the moment we encode each separate value as `Data`. In the future we are likely
+to replace it with specialized types for every SQL data type.
+- **SqlError** - an object describing the SQL error that occurred on the server. We use a separate object because we pass an 
+error code in addition to the error message.
+
+### 2.1 Execute Command
+
+The `execute` command starts execution of a query on the member. The response contains query ID, the data page, and metadata.
+
+The command must never be sent to a lite member in 4.1.
+
 ```
-Stage(S)                 IO(S)        IO(R)                Stage(R)
-   |----enqueue/notify->--|            |                      |
-   |                      |----send->--|                      |
-   |                      |            |----enqueue/notify->--|
-```
+request {
+    sql : String 
+    parameters : List<Data>
+    timeoutMillis : long
+    cursorBufferSize : int
+}
 
-We now discuss the organization of different execution stages.
-
-### 1.2 Partition Pool
-
-A message may have a logical **partition**, which is a positive integer number. Messages with defined partition are routed to
-a special thread pool, which we refer to as **partition pool**. The pool has several threads. Every thread has a dedicated task
-queue. Partition of the message is used to determine the exact thread which will process the message:
-`threadIndex = partition % threadCount`.
-
-The partition pool has the following advantages:
-1. Only one thread processes messages with the given partition so that processing logic may use less synchronization
-1. Dedicated thread queues reduce contention on enqueue/deque operations
-
-The partition pool has the following disadvantage:
-1. There is no balancing between threads: a single long-running task may delay other tasks from the same partition
-indefinitely; likewise, an imbalance between partitions may cause resource underutilization
-
-The partition pool is thus most suitable for small tasks that operate on independent physical resources, and that are
-distributed equally between logical partitions. An example is `IMap` operations, which operate on separate physical
-partitions, such as `GET` and `PUT`.
-
-Since the partition is a logical notion, it is possible to multiplex tasks from different components to a single partition pool.
-For example, CP Subsystem schedules tasks, all with the same partition, to the partition pool to ensure total processing order.
-
-### 1.3 Generic Pool
-
-If a message doesn't have a logical partition, it is submitted to the **generic pool**. This is a conventional thread pool with
-a shared blocking queue. It has inherent balancing capabilities. But at the same time, this pool may demonstrate less than
-optimal throughput when a lot of small tasks are submitted due to contention on the queue.
-
-### 1.4 Hazelcast Jet Pool
-
-Hazelcast Jet uses its own cooperative pool to execute Jet jobs. Every thread has its own queue of jobs that are executed
-cooperatively. There is no balancing: once the job is submitted to a specific thread, it is always executed in that thread.
-
-IO pool doesn't notify the Jet pool about new data batch ("push"). Instead, the message is just enqueued, and the Jet thread
-checks the queue periodically ("poll").
-
-## 2 Design
-
-We now define the requirements to Hazelcast Mustang threading model, analyze them concerning existing infrastructure, and
-define the design.
-
-### 2.1 Requirements
-
-The requirements are thread safety, load balancing, and ordered message processing.
-
-First, the infrastructure must guarantee that operator execution is thread-safe. That is, the stateful operator should not be
-executed by multiple threads simultaneously. This simplifies operator implementations and makes them more performant.
-Hazelcast Jet follows this principle, as only one thread may execute a particular job. However, Hazelcast Jet pool doesn't
-satisfy the load balancing requirement discussed below.
-
-Second, the execution environment must support load balancing. Query execution may take a long time to complete. If several query
-fragments have been assigned to a single execution thread, it should be possible to reassign them to idle threads dynamically.
-Hence neither partition pool nor Hazelcast Jet pool designs are applicable to Hazelcast Mustang because they lack balancing
-capabilities.
-
-Third, it should be possible to execute some tasks in order. That is, if task `A` is received before task `B`, then it
-should be executed before `B`. It is always possible to implement an ordering guarantee with the help of additional
-synchronization primitives, but it increases complexity and typically reduces performance. So we prefer to have a threading
-infrastructure with ordering guarantees, such as in the partition pool. Examples of tasks requiring ordered processing:
-1. Query cancel should be executed after query start to minimize resource leaks
-1. The N-th batch from the stream should be processed before the (N+1)-th batch, as described in [[1]] (p. 1.3)
-
-### 2.1 General Design
-
-We define the taxonomy of tasks related to query execution.
-
-First, the engine must execute query fragments, i.e., advance Volcano-style operators, as explained in [[2]] (p. 3). Fragment
-execution is initiated in response to query start or data messages. Fragment execution may take significant time to complete.
-
-Second, the engine must process query operations described in [[1]] (p. 3), such as query start, query cancel, batch arrival,
-and flow control. These operations take short time to complete. Moreover, query start operation may trigger the parallel
-execution of several fragments.
-
-Given the different nature of query operations and fragment execution, we split them into independent stages, called
-**operation pool** and **fragment pool**. The former executes query operations, and the latter executes fragments. This design
-provides a clear separation of concerns and allows us to optimize stages for their tasks as described below, which improves
-performance. On the other hand, this design introduces an additional thread notification, as shown in the snippet below, which
-may negatively affect performance. Nevertheless, we think that the advantages of this approach outweigh the disadvantages.
-
-*Snippet 2: Query start flow (receiver only)*
-```
-IO               Operation pool         Fragment pool
-|----enqueue/notify-->-|                      |
-|                      |----enqueue/notify-->-|
+response {
+    queryId : String
+    rowMetadata : SqlRowMetadata
+    rowPage : List<SqlRow>
+    rowPageLast : boolean
+    error : SqlError
+}
 ```
 
-### 2.2 Operation Pool
+### 2.2 Fetch Command
 
-Every network message received by the IO pool is first submitted to the operation pool.
+The `fetch` command extracts the next page of rows from the server-side cursor via query ID. 
 
-The pool is organized as a fixed pool of threads with dedicated per-thread queues. Dedicated queues reduce contention and
-increase the throughput, which is important given that processing of a single message takes little time.
+Data fetching is organized in a simple request-response fashion: one page is returned for every `fetch` request. This 
+implementation is not optimal for large result sets due to increased latency. A better implementation will stream data from the 
+member to the client without waiting for an explicit `fetch` request for every page. We decided not to do this in 4.1 due to 
+time constraints. However, the design of the client protocol allows for such interaction, so we may implement the streaming 
+protocol in the future. 
 
-Every message may define an optional logical partition. If the partition is not defined, a random thread is picked for message
-processing. If the partition is defined, the index of executing thread is defined as `threadIndex = partition % threadCount`.
-Two messages with the same partition are guaranteed to be processed by the same thread, thus providing ordering guarantees.
+The command must be sent to the query initiator for two reasons:
+1. This guarantees the optimal performance, because the data is extract with a minimal number of network requests 
+1. Currently, there is no way to re-route `fetch` requests from the one member to another. This limitation might be relaxed in 
+the future.
 
-Some messages may trigger query fragment execution, as described below. In this case, a fragment execution task is created and
-submitted for execution to the fragment pool.
-1. `execute` - triggers the execution of one or more fragments
-1. `batch` and `flow_control` - trigger execution of one fragment defined by query ID and edge ID, as described in [[1]]
+```
+request {
+    queryId : String
+}
 
-### 2.3 Fragment Pool
+response {
+    rowPage : List<SqlRow>
+    rowPageLast : boolean
+    error : SqlError
+}
+```
 
-The fragment pool is responsible for the execution of individual query fragments. Fragment execution is always initiated by
-a task from the operation pool.
+### 2.3 Close Command
 
-Unlike operations, fragment execution may take arbitrary time depending on the query structure. It is, therefore, important to
-guarantee high throughput for short fragments, while still providing load balancing for long fragments. The ideal candidate
-is a thread pool with dedicated per-thread queues and work-stealing. For this reason, we choose JDK's `ForkJoinPool` as a
-backbone of the fragment pool. We create a separate instance of the `ForkJoinPool` rather than using `ForkJoinPool.commonPool()`
-to avoid interference with user workloads.
+The `close` command stops query execution on the member, and releases the associated resources. 
 
-We may decide to introduce multiple fragment pools for better resource management in the future. This will help limit the
-maximum number of CPU cores dedicated to a particular workload. An example of this approach is **Resource Pools** in MemSQL [[3]].
+If the previous `execute` or `fetch` response returned "end of data" flag (`rowPageLast == true`), then it is not necessary 
+to send this command to the member.
 
-## 3 Alternative Approaches
+If the server-side cursor with the given ID is not found, the command is no-op.
 
-Several other approaches were considered but then rejected. This section explains these approaches and the rejection
-reasons.
+The command must be sent to the query initiator for reasons similar to the `fetch` command.
 
-### 3.1 Use Single Pool
+```
+request {
+    queryId : String
+}
 
-It is possible to use a single pool for both operation and fragment processing and remove the additional notifications for
-fragment execution. The problem is that an operation task is short and requires fast response, while fragment execution is
-potentially a long-running task. Consider two examples that demonstrate when this approach doesn't work well.
+response {}
+```
+  
+## 3 Limitations
 
-**Example 1**:
+This section describes limitations of the current implementation
 
-Consider that long-running fragments occupied all threads in the pool. Then a `cancel` message arrives, but it cannot be
-processed because all threads are busy. To fix it, we would have to introduce a separate priority queue, which should be
-checked periodically by fragment tasks. This may lead to wasted CPU cycles and frequent interrupts to fragment tasks.
+### 3.1 No Backward Compatibility
 
-**Example 2**
+The protocol is not backward compatible at the moment, because the SQL feature is declared as beta. Messages could be changed 
+in an incompatible way in minor and patch versions. 
 
-Consider a fragment which occupied the thread `A`. Then a `batch` message arrives, which should resume execution of another
-fragment. Given that the processing of `batch` message should be ordered, it has logical partition defined. It may happen that
-the thread chosen for `batch` operation processing will also be the thread `A`, that is currently busy. So we either delay
-the resume of the fragment associated with the batch, reducing the throughput, or we introduce a priority queue and interrupt
-the running fragment, wasting CPU cycles.
+In order to ensure that the user receives proper error messages in case of incompatibility, we will increment the ID of the 
+message every time it is changed in an incompatible way. The user will receive an error message about the version mismatch.
 
-### 3.2 Use IO Pool
+When the SQL is no longer in beta, the SQL protocol will become backward/forward compatible, similarly to other Hazelcast 
+components.  
 
-Another approach is to use the IO pool to process short operations, such as `batch` processing, to eliminate an additional
-notification. Hazelcast Jet uses this approach for batch processing, but with two important traits:
-1. The "poll" approach without thread notifications is used. This is inappropriate for SQL where low latency is required
-1. The batch destination is encoded inside the network `Packet` at known positions, and therefore no expensive deserialization
-is needed. We expect SQL protocol to change frequently during first releases, so it is not desirable to have an additional
-contract on message structure at the moment
+### 3.2 Stickiness
 
-### 3.3 Use Partition Pool
+There is no server-side logic to re-route client requests between members. Therefore, the protocol is sticky: `fetch` and 
+`close` commands must be sent to the same member as the prior `execute` command.
 
-The partition pool cannot be used for fragment execution, because it may significantly delay other operations, such as `IMap`
-'GET' and 'PUT'. However, it is possible to use the partition pool instead of the operation pool. The partition pool and query
-operation pool have a very similar design. By merging them, we may decrease the total number of threads and possibly reduce the
-number of context switches. But with this design, query operations will interfere with other workloads, that are potentially
-long-running (e.g., `EntryProcessor`) or skewed (e.g., bad data distribution), causing unpredictable side effects.
+We are likely to add missing routing logic in future versions. However, stickiness guarantees the optimal performance. Therefore,
+we will still employ the sticky approach on the best-effort basis even after the limitation is resolved. 
 
-We may revisit this decision at any time in the future because it doesn't affect the network protocol.
+### 3.3 No Support for Lite Members
 
-### 3.4 Use Generic Pool
+Lite members cannot initiate the SQL queries, and we do not have routing of client requests between members. Therefore, the 
+client cannot send `execute` requests to the lite members. 
 
-It is possible to execute query fragments in the generic pool. But if we do so, we would have to restrict the execution of
-queries from any tasks that may potentially be executed in the generic pool.
+This especially affects unisocket deployments: if a client is connected to a lite member, the query execution will fail
+even though there could be data members in the topology. 
 
-For example, it will be impossible to execute SQL from `IScheduledExecutorService`. Otherwise, thread starvation is possible as
-described below:
-1. User starts many tasks from the `IScheduledExecutorService`, and they occupy all generic threads
-1. Every task starts execution of the query
-1. But query execution cannot complete because it needs free generic threads, resulting in a distributed deadlock
-
-[1]: 03-network-protocol.md "SQL Network Protocol"
-[2]: 02-operator-interface.md "SQL Operator Interface"
-[3]: https://docs.memsql.com/v6.8/guides/cluster-management/operations/setting-resource-limits/ "MemSQL: Setting Resource Limits"
+We will add missing routing logic in future versions, and remove this limitation. 
