@@ -133,6 +133,11 @@ public class PhysicalIndexScanTest extends OptimizerTestSupport {
         // TODO
     }
 
+    @Test
+    public void test_or_nested() {
+        checkIndex("f1 = 1 OR (f1 = 2 OR f1 = 3)", null, "sorted_f1", "OR(=($1, 1), =($1, 2), =($1, 3))", "true", 25d);
+    }
+
     private void checkOr(
         String column,
         String value1,

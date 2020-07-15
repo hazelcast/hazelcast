@@ -500,11 +500,10 @@ public class IndexResolver {
             case LESS_THAN_OR_EQUAL:
                 return IndexCandidateType.LESS_THAN_OR_EQUALS;
 
-            case EQUALS:
-                return IndexCandidateType.EQUALS;
-
             default:
-                throw new UnsupportedOperationException("Unexpected kind: " + kind);
+                assert kind == SqlKind.EQUALS;
+
+                return IndexCandidateType.EQUALS;
         }
     }
 
@@ -522,11 +521,10 @@ public class IndexResolver {
             case LESS_THAN_OR_EQUAL:
                 return SqlKind.GREATER_THAN_OR_EQUAL;
 
-            case EQUALS:
-                return kind;
-
             default:
-                throw new UnsupportedOperationException("Unexpected kind: " + kind);
+                assert kind == SqlKind.EQUALS;
+
+                return kind;
         }
     }
 
