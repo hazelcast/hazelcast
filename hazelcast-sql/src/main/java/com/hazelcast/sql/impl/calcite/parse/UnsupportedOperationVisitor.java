@@ -291,6 +291,7 @@ public final class UnsupportedOperationVisitor implements SqlVisitor<Void> {
         return null;
     }
 
+    @SuppressWarnings("checkstyle:CyclomaticComplexity")
     private void processCall(SqlCall call) {
         SqlKind kind = call.getKind();
 

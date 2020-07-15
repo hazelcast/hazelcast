@@ -138,6 +138,11 @@ public class UnorderedIndexStore extends BaseSingleValueIndexStore {
     }
 
     @Override
+    public Iterator<QueryableEntry> getRecordIterator() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public Iterator<QueryableEntry> getRecordIterator(Comparable value) {
         if (value == NULL) {
             return recordsWithNullValue.values().iterator();

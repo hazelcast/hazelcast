@@ -110,6 +110,8 @@ public interface Index {
      */
     Set<QueryableEntry> evaluate(Predicate predicate);
 
+    Iterator<QueryableEntry> getRecordIterator();
+
     Iterator<QueryableEntry> getRecordIterator(Comparable value);
 
     /**

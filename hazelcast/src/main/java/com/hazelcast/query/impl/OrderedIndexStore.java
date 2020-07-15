@@ -18,13 +18,15 @@ package com.hazelcast.query.impl;
 
 import com.hazelcast.core.TypeConverter;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.util.AbstractCompositeIterator;
+import com.hazelcast.internal.util.FlatCompositeIterator;
 import com.hazelcast.query.Predicate;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.concurrent.ConcurrentHashMap;
@@ -114,6 +116,14 @@ public class OrderedIndexStore extends BaseSingleValueIndexStore {
     }
 
     @Override
+    public Iterator<QueryableEntry> getRecordIterator() {
+        Iterator<QueryableEntry> iterator = new EntryCompositeIterator(recordMap.values().iterator());
+        Iterator<QueryableEntry> nullIterator = recordsWithNullValue.values().iterator();
+
+        return new FlatCompositeIterator<>(Arrays.asList(iterator, nullIterator).iterator());
+    }
+
+    @Override
     public Iterator<QueryableEntry> getRecordIterator(Comparable value) {
         if (value == NULL) {
             return recordsWithNullValue.values().iterator();
@@ -179,7 +189,7 @@ public class OrderedIndexStore extends BaseSingleValueIndexStore {
                 throw new IllegalArgumentException("Unrecognized comparison: " + comparison);
         }
 
-        return new FlatIterator(iterator);
+        return new EntryCompositeIterator(iterator);
     }
 
     @Override
@@ -231,7 +241,7 @@ public class OrderedIndexStore extends BaseSingleValueIndexStore {
             return emptyIterator();
         }
 
-        return new FlatIterator(recordMap.subMap(from, fromInclusive, to, toInclusive).values().iterator());
+        return new EntryCompositeIterator(recordMap.subMap(from, fromInclusive, to, toInclusive).values().iterator());
     }
 
     @Override
@@ -380,53 +390,27 @@ public class OrderedIndexStore extends BaseSingleValueIndexStore {
     }
 
     @SuppressWarnings("rawtypes")
-    private static final class FlatIterator implements Iterator<QueryableEntry> {
+    private static final class EntryCompositeIterator extends AbstractCompositeIterator<QueryableEntry> {
 
         private final Iterator<Map<Data, QueryableEntry>> iterator;
-        private Iterator<QueryableEntry> currentIterator;
 
-        private FlatIterator(Iterator<Map<Data, QueryableEntry>> iterator) {
+        private EntryCompositeIterator(Iterator<Map<Data, QueryableEntry>> iterator) {
             this.iterator = iterator;
-
-            advance();
         }
 
         @Override
-        public boolean hasNext() {
-            return currentIterator != null;
-        }
-
-        @Override
-        public QueryableEntry next() {
-            if (!hasNext()) {
-                throw new NoSuchElementException();
-            }
-
-            QueryableEntry entry = currentIterator.next();
-
-            if (!currentIterator.hasNext()) {
-                currentIterator = null;
-
-                advance();
-            }
-
-            return entry;
-        }
-
-        private void advance() {
-            assert currentIterator == null;
-
+        protected Iterator<QueryableEntry> nextIterator() {
             while (iterator.hasNext()) {
                 Map<Data, QueryableEntry> map = iterator.next();
 
                 Iterator<QueryableEntry> currentIterator0 = map.values().iterator();
 
                 if (currentIterator0.hasNext()) {
-                    currentIterator = currentIterator0;
-
-                    break;
+                    return currentIterator0;
                 }
             }
+
+            return null;
         }
     }
 }

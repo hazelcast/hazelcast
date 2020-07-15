@@ -176,6 +176,15 @@ public abstract class AbstractIndex implements InternalIndex {
     }
 
     @Override
+    public Iterator<QueryableEntry> getRecordIterator() {
+        if (converter == null) {
+            return emptyIterator();
+        }
+
+        return indexStore.getRecordIterator();
+    }
+
+    @Override
     public Iterator<QueryableEntry> getRecordIterator(Comparable value) {
         if (converter == null) {
             return emptyIterator();

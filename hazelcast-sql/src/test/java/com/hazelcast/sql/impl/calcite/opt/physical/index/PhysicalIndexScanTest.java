@@ -238,6 +238,7 @@ public class PhysicalIndexScanTest extends OptimizerTestSupport {
         }
     }
 
+    @SuppressWarnings("checkstyle:ParameterNumber")
     private void checkRangeClosed(
         String column,
         String operator1,

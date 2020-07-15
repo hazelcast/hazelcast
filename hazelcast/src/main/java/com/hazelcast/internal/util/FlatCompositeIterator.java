@@ -14,24 +14,27 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.calcite.opt.physical.index;
+package com.hazelcast.internal.util;
 
-import com.hazelcast.sql.impl.plan.node.PlanNodeFieldTypeProvider;
-import com.hazelcast.sql.impl.type.QueryDataType;
+import java.util.Iterator;
 
-/**
- * Specialized field type provider that do not expect any fields.
- */
-public final class IndexFieldTypeProvider implements PlanNodeFieldTypeProvider {
+public class FlatCompositeIterator<E> extends AbstractCompositeIterator<E> {
 
-    public static final IndexFieldTypeProvider INSTANCE = new IndexFieldTypeProvider();
+    private final Iterator<Iterator<E>> iterators;
 
-    private IndexFieldTypeProvider() {
-        // No-op.
+    public FlatCompositeIterator(Iterator<Iterator<E>> iterators) {
+        this.iterators = iterators;
     }
 
-    @Override
-    public QueryDataType getType(int index) {
-        throw new IllegalStateException("The operation should not be called.");
+    protected Iterator<E> nextIterator() {
+        while (iterators.hasNext()) {
+            Iterator<E> iterator = iterators.next();
+
+            if (iterator.hasNext()) {
+                return iterator;
+            }
+        }
+
+        return null;
     }
 }

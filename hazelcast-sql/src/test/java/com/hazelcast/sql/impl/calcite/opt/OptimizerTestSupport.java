@@ -82,8 +82,8 @@ public abstract class OptimizerTestSupport extends SqlTestSupport {
     private Result optimize(String sql, int nodeCount, boolean physical, QueryDataType... parameterTypes) {
         HazelcastSchema schema = createDefaultSchema();
 
-        QueryParameterMetadata parameterMetadata = parameterTypes == null || parameterTypes.length == 0 ? null :
-            new QueryParameterMetadata(parameterTypes);
+        QueryParameterMetadata parameterMetadata = parameterTypes == null || parameterTypes.length == 0
+            ? null : new QueryParameterMetadata(parameterTypes);
 
         return optimize(sql, schema, nodeCount, physical, parameterMetadata);
     }

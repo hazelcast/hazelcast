@@ -237,6 +237,11 @@ public class AttributeIndexRegistry {
         }
 
         @Override
+        public Iterator<QueryableEntry> getRecordIterator() {
+            return delegate.getRecordIterator();
+        }
+
+        @Override
         public Iterator<QueryableEntry> getRecordIterator(Comparable value) {
             Comparable from = new CompositeValue(width, value, NEGATIVE_INFINITY);
             Comparable to = new CompositeValue(width, value, POSITIVE_INFINITY);

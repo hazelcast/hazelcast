@@ -59,7 +59,7 @@ import java.util.Set;
 // TODO: Return index scans even if there are no matching predicates because they may provide better collations for parent
 //   operators
 // TODO: Use monotonicity to employ indexes in more advanced cases, e.g. "WHERE x + 1 > 2"
-public class IndexResolver {
+public final class IndexResolver {
     private IndexResolver() {
         // No-op.
     }
@@ -405,6 +405,7 @@ public class IndexResolver {
         );
     }
 
+    @SuppressWarnings({"checkstyle:CyclomaticComplexity", "checkstyle:NPathComplexity"})
     private static IndexFilterDescriptor createFilterFromCandidates(
         IndexType type,
         List<IndexCandidate> candidates
@@ -464,7 +465,9 @@ public class IndexResolver {
 
                         break;
 
-                    case LESS_THAN_OR_EQUALS:
+                    default:
+                        assert candidate.getFilterType() == IndexCandidateType.LESS_THAN_OR_EQUALS;
+
                         if (to == null) {
                             to = candidate.getFilterValue();
                             toInclusive = true;

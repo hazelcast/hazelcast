@@ -145,6 +145,13 @@ public class GlobalQueryContextWithStats extends QueryContext {
         }
 
         @Override
+        public Iterator<QueryableEntry> getRecordIterator() {
+            Iterator<QueryableEntry> result = delegate.getRecordIterator();
+            hasQueries = true;
+            return result;
+        }
+
+        @Override
         public Iterator<QueryableEntry> getRecordIterator(Comparable value) {
             Iterator<QueryableEntry> result = delegate.getRecordIterator(value);
             hasQueries = true;

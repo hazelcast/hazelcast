@@ -25,6 +25,7 @@ import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.exec.scan.KeyValueIterator;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
@@ -138,16 +139,28 @@ public class MapIndexScanExecIterator implements KeyValueIterator {
         IndexFilter lastFilter = lastFilter();
 
         Comparable from = lastFilter.getFrom() != null ? (Comparable) lastFilter.getFrom().eval(null, evalContext) : null;
+        Comparison fromComparison = lastFilter.isFromInclusive() ? Comparison.GREATER_OR_EQUAL : Comparison.GREATER;
+
         Comparable to = lastFilter.getTo() != null ? (Comparable) lastFilter.getTo().eval(null, evalContext) : null;
+        Comparison toComparison = lastFilter.isToInclusive() ? Comparison.LESS_OR_EQUAL : Comparison.LESS;
 
-        if (from != null && to == null) {
-            Object res = index.getRecords(lastFilter.isFromInclusive() ? Comparison.GREATER_OR_EQUAL : Comparison.GREATER, from);
-
-            return index.getRecordIterator(lastFilter.isFromInclusive() ? Comparison.GREATER_OR_EQUAL : Comparison.GREATER, from);
+        if (from != null) {
+            if (to == null) {
+                // Left bound only
+                return index.getRecordIterator(fromComparison, from);
+            } else {
+                // Both left and right bounds
+                return index.getRecordIterator(from, lastFilter.isFromInclusive(), to, lastFilter.isToInclusive());
+            }
+        } else {
+            if (to != null) {
+                // Right bound only
+                return index.getRecordIterator(toComparison, true);
+            } else {
+                // No bounds, do a full index scan (e.g. for HD)
+                return index.getRecordIterator();
+            }
         }
-
-        // TODO: Fix this!
-        return index.getRecordIterator(from, lastFilter.isFromInclusive(), to, lastFilter.isToInclusive());
     }
 
     private Iterator<QueryableEntry> processEquals(InternalIndex index) {
@@ -156,7 +169,13 @@ public class MapIndexScanExecIterator implements KeyValueIterator {
             throw new UnsupportedOperationException("Implement me!");
         }
 
-        return index.getRecordIterator((Comparable) lastFilter().getFrom().eval(null, evalContext));
+        Comparable value = (Comparable) lastFilter().getFrom().eval(null, evalContext);
+
+        if (value == null) {
+            return Collections.emptyIterator();
+        } else {
+            return index.getRecordIterator(value);
+        }
     }
 
     @SuppressWarnings("unchecked")
@@ -166,9 +185,7 @@ public class MapIndexScanExecIterator implements KeyValueIterator {
             throw new UnsupportedOperationException("Implement me!");
         }
 
-        Set<Comparable> values = (Set<Comparable>) lastFilter().getFrom().eval(null, evalContext);
-
-        // TODO: Implement on the index storage leve;
+        // TODO: Implement on the index storage level
         throw new UnsupportedOperationException("Implement me");
     }
 
