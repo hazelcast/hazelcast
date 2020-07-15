@@ -38,15 +38,10 @@ import java.util.Map;
 
 import static com.hazelcast.sql.impl.type.QueryDataType.INT;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
 
 /**
  * Tests for sorted index scans
  */
-// TODO: In this class:
-//  Ranges (including BETWEEN)
-//  IN conditions (including OR with manual collapse)
-//
 // TODO: In separate classes:
 //   Composite indexes
 public class PhysicalIndexScanTest extends OptimizerTestSupport {
@@ -77,60 +72,212 @@ public class PhysicalIndexScanTest extends OptimizerTestSupport {
     }
 
     @Test
-    public void test_equals_literal_sorted() {
-        checkEqualsLiteral("f1", "sorted_f1", "1");
-    }
-
-    @Test
-    public void test_equals_literal_hash() {
-        checkEqualsLiteral("f2", "hash_f2", "2");
-    }
-
-    @Test
-    public void test_equals_literal_hashOverSorted() {
-        checkEqualsLiteral("f3", "hash_f3", "3");
-    }
-
-    private void checkEqualsLiteral(String columnName, String expectedIndexName, String expectedColumnOrdinal) {
-        String condition = columnName + " = 1";
-        String inverseCondition = "1 = " + columnName;
-
-        String expectedFilter = "=($" + expectedColumnOrdinal + ", 1)";
-        String expectedInverseFilter = "=(1, $" + expectedColumnOrdinal + ")";
-
-        checkIndex(condition, null, expectedIndexName, expectedFilter, "true", 15d);
-        checkIndex(inverseCondition, null, expectedIndexName, expectedInverseFilter, "true", 15d);
-
-        // Unrelated AND condition
-        checkIndex(condition, "AND ret = 5", expectedIndexName, expectedFilter, "=($0, 5)", 2.2d);
-        checkIndex(inverseCondition, "AND ret = 5", expectedIndexName, expectedInverseFilter, "=($0, 5)", 2.2d);
-
-        // Unrelated OR condition
-        checkNoIndex(condition, "OR ret = 5");
-        checkNoIndex(inverseCondition, "OR ret = 5");
+    public void test_equals_literal() {
+        checkEquals("f1", "1", "sorted_f1", "$1", "1");
+        checkEquals("f2", "1", "hash_f2", "$2", "1");
+        checkEquals("f3", "1", "hash_f3", "$3", "1");
     }
 
     @Ignore("Remove coercion from binary operation if one of the sides is a column")
     @Test
     public void test_equals_parameter() {
-        // Plain quality
-        checkIndex("f1 = ?", null, "sorted_f1", "=($1, ?0)", "true", 15d, QueryDataType.INT);
-        checkIndex("? = f1", null, "sorted_f1", "=(?0, $1)", "true", 15d, QueryDataType.INT);
-
-        // Unrelated AND condition
-        checkIndex("f1 = ?", "AND ret = 5", "sorted_f1", "=($1, ?0)", "=($0, 5)", 2.2d);
-        checkIndex("? = f1", "AND ret = 5", "sorted_f1", "=(?0, $1)", "=($0, 5)", 2.2d);
-
-        // Unrelated OR condition
-        checkNoIndex("f1 = ?", "OR ret = 5");
-        checkNoIndex("? = f1", "OR ret = 5");
+        checkEquals("f1", "?", "sorted_f1", "$1", "?0");
+        checkEquals("f2", "?", "hash_f2", "$2", "?0");
+        checkEquals("f3", "?", "hash_f3", "$3", "?0");
     }
 
     @Ignore("Remove coercion from binary operation if one of the sides is a column")
     @Test
     public void test_equals_expressions() {
+        checkEquals("f1", "ret + 1", "sorted_f1", "$1", "+($0, 1)");
+        checkEquals("f2", "ret + 1", "hash_f2", "$2", "+($0, 1)");
+        checkEquals("f3", "ret + 1", "hash_f3", "$3", "+($0, 1)");
+
+        // TODO: Add tests with complex expressions with and without columns on both sides
+    }
+
+    private void checkEquals(
+        String operand1,
+        String operand2,
+        String expectedIndexName,
+        String expectedOperand1,
+        String expectedOperand2,
+        QueryDataType... parameterTypes
+    ) {
+        String condition = operand1 + " = " + operand2;
+        String inverseCondition = operand2 + " = " + operand1;
+
+        String expectedFilter = "=(" + expectedOperand1 + ", " + expectedOperand2 + ")";
+        String expectedInverseFilter = "=(" + expectedOperand2 + ", " + expectedOperand1 + ")";
+
+        checkIndex(condition, null, expectedIndexName, expectedFilter, "true", 15d, parameterTypes);
+        checkIndex(inverseCondition, null, expectedIndexName, expectedInverseFilter, "true", 15d, parameterTypes);
+    }
+
+    @Test
+    public void test_or_literal() {
+        checkOr("f1", "1", "2", "sorted_f1", "=($1, 1)", "=($1, 2)");
+        checkOr("f2", "1", "2", "hash_f2", "=($2, 1)", "=($2, 2)");
+        checkOr("f3", "1", "2", "hash_f3", "=($3, 1)", "=($3, 2)");
+    }
+
+    @Ignore
+    @Test
+    public void test_or_params() {
         // TODO
-        fail("Add tests with complex expressions with and without columns on both sides");
+    }
+
+    @Ignore
+    @Test
+    public void test_or_expressions() {
+        // TODO
+    }
+
+    private void checkOr(
+        String column,
+        String value1,
+        String value2,
+        String expectedIndexName,
+        String expectedOperand1,
+        String expectedOperand2,
+        QueryDataType... parameterTypes
+    ) {
+        String condition = "(" + column + " = " + value1 + " OR " + column + " = " + value2 + ")";
+        String conditionWithIn = column + " IN (" + value1 + ", " + value2 + ")";
+        String inverseCondition = "(" + column + " = " + value2 + " OR " + column + " = " + value1 + ")";
+
+        String expectedFilter = "OR(" + expectedOperand1 + ", " + expectedOperand2 + ")";
+        String expectedInverseFilter = "OR(" + expectedOperand2 + ", " + expectedOperand1 + ")";
+
+        checkIndex(condition, null, expectedIndexName, expectedFilter, "true", 25d, parameterTypes);
+        checkIndex(conditionWithIn, null, expectedIndexName, expectedFilter, "true", 25d, parameterTypes);
+        checkIndex(inverseCondition, null, expectedIndexName, expectedInverseFilter, "true", 25d, parameterTypes);
+
+        // Make sure that inequality disallows index usage
+        String conditionWithInequality = "(" + column + " = " + value1 + " OR " + column + " > " + value2 + ")";
+        checkNoIndex(conditionWithInequality, null, parameterTypes);
+    }
+
+    @Test
+    public void test_range_literal() {
+        checkRange("f1", "1", "2", "sorted_f1", "$1", "1", "2");
+        checkIndex("f1 BETWEEN 1 AND 2", null, "sorted_f1", "AND(>=($1, 1), <=($1, 2))", "true", 25d);
+
+        checkRange("f2", "1", "2", null, null, null, null);
+    }
+
+    @Ignore
+    @Test
+    public void test_range_params() {
+        // TODO
+    }
+
+    @Ignore
+    @Test
+    public void test_range_expressions() {
+        // TODO
+    }
+
+    private void checkRange(
+        String column,
+        String value1,
+        String value2,
+        String expectedIndexName,
+        String expectedColumnSignature,
+        String expectedOperand1,
+        String expectedOperand2,
+        QueryDataType... parameterTypes
+    ) {
+        checkRangeOpen(column, ">", value1, expectedIndexName, expectedColumnSignature, expectedOperand1, parameterTypes);
+        checkRangeOpen(column, ">=", value1, expectedIndexName, expectedColumnSignature, expectedOperand1, parameterTypes);
+        checkRangeOpen(column, "<", value1, expectedIndexName, expectedColumnSignature, expectedOperand1, parameterTypes);
+        checkRangeOpen(column, "<=", value1, expectedIndexName, expectedColumnSignature, expectedOperand1, parameterTypes);
+
+        checkRangeClosed(column, ">", value1, "<", value2, expectedIndexName, expectedColumnSignature,
+            expectedOperand1, expectedOperand2, parameterTypes);
+        checkRangeClosed(column, ">", value1, "<=", value2, expectedIndexName, expectedColumnSignature,
+            expectedOperand1, expectedOperand2, parameterTypes);
+        checkRangeClosed(column, ">=", value1, "<", value2, expectedIndexName, expectedColumnSignature,
+            expectedOperand1, expectedOperand2, parameterTypes);
+        checkRangeClosed(column, ">=", value1, "<=", value2, expectedIndexName, expectedColumnSignature,
+            expectedOperand1, expectedOperand2, parameterTypes);
+    }
+
+    private void checkRangeOpen(
+        String column,
+        String operator,
+        String value,
+        String expectedIndexName,
+        String expectedColumnSignature,
+        String expectedOperand,
+        QueryDataType... parameterTypes
+    ) {
+        String condition = column + " " + operator + " " + value;
+
+        if (expectedIndexName != null) {
+            String expectedFilter = operator + "(" + expectedColumnSignature + ", " + expectedOperand + ")";
+            checkIndex(condition, null, expectedIndexName, expectedFilter, "true", 50d, parameterTypes);
+        } else {
+            checkNoIndex(condition, null);
+        }
+
+        // Test that the opposite order of arguments also works as expected
+        if (expectedIndexName != null) {
+            String conditionInverse = value + " " + operator + " " + column;
+            String expectedFilterInverse = operator + "(" + expectedOperand + ", " + expectedColumnSignature + ")";
+            checkIndex(conditionInverse, null, expectedIndexName, expectedFilterInverse, "true", 50d, parameterTypes);
+        } else {
+            checkNoIndex(condition, null);
+        }
+    }
+
+    private void checkRangeClosed(
+        String column,
+        String operator1,
+        String value1,
+        String operator2,
+        String value2,
+        String expectedIndexName,
+        String expectedColumnSignature,
+        String expectedOperand1,
+        String expectedOperand2,
+        QueryDataType... parameterTypes
+    ) {
+        String condition = column + " " + operator1 + " " + value1 + " AND " + column + " " + operator2 + " " + value2;
+
+        if (expectedIndexName != null) {
+            String expectedFilter1 = operator1 + "(" + expectedColumnSignature + ", " + expectedOperand1 + ")";
+            String expectedFilter2 = operator2 + "(" + expectedColumnSignature + ", " + expectedOperand2 + ")";
+            String expectedFilter = "AND(" + expectedFilter1 + ", " + expectedFilter2 + ")";
+
+            checkIndex(condition, null, expectedIndexName, expectedFilter, "true", 25d, parameterTypes);
+        } else {
+            checkNoIndex(condition, null, parameterTypes);
+        }
+    }
+
+    @Test
+    public void testAdditionalPredicates() {
+        // No additional predicates, just to confirm that index works
+        checkIndex("f1 = 1", null, "sorted_f1", "=($1, 1)", "true", 15d);
+
+        // AND should not interfere with index choice
+        checkIndex("f1 = 1", "AND ret = 5", "sorted_f1", "=($1, 1)", "=($0, 5)", 2.2d);
+
+        // OR cancels out the index optimization
+        checkNoIndex("f1 = 1", "OR ret = 5");
+
+        // NOT cancels out the index optimization
+        checkNoIndex("NOT (f1 = 1)", null);
+    }
+
+    @Test
+    public void testExpressionTypePreference() {
+        // Equality has top priority
+        checkIndex("f1 = 1 AND f1 IN (1, 2)", null, "sorted_f1", "=($1, 1)", "OR(=($1, 1), =($1, 2))", 3.8d);
+
+        // IN is better than range
+        checkIndex("f1 IN (1, 2) AND f1 >= 1", null, "sorted_f1", "OR(=($1, 1), =($1, 2))", ">=($1, 1)", 12.5d);
     }
 
     private void checkIndex(
