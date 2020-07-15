@@ -169,6 +169,8 @@ clientConfig.getNetworkConfig().getAwsConfig()
 
 The plugin works both for **Hazelcast Member Discovery** (forming Hazelcast cluster) and **Hazelcast Client Discovery**.
 
+Note: for the step-by-step guide, check out the following blot post: [How to set up Hazelcast on AWS ECS](https://hazelcast.com/blog/how-to-set-up-hazelcast-imdg-on-aws-ecs/).
+
 ### ECS Hazelcast Member Discovery
 
 Make sure that your IAM Task Role has the following permissions:
