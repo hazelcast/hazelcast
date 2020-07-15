@@ -36,7 +36,7 @@ Apache License, Version 2.0
   proto-google-common-protos:1.17.0
   FindBugs-jsr305:3.0.2
   Gson:2.8.6
-  error-prone annotations:2.3.2
+  error-prone annotations:2.3.4
   Guava InternalFutureFailureAccess and InternalFutures:1.0.1
   Guava: Google Core Libraries for Java:28.1-android
   Guava ListenableFuture only:9999.0-empty-to-avoid-conflict-with-guava
@@ -52,13 +52,13 @@ Apache License, Version 2.0
   Debezium Connector for PostgreSQL:1.1.0.Final
   Debezium Core:1.1.0.Final
   Debezium ANTLR DDL parsers:1.1.0.Final
-  io.grpc:grpc-api:1.29.0
-  io.grpc:grpc-context:1.29.0
-  io.grpc:grpc-core:1.29.0
-  io.grpc:grpc-netty-shaded:1.29.0
-  io.grpc:grpc-protobuf:1.29.0
-  io.grpc:grpc-protobuf-lite:1.29.0
-  io.grpc:grpc-stub:1.29.0
+  io.grpc:grpc-api:1.30.0
+  io.grpc:grpc-context:1.30.0
+  io.grpc:grpc-core:1.30.0
+  io.grpc:grpc-netty-shaded:1.30.0
+  io.grpc:grpc-protobuf:1.30.0
+  io.grpc:grpc-protobuf-lite:1.30.0
+  io.grpc:grpc-stub:1.30.0
   Netty/Buffer:4.1.39.Final
   Netty/Codec:4.1.39.Final
   Netty/Codec/HTTP:4.1.39.Final
