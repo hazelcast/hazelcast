@@ -155,7 +155,7 @@ public class MapIndexScanExecIterator implements KeyValueIterator {
         } else {
             if (to != null) {
                 // Right bound only
-                return index.getRecordIterator(toComparison, true);
+                return index.getRecordIterator(toComparison, to);
             } else {
                 // No bounds, do a full index scan (e.g. for HD)
                 return index.getRecordIterator();
