@@ -19,13 +19,6 @@ tar zxvf hazelcast-jet-management-center-{jet-version}.tar.gz
 
 Like with the Jet Enterprise Server, Jet Management Center also requires
 a license key. You can get a 30-day trial license from
-[the Hazelcast website](https://hazelcast.com/download). You can use the
-same license key on the management center as on the enterprise server.
-
-## Setting License Key
-
-Like with the Jet Enterprise Server, Jet Management Center also requires
-a license key. You can get a 30-day trial license from
 [the Hazelcast website](https://hazelcast.com/download).
 
 You can also run the Management Center without a license key,
