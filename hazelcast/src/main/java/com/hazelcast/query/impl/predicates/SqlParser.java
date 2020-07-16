@@ -20,56 +20,24 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
+import java.util.Set;
 
-import static com.hazelcast.internal.util.MapUtil.createHashMap;
+import static com.hazelcast.internal.util.SetUtil.createHashSet;
 import static com.hazelcast.internal.util.StringUtil.lowerCaseInternal;
 
 class SqlParser {
     private static final String SPLIT_EXPRESSION = " ";
-
-    private static final int PARENTHESIS_PRECEDENCE = 15;
-    private static final int NOT_PRECEDENCE = 8;
-    private static final int EQUAL_PRECEDENCE = 10;
-    private static final int GREATER_PRECEDENCE = 10;
-    private static final int LESS_PRECEDENCE = 10;
-    private static final int GREATER_EQUAL_PRECEDENCE = 10;
-    private static final int LESS_EQUAL_PRECEDENCE = 10;
-    private static final int ASSIGN_PRECEDENCE = 10;
-    private static final int NOT_EQUAL_PRECEDENCE = 10;
-    private static final int BETWEEN_PRECEDENCE = 10;
-    private static final int IN_PRECEDENCE = 10;
-    private static final int LIKE_PRECEDENCE = 10;
-    private static final int ILIKE_PRECEDENCE = 10;
-    private static final int ESCAPE_PRECEDENCE = 15;
-    private static final int REGEX_PRECEDENCE = 10;
-    private static final int AND_PRECEDENCE = 5;
-    private static final int OR_PRECEDENCE = 3;
-
-    private static final Map<String, Integer> PRECEDENCE;
+    private static final List<Set<String>> PRECEDENCE;
 
     static {
-        final Map<String, Integer> precedence = createHashMap(18);
-        precedence.put("(", PARENTHESIS_PRECEDENCE);
-        precedence.put(")", PARENTHESIS_PRECEDENCE);
-        precedence.put("not", NOT_PRECEDENCE);
-        precedence.put("=", EQUAL_PRECEDENCE);
-        precedence.put(">", GREATER_PRECEDENCE);
-        precedence.put("<", LESS_PRECEDENCE);
-        precedence.put(">=", GREATER_EQUAL_PRECEDENCE);
-        precedence.put("<=", LESS_EQUAL_PRECEDENCE);
-        precedence.put("==", ASSIGN_PRECEDENCE);
-        precedence.put("!=", NOT_EQUAL_PRECEDENCE);
-        precedence.put("<>", NOT_EQUAL_PRECEDENCE);
-        precedence.put("between", BETWEEN_PRECEDENCE);
-        precedence.put("in", IN_PRECEDENCE);
-        precedence.put("like", LIKE_PRECEDENCE);
-        precedence.put("ilike", ILIKE_PRECEDENCE);
-        precedence.put("escape", ESCAPE_PRECEDENCE);
-        precedence.put("regex", REGEX_PRECEDENCE);
-        precedence.put("and", AND_PRECEDENCE);
-        precedence.put("or", OR_PRECEDENCE);
-        PRECEDENCE = Collections.unmodifiableMap(precedence);
+        final List<Set<String>> precedence = new ArrayList<>();
+        precedence.add(createHashSet("(", ")", "escape"));
+        precedence.add(createHashSet("=", ">", ">", "<", ">=", "<=", "==", "!=", "<>", "between", "in",
+                "like", "ilike", "regex"));
+        precedence.add(createHashSet("not"));
+        precedence.add(createHashSet("and"));
+        precedence.add(createHashSet("or"));
+        PRECEDENCE = Collections.unmodifiableList(precedence);
     }
 
     private static final List<String> CHAR_OPERATORS
@@ -172,11 +140,22 @@ class SqlParser {
     }
 
     boolean hasHigherPrecedence(String operator1, String operator2) {
-        return PRECEDENCE.get(lowerCaseInternal(operator1)) > PRECEDENCE.get(lowerCaseInternal(operator2));
+        return getPrecedenceValue(lowerCaseInternal(operator1)) < getPrecedenceValue(lowerCaseInternal(operator2));
     }
 
     boolean isOperand(String string) {
-        return PRECEDENCE.containsKey(lowerCaseInternal(string));
+        return getPrecedenceValue(lowerCaseInternal(string)) != null;
+    }
+
+    private Integer getPrecedenceValue(String operand) {
+        Integer precedence = null;
+        for (int i = 0; i < PRECEDENCE.size(); i++) {
+            if (PRECEDENCE.get(i).contains(operand)) {
+                precedence = i;
+                break;
+            }
+        }
+        return precedence;
     }
 
     private boolean openParanthesesFound(List<String> stack) {

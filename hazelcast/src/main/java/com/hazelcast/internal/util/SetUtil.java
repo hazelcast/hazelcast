@@ -20,6 +20,7 @@ import com.hazelcast.internal.util.collection.ImmutablePartitionIdSet;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.Set;
@@ -41,6 +42,13 @@ public final class SetUtil {
     public static <E> Set<E> createHashSet(int expectedMapSize) {
         final int initialCapacity = (int) (expectedMapSize / HASHSET_DEFAULT_LOAD_FACTOR) + 1;
         return new HashSet<E>(initialCapacity, HASHSET_DEFAULT_LOAD_FACTOR);
+    }
+
+    public static <E> Set<E> createHashSet(E... elements) {
+        final int initialCapacity = (int) (elements.length / HASHSET_DEFAULT_LOAD_FACTOR) + 1;
+        HashSet<E> set = new HashSet<>(initialCapacity, HASHSET_DEFAULT_LOAD_FACTOR);
+        Collections.addAll(set, elements);
+        return set;
     }
 
     /**
