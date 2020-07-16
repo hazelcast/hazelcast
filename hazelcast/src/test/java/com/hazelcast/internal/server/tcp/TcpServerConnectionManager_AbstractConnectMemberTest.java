@@ -56,8 +56,8 @@ public abstract class TcpServerConnectionManager_AbstractConnectMemberTest
 
         connect(tcpServerA, addressB);
 
-        assertEquals(1, tcpServerA.getConnectionManager(MEMBER).getActiveConnections().size());
-        assertEquals(1, tcpServerB.getConnectionManager(MEMBER).getActiveConnections().size());
+        assertEquals(1, tcpServerA.getConnectionManager(MEMBER).getConnections().size());
+        assertEquals(1, tcpServerB.getConnectionManager(MEMBER).getConnections().size());
     }
 
     @Test
@@ -117,12 +117,12 @@ public abstract class TcpServerConnectionManager_AbstractConnectMemberTest
         TcpServerConnection connAB = connect(tcpServerA, addressB);
         assertTrue(connAB.isAlive());
         assertEquals(ConnectionType.MEMBER, connAB.getConnectionType());
-        assertEquals(1, tcpServerA.getConnectionManager(MEMBER).getActiveConnections().size());
+        assertEquals(1, tcpServerA.getConnectionManager(MEMBER).getConnections().size());
 
         TcpServerConnection connBA = (TcpServerConnection) tcpServerB.getConnectionManager(MEMBER).get(addressA);
         assertTrue(connBA.isAlive());
         assertEquals(ConnectionType.MEMBER, connBA.getConnectionType());
-        assertEquals(1, tcpServerB.getConnectionManager(MEMBER).getActiveConnections().size());
+        assertEquals(1, tcpServerB.getConnectionManager(MEMBER).getConnections().size());
 
         assertEquals(tcpServerA.getContext().getThisAddress(), connBA.getRemoteAddress());
         assertEquals(tcpServerB.getContext().getThisAddress(), connAB.getRemoteAddress());

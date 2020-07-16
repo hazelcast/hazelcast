@@ -16,11 +16,11 @@
 
 package com.hazelcast.internal.cluster.impl;
 
-import com.hazelcast.instance.ProtocolType;
-import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.cluster.Address;
+import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -36,6 +36,7 @@ import java.util.EnumMap;
 import java.util.Map;
 import java.util.UUID;
 
+import static com.hazelcast.internal.cluster.impl.MemberHandshake.SCHEMA_VERSION_2;
 import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -46,7 +47,7 @@ import static org.junit.Assert.assertTrue;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class MemberHandshakeTest {
 
-    private MemberHandshake bindMessage;
+    private MemberHandshake handshake;
     private SerializationService serializationService;
     private Address targetAddress;
     private UUID uuid;
@@ -60,10 +61,10 @@ public class MemberHandshakeTest {
 
     @Test
     public void testSerialization_withMultipleLocalAddresses() throws Exception {
-        bindMessage = new MemberHandshake((byte) 1, localAddresses(), targetAddress, true, uuid);
-        Data serialized = serializationService.toData(bindMessage);
+        handshake = new MemberHandshake(SCHEMA_VERSION_2, localAddresses(), targetAddress, true, uuid, 0, 1);
+        Data serialized = serializationService.toData(handshake);
         MemberHandshake deserialized = serializationService.toObject(serialized);
-        assertEquals(1, deserialized.getSchemaVersion());
+        assertEquals(SCHEMA_VERSION_2, deserialized.getSchemaVersion());
         assertEquals(localAddresses(), deserialized.getLocalAddresses());
         assertEquals(targetAddress, deserialized.getTargetAddress());
         assertTrue(deserialized.isReply());
@@ -71,9 +72,9 @@ public class MemberHandshakeTest {
     }
 
     @Test
-    public void testSerialization_whenBindMessageEmpty() {
-        bindMessage = new MemberHandshake();
-        Data serialized = serializationService.toData(bindMessage);
+    public void testSerialization_whenMemberHandshakeEmpty() {
+        handshake = new MemberHandshake();
+        Data serialized = serializationService.toData(handshake);
         MemberHandshake deserialized = serializationService.toObject(serialized);
         assertEquals(0, deserialized.getSchemaVersion());
         assertTrue(deserialized.getLocalAddresses().isEmpty());
