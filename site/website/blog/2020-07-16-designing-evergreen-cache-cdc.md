@@ -1,11 +1,11 @@
 ---
-title: Designing an evergreen cache with Change Data Capture
+title: Designing an Evergreen Cache with Change Data Capture
 author: Nicolas Frankel
 authorURL: https://twitter.com/nicolas_frankel
 authorImageURL: https://3l0wd94f0qdd10om8642z9se-wpengine.netdna-ssl.com/wp-content/uploads/2019/12/nicolas-frankel-170x170.jpg
 ---
 
-It's been said that there are two things hard in software development,
+It has been said that there are two things hard in software development,
 naming things and cache invalidation (while some add off-by-one errors
 to the mix).
 I believe that keeping the cache in sync with the source of truth might
