@@ -172,11 +172,10 @@ There's another, relatively minor technical point worth mentioning:
 since we tested on a cloud server instance, we used Jet's client-server
 mode, which means we separately start a Jet node and then deploy the
 pipeline to it using Jet's command `jet submit`. The code available on
-GitHub is the client code and the Jet server code was a build from a
-recent state of the Jet master branch. It uses a pipeline feature that
-will be released with Jet 4.2, which is the reason we couldn't use a
-released Jet version. We expect all the results to be reproducible with
-Jet 4.2 once released.
+GitHub is the client code and the Jet server code was a build from the
+Jet master branch before Jet 4.2 was released. We expect all the results
+to be reproducible with the [Jet 4.2
+release](https://github.com/hazelcast/hazelcast-jet/releases/download/v4.2/hazelcast-jet-4.2.tar.gz).
 
 ## What Exactly We Measured
 

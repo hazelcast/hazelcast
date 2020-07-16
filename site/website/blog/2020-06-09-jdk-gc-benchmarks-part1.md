@@ -157,8 +157,8 @@ events/second metric of the stream. It has minimal state (a single
 `long` number) and produces no garbage. For any given heap usage in
 gigabytes, such a small state per key implies the worst case for the
 garbage collector: a very large number of objects. GC overheads scale
-not with heap size, but object count. We also tested a variant that
-computes the same aggregate function, but with a different
+much more with object count than heap size. We also tested a variant
+that computes the same aggregate function, but with a different
 implementation that produces garbage.
 
 We performed most of the streaming benchmarks on a single node since our
