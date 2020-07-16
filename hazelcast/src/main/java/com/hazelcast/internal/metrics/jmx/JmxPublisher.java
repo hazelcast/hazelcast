@@ -247,6 +247,9 @@ public class JmxPublisher implements MetricsPublisher {
     @Override
     public void shutdown() {
         isShutdown = true;
+        if (platformMBeanServer == null) {
+            return;
+        }
         try {
             // unregister the MBeans registered by this JmxPublisher
             // the mBeans map can't be used since it is not thread-safe
