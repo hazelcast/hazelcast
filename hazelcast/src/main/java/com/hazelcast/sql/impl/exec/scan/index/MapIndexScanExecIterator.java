@@ -28,7 +28,6 @@ import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Set;
 
 /**
  * Iterator for index-based partitioned map access.
@@ -116,7 +115,13 @@ public class MapIndexScanExecIterator implements KeyValueIterator {
             throw QueryException.error("Index doesn't exist: " + indexName);
         }
 
-        switch (lastFilter().getType()) {
+        IndexFilter lastFilter = lastFilter();
+
+        if (lastFilter == null) {
+            return processScan(index);
+        }
+
+        switch (lastFilter.getType()) {
             case EQUALS:
                 return processEquals(index);
 
@@ -124,10 +129,50 @@ public class MapIndexScanExecIterator implements KeyValueIterator {
                 return processIn(index);
 
             default:
-                assert lastFilter().getType() == IndexFilterType.RANGE;
+                assert lastFilter.getType() == IndexFilterType.RANGE;
 
                 return processRange(index);
         }
+    }
+
+    private Iterator<QueryableEntry> processScan(InternalIndex index) {
+        assert indexFilters.isEmpty();
+
+        return index.getRecordIterator();
+    }
+
+    private Iterator<QueryableEntry> processEquals(InternalIndex index) {
+        if (indexFilters.size() > 1) {
+            // TODO
+            throw new UnsupportedOperationException("Implement me!");
+        }
+
+        IndexFilter lastFilter = lastFilter();
+
+        assert lastFilter != null;
+
+        Comparable value = (Comparable) lastFilter.getFrom().eval(null, evalContext);
+
+        if (value == null) {
+            return Collections.emptyIterator();
+        } else {
+            return index.getRecordIterator(value);
+        }
+    }
+
+    private Iterator<QueryableEntry> processIn(InternalIndex index) {
+        if (indexFilters.size() > 1) {
+            // TODO
+            throw new UnsupportedOperationException("Implement me!");
+        }
+
+        IndexFilter lastFilter = lastFilter();
+
+        assert lastFilter != null;
+
+        Comparable[] values = (Comparable[]) lastFilter.getFrom().eval(null, evalContext);
+
+        return index.getRecordIterator(values);
     }
 
     private Iterator<QueryableEntry> processRange(InternalIndex index) {
@@ -138,59 +183,27 @@ public class MapIndexScanExecIterator implements KeyValueIterator {
 
         IndexFilter lastFilter = lastFilter();
 
+        assert lastFilter != null;
+
         Comparable from = lastFilter.getFrom() != null ? (Comparable) lastFilter.getFrom().eval(null, evalContext) : null;
         Comparison fromComparison = lastFilter.isFromInclusive() ? Comparison.GREATER_OR_EQUAL : Comparison.GREATER;
 
         Comparable to = lastFilter.getTo() != null ? (Comparable) lastFilter.getTo().eval(null, evalContext) : null;
         Comparison toComparison = lastFilter.isToInclusive() ? Comparison.LESS_OR_EQUAL : Comparison.LESS;
 
-        if (from != null) {
-            if (to == null) {
-                // Left bound only
-                return index.getRecordIterator(fromComparison, from);
-            } else {
-                // Both left and right bounds
-                return index.getRecordIterator(from, lastFilter.isFromInclusive(), to, lastFilter.isToInclusive());
-            }
+        if (from != null && to == null) {
+            // Left bound only
+            return index.getRecordIterator(fromComparison, from);
+        } else if (from == null && to != null) {
+            // Right bound only
+            return index.getRecordIterator(toComparison, to);
         } else {
-            if (to != null) {
-                // Right bound only
-                return index.getRecordIterator(toComparison, to);
-            } else {
-                // No bounds, do a full index scan (e.g. for HD)
-                return index.getRecordIterator();
-            }
+            // Both left and right bounds
+            return index.getRecordIterator(from, lastFilter.isFromInclusive(), to, lastFilter.isToInclusive());
         }
-    }
-
-    private Iterator<QueryableEntry> processEquals(InternalIndex index) {
-        if (indexFilters.size() > 1) {
-            // TODO
-            throw new UnsupportedOperationException("Implement me!");
-        }
-
-        Comparable value = (Comparable) lastFilter().getFrom().eval(null, evalContext);
-
-        if (value == null) {
-            return Collections.emptyIterator();
-        } else {
-            return index.getRecordIterator(value);
-        }
-    }
-
-    @SuppressWarnings("unchecked")
-    private Iterator<QueryableEntry> processIn(InternalIndex index) {
-        if (indexFilters.size() > 1) {
-            // TODO
-            throw new UnsupportedOperationException("Implement me!");
-        }
-
-        Comparable[] values = (Comparable[]) lastFilter().getFrom().eval(null, evalContext);
-
-        return index.getRecordIterator(values);
     }
 
     private IndexFilter lastFilter() {
-        return indexFilters.get(indexFilters.size() - 1);
+        return indexFilters.isEmpty() ? null : indexFilters.get(indexFilters.size() - 1);
     }
 }

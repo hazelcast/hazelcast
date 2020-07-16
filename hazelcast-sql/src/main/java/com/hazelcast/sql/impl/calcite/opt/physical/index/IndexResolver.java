@@ -422,6 +422,8 @@ public final class IndexResolver {
         // Next look for IN, as it is worse than equality on a single value, but better than range
         for (IndexCandidate candidate : candidates) {
             if (candidate.getFilterType() == IndexCandidateType.IN) {
+                // TODO: Make sure that the order is preserved here! It seems that the values should be sorted
+                //   when accessing the index store.
                 IndexFilter filter = IndexFilter.forIn(candidate.getFilterValue());
 
                 return new IndexFilterDescriptor(filter, candidate.getExpression());
