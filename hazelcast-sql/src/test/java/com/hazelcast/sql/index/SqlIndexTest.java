@@ -17,12 +17,14 @@
 package com.hazelcast.sql.index;
 
 import com.hazelcast.client.test.TestHazelcastFactory;
+import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.IndexType;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
 import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.impl.SqlTestSupport;
-import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.sql.impl.exec.scan.index.MapIndexScanExec;
+import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.AfterClass;
@@ -31,32 +33,43 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.IntStream;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
-@RunWith(HazelcastParallelClassRunner.class)
+@RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class SqlIndexTest extends SqlTestSupport {
 
     private static final String MAP_NAME = "map";
+    private static final String SORTED_INDEX_NAME = "sorted";
+    private static final String HASH_INDEX_NAME = "hash";
 
     private static final TestHazelcastFactory FACTORY = new TestHazelcastFactory(2);
     private static HazelcastInstance member;
-    private static IMap<Long, Person> map;
 
     @BeforeClass
-    public static void beforeClass() throws Exception {
+    public static void beforeClass() {
         member = FACTORY.newHazelcastInstance();
-        // FACTORY.newHazelcastInstance();
 
-        map = member.getMap(MAP_NAME);
-        map.addIndex(IndexType.SORTED, "age");
-        Thread.sleep(1000);
+        IMap<Integer, Integer>  intMap = member.getMap(MAP_NAME);
+        intMap.addIndex(new IndexConfig().setName(SORTED_INDEX_NAME).setType(IndexType.SORTED).addAttribute("this"));
+        intMap.addIndex(new IndexConfig().setName(HASH_INDEX_NAME).setType(IndexType.HASH).addAttribute("__key"));
 
-        map.put(1L, new Person(30));
-        map.put(2L, new Person(40));
+        Map<Integer, Integer> localMap = new HashMap<>();
+
+        for (int i = 0; i < 100; i++) {
+            localMap.put(i, i);
+        }
+
+        intMap.putAll(localMap);
     }
 
     @AfterClass
@@ -65,18 +78,77 @@ public class SqlIndexTest extends SqlTestSupport {
     }
 
     @Test
-    public void testIndex() {
-        List<SqlRow> rows = execute(member, "SELECT age FROM map WHERE age > 35");
-
-        assertEquals(1, rows.size());
-        assertEquals((Integer) 40, rows.get(0).getObject(0));
+    public void testEquals_sorted() {
+        checkIntRange(executeWithIndex(MAP_NAME, SORTED_INDEX_NAME, "this = 50"), IntStream.range(50, 51));
     }
 
-    public static class Person implements Serializable {
-        public int age;
+    @Test
+    public void testIn_sorted() {
+        checkIntRange(executeWithIndex(MAP_NAME, SORTED_INDEX_NAME, "this = 50 OR this = 51"), IntStream.range(50, 52));
+        checkIntRange(executeWithIndex(MAP_NAME, SORTED_INDEX_NAME, "this IN (50, 51)"), IntStream.range(50, 52));
+    }
 
-        public Person(int age) {
-            this.age = age;
+    @Test
+    public void testRange_sorted() {
+        checkIntRange(executeWithIndex(MAP_NAME, SORTED_INDEX_NAME, "this > 50"), IntStream.range(51, 100));
+        checkIntRange(executeWithIndex(MAP_NAME, SORTED_INDEX_NAME, "this >= 50"), IntStream.range(50, 100));
+        checkIntRange(executeWithIndex(MAP_NAME, SORTED_INDEX_NAME, "this < 50"), IntStream.range(0, 50));
+        checkIntRange(executeWithIndex(MAP_NAME, SORTED_INDEX_NAME, "this <= 50"), IntStream.range(0, 51));
+        checkIntRange(executeWithIndex(MAP_NAME, SORTED_INDEX_NAME, "this > 25 AND this < 75"), IntStream.range(26, 75));
+        checkIntRange(executeWithIndex(MAP_NAME, SORTED_INDEX_NAME, "this > 25 AND this <= 75"), IntStream.range(26, 76));
+        checkIntRange(executeWithIndex(MAP_NAME, SORTED_INDEX_NAME, "this >= 25 AND this < 75"), IntStream.range(25, 75));
+        checkIntRange(executeWithIndex(MAP_NAME, SORTED_INDEX_NAME, "this >= 25 AND this <= 75"), IntStream.range(25, 76));
+    }
+
+    @Test
+    public void testEquals_hash() {
+        checkIntRange(executeWithIndex(MAP_NAME, HASH_INDEX_NAME, "__key = 50"), IntStream.range(50, 51));
+    }
+
+    @Test
+    public void testIn_hash() {
+        checkIntRange(executeWithIndex(MAP_NAME, HASH_INDEX_NAME, "__key = 50 OR __key = 51"), IntStream.range(50, 52));
+        checkIntRange(executeWithIndex(MAP_NAME, HASH_INDEX_NAME, "__key IN (50, 51)"), IntStream.range(50, 52));
+    }
+
+    private static void checkIntRange(List<Integer> rows, IntStream expectedStream) {
+        int expectedSize = 0;
+
+        for (int value : expectedStream.toArray()) {
+            assertTrue("Cannot find value: " + value, rows.contains(value));
+
+            expectedSize++;
         }
+
+        assertEquals(expectedSize, rows.size());
+    }
+
+    private <T> List<T> executeWithIndex(String mapName, String indexName, String condition) {
+        AtomicReference<MapIndexScanExec> lastIndexExecRef = new AtomicReference<>();
+
+        setExecHook(member, exec -> {
+            if (exec instanceof MapIndexScanExec) {
+                lastIndexExecRef.set((MapIndexScanExec) exec);
+            }
+
+            return exec;
+        });
+
+        String sql = "SELECT this FROM " + mapName + " WHERE " + condition;
+
+        List<T> res = new ArrayList<>();
+
+        for (SqlRow row : execute(member, sql)) {
+            T value = row.getObject(0);
+
+            res.add(value);
+        }
+
+        MapIndexScanExec lastIndexExec = lastIndexExecRef.get();
+
+        assertNotNull("Index was not used for the request", lastIndexExec);
+        assertEquals(indexName, lastIndexExec.getIndexName());
+
+        return res;
     }
 }

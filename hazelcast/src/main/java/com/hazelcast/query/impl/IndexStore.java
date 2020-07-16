@@ -139,6 +139,8 @@ public interface IndexStore {
      */
     Set<QueryableEntry> getRecords(Comparable value);
 
+    Iterator<QueryableEntry> getRecordIterator(Set<Comparable> values);
+
     /**
      * Obtains entries that have indexed attribute value equal to one of the
      * given set of values.

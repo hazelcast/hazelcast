@@ -422,7 +422,7 @@ public final class IndexResolver {
         // Next look for IN, as it is worse than equality on a single value, but better than range
         for (IndexCandidate candidate : candidates) {
             if (candidate.getFilterType() == IndexCandidateType.IN) {
-                IndexFilter filter = IndexFilter.forEquals(candidate.getFilterValue());
+                IndexFilter filter = IndexFilter.forIn(candidate.getFilterValue());
 
                 return new IndexFilterDescriptor(filter, candidate.getExpression());
             }

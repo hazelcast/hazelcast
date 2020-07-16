@@ -23,11 +23,8 @@ import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
-import java.util.HashSet;
-import java.util.Set;
-
 @SuppressWarnings("rawtypes")
-public class IndexVariExpression extends VariExpression<Set<Comparable>> {
+public class IndexVariExpression extends VariExpression<Comparable[]> {
     public IndexVariExpression() {
         // No-op.
     }
@@ -37,14 +34,20 @@ public class IndexVariExpression extends VariExpression<Set<Comparable>> {
     }
 
     @Override
-    public Set<Comparable> eval(Row row, ExpressionEvalContext context) {
-        Set<Comparable> res = new HashSet<>();
+    public Comparable[] eval(Row row, ExpressionEvalContext context) {
+        Comparable[] res = new Comparable[operands.length];
+
+        int pos = 0;
 
         for (Expression<?> operand : operands) {
             Object value = operand.eval(row, context);
 
+            if (value == null) {
+                return null;
+            }
+
             // TODO: Be careful with cast!
-            res.add((Comparable) value);
+            res[pos++] = (Comparable) value;
         }
 
         return res;

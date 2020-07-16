@@ -20,10 +20,13 @@ import com.hazelcast.config.IndexConfig;
 import com.hazelcast.core.TypeConverter;
 import com.hazelcast.internal.monitor.impl.PerIndexStats;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.util.FlatCompositeIterator;
 import com.hazelcast.query.Predicate;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -33,6 +36,7 @@ import static com.hazelcast.query.impl.Comparison.GREATER;
 import static com.hazelcast.query.impl.Comparison.GREATER_OR_EQUAL;
 import static com.hazelcast.query.impl.CompositeValue.NEGATIVE_INFINITY;
 import static com.hazelcast.query.impl.CompositeValue.POSITIVE_INFINITY;
+import static java.util.Collections.emptyIterator;
 import static java.util.Collections.emptySet;
 
 /**
@@ -253,6 +257,39 @@ public class AttributeIndexRegistry {
             Comparable from = new CompositeValue(width, value, NEGATIVE_INFINITY);
             Comparable to = new CompositeValue(width, value, POSITIVE_INFINITY);
             return delegate.getRecords(from, false, to, false);
+        }
+
+        @Override
+        public Iterator<QueryableEntry> getRecordIterator(Comparable[] values) {
+            if (values.length == 0) {
+                return emptyIterator();
+            }
+
+            TypeConverter converter = getConverter();
+            if (converter == null) {
+                return emptyIterator();
+            }
+
+            if (values.length == 1) {
+                return getRecordIterator(values[0]);
+            }
+
+            Set<Comparable> convertedValues = new HashSet<>();
+            for (Comparable value : values) {
+                Comparable converted = converter.convert(value);
+                convertedValues.add(canonicalizeQueryArgumentScalar(converted));
+            }
+
+            if (convertedValues.size() == 1) {
+                return getRecordIterator(convertedValues.iterator().next());
+            }
+
+            List<Iterator<QueryableEntry>> iterators = new ArrayList<>(convertedValues.size());
+            for (Comparable value : convertedValues) {
+                iterators.add(getRecordIterator(value));
+            }
+
+            return new FlatCompositeIterator<>(iterators.iterator());
         }
 
         @SuppressWarnings("checkstyle:npathcomplexity")

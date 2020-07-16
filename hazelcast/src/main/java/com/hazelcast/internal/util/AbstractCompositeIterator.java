@@ -44,9 +44,7 @@ public abstract class AbstractCompositeIterator<E> implements Iterator<E> {
         E entry = currentIterator.next();
 
         if (!currentIterator.hasNext()) {
-            currentIterator = null;
-
-            nextIterator();
+            currentIterator = nextIterator();
         }
 
         return entry;

@@ -324,6 +324,11 @@ public final class BitmapIndexStore extends BaseIndexStore {
     }
 
     @Override
+    public Iterator<QueryableEntry> getRecordIterator(Set<Comparable> values) {
+        throw makeUnsupportedOperationException();
+    }
+
+    @Override
     public Set<QueryableEntry> getRecords(Set<Comparable> values) {
         throw makeUnsupportedOperationException();
     }

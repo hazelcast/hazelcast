@@ -185,8 +185,9 @@ public class MapIndexScanExecIterator implements KeyValueIterator {
             throw new UnsupportedOperationException("Implement me!");
         }
 
-        // TODO: Implement on the index storage level
-        throw new UnsupportedOperationException("Implement me");
+        Comparable[] values = (Comparable[]) lastFilter().getFrom().eval(null, evalContext);
+
+        return index.getRecordIterator(values);
     }
 
     private IndexFilter lastFilter() {

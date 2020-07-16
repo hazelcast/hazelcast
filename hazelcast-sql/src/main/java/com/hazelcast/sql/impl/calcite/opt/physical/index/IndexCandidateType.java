@@ -18,7 +18,7 @@ package com.hazelcast.sql.impl.calcite.opt.physical.index;
 
 public enum IndexCandidateType {
     EQUALS,
-    IN,
+    IN, // TODO: Make sure that the sorting is preserved here!
     GREATER_THAN,
     GREATER_THAN_OR_EQUALS,
     LESS_THAN,

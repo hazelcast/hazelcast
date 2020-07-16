@@ -208,6 +208,29 @@ public abstract class AbstractIndex implements InternalIndex {
     }
 
     @Override
+    public Iterator<QueryableEntry> getRecordIterator(Comparable[] values) {
+        if (values.length == 1) {
+            return getRecordIterator(values[0]);
+        }
+
+        if (converter == null || values.length == 0) {
+            return emptyIterator();
+        }
+
+        Set<Comparable> convertedValues = createHashSet(values.length);
+        for (Comparable value : values) {
+            Comparable converted = convert(value);
+            convertedValues.add(canonicalizeQueryArgumentScalar(converted));
+        }
+
+        if (convertedValues.size() == 1) {
+            return getRecordIterator(convertedValues.iterator().next());
+        }
+
+        return indexStore.getRecordIterator(convertedValues);
+    }
+
+    @Override
     public Set<QueryableEntry> getRecords(Comparable[] values) {
         if (values.length == 1) {
             return getRecords(values[0]);

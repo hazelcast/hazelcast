@@ -22,10 +22,13 @@ import com.hazelcast.internal.util.AbstractCompositeIterator;
 import com.hazelcast.internal.util.FlatCompositeIterator;
 import com.hazelcast.query.Predicate;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.SortedMap;
@@ -144,6 +147,17 @@ public class OrderedIndexStore extends BaseSingleValueIndexStore {
         } finally {
             releaseReadLock();
         }
+    }
+
+    @Override
+    public Iterator<QueryableEntry> getRecordIterator(Set<Comparable> values) {
+        List<Iterator<QueryableEntry>> iterators = new ArrayList<>(values.size());
+
+        for (Comparable value : values) {
+            iterators.add(getRecordIterator(value));
+        }
+
+        return new FlatCompositeIterator<>(iterators.iterator());
     }
 
     @Override

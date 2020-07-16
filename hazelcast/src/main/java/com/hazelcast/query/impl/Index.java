@@ -123,6 +123,8 @@ public interface Index {
      */
     Set<QueryableEntry> getRecords(Comparable value);
 
+    Iterator<QueryableEntry> getRecordIterator(Comparable[] values);
+
     /**
      * Produces a result set containing entries whose attribute values are equal
      * to at least one of the given values.

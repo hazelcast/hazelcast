@@ -69,6 +69,10 @@ public class MapIndexScanExec extends MapScanExec {
         this.indexFilters = indexFilters;
     }
 
+    public String getIndexName() {
+        return indexName;
+    }
+
     @Override
     protected KeyValueIterator createIterator() {
         return new MapIndexScanExecIterator(map, indexName, indexFilters, ctx);
