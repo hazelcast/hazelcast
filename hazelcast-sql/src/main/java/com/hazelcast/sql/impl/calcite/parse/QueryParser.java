@@ -17,6 +17,7 @@
 package com.hazelcast.sql.impl.calcite.parse;
 
 import com.hazelcast.sql.SqlErrorCode;
+import com.hazelcast.sql.impl.JetSqlBackend;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.calcite.parser.HazelcastSqlParser;
 import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlConformance;
@@ -25,10 +26,16 @@ import org.apache.calcite.sql.SqlCall;
 import org.apache.calcite.sql.SqlHint;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlNode;
+import org.apache.calcite.sql.SqlOperator;
+import org.apache.calcite.sql.SqlOperatorTable;
 import org.apache.calcite.sql.SqlSelect;
 import org.apache.calcite.sql.parser.SqlParser;
 import org.apache.calcite.sql.util.SqlBasicVisitor;
 import org.apache.calcite.sql.validate.SqlValidator;
+
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * Performs syntactic and semantic validation of the query, and converts the parse tree into a relational tree.
@@ -55,7 +62,7 @@ public class QueryParser {
         this.validator = validator;
     }
 
-    public QueryParseResult parse(String sql, boolean jetBackendPresent) {
+    public QueryParseResult parse(String sql, JetSqlBackend jetSqlBackend) {
         SqlNode node;
         RelDataType parameterRowType;
 
@@ -65,7 +72,10 @@ public class QueryParser {
 
             node = validator.validate(parser.parseStmt());
 
-            UnsupportedOperationVisitor visitor = new UnsupportedOperationVisitor(validator.getCatalogReader());
+            Set<SqlOperator> jetSqlOperators = jetSqlBackend == null
+                    ? Collections.emptySet()
+                    : new HashSet<>(((SqlOperatorTable) jetSqlBackend.operatorTable()).getOperatorList());
+            UnsupportedOperationVisitor visitor = new UnsupportedOperationVisitor(validator.getCatalogReader(), jetSqlOperators);
             node.accept(visitor);
 
             if (!visitor.runsOnImdg() && !visitor.runsOnJet()) {
@@ -75,7 +85,7 @@ public class QueryParser {
                 throw QueryException.error("The query contains an unsupported combination of features");
             }
 
-            if (!visitor.runsOnImdg() && !jetBackendPresent) {
+            if (!visitor.runsOnImdg() && jetSqlBackend == null) {
                 throw QueryException.error("To run this query Hazelcast Jet must be on the classpath");
             }
 

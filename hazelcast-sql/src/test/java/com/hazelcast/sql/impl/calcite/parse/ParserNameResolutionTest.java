@@ -109,7 +109,7 @@ public class ParserNameResolutionTest {
     }
 
     private static void checkSuccess(OptimizerContext context, String fieldName, String tableFqn, String... tableComponents) {
-        QueryParseResult res = context.parse(composeSelect(fieldName, tableComponents), false);
+        QueryParseResult res = context.parse(composeSelect(fieldName, tableComponents));
 
         SqlSelect select = (SqlSelect) res.getNode();
 
@@ -127,7 +127,7 @@ public class ParserNameResolutionTest {
 
     private static void checkFailure(String errorMessage, String fieldName, String... tableComponents) {
         try {
-            createContext().parse(composeSelect(fieldName, tableComponents), false);
+            createContext().parse(composeSelect(fieldName, tableComponents));
 
             fail();
         } catch (QueryException e) {

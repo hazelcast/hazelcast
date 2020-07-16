@@ -125,7 +125,7 @@ public abstract class OptimizerTestSupport extends SqlTestSupport {
         boolean physical,
         QueryParameterMetadata parameterMetadata
     ) {
-        SqlNode node = context.parse(sql, false).getNode();
+        SqlNode node = context.parse(sql).getNode();
         RelNode convertedRel = context.convert(node).getRel();
         LogicalRel logicalRel = optimizeLogicalInternal(context, convertedRel);
         PhysicalRel physicalRel = physical ? optimizePhysicalInternal(context, logicalRel, parameterMetadata) : null;

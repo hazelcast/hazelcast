@@ -134,7 +134,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         this.nodeEngine = nodeEngine;
         this.catalog = new ExternalCatalog(nodeEngine);
 
-        tableResolvers = createTableResolvers(catalog, nodeEngine);
+        this.tableResolvers = createTableResolvers(catalog, nodeEngine);
 
         this.jetSqlBackend = jetSqlBackend;
     }
@@ -152,7 +152,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         );
 
         // 2. Parse SQL string and validate it.
-        QueryParseResult parseResult = context.parse(task.getSql(), jetSqlBackend != null);
+        QueryParseResult parseResult = context.parse(task.getSql());
 
         if (parseResult.isDdl()) {
             return createSchemaPlan(parseResult.getNode());

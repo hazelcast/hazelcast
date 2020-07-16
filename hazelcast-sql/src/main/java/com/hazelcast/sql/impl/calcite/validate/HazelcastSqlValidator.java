@@ -45,6 +45,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.BiFunction;
 
 import static com.hazelcast.sql.impl.calcite.validate.SqlNodeUtil.isLiteral;
 import static com.hazelcast.sql.impl.calcite.validate.SqlNodeUtil.isParameter;
@@ -71,11 +72,28 @@ public class HazelcastSqlValidator extends SqlValidatorImpl {
 
     private final Map<SqlNode, RelDataType> knownNodeTypes = new HashMap<>();
 
-    public HazelcastSqlValidator(SqlOperatorTable opTab, SqlValidatorCatalogReader catalogReader, RelDataTypeFactory typeFactory,
-                                 SqlConformance conformance) {
-        super(opTab, catalogReader, typeFactory, CONFIG.withSqlConformance(conformance));
+    private final BiFunction<Object, Object, Object> validator;
+
+    public HazelcastSqlValidator(
+        SqlOperatorTable operatorTable,
+        SqlValidatorCatalogReader catalogReader,
+        RelDataTypeFactory typeFactory,
+        SqlConformance conformance
+    ) {
+        this(operatorTable, catalogReader, typeFactory, conformance, (reader, node) -> node);
+    }
+
+    public HazelcastSqlValidator(
+        SqlOperatorTable operatorTable,
+        SqlValidatorCatalogReader catalogReader,
+        RelDataTypeFactory typeFactory,
+        SqlConformance conformance,
+        BiFunction<Object, Object, Object> validator
+    ) {
+        super(operatorTable, catalogReader, typeFactory, CONFIG.withSqlConformance(conformance));
         assert typeFactory instanceof HazelcastTypeFactory;
         setTypeCoercion(new HazelcastTypeCoercion(this));
+        this.validator = validator;
     }
 
     /**
@@ -128,7 +146,8 @@ public class HazelcastSqlValidator extends SqlValidatorImpl {
             return topNode;
         }
 
-        return super.validate(topNode);
+        SqlNode node = super.validate(topNode);
+        return (SqlNode) validator.apply(getCatalogReader(), node);
     }
 
     @Override
