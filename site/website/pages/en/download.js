@@ -10,14 +10,15 @@ const CompLibrary = require('../../core/CompLibrary');
 const Container = CompLibrary.Container;
 
 const CWD = process.cwd();
-
+const modules = require(`${CWD}/modules.json`);
 const versions = require(`${CWD}/all-versions.json`);
 const MarkdownBlock = CompLibrary.MarkdownBlock;
 
 function Downloads(props) {
-  const {config: siteConfig} = props;
+  const { config: siteConfig } = props;
   const latest = versions[0];
   const repoUrl = `https://github.com/${siteConfig.organizationName}/${siteConfig.projectName}`;
+  const contribRepoUrl = `https://github.com/${siteConfig.organizationName}/${siteConfig.projectName}-contrib`
   return (
     <div className="docMainWrapper wrapper">
       <Container className="mainContainer versionsContainer">
@@ -26,11 +27,11 @@ function Downloads(props) {
             <h1>{siteConfig.title} Downloads</h1>
           </header>
           <MarkdownBlock>
-            The Hazelcast Jet download package includes Hazelcast Jet server and 
-            several additional modules. It requires a JDK to run, which can be obtained from 
-            [AdoptOpenJDK](https://adoptopenjdk.net) (minimum version is 8 - recommended is 11 or later). For details about 
+            The Hazelcast Jet download package includes Hazelcast Jet server and
+            several additional modules. It requires a JDK to run, which can be obtained from
+            [AdoptOpenJDK](https://adoptopenjdk.net) (minimum version is 8 - recommended is 11 or later). For details about
             what's included, and minimim requirements please see the
-             [installation page](/docs/operations/installation).
+            [installation page](/docs/operations/installation).
           </MarkdownBlock>
           <h3 id="latest">Current version (Stable)</h3>
           <table className="versions">
@@ -38,14 +39,14 @@ function Downloads(props) {
               <tr>
                 <th>{latest.version}</th>
                 <td>
-                <a href={`${repoUrl}/releases/download/v${latest.version}/hazelcast-jet-${latest.version}.tar.gz`}>
-                        hazelcast-jet-{latest.version}.tar.gz
+                  <a href={`${repoUrl}/releases/download/v${latest.version}/hazelcast-jet-${latest.version}.tar.gz`}>
+                    hazelcast-jet-{latest.version}.tar.gz
                 </a>
                 </td>
                 <td>{latest.size}MB</td>
                 <td>
-                  <a href={ latest.releaseNotes ? `${latest.releaseNotes}`
-                  : `${repoUrl}/releases/tag/v${latest.version}`}>
+                  <a href={latest.releaseNotes ? `${latest.releaseNotes}`
+                    : `${repoUrl}/releases/tag/v${latest.version}`}>
                     Release Notes
                   </a>
                 </td>
@@ -59,13 +60,48 @@ function Downloads(props) {
             </tbody>
           </table>
           <p>Hazelcast Jet artifacts can also be retrieved using the following Maven coordinates:</p>
-          
+
           <pre><code className="language-groovy css hljs">
-              groupId: <span className="hljs-string">com.hazelcast.jet</span><br/>
-              artifactId: <span className="hljs-string">hazelcast-jet</span><br/>
+            groupId: <span className="hljs-string">com.hazelcast.jet</span><br />
+              artifactId: <span className="hljs-string">hazelcast-jet</span><br />
               version: <span className="hljs-string">{latest.version}</span>
-         </code></pre>
-         <p>For the full list of modules, please see <a href="https://search.maven.org/search?q=g:com.hazelcast.jet">Maven Central</a>.</p>
+          </code></pre>
+
+          <h3 id="modules">Additional Modules</h3>
+          <p>In addition to the ones included in the main distribution, Jet also has
+          the following modules:
+             </p>
+          <table className="modules">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>File</th>
+                <th>Size</th>
+              </tr>
+            </thead>
+            <tbody>
+              {modules.map(
+                module =>
+                  <tr key={module.name}>
+                    <td>
+                      <a href={module.docs}>
+                        {module.name}
+                      </a>
+                     </td>
+                    <td>
+                      <a href={module.download}>
+                        {module.filename}
+                      </a>
+                    </td>
+                    <td>
+                      {module.size} MB
+                    </td>
+                  </tr>
+              )}
+            </tbody>
+          </table>
+          <p>You can include them in the classpath by moving the downloaded jars to the lib folder under your Jet Home. </p>
+          <p>For the full list of modules, please see <a href="https://search.maven.org/search?q=g:com.hazelcast.jet">Maven Central</a>.</p>
 
         <h3 id="management-center">Management Center</h3>
 
@@ -75,8 +111,8 @@ function Downloads(props) {
          <p>
           You can download Hazelcast Jet Management Center <a href={`https://download.hazelcast.com/hazelcast-jet-management-center/hazelcast-jet-management-center-${latest.version}.tar.gz`}>here</a>.
          </p>
-         <p>
-          You can run the Management Center without a license key, but it will only work with a single node cluster.
+          <p>
+            You can run the Management Center without a license key, but it will only work with a single node cluster.
           Get a 30-day trial license from <a href="https://hazelcast.com/download">the Hazelcast website</a>.
          </p>
          <p>  
@@ -93,16 +129,16 @@ function Downloads(props) {
                     <tr key={current.version}>
                       <th>{current.version}</th>
                       <td>
-                      <a href={`${repoUrl}/releases/download/v${current.version}/hazelcast-jet-${current.version}.tar.gz`}>
-                        hazelcast-jet-{current.version}.tar.gz
+                        <a href={`${repoUrl}/releases/download/v${current.version}/hazelcast-jet-${current.version}.tar.gz`}>
+                          hazelcast-jet-{current.version}.tar.gz
                       </a>
                       </td>
                       <td>
-                      {current.size} MB
+                        {current.size} MB
                       </td>
                       <td>
-                      <a href={ current.releaseNotes ? `${current.releaseNotes}`
-                        : `${repoUrl}/releases/tag/v${current.version}`}>
+                        <a href={current.releaseNotes ? `${current.releaseNotes}`
+                          : `${repoUrl}/releases/tag/v${current.version}`}>
                           Release Notes
                         </a>
                       </td>
