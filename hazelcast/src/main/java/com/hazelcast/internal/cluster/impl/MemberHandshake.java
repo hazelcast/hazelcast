@@ -49,22 +49,42 @@ import static com.hazelcast.internal.util.UUIDSerializationUtil.writeUUID;
 public class MemberHandshake
         implements IdentifiedDataSerializable {
 
+    public static final byte SCHEMA_VERSION_1 = (byte) 1;
+    public static final byte SCHEMA_VERSION_2 = (byte) 2;
+
     private byte schemaVersion;
     private Map<ProtocolType, Collection<Address>> localAddresses;
     private Address targetAddress;
     private boolean reply;
     private UUID uuid;
+    private int planeCount;
+    private int planeIndex;
 
     public MemberHandshake() {
     }
 
-    public MemberHandshake(byte schemaVersion, Map<ProtocolType, Collection<Address>> localAddresses,
-                           Address targetAddress, boolean reply, UUID uuid) {
+    public MemberHandshake(byte schemaVersion,
+                           Map<ProtocolType, Collection<Address>> localAddresses,
+                           Address targetAddress,
+                           boolean reply,
+                           UUID uuid,
+                           int planeIndex,
+                           int planeCount) {
         this.schemaVersion = schemaVersion;
         this.localAddresses = new EnumMap<>(localAddresses);
         this.targetAddress = targetAddress;
         this.reply = reply;
         this.uuid = uuid;
+        this.planeIndex = planeIndex;
+        this.planeCount = planeCount;
+    }
+
+    public int getPlaneIndex() {
+        return planeIndex;
+    }
+
+    public int getPlaneCount() {
+        return planeCount;
     }
 
     byte getSchemaVersion() {
@@ -103,15 +123,17 @@ public class MemberHandshake
         out.writeObject(targetAddress);
         out.writeBoolean(reply);
         writeUUID(out, uuid);
-        int size = (localAddresses == null) ? 0 : localAddresses.size();
+        int size = localAddresses == null ? 0 : localAddresses.size();
         out.writeInt(size);
-        if (size == 0) {
-            return;
+        if (size > 0) {
+            for (Map.Entry<ProtocolType, Collection<Address>> addressEntry : localAddresses.entrySet()) {
+                out.writeInt(addressEntry.getKey().ordinal());
+                writeCollection(addressEntry.getValue(), out);
+            }
         }
-        for (Map.Entry<ProtocolType, Collection<Address>> addressEntry : localAddresses.entrySet()) {
-            out.writeInt(addressEntry.getKey().ordinal());
-            writeCollection(addressEntry.getValue(), out);
-        }
+
+        out.writeInt(planeIndex);
+        out.writeInt(planeCount);
     }
 
     @Override
@@ -123,20 +145,35 @@ public class MemberHandshake
         int size = in.readInt();
         if (size == 0) {
             localAddresses = Collections.emptyMap();
-            return;
+        } else {
+            Map<ProtocolType, Collection<Address>> addressesPerProtocolType = new EnumMap<>(ProtocolType.class);
+            for (int i = 0; i < size; i++) {
+                ProtocolType protocolType = ProtocolType.valueOf(in.readInt());
+                Collection<Address> addresses = readCollection(in);
+                addressesPerProtocolType.put(protocolType, addresses);
+            }
+            this.localAddresses = addressesPerProtocolType;
         }
-        Map<ProtocolType, Collection<Address>> addressesPerProtocolType = new EnumMap<>(ProtocolType.class);
-        for (int i = 0; i < size; i++) {
-            ProtocolType protocolType = ProtocolType.valueOf(in.readInt());
-            Collection<Address> addresses = readCollection(in);
-            addressesPerProtocolType.put(protocolType, addresses);
+        if (schemaVersion == SCHEMA_VERSION_1) {
+            // with this schema, the planeCount/planeIndex are not available so we assume it is a single plane system.
+            this.planeCount = 1;
+            this.planeIndex = 0;
+        } else {
+            this.planeIndex = in.readInt();
+            this.planeCount = in.readInt();
         }
-        this.localAddresses = addressesPerProtocolType;
     }
 
     @Override
     public String toString() {
-        return "MemberHandshake{" + "schemaVersion=" + schemaVersion + ", localAddresses=" + localAddresses
-                + ", targetAddress=" + targetAddress + ", reply=" + reply + ", uuid=" + uuid + '}';
+        return "MemberHandshake{"
+                + "schemaVersion=" + schemaVersion
+                + ", localAddresses=" + localAddresses
+                + ", targetAddress=" + targetAddress
+                + ", reply=" + reply
+                + ", uuid=" + uuid
+                + ", planeIndex=" + planeIndex
+                + ", planeCount=" + planeCount
+                + '}';
     }
 }
