@@ -17,6 +17,7 @@
 package com.hazelcast.sql.impl.calcite.opt.physical.index;
 
 import com.hazelcast.config.IndexType;
+import com.hazelcast.internal.util.BiTuple;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.calcite.opt.OptUtils;
 import com.hazelcast.sql.impl.calcite.opt.distribution.DistributionTrait;
@@ -25,12 +26,14 @@ import com.hazelcast.sql.impl.calcite.opt.physical.MapIndexScanPhysicalRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.visitor.RexToExpressionVisitor;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastRelOptTable;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
+import com.hazelcast.sql.impl.calcite.validate.types.HazelcastIntegerType;
 import com.hazelcast.sql.impl.exec.scan.index.IndexFilter;
 import com.hazelcast.sql.impl.exec.scan.index.IndexFilterType;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ParameterExpression;
 import com.hazelcast.sql.impl.schema.map.MapTableIndex;
+import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.calcite.plan.RelOptTable;
 import org.apache.calcite.plan.RelOptUtil;
 import org.apache.calcite.plan.RelTraitSet;
@@ -38,6 +41,7 @@ import org.apache.calcite.rel.RelCollation;
 import org.apache.calcite.rel.RelCollations;
 import org.apache.calcite.rel.RelFieldCollation;
 import org.apache.calcite.rel.RelNode;
+import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rex.RexBuilder;
 import org.apache.calcite.rex.RexCall;
 import org.apache.calcite.rex.RexInputRef;
@@ -187,11 +191,13 @@ public final class IndexResolver {
             case LESS_THAN:
             case LESS_THAN_OR_EQUAL:
             case EQUALS:
+                BiTuple<RexNode, RexNode> operands = extractComparisonOperands(exp);
+
                 return prepareSingleColumnCandidateComparison(
                     exp,
                     kind,
-                    ((RexCall) exp).getOperands().get(0),
-                    ((RexCall) exp).getOperands().get(1),
+                    operands.element1(),
+                    operands.element2(),
                     parameterMetadata
                 );
 
@@ -322,7 +328,10 @@ public final class IndexResolver {
     ) {
         List<IndexFilterDescriptor> filters = new ArrayList<>(index.getFieldOrdinals().size());
 
-        for (int fieldOrdinal : index.getFieldOrdinals()) {
+        for (int i = 0; i < index.getFieldOrdinals().size(); i++) {
+            int fieldOrdinal = index.getFieldOrdinals().get(i);
+            QueryDataType fieldConverterType = index.getFieldConverterTypes().get(i);
+
             List<IndexCandidate> fieldCandidates = candidates.get(fieldOrdinal);
 
             if (fieldCandidates == null) {
@@ -330,7 +339,7 @@ public final class IndexResolver {
                 break;
             }
 
-            IndexFilterDescriptor filter = createFilterFromCandidates(index.getType(), fieldCandidates);
+            IndexFilterDescriptor filter = createFilterFromCandidates(index.getType(), fieldCandidates, fieldConverterType);
 
             if (filter == null) {
                 // Cannot create a filter for the given candidates, stop.
@@ -364,10 +373,12 @@ public final class IndexResolver {
     ) {
         // Collect filters and relevant expressions
         List<IndexFilter> filters = new ArrayList<>(filterDescriptors.size());
+        List<QueryDataType> converterTypes = new ArrayList<>(filterDescriptors.size());
         Set<RexNode> exps = new HashSet<>();
 
         for (IndexFilterDescriptor filterDescriptor : filterDescriptors) {
             filters.add(filterDescriptor.getFilter());
+            converterTypes.add(filterDescriptor.getConverterType());
             exps.addAll(filterDescriptor.getExpressions());
         }
 
@@ -400,6 +411,7 @@ public final class IndexResolver {
             newRelTable,
             index,
             filters,
+            converterTypes,
             exp,
             remainderExp
         );
@@ -408,14 +420,15 @@ public final class IndexResolver {
     @SuppressWarnings({"checkstyle:CyclomaticComplexity", "checkstyle:NPathComplexity"})
     private static IndexFilterDescriptor createFilterFromCandidates(
         IndexType type,
-        List<IndexCandidate> candidates
+        List<IndexCandidate> candidates,
+        QueryDataType converterType
     ) {
         // First look for equality conditions, assuming that it is the most restrictive
         for (IndexCandidate candidate : candidates) {
             if (candidate.getFilterType() == IndexCandidateType.EQUALS) {
                 IndexFilter filter = IndexFilter.forEquals(candidate.getFilterValue());
 
-                return new IndexFilterDescriptor(filter, candidate.getExpression());
+                return new IndexFilterDescriptor(filter, candidate.getExpression(), converterType);
             }
         }
 
@@ -426,7 +439,7 @@ public final class IndexResolver {
                 //   when accessing the index store.
                 IndexFilter filter = IndexFilter.forIn(candidate.getFilterValue());
 
-                return new IndexFilterDescriptor(filter, candidate.getExpression());
+                return new IndexFilterDescriptor(filter, candidate.getExpression(), converterType);
             }
         }
 
@@ -483,7 +496,7 @@ public final class IndexResolver {
             if (from != null || to != null) {
                 IndexFilter filter = IndexFilter.forRange(from, fromInclusive, to, toInclusive);
 
-                return new IndexFilterDescriptor(filter, expressions);
+                return new IndexFilterDescriptor(filter, expressions, converterType);
             }
         }
 
@@ -585,5 +598,52 @@ public final class IndexResolver {
 
     private static boolean isIndexSupported(MapTableIndex index) {
         return index.getType() == IndexType.SORTED || index.getType() == IndexType.HASH;
+    }
+
+    /**
+     * Extracts comparison operands, removing CAST when possible.
+     *
+     * @param node original comparison node
+     * @return a pair of operands
+     */
+    private static BiTuple<RexNode, RexNode> extractComparisonOperands(RexNode node) {
+        assert node instanceof RexCall;
+
+        RexCall node0 = (RexCall) node;
+
+        assert node0.getOperands().size() == 2;
+
+        RexNode operand1 = node0.getOperands().get(0);
+        RexNode operand2 = node0.getOperands().get(1);
+
+        RexNode normalizedOperand1 = removeCastIfPossible(operand1);
+        RexNode normalizedOperand2 = removeCastIfPossible(operand2);
+
+        return BiTuple.of(normalizedOperand1, normalizedOperand2);
+    }
+
+    private static RexNode removeCastIfPossible(RexNode node) {
+        if (node.getKind() == SqlKind.CAST) {
+            RexCall node0 = (RexCall) node;
+
+            RexNode from = node0.getOperands().get(0);
+
+            RelDataType fromType = from.getType();
+            RelDataType toType = node0.getType();
+
+            // No conversion => remove CAST
+            if (fromType.equals(toType)) {
+                return from;
+            }
+
+            // Converting between integer types => remove CAST
+            if (fromType instanceof HazelcastIntegerType && toType instanceof HazelcastIntegerType) {
+                return from;
+            }
+
+            // TODO: Strings?
+        }
+
+        return node;
     }
 }

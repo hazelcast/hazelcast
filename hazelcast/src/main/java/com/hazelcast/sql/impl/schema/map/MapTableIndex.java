@@ -17,6 +17,7 @@
 package com.hazelcast.sql.impl.schema.map;
 
 import com.hazelcast.config.IndexType;
+import com.hazelcast.sql.impl.type.QueryDataType;
 
 import java.util.List;
 
@@ -31,10 +32,19 @@ public class MapTableIndex {
     /** Ordinals of the fields in the owning table. */
     private final List<Integer> fieldOrdinals;
 
-    public MapTableIndex(String name, IndexType type, List<Integer> fieldOrdinals) {
+    /** Expected types of field converters. */
+    private final List<QueryDataType> fieldConverterTypes;
+
+    public MapTableIndex(
+        String name,
+        IndexType type,
+        List<Integer> fieldOrdinals,
+        List<QueryDataType> fieldConverterTypes
+    ) {
         this.name = name;
         this.type = type;
         this.fieldOrdinals = fieldOrdinals;
+        this.fieldConverterTypes = fieldConverterTypes;
     }
 
     public String getName() {
@@ -47,5 +57,9 @@ public class MapTableIndex {
 
     public List<Integer> getFieldOrdinals() {
         return fieldOrdinals;
+    }
+
+    public List<QueryDataType> getFieldConverterTypes() {
+        return fieldConverterTypes;
     }
 }

@@ -21,6 +21,7 @@ import com.hazelcast.sql.impl.calcite.opt.cost.CostUtils;
 import com.hazelcast.sql.impl.calcite.opt.physical.visitor.PhysicalRelVisitor;
 import com.hazelcast.sql.impl.exec.scan.index.IndexFilter;
 import com.hazelcast.sql.impl.schema.map.MapTableIndex;
+import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelOptCost;
 import org.apache.calcite.plan.RelOptPlanner;
@@ -41,6 +42,7 @@ public class MapIndexScanPhysicalRel extends AbstractMapScanRel implements Physi
 
     private final MapTableIndex index;
     private final List<IndexFilter> indexFilters;
+    private final List<QueryDataType> converterTypes;
     private final RexNode indexExp;
     private final RexNode remainderExp;
 
@@ -50,6 +52,7 @@ public class MapIndexScanPhysicalRel extends AbstractMapScanRel implements Physi
         RelOptTable table,
         MapTableIndex index,
         List<IndexFilter> indexFilters,
+        List<QueryDataType> converterTypes,
         RexNode indexExp,
         RexNode remainderExp
     ) {
@@ -57,6 +60,7 @@ public class MapIndexScanPhysicalRel extends AbstractMapScanRel implements Physi
 
         this.index = index;
         this.indexFilters = indexFilters;
+        this.converterTypes = converterTypes;
         this.indexExp = indexExp;
         this.remainderExp = remainderExp;
     }
@@ -67,6 +71,10 @@ public class MapIndexScanPhysicalRel extends AbstractMapScanRel implements Physi
 
     public List<IndexFilter> getIndexFilters() {
         return indexFilters;
+    }
+
+    public List<QueryDataType> getConverterTypes() {
+        return converterTypes;
     }
 
     public RexNode getRemainderExp() {
@@ -81,6 +89,7 @@ public class MapIndexScanPhysicalRel extends AbstractMapScanRel implements Physi
             getTable(),
             index,
             indexFilters,
+            converterTypes,
             indexExp,
             remainderExp
         );

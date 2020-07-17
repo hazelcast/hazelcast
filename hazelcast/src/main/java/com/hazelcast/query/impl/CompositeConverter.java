@@ -75,6 +75,10 @@ public class CompositeConverter implements TypeConverter {
         return isTransient;
     }
 
+    public int getComponentCount() {
+        return converters.length;
+    }
+
     /**
      * @return the converter for the given component.
      */

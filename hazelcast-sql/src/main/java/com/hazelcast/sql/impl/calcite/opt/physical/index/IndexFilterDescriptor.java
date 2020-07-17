@@ -17,6 +17,7 @@
 package com.hazelcast.sql.impl.calcite.opt.physical.index;
 
 import com.hazelcast.sql.impl.exec.scan.index.IndexFilter;
+import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.calcite.rex.RexNode;
 
 import java.util.Collections;
@@ -29,14 +30,19 @@ public class IndexFilterDescriptor {
     /** Calcite expressions that formed the filter */
     private final List<RexNode> expressions;
 
-    public IndexFilterDescriptor(IndexFilter filter, RexNode expression) {
+    /** Expected converter type of the target index. */
+    private final QueryDataType converterType;
+
+    public IndexFilterDescriptor(IndexFilter filter, RexNode expression, QueryDataType converterType) {
         this.filter = filter;
         this.expressions = Collections.singletonList(expression);
+        this.converterType = converterType;
     }
 
-    public IndexFilterDescriptor(IndexFilter filter, List<RexNode> expressions) {
+    public IndexFilterDescriptor(IndexFilter filter, List<RexNode> expressions, QueryDataType converterType) {
         this.filter = filter;
         this.expressions = expressions;
+        this.converterType = converterType;
     }
 
     public IndexFilter getFilter() {
@@ -45,5 +51,9 @@ public class IndexFilterDescriptor {
 
     public List<RexNode> getExpressions() {
         return expressions;
+    }
+
+    public QueryDataType getConverterType() {
+        return converterType;
     }
 }

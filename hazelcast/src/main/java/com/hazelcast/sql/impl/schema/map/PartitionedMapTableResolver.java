@@ -124,7 +124,7 @@ public class PartitionedMapTableResolver extends AbstractMapTableResolver {
             long estimatedRowCount = MapTableUtils.estimatePartitionedMapRowCount(nodeEngine, context, name);
 
             // Resolve indexes.
-            List<MapTableIndex> indexes = MapTableUtils.getPartitionedMapIndexes(mapContainer, name, resolved.getFields());
+            List<MapTableIndex> indexes = MapTableUtils.getPartitionedMapIndexes(mapContainer, resolved.getFields());
 
             // Resolve distribution field ordinal.
             int distributionFieldOrdinal =

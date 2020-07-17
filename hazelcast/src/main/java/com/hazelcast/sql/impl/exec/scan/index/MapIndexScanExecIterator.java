@@ -24,6 +24,8 @@ import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.exec.scan.KeyValueIterator;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
+import com.hazelcast.sql.impl.schema.map.MapTableUtils;
+import com.hazelcast.sql.impl.type.QueryDataType;
 
 import java.util.Collections;
 import java.util.Iterator;
@@ -39,6 +41,7 @@ public class MapIndexScanExecIterator implements KeyValueIterator {
     private final MapContainer map;
     private final String indexName;
     private final List<IndexFilter> indexFilters;
+    private final List<QueryDataType> expectedConverterTypes;
     private final ExpressionEvalContext evalContext;
 
     private final Iterator<QueryableEntry> iterator;
@@ -52,11 +55,13 @@ public class MapIndexScanExecIterator implements KeyValueIterator {
         MapContainer map,
         String indexName,
         List<IndexFilter> indexFilters,
+        List<QueryDataType> expectedConverterTypes,
         ExpressionEvalContext evalContext
     ) {
         this.map = map;
         this.indexName = indexName;
         this.indexFilters = indexFilters;
+        this.expectedConverterTypes = expectedConverterTypes;
         this.evalContext = evalContext;
 
         iterator = getIndexEntries();
@@ -114,6 +119,10 @@ public class MapIndexScanExecIterator implements KeyValueIterator {
             // TODO: Proper error
             throw QueryException.error("Index doesn't exist: " + indexName);
         }
+
+        List<QueryDataType> currentConverterTypes = MapTableUtils.indexConverterToSqlTypes(index.getConverter());
+
+        validateConverterTypes(expectedConverterTypes, currentConverterTypes);
 
         IndexFilter lastFilter = lastFilter();
 
@@ -205,5 +214,32 @@ public class MapIndexScanExecIterator implements KeyValueIterator {
 
     private IndexFilter lastFilter() {
         return indexFilters.isEmpty() ? null : indexFilters.get(indexFilters.size() - 1);
+    }
+
+    private static void validateConverterTypes(
+        List<QueryDataType> expectedConverterTypes,
+        List<QueryDataType> actualConverterTypes
+    ) {
+        if (expectedConverterTypes.size() <= actualConverterTypes.size()) {
+            boolean valid = true;
+
+            for (int i = 0; i < expectedConverterTypes.size(); i++) {
+                QueryDataType expected = expectedConverterTypes.get(i);
+                QueryDataType actual = actualConverterTypes.get(i);
+
+                if (!expected.equals(actual)) {
+                    valid = false;
+
+                    break;
+                }
+            }
+
+            if (valid) {
+                return;
+            }
+        }
+
+        // TODO: Proper exception
+        throw QueryException.error("Converters do no match");
     }
 }

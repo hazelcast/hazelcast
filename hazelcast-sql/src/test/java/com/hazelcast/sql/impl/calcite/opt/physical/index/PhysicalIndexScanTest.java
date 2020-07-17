@@ -32,11 +32,11 @@ import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
 import static com.hazelcast.sql.impl.type.QueryDataType.INT;
+import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
 
 /**
@@ -44,6 +44,7 @@ import static org.junit.Assert.assertEquals;
  */
 // TODO: In separate classes:
 //   Composite indexes
+//   Different types!
 public class PhysicalIndexScanTest extends OptimizerTestSupport {
     @Override
     protected HazelcastSchema createDefaultSchema() {
@@ -53,15 +54,15 @@ public class PhysicalIndexScanTest extends OptimizerTestSupport {
             "p",
             OptimizerTestSupport.fields("ret", INT, "f1", INT, "f2", INT, "f3", INT),
             Arrays.asList(
-                new MapTableIndex("sorted_f1", IndexType.SORTED, Collections.singletonList(1)),
-                new MapTableIndex("bitmap_f1", IndexType.BITMAP, Collections.singletonList(1)),
+                new MapTableIndex("sorted_f1", IndexType.SORTED, singletonList(1), singletonList(INT)),
+                new MapTableIndex("bitmap_f1", IndexType.BITMAP, singletonList(1), singletonList(INT)),
 
-                new MapTableIndex("hash_f2", IndexType.HASH, Collections.singletonList(2)),
-                new MapTableIndex("bitmap_f2", IndexType.BITMAP, Collections.singletonList(2)),
+                new MapTableIndex("hash_f2", IndexType.HASH, singletonList(2), singletonList(INT)),
+                new MapTableIndex("bitmap_f2", IndexType.BITMAP, singletonList(2), singletonList(INT)),
 
-                new MapTableIndex("sorted_f3", IndexType.SORTED, Collections.singletonList(3)),
-                new MapTableIndex("hash_f3", IndexType.HASH, Collections.singletonList(3)),
-                new MapTableIndex("bitmap_f3", IndexType.BITMAP, Collections.singletonList(3))
+                new MapTableIndex("sorted_f3", IndexType.SORTED, singletonList(3), singletonList(INT)),
+                new MapTableIndex("hash_f3", IndexType.HASH, singletonList(3), singletonList(INT)),
+                new MapTableIndex("bitmap_f3", IndexType.BITMAP, singletonList(3), singletonList(INT))
             ),
             100
         );
@@ -78,20 +79,18 @@ public class PhysicalIndexScanTest extends OptimizerTestSupport {
         checkEquals("f3", "1", "hash_f3", "$3", "1");
     }
 
-    @Ignore("Remove coercion from binary operation if one of the sides is a column")
     @Test
     public void test_equals_parameter() {
-        checkEquals("f1", "?", "sorted_f1", "$1", "?0");
-        checkEquals("f2", "?", "hash_f2", "$2", "?0");
-        checkEquals("f3", "?", "hash_f3", "$3", "?0");
+        checkEquals("f1", "?", "sorted_f1", "CAST($1):BIGINT(63)", "?0", INT);
+        checkEquals("f2", "?", "hash_f2", "CAST($2):BIGINT(63)", "?0", INT);
+        checkEquals("f3", "?", "hash_f3", "CAST($3):BIGINT(63)", "?0", INT);
     }
 
-    @Ignore("Remove coercion from binary operation if one of the sides is a column")
     @Test
     public void test_equals_expressions() {
-        checkEquals("f1", "ret + 1", "sorted_f1", "$1", "+($0, 1)");
-        checkEquals("f2", "ret + 1", "hash_f2", "$2", "+($0, 1)");
-        checkEquals("f3", "ret + 1", "hash_f3", "$3", "+($0, 1)");
+        checkEquals("f1", "? + 1", "sorted_f1", "CAST($1):BIGINT(64)", "+(?0, 1:TINYINT(1))", INT);
+        checkEquals("f2", "? + 1", "hash_f2", "CAST($2):BIGINT(64)", "+(?0, 1:TINYINT(1))", INT);
+        checkEquals("f3", "? + 1", "hash_f3", "CAST($3):BIGINT(64)", "+(?0, 1:TINYINT(1))", INT);
 
         // TODO: Add tests with complex expressions with and without columns on both sides
     }

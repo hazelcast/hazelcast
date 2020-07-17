@@ -313,6 +313,7 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
             hazelcastTable.getProjects(),
             rel.getIndex().getName(),
             rel.getIndexFilters(),
+            rel.getConverterTypes(),
             convertFilter(schemaBefore, rel.getRemainderExp())
         );
 

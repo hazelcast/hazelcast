@@ -83,7 +83,7 @@ public class LocalPartitionedMapConnector extends SqlKeyValueConnector {
         MapContainer container = context.getMapContainer(mapName);
 
         long estimatedRowCount = estimatePartitionedMapRowCount(nodeEngine, context, mapName);
-        List<MapTableIndex> indexes = container != null ? getPartitionedMapIndexes(container, mapName, fields) : emptyList();
+        List<MapTableIndex> indexes = container != null ? getPartitionedMapIndexes(container, fields) : emptyList();
         int distributionFieldOrdinal = container != null ? getPartitionedMapDistributionField(container, context, fields) : -1;
 
         return new PartitionedMapTable(

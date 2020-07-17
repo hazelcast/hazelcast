@@ -20,6 +20,7 @@ import com.hazelcast.cluster.memberselector.MemberSelectors;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.MapConfig;
+import com.hazelcast.core.TypeConverter;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
@@ -30,6 +31,9 @@ import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.partition.PartitioningStrategy;
 import com.hazelcast.partition.strategy.DeclarativePartitioningStrategy;
+import com.hazelcast.query.impl.CompositeConverter;
+import com.hazelcast.query.impl.Index;
+import com.hazelcast.query.impl.TypeConverters;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.extract.QueryPath;
@@ -37,9 +41,13 @@ import com.hazelcast.sql.impl.extract.QueryTargetDescriptor;
 import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.schema.map.sample.MapSampleMetadata;
 import com.hazelcast.sql.impl.schema.map.sample.MapSampleMetadataResolver;
+import com.hazelcast.sql.impl.type.QueryDataType;
+import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
+import com.hazelcast.sql.impl.type.QueryDataTypeUtils;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -80,19 +88,28 @@ public final class MapTableUtils {
         return entryCount * memberCount;
     }
 
-    public static List<MapTableIndex> getPartitionedMapIndexes(
-        MapContainer mapContainer,
-        String mapName,
-        List<TableField> fields
-    ) {
+    public static List<MapTableIndex> getPartitionedMapIndexes(MapContainer mapContainer, List<TableField> fields) {
         Map<QueryPath, Integer> pathToOrdinalMap = mapPathsToOrdinals(fields);
 
-        List<MapTableIndex> res = new ArrayList<>(mapContainer.getIndexDefinitions().size());
+        List<Index> indexes = mapContainer.getIndexList();
 
-        for (IndexConfig indexConfig : mapContainer.getIndexDefinitions().values()) {
+        if (indexes.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        List<MapTableIndex> res = new ArrayList<>(indexes.size());
+
+        for (Index index : indexes) {
+            IndexConfig indexConfig = index.getConfig();
+
+            List<QueryDataType> resolvedFieldConverterTypes = indexConverterToSqlTypes(index.getConverter());
+
             List<Integer> indexFieldOrdinals = new ArrayList<>(indexConfig.getAttributes().size());
+            List<QueryDataType> indexFieldConverterTypes = new ArrayList<>(indexConfig.getAttributes().size());
 
-            for (String attribute : indexConfig.getAttributes()) {
+            for (int i = 0; i < indexConfig.getAttributes().size(); i++) {
+                String attribute = indexConfig.getAttributes().get(i);
+
                 QueryPath attributePath = QueryPath.create(attribute);
 
                 Integer ordinal = pathToOrdinalMap.get(attributePath);
@@ -102,20 +119,31 @@ public final class MapTableUtils {
                     break;
                 }
 
-                if (!((MapTableField) fields.get(ordinal)).isStaticallyTyped()) {
-                    // Field possibly converted. Stop to not confuse optimizer and produce incorrect results.
+                if (i >= resolvedFieldConverterTypes.size()) {
+                    // No more resolved converters. Stop.
+                    break;
+                }
+
+                QueryDataType fieldType = fields.get(i).getType();
+                QueryDataType converterType = resolvedFieldConverterTypes.get(i);
+
+                if (!isCompatibleForIndexRequest(fieldType, converterType)) {
+                    // Field and converter types are not compatible (e.g. INT vs VARCHAR).
                     break;
                 }
 
                 indexFieldOrdinals.add(ordinal);
+                indexFieldConverterTypes.add(converterType);
             }
 
-            if (indexFieldOrdinals.isEmpty()) {
-                // Failed to resolve a prefix of the index, so it cannot be used in any query => skip.
-                break;
-            }
+            MapTableIndex index0 = new MapTableIndex(
+                indexConfig.getName(),
+                indexConfig.getType(),
+                indexFieldOrdinals,
+                indexFieldConverterTypes
+            );
 
-            res.add(new MapTableIndex(indexConfig.getName(), indexConfig.getType(), indexFieldOrdinals));
+            res.add(index0);
         }
 
         return res;
@@ -167,6 +195,7 @@ public final class MapTableUtils {
         return res;
     }
 
+    @SuppressWarnings("rawtypes")
     @Nullable
     public static ResolveResult resolvePartitionedMap(InternalSerializationService ss, MapServiceContext context, String name) {
         MapContainer mapContainer = context.getMapContainer(name);
@@ -230,6 +259,80 @@ public final class MapTableUtils {
         }
 
         return new ArrayList<>(res.values());
+    }
+
+    public static List<QueryDataType> indexConverterToSqlTypes(TypeConverter converter) {
+        if (converter instanceof CompositeConverter) {
+            CompositeConverter converter0 = ((CompositeConverter) converter);
+
+            List<QueryDataType> res = new ArrayList<>(converter0.getComponentCount());
+
+            for (int i = 0; i < converter0.getComponentCount(); i++) {
+                QueryDataType type = indexConverterToSqlType(converter0.getComponentConverter(i));
+
+                if (type == null) {
+                    break;
+                } else {
+                    res.add(type);
+                }
+            }
+
+            if (!res.isEmpty()) {
+                return res;
+            }
+        } else {
+            QueryDataType type = indexConverterToSqlType(converter);
+
+            if (type != null) {
+                return Collections.singletonList(type);
+            }
+        }
+
+        return Collections.emptyList();
+    }
+
+    @SuppressWarnings("checkstyle:ReturnCount")
+    private static QueryDataType indexConverterToSqlType(TypeConverter converter) {
+        assert !(converter instanceof CompositeConverter) : converter;
+
+        if (converter == TypeConverters.BOOLEAN_CONVERTER) {
+            return QueryDataType.BOOLEAN;
+        } else if (converter == TypeConverters.BYTE_CONVERTER) {
+            return QueryDataType.TINYINT;
+        } else if (converter == TypeConverters.SHORT_CONVERTER) {
+            return QueryDataType.SMALLINT;
+        } else if (converter == TypeConverters.INTEGER_CONVERTER) {
+            return QueryDataType.INT;
+        } else if (converter == TypeConverters.LONG_CONVERTER) {
+            return QueryDataType.BIGINT;
+        } else if (converter == TypeConverters.BIG_DECIMAL_CONVERTER) {
+            return QueryDataType.DECIMAL;
+        } else if (converter == TypeConverters.BIG_INTEGER_CONVERTER) {
+            return QueryDataType.DECIMAL_BIG_INTEGER;
+        } else if (converter == TypeConverters.STRING_CONVERTER) {
+            return QueryDataType.VARCHAR;
+        } else if (converter == TypeConverters.CHAR_CONVERTER) {
+            return QueryDataType.VARCHAR_CHARACTER;
+        }
+
+        // TODO: Add identity converter?
+
+        return null;
+    }
+
+    private static boolean isCompatibleForIndexRequest(QueryDataType columnType, QueryDataType indexConverterType) {
+        QueryDataTypeFamily indexConverterTypeFamily = indexConverterType.getTypeFamily();
+
+        switch (columnType.getTypeFamily()) {
+            case BOOLEAN:
+                return indexConverterTypeFamily == QueryDataTypeFamily.BOOLEAN;
+
+            case VARCHAR:
+                return indexConverterTypeFamily == QueryDataTypeFamily.VARCHAR;
+
+            default:
+                return QueryDataTypeUtils.isNumeric(columnType) && QueryDataTypeUtils.isNumeric(indexConverterType);
+        }
     }
 
     public static final class ResolveResult {

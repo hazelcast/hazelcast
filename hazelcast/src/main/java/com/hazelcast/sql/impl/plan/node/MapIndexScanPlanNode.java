@@ -36,6 +36,7 @@ public class MapIndexScanPlanNode extends AbstractMapScanPlanNode {
 
     private String indexName;
     private List<IndexFilter> indexFilters;
+    private List<QueryDataType> converterTypes;
 
     public MapIndexScanPlanNode() {
         // No-op.
@@ -52,12 +53,14 @@ public class MapIndexScanPlanNode extends AbstractMapScanPlanNode {
         List<Integer> projects,
         String indexName,
         List<IndexFilter> indexFilters,
+        List<QueryDataType> converterTypes,
         Expression<Boolean> remainderFilter
     ) {
         super(id, mapName, keyDescriptor, valueDescriptor, fieldPaths, fieldTypes, projects, remainderFilter);
 
         this.indexName = indexName;
         this.indexFilters = indexFilters;
+        this.converterTypes = converterTypes;
     }
 
     public String getIndexName() {
@@ -66,6 +69,10 @@ public class MapIndexScanPlanNode extends AbstractMapScanPlanNode {
 
     public List<IndexFilter> getIndexFilters() {
         return indexFilters;
+    }
+
+    public List<QueryDataType> getConverterTypes() {
+        return converterTypes;
     }
 
     @Override
@@ -79,6 +86,7 @@ public class MapIndexScanPlanNode extends AbstractMapScanPlanNode {
 
         out.writeUTF(indexName);
         SerializationUtil.writeList(indexFilters, out);
+        SerializationUtil.writeList(converterTypes, out);
     }
 
     @Override
@@ -87,11 +95,12 @@ public class MapIndexScanPlanNode extends AbstractMapScanPlanNode {
 
         indexName = in.readUTF();
         indexFilters = SerializationUtil.readList(in);
+        converterTypes = SerializationUtil.readList(in);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, mapName, fieldPaths, projects, indexName, indexFilters, filter);
+        return Objects.hash(id, mapName, fieldPaths, projects, indexName, indexFilters, converterTypes, filter);
     }
 
     @Override
@@ -112,6 +121,7 @@ public class MapIndexScanPlanNode extends AbstractMapScanPlanNode {
             && projects.equals(that.projects)
             && indexName.equals(that.indexName)
             && Objects.equals(indexFilters, that.indexFilters)
+            && Objects.equals(converterTypes, that.converterTypes)
             && Objects.equals(filter, that.filter);
     }
 

@@ -35,6 +35,7 @@ public class MapIndexScanExec extends MapScanExec {
 
     private final String indexName;
     private final List<IndexFilter> indexFilters;
+    private final List<QueryDataType> converterTypes;
 
     @SuppressWarnings("checkstyle:ParameterNumber")
     public MapIndexScanExec(
@@ -49,7 +50,8 @@ public class MapIndexScanExec extends MapScanExec {
         Expression<Boolean> filter,
         InternalSerializationService serializationService,
         String indexName,
-        List<IndexFilter> indexFilters
+        List<IndexFilter> indexFilters,
+        List<QueryDataType> converterTypes
     ) {
         // TODO: How to deal with passed partitions? Should we check that they are still owned during setup?
         super(
@@ -67,6 +69,7 @@ public class MapIndexScanExec extends MapScanExec {
 
         this.indexName = indexName;
         this.indexFilters = indexFilters;
+        this.converterTypes = converterTypes;
     }
 
     public String getIndexName() {
@@ -75,7 +78,7 @@ public class MapIndexScanExec extends MapScanExec {
 
     @Override
     protected KeyValueIterator createIterator() {
-        return new MapIndexScanExecIterator(map, indexName, indexFilters, ctx);
+        return new MapIndexScanExecIterator(map, indexName, indexFilters, converterTypes, ctx);
     }
 
     @Override
