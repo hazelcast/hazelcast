@@ -187,8 +187,14 @@ public final class UnsupportedOperationVisitor implements SqlVisitor<Void> {
         SUPPORTED_OPERATORS.add(SqlOption.OPERATOR);
     }
 
-    UnsupportedOperationVisitor(SqlValidatorCatalogReader catalogReader) {
+    private final Set<SqlOperator> extensionOperators;
+
+    UnsupportedOperationVisitor(
+            SqlValidatorCatalogReader catalogReader,
+            Set<SqlOperator> extensionOperators
+    ) {
         this.catalogReader = catalogReader;
+        this.extensionOperators = extensionOperators;
     }
 
     @Override
@@ -333,7 +339,9 @@ public final class UnsupportedOperationVisitor implements SqlVisitor<Void> {
             case ROW:
             case VALUES:
             case INSERT:
-                // TODO: Proper validation for DML
+            case COLLECTION_TABLE:
+            case ARGUMENT_ASSIGNMENT:
+                // TODO: Proper validation
                 runsOnImdg = false;
                 break;
 
@@ -362,6 +370,10 @@ public final class UnsupportedOperationVisitor implements SqlVisitor<Void> {
         SqlOperator operator = call.getOperator();
 
         if (SUPPORTED_OPERATORS.contains(operator)) {
+            return;
+        }
+
+        if (extensionOperators.contains(operator)) {
             return;
         }
 

@@ -21,6 +21,7 @@ import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.impl.optimizer.SqlPlan;
 
 import java.util.List;
+import java.util.function.BiFunction;
 
 /**
  * A service to optimize a RelNode and execute the SqlPlan implemented by Jet.
@@ -30,17 +31,22 @@ public interface JetSqlBackend {
     String SERVICE_NAME = "hz:impl:jetSqlService";
 
     /**
-     *
-     * @param opTab Actual type is org.apache.calcite.sql.SqlOperatorTable
-     * @param catalogReader Actual type is org.apache.calcite.sql.validate.SqlValidatorCatalogReader
-     * @param typeFactory Actual type is org.apache.calcite.rel.type.RelDataTypeFactory
-     * @param conformance Actual type is org.apache.calcite.sql.validate.SqlConformance
-     * @return Actual returned type is com.hazelcast.sql.impl.calcite.validate.HazelcastSqlValidator
+     * @return Actual returned type is org.apache.calcite.sql.SqlOperatorTable
      */
-    Object createValidator(Object opTab, Object catalogReader, Object typeFactory, Object conformance);
+    Object operatorTable();
 
     /**
-     * @param context Actual type is com.hazelcast.sql.impl.calcite.OptimizerContext
+     * @return Actual returned type is:<br>
+     * BiFunction&lt;<br>
+     * org.apache.calcite.prepare.Prepare.CatalogReader,<br>
+     * org.apache.calcite.sql.SqlNode,<br>
+     * org.apache.calcite.sql.SqlNode<br>
+     * &gt;
+     */
+    BiFunction<Object, Object, Object> validator();
+
+    /**
+     * @param context  Actual type is com.hazelcast.sql.impl.calcite.OptimizerContext
      * @param inputRel Actual type is org.apache.calcite.rel.RelNode
      */
     SqlPlan optimizeAndCreatePlan(NodeEngine nodeEngine, Object context, Object inputRel, List<String> rootColumnNames);

@@ -17,11 +17,18 @@
 package com.hazelcast.sql.impl.calcite.schema;
 
 import com.hazelcast.sql.impl.QueryUtils;
+import com.hazelcast.sql.impl.calcite.SqlToQueryType;
 import com.hazelcast.sql.impl.schema.Table;
+import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.schema.TableResolver;
 import com.hazelcast.sql.impl.schema.map.AbstractMapTable;
+import com.hazelcast.sql.impl.type.QueryDataType;
+import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
+import org.apache.calcite.rel.type.RelDataType;
+import org.apache.calcite.rel.type.RelDataTypeFactory;
 import org.apache.calcite.schema.Schema;
 import org.apache.calcite.schema.Statistic;
+import org.apache.calcite.sql.type.SqlTypeName;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -151,5 +158,22 @@ public final class HazelcastSchemaUtils {
         res.add(Collections.emptyList());
 
         return res;
+    }
+
+    /**
+     * Converts a {@link TableField} to {@link RelDataType}.
+     */
+    public static RelDataType convert(TableField field, RelDataTypeFactory typeFactory) {
+        QueryDataType fieldType = field.getType();
+        QueryDataTypeFamily fieldTypeFamily = fieldType.getTypeFamily();
+
+        SqlTypeName sqlTypeName = SqlToQueryType.map(fieldTypeFamily);
+
+        if (sqlTypeName == null) {
+            throw new IllegalStateException("Unexpected type family: " + fieldTypeFamily);
+        }
+
+        RelDataType relType = typeFactory.createSqlType(sqlTypeName);
+        return typeFactory.createTypeWithNullability(relType, true);
     }
 }

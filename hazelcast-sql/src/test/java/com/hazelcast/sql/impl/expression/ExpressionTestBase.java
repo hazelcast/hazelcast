@@ -649,7 +649,7 @@ public abstract class ExpressionTestBase {
         }
 
         try {
-            SqlNode sqlNode = optimizerContext.parse(query, false).getNode();
+            SqlNode sqlNode = optimizerContext.parse(query).getNode();
             assert sqlNode instanceof SqlSelect;
             if (trace != null) {
                 trace.append("parsed: ").append(sqlNode).append('\n');
@@ -1066,7 +1066,7 @@ public abstract class ExpressionTestBase {
      */
     public static SqlCallBinding makeMockBinding(String expression, RelDataType... types) {
         OptimizerContext context = makeContext();
-        QueryParseResult parseResult = context.parse("select " + expression + " from t", false);
+        QueryParseResult parseResult = context.parse("select " + expression + " from t");
 
         SqlSelect select = (SqlSelect) parseResult.getNode();
         SqlValidator validator = context.getValidator();

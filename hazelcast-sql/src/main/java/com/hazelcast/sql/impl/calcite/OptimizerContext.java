@@ -84,18 +84,22 @@ public final class OptimizerContext {
     // for testing purposes only
     private final SqlValidator validator;
 
+    private final JetSqlBackend jetSqlBackend;
+
     private OptimizerContext(
         HazelcastRelOptCluster cluster,
         QueryParser parser,
         QueryConverter converter,
         QueryPlanner planner,
-        SqlValidator validator
+        SqlValidator validator,
+        JetSqlBackend jetSqlBackend
     ) {
         this.cluster = cluster;
         this.parser = parser;
         this.converter = converter;
         this.planner = planner;
         this.validator = validator;
+        this.jetSqlBackend = jetSqlBackend;
     }
 
     // for testing purposes only
@@ -144,18 +148,17 @@ public final class OptimizerContext {
         QueryConverter converter = new QueryConverter(catalogReader, validator, cluster);
         QueryPlanner planner = new QueryPlanner(volcanoPlanner);
 
-        return new OptimizerContext(cluster, parser, converter, planner, validator);
+        return new OptimizerContext(cluster, parser, converter, planner, validator, jetSqlBackend);
     }
 
     /**
      * Parse SQL statement.
      *
      * @param sql SQL string.
-     * @param jetBackendPresent True if Jet is on classpath and able to run queries.
      * @return SQL tree.
      */
-    public QueryParseResult parse(String sql, boolean jetBackendPresent) {
-        return parser.parse(sql, jetBackendPresent);
+    public QueryParseResult parse(String sql) {
+        return parser.parse(sql, jetSqlBackend);
     }
 
     /**
@@ -198,31 +201,44 @@ public final class OptimizerContext {
         );
     }
 
-    private static SqlValidator createValidator(JetSqlBackend jetSqlBackend, RelDataTypeFactory typeFactory,
-                                                CatalogReader catalogReader) {
-        SqlOperatorTable opTab = ChainedSqlOperatorTable.of(
-            HazelcastSqlOperatorTable.instance(),
-            SqlStdOperatorTable.instance()
-        );
+    private static SqlValidator createValidator(
+        JetSqlBackend jetSqlBackend,
+        RelDataTypeFactory typeFactory,
+        CatalogReader catalogReader
+    ) {
+        if (jetSqlBackend == null) {
+            SqlOperatorTable operatorTable = ChainedSqlOperatorTable.of(
+                HazelcastSqlOperatorTable.instance(),
+                SqlStdOperatorTable.instance()
+            );
 
-        if (jetSqlBackend != null) {
-            return (SqlValidator) jetSqlBackend.createValidator(
-                opTab,
+            return new HazelcastSqlValidator(
+                operatorTable,
                 catalogReader,
                 typeFactory,
                 HazelcastSqlConformance.INSTANCE
             );
         } else {
+            SqlOperatorTable operatorTable = ChainedSqlOperatorTable.of(
+                HazelcastSqlOperatorTable.instance(),
+                SqlStdOperatorTable.instance(),
+                (SqlOperatorTable) jetSqlBackend.operatorTable()
+            );
+
             return new HazelcastSqlValidator(
-                opTab,
+                operatorTable,
                 catalogReader,
                 typeFactory,
-                HazelcastSqlConformance.INSTANCE
+                HazelcastSqlConformance.INSTANCE,
+                jetSqlBackend.validator()
             );
         }
     }
 
-    private static VolcanoPlanner createPlanner(CalciteConnectionConfig config, DistributionTraitDef distributionTraitDef) {
+    private static VolcanoPlanner createPlanner(
+        CalciteConnectionConfig config,
+        DistributionTraitDef distributionTraitDef
+    ) {
         VolcanoPlanner planner = new VolcanoPlanner(
             CostFactory.INSTANCE,
             Contexts.of(config)
