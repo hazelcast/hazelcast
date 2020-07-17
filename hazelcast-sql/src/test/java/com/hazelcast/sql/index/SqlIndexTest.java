@@ -17,6 +17,7 @@
 package com.hazelcast.sql.index;
 
 import com.hazelcast.client.test.TestHazelcastFactory;
+import com.hazelcast.config.Config;
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.IndexType;
 import com.hazelcast.core.HazelcastInstance;
@@ -57,9 +58,13 @@ public class SqlIndexTest extends SqlTestSupport {
 
     @BeforeClass
     public static void beforeClass() {
-        member = FACTORY.newHazelcastInstance();
+        beforeClass0(null);
+    }
 
-        IMap<Integer, Integer>  intMap = member.getMap(MAP_NAME);
+    protected static void beforeClass0(Config config) {
+        member = FACTORY.newHazelcastInstance(config);
+
+        IMap<Integer, Integer> intMap = member.getMap(MAP_NAME);
         intMap.addIndex(new IndexConfig().setName(SORTED_INDEX_NAME).setType(IndexType.SORTED).addAttribute("this"));
         intMap.addIndex(new IndexConfig().setName(HASH_INDEX_NAME).setType(IndexType.HASH).addAttribute("__key"));
 

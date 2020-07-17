@@ -87,6 +87,7 @@ import com.hazelcast.sql.impl.plan.node.join.HashJoinPlanNode;
 import com.hazelcast.sql.impl.plan.node.join.NestedLoopJoinPlanNode;
 import com.hazelcast.sql.impl.schema.map.AbstractMapTable;
 import com.hazelcast.sql.impl.schema.map.MapTableField;
+import com.hazelcast.sql.impl.schema.map.PartitionedMapTable;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.calcite.rel.RelFieldCollation;
 import org.apache.calcite.rel.core.AggregateCall;
@@ -277,20 +278,25 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
 
     @Override
     public void onMapScan(MapScanPhysicalRel rel) {
-        HazelcastTable hazelcastTable = rel.getTableUnwrapped();
         AbstractMapTable table = rel.getMap();
+
+        if (((PartitionedMapTable) table).nativeMemoryEnabled()) {
+            throw QueryException.error("Cannot query IMap " + table.getName() + " with InMemoryFormat.NATIVE because it does not have indexes (please add at least one index to query this IMap)");
+        }
+
+        HazelcastTable hazelcastTable = rel.getTableUnwrapped();
 
         PlanNodeSchema schemaBefore = getScanSchemaBeforeProject(table);
 
         MapScanPlanNode scanNode = new MapScanPlanNode(
-            pollId(rel),
-            table.getName(),
-            table.getKeyDescriptor(),
-            table.getValueDescriptor(),
-            getScanFieldPaths(table),
-            schemaBefore.getTypes(),
-            hazelcastTable.getProjects(),
-            convertFilter(schemaBefore, hazelcastTable.getFilter())
+                pollId(rel),
+                table.getName(),
+                table.getKeyDescriptor(),
+                table.getValueDescriptor(),
+                getScanFieldPaths(table),
+                schemaBefore.getTypes(),
+                hazelcastTable.getProjects(),
+                convertFilter(schemaBefore, hazelcastTable.getFilter())
         );
 
         pushUpstream(scanNode);
@@ -304,17 +310,17 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
         PlanNodeSchema schemaBefore = getScanSchemaBeforeProject(table);
 
         MapIndexScanPlanNode scanNode = new MapIndexScanPlanNode(
-            pollId(rel),
-            table.getName(),
-            table.getKeyDescriptor(),
-            table.getValueDescriptor(),
-            getScanFieldPaths(table),
-            schemaBefore.getTypes(),
-            hazelcastTable.getProjects(),
-            rel.getIndex().getName(),
-            rel.getIndexFilters(),
-            rel.getConverterTypes(),
-            convertFilter(schemaBefore, rel.getRemainderExp())
+                pollId(rel),
+                table.getName(),
+                table.getKeyDescriptor(),
+                table.getValueDescriptor(),
+                getScanFieldPaths(table),
+                schemaBefore.getTypes(),
+                hazelcastTable.getProjects(),
+                rel.getIndex().getName(),
+                rel.getIndexFilters(),
+                rel.getConverterTypes(),
+                convertFilter(schemaBefore, rel.getRemainderExp())
         );
 
         pushUpstream(scanNode);
@@ -322,20 +328,21 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
 
     @Override
     public void onReplicatedMapScan(ReplicatedMapScanPhysicalRel rel) {
-        HazelcastTable hazelcastTable = rel.getTableUnwrapped();
         AbstractMapTable table = rel.getMap();
+
+        HazelcastTable hazelcastTable = rel.getTableUnwrapped();
 
         PlanNodeSchema schemaBefore = getScanSchemaBeforeProject(table);
 
         ReplicatedMapScanPlanNode scanNode = new ReplicatedMapScanPlanNode(
-            pollId(rel),
-            table.getName(),
-            table.getKeyDescriptor(),
-            table.getValueDescriptor(),
-            getScanFieldPaths(table),
-            schemaBefore.getTypes(),
-            hazelcastTable.getProjects(),
-            convertFilter(schemaBefore, hazelcastTable.getFilter())
+                pollId(rel),
+                table.getName(),
+                table.getKeyDescriptor(),
+                table.getValueDescriptor(),
+                getScanFieldPaths(table),
+                schemaBefore.getTypes(),
+                hazelcastTable.getProjects(),
+                convertFilter(schemaBefore, hazelcastTable.getFilter())
         );
 
         pushUpstream(scanNode);
@@ -509,7 +516,7 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
          pushUpstream(replicatedToPartitionedNode);
      }
 
-     @Override
+    @Override
     public void onProject(ProjectPhysicalRel rel) {
         PlanNode upstreamNode = pollSingleUpstream();
 

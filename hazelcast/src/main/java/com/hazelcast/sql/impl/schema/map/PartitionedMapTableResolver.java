@@ -109,11 +109,6 @@ public class PartitionedMapTableResolver extends AbstractMapTableResolver {
 
             MapConfig config = mapContainer.getMapConfig();
 
-            // HD maps are not supported at the moment.
-            if (config.getInMemoryFormat() == InMemoryFormat.NATIVE) {
-                throw QueryException.error("IMap with InMemoryFormat.NATIVE is not supported: " + name);
-            }
-
             InternalSerializationService ss = (InternalSerializationService) nodeEngine.getSerializationService();
 
             ResolveResult resolved = MapTableUtils.resolvePartitionedMap(ss, context, name);
@@ -130,6 +125,8 @@ public class PartitionedMapTableResolver extends AbstractMapTableResolver {
             int distributionFieldOrdinal =
                 MapTableUtils.getPartitionedMapDistributionField(mapContainer, context, resolved.getFields());
 
+            boolean nativeMemoryEnabled = config.getInMemoryFormat() == InMemoryFormat.NATIVE;
+
             // Done.
             return new PartitionedMapTable(
                     SCHEMA_NAME_PARTITIONED,
@@ -141,7 +138,8 @@ public class PartitionedMapTableResolver extends AbstractMapTableResolver {
                     null,
                     null,
                     indexes,
-                    distributionFieldOrdinal
+                    distributionFieldOrdinal,
+                    nativeMemoryEnabled
             );
         } catch (QueryException e) {
             return new PartitionedMapTable(name, e);

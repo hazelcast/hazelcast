@@ -17,7 +17,6 @@
 package com.hazelcast.sql.impl.schema.map;
 
 import com.hazelcast.cluster.memberselector.MemberSelectors;
-import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.TypeConverter;
@@ -35,7 +34,6 @@ import com.hazelcast.query.impl.CompositeConverter;
 import com.hazelcast.query.impl.Index;
 import com.hazelcast.query.impl.TypeConverters;
 import com.hazelcast.spi.impl.NodeEngine;
-import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.extract.QueryTargetDescriptor;
 import com.hazelcast.sql.impl.schema.TableField;
@@ -203,13 +201,6 @@ public final class MapTableUtils {
         // Handle concurrent map destroy.
         if (mapContainer == null) {
             return null;
-        }
-
-        MapConfig config = mapContainer.getMapConfig();
-
-        // HD maps are not supported at the moment.
-        if (config.getInMemoryFormat() == InMemoryFormat.NATIVE) {
-            throw QueryException.error("IMap with InMemoryFormat.NATIVE is not supported: " + name);
         }
 
         for (PartitionContainer partitionContainer : context.getPartitionContainers()) {
