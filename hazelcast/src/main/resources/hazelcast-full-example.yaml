@@ -2356,6 +2356,9 @@ hazelcast:
         - name: "*"
           actions:
             - all
+      sql:
+        endpoints:
+          - 127.0.0.1
     client-block-unmapped-actions: true
     security-interceptors:
       - com.your-package.YourSecurityInterceptorImplementation
