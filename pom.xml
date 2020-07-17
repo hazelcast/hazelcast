@@ -631,9 +631,12 @@
                                     <goal>test</goal>
                                 </goals>
                                 <configuration>
-                                    <argLine>@{argLine}</argLine>
+                                    <argLine>
+                                        @{argLine}
+                                        -Dhazelcast.test.defaultTestTimeoutInSeconds=600
+                                    </argLine>
                                     <excludedGroups combine.self="override">
-                                        com.hazelcast.test.annotation.SlowTest,com.hazelcast.test.annotation.NightlyTest,com.hazelcast.jet.test.IgnoredForCoverage
+                                        com.hazelcast.jet.test.IgnoredForCoverage
                                     </excludedGroups>
                                 </configuration>
                             </execution>
@@ -643,9 +646,13 @@
                                     <goal>test</goal>
                                 </goals>
                                 <configuration>
-                                    <argLine>@{argLine}</argLine>
-                                    <excludedGroups>
-                                        com.hazelcast.jet.test.SerialTest,com.hazelcast.test.annotation.SlowTest,com.hazelcast.test.annotation.NightlyTest,com.hazelcast.jet.test.IgnoredForCoverage
+                                    <argLine>
+                                        @{argLine}
+                                        -Dhazelcast.test.defaultTestTimeoutInSeconds=600
+                                    </argLine>
+                                    <forkCount combine.self="override">1</forkCount>
+                                    <excludedGroups combine.self="override">
+                                        com.hazelcast.jet.test.SerialTest,com.hazelcast.jet.test.IgnoredForCoverage
                                     </excludedGroups>
                                 </configuration>
                             </execution>

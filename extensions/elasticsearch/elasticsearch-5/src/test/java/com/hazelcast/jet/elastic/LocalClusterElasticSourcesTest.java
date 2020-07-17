@@ -20,13 +20,16 @@ import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.JetTestInstanceFactory;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.impl.util.Util;
+import com.hazelcast.jet.test.IgnoredForCoverage;
 import org.junit.AfterClass;
 
 import java.util.function.Supplier;
+import org.junit.experimental.categories.Category;
 
 /**
  * Test running 3 local Jet members in a cluster and Elastic in docker
  */
+@Category({IgnoredForCoverage.class})
 public class LocalClusterElasticSourcesTest extends CommonElasticSourcesTest {
 
     private static JetInstance[] instances;
