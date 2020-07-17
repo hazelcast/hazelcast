@@ -24,8 +24,8 @@ import com.hazelcast.internal.networking.OutboundFrame;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.nio.ConnectionLifecycleListener;
 import com.hazelcast.internal.nio.ConnectionType;
-import com.hazelcast.internal.server.ServerContext;
 import com.hazelcast.internal.server.ServerConnection;
+import com.hazelcast.internal.server.ServerContext;
 import com.hazelcast.logging.ILogger;
 
 import java.io.EOFException;
@@ -80,6 +80,7 @@ public class TcpServerConnection implements ServerConnection {
     private volatile Throwable closeCause;
 
     private volatile String closeReason;
+    private volatile int planeIndex = -1;
 
     public TcpServerConnection(TcpServerConnectionManager connectionManager,
                                ConnectionLifecycleListener<TcpServerConnection> lifecycleListener,
@@ -102,6 +103,14 @@ public class TcpServerConnection implements ServerConnection {
 
     public Channel getChannel() {
         return channel;
+    }
+
+    public int getPlaneIndex() {
+        return planeIndex;
+    }
+
+    public void setPlaneIndex(int planeIndex) {
+        this.planeIndex = planeIndex;
     }
 
     @Override

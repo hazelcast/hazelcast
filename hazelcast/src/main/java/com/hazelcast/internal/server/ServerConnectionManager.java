@@ -56,12 +56,16 @@ public interface ServerConnectionManager
     }
 
     /**
-     * Returns the number of connections.
+     * Registers (i.e. stores) the connection for the given remote remoteAddress.
+     * Once this call finishes every subsequent call to {@link #get(Address)} will return
+     * the relevant {@link Connection} resource.
      *
-     * @return the number of connections.
+     * @param remoteAddress - The remote address to register the connection under
+     * @param connection    - The connection to be registered
+     * @return True if the call was successful
      */
-    default int connectionCount() {
-        return connectionCount(null);
+    default boolean register(Address remoteAddress, ServerConnection connection) {
+        return register(remoteAddress, connection, 0);
     }
 
     /**
@@ -71,9 +75,19 @@ public interface ServerConnectionManager
      *
      * @param remoteAddress - The remote address to register the connection under
      * @param connection    - The connection to be registered
+     * @param planeIndex the the index of the plane
      * @return True if the call was successful
      */
-    boolean register(Address remoteAddress, ServerConnection connection);
+    boolean register(Address remoteAddress, ServerConnection connection, int planeIndex);
+
+    /**
+     * Returns the number of connections.
+     *
+     * @return the number of connections.
+     */
+    default int connectionCount() {
+        return connectionCount(null);
+    }
 
     /**
      * Gets the connection for a given address. If the connection does not exist, it returns null.
@@ -81,7 +95,18 @@ public interface ServerConnectionManager
      * @param address the remote side of the connection
      * @return the found Connection, or none if one doesn't exist
      */
-    ServerConnection get(Address address);
+    default ServerConnection get(Address address) {
+        return get(address, 0);
+    }
+
+    /**
+     * Gets the connection for a given address and streamId. If the connection does not exist, it returns null.
+     *
+     * @param address the remote side of the connection
+     * @param streamId the stream id
+     * @return the found Connection, or none if one doesn't exist
+     */
+    ServerConnection get(Address address, int streamId);
 
     /**
      * Gets the existing connection for a given address or connects.
@@ -96,8 +121,23 @@ public interface ServerConnectionManager
      * @see #getOrConnect(Address, boolean)
      */
     default ServerConnection getOrConnect(Address address) {
-        return getOrConnect(address, false);
+        return getOrConnect(address, false, 0);
     }
+
+    /**
+     * Gets the existing connection for a given address or connects.
+     * <p>
+     * Default implementation is equivalent to calling:
+     * <pre>{@code
+     * getOrConnect(address, false)
+     * }</pre>
+     *
+     * @param address the address to connect to
+     * @param streamId the stream id
+     * @return the found connection, or {@code null} if no connection exists
+     * @see #getOrConnect(Address, boolean)
+     */
+    ServerConnection getOrConnect(Address address, int streamId);
 
     /**
      * Gets the existing connection for a given address. If it does not exist, the system will try to connect
@@ -111,20 +151,24 @@ public interface ServerConnectionManager
      *                 otherwise errors are not reported and logged on debug level
      * @return the existing connection
      */
-    ServerConnection getOrConnect(Address address, boolean silent);
+    default ServerConnection getOrConnect(Address address, boolean silent) {
+        return getOrConnect(address, silent, 0);
+    }
 
     /**
-     * Transmits a packet to a certain connection.
+     * Gets the existing connection for a given address. If it does not exist, the system will try to connect
+     * asynchronously. In this case, it returns {@code null}.
      * <p>
-     * If this method is called with a {@code null} connection, the call returns {@code false}.
+     * When the connection is established at some point in time, it can be retrieved using the
+     * {@link #get(Address)}.
      *
-     * @param packet     the packet to transmit
-     * @param connection he connection to where the Packet should be transmitted
-     * @return {@code true} if the transmit was a success, {@code false} if a failure (there is no guarantee that the packet is
-     * actually going to be received since the packet perhaps is stuck in some buffer; it just means that it's buffered somewhere)
-     * @throws NullPointerException if the packet is {@code null}
+     * @param address the address to connect to
+     * @param silent   connection errors are reported to error handler and logged on info level when {@code false},
+     *                 otherwise errors are not reported and logged on debug level
+     * @param streamId the stream id
+     * @return the existing connection
      */
-    boolean transmit(Packet packet, ServerConnection connection);
+    ServerConnection getOrConnect(Address address, boolean silent, int streamId);
 
     /**
      * Transmits a packet to a certain address.
@@ -136,9 +180,24 @@ public interface ServerConnectionManager
      * @param target The address of the target machine where the Packet should be transmitted.
      * @return true if the transmit was a success, false if a failure.
      * @throws NullPointerException if packet or target is null.
-     * @see #transmit(Packet, ServerConnection)
      */
-    boolean transmit(Packet packet, Address target);
+    default boolean transmit(Packet packet, Address target) {
+        return transmit(packet, target, 0);
+    }
+
+    /**
+     * Transmits a packet to a certain address.
+     * <p>
+     * If the connection to the target doesn't exist yet, the system will try to make the connection. In this case
+     * true can be returned, even though the connection eventually can't be established.
+     *
+     * @param packet The Packet to transmit.
+     * @param target The address of the target machine where the Packet should be transmitted.
+     * @param streamId the stream id
+     * @return true if the transmit was a success, false if a failure.
+     * @throws NullPointerException if packet or target is null.
+     */
+    boolean transmit(Packet packet, Address target, int streamId);
 
     /**
      * Returns network stats for inbound and outbound traffic.
