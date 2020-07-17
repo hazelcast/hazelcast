@@ -74,7 +74,7 @@ cache, then there's an extra query from the cache to the RDBMS when it's
 needed by the app.
 This is a net loss of resources.
 2. If an item is updated in the RDBMS, but its TTL has not been reached
-yet, then the cache will return the state data.
+yet, then the cache will return the stale data.
 This defeats the purpose.
 
 With longer TTL, we avoid unnecessary round trips but return more stale
