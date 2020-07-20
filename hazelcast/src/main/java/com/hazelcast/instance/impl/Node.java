@@ -820,14 +820,14 @@ public class Node {
         join.verify();
 
         if (shouldUseMulticastJoiner(join)) {
-            logger.info("Creating MulticastJoiner");
+            logger.info("Using Multicast discovery");
             return new MulticastJoiner(this);
         } else if (join.getTcpIpConfig().isEnabled()) {
-            logger.info("Creating TcpIpJoiner");
+            logger.info("Using TCP/IP discovery");
             return new TcpIpJoiner(this);
         } else if (properties.getBoolean(DISCOVERY_SPI_ENABLED) || isAnyAliasedConfigEnabled(join)
                 || join.isAutoDetectionEnabled()) {
-            logger.info("Activating Discovery SPI Joiner");
+            logger.info("Using Discovery SPI");
             return new DiscoveryJoiner(this, discoveryService, usePublicAddress(join));
         }
         return null;
