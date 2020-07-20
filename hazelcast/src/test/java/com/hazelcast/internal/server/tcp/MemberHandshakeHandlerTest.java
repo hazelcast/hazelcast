@@ -210,7 +210,7 @@ public class MemberHandshakeHandlerTest {
     }
 
     private Packet bindMessage() {
-        MemberHandshake handshake = new MemberHandshake(SCHEMA_VERSION_2, localAddresses, new Address(CLIENT_SOCKET_ADDRESS), reply, uuid, 0, 1);
+        MemberHandshake handshake = new MemberHandshake(SCHEMA_VERSION_2, localAddresses, new Address(CLIENT_SOCKET_ADDRESS), reply, uuid);
 
         Packet packet = new Packet(serializationService.toBytes(handshake));
         TcpServerConnection connection = new TcpServerConnection(connectionManager, mock(ConnectionLifecycleListener.class), 1, channel);
