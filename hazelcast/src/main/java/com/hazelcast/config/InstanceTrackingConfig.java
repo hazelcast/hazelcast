@@ -109,9 +109,9 @@ public class InstanceTrackingConfig {
      * Returns the pattern used to render the contents of the instance tracking file.
      * It may contain placeholders for properties listed in the
      * {@link InstanceTrackingProperties} enum. The placeholders are defined by
-     * a $HZ_IT&#123; prefix and followed by &#125;. For instance, a placeholder for
+     * a $HZ_INSTANCE_TRACKING&#123; prefix and followed by &#125;. For instance, a placeholder for
      * the {@link InstanceTrackingProperties#START_TIMESTAMP}
-     * would be $&#123;start_timestamp&#125;.
+     * would be $HZ_INSTANCE_TRACKING&#123;start_timestamp&#125;.
      * <p>
      * The placeholders are resolved in a fail-safe manner. Any incorrect syntax
      * is ignored and only the known properties are resolved, placeholders for
@@ -133,9 +133,9 @@ public class InstanceTrackingConfig {
      * Sets the pattern used to render the contents of the instance tracking file.
      * It may contain placeholders for properties listed in the
      * {@link InstanceTrackingProperties} enum. The placeholders are defined by
-     * a $&#123; prefix and followed by &#125;. For instance, a placeholder for
+     * a $HZ_INSTANCE_TRACKING&#123; prefix and followed by &#125;. For instance, a placeholder for
      * the {@link InstanceTrackingProperties#START_TIMESTAMP}
-     * would be $&#123;start_timestamp&#125;.
+     * would be $HZ_INSTANCE_TRACKING&#123;start_timestamp&#125;.
      * <p>
      * The placeholders are resolved in a fail-safe manner. Any incorrect syntax
      * is ignored and only the known properties are resolved, placeholders for

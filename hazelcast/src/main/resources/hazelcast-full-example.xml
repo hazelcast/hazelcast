@@ -3488,7 +3488,8 @@
 
   -->
     <instance-tracking enabled="false">
-
+        <file-name>hazelcast.process</file-name>
+        <format-pattern>$HZ_INSTANCE_TRACKING{product}:$HZ_INSTANCE_TRACKING{version}</format-pattern>
     </instance-tracking>
 
     <!--

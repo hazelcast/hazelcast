@@ -906,3 +906,5 @@ hazelcast-client:
   #
   instance-tracking:
     enabled: false
+    file-name: hazelcast.process
+    format-pattern: $HZ_INSTANCE_TRACKING{product}:$HZ_INSTANCE_TRACKING{version}
