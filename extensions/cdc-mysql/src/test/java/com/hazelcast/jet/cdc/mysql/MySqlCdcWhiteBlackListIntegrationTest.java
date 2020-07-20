@@ -323,13 +323,13 @@ public class MySqlCdcWhiteBlackListIntegrationTest extends AbstractMySqlCdcInteg
 
             id = dbSuffix * 1000 + 4;
             statement.addBatch("INSERT INTO table0 VALUES (" + id + ", '" + database + "_table0_val1_3', "
-                            + "'" + database + "_table0_val2_3', '" + database + "_table0_val3_3')");
+                    + "'" + database + "_table0_val2_3', '" + database + "_table0_val3_3')");
             id = dbSuffix * 1000 + 100 + 4;
             statement.addBatch("INSERT INTO table1 VALUES (" + id + ", '" + database + "_table1_val1_3', "
-                            + "'" + database + "_table1_val2_3', '" + database + "_table1_val3_3')");
+                    + "'" + database + "_table1_val2_3', '" + database + "_table1_val3_3')");
             id = dbSuffix * 1000 + 200 + 4;
             statement.addBatch("INSERT INTO table2 VALUES (" + id + ", '" + database + "_table2_val1_3', "
-                            + "'" + database + "_table2_val2_3', '" + database + "_table2_val3_3')");
+                    + "'" + database + "_table2_val2_3', '" + database + "_table2_val3_3')");
 
             id = dbSuffix * 1000 + 4;
             statement.addBatch("DELETE FROM table0 WHERE id=" + id);
