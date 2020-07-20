@@ -56,7 +56,6 @@ import com.hazelcast.internal.nio.ConnectionListener;
 import com.hazelcast.internal.nio.ConnectionType;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.util.AddressUtil;
-import com.hazelcast.internal.util.ConcurrencyUtil;
 import com.hazelcast.internal.util.EmptyStatement;
 import com.hazelcast.internal.util.RuntimeAvailableProcessors;
 import com.hazelcast.internal.util.UuidUtil;
@@ -76,7 +75,6 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.SocketAddress;
-import java.net.UnknownHostException;
 import java.nio.channels.SocketChannel;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -126,7 +124,6 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
     private final ILogger logger;
     private final int connectionTimeoutMillis;
     private final HazelcastClientInstanceImpl client;
-    private final ConcurrentMap<Address, InetSocketAddress> inetSocketAddressCache = new ConcurrentHashMap<>();
     private final Collection<ConnectionListener> connectionListeners = new CopyOnWriteArrayList<>();
     private final NioNetworking networking;
     private final HeartbeatManager heartbeat;
@@ -156,6 +153,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
     private volatile UUID clusterId;
     private volatile ClientState clientState = ClientState.INITIAL;
     private volatile boolean connectToClusterTaskSubmitted;
+    private volatile boolean switchingToNextCluster;
 
     private enum ClientState {
         /**
@@ -199,13 +197,12 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         this.authenticationTimeout = heartbeat.getHeartbeatTimeout();
         this.failoverConfigProvided = client.getFailoverConfig() != null;
         this.executor = createExecutorService();
-        this.shuffleMemberList = client.getProperties().getBoolean(SHUFFLE_MEMBER_LIST);
         this.clusterDiscoveryService = client.getClusterDiscoveryService();
-        this.isSmartRoutingEnabled = client.getClientConfig().getNetworkConfig().isSmartRouting();
         this.waitStrategy = initializeWaitStrategy(client.getClientConfig());
-        ClientConnectionStrategyConfig connectionStrategyConfig = client.getClientConfig().getConnectionStrategyConfig();
-        this.asyncStart = connectionStrategyConfig.isAsyncStart();
-        this.reconnectMode = connectionStrategyConfig.getReconnectMode();
+        this.shuffleMemberList = client.getProperties().getBoolean(SHUFFLE_MEMBER_LIST);
+        this.isSmartRoutingEnabled = client.getClientConfig().getNetworkConfig().isSmartRouting();
+        this.asyncStart = client.getClientConfig().getConnectionStrategyConfig().isAsyncStart();
+        this.reconnectMode = client.getClientConfig().getConnectionStrategyConfig().getReconnectMode();
     }
 
     private int initConnectionTimeoutMillis() {
@@ -410,7 +407,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         ((ClientLoggingService) client.getLoggingService()).updateClusterName(nextContext.getClusterName());
 
         logger.info("Trying to connect to next cluster: " + nextContext.getClusterName());
-
+        switchingToNextCluster = true;
         if (doConnectToCandidateCluster(nextContext)) {
             client.waitForInitialMembershipEvents();
             fireLifecycleEvent(CLIENT_CHANGED_CLUSTER);
@@ -660,7 +657,9 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
             ChannelInitializerProvider channelInitializer = currentClusterContext.getChannelInitializerProvider();
             Channel channel = networking.register(null, channelInitializer, socketChannel, true);
             channel.attributeMap().put(Address.class, target);
-            channel.connect(resolveAddress(target), connectionTimeoutMillis);
+
+            InetSocketAddress inetSocketAddress = new InetSocketAddress(target.getInetAddress(), target.getPort());
+            channel.connect(inetSocketAddress, connectionTimeoutMillis);
 
             ClientConnection connection = new ClientConnection(client, connectionIdGen.incrementAndGet(), channel);
 
@@ -756,8 +755,6 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         for (ClientConnection activeConnection : activeConnections.values()) {
             activeConnection.close(null, new TargetDisconnectedException("Closing since client is switching cluster"));
         }
-
-        inetSocketAddressCache.clear();
     }
 
     @Override
@@ -838,18 +835,18 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
                 logger.fine("Checking the cluster: " + newClusterId + ", current cluster: " + this.clusterId);
             }
 
-            boolean initialConnection = activeConnections.isEmpty();
-            boolean changedCluster = initialConnection && this.clusterId != null && !newClusterId.equals(this.clusterId);
-            if (changedCluster) {
+            boolean clusterIdChanged = this.clusterId != null && !newClusterId.equals(this.clusterId);
+            if (clusterIdChanged) {
+                checkClientStateOnClusterIdChange(connection);
                 logger.warning("Switching from current cluster: " + this.clusterId + " to new cluster: " + newClusterId);
                 client.onClusterRestart();
             }
 
+            boolean connectionsEmpty = activeConnections.isEmpty();
             activeConnections.put(response.memberUuid, connection);
-
-            if (initialConnection) {
+            if (connectionsEmpty) {
                 clusterId = newClusterId;
-                if (changedCluster) {
+                if (clusterIdChanged) {
                     clientState = ClientState.CONNECTED_TO_CLUSTER;
                     executor.execute(() -> initializeClientOnCluster(newClusterId));
                 } else {
@@ -874,6 +871,30 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
             onConnectionClose(connection);
         }
         return connection;
+    }
+
+    private void checkClientStateOnClusterIdChange(ClientConnection connection) {
+        if (activeConnections.isEmpty()) {
+            //We only have single connection established
+            if (failoverConfigProvided) {
+                //If failover is provided, and this single connection is established after failover logic kicks in
+                // (checked via `switchingToNextCluster`), then it is OK to continue. Otherwise, we force the failover logic
+                // to be used by throwing `ClientNotAllowedInClusterException`
+                if (switchingToNextCluster) {
+                    switchingToNextCluster = false;
+                } else {
+                    String reason = "Force to hard cluster switch";
+                    connection.close(reason, null);
+                    throw new ClientNotAllowedInClusterException(reason);
+                }
+            }
+        } else {
+            //If there are other connections that means we have a connection to wrong cluster.
+            //We should not stay connected.
+            String reason = "Connection does not belong to this cluster";
+            connection.close(reason, null);
+            throw new IllegalStateException(reason);
+        }
     }
 
     private ClientMessage encodeAuthenticationRequest() {
@@ -916,16 +937,6 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
                     + "Expected partition count: " + partitionService.getPartitionCount()
                     + ", Member partition count: " + newPartitionCount);
         }
-    }
-
-    private InetSocketAddress resolveAddress(Address target) {
-        return ConcurrencyUtil.getOrPutIfAbsent(inetSocketAddressCache, target, arg -> {
-            try {
-                return new InetSocketAddress(target.getInetAddress(), target.getPort());
-            } catch (UnknownHostException e) {
-                throw rethrow(e);
-            }
-        });
     }
 
     private void initializeClientOnCluster(UUID targetClusterId) {
