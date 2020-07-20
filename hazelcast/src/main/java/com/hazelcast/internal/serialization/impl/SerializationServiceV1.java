@@ -276,7 +276,7 @@ public class SerializationServiceV1 extends AbstractSerializationService {
                         + factoryId + ", class-id " + classId);
             }
             if (fd.getType() == FieldType.PORTABLE || fd.getType() == FieldType.PORTABLE_ARRAY) {
-                ClassDefinition nestedCd = ((FieldDefinitionImpl)fd).getClassDefinition();
+                ClassDefinition nestedCd = ((FieldDefinitionImpl) fd).getClassDefinition();
                 if (nestedCd != null) {
                     registerClassDefinition(nestedCd, checkClassDefErrors);
                     portableContext.registerClassDefinition(nestedCd);

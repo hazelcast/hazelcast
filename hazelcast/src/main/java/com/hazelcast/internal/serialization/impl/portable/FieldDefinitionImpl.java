@@ -34,7 +34,8 @@ public class FieldDefinitionImpl implements FieldDefinition {
         this(index, fieldName, type, 0, 0, version, null);
     }
 
-    public FieldDefinitionImpl(int index, String fieldName, FieldType type, int factoryId, int classId, int version, ClassDefinition cd) {
+    public FieldDefinitionImpl(int index, String fieldName, FieldType type, int factoryId,
+                               int classId, int version, ClassDefinition cd) {
         this.classId = classId;
         this.type = type;
         this.fieldName = fieldName;

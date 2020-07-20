@@ -188,11 +188,10 @@ public class PortableTest {
         SerializationConfig serializationConfig = new SerializationConfig();
         serializationConfig.addPortableFactory(PORTABLE_FACTORY_ID, new TestPortableFactory());
         serializationConfig.setPortableVersion(1);
-        serializationConfig
-                .addClassDefinition(
-                        new ClassDefinitionBuilder(PORTABLE_FACTORY_ID, TestSerializationConstants.RAW_DATA_PORTABLE, 1)
-                                .addLongField("l").addCharArrayField("c").addPortableField("p", createNamedPortableClassDefinition(1)).build());
-
+        serializationConfig.addClassDefinition(
+        new ClassDefinitionBuilder(PORTABLE_FACTORY_ID, TestSerializationConstants.RAW_DATA_PORTABLE, 1)
+                .addLongField("l").addCharArrayField("c").addPortableField("p",
+                createNamedPortableClassDefinition(1)).build());
         try {
             new DefaultSerializationServiceBuilder().setConfig(serializationConfig).build();
             fail("Should throw HazelcastSerializationException!");

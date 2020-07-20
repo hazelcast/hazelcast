@@ -27,7 +27,6 @@ import java.util.Set;
  */
 public interface ClassDefinition {
 
-
     /**
      * Gets the FieldDefinition for a particular field.
      *
