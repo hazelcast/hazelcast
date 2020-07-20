@@ -34,6 +34,7 @@
     </parent>
 
     <modules>
+        <module>cdc</module>
         <module>co-group</module>
         <module>early-window-results</module>
         <module>elastic</module>

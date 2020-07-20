@@ -156,6 +156,7 @@ samples using the Core API.
   - variant with [Avro Serialization](hadoop/src/main/java/com/hazelcast/jet/examples/hadoop/avro/HadoopAvro.java)
 - [JDBC Source](jdbc/src/main/java/com/hazelcast/jet/examples/jdbc/JdbcSource.java)
 - [JDBC Sink](jdbc/src/main/java/com/hazelcast/jet/examples/jdbc/JdbcSink.java)
+- [Change Data Capture](cdc/src/main/java/com/hazelcast/jet/examples/cdc/Cache.java)
 - [JMS Queue Source and Sink](jms/src/main/java/com/hazelcast/jet/examples/jms/JmsQueueSample.java)
 - [JMS Topic Source and Sink](jms/src/main/java/com/hazelcast/jet/examples/jms/JmsTopicSample.java)
 - [Python Mapping Function](python/src/main/java/com/hazelcast/jet/examples/python/Python.java)
