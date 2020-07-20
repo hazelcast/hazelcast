@@ -24,8 +24,6 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
-import java.util.List;
-import java.util.ArrayList;
 
 public class ClassDefinitionImpl implements ClassDefinition {
 
@@ -33,7 +31,6 @@ public class ClassDefinitionImpl implements ClassDefinition {
     private final int classId;
     private int version = -1;
     private final Map<String, FieldDefinition> fieldDefinitionsMap = new LinkedHashMap<String, FieldDefinition>();
-    private final List<ClassDefinition> nestedClassDefinitions = new ArrayList<ClassDefinition>();
 
     public ClassDefinitionImpl(int factoryId, int classId, int version) {
         this.factoryId = factoryId;
@@ -43,18 +40,6 @@ public class ClassDefinitionImpl implements ClassDefinition {
 
     public void addFieldDef(FieldDefinitionImpl fd) {
         fieldDefinitionsMap.put(fd.getName(), fd);
-    }
-
-    public void addNestedClassDef(ClassDefinition ncd) {
-        nestedClassDefinitions.add(ncd);
-    }
-
-    public List<ClassDefinition> getNestedClassDefinitions() {
-        return nestedClassDefinitions;
-    }
-
-    public void removeFieldDef(FieldDefinition fd) {
-        fieldDefinitionsMap.remove(fd.getName(), fd);
     }
 
     @Override
@@ -106,10 +91,6 @@ public class ClassDefinitionImpl implements ClassDefinition {
     @Override
     public int getFieldCount() {
         return fieldDefinitionsMap.size();
-    }
-
-    public int getNestedClassDefCount() {
-        return nestedClassDefinitions.size();
     }
 
     @Override

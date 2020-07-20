@@ -35,7 +35,6 @@ public final class ClassDefinitionBuilder {
     private final int classId;
     private final int version;
     private final List<FieldDefinitionImpl> fieldDefinitions = new ArrayList<FieldDefinitionImpl>();
-    private final List<ClassDefinition> nestedClassDefinitions = new ArrayList<ClassDefinition>();
 
     private int index;
     private boolean done;
@@ -182,9 +181,6 @@ public final class ClassDefinitionBuilder {
         }
         fieldDefinitions.add(new FieldDefinitionImpl(index++, fieldName,
                 FieldType.PORTABLE, def.getFactoryId(), def.getClassId(), def.getVersion(), def));
-        if (def.getClassId() != classId) {
-            nestedClassDefinitions.add(def);
-        }
         return this;
     }
 
@@ -195,9 +191,6 @@ public final class ClassDefinitionBuilder {
         }
         fieldDefinitions.add(new FieldDefinitionImpl(index++, fieldName,
                 FieldType.PORTABLE_ARRAY, def.getFactoryId(), def.getClassId(), def.getVersion(), def));
-        if (def.getClassId() != classId) {
-            nestedClassDefinitions.add(def);
-        }
         return this;
     }
 
@@ -216,9 +209,6 @@ public final class ClassDefinitionBuilder {
         final ClassDefinitionImpl cd = new ClassDefinitionImpl(factoryId, classId, version);
         for (FieldDefinitionImpl fd : fieldDefinitions) {
             cd.addFieldDef(fd);
-        }
-        for (ClassDefinition ncd : nestedClassDefinitions) {
-            cd.addNestedClassDef(ncd);
         }
         return cd;
     }
