@@ -343,7 +343,7 @@ config.getPartitionGroupConfig()
 
 ## Autoscaling
 
-Hazelcast is prepared to work correctly within the autoscaling environments. Note that there are two specific requirements to prevent Hazelcast data:
+Hazelcast is prepared to work correctly within the autoscaling environments. Note that there are two specific requirements to prevent Hazelcast from losing data:
 * the number of members must change by 1 at the time
 * when a member is launched or terminated, the cluster must be in the safe state
 
