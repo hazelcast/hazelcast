@@ -23,6 +23,7 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -40,6 +41,7 @@ import static java.util.Collections.singletonMap;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public class KubernetesClientTest {
     private static final String KUBERNETES_MASTER_IP = "localhost";
@@ -748,5 +750,11 @@ public class KubernetesClientTest {
 
     private static String toString(String ip, Integer port, boolean isReady) {
         return String.format("%s:%s:%s", ip, port, isReady);
+    }
+
+    @Test
+    public void rbacYamlFileExists() {
+        // rbac.yaml file is mentioned in logs, so the file must exist in the repo
+        assertTrue(new File("rbac.yaml").exists());
     }
 }
