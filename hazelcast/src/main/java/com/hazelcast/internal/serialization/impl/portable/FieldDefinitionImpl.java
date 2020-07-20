@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.serialization.impl.portable;
 
+import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.FieldDefinition;
 import com.hazelcast.nio.serialization.FieldType;
 
@@ -27,9 +28,20 @@ public class FieldDefinitionImpl implements FieldDefinition {
     private final int classId;
     private final int factoryId;
     private final int version;
+    private final ClassDefinition classDefinition;
 
     public FieldDefinitionImpl(int index, String fieldName, FieldType type, int version) {
-        this(index, fieldName, type, 0, 0, version);
+        this(index, fieldName, type, 0, 0, version, null);
+    }
+
+    public FieldDefinitionImpl(int index, String fieldName, FieldType type, int factoryId, int classId, int version, ClassDefinition cd) {
+        this.classId = classId;
+        this.type = type;
+        this.fieldName = fieldName;
+        this.index = index;
+        this.factoryId = factoryId;
+        this.version = version;
+        this.classDefinition = cd ;
     }
 
     public FieldDefinitionImpl(int index, String fieldName, FieldType type, int factoryId, int classId, int version) {
@@ -39,6 +51,7 @@ public class FieldDefinitionImpl implements FieldDefinition {
         this.index = index;
         this.factoryId = factoryId;
         this.version = version;
+        this.classDefinition = null ;
     }
 
     @Override
@@ -69,6 +82,10 @@ public class FieldDefinitionImpl implements FieldDefinition {
     @Override
     public int getVersion() {
         return version;
+    }
+
+    public ClassDefinition getClassDefinition() {
+        return classDefinition;
     }
 
     @Override
