@@ -47,7 +47,7 @@ import static org.junit.Assert.assertTrue;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class MemberHandshakeTest {
 
-    private MemberHandshake handshake;
+    private MemberHandshake originalHandshake;
     private SerializationService serializationService;
     private Address targetAddress;
     private UUID uuid;
@@ -60,27 +60,48 @@ public class MemberHandshakeTest {
     }
 
     @Test
-    public void testSerialization_withMultipleLocalAddresses() throws Exception {
-        handshake = new MemberHandshake(SCHEMA_VERSION_2, localAddresses(), targetAddress, true, uuid, 0, 1);
+    public void testOptions() throws Exception {
+        originalHandshake = new MemberHandshake(SCHEMA_VERSION_2, localAddresses(), targetAddress, true, uuid)
+                .addOption("foo", 1)
+                .addOption("bar", 2);
+
+        MemberHandshake clonedHandshake = cloneHandshake(originalHandshake);
+        assertEquals(SCHEMA_VERSION_2, clonedHandshake.getSchemaVersion());
+        assertEquals(localAddresses(), clonedHandshake.getLocalAddresses());
+        assertEquals(targetAddress, clonedHandshake.getTargetAddress());
+        assertTrue(clonedHandshake.isReply());
+        assertEquals(uuid, clonedHandshake.getUuid());
+        assertEquals(1, clonedHandshake.getIntOption("foo", -1));
+        assertEquals(2, clonedHandshake.getIntOption("bar", -1));
+    }
+
+    public MemberHandshake cloneHandshake(MemberHandshake handshake) {
         Data serialized = serializationService.toData(handshake);
-        MemberHandshake deserialized = serializationService.toObject(serialized);
-        assertEquals(SCHEMA_VERSION_2, deserialized.getSchemaVersion());
-        assertEquals(localAddresses(), deserialized.getLocalAddresses());
-        assertEquals(targetAddress, deserialized.getTargetAddress());
-        assertTrue(deserialized.isReply());
-        assertEquals(uuid, deserialized.getUuid());
+        return serializationService.toObject(serialized);
+    }
+
+    @Test
+    public void testSerialization_withMultipleLocalAddresses() throws Exception {
+        originalHandshake = new MemberHandshake(SCHEMA_VERSION_2, localAddresses(), targetAddress, true, uuid);
+        MemberHandshake clonedHandshake = cloneHandshake(originalHandshake);
+
+        assertEquals(SCHEMA_VERSION_2, clonedHandshake.getSchemaVersion());
+        assertEquals(localAddresses(), clonedHandshake.getLocalAddresses());
+        assertEquals(targetAddress, clonedHandshake.getTargetAddress());
+        assertTrue(clonedHandshake.isReply());
+        assertEquals(uuid, clonedHandshake.getUuid());
     }
 
     @Test
     public void testSerialization_whenMemberHandshakeEmpty() {
-        handshake = new MemberHandshake();
-        Data serialized = serializationService.toData(handshake);
-        MemberHandshake deserialized = serializationService.toObject(serialized);
-        assertEquals(0, deserialized.getSchemaVersion());
-        assertTrue(deserialized.getLocalAddresses().isEmpty());
-        assertNull(null, deserialized.getTargetAddress());
-        assertFalse(deserialized.isReply());
-        assertNull(deserialized.getUuid());
+        originalHandshake = new MemberHandshake();
+        MemberHandshake clonedHandshake = cloneHandshake(originalHandshake);
+
+        assertEquals(0, clonedHandshake.getSchemaVersion());
+        assertTrue(clonedHandshake.getLocalAddresses().isEmpty());
+        assertNull(null, clonedHandshake.getTargetAddress());
+        assertFalse(clonedHandshake.isReply());
+        assertNull(clonedHandshake.getUuid());
     }
 
     Map<ProtocolType, Collection<Address>> localAddresses() throws Exception {

@@ -26,6 +26,7 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumMap;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
@@ -44,6 +45,11 @@ import static com.hazelcast.internal.util.UUIDSerializationUtil.writeUUID;
  * schema version so it can be extended in future versions without having
  * to use another packet type.
  *
+ * <h1>Options</h1>
+ * Since 4.1 it is possible to add options to the MemberHandshake without breaking
+ * the protocol in the form of options which effectively is a map with keys and values
+ * of type string.
+ *
  * @since 3.12
  */
 public class MemberHandshake
@@ -52,13 +58,15 @@ public class MemberHandshake
     public static final byte SCHEMA_VERSION_1 = (byte) 1;
     public static final byte SCHEMA_VERSION_2 = (byte) 2;
 
+    public static final String OPTION_PLANE_COUNT = "planeCount";
+    public static final String OPTION_PLANE_INDEX = "planeIndex";
+
     private byte schemaVersion;
     private Map<ProtocolType, Collection<Address>> localAddresses;
     private Address targetAddress;
     private boolean reply;
     private UUID uuid;
-    private int planeCount;
-    private int planeIndex;
+    private final Map<String, String> options = new HashMap<>();
 
     public MemberHandshake() {
     }
@@ -67,24 +75,30 @@ public class MemberHandshake
                            Map<ProtocolType, Collection<Address>> localAddresses,
                            Address targetAddress,
                            boolean reply,
-                           UUID uuid,
-                           int planeIndex,
-                           int planeCount) {
+                           UUID uuid) {
         this.schemaVersion = schemaVersion;
         this.localAddresses = new EnumMap<>(localAddresses);
         this.targetAddress = targetAddress;
         this.reply = reply;
         this.uuid = uuid;
-        this.planeIndex = planeIndex;
-        this.planeCount = planeCount;
     }
 
-    public int getPlaneIndex() {
-        return planeIndex;
+    public MemberHandshake addOption(String key, Object value) {
+        options.put(key, "" + value);
+        return this;
+    }
+
+    public int getIntOption(String key, int defaultValue) {
+        String value = options.get(key);
+        return value == null ? defaultValue : Integer.parseInt(value);
     }
 
     public int getPlaneCount() {
-        return planeCount;
+        return getIntOption(OPTION_PLANE_COUNT, 1);
+    }
+
+    public int getPlaneIndex() {
+        return getIntOption(OPTION_PLANE_INDEX, 0);
     }
 
     byte getSchemaVersion() {
@@ -132,8 +146,14 @@ public class MemberHandshake
             }
         }
 
-        out.writeInt(planeIndex);
-        out.writeInt(planeCount);
+        int optionsSize = options.size();
+        out.writeInt(optionsSize);
+        if (optionsSize > 0) {
+            for (Map.Entry<String, String> entry : options.entrySet()) {
+                out.writeUTF(entry.getKey());
+                out.writeUTF(entry.getValue());
+            }
+        }
     }
 
     @Override
@@ -154,13 +174,12 @@ public class MemberHandshake
             }
             this.localAddresses = addressesPerProtocolType;
         }
-        if (schemaVersion == SCHEMA_VERSION_1) {
-            // with this schema, the planeCount/planeIndex are not available so we assume it is a single plane system.
-            this.planeCount = 1;
-            this.planeIndex = 0;
-        } else {
-            this.planeIndex = in.readInt();
-            this.planeCount = in.readInt();
+
+        if (schemaVersion > SCHEMA_VERSION_1) {
+            int optionsSize = in.readInt();
+            for (int k = 0; k < optionsSize; k++) {
+                options.put(in.readUTF(), in.readUTF());
+            }
         }
     }
 
@@ -172,8 +191,7 @@ public class MemberHandshake
                 + ", targetAddress=" + targetAddress
                 + ", reply=" + reply
                 + ", uuid=" + uuid
-                + ", planeIndex=" + planeIndex
-                + ", planeCount=" + planeCount
+                + ", options=" + options
                 + '}';
     }
 }
