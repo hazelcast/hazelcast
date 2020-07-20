@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Submits the task to partition for execution, partition is chosen based on multiple criteria of the given task.
  */
-@Generated("a31984a9e4794c14fb57646073c88772")
+@Generated("97cd798c27e5bb41faa3c075bda867e9")
 public final class ScheduledExecutorSubmitToPartitionCodec {
     //hex: 0x1A0200
     public static final int REQUEST_MESSAGE_TYPE = 1704448;
@@ -86,7 +86,7 @@ public final class ScheduledExecutorSubmitToPartitionCodec {
         public long periodInMillis;
 
         /**
-         * * A boolean flag to indicate whether the task should be destroyed automatically after execution.
+         * A boolean flag to indicate whether the task should be destroyed automatically after execution.
          */
         public boolean autoDisposable;
 
