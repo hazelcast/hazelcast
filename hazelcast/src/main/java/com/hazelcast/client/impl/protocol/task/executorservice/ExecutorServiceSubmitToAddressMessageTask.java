@@ -26,6 +26,7 @@ import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.security.SecurityContext;
+import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.spi.impl.operationservice.InvocationBuilder;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
@@ -33,6 +34,8 @@ import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import javax.security.auth.Subject;
 import java.security.Permission;
 import java.util.concurrent.Callable;
+
+import static java.lang.String.format;
 
 public class ExecutorServiceSubmitToAddressMessageTask
         extends AbstractInvocationMessageTask<ExecutorServiceSubmitToMemberCodec.RequestParameters> {
@@ -45,6 +48,9 @@ public class ExecutorServiceSubmitToAddressMessageTask
     protected InvocationBuilder getInvocationBuilder(Operation op) {
         final OperationServiceImpl operationService = nodeEngine.getOperationService();
         Member member = nodeEngine.getClusterService().getMember(parameters.memberUUID);
+        if (member == null) {
+            throw new TargetNotMemberException(format("Member with uuid(%s) is not in member list ", parameters.memberUUID));
+        }
         return operationService.createInvocationBuilder(getServiceName(), op, member.getAddress());
     }
 

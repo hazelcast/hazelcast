@@ -27,12 +27,12 @@ import com.hazelcast.instance.impl.NodeState;
 import com.hazelcast.internal.cluster.ClusterClock;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.nio.Connection;
-import com.hazelcast.internal.server.ServerConnectionManager;
-import com.hazelcast.internal.server.Server;
 import com.hazelcast.internal.nio.Packet;
-import com.hazelcast.internal.server.ServerConnection;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.server.Server;
+import com.hazelcast.internal.server.ServerConnection;
+import com.hazelcast.internal.server.ServerConnectionManager;
 import com.hazelcast.internal.util.Clock;
 import com.hazelcast.internal.util.counters.MwCounter;
 import com.hazelcast.internal.util.executor.ManagedExecutorService;
@@ -601,9 +601,16 @@ public abstract class Invocation<T> extends BaseInvocation implements OperationR
     private void doInvokeRemote() {
         assert connectionManager != null : "Endpoint manager was null";
 
-        ServerConnection connection = connectionManager.getOrConnect(targetAddress);
+        ServerConnection connection = connectionManager.getOrConnect(targetAddress, op.getPartitionId());
         this.connection = connection;
-        if (!context.outboundOperationHandler.send(op, connection)) {
+        boolean write;
+        if (connection != null) {
+            write = context.outboundOperationHandler.send(op, connection);
+        } else {
+            write = context.outboundOperationHandler.send(op, targetAddress);
+        }
+
+        if (!write) {
             notifyError(new RetryableIOException(getPacketNotSentMessage(connection)));
         }
     }

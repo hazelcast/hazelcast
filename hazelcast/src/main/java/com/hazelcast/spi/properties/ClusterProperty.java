@@ -55,6 +55,14 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 public final class ClusterProperty {
 
     /**
+     * Number of parallel connection between members.
+     *
+     * There is no point in having more connections than IO threads.
+     */
+    public static final HazelcastProperty CHANNEL_COUNT
+            = new HazelcastProperty("tcp.channels.per.connection", 1);
+
+    /**
      * Total number of partitions in the Hazelcast cluster.
      */
     public static final HazelcastProperty PARTITION_COUNT
