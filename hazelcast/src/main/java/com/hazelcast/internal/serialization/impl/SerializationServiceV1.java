@@ -47,7 +47,11 @@ import com.hazelcast.internal.serialization.impl.defaultserializers.PriorityQueu
 import com.hazelcast.internal.serialization.impl.defaultserializers.SynchronousQueueStreamSerializer;
 import com.hazelcast.internal.serialization.impl.defaultserializers.TreeMapStreamSerializer;
 import com.hazelcast.internal.serialization.impl.defaultserializers.TreeSetStreamSerializer;
-import com.hazelcast.internal.serialization.impl.portable.*;
+import com.hazelcast.internal.serialization.impl.portable.PortableContext;
+import com.hazelcast.internal.serialization.impl.portable.PortableContextImpl;
+import com.hazelcast.internal.serialization.impl.portable.PortableHookLoader;
+import com.hazelcast.internal.serialization.impl.portable.PortableSerializer;
+import com.hazelcast.internal.serialization.impl.portable.FieldDefinitionImpl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.ClassNameFilter;
