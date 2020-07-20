@@ -281,7 +281,9 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
         AbstractMapTable table = rel.getMap();
 
         if (((PartitionedMapTable) table).nativeMemoryEnabled()) {
-            throw QueryException.error("Cannot query IMap " + table.getName() + " with InMemoryFormat.NATIVE because it does not have indexes (please add at least one index to query this IMap)");
+            throw QueryException.error("Cannot query IMap " + table.getName()
+                    + " with InMemoryFormat.NATIVE because it does not have indexes "
+                    + "(please add at least one index to query this IMap)");
         }
 
         HazelcastTable hazelcastTable = rel.getTableUnwrapped();
