@@ -100,7 +100,9 @@ class BackpressureRegulator {
                                 OPERATION_BACKUP_TIMEOUT_MILLIS.getName()));
             }
         } else {
-            logger.info("Backpressure is disabled");
+            if (logger.isFineEnabled()) {
+                logger.fine("Backpressure is disabled");
+            }
         }
     }
 
