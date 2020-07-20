@@ -43,6 +43,7 @@ public final class HazelcastMemberStarter {
      * @param args none
      */
     public static void main(String[] args) throws FileNotFoundException, UnsupportedEncodingException {
+        System.setProperty("hazelcast.tracking.server", "true");
         HazelcastInstance hz = Hazelcast.newHazelcastInstance();
         printMemberPort(hz);
     }
