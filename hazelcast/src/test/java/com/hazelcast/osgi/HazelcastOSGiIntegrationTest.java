@@ -28,7 +28,6 @@ import org.ops4j.pax.exam.options.CompositeOption;
 import org.ops4j.pax.exam.options.UrlProvisionOption;
 import org.ops4j.pax.exam.spi.reactors.AllConfinedStagedReactorFactory;
 import org.ops4j.pax.exam.util.PathUtils;
-import org.ops4j.pax.url.maven.commons.MavenConstants;
 import org.ops4j.pax.url.mvn.ServiceConstants;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
@@ -40,6 +39,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.ops4j.pax.exam.CoreOptions.bundle;
 import static org.ops4j.pax.exam.CoreOptions.junitBundles;
 import static org.ops4j.pax.exam.CoreOptions.options;
+import static org.ops4j.pax.url.mvn.ServiceConstants.PROPERTY_REPOSITORIES;
 
 @RunWith(PaxExamTestRunner.class)
 @Category(QuickTest.class)
@@ -49,7 +49,7 @@ public class HazelcastOSGiIntegrationTest {
     @Inject
     private BundleContext bundleContext;
 
-    private static final String MAVEN_REPOSITORIES_PROP = ServiceConstants.PID + MavenConstants.PROPERTY_REPOSITORIES;
+    private static final String MAVEN_REPOSITORIES_PROP = ServiceConstants.PID + PROPERTY_REPOSITORIES;
     private static final String MAVEN_REPOSITORIES = "https://osgi.sonatype.org/content/groups/pax-runner@id=paxrunner,"
             + "https://repo1.maven.org/maven2@id=central";
     private String oldMavenRepoProperty;

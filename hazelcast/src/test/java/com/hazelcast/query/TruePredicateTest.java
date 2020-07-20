@@ -34,7 +34,6 @@ public class TruePredicateTest {
     public void testEqualsAndHashCode() {
         EqualsVerifier.forClass(TruePredicate.class)
             .suppress(Warning.NONFINAL_FIELDS, Warning.STRICT_INHERITANCE)
-            .allFieldsShouldBeUsed()
             .verify();
     }
 

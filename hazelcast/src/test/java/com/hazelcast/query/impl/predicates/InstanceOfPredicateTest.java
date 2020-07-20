@@ -33,7 +33,6 @@ public class InstanceOfPredicateTest {
     public void testEqualsAndHashCode() {
         EqualsVerifier.forClass(InstanceOfPredicate.class)
             .suppress(Warning.NONFINAL_FIELDS, Warning.STRICT_INHERITANCE)
-            .allFieldsShouldBeUsed()
             .verify();
     }
 
