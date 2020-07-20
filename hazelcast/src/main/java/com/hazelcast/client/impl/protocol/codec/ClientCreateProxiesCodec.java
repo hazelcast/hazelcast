@@ -40,7 +40,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Exceptions related to a proxy creation failure is not send to the client.
  * A proxy creation failure does not cancel this operation, all proxies will be attempted to be created.
  */
-@Generated("ca5ab7072a587c21510509db42965d46")
+@Generated("9331299827cc08394b46595eb111f277")
 public final class ClientCreateProxiesCodec {
     //hex: 0x000E00
     public static final int REQUEST_MESSAGE_TYPE = 3584;
@@ -52,17 +52,14 @@ public final class ClientCreateProxiesCodec {
     private ClientCreateProxiesCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class RequestParameters {
-
-        /**
-         * proxies that will be created
-         * Each entry's key is distributed object name.
-         * Each entry's value is service name.
-         * For possible service names see createProxy message.
-         */
-        public java.util.List<java.util.Map.Entry<java.lang.String, java.lang.String>> proxies;
-    }
+    /**
+     * proxies that will be created
+     * Each entry's key is distributed object name.
+     * Each entry's value is service name.
+     * For possible service names see createProxy message.
+     */
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"UUF_UNUSED_PUBLIC_OR_PROTECTED_FIELD"})
+    public java.util.List<java.util.Map.Entry<java.lang.String, java.lang.String>> proxies;
 
     public static ClientMessage encodeRequest(java.util.Collection<java.util.Map.Entry<java.lang.String, java.lang.String>> proxies) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
@@ -76,17 +73,11 @@ public final class ClientCreateProxiesCodec {
         return clientMessage;
     }
 
-    public static ClientCreateProxiesCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
+    public static java.util.List<java.util.Map.Entry<java.lang.String, java.lang.String>> decodeRequest(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        RequestParameters request = new RequestParameters();
         //empty initial frame
         iterator.next();
-        request.proxies = EntryListCodec.decode(iterator, StringCodec::decode, StringCodec::decode);
-        return request;
-    }
-
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class ResponseParameters {
+        return EntryListCodec.decode(iterator, StringCodec::decode, StringCodec::decode);
     }
 
     public static ClientMessage encodeResponse() {
@@ -98,12 +89,5 @@ public final class ClientCreateProxiesCodec {
         return clientMessage;
     }
 
-    public static ClientCreateProxiesCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
-        ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        ResponseParameters response = new ResponseParameters();
-        //empty initial frame
-        iterator.next();
-        return response;
-    }
 
 }

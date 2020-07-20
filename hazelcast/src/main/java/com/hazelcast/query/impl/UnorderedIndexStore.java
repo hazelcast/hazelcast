@@ -41,7 +41,7 @@ public class UnorderedIndexStore extends BaseSingleValueIndexStore {
     private volatile Map<Data, QueryableEntry> recordsWithNullValue;
 
     public UnorderedIndexStore(IndexCopyBehavior copyOn) {
-        super(copyOn);
+        super(copyOn, true);
         if (copyOn == IndexCopyBehavior.COPY_ON_WRITE) {
             addFunctor = new CopyOnWriteAddFunctor();
             removeFunctor = new CopyOnWriteRemoveFunctor();

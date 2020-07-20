@@ -269,6 +269,7 @@ public final class ClientEndpointImpl implements ClientEndpoint {
                 + ", clientVersion=" + clientVersion
                 + ", creationTime=" + creationTime
                 + ", latest clientAttributes=" + getClientAttributes()
+                + ", labels=" + labels
                 + '}';
     }
 

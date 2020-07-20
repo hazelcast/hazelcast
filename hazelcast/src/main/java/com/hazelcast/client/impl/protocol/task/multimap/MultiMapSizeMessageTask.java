@@ -37,7 +37,7 @@ import static com.hazelcast.internal.util.MapUtil.toIntSize;
  * {@link com.hazelcast.client.impl.protocol.codec.MultiMapMessageType#MULTIMAP_SIZE}
  */
 public class MultiMapSizeMessageTask
-        extends AbstractAllPartitionsMessageTask<MultiMapSizeCodec.RequestParameters> {
+        extends AbstractAllPartitionsMessageTask<String> {
 
     public MultiMapSizeMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -45,7 +45,7 @@ public class MultiMapSizeMessageTask
 
     @Override
     protected OperationFactory createOperationFactory() {
-        return new MultiMapOperationFactory(parameters.name, MultiMapOperationFactory.OperationFactoryType.SIZE);
+        return new MultiMapOperationFactory(parameters, MultiMapOperationFactory.OperationFactoryType.SIZE);
     }
 
     @Override
@@ -58,7 +58,7 @@ public class MultiMapSizeMessageTask
     }
 
     @Override
-    protected MultiMapSizeCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+    protected String decodeClientMessage(ClientMessage clientMessage) {
         return MultiMapSizeCodec.decodeRequest(clientMessage);
     }
 
@@ -74,12 +74,12 @@ public class MultiMapSizeMessageTask
 
     @Override
     public Permission getRequiredPermission() {
-        return new MultiMapPermission(parameters.name, ActionConstants.ACTION_READ);
+        return new MultiMapPermission(parameters, ActionConstants.ACTION_READ);
     }
 
     @Override
     public String getDistributedObjectName() {
-        return parameters.name;
+        return parameters;
     }
 
     @Override

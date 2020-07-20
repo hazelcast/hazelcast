@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Returns true if this executor has been shut down.
  */
-@Generated("aaa9a2b1d12c80e4274cf80fa731beb0")
+@Generated("976e9721c8286b79d10bda2d8a0487c2")
 public final class DurableExecutorIsShutdownCodec {
     //hex: 0x180200
     public static final int REQUEST_MESSAGE_TYPE = 1573376;
@@ -49,14 +49,11 @@ public final class DurableExecutorIsShutdownCodec {
     private DurableExecutorIsShutdownCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class RequestParameters {
-
-        /**
-         * Name of the executor.
-         */
-        public java.lang.String name;
-    }
+    /**
+     * Name of the executor.
+     */
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"UUF_UNUSED_PUBLIC_OR_PROTECTED_FIELD"})
+    public java.lang.String name;
 
     public static ClientMessage encodeRequest(java.lang.String name) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
@@ -70,22 +67,11 @@ public final class DurableExecutorIsShutdownCodec {
         return clientMessage;
     }
 
-    public static DurableExecutorIsShutdownCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
+    public static java.lang.String decodeRequest(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        RequestParameters request = new RequestParameters();
         //empty initial frame
         iterator.next();
-        request.name = StringCodec.decode(iterator);
-        return request;
-    }
-
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class ResponseParameters {
-
-        /**
-         * true if this executor has been shut down
-         */
-        public boolean response;
+        return StringCodec.decode(iterator);
     }
 
     public static ClientMessage encodeResponse(boolean response) {
@@ -98,12 +84,13 @@ public final class DurableExecutorIsShutdownCodec {
         return clientMessage;
     }
 
-    public static DurableExecutorIsShutdownCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
+    /**
+    * true if this executor has been shut down
+    */
+    public static boolean decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        ResponseParameters response = new ResponseParameters();
         ClientMessage.Frame initialFrame = iterator.next();
-        response.response = decodeBoolean(initialFrame.content, RESPONSE_RESPONSE_FIELD_OFFSET);
-        return response;
+        return decodeBoolean(initialFrame.content, RESPONSE_RESPONSE_FIELD_OFFSET);
     }
 
 }

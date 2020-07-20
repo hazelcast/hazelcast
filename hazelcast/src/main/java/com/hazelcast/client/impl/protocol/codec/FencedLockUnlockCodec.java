@@ -40,7 +40,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * {@code LockOwnershipLostException}. Returns true if the lock is still
  * held by the caller after a successful unlock() call, false otherwise.
  */
-@Generated("eeb537521f361534243a9603fbc4b9cd")
+@Generated("3ebd2e79fcbdd68a65a987bae0dfbe5b")
 public final class FencedLockUnlockCodec {
     //hex: 0x070300
     public static final int REQUEST_MESSAGE_TYPE = 459520;
@@ -113,16 +113,6 @@ public final class FencedLockUnlockCodec {
         return request;
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class ResponseParameters {
-
-        /**
-         * true if the lock is still held by the caller after
-         * a successful unlock() call, false otherwise.
-         */
-        public boolean response;
-    }
-
     public static ClientMessage encodeResponse(boolean response) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
@@ -133,12 +123,14 @@ public final class FencedLockUnlockCodec {
         return clientMessage;
     }
 
-    public static FencedLockUnlockCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
+    /**
+    * true if the lock is still held by the caller after
+    * a successful unlock() call, false otherwise.
+    */
+    public static boolean decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        ResponseParameters response = new ResponseParameters();
         ClientMessage.Frame initialFrame = iterator.next();
-        response.response = decodeBoolean(initialFrame.content, RESPONSE_RESPONSE_FIELD_OFFSET);
-        return response;
+        return decodeBoolean(initialFrame.content, RESPONSE_RESPONSE_FIELD_OFFSET);
     }
 
 }

@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Destroys the proxy given by its name cluster-wide. Also, clears and releases all resources of this proxy.
  */
-@Generated("ff7360e866faa9b8866f10e663c5ab98")
+@Generated("3f68b01de1cb4bea720006e5436ea50a")
 public final class ClientDestroyProxyCodec {
     //hex: 0x000500
     public static final int REQUEST_MESSAGE_TYPE = 1280;
@@ -100,10 +100,6 @@ public final class ClientDestroyProxyCodec {
         return request;
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class ResponseParameters {
-    }
-
     public static ClientMessage encodeResponse() {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
@@ -113,12 +109,5 @@ public final class ClientDestroyProxyCodec {
         return clientMessage;
     }
 
-    public static ClientDestroyProxyCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
-        ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        ResponseParameters response = new ResponseParameters();
-        //empty initial frame
-        iterator.next();
-        return response;
-    }
 
 }

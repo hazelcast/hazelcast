@@ -39,7 +39,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * in the collection, and vice-versa. This method is always executed by a distributed query, so it may throw a
  * QueryResultSizeExceededException if query result size limit is configured.
  */
-@Generated("58a9ef9e2715481053cd68858b1f65d3")
+@Generated("548d5d1a71095dca8c4f6edaab7d9368")
 public final class MapValuesWithPredicateCodec {
     //hex: 0x012700
     public static final int REQUEST_MESSAGE_TYPE = 75520;
@@ -88,15 +88,6 @@ public final class MapValuesWithPredicateCodec {
         return request;
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class ResponseParameters {
-
-        /**
-         * result value collection of the query.
-         */
-        public java.util.List<com.hazelcast.internal.serialization.Data> response;
-    }
-
     public static ClientMessage encodeResponse(java.util.Collection<com.hazelcast.internal.serialization.Data> response) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
@@ -107,13 +98,14 @@ public final class MapValuesWithPredicateCodec {
         return clientMessage;
     }
 
-    public static MapValuesWithPredicateCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
+    /**
+    * result value collection of the query.
+    */
+    public static java.util.List<com.hazelcast.internal.serialization.Data> decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        ResponseParameters response = new ResponseParameters();
         //empty initial frame
         iterator.next();
-        response.response = ListMultiFrameCodec.decode(iterator, DataCodec::decode);
-        return response;
+        return ListMultiFrameCodec.decode(iterator, DataCodec::decode);
     }
 
 }

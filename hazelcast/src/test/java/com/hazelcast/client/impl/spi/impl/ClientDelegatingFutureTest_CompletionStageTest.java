@@ -85,7 +85,7 @@ public class ClientDelegatingFutureTest_CompletionStageTest extends CompletableF
         ClientInvocationFuture cf = invocation.getClientInvocationFuture();
 
         ClientDelegatingFuture<Object> future =
-                new ClientDelegatingFuture<>(cf, serializationService, message -> MapGetCodec.decodeResponse(message).response);
+                new ClientDelegatingFuture<>(cf, serializationService, MapGetCodec::decodeResponse);
 
         Executor completionExecutor;
         if (completeAfterMillis <= 0) {

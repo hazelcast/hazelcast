@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Makes an authentication request to the cluster.
  */
-@Generated("168c048476e3d4fe1d8ac3e9fea8ad63")
+@Generated("6a04ae2059ca7049a86502d33db8d157")
 public final class ClientAuthenticationCodec {
     //hex: 0x000100
     public static final int REQUEST_MESSAGE_TYPE = 256;
@@ -145,49 +145,40 @@ public final class ClientAuthenticationCodec {
 
     @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class ResponseParameters {
-
         /**
          * A byte that represents the authentication status. It can be AUTHENTICATED(0), CREDENTIALS_FAILED(1),
          * SERIALIZATION_VERSION_MISMATCH(2) or NOT_ALLOWED_IN_CLUSTER(3).
          */
         public byte status;
-
         /**
          * Address of the Hazelcast member which sends the authentication response.
          */
         public @Nullable com.hazelcast.cluster.Address address;
-
         /**
          * UUID of the Hazelcast member which sends the authentication response.
          */
         public @Nullable java.util.UUID memberUuid;
-
         /**
          * client side supported version to inform server side
          */
         public byte serializationVersion;
-
         /**
          * Version of the Hazelcast member which sends the authentication response.
          */
         public java.lang.String serverHazelcastVersion;
-
         /**
          * Partition count of the cluster.
          */
         public int partitionCount;
-
         /**
          * UUID of the cluster that the client authenticated.
          */
         public java.util.UUID clusterId;
-
         /**
          * Returns true if server supports clients with failover feature.
          */
         public boolean failoverSupported;
     }
-
     public static ClientMessage encodeResponse(byte status, @Nullable com.hazelcast.cluster.Address address, @Nullable java.util.UUID memberUuid, byte serializationVersion, java.lang.String serverHazelcastVersion, int partitionCount, java.util.UUID clusterId, boolean failoverSupported) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);

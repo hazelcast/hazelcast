@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Adds listener to map. This listener will be used to listen near cache invalidation events.
  */
-@Generated("106bdc1c337e617f5a552ec9538b8203")
+@Generated("f85840699ab54b7918e874b63a98163b")
 public final class MapAddNearCacheInvalidationListenerCodec {
     //hex: 0x013F00
     public static final int REQUEST_MESSAGE_TYPE = 81664;
@@ -104,15 +104,6 @@ public final class MapAddNearCacheInvalidationListenerCodec {
         return request;
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class ResponseParameters {
-
-        /**
-         * A unique string which is used as a key to remove the listener.
-         */
-        public java.util.UUID response;
-    }
-
     public static ClientMessage encodeResponse(java.util.UUID response) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
@@ -123,12 +114,13 @@ public final class MapAddNearCacheInvalidationListenerCodec {
         return clientMessage;
     }
 
-    public static MapAddNearCacheInvalidationListenerCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
+    /**
+    * A unique string which is used as a key to remove the listener.
+    */
+    public static java.util.UUID decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        ResponseParameters response = new ResponseParameters();
         ClientMessage.Frame initialFrame = iterator.next();
-        response.response = decodeUUID(initialFrame.content, RESPONSE_RESPONSE_FIELD_OFFSET);
-        return response;
+        return decodeUUID(initialFrame.content, RESPONSE_RESPONSE_FIELD_OFFSET);
     }
 
     public static ClientMessage encodeIMapInvalidationEvent(@Nullable com.hazelcast.internal.serialization.Data key, java.util.UUID sourceUuid, java.util.UUID partitionUuid, long sequence) {

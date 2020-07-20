@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Gets the effective config of a member rendered as XML.
  */
-@Generated("ada90cc84d53540ac967d710919b6571")
+@Generated("a21ad0545aeaed17c65918ac941677ec")
 public final class MCGetMemberConfigCodec {
     //hex: 0x200500
     public static final int REQUEST_MESSAGE_TYPE = 2098432;
@@ -48,9 +48,6 @@ public final class MCGetMemberConfigCodec {
     private MCGetMemberConfigCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class RequestParameters {
-    }
 
     public static ClientMessage encodeRequest() {
         ClientMessage clientMessage = ClientMessage.createForEncode();
@@ -63,22 +60,6 @@ public final class MCGetMemberConfigCodec {
         return clientMessage;
     }
 
-    public static MCGetMemberConfigCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
-        ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        RequestParameters request = new RequestParameters();
-        //empty initial frame
-        iterator.next();
-        return request;
-    }
-
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class ResponseParameters {
-
-        /**
-         * Effective config of a member rendered as XML.
-         */
-        public java.lang.String configXml;
-    }
 
     public static ClientMessage encodeResponse(java.lang.String configXml) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
@@ -90,13 +71,14 @@ public final class MCGetMemberConfigCodec {
         return clientMessage;
     }
 
-    public static MCGetMemberConfigCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
+    /**
+    * Effective config of a member rendered as XML.
+    */
+    public static java.lang.String decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        ResponseParameters response = new ResponseParameters();
         //empty initial frame
         iterator.next();
-        response.configXml = StringCodec.decode(iterator);
-        return response;
+        return StringCodec.decode(iterator);
     }
 
 }

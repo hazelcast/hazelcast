@@ -39,7 +39,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * This method is always executed by a distributed query, so it may throw a QueryResultSizeExceededException
  * if query result size limit is configured.
  */
-@Generated("77af703a28b0d32a0843fcb87fbaed11")
+@Generated("e1064b256c20fce1779a6297704e7bfc")
 public final class MapValuesCodec {
     //hex: 0x012400
     public static final int REQUEST_MESSAGE_TYPE = 74752;
@@ -51,14 +51,11 @@ public final class MapValuesCodec {
     private MapValuesCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class RequestParameters {
-
-        /**
-         * name of map
-         */
-        public java.lang.String name;
-    }
+    /**
+     * name of map
+     */
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"UUF_UNUSED_PUBLIC_OR_PROTECTED_FIELD"})
+    public java.lang.String name;
 
     public static ClientMessage encodeRequest(java.lang.String name) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
@@ -72,22 +69,11 @@ public final class MapValuesCodec {
         return clientMessage;
     }
 
-    public static MapValuesCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
+    public static java.lang.String decodeRequest(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        RequestParameters request = new RequestParameters();
         //empty initial frame
         iterator.next();
-        request.name = StringCodec.decode(iterator);
-        return request;
-    }
-
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class ResponseParameters {
-
-        /**
-         * All values in the map
-         */
-        public java.util.List<com.hazelcast.internal.serialization.Data> response;
+        return StringCodec.decode(iterator);
     }
 
     public static ClientMessage encodeResponse(java.util.Collection<com.hazelcast.internal.serialization.Data> response) {
@@ -100,13 +86,14 @@ public final class MapValuesCodec {
         return clientMessage;
     }
 
-    public static MapValuesCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
+    /**
+    * All values in the map
+    */
+    public static java.util.List<com.hazelcast.internal.serialization.Data> decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        ResponseParameters response = new ResponseParameters();
         //empty initial frame
         iterator.next();
-        response.response = ListMultiFrameCodec.decode(iterator, DataCodec::decode);
-        return response;
+        return ListMultiFrameCodec.decode(iterator, DataCodec::decode);
     }
 
 }

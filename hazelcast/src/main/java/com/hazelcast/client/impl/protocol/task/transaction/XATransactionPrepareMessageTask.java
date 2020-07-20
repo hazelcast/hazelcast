@@ -33,14 +33,14 @@ import java.security.Permission;
 import java.util.UUID;
 
 public class XATransactionPrepareMessageTask
-        extends AbstractCallableMessageTask<XATransactionPrepareCodec.RequestParameters>
+        extends AbstractCallableMessageTask<UUID>
         implements TransactionalMessageTask {
     public XATransactionPrepareMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected XATransactionPrepareCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+    protected UUID decodeClientMessage(ClientMessage clientMessage) {
         return XATransactionPrepareCodec.decodeRequest(clientMessage);
     }
 
@@ -51,7 +51,7 @@ public class XATransactionPrepareMessageTask
 
     @Override
     protected Object call() throws Exception {
-        UUID transactionId = parameters.transactionId;
+        UUID transactionId = parameters;
         TransactionContext transactionContext = endpoint.getTransactionContext(transactionId);
         if (transactionContext == null) {
             throw new TransactionException("No transaction context with given transactionId: " + transactionId);

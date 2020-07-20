@@ -223,17 +223,17 @@ public class PartitionedMapTableResolverTest extends MapSchemaTestSupport {
         checkFields(getExistingTable(tables, MAP_SERIALIZABLE_BINARY), expectedFields);
         checkFields(getExistingTable(tables, MAP_FROM_WILDCARD), expectedFields);
 
-        // Check portable in the OBJECT mode. Both key and value are processed as object.
+        // Check portable in the OBJECT mode.
         checkFields(
             getExistingTable(tables, MAP_PORTABLE_OBJECT),
             hiddenField(KEY, QueryDataType.OBJECT, true),
-            field("field1", QueryDataType.INT, true),
-            field("field2", QueryDataType.INT, true),
-            field("field3", QueryDataType.INT, false),
+            field("portableField1", QueryDataType.INT, true),
+            field("portableField2", QueryDataType.INT, true),
+            field("portableField3", QueryDataType.INT, false),
             hiddenField(VALUE, QueryDataType.OBJECT, false)
         );
 
-        // Check portable in the BINARY mode. Both key and value are processed as portable.
+        // Check portable in the BINARY mode.
         checkFields(
             getExistingTable(tables, MAP_PORTABLE_BINARY),
             hiddenField(KEY, QueryDataType.OBJECT, true),

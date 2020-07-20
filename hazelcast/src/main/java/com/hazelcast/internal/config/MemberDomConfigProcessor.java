@@ -103,6 +103,7 @@ import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.config.SplitBrainProtectionConfig;
 import com.hazelcast.config.SplitBrainProtectionConfigBuilder;
 import com.hazelcast.config.SplitBrainProtectionListenerConfig;
+import com.hazelcast.config.SqlConfig;
 import com.hazelcast.config.SymmetricEncryptionConfig;
 import com.hazelcast.config.TcpIpConfig;
 import com.hazelcast.config.TopicConfig;
@@ -194,6 +195,7 @@ import static com.hazelcast.internal.config.ConfigSections.SECURITY;
 import static com.hazelcast.internal.config.ConfigSections.SERIALIZATION;
 import static com.hazelcast.internal.config.ConfigSections.SET;
 import static com.hazelcast.internal.config.ConfigSections.SPLIT_BRAIN_PROTECTION;
+import static com.hazelcast.internal.config.ConfigSections.SQL;
 import static com.hazelcast.internal.config.ConfigSections.TOPIC;
 import static com.hazelcast.internal.config.ConfigSections.USER_CODE_DEPLOYMENT;
 import static com.hazelcast.internal.config.ConfigSections.WAN_REPLICATION;
@@ -335,6 +337,8 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             handleCPSubsystem(node);
         } else if (METRICS.isEqual(nodeName)) {
             handleMetrics(node);
+        } else if (SQL.isEqual(nodeName)) {
+            handleSql(node);
         } else {
             return true;
         }
@@ -2919,6 +2923,22 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             if ("enabled".equals(att.getNodeName())) {
                 boolean enabled = getBooleanValue(getAttribute(node, "enabled"));
                 jmxConfig.setEnabled(enabled);
+            }
+        }
+    }
+
+    private void handleSql(Node node) {
+        SqlConfig sqlConfig = config.getSqlConfig();
+
+        for (Node child : childElements(node)) {
+            String nodeName = cleanNodeName(child);
+            String value = getTextContent(child).trim();
+            if ("executor-pool-size".equals(nodeName)) {
+                sqlConfig.setExecutorPoolSize(Integer.parseInt(value));
+            } else if ("operation-pool-size".equals(nodeName)) {
+                sqlConfig.setOperationPoolSize(Integer.parseInt(value));
+            } else if ("query-timeout-millis".equals(nodeName)) {
+                sqlConfig.setQueryTimeoutMillis(Long.parseLong(value));
             }
         }
     }

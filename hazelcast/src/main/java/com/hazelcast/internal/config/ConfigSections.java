@@ -61,7 +61,8 @@ public enum ConfigSections {
     PN_COUNTER("pn-counter", true),
     ADVANCED_NETWORK("advanced-network", false),
     CP_SUBSYSTEM("cp-subsystem", false),
-    METRICS("metrics", false);
+    METRICS("metrics", false),
+    SQL("sql", false);
 
     final boolean multipleOccurrence;
     private final String name;

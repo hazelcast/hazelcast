@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Adds an listener for this collection. Listener will be notified or all collection add/remove events.
  */
-@Generated("3007ffeb9edbc2e7c599483b97935aa6")
+@Generated("6346dde1780fc76a0b4d9462e889bdb3")
 public final class QueueAddListenerCodec {
     //hex: 0x031100
     public static final int REQUEST_MESSAGE_TYPE = 200960;
@@ -100,15 +100,6 @@ public final class QueueAddListenerCodec {
         return request;
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class ResponseParameters {
-
-        /**
-         * The registration id
-         */
-        public java.util.UUID response;
-    }
-
     public static ClientMessage encodeResponse(java.util.UUID response) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
@@ -119,12 +110,13 @@ public final class QueueAddListenerCodec {
         return clientMessage;
     }
 
-    public static QueueAddListenerCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
+    /**
+    * The registration id
+    */
+    public static java.util.UUID decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        ResponseParameters response = new ResponseParameters();
         ClientMessage.Frame initialFrame = iterator.next();
-        response.response = decodeUUID(initialFrame.content, RESPONSE_RESPONSE_FIELD_OFFSET);
-        return response;
+        return decodeUUID(initialFrame.content, RESPONSE_RESPONSE_FIELD_OFFSET);
     }
 
     public static ClientMessage encodeItemEvent(@Nullable com.hazelcast.internal.serialization.Data item, java.util.UUID uuid, int eventType) {

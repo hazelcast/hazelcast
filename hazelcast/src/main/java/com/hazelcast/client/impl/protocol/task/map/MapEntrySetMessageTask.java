@@ -38,7 +38,7 @@ import java.util.Map;
 import static com.hazelcast.map.impl.LocalMapStatsUtil.incrementOtherOperationsCount;
 
 public class MapEntrySetMessageTask
-        extends DefaultMapQueryMessageTask<MapEntrySetCodec.RequestParameters> {
+        extends DefaultMapQueryMessageTask<String> {
 
     public MapEntrySetMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -47,7 +47,7 @@ public class MapEntrySetMessageTask
     @Override
     protected Object reduce(Collection<QueryResultRow> result) {
         List<Map.Entry<Data, Data>> entries = new ArrayList<>(result);
-        incrementOtherOperationsCount(getService(MapService.SERVICE_NAME), parameters.name);
+        incrementOtherOperationsCount(getService(MapService.SERVICE_NAME), parameters);
         return entries;
     }
 
@@ -62,7 +62,7 @@ public class MapEntrySetMessageTask
     }
 
     @Override
-    protected MapEntrySetCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+    protected String decodeClientMessage(ClientMessage clientMessage) {
         return MapEntrySetCodec.decodeRequest(clientMessage);
     }
 
@@ -73,12 +73,12 @@ public class MapEntrySetMessageTask
 
     @Override
     public Permission getRequiredPermission() {
-        return new MapPermission(parameters.name, ActionConstants.ACTION_READ);
+        return new MapPermission(parameters, ActionConstants.ACTION_READ);
     }
 
     @Override
     public String getDistributedObjectName() {
-        return parameters.name;
+        return parameters;
     }
 
     @Override

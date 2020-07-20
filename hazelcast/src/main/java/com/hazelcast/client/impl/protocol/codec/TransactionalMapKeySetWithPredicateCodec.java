@@ -39,7 +39,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * set, and vice-versa. This method is always executed by a distributed query, so it may throw a
  * QueryResultSizeExceededException if query result size limit is configured.
  */
-@Generated("f15766b10229b4817dd5313fd50d43f8")
+@Generated("b7181987125b048065519312e07469d1")
 public final class TransactionalMapKeySetWithPredicateCodec {
     //hex: 0x0E0F00
     public static final int REQUEST_MESSAGE_TYPE = 921344;
@@ -103,15 +103,6 @@ public final class TransactionalMapKeySetWithPredicateCodec {
         return request;
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class ResponseParameters {
-
-        /**
-         * Result key set for the query.
-         */
-        public java.util.List<com.hazelcast.internal.serialization.Data> response;
-    }
-
     public static ClientMessage encodeResponse(java.util.Collection<com.hazelcast.internal.serialization.Data> response) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
@@ -122,13 +113,14 @@ public final class TransactionalMapKeySetWithPredicateCodec {
         return clientMessage;
     }
 
-    public static TransactionalMapKeySetWithPredicateCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
+    /**
+    * Result key set for the query.
+    */
+    public static java.util.List<com.hazelcast.internal.serialization.Data> decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        ResponseParameters response = new ResponseParameters();
         //empty initial frame
         iterator.next();
-        response.response = ListMultiFrameCodec.decode(iterator, DataCodec::decode);
-        return response;
+        return ListMultiFrameCodec.decode(iterator, DataCodec::decode);
     }
 
 }

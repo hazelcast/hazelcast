@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Atomically removes the entry for a key only if currently mapped to some value.
  */
-@Generated("c0b3cd696981e374073b8272eac0cce1")
+@Generated("4b1b25935ed3db2a38f322b6c90c556d")
 public final class CacheGetAndRemoveCodec {
     //hex: 0x130A00
     public static final int REQUEST_MESSAGE_TYPE = 1247744;
@@ -93,15 +93,6 @@ public final class CacheGetAndRemoveCodec {
         return request;
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class ResponseParameters {
-
-        /**
-         * the value if one existed or null if no mapping existed for this key
-         */
-        public @Nullable com.hazelcast.internal.serialization.Data response;
-    }
-
     public static ClientMessage encodeResponse(@Nullable com.hazelcast.internal.serialization.Data response) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
@@ -112,13 +103,14 @@ public final class CacheGetAndRemoveCodec {
         return clientMessage;
     }
 
-    public static CacheGetAndRemoveCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
+    /**
+    * the value if one existed or null if no mapping existed for this key
+    */
+    public static com.hazelcast.internal.serialization.Data decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        ResponseParameters response = new ResponseParameters();
         //empty initial frame
         iterator.next();
-        response.response = CodecUtil.decodeNullable(iterator, DataCodec::decode);
-        return response;
+        return CodecUtil.decodeNullable(iterator, DataCodec::decode);
     }
 
 }

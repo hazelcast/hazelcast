@@ -1308,8 +1308,9 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     }
 
     private void destroyStorageImmediate(boolean isDuringShutdown, boolean internal) {
-        storage.destroy(isDuringShutdown);
         mutationObserver.onDestroy(isDuringShutdown, internal);
+        // Destroy storage in the end
+        storage.destroy(isDuringShutdown);
     }
 
     /**

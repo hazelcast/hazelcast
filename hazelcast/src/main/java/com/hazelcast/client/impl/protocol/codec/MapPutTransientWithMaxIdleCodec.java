@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Same as put except that MapStore, if defined, will not be called to store/persist the entry.
  * If ttl and maxIdle are 0, then the entry lives forever.
  */
-@Generated("db4552776c89e26a381634ca17c46e1e")
+@Generated("ecacc9d1898123d4652ee72c45ad0a02")
 public final class MapPutTransientWithMaxIdleCodec {
     //hex: 0x014500
     public static final int REQUEST_MESSAGE_TYPE = 83200;
@@ -117,15 +117,6 @@ public final class MapPutTransientWithMaxIdleCodec {
         return request;
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class ResponseParameters {
-
-        /**
-         * old value of the entry
-         */
-        public @Nullable com.hazelcast.internal.serialization.Data response;
-    }
-
     public static ClientMessage encodeResponse(@Nullable com.hazelcast.internal.serialization.Data response) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
@@ -136,13 +127,14 @@ public final class MapPutTransientWithMaxIdleCodec {
         return clientMessage;
     }
 
-    public static MapPutTransientWithMaxIdleCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
+    /**
+    * old value of the entry
+    */
+    public static com.hazelcast.internal.serialization.Data decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        ResponseParameters response = new ResponseParameters();
         //empty initial frame
         iterator.next();
-        response.response = CodecUtil.decodeNullable(iterator, DataCodec::decode);
-        return response;
+        return CodecUtil.decodeNullable(iterator, DataCodec::decode);
     }
 
 }

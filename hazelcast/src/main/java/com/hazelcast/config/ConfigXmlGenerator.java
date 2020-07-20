@@ -166,6 +166,7 @@ public class ConfigXmlGenerator {
         splitBrainProtectionXmlGenerator(gen, config);
         cpSubsystemConfig(gen, config);
         metricsConfig(gen, config);
+        sqlConfig(gen, config);
         userCodeDeploymentConfig(gen, config);
 
         xml.append("</hazelcast>");
@@ -1583,6 +1584,15 @@ public class ConfigXmlGenerator {
            .close()
            .node("collection-frequency-seconds", metricsConfig.getCollectionFrequencySeconds())
            .close();
+    }
+
+    private static void sqlConfig(XmlGenerator gen, Config config) {
+        SqlConfig sqlConfig = config.getSqlConfig();
+        gen.open("sql")
+            .node("executor-pool-size", sqlConfig.getExecutorPoolSize())
+            .node("operation-pool-size", sqlConfig.getOperationPoolSize())
+            .node("query-timeout-millis", sqlConfig.getQueryTimeoutMillis())
+            .close();
     }
 
     private static void userCodeDeploymentConfig(XmlGenerator gen, Config config) {

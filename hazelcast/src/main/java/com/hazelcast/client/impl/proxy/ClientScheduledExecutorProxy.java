@@ -73,8 +73,6 @@ public class ClientScheduledExecutorProxy
 
     private static final ILogger LOGGER = Logger.getLogger(ClientScheduledExecutorProxy.class);
 
-    private static final ClientMessageDecoder SUBMIT_DECODER = clientMessage -> null;
-
     private final FutureUtil.ExceptionHandler shutdownExceptionHandler = throwable -> {
         if (throwable != null) {
             if (throwable instanceof SplitBrainProtectionException) {
@@ -303,7 +301,7 @@ public class ClientScheduledExecutorProxy
         }
 
         Collection<ScheduledTaskHandler> urnsPerMember =
-                ScheduledExecutorGetAllScheduledFuturesCodec.decodeResponse(response).handlers;
+                ScheduledExecutorGetAllScheduledFuturesCodec.decodeResponse(response);
 
         Map<Member, List<IScheduledFuture<V>>> tasksMap = new HashMap<>();
 
@@ -330,7 +328,7 @@ public class ClientScheduledExecutorProxy
 
         for (Member member : members) {
             ClientMessage request = ScheduledExecutorShutdownCodec.encodeRequest(getName(), member.getUuid());
-            calls.add(doSubmitOnTarget(request, SUBMIT_DECODER, member.getUuid()));
+            calls.add(doSubmitOnTarget(request, clientMessage -> null, member.getUuid()));
         }
 
         waitWithDeadline(calls, SHUTDOWN_TIMEOUT, TimeUnit.SECONDS, shutdownExceptionHandler);

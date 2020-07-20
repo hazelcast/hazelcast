@@ -40,7 +40,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * re-enabled for thread scheduling purposes, and Countdown owner is set to
  * null. If the current count equals zero, then nothing happens.
  */
-@Generated("9cccb81e97441e5f2b5374a841307ff0")
+@Generated("4f770be183588781250797798cbf37d8")
 public final class CountDownLatchCountDownCodec {
     //hex: 0x0B0300
     public static final int REQUEST_MESSAGE_TYPE = 721664;
@@ -104,10 +104,6 @@ public final class CountDownLatchCountDownCodec {
         return request;
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class ResponseParameters {
-    }
-
     public static ClientMessage encodeResponse() {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
@@ -117,12 +113,5 @@ public final class CountDownLatchCountDownCodec {
         return clientMessage;
     }
 
-    public static CountDownLatchCountDownCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
-        ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        ResponseParameters response = new ResponseParameters();
-        //empty initial frame
-        iterator.next();
-        return response;
-    }
 
 }

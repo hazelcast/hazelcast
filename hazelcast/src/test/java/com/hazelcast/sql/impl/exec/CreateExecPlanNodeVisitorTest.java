@@ -99,7 +99,7 @@ public class CreateExecPlanNodeVisitorTest extends SqlTestSupport {
     private static final int[] PARTITIONS_MEMBER_2 = new int[] { 3, 4 };
     private static Map<UUID, PartitionIdSet> partitionMapping;
 
-    private static UUID membedId1;
+    private static UUID memberId1;
     private static final UUID MEMBER_ID_2 = UUID.randomUUID();
 
     private static NodeServiceProviderImpl nodeServiceProvider;
@@ -116,10 +116,10 @@ public class CreateExecPlanNodeVisitorTest extends SqlTestSupport {
             ((HazelcastInstanceProxy) instance).getOriginal().node.nodeEngine
         );
 
-        membedId1 = instance.getLocalEndpoint().getUuid();
+        memberId1 = instance.getLocalEndpoint().getUuid();
 
         partitionMapping = new HashMap<>();
-        partitionMapping.put(membedId1, createPartitionIdSet(PARTITION_COUNT, PARTITIONS_MEMBER_1));
+        partitionMapping.put(memberId1, createPartitionIdSet(PARTITION_COUNT, PARTITIONS_MEMBER_1));
         partitionMapping.put(MEMBER_ID_2, createPartitionIdSet(PARTITION_COUNT, PARTITIONS_MEMBER_2));
     }
 
@@ -136,7 +136,7 @@ public class CreateExecPlanNodeVisitorTest extends SqlTestSupport {
         QueryExecuteOperationFragment rootFragment = new QueryExecuteOperationFragment(
             rootNode,
             EXPLICIT,
-            Collections.singletonList(membedId1)
+            Collections.singletonList(memberId1)
         );
 
         QueryExecuteOperation operation = createOperation(
@@ -171,7 +171,7 @@ public class CreateExecPlanNodeVisitorTest extends SqlTestSupport {
         QueryExecuteOperationFragment receiveFragment = new QueryExecuteOperationFragment(
             null,
             EXPLICIT,
-            Collections.singletonList(membedId1)
+            Collections.singletonList(memberId1)
         );
 
         QueryExecuteOperation operation = createOperation(
@@ -191,8 +191,8 @@ public class CreateExecPlanNodeVisitorTest extends SqlTestSupport {
         assertEquals(QUERY_ID, outbox.getQueryId());
         assertEquals(EDGE_1_ID, outbox.getEdgeId());
         assertEquals(upstreamNode.getSchema().getEstimatedRowSize(), outbox.getRowWidth());
-        assertEquals(membedId1, outbox.getLocalMemberId());
-        assertEquals(membedId1, outbox.getTargetMemberId());
+        assertEquals(memberId1, outbox.getLocalMemberId());
+        assertEquals(memberId1, outbox.getTargetMemberId());
         assertEquals(OUTBOX_BATCH_SIZE, outbox.getBatchSize());
         assertEquals(EDGE_1_INITIAL_MEMORY, outbox.getRemainingMemory());
 
@@ -203,7 +203,7 @@ public class CreateExecPlanNodeVisitorTest extends SqlTestSupport {
 
         assertEquals(1, visitor.getOutboxes().size());
         assertEquals(1, visitor.getOutboxes().get(EDGE_1_ID).size());
-        assertSame(outbox, visitor.getOutboxes().get(EDGE_1_ID).get(membedId1));
+        assertSame(outbox, visitor.getOutboxes().get(EDGE_1_ID).get(memberId1));
     }
 
     @Test
@@ -228,7 +228,7 @@ public class CreateExecPlanNodeVisitorTest extends SqlTestSupport {
         QueryExecuteOperationFragment receiveFragment = new QueryExecuteOperationFragment(
             downstreamNode,
             EXPLICIT,
-            Collections.singletonList(membedId1)
+            Collections.singletonList(memberId1)
         );
 
         QueryExecuteOperation operation = createOperation(
@@ -250,7 +250,7 @@ public class CreateExecPlanNodeVisitorTest extends SqlTestSupport {
         assertEquals(QUERY_ID, inbox.getQueryId());
         assertEquals(EDGE_1_ID, inbox.getEdgeId());
         assertEquals(receiveNode.getSchema().getEstimatedRowSize(), inbox.getRowWidth());
-        assertEquals(membedId1, inbox.getLocalMemberId());
+        assertEquals(memberId1, inbox.getLocalMemberId());
         assertEquals(partitionMapping.size(), inbox.getRemainingStreams());
         assertEquals(EDGE_1_INITIAL_MEMORY, ((SimpleFlowControl) inbox.getFlowControl()).getMaxMemory());
 
@@ -273,7 +273,7 @@ public class CreateExecPlanNodeVisitorTest extends SqlTestSupport {
         QueryExecuteOperationFragment rootFragment = new QueryExecuteOperationFragment(
             projectNode,
             EXPLICIT,
-            Collections.singletonList(membedId1)
+            Collections.singletonList(memberId1)
         );
 
         QueryExecuteOperation operation = createOperation(
@@ -306,7 +306,7 @@ public class CreateExecPlanNodeVisitorTest extends SqlTestSupport {
         QueryExecuteOperationFragment rootFragment = new QueryExecuteOperationFragment(
             filterNode,
             EXPLICIT,
-            Collections.singletonList(membedId1)
+            Collections.singletonList(memberId1)
         );
 
         QueryExecuteOperation operation = createOperation(
@@ -333,7 +333,7 @@ public class CreateExecPlanNodeVisitorTest extends SqlTestSupport {
 
         // Map with data, but no partitions.
         Map<UUID, PartitionIdSet> partitionMapping = new HashMap<>();
-        partitionMapping.put(membedId1, createPartitionIdSet(PARTITION_COUNT));
+        partitionMapping.put(memberId1, createPartitionIdSet(PARTITION_COUNT));
         partitionMapping.put(MEMBER_ID_2, createPartitionIdSet(PARTITION_COUNT, PARTITIONS_MEMBER_2));
 
         checkMapScan(MAP_NAME, partitionMapping, true);
@@ -362,7 +362,7 @@ public class CreateExecPlanNodeVisitorTest extends SqlTestSupport {
         QueryExecuteOperationFragment fragment = new QueryExecuteOperationFragment(
             downstreamNode,
             EXPLICIT,
-            Collections.singletonList(membedId1)
+            Collections.singletonList(memberId1)
         );
 
         QueryExecuteOperation operation = createOperation(
@@ -401,11 +401,12 @@ public class CreateExecPlanNodeVisitorTest extends SqlTestSupport {
             new LoggingQueryOperationHandler(),
             nodeServiceProvider,
             new DefaultSerializationServiceBuilder().build(),
-            membedId1,
+            memberId1,
             operation,
             SimpleFlowControlFactory.INSTANCE,
-            operation.getPartitionMap().get(membedId1),
-            OUTBOX_BATCH_SIZE
+            operation.getPartitionMap().get(memberId1),
+            OUTBOX_BATCH_SIZE,
+            null
         );
 
         fragment.getNode().visit(res);
@@ -439,7 +440,7 @@ public class CreateExecPlanNodeVisitorTest extends SqlTestSupport {
             Collections.emptyList()
         );
 
-        operation.setRootConsumer(new TestRootResultConusmer(), ROOT_BATCH_SIZE);
+        operation.setRootConsumer(new TestRootResultConsumer(), ROOT_BATCH_SIZE);
 
         return operation;
     }
@@ -577,7 +578,7 @@ public class CreateExecPlanNodeVisitorTest extends SqlTestSupport {
         }
     }
 
-    private static class TestRootResultConusmer implements RootResultConsumer {
+    private static class TestRootResultConsumer implements RootResultConsumer {
         @Override
         public void setup(QueryFragmentContext context) {
             // No-op.

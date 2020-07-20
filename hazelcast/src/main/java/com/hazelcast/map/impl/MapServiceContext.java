@@ -192,6 +192,8 @@ public interface MapServiceContext extends MapServiceContextInterceptorSupport,
 
     IndexCopyBehavior getIndexCopyBehavior();
 
+    boolean globalIndexEnabled();
+
     ValueComparator getValueComparatorOf(InMemoryFormat inMemoryFormat);
 
     NodeWideUsedCapacityCounter getNodeWideUsedCapacityCounter();

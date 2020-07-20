@@ -64,7 +64,7 @@ public class ClientInvocationServiceImpl implements ClientInvocationService {
 
         @Override
         public UUID decodeAddResponse(ClientMessage clientMessage) {
-            return ClientLocalBackupListenerCodec.decodeResponse(clientMessage).response;
+            return ClientLocalBackupListenerCodec.decodeResponse(clientMessage);
         }
 
         @Override

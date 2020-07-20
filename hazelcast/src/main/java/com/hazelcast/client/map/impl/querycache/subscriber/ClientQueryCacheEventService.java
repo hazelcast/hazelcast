@@ -24,6 +24,7 @@ import com.hazelcast.client.impl.spi.ClientListenerService;
 import com.hazelcast.client.impl.spi.EventHandler;
 import com.hazelcast.client.impl.spi.impl.ListenerMessageCodec;
 import com.hazelcast.client.impl.spi.impl.listener.ClientListenerServiceImpl;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.util.ConstructorFunction;
@@ -43,7 +44,6 @@ import com.hazelcast.map.impl.querycache.event.LocalEntryEventData;
 import com.hazelcast.map.impl.querycache.event.QueryCacheEventData;
 import com.hazelcast.map.impl.querycache.event.SingleIMapEvent;
 import com.hazelcast.map.listener.MapListener;
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.query.impl.QueryEntry;
 import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.spi.impl.eventservice.EventFilter;
@@ -187,7 +187,7 @@ public class ClientQueryCacheEventService implements QueryCacheEventService {
 
             @Override
             public UUID decodeAddResponse(ClientMessage clientMessage) {
-                return ContinuousQueryAddListenerCodec.decodeResponse(clientMessage).response;
+                return ContinuousQueryAddListenerCodec.decodeResponse(clientMessage);
             }
 
             @Override
@@ -197,7 +197,7 @@ public class ClientQueryCacheEventService implements QueryCacheEventService {
 
             @Override
             public boolean decodeRemoveResponse(ClientMessage clientMessage) {
-                return MapRemoveEntryListenerCodec.decodeResponse(clientMessage).response;
+                return MapRemoveEntryListenerCodec.decodeResponse(clientMessage);
             }
 
         };

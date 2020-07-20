@@ -30,8 +30,8 @@ import com.hazelcast.internal.util.SortingUtil;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
@@ -62,7 +62,7 @@ import static com.hazelcast.internal.serialization.impl.SerializationUtil.writeN
  */
 public class QueryResult implements Result<QueryResult>, Iterable<QueryResultRow> {
 
-    private List rows = new LinkedList();
+    private List rows = new ArrayList();
 
     private PartitionIdSet partitionIds;
     private IterationType iterationType;

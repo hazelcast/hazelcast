@@ -39,7 +39,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * in the collection, and vice-versa. This method is always executed by a distributed query, so it may throw a
  * QueryResultSizeExceededException if query result size limit is configured.
  */
-@Generated("98935d1a8a9834b0b0ca3a44093f7bbd")
+@Generated("6895c42db725a987502be3e95bf0bb33")
 public final class MapEntriesWithPagingPredicateCodec {
     //hex: 0x013600
     public static final int REQUEST_MESSAGE_TYPE = 79360;
@@ -90,18 +90,15 @@ public final class MapEntriesWithPagingPredicateCodec {
 
     @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class ResponseParameters {
-
         /**
          * key-value pairs for the query.
          */
         public java.util.List<java.util.Map.Entry<com.hazelcast.internal.serialization.Data, com.hazelcast.internal.serialization.Data>> response;
-
         /**
          * The updated anchor list.
          */
         public com.hazelcast.client.impl.protocol.codec.holder.AnchorDataListHolder anchorDataList;
     }
-
     public static ClientMessage encodeResponse(java.util.Collection<java.util.Map.Entry<com.hazelcast.internal.serialization.Data, com.hazelcast.internal.serialization.Data>> response, com.hazelcast.client.impl.protocol.codec.holder.AnchorDataListHolder anchorDataList) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);

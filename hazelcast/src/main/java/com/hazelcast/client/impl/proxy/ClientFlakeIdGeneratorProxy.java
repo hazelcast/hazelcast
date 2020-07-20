@@ -39,12 +39,7 @@ public class ClientFlakeIdGeneratorProxy extends ClientProxy implements FlakeIdG
 
         ClientFlakeIdGeneratorConfig config = getContext().getClientConfig().findFlakeIdGeneratorConfig(getName());
         batcher = new AutoBatcher(config.getPrefetchCount(), config.getPrefetchValidityMillis(),
-                new AutoBatcher.IdBatchSupplier() {
-                    @Override
-                    public IdBatch newIdBatch(int batchSize) {
-                        return ClientFlakeIdGeneratorProxy.this.newIdBatch(batchSize);
-                    }
-                });
+                ClientFlakeIdGeneratorProxy.this::newIdBatch);
     }
 
     @Override

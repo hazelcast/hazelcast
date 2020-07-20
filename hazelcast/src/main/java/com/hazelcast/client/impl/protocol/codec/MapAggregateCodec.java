@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Applies the aggregation logic on all map entries and returns the result
  */
-@Generated("d38fd3fc1ea770f1fc90097f547d6fc7")
+@Generated("8ab8341a5bdf9295ea075d3cff7df01a")
 public final class MapAggregateCodec {
     //hex: 0x013900
     public static final int REQUEST_MESSAGE_TYPE = 80128;
@@ -85,15 +85,6 @@ public final class MapAggregateCodec {
         return request;
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class ResponseParameters {
-
-        /**
-         * the aggregation result
-         */
-        public @Nullable com.hazelcast.internal.serialization.Data response;
-    }
-
     public static ClientMessage encodeResponse(@Nullable com.hazelcast.internal.serialization.Data response) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
@@ -104,13 +95,14 @@ public final class MapAggregateCodec {
         return clientMessage;
     }
 
-    public static MapAggregateCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
+    /**
+    * the aggregation result
+    */
+    public static com.hazelcast.internal.serialization.Data decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        ResponseParameters response = new ResponseParameters();
         //empty initial frame
         iterator.next();
-        response.response = CodecUtil.decodeNullable(iterator, DataCodec::decode);
-        return response;
+        return CodecUtil.decodeNullable(iterator, DataCodec::decode);
     }
 
 }

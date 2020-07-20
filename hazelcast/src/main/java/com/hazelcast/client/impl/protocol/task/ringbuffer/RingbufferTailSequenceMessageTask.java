@@ -30,7 +30,7 @@ import com.hazelcast.spi.impl.operationservice.Operation;
 import java.security.Permission;
 
 public class RingbufferTailSequenceMessageTask
-        extends AbstractPartitionMessageTask<RingbufferTailSequenceCodec.RequestParameters> {
+        extends AbstractPartitionMessageTask<String> {
 
     public RingbufferTailSequenceMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -38,11 +38,11 @@ public class RingbufferTailSequenceMessageTask
 
     @Override
     protected Operation prepareOperation() {
-        return new GenericOperation(parameters.name, GenericOperation.OPERATION_TAIL);
+        return new GenericOperation(parameters, GenericOperation.OPERATION_TAIL);
     }
 
     @Override
-    protected RingbufferTailSequenceCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+    protected String decodeClientMessage(ClientMessage clientMessage) {
         return RingbufferTailSequenceCodec.decodeRequest(clientMessage);
     }
 
@@ -63,7 +63,7 @@ public class RingbufferTailSequenceMessageTask
 
     @Override
     public Permission getRequiredPermission() {
-        return new RingBufferPermission(parameters.name, ActionConstants.ACTION_READ);
+        return new RingBufferPermission(parameters, ActionConstants.ACTION_READ);
     }
 
     @Override
@@ -73,6 +73,6 @@ public class RingbufferTailSequenceMessageTask
 
     @Override
     public String getDistributedObjectName() {
-        return parameters.name;
+        return parameters;
     }
 }

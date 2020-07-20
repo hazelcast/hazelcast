@@ -40,7 +40,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * lock is only for the key in this map.Locks are re-entrant, so if the key is locked N times, then it should be
  * unlocked N times before another thread can acquire it.
  */
-@Generated("d4069a070c6df41a78a900e912f822d2")
+@Generated("e506492d2bba524cf7b78c88099189c2")
 public final class MultiMapLockCodec {
     //hex: 0x021000
     public static final int REQUEST_MESSAGE_TYPE = 135168;
@@ -112,10 +112,6 @@ public final class MultiMapLockCodec {
         return request;
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class ResponseParameters {
-    }
-
     public static ClientMessage encodeResponse() {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
@@ -125,12 +121,5 @@ public final class MultiMapLockCodec {
         return clientMessage;
     }
 
-    public static MultiMapLockCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
-        ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        ResponseParameters response = new ResponseParameters();
-        //empty initial frame
-        iterator.next();
-        return response;
-    }
 
 }

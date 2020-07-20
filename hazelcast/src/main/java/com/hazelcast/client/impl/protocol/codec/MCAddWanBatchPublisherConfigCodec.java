@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Add a new WAN batch publisher configuration
  */
-@Generated("8b084e36fb19eec8062549b831c338d1")
+@Generated("73ca2bc2716e81b146ada9694101ded4")
 public final class MCAddWanBatchPublisherConfigCodec {
     //hex: 0x201500
     public static final int REQUEST_MESSAGE_TYPE = 2102528;
@@ -158,19 +158,16 @@ public final class MCAddWanBatchPublisherConfigCodec {
 
     @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
     public static class ResponseParameters {
-
         /**
          * Returns the IDs for the WAN publishers which were added to the configuration
          */
         public java.util.List<java.lang.String> addedPublisherIds;
-
         /**
          * Returns the IDs for the WAN publishers which were ignored and not added to
          * the configuration.
          */
         public java.util.List<java.lang.String> ignoredPublisherIds;
     }
-
     public static ClientMessage encodeResponse(java.util.Collection<java.lang.String> addedPublisherIds, java.util.Collection<java.lang.String> ignoredPublisherIds) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);

@@ -39,7 +39,7 @@ import java.util.Map;
  * {@link com.hazelcast.client.impl.protocol.codec.MultiMapMessageType#MULTIMAP_ENTRYSET}
  */
 public class MultiMapEntrySetMessageTask
-        extends AbstractAllPartitionsMessageTask<MultiMapEntrySetCodec.RequestParameters> {
+        extends AbstractAllPartitionsMessageTask<String> {
 
     public MultiMapEntrySetMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -47,7 +47,7 @@ public class MultiMapEntrySetMessageTask
 
     @Override
     protected OperationFactory createOperationFactory() {
-        return new MultiMapOperationFactory(parameters.name, MultiMapOperationFactory.OperationFactoryType.ENTRY_SET);
+        return new MultiMapOperationFactory(parameters, MultiMapOperationFactory.OperationFactoryType.ENTRY_SET);
     }
 
     @Override
@@ -64,7 +64,7 @@ public class MultiMapEntrySetMessageTask
     }
 
     @Override
-    protected MultiMapEntrySetCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+    protected String decodeClientMessage(ClientMessage clientMessage) {
         return MultiMapEntrySetCodec.decodeRequest(clientMessage);
     }
 
@@ -80,12 +80,12 @@ public class MultiMapEntrySetMessageTask
 
     @Override
     public Permission getRequiredPermission() {
-        return new MultiMapPermission(parameters.name, ActionConstants.ACTION_READ);
+        return new MultiMapPermission(parameters, ActionConstants.ACTION_READ);
     }
 
     @Override
     public String getDistributedObjectName() {
-        return parameters.name;
+        return parameters;
     }
 
     @Override

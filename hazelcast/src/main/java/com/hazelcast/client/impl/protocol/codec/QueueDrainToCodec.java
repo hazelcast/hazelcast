@@ -40,7 +40,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * thrown. Attempts to drain a queue to itself result in ILLEGAL_ARGUMENT. Further, the behavior of
  * this operation is undefined if the specified collection is modified while the operation is in progress.
  */
-@Generated("4af7b9992be684a9ebcc08316538b910")
+@Generated("5c35e45290e42cc92b579d51129a2ff9")
 public final class QueueDrainToCodec {
     //hex: 0x030900
     public static final int REQUEST_MESSAGE_TYPE = 198912;
@@ -52,14 +52,11 @@ public final class QueueDrainToCodec {
     private QueueDrainToCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class RequestParameters {
-
-        /**
-         * Name of the Queue
-         */
-        public java.lang.String name;
-    }
+    /**
+     * Name of the Queue
+     */
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"UUF_UNUSED_PUBLIC_OR_PROTECTED_FIELD"})
+    public java.lang.String name;
 
     public static ClientMessage encodeRequest(java.lang.String name) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
@@ -73,22 +70,11 @@ public final class QueueDrainToCodec {
         return clientMessage;
     }
 
-    public static QueueDrainToCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
+    public static java.lang.String decodeRequest(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        RequestParameters request = new RequestParameters();
         //empty initial frame
         iterator.next();
-        request.name = StringCodec.decode(iterator);
-        return request;
-    }
-
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class ResponseParameters {
-
-        /**
-         * list of all removed data in queue
-         */
-        public java.util.List<com.hazelcast.internal.serialization.Data> response;
+        return StringCodec.decode(iterator);
     }
 
     public static ClientMessage encodeResponse(java.util.Collection<com.hazelcast.internal.serialization.Data> response) {
@@ -101,13 +87,14 @@ public final class QueueDrainToCodec {
         return clientMessage;
     }
 
-    public static QueueDrainToCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
+    /**
+    * list of all removed data in queue
+    */
+    public static java.util.List<com.hazelcast.internal.serialization.Data> decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        ResponseParameters response = new ResponseParameters();
         //empty initial frame
         iterator.next();
-        response.response = ListMultiFrameCodec.decode(iterator, DataCodec::decode);
-        return response;
+        return ListMultiFrameCodec.decode(iterator, DataCodec::decode);
     }
 
 }

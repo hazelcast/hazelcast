@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Returns whether the multimap contains an entry with the value.
  */
-@Generated("05f51c95e471a940229b2ef493cf98ad")
+@Generated("2863a3739bbdf0ce38cec1c0d37c3009")
 public final class MultiMapContainsValueCodec {
     //hex: 0x020800
     public static final int REQUEST_MESSAGE_TYPE = 133120;
@@ -86,15 +86,6 @@ public final class MultiMapContainsValueCodec {
         return request;
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class ResponseParameters {
-
-        /**
-         * True if the multimap contains an entry with the value, false otherwise.
-         */
-        public boolean response;
-    }
-
     public static ClientMessage encodeResponse(boolean response) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
@@ -105,12 +96,13 @@ public final class MultiMapContainsValueCodec {
         return clientMessage;
     }
 
-    public static MultiMapContainsValueCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
+    /**
+    * True if the multimap contains an entry with the value, false otherwise.
+    */
+    public static boolean decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        ResponseParameters response = new ResponseParameters();
         ClientMessage.Frame initialFrame = iterator.next();
-        response.response = decodeBoolean(initialFrame.content, RESPONSE_RESPONSE_FIELD_OFFSET);
-        return response;
+        return decodeBoolean(initialFrame.content, RESPONSE_RESPONSE_FIELD_OFFSET);
     }
 
 }

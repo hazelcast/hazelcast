@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Removes the specified distributed object listener. If there is no such listener added before, this call does no
  * change in the cluster and returns false.
  */
-@Generated("f6d40378da3dc44fce5203e79d0730f6")
+@Generated("9928ba01391fb73ca96122b18a13423f")
 public final class ClientRemoveDistributedObjectListenerCodec {
     //hex: 0x000A00
     public static final int REQUEST_MESSAGE_TYPE = 2560;
@@ -51,14 +51,11 @@ public final class ClientRemoveDistributedObjectListenerCodec {
     private ClientRemoveDistributedObjectListenerCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class RequestParameters {
-
-        /**
-         * The id assigned during the registration.
-         */
-        public java.util.UUID registrationId;
-    }
+    /**
+     * The id assigned during the registration.
+     */
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"UUF_UNUSED_PUBLIC_OR_PROTECTED_FIELD"})
+    public java.util.UUID registrationId;
 
     public static ClientMessage encodeRequest(java.util.UUID registrationId) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
@@ -72,21 +69,10 @@ public final class ClientRemoveDistributedObjectListenerCodec {
         return clientMessage;
     }
 
-    public static ClientRemoveDistributedObjectListenerCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
+    public static java.util.UUID decodeRequest(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        RequestParameters request = new RequestParameters();
         ClientMessage.Frame initialFrame = iterator.next();
-        request.registrationId = decodeUUID(initialFrame.content, REQUEST_REGISTRATION_ID_FIELD_OFFSET);
-        return request;
-    }
-
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class ResponseParameters {
-
-        /**
-         * true if the listener existed and removed, false otherwise.
-         */
-        public boolean response;
+        return decodeUUID(initialFrame.content, REQUEST_REGISTRATION_ID_FIELD_OFFSET);
     }
 
     public static ClientMessage encodeResponse(boolean response) {
@@ -99,12 +85,13 @@ public final class ClientRemoveDistributedObjectListenerCodec {
         return clientMessage;
     }
 
-    public static ClientRemoveDistributedObjectListenerCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
+    /**
+    * true if the listener existed and removed, false otherwise.
+    */
+    public static boolean decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        ResponseParameters response = new ResponseParameters();
         ClientMessage.Frame initialFrame = iterator.next();
-        response.response = decodeBoolean(initialFrame.content, RESPONSE_RESPONSE_FIELD_OFFSET);
-        return response;
+        return decodeBoolean(initialFrame.content, RESPONSE_RESPONSE_FIELD_OFFSET);
     }
 
 }

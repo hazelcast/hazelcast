@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * specified key once the call returns. The object to be removed will be accessible only in the current transaction
  * context until the transaction is committed.
  */
-@Generated("35792315e768213c6b611a00fc07b822")
+@Generated("0b0c9d680c55c116fbf27fda9e8f4dd5")
 public final class TransactionalMapRemoveCodec {
     //hex: 0x0E0B00
     public static final int REQUEST_MESSAGE_TYPE = 920320;
@@ -102,15 +102,6 @@ public final class TransactionalMapRemoveCodec {
         return request;
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class ResponseParameters {
-
-        /**
-         * The previous value associated with key, or null if there was no mapping for key
-         */
-        public @Nullable com.hazelcast.internal.serialization.Data response;
-    }
-
     public static ClientMessage encodeResponse(@Nullable com.hazelcast.internal.serialization.Data response) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
@@ -121,13 +112,14 @@ public final class TransactionalMapRemoveCodec {
         return clientMessage;
     }
 
-    public static TransactionalMapRemoveCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
+    /**
+    * The previous value associated with key, or null if there was no mapping for key
+    */
+    public static com.hazelcast.internal.serialization.Data decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        ResponseParameters response = new ResponseParameters();
         //empty initial frame
         iterator.next();
-        response.response = CodecUtil.decodeNullable(iterator, DataCodec::decode);
-        return response;
+        return CodecUtil.decodeNullable(iterator, DataCodec::decode);
     }
 
 }

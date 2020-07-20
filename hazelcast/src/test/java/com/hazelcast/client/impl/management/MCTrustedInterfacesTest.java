@@ -27,6 +27,8 @@ import static org.junit.Assert.fail;
 
 import java.security.AccessControlException;
 import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.ExecutionException;
 
@@ -116,14 +118,13 @@ public class MCTrustedInterfacesTest extends HazelcastTestSupport {
                 null
         );
 
-        ClientDelegatingFuture<MCGetSystemPropertiesCodec.ResponseParameters> future = new ClientDelegatingFuture<>(
+        ClientDelegatingFuture<List<Map.Entry<String, String>>> future = new ClientDelegatingFuture<>(
                 invocation.invoke(),
                 clientImpl.getSerializationService(),
                 MCGetSystemPropertiesCodec::decodeResponse
         );
 
-        MCGetSystemPropertiesCodec.ResponseParameters response = future.get(ASSERT_TRUE_EVENTUALLY_TIMEOUT, SECONDS);
-        assertFalse(response.systemProperties.isEmpty());
+        assertFalse(future.get(ASSERT_TRUE_EVENTUALLY_TIMEOUT, SECONDS).isEmpty());
     }
 
 

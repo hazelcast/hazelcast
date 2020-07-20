@@ -82,6 +82,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assume.assumeTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -89,6 +90,10 @@ public class EvictionTest extends HazelcastTestSupport {
 
     @Rule
     public final OverridePropertyRule overrideTaskSecondsRule = set(PROP_TASK_PERIOD_SECONDS, String.valueOf(1));
+
+    boolean updateRecordAccessTime() {
+        return true;
+    }
 
     @Test
     public void testTTL_entryShouldNotBeReachableAfterTTL() {
@@ -177,11 +182,13 @@ public class EvictionTest extends HazelcastTestSupport {
 
     @Test
     public void testMaxIdle_readThroughOrderedIndex() {
+        assumeTrue(updateRecordAccessTime());
         testMaxIdle_readThroughIndex(IndexType.SORTED);
     }
 
     @Test
     public void testMaxIdle_readThroughUnorderedIndex() {
+        assumeTrue(updateRecordAccessTime());
         testMaxIdle_readThroughIndex(IndexType.HASH);
     }
 

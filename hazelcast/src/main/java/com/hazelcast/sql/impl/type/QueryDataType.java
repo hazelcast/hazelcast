@@ -111,18 +111,32 @@ public class QueryDataType implements IdentifiedDataSerializable {
         return precision;
     }
 
-    public Object convert(Object value) {
+    /**
+     * Normalize the given value to a value returned by this instance. If the value doesn't match
+     * the type expected by the converter, an exception is thrown.
+     *
+     * @param value Value
+     * @return Normalized value
+     * @throws QueryDataTypeMismatchException In case of data type mismatch.
+     */
+    public Object normalize(Object value) {
         if (value == null) {
             return value;
         }
 
         Class<?> valueClass = value.getClass();
 
-        if (valueClass == converter.getValueClass()) {
+        if (!converter.getValueClass().isAssignableFrom(valueClass)) {
+            // Expected and actual class don't match. Throw an error.
+            throw new QueryDataTypeMismatchException(converter.getValueClass(), valueClass);
+        }
+
+        if (valueClass == converter.getNormalizedValueClass()) {
+            // Do nothing if the value is already in the normalized form.
             return value;
         }
 
-        return converter.convertToSelf(Converters.getConverter(valueClass), value);
+        return converter.convertToSelf(converter, value);
     }
 
     @Override

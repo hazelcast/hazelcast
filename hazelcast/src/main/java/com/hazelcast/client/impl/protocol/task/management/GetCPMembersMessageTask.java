@@ -18,7 +18,6 @@ package com.hazelcast.client.impl.protocol.task.management;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MCGetCPMembersCodec;
-import com.hazelcast.client.impl.protocol.codec.MCGetCPMembersCodec.RequestParameters;
 import com.hazelcast.client.impl.protocol.task.AbstractAsyncMessageTask;
 import com.hazelcast.cp.CPMember;
 import com.hazelcast.cp.CPSubsystemManagementService;
@@ -35,7 +34,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
-public class GetCPMembersMessageTask extends AbstractAsyncMessageTask<RequestParameters, List<SimpleEntry<UUID, UUID>>> {
+public class GetCPMembersMessageTask extends AbstractAsyncMessageTask<Void, List<SimpleEntry<UUID, UUID>>> {
 
     public GetCPMembersMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -58,8 +57,8 @@ public class GetCPMembersMessageTask extends AbstractAsyncMessageTask<RequestPar
     }
 
     @Override
-    protected RequestParameters decodeClientMessage(ClientMessage clientMessage) {
-        return MCGetCPMembersCodec.decodeRequest(clientMessage);
+    protected Void decodeClientMessage(ClientMessage clientMessage) {
+        return null;
     }
 
     @Override

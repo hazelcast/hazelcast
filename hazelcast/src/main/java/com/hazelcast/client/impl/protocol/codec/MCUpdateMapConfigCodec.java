@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Updates the config of a map on the member it's called on.
  */
-@Generated("89b21beb7a16c273e70bdd938dbdde2b")
+@Generated("a928a62a922fe8bf0937d3d5820ca645")
 public final class MCUpdateMapConfigCodec {
     //hex: 0x200400
     public static final int REQUEST_MESSAGE_TYPE = 2098176;
@@ -139,10 +139,6 @@ public final class MCUpdateMapConfigCodec {
         return request;
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class ResponseParameters {
-    }
-
     public static ClientMessage encodeResponse() {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
@@ -152,12 +148,5 @@ public final class MCUpdateMapConfigCodec {
         return clientMessage;
     }
 
-    public static MCUpdateMapConfigCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
-        ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        ResponseParameters response = new ResponseParameters();
-        //empty initial frame
-        iterator.next();
-        return response;
-    }
 
 }

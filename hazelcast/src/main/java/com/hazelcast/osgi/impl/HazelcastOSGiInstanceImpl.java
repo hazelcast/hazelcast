@@ -45,6 +45,7 @@ import com.hazelcast.replicatedmap.ReplicatedMap;
 import com.hazelcast.ringbuffer.Ringbuffer;
 import com.hazelcast.scheduledexecutor.IScheduledExecutorService;
 import com.hazelcast.splitbrainprotection.SplitBrainProtectionService;
+import com.hazelcast.sql.SqlService;
 import com.hazelcast.topic.ITopic;
 import com.hazelcast.transaction.HazelcastXAResource;
 import com.hazelcast.transaction.TransactionContext;
@@ -281,6 +282,12 @@ class HazelcastOSGiInstanceImpl
     @Override
     public CPSubsystem getCPSubsystem() {
         return delegatedInstance.getCPSubsystem();
+    }
+
+    @Nonnull
+    @Override
+    public SqlService getSql() {
+        return delegatedInstance.getSql();
     }
 
     @Override

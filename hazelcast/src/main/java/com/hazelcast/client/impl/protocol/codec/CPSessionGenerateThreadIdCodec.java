@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Generates a new ID for the caller thread. The ID is unique in the given
  * CP group.
  */
-@Generated("0e9f51339cabfcffad12639fe0681c68")
+@Generated("5c8569ed132144792102705be779a1c9")
 public final class CPSessionGenerateThreadIdCodec {
     //hex: 0x1F0400
     public static final int REQUEST_MESSAGE_TYPE = 2032640;
@@ -50,14 +50,11 @@ public final class CPSessionGenerateThreadIdCodec {
     private CPSessionGenerateThreadIdCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class RequestParameters {
-
-        /**
-         * ID of the CP group
-         */
-        public com.hazelcast.cp.internal.RaftGroupId groupId;
-    }
+    /**
+     * ID of the CP group
+     */
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"UUF_UNUSED_PUBLIC_OR_PROTECTED_FIELD"})
+    public com.hazelcast.cp.internal.RaftGroupId groupId;
 
     public static ClientMessage encodeRequest(com.hazelcast.cp.internal.RaftGroupId groupId) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
@@ -71,22 +68,11 @@ public final class CPSessionGenerateThreadIdCodec {
         return clientMessage;
     }
 
-    public static CPSessionGenerateThreadIdCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
+    public static com.hazelcast.cp.internal.RaftGroupId decodeRequest(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        RequestParameters request = new RequestParameters();
         //empty initial frame
         iterator.next();
-        request.groupId = RaftGroupIdCodec.decode(iterator);
-        return request;
-    }
-
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class ResponseParameters {
-
-        /**
-         * A unique ID for the caller thread
-         */
-        public long response;
+        return RaftGroupIdCodec.decode(iterator);
     }
 
     public static ClientMessage encodeResponse(long response) {
@@ -99,12 +85,13 @@ public final class CPSessionGenerateThreadIdCodec {
         return clientMessage;
     }
 
-    public static CPSessionGenerateThreadIdCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
+    /**
+    * A unique ID for the caller thread
+    */
+    public static long decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        ResponseParameters response = new ResponseParameters();
         ClientMessage.Frame initialFrame = iterator.next();
-        response.response = decodeLong(initialFrame.content, RESPONSE_RESPONSE_FIELD_OFFSET);
-        return response;
+        return decodeLong(initialFrame.content, RESPONSE_RESPONSE_FIELD_OFFSET);
     }
 
 }

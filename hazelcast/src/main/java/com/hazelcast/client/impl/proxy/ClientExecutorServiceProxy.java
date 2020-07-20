@@ -376,9 +376,7 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
     public boolean isShutdown() {
         ClientMessage request = ExecutorServiceIsShutdownCodec.encodeRequest(name);
         ClientMessage response = invoke(request);
-        ExecutorServiceIsShutdownCodec.ResponseParameters resultParameters =
-                ExecutorServiceIsShutdownCodec.decodeResponse(response);
-        return resultParameters.response;
+        return ExecutorServiceIsShutdownCodec.decodeResponse(response);
     }
 
     @Override
@@ -550,7 +548,7 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
             return newCompletedFuture(response, getSerializationService());
         } else {
             return new IExecutorDelegatingFuture<>(f, getContext(), uuid, defaultValue,
-                    message -> ExecutorServiceSubmitToMemberCodec.decodeResponse(message).response, name, member);
+                    ExecutorServiceSubmitToMemberCodec::decodeResponse, name, member);
         }
     }
 
@@ -563,7 +561,7 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
             return newCompletedFuture(response, getSerializationService());
         } else {
             return new IExecutorDelegatingFuture<>(f, getContext(), uuid, defaultValue,
-                    message -> ExecutorServiceSubmitToPartitionCodec.decodeResponse(message).response, name, partitionId);
+                    ExecutorServiceSubmitToPartitionCodec::decodeResponse, name, partitionId);
         }
     }
 
@@ -581,7 +579,7 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
         Object response;
         try {
             SerializationService serializationService = getClient().getSerializationService();
-            Data data = ExecutorServiceSubmitToMemberCodec.decodeResponse(f.get()).response;
+            Data data = ExecutorServiceSubmitToMemberCodec.decodeResponse(f.get());
             response = serializationService.toObject(data);
         } catch (Exception e) {
             response = e;

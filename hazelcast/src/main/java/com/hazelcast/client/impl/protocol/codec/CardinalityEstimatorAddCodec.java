@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Add a new hash in the estimation set. This is the method you want to
  * use to feed hash values into the estimator.
  */
-@Generated("781be84e36d1b948235c6bb3c2ab3c55")
+@Generated("8d57b25ede9387d865ecbbf3286bc3dd")
 public final class CardinalityEstimatorAddCodec {
     //hex: 0x190100
     public static final int REQUEST_MESSAGE_TYPE = 1638656;
@@ -88,10 +88,6 @@ public final class CardinalityEstimatorAddCodec {
         return request;
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class ResponseParameters {
-    }
-
     public static ClientMessage encodeResponse() {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
@@ -101,12 +97,5 @@ public final class CardinalityEstimatorAddCodec {
         return clientMessage;
     }
 
-    public static CardinalityEstimatorAddCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
-        ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        ResponseParameters response = new ResponseParameters();
-        //empty initial frame
-        iterator.next();
-        return response;
-    }
 
 }

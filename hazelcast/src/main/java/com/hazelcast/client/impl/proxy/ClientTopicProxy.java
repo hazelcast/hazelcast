@@ -107,7 +107,7 @@ public class ClientTopicProxy<E> extends PartitionSpecificClientProxy implements
 
         @Override
         public UUID decodeAddResponse(ClientMessage clientMessage) {
-            return TopicAddMessageListenerCodec.decodeResponse(clientMessage).response;
+            return TopicAddMessageListenerCodec.decodeResponse(clientMessage);
         }
 
         @Override
@@ -117,7 +117,7 @@ public class ClientTopicProxy<E> extends PartitionSpecificClientProxy implements
 
         @Override
         public boolean decodeRemoveResponse(ClientMessage clientMessage) {
-            return TopicRemoveMessageListenerCodec.decodeResponse(clientMessage).response;
+            return TopicRemoveMessageListenerCodec.decodeResponse(clientMessage);
         }
     }
 }

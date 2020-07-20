@@ -18,7 +18,6 @@ package com.hazelcast.client.impl.protocol.task.management;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MCGetMapConfigCodec;
-import com.hazelcast.client.impl.protocol.codec.MCGetMapConfigCodec.RequestParameters;
 import com.hazelcast.client.impl.protocol.task.AbstractInvocationMessageTask;
 import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.instance.impl.Node;
@@ -31,7 +30,7 @@ import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.security.Permission;
 
-public class GetMapConfigMessageTask extends AbstractInvocationMessageTask<RequestParameters> {
+public class GetMapConfigMessageTask extends AbstractInvocationMessageTask<String> {
     public GetMapConfigMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
@@ -44,11 +43,11 @@ public class GetMapConfigMessageTask extends AbstractInvocationMessageTask<Reque
 
     @Override
     protected Operation prepareOperation() {
-        return new GetMapConfigOperation(parameters.mapName);
+        return new GetMapConfigOperation(parameters);
     }
 
     @Override
-    protected RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+    protected String decodeClientMessage(ClientMessage clientMessage) {
         return MCGetMapConfigCodec.decodeRequest(clientMessage);
     }
 
@@ -97,7 +96,7 @@ public class GetMapConfigMessageTask extends AbstractInvocationMessageTask<Reque
 
     @Override
     public Object[] getParameters() {
-        return new Object[]{parameters.mapName};
+        return new Object[]{parameters};
     }
 
     @Override

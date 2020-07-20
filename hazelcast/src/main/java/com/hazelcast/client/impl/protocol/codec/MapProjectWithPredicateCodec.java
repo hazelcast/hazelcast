@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Applies the projection logic on map entries filtered with the Predicate and returns the result
  */
-@Generated("f543c5f4f73238785dd70f4b383a2454")
+@Generated("fe55c43b2db1cc3492f3340d24b70b98")
 public final class MapProjectWithPredicateCodec {
     //hex: 0x013C00
     public static final int REQUEST_MESSAGE_TYPE = 80896;
@@ -92,15 +92,6 @@ public final class MapProjectWithPredicateCodec {
         return request;
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class ResponseParameters {
-
-        /**
-         * the resulted collection upon transformation to the type of the projection
-         */
-        public java.util.List<com.hazelcast.internal.serialization.Data> response;
-    }
-
     public static ClientMessage encodeResponse(java.util.Collection<com.hazelcast.internal.serialization.Data> response) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
@@ -111,13 +102,14 @@ public final class MapProjectWithPredicateCodec {
         return clientMessage;
     }
 
-    public static MapProjectWithPredicateCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
+    /**
+    * the resulted collection upon transformation to the type of the projection
+    */
+    public static java.util.List<com.hazelcast.internal.serialization.Data> decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        ResponseParameters response = new ResponseParameters();
         //empty initial frame
         iterator.next();
-        response.response = ListMultiFrameCodec.decodeContainsNullable(iterator, DataCodec::decode);
-        return response;
+        return ListMultiFrameCodec.decodeContainsNullable(iterator, DataCodec::decode);
     }
 
 }
