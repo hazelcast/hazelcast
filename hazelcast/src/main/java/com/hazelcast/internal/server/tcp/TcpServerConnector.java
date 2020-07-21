@@ -16,12 +16,12 @@
 
 package com.hazelcast.internal.server.tcp;
 
-import com.hazelcast.internal.networking.Channel;
-import com.hazelcast.internal.server.ServerContext;
-import com.hazelcast.logging.ILogger;
 import com.hazelcast.cluster.Address;
+import com.hazelcast.internal.networking.Channel;
 import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.internal.server.ServerContext;
 import com.hazelcast.internal.util.AddressUtil;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.properties.HazelcastProperties;
 
 import java.io.IOException;
@@ -57,6 +57,7 @@ class TcpServerConnector {
     private final LinkedList<Integer> outboundPorts = new LinkedList<>();
     private final boolean socketClientBind;
     private final boolean socketClientBindAny;
+    private final int planeCount;
 
     TcpServerConnector(TcpServerConnectionManager connectionManager) {
         this.connectionManager = connectionManager;
@@ -68,11 +69,12 @@ class TcpServerConnector {
         HazelcastProperties properties = serverContext.properties();
         this.socketClientBind = properties.getBoolean(SOCKET_CLIENT_BIND);
         this.socketClientBindAny = properties.getBoolean(SOCKET_CLIENT_BIND_ANY);
+        this.planeCount = connectionManager.planeCount;
     }
 
-    void asyncConnect(Address address, boolean silent) {
+    void asyncConnect(Address address, boolean silent, int planeIndex) {
         serverContext.shouldConnectTo(address);
-        serverContext.executeAsync(new ConnectTask(address, silent));
+        serverContext.executeAsync(new ConnectTask(address, silent, planeIndex));
     }
 
     private boolean useAnyOutboundPort() {
@@ -97,10 +99,12 @@ class TcpServerConnector {
     private final class ConnectTask implements Runnable {
         private final Address remoteAddress;
         private final boolean silent;
+        private final int planeIndex;
 
-        ConnectTask(Address remoteAddress, boolean silent) {
+        ConnectTask(Address remoteAddress, boolean silent, int planeIndex) {
             this.remoteAddress = remoteAddress;
             this.silent = silent;
+            this.planeIndex = planeIndex;
         }
 
         @Override
@@ -138,7 +142,7 @@ class TcpServerConnector {
                 }
             } catch (Throwable e) {
                 logger.finest(e);
-                connectionManager.failedConnection(remoteAddress, e, silent);
+                connectionManager.failedConnection(remoteAddress, planeIndex, e, silent);
             }
         }
 
@@ -195,7 +199,8 @@ class TcpServerConnector {
                     serverContext.interceptSocket(connectionManager.getEndpointQualifier(), socketChannel.socket(), false);
 
                     connection = connectionManager.newConnection(channel, remoteAddress);
-                    new SendMemberHandshakeTask(logger, serverContext, connection, remoteAddress, true).run();
+                    new SendMemberHandshakeTask(logger, serverContext, connection,
+                            remoteAddress, true, planeIndex, planeCount).run();
                 } catch (Exception e) {
                     closeConnection(connection, e);
                     closeSocket(socketChannel);

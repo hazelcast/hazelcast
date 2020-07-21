@@ -26,6 +26,7 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumMap;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
@@ -44,27 +45,60 @@ import static com.hazelcast.internal.util.UUIDSerializationUtil.writeUUID;
  * schema version so it can be extended in future versions without having
  * to use another packet type.
  *
+ * <h1>Options</h1>
+ * Since 4.1 it is possible to add options to the MemberHandshake without breaking
+ * the protocol in the form of options which effectively is a map with keys and values
+ * of type string.
+ *
  * @since 3.12
  */
 public class MemberHandshake
         implements IdentifiedDataSerializable {
+
+    public static final byte SCHEMA_VERSION_1 = (byte) 1;
+    public static final byte SCHEMA_VERSION_2 = (byte) 2;
+
+    public static final String OPTION_PLANE_COUNT = "planeCount";
+    public static final String OPTION_PLANE_INDEX = "planeIndex";
 
     private byte schemaVersion;
     private Map<ProtocolType, Collection<Address>> localAddresses;
     private Address targetAddress;
     private boolean reply;
     private UUID uuid;
+    private final Map<String, String> options = new HashMap<>();
 
     public MemberHandshake() {
     }
 
-    public MemberHandshake(byte schemaVersion, Map<ProtocolType, Collection<Address>> localAddresses,
-                           Address targetAddress, boolean reply, UUID uuid) {
+    public MemberHandshake(byte schemaVersion,
+                           Map<ProtocolType, Collection<Address>> localAddresses,
+                           Address targetAddress,
+                           boolean reply,
+                           UUID uuid) {
         this.schemaVersion = schemaVersion;
         this.localAddresses = new EnumMap<>(localAddresses);
         this.targetAddress = targetAddress;
         this.reply = reply;
         this.uuid = uuid;
+    }
+
+    public MemberHandshake addOption(String key, Object value) {
+        options.put(key, "" + value);
+        return this;
+    }
+
+    public int getIntOption(String key, int defaultValue) {
+        String value = options.get(key);
+        return value == null ? defaultValue : Integer.parseInt(value);
+    }
+
+    public int getPlaneCount() {
+        return getIntOption(OPTION_PLANE_COUNT, 1);
+    }
+
+    public int getPlaneIndex() {
+        return getIntOption(OPTION_PLANE_INDEX, 0);
     }
 
     byte getSchemaVersion() {
@@ -103,14 +137,22 @@ public class MemberHandshake
         out.writeObject(targetAddress);
         out.writeBoolean(reply);
         writeUUID(out, uuid);
-        int size = (localAddresses == null) ? 0 : localAddresses.size();
+        int size = localAddresses == null ? 0 : localAddresses.size();
         out.writeInt(size);
-        if (size == 0) {
-            return;
+        if (size > 0) {
+            for (Map.Entry<ProtocolType, Collection<Address>> addressEntry : localAddresses.entrySet()) {
+                out.writeInt(addressEntry.getKey().ordinal());
+                writeCollection(addressEntry.getValue(), out);
+            }
         }
-        for (Map.Entry<ProtocolType, Collection<Address>> addressEntry : localAddresses.entrySet()) {
-            out.writeInt(addressEntry.getKey().ordinal());
-            writeCollection(addressEntry.getValue(), out);
+
+        int optionsSize = options.size();
+        out.writeInt(optionsSize);
+        if (optionsSize > 0) {
+            for (Map.Entry<String, String> entry : options.entrySet()) {
+                out.writeUTF(entry.getKey());
+                out.writeUTF(entry.getValue());
+            }
         }
     }
 
@@ -123,20 +165,33 @@ public class MemberHandshake
         int size = in.readInt();
         if (size == 0) {
             localAddresses = Collections.emptyMap();
-            return;
+        } else {
+            Map<ProtocolType, Collection<Address>> addressesPerProtocolType = new EnumMap<>(ProtocolType.class);
+            for (int i = 0; i < size; i++) {
+                ProtocolType protocolType = ProtocolType.valueOf(in.readInt());
+                Collection<Address> addresses = readCollection(in);
+                addressesPerProtocolType.put(protocolType, addresses);
+            }
+            this.localAddresses = addressesPerProtocolType;
         }
-        Map<ProtocolType, Collection<Address>> addressesPerProtocolType = new EnumMap<>(ProtocolType.class);
-        for (int i = 0; i < size; i++) {
-            ProtocolType protocolType = ProtocolType.valueOf(in.readInt());
-            Collection<Address> addresses = readCollection(in);
-            addressesPerProtocolType.put(protocolType, addresses);
+
+        if (schemaVersion > SCHEMA_VERSION_1) {
+            int optionsSize = in.readInt();
+            for (int k = 0; k < optionsSize; k++) {
+                options.put(in.readUTF(), in.readUTF());
+            }
         }
-        this.localAddresses = addressesPerProtocolType;
     }
 
     @Override
     public String toString() {
-        return "MemberHandshake{" + "schemaVersion=" + schemaVersion + ", localAddresses=" + localAddresses
-                + ", targetAddress=" + targetAddress + ", reply=" + reply + ", uuid=" + uuid + '}';
+        return "MemberHandshake{"
+                + "schemaVersion=" + schemaVersion
+                + ", localAddresses=" + localAddresses
+                + ", targetAddress=" + targetAddress
+                + ", reply=" + reply
+                + ", uuid=" + uuid
+                + ", options=" + options
+                + '}';
     }
 }

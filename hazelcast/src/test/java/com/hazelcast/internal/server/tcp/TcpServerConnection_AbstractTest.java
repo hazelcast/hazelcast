@@ -164,7 +164,7 @@ public abstract class TcpServerConnection_AbstractTest extends HazelcastTestSupp
         long startMs = System.currentTimeMillis();
 
         for (; ; ) {
-            for (ServerConnection connection : server.getConnectionManager(MEMBER).getActiveConnections()) {
+            for (ServerConnection connection : server.getConnectionManager(MEMBER).getConnections()) {
                 if (connection.getRemoteSocketAddress().equals(localSocketAddress)) {
                     return connection;
                 }
