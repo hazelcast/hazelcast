@@ -86,7 +86,8 @@ import java.util.PriorityQueue;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
-import java.util.UUID;import java.util.concurrent.ArrayBlockingQueue;
+import java.util.UUID;
+import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.ConcurrentSkipListSet;
@@ -260,7 +261,7 @@ public class SerializationServiceV1 extends AbstractSerializationService {
     public void registerClassDefinitions(Collection<ClassDefinition> classDefinitions, boolean checkClassDefErrors) {
         ArrayList<Integer> classIds = new ArrayList<>();
         for (ClassDefinition cd : classDefinitions) {
-            classIds.add( cd.getClassId() );
+            classIds.add(cd.getClassId());
             registerClassDefinition(cd, classIds, checkClassDefErrors);
         }
     }
@@ -272,7 +273,7 @@ public class SerializationServiceV1 extends AbstractSerializationService {
             FieldDefinition fd = cd.getField(fieldName);
             int factoryId = fd.getFactoryId();
             int classId = fd.getClassId();
-            for (int i = 0; i < classIds.size() ; i++) {
+            for (int i = 0; i < classIds.size(); i++) {
                if ( classIds.get(i) == classId ) {
                    throw new HazelcastSerializationException("Duplicate registration found for factory-id : "
                            + factoryId + ", class-id " + classId);
