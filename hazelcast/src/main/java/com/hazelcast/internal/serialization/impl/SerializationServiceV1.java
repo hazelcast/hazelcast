@@ -64,29 +64,15 @@ import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableFactory;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.partition.PartitioningStrategy;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.Externalizable;
 import java.io.IOException;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.util.AbstractMap;
-import java.util.ArrayDeque;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
-import java.util.LinkedList;
-import java.util.Map;
-import java.util.PriorityQueue;
-import java.util.Set;
-import java.util.TreeMap;
-import java.util.TreeSet;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListMap;
@@ -259,26 +245,31 @@ public class SerializationServiceV1 extends AbstractSerializationService {
     }
 
     public void registerClassDefinitions(Collection<ClassDefinition> classDefinitions, boolean checkClassDefErrors) {
+        ArrayList<Integer> classIds = new ArrayList<>();
         for (ClassDefinition cd : classDefinitions) {
-            registerClassDefinition(cd, checkClassDefErrors);
+            classIds.add(cd.getClassId());
+            registerClassDefinition(cd, classIds, checkClassDefErrors);
         }
     }
 
-    private void registerClassDefinition(ClassDefinition cd,
+    private void registerClassDefinition(ClassDefinition cd, ArrayList<Integer> classIds,
                                          boolean checkClassDefErrors) {
         Set<String> fieldNames = cd.getFieldNames();
         for (String fieldName : fieldNames) {
             FieldDefinition fd = cd.getField(fieldName);
             int factoryId = fd.getFactoryId();
             int classId = fd.getClassId();
-            if (fd.getClassId() == cd.getClassId()) {
-                throw new HazelcastSerializationException("Duplicate registration found for factory-id : "
-                        + factoryId + ", class-id " + classId);
+            for (int i = 0; i < classIds.size() ; i++) {
+               if ( classIds.get(i) == classId ) {
+                   throw new HazelcastSerializationException("Duplicate registration found for factory-id : "
+                           + factoryId + ", class-id " + classId);
+               }
             }
             if (fd.getType() == FieldType.PORTABLE || fd.getType() == FieldType.PORTABLE_ARRAY) {
+                classIds.add(classId);
                 ClassDefinition nestedCd = ((FieldDefinitionImpl) fd).getClassDefinition();
                 if (nestedCd != null) {
-                    registerClassDefinition(nestedCd, checkClassDefErrors);
+                    registerClassDefinition(nestedCd, classIds, checkClassDefErrors);
                     portableContext.registerClassDefinition(nestedCd);
                     continue;
                 }
