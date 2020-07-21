@@ -31,6 +31,7 @@ import com.hazelcast.sql.SqlErrorCode;
 import com.hazelcast.sql.SqlException;
 import com.hazelcast.sql.SqlQuery;
 import com.hazelcast.sql.SqlResult;
+import com.hazelcast.sql.SqlRowMetadata;
 import com.hazelcast.sql.SqlService;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.QueryId;
@@ -102,7 +103,7 @@ public class SqlClientService implements SqlService {
                 this,
                 connection,
                 response.queryId,
-                response.rowMetadata,
+                response.rowMetadata != null ? new SqlRowMetadata(response.rowMetadata) : null,
                 response.rowPage,
                 response.rowPageLast,
                 query.getCursorBufferSize()

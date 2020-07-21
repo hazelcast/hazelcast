@@ -62,7 +62,7 @@ public class SqlExecuteMessageTask extends SqlAbstractMessageTask<SqlExecuteCode
 
             return new SqlExecuteResponse(
                 cursor.getQueryId().unparse(),
-                cursor.getRowMetadata(),
+                cursor.getRowMetadata().getColumns(),
                 page.getRows(),
                 page.isLast(),
                 null
