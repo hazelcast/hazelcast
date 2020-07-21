@@ -76,7 +76,7 @@ public class SendMemberHandshakeTask implements Runnable {
                 .addOption(OPTION_PLANE_COUNT, planeCount)
                 .addOption(OPTION_PLANE_INDEX, planeIndex);
         byte[] bytes = serverContext.getSerializationService().toBytes(memberHandshake);
-        Packet packet = new Packet(bytes).setPacketType(Packet.Type.MEMBER_HANDSHAKE);
+        Packet packet = new Packet(bytes).setPacketType(Packet.Type.SERVER_CONTROL);
         connection.write(packet);
         //now you can send anything...
     }
