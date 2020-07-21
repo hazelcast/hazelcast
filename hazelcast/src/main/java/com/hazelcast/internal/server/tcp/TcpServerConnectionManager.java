@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.hazelcast.internal.server.tcp;
 
 import com.hazelcast.cluster.Address;
@@ -36,7 +35,6 @@ import com.hazelcast.internal.server.NetworkStats;
 import com.hazelcast.internal.server.ServerConnection;
 import com.hazelcast.internal.server.ServerConnectionManager;
 import com.hazelcast.internal.server.ServerContext;
-import com.hazelcast.internal.server.tcp.AbstractChannelInitializer.MemberHandshakeHandler;
 import com.hazelcast.internal.util.ConstructorFunction;
 import com.hazelcast.internal.util.MutableLong;
 import com.hazelcast.internal.util.counters.MwCounter;
@@ -114,7 +112,7 @@ public class TcpServerConnectionManager
     private final Function<EndpointQualifier, ChannelInitializer> channelInitializerFn;
     private final TcpServer server;
     private final TcpServerConnector connector;
-    private final MemberHandshakeHandler memberHandshakeHandler;
+    private final TcpServerControl serverControl;
     private final NetworkStatsImpl networkStats;
     private final ConstructorFunction<Address, TcpServerConnectionErrorHandler> errorHandlerConstructor =
             endpoint -> new TcpServerConnectionErrorHandler(TcpServerConnectionManager.this, endpoint);
@@ -141,7 +139,7 @@ public class TcpServerConnectionManager
         this.serverContext = serverContext;
         this.logger = serverContext.getLoggingService().getLogger(TcpServerConnectionManager.class);
         this.connector = new TcpServerConnector(this);
-        this.memberHandshakeHandler = new MemberHandshakeHandler(this, serverContext, logger, supportedProtocolTypes);
+        this.serverControl = new TcpServerControl(this, serverContext, logger, supportedProtocolTypes);
         this.networkStats = endpointQualifier == null ? null : new NetworkStatsImpl();
         this.planes = new Plane[planeCount];
         for (int planeIndex = 0; planeIndex < planes.length; planeIndex++) {
@@ -170,7 +168,7 @@ public class TcpServerConnectionManager
 
     @Override
     public synchronized void accept(Packet packet) {
-        memberHandshakeHandler.process(packet);
+        serverControl.process(packet);
     }
 
     public ServerConnection get(Address address, int streamId) {

@@ -123,7 +123,7 @@ public class MemberHandshakeHandlerTest {
     private final TestAwareInstanceFactory factory = new TestAwareInstanceFactory();
 
     private InternalSerializationService serializationService;
-    private AbstractChannelInitializer.MemberHandshakeHandler handshakeHandler;
+    private TcpServerControl tcpServerControl;
     private UUID uuid = UUID.randomUUID();
 
     // mocks
@@ -163,7 +163,7 @@ public class MemberHandshakeHandlerTest {
         Node node = getNode(hz);
         connectionManager = TcpServerConnectionManager.class.cast(
                 node.getServer().getConnectionManager(EndpointQualifier.resolve(protocolType, "wan")));
-        handshakeHandler = getFieldValueReflectively(connectionManager, "memberHandshakeHandler");
+        tcpServerControl = getFieldValueReflectively(connectionManager, "serverControl");
 
         // setup mock channel & socket
         Socket socket = mock(Socket.class);
@@ -183,7 +183,7 @@ public class MemberHandshakeHandlerTest {
 
     @Test
     public void process() {
-        handshakeHandler.process(bindMessage());
+        tcpServerControl.process(bindMessage());
         assertExpectedAddressesRegistered();
     }
 
