@@ -22,6 +22,7 @@ import com.hazelcast.sql.impl.calcite.opt.distribution.DistributionTrait;
 import com.hazelcast.sql.impl.calcite.opt.distribution.DistributionTraitDef;
 import com.hazelcast.sql.impl.calcite.opt.logical.MapScanLogicalRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.index.IndexResolver;
+import com.hazelcast.sql.impl.schema.map.MapTableIndex;
 import com.hazelcast.sql.impl.schema.map.PartitionedMapTable;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.RelOptRuleCall;
@@ -30,6 +31,8 @@ import org.apache.calcite.rel.RelNode;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+
+import static com.hazelcast.sql.impl.calcite.opt.physical.index.IndexResolver.createFullIndexScan;
 
 /**
  * Convert logical map scan to either replicated or partitioned physical scan.
@@ -59,23 +62,42 @@ public final class MapScanPhysicalRule extends RelOptRule {
         } else {
             PartitionedMapTable table = (PartitionedMapTable) scan.getMap();
 
+            boolean nativeMemoryEnabled = table.nativeMemoryEnabled();
+
             DistributionTrait distribution = getDistributionTrait(
-                OptUtils.getDistributionDef(scan),
-                table,
-                scan.getTableUnwrapped().getProjects()
+                    OptUtils.getDistributionDef(scan),
+                    table,
+                    scan.getTableUnwrapped().getProjects()
             );
 
             List<RelNode> transforms = new ArrayList<>(1);
 
-            // Add normal map scan.
-            transforms.add(new MapScanPhysicalRel(
-                scan.getCluster(),
-                OptUtils.toPhysicalConvention(scan.getTraitSet(), distribution),
-                scan.getTable()
-            ));
+            MapScanPhysicalRel mapScan = new MapScanPhysicalRel(
+                    scan.getCluster(),
+                    OptUtils.toPhysicalConvention(scan.getTraitSet(), distribution),
+                    scan.getTable()
+            );
+            if (!nativeMemoryEnabled) {
+                // Add normal map scan. For HD, Map scan is not supported
+                transforms.add(mapScan);
+            }
 
             // Try adding index scans.
-            transforms.addAll(IndexResolver.createIndexScans(scan, distribution, table.getIndexes()));
+            List<MapTableIndex> indexes = table.getIndexes();
+            List<RelNode> indexScans = IndexResolver.createIndexScans(scan, distribution, indexes);
+            transforms.addAll(indexScans);
+
+            if (nativeMemoryEnabled && indexScans.isEmpty()) {
+                if (!indexes.isEmpty()) {
+                    // Create index scan, even if there is no matching filters
+                    RelNode rel = createFullIndexScan(scan, distribution, indexes);
+                    transforms.add(rel);
+                } else {
+                    // Most likely this will throw a not supported exception on the
+                    // creation of query plan.
+                    transforms.add(mapScan);
+                }
+            }
 
             for (RelNode transform : transforms) {
                 call.transformTo(transform);

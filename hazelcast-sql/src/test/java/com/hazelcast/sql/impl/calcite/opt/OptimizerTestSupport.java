@@ -115,7 +115,7 @@ public abstract class OptimizerTestSupport extends SqlTestSupport {
     /**
      * Optimize with the given context.
      *
-     * @param sql SQL.
+     * @param sql     SQL.
      * @param context Context.
      * @return Result.
      */
@@ -155,22 +155,33 @@ public abstract class OptimizerTestSupport extends SqlTestSupport {
     }
 
     protected static HazelcastTable partitionedTable(
-        String name,
-        List<TableField> fields,
-        List<MapTableIndex> indexes,
-        long rowCount
+            String name,
+            List<TableField> fields,
+            List<MapTableIndex> indexes,
+            long rowCount
+            ) {
+        return partitionedTable(name, fields, indexes, rowCount, false);
+    }
+
+    protected static HazelcastTable partitionedTable(
+            String name,
+            List<TableField> fields,
+            List<MapTableIndex> indexes,
+            long rowCount,
+            boolean nativeMemoryEnabled
     ) {
         PartitionedMapTable table = new PartitionedMapTable(
-            SCHEMA_NAME_REPLICATED,
-            name,
-            fields,
-            new ConstantTableStatistics(rowCount),
-            null,
-            null,
-            null,
-            null,
-            indexes,
-            PartitionedMapTable.DISTRIBUTION_FIELD_ORDINAL_NONE
+                SCHEMA_NAME_REPLICATED,
+                name,
+                fields,
+                new ConstantTableStatistics(rowCount),
+                null,
+                null,
+                null,
+                null,
+                indexes,
+                PartitionedMapTable.DISTRIBUTION_FIELD_ORDINAL_NONE,
+                nativeMemoryEnabled
         );
 
         return new HazelcastTable(table, new MapTableStatistic(rowCount));
@@ -185,10 +196,11 @@ public abstract class OptimizerTestSupport extends SqlTestSupport {
         Map<String, Table> tableMap = new HashMap<>();
 
         tableMap.put("p", partitionedTable(
-            "p",
-            fields("f0", INT, "f1", INT, "f2", INT, "f3", INT, "f4", INT),
-            null,
-            100
+                "p",
+                fields("f0", INT, "f1", INT, "f2", INT, "f3", INT, "f4", INT),
+                null,
+                100,
+                false
         ));
 
         return new HazelcastSchema(tableMap);
@@ -258,11 +270,11 @@ public abstract class OptimizerTestSupport extends SqlTestSupport {
             PlanRow actualRow = actual.getRow(i);
 
             assertEquals(
-                planErrorMessage(
-                    "Plan rows are different at " + (i + 1), expected, actual
-                ),
-                expectedRow,
-                actualRow
+                    planErrorMessage(
+                            "Plan rows are different at " + (i + 1), expected, actual
+                    ),
+                    expectedRow,
+                    actualRow
             );
         }
 

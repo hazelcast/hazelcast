@@ -32,14 +32,14 @@ import java.util.List;
 public class TestMapTable extends AbstractMapTable {
     private TestMapTable(String schemaName, String name, List<TableField> fields, TableStatistics statistics) {
         super(
-            schemaName,
-            name,
-            fields,
-            statistics,
-            GenericQueryTargetDescriptor.DEFAULT,
-            GenericQueryTargetDescriptor.DEFAULT,
-            null,
-            null
+                schemaName,
+                name,
+                fields,
+                statistics,
+                GenericQueryTargetDescriptor.DEFAULT,
+                GenericQueryTargetDescriptor.DEFAULT,
+                null,
+                null
         );
     }
 

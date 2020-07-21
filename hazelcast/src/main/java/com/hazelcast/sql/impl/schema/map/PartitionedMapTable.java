@@ -33,7 +33,9 @@ public class PartitionedMapTable extends AbstractMapTable {
 
     private final List<MapTableIndex> indexes;
     private final int distributionFieldIndex;
+    private final boolean nativeMemoryEnabled;
 
+    @SuppressWarnings("checkstyle:ParameterNumber")
     public PartitionedMapTable(
             String schemaName,
             String name,
@@ -44,13 +46,15 @@ public class PartitionedMapTable extends AbstractMapTable {
             UpsertTargetDescriptor keyUpsertDescriptor,
             UpsertTargetDescriptor valueUpsertDescriptor,
             List<MapTableIndex> indexes,
-            int distributionFieldOrdinal
+            int distributionFieldOrdinal,
+            boolean nativeMemoryEnabled
     ) {
         super(schemaName, name, fields, statistics, keyDescriptor, valueDescriptor,
                 keyUpsertDescriptor, valueUpsertDescriptor);
 
         this.indexes = indexes;
         this.distributionFieldIndex = distributionFieldOrdinal;
+        this.nativeMemoryEnabled = nativeMemoryEnabled;
     }
 
     public PartitionedMapTable(String name, QueryException exception) {
@@ -58,6 +62,7 @@ public class PartitionedMapTable extends AbstractMapTable {
 
         this.indexes = null;
         this.distributionFieldIndex = DISTRIBUTION_FIELD_ORDINAL_NONE;
+        this.nativeMemoryEnabled = false;
     }
 
     public List<MapTableIndex> getIndexes() {
@@ -74,5 +79,11 @@ public class PartitionedMapTable extends AbstractMapTable {
         checkException();
 
         return distributionFieldIndex;
+    }
+
+    public boolean nativeMemoryEnabled() {
+        checkException();
+
+        return nativeMemoryEnabled;
     }
 }

@@ -39,6 +39,7 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
+import static com.hazelcast.config.InMemoryFormat.NATIVE;
 import static com.hazelcast.sql.impl.schema.map.MapTableUtils.estimatePartitionedMapRowCount;
 import static com.hazelcast.sql.impl.schema.map.MapTableUtils.getPartitionedMapDistributionField;
 import static com.hazelcast.sql.impl.schema.map.MapTableUtils.getPartitionedMapIndexes;
@@ -85,6 +86,8 @@ public class LocalPartitionedMapConnector extends SqlKeyValueConnector {
         long estimatedRowCount = estimatePartitionedMapRowCount(nodeEngine, context, mapName);
         List<MapTableIndex> indexes = container != null ? getPartitionedMapIndexes(container, fields) : emptyList();
         int distributionFieldOrdinal = container != null ? getPartitionedMapDistributionField(container, context, fields) : -1;
+        boolean nativeMemoryEnabled = container != null && nodeEngine.getConfig().getNativeMemoryConfig().isEnabled()
+                && container.getMapConfig().getInMemoryFormat() == NATIVE;
 
         return new PartitionedMapTable(
                 schemaName,
@@ -96,7 +99,8 @@ public class LocalPartitionedMapConnector extends SqlKeyValueConnector {
                 keyMetadata.getUpsertTargetDescriptor(),
                 valueMetadata.getUpsertTargetDescriptor(),
                 indexes,
-                distributionFieldOrdinal
+                distributionFieldOrdinal,
+                nativeMemoryEnabled
         );
     }
 

@@ -26,16 +26,24 @@ import com.hazelcast.sql.impl.calcite.schema.HazelcastSchema;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
 import com.hazelcast.sql.impl.schema.map.MapTableIndex;
 import com.hazelcast.sql.impl.type.QueryDataType;
+import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
+import com.hazelcast.test.annotation.ParallelJVMTest;
+import com.hazelcast.test.annotation.QuickTest;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.schema.Table;
 import org.junit.Ignore;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
 import static com.hazelcast.sql.impl.type.QueryDataType.INT;
+import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
 
@@ -45,7 +53,23 @@ import static org.junit.Assert.assertEquals;
 // TODO: In separate classes:
 //   Composite indexes
 //   Different types!
+
+@RunWith(Parameterized.class)
+@Parameterized.UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class PhysicalIndexScanTest extends OptimizerTestSupport {
+
+    @Parameterized.Parameter
+    public boolean nativeMemoryEnabled;
+
+    @Parameterized.Parameters(name = "nativeMemoryEnabled:{0}")
+    public static Collection<Object[]> parameters() {
+        return asList(new Object[][]{
+                {true},
+                {false},
+        });
+    }
+
     @Override
     protected HazelcastSchema createDefaultSchema() {
         Map<String, Table> tableMap = new HashMap<>();
@@ -64,7 +88,8 @@ public class PhysicalIndexScanTest extends OptimizerTestSupport {
                 new MapTableIndex("hash_f3", IndexType.HASH, singletonList(3), singletonList(INT)),
                 new MapTableIndex("bitmap_f3", IndexType.BITMAP, singletonList(3), singletonList(INT))
             ),
-            100
+            100,
+            nativeMemoryEnabled
         );
 
         tableMap.put("p", pTable);
@@ -115,9 +140,9 @@ public class PhysicalIndexScanTest extends OptimizerTestSupport {
 
     @Test
     public void test_or_literal() {
-        checkOr("f1", "1", "2", "sorted_f1", "=($1, 1)", "=($1, 2)");
-        checkOr("f2", "1", "2", "hash_f2", "=($2, 1)", "=($2, 2)");
-        checkOr("f3", "1", "2", "hash_f3", "=($3, 1)", "=($3, 2)");
+        checkOr("f1", "1", "2", "sorted_f1", "sorted_f1", "=($1, 1)", "=($1, 2)");
+        checkOr("f2", "1", "2", "sorted_f1", "hash_f2", "=($2, 1)", "=($2, 2)");
+        checkOr("f3", "1", "2", "sorted_f1", "hash_f3", "=($3, 1)", "=($3, 2)");
     }
 
     @Ignore
@@ -143,6 +168,7 @@ public class PhysicalIndexScanTest extends OptimizerTestSupport {
         String column,
         String value1,
         String value2,
+        String firstIndexName,
         String expectedIndexName,
         String expectedOperand1,
         String expectedOperand2,
@@ -159,9 +185,16 @@ public class PhysicalIndexScanTest extends OptimizerTestSupport {
         checkIndex(conditionWithIn, null, expectedIndexName, expectedFilter, "true", 25d, parameterTypes);
         checkIndex(inverseCondition, null, expectedIndexName, expectedInverseFilter, "true", 25d, parameterTypes);
 
-        // Make sure that inequality disallows index usage
         String conditionWithInequality = "(" + column + " = " + value1 + " OR " + column + " > " + value2 + ")";
-        checkNoIndex(conditionWithInequality, null, parameterTypes);
+
+        if (nativeMemoryEnabled) {
+            String expectedGreaterOperand2 = ">" + expectedOperand2.substring(1);
+            String expectedRemainingFilter = "OR(" + expectedOperand1 + ", " + expectedGreaterOperand2 + ")";
+            checkIndex(conditionWithInequality, null, firstIndexName, null, expectedRemainingFilter, 25d, parameterTypes);
+        } else {
+            // Make sure that inequality disallows index usage
+            checkNoIndex(conditionWithInequality, null, parameterTypes);
+        }
     }
 
     @Test
@@ -169,7 +202,9 @@ public class PhysicalIndexScanTest extends OptimizerTestSupport {
         checkRange("f1", "1", "2", "sorted_f1", "$1", "1", "2");
         checkIndex("f1 BETWEEN 1 AND 2", null, "sorted_f1", "AND(>=($1, 1), <=($1, 2))", "true", 25d);
 
-        checkRange("f2", "1", "2", null, null, null, null);
+        if (!nativeMemoryEnabled) {
+            checkRange("f2", "1", "2", null, null, null, null);
+        }
     }
 
     @Ignore
@@ -271,11 +306,19 @@ public class PhysicalIndexScanTest extends OptimizerTestSupport {
         // AND should not interfere with index choice
         checkIndex("f1 = 1", "AND ret = 5", "sorted_f1", "=($1, 1)", "=($0, 5)", 2.2d);
 
-        // OR cancels out the index optimization
-        checkNoIndex("f1 = 1", "OR ret = 5");
+        if (nativeMemoryEnabled) {
+            // For OR still use the index
+            checkIndex("f1 = 1", "OR ret = 5",  "sorted_f1", "null", "OR(=($1, 1), =($0, 5))", 25d);
 
-        // NOT cancels out the index optimization
-        checkNoIndex("NOT (f1 = 1)", null);
+            // For NOT still use te index
+            checkIndex("NOT (f1 = 1)", null,  "sorted_f1", "null", "<>($1, 1)", 50d);
+        } else {
+            // OR cancels out the index optimization
+            checkNoIndex("f1 = 1", "OR ret = 5");
+
+            // NOT cancels out the index optimization
+            checkNoIndex("NOT (f1 = 1)", null);
+        }
     }
 
     @Test

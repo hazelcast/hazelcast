@@ -140,7 +140,7 @@ public final class IndexResolver {
      * Creates a map from the scan column ordinal to expressions that could be potentially used by indexes created over
      * this column.
      *
-     * @param nodes CNF nodes
+     * @param nodes                   CNF nodes
      * @param allIndexedFieldOrdinals Ordinals of all columns that have some indexes. Helps to filter out candidates that
      *                                definitely cannot be used earlier.
      */
@@ -364,6 +364,39 @@ public final class IndexResolver {
         return createIndexScan(scan, distribution, index, cnf, filters);
     }
 
+    public static RelNode createFullIndexScan(
+            MapScanLogicalRel scan,
+            DistributionTrait distribution,
+            List<MapTableIndex> indexes
+    ) {
+        assert !indexes.isEmpty();
+        MapTableIndex tableIndex = indexes.get(0);
+
+        RexNode scanFilter = scan.getTableUnwrapped().getFilter();
+
+        RelTraitSet traitSet = OptUtils.toPhysicalConvention(scan.getTraitSet(), distribution);
+
+        HazelcastRelOptTable originalRelTable = (HazelcastRelOptTable) scan.getTable();
+        HazelcastTable originalHazelcastTable = OptUtils.getHazelcastTable(scan);
+
+        RelOptTable newRelTable = OptUtils.createRelTable(
+                originalRelTable,
+                originalHazelcastTable.withFilter(null),
+                scan.getCluster().getTypeFactory()
+        );
+
+        return new MapIndexScanPhysicalRel(
+                scan.getCluster(),
+                traitSet,
+                newRelTable,
+                tableIndex,
+                Collections.emptyList(),
+                Collections.emptyList(),
+                null,
+                scanFilter
+        );
+    }
+
     private static MapIndexScanPhysicalRel createIndexScan(
         MapScanLogicalRel scan,
         DistributionTrait distribution,
@@ -549,7 +582,7 @@ public final class IndexResolver {
     /**
      * Create collation trait for the given scan and index.
      *
-     * @param scan Scan.
+     * @param scan  Scan.
      * @param index Index.
      * @return Collation trait.
      */
