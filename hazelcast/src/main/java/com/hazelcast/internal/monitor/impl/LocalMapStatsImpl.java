@@ -161,11 +161,12 @@ public class LocalMapStatsImpl implements LocalMapStats {
     private volatile long dirtyEntryCount;
     @Probe(name = MAP_METRIC_BACKUP_COUNT)
     private volatile int backupCount;
-    private volatile NearCacheStats nearCacheStats;
     @Probe(name = MAP_METRIC_QUERY_COUNT)
     private volatile long queryCount;
     @Probe(name = MAP_METRIC_INDEXED_QUERY_COUNT)
     private volatile long indexedQueryCount;
+    private volatile NearCacheStats nearCacheStats;
+    private volatile EntryProcessorStatsImpl entryProcessorStats;
 
     public LocalMapStatsImpl() {
         creationTime = Clock.currentTimeMillis();
@@ -370,6 +371,11 @@ public class LocalMapStatsImpl implements LocalMapStats {
     @Override
     public NearCacheStats getNearCacheStats() {
         return nearCacheStats;
+    }
+
+    @Override
+    public EntryProcessorStatsImpl getEntryProcessorStats() {
+        return entryProcessorStats;
     }
 
     public void setNearCacheStats(NearCacheStats nearCacheStats) {

@@ -16,10 +16,10 @@
 
 package com.hazelcast.map;
 
-import com.hazelcast.query.LocalIndexStats;
 import com.hazelcast.instance.LocalInstanceStats;
 import com.hazelcast.internal.monitor.MemberState;
 import com.hazelcast.nearcache.NearCacheStats;
+import com.hazelcast.query.LocalIndexStats;
 
 import java.util.Map;
 
@@ -243,13 +243,6 @@ public interface LocalMapStats extends LocalInstanceStats {
     long getMerkleTreesCost();
 
     /**
-     * Returns statistics related to the Near Cache.
-     *
-     * @return statistics object for the Near Cache
-     */
-    NearCacheStats getNearCacheStats();
-
-    /**
      * Returns the total number of queries performed on the map.
      * <p>
      * The returned value includes queries processed with and without indexes.
@@ -274,4 +267,12 @@ public interface LocalMapStats extends LocalInstanceStats {
      */
     Map<String, LocalIndexStats> getIndexStats();
 
+    /**
+     * Returns statistics related to the Near Cache.
+     *
+     * @return statistics object for the Near Cache
+     */
+    NearCacheStats getNearCacheStats();
+
+    EntryProcessorStats getEntryProcessorStats();
 }

@@ -81,6 +81,19 @@ public final class ConcurrencyUtil {
         }
     }
 
+    public static <E> void setMin(E obj, AtomicLongFieldUpdater<E> updater, long value) {
+        for (; ; ) {
+            long current = updater.get(obj);
+            if (current <= value) {
+                return;
+            }
+
+            if (updater.compareAndSet(obj, current, value)) {
+                return;
+            }
+        }
+    }
+
     public static boolean setIfEqualOrGreaterThan(AtomicLong oldValue, long newValue) {
         while (true) {
             long local = oldValue.get();

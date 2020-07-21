@@ -33,8 +33,8 @@ import com.hazelcast.map.IMap;
 import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.map.QueryCache;
 import com.hazelcast.map.impl.ComputeEntryProcessor;
-import com.hazelcast.map.impl.ComputeIfPresentEntryProcessor;
 import com.hazelcast.map.impl.ComputeIfAbsentEntryProcessor;
+import com.hazelcast.map.impl.ComputeIfPresentEntryProcessor;
 import com.hazelcast.map.impl.KeyValueConsumingEntryProcessor;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.SimpleEntryView;
@@ -78,6 +78,7 @@ import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
+import static com.hazelcast.internal.util.ConcurrencyUtil.CALLER_RUNS;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.internal.util.MapUtil.createHashMap;
 import static com.hazelcast.internal.util.Preconditions.checkNoNullInside;
@@ -735,15 +736,34 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         handleHazelcastInstanceAwareParams(entryProcessor);
 
+        long startNanos = UNSET;
+        if (statisticsEnabled) {
+            startNanos = System.nanoTime();
+        }
+
         Data result = executeOnKeyInternal(key, entryProcessor).joinInternal();
+        if (statisticsEnabled) {
+            localMapStats.getEntryProcessorStats()
+                    .recordExecutionTime(System.nanoTime() - startNanos);
+        }
         return toObject(result);
     }
 
     @Override
     public <R> Map<K, R> executeOnKeys(@Nonnull Set<K> keys,
                                        @Nonnull EntryProcessor<K, V, R> entryProcessor) {
+        long startNanos = UNSET;
+        if (statisticsEnabled) {
+            startNanos = System.nanoTime();
+        }
+
         try {
-            return submitToKeys(keys, entryProcessor).get();
+            Map<K, R> result = submitToKeys(keys, entryProcessor).get();
+            if (statisticsEnabled) {
+                localMapStats.getEntryProcessorStats()
+                        .recordExecutionTime(System.nanoTime() - startNanos);
+            }
+            return result;
         } catch (Exception e) {
             throw rethrow(e);
         }
@@ -752,6 +772,27 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
     @Override
     public <R> InternalCompletableFuture<Map<K, R>> submitToKeys(@Nonnull Set<K> keys,
                                                                  @Nonnull EntryProcessor<K, V, R> entryProcessor) {
+        long startNanos = UNSET;
+        if (statisticsEnabled) {
+            startNanos = System.nanoTime();
+        }
+
+        InternalCompletableFuture<Map<K, R>> future = submitToKeysAsync(keys, entryProcessor);
+
+        if (statisticsEnabled) {
+            long finalStartNanos = startNanos;
+            future.whenCompleteAsync((krMap, throwable) -> {
+                if (throwable == null) {
+                    localMapStats.getEntryProcessorStats()
+                            .recordExecutionTime(System.nanoTime() - finalStartNanos);
+                }
+            }, CALLER_RUNS);
+        }
+        return future;
+    }
+
+    private <R> InternalCompletableFuture<Map<K, R>> submitToKeysAsync(@Nonnull Set<K> keys,
+                                                                       @Nonnull EntryProcessor<K, V, R> entryProcessor) {
         checkNotNull(keys, NULL_KEYS_ARE_NOT_ALLOWED);
         if (keys.isEmpty()) {
             return newCompletedFuture(Collections.emptyMap());
@@ -765,11 +806,27 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
     @Override
     public <R> InternalCompletableFuture<R> submitToKey(@Nonnull K key,
                                                         @Nonnull EntryProcessor<K, V, R> entryProcessor) {
+        long startNanos = UNSET;
+        if (statisticsEnabled) {
+            startNanos = System.nanoTime();
+        }
+
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         handleHazelcastInstanceAwareParams(entryProcessor);
 
         InternalCompletableFuture<Data> future = executeOnKeyInternal(key, entryProcessor);
-        return newDelegatingFuture(serializationService, future);
+        InternalCompletableFuture<R> completableFuture = newDelegatingFuture(serializationService, future);
+        if (statisticsEnabled) {
+            long finalStartNanos = startNanos;
+            completableFuture.whenCompleteAsync((krMap, throwable) -> {
+                if (throwable == null) {
+                    localMapStats.getEntryProcessorStats()
+                            .recordExecutionTime(System.nanoTime() - finalStartNanos);
+                }
+            }, CALLER_RUNS);
+        }
+
+        return completableFuture;
     }
 
     @Override
@@ -780,6 +837,11 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
     @Override
     public <R> Map<K, R> executeOnEntries(@Nonnull EntryProcessor<K, V, R> entryProcessor,
                                           @Nonnull Predicate<K, V> predicate) {
+        long startNanos = UNSET;
+        if (statisticsEnabled) {
+            startNanos = System.nanoTime();
+        }
+
         handleHazelcastInstanceAwareParams(entryProcessor, predicate);
         List<Data> result = new ArrayList<>();
 
@@ -795,6 +857,10 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
 
             resultingMap.put(toObject(key), toObject(value));
 
+        }
+        if (statisticsEnabled) {
+            localMapStats.getEntryProcessorStats()
+                    .recordExecutionTime(System.nanoTime() - startNanos);
         }
         return resultingMap;
     }
@@ -967,7 +1033,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
         final ManagedContext context = serializationService.getManagedContext();
         predicate = (java.util.function.Predicate<? super EventJournalMapEvent<K, V>>) context.initialize(predicate);
         projection = (java.util.function.Function<? super EventJournalMapEvent<K, V>, ? extends T>)
-            context.initialize(projection);
+                context.initialize(projection);
         final MapEventJournalReadOperation<K, V, T> op = new MapEventJournalReadOperation<>(
                 name, startSequence, minSize, maxSize, predicate, projection);
         op.setPartitionId(partitionId);
@@ -1140,7 +1206,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
     }
 
     private V computeLocally(K key,
-                                      BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
+                             BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
 
         while (true) {
             Data oldValueAsData = toData(getInternal(key));
@@ -1157,7 +1223,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
                 }
             } else {
                 if (newValue != null) {
-                    Data result =  putIfAbsentInternal(key, toData(newValue), UNSET, TimeUnit.MILLISECONDS, UNSET,
+                    Data result = putIfAbsentInternal(key, toData(newValue), UNSET, TimeUnit.MILLISECONDS, UNSET,
                             TimeUnit.MILLISECONDS);
                     if (result == null) {
                         return newValue;
