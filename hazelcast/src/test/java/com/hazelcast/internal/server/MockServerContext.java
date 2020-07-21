@@ -58,7 +58,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 
-import static com.hazelcast.internal.nio.Packet.Type.MEMBER_HANDSHAKE;
+import static com.hazelcast.internal.nio.Packet.Type.SERVER_CONTROL;
 import static com.hazelcast.spi.properties.ClusterProperty.IO_INPUT_THREAD_COUNT;
 import static com.hazelcast.spi.properties.ClusterProperty.IO_OUTPUT_THREAD_COUNT;
 
@@ -358,7 +358,7 @@ public class MockServerContext implements ServerContext {
     public InboundHandler[] createInboundHandlers(EndpointQualifier qualifier, final ServerConnection connection) {
         return new InboundHandler[]{new PacketDecoder(connection, packet -> {
             try {
-                if (packet.getPacketType() == MEMBER_HANDSHAKE) {
+                if (packet.getPacketType() == SERVER_CONTROL) {
                     connection.getConnectionManager().accept(packet);
                 } else {
                     Consumer<Packet> consumer = packetConsumer;
