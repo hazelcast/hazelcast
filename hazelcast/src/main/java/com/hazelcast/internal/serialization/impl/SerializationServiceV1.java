@@ -274,7 +274,7 @@ public class SerializationServiceV1 extends AbstractSerializationService {
             int factoryId = fd.getFactoryId();
             int classId = fd.getClassId();
             for (int i = 0; i < classIds.size(); i++) {
-               if ( classIds.get(i) == classId ) {
+               if (classIds.get(i) == classId) {
                    throw new HazelcastSerializationException("Duplicate registration found for factory-id : "
                            + factoryId + ", class-id " + classId);
                }
