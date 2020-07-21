@@ -16,10 +16,6 @@
 
 package com.hazelcast.sql.impl.expression;
 
-import com.hazelcast.sql.SqlColumnType;
-import com.hazelcast.sql.SqlErrorCode;
-import com.hazelcast.sql.SqlException;
-import com.hazelcast.sql.SqlRow;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -35,9 +31,6 @@ import static com.hazelcast.sql.SqlColumnType.NULL;
 import static com.hazelcast.sql.SqlColumnType.SMALLINT;
 import static com.hazelcast.sql.SqlColumnType.TINYINT;
 import static com.hazelcast.sql.SqlColumnType.VARCHAR;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -45,83 +38,54 @@ public class LiteralEndToEndTest extends ExpressionEndToEndTestBase {
 
     @Test
     public void testValid() {
-        check("0", TINYINT, (byte) 0);
-        check("-0", TINYINT, (byte) 0);
-        check("000", TINYINT, (byte) 0);
-        check("1", TINYINT, (byte) 1);
-        check("-1", TINYINT, (byte) -1);
-        check("-01", TINYINT, (byte) -1);
-        check("001", TINYINT, (byte) 1);
-        check("100", TINYINT, (byte) 100);
-        check(Byte.toString(Byte.MAX_VALUE), TINYINT, Byte.MAX_VALUE);
+        assertRow("0", TINYINT, (byte) 0);
+        assertRow("-0", TINYINT, (byte) 0);
+        assertRow("000", TINYINT, (byte) 0);
+        assertRow("1", TINYINT, (byte) 1);
+        assertRow("-1", TINYINT, (byte) -1);
+        assertRow("-01", TINYINT, (byte) -1);
+        assertRow("001", TINYINT, (byte) 1);
+        assertRow("100", TINYINT, (byte) 100);
+        assertRow(Byte.toString(Byte.MAX_VALUE), TINYINT, Byte.MAX_VALUE);
 
-        check(Short.toString((short) (Byte.MAX_VALUE + 1)), SMALLINT, (short) (Byte.MAX_VALUE + 1));
-        check(Short.toString(Short.MAX_VALUE), SMALLINT, Short.MAX_VALUE);
+        assertRow(Short.toString((short) (Byte.MAX_VALUE + 1)), SMALLINT, (short) (Byte.MAX_VALUE + 1));
+        assertRow(Short.toString(Short.MAX_VALUE), SMALLINT, Short.MAX_VALUE);
 
-        check(Integer.toString(Short.MAX_VALUE + 1), INT, Short.MAX_VALUE + 1);
-        check(Integer.toString(Integer.MAX_VALUE), INT, Integer.MAX_VALUE);
+        assertRow(Integer.toString(Short.MAX_VALUE + 1), INT, Short.MAX_VALUE + 1);
+        assertRow(Integer.toString(Integer.MAX_VALUE), INT, Integer.MAX_VALUE);
 
-        check(Long.toString(Integer.MAX_VALUE + 1L), BIGINT, Integer.MAX_VALUE + 1L);
-        check(Long.toString(Long.MAX_VALUE), BIGINT, Long.MAX_VALUE);
+        assertRow(Long.toString(Integer.MAX_VALUE + 1L), BIGINT, Integer.MAX_VALUE + 1L);
+        assertRow(Long.toString(Long.MAX_VALUE), BIGINT, Long.MAX_VALUE);
 
-        check("1.0", DOUBLE, 1.0);
-        check("1.000", DOUBLE, 1.0);
-        check("001.000", DOUBLE, 1.0);
-        check("1.1", DOUBLE, 1.1);
-        check("1.100", DOUBLE, 1.1);
-        check("001.100", DOUBLE, 1.1);
-        check("1e1", DOUBLE, 1e1);
-        check("-0.0", DOUBLE, 0.0);
-        check("-1.0", DOUBLE, -1.0);
-        check("-001.100", DOUBLE, -1.1);
-        check(".0", DOUBLE, 0.0);
-        check(".1", DOUBLE, 0.1);
+        assertRow("1.0", DOUBLE, 1.0);
+        assertRow("1.000", DOUBLE, 1.0);
+        assertRow("001.000", DOUBLE, 1.0);
+        assertRow("1.1", DOUBLE, 1.1);
+        assertRow("1.100", DOUBLE, 1.1);
+        assertRow("001.100", DOUBLE, 1.1);
+        assertRow("1e1", DOUBLE, 1e1);
+        assertRow("-0.0", DOUBLE, 0.0);
+        assertRow("-1.0", DOUBLE, -1.0);
+        assertRow("-001.100", DOUBLE, -1.1);
+        assertRow(".0", DOUBLE, 0.0);
+        assertRow(".1", DOUBLE, 0.1);
 
-        check("false", BOOLEAN, false);
-        check("true", BOOLEAN, true);
-        check("tRuE", BOOLEAN, true);
+        assertRow("false", BOOLEAN, false);
+        assertRow("true", BOOLEAN, true);
+        assertRow("tRuE", BOOLEAN, true);
 
-        check("''", VARCHAR, "");
-        check("'foo'", VARCHAR, "foo");
+        assertRow("''", VARCHAR, "");
+        assertRow("'foo'", VARCHAR, "foo");
 
-        check("null", NULL, null);
-        check("nUlL", NULL, null);
+        assertRow("null", NULL, null);
+        assertRow("nUlL", NULL, null);
     }
 
     @Test
     public void testInvalid() {
-        check(Long.MAX_VALUE + "0", "out of range");
-        check("0..0", "was expecting one of");
-        check("'foo", "was expecting one of");
-    }
-
-    private static void check(String literal, SqlColumnType expectedType, Object expectedValue) {
-        boolean done = false;
-        for (SqlRow row : sql.query("select " + literal + " from records")) {
-            if (done) {
-                fail("one row expected");
-            }
-            done = true;
-
-            assertEquals(1, row.getMetadata().getColumnCount());
-            assertEquals(expectedType, row.getMetadata().getColumn(0).getType());
-            assertEquals(expectedValue, row.getObject(0));
-        }
-    }
-
-    private static void check(String literal, String message) {
-        try {
-            //noinspection StatementWithEmptyBody
-            for (SqlRow ignore : sql.query("select " + literal + " from records")) {
-                // do nothing
-            }
-        } catch (SqlException e) {
-            assertEquals(SqlErrorCode.PARSING, e.getCode());
-            assertTrue("expected message '" + message + "', got '" + e.getMessage() + "'",
-                    e.getMessage().toLowerCase().contains(message));
-            return;
-        }
-        fail("expected error: " + message);
+        assertParsingError(Long.MAX_VALUE + "0", "out of range");
+        assertParsingError("0..0", "was expecting one of");
+        assertParsingError("'foo", "was expecting one of");
     }
 
 }

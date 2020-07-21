@@ -22,6 +22,7 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.sql.impl.SqlDataSerializerHook;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.QueryDataType;
+import com.hazelcast.sql.impl.type.QueryDataTypeUtils;
 
 import java.io.IOException;
 
@@ -45,7 +46,14 @@ public final class ColumnExpression<T> implements Expression<T>, IdentifiedDataS
     }
 
     public static ColumnExpression<?> create(int index, QueryDataType type) {
-        return new ColumnExpression<>(index, type);
+        // Canonicalize the column type: currently values of non-canonical types,
+        // like QueryDataType.VARCHAR_CHARACTER, are canonicalized to values of
+        // some other canonical type, like QueryDataType.VARCHAR. That kind of
+        // changes the observed type of a column to a canonical one.
+        Class<?> canonicalClass = type.getConverter().getNormalizedValueClass();
+        QueryDataType canonicalType = QueryDataTypeUtils.resolveTypeForClass(canonicalClass);
+
+        return new ColumnExpression<>(index, canonicalType);
     }
 
     @SuppressWarnings("unchecked")

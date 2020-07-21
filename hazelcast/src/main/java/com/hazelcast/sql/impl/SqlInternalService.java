@@ -217,7 +217,8 @@ public class SqlInternalService {
 
         int parameterCount = parameterMetadata.getParameterCount();
         if (parameterCount != params.size()) {
-            throw QueryException.error("Unexpected parameter count: expected " + parameterCount + ", got " + params.size());
+            throw QueryException.error(SqlErrorCode.DATA_EXCEPTION,
+                    "Unexpected parameter count: expected " + parameterCount + ", got " + params.size());
         }
 
         for (int i = 0; i < params.size(); ++i) {

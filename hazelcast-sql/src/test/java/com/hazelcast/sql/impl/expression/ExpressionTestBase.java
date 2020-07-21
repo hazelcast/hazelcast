@@ -1148,6 +1148,7 @@ public abstract class ExpressionTestBase extends SqlTestSupport {
         public final double double1;
         public final BigDecimal decimal1;
         public final Boolean boolean1;
+        public final byte byte1;
 
         public Record(String string1, int int1, double double1, BigDecimal decimal1, Boolean boolean1) {
             this.string1 = string1;
@@ -1155,6 +1156,8 @@ public abstract class ExpressionTestBase extends SqlTestSupport {
             this.double1 = double1;
             this.decimal1 = decimal1;
             this.boolean1 = boolean1;
+
+            this.byte1 = (byte) int1;
         }
 
     }

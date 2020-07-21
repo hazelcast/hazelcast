@@ -16,7 +16,6 @@
 
 package com.hazelcast.sql.impl.expression;
 
-import com.hazelcast.sql.SqlService;
 import com.hazelcast.sql.impl.SqlDataSerializerHook;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -33,18 +32,6 @@ import static org.junit.Assert.assertEquals;
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class ParameterTest extends ExpressionTestBase {
-
-    @Test
-    public void testEndToEnd() {
-        SqlService sql = createEndToEndRecords();
-        assertRows(query(sql, "select __key from records where int1 > ?", 0.0), keyRange(0, 1000));
-        assertRows(query(sql, "select __key, __key + ? from records", 10), keyRange(0, 1000, 5000, 6000), k -> k + 10L);
-        assertQueryThrows(sql, "select ? + 1 from records", "unexpected parameter count");
-        assertQueryThrows(sql, "select ? + ? from records", "illegal use of dynamic parameter", 1, 2);
-        assertQueryThrows(sql, "select ? + 1 from records", "failed to convert parameter at position 0", "foo");
-        assertRows(query(sql, "select __key, ? + cast(? as bigint) from records", 10, 20), keyRange(0, 1000, 5000, 6000),
-                k -> 30L);
-    }
 
     @Test
     public void verify() {
