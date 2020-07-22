@@ -400,11 +400,13 @@ public class ClientScheduledExecutorProxy
 
     private String getNamedTaskName(Object command) {
         if (command instanceof AbstractTaskDecorator) {
-            AbstractTaskDecorator<?> decoratedTask = (AbstractTaskDecorator<?>) command;
-            NamedTask namedTask = decoratedTask.undecorateTo(NamedTask.class);
+            NamedTask namedTask = ((AbstractTaskDecorator<?>) command).undecorateTo(NamedTask.class);
             if (namedTask != null) {
                 return namedTask.getName();
             }
+        }
+        if (command instanceof NamedTask) {
+            return ((NamedTask) command).getName();
         }
         return null;
     }

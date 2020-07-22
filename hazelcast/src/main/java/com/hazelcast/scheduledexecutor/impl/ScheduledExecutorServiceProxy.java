@@ -480,12 +480,21 @@ public class ScheduledExecutorServiceProxy
     }
 
     private String extractNameOrGenerateOne(Object command) {
-        String name = null;
-        if (command instanceof NamedTask) {
-            name = ((NamedTask) command).getName();
-        }
+        String taskName = getNamedTaskName(command);
+        return taskName != null ? taskName : UuidUtil.newUnsecureUuidString();
+    }
 
-        return name != null ? name : UuidUtil.newUnsecureUuidString();
+    private String getNamedTaskName(Object command) {
+        if (command instanceof AbstractTaskDecorator) {
+            NamedTask namedTask = ((AbstractTaskDecorator<?>) command).undecorateTo(NamedTask.class);
+            if (namedTask != null) {
+                return namedTask.getName();
+            }
+        }
+        if (command instanceof NamedTask) {
+            return ((NamedTask) command).getName();
+        }
+        return null;
     }
 
     private @Nonnull

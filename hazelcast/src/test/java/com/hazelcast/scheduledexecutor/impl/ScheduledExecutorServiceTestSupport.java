@@ -408,6 +408,21 @@ public class ScheduledExecutorServiceTestSupport extends HazelcastTestSupport {
         }
     }
 
+    public static class NamedCallable implements Callable<Boolean>, NamedTask {
+
+        public static final String NAME = "NAMED-CALLABLE";
+
+        @Override
+        public Boolean call() {
+            return true;
+        }
+
+        @Override
+        public String getName() {
+            return NAME;
+        }
+    }
+
     public static class AllTasksRunningWithinNumOfNodes implements AssertTask {
 
         private final IScheduledExecutorService scheduler;

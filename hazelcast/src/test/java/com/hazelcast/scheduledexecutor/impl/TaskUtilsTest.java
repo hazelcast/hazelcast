@@ -64,4 +64,16 @@ public class TaskUtilsTest extends ScheduledExecutorServiceTestSupport {
         assertTrue(decoratedTask.isDecoratedWith(NamedTask.class));
         assertTrue(decoratedTask.isDecoratedWith(AutoDisposableTask.class));
     }
+
+    @Test
+    public void decoratedTask_whenCallableImplementingNamedTask() {
+        NamedCallable namedTaskCallable = new NamedCallable();
+
+        AbstractTaskDecorator<?> decoratedTask = (AbstractTaskDecorator) autoDisposable(namedTaskCallable);
+
+        assertTrue(decoratedTask.isDecoratedWith(AutoDisposableTask.class));
+        assertTrue(decoratedTask.isDecoratedWith(NamedTask.class));
+        assertEquals(decoratedTask.undecorateTo(NamedTask.class).getName(), NamedCallable.NAME);
+    }
+
 }
