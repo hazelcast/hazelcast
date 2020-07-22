@@ -36,6 +36,11 @@ public abstract class AbstractStringConverter extends Converter {
     }
 
     @Override
+    public Class<?> getNormalizedValueClass() {
+        return String.class;
+    }
+
+    @Override
     public final boolean asBoolean(Object val) {
         String val0 = cast(val);
 
@@ -45,7 +50,7 @@ public abstract class AbstractStringConverter extends Converter {
             return false;
         }
 
-        throw QueryException.error(SqlErrorCode.DATA_EXCEPTION, "VARCHAR value cannot be converted to BIT: " + val);
+        throw QueryException.error(SqlErrorCode.DATA_EXCEPTION, "VARCHAR value cannot be converted to BOOLEAN: " + val);
     }
 
     @Override

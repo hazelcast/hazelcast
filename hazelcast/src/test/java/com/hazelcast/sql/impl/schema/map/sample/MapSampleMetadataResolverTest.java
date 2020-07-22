@@ -123,38 +123,38 @@ public class MapSampleMetadataResolverTest extends MapSchemaTestSupport {
             .build();
 
         // Test key.
-        MapSampleMetadata metadata = MapSampleMetadataResolver.resolve(ss, ss.toData(new PortableParent()), false, true);
+        MapSampleMetadata metadata = MapSampleMetadataResolver.resolve(ss, ss.toData(new PortableParent()), true);
 
         checkFields(
             metadata,
-            field("fBoolean", QueryDataType.BOOLEAN, true),
-            field("fByte", QueryDataType.TINYINT, true),
-            field("fChar", QueryDataType.VARCHAR_CHARACTER, true),
-            field("fShort", QueryDataType.SMALLINT, true),
-            field("fInt", QueryDataType.INT, true),
-            field("fLong", QueryDataType.BIGINT, true),
-            field("fFloat", QueryDataType.REAL, true),
-            field("fDouble", QueryDataType.DOUBLE, true),
-            field("fString", QueryDataType.VARCHAR, true),
-            field("fObject", QueryDataType.OBJECT, true),
+            field("_boolean", QueryDataType.BOOLEAN, true),
+            field("_byte", QueryDataType.TINYINT, true),
+            field("_char", QueryDataType.VARCHAR_CHARACTER, true),
+            field("_short", QueryDataType.SMALLINT, true),
+            field("_int", QueryDataType.INT, true),
+            field("_long", QueryDataType.BIGINT, true),
+            field("_float", QueryDataType.REAL, true),
+            field("_double", QueryDataType.DOUBLE, true),
+            field("_string", QueryDataType.VARCHAR, true),
+            field("_object", QueryDataType.OBJECT, true),
             hiddenField(KEY, QueryDataType.OBJECT, true)
         );
 
         // Test value.
-        metadata = MapSampleMetadataResolver.resolve(ss, ss.toData(new PortableParent()), false, false);
+        metadata = MapSampleMetadataResolver.resolve(ss, ss.toData(new PortableParent()), false);
 
         checkFields(
             metadata,
-            field("fBoolean", QueryDataType.BOOLEAN, false),
-            field("fByte", QueryDataType.TINYINT, false),
-            field("fChar", QueryDataType.VARCHAR_CHARACTER, false),
-            field("fShort", QueryDataType.SMALLINT, false),
-            field("fInt", QueryDataType.INT, false),
-            field("fLong", QueryDataType.BIGINT, false),
-            field("fFloat", QueryDataType.REAL, false),
-            field("fDouble", QueryDataType.DOUBLE, false),
-            field("fString", QueryDataType.VARCHAR, false),
-            field("fObject", QueryDataType.OBJECT, false),
+            field("_boolean", QueryDataType.BOOLEAN, false),
+            field("_byte", QueryDataType.TINYINT, false),
+            field("_char", QueryDataType.VARCHAR_CHARACTER, false),
+            field("_short", QueryDataType.SMALLINT, false),
+            field("_int", QueryDataType.INT, false),
+            field("_long", QueryDataType.BIGINT, false),
+            field("_float", QueryDataType.REAL, false),
+            field("_double", QueryDataType.DOUBLE, false),
+            field("_string", QueryDataType.VARCHAR, false),
+            field("_object", QueryDataType.OBJECT, false),
             hiddenField(VALUE, QueryDataType.OBJECT, false)
         );
     }
@@ -164,7 +164,7 @@ public class MapSampleMetadataResolverTest extends MapSchemaTestSupport {
         InternalSerializationService ss = getSerializationService();
 
         // Test key.
-        MapSampleMetadata metadata = MapSampleMetadataResolver.resolve(ss, ss.toData(new PortableParent()), true, true);
+        MapSampleMetadata metadata = MapSampleMetadataResolver.resolve(ss, ss.toData(new PortableParent()), true);
 
         checkFields(
             metadata,
@@ -182,7 +182,7 @@ public class MapSampleMetadataResolverTest extends MapSchemaTestSupport {
         );
 
         // Test value.
-        metadata = MapSampleMetadataResolver.resolve(ss, ss.toData(new PortableParent()), true, false);
+        metadata = MapSampleMetadataResolver.resolve(ss, ss.toData(new PortableParent()), false);
 
         checkFields(
             metadata,
@@ -209,7 +209,7 @@ public class MapSampleMetadataResolverTest extends MapSchemaTestSupport {
 
         JavaFields object = new JavaFields();
 
-        MapSampleMetadata metadata = MapSampleMetadataResolver.resolve(ss, object, true, true);
+        MapSampleMetadata metadata = MapSampleMetadataResolver.resolve(ss, object, true);
 
         checkFields(
             metadata,
@@ -217,7 +217,7 @@ public class MapSampleMetadataResolverTest extends MapSchemaTestSupport {
             hiddenField(KEY, QueryDataType.OBJECT, true)
         );
 
-        metadata = MapSampleMetadataResolver.resolve(ss, ss.toData(object), true, true);
+        metadata = MapSampleMetadataResolver.resolve(ss, ss.toData(object), true);
 
         checkFields(
             metadata,
@@ -235,7 +235,7 @@ public class MapSampleMetadataResolverTest extends MapSchemaTestSupport {
 
         JavaGetters object = new JavaGetters();
 
-        MapSampleMetadata metadata = MapSampleMetadataResolver.resolve(ss, object, true, true);
+        MapSampleMetadata metadata = MapSampleMetadataResolver.resolve(ss, object, true);
 
         checkFields(
             metadata,
@@ -245,7 +245,7 @@ public class MapSampleMetadataResolverTest extends MapSchemaTestSupport {
             hiddenField(KEY, QueryDataType.OBJECT, true)
         );
 
-        metadata = MapSampleMetadataResolver.resolve(ss, ss.toData(object), true, true);
+        metadata = MapSampleMetadataResolver.resolve(ss, ss.toData(object), true);
 
         checkFields(
             metadata,
@@ -265,10 +265,10 @@ public class MapSampleMetadataResolverTest extends MapSchemaTestSupport {
 
         JavaFieldClashChild object = new JavaFieldClashChild();
 
-        TableField field = MapSampleMetadataResolver.resolve(ss, object, true, true).getFields().get("field");
+        TableField field = MapSampleMetadataResolver.resolve(ss, object, true).getFields().get("field");
         assertEquals(field("field", QueryDataType.BIGINT, true), field);
 
-        field = MapSampleMetadataResolver.resolve(ss, ss.toData(object), true, true).getFields().get("field");
+        field = MapSampleMetadataResolver.resolve(ss, ss.toData(object), true).getFields().get("field");
         assertEquals(field("field", QueryDataType.BIGINT, true), field);
     }
 
@@ -281,10 +281,10 @@ public class MapSampleMetadataResolverTest extends MapSchemaTestSupport {
 
         JavaFieldGetterClash object = new JavaFieldGetterClash();
 
-        TableField field = MapSampleMetadataResolver.resolve(ss, object, true, true).getFields().get("field");
+        TableField field = MapSampleMetadataResolver.resolve(ss, object, true).getFields().get("field");
         assertEquals(field("field", QueryDataType.BIGINT, true), field);
 
-        field = MapSampleMetadataResolver.resolve(ss, ss.toData(object), true, true).getFields().get("field");
+        field = MapSampleMetadataResolver.resolve(ss, ss.toData(object), true).getFields().get("field");
         assertEquals(field("field", QueryDataType.BIGINT, true), field);
     }
 
@@ -298,17 +298,17 @@ public class MapSampleMetadataResolverTest extends MapSchemaTestSupport {
         JavaTopFieldClash object = new JavaTopFieldClash();
 
         // Key
-        TableField field = MapSampleMetadataResolver.resolve(ss, object, true, true).getFields().get(KEY);
+        TableField field = MapSampleMetadataResolver.resolve(ss, object, true).getFields().get(KEY);
         assertEquals(hiddenField(KEY, QueryDataType.OBJECT, true), field);
 
-        field = MapSampleMetadataResolver.resolve(ss, ss.toData(object), true, true).getFields().get(KEY);
+        field = MapSampleMetadataResolver.resolve(ss, ss.toData(object), true).getFields().get(KEY);
         assertEquals(hiddenField(KEY, QueryDataType.OBJECT, true), field);
 
         // Value
-        field = MapSampleMetadataResolver.resolve(ss, object, true, false).getFields().get(VALUE);
+        field = MapSampleMetadataResolver.resolve(ss, object, false).getFields().get(VALUE);
         assertEquals(hiddenField(VALUE, QueryDataType.OBJECT, false), field);
 
-        field = MapSampleMetadataResolver.resolve(ss, ss.toData(object), true, false).getFields().get(VALUE);
+        field = MapSampleMetadataResolver.resolve(ss, ss.toData(object), false).getFields().get(VALUE);
         assertEquals(hiddenField(VALUE, QueryDataType.OBJECT, false), field);
     }
 
@@ -322,17 +322,17 @@ public class MapSampleMetadataResolverTest extends MapSchemaTestSupport {
         JavaTopGetterClash object = new JavaTopGetterClash();
 
         // Key
-        TableField field = MapSampleMetadataResolver.resolve(ss, object, true, true).getFields().get(KEY);
+        TableField field = MapSampleMetadataResolver.resolve(ss, object, true).getFields().get(KEY);
         assertEquals(hiddenField(KEY, QueryDataType.OBJECT, true), field);
 
-        field = MapSampleMetadataResolver.resolve(ss, ss.toData(object), true, true).getFields().get(KEY);
+        field = MapSampleMetadataResolver.resolve(ss, ss.toData(object), true).getFields().get(KEY);
         assertEquals(hiddenField(KEY, QueryDataType.OBJECT, true), field);
 
         // Value
-        field = MapSampleMetadataResolver.resolve(ss, object, true, false).getFields().get(VALUE);
+        field = MapSampleMetadataResolver.resolve(ss, object, false).getFields().get(VALUE);
         assertEquals(hiddenField(VALUE, QueryDataType.OBJECT, false), field);
 
-        field = MapSampleMetadataResolver.resolve(ss, ss.toData(object), true, false).getFields().get(VALUE);
+        field = MapSampleMetadataResolver.resolve(ss, ss.toData(object), false).getFields().get(VALUE);
         assertEquals(hiddenField(VALUE, QueryDataType.OBJECT, false), field);
     }
 
@@ -351,7 +351,7 @@ public class MapSampleMetadataResolverTest extends MapSchemaTestSupport {
         InternalSerializationService ss = getSerializationService();
 
         // Key clash
-        MapSampleMetadata metadata = MapSampleMetadataResolver.resolve(ss, ss.toData(new PortableClash()), true, true);
+        MapSampleMetadata metadata = MapSampleMetadataResolver.resolve(ss, ss.toData(new PortableClash()), true);
 
         checkFields(
             metadata,
@@ -360,7 +360,7 @@ public class MapSampleMetadataResolverTest extends MapSchemaTestSupport {
         );
 
         // Value clash
-        metadata = MapSampleMetadataResolver.resolve(ss, ss.toData(new PortableClash()), true, false);
+        metadata = MapSampleMetadataResolver.resolve(ss, ss.toData(new PortableClash()), false);
 
         checkFields(
             metadata,
@@ -374,7 +374,7 @@ public class MapSampleMetadataResolverTest extends MapSchemaTestSupport {
         InternalSerializationService ss = getSerializationService();
 
         try {
-            MapSampleMetadataResolver.resolve(ss, ss.toData(new HazelcastJsonValue("{ \"test\": 10 }")), true, true);
+            MapSampleMetadataResolver.resolve(ss, ss.toData(new HazelcastJsonValue("{ \"test\": 10 }")), true);
         } catch (QueryException e) {
             assertEquals(SqlErrorCode.GENERIC, e.getCode());
             assertTrue(e.getMessage().contains("JSON objects are not supported"));
@@ -385,19 +385,19 @@ public class MapSampleMetadataResolverTest extends MapSchemaTestSupport {
         InternalSerializationService ss = getSerializationService();
 
         // Key
-        MapSampleMetadata metadata = MapSampleMetadataResolver.resolve(ss, value, true, true);
+        MapSampleMetadata metadata = MapSampleMetadataResolver.resolve(ss, value, true);
         checkFields(metadata, field(KEY, expectedType, true));
 
         // Serialized key
-        metadata = MapSampleMetadataResolver.resolve(ss, ss.toData(value), true, true);
+        metadata = MapSampleMetadataResolver.resolve(ss, ss.toData(value), true);
         checkFields(metadata, field(KEY, expectedType, true));
 
         // Value
-        metadata = MapSampleMetadataResolver.resolve(ss, value, true, false);
+        metadata = MapSampleMetadataResolver.resolve(ss, value, false);
         checkFields(metadata, field(VALUE, expectedType, false));
 
         // Serialized value
-        metadata = MapSampleMetadataResolver.resolve(ss, ss.toData(value), true, false);
+        metadata = MapSampleMetadataResolver.resolve(ss, ss.toData(value), false);
         checkFields(metadata, field(VALUE, expectedType, false));
     }
 
@@ -430,7 +430,7 @@ public class MapSampleMetadataResolverTest extends MapSchemaTestSupport {
     }
 
     private void checkJavaTypes(Object object, boolean key) {
-        MapSampleMetadata metadata = MapSampleMetadataResolver.resolve(getSerializationService(), object, true, key);
+        MapSampleMetadata metadata = MapSampleMetadataResolver.resolve(getSerializationService(), object, key);
 
         assertEquals(GenericQueryTargetDescriptor.INSTANCE, metadata.getDescriptor());
 

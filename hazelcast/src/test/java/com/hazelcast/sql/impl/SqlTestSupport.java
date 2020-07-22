@@ -22,7 +22,9 @@ import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.sql.impl.exec.CreateExecPlanNodeVisitorHook;
 import com.hazelcast.sql.impl.extract.QueryPath;
+import com.hazelcast.sql.impl.operation.QueryOperationHandlerImpl;
 import com.hazelcast.sql.impl.plan.Plan;
 import com.hazelcast.sql.impl.row.HeapRow;
 import com.hazelcast.sql.impl.row.ListRowBatch;
@@ -135,7 +137,8 @@ public class SqlTestSupport extends HazelcastTestSupport {
             Collections.emptyList(),
             Collections.emptyMap(),
             Collections.emptyMap(),
-            Collections.emptyMap()
+            Collections.emptyMap(),
+            null
         );
     }
 
@@ -160,5 +163,12 @@ public class SqlTestSupport extends HazelcastTestSupport {
         assertTrue(values.length > 0);
 
         return new HeapRow(values);
+    }
+
+    public static void setExecHook(HazelcastInstance instance, CreateExecPlanNodeVisitorHook hook) {
+        QueryOperationHandlerImpl operationHandler =
+            ((SqlServiceImpl) instance.getSql()).getInternalService().getOperationHandler();
+
+        operationHandler.setExecHook(hook);
     }
 }

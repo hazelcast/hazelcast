@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Triggers partial start
  */
-@Generated("6f9399ec3d579a547732487893f5124e")
+@Generated("34a3c9af0f6b45db942ec4d5b59f64a0")
 public final class MCTriggerPartialStartCodec {
     //hex: 0x201D00
     public static final int REQUEST_MESSAGE_TYPE = 2104576;
@@ -49,9 +49,6 @@ public final class MCTriggerPartialStartCodec {
     private MCTriggerPartialStartCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class RequestParameters {
-    }
 
     public static ClientMessage encodeRequest() {
         ClientMessage clientMessage = ClientMessage.createForEncode();
@@ -64,22 +61,6 @@ public final class MCTriggerPartialStartCodec {
         return clientMessage;
     }
 
-    public static MCTriggerPartialStartCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
-        ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        RequestParameters request = new RequestParameters();
-        //empty initial frame
-        iterator.next();
-        return request;
-    }
-
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class ResponseParameters {
-
-        /**
-         * True if the partial restart was successfully initiated, false otherwise
-         */
-        public boolean result;
-    }
 
     public static ClientMessage encodeResponse(boolean result) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
@@ -91,12 +72,13 @@ public final class MCTriggerPartialStartCodec {
         return clientMessage;
     }
 
-    public static MCTriggerPartialStartCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
+    /**
+    * True if the partial restart was successfully initiated, false otherwise
+    */
+    public static boolean decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        ResponseParameters response = new ResponseParameters();
         ClientMessage.Frame initialFrame = iterator.next();
-        response.result = decodeBoolean(initialFrame.content, RESPONSE_RESULT_FIELD_OFFSET);
-        return response;
+        return decodeBoolean(initialFrame.content, RESPONSE_RESULT_FIELD_OFFSET);
     }
 
 }

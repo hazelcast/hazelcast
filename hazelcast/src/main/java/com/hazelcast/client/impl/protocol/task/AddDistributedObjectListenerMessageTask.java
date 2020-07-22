@@ -31,7 +31,7 @@ import java.util.UUID;
 import java.util.concurrent.Callable;
 
 public class AddDistributedObjectListenerMessageTask
-        extends AbstractCallableMessageTask<ClientAddDistributedObjectListenerCodec.RequestParameters>
+        extends AbstractCallableMessageTask<Boolean>
         implements DistributedObjectListener {
 
     public AddDistributedObjectListenerMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
@@ -48,7 +48,7 @@ public class AddDistributedObjectListenerMessageTask
     }
 
     @Override
-    protected ClientAddDistributedObjectListenerCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+    protected Boolean decodeClientMessage(ClientMessage clientMessage) {
         return ClientAddDistributedObjectListenerCodec.decodeRequest(clientMessage);
     }
 
@@ -117,7 +117,7 @@ public class AddDistributedObjectListenerMessageTask
 
         ClusterService clusterService = clientEngine.getClusterService();
         boolean currentMemberIsMaster = clusterService.isMaster();
-        if (parameters.localOnly && !currentMemberIsMaster) {
+        if (parameters && !currentMemberIsMaster) {
             //if client registered localOnly, only master is allowed to send request
             return false;
         }

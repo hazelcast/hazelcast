@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Removes the given unreachable CP member from the active CP members
  * list and all CP groups it belongs to.
  */
-@Generated("95f7469bb890a2b18e040e4ab36a4320")
+@Generated("13957ebb7e2f6d9f62e5ae135c79e4f8")
 public final class MCRemoveCPMemberCodec {
     //hex: 0x201B00
     public static final int REQUEST_MESSAGE_TYPE = 2104064;
@@ -50,14 +50,11 @@ public final class MCRemoveCPMemberCodec {
     private MCRemoveCPMemberCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class RequestParameters {
-
-        /**
-         * UUID of the unreachable CP member
-         */
-        public java.util.UUID cpMemberUuid;
-    }
+    /**
+     * UUID of the unreachable CP member
+     */
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"UUF_UNUSED_PUBLIC_OR_PROTECTED_FIELD"})
+    public java.util.UUID cpMemberUuid;
 
     public static ClientMessage encodeRequest(java.util.UUID cpMemberUuid) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
@@ -71,16 +68,10 @@ public final class MCRemoveCPMemberCodec {
         return clientMessage;
     }
 
-    public static MCRemoveCPMemberCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
+    public static java.util.UUID decodeRequest(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        RequestParameters request = new RequestParameters();
         ClientMessage.Frame initialFrame = iterator.next();
-        request.cpMemberUuid = decodeUUID(initialFrame.content, REQUEST_CP_MEMBER_UUID_FIELD_OFFSET);
-        return request;
-    }
-
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class ResponseParameters {
+        return decodeUUID(initialFrame.content, REQUEST_CP_MEMBER_UUID_FIELD_OFFSET);
     }
 
     public static ClientMessage encodeResponse() {
@@ -92,12 +83,5 @@ public final class MCRemoveCPMemberCodec {
         return clientMessage;
     }
 
-    public static MCRemoveCPMemberCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
-        ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        ResponseParameters response = new ResponseParameters();
-        //empty initial frame
-        iterator.next();
-        return response;
-    }
 
 }

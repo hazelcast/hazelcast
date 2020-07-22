@@ -16,7 +16,7 @@
 
 package com.hazelcast.client.cp.internal.datastructures.atomicref;
 
-import com.hazelcast.client.impl.clientside.ClientMessageDecoder;
+import com.hazelcast.client.impl.ClientDelegatingFuture;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.AtomicRefApplyCodec;
 import com.hazelcast.client.impl.protocol.codec.AtomicRefCompareAndSetCodec;
@@ -28,10 +28,9 @@ import com.hazelcast.client.impl.spi.ClientContext;
 import com.hazelcast.client.impl.spi.ClientProxy;
 import com.hazelcast.client.impl.spi.impl.ClientInvocation;
 import com.hazelcast.client.impl.spi.impl.ClientInvocationFuture;
-import com.hazelcast.client.impl.ClientDelegatingFuture;
-import com.hazelcast.cp.IAtomicReference;
 import com.hazelcast.core.IFunction;
 import com.hazelcast.cp.CPGroupId;
+import com.hazelcast.cp.IAtomicReference;
 import com.hazelcast.cp.internal.RaftGroupId;
 import com.hazelcast.cp.internal.datastructures.atomicref.AtomicRefService;
 import com.hazelcast.cp.internal.datastructures.atomicref.operation.ApplyOp.ReturnValueType;
@@ -50,42 +49,6 @@ import static com.hazelcast.internal.util.Preconditions.checkTrue;
  */
 @SuppressWarnings("checkstyle:methodcount")
 public class AtomicRefProxy<T> extends ClientProxy implements IAtomicReference<T> {
-
-    private static final ClientMessageDecoder COMPARE_AND_SET_DECODER = new ClientMessageDecoder() {
-        @Override
-        public Boolean decodeClientMessage(ClientMessage clientMessage) {
-            return AtomicRefCompareAndSetCodec.decodeResponse(clientMessage).response;
-        }
-    };
-
-    private static final ClientMessageDecoder GET_DECODER = new ClientMessageDecoder() {
-        @Override
-        public Data decodeClientMessage(ClientMessage clientMessage) {
-            return AtomicRefGetCodec.decodeResponse(clientMessage).response;
-        }
-    };
-
-    private static final ClientMessageDecoder CONTAINS_DECODER = new ClientMessageDecoder() {
-        @Override
-        public Boolean decodeClientMessage(ClientMessage clientMessage) {
-            return AtomicRefContainsCodec.decodeResponse(clientMessage).response;
-        }
-    };
-
-    private static final ClientMessageDecoder SET_DECODER = new ClientMessageDecoder() {
-        @Override
-        public Data decodeClientMessage(ClientMessage clientMessage) {
-            return AtomicRefGetCodec.decodeResponse(clientMessage).response;
-        }
-    };
-
-    private static final ClientMessageDecoder APPLY_DECODER = new ClientMessageDecoder() {
-        @Override
-        public Data decodeClientMessage(ClientMessage clientMessage) {
-            return AtomicRefApplyCodec.decodeResponse(clientMessage).response;
-        }
-    };
-
 
     private final RaftGroupId groupId;
     private final String objectName;
@@ -157,14 +120,14 @@ public class AtomicRefProxy<T> extends ClientProxy implements IAtomicReference<T
         Data newData = getContext().getSerializationService().toData(update);
         ClientMessage request = AtomicRefCompareAndSetCodec.encodeRequest(groupId, objectName, expectedData, newData);
         ClientInvocationFuture future = new ClientInvocation(getClient(), request, name).invoke();
-        return new ClientDelegatingFuture<>(future, getSerializationService(), COMPARE_AND_SET_DECODER);
+        return new ClientDelegatingFuture<>(future, getSerializationService(), AtomicRefCompareAndSetCodec::decodeResponse);
     }
 
     @Override
     public InternalCompletableFuture<T> getAsync() {
         ClientMessage request = AtomicRefGetCodec.encodeRequest(groupId, objectName);
         ClientInvocationFuture future = new ClientInvocation(getClient(), request, name).invoke();
-        return new ClientDelegatingFuture<>(future, getSerializationService(), GET_DECODER);
+        return new ClientDelegatingFuture<>(future, getSerializationService(), AtomicRefGetCodec::decodeResponse);
     }
 
     @Override
@@ -172,7 +135,7 @@ public class AtomicRefProxy<T> extends ClientProxy implements IAtomicReference<T
         Data data = getContext().getSerializationService().toData(newValue);
         ClientMessage request = AtomicRefSetCodec.encodeRequest(groupId, objectName, data, false);
         ClientInvocationFuture future = new ClientInvocation(getClient(), request, name).invoke();
-        return new ClientDelegatingFuture<>(future, getSerializationService(), SET_DECODER);
+        return new ClientDelegatingFuture<>(future, getSerializationService(), AtomicRefGetCodec::decodeResponse);
     }
 
     @Override
@@ -180,7 +143,7 @@ public class AtomicRefProxy<T> extends ClientProxy implements IAtomicReference<T
         Data data = getContext().getSerializationService().toData(newValue);
         ClientMessage request = AtomicRefSetCodec.encodeRequest(groupId, objectName, data, true);
         ClientInvocationFuture future = new ClientInvocation(getClient(), request, name).invoke();
-        return new ClientDelegatingFuture<>(future, getSerializationService(), SET_DECODER);
+        return new ClientDelegatingFuture<>(future, getSerializationService(), AtomicRefGetCodec::decodeResponse);
     }
 
     @Override
@@ -198,7 +161,7 @@ public class AtomicRefProxy<T> extends ClientProxy implements IAtomicReference<T
         Data data = getContext().getSerializationService().toData(expected);
         ClientMessage request = AtomicRefContainsCodec.encodeRequest(groupId, objectName, data);
         ClientInvocationFuture future = new ClientInvocation(getClient(), request, name).invoke();
-        return new ClientDelegatingFuture<>(future, getSerializationService(), CONTAINS_DECODER);
+        return new ClientDelegatingFuture<>(future, getSerializationService(), AtomicRefContainsCodec::decodeResponse);
     }
 
     @Override
@@ -242,7 +205,7 @@ public class AtomicRefProxy<T> extends ClientProxy implements IAtomicReference<T
         Data data = getContext().getSerializationService().toData(function);
         ClientMessage request = AtomicRefApplyCodec.encodeRequest(groupId, objectName, data, returnValueType.value(), alter);
         ClientInvocationFuture future = new ClientInvocation(getClient(), request, name).invoke();
-        return new ClientDelegatingFuture<>(future, getSerializationService(), APPLY_DECODER);
+        return new ClientDelegatingFuture<>(future, getSerializationService(), AtomicRefApplyCodec::decodeResponse);
     }
 
 }

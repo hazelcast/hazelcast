@@ -16,10 +16,12 @@
 
 package com.hazelcast.query.impl;
 
+import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.IndexType;
 import com.hazelcast.core.TypeConverter;
 import com.hazelcast.internal.monitor.impl.GlobalIndexesStats;
+import com.hazelcast.internal.monitor.impl.HDGlobalIndexesStats;
 import com.hazelcast.internal.monitor.impl.IndexesStats;
 import com.hazelcast.internal.monitor.impl.PartitionIndexesStats;
 import com.hazelcast.internal.serialization.Data;
@@ -37,6 +39,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
+import static com.hazelcast.config.InMemoryFormat.NATIVE;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 /**
@@ -72,12 +75,13 @@ public class Indexes {
     private volatile InternalIndex[] compositeIndexes = EMPTY_INDEXES;
 
     private Indexes(InternalSerializationService serializationService, IndexCopyBehavior indexCopyBehavior, Extractors extractors,
-                    IndexProvider indexProvider, boolean usesCachedQueryableEntries, boolean statisticsEnabled, boolean global) {
+                    IndexProvider indexProvider, boolean usesCachedQueryableEntries, boolean statisticsEnabled, boolean global,
+                    InMemoryFormat inMemoryFormat) {
         this.global = global;
         this.indexCopyBehavior = indexCopyBehavior;
         this.serializationService = serializationService;
         this.usesCachedQueryableEntries = usesCachedQueryableEntries;
-        this.stats = createStats(global, statisticsEnabled);
+        this.stats = createStats(global, inMemoryFormat, statisticsEnabled);
         this.extractors = extractors == null ? Extractors.newBuilder(serializationService).build() : extractors;
         this.indexProvider = indexProvider == null ? new DefaultIndexProvider() : indexProvider;
         this.queryContextProvider = createQueryContextProvider(this, global, statisticsEnabled);
@@ -113,8 +117,9 @@ public class Indexes {
      * @return new builder instance which will be used to create Indexes object.
      * @see IndexCopyBehavior
      */
-    public static Builder newBuilder(SerializationService ss, IndexCopyBehavior indexCopyBehavior) {
-        return new Builder(ss, indexCopyBehavior);
+    public static Builder newBuilder(SerializationService ss, IndexCopyBehavior indexCopyBehavior,
+                                     InMemoryFormat inMemoryFormat) {
+        return new Builder(ss, indexCopyBehavior, inMemoryFormat);
     }
 
     public synchronized InternalIndex addOrGetIndex(IndexConfig indexConfig, StoreAdapter partitionStoreAdapter) {
@@ -437,9 +442,13 @@ public class Indexes {
         }
     }
 
-    private static IndexesStats createStats(boolean global, boolean statisticsEnabled) {
+    private static IndexesStats createStats(boolean global, InMemoryFormat inMemoryFormat, boolean statisticsEnabled) {
         if (statisticsEnabled) {
-            return global ? new GlobalIndexesStats() : new PartitionIndexesStats();
+            if (global) {
+                return inMemoryFormat.equals(NATIVE) ? new HDGlobalIndexesStats() : new GlobalIndexesStats();
+            } else {
+                return new PartitionIndexesStats();
+            }
         } else {
             return IndexesStats.EMPTY;
         }
@@ -458,10 +467,12 @@ public class Indexes {
         private boolean usesCachedQueryableEntries;
         private Extractors extractors;
         private IndexProvider indexProvider;
+        private InMemoryFormat inMemoryFormat;
 
-        Builder(SerializationService ss, IndexCopyBehavior indexCopyBehavior) {
+        Builder(SerializationService ss, IndexCopyBehavior indexCopyBehavior, InMemoryFormat inMemoryFormat) {
             this.serializationService = checkNotNull((InternalSerializationService) ss, "serializationService cannot be null");
             this.indexCopyBehavior = checkNotNull(indexCopyBehavior, "indexCopyBehavior cannot be null");
+            this.inMemoryFormat = inMemoryFormat;
         }
 
         /**
@@ -518,7 +529,7 @@ public class Indexes {
          */
         public Indexes build() {
             return new Indexes(serializationService, indexCopyBehavior, extractors, indexProvider, usesCachedQueryableEntries,
-                    statsEnabled, global);
+                    statsEnabled, global, inMemoryFormat);
         }
 
     }

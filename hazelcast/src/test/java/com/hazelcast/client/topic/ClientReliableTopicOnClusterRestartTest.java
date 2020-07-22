@@ -185,7 +185,7 @@ public class ClientReliableTopicOnClusterRestartTest {
         assertTrueEventually(() -> {
             ClientReliableTopicProxy<?> proxy = (ClientReliableTopicProxy<?>) topic;
             assertTrue(proxy.isListenerCancelled(registrationId));
-        }, 10);
+        });
         assertEquals(0, messageCount.get());
     }
 

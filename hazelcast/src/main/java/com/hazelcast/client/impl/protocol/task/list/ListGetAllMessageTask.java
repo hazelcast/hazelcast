@@ -35,7 +35,7 @@ import java.security.Permission;
  * {@link com.hazelcast.client.impl.protocol.codec.ListMessageType#LIST_GETALL}
  */
 public class ListGetAllMessageTask
-        extends AbstractPartitionMessageTask<ListGetAllCodec.RequestParameters> {
+        extends AbstractPartitionMessageTask<String> {
 
     public ListGetAllMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -43,11 +43,11 @@ public class ListGetAllMessageTask
 
     @Override
     protected Operation prepareOperation() {
-        return new CollectionGetAllOperation(parameters.name);
+        return new CollectionGetAllOperation(parameters);
     }
 
     @Override
-    protected ListGetAllCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+    protected String decodeClientMessage(ClientMessage clientMessage) {
         return ListGetAllCodec.decodeRequest(clientMessage);
     }
 
@@ -63,12 +63,12 @@ public class ListGetAllMessageTask
 
     @Override
     public Object[] getParameters() {
-        return new Object[]{parameters.name};
+        return new Object[]{parameters};
     }
 
     @Override
     public Permission getRequiredPermission() {
-        return new ListPermission(parameters.name, ActionConstants.ACTION_READ);
+        return new ListPermission(parameters, ActionConstants.ACTION_READ);
     }
 
     @Override
@@ -78,7 +78,7 @@ public class ListGetAllMessageTask
 
     @Override
     public String getDistributedObjectName() {
-        return parameters.name;
+        return parameters;
     }
 
 }

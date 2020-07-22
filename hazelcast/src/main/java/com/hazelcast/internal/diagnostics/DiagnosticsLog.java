@@ -16,6 +16,16 @@
 
 package com.hazelcast.internal.diagnostics;
 
+/**
+ * The diagnostics log output.
+ */
 public interface DiagnosticsLog {
+
+    /**
+     * Writes the output of the provided {@code plugin} to the diagnostics
+     * output.
+     *
+     * @param plugin the plugin to log
+     */
     void write(DiagnosticsPlugin plugin);
 }

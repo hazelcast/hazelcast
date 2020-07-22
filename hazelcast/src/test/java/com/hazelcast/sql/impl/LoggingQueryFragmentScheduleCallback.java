@@ -25,7 +25,7 @@ public class LoggingQueryFragmentScheduleCallback implements QueryFragmentSchedu
     private final AtomicInteger count = new AtomicInteger();
 
     @Override
-    public boolean schedule() {
+    public boolean schedule(boolean force) {
         count.incrementAndGet();
 
         return true;

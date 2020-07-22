@@ -27,13 +27,24 @@ import java.util.List;
  * The base store for indexes that are unable to work with multi-value
  * attributes natively. For such indexes {@link MultiResult}s are split into
  * individual values and each value is inserted/removed separately.
+ * <p>
+ * All operations on the off-heap index store like insert/remove/getRecords are
+ * not guarded by a global lock. The subclasses must either implement thread-safe
+ * access operations or the index should be used as single-threaded by design.
  */
 public abstract class BaseSingleValueIndexStore extends BaseIndexStore {
 
-    private boolean multiResultHasToDetectDuplicates;
+    /**
+     * The flag is set to {@code true} when a collection is inserted into the index
+     * and deduplication is needed.
+     * <p>
+     * Since there is no global lock guarding update/getRecords() operations
+     * some queries still can return duplicates.
+     */
+    private volatile boolean multiResultHasToDetectDuplicates;
 
-    BaseSingleValueIndexStore(IndexCopyBehavior copyOn) {
-        super(copyOn);
+    BaseSingleValueIndexStore(IndexCopyBehavior copyOn, boolean enableGlobalLock) {
+        super(copyOn, enableGlobalLock);
     }
 
     /**

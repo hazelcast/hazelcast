@@ -112,7 +112,7 @@ public class ClientRaftProxyFactory {
     private ISemaphore createSemaphore(RaftGroupId groupId, String proxyName, String objectName) {
         ClientMessage request = SemaphoreGetSemaphoreTypeCodec.encodeRequest(proxyName);
         ClientMessage response = new ClientInvocation(client, request, objectName).invoke().join();
-        boolean jdkCompatible = SemaphoreGetSemaphoreTypeCodec.decodeResponse(response).response;
+        boolean jdkCompatible = SemaphoreGetSemaphoreTypeCodec.decodeResponse(response);
 
         return jdkCompatible
                 ? new SessionlessSemaphoreProxy(context, groupId, proxyName, objectName)
@@ -122,7 +122,7 @@ public class ClientRaftProxyFactory {
     private RaftGroupId getGroupId(String proxyName, String objectName) {
         ClientMessage request = CPGroupCreateCPGroupCodec.encodeRequest(proxyName);
         ClientMessage response = new ClientInvocation(client, request, objectName).invoke().joinInternal();
-        return CPGroupCreateCPGroupCodec.decodeResponse(response).groupId;
+        return CPGroupCreateCPGroupCodec.decodeResponse(response);
     }
 
 }

@@ -34,7 +34,7 @@ import java.util.Map;
 import static com.hazelcast.map.impl.LocalMapStatsUtil.incrementOtherOperationsCount;
 
 public class MapIsEmptyMessageTask
-        extends AbstractAllPartitionsMessageTask<MapIsEmptyCodec.RequestParameters> {
+        extends AbstractAllPartitionsMessageTask<String> {
 
     public MapIsEmptyMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -42,7 +42,7 @@ public class MapIsEmptyMessageTask
 
     @Override
     protected OperationFactory createOperationFactory() {
-        return new IsEmptyOperationFactory(parameters.name);
+        return new IsEmptyOperationFactory(parameters);
     }
 
     @Override
@@ -56,12 +56,12 @@ public class MapIsEmptyMessageTask
                 response = false;
             }
         }
-        incrementOtherOperationsCount(mapService, parameters.name);
+        incrementOtherOperationsCount(mapService, parameters);
         return response;
     }
 
     @Override
-    protected MapIsEmptyCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+    protected String decodeClientMessage(ClientMessage clientMessage) {
         return MapIsEmptyCodec.decodeRequest(clientMessage);
     }
 
@@ -77,12 +77,12 @@ public class MapIsEmptyMessageTask
 
     @Override
     public Permission getRequiredPermission() {
-        return new MapPermission(parameters.name, ActionConstants.ACTION_READ);
+        return new MapPermission(parameters, ActionConstants.ACTION_READ);
     }
 
     @Override
     public String getDistributedObjectName() {
-        return parameters.name;
+        return parameters;
     }
 
     @Override

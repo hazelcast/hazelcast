@@ -112,7 +112,7 @@ final class ClientCacheProxySupportUtil {
 
         @Override
         public UUID decodeAddResponse(ClientMessage clientMessage) {
-            return CacheAddEntryListenerCodec.decodeResponse(clientMessage).response;
+            return CacheAddEntryListenerCodec.decodeResponse(clientMessage);
         }
 
         @Override
@@ -122,7 +122,7 @@ final class ClientCacheProxySupportUtil {
 
         @Override
         public boolean decodeRemoveResponse(ClientMessage clientMessage) {
-            return CacheRemoveEntryListenerCodec.decodeResponse(clientMessage).response;
+            return CacheRemoveEntryListenerCodec.decodeResponse(clientMessage);
         }
     }
 
@@ -141,7 +141,7 @@ final class ClientCacheProxySupportUtil {
 
         @Override
         public UUID decodeAddResponse(ClientMessage clientMessage) {
-            return CacheAddPartitionLostListenerCodec.decodeResponse(clientMessage).response;
+            return CacheAddPartitionLostListenerCodec.decodeResponse(clientMessage);
         }
 
         @Override
@@ -151,7 +151,7 @@ final class ClientCacheProxySupportUtil {
 
         @Override
         public boolean decodeRemoveResponse(ClientMessage clientMessage) {
-            return CacheRemovePartitionLostListenerCodec.decodeResponse(clientMessage).response;
+            return CacheRemovePartitionLostListenerCodec.decodeResponse(clientMessage);
         }
     }
 

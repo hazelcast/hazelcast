@@ -100,13 +100,13 @@ public final class IExecutorDelegatingFuture<V> extends ClientDelegatingFuture<V
                     ExecutorServiceCancelOnPartitionCodec.encodeRequest(uuid, mayInterruptIfRunning);
             ClientInvocation clientInvocation = new ClientInvocation(client, request, objectName, partitionId);
             ClientInvocationFuture f = clientInvocation.invoke();
-            return ExecutorServiceCancelOnPartitionCodec.decodeResponse(f.get()).response;
+            return ExecutorServiceCancelOnPartitionCodec.decodeResponse(f.get());
         } else {
             ClientMessage request =
                     ExecutorServiceCancelOnMemberCodec.encodeRequest(uuid, member.getUuid(), mayInterruptIfRunning);
             ClientInvocation clientInvocation = new ClientInvocation(client, request, objectName, member.getUuid());
             ClientInvocationFuture f = clientInvocation.invoke();
-            return ExecutorServiceCancelOnMemberCodec.decodeResponse(f.get()).response;
+            return ExecutorServiceCancelOnMemberCodec.decodeResponse(f.get());
         }
     }
 

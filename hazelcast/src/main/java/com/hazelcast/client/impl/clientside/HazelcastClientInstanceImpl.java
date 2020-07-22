@@ -117,6 +117,7 @@ import com.hazelcast.spi.impl.executionservice.TaskScheduler;
 import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.splitbrainprotection.SplitBrainProtectionService;
+import com.hazelcast.sql.SqlService;
 import com.hazelcast.topic.ITopic;
 import com.hazelcast.topic.impl.TopicService;
 import com.hazelcast.topic.impl.reliable.ReliableTopicService;
@@ -285,8 +286,8 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
 
     private Diagnostics initDiagnostics() {
         String name = "diagnostics-client-" + id + "-" + currentTimeMillis();
-        ILogger logger = loggingService.getLogger(Diagnostics.class);
-        return new Diagnostics(name, logger, instanceName, properties);
+
+        return new Diagnostics(name, loggingService, instanceName, properties);
     }
 
     private MetricsRegistryImpl initMetricsRegistry() {
@@ -590,8 +591,6 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
             ClientMessage request = ClientGetDistributedObjectsCodec.encodeRequest();
             final Future<ClientMessage> future = new ClientInvocation(this, request, getName()).invoke();
             ClientMessage response = future.get();
-            ClientGetDistributedObjectsCodec.ResponseParameters resultParameters =
-                    ClientGetDistributedObjectsCodec.decodeResponse(response);
 
             Collection<? extends DistributedObject> distributedObjects = proxyManager.getDistributedObjects();
             Set<DistributedObjectInfo> localDistributedObjects = new HashSet<>();
@@ -599,8 +598,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
                 localDistributedObjects.add(new DistributedObjectInfo(localInfo.getServiceName(), localInfo.getName()));
             }
 
-            Collection<DistributedObjectInfo> newDistributedObjectInfo = resultParameters.response;
-            for (DistributedObjectInfo distributedObjectInfo : newDistributedObjectInfo) {
+            for (DistributedObjectInfo distributedObjectInfo : ClientGetDistributedObjectsCodec.decodeResponse(response)) {
                 localDistributedObjects.remove(distributedObjectInfo);
                 getDistributedObject(distributedObjectInfo.getServiceName(), distributedObjectInfo.getName(), false);
             }
@@ -803,6 +801,12 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
 
     public ConcurrencyDetection getConcurrencyDetection() {
         return concurrencyDetection;
+    }
+
+    @Nonnull
+    @Override
+    public SqlService getSql() {
+        throw new UnsupportedOperationException("SQL is not supported on client members yet.");
     }
 
     public void onClusterChange() {

@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Takes a thread dump of the member it's called on.
  */
-@Generated("ca7ae20159260673f9df18e0d3a10823")
+@Generated("2d6c146397a654b429dffe483be83694")
 public final class MCGetThreadDumpCodec {
     //hex: 0x200700
     public static final int REQUEST_MESSAGE_TYPE = 2098944;
@@ -49,14 +49,11 @@ public final class MCGetThreadDumpCodec {
     private MCGetThreadDumpCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class RequestParameters {
-
-        /**
-         * Whether only dead-locked threads or all threads should be dumped.
-         */
-        public boolean dumpDeadLocks;
-    }
+    /**
+     * Whether only dead-locked threads or all threads should be dumped.
+     */
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"UUF_UNUSED_PUBLIC_OR_PROTECTED_FIELD"})
+    public boolean dumpDeadLocks;
 
     public static ClientMessage encodeRequest(boolean dumpDeadLocks) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
@@ -70,21 +67,10 @@ public final class MCGetThreadDumpCodec {
         return clientMessage;
     }
 
-    public static MCGetThreadDumpCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
+    public static boolean decodeRequest(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        RequestParameters request = new RequestParameters();
         ClientMessage.Frame initialFrame = iterator.next();
-        request.dumpDeadLocks = decodeBoolean(initialFrame.content, REQUEST_DUMP_DEAD_LOCKS_FIELD_OFFSET);
-        return request;
-    }
-
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class ResponseParameters {
-
-        /**
-         * Thread dump of the member's JVM.
-         */
-        public java.lang.String threadDump;
+        return decodeBoolean(initialFrame.content, REQUEST_DUMP_DEAD_LOCKS_FIELD_OFFSET);
     }
 
     public static ClientMessage encodeResponse(java.lang.String threadDump) {
@@ -97,13 +83,14 @@ public final class MCGetThreadDumpCodec {
         return clientMessage;
     }
 
-    public static MCGetThreadDumpCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
+    /**
+    * Thread dump of the member's JVM.
+    */
+    public static java.lang.String decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        ResponseParameters response = new ResponseParameters();
         //empty initial frame
         iterator.next();
-        response.threadDump = StringCodec.decode(iterator);
-        return response;
+        return StringCodec.decode(iterator);
     }
 
 }

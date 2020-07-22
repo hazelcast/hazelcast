@@ -89,6 +89,19 @@ public class QueryOperation extends AbstractNamedOperation implements ReadonlyOp
                 result = queryRunner.runIndexOrPartitionScanQueryOnOwnedPartitions(query);
                 return RESPONSE;
             case NATIVE:
+                boolean useGlobalIndex = getMapServiceContext().getMapContainer(getName()).shouldUseGlobalIndex();
+
+                if (useGlobalIndex) {
+                    // Try to use HD global index
+                    // Don't do map scan because it is not thread-safe
+                    Result indexResult = queryRunner.runIndexOrPartitionScanQueryOnOwnedPartitions(query, false);
+                    if (indexResult != null) {
+                        result = indexResult;
+                        return RESPONSE;
+                    }
+                }
+
+                // Offload query run on the partition threads.
                 BitSet localPartitions = localPartitions();
                 if (localPartitions.cardinality() == 0) {
                     // important to deal with situation of not having any partitions
@@ -181,7 +194,8 @@ public class QueryOperation extends AbstractNamedOperation implements ReadonlyOp
         @Override
         public void start() {
             QueryFuture future = new QueryFuture(localPartitions.cardinality());
-            getOperationService().executeOnPartitions(new QueryTaskFactory(query, queryRunner, future), localPartitions);
+            getOperationService().executeOnPartitions(
+                    new QueryTaskFactory(query, queryRunner, future), localPartitions);
             future.whenCompleteAsync(new ExecutionCallbackImpl(queryRunner, query));
         }
     }

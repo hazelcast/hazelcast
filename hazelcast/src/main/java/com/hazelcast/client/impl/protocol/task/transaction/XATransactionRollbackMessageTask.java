@@ -33,14 +33,14 @@ import java.security.Permission;
 import java.util.UUID;
 
 public class XATransactionRollbackMessageTask
-        extends AbstractCallableMessageTask<XATransactionRollbackCodec.RequestParameters>
+        extends AbstractCallableMessageTask<UUID>
         implements TransactionalMessageTask {
     public XATransactionRollbackMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected XATransactionRollbackCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+    protected UUID decodeClientMessage(ClientMessage clientMessage) {
         return XATransactionRollbackCodec.decodeRequest(clientMessage);
     }
 
@@ -51,7 +51,7 @@ public class XATransactionRollbackMessageTask
 
     @Override
     protected Object call() throws Exception {
-        UUID transactionId = parameters.transactionId;
+        UUID transactionId = parameters;
         TransactionContext transactionContext = endpoint.getTransactionContext(transactionId);
         if (transactionContext == null) {
             throw new TransactionException("No transaction context with given transactionId: " + transactionId);

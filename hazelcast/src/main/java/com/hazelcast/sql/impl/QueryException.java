@@ -62,7 +62,7 @@ public final class QueryException extends HazelcastException {
     }
 
     public static QueryException memberConnection(UUID memberId) {
-        return error(SqlErrorCode.MEMBER_CONNECTION, "Connection to member is broken: " + memberId);
+        return error(SqlErrorCode.MEMBER_CONNECTION, "Connection to the member is broken: " + memberId);
     }
 
     public static QueryException memberLeave(UUID memberId) {
@@ -70,15 +70,15 @@ public final class QueryException extends HazelcastException {
     }
 
     public static QueryException memberLeave(Collection<UUID> memberIds) {
-        return error(SqlErrorCode.MEMBER_LEAVE, "Participating members has left the topology: " + memberIds);
+        return error(SqlErrorCode.MEMBER_LEAVE, "Participating members have left the topology: " + memberIds);
     }
 
     public static QueryException timeout(long timeout) {
-        return error(SqlErrorCode.TIMEOUT, "Query has been cancelled due to timeout (" + timeout + " ms)");
+        return error(SqlErrorCode.TIMEOUT, "Query has been cancelled due to a timeout (" + timeout + " ms)");
     }
 
     public static QueryException cancelledByUser() {
-        return error(SqlErrorCode.CANCELLED_BY_USER, "Query was cancelled by user");
+        return error(SqlErrorCode.CANCELLED_BY_USER, "Query was cancelled by the user");
     }
 
     public static QueryException dataException(String message, Throwable cause) {
@@ -104,14 +104,5 @@ public final class QueryException extends HazelcastException {
      */
     public UUID getOriginatingMemberId() {
         return originatingMemberId;
-    }
-
-    @Override
-    public String getMessage() {
-        if (originatingMemberId != null) {
-            return super.getMessage() + " (code=" + code + ", originatingMemberId=" + originatingMemberId + ')';
-        } else {
-            return super.getMessage() + " (code=" + code + ')';
-        }
     }
 }

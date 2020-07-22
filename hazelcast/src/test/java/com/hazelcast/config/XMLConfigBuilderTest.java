@@ -3478,4 +3478,21 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         assertTrue(metricsConfig.getManagementCenterConfig().isEnabled());
         assertFalse(metricsConfig.getJmxConfig().isEnabled());
     }
+
+    @Override
+    @Test
+    public void testSqlConfig() {
+        String xml = HAZELCAST_START_TAG
+            + "<sql>\n"
+            + "  <executor-pool-size>10</executor-pool-size>\n"
+            + "  <operation-pool-size>20</operation-pool-size>\n"
+            + "  <query-timeout-millis>30</query-timeout-millis>\n"
+            + "</sql>"
+            + HAZELCAST_END_TAG;
+        Config config = new InMemoryXmlConfig(xml);
+        SqlConfig sqlConfig = config.getSqlConfig();
+        assertEquals(10, sqlConfig.getExecutorPoolSize());
+        assertEquals(20, sqlConfig.getOperationPoolSize());
+        assertEquals(30L, sqlConfig.getQueryTimeoutMillis());
+    }
 }

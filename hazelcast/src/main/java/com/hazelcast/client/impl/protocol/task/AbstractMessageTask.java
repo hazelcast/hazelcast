@@ -303,6 +303,9 @@ public abstract class AbstractMessageTask<P> implements MessageTask, SecureReque
         if (!isAdvancedNetworkEnabled()) {
             return true;
         }
+        if (parameters == null) {
+            return true;
+        }
         Class<Address> addressClass = Address.class;
         Field[] fields = parameters.getClass().getDeclaredFields();
         Set<Address> addresses = new HashSet<Address>();
@@ -341,8 +344,8 @@ public abstract class AbstractMessageTask<P> implements MessageTask, SecureReque
                 return t;
             }
         }
-
-        return peel(t);
+        //We are passing our own message factory, because we don't want checked exceptions to be wrapped to HazelcastException
+        return peel(t, null, null, (throwable, message) -> throwable);
     }
 
 

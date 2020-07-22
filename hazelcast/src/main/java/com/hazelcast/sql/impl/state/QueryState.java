@@ -17,6 +17,7 @@
 package com.hazelcast.sql.impl.state;
 
 import com.hazelcast.sql.SqlErrorCode;
+import com.hazelcast.sql.SqlRowMetadata;
 import com.hazelcast.sql.impl.ClockProvider;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.QueryId;
@@ -68,6 +69,7 @@ public final class QueryState implements QueryStateCallback {
         boolean initiator,
         long initiatorTimeout,
         Plan initiatorPlan,
+        SqlRowMetadata initiatorRowMetadata,
         QueryResultProducer initiatorRowSource,
         ClockProvider clockProvider
     ) {
@@ -80,6 +82,7 @@ public final class QueryState implements QueryStateCallback {
             initiatorState = new QueryInitiatorState(
                 queryId,
                 initiatorPlan,
+                initiatorRowMetadata,
                 initiatorRowSource,
                 initiatorTimeout
             );
@@ -99,6 +102,7 @@ public final class QueryState implements QueryStateCallback {
         QueryStateCompletionCallback completionCallback,
         long initiatorTimeout,
         Plan initiatorPlan,
+        SqlRowMetadata initiatorRowMetadata,
         QueryResultProducer initiatorResultProducer,
         ClockProvider clockProvider
     ) {
@@ -109,6 +113,7 @@ public final class QueryState implements QueryStateCallback {
             true,
             initiatorTimeout,
             initiatorPlan,
+            initiatorRowMetadata,
             initiatorResultProducer,
             clockProvider
         );
@@ -132,6 +137,7 @@ public final class QueryState implements QueryStateCallback {
             completionCallback,
             false,
             -1,
+            null,
             null,
             null,
             clockProvider

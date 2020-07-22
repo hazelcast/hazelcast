@@ -39,7 +39,7 @@ import java.security.Permission;
  * @since 3.9
  */
 public class MapEventJournalSubscribeTask
-        extends AbstractMapPartitionMessageTask<MapEventJournalSubscribeCodec.RequestParameters> {
+        extends AbstractMapPartitionMessageTask<String> {
 
     public MapEventJournalSubscribeTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -47,11 +47,11 @@ public class MapEventJournalSubscribeTask
 
     @Override
     protected Operation prepareOperation() {
-        return new MapEventJournalSubscribeOperation(parameters.name);
+        return new MapEventJournalSubscribeOperation(parameters);
     }
 
     @Override
-    protected MapEventJournalSubscribeCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+    protected String decodeClientMessage(ClientMessage clientMessage) {
         return MapEventJournalSubscribeCodec.decodeRequest(clientMessage);
     }
 
@@ -67,12 +67,12 @@ public class MapEventJournalSubscribeTask
     }
 
     public Permission getRequiredPermission() {
-        return new MapPermission(parameters.name, ActionConstants.ACTION_LISTEN);
+        return new MapPermission(parameters, ActionConstants.ACTION_LISTEN);
     }
 
     @Override
     public String getDistributedObjectName() {
-        return parameters.name;
+        return parameters;
     }
 
     @Override
