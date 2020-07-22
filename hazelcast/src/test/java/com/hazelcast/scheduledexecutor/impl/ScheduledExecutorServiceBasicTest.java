@@ -60,6 +60,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import static com.hazelcast.internal.partition.IPartition.MAX_BACKUP_COUNT;
+import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.scheduledexecutor.TaskUtils.autoDisposable;
 import static com.hazelcast.scheduledexecutor.TaskUtils.named;
 import static com.hazelcast.spi.properties.ClusterProperty.PARTITION_COUNT;
@@ -67,7 +68,6 @@ import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static java.lang.String.format;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
-import static org.hamcrest.CoreMatchers.isA;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
@@ -574,10 +574,15 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
         IScheduledExecutorService service = instances[0].getScheduledExecutorService(schedulerName);
         String keyOwner = "hitSamePartitionToCheckCapacity";
 
+        List<IScheduledFuture<Double>> futures = new ArrayList<>();
         for (int i = 0; i < capacity; i++) {
-            service.scheduleOnKeyOwner(autoDisposable(new PlainCallableTask()), keyOwner, 0, TimeUnit.SECONDS);
+            Callable<Double> command = autoDisposable(new PlainCallableTask());
+            IScheduledFuture<Double> future = service.scheduleOnKeyOwner(command, keyOwner, 0, SECONDS);
+            futures.add(future);
         }
-        Thread.sleep(2000);
+
+        futures.forEach(this::assertTaskHasBeenDestroyedEventually);
+
         for (int i = 0; i < capacity; i++) {
             service.scheduleOnKeyOwner(autoDisposable(new PlainCallableTask()), keyOwner, 0, TimeUnit.SECONDS);
         }
@@ -911,10 +916,7 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
 
         IScheduledFuture<Double> future = executorService.schedule(autoDisposable(new PlainCallableTask()), 1, SECONDS);
 
-        expected.expect(ExecutionException.class);
-        expected.expectCause(isA(StaleTaskException.class));
-        Thread.sleep(2000);
-        future.get();
+        assertTaskHasBeenDestroyedEventually(future);
     }
 
 
@@ -927,10 +929,7 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
         IScheduledFuture<Double> future = executorService.scheduleOnMember(
                 autoDisposable(new PlainCallableTask()), localMember, 1, SECONDS);
 
-        expected.expect(ExecutionException.class);
-        expected.expectCause(isA(StaleTaskException.class));
-        Thread.sleep(2000);
-        future.get();
+        assertTaskHasBeenDestroyedEventually(future);
     }
 
     @Test
@@ -941,10 +940,19 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
 
         IScheduledFuture<Double> future = executorService.scheduleOnKeyOwner(autoDisposable(new PlainCallableTask()), key, 1, SECONDS);
 
-        expected.expect(ExecutionException.class);
-        expected.expectCause(isA(StaleTaskException.class));
-        Thread.sleep(2000);
-        future.get();
+        assertTaskHasBeenDestroyedEventually(future);
+    }
+
+    private void assertTaskHasBeenDestroyedEventually(IScheduledFuture<Double> future) {
+        assertTrueEventually(() -> assertThrows(StaleTaskException.class, () -> {
+            try {
+                future.get();
+            } catch (InterruptedException ignored) {
+                // ignored
+            } catch (ExecutionException ex) {
+                sneakyThrow(ex.getCause());
+            }
+        }));
     }
 
     @Test(expected = TimeoutException.class)
