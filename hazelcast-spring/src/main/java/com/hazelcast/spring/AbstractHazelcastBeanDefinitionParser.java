@@ -142,6 +142,13 @@ public abstract class AbstractHazelcastBeanDefinitionParser extends AbstractBean
             return builder;
         }
 
+        protected BeanDefinitionBuilder createBeanBuilder(String className) {
+            BeanDefinitionBuilder builder = BeanDefinitionBuilder.rootBeanDefinition(className);
+            builder.setScope(configBuilder.getBeanDefinition().getScope());
+            builder.setLazyInit(configBuilder.getBeanDefinition().isLazyInit());
+            return builder;
+        }
+
         protected BeanDefinitionBuilder createAndFillBeanBuilder(Node node, Class clazz, String propertyName,
                                                                  BeanDefinitionBuilder parent, String... exceptPropertyNames) {
             BeanDefinitionBuilder builder = createBeanBuilder(clazz);

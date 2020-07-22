@@ -17,6 +17,7 @@
 package com.hazelcast.spring;
 
 import com.hazelcast.client.HazelcastClient;
+import com.hazelcast.client.LoadBalancer;
 import com.hazelcast.client.config.ClientCloudConfig;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ClientConnectionStrategyConfig;
@@ -34,6 +35,7 @@ import com.hazelcast.client.util.RandomLB;
 import com.hazelcast.client.util.RoundRobinLB;
 import com.hazelcast.config.AliasedDiscoveryConfig;
 import com.hazelcast.config.CredentialsFactoryConfig;
+import com.hazelcast.config.DiscoveryStrategyConfig;
 import com.hazelcast.config.EntryListenerConfig;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.InstanceTrackingConfig;
@@ -364,6 +366,20 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
                 configBuilder.addPropertyValue("loadBalancer", new RandomLB());
             } else if ("round-robin".equals(type)) {
                 configBuilder.addPropertyValue("loadBalancer", new RoundRobinLB());
+            } else if ("custom".equals(type)) {
+                NamedNodeMap attributes = node.getAttributes();
+                Node classNameNode = attributes.getNamedItem("class-name");
+                String className = classNameNode != null ? getTextContent(classNameNode) : null;
+                Node implNode = attributes.getNamedItem("implementation");
+                String implementation = implNode != null ? getTextContent(implNode) : null;
+                isTrue(className != null || implementation != null, "One of 'class-name' or 'implementation'"
+                    + " attributes is required to create LoadBalancer!");
+                if (className != null) {
+                    BeanDefinitionBuilder loadBalancerBeanDefinition = createBeanBuilder(className);
+                    configBuilder.addPropertyValue("loadBalancer", loadBalancerBeanDefinition.getBeanDefinition());
+                } else {
+                    configBuilder.addPropertyReference("loadBalancer", implementation);
+                }
             }
         }
 

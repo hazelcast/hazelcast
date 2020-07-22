@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.config.impl;
 
+import com.hazelcast.client.LoadBalancer;
 import com.hazelcast.client.config.ClientCloudConfig;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ClientConnectionStrategyConfig;
@@ -90,6 +91,7 @@ import static com.hazelcast.internal.config.DomConfigHelper.getBooleanValue;
 import static com.hazelcast.internal.config.DomConfigHelper.getDoubleValue;
 import static com.hazelcast.internal.config.DomConfigHelper.getIntegerValue;
 import static com.hazelcast.internal.config.DomConfigHelper.getLongValue;
+import static com.hazelcast.internal.nio.ClassLoaderUtil.newInstance;
 import static com.hazelcast.internal.util.StringUtil.upperCaseInternal;
 
 @SuppressWarnings({
@@ -118,7 +120,7 @@ public class ClientDomConfigProcessor extends AbstractDomConfigProcessor {
     }
 
     @Override
-    public void buildConfig(Node rootNode) throws Exception {
+    public void buildConfig(Node rootNode) {
         for (Node node : childElements(rootNode)) {
             String nodeName = cleanNodeName(node);
             if (occurrenceSet.contains(nodeName)) {
@@ -391,7 +393,20 @@ public class ClientDomConfigProcessor extends AbstractDomConfigProcessor {
             clientConfig.setLoadBalancer(new RandomLB());
         } else if ("round-robin".equals(type)) {
             clientConfig.setLoadBalancer(new RoundRobinLB());
+        } else if ("custom".equals(type)) {
+            String loadBalancerClassName = parseCustomLoadBalancerClassName(node);
+
+            try {
+                LoadBalancer loadBalancer = newInstance(null, loadBalancerClassName);
+                clientConfig.setLoadBalancer(loadBalancer);
+            } catch (Exception e) {
+                throw new InvalidConfigurationException("Unable to instantiate load balancer class '" + loadBalancerClassName + "' found in the configuration", e);
+            }
         }
+    }
+
+    protected String parseCustomLoadBalancerClassName(Node node) {
+        return getTextContent(node);
     }
 
     private void handleNetwork(Node node) {

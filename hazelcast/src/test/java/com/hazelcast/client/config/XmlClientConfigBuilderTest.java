@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.config;
 
+import com.hazelcast.client.test.CustomLoadBalancer;
 import com.hazelcast.client.util.RandomLB;
 import com.hazelcast.client.util.RoundRobinLB;
 import com.hazelcast.config.CredentialsFactoryConfig;
@@ -355,6 +356,18 @@ public class XmlClientConfigBuilderTest extends AbstractClientConfigBuilderTest 
         ClientConfig config = buildConfig(xml);
 
         assertInstanceOf(RoundRobinLB.class, config.getLoadBalancer());
+    }
+
+    @Override
+    @Test
+    public void testLoadBalancerCustom() {
+        String xml = HAZELCAST_CLIENT_START_TAG
+                     + "<load-balancer type=\"custom\">com.hazelcast.client.test.CustomLoadBalancer</load-balancer>"
+                     + HAZELCAST_CLIENT_END_TAG;
+
+        ClientConfig config = buildConfig(xml);
+
+        assertInstanceOf(CustomLoadBalancer.class, config.getLoadBalancer());
     }
 
     @Override

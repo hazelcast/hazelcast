@@ -429,9 +429,14 @@ public final class ClientConfigXmlGenerator {
         } else if (loadBalancer instanceof RoundRobinLB) {
             type = "round-robin";
         } else {
-            throw new IllegalArgumentException("Unknown load-balancer type: " + loadBalancer);
+            type = "custom";
         }
-        gen.node("load-balancer", null, "type", type);
+
+        if ("custom".equals(type)) {
+            gen.node("load-balancer", loadBalancer.getClass().getName(), "type", type);
+        } else {
+            gen.node("load-balancer", null, "type", type);
+        }
     }
 
     private static void nearCaches(XmlGenerator gen, Map<String, NearCacheConfig> nearCacheMap) {

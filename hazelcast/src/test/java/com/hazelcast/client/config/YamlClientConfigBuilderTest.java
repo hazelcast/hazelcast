@@ -16,8 +16,10 @@
 
 package com.hazelcast.client.config;
 
+import com.hazelcast.client.test.CustomLoadBalancer;
 import com.hazelcast.client.util.RandomLB;
 import com.hazelcast.client.util.RoundRobinLB;
+import com.hazelcast.client.util.StaticLB;
 import com.hazelcast.config.CredentialsFactoryConfig;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.InMemoryFormat;
@@ -324,6 +326,20 @@ public class YamlClientConfigBuilderTest extends AbstractClientConfigBuilderTest
         ClientConfig config = buildConfig(yaml);
 
         assertInstanceOf(RoundRobinLB.class, config.getLoadBalancer());
+    }
+
+    @Override
+    @Test
+    public void testLoadBalancerCustom() {
+        String yaml = ""
+                      + "hazelcast-client:\n"
+                      + "  load-balancer:\n"
+                      + "    type: custom\n"
+                      + "    class-name: com.hazelcast.client.test.CustomLoadBalancer\n";
+
+        ClientConfig config = buildConfig(yaml);
+
+        assertInstanceOf(CustomLoadBalancer.class, config.getLoadBalancer());
     }
 
     @Test

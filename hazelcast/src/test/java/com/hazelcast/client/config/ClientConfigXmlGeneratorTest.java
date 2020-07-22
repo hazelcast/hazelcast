@@ -17,6 +17,7 @@
 package com.hazelcast.client.config;
 
 import com.hazelcast.client.LoadBalancer;
+import com.hazelcast.client.test.CustomLoadBalancer;
 import com.hazelcast.client.util.RandomLB;
 import com.hazelcast.config.AliasedDiscoveryConfig;
 import com.hazelcast.config.ConfigCompatibilityChecker;
@@ -492,6 +493,13 @@ public class ClientConfigXmlGeneratorTest extends HazelcastTestSupport {
         clientConfig.setLoadBalancer(new RandomLB());
         LoadBalancer actual = newConfigViaGenerator().getLoadBalancer();
         assertTrue(actual instanceof RandomLB);
+    }
+
+    @Test
+    public void loadBalancerCustom() {
+        clientConfig.setLoadBalancer(new CustomLoadBalancer());
+        LoadBalancer actual = newConfigViaGenerator().getLoadBalancer();
+        assertTrue(actual instanceof CustomLoadBalancer);
     }
 
     private NearCacheConfig createNearCacheConfig(String name) {
