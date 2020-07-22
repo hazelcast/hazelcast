@@ -55,6 +55,8 @@ class MapInfoCollector implements MetricsCollector {
         mapInfo.put("mpaocct", String.valueOf(countMapWithAtleastOneAttribute()));
         mapInfo.put("mpevct", String.valueOf(countMapUsingEviction()));
         mapInfo.put("mpnmct", String.valueOf(countMapWithNativeInMemoryFormat()));
+        mapInfo.put("mpgtla", String.valueOf(MapGetLatency(hazelcastNode)));
+        mapInfo.put("mpptla", String.valueOf(MapPutLatency(hazelcastNode)));
 
         return mapInfo;
     }
@@ -102,5 +104,19 @@ class MapInfoCollector implements MetricsCollector {
     private long countMapWithNativeInMemoryFormat() {
         return mapConfigs.stream()
                 .filter(mapConfig -> mapConfig != null && mapConfig.getInMemoryFormat() == InMemoryFormat.NATIVE).count();
+    }
+
+    private long MapPutLatency(Node node) {
+        return (long) mapConfigs.stream().map(mapConfig -> node.hazelcastInstance.getMap(mapConfig.getName()))
+                .filter(map -> map.getLocalMapStats().getPutOperationCount() != 0L)
+                .mapToDouble(map -> map.getLocalMapStats().getTotalPutLatency() / map.getLocalMapStats().getPutOperationCount())
+                .average().orElse(0);
+    }
+
+    private long MapGetLatency(Node node) {
+        return (long) mapConfigs.stream().map(mapConfig -> node.hazelcastInstance.getMap(mapConfig.getName()))
+                .filter(map -> map.getLocalMapStats().getGetOperationCount() != 0L)
+                .mapToDouble(map -> map.getLocalMapStats().getTotalGetLatency() / map.getLocalMapStats().getGetOperationCount())
+                .average().orElse(0);
     }
 }

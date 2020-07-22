@@ -34,6 +34,7 @@ import com.hazelcast.crdt.pncounter.PNCounter;
 import com.hazelcast.flakeidgen.FlakeIdGenerator;
 import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.instance.impl.Node;
+import com.hazelcast.map.IMap;
 import com.hazelcast.multimap.MultiMap;
 import com.hazelcast.replicatedmap.ReplicatedMap;
 import com.hazelcast.ringbuffer.Ringbuffer;
@@ -501,6 +502,44 @@ public class PhoneHomeTest extends HazelcastTestSupport {
         parameters = phoneHome.phoneHome(true);
         assertEquals(parameters.get("figct"), "2");
 
+    }
+
+    @Test
+    public void testMapPutLatency() {
+        Map<String, String> parameters;
+        parameters = phoneHome.phoneHome(true);
+        assertEquals(parameters.get("mpptla"), "0");
+
+        IMap<Object, Object> iMap = node.hazelcastInstance.getMap("hazelcast");
+        iMap.put("1", "hazelcast");
+        parameters = phoneHome.phoneHome(true);
+        assertEquals(parameters.get("mpptla"),
+                String.valueOf(iMap.getLocalMapStats().getTotalPutLatency() / iMap.getLocalMapStats().getPutOperationCount()));
+
+        iMap.put("2", "phonehome");
+        parameters = phoneHome.phoneHome(true);
+        assertEquals(parameters.get("mpptla"),
+                String.valueOf(iMap.getLocalMapStats().getTotalPutLatency() / iMap.getLocalMapStats().getPutOperationCount()));
+    }
+
+    @Test
+    public void testMapGetLatency() {
+        Map<String, String> parameters;
+        parameters = phoneHome.phoneHome(true);
+        assertEquals(parameters.get("mpgtla"), "0");
+
+        IMap<Object, Object> iMap = node.hazelcastInstance.getMap("hazelcast");
+        iMap.put("1", "hazelcast");
+        iMap.get("1");
+        parameters = phoneHome.phoneHome(true);
+        assertEquals(parameters.get("mpgtla"),
+                String.valueOf(iMap.getLocalMapStats().getTotalGetLatency() / iMap.getLocalMapStats().getGetOperationCount()));
+
+        iMap.put("2", "phonehome");
+        iMap.get("2");
+        parameters = phoneHome.phoneHome(true);
+        assertEquals(parameters.get("mpgtla"),
+                String.valueOf(iMap.getLocalMapStats().getTotalGetLatency() / iMap.getLocalMapStats().getGetOperationCount()));
     }
 
 }
