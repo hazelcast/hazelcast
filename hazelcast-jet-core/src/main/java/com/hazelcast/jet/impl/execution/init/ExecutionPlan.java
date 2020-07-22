@@ -440,7 +440,7 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
                                                          InternalSerializationService jobSerializationService) {
         final int upstreamParallelism = edge.sourceVertex().localParallelism();
         final int downstreamParallelism = edge.destVertex().localParallelism();
-        final int numRemoteMembers = ptionArrgmt.remotePartitionAssignment.get().size();
+        final int numRemoteMembers = ptionArrgmt.getRemotePartitionAssignment().size();
         final int queueSize = edge.getConfig().getQueueSize();
 
         if (edge.routingPolicy() == RoutingPolicy.ISOLATED) {
@@ -493,7 +493,7 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
         createIfAbsentReceiverTasklet(edge, ptionsPerProcessor, totalPtionCount, jobSerializationService);
 
         // assign remote partitions to outbound data collectors
-        final Map<Address, int[]> memberToPartitions = ptionArrgmt.remotePartitionAssignment.get();
+        final Map<Address, int[]> memberToPartitions = ptionArrgmt.getRemotePartitionAssignment();
         allCollectors = new OutboundCollector[memberToPartitions.size() + 1];
         allCollectors[0] = compositeCollector(localCollectors, edge, totalPtionCount);
         int index = 1;
@@ -521,7 +521,7 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
                        Map<Address, ReceiverTasklet> addrToTasklet = new HashMap<>();
                        //create a receiver per address
                        int offset = 0;
-                       for (Address addr : ptionArrgmt.remotePartitionAssignment.get().keySet()) {
+                       for (Address addr : ptionArrgmt.getRemotePartitionAssignment().keySet()) {
                            final OutboundCollector[] collectors = new OutboundCollector[ptionsPerProcessor.length];
                            // assign the queues starting from end
                            final int queueOffset = --offset;
