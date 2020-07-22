@@ -539,6 +539,9 @@
                                 <goals>
                                     <goal>test</goal>
                                 </goals>
+                                <configuration>
+                                    <skip combine.self="override">true</skip>
+                                </configuration>
                             </execution>
                             <execution>
                                 <id>regular-tests</id>
@@ -550,6 +553,7 @@
                                         ${argLine}
                                         -Dhazelcast.test.defaultTestTimeoutInSeconds=600
                                     </argLine>
+                                    <forkCount combine.self="override">1</forkCount>
                                     <excludedGroups combine.self="override" />
                                 </configuration>
                             </execution>
