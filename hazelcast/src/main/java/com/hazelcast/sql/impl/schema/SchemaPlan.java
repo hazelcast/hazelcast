@@ -33,7 +33,8 @@ public interface SchemaPlan extends SqlPlan {
         throw new UnsupportedOperationException();
     }
 
-    SqlPlan execute(); // TODO: add execute(List<Object> params, long timeout, int pageSize) to SqlPlan ???
+    // TODO: add execute(List<Object> params, long timeout, int pageSize) to SqlPlan ???
+    SqlPlan execute();
 
     class CreateExternalTablePlan implements SchemaPlan {
 
