@@ -18,6 +18,7 @@ package com.hazelcast.jet.core;
 
 import com.hazelcast.cluster.Address;
 import com.hazelcast.core.DistributedObject;
+import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.internal.cluster.MemberInfo;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
@@ -39,6 +40,9 @@ import com.hazelcast.jet.impl.execution.ExecutionContext;
 import com.hazelcast.jet.impl.execution.init.ExecutionPlan;
 import com.hazelcast.jet.impl.execution.init.ExecutionPlanBuilder;
 import com.hazelcast.map.IMap;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import org.junit.Before;
@@ -48,6 +52,7 @@ import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
 import javax.annotation.Nonnull;
+import java.io.IOException;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
@@ -68,6 +73,7 @@ import static com.hazelcast.jet.core.processor.Processors.noopP;
 import static com.hazelcast.jet.impl.JobExecutionRecord.NO_SNAPSHOT;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
+import static java.util.Collections.nCopies;
 import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -579,6 +585,36 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
                                    .count();
 
         assertEquals(0, snapshotMaps);
+    }
+
+    @Test
+    public void when_dataSerializable_processorSupplier_notSerializable_then_jobFails() {
+        DAG dag = new DAG();
+        dag.newVertex("v", ProcessorMetaSupplier.of(
+                (FunctionEx<? super Address, ? extends ProcessorSupplier>)
+                        address -> new NotSerializable_DataSerializable_ProcessorSupplier()));
+
+        Job job = instance().newJob(dag);
+        Exception e = assertThrows(Exception.class, () -> job.join());
+        assertContains(e.getMessage(), "Failed to serialize");
+    }
+
+    public static class NotSerializable_DataSerializable_ProcessorSupplier implements ProcessorSupplier, DataSerializable {
+        @Nonnull @Override
+        public Collection<? extends Processor> get(int count) {
+            return nCopies(count, Processors.noopP().get());
+        }
+
+        @Override
+        public void writeData(ObjectDataOutput out) throws IOException {
+            // Object is not serializable
+            out.writeObject(new Object());
+        }
+
+        @Override
+        public void readData(ObjectDataInput in) {
+            fail();
+        }
     }
 
     private Job runJobExpectFailure(@Nonnull DAG dag, boolean snapshotting) {

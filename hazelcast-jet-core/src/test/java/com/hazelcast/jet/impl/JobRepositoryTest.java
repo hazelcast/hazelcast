@@ -45,8 +45,6 @@ import java.util.Collections;
 import java.util.Properties;
 
 import static com.hazelcast.jet.core.JetProperties.JOB_RESULTS_MAX_SIZE;
-import static com.hazelcast.jet.core.JetProperties.JOB_SCAN_PERIOD;
-import static java.util.concurrent.TimeUnit.HOURS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -58,10 +56,9 @@ import static org.junit.Assert.fail;
 public class JobRepositoryTest extends JetTestSupport {
 
     private static final long RESOURCES_EXPIRATION_TIME_MILLIS = SECONDS.toMillis(1);
-    private static final long JOB_SCAN_PERIOD_IN_MILLIS = HOURS.toMillis(1);
     private static final int MAX_JOB_RESULTS_COUNT = 2;
 
-    private JobConfig jobConfig = new JobConfig();
+    private final JobConfig jobConfig = new JobConfig();
     private JetInstance instance;
     private JobRepository jobRepository;
 
@@ -70,7 +67,6 @@ public class JobRepositoryTest extends JetTestSupport {
         JetConfig config = new JetConfig();
         Properties properties = config.getProperties();
         properties.setProperty(JOB_RESULTS_MAX_SIZE.getName(), Integer.toString(MAX_JOB_RESULTS_COUNT));
-        properties.setProperty(JOB_SCAN_PERIOD.getName(), Long.toString(JOB_SCAN_PERIOD_IN_MILLIS));
 
         instance = createJetMember(config);
         jobRepository = new JobRepository(instance);
@@ -82,7 +78,7 @@ public class JobRepositoryTest extends JetTestSupport {
     @Test
     public void when_jobIsRunning_then_expiredJobIsNotCleanedUp() {
         long jobId = uploadResourcesForNewJob();
-        Data dag = createDAGData();
+        Data dag = createDagData();
         JobRecord jobRecord = createJobRecord(jobId, dag);
         jobRepository.putNewJobRecord(jobRecord);
         jobRepository.newExecutionId();
@@ -99,7 +95,7 @@ public class JobRepositoryTest extends JetTestSupport {
     @Test
     public void when_jobRecordIsPresentForExpiredJob_then_jobIsNotCleanedUp() {
         long jobId = uploadResourcesForNewJob();
-        Data dag = createDAGData();
+        Data dag = createDagData();
         JobRecord jobRecord = createJobRecord(jobId, dag);
         jobRepository.putNewJobRecord(jobRecord);
         jobRepository.newExecutionId();
@@ -215,8 +211,10 @@ public class JobRepositoryTest extends JetTestSupport {
         return jobRepository.uploadJobResources(jobConfig);
     }
 
-    private Data createDAGData() {
-        return getNodeEngineImpl(instance.getHazelcastInstance()).toData(new DAG());
+    private Data createDagData() {
+        DAG dag = new DAG();
+        dag.newVertex("v", () -> new TestProcessors.MockP().streaming());
+        return getNodeEngineImpl(instance.getHazelcastInstance()).toData(dag);
     }
 
     private JobRecord createJobRecord(long jobId, Data dag) {

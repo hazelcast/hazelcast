@@ -986,6 +986,8 @@ public class JobCoordinationService {
             try {
                 return CompletableFuture.completedFuture(action.call());
             } catch (Throwable e) {
+                // most callers ignore the failure on the returned future, let's log it at least
+                logger.warning(null, e);
                 return com.hazelcast.jet.impl.util.Util.exceptionallyCompletedFuture(e);
             }
         }
@@ -996,7 +998,7 @@ public class JobCoordinationService {
             try {
                 return action.call();
             } catch (Throwable e) {
-                // the executor ignores exceptions, let's log it at least
+                // most callers ignore the failure on the returned future, let's log it at least
                 logger.warning(null, e);
                 throw e;
             } finally {

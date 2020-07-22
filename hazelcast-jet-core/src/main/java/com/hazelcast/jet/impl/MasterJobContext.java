@@ -21,6 +21,7 @@ import com.hazelcast.core.LocalMemberResetException;
 import com.hazelcast.internal.cluster.MemberInfo;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.cluster.impl.MembersView;
+import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.Edge;
@@ -213,33 +214,29 @@ public class MasterJobContext {
                         + ", execution graph in DOT format:\n" + dotRepresentation
                         + "\nHINT: You can use graphviz or http://viz-js.com to visualize the printed graph.");
                 logger.fine("Building execution plan for " + mc.jobIdString());
-                try {
-                    Util.doWithClassLoader(classLoader, () ->
-                            mc.setExecutionPlanMap(createExecutionPlans(mc.nodeEngine(), membersView, dag, mc.jobId(),
-                                    mc.executionId(), mc.jobConfig(), jobExecRec.ongoingSnapshotId())));
-                } catch (Throwable e) {
-                    throw new UserCausedException(e);
-                }
+                Util.doWithClassLoader(classLoader, () ->
+                        mc.setExecutionPlanMap(createExecutionPlans(mc.nodeEngine(), membersView, dag, mc.jobId(),
+                                mc.executionId(), mc.jobConfig(), jobExecRec.ongoingSnapshotId())));
+
                 logger.fine("Built execution plans for " + mc.jobIdString());
                 Set<MemberInfo> participants = mc.executionPlanMap().keySet();
                 Function<ExecutionPlan, Operation> operationCtor = plan ->
                         new InitExecutionOperation(mc.jobId(), mc.executionId(), membersView.getVersion(), participants,
                                 mc.nodeEngine().getSerializationService().toData(plan));
                 mc.invokeOnParticipants(operationCtor, this::onInitStepCompleted, null, false);
-            } catch (UserCausedException e) {
-                finalizeJob(e.getCause());
+            } catch (Throwable e) {
+                finalizeJob(e);
             }
         });
     }
 
     @Nullable
-    private Tuple2<DAG, ClassLoader> resolveDagAndCL(Supplier<Long> executionIdSupplier)
-            throws UserCausedException {
+    private Tuple2<DAG, ClassLoader> resolveDagAndCL(Supplier<Long> executionIdSupplier) {
         mc.lock();
         try {
             if (isCancelled()) {
                 logger.fine("Skipping init job '" + mc.jobName() + "': is already cancelled.");
-                throw new UserCausedException(new CancellationException());
+                throw new CancellationException();
             }
             if (mc.jobStatus() != NOT_RUNNING) {
                 logger.fine("Not starting job '" + mc.jobName() + "': status is " + mc.jobStatus());
@@ -260,7 +257,7 @@ public class MasterJobContext {
 
             if (requestedTerminationMode != null) {
                 if (requestedTerminationMode.actionAfterTerminate() != RESTART) {
-                    throw new UserCausedException(new JobTerminateRequestedException(requestedTerminationMode));
+                    throw new JobTerminateRequestedException(requestedTerminationMode);
                 }
                 // requested termination mode is RESTART, ignore it because we are just starting
                 requestedTerminationMode = null;
@@ -271,8 +268,7 @@ public class MasterJobContext {
                 dag = deserializeWithCustomClassLoader(mc.nodeEngine().getSerializationService(),
                         classLoader, mc.jobRecord().getDag());
             } catch (Exception e) {
-                logger.warning("DAG deserialization failed", e);
-                throw new UserCausedException(e);
+                throw new JetException("DAG deserialization failed", e);
             }
             // save a copy of the vertex list because it is going to change
             vertices = new HashSet<>();
@@ -283,13 +279,6 @@ public class MasterJobContext {
             return tuple2(dag, classLoader);
         } finally {
             mc.unlock();
-        }
-    }
-
-    // Used only in tryStartJob() and its callees, should never escape that method.
-    private static class UserCausedException extends Exception {
-        UserCausedException(Throwable cause) {
-            super(cause);
         }
     }
 
@@ -365,35 +354,29 @@ public class MasterJobContext {
         return result;
     }
 
-    private void rewriteDagWithSnapshotRestore(
-            DAG dag, long snapshotId, String mapName, String snapshotName
-    ) throws UserCausedException {
-        try {
-            IMap<Object, Object> snapshotMap = mc.nodeEngine().getHazelcastInstance().getMap(mapName);
-            long resolvedSnapshotId = validateSnapshot(
-                    snapshotId, snapshotMap, mc.jobIdString(), snapshotName);
-            logger.info(String.format(
-                    "About to restore the state of %s from snapshot %d, mapName = %s",
-                    mc.jobIdString(), resolvedSnapshotId, mapName));
-            List<Vertex> originalVertices = new ArrayList<>();
-            dag.iterator().forEachRemaining(originalVertices::add);
+    private void rewriteDagWithSnapshotRestore(DAG dag, long snapshotId, String mapName, String snapshotName) {
+        IMap<Object, Object> snapshotMap = mc.nodeEngine().getHazelcastInstance().getMap(mapName);
+        long resolvedSnapshotId = validateSnapshot(
+                snapshotId, snapshotMap, mc.jobIdString(), snapshotName);
+        logger.info(String.format(
+                "About to restore the state of %s from snapshot %d, mapName = %s",
+                mc.jobIdString(), resolvedSnapshotId, mapName));
+        List<Vertex> originalVertices = new ArrayList<>();
+        dag.iterator().forEachRemaining(originalVertices::add);
 
-            Map<String, Integer> vertexToOrdinal = new HashMap<>();
-            Vertex readSnapshotVertex = dag.newVertex(SNAPSHOT_VERTEX_PREFIX + "read", readMapP(mapName));
-            Vertex explodeVertex = dag.newVertex(SNAPSHOT_VERTEX_PREFIX + "explode",
-                    () -> new ExplodeSnapshotP(vertexToOrdinal, resolvedSnapshotId));
-            dag.edge(between(readSnapshotVertex, explodeVertex).isolated());
+        Map<String, Integer> vertexToOrdinal = new HashMap<>();
+        Vertex readSnapshotVertex = dag.newVertex(SNAPSHOT_VERTEX_PREFIX + "read", readMapP(mapName));
+        Vertex explodeVertex = dag.newVertex(SNAPSHOT_VERTEX_PREFIX + "explode",
+                () -> new ExplodeSnapshotP(vertexToOrdinal, resolvedSnapshotId));
+        dag.edge(between(readSnapshotVertex, explodeVertex).isolated());
 
-            int index = 0;
-            // add the edges
-            for (Vertex userVertex : originalVertices) {
-                vertexToOrdinal.put(userVertex.getName(), index);
-                int destOrdinal = dag.getInboundEdges(userVertex.getName()).size();
-                dag.edge(new SnapshotRestoreEdge(explodeVertex, index, userVertex, destOrdinal));
-                index++;
-            }
-        } catch (Exception e) {
-            throw new UserCausedException(e);
+        int index = 0;
+        // add the edges
+        for (Vertex userVertex : originalVertices) {
+            vertexToOrdinal.put(userVertex.getName(), index);
+            int destOrdinal = dag.getInboundEdges(userVertex.getName()).size();
+            dag.edge(new SnapshotRestoreEdge(explodeVertex, index, userVertex, destOrdinal));
+            index++;
         }
     }
 
