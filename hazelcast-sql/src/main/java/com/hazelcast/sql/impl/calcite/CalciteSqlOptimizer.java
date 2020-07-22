@@ -208,6 +208,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
 
                 externalFields.add(new ExternalField(name, type, externalName));
             }
+            assert !columns.hasNext() : "there are too many columns specified";
             ExternalTable externalTable = new ExternalTable(create.name(), create.type(), externalFields, create.options());
 
             SqlPlan populateTablePlan = createPlan(sql, context, parseResult, convertedResult);

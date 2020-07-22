@@ -123,6 +123,7 @@ public final class HazelcastSqlToRelConverter extends SqlToRelConverter {
 
             externalFields.add(new ExternalField(name, type, externalName));
         }
+        assert !columns.hasNext() : "there are too many columns specified";
         ExternalTable externalTable = new ExternalTable(create.name(), create.type(), externalFields, create.options());
 
         Table table = catalog.toTable(externalTable);
