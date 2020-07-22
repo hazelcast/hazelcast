@@ -322,11 +322,14 @@ public final class UnsupportedOperationVisitor implements SqlVisitor<Void> {
 
             case CREATE_TABLE:
                 if (((SqlCreateExternalTable) call).source() != null) {
-                    runsOnImdg = false; // TODO: not needed when IMDG supports INSERTs
+                    // TODO: not needed when IMDG supports INSERTs
+                    runsOnImdg = false;
                 }
+                this.ddlOperandTableNames = ((SqlIdentifier) call.getOperandList().get(0)).names;
+                // TODO: Proper validation for DDL
+                break;
             case DROP_TABLE:
-                SqlIdentifier identifier = (SqlIdentifier) call.getOperandList().get(0);
-                this.ddlOperandTableNames = identifier.names;
+                this.ddlOperandTableNames = ((SqlIdentifier) call.getOperandList().get(0)).names;
                 // TODO: Proper validation for DDL
                 break;
 

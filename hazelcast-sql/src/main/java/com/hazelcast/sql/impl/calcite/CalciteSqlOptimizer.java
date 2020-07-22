@@ -212,7 +212,13 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
             ExternalTable externalTable = new ExternalTable(create.name(), create.type(), externalFields, create.options());
 
             SqlPlan populateTablePlan = createPlan(sql, context, parseResult, convertedResult);
-            return new CreateExternalTablePlan(catalog, externalTable, create.getReplace(), create.ifNotExists(), populateTablePlan);
+            return new CreateExternalTablePlan(
+                    catalog,
+                    externalTable,
+                    create.getReplace(),
+                    create.ifNotExists(),
+                    populateTablePlan
+            );
         }
     }
 
