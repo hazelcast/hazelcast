@@ -143,7 +143,7 @@ public class DefaultDiscoveryService
             }
 
             if (discoveryStrategies.isEmpty() && settings.isAutoDetectionEnabled()) {
-                logger.info("Discovery auto-detection enabled, looking for available discovery strategies");
+                logger.fine("Discovery auto-detection enabled, looking for available discovery strategies");
                 DiscoveryStrategyFactory autoDetectedFactory = detectDiscoveryStrategyFactory(factories);
                 if (autoDetectedFactory != null) {
                     logger.info(String.format("Auto-detection selected discovery strategy: %s", autoDetectedFactory.getClass()));
