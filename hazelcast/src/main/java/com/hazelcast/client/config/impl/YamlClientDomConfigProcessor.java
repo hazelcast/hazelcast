@@ -109,6 +109,11 @@ public class YamlClientDomConfigProcessor extends ClientDomConfigProcessor {
         return serializationConfig;
     }
 
+    @Override
+    protected String parseCustomLoadBalancerClassName(Node node) {
+        return getAttribute(node, "class-name");
+    }
+
     private void fillGlobalSerializer(Node child, SerializationConfig serializationConfig) {
         GlobalSerializerConfig globalSerializerConfig = new GlobalSerializerConfig();
         String attrClassName = getAttribute(child, "class-name");
