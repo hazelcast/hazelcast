@@ -17,6 +17,7 @@
 package com.hazelcast.sql.impl.calcite.parse;
 
 import com.hazelcast.sql.impl.calcite.HazelcastSqlToRelConverter;
+import com.hazelcast.sql.impl.schema.ExternalCatalog;
 import org.apache.calcite.plan.Contexts;
 import org.apache.calcite.plan.HazelcastRelOptCluster;
 import org.apache.calcite.plan.RelOptCostImpl;
@@ -60,14 +61,20 @@ public class QueryConverter {
         CONFIG = configBuilder.build();
     }
 
-    public QueryConverter(Prepare.CatalogReader catalogReader, SqlValidator validator, HazelcastRelOptCluster cluster) {
+    public QueryConverter(
+        Prepare.CatalogReader catalogReader,
+        SqlValidator validator,
+        HazelcastRelOptCluster cluster,
+        ExternalCatalog externalCatalog
+    ) {
         converter = new HazelcastSqlToRelConverter(
             null,
             validator,
             catalogReader,
             cluster,
             StandardConvertletTable.INSTANCE,
-            CONFIG
+            CONFIG,
+            externalCatalog
         );
     }
 

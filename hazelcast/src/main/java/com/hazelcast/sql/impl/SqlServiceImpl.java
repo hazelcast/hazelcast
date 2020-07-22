@@ -224,7 +224,7 @@ public class SqlServiceImpl implements SqlService, Consumer<Packet> {
     private SqlResult execute(SqlPlan plan, List<Object> params, long timeout, int pageSize) {
         switch (plan.getType()) {
             case SCHEMA:
-                return executeSchemaChange((SchemaPlan) plan);
+                return executeSchemaChange((SchemaPlan) plan, params, timeout, pageSize);
             case IMDG:
                 return executeImdg((Plan) plan, params, timeout, pageSize);
             case JET:
@@ -234,10 +234,12 @@ public class SqlServiceImpl implements SqlService, Consumer<Packet> {
         }
     }
 
-    private SqlResult executeSchemaChange(SchemaPlan plan) {
-        plan.execute();
+    private SqlResult executeSchemaChange(SchemaPlan plan, List<Object> params, long timeout, int pageSize) {
+        SqlPlan populateTablePlan = plan.execute();
 
-        return new SingleValueResult(0);
+        return populateTablePlan == null
+                ? new SingleValueResult(0)
+                : execute(populateTablePlan, params, timeout, pageSize);
     }
 
     private SqlResult executeImdg(Plan plan, List<Object> params, long timeout, int pageSize) {

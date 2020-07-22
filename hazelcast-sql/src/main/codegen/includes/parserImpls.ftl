@@ -26,6 +26,7 @@ SqlCreate SqlCreateExternalTable(Span span, boolean replace) :
     SqlNodeList columns = SqlNodeList.EMPTY;
     SqlIdentifier type;
     SqlNodeList sqlOptions = SqlNodeList.EMPTY;
+    SqlNode source = null;
 }
 {
     <EXTERNAL> <TABLE>
@@ -40,12 +41,17 @@ SqlCreate SqlCreateExternalTable(Span span, boolean replace) :
         <OPTIONS>
         sqlOptions = SqlOptions()
     ]
+    [
+        <AS>
+        source = OrderedQueryOrExpr(ExprContext.ACCEPT_QUERY)
+    ]
     {
         return new SqlCreateExternalTable(
             name,
             columns,
             type,
             sqlOptions,
+            source,
             replace,
             ifNotExists,
             startPos.plus(getPos())

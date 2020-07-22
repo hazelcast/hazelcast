@@ -187,6 +187,7 @@ public class ParserNameResolutionTest {
 
         return OptimizerContext.create(
             null,
+            null,
             Arrays.asList(resolverWithoutSearchPath, resolverWithSearchPath),
             searchPaths,
             1

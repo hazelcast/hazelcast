@@ -1030,7 +1030,7 @@ public abstract class ExpressionTestBase {
                         null, emptyList(), PartitionedMapTable.DISTRIBUTION_FIELD_ORDINAL_NONE, false);
 
         HazelcastTable hazelcastTable = new HazelcastTable(table, new MapTableStatistic(100));
-        return OptimizerContext.create(null, new HazelcastSchema(singletonMap("t", hazelcastTable)),
+        return OptimizerContext.create(null, null, new HazelcastSchema(singletonMap("t", hazelcastTable)),
                 HazelcastSchemaUtils.prepareSearchPaths(null, null), 1);
     }
 
