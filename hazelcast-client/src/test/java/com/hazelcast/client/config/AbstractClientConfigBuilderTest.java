@@ -452,4 +452,8 @@ public abstract class AbstractClientConfigBuilderTest extends HazelcastTestSuppo
 
     @Test
     public abstract void testLoadBalancerRoundRobin();
+
+    @Test
+    public abstract void testLoadBalancerCustom();
+
 }
