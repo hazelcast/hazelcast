@@ -34,6 +34,7 @@ import com.hazelcast.security.Credentials;
 import com.hazelcast.util.Preconditions;
 import com.hazelcast.util.function.BiConsumer;
 
+import javax.annotation.Nonnull;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -48,6 +49,7 @@ import java.util.concurrent.ConcurrentMap;
 import static com.hazelcast.internal.config.ConfigUtils.lookupByPattern;
 import static com.hazelcast.partition.strategy.StringPartitioningStrategy.getBaseName;
 import static com.hazelcast.util.Preconditions.checkFalse;
+import static com.hazelcast.util.Preconditions.checkHasText;
 
 /**
  * Main configuration to setup a Hazelcast Client
@@ -82,6 +84,11 @@ public class ClientConfig {
      * Used to distribute the operations to multiple Endpoints.
      */
     private LoadBalancer loadBalancer;
+
+    /**
+     * Load balancer class name. Used internally with declarative configuration.
+     */
+    private String loadBalancerClassName;
 
     /**
      * List of listeners that Hazelcast will automatically add as a part of initialization process.
@@ -129,6 +136,7 @@ public class ClientConfig {
         securityConfig = new ClientSecurityConfig(config.securityConfig);
         networkConfig = new ClientNetworkConfig(config.networkConfig);
         loadBalancer = config.loadBalancer;
+        loadBalancerClassName = config.loadBalancerClassName;
         listenerConfigs = new LinkedList<ListenerConfig>();
         for (ListenerConfig listenerConfig : config.listenerConfigs) {
             listenerConfigs.add(new ListenerConfig(listenerConfig));
@@ -768,7 +776,9 @@ public class ClientConfig {
     }
 
     /**
-     * Sets the {@link LoadBalancer}
+     * Sets the {@link LoadBalancer}.
+     * <p>
+     * If a load balancer class name was set, it will be removed.
      *
      * @param loadBalancer {@link LoadBalancer}
      * @return configured {@link com.hazelcast.client.config.ClientConfig} for chaining
@@ -776,6 +786,32 @@ public class ClientConfig {
      */
     public ClientConfig setLoadBalancer(LoadBalancer loadBalancer) {
         this.loadBalancer = loadBalancer;
+        this.loadBalancerClassName = null;
+        return this;
+    }
+
+    /**
+     * Gets load balancer class name
+     *
+     * @return load balancer class name
+     * @see com.hazelcast.client.LoadBalancer
+     */
+    public String getLoadBalancerClassName() {
+        return loadBalancerClassName;
+    }
+
+    /**
+     * Sets load balancer class name.
+     * <p>
+     * If a load balancer implementation was set, it will be removed.
+     *
+     * @param loadBalancerClassName {@link LoadBalancer}
+     * @return configured {@link com.hazelcast.client.config.ClientConfig} for chaining
+     * @see com.hazelcast.client.LoadBalancer
+     */
+    public ClientConfig setLoadBalancerClassName(@Nonnull String loadBalancerClassName) {
+        this.loadBalancerClassName = checkHasText(loadBalancerClassName, "Load balancer class name must contain text");
+        this.loadBalancer = null;
         return this;
     }
 
@@ -1127,6 +1163,10 @@ public class ClientConfig {
         if (loadBalancer != null ? !loadBalancer.equals(that.loadBalancer) : that.loadBalancer != null) {
             return false;
         }
+        if (loadBalancerClassName != null ? !loadBalancerClassName.equals(that.loadBalancerClassName)
+                : that.loadBalancerClassName != null) {
+            return false;
+        }
         if (!listenerConfigs.equals(that.listenerConfigs)) {
             return false;
         }
@@ -1187,6 +1227,7 @@ public class ClientConfig {
         result = 31 * result + securityConfig.hashCode();
         result = 31 * result + networkConfig.hashCode();
         result = 31 * result + (loadBalancer != null ? loadBalancer.hashCode() : 0);
+        result = 31 * result + (loadBalancerClassName != null ? loadBalancerClassName.hashCode() : 0);
         result = 31 * result + listenerConfigs.hashCode();
         result = 31 * result + executorPoolSize;
         result = 31 * result + (instanceName != null ? instanceName.hashCode() : 0);

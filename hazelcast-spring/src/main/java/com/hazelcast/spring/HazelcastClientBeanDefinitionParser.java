@@ -120,7 +120,7 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
             configBuilder.addPropertyValue("reliableTopicConfigMap", reliableTopicConfigMap);
         }
 
-       public AbstractBeanDefinition handleClient(Node rootNode) {
+        public AbstractBeanDefinition handleClient(Node rootNode) {
             AbstractBeanDefinition configBean = createConfigBean(rootNode);
             builder.addConstructorArgValue(configBean);
             return builder.getBeanDefinition();
@@ -334,6 +334,20 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
                 configBuilder.addPropertyValue("loadBalancer", new RandomLB());
             } else if ("round-robin".equals(type)) {
                 configBuilder.addPropertyValue("loadBalancer", new RoundRobinLB());
+            } else if ("custom".equals(type)) {
+                NamedNodeMap attributes = node.getAttributes();
+                Node classNameNode = attributes.getNamedItem("class-name");
+                String className = classNameNode != null ? getTextContent(classNameNode) : null;
+                Node implNode = attributes.getNamedItem("implementation");
+                String implementation = implNode != null ? getTextContent(implNode) : null;
+                isTrue(className != null ^ implementation != null, "Exactly one of 'class-name' or 'implementation'"
+                        + " attributes is required to create LoadBalancer!");
+                if (className != null) {
+                    BeanDefinitionBuilder loadBalancerBeanDefinition = createBeanBuilder(className);
+                    configBuilder.addPropertyValue("loadBalancer", loadBalancerBeanDefinition.getBeanDefinition());
+                } else {
+                    configBuilder.addPropertyReference("loadBalancer", implementation);
+                }
             }
         }
 

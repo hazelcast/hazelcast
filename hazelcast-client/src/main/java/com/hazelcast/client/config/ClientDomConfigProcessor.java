@@ -374,7 +374,14 @@ class ClientDomConfigProcessor extends AbstractDomConfigProcessor {
             clientConfig.setLoadBalancer(new RandomLB());
         } else if ("round-robin".equals(type)) {
             clientConfig.setLoadBalancer(new RoundRobinLB());
+        } else if ("custom".equals(type)) {
+            String loadBalancerClassName =  parseCustomLoadBalancerClassName(node);
+            clientConfig.setLoadBalancerClassName(loadBalancerClassName);
         }
+    }
+
+    protected String parseCustomLoadBalancerClassName(Node node) {
+        return getTextContent(node);
     }
 
     private void handleNetwork(Node node) {

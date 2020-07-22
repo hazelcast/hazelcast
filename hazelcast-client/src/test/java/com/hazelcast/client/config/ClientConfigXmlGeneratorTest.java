@@ -63,6 +63,7 @@ import static com.hazelcast.config.EvictionPolicy.LFU;
 import static com.hazelcast.config.NearCacheConfig.LocalUpdatePolicy.CACHE_ON_UPDATE;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -338,8 +339,21 @@ public class ClientConfigXmlGeneratorTest extends HazelcastTestSupport {
     @Test
     public void loadBalancer() {
         clientConfig.setLoadBalancer(new RandomLB());
-        LoadBalancer actual = newConfigViaGenerator().getLoadBalancer();
+        ClientConfig newClientConfig = newConfigViaGenerator();
+        LoadBalancer actual = newClientConfig.getLoadBalancer();
         assertTrue(actual instanceof RandomLB);
+        String actualClassName = newClientConfig.getLoadBalancerClassName();
+        assertNull(actualClassName);
+    }
+
+    @Test
+    public void loadBalancerCustom() {
+        clientConfig.setLoadBalancer(new CustomLoadBalancer());
+        ClientConfig newClientConfig = newConfigViaGenerator();
+        LoadBalancer actual = newClientConfig.getLoadBalancer();
+        assertNull(actual);
+        String actualClassName = newClientConfig.getLoadBalancerClassName();
+        assertEquals("com.hazelcast.client.test.CustomLoadBalancer", actualClassName);
     }
 
     @Test
