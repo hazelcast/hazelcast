@@ -47,7 +47,6 @@ import static com.hazelcast.sql.impl.connector.SqlKeyValueConnector.TO_VALUE_CLA
 import static com.hazelcast.sql.impl.extract.QueryPath.VALUE_PATH;
 import static java.lang.Character.toLowerCase;
 import static java.lang.Character.toUpperCase;
-import static java.lang.String.format;
 import static java.util.Collections.singletonMap;
 
 // TODO: deduplicate with MapSampleMetadataResolver
@@ -82,7 +81,7 @@ public final class JavaMapOptionsMetadataResolver implements MapOptionsMetadataR
         String className = options.get(classNameProperty);
 
         if (className == null) {
-            throw QueryException.error(format("Unable to resolve table metadata. Missing '%s' option", classNameProperty));
+            throw QueryException.error("Unable to resolve table metadata. Missing '" + classNameProperty + "' option");
         }
 
         Class<?> clazz = loadClass(className);
@@ -100,9 +99,7 @@ public final class JavaMapOptionsMetadataResolver implements MapOptionsMetadataR
         try {
             return ClassLoaderUtil.loadClass(null, className);
         } catch (ClassNotFoundException e) {
-            throw QueryException.dataException(
-                    format("Unable to load class \"%s\" : %s", className, e.getMessage()), e
-            );
+            throw QueryException.dataException("Unable to load class \"" + className + "\" : " + e.getMessage(), e);
         }
     }
 
@@ -111,16 +108,15 @@ public final class JavaMapOptionsMetadataResolver implements MapOptionsMetadataR
             QueryDataType type,
             boolean isKey
     ) {
-        Map<QueryPath, ExternalField> externalFieldsByPath =
-                extractFields(externalFields, isKey, name -> VALUE_PATH);
+        Map<QueryPath, ExternalField> externalFieldsByPath = isKey
+                ? extractKeyFields(externalFields)
+                : extractValueFields(externalFields, name -> VALUE_PATH);
 
         QueryPath path = isKey ? QueryPath.KEY_PATH : QueryPath.VALUE_PATH;
 
         ExternalField externalField = externalFieldsByPath.get(path);
-        if (externalField != null && !externalField.type().equals(type)) {
-            throw QueryException.error(
-                    format("Mismatch between declared and inferred type - '%s'", externalField.name())
-            );
+        if (externalField != null && !type.equals(externalField.type())) {
+            throw QueryException.error("Mismatch between declared and inferred type - '" + externalField.name() + "'");
         }
         String name = externalField == null ? (isKey ? QueryPath.KEY : QueryPath.VALUE) : externalField.name();
 
@@ -128,7 +124,7 @@ public final class JavaMapOptionsMetadataResolver implements MapOptionsMetadataR
 
         for (ExternalField ef : externalFieldsByPath.values()) {
             if (!field.getName().equals(ef.name())) {
-                throw QueryException.error(format("Unmapped field - '%s'", ef.name()));
+                throw QueryException.error("Unmapped field - '" + ef.name() + "'");
             }
         }
 
@@ -144,8 +140,9 @@ public final class JavaMapOptionsMetadataResolver implements MapOptionsMetadataR
             Class<?> clazz,
             boolean isKey
     ) {
-        Map<QueryPath, ExternalField> externalFieldsByPath =
-                extractFields(externalFields, isKey, name -> new QueryPath(name, false));
+        Map<QueryPath, ExternalField> externalFieldsByPath = isKey
+                ? extractKeyFields(externalFields)
+                : extractValueFields(externalFields, name -> new QueryPath(name, false));
 
         LinkedHashMap<String, TableField> fields = new LinkedHashMap<>();
         Map<String, String> typeNamesByPaths = new HashMap<>();
@@ -155,10 +152,8 @@ public final class JavaMapOptionsMetadataResolver implements MapOptionsMetadataR
             QueryDataType type = QueryDataTypeUtils.resolveTypeForClass(entry.getValue());
 
             ExternalField externalField = externalFieldsByPath.get(path);
-            if (externalField != null && !externalField.type().equals(type)) {
-                throw QueryException.error(
-                        format("Mismatch between declared and inferred type - '%s'", externalField.name())
-                );
+            if (externalField != null && !type.equals(externalField.type())) {
+                throw QueryException.error("Mismatch between declared and inferred type - '" + externalField.name() + "'");
             }
             String name = externalField == null ? entry.getKey() : externalField.name();
 

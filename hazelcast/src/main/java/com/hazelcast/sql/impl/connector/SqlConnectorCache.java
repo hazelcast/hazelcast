@@ -21,7 +21,6 @@ import com.hazelcast.internal.util.ServiceLoader;
 import com.hazelcast.spi.impl.NodeEngine;
 
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
 
@@ -36,11 +35,8 @@ public final class SqlConnectorCache {
         addConnector(new LocalReplicatedMapConnector());
 
         try {
-            Iterator<SqlConnector> serviceConnectors = ServiceLoader.iterator(SqlConnector.class, FACTORY_ID,
-                    nodeEngine.getConfigClassLoader());
-            while (serviceConnectors.hasNext()) {
-                addConnector(serviceConnectors.next());
-            }
+            ServiceLoader.iterator(SqlConnector.class, FACTORY_ID, nodeEngine.getConfigClassLoader())
+                         .forEachRemaining(this::addConnector);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

@@ -26,8 +26,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 
-import static java.lang.String.format;
-
 // TODO: deduplicate with MapSampleMetadataResolver
 public interface MapOptionsMetadataResolver {
 
@@ -40,46 +38,63 @@ public interface MapOptionsMetadataResolver {
             InternalSerializationService serializationService
     );
 
-    default Map<QueryPath, ExternalField> extractFields(
-            List<ExternalField> externalFields,
-            boolean key,
-            Function<String, QueryPath> defaultPathSupplier
+    default Map<QueryPath, ExternalField> extractKeyFields(
+            List<ExternalField> externalFields
     ) {
-        Map<QueryPath, ExternalField> fieldsByPath = new LinkedHashMap<>();
+        Map<QueryPath, ExternalField> keyFieldsByPath = new LinkedHashMap<>();
         for (ExternalField externalField : externalFields) {
             String externalName = externalField.externalName();
+
+            if (externalName == null
+                    || QueryPath.VALUE.equals(externalName)
+                    || externalName.startsWith(QueryPath.VALUE_PREFIX)) {
+                continue;
+            }
+
+            QueryPath path;
+            if (QueryPath.KEY.equals(externalName)) {
+                path = QueryPath.KEY_PATH;
+            } else if (externalName.startsWith(QueryPath.KEY_PREFIX)) {
+                path = QueryPath.create(externalName);
+            } else {
+                throw QueryException.error("Invalid external name '" + externalName + "'");
+            }
+
+            if (keyFieldsByPath.putIfAbsent(path, externalField) != null) {
+                throw QueryException.error("Duplicate key external name '" + path + "'");
+            }
+        }
+        return keyFieldsByPath;
+    }
+
+    default Map<QueryPath, ExternalField> extractValueFields(
+            List<ExternalField> externalFields,
+            Function<String, QueryPath> defaultPathSupplier
+    ) {
+        Map<QueryPath, ExternalField> valueFieldsByPath = new LinkedHashMap<>();
+        for (ExternalField externalField : externalFields) {
+            String externalName = externalField.externalName();
+
+            if (externalName != null
+                    && (QueryPath.KEY.equals(externalName) || externalName.startsWith(QueryPath.KEY_PREFIX))) {
+                continue;
+            }
 
             QueryPath path;
             if (externalName == null) {
                 path = defaultPathSupplier.apply(externalField.name());
-            } else if (QueryPath.KEY.equals(externalName)) {
-                path = QueryPath.KEY_PATH;
             } else if (QueryPath.VALUE.equals(externalName)) {
                 path = QueryPath.VALUE_PATH;
-            } else if (externalName.startsWith(QueryPath.KEY_PREFIX) || externalName.startsWith(QueryPath.VALUE_PREFIX)) {
-                // TODO: should be supported? move the validation to SqlTableColumn ?
-                if (externalName.chars().filter(ch -> ch == '.').count() > 1) {
-                    throw QueryException.error(
-                            format("Invalid field external name - '%s'. Nested fields are not supported.", externalName)
-                    );
-                }
+            } else if (externalName.startsWith(QueryPath.VALUE_PREFIX)) {
                 path = QueryPath.create(externalName);
             } else {
-                throw QueryException.error(
-                        format("External name should start with either '%s' or '%s'", QueryPath.KEY, QueryPath.VALUE)
-                );
+                throw QueryException.error("Invalid external name '" + externalName + "'");
             }
 
-            if (path.isKey() == key) {
-                ExternalField existingExternalField = fieldsByPath.putIfAbsent(path, externalField);
-                if (existingExternalField != null) {
-                    throw QueryException.error(
-                            format("Ambiguous mapping for fields - '%s', '%s'",
-                                    existingExternalField.name(), externalField.name())
-                    );
-                }
+            if (valueFieldsByPath.putIfAbsent(path, externalField) != null) {
+                throw QueryException.error("Duplicate value external name '" + path + "'");
             }
         }
-        return fieldsByPath;
+        return valueFieldsByPath;
     }
 }

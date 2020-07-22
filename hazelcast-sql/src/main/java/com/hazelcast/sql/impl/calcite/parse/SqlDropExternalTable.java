@@ -24,6 +24,8 @@ import org.apache.calcite.sql.SqlOperator;
 import org.apache.calcite.sql.SqlSpecialOperator;
 import org.apache.calcite.sql.SqlWriter;
 import org.apache.calcite.sql.parser.SqlParserPos;
+import org.apache.calcite.sql.validate.SqlValidator;
+import org.apache.calcite.sql.validate.SqlValidatorScope;
 import org.apache.calcite.util.ImmutableNullableList;
 
 import javax.annotation.Nonnull;
@@ -75,5 +77,9 @@ public class SqlDropExternalTable extends SqlDrop {
         }
 
         name.unparse(writer, leftPrec, rightPrec);
+    }
+
+    @Override
+    public void validate(SqlValidator validator, SqlValidatorScope scope) {
     }
 }

@@ -321,7 +321,7 @@ SqlDrop SqlDropExternalTable(Span span, boolean replace) :
 /**
 * Parses an extended INSERT statement.
 */
-SqlNode SqlExtendedInsert() :
+SqlInsert SqlExtendedInsert() :
 {
     Span span;
     SqlNode table;

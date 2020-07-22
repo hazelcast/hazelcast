@@ -25,13 +25,17 @@ import org.apache.calcite.sql.SqlOperator;
 import org.apache.calcite.sql.SqlSpecialOperator;
 import org.apache.calcite.sql.SqlWriter;
 import org.apache.calcite.sql.parser.SqlParserPos;
+import org.apache.calcite.sql.validate.SqlValidator;
+import org.apache.calcite.sql.validate.SqlValidatorScope;
 import org.apache.calcite.util.ImmutableNullableList;
 
 import javax.annotation.Nonnull;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Stream;
 
 import static java.util.Objects.requireNonNull;
+import static java.util.stream.Collectors.toMap;
 
 public class SqlCreateExternalTable extends SqlCreate {
 
@@ -43,13 +47,15 @@ public class SqlCreateExternalTable extends SqlCreate {
     private final SqlIdentifier type;
     private final SqlNodeList options;
 
-    public SqlCreateExternalTable(SqlIdentifier name,
-                                  SqlNodeList columns,
-                                  SqlIdentifier type,
-                                  SqlNodeList options,
-                                  boolean replace,
-                                  boolean ifNotExists,
-                                  SqlParserPos pos) {
+    public SqlCreateExternalTable(
+            SqlIdentifier name,
+            SqlNodeList columns,
+            SqlIdentifier type,
+            SqlNodeList options,
+            boolean replace,
+            boolean ifNotExists,
+            SqlParserPos pos
+    ) {
         super(OPERATOR, pos, replace, ifNotExists);
         this.name = requireNonNull(name, "Name should not be null");
         this.columns = requireNonNull(columns, "Columns should not be null");
@@ -61,10 +67,6 @@ public class SqlCreateExternalTable extends SqlCreate {
         return name.toString();
     }
 
-    public boolean ifNotExists() {
-        return ifNotExists;
-    }
-
     public Stream<SqlTableColumn> columns() {
         return columns.getList().stream().map(node -> (SqlTableColumn) node);
     }
@@ -73,8 +75,12 @@ public class SqlCreateExternalTable extends SqlCreate {
         return type.toString();
     }
 
-    public Stream<SqlOption> options() {
-        return options.getList().stream().map(node -> (SqlOption) node);
+    public Map<String, String> options() {
+        return options.getList().stream().map(node -> (SqlOption) node).collect(toMap(SqlOption::key, SqlOption::value));
+    }
+
+    public boolean ifNotExists() {
+        return ifNotExists;
     }
 
     @Override
@@ -109,13 +115,15 @@ public class SqlCreateExternalTable extends SqlCreate {
 
         name.unparse(writer, leftPrec, rightPrec);
 
-        SqlWriter.Frame frame = writer.startList("(", ")");
-        for (SqlNode column : columns) {
-            printIndent(writer);
-            column.unparse(writer, 0, 0);
+        if (columns.size() > 0) {
+            SqlWriter.Frame frame = writer.startList("(", ")");
+            for (SqlNode column : columns) {
+                printIndent(writer);
+                column.unparse(writer, 0, 0);
+            }
+            writer.newlineAndIndent();
+            writer.endList(frame);
         }
-        writer.newlineAndIndent();
-        writer.endList(frame);
 
         writer.newlineAndIndent();
         writer.keyword("TYPE");
@@ -138,5 +146,10 @@ public class SqlCreateExternalTable extends SqlCreate {
         writer.sep(",", false);
         writer.newlineAndIndent();
         writer.print(" ");
+    }
+
+    @Override
+    public void validate(SqlValidator validator, SqlValidatorScope scope) {
+        columns.forEach(column -> column.validate(validator, scope));
     }
 }

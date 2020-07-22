@@ -32,7 +32,6 @@ import com.hazelcast.sql.impl.calcite.parse.QueryConvertResult;
 import com.hazelcast.sql.impl.calcite.parse.QueryParseResult;
 import com.hazelcast.sql.impl.calcite.parse.SqlCreateExternalTable;
 import com.hazelcast.sql.impl.calcite.parse.SqlDropExternalTable;
-import com.hazelcast.sql.impl.calcite.parse.SqlOption;
 import com.hazelcast.sql.impl.optimizer.OptimizationTask;
 import com.hazelcast.sql.impl.optimizer.SqlOptimizer;
 import com.hazelcast.sql.impl.optimizer.SqlPlan;
@@ -58,7 +57,6 @@ import java.util.List;
 import java.util.Map;
 
 import static java.util.stream.Collectors.toList;
-import static java.util.stream.Collectors.toMap;
 
 /**
  * SQL optimizer based on Apache Calcite.
@@ -133,9 +131,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
     public CalciteSqlOptimizer(NodeEngine nodeEngine, JetSqlBackend jetSqlBackend) {
         this.nodeEngine = nodeEngine;
         this.catalog = new ExternalCatalog(nodeEngine);
-
         this.tableResolvers = createTableResolvers(catalog, nodeEngine);
-
         this.jetSqlBackend = jetSqlBackend;
     }
 
@@ -176,33 +172,31 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
                 convertResult.getFieldNames()
             );
         } else {
-            return jetSqlBackend.optimizeAndCreatePlan(nodeEngine, context, convertResult.getRel(),
-                    convertResult.getFieldNames());
+            return jetSqlBackend.optimizeAndCreatePlan(context, convertResult.getRel(), convertResult.getFieldNames());
         }
     }
 
     private SchemaPlan createSchemaPlan(SqlNode node) {
         if (node instanceof SqlCreateExternalTable) {
-            return createCreateExternalTablePlan((SqlCreateExternalTable) node);
+            return toCreateExternalTablePlan((SqlCreateExternalTable) node);
         } else if (node instanceof SqlDropExternalTable) {
-            return createRemoveExternalTablePlan((SqlDropExternalTable) node);
+            return toRemoveExternalTablePlan((SqlDropExternalTable) node);
         } else {
             throw new IllegalArgumentException("Unsupported SQL statement - " + node);
         }
     }
 
-    private SchemaPlan createCreateExternalTablePlan(SqlCreateExternalTable sqlCreateTable) {
+    private SchemaPlan toCreateExternalTablePlan(SqlCreateExternalTable sqlCreateTable) {
         List<ExternalField> externalFields = sqlCreateTable.columns()
             .map(column -> new ExternalField(column.name(), column.type(), column.externalName()))
             .collect(toList());
-        Map<String, String> options = sqlCreateTable.options()
-                                                            .collect(toMap(SqlOption::key, SqlOption::value));
+        Map<String, String> options = sqlCreateTable.options();
         ExternalTable schema = new ExternalTable(sqlCreateTable.name(), sqlCreateTable.type(), externalFields, options);
 
         return new CreateExternalTablePlan(catalog, schema, sqlCreateTable.getReplace(), sqlCreateTable.ifNotExists());
     }
 
-    private SchemaPlan createRemoveExternalTablePlan(SqlDropExternalTable sqlDropTable) {
+    private SchemaPlan toRemoveExternalTablePlan(SqlDropExternalTable sqlDropTable) {
         return new RemoveExternalTablePlan(catalog, sqlDropTable.name(), sqlDropTable.ifExists());
     }
 

@@ -18,6 +18,7 @@ package com.hazelcast.sql.impl.schema;
 
 import com.google.common.collect.ImmutableMap;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.SqlTestSupport;
 import com.hazelcast.sql.impl.connector.LocalPartitionedMapConnector;
@@ -61,7 +62,7 @@ public class ExternalCatalogTest extends SqlTestSupport {
     public void throws_whenTriesToCreateDuplicateTable() {
         // given
         String name = "table_to_create";
-        ExternalCatalog catalog = new ExternalCatalog(nodeEngine(instance));
+        ExternalCatalog catalog = externalCatalog();
         catalog.createTable(table(name), false, false);
 
         // when
@@ -73,7 +74,7 @@ public class ExternalCatalogTest extends SqlTestSupport {
     public void replaces_whenTableAlreadyExists() {
         // given
         String name = "table_to_be_replaced";
-        ExternalCatalog catalog = new ExternalCatalog(nodeEngine(instance));
+        ExternalCatalog catalog = externalCatalog();
         catalog.createTable(table(name, Integer.class, String.class), true, false);
 
         // when
@@ -88,7 +89,7 @@ public class ExternalCatalogTest extends SqlTestSupport {
     public void doesNotThrow_whenTableAlreadyExists() {
         // given
         String name = "table_if_not_exists";
-        ExternalCatalog catalog = new ExternalCatalog(nodeEngine(instance));
+        ExternalCatalog catalog = externalCatalog();
         catalog.createTable(table(name, Integer.class, String.class), false, true);
 
         // when
@@ -102,7 +103,7 @@ public class ExternalCatalogTest extends SqlTestSupport {
     @Test(expected = QueryException.class)
     public void throws_whenTableDoesNotExist() {
         // given
-        ExternalCatalog catalog = new ExternalCatalog(nodeEngine(instance));
+        ExternalCatalog catalog = externalCatalog();
 
         // when
         // then
@@ -112,11 +113,16 @@ public class ExternalCatalogTest extends SqlTestSupport {
     @Test
     public void doesNotThrow_whenTableDoesNotExist() {
         // given
-        ExternalCatalog catalog = new ExternalCatalog(nodeEngine(instance));
+        ExternalCatalog catalog = externalCatalog();
 
         // when
         // then
         catalog.removeTable("table_if_exists", true);
+    }
+
+    private static ExternalCatalog externalCatalog() {
+        NodeEngine nodeEngine = nodeEngine(instance);
+        return new ExternalCatalog(nodeEngine);
     }
 
     private static ExternalTable table(String name) {

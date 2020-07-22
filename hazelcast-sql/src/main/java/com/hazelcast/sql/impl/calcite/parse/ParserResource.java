@@ -20,17 +20,21 @@ import org.apache.calcite.runtime.CalciteException;
 import org.apache.calcite.runtime.Resources;
 import org.apache.calcite.runtime.Resources.BaseMessage;
 import org.apache.calcite.runtime.Resources.ExInst;
+import org.apache.calcite.sql.validate.SqlValidatorException;
 
 public interface ParserResource {
 
     ParserResource RESOURCE = Resources.create(ParserResource.class);
 
-    @BaseMessage("Duplicate column name - ''{0}''")
+    @BaseMessage("Column ''{0}'' specified more than once")
     ExInst<CalciteException> duplicateColumn(String columnName);
 
-    @BaseMessage("Duplicate option name - ''{0}''")
-    ExInst<CalciteException> duplicateOption(String optionName);
+    @BaseMessage("Invalid external name ''{0}'' - nested fields are not supported.")
+    ExInst<SqlValidatorException> nestedField(String externalColumnName);
+
+    @BaseMessage("Option ''{0}'' specified more than once")
+    ExInst<SqlValidatorException> duplicateOption(String optionName);
 
     @BaseMessage("Unrecognized TIMESTAMP variant ''{0}''")
-    ExInst<CalciteException> unknownTimestampVariant(String variant);
+    ExInst<SqlValidatorException> unknownTimestampVariant(String variant);
 }

@@ -41,7 +41,6 @@ import static com.hazelcast.sql.impl.connector.SqlKeyValueConnector.TO_KEY_FACTO
 import static com.hazelcast.sql.impl.connector.SqlKeyValueConnector.TO_VALUE_CLASS_ID;
 import static com.hazelcast.sql.impl.connector.SqlKeyValueConnector.TO_VALUE_CLASS_VERSION;
 import static com.hazelcast.sql.impl.connector.SqlKeyValueConnector.TO_VALUE_FACTORY_ID;
-import static java.lang.String.format;
 
 // TODO: deduplicate with MapSampleMetadataResolver
 public final class PortableMapOptionsMetadataResolver implements MapOptionsMetadataResolver {
@@ -72,8 +71,11 @@ public final class PortableMapOptionsMetadataResolver implements MapOptionsMetad
 
         if (factoryId == null || classId == null || classVersion == null) {
             throw QueryException.error(
-                    format("Unable to resolve table metadata. Missing ['%s'|'%s'|'%s'] option(s)",
-                            factoryIdProperty, classIdProperty, classVersionProperty));
+                    "Unable to resolve table metadata. Missing ['"
+                            + factoryIdProperty + "'|'"
+                            + classIdProperty + "'|'"
+                            + classVersionProperty
+                            + "'] option(s)");
         }
 
         ClassDefinition classDefinition = lookupClassDefinition(
@@ -97,8 +99,8 @@ public final class PortableMapOptionsMetadataResolver implements MapOptionsMetad
                 .lookupClassDefinition(factoryId, classId, classVersion);
         if (classDefinition == null) {
             throw QueryException.dataException(
-                    format("Unable to find class definition for factoryId: %s, classId: %s, classVersion: %s",
-                            factoryId, classId, classVersion)
+                    "Unable to find class definition for factoryId: " + factoryId
+                            + ", classId: " + classId + ", classVersion: " + classVersion
             );
         }
         return classDefinition;
@@ -109,8 +111,10 @@ public final class PortableMapOptionsMetadataResolver implements MapOptionsMetad
             ClassDefinition classDefinition,
             boolean isKey
     ) {
-        Map<QueryPath, ExternalField> externalFieldsByPath =
-                extractFields(externalFields, isKey, name -> new QueryPath(name, false));
+
+        Map<QueryPath, ExternalField> externalFieldsByPath = isKey
+                ? extractKeyFields(externalFields)
+                : extractValueFields(externalFields, name -> new QueryPath(name, false));
 
         LinkedHashMap<String, TableField> fields = new LinkedHashMap<>();
 
@@ -119,10 +123,8 @@ public final class PortableMapOptionsMetadataResolver implements MapOptionsMetad
             QueryDataType type = resolvePortableType(entry.getValue());
 
             ExternalField externalField = externalFieldsByPath.get(path);
-            if (externalField != null && !externalField.type().equals(type)) {
-                throw QueryException.error(
-                        format("Mismatch between declared and inferred type - '%s'", externalField.name())
-                );
+            if (externalField != null && !type.equals(externalField.type())) {
+                throw QueryException.error("Mismatch between declared and inferred type - '" + externalField.name() + "'");
             }
             String name = externalField == null ? entry.getKey() : externalField.name();
 

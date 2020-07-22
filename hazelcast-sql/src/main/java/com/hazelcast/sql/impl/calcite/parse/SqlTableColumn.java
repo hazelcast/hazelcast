@@ -23,13 +23,17 @@ import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.SqlOperator;
 import org.apache.calcite.sql.SqlSpecialOperator;
+import org.apache.calcite.sql.SqlUtil;
 import org.apache.calcite.sql.SqlWriter;
 import org.apache.calcite.sql.parser.SqlParserPos;
+import org.apache.calcite.sql.validate.SqlValidator;
+import org.apache.calcite.sql.validate.SqlValidatorScope;
 import org.apache.calcite.util.ImmutableNullableList;
 
 import javax.annotation.Nonnull;
 import java.util.List;
 
+import static com.hazelcast.sql.impl.calcite.parse.ParserResource.RESOURCE;
 import static java.util.Objects.requireNonNull;
 
 public class SqlTableColumn extends SqlCall {
@@ -82,6 +86,14 @@ public class SqlTableColumn extends SqlCall {
             writer.keyword("EXTERNAL");
             writer.keyword("NAME");
             externalName.unparse(writer, leftPrec, rightPrec);
+        }
+    }
+
+    @Override
+    public void validate(SqlValidator validator, SqlValidatorScope scope) {
+        if (externalName != null && externalName.names.size() > 2) {
+            throw SqlUtil.newContextException(this.externalName.getParserPosition(),
+                    RESOURCE.nestedField(externalName.toString()));
         }
     }
 }

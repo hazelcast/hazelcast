@@ -217,6 +217,10 @@ public class SqlServiceImpl implements SqlService, Consumer<Packet> {
         }
     }
 
+    private SqlPlan prepare(String sql) {
+        return optimizer.prepare(new OptimizationTask.Builder(sql).build());
+    }
+
     private SqlResult execute(SqlPlan plan, List<Object> params, long timeout, int pageSize) {
         switch (plan.getType()) {
             case SCHEMA:
@@ -244,10 +248,6 @@ public class SqlServiceImpl implements SqlService, Consumer<Packet> {
 
     private SqlResult executeJet(SqlPlan plan, List<Object> params, long timeout, int pageSize) {
         return jetSqlBackend.execute(plan, params, timeout, pageSize);
-    }
-
-    private SqlPlan prepare(String sql) {
-        return optimizer.prepare(new OptimizationTask.Builder(sql).build());
     }
 
     /**

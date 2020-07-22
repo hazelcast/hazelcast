@@ -37,7 +37,6 @@ public interface SchemaPlan extends SqlPlan {
 
     class CreateExternalTablePlan implements SchemaPlan {
 
-        // TODO: should it be provided from the outside to execute()?
         private final ExternalCatalog catalog;
 
         private final ExternalTable schema;
@@ -45,8 +44,12 @@ public interface SchemaPlan extends SqlPlan {
         private final boolean replace;
         private final boolean ifNotExists;
 
-        public CreateExternalTablePlan(ExternalCatalog catalog,
-                                       ExternalTable schema, boolean replace, boolean ifNotExists) {
+        public CreateExternalTablePlan(
+            ExternalCatalog catalog,
+            ExternalTable schema,
+            boolean replace,
+            boolean ifNotExists
+        ) {
             this.catalog = catalog;
             this.schema = schema;
             this.replace = replace;
@@ -61,14 +64,17 @@ public interface SchemaPlan extends SqlPlan {
 
     class RemoveExternalTablePlan implements SchemaPlan {
 
-        // TODO: should it be provided from the outside to execute()?
         private final ExternalCatalog catalog;
 
         private final String name;
 
         private final boolean ifExists;
 
-        public RemoveExternalTablePlan(ExternalCatalog catalog, String name, boolean ifExists) {
+        public RemoveExternalTablePlan(
+            ExternalCatalog catalog,
+            String name,
+            boolean ifExists
+        ) {
             this.catalog = catalog;
             this.name = name;
             this.ifExists = ifExists;

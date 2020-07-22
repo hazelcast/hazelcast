@@ -116,7 +116,7 @@ public final class OptimizerContext {
      * @return Context.
      */
     public static OptimizerContext create(
-        JetSqlBackend jetSqlBackend,
+        @Nullable JetSqlBackend jetSqlBackend,
         List<TableResolver> tableResolvers,
         List<List<String>> currentSearchPaths,
         int memberCount
@@ -140,15 +140,15 @@ public final class OptimizerContext {
 
         RelDataTypeFactory typeFactory = HazelcastTypeFactory.INSTANCE;
         Prepare.CatalogReader catalogReader = createCatalogReader(typeFactory, CONNECTION_CONFIG, rootSchema, schemaPaths);
-        SqlValidator validator = createValidator(jetSqlBackend, typeFactory, catalogReader);
+        SqlValidator sqlValidator = createValidator(jetSqlBackend, typeFactory, catalogReader);
         VolcanoPlanner volcanoPlanner = createPlanner(CONNECTION_CONFIG, distributionTraitDef);
         HazelcastRelOptCluster cluster = createCluster(volcanoPlanner, typeFactory, distributionTraitDef);
 
-        QueryParser parser = new QueryParser(validator);
-        QueryConverter converter = new QueryConverter(catalogReader, validator, cluster);
+        QueryParser parser = new QueryParser(sqlValidator);
+        QueryConverter converter = new QueryConverter(catalogReader, sqlValidator, cluster);
         QueryPlanner planner = new QueryPlanner(volcanoPlanner);
 
-        return new OptimizerContext(cluster, parser, converter, planner, validator, jetSqlBackend);
+        return new OptimizerContext(cluster, parser, converter, planner, sqlValidator, jetSqlBackend);
     }
 
     /**

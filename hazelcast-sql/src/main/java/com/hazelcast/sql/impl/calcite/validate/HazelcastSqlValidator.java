@@ -143,6 +143,7 @@ public class HazelcastSqlValidator extends SqlValidatorImpl {
     @Override
     public SqlNode validate(SqlNode topNode) {
         if (topNode.getKind().belongsTo(SqlKind.DDL)) {
+            topNode.validate(this, getEmptyScope());
             return topNode;
         }
 

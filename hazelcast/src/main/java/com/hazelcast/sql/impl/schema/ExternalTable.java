@@ -24,9 +24,11 @@ import com.hazelcast.sql.impl.type.QueryDataType;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 
 /**
  * User-defined table schema definition.
@@ -42,10 +44,25 @@ public class ExternalTable implements DataSerializable {
     private ExternalTable() {
     }
 
-    public ExternalTable(String name,
-                         String type,
-                         List<ExternalField> externalFields,
-                         Map<String, String> options) {
+    public ExternalTable(
+            String name,
+            String type,
+            List<ExternalField> externalFields,
+            Map<String, String> options
+    ) {
+        Set<String> fieldNames = new HashSet<>();
+        Set<String> externalFieldNames = new HashSet<>();
+        for (ExternalField field : externalFields) {
+            if (!fieldNames.add(field.name())) {
+                throw new IllegalArgumentException("Column '" + field.name()
+                        + "' specified more than once");
+            }
+            if (field.externalName() != null && !externalFieldNames.add(field.externalName())) {
+                throw new IllegalArgumentException("Column with external name '" + field.externalName()
+                        + "' specified more than once");
+            }
+        }
+
         this.name = name;
         this.type = type;
         this.externalFields = externalFields;
@@ -101,9 +118,11 @@ public class ExternalTable implements DataSerializable {
 
         public ExternalField(String name, QueryDataType type, String externalName) {
             this.properties = new HashMap<>();
-            this.properties.put(NAME, name);
-            this.properties.put(TYPE, type);
-            this.properties.put(EXTERNAL_NAME, externalName);
+            this.properties.put(NAME, Objects.requireNonNull(name));
+            this.properties.put(TYPE, Objects.requireNonNull(type));
+            if (externalName != null) {
+                this.properties.put(EXTERNAL_NAME, externalName);
+            }
         }
 
         /**

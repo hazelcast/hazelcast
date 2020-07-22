@@ -34,7 +34,6 @@ import java.util.Map.Entry;
 import java.util.Set;
 
 import static com.hazelcast.sql.impl.connector.SqlConnector.JSON_SERIALIZATION_FORMAT;
-import static java.lang.String.format;
 
 // TODO: deduplicate with MapSampleMetadataResolver
 public final class JsonMapOptionsMetadataResolver implements MapOptionsMetadataResolver {
@@ -56,11 +55,12 @@ public final class JsonMapOptionsMetadataResolver implements MapOptionsMetadataR
             boolean isKey,
             InternalSerializationService serializationService
     ) {
-        Map<QueryPath, ExternalField> externalFieldsByPath =
-                extractFields(externalFields, isKey, name -> new QueryPath(name, false));
+        Map<QueryPath, ExternalField> externalFieldsByPath = isKey
+                ? extractKeyFields(externalFields)
+                : extractValueFields(externalFields, name -> new QueryPath(name, false));
 
         if (externalFieldsByPath.isEmpty()) {
-            throw QueryException.error(format("Empty %s column list", isKey ? "key" : "value"));
+            throw QueryException.error("Empty " + (isKey ? "key" : "value") + " column list");
         }
 
         LinkedHashMap<String, TableField> fields = new LinkedHashMap<>();
@@ -68,6 +68,9 @@ public final class JsonMapOptionsMetadataResolver implements MapOptionsMetadataR
 
         for (Entry<QueryPath, ExternalField> externalField : externalFieldsByPath.entrySet()) {
             QueryPath path = externalField.getKey();
+            if (path.getPath() == null) {
+                throw QueryException.error("Invalid external name '" + path.getFullPath() + "'");
+            }
             QueryDataType type = externalField.getValue().type();
             String name = externalField.getValue().name();
             boolean requiresConversion = doesRequireConversion(type);
