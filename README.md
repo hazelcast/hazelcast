@@ -1,7 +1,7 @@
 # Hazelcast Jet
 
 ![GitHub release](https://img.shields.io/github/release/hazelcast/hazelcast-jet.svg)
-[![Join the community on Slack](https://hz-community-slack.herokuapp.com/badge.svg)](https://hz-community-slack.herokuapp.com)
+[![Join the community on Slack](https://hz-community-slack.herokuapp.com/badge.svg)](https://slack.hazelcast.com)
 [![Code Quality: Java](https://img.shields.io/lgtm/grade/java/g/hazelcast/hazelcast.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/hazelcast/hazelcast-jet/context:java)
 [![Docker pulls](https://img.shields.io/docker/pulls/hazelcast/hazelcast-jet)](https://img.shields.io/docker/pulls/hazelcast/hazelcast-jet)
 
