@@ -42,8 +42,6 @@ public class ListRowBatch implements RowBatch, IdentifiedDataSerializable {
 
     @Override
     public Row getRow(int index) {
-        assert index >= 0 && index < rows.size() : index;
-
         return rows.get(index);
     }
 

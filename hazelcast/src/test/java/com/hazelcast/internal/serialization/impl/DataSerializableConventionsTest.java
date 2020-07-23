@@ -79,9 +79,11 @@ public class DataSerializableConventionsTest {
     // IdentifiedDataSerializable due to unavailability of default constructor.
     // - they purposefully break conventions to fix a known issue
     private final Set<Class> classWhiteList;
+    private final Set<String> packageWhiteList;
 
     public DataSerializableConventionsTest() {
         classWhiteList = Collections.unmodifiableSet(getWhitelistedClasses());
+        packageWhiteList = Collections.unmodifiableSet(getWhitelistedPackageNames());
     }
 
     /**
@@ -329,12 +331,24 @@ public class DataSerializableConventionsTest {
     }
 
     private boolean inheritsFromWhiteListedClass(Class klass) {
+        String className = klass.getName();
+
+        for (String packageName : packageWhiteList) {
+            if (className.startsWith(packageName)) {
+                return true;
+            }
+        }
+
         for (Class superclass : classWhiteList) {
             if (superclass.isAssignableFrom(klass)) {
                 return true;
             }
         }
         return false;
+    }
+
+    protected Set<String> getWhitelistedPackageNames() {
+        return Collections.emptySet();
     }
 
     /**

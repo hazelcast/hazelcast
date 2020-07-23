@@ -41,7 +41,21 @@ public class RoundRobinLB extends AbstractLoadBalancer {
 
     @Override
     public Member next() {
-        Member[] members = getMembers();
+        return nextInternal(false);
+    }
+
+    @Override
+    public Member nextDataMember() {
+        return nextInternal(true);
+    }
+
+    @Override
+    public boolean canGetNextDataMember() {
+        return true;
+    }
+
+    private Member nextInternal(boolean dataMembers) {
+        Member[] members = dataMembers ? getDataMembers() : getMembers();
         if (members == null || members.length == 0) {
             return null;
         }

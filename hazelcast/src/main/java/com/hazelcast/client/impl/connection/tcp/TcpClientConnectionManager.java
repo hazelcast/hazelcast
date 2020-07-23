@@ -85,6 +85,7 @@ import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -756,19 +757,58 @@ public class TcpClientConnectionManager implements ClientConnectionManager {
     }
 
     @Override
-    public ClientConnection getRandomConnection() {
+    public ClientConnection getRandomConnection(boolean dataMember) {
+        // Try getting the connection from the load balancer, if smart routing is enabled
         if (isSmartRoutingEnabled) {
-            Member member = loadBalancer.next();
-            if (member != null) {
-                ClientConnection connection = getConnection(member.getUuid());
-                if (connection != null) {
-                    return connection;
-                }
+            ClientConnection connection = getConnectionFromLoadBalancer(dataMember);
+
+            if (connection != null) {
+                return connection;
             }
         }
 
-        Iterator<TcpClientConnection> iterator = activeConnections.values().iterator();
-        return iterator.hasNext() ? iterator.next() : null;
+        // Otherwise iterate over connections and return the very first valid
+        Iterator<Map.Entry<UUID, TcpClientConnection>> iterator = activeConnections.entrySet().iterator();
+
+        while (iterator.hasNext()) {
+            Map.Entry<UUID, TcpClientConnection> connectionEntry = iterator.next();
+
+            if (dataMember) {
+                UUID memberId = connectionEntry.getKey();
+
+                Member member = client.getClientClusterService().getMember(memberId);
+
+                if (member == null || member.isLiteMember()) {
+                    continue;
+                }
+            }
+
+            return connectionEntry.getValue();
+        }
+
+        // Failed to get a connection
+        return null;
+    }
+
+    private ClientConnection getConnectionFromLoadBalancer(boolean dataMember) {
+        Member member;
+
+        if (dataMember) {
+            if (loadBalancer.canGetNextDataMember()) {
+                member = loadBalancer.nextDataMember();
+            } else {
+                member = null;
+            }
+        } else {
+            member = loadBalancer.next();
+        }
+
+        // Failed to get member
+        if (member == null) {
+            return null;
+        }
+
+        return getConnection(member.getUuid());
     }
 
     private void authenticateOnCluster(TcpClientConnection connection) {

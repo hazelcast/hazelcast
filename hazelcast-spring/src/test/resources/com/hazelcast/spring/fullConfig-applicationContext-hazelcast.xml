@@ -843,6 +843,7 @@
                             <hz:action>all</hz:action>
                         </hz:actions>
                     </hz:reliable-topic-permission>
+                    <hz:sql-permission principal="dev"/>
                 </hz:client-permissions>
                 <hz:client-block-unmapped-actions>false</hz:client-block-unmapped-actions>
             </hz:security>

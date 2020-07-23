@@ -16,6 +16,7 @@
 
 package com.hazelcast.sql.impl;
 
+import com.hazelcast.cluster.Address;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.sql.SqlErrorCode;
 
@@ -62,15 +63,19 @@ public final class QueryException extends HazelcastException {
     }
 
     public static QueryException memberConnection(UUID memberId) {
-        return error(SqlErrorCode.MEMBER_CONNECTION, "Connection to the member is broken: " + memberId);
+        return error(SqlErrorCode.CONNECTION_PROBLEM, "Member cannot be reached: " + memberId);
     }
 
-    public static QueryException memberLeave(UUID memberId) {
-        return error(SqlErrorCode.MEMBER_LEAVE, "Participating member has left the topology: " + memberId);
+    public static QueryException memberConnection(Address address) {
+        return error(SqlErrorCode.CONNECTION_PROBLEM, "Member cannot be reached: " + address);
     }
 
-    public static QueryException memberLeave(Collection<UUID> memberIds) {
-        return error(SqlErrorCode.MEMBER_LEAVE, "Participating members have left the topology: " + memberIds);
+    public static QueryException memberConnection(Collection<UUID> memberIds) {
+        return error(SqlErrorCode.CONNECTION_PROBLEM, "Members cannot be reached: " + memberIds);
+    }
+
+    public static QueryException clientMemberConnection(UUID clientId) {
+        return error(SqlErrorCode.CONNECTION_PROBLEM, "Client cannot be reached: " + clientId);
     }
 
     public static QueryException timeout(long timeout) {

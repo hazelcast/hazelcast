@@ -75,6 +75,37 @@ public class QueryIdTest extends SqlTestSupport {
         assertEquals(original, restored);
     }
 
+    @Test
+    public void testParsing() {
+        QueryId original = QueryId.create(UUID.randomUUID());
+        QueryId restored = QueryId.parse(original.toString());
+        assertEquals(original, restored);
+
+        assertThrows(IllegalArgumentException.class, () -> {
+            QueryId.parse(UUID.randomUUID().toString());
+        });
+
+        assertThrows(IllegalArgumentException.class, () -> {
+            QueryId.parse(UUID.randomUUID() + "_");
+        });
+
+        assertThrows(IllegalArgumentException.class, () -> {
+            QueryId.parse(UUID.randomUUID() + "!_" + UUID.randomUUID());
+        });
+
+        assertThrows(IllegalArgumentException.class, () -> {
+            QueryId.parse(UUID.randomUUID() + "_" + UUID.randomUUID() + "!");
+        });
+
+        assertThrows(IllegalArgumentException.class, () -> {
+            QueryId.parse(UUID.randomUUID() + "_" + UUID.randomUUID() + "_");
+        });
+
+        assertThrows(IllegalArgumentException.class, () -> {
+            QueryId.parse(UUID.randomUUID() + "_" + UUID.randomUUID() + "_" + UUID.randomUUID());
+        });
+    }
+
     private static QueryId create(UUID memberId, UUID localId) {
         return new QueryId(memberId.getMostSignificantBits(), memberId.getLeastSignificantBits(),
             localId.getMostSignificantBits(), localId.getLeastSignificantBits());

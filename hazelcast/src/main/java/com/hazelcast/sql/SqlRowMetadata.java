@@ -20,7 +20,7 @@ import com.hazelcast.internal.util.Preconditions;
 import com.hazelcast.spi.annotation.PrivateApi;
 
 import javax.annotation.Nonnull;
-import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -41,7 +41,7 @@ public final class SqlRowMetadata {
     public SqlRowMetadata(@Nonnull List<SqlColumnMetadata> columns) {
         assert columns != null && !columns.isEmpty();
 
-        this.columns = new ArrayList<>(columns);
+        this.columns = Collections.unmodifiableList(columns);
 
         nameToIndex = new HashMap<>(columns.size());
 
@@ -73,6 +73,16 @@ public final class SqlRowMetadata {
         }
 
         return columns.get(index);
+    }
+
+    /**
+     * Gets columns metadata.
+     *
+     * @return columns metadata
+     */
+    @Nonnull
+    public List<SqlColumnMetadata> getColumns() {
+        return columns;
     }
 
     /**

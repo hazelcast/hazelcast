@@ -39,6 +39,7 @@ import org.junit.runner.RunWith;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.Collection;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentMap;
 
@@ -96,6 +97,11 @@ public class QueryOperationChannelTest extends SqlTestSupport {
 
         @Override
         public Collection<UUID> getDataMemberIds() {
+            return null;
+        }
+
+        @Override
+        public Set<UUID> getClientIds() {
             return null;
         }
 

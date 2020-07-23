@@ -26,6 +26,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 import static com.hazelcast.sql.impl.QueryUtils.WORKER_TYPE_STATE_CHECKER;
@@ -34,16 +35,11 @@ import static com.hazelcast.sql.impl.QueryUtils.WORKER_TYPE_STATE_CHECKER;
  * Class performing periodic query state check.
  */
 public class QueryStateRegistryUpdater {
-    /** Node service provider. */
+
     private final NodeServiceProvider nodeServiceProvider;
-
-    /** State to be checked. */
     private final QueryStateRegistry stateRegistry;
-
-    /** Operation handler. */
+    private final QueryClientStateRegistry clientStateRegistry;
     private final QueryOperationHandler operationHandler;
-
-    /** State check frequency. */
     private final long stateCheckFrequency;
 
     /** Worker performing periodic state check. */
@@ -53,6 +49,7 @@ public class QueryStateRegistryUpdater {
         String instanceName,
         NodeServiceProvider nodeServiceProvider,
         QueryStateRegistry stateRegistry,
+        QueryClientStateRegistry clientStateRegistry,
         QueryOperationHandler operationHandler,
         long stateCheckFrequency
     ) {
@@ -62,6 +59,7 @@ public class QueryStateRegistryUpdater {
 
         this.nodeServiceProvider = nodeServiceProvider;
         this.stateRegistry = stateRegistry;
+        this.clientStateRegistry = clientStateRegistry;
         this.operationHandler = operationHandler;
         this.stateCheckFrequency = stateCheckFrequency;
 
@@ -77,6 +75,7 @@ public class QueryStateRegistryUpdater {
     }
 
     private final class Worker implements Runnable {
+
         private final Object startMux = new Object();
         private final String instanceName;
         private Thread thread;
@@ -111,6 +110,7 @@ public class QueryStateRegistryUpdater {
                     Thread.sleep(stateCheckFrequency);
 
                     checkMemberState();
+                    checkClientState();
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
 
@@ -151,6 +151,12 @@ public class QueryStateRegistryUpdater {
 
                 operationHandler.submit(localMemberId, checkEntry.getKey(), operation);
             }
+        }
+
+        private void checkClientState() {
+            Set<UUID> activeClientIds = nodeServiceProvider.getClientIds();
+
+            clientStateRegistry.update(activeClientIds);
         }
 
         public void stop() {
