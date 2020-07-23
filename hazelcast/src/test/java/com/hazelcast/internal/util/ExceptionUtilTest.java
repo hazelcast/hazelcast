@@ -54,14 +54,16 @@ public class ExceptionUtilTest extends HazelcastTestSupport {
     public void testPeel_whenThrowableIsRuntimeException_thenReturnOriginal() {
         RuntimeException result = ExceptionUtil.peel(throwable);
 
-        assertEquals(throwable, result);
+        assertEquals(throwable.getMessage(), result.getMessage());
+        assertEquals(throwable.getClass(), result.getClass());
     }
 
     @Test
     public void testPeel_whenThrowableIsExecutionException_thenReturnCause() {
         RuntimeException result = ExceptionUtil.peel(new ExecutionException(throwable));
 
-        assertEquals(throwable, result);
+        assertEquals(throwable.getMessage(), result.getMessage());
+        assertEquals(throwable.getClass(), result.getClass());
     }
 
     @Test

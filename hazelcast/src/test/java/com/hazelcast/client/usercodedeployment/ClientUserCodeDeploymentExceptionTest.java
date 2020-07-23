@@ -22,13 +22,13 @@ import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.internal.util.FilteringClassLoader;
 import com.hazelcast.map.IMap;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.internal.util.FilteringClassLoader;
 import org.junit.After;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -38,8 +38,6 @@ import usercodedeployment.IncrementingEntryProcessor;
 import java.io.FileNotFoundException;
 
 import static java.util.Collections.singletonList;
-import static junit.framework.TestCase.fail;
-import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -52,7 +50,7 @@ public class ClientUserCodeDeploymentExceptionTest extends HazelcastTestSupport 
         factory.terminateAll();
     }
 
-    @Test
+    @Test(expected = HazelcastSerializationException.class)
     public void testUserCodeDeploymentIsDisabledByDefaultOnClient() {
         // this test also validate the EP is filtered locally and has to be loaded from the other member
         ClientConfig clientConfig = new ClientConfig();
@@ -64,12 +62,7 @@ public class ClientUserCodeDeploymentExceptionTest extends HazelcastTestSupport 
         HazelcastInstance client = factory.newHazelcastClient(clientConfig);
 
         IMap<Integer, Integer> map = client.getMap(randomName());
-        try {
-            map.executeOnEntries(incrementingEntryProcessor);
-            fail();
-        } catch (HazelcastSerializationException e) {
-            assertEquals(ClassNotFoundException.class, e.getCause().getClass());
-        }
+        map.executeOnEntries(incrementingEntryProcessor);
     }
 
     private Config createNodeConfig() {
