@@ -123,7 +123,7 @@ public final class PortableMapOptionsMetadataResolver implements MapOptionsMetad
             QueryDataType type = resolvePortableType(entry.getValue());
 
             ExternalField externalField = externalFieldsByPath.get(path);
-            if (externalField != null && !type.equals(externalField.type())) {
+            if (externalField != null && !type.getTypeFamily().equals(externalField.type().getTypeFamily())) {
                 throw QueryException.error("Mismatch between declared and inferred type - '" + externalField.name() + "'");
             }
             String name = externalField == null ? entry.getKey() : externalField.name();

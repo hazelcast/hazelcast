@@ -153,24 +153,15 @@ QueryDataType NumericType() :
     |
         <SMALLINT> { type = QueryDataType.SMALLINT; }
     |
-        (<INTEGER> | <INT>) { type = QueryDataType.INT; }
+        <INT> { type = QueryDataType.INT; }
     |
         <BIGINT> { type = QueryDataType.BIGINT; }
     |
-        (<REAL> | <FLOAT>) { type = QueryDataType.REAL; }
+        <REAL> { type = QueryDataType.REAL; }
     |
-        <DOUBLE> [ <PRECISION> ] { type = QueryDataType.DOUBLE; }
+        <DOUBLE> { type = QueryDataType.DOUBLE; }
     |
-        (<DECIMAL> | <DEC> | <NUMERIC>)
-        [
-            <LPAREN>
-            precision = UnsignedIntLiteral()
-            [
-                <COMMA>
-                scale = UnsignedIntLiteral()
-            ]
-            <RPAREN>
-        ] { type = scale > 0 ? QueryDataType.DECIMAL : QueryDataType.DECIMAL_BIG_INTEGER; }
+        <DECIMAL> { type = QueryDataType.DECIMAL; }
     )
     {
         return type;
@@ -183,13 +174,6 @@ QueryDataType CharacterType() :
 }
 {
     (
-        (<CHARACTER> | <CHAR>)
-        (
-            <VARYING> { type = QueryDataType.VARCHAR; }
-        |
-            { type = QueryDataType.VARCHAR_CHARACTER; }
-        )
-    |
         <VARCHAR> { type = QueryDataType.VARCHAR; }
     )
     {
@@ -210,42 +194,7 @@ QueryDataType DateTimeType() :
     |
         <TIMESTAMP>
         (
-            <WITH>
-            (
-                <TIME> <ZONE>
-                [
-                    <LPAREN> variant = SimpleIdentifier() <RPAREN>
-                ]
-                {
-                    if (variant == null || "OFFSET_DATE_TIME".equalsIgnoreCase(variant.getSimple())) {
-                        type = QueryDataType.TIMESTAMP_WITH_TZ_OFFSET_DATE_TIME;
-                    } else if ("ZONED_DATE_TIME".equalsIgnoreCase(variant.getSimple())) {
-                        type = QueryDataType.TIMESTAMP_WITH_TZ_ZONED_DATE_TIME;
-                    } else if ("CALENDAR".equalsIgnoreCase(variant.getSimple())) {
-                        type = QueryDataType.TIMESTAMP_WITH_TZ_CALENDAR;
-                    } else {
-                        throw SqlUtil.newContextException(getPos(),
-                            ParserResource.RESOURCE.unknownTimestampVariant(variant.getSimple()));
-                    }
-                }
-            |
-                <LOCAL> <TIME> <ZONE>
-                [
-                    <LPAREN> variant = SimpleIdentifier() <RPAREN>
-                ]
-                {
-                    if (variant == null || "INSTANT".equalsIgnoreCase(variant.getSimple())) {
-                        type = QueryDataType.TIMESTAMP_WITH_TZ_INSTANT;
-                    } else if ("DATE".equalsIgnoreCase(variant.getSimple())) {
-                        type = QueryDataType.TIMESTAMP_WITH_TZ_DATE;
-                    } else {
-                        throw SqlUtil.newContextException(getPos(),
-                            ParserResource.RESOURCE.unknownTimestampVariant(variant.getSimple()));
-                    }
-                }
-            )
-        |
-            <WITHOUT> <TIME> <ZONE> { type = QueryDataType.TIMESTAMP; }
+            <WITH> <TIME> <ZONE> { type = QueryDataType.TIMESTAMP_WITH_TZ_OFFSET_DATE_TIME; }
         |
             { type = QueryDataType.TIMESTAMP; }
         )

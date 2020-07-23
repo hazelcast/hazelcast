@@ -39,7 +39,4 @@ public interface ParserResource {
 
     @BaseMessage("Option ''{0}'' specified more than once")
     ExInst<SqlValidatorException> duplicateOption(String optionName);
-
-    @BaseMessage("Unrecognized TIMESTAMP variant ''{0}''")
-    ExInst<SqlValidatorException> unknownTimestampVariant(String variant);
 }

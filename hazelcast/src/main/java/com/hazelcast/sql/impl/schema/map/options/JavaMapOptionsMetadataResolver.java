@@ -115,7 +115,7 @@ public final class JavaMapOptionsMetadataResolver implements MapOptionsMetadataR
         QueryPath path = isKey ? QueryPath.KEY_PATH : QueryPath.VALUE_PATH;
 
         ExternalField externalField = externalFieldsByPath.get(path);
-        if (externalField != null && !type.equals(externalField.type())) {
+        if (externalField != null && !type.getTypeFamily().equals(externalField.type().getTypeFamily())) {
             throw QueryException.error("Mismatch between declared and inferred type - '" + externalField.name() + "'");
         }
         String name = externalField == null ? (isKey ? QueryPath.KEY : QueryPath.VALUE) : externalField.name();
@@ -152,7 +152,7 @@ public final class JavaMapOptionsMetadataResolver implements MapOptionsMetadataR
             QueryDataType type = QueryDataTypeUtils.resolveTypeForClass(entry.getValue());
 
             ExternalField externalField = externalFieldsByPath.get(path);
-            if (externalField != null && !type.equals(externalField.type())) {
+            if (externalField != null && !type.getTypeFamily().equals(externalField.type().getTypeFamily())) {
                 throw QueryException.error("Mismatch between declared and inferred type - '" + externalField.name() + "'");
             }
             String name = externalField == null ? entry.getKey() : externalField.name();

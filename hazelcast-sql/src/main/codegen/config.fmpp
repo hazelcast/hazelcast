@@ -40,10 +40,6 @@ data: {
     # keyword add it to 'nonReservedKeywords' section.
     keywords: [
       "IF"
-      "CALENDAR"
-      "INSTANT"
-      "OFFSET_DATE_TIME"
-      "ZONED_DATE_TIME"
       "OVERWRITE"
     ]
 
@@ -359,10 +355,6 @@ data: {
       "XML"
       "YEARS"
       "ZONE"
-      "CALENDAR"
-      "INSTANT"
-      "OFFSET_DATE_TIME"
-      "ZONED_DATE_TIME"
       "OVERWRITE"
     ]
 
