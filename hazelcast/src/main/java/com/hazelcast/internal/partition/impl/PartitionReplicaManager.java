@@ -26,6 +26,7 @@ import com.hazelcast.internal.partition.PartitionReplicaVersionManager;
 import com.hazelcast.internal.partition.operation.PartitionReplicaSyncRequest;
 import com.hazelcast.internal.services.ServiceNamespace;
 import com.hazelcast.internal.services.ServiceNamespaceAware;
+import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.internal.util.counters.MwCounter;
 import com.hazelcast.internal.util.scheduler.EntryTaskScheduler;
 import com.hazelcast.internal.util.scheduler.EntryTaskSchedulerFactory;
@@ -37,16 +38,18 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.executionservice.ExecutionService;
 import com.hazelcast.spi.impl.executionservice.TaskScheduler;
 import com.hazelcast.spi.impl.operationservice.Operation;
-import com.hazelcast.spi.impl.operationservice.PartitionTaskFactory;
 import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
 
+import javax.annotation.Nonnull;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Semaphore;
@@ -479,13 +482,11 @@ public class PartitionReplicaManager implements PartitionReplicaVersionManager {
         }
     }
 
-    void scheduleReplicaVersionSync(ExecutionService
-                                            executionService) {
+    void scheduleReplicaVersionSync(ExecutionService executionService) {
         long definedBackupSyncCheckInterval = node.getProperties().getSeconds(ClusterProperty.PARTITION_BACKUP_SYNC_INTERVAL);
         long backupSyncCheckInterval = definedBackupSyncCheckInterval > 0 ? definedBackupSyncCheckInterval : 1;
 
-        executionService.scheduleWithRepetition(new AntiEntropyTask(),
-                backupSyncCheckInterval, backupSyncCheckInterval, TimeUnit.SECONDS);
+        executionService.schedule(new AntiEntropyTask(backupSyncCheckInterval), backupSyncCheckInterval, TimeUnit.SECONDS);
     }
 
     @Override
@@ -516,31 +517,116 @@ public class PartitionReplicaManager implements PartitionReplicaVersionManager {
     }
 
     private class AntiEntropyTask implements Runnable {
+
+        private static final int UNSET = -1;
+
+        private final long firstRunNanos;
+        private final long backupSyncCheckIntervalSeconds;
+        private final Semaphore semaphore = new Semaphore(0);
+
+        private int numInOneGo;
+        private Queue<Integer> localPartitionIds;
+
+        AntiEntropyTask(long backupSyncCheckIntervalSeconds) {
+            this(backupSyncCheckIntervalSeconds, null, UNSET, UNSET);
+        }
+
+        AntiEntropyTask(long backupSyncCheckIntervalSeconds, Queue<Integer> localPartitionIds,
+                        long firstRunNanos, int numInOneGo) {
+            this.backupSyncCheckIntervalSeconds = backupSyncCheckIntervalSeconds;
+            this.localPartitionIds = localPartitionIds;
+            this.firstRunNanos = firstRunNanos;
+            this.numInOneGo = numInOneGo;
+        }
+
         @Override
         public void run() {
+            long initialStartTimeInNanos = firstRunNanos == UNSET ? System.nanoTime() : firstRunNanos;
+
             if (!node.isRunning() || !node.getNodeExtension().isStartCompleted()
                     || !partitionService.areMigrationTasksAllowed()) {
                 return;
             }
-            nodeEngine.getOperationService().executeOnPartitions(new PartitionAntiEntropyTaskFactory(), getLocalPartitions());
+
+            initLocalPartitionsIfNull();
+
+            BitSet partitionsBitSet = convertLocalPartitionsToBitSet();
+
+            runAntiEntropyTask(partitionsBitSet);
+
+            waitAntiEntropyTaskEnd(partitionsBitSet.cardinality());
+
+            scheduleNextRun(initialStartTimeInNanos);
         }
 
-        private BitSet getLocalPartitions() {
-            BitSet localPartitions = new BitSet(partitionService.getPartitionCount());
+        private void scheduleNextRun(long initialStartTimeInNanos) {
+            ExecutionService executionService = nodeEngine.getExecutionService();
+
+            if (!localPartitionIds.isEmpty()) {
+                // we still have local partitions to check
+                executionService.schedule(new AntiEntropyTask(backupSyncCheckIntervalSeconds,
+                        localPartitionIds, initialStartTimeInNanos, numInOneGo), 1, TimeUnit.SECONDS);
+            } else {
+                // we have finished checking of all local partitions, time to decide when to commence next run.
+                long elapsedSeconds = TimeUnit.NANOSECONDS.toSeconds(System.nanoTime() - initialStartTimeInNanos);
+                long delayBeforeNextRunSeconds = Math.max(1, backupSyncCheckIntervalSeconds - elapsedSeconds);
+                executionService.schedule(new AntiEntropyTask(backupSyncCheckIntervalSeconds),
+                        delayBeforeNextRunSeconds, TimeUnit.SECONDS);
+            }
+        }
+
+        private void runAntiEntropyTask(BitSet partitionsBitSet) {
+            nodeEngine.getOperationService().executeOnPartitions(partitionId -> {
+                semaphore.release();
+                return new PartitionPrimaryReplicaAntiEntropyTask(nodeEngine, partitionId);
+            }, partitionsBitSet);
+        }
+
+        private void waitAntiEntropyTaskEnd(int partitionCount) {
+            try {
+                semaphore.acquire(partitionCount);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw ExceptionUtil.rethrow(e);
+            }
+        }
+
+        private void initLocalPartitionsIfNull() {
+            if (localPartitionIds != null) {
+                return;
+            }
+
+            localPartitionIds = getLocalPartitionIds();
+            numInOneGo = Math.max(1, (int) Math.ceil(1D * localPartitionIds.size() / backupSyncCheckIntervalSeconds));
+        }
+
+        @Nonnull
+        private BitSet convertLocalPartitionsToBitSet() {
+            BitSet bitSet = new BitSet(partitionService.getPartitionCount());
+
+            do {
+                Integer partitionId = localPartitionIds.poll();
+                if (partitionId == null) {
+                    break;
+                }
+
+                bitSet.set(partitionId);
+
+            } while (bitSet.cardinality() < numInOneGo);
+
+            return bitSet;
+        }
+
+        private Queue<Integer> getLocalPartitionIds() {
+            Queue<Integer> localPartitions = new ArrayDeque<>(partitionService.getPartitionCount());
 
             for (InternalPartition partition : partitionService.getInternalPartitions()) {
                 if (partition.isLocal()) {
-                    localPartitions.set(partition.getPartitionId());
+                    localPartitions.offer(partition.getPartitionId());
                 }
             }
             return localPartitions;
         }
-    }
 
-    private class PartitionAntiEntropyTaskFactory implements PartitionTaskFactory<Runnable> {
-        @Override
-        public Runnable create(int partitionId) {
-            return new PartitionPrimaryReplicaAntiEntropyTask(nodeEngine, partitionId);
-        }
     }
 }
