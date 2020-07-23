@@ -28,7 +28,7 @@ TYPE table_type
 The table is created in the `public` schema. The name of the table must be distinct from the name of any other table in
 the schema.
 
-Column list is optional, for some storage systems and serialization formats, it is possible to derive it.
+Column list is optional, for some storage systems and serialization formats, it is possible to infer it.
 
 ### 1.4 Parameters
 
@@ -42,31 +42,7 @@ The name of a column in the table.
 
 **data_type**
 
-The data type of the column.
-
-| Name | Aliases | Description |
-|---|---|---|
-| BOOLEAN | | logical Boolean (true/false) |
-| TINYINT | | signed one-byte integer |
-| SMALLINT | | signed two-byte integer |
-| INT | INTEGER | signed four-byte integer |
-| BIGINT | | signed eight-byte integer |
-| FLOAT | REAL | single precision floating-point number (4 bytes) |
-| DOUBLE [PRECISION] | | double precision floating-point number (8 bytes) |
-| DECIMAL [ (_p_, 0) ] | DEC [ (_p_, 0) ], NUMERIC [ (_p_, 0) ] | arbitrary-precision integer |
-| DECIMAL [ (_p_, _s_) ] | DEC [ (_p_, _s_) ], NUMERIC [ (_p_, s) ] | arbitrary-precision signed decimal number |
-| CHARACTER | CHAR | single character |
-| CHARACTER VARYING | VARCHAR | variable-length character string |
-| TIME | | time (no time zone) |
-| DATE | | date (no time zone) |
-| TIMESTAMP WITHOUT TIME ZONE | TIMESTAMP | date-time (no time zone) |
-| TIMESTAMP WITH TIME ZONE | TIMESTAMP WITH TIME ZONE (OFFSET_DATE_TIME) | date-time with an offset from UTC/Greenwich in the ISO-8601 calendar system |
-| TIMESTAMP WITH TIME ZONE (ZONED_DATE_TIME) | | date-time with a time-zone in the ISO-8601 calendar system |
-| TIMESTAMP WITH TIME ZONE (CALENDAR) | | specific instant in time with a time-zone, with millisecond precision |
-| TIMESTAMP WITH LOCAL TIME ZONE | TIMESTAMP WITH LOCAL TIME ZONE (INSTANT) | instantaneous point on the time-line |
-| TIMESTAMP WITH LOCAL TIME ZONE (DATE) | | specific instant in time, with millisecond precision |
-
-For more information on the supported data types, refer to [type system document](https://github.com/hazelcast/hazelcast/blob/master/docs/design/sql/01-type-system.md).
+The data type of the column. For more information on the supported data types, refer to [type system document](https://github.com/hazelcast/hazelcast/blob/master/docs/design/sql/01-type-system.md).
 
 **external_name**
 
@@ -192,7 +168,7 @@ AS query
 
 `CREATE EXTERNAL TABLE AS` registers a virtual table that references an external storage system. It fills the table with
 data computed by `SELECT` statement. The table columns have the names and data types associated with the output columns
-of the `SELECT` (except that column names can overridden by an explicit list of column names).
+of the `SELECT` (except that column names can overridden by an explicit list).
 
 The table is created in the `public` schema. The name of the table must be distinct from the name of any other table in
 the schema.
@@ -209,31 +185,7 @@ The name of a column in the table.
 
 **data_type**
 
-The data type of the column.
-
-| Name | Aliases | Description |
-|---|---|---|
-| BOOLEAN | | logical Boolean (true/false) |
-| TINYINT | | signed one-byte integer |
-| SMALLINT | | signed two-byte integer |
-| INT | INTEGER | signed four-byte integer |
-| BIGINT | | signed eight-byte integer |
-| FLOAT | REAL | single precision floating-point number (4 bytes) |
-| DOUBLE [PRECISION] | | double precision floating-point number (8 bytes) |
-| DECIMAL [ (_p_, 0) ] | DEC [ (_p_, 0) ], NUMERIC [ (_p_, 0) ] | arbitrary-precision integer |
-| DECIMAL [ (_p_, _s_) ] | DEC [ (_p_, _s_) ], NUMERIC [ (_p_, s) ] | arbitrary-precision signed decimal number |
-| CHARACTER | CHAR | single character |
-| CHARACTER VARYING | VARCHAR | variable-length character string |
-| TIME | | time (no time zone) |
-| DATE | | date (no time zone) |
-| TIMESTAMP WITHOUT TIME ZONE | TIMESTAMP | date-time (no time zone) |
-| TIMESTAMP WITH TIME ZONE | TIMESTAMP WITH TIME ZONE (OFFSET_DATE_TIME) | date-time with an offset from UTC/Greenwich in the ISO-8601 calendar system |
-| TIMESTAMP WITH TIME ZONE (ZONED_DATE_TIME) | | date-time with a time-zone in the ISO-8601 calendar system |
-| TIMESTAMP WITH TIME ZONE (CALENDAR) | | specific instant in time with a time-zone, with millisecond precision |
-| TIMESTAMP WITH LOCAL TIME ZONE | TIMESTAMP WITH LOCAL TIME ZONE (INSTANT) | instantaneous point on the time-line |
-| TIMESTAMP WITH LOCAL TIME ZONE (DATE) | | specific instant in time, with millisecond precision |
-
-For more information on the supported data types, refer to [type system document](https://github.com/hazelcast/hazelcast/blob/master/docs/design/sql/01-type-system.md).
+The data type of the column. For more information on the supported data types, refer to [type system document](https://github.com/hazelcast/hazelcast/blob/master/docs/design/sql/01-type-system.md).
 
 **external_name**
 
