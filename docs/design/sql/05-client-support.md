@@ -76,7 +76,7 @@ request {
 }
 
 response {
-    queryId : String
+    queryId : SqlQueryId
     rowMetadata : SqlRowMetadata
     rowPage : List<SqlRow>
     rowPageLast : boolean
@@ -101,7 +101,7 @@ the future.
 
 ```
 request {
-    queryId : String
+    queryId : SqlQueryId
 }
 
 response {
@@ -124,7 +124,7 @@ The command must be sent to the query initiator for reasons similar to the `fetc
 
 ```
 request {
-    queryId : String
+    queryId : SqlQueryId
 }
 
 response {}
