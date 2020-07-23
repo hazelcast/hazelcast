@@ -28,6 +28,8 @@ import com.hazelcast.sql.impl.SqlResultImpl;
 import com.hazelcast.sql.impl.SqlServiceImpl;
 
 import java.security.Permission;
+import java.util.Collection;
+import java.util.List;
 
 /**
  * SQL query execute task.
@@ -79,14 +81,18 @@ public class SqlExecuteMessageTask extends SqlAbstractMessageTask<SqlExecuteCode
         return SqlExecuteCodec.decodeRequest(clientMessage);
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     protected ClientMessage encodeResponse(Object response) {
         SqlExecuteResponse response0 = (SqlExecuteResponse) response;
 
+        List<List<Data>> rowPage = response0.getRowPage();
+        Collection<Collection<Data>> rowPage0 = (Collection<Collection<Data>>) (Object) rowPage;
+
         return SqlExecuteCodec.encodeResponse(
             response0.getQueryId(),
             response0.getRowMetadata(),
-            response0.getRowPage(),
+            rowPage0,
             response0.isRowPageLast(),
             response0.getError()
         );

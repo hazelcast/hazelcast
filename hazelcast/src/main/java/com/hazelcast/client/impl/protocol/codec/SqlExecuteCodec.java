@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Starts execution of an SQL query.
  */
-@Generated("0be360beaae85d556e6c8f8a717728a2")
+@Generated("2fb2fb6fb01383f480d9ebb91b076438")
 public final class SqlExecuteCodec {
     //hex: 0x210100
     public static final int REQUEST_MESSAGE_TYPE = 2162944;
@@ -124,7 +124,7 @@ public final class SqlExecuteCodec {
          */
         public @Nullable com.hazelcast.sql.impl.client.SqlError error;
     }
-    public static ClientMessage encodeResponse(@Nullable java.lang.String queryId, @Nullable java.util.List<com.hazelcast.sql.SqlColumnMetadata> rowMetadata, @Nullable java.util.Collection<java.util.List<com.hazelcast.internal.serialization.Data>> rowPage, boolean rowPageLast, @Nullable com.hazelcast.sql.impl.client.SqlError error) {
+    public static ClientMessage encodeResponse(@Nullable java.lang.String queryId, @Nullable java.util.List<com.hazelcast.sql.SqlColumnMetadata> rowMetadata, @Nullable java.util.Collection<java.util.Collection<com.hazelcast.internal.serialization.Data>> rowPage, boolean rowPageLast, @Nullable com.hazelcast.sql.impl.client.SqlError error) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);

@@ -20,10 +20,13 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.SqlFetchCodec;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.security.permission.SqlPermission;
 import com.hazelcast.sql.impl.SqlInternalService;
 
 import java.security.Permission;
+import java.util.Collection;
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -60,11 +63,15 @@ public class SqlFetchMessageTask extends SqlAbstractMessageTask<SqlFetchCodec.Re
         return SqlFetchCodec.decodeRequest(clientMessage);
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     protected ClientMessage encodeResponse(Object response) {
         SqlFetchResponse response0 = ((SqlFetchResponse) response);
 
-        return SqlFetchCodec.encodeResponse(response0.getRowPage(), response0.isRowPageLast(), response0.getError());
+        List<List<Data>> rowPage = response0.getRowPage();
+        Collection<Collection<Data>> rowPage0 = (Collection<Collection<Data>>) (Object) rowPage;
+
+        return SqlFetchCodec.encodeResponse(rowPage0, response0.isRowPageLast(), response0.getError());
     }
 
     @Override

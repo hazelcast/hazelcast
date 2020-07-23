@@ -773,7 +773,7 @@ public class ReferenceObjects {
     public static List<CacheSimpleEntryListenerConfig> aListOfCacheSimpleEntryListenerConfigs
             = Collections.singletonList(aCacheSimpleEntryListenerConfig);
     public static List<Data> aListOfData = Collections.singletonList(aData);
-    public static List<List<Data>> aListOfListOfData = Collections.singletonList(aListOfData);
+    public static List<Collection<Data>> aListOfListOfData = Collections.singletonList(aListOfData);
     public static Collection<Map.Entry<Data, Collection<Data>>> aListOfDataToListOfData
             = Collections.singletonList(new AbstractMap.SimpleEntry<>(aData, aListOfData));
     public static List<DistributedObjectInfo> aListOfDistributedObjectInfo = Collections.singletonList(aDistributedObjectInfo);
