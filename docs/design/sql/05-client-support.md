@@ -53,7 +53,7 @@ The protocol contains three commands: `execute`, `fetch`, and `close`.
 ### 2.1 Common Entities
 
 The protocol contains the following common entities that are used across different commands:
-- **Query ID** - an opaque query identifier of type `String` that is used to locate the server-side cursor on the member
+- **Query ID** - an opaque query identifier that is used to locate the server-side cursor on the member
 - **Data page** - a finite collection of rows fetched from the initiator, together with the "end of data" marker. If the 
 "end of data" condition is observed, the cursor is closed on the server automatically and no separate `close` is needed.
 - **SqlRow** - an object containing row data. At the moment we encode each separate value as `Data`. In the future we are likely
