@@ -101,6 +101,7 @@ public class ParserOperationsTest {
 
         return OptimizerContext.create(
             null,
+            null,
             Collections.singletonList(resolver),
             null,
             1

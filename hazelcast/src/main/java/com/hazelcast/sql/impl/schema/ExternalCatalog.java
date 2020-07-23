@@ -89,9 +89,9 @@ public class ExternalCatalog implements TableResolver {
         return nodeEngine.getHazelcastInstance().getReplicatedMap(CATALOG_MAP_NAME);
     }
 
-    private Table toTable(ExternalTable table) {
+    public Table toTable(ExternalTable table) {
         String type = table.type();
-        SqlConnector connector = requireNonNull(sqlConnectorCache.forType(type), "Unknown connector type - '" + type + "'");
+        SqlConnector connector = requireNonNull(sqlConnectorCache.forType(type), "Unknown connector type '" + type + "'");
         return connector.createTable(nodeEngine, SCHEMA_NAME_PUBLIC, table.name(), table.options(), table.fields());
     }
 }

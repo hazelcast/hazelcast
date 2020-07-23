@@ -16,7 +16,6 @@
 
 package com.hazelcast.sql.impl.calcite.parse;
 
-import org.apache.calcite.runtime.CalciteException;
 import org.apache.calcite.runtime.Resources;
 import org.apache.calcite.runtime.Resources.BaseMessage;
 import org.apache.calcite.runtime.Resources.ExInst;
@@ -26,10 +25,16 @@ public interface ParserResource {
 
     ParserResource RESOURCE = Resources.create(ParserResource.class);
 
-    @BaseMessage("Column ''{0}'' specified more than once")
-    ExInst<CalciteException> duplicateColumn(String columnName);
+    @BaseMessage("Too many columns were specified")
+    ExInst<SqlValidatorException> tooManyColumnsSpecified();
 
-    @BaseMessage("Invalid external name ''{0}'' - nested fields are not supported.")
+    @BaseMessage("Column ''{0}'' specified more than once")
+    ExInst<SqlValidatorException> duplicateColumn(String columnName);
+
+    @BaseMessage("Mismatch between declared and inferred type for ''{0}''")
+    ExInst<SqlValidatorException> columnTypeMismatch(String columnName);
+
+    @BaseMessage("Invalid external name ''{0}'', nested fields are not supported")
     ExInst<SqlValidatorException> nestedField(String externalColumnName);
 
     @BaseMessage("Option ''{0}'' specified more than once")

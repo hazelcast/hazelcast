@@ -32,16 +32,17 @@ import com.hazelcast.sql.impl.calcite.parse.QueryConvertResult;
 import com.hazelcast.sql.impl.calcite.parse.QueryParseResult;
 import com.hazelcast.sql.impl.calcite.parse.SqlCreateExternalTable;
 import com.hazelcast.sql.impl.calcite.parse.SqlDropExternalTable;
+import com.hazelcast.sql.impl.calcite.parse.SqlTableColumn;
+import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
 import com.hazelcast.sql.impl.optimizer.OptimizationTask;
 import com.hazelcast.sql.impl.optimizer.SqlOptimizer;
 import com.hazelcast.sql.impl.optimizer.SqlPlan;
-import com.hazelcast.sql.impl.plan.Plan;
 import com.hazelcast.sql.impl.schema.ExternalCatalog;
 import com.hazelcast.sql.impl.schema.ExternalTable;
 import com.hazelcast.sql.impl.schema.ExternalTable.ExternalField;
-import com.hazelcast.sql.impl.schema.SchemaPlan;
 import com.hazelcast.sql.impl.schema.SchemaPlan.CreateExternalTablePlan;
 import com.hazelcast.sql.impl.schema.SchemaPlan.RemoveExternalTablePlan;
+import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.schema.TableResolver;
 import com.hazelcast.sql.impl.schema.map.PartitionedMapTableResolver;
 import com.hazelcast.sql.impl.schema.map.ReplicatedMapTableResolver;
@@ -53,6 +54,7 @@ import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.sql.SqlNode;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -142,6 +144,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
 
         OptimizerContext context = OptimizerContext.create(
             jetSqlBackend,
+            catalog,
             tableResolvers,
             task.getSearchPaths(),
             memberCount
@@ -151,22 +154,92 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         QueryParseResult parseResult = context.parse(task.getSql());
 
         if (parseResult.isDdl()) {
-            return createSchemaPlan(parseResult.getNode());
+            return createSchemaPlan(task.getSql(), context, parseResult);
         }
 
         // 3. Convert parse tree to relational tree.
         QueryConvertResult convertResult = context.convert(parseResult.getNode());
 
+        // 4. Create plan.
+        return createPlan(task.getSql(), context, parseResult, convertResult);
+    }
+
+    private SqlPlan createSchemaPlan(
+            String sql,
+            OptimizerContext context,
+            QueryParseResult parseResult
+    ) {
+        if (parseResult.getNode() instanceof SqlCreateExternalTable) {
+            return toCreateTablePlan(sql, context, parseResult);
+        } else if (parseResult.getNode() instanceof SqlDropExternalTable) {
+            return toRemoveTablePlan((SqlDropExternalTable) parseResult.getNode());
+        } else {
+            throw new IllegalArgumentException("Unsupported SQL statement - " + parseResult.getNode());
+        }
+    }
+
+    private SqlPlan toCreateTablePlan(
+        String sql,
+        OptimizerContext context,
+        QueryParseResult parseResult
+    ) {
+        SqlCreateExternalTable create = (SqlCreateExternalTable) parseResult.getNode();
+
+        SqlNode source = create.source();
+        if (source == null) {
+            List<ExternalField> externalFields = create.columns()
+                    .map(field -> new ExternalField(field.name(), field.type(), field.externalName()))
+                    .collect(toList());
+            ExternalTable externalTable = new ExternalTable(create.name(), create.type(), externalFields, create.options());
+
+            return new CreateExternalTablePlan(catalog, externalTable, create.getReplace(), create.ifNotExists(), null);
+        } else {
+            QueryConvertResult convertedResult = context.convert(create);
+
+            // TODO: ExternalTable is already being created in HazelcastSqlToRelConverter, any way to reuse it ???
+            List<ExternalField> externalFields = new ArrayList<>();
+            Iterator<SqlTableColumn> columns = create.columns().iterator();
+            for (TableField field : convertedResult.getRel().getTable().unwrap(HazelcastTable.class).getTarget().getFields()) {
+                SqlTableColumn column = columns.hasNext() ? columns.next() : null;
+
+                String name = field.getName();
+                QueryDataType type = field.getType();
+                String externalName = column != null ? column.externalName() : null;
+
+                externalFields.add(new ExternalField(name, type, externalName));
+            }
+            assert !columns.hasNext() : "there are too many columns specified";
+            ExternalTable externalTable = new ExternalTable(create.name(), create.type(), externalFields, create.options());
+
+            SqlPlan populateTablePlan = createPlan(sql, context, parseResult, convertedResult);
+            return new CreateExternalTablePlan(
+                    catalog,
+                    externalTable,
+                    create.getReplace(),
+                    create.ifNotExists(),
+                    populateTablePlan
+            );
+        }
+    }
+
+    private SqlPlan toRemoveTablePlan(SqlDropExternalTable sqlDropTable) {
+        return new RemoveExternalTablePlan(catalog, sqlDropTable.name(), sqlDropTable.ifExists());
+    }
+
+    private SqlPlan createPlan(
+        String sql,
+        OptimizerContext context,
+        QueryParseResult parseResult,
+        QueryConvertResult convertResult
+    ) {
         if (parseResult.isImdg()) {
-            // 5. Perform optimization.
             QueryDataType[] mappedParameterRowType = SqlToQueryType.mapRowType(parseResult.getParameterRowType());
             QueryParameterMetadata parameterMetadata = new QueryParameterMetadata(mappedParameterRowType);
 
             PhysicalRel physicalRel = optimize(context, convertResult.getRel(), parameterMetadata);
 
-            // 6. Create plan.
             return createImdgPlan(
-                task.getSql(),
+                sql,
                 parameterMetadata,
                 physicalRel,
                 convertResult.getFieldNames()
@@ -174,30 +247,6 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         } else {
             return jetSqlBackend.optimizeAndCreatePlan(context, convertResult.getRel(), convertResult.getFieldNames());
         }
-    }
-
-    private SchemaPlan createSchemaPlan(SqlNode node) {
-        if (node instanceof SqlCreateExternalTable) {
-            return toCreateExternalTablePlan((SqlCreateExternalTable) node);
-        } else if (node instanceof SqlDropExternalTable) {
-            return toRemoveExternalTablePlan((SqlDropExternalTable) node);
-        } else {
-            throw new IllegalArgumentException("Unsupported SQL statement - " + node);
-        }
-    }
-
-    private SchemaPlan toCreateExternalTablePlan(SqlCreateExternalTable sqlCreateTable) {
-        List<ExternalField> externalFields = sqlCreateTable.columns()
-            .map(column -> new ExternalField(column.name(), column.type(), column.externalName()))
-            .collect(toList());
-        Map<String, String> options = sqlCreateTable.options();
-        ExternalTable schema = new ExternalTable(sqlCreateTable.name(), sqlCreateTable.type(), externalFields, options);
-
-        return new CreateExternalTablePlan(catalog, schema, sqlCreateTable.getReplace(), sqlCreateTable.ifNotExists());
-    }
-
-    private SchemaPlan toRemoveExternalTablePlan(SqlDropExternalTable sqlDropTable) {
-        return new RemoveExternalTablePlan(catalog, sqlDropTable.name(), sqlDropTable.ifExists());
     }
 
     private PhysicalRel optimize(
@@ -228,7 +277,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
      * @param rel Rel.
      * @return Plan.
      */
-    private Plan createImdgPlan(
+    private SqlPlan createImdgPlan(
         String sql,
         QueryParameterMetadata parameterMetadata,
         PhysicalRel rel,

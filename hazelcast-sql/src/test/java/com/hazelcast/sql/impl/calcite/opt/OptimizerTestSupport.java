@@ -104,6 +104,7 @@ public abstract class OptimizerTestSupport extends SqlTestSupport {
     ) {
         OptimizerContext context = OptimizerContext.create(
             null,
+            null,
             HazelcastSchemaUtils.createCatalog(schema),
             HazelcastSchemaUtils.prepareSearchPaths(null, null),
             nodeCount

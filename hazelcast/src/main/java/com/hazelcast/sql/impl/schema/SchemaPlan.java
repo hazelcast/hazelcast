@@ -33,7 +33,8 @@ public interface SchemaPlan extends SqlPlan {
         throw new UnsupportedOperationException();
     }
 
-    void execute();
+    // TODO: add execute(List<Object> params, long timeout, int pageSize) to SqlPlan ???
+    SqlPlan execute();
 
     class CreateExternalTablePlan implements SchemaPlan {
 
@@ -44,21 +45,26 @@ public interface SchemaPlan extends SqlPlan {
         private final boolean replace;
         private final boolean ifNotExists;
 
+        private final SqlPlan populateTablePlan;
+
         public CreateExternalTablePlan(
             ExternalCatalog catalog,
             ExternalTable schema,
             boolean replace,
-            boolean ifNotExists
+            boolean ifNotExists,
+            SqlPlan populateTablePlan
         ) {
             this.catalog = catalog;
             this.schema = schema;
             this.replace = replace;
             this.ifNotExists = ifNotExists;
+            this.populateTablePlan = populateTablePlan;
         }
 
         @Override
-        public void execute() {
+        public SqlPlan execute() {
             catalog.createTable(schema, replace, ifNotExists);
+            return populateTablePlan;
         }
     }
 
@@ -81,8 +87,9 @@ public interface SchemaPlan extends SqlPlan {
         }
 
         @Override
-        public void execute() {
+        public SqlPlan execute() {
             catalog.removeTable(name, ifExists);
+            return null;
         }
     }
 }
