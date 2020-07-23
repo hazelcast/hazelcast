@@ -22,6 +22,7 @@ import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.pipeline.Pipeline;
+import com.hazelcast.jet.test.IgnoreInJenkinsOnWindows;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.NightlyTest;
 import org.elasticsearch.action.admin.indices.create.CreateIndexRequest;
@@ -65,7 +66,7 @@ import static org.elasticsearch.client.RequestOptions.DEFAULT;
  * Subclasses are free to cache
  */
 @RunWith(HazelcastSerialClassRunner.class)
-@Category(NightlyTest.class)
+@Category({NightlyTest.class, IgnoreInJenkinsOnWindows.class})
 public abstract class BaseElasticTest {
 
     protected static final int BATCH_SIZE = 42;

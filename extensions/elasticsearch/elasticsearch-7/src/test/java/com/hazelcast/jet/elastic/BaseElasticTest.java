@@ -22,6 +22,7 @@ import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.pipeline.Pipeline;
+import com.hazelcast.jet.test.IgnoreInJenkinsOnWindows;
 import com.hazelcast.jet.test.SerialTest;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
@@ -66,7 +67,7 @@ import static org.elasticsearch.index.query.QueryBuilders.matchAllQuery;
  * Subclasses are free to cache
  */
 @RunWith(HazelcastSerialClassRunner.class)
-@Category(SerialTest.class)
+@Category({SerialTest.class, IgnoreInJenkinsOnWindows.class})
 public abstract class BaseElasticTest {
 
     protected static final int BATCH_SIZE = 42;

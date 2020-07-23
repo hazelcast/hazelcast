@@ -18,6 +18,7 @@ package com.hazelcast.jet.cdc.postgres;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hazelcast.jet.cdc.AbstractCdcIntegrationTest;
+import com.hazelcast.jet.test.IgnoreInJenkinsOnWindows;
 import org.junit.Rule;
 import org.testcontainers.containers.PostgreSQLContainer;
 
@@ -28,9 +29,11 @@ import java.sql.SQLException;
 import java.util.Date;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
+import org.junit.experimental.categories.Category;
 
 import static org.testcontainers.containers.PostgreSQLContainer.POSTGRESQL_PORT;
 
+@Category({IgnoreInJenkinsOnWindows.class})
 public abstract class AbstractPostgresCdcIntegrationTest extends AbstractCdcIntegrationTest {
 
     @Rule

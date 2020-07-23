@@ -17,6 +17,7 @@
 package com.hazelcast.jet.cdc.mysql;
 
 import com.hazelcast.jet.cdc.AbstractCdcIntegrationTest;
+import com.hazelcast.jet.test.IgnoreInJenkinsOnWindows;
 import org.junit.Rule;
 import org.testcontainers.containers.MySQLContainer;
 
@@ -24,9 +25,11 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.Statement;
+import org.junit.experimental.categories.Category;
 
 import static org.testcontainers.containers.MySQLContainer.MYSQL_PORT;
 
+@Category({IgnoreInJenkinsOnWindows.class})
 public abstract class AbstractMySqlCdcIntegrationTest extends AbstractCdcIntegrationTest {
 
     @Rule
