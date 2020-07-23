@@ -408,7 +408,7 @@ public class ScheduledExecutorServiceTestSupport extends HazelcastTestSupport {
         }
     }
 
-    public static class NamedCallable implements Callable<Boolean>, NamedTask {
+    public static class NamedCallable implements Callable<Boolean>, NamedTask, Serializable {
 
         public static final String NAME = "NAMED-CALLABLE";
 

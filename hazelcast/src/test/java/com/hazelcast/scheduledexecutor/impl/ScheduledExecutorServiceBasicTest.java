@@ -79,12 +79,14 @@ import static org.junit.Assert.fail;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceTestSupport {
 
+    private static final String ANY_EXECUTOR_NAME = "s";
+
     @Rule
     public ExpectedException expected = ExpectedException.none();
 
     @Test
     public void config() {
-        String schedulerName = "foobar";
+        String schedulerName = ANY_EXECUTOR_NAME;
 
         ScheduledExecutorConfig sec = new ScheduledExecutorConfig()
                 .setName(schedulerName)
@@ -114,7 +116,7 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
     public void exception_suppressesFutureExecutions()
             throws ExecutionException, InterruptedException {
         HazelcastInstance[] instances = createClusterWithCount(2);
-        IScheduledExecutorService service = instances[0].getScheduledExecutorService("test");
+        IScheduledExecutorService service = instances[0].getScheduledExecutorService(ANY_EXECUTOR_NAME);
 
         final IScheduledFuture f = service.scheduleAtFixedRate(
                 new ErroneousRunnableTask(), 1, 1, TimeUnit.SECONDS);
@@ -130,7 +132,7 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
 
     @Test
     public void capacity_whenNoLimit_perNode() {
-        String schedulerName = "foobar";
+        String schedulerName = ANY_EXECUTOR_NAME;
 
         ScheduledExecutorConfig sec = new ScheduledExecutorConfig()
                 .setName(schedulerName)
@@ -151,7 +153,7 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
 
     @Test
     public void capacity_whenNoLimit_perPartition() {
-        String schedulerName = "foobar";
+        String schedulerName = ANY_EXECUTOR_NAME;
 
         ScheduledExecutorConfig sec = new ScheduledExecutorConfig()
                 .setName(schedulerName)
@@ -173,7 +175,7 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
 
     @Test
     public void capacity_whenDefault() {
-        String schedulerName = "foobar";
+        String schedulerName = ANY_EXECUTOR_NAME;
 
         HazelcastInstance[] instances = createClusterWithCount(1, null);
         IScheduledExecutorService service = instances[0].getScheduledExecutorService(schedulerName);
@@ -183,7 +185,7 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
         }
 
         assertCapacityReached(service, null, "Maximum capacity (100) of tasks reached "
-                + "for this member and scheduled executor (foobar).");
+                + "for this member and scheduled executor (" + schedulerName + ").");
 
         // Dispose all
         for (IScheduledFuture future : futures) {
@@ -196,12 +198,12 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
         }
 
         assertCapacityReached(service, null, "Maximum capacity (100) of tasks reached "
-                + "for this member and scheduled executor (foobar).");
+                + "for this member and scheduled executor (" + schedulerName + ").");
     }
 
     @Test
     public void capacity_whenDefault_perPartition() {
-        String schedulerName = "foobar";
+        String schedulerName = ANY_EXECUTOR_NAME;
         ScheduledExecutorConfig sec = new ScheduledExecutorConfig()
                 .setName(schedulerName)
                 .setCapacityPolicy(ScheduledExecutorConfig.CapacityPolicy.PER_PARTITION);
@@ -219,7 +221,7 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
         }
 
         assertCapacityReached(service, key, "Maximum capacity (100) of tasks reached "
-                + "for partition (" + keyOwner + ") and scheduled executor (foobar).");
+                + "for partition (" + keyOwner + ") and scheduled executor (" + schedulerName + ").");
 
         // Dispose all
         for (IScheduledFuture future : futures) {
@@ -232,12 +234,12 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
         }
 
         assertCapacityReached(service, key, "Maximum capacity (100) of tasks reached "
-                + "for partition (" + keyOwner + ") and scheduled executor (foobar).");
+                + "for partition (" + keyOwner + ") and scheduled executor (" + schedulerName + ").");
     }
 
     @Test
     public void capacity_whenPositiveLimit() {
-        String schedulerName = "foobar";
+        String schedulerName = ANY_EXECUTOR_NAME;
 
         ScheduledExecutorConfig sec = new ScheduledExecutorConfig()
                 .setName(schedulerName)
@@ -259,7 +261,7 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
         }
 
         assertCapacityReached(service, key, "Maximum capacity (10) of tasks reached "
-                + "for partition (" + keyOwner + ") and scheduled executor (foobar).");
+                + "for partition (" + keyOwner + ") and scheduled executor (" + schedulerName + ").");
 
         // Dispose all
         for (IScheduledFuture future : futures) {
@@ -272,14 +274,14 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
         }
 
         assertCapacityReached(service, key, "Maximum capacity (10) of tasks reached "
-                + "for partition (" + keyOwner + ") and scheduled executor (foobar).");
+                + "for partition (" + keyOwner + ") and scheduled executor (" + schedulerName + ").");
 
     }
 
     @Test
     public void capacity_whenPositiveLimit_andMigration()
             throws ExecutionException, InterruptedException {
-        String schedulerName = "foobar";
+        String schedulerName = ANY_EXECUTOR_NAME;
 
         ScheduledExecutorConfig sec = new ScheduledExecutorConfig()
                 .setName(schedulerName)
@@ -299,7 +301,7 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
         future.get();
 
         assertCapacityReached(service, key, "Maximum capacity (1) of tasks reached "
-                + "for partition (" + keyOwner + ") and scheduled executor (foobar).");
+                + "for partition (" + keyOwner + ") and scheduled executor (" + schedulerName + ").");
 
         instances[0].getLifecycleService().shutdown();
         waitAllForSafeState(instances[1]);
@@ -308,13 +310,13 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
         future = service.getScheduledFuture(future.getHandler());
 
         assertCapacityReached(service, key, "Maximum capacity (1) of tasks reached "
-                + "for partition (" + keyOwner + ") and scheduled executor (foobar).");
+                + "for partition (" + keyOwner + ") and scheduled executor (" + schedulerName + ").");
 
         future.dispose();
         service.scheduleOnKeyOwner(new PlainCallableTask(), key, 0, TimeUnit.SECONDS);
 
         assertCapacityReached(service, key, "Maximum capacity (1) of tasks reached "
-                + "for partition (" + keyOwner + ") and scheduled executor (foobar).");
+                + "for partition (" + keyOwner + ") and scheduled executor (" + schedulerName + ").");
     }
 
     /**
@@ -323,7 +325,7 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
     @Test
     public void capacity_whenPositiveLimit_afterDisposing_andReplicaPartitionPromotion()
             throws ExecutionException, InterruptedException {
-        String schedulerName = "foobar";
+        String schedulerName = ANY_EXECUTOR_NAME;
 
         ScheduledExecutorConfig sec = new ScheduledExecutorConfig()
                 .setName(schedulerName)
@@ -343,7 +345,7 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
         future.get();
 
         assertCapacityReached(service, key, "Maximum capacity (1) of tasks reached "
-                + "for partition (" + keyOwner + ") and scheduled executor (foobar).");
+                + "for partition (" + keyOwner + ") and scheduled executor (" + schedulerName + ").");
 
         instances[0].getLifecycleService().shutdown();
         waitAllForSafeState(instances[1]);
@@ -352,19 +354,19 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
         future = service.getScheduledFuture(future.getHandler());
 
         assertCapacityReached(service, key, "Maximum capacity (1) of tasks reached "
-                + "for partition (" + keyOwner + ") and scheduled executor (foobar).");
+                + "for partition (" + keyOwner + ") and scheduled executor (" + schedulerName + ").");
 
         future.dispose();
         service.scheduleOnKeyOwner(new PlainCallableTask(), key, 0, TimeUnit.SECONDS);
 
         assertCapacityReached(service, key, "Maximum capacity (1) of tasks reached "
-                + "for partition (" + keyOwner + ") and scheduled executor (foobar).");
+                + "for partition (" + keyOwner + ") and scheduled executor (" + schedulerName + ").");
     }
 
     @Test
     public void capacity_whenPositiveLimit_perNode_afterDisposing_andReplicaPartitionPromotion()
             throws ExecutionException, InterruptedException {
-        String schedulerName = "foobar";
+        String schedulerName = ANY_EXECUTOR_NAME;
 
         ScheduledExecutorConfig sec = new ScheduledExecutorConfig()
                 .setName(schedulerName)
@@ -383,7 +385,7 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
         future.get();
 
         assertCapacityReached(service, key, "Maximum capacity (1) of tasks reached for this "
-                + "member and scheduled executor (foobar).");
+                + "member and scheduled executor (" + schedulerName + ").");
 
         instances[0].getLifecycleService().shutdown();
         waitAllForSafeState(instances[1]);
@@ -392,19 +394,19 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
         future = service.getScheduledFuture(future.getHandler());
 
         assertCapacityReached(service, key, "Maximum capacity (1) of tasks reached for this "
-                + "member and scheduled executor (foobar).");
+                + "member and scheduled executor (" + schedulerName + ").");
 
         future.dispose();
         service.scheduleOnKeyOwner(new PlainCallableTask(), key, 0, TimeUnit.SECONDS);
 
         assertCapacityReached(service, key, "Maximum capacity (1) of tasks reached for this "
-                + "member and scheduled executor (foobar).");
+                + "member and scheduled executor (" + schedulerName + ").");
     }
 
     @Test
     public void capacity_whenPositiveLimit_completedTask_andFirstPromotionFails()
             throws ExecutionException, InterruptedException {
-        String schedulerName = "foobar";
+        String schedulerName = ANY_EXECUTOR_NAME;
 
         ScheduledExecutorConfig sec = new ScheduledExecutorConfig()
                 .setName(schedulerName)
@@ -426,7 +428,7 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
         future.get();
 
         assertCapacityReached(service, key, "Maximum capacity (1) of tasks reached "
-                + "for partition (" + keyOwner + ") and scheduled executor (foobar).");
+                + "for partition (" + keyOwner + ") and scheduled executor (" + schedulerName + ").");
 
         // Fail promotion
         DistributedScheduledExecutorService.FAIL_MIGRATIONS.set(true);
@@ -436,12 +438,12 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
 
         service = instances[1].getScheduledExecutorService(schedulerName);
         assertCapacityReached(service, key, "Maximum capacity (1) of tasks reached "
-                + "for partition (" + keyOwner + ") and scheduled executor (foobar).");
+                + "for partition (" + keyOwner + ") and scheduled executor (" + schedulerName + ").");
     }
 
     @Test
     public void capacity_whenPositiveLimit_pendingTask_andFirstPromotionFails() {
-        String schedulerName = "foobar";
+        String schedulerName = ANY_EXECUTOR_NAME;
 
         ScheduledExecutorConfig sec = new ScheduledExecutorConfig()
                 .setName(schedulerName)
@@ -463,7 +465,7 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
         future.getStats();
 
         assertCapacityReached(service, key, "Maximum capacity (1) of tasks reached "
-                + "for partition (" + keyOwner + ") and scheduled executor (foobar).");
+                + "for partition (" + keyOwner + ") and scheduled executor (" + schedulerName + ").");
 
         // Fail promotion
         DistributedScheduledExecutorService.FAIL_MIGRATIONS.set(true);
@@ -473,13 +475,13 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
 
         service = instances[1].getScheduledExecutorService(schedulerName);
         assertCapacityReached(service, key, "Maximum capacity (1) of tasks reached "
-                + "for partition (" + keyOwner + ") and scheduled executor (foobar).");
+                + "for partition (" + keyOwner + ") and scheduled executor (" + schedulerName + ").");
     }
 
     @Test
     public void capacity_whenPositiveLimit_onMember_andMigration()
             throws ExecutionException, InterruptedException {
-        String schedulerName = "foobar";
+        String schedulerName = ANY_EXECUTOR_NAME;
 
         ScheduledExecutorConfig sec = new ScheduledExecutorConfig()
                 .setName(schedulerName)
@@ -516,7 +518,7 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
         // Scheduling on different partition on Node A should be rejected
         key = generateKeyOwnedBy(instances[0]);
         assertCapacityReached(serviceA, key, "Maximum capacity (3) of tasks reached "
-                        + "for this member and scheduled executor (foobar).");
+                        + "for this member and scheduled executor (" + schedulerName + ").");
 
         instances[0].getLifecycleService().shutdown();
         waitAllForSafeState(instances[1]);
@@ -529,22 +531,22 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
         futureAC = serviceB.getScheduledFuture(futureAC.getHandler());
 
         assertCapacityReached(serviceB, null, "Maximum capacity (3) of tasks reached "
-                + "for this member and scheduled executor (foobar).");
+                + "for this member and scheduled executor (" + schedulerName + ").");
 
         // Disposing node's A tasks will be enough to schedule ONE more,
         // since Node B was already holding 2 tasks before the migration
         futureAA.dispose();
         assertCapacityReached(serviceB, null, "Maximum capacity (3) of tasks reached "
-                + "for this member and scheduled executor (foobar).");
+                + "for this member and scheduled executor (" + schedulerName + ").");
         futureAB.dispose();
         assertCapacityReached(serviceB, null, "Maximum capacity (3) of tasks reached "
-                + "for this member and scheduled executor (foobar).");
+                + "for this member and scheduled executor (" + schedulerName + ").");
         futureAC.dispose();
 
         // Now we should be able to schedule again ONE more
         IScheduledFuture futureBC = serviceB.scheduleOnKeyOwner(new PlainCallableTask(), key, 0, TimeUnit.SECONDS);
         assertCapacityReached(serviceB, null, "Maximum capacity (3) of tasks reached "
-                + "for this member and scheduled executor (foobar).");
+                + "for this member and scheduled executor (" + schedulerName + ").");
         futureBA.dispose();
         futureBB.dispose();
         futureBC.dispose();
@@ -554,12 +556,12 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
         serviceB.scheduleOnKeyOwner(new PlainCallableTask(), key, 0, TimeUnit.SECONDS);
         serviceB.scheduleOnKeyOwner(new PlainCallableTask(), key, 0, TimeUnit.SECONDS);
         assertCapacityReached(serviceB, null, "Maximum capacity (3) of tasks reached "
-                + "for this member and scheduled executor (foobar).");
+                + "for this member and scheduled executor (" + schedulerName + ").");
     }
 
     @Test
     public void capacity_whenAutoDisposable() throws Exception {
-        String schedulerName = "foobar";
+        String schedulerName = ANY_EXECUTOR_NAME;
         int capacity = 10;
 
         ScheduledExecutorConfig sec = new ScheduledExecutorConfig()
@@ -607,7 +609,7 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
 
     @Test
     public void capacity_onMember_whenPositiveLimit() {
-        String schedulerName = "foobar";
+        String schedulerName = ANY_EXECUTOR_NAME;
 
         ScheduledExecutorConfig sec = new ScheduledExecutorConfig()
                 .setName(schedulerName)
@@ -631,7 +633,7 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
             fail("Should have been rejected.");
         } catch (RejectedExecutionException ex) {
             assertEquals("Got wrong RejectedExecutionException",
-                    "Maximum capacity (10) of tasks reached for this member and scheduled executor (foobar). "
+                    "Maximum capacity (10) of tasks reached for this member and scheduled executor (" + schedulerName + "). "
                             + "Reminder, that tasks must be disposed if not needed.", ex.getMessage());
         }
 
@@ -650,14 +652,14 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
             fail("Should have been rejected.");
         } catch (RejectedExecutionException ex) {
             assertEquals("Got wrong RejectedExecutionException",
-                    "Maximum capacity (10) of tasks reached for this member and scheduled executor (foobar). "
+                    "Maximum capacity (10) of tasks reached for this member and scheduled executor (" + schedulerName + "). "
                             + "Reminder, that tasks must be disposed if not needed.", ex.getMessage());
         }
     }
 
     @Test
     public void capacity_onMember_whenPositiveLimit_perPartition_shouldNotReject() {
-        String schedulerName = "foobar";
+        String schedulerName = ANY_EXECUTOR_NAME;
 
         ScheduledExecutorConfig sec = new ScheduledExecutorConfig()
                 .setName(schedulerName)
@@ -683,7 +685,7 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
     @Test
     public void handlerTaskAndSchedulerNames_withCallable() throws Exception {
         int delay = 0;
-        String schedulerName = "s";
+        String schedulerName = ANY_EXECUTOR_NAME;
         String taskName = "TestCallable";
 
         HazelcastInstance[] instances = createClusterWithCount(2);
@@ -700,7 +702,7 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
     @Test
     public void handlerTaskAndSchedulerNames_withRunnable() {
         int delay = 0;
-        String schedulerName = "s";
+        String schedulerName = ANY_EXECUTOR_NAME;
         String taskName = "TestRunnable";
 
         HazelcastInstance[] instances = createClusterWithCount(2);
@@ -725,7 +727,7 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
 
         HazelcastInstance[] instances = createClusterWithCount(2);
         Object key = generateKeyOwnedBy(instances[1]);
-        IScheduledExecutorService executorService = getScheduledExecutor(instances, "s");
+        IScheduledExecutorService executorService = getScheduledExecutor(instances, ANY_EXECUTOR_NAME);
         IScheduledFuture<Double> future = executorService.scheduleOnKeyOwner(new PlainCallableTask(), key, (int) delay, SECONDS);
 
         future.get();
@@ -744,7 +746,7 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
 
         HazelcastInstance[] instances = createClusterWithCount(2);
         Member localMember = instances[0].getCluster().getLocalMember();
-        IScheduledExecutorService executorService = getScheduledExecutor(instances, "s");
+        IScheduledExecutorService executorService = getScheduledExecutor(instances, ANY_EXECUTOR_NAME);
         IScheduledFuture<Double> future = executorService.scheduleOnMember(
                 new PlainCallableTask(), localMember, (int) delay, SECONDS);
 
@@ -764,7 +766,7 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
         double expectedResult = 25.0;
 
         HazelcastInstance[] instances = createClusterWithCount(2);
-        IScheduledExecutorService executorService = getScheduledExecutor(instances, "s");
+        IScheduledExecutorService executorService = getScheduledExecutor(instances, ANY_EXECUTOR_NAME);
         IScheduledFuture<Double> future = executorService.schedule(new PlainCallableTask(), delay, SECONDS);
 
         double result = future.get();
@@ -782,7 +784,7 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
         HazelcastInstance[] instances = createClusterWithCount(2);
         String key = generateKeyOwnedBy(instances[1]);
 
-        IScheduledExecutorService executorService = getScheduledExecutor(instances, "s");
+        IScheduledExecutorService executorService = getScheduledExecutor(instances, ANY_EXECUTOR_NAME);
         IScheduledFuture<Double> future = executorService.scheduleOnKeyOwner(new PlainCallableTask(), key, delay, SECONDS);
 
         double resultFromOriginalTask = future.get();
@@ -813,7 +815,7 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
 
         IAtomicLong runEntryCounter = instances[1].getCPSubsystem().getAtomicLong("runEntryCounterName");
 
-        IScheduledExecutorService executorService = getScheduledExecutor(instances, "s");
+        IScheduledExecutorService executorService = getScheduledExecutor(instances, ANY_EXECUTOR_NAME);
         executorService.scheduleOnKeyOwner(new ICountdownLatchMapIncrementCallableTask("map",
                 "runEntryCounterName", "startedLatch", "finishedLatch", "waitAfterStartLatch"), key, 0, SECONDS);
 
@@ -840,7 +842,7 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
         ICountDownLatch doneCountLatch = instances[0].getCPSubsystem().getCountDownLatch("doneCountLatchName");
         doneCountLatch.trySetCount(1);
 
-        IScheduledExecutorService executorService = getScheduledExecutor(instances, "s");
+        IScheduledExecutorService executorService = getScheduledExecutor(instances, ANY_EXECUTOR_NAME);
         IScheduledFuture<Double> future = executorService.schedule(
                 new ICountdownLatchCallableTask(initCountLatch.getName(), waitCountLatch.getName(), doneCountLatch.getName()),
                 delay, SECONDS);
@@ -862,7 +864,7 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
         double expectedResult = 25.0;
 
         HazelcastInstance[] instances = createClusterWithCount(2);
-        IScheduledExecutorService executorService = getScheduledExecutor(instances, "s");
+        IScheduledExecutorService executorService = getScheduledExecutor(instances, ANY_EXECUTOR_NAME);
         IScheduledFuture<Double> future = executorService.schedule(new PlainCallableTask(), delay, SECONDS);
 
         double result = future.get();
@@ -878,7 +880,7 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
         String taskName = "Test";
 
         HazelcastInstance[] instances = createClusterWithCount(2);
-        IScheduledExecutorService executorService = getScheduledExecutor(instances, "s");
+        IScheduledExecutorService executorService = getScheduledExecutor(instances, ANY_EXECUTOR_NAME);
         executorService.schedule(named(taskName, new PlainCallableTask()), delay, SECONDS);
 
         executorService.schedule(named(taskName, new PlainCallableTask()), delay, SECONDS);
@@ -890,7 +892,7 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
         String taskName = "Test";
 
         HazelcastInstance[] instances = createClusterWithCount(2);
-        IScheduledExecutorService executorService = getScheduledExecutor(instances, "s");
+        IScheduledExecutorService executorService = getScheduledExecutor(instances, ANY_EXECUTOR_NAME);
         IScheduledFuture<Double> first = executorService.schedule(named(taskName, new PlainCallableTask()), delay, MINUTES);
 
         first.cancel(true);
@@ -902,7 +904,7 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
         String taskName = "Test";
 
         HazelcastInstance[] instances = createClusterWithCount(2);
-        IScheduledExecutorService executorService = getScheduledExecutor(instances, "s");
+        IScheduledExecutorService executorService = getScheduledExecutor(instances, ANY_EXECUTOR_NAME);
         IScheduledFuture<Double> first = executorService.schedule(named(taskName, new PlainCallableTask()), delay, MINUTES);
 
         first.cancel(false);
@@ -912,7 +914,7 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
     @Test
     public void schedule_whenAutoDisposable_thenGet() throws Exception {
         HazelcastInstance[] instances = createClusterWithCount(2);
-        IScheduledExecutorService executorService = getScheduledExecutor(instances, "s");
+        IScheduledExecutorService executorService = getScheduledExecutor(instances, ANY_EXECUTOR_NAME);
 
         IScheduledFuture<Double> future = executorService.schedule(autoDisposable(new PlainCallableTask()), 1, SECONDS);
 
@@ -924,7 +926,7 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
     public void scheduleOnMember_whenAutoDisposable_thenGet() throws Exception {
         HazelcastInstance[] instances = createClusterWithCount(2);
         Member localMember = instances[0].getCluster().getLocalMember();
-        IScheduledExecutorService executorService = getScheduledExecutor(instances, "s");
+        IScheduledExecutorService executorService = getScheduledExecutor(instances, ANY_EXECUTOR_NAME);
 
         IScheduledFuture<Double> future = executorService.scheduleOnMember(
                 autoDisposable(new PlainCallableTask()), localMember, 1, SECONDS);
@@ -935,7 +937,7 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
     @Test
     public void scheduleOnKeyOwner_whenAutoDisposable_thenGet() throws Exception {
         HazelcastInstance[] instances = createClusterWithCount(2);
-        IScheduledExecutorService executorService = getScheduledExecutor(instances, "s");
+        IScheduledExecutorService executorService = getScheduledExecutor(instances, ANY_EXECUTOR_NAME);
         String key = generateKeyOwnedBy(instances[1]);
 
         IScheduledFuture<Double> future = executorService.scheduleOnKeyOwner(autoDisposable(new PlainCallableTask()), key, 1, SECONDS);
@@ -961,7 +963,7 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
         String taskName = "Test";
 
         HazelcastInstance[] instances = createClusterWithCount(2);
-        IScheduledExecutorService executorService = getScheduledExecutor(instances, "s");
+        IScheduledExecutorService executorService = getScheduledExecutor(instances, ANY_EXECUTOR_NAME);
         IScheduledFuture<Double> first = executorService.schedule(named(taskName, new PlainCallableTask()), delay, MINUTES);
 
         first.get(2, TimeUnit.SECONDS);
@@ -973,7 +975,7 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
         String taskName = "Test";
 
         HazelcastInstance[] instances = createClusterWithCount(2);
-        IScheduledExecutorService executorService = getScheduledExecutor(instances, "s");
+        IScheduledExecutorService executorService = getScheduledExecutor(instances, ANY_EXECUTOR_NAME);
         IScheduledFuture<Double> first = executorService.schedule(named(taskName, new PlainCallableTask()), delay, MINUTES);
 
         assertEquals(19, first.getDelay(MINUTES));
@@ -987,7 +989,7 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
         HazelcastInstance[] instances = createClusterWithCount(2);
         Object key = generateKeyOwnedBy(instances[1]);
 
-        IScheduledExecutorService executorService = getScheduledExecutor(instances, "s");
+        IScheduledExecutorService executorService = getScheduledExecutor(instances, ANY_EXECUTOR_NAME);
         IScheduledFuture<Double> first = executorService.scheduleOnKeyOwner(
                 named(taskName, new PlainCallableTask()), key, delay, MINUTES);
 
@@ -1002,7 +1004,7 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
         HazelcastInstance[] instances = createClusterWithCount(2);
         Member localMember = instances[0].getCluster().getLocalMember();
 
-        IScheduledExecutorService executorService = getScheduledExecutor(instances, "s");
+        IScheduledExecutorService executorService = getScheduledExecutor(instances, ANY_EXECUTOR_NAME);
         IScheduledFuture<Double> first = executorService.scheduleOnMember(
                 named(taskName, new PlainCallableTask()), localMember, delay, MINUTES);
 
@@ -1016,7 +1018,7 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
         ICountDownLatch latch = instances[0].getCPSubsystem().getCountDownLatch("latch");
         latch.trySetCount(1);
 
-        IScheduledExecutorService executorService = getScheduledExecutor(instances, "s");
+        IScheduledExecutorService executorService = getScheduledExecutor(instances, ANY_EXECUTOR_NAME);
         IScheduledFuture future = executorService.scheduleAtFixedRate(new ICountdownLatchRunnableTask("latch"), 1, 1, SECONDS);
 
         sleepSeconds(5);
@@ -1038,7 +1040,7 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
         ICountDownLatch latch = instances[0].getCPSubsystem().getCountDownLatch("latch");
         latch.trySetCount(1);
 
-        IScheduledExecutorService executorService = getScheduledExecutor(instances, "s");
+        IScheduledExecutorService executorService = getScheduledExecutor(instances, ANY_EXECUTOR_NAME);
         IScheduledFuture future = executorService.scheduleOnMemberAtFixedRate(
                 new ICountdownLatchRunnableTask("latch"), localMember, 1, 1, SECONDS);
 
@@ -1061,7 +1063,7 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
         ICountDownLatch latch = instances[0].getCPSubsystem().getCountDownLatch("latch");
         latch.trySetCount(1);
 
-        IScheduledExecutorService executorService = getScheduledExecutor(instances, "s");
+        IScheduledExecutorService executorService = getScheduledExecutor(instances, ANY_EXECUTOR_NAME);
         IScheduledFuture future = executorService.scheduleOnKeyOwnerAtFixedRate(
                 new ICountdownLatchRunnableTask("latch"), key, 0, 1, SECONDS);
 
@@ -1085,7 +1087,7 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
     public void schedule_compareTo() {
         HazelcastInstance[] instances = createClusterWithCount(2);
 
-        IScheduledExecutorService executorService = getScheduledExecutor(instances, "s");
+        IScheduledExecutorService executorService = getScheduledExecutor(instances, ANY_EXECUTOR_NAME);
         IScheduledFuture<Double> first = executorService.schedule(new PlainCallableTask(), 1, MINUTES);
         IScheduledFuture<Double> second = executorService.schedule(new PlainCallableTask(), 2, MINUTES);
 
@@ -1098,7 +1100,7 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
         String taskName = "Test";
 
         HazelcastInstance[] instances = createClusterWithCount(2);
-        IScheduledExecutorService executorService = getScheduledExecutor(instances, "s");
+        IScheduledExecutorService executorService = getScheduledExecutor(instances, ANY_EXECUTOR_NAME);
         IScheduledFuture<Double> first = executorService.schedule(named(taskName, new PlainCallableTask()), delay, SECONDS);
 
         first.dispose();
@@ -1112,7 +1114,7 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
 
         HazelcastInstance[] instances = createClusterWithCount(2);
         Member localMember = instances[0].getCluster().getLocalMember();
-        IScheduledExecutorService executorService = getScheduledExecutor(instances, "s");
+        IScheduledExecutorService executorService = getScheduledExecutor(instances, ANY_EXECUTOR_NAME);
         IScheduledFuture<Double> first = executorService.scheduleOnMember(
                 named(taskName, new PlainCallableTask()), localMember, delay, SECONDS);
 
@@ -1125,7 +1127,7 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
         int delay = 1;
 
         HazelcastInstance[] instances = createClusterWithCount(2);
-        IScheduledExecutorService executorService = getScheduledExecutor(instances, "s");
+        IScheduledExecutorService executorService = getScheduledExecutor(instances, ANY_EXECUTOR_NAME);
         executorService.schedule(new PlainCallableTask(), delay, SECONDS);
         executorService.shutdown();
 
@@ -1136,7 +1138,7 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
         int delay = 1;
 
         HazelcastInstance[] instances = createClusterWithCount(1);
-        IScheduledExecutorService executorService = getScheduledExecutor(instances, "s");
+        IScheduledExecutorService executorService = getScheduledExecutor(instances, ANY_EXECUTOR_NAME);
         final IScheduledFuture future = executorService.schedule(new PlainCallableTask(), delay, SECONDS);
 
         // Used to make sure both futures (on the same handler) get the event.
@@ -1185,7 +1187,7 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
         HazelcastInstance[] instances = createClusterWithCount(2);
         Member member = instances[1].getCluster().getLocalMember();
 
-        IScheduledExecutorService executorService = getScheduledExecutor(instances, "s");
+        IScheduledExecutorService executorService = getScheduledExecutor(instances, ANY_EXECUTOR_NAME);
         final IScheduledFuture future = executorService.scheduleOnMember(new PlainCallableTask(), member, delay, SECONDS);
 
         instances[1].getLifecycleService().terminate();
@@ -1210,7 +1212,7 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
         String taskName = "Test";
 
         HazelcastInstance[] instances = createClusterWithCount(2);
-        IScheduledExecutorService executorService = getScheduledExecutor(instances, "s");
+        IScheduledExecutorService executorService = getScheduledExecutor(instances, ANY_EXECUTOR_NAME);
         IScheduledFuture<Double> first = executorService.schedule(named(taskName, new PlainCallableTask()), delay, SECONDS);
 
         ScheduledTaskHandler handler = first.getHandler();
@@ -1226,7 +1228,7 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
         int delay = 1;
 
         HazelcastInstance[] instances = createClusterWithCount(2);
-        IScheduledExecutorService executorService = getScheduledExecutor(instances, "s");
+        IScheduledExecutorService executorService = getScheduledExecutor(instances, ANY_EXECUTOR_NAME);
         Callable<Double> task = new PlainPartitionAwareCallableTask();
         IScheduledFuture<Double> first = executorService.schedule(task, delay, SECONDS);
 
@@ -1245,7 +1247,7 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
         ICountDownLatch completionLatch = instances[0].getCPSubsystem().getCountDownLatch(completionLatchName);
         completionLatch.trySetCount(1);
 
-        IScheduledExecutorService executorService = getScheduledExecutor(instances, "s");
+        IScheduledExecutorService executorService = getScheduledExecutor(instances, ANY_EXECUTOR_NAME);
         Runnable task = new PlainPartitionAwareRunnableTask(completionLatchName);
         IScheduledFuture first = executorService.schedule(task, delay, SECONDS);
 
@@ -1259,7 +1261,7 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
     @Test
     public void schedule_withStatefulRunnable() {
         HazelcastInstance[] instances = createClusterWithCount(4);
-        IScheduledExecutorService executorService = getScheduledExecutor(instances, "s");
+        IScheduledExecutorService executorService = getScheduledExecutor(instances, ANY_EXECUTOR_NAME);
 
         ICountDownLatch latch = instances[0].getCPSubsystem().getCountDownLatch("latch");
         latch.trySetCount(1);
@@ -1275,7 +1277,7 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
         ICountDownLatch latch = instances[0].getCPSubsystem().getCountDownLatch("latch");
         latch.trySetCount(1);
 
-        IScheduledExecutorService s = getScheduledExecutor(instances, "s");
+        IScheduledExecutorService s = getScheduledExecutor(instances, ANY_EXECUTOR_NAME);
         s.schedule(TaskUtils.named("blah", new PlainInstanceAwareRunnableTask("latch")), 1, TimeUnit.SECONDS);
 
         assertOpenEventually(latch);
@@ -1289,7 +1291,7 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
         latch.trySetCount(1);
 
         MemberImpl member = getNodeEngineImpl(instances[1]).getLocalMember();
-        IScheduledExecutorService s = getScheduledExecutor(instances, "s");
+        IScheduledExecutorService s = getScheduledExecutor(instances, ANY_EXECUTOR_NAME);
         s.scheduleOnMember(TaskUtils.named("blah", new PlainInstanceAwareRunnableTask("latch")), member, 1, TimeUnit.SECONDS);
 
         assertOpenEventually(latch);
@@ -1300,7 +1302,7 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
     public void scheduleWithRepetition() {
         HazelcastInstance[] instances = createClusterWithCount(2);
 
-        IScheduledExecutorService s = getScheduledExecutor(instances, "s");
+        IScheduledExecutorService s = getScheduledExecutor(instances, ANY_EXECUTOR_NAME);
 
         ICountDownLatch latch = instances[0].getCPSubsystem().getCountDownLatch("latch");
         latch.trySetCount(3);
@@ -1318,7 +1320,7 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
         int delay = 1;
 
         HazelcastInstance[] instances = createClusterWithCount(2);
-        IScheduledExecutorService executorService = getScheduledExecutor(instances, "s");
+        IScheduledExecutorService executorService = getScheduledExecutor(instances, ANY_EXECUTOR_NAME);
 
         MemberImpl member = getNodeEngineImpl(instances[0]).getLocalMember();
         IScheduledFuture<Double> future = executorService.scheduleOnMember(new PlainCallableTask(), member, delay, SECONDS);
@@ -1330,7 +1332,7 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
     @Test
     public void scheduleOnMemberWithRepetition() {
         HazelcastInstance[] instances = createClusterWithCount(4);
-        IScheduledExecutorService s = getScheduledExecutor(instances, "s");
+        IScheduledExecutorService s = getScheduledExecutor(instances, ANY_EXECUTOR_NAME);
 
         ICountDownLatch latch = instances[0].getCPSubsystem().getCountDownLatch("latch");
         latch.trySetCount(4);
@@ -1347,7 +1349,7 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
     @Test
     public void scheduleOnKeyOwner_thenGet() throws Exception {
         HazelcastInstance[] instances = createClusterWithCount(2);
-        IScheduledExecutorService executorService = getScheduledExecutor(instances, "s");
+        IScheduledExecutorService executorService = getScheduledExecutor(instances, ANY_EXECUTOR_NAME);
         String key = generateKeyOwnedBy(instances[1]);
 
         IScheduledFuture<Double> future = executorService.scheduleOnKeyOwner(new PlainCallableTask(), key, 2, SECONDS);
@@ -1360,7 +1362,7 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
         HazelcastInstance[] instances = createClusterWithCount(2);
 
         String key = generateKeyOwnedBy(instances[0]);
-        IScheduledExecutorService s = getScheduledExecutor(instances, "s");
+        IScheduledExecutorService s = getScheduledExecutor(instances, ANY_EXECUTOR_NAME);
 
         ICountDownLatch latch = instances[0].getCPSubsystem().getCountDownLatch("latch");
         latch.trySetCount(1);
@@ -1374,7 +1376,7 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
         HazelcastInstance[] instances = createClusterWithCount(2);
 
         String key = generateKeyOwnedBy(instances[1]);
-        IScheduledExecutorService s = getScheduledExecutor(instances, "s");
+        IScheduledExecutorService s = getScheduledExecutor(instances, ANY_EXECUTOR_NAME);
 
         ICountDownLatch latch = instances[0].getCPSubsystem().getCountDownLatch("latch");
         latch.trySetCount(1);
@@ -1392,7 +1394,7 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
         String key = "TestKey";
 
         HazelcastInstance[] instances = createClusterWithCount(2);
-        IScheduledExecutorService executorService = getScheduledExecutor(instances, "s");
+        IScheduledExecutorService executorService = getScheduledExecutor(instances, ANY_EXECUTOR_NAME);
         Callable<Double> task = new PlainPartitionAwareCallableTask();
         IScheduledFuture<Double> first = executorService.scheduleOnKeyOwner(task, key, delay, SECONDS);
 
@@ -1409,7 +1411,7 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
         String key = "TestKey";
 
         HazelcastInstance[] instances = createClusterWithCount(2);
-        IScheduledExecutorService executorService = getScheduledExecutor(instances, "s");
+        IScheduledExecutorService executorService = getScheduledExecutor(instances, ANY_EXECUTOR_NAME);
 
         ICountDownLatch latch = instances[0].getCPSubsystem().getCountDownLatch("latch");
         latch.trySetCount(5);
@@ -1429,24 +1431,43 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
     }
 
     @Test
-    public void getScheduled() {
+    public void getScheduled_whenTaskDecoratedWithNamedTask() {
         int delay = 1;
         String taskName = "Test";
+        PlainCallableTask task = new PlainCallableTask();
 
         HazelcastInstance[] instances = createClusterWithCount(2);
-        IScheduledExecutorService executorService = getScheduledExecutor(instances, "s");
-        IScheduledFuture<Double> first = executorService.schedule(named(taskName, new PlainCallableTask()), delay, SECONDS);
+        IScheduledExecutorService executorService = getScheduledExecutor(instances, ANY_EXECUTOR_NAME);
+        IScheduledFuture<Double> first = executorService.schedule(named(taskName, task), delay, SECONDS);
 
         ScheduledTaskHandler handler = first.getHandler();
         IScheduledFuture<Double> copy = executorService.getScheduledFuture(handler);
 
         assertEquals(first.getHandler(), copy.getHandler());
+        assertEquals(copy.getHandler().getTaskName(), taskName);
+    }
+
+    @Test
+    public void getScheduled_whenTaskImplementingNamedTask() {
+        int delay = 1;
+        String taskName = NamedCallable.NAME;
+        NamedCallable task = new NamedCallable();
+
+        HazelcastInstance[] instances = createClusterWithCount(2);
+        IScheduledExecutorService executorService = getScheduledExecutor(instances, ANY_EXECUTOR_NAME);
+        IScheduledFuture<Boolean> first = executorService.schedule(task, delay, SECONDS);
+
+        ScheduledTaskHandler handler = first.getHandler();
+        IScheduledFuture<Double> copy = executorService.getScheduledFuture(handler);
+
+        assertEquals(first.getHandler(), copy.getHandler());
+        assertEquals(copy.getHandler().getTaskName(), taskName);
     }
 
     @Test
     public void scheduleOnAllMembers_getAllScheduled() throws Exception {
         HazelcastInstance[] instances = createClusterWithCount(3);
-        IScheduledExecutorService s = getScheduledExecutor(instances, "s");
+        IScheduledExecutorService s = getScheduledExecutor(instances, ANY_EXECUTOR_NAME);
         s.scheduleOnAllMembers(new PlainCallableTask(), 0, SECONDS);
 
         Set<Member> members = instances[0].getCluster().getMembers();
@@ -1463,7 +1484,7 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
     @Test
     public void scheduleRandomPartitions_getAllScheduled() throws Exception {
         HazelcastInstance[] instances = createClusterWithCount(2);
-        IScheduledExecutorService s = getScheduledExecutor(instances, "s");
+        IScheduledExecutorService s = getScheduledExecutor(instances, ANY_EXECUTOR_NAME);
 
         int expectedTotal = 11;
         IScheduledFuture[] futures = new IScheduledFuture[expectedTotal];
@@ -1494,7 +1515,7 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
         HazelcastInstance[] instances = createClusterWithCount(2);
 
         String key = generateKeyOwnedBy(instances[1]);
-        IScheduledExecutorService executorService = getScheduledExecutor(instances, "s");
+        IScheduledExecutorService executorService = getScheduledExecutor(instances, ANY_EXECUTOR_NAME);
         ICountDownLatch latch = instances[1].getCPSubsystem().getCountDownLatch(completionLatchName);
         latch.trySetCount(1);
 
@@ -1516,7 +1537,7 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
         HazelcastInstance[] instances = createClusterWithCount(2);
 
         String key = generateKeyOwnedBy(instances[1]);
-        IScheduledExecutorService executorService = getScheduledExecutor(instances, "s");
+        IScheduledExecutorService executorService = getScheduledExecutor(instances, ANY_EXECUTOR_NAME);
         ICountDownLatch latch = instances[1].getCPSubsystem().getCountDownLatch(completionLatchName);
         latch.trySetCount(1);
 
@@ -1535,7 +1556,7 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
     @Test
     public void managedContext_whenLocalExecution() {
         HazelcastInstance instance = createHazelcastInstance();
-        IScheduledExecutorService s = instance.getScheduledExecutorService("s");
+        IScheduledExecutorService s = instance.getScheduledExecutorService(ANY_EXECUTOR_NAME);
         s.schedule(new PlainCallableTask(), 0, SECONDS);
     }
 }
