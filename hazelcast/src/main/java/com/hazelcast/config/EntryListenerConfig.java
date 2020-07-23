@@ -58,7 +58,7 @@ public class EntryListenerConfig extends ListenerConfig {
     }
 
     @Override
-    public ListenerConfig setImplementation(EventListener implementation) {
+    public EntryListenerConfig setImplementation(EventListener implementation) {
         checkInstanceOf(MapListener.class, isNotNull(implementation, "implementation"));
         super.setImplementation(implementation);
         return this;
