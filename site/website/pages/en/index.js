@@ -30,8 +30,7 @@ class HomeSplash extends React.Component {
     const ProjectTitle = props => (
       <h2 className="projectTitle">
         Use Your Data Instantly At Scale
-        <small>Hazelcast Jet is a distributed computing platform that serves and processes massive amounts of
-           live data with consistent low latency.
+        <small>Hazelcast Jet is a distributed stream processing system that can do stateful computations over massive amounts of data with consistent low latency.
         </small>
       </h2>
     );
@@ -88,7 +87,7 @@ class Index extends React.Component {
     );
 
     const Features = () => (
-      <Block layout="fourColumn"  align='center'>
+      <Block layout="twoColumn"  align='center'>
         {[
            {
             title: 'Build Data Pipelines That Scale',
@@ -96,18 +95,24 @@ class Index extends React.Component {
             imageAlign: 'top',
             content: 'Jet consumes and analyzes millions of events per second'
             + ' or terabytes of data at rest using a <a href="/docs/api/pipeline">unified API</a>. '
-            + 'Jet keeps processing data <a href="/docs/architecture/fault-tolerance">without loss</a> even '
-            + ' when a node fails. You can add nodes to a live cluster, and they immediately start'
+            + 'Jet keeps processing data <a href="/docs/architecture/fault-tolerance">without loss</a>' 
+            + ' when a node fails, using a replicated <a href="/docs/architecture/in-memory-storage">in-memory data store</a>. '
+            + '  You can add nodes to a live cluster, and they immediately start'
             + ' sharing the computation load.'
 
           },
           {
-            title: 'Granular and Fast Access to Data',
+            title: 'Process Data from Multiple Systems',
             image: `${baseUrl}img/database.svg`,
             imageAlign: 'top',
-            content: 'Jet stores computational state in <a href="/docs/api/data-structures">fault-tolerant, '
-             + 'distributed in-memory storage</a>, allowing thousands of concurrent users granular '
-             + 'and fast access to your data without breaking a sweat.'
+            content: 'Jet provides source and sink connectors for '
+             + '<a href="/docs/api/sources-sinks#files">text files, Avro, JSON, Parquet</a>, ' 
+             + '<a href="/docs/tutorials/kafka">Apache Kafka</a>, '
+             + '<a href="/docs/api/sources-sinks#apache-pulsar">Apache Pulsar</a>, '
+             + '<a href="/docs/api/sources-sinks#elasticsearch">ElasticSearch</a>, '
+             + '<a href="/docs/api/sources-sinks#jdbc">relational databases</a> including <a href="/docs/tutorials/cdc">change data capture</a>, ' 
+             + '<a href="/docs/api/sources-sinks#hadoop-inputformatoutputformat">Hadoop, Amazon S3, Azure Data Lake</a>'
+             + ' and many more. You can read from one and write to another, or aggregate and join the data in-flight.'
           },
           {
             title: 'Sub 10ms Latency at the 99.99th Percentile',
@@ -142,26 +147,28 @@ class Index extends React.Component {
         <Block id="data-layer" background="dark">
         {[
           {
-            title: 'Serve Operational Data for Applications, Fast',
+            title: 'Streaming and Batch Analytics',
             image: `${baseUrl}img/layers2.svg`,
             imageAlign: 'left',
-            content: ' Ingest data from a <a href="/docs/tutorials/cdc">relational database</a>,'
-            + ' <a href="docs/api/sources-sinks#hadoop-inputformatoutputformat">Hadoop, Amazon S3, Google Cloud Storage, Azure Data Lake</a> and more,'
-            + ' combine it with real-time sources '
-            + ' and serve through thousands of concurrent low-latency queries and fine-grained, key-based access.'
+            content: ' Ingest data from a wide-variety of batch and streaming <a href="/docs/api/sources-sinks">data sources</a>, '
+            + ' perform <a href="docs/api/stateless-transforms">transforms</a> and <a href="docs/api/stateful-transforms">stateful computations</a> ' 
+            +  ' on it, and write the results to the <a href="/docs/api/sources-sinks">destination</a> of choice. You can also '
+            + ' cache the result set <a href="/docs/api/data-structures">in-memory</a> '
+            + ' and serve it directly through thousands of concurrent low-latency queries and fine-grained, key-based access.'
           },
         ]}
       </Block>
       <Block id="real-time" background="dark">
       {[
         {
-          title: 'React Instantly To Real-Time Data At Scale',
+          title: 'React To Real-Time Events',
           image: `${baseUrl}img/electricity.svg`,
           imageAlign: 'right',
-          content: 'You can instantly react to real-time events with Jet, querying, enriching and applying inference at scale. A single node is capable of <a href="/docs/tutorials/windowing">windowing and aggregating</a> '
+          content: 'You can instantly react to real-time events with Jet, enriching and applying inference at scale. A single node is capable of <a href="/docs/tutorials/windowing">windowing and aggregating</a> '
           + '100Hz sensor data from 100,000 devices with '
           + '  <a href="blog/2020/06/23/jdk-gc-benchmarks-rematch">latencies below 10 milliseconds</a>: that\'s 10 million events/second. Jet works'
-          + ' with many streaming data sources such as <a href="docs/tutorials/kafka">Apache Kafka</a>, Apache Pulsar, or message brokers such as RabbitMQ.'
+          + ' with many streaming data sources such as <a href="/docs/tutorials/kafka">Apache Kafka</a>, <a href="/docs/tutorials/pulsar">Apache Pulsar</a>'
+          + ', or message brokers such as RabbitMQ.'
         },
       ]}
       </Block>
