@@ -16,7 +16,6 @@
 
 package com.hazelcast.sql.impl.expression;
 
-import com.hazelcast.sql.SqlService;
 import com.hazelcast.sql.impl.SqlDataSerializerHook;
 import com.hazelcast.sql.impl.row.HeapRow;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -35,15 +34,6 @@ import static org.junit.Assert.assertSame;
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class ColumnTest extends ExpressionTestBase {
-
-    @Test
-    public void testEndToEnd() {
-        SqlService sql = createEndToEndRecords();
-        assertRows(query(sql, "select __key from records"), keyRange(0, 1000, 5000, 6000));
-        assertRows(query(sql, "select \"__key\", string1 from records"), keyRange(0, 1000, 5000, 6000),
-                k -> k == 5000 || k == 6000 ? null : "str" + k);
-        assertQueryThrows(sql, "select missingColumn * 100500 from records", "not found in any table");
-    }
 
     @Test
     public void verify() {

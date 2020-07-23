@@ -38,47 +38,47 @@ public class LiteralEndToEndTest extends ExpressionEndToEndTestBase {
 
     @Test
     public void testValid() {
-        assertRow("0", TINYINT, (byte) 0);
-        assertRow("-0", TINYINT, (byte) 0);
-        assertRow("000", TINYINT, (byte) 0);
-        assertRow("1", TINYINT, (byte) 1);
-        assertRow("-1", TINYINT, (byte) -1);
-        assertRow("-01", TINYINT, (byte) -1);
-        assertRow("001", TINYINT, (byte) 1);
-        assertRow("100", TINYINT, (byte) 100);
-        assertRow(Byte.toString(Byte.MAX_VALUE), TINYINT, Byte.MAX_VALUE);
+        assertRow("0", EXPR0, TINYINT, (byte) 0);
+        assertRow("-0", EXPR0, TINYINT, (byte) 0);
+        assertRow("000", EXPR0, TINYINT, (byte) 0);
+        assertRow("1", EXPR0, TINYINT, (byte) 1);
+        assertRow("-1", EXPR0, TINYINT, (byte) -1);
+        assertRow("-01", EXPR0, TINYINT, (byte) -1);
+        assertRow("001", EXPR0, TINYINT, (byte) 1);
+        assertRow("100", EXPR0, TINYINT, (byte) 100);
+        assertRow(Byte.toString(Byte.MAX_VALUE), EXPR0, TINYINT, Byte.MAX_VALUE);
 
-        assertRow(Short.toString((short) (Byte.MAX_VALUE + 1)), SMALLINT, (short) (Byte.MAX_VALUE + 1));
-        assertRow(Short.toString(Short.MAX_VALUE), SMALLINT, Short.MAX_VALUE);
+        assertRow(Short.toString((short) (Byte.MAX_VALUE + 1)), EXPR0, SMALLINT, (short) (Byte.MAX_VALUE + 1));
+        assertRow(Short.toString(Short.MAX_VALUE), EXPR0, SMALLINT, Short.MAX_VALUE);
 
-        assertRow(Integer.toString(Short.MAX_VALUE + 1), INT, Short.MAX_VALUE + 1);
-        assertRow(Integer.toString(Integer.MAX_VALUE), INT, Integer.MAX_VALUE);
+        assertRow(Integer.toString(Short.MAX_VALUE + 1), EXPR0, INT, Short.MAX_VALUE + 1);
+        assertRow(Integer.toString(Integer.MAX_VALUE), EXPR0, INT, Integer.MAX_VALUE);
 
-        assertRow(Long.toString(Integer.MAX_VALUE + 1L), BIGINT, Integer.MAX_VALUE + 1L);
-        assertRow(Long.toString(Long.MAX_VALUE), BIGINT, Long.MAX_VALUE);
+        assertRow(Long.toString(Integer.MAX_VALUE + 1L), EXPR0, BIGINT, Integer.MAX_VALUE + 1L);
+        assertRow(Long.toString(Long.MAX_VALUE), EXPR0, BIGINT, Long.MAX_VALUE);
 
-        assertRow("1.0", DOUBLE, 1.0);
-        assertRow("1.000", DOUBLE, 1.0);
-        assertRow("001.000", DOUBLE, 1.0);
-        assertRow("1.1", DOUBLE, 1.1);
-        assertRow("1.100", DOUBLE, 1.1);
-        assertRow("001.100", DOUBLE, 1.1);
-        assertRow("1e1", DOUBLE, 1e1);
-        assertRow("-0.0", DOUBLE, 0.0);
-        assertRow("-1.0", DOUBLE, -1.0);
-        assertRow("-001.100", DOUBLE, -1.1);
-        assertRow(".0", DOUBLE, 0.0);
-        assertRow(".1", DOUBLE, 0.1);
+        assertRow("1.0", EXPR0, DOUBLE, 1.0);
+        assertRow("1.000", EXPR0, DOUBLE, 1.0);
+        assertRow("001.000", EXPR0, DOUBLE, 1.0);
+        assertRow("1.1", EXPR0, DOUBLE, 1.1);
+        assertRow("1.100", EXPR0, DOUBLE, 1.1);
+        assertRow("001.100", EXPR0, DOUBLE, 1.1);
+        assertRow("1e1", EXPR0, DOUBLE, 1e1);
+        assertRow("-0.0", EXPR0, DOUBLE, 0.0);
+        assertRow("-1.0", EXPR0, DOUBLE, -1.0);
+        assertRow("-001.100", EXPR0, DOUBLE, -1.1);
+        assertRow(".0", EXPR0, DOUBLE, 0.0);
+        assertRow(".1", EXPR0, DOUBLE, 0.1);
 
-        assertRow("false", BOOLEAN, false);
-        assertRow("true", BOOLEAN, true);
-        assertRow("tRuE", BOOLEAN, true);
+        assertRow("false", EXPR0, BOOLEAN, false);
+        assertRow("true", EXPR0, BOOLEAN, true);
+        assertRow("tRuE", EXPR0, BOOLEAN, true);
 
-        assertRow("''", VARCHAR, "");
-        assertRow("'foo'", VARCHAR, "foo");
+        assertRow("''", EXPR0, VARCHAR, "");
+        assertRow("'foo'", EXPR0, VARCHAR, "foo");
 
-        assertRow("null", NULL, null);
-        assertRow("nUlL", NULL, null);
+        assertRow("null", EXPR0, NULL, null);
+        assertRow("nUlL", EXPR0, NULL, null);
     }
 
     @Test
