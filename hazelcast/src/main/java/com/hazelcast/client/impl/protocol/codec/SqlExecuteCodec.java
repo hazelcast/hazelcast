@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Starts execution of an SQL query.
  */
-@Generated("b454c78e766bbe141b7c02bf6616e2e1")
+@Generated("0be360beaae85d556e6c8f8a717728a2")
 public final class SqlExecuteCodec {
     //hex: 0x210100
     public static final int REQUEST_MESSAGE_TYPE = 2162944;
@@ -114,7 +114,7 @@ public final class SqlExecuteCodec {
         /**
          * Row page.
          */
-        public @Nullable java.util.List<com.hazelcast.sql.impl.client.SqlClientRow> rowPage;
+        public @Nullable java.util.List<java.util.List<com.hazelcast.internal.serialization.Data>> rowPage;
         /**
          * Whether the row page is the last.
          */
@@ -124,7 +124,7 @@ public final class SqlExecuteCodec {
          */
         public @Nullable com.hazelcast.sql.impl.client.SqlError error;
     }
-    public static ClientMessage encodeResponse(@Nullable java.lang.String queryId, @Nullable java.util.List<com.hazelcast.sql.SqlColumnMetadata> rowMetadata, @Nullable java.util.List<com.hazelcast.sql.impl.client.SqlClientRow> rowPage, boolean rowPageLast, @Nullable com.hazelcast.sql.impl.client.SqlError error) {
+    public static ClientMessage encodeResponse(@Nullable java.lang.String queryId, @Nullable java.util.List<com.hazelcast.sql.SqlColumnMetadata> rowMetadata, @Nullable java.util.Collection<java.util.List<com.hazelcast.internal.serialization.Data>> rowPage, boolean rowPageLast, @Nullable com.hazelcast.sql.impl.client.SqlError error) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);
@@ -133,7 +133,7 @@ public final class SqlExecuteCodec {
 
         CodecUtil.encodeNullable(clientMessage, queryId, StringCodec::encode);
         ListMultiFrameCodec.encodeNullable(clientMessage, rowMetadata, SqlColumnMetadataCodec::encode);
-        ListMultiFrameCodec.encodeNullable(clientMessage, rowPage, SqlRowCodec::encode);
+        ListMultiFrameCodec.encodeNullable(clientMessage, rowPage, ListDataCodec::encode);
         CodecUtil.encodeNullable(clientMessage, error, SqlErrorCodec::encode);
         return clientMessage;
     }
@@ -145,7 +145,7 @@ public final class SqlExecuteCodec {
         response.rowPageLast = decodeBoolean(initialFrame.content, RESPONSE_ROW_PAGE_LAST_FIELD_OFFSET);
         response.queryId = CodecUtil.decodeNullable(iterator, StringCodec::decode);
         response.rowMetadata = ListMultiFrameCodec.decodeNullable(iterator, SqlColumnMetadataCodec::decode);
-        response.rowPage = ListMultiFrameCodec.decodeNullable(iterator, SqlRowCodec::decode);
+        response.rowPage = ListMultiFrameCodec.decodeNullable(iterator, ListDataCodec::decode);
         response.error = CodecUtil.decodeNullable(iterator, SqlErrorCodec::decode);
         return response;
     }

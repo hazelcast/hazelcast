@@ -16,6 +16,8 @@
 
 package com.hazelcast.sql.impl.client;
 
+import com.hazelcast.internal.serialization.Data;
+
 import java.util.List;
 import java.util.Objects;
 
@@ -24,15 +26,15 @@ import java.util.Objects;
  */
 public class SqlPage {
 
-    private final List<SqlClientRow> rows;
+    private final List<List<Data>> rows;
     private final boolean last;
 
-    public SqlPage(List<SqlClientRow> rows, boolean last) {
+    public SqlPage(List<List<Data>> rows, boolean last) {
         this.rows = rows;
         this.last = last;
     }
 
-    public List<SqlClientRow> getRows() {
+    public List<List<Data>> getRows() {
         return rows;
     }
 

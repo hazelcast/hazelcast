@@ -6480,7 +6480,7 @@ public class ClientCompatibilityTest_2_1 {
         SqlExecuteCodec.ResponseParameters parameters = SqlExecuteCodec.decodeResponse(fromFile);
         assertTrue(isEqual(aString, parameters.queryId));
         assertTrue(isEqual(aListOfSqlColumnMetadata, parameters.rowMetadata));
-        assertTrue(isEqual(aListOfSqlRow, parameters.rowPage));
+        assertTrue(isEqual(aListOfListOfData, parameters.rowPage));
         assertTrue(isEqual(aBoolean, parameters.rowPageLast));
         assertTrue(isEqual(anSqlError, parameters.error));
     }
@@ -6498,7 +6498,7 @@ public class ClientCompatibilityTest_2_1 {
         int fileClientMessageIndex = 828;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         SqlFetchCodec.ResponseParameters parameters = SqlFetchCodec.decodeResponse(fromFile);
-        assertTrue(isEqual(aListOfSqlRow, parameters.rowPage));
+        assertTrue(isEqual(aListOfListOfData, parameters.rowPage));
         assertTrue(isEqual(aBoolean, parameters.rowPageLast));
         assertTrue(isEqual(anSqlError, parameters.error));
     }

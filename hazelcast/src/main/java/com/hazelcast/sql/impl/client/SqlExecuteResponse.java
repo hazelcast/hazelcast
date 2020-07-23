@@ -16,6 +16,7 @@
 
 package com.hazelcast.sql.impl.client;
 
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.sql.SqlColumnMetadata;
 
 import java.util.List;
@@ -24,14 +25,14 @@ public class SqlExecuteResponse {
 
     private final String queryId;
     private final List<SqlColumnMetadata> rowMetadata;
-    private final List<SqlClientRow> rowPage;
+    private final List<List<Data>> rowPage;
     private final boolean rowPageLast;
     private final SqlError error;
 
     public SqlExecuteResponse(
         String queryId,
         List<SqlColumnMetadata> rowMetadata,
-        List<SqlClientRow> rowPage,
+        List<List<Data>> rowPage,
         boolean rowPageLast,
         SqlError error
     ) {
@@ -50,7 +51,7 @@ public class SqlExecuteResponse {
         return rowMetadata;
     }
 
-    public List<SqlClientRow> getRowPage() {
+    public List<List<Data>> getRowPage() {
         return rowPage;
     }
 

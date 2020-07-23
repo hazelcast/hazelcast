@@ -52,7 +52,7 @@ public class SqlClientResult implements SqlResult {
         Connection connection,
         String queryId,
         SqlRowMetadata rowMetadata,
-        List<SqlClientRow> rowPage,
+        List<List<Data>> rowPage,
         boolean rowPageLast,
         int cursorBufferSize
     ) {
@@ -105,15 +105,14 @@ public class SqlClientResult implements SqlResult {
         iterator.onNextPage(page.getRows(), page.isLast());
     }
 
-    private List<Row> convertPageRows(List<SqlClientRow> serializedRows) {
+    private List<Row> convertPageRows(List<List<Data>> serializedRows) {
         List<Row> rows = new ArrayList<>(serializedRows.size());
 
-        for (SqlClientRow serializedRow : serializedRows) {
-            List<Data> serializedValues = serializedRow.getValues();
-            Object[] values = new Object[serializedValues.size()];
+        for (List<Data> serializedRow : serializedRows) {
+            Object[] values = new Object[serializedRow.size()];
 
-            for (int i = 0; i < serializedValues.size(); i++) {
-                values[i] = service.deserializeRowValue(serializedValues.get(i));
+            for (int i = 0; i < serializedRow.size(); i++) {
+                values[i] = service.deserializeRowValue(serializedRow.get(i));
             }
 
             rows.add(new HeapRow(values));
@@ -161,7 +160,7 @@ public class SqlClientResult implements SqlResult {
             return new SqlRowImpl(rowMetadata, row);
         }
 
-        private void onNextPage(List<SqlClientRow> rowPage, boolean rowPageLast) {
+        private void onNextPage(List<List<Data>> rowPage, boolean rowPageLast) {
             currentRows = convertPageRows(rowPage);
             currentPosition = 0;
 

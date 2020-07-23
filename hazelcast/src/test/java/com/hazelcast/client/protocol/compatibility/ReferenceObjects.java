@@ -60,9 +60,7 @@ import com.hazelcast.scheduledexecutor.ScheduledTaskHandler;
 import com.hazelcast.scheduledexecutor.impl.ScheduledTaskHandlerImpl;
 import com.hazelcast.sql.SqlColumnMetadata;
 import com.hazelcast.sql.SqlColumnType;
-import com.hazelcast.sql.SqlRowMetadata;
 import com.hazelcast.sql.impl.client.SqlError;
-import com.hazelcast.sql.impl.client.SqlClientRow;
 import com.hazelcast.transaction.impl.xa.SerializableXID;
 import com.hazelcast.version.MemberVersion;
 
@@ -775,6 +773,7 @@ public class ReferenceObjects {
     public static List<CacheSimpleEntryListenerConfig> aListOfCacheSimpleEntryListenerConfigs
             = Collections.singletonList(aCacheSimpleEntryListenerConfig);
     public static List<Data> aListOfData = Collections.singletonList(aData);
+    public static List<List<Data>> aListOfListOfData = Collections.singletonList(aListOfData);
     public static Collection<Map.Entry<Data, Collection<Data>>> aListOfDataToListOfData
             = Collections.singletonList(new AbstractMap.SimpleEntry<>(aData, aListOfData));
     public static List<DistributedObjectInfo> aListOfDistributedObjectInfo = Collections.singletonList(aDistributedObjectInfo);
@@ -799,8 +798,5 @@ public class ReferenceObjects {
 
     public static SqlColumnMetadata anSqlColumnMetadata = CustomTypeFactory.createSqlColumnMetadata(aString, SqlColumnType.BOOLEAN.getId());
     public static List<SqlColumnMetadata> aListOfSqlColumnMetadata = Collections.singletonList(anSqlColumnMetadata);
-    public static SqlRowMetadata anSqlRowMetadata = new SqlRowMetadata(aListOfSqlColumnMetadata);
     public static SqlError anSqlError = new SqlError(anInt, aString, aUUID);
-    public static SqlClientRow anSqlRow = new SqlClientRow(aListOfData);
-    public static List<SqlClientRow> aListOfSqlRow = Collections.singletonList(anSqlRow);
 }
