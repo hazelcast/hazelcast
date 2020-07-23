@@ -98,7 +98,7 @@ public class PartitionIdSet extends AbstractSet<Integer> {
     }
 
     /**
-     * @return  {@code true} when {@code this} set contains all partition IDs contained in {@code other}
+     * @return {@code true} when {@code this} set contains all partition IDs contained in {@code other}
      */
     public boolean containsAll(PartitionIdSet other) {
         BitSet clone = (BitSet) bitSet.clone();
@@ -157,8 +157,8 @@ public class PartitionIdSet extends AbstractSet<Integer> {
     /**
      * Returns whether the intersection of this set with given argument is not empty.
      *
-     * @return  {@code true} when the intersection of {@code this} and {@code other} set
-     *          is not empty, otherwise {@code false}.
+     * @return {@code true} when the intersection of {@code this} and {@code other} set
+     * is not empty, otherwise {@code false}.
      */
     public boolean intersects(PartitionIdSet other) {
         return bitSet.intersects(other.bitSet);
@@ -180,8 +180,8 @@ public class PartitionIdSet extends AbstractSet<Integer> {
     }
 
     /**
-     * @return  {@code false} when all partition IDs in [0, partitionCount) are contained in this
-     *          set, otherwise {@code true}
+     * @return {@code false} when all partition IDs in [0, partitionCount) are contained in this
+     * set, otherwise {@code true}
      */
     public boolean isMissingPartitions() {
         return bitSet.nextClearBit(0) < partitionCount;

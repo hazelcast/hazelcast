@@ -606,13 +606,13 @@ public class PartitionReplicaManager implements PartitionReplicaVersionManager {
 
             do {
                 Integer partitionId = localPartitionIds.poll();
-                if (partitionId == null || bitSet.cardinality() == numInOneGo) {
+                if (partitionId == null) {
                     break;
                 }
 
                 bitSet.set(partitionId);
 
-            } while (true);
+            } while (bitSet.cardinality() < numInOneGo);
 
             return bitSet;
         }
