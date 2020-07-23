@@ -17,6 +17,7 @@
 package com.hazelcast.sql.impl.state;
 
 import com.hazelcast.sql.SqlRow;
+import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.SqlResultImpl;
 
 import java.util.Iterator;
@@ -37,8 +38,8 @@ public class QueryClientState {
         return clientId;
     }
 
-    public String getQueryId() {
-        return sqlResult.getQueryId().unparse();
+    public QueryId getQueryId() {
+        return sqlResult.getQueryId();
     }
 
     public SqlResultImpl getSqlResult() {

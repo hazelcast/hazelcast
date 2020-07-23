@@ -7348,7 +7348,7 @@ public class MemberCompatibilityNullTest_2_1 {
         int fileClientMessageIndex = 827;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         SqlFetchCodec.RequestParameters parameters = SqlFetchCodec.decodeRequest(fromFile);
-        assertTrue(isEqual(aString, parameters.queryId));
+        assertTrue(isEqual(anSqlQueryId, parameters.queryId));
         assertTrue(isEqual(anInt, parameters.cursorBufferSize));
     }
 
@@ -7364,7 +7364,7 @@ public class MemberCompatibilityNullTest_2_1 {
     public void test_SqlCloseCodec_decodeRequest() {
         int fileClientMessageIndex = 829;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        assertTrue(isEqual(aString, SqlCloseCodec.decodeRequest(fromFile)));
+        assertTrue(isEqual(anSqlQueryId, SqlCloseCodec.decodeRequest(fromFile)));
     }
 
     @Test

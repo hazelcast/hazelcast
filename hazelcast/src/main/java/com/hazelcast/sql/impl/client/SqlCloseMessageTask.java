@@ -21,6 +21,7 @@ import com.hazelcast.client.impl.protocol.codec.SqlCloseCodec;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.security.permission.SqlPermission;
+import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.SqlInternalService;
 
 import java.security.Permission;
@@ -28,7 +29,7 @@ import java.security.Permission;
 /**
  * SQL query close task.
  */
-public class SqlCloseMessageTask extends SqlAbstractMessageTask<String> {
+public class SqlCloseMessageTask extends SqlAbstractMessageTask<QueryId> {
     public SqlCloseMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
@@ -43,7 +44,7 @@ public class SqlCloseMessageTask extends SqlAbstractMessageTask<String> {
     }
 
     @Override
-    protected String decodeClientMessage(ClientMessage clientMessage) {
+    protected QueryId decodeClientMessage(ClientMessage clientMessage) {
         return SqlCloseCodec.decodeRequest(clientMessage);
     }
 

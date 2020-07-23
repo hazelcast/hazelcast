@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Fetches the next row page.
  */
-@Generated("273a1406b079ae788eb3b66b86e56610")
+@Generated("d1c884306ac5ed9b3c2952509bbcc7ff")
 public final class SqlFetchCodec {
     //hex: 0x210200
     public static final int REQUEST_MESSAGE_TYPE = 2163200;
@@ -56,7 +56,7 @@ public final class SqlFetchCodec {
         /**
          * Query ID.
          */
-        public java.lang.String queryId;
+        public com.hazelcast.sql.impl.QueryId queryId;
 
         /**
          * Cursor buffer size.
@@ -64,7 +64,7 @@ public final class SqlFetchCodec {
         public int cursorBufferSize;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String queryId, int cursorBufferSize) {
+    public static ClientMessage encodeRequest(com.hazelcast.sql.impl.QueryId queryId, int cursorBufferSize) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
         clientMessage.setOperationName("Sql.Fetch");
@@ -73,7 +73,7 @@ public final class SqlFetchCodec {
         encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         encodeInt(initialFrame.content, REQUEST_CURSOR_BUFFER_SIZE_FIELD_OFFSET, cursorBufferSize);
         clientMessage.add(initialFrame);
-        StringCodec.encode(clientMessage, queryId);
+        SqlQueryIdCodec.encode(clientMessage, queryId);
         return clientMessage;
     }
 
@@ -82,7 +82,7 @@ public final class SqlFetchCodec {
         RequestParameters request = new RequestParameters();
         ClientMessage.Frame initialFrame = iterator.next();
         request.cursorBufferSize = decodeInt(initialFrame.content, REQUEST_CURSOR_BUFFER_SIZE_FIELD_OFFSET);
-        request.queryId = StringCodec.decode(iterator);
+        request.queryId = SqlQueryIdCodec.decode(iterator);
         return request;
     }
 

@@ -120,7 +120,7 @@ public class SqlClientService implements SqlService {
      * @param queryId Query ID.
      * @return Pair: fetched rows + last page flag.
      */
-    public SqlPage fetch(Connection connection, String queryId, int cursorBufferSize) {
+    public SqlPage fetch(Connection connection, QueryId queryId, int cursorBufferSize) {
         try {
             ClientMessage requestMessage = SqlFetchCodec.encodeRequest(queryId, cursorBufferSize);
             ClientMessage responseMessage = invoke(requestMessage, connection);
@@ -140,7 +140,7 @@ public class SqlClientService implements SqlService {
      * @param connection Connection.
      * @param queryId Query ID.
      */
-    void close(Connection connection, String queryId) {
+    void close(Connection connection, QueryId queryId) {
         try {
             ClientMessage requestMessage = SqlCloseCodec.encodeRequest(queryId);
 
@@ -165,7 +165,7 @@ public class SqlClientService implements SqlService {
         }
 
         try {
-            ClientMessage requestMessage = SqlCloseCodec.encodeRequest(QueryId.create(UuidUtil.newSecureUUID()).unparse());
+            ClientMessage requestMessage = SqlCloseCodec.encodeRequest(QueryId.create(UuidUtil.newSecureUUID()));
 
             int messageType = requestMessage.getMessageType();
             int messageTypeWithInvalidMethodId = (messageType & (~METHOD_ID_MASK)) | (INVALID_MESSAGE_ID << METHOD_ID_SHIFT);

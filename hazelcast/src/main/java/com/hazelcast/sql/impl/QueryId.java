@@ -116,16 +116,6 @@ public final class QueryId implements IdentifiedDataSerializable {
         return localIdLow;
     }
 
-    /**
-     * Converts the ID to a string form that could be used for future {@link QueryId#parse(String)} operation.
-     * <p>
-     * This method is implemented separately from toString() on purpose, because in theory they may return different
-     * results.
-     */
-    public String unparse() {
-        return toString();
-    }
-
     @Override
     public int getFactoryId() {
         return SqlDataSerializerHook.F_ID;

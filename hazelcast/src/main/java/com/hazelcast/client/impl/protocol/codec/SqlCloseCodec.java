@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Closes server-side query cursor.
  */
-@Generated("c5da2f088e04b28c7e03fe3b80932883")
+@Generated("91a9e9d686272dfa2caf8a619168693e")
 public final class SqlCloseCodec {
     //hex: 0x210300
     public static final int REQUEST_MESSAGE_TYPE = 2163456;
@@ -52,9 +52,9 @@ public final class SqlCloseCodec {
      * Query ID.
      */
     @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"UUF_UNUSED_PUBLIC_OR_PROTECTED_FIELD"})
-    public java.lang.String queryId;
+    public com.hazelcast.sql.impl.QueryId queryId;
 
-    public static ClientMessage encodeRequest(java.lang.String queryId) {
+    public static ClientMessage encodeRequest(com.hazelcast.sql.impl.QueryId queryId) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
         clientMessage.setOperationName("Sql.Close");
@@ -62,15 +62,15 @@ public final class SqlCloseCodec {
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
         encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         clientMessage.add(initialFrame);
-        StringCodec.encode(clientMessage, queryId);
+        SqlQueryIdCodec.encode(clientMessage, queryId);
         return clientMessage;
     }
 
-    public static java.lang.String decodeRequest(ClientMessage clientMessage) {
+    public static com.hazelcast.sql.impl.QueryId decodeRequest(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         //empty initial frame
         iterator.next();
-        return StringCodec.decode(iterator);
+        return SqlQueryIdCodec.decode(iterator);
     }
 
     public static ClientMessage encodeResponse() {
