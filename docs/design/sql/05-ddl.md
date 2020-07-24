@@ -40,7 +40,7 @@ Replace table definition if one with the same name already exists.
 
 **IF NOT EXISTS**
 
-Do not throw an error if a table with the same name already exists.
+Do not fail if a table with the same name already exists.
 
 **table_name**
 
@@ -62,7 +62,7 @@ The path to the field in the external storage system. Used to link a column to p
 **table_type**
 
 The external storage system identifier. Supported table types are listed in Table 1. Not all storage systems implement
-full set of DML operations, so for instance you might be able to `SELECT` from a given table but not `INSERT` into it.
+full set of operations, so for instance you might be able to `SELECT` from a given table but not `INSERT` into it.
 
 *Table 1: Hazelcast Mustang table types*
 
@@ -199,7 +199,7 @@ Replace table definition if one with the same name already exists.
 
 **IF NOT EXISTS**
 
-Do not throw an error if a table with the same name already exists.
+Do not fail and do not insert any data if a table with the same name already exists.
 
 **table_name**
 
@@ -218,7 +218,7 @@ The path to the field in the external storage system. Used to link a column to p
 **table_type**
 
 The external storage system identifier. Supported table types are listed in Table 1. Not all storage systems implement
-full set of DML operations, so for instance you might be able to `SELECT` from a given table but not `INSERT` into it.
+full set of operations, so for instance you might be able to `SELECT` from a given table but not `INSERT` into it.
 
 *Table 1: Hazelcast Mustang table types*
 
