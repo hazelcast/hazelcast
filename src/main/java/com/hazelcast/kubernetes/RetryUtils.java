@@ -19,7 +19,6 @@ package com.hazelcast.kubernetes;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-import com.hazelcast.internal.util.ExceptionUtil;
 
 import java.util.List;
 import java.util.concurrent.Callable;
@@ -54,7 +53,7 @@ final class RetryUtils {
             } catch (Exception e) {
                 retryCount++;
                 if (retryCount > retries || containsAnyOf(e, nonRetryableKeywords)) {
-                    throw ExceptionUtil.rethrow(e);
+                    throw unchecked(e);
                 }
                 long waitIntervalMs = backoffIntervalForRetry(retryCount);
                 LOGGER.warning(
@@ -63,6 +62,13 @@ final class RetryUtils {
                 sleep(waitIntervalMs);
             }
         }
+    }
+
+    private static RuntimeException unchecked(Exception e) {
+        if (e instanceof RuntimeException) {
+            return (RuntimeException) e;
+        }
+        return new HazelcastException(e);
     }
 
     private static boolean containsAnyOf(Exception e, List<String> nonRetryableKeywords) {
