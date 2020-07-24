@@ -17,13 +17,12 @@
 package com.hazelcast.sql.impl.schema.map.sample;
 
 import com.hazelcast.core.HazelcastJsonValue;
+import com.hazelcast.internal.json.Json;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
-import com.hazelcast.sql.SqlErrorCode;
-import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.extract.GenericQueryTargetDescriptor;
 import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.schema.map.MapSchemaTestSupport;
@@ -56,7 +55,6 @@ import java.util.TreeMap;
 import static com.hazelcast.sql.impl.extract.QueryPath.KEY;
 import static com.hazelcast.sql.impl.extract.QueryPath.VALUE;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 /**
  * Tests for sample resolution for serialized portables.
@@ -373,12 +371,46 @@ public class MapSampleMetadataResolverTest extends MapSchemaTestSupport {
     public void testJson() {
         InternalSerializationService ss = getSerializationService();
 
-        try {
-            MapSampleMetadataResolver.resolve(ss, ss.toData(new HazelcastJsonValue("{ \"test\": 10 }")), true);
-        } catch (QueryException e) {
-            assertEquals(SqlErrorCode.GENERIC, e.getCode());
-            assertTrue(e.getMessage().contains("JSON objects are not supported"));
-        }
+        HazelcastJsonValue json = new HazelcastJsonValue(Json.object()
+                .add("_boolean", true)
+                .add("_int", 1)
+                .add("_long", 2L)
+                .add("_float", 3.1F)
+                .add("_double", 4.2D)
+                .add("_string", "string")
+                .add("_null", (String) null)
+                .toString()
+        );
+
+        // Test key.
+        MapSampleMetadata metadata = MapSampleMetadataResolver.resolve(ss, ss.toData(json), true);
+
+        checkFields(
+                metadata,
+                field("_boolean", QueryDataType.BOOLEAN, true),
+                convertedField("_int", QueryDataType.DOUBLE, true),
+                convertedField("_long", QueryDataType.DOUBLE, true),
+                convertedField("_float", QueryDataType.DOUBLE, true),
+                convertedField("_double", QueryDataType.DOUBLE, true),
+                field("_string", QueryDataType.VARCHAR, true),
+                convertedField("_null", QueryDataType.OBJECT, true),
+                hiddenField(KEY, QueryDataType.OBJECT, true)
+        );
+
+        // Test value.
+        metadata = MapSampleMetadataResolver.resolve(ss, ss.toData(json), false);
+
+        checkFields(
+                metadata,
+                field("_boolean", QueryDataType.BOOLEAN, false),
+                convertedField("_int", QueryDataType.DOUBLE, false),
+                convertedField("_long", QueryDataType.DOUBLE, false),
+                convertedField("_float", QueryDataType.DOUBLE, false),
+                convertedField("_double", QueryDataType.DOUBLE, false),
+                field("_string", QueryDataType.VARCHAR, false),
+                convertedField("_null", QueryDataType.OBJECT, false),
+                hiddenField(VALUE, QueryDataType.OBJECT, false)
+        );
     }
 
     private void checkPrimitive(Object value, QueryDataType expectedType) {

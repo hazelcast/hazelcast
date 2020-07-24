@@ -14,15 +14,20 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.optimizer;
+package com.hazelcast.sql.impl.calcite.parse;
 
-public enum SqlPlanType {
-    /** Schema plan (DDL). */
-    SCHEMA,
+import org.apache.calcite.runtime.CalciteException;
+import org.apache.calcite.runtime.Resources;
+import org.apache.calcite.runtime.Resources.BaseMessage;
+import org.apache.calcite.runtime.Resources.ExInst;
 
-    /** IMDG plan. */
-    IMDG,
+public interface ParserResource {
 
-    /** Streaming plan that should be executed by Jet. */
-    JET,
+    ParserResource RESOURCE = Resources.create(ParserResource.class);
+
+    @BaseMessage("Duplicate column name - ''{0}''")
+    ExInst<CalciteException> duplicateColumn(String columnName);
+
+    @BaseMessage("Duplicate option name - ''{0}''")
+    ExInst<CalciteException> duplicateOption(String optionName);
 }

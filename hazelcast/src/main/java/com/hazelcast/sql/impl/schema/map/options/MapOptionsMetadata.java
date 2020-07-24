@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.schema.map.sample;
+package com.hazelcast.sql.impl.schema.map.options;
 
 import com.hazelcast.sql.impl.extract.QueryTargetDescriptor;
 import com.hazelcast.sql.impl.schema.TableField;
@@ -22,21 +22,22 @@ import com.hazelcast.sql.impl.schema.TableField;
 import java.util.LinkedHashMap;
 
 /**
- * Metadata from sample resolution.
+ * Metadata from options resolution.
  */
-// TODO: deduplicate with MapOptionsMetadata ?
-public class MapSampleMetadata {
+// TODO: deduplicate with MapSampleMetadata ?
+public class MapOptionsMetadata {
 
-    private final QueryTargetDescriptor descriptor;
+    private final QueryTargetDescriptor queryTargetDescriptor;
     private final LinkedHashMap<String, TableField> fields;
 
-    public MapSampleMetadata(QueryTargetDescriptor descriptor, LinkedHashMap<String, TableField> fields) {
-        this.descriptor = descriptor;
+    public MapOptionsMetadata(QueryTargetDescriptor queryTargetDescriptor,
+                              LinkedHashMap<String, TableField> fields) {
+        this.queryTargetDescriptor = queryTargetDescriptor;
         this.fields = fields;
     }
 
-    public QueryTargetDescriptor getDescriptor() {
-        return descriptor;
+    public QueryTargetDescriptor getQueryTargetDescriptor() {
+        return queryTargetDescriptor;
     }
 
     @SuppressWarnings("checkstyle:IllegalType")

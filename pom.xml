@@ -92,6 +92,7 @@
         <hamcrest.version>1.3</hamcrest.version>
         <mockito.version>2.19.0</mockito.version>
         <powermock.version>2.0.7</powermock.version>
+        <assertj.version>3.15.0</assertj.version>
         <bytebuddy.version>1.10.9</bytebuddy.version>
         <reflections.version>0.9.10</reflections.version>
         <jmh.version>1.21</jmh.version>
@@ -236,6 +237,8 @@
                 <configuration>
                     <spotbugsXmlOutput>true</spotbugsXmlOutput>
                     <xmlOutput>true</xmlOutput>
+                    <excludeFilterFile>${maven.multiModuleProjectDirectory}/spotbugs/spotbugs-exclude.xml</excludeFilterFile>
+                    <maxHeap>1024</maxHeap>
                 </configuration>
             </plugin>
 
@@ -471,7 +474,7 @@
         <profile>
             <id>LOCAL</id>
             <properties>
-                <vmHeapSettings>-Xms128m -Xmx1G</vmHeapSettings>
+                <vmHeapSettings>-Xms128m -Xmx16G</vmHeapSettings>
             </properties>
             <build>
                 <plugins>
@@ -543,7 +546,7 @@
         <profile>
             <id>test-coverage-Local</id>
             <properties>
-                <vmHeapSettings>-Xms128m -Xmx1G</vmHeapSettings>
+                <vmHeapSettings>-Xms128m -Xmx16G</vmHeapSettings>
             </properties>
             <build>
                 <plugins>
@@ -1058,7 +1061,7 @@
             <!-- for compatibility testing -->
             <id>generate-compatibility-samples</id>
             <properties>
-                <vmHeapSettings>-Xms128m -Xmx1G</vmHeapSettings>
+                <vmHeapSettings>-Xms128m -Xmx16G</vmHeapSettings>
             </properties>
             <build>
                 <plugins>

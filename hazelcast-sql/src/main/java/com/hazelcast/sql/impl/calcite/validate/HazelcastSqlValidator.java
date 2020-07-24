@@ -16,36 +16,82 @@
 
 package com.hazelcast.sql.impl.calcite.validate;
 
+import com.hazelcast.sql.impl.calcite.HazelcastTypeFactory;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeFactory;
 import org.apache.calcite.sql.SqlCall;
 import org.apache.calcite.sql.SqlIdentifier;
+import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.SqlOperatorTable;
+import org.apache.calcite.sql.SqlSelect;
 import org.apache.calcite.sql.validate.SelectScope;
 import org.apache.calcite.sql.validate.SqlConformance;
 import org.apache.calcite.sql.validate.SqlQualified;
 import org.apache.calcite.sql.validate.SqlValidatorCatalogReader;
 import org.apache.calcite.sql.validate.SqlValidatorImpl;
+import org.apache.calcite.sql.validate.SqlValidatorScope;
 import org.apache.calcite.sql.validate.SqlValidatorTable;
 import org.apache.calcite.util.Util;
 
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.BiFunction;
 
 /**
  * Hazelcast-specific SQL validator.
  */
 public class HazelcastSqlValidator extends SqlValidatorImpl {
+
+    private static final Config CONFIG = Config.DEFAULT.withIdentifierExpansion(true);
+
+    private final BiFunction<Object, Object, Object> validator;
+
     public HazelcastSqlValidator(
-        SqlOperatorTable opTab,
-        SqlValidatorCatalogReader catalogReader,
-        RelDataTypeFactory typeFactory,
-        SqlConformance conformance
+            SqlOperatorTable operatorTable,
+            SqlValidatorCatalogReader catalogReader,
+            RelDataTypeFactory typeFactory,
+            SqlConformance conformance,
+            BiFunction<Object, Object, Object> validator
     ) {
-        super(opTab, catalogReader, typeFactory, Config.DEFAULT.withSqlConformance(conformance));
+        super(operatorTable, catalogReader, typeFactory, CONFIG.withSqlConformance(conformance));
+        assert typeFactory instanceof HazelcastTypeFactory;
+        this.validator = validator;
+    }
+
+    @Override
+    public void validateQuery(SqlNode node, SqlValidatorScope scope, RelDataType targetRowType) {
+        super.validateQuery(node, scope, targetRowType);
+
+        if (node instanceof SqlSelect) {
+            // Derive the types for offset-fetch expressions, Calcite doesn't do
+            // that automatically.
+
+            SqlSelect select = (SqlSelect) node;
+
+            SqlNode offset = select.getOffset();
+            if (offset != null) {
+                deriveType(scope, offset);
+            }
+
+            SqlNode fetch = select.getFetch();
+            if (fetch != null) {
+                deriveType(scope, fetch);
+            }
+        }
+    }
+
+    @Override
+    public SqlNode validate(SqlNode topNode) {
+        if (topNode.getKind().belongsTo(SqlKind.DDL)) {
+            topNode.validate(this, getEmptyScope());
+            return topNode;
+        }
+
+        SqlNode node = super.validate(topNode);
+        return (SqlNode) validator.apply(getCatalogReader(), node);
     }
 
     @Override

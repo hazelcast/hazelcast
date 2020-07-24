@@ -39,6 +39,7 @@ import java.util.TreeMap;
 /**
  * Helper class that resolves a map-backed table from a key/value sample.
  */
+// TODO: deduplicate with MapOptionsMetadataResolvers
 public final class MapSampleMetadataResolver {
 
     private static final String METHOD_PREFIX_GET = "get";
@@ -208,10 +209,9 @@ public final class MapSampleMetadataResolver {
             return null;
         }
 
-        String methodName = method.getName();
-
         String fieldNameWithWrongCase;
 
+        String methodName = method.getName();
         if (methodName.startsWith(METHOD_PREFIX_GET) && methodName.length() > METHOD_PREFIX_GET.length()) {
             fieldNameWithWrongCase = methodName.substring(METHOD_PREFIX_GET.length());
         } else if (methodName.startsWith(METHOD_PREFIX_IS) && methodName.length() > METHOD_PREFIX_IS.length()) {
@@ -242,12 +242,9 @@ public final class MapSampleMetadataResolver {
 
         // Exclude void return type.
         Class<?> returnType = method.getReturnType();
-
         if (returnType == void.class || returnType == Void.class) {
             return true;
         }
-
-        String methodName = method.getName();
 
         // Skip methods with parameters.
         if (method.getParameterCount() != 0) {
@@ -260,6 +257,7 @@ public final class MapSampleMetadataResolver {
         }
 
         // Skip getFactoryId() and getClassId() from Portable and IdentifiedDataSerializable.
+        String methodName = method.getName();
         if (methodName.equals(METHOD_GET_FACTORY_ID) || methodName.equals(METHOD_GET_CLASS_ID)) {
             if (IdentifiedDataSerializable.class.isAssignableFrom(clazz) || Portable.class.isAssignableFrom(clazz)) {
                 return true;

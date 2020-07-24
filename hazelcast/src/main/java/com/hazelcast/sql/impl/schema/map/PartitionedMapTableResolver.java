@@ -30,6 +30,7 @@ import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.QueryUtils;
 import com.hazelcast.sql.impl.schema.ConstantTableStatistics;
+import com.hazelcast.sql.impl.schema.ExternalCatalog;
 import com.hazelcast.sql.impl.schema.Table;
 import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.schema.map.sample.MapSampleMetadata;
@@ -67,6 +68,11 @@ public class PartitionedMapTableResolver extends AbstractMapTableResolver {
 
         // Get started maps.
         for (String mapName : context.getMapContainers().keySet()) {
+            // TODO: skip all system tables, i.e. `__jet` prefixed
+            if (mapName.equalsIgnoreCase(ExternalCatalog.CATALOG_MAP_NAME)) {
+                continue;
+            }
+
             PartitionedMapTable table = createTable(nodeEngine, context, mapName);
 
             if (table == null) {
@@ -95,7 +101,7 @@ public class PartitionedMapTableResolver extends AbstractMapTableResolver {
     }
 
     @SuppressWarnings({"rawtypes", "checkstyle:MethodLength", "checkstyle:CyclomaticComplexity", "checkstyle:NPathComplexity"})
-    public static PartitionedMapTable createTable(
+    private PartitionedMapTable createTable(
         NodeEngine nodeEngine,
         MapServiceContext context,
         String name
@@ -151,6 +157,7 @@ public class PartitionedMapTableResolver extends AbstractMapTableResolver {
 
                 // Done.
                 return new PartitionedMapTable(
+                    SCHEMA_NAME_PARTITIONED,
                     name,
                     fields,
                     new ConstantTableStatistics(estimatedRowCount),

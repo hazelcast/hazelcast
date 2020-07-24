@@ -317,6 +317,9 @@
     <!-- Exclude Clover instrumented sources -->
     <suppress checks="" files="[\\/]src-instrumented[\\/]"/>
 
+    <!-- Generated sources -->
+    <suppress checks="" files="generated-sources" />
+
     <!-- Test suppressions -->
     <suppress
             checks="FileLength|MethodLength|LineLength|AnonInnerLength|MethodCount|ReturnCount|ExecutableStatementCount"

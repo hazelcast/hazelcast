@@ -16,6 +16,7 @@
 
 package com.hazelcast.sql.impl.schema;
 
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -28,10 +29,15 @@ public abstract class Table {
     private final List<TableField> fields;
     private final TableStatistics statistics;
 
-    protected Table(String schemaName, String name, List<TableField> fields, TableStatistics statistics) {
+    protected Table(
+        String schemaName,
+        String name,
+        List<TableField> fields,
+        TableStatistics statistics
+    ) {
         this.schemaName = schemaName;
         this.name = name;
-        this.fields = fields;
+        this.fields = Collections.unmodifiableList(fields);
         this.statistics = statistics;
     }
 
@@ -41,6 +47,10 @@ public abstract class Table {
 
     public String getName() {
         return name;
+    }
+
+    public List<TableField> getFields() {
+        return fields;
     }
 
     public int getFieldCount() {
