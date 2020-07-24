@@ -85,6 +85,12 @@ const siteConfig = {
     scripts: ['https://buttons.github.io/buttons.js', 
     'https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.0/clipboard.min.js',
     '/js/code-block-buttons.js',
+    {
+        src:  'https://plausible.io/js/plausible.js',
+        async: true,
+        defer: true,
+        "data-domain": 'jet-start.sh'
+    }
     ],
 
     separateCss: ['static/javadoc'],
