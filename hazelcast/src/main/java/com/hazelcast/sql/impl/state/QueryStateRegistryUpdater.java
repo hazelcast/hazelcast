@@ -19,7 +19,6 @@ package com.hazelcast.sql.impl.state;
 import com.hazelcast.sql.impl.NodeServiceProvider;
 import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.QueryUtils;
-import com.hazelcast.sql.impl.client.QueryClientStateRegistry;
 import com.hazelcast.sql.impl.operation.QueryCheckOperation;
 import com.hazelcast.sql.impl.operation.QueryOperationHandler;
 

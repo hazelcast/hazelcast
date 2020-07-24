@@ -55,8 +55,8 @@ public class ClientTxnUniSocketTest extends ClientTestSupport {
         //try to force second member to connect when exist
         config.setLoadBalancer(new AbstractLoadBalancer() {
             @Override
-            public Member next(boolean dataMembers) {
-                Member[] members = getMembers(dataMembers);
+            public Member next() {
+                Member[] members = getMembers();
                 if (members == null || members.length == 0) {
                     return null;
                 }
