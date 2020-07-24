@@ -16,7 +16,6 @@
 
 package com.hazelcast.sql.impl.calcite.parse;
 
-import com.hazelcast.sql.impl.calcite.SqlToQueryType;
 import org.apache.calcite.rel.type.RelDataTypeField;
 import org.apache.calcite.sql.SqlCreate;
 import org.apache.calcite.sql.SqlIdentifier;
@@ -171,7 +170,14 @@ public class SqlCreateExternalTable extends SqlCreate {
     public void validate(SqlValidator validator, SqlValidatorScope scope) {
         columns.forEach(column -> column.validate(validator, scope));
 
-        if (source != null) {
+        if (source == null) {
+            for (int i = 0; i < columns.size(); i++) {
+                SqlTableColumn column = (SqlTableColumn) columns.get(i);
+                if (column.type() == null) {
+                    throw SqlUtil.newContextException(column.getParserPosition(), RESOURCE.missingColumnType());
+                }
+            }
+        } else {
             validator.validate(source);
 
             List<RelDataTypeField> sourceFields = validator.getValidatedNodeType(source).getFieldList();
@@ -191,11 +197,10 @@ public class SqlCreateExternalTable extends SqlCreate {
                 }
             }
 
-            // TODO: should types be forbidden all together here ???
             for (int i = 0; i < columns.size(); i++) {
                 SqlTableColumn column = (SqlTableColumn) columns.get(i);
-                if (!column.type().equals(SqlToQueryType.map(sourceFields.get(i).getType().getSqlTypeName()))) {
-                    throw SqlUtil.newContextException(column.getParserPosition(), RESOURCE.columnTypeMismatch(column.name()));
+                if (column.type() != null) {
+                    throw SqlUtil.newContextException(column.getParserPosition(), RESOURCE.columnTypeSpecified());
                 }
             }
         }

@@ -31,8 +31,11 @@ public interface ParserResource {
     @BaseMessage("Column ''{0}'' specified more than once")
     ExInst<SqlValidatorException> duplicateColumn(String columnName);
 
-    @BaseMessage("Mismatch between declared and inferred type for ''{0}''")
-    ExInst<SqlValidatorException> columnTypeMismatch(String columnName);
+    @BaseMessage("Missing column type")
+    ExInst<SqlValidatorException> missingColumnType();
+
+    @BaseMessage("Unexpected column type")
+    ExInst<SqlValidatorException> columnTypeSpecified();
 
     @BaseMessage("Invalid external name ''{0}'', nested fields are not supported")
     ExInst<SqlValidatorException> nestedField(String externalColumnName);

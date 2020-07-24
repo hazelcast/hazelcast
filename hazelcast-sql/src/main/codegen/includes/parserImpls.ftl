@@ -94,13 +94,15 @@ SqlTableColumn TableColumn() :
     Span span;
 
     SqlIdentifier name;
-    SqlDataType type;
+    SqlDataType type = null;
     SqlIdentifier externalName = null;
 
 }
 {
     name = SimpleIdentifier() { span = span(); }
-    type = SqlDataType()
+    [
+        type = SqlDataType()
+    ]
     [
         <EXTERNAL> <NAME> externalName = CompoundIdentifier()
     ]

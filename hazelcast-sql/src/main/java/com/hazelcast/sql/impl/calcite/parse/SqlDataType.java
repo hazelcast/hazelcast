@@ -35,47 +35,7 @@ public class SqlDataType extends SqlIdentifier {
     }
 
     @Override
-    @SuppressWarnings("checkstyle:CyclomaticComplexity")
     public void unparse(SqlWriter writer, int leftPrec, int rightPrec) {
-        // TODO: add `name` to QueryDataType ?
-        if (type == QueryDataType.BOOLEAN) {
-            writer.keyword("BOOLEAN");
-        } else if (type == QueryDataType.TINYINT) {
-            writer.keyword("TINYINT");
-        } else if (type == QueryDataType.SMALLINT) {
-            writer.keyword("SMALLINT");
-        } else if (type == QueryDataType.INT) {
-            writer.keyword("INT");
-        } else if (type == QueryDataType.BIGINT) {
-            writer.keyword("BIGINT");
-        } else if (type == QueryDataType.REAL) {
-            writer.keyword("REAL");
-        } else if (type == QueryDataType.DOUBLE) {
-            writer.keyword("DOUBLE");
-        } else if (type == QueryDataType.DECIMAL) {
-            writer.keyword("DECIMAL");
-        } else if (type == QueryDataType.DECIMAL_BIG_INTEGER) {
-            writer.keyword("DECIMAL");
-        } else if (type == QueryDataType.VARCHAR_CHARACTER) {
-            writer.keyword("CHAR");
-        } else if (type == QueryDataType.VARCHAR) {
-            writer.keyword("VARCHAR");
-        } else if (type == QueryDataType.TIME) {
-            writer.keyword("TIME");
-        } else if (type == QueryDataType.DATE) {
-            writer.keyword("DATE");
-        } else if (type == QueryDataType.TIMESTAMP) {
-            writer.keyword("TIMESTAMP");
-        } else if (type == QueryDataType.TIMESTAMP_WITH_TZ_DATE) {
-            writer.keyword("TIMESTAMP WITH LOCAL TIME ZONE (\"DATE\")");
-        } else if (type == QueryDataType.TIMESTAMP_WITH_TZ_CALENDAR) {
-            writer.keyword("TIMESTAMP WITH TIME ZONE (\"CALENDAR\")");
-        } else if (type == QueryDataType.TIMESTAMP_WITH_TZ_INSTANT) {
-            writer.keyword("TIMESTAMP WITH LOCAL TIME ZONE");
-        } else if (type == QueryDataType.TIMESTAMP_WITH_TZ_ZONED_DATE_TIME) {
-            writer.keyword("TIMESTAMP WITH TIME ZONE (\"ZONED_DATE_TIME\")");
-        } else if (type == QueryDataType.TIMESTAMP_WITH_TZ_OFFSET_DATE_TIME) {
-            writer.keyword("TIMESTAMP WITH TIME ZONE");
-        }
+        writer.keyword(type.getTypeFamily().name().replace('_', ' '));
     }
 }

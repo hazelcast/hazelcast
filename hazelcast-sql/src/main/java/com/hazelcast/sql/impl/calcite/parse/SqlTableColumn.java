@@ -48,7 +48,7 @@ public class SqlTableColumn extends SqlCall {
     public SqlTableColumn(SqlIdentifier name, SqlDataType type, SqlIdentifier externalName, SqlParserPos pos) {
         super(pos);
         this.name = requireNonNull(name, "Column name should not be null");
-        this.type = requireNonNull(type, "Column type should not be null");
+        this.type = type;
         this.externalName = externalName;
     }
 
@@ -57,7 +57,7 @@ public class SqlTableColumn extends SqlCall {
     }
 
     public QueryDataType type() {
-        return type.type();
+        return type != null ? type.type() : null;
     }
 
     public String externalName() {
@@ -80,7 +80,9 @@ public class SqlTableColumn extends SqlCall {
     public void unparse(SqlWriter writer, int leftPrec, int rightPrec) {
         name.unparse(writer, leftPrec, rightPrec);
         writer.print(" ");
-        type.unparse(writer, leftPrec, rightPrec);
+        if (type != null) {
+            type.unparse(writer, leftPrec, rightPrec);
+        }
         if (externalName != null) {
             writer.print(" ");
             writer.keyword("EXTERNAL");
@@ -92,7 +94,7 @@ public class SqlTableColumn extends SqlCall {
     @Override
     public void validate(SqlValidator validator, SqlValidatorScope scope) {
         if (externalName != null && externalName.names.size() > 2) {
-            throw SqlUtil.newContextException(this.externalName.getParserPosition(),
+            throw SqlUtil.newContextException(externalName.getParserPosition(),
                     RESOURCE.nestedField(externalName.toString()));
         }
     }
