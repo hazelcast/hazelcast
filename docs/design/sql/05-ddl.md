@@ -52,7 +52,8 @@ The name of the column in the table.
 
 **column_type**
 
-The data type of the column. For more information on the supported data types, refer to [type system document](https://github.com/hazelcast/hazelcast/blob/master/docs/design/sql/01-type-system.md).
+The data type of the column. For more information on the supported data types, refer to [type system
+document](01-type-system.md).
 
 **column_external_name**
 
@@ -78,7 +79,7 @@ Parameter specific to the external storage system - connection string, serializa
 
 **table_parameter_value**
 
-Parameter value as string literal.
+Parameter value as a string literal.
 
 ### 1.4 Examples
 
@@ -185,8 +186,8 @@ AS query
 ### 2.2 Description
 
 `CREATE EXTERNAL TABLE AS` registers a virtual table that references an external storage system. It fills the table with
-data computed by `SELECT` statement. The table columns have the names and data types associated with the output columns
-of the `SELECT` (except that column names can be overridden by an explicit list of names).
+data returned by a `SELECT` statement. The table columns have the names and data types associated with the output columns
+of the query (except that column names can be overridden by an explicit list of names).
 
 The table is created in the `public` schema. The name of the table must be distinct from the name of any other table in
 the schema.
@@ -286,7 +287,7 @@ DROP EXTERNAL TABLE [IF EXISTS] table_name
 ### 3.2 Description
 
 `DROP EXTERNAL TABLE` removes the table from the catalog. It removes just a reference to the external storage system, it
-does NOT delete any physical entity nor data.
+does NOT delete any physical entity or data.
 
 ### 3.3 Parameters
 
