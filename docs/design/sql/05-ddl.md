@@ -28,7 +28,7 @@ it does not create a physical entity until a write occurs.
 The table is created in the `public` schema. The name of the table must be distinct from the name of any other table in
 the schema.
 
-Column list is optional, for some storage systems and serialization formats, it is possible to infer it.
+Column list is optional, as for some storage systems and serialization formats, it is possible to infer it.
 
 ### 1.4 Parameters
 
@@ -46,7 +46,7 @@ The unqualified name of the table to be created.
 
 **column_name**
 
-The name of a column in the table.
+The name of the column in the table.
 
 **data_type**
 
@@ -66,7 +66,7 @@ Parameter specific to the external storage system - connection string, serializa
 
 **table_parameter_value**
 
-Parameter value as a string literal.
+Parameter value as string literal.
 
 ### 1.5 Examples
 
@@ -176,7 +176,7 @@ AS query
 
 `CREATE EXTERNAL TABLE AS` registers a virtual table that references an external storage system. It fills the table with
 data computed by `SELECT` statement. The table columns have the names and data types associated with the output columns
-of the `SELECT` (except that column names can be overridden by an explicit list).
+of the `SELECT` (except that column names can be overridden by an explicit list of names).
 
 The table is created in the `public` schema. The name of the table must be distinct from the name of any other table in
 the schema.
@@ -197,7 +197,7 @@ The unqualified name of the table to be created.
 
 **column_name**
 
-The name of a column in the table.
+The name of the column in the table.
 
 **external_name**
 
@@ -213,7 +213,7 @@ Parameter specific to the external storage system - connection string, serializa
 
 **table_parameter_value**
 
-Parameter value as a string literal.
+Parameter value as string literal.
 
 **query**
 
@@ -243,15 +243,13 @@ A query statement (that is, a `SELECT` statement).
 
   ```sql
   CREATE EXTERNAL TABLE persons (
-    id EXTERNAL NAME "__key"
-    name EXTERNAL NAME "this"
+    id EXTERNAL NAME "__key.id"
+    name
   )
   TYPE "com.hazelcast.IMap"
   OPTIONS (
-    "serialization.key.format" 'java',
-    "serialization.key.java.class" 'java.lang.Integer',
-    "serialization.value.format" 'java',
-    "serialization.value.java.class" 'java.lang.String'
+    "serialization.key.format" 'json',
+    "serialization.value.format" 'json',
   )
   AS SELECT employee_id, employee_name FROM employees
   ```
