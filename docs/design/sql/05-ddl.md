@@ -217,8 +217,7 @@ The path to the field in the external storage system. Used to link a column to p
 
 **table_type**
 
-The external storage system identifier. Supported table types are listed in Table 2. Not all storage systems implement
-full set of operations, so for instance you might be able to `SELECT` from a given table but not `INSERT` into it.
+The external storage system identifier. Supported table types are listed in Table 2.
 
 *Table 2: CREATE EXTERNAL TABLE AS supported table types*
 
