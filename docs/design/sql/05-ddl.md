@@ -290,7 +290,7 @@ does NOT delete any physical entity nor data.
 
 ### 3.3 Parameters
 
-**IF NOT EXISTS**
+**IF EXISTS**
 
 Do not fail if a table with the given name does not exist.
 
