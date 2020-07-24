@@ -101,7 +101,7 @@ public class RestClientTest {
         assertEquals(BODY_RESPONSE, result);
     }
 
-    @Test(expected = RestClientException.class)
+    @Test(expected = Exception.class)
     public void getFailure() {
         // given
         stubFor(get(urlEqualTo(API_ENDPOINT))

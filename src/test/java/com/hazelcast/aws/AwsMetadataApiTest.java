@@ -144,8 +144,7 @@ public class AwsMetadataApiTest {
             .willReturn(aResponse().withStatus(errorCode).withBody(errorMessage)));
 
         // when
-        RestClientException exception = assertThrows(RestClientException.class,
-            () -> awsMetadataApi.defaultIamRoleEc2());
+        Exception exception = assertThrows(Exception.class, () -> awsMetadataApi.defaultIamRoleEc2());
 
         // then
         assertTrue(exception.getMessage().contains(Integer.toString(errorCode)));

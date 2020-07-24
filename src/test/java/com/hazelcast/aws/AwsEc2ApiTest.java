@@ -284,8 +284,7 @@ public class AwsEc2ApiTest {
             .willReturn(aResponse().withStatus(errorCode).withBody(errorMessage)));
 
         // when
-        RestClientException exception = assertThrows(RestClientException.class,
-            () -> awsEc2Api.describeInstances(CREDENTIALS));
+        Exception exception = assertThrows(Exception.class, () -> awsEc2Api.describeInstances(CREDENTIALS));
 
         // then
         assertTrue(exception.getMessage().contains(Integer.toString(errorCode)));

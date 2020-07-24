@@ -224,8 +224,7 @@ public class AwsEcsApiTest {
             .willReturn(aResponse().withStatus(errorCode).withBody(errorMessage)));
 
         // when
-        RestClientException exception = assertThrows(RestClientException.class,
-            () -> awsEcsApi.listTasks("cluster-arn", CREDENTIALS));
+        Exception exception = assertThrows(Exception.class, () -> awsEcsApi.listTasks("cluster-arn", CREDENTIALS));
 
         // then
         assertTrue(exception.getMessage().contains(Integer.toString(errorCode)));
