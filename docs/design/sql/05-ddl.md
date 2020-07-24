@@ -17,7 +17,7 @@ This part contains reference information for the DDL commands supported by Hazel
 
 ```sql
 CREATE [OR REPLACE] EXTERNAL TABLE [IF NOT EXISTS] table_name [ (
- column_name data_type [ EXTERNAL NAME external_name ] [, ... ]
+ column_name column_type [ EXTERNAL NAME column_external_name ] [, ... ]
 ) ]
 TYPE table_type
 [ OPTIONS ( table_parameter table_parameter_value [, ... ] ) ]
@@ -50,11 +50,11 @@ The unqualified name of the table to be created.
 
 The name of the column in the table.
 
-**data_type**
+**column_type**
 
 The data type of the column. For more information on the supported data types, refer to [type system document](https://github.com/hazelcast/hazelcast/blob/master/docs/design/sql/01-type-system.md).
 
-**external_name**
+**column_external_name**
 
 The path to the field in the external storage system. Used to link a column to physical field under a different name
 (i.e. to be able to access both key and value `IMap` fields having same name).
@@ -175,7 +175,7 @@ Parameter value as string literal.
 
 ```
 CREATE [OR REPLACE] EXTERNAL TABLE [IF NOT EXISTS] table_name [ (
- column_name [ EXTERNAL NAME external_name ] [, ... ]
+ column_name [ EXTERNAL NAME column_external_name ] [, ... ]
 ) ]
 TYPE table_type
 [ OPTIONS ( table_parameter table_parameter_value [, ... ] ) ]
@@ -210,7 +210,7 @@ The unqualified name of the table to be created.
 The name of the column in the table. If column names are not provided, they are taken from the output column names of
 the query.
 
-**external_name**
+**column_external_name**
 
 The path to the field in the external storage system. Used to link a column to physical field under a different name
 (i.e. to be able to access both key and value `IMap` fields having same name).
