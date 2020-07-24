@@ -4,6 +4,11 @@
 
 This part contains reference information for the DDL commands supported by Hazelcast Mustang.
 
+## Table of Contents
+1. [CREATE EXTERNAL TABLE](#1-create-external-table) -- define a new external table
+2. [CREATE EXTERNAL TABLE AS](#2-create-external-table-as) -- define a new external table from the results of a query
+3. [DROP EXTERNAL TABLE](#3-drop-external-table) -- remove external table
+
 ## 1 CREATE EXTERNAL TABLE
 
 ### 1.1 Name
@@ -23,12 +28,11 @@ TYPE table_type
 ### 1.3 Description
 
 `CREATE EXTERNAL TABLE` registers a virtual table that references an external storage system. For some storage systems,
-it does not create a physical entity until a write occurs.
+it does not create a physical entity until a write occurs. Column list is optional, as for some storage systems and
+serialization formats, it is possible to infer it.
 
 The table is created in the `public` schema. The name of the table must be distinct from the name of any other table in
 the schema.
-
-Column list is optional, as for some storage systems and serialization formats, it is possible to infer it.
 
 ### 1.4 Parameters
 
@@ -54,11 +58,21 @@ The data type of the column. For more information on the supported data types, r
 
 **external_name**
 
-The path to the field in the external storage system.
+The path to the field in the external storage system. Used to link a column to physical field under a different name
+(i.e. to be able to access both key and value `IMap` fields having same name).
 
 **table_type**
 
-The external storage system identifier.
+The external storage system identifier. Supported table types are listed in Table 1. Not all storage systems implement
+full set of DML operations, so for instance you might be able to `SELECT` from a given table but not `INSERT` into it.
+
+*Table 1: Hazelcast Mustang table types*
+
+| Table type | Description |
+|---|---|
+| com.hazelcast.IMap | Table backed by Hazelcast `IMap` |
+| com.hazelcast.ReplicatedMap | Table backed by Hazelcast `ReplicatedMap` |
+| com.hazelcast.File | Table backed by files in a directory |
 
 **table_parameter**
 
@@ -197,15 +211,26 @@ The unqualified name of the table to be created.
 
 **column_name**
 
-The name of the column in the table.
+The name of the column in the table. If column names are not provided, they are taken from the output column names of
+the query.
 
 **external_name**
 
-The path to the field in the external storage system.
+The path to the field in the external storage system. Used to link a column to physical field under a different name
+(i.e. to be able to access both key and value `IMap` fields having same name).
 
 **table_type**
 
-The external storage system identifier.
+The external storage system identifier. Supported table types are listed in Table 1. Not all storage systems implement
+full set of DML operations, so for instance you might be able to `SELECT` from a given table but not `INSERT` into it.
+
+*Table 1: Hazelcast Mustang table types*
+
+| Table type | Description |
+|---|---|
+| com.hazelcast.IMap | Table backed by Hazelcast `IMap` |
+| com.hazelcast.ReplicatedMap | Table backed by Hazelcast `ReplicatedMap` |
+| com.hazelcast.File | Table backed by files in a directory |
 
 **table_parameter**
 
