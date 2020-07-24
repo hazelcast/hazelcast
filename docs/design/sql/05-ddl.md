@@ -11,11 +11,9 @@ This part contains reference information for the DDL commands supported by Hazel
 
 ## 1 CREATE EXTERNAL TABLE
 
-### 1.1 Name
-
 `CREATE EXTERNAL TABLE` -- define a new external table
 
-### 1.2 Synopsis
+### 1.1 Synopsis
 
 ```sql
 CREATE [OR REPLACE] EXTERNAL TABLE [IF NOT EXISTS] table_name [ (
@@ -25,7 +23,7 @@ TYPE table_type
 [ OPTIONS ( table_parameter table_parameter_value [, ... ] ) ]
 ```
 
-### 1.3 Description
+### 1.2 Description
 
 `CREATE EXTERNAL TABLE` registers a virtual table that references an external storage system. For some storage systems,
 it does not create a physical entity until a write occurs. Column list is optional, as for some storage systems and
@@ -34,7 +32,7 @@ serialization formats, it is possible to infer it.
 The table is created in the `public` schema. The name of the table must be distinct from the name of any other table in
 the schema.
 
-### 1.4 Parameters
+### 1.3 Parameters
 
 **OR REPLACE**
 
@@ -82,7 +80,7 @@ Parameter specific to the external storage system - connection string, serializa
 
 Parameter value as string literal.
 
-### 1.5 Examples
+### 1.4 Examples
 
 - Create an external table referencing an `IMap` with inferred schema.
 
@@ -171,11 +169,9 @@ Parameter value as string literal.
 
 ## 2 CREATE EXTERNAL TABLE AS
 
-### 2.1 Name
-
 `CREATE EXTERNAL TABLE AS` -- define a new external table from the results of a query
 
-### 2.2 Synopsis
+### 2.1 Synopsis
 
 ```
 CREATE [OR REPLACE] EXTERNAL TABLE [IF NOT EXISTS] table_name [ (
@@ -186,7 +182,7 @@ TYPE table_type
 AS query
 ```
 
-### 2.3 Description
+### 2.2 Description
 
 `CREATE EXTERNAL TABLE AS` registers a virtual table that references an external storage system. It fills the table with
 data computed by `SELECT` statement. The table columns have the names and data types associated with the output columns
@@ -195,7 +191,7 @@ of the `SELECT` (except that column names can be overridden by an explicit list 
 The table is created in the `public` schema. The name of the table must be distinct from the name of any other table in
 the schema.
 
-### 2.4 Parameters
+### 2.3 Parameters
 
 **OR REPLACE**
 
@@ -244,7 +240,7 @@ Parameter value as string literal.
 
 A query statement (that is, a `SELECT` statement).
 
-### 2.5 Examples
+### 2.4 Examples
 
 - Create an external table referencing an `IMap` and filling it with data from files in the given directory.
 
@@ -281,22 +277,20 @@ A query statement (that is, a `SELECT` statement).
 
 ## 3 DROP EXTERNAL TABLE
 
-### 3.1 Name
-
 `DROP EXTERNAL TABLE` -- remove external table
 
-### 3.2 Synopsis
+### 3.1 Synopsis
 
 ```sql
 DROP EXTERNAL TABLE [IF EXISTS] table_name
 ```
 
-### 3.3 Description
+### 3.2 Description
 
 `DROP EXTERNAL TABLE` removes the table from the catalog. It removes just a reference to the external storage system, it
 does NOT delete any physical entity nor data.
 
-### 3.4 Parameters
+### 3.3 Parameters
 
 **IF NOT EXISTS**
 
@@ -306,7 +300,7 @@ Do not throw an error if a table with the given name does not exist.
 
 The unqualified name of the table to be removed.
 
-### 3.5 Examples
+### 3.4 Examples
 
 ```sql
 DROP EXTERNAL TABLE persons
