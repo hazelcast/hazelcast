@@ -64,7 +64,7 @@ The path to the field in the external storage system. Used to link a column to p
 The external storage system identifier. Supported table types are listed in Table 1. Not all storage systems implement
 full set of operations, so for instance you might be able to `SELECT` from a given table but not `INSERT` into it.
 
-*Table 1: Hazelcast Mustang table types*
+*Table 1: CREATE EXTERNAL TABLE supported table types*
 
 | Table type | Description |
 |---|---|
@@ -217,10 +217,10 @@ The path to the field in the external storage system. Used to link a column to p
 
 **table_type**
 
-The external storage system identifier. Supported table types are listed in Table 1. Not all storage systems implement
+The external storage system identifier. Supported table types are listed in Table 2. Not all storage systems implement
 full set of operations, so for instance you might be able to `SELECT` from a given table but not `INSERT` into it.
 
-*Table 1: Hazelcast Mustang table types*
+*Table 2: CREATE EXTERNAL TABLE AS supported table types*
 
 | Table type | Description |
 |---|---|
