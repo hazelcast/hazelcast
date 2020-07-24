@@ -41,6 +41,8 @@ import static com.hazelcast.sql.impl.type.QueryDataType.VARCHAR;
 import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.toMap;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 public class ExternalCatalogTest extends SqlTestSupport {
 
@@ -63,7 +65,7 @@ public class ExternalCatalogTest extends SqlTestSupport {
         // given
         String name = "table_to_create";
         ExternalCatalog catalog = externalCatalog();
-        catalog.createTable(table(name), false, false);
+        assertTrue(catalog.createTable(table(name), false, false));
 
         // when
         // then
@@ -75,11 +77,11 @@ public class ExternalCatalogTest extends SqlTestSupport {
         // given
         String name = "table_to_be_replaced";
         ExternalCatalog catalog = externalCatalog();
-        catalog.createTable(table(name, Integer.class, String.class), true, false);
+        assertTrue(catalog.createTable(table(name, Integer.class, String.class), true, false));
 
         // when
         ExternalTable table = table(name, String.class, Integer.class);
-        catalog.createTable(table, true, false);
+        assertTrue(catalog.createTable(table, true, false));
 
         // then
         assertEquals(ImmutableMap.of("__key", VARCHAR, "this", INT), tableFields(catalog, name));
@@ -90,11 +92,11 @@ public class ExternalCatalogTest extends SqlTestSupport {
         // given
         String name = "table_if_not_exists";
         ExternalCatalog catalog = externalCatalog();
-        catalog.createTable(table(name, Integer.class, String.class), false, true);
+        assertTrue(catalog.createTable(table(name, Integer.class, String.class), false, true));
 
         // when
         ExternalTable table = table(name, String.class, Integer.class);
-        catalog.createTable(table, false, true);
+        assertFalse(catalog.createTable(table, false, true));
 
         // then
         assertEquals(ImmutableMap.of("__key", INT, "this", VARCHAR), tableFields(catalog, name));

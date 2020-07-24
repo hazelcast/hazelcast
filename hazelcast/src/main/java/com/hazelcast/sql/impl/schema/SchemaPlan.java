@@ -63,8 +63,7 @@ public interface SchemaPlan extends SqlPlan {
 
         @Override
         public SqlPlan execute() {
-            catalog.createTable(schema, replace, ifNotExists);
-            return populateTablePlan;
+            return catalog.createTable(schema, replace, ifNotExists) ? populateTablePlan : null;
         }
     }
 

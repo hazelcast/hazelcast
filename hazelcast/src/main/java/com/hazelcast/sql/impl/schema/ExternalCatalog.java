@@ -48,7 +48,7 @@ public class ExternalCatalog implements TableResolver {
         this.sqlConnectorCache = new SqlConnectorCache(nodeEngine);
     }
 
-    public void createTable(ExternalTable table, boolean replace, boolean ifNotExists) {
+    public boolean createTable(ExternalTable table, boolean replace, boolean ifNotExists) {
         // catch all the potential errors - missing connector, class, invalid format or field definitions etc. - early
         try {
             toTable(table);
@@ -58,12 +58,13 @@ public class ExternalCatalog implements TableResolver {
 
         String name = table.name();
         if (ifNotExists) {
-            tables().putIfAbsent(name, table);
+            return tables().putIfAbsent(name, table) == null;
         } else if (replace) {
             tables().put(name, table);
         } else if (tables().putIfAbsent(name, table) != null) {
             throw QueryException.error("'" + name + "' table already exists");
         }
+        return true;
     }
 
     public void removeTable(String name, boolean ifExists) {
