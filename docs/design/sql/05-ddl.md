@@ -226,7 +226,6 @@ full set of operations, so for instance you might be able to `SELECT` from a giv
 |---|---|
 | com.hazelcast.IMap | Table backed by Hazelcast `IMap` |
 | com.hazelcast.ReplicatedMap | Table backed by Hazelcast `ReplicatedMap` |
-| com.hazelcast.File | Table backed by files in a directory |
 
 **table_parameter**
 
