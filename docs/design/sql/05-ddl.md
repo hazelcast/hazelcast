@@ -2,7 +2,7 @@
 
 ## Overview
 
-This part contains reference information for the DDL commands supported by Hazelcast SQL subsystem.
+This part contains reference information for the DDL commands supported by Hazelcast Mustang.
 
 ## 1 CREATE EXTERNAL TABLE
 
@@ -23,7 +23,7 @@ TYPE table_type
 ### 1.3 Description
 
 `CREATE EXTERNAL TABLE` registers a virtual table that references an external storage system. For some storage systems,
-`CREATE EXTERNAL TABLE` does not create a physical entity until a write occurs.
+it does not create a physical entity until a write occurs.
 
 The table is created in the `public` schema. The name of the table must be distinct from the name of any other table in
 the schema.
@@ -31,6 +31,14 @@ the schema.
 Column list is optional, for some storage systems and serialization formats, it is possible to infer it.
 
 ### 1.4 Parameters
+
+**OR REPLACE**
+
+Replace table definition if one with the same name already exists.
+
+**IF NOT EXISTS**
+
+Do not throw an error if a table with the same name already exists.
 
 **table_name**
 
@@ -58,7 +66,7 @@ Parameter specific to the external storage system - connection string, serializa
 
 **table_parameter_value**
 
-A string literal.
+Parameter value as a string literal.
 
 ### 1.5 Examples
 
@@ -157,7 +165,7 @@ A string literal.
 
 ```
 CREATE [OR REPLACE] EXTERNAL TABLE [IF NOT EXISTS] table_name [ (
- column_name data_type [ EXTERNAL NAME external_name ] [, ... ]
+ column_name [ EXTERNAL NAME external_name ] [, ... ]
 ) ]
 TYPE table_type
 [ OPTIONS ( table_parameter table_parameter_value [, ... ] ) ]
@@ -168,12 +176,20 @@ AS query
 
 `CREATE EXTERNAL TABLE AS` registers a virtual table that references an external storage system. It fills the table with
 data computed by `SELECT` statement. The table columns have the names and data types associated with the output columns
-of the `SELECT` (except that column names can overridden by an explicit list).
+of the `SELECT` (except that column names can be overridden by an explicit list).
 
 The table is created in the `public` schema. The name of the table must be distinct from the name of any other table in
 the schema.
 
 ### 2.4 Parameters
+
+**OR REPLACE**
+
+Replace table definition if one with the same name already exists.
+
+**IF NOT EXISTS**
+
+Do not throw an error if a table with the same name already exists.
 
 **table_name**
 
@@ -182,10 +198,6 @@ The unqualified name of the table to be created.
 **column_name**
 
 The name of a column in the table.
-
-**data_type**
-
-The data type of the column. For more information on the supported data types, refer to [type system document](https://github.com/hazelcast/hazelcast/blob/master/docs/design/sql/01-type-system.md).
 
 **external_name**
 
@@ -201,7 +213,7 @@ Parameter specific to the external storage system - connection string, serializa
 
 **table_parameter_value**
 
-A string literal.
+Parameter value as a string literal.
 
 **query**
 
@@ -213,7 +225,7 @@ A query statement (that is, a `SELECT` statement).
 
   ```sql
   CREATE EXTERNAL TABLE persons (
-    id INT EXTERNAL NAME "__key"
+    id EXTERNAL NAME "__key"
   )
   TYPE "com.hazelcast.IMap"
   OPTIONS (
@@ -231,8 +243,8 @@ A query statement (that is, a `SELECT` statement).
 
   ```sql
   CREATE EXTERNAL TABLE persons (
-    id INT EXTERNAL NAME "__key"
-    name VARCHAR EXTERNAL NAME "this"
+    id EXTERNAL NAME "__key"
+    name EXTERNAL NAME "this"
   )
   TYPE "com.hazelcast.IMap"
   OPTIONS (
@@ -241,7 +253,7 @@ A query statement (that is, a `SELECT` statement).
     "serialization.value.format" 'java',
     "serialization.value.java.class" 'java.lang.String'
   )
-  AS SELECT __key, this FROM employees
+  AS SELECT employee_id, employee_name FROM employees
   ```
 
 ## 3 DROP EXTERNAL TABLE
@@ -263,6 +275,10 @@ does NOT delete any physical entity nor data.
 
 ### 3.4 Parameters
 
+**IF NOT EXISTS**
+
+Do not throw an error if a table with the given name does not exist.
+
 **table_name**
 
 The unqualified name of the table to be removed.
@@ -270,5 +286,5 @@ The unqualified name of the table to be removed.
 ### 3.5 Examples
 
 ```sql
-DROP EXTERNAL TABLE orders
+DROP EXTERNAL TABLE persons
 ```
