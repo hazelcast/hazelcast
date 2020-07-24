@@ -16,30 +16,16 @@
 
 package com.hazelcast.sql.impl.client;
 
-import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
+import com.hazelcast.instance.impl.Node;
+import com.hazelcast.internal.nio.Connection;
 
-import java.util.List;
-
-public class SqlFetchResponse {
-    private final List<List<Data>> rowPage;
-    private final boolean rowPageLast;
-    private final SqlError error;
-
-    public SqlFetchResponse(List<List<Data>> rowPage, boolean rowPageLast, SqlError error) {
-        this.rowPage = rowPage;
-        this.rowPageLast = rowPageLast;
-        this.error = error;
-    }
-
-    public List<List<Data>> getRowPage() {
-        return rowPage;
-    }
-
-    public boolean isRowPageLast() {
-        return rowPageLast;
-    }
-
-    public SqlError getError() {
-        return error;
+/**
+ * Base class for SQL messages.
+ */
+public abstract class SqlAbstractMessageTask<T> extends AbstractCallableMessageTask<T> {
+    protected SqlAbstractMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
+        super(clientMessage, node, connection);
     }
 }

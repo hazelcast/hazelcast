@@ -29,6 +29,8 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
+import static com.hazelcast.internal.cluster.impl.MemberHandshake.OPTION_PLANE_COUNT;
+import static com.hazelcast.internal.cluster.impl.MemberHandshake.OPTION_PLANE_INDEX;
 import static com.hazelcast.internal.cluster.impl.MemberHandshake.SCHEMA_VERSION_2;
 
 public class SendMemberHandshakeTask implements Runnable {
@@ -70,11 +72,11 @@ public class SendMemberHandshakeTask implements Runnable {
                 getConfiguredLocalAddresses(),
                 remoteAddress,
                 reply,
-                serverContext.getUuid(),
-                planeIndex,
-                planeCount);
+                serverContext.getUuid())
+                .addOption(OPTION_PLANE_COUNT, planeCount)
+                .addOption(OPTION_PLANE_INDEX, planeIndex);
         byte[] bytes = serverContext.getSerializationService().toBytes(memberHandshake);
-        Packet packet = new Packet(bytes).setPacketType(Packet.Type.MEMBER_HANDSHAKE);
+        Packet packet = new Packet(bytes).setPacketType(Packet.Type.SERVER_CONTROL);
         connection.write(packet);
         //now you can send anything...
     }

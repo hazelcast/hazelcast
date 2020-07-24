@@ -26,7 +26,7 @@ import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
 /**
- * Test that covers basic column read operations through SQL executed from a client member.
+ * Test that covers basic column read operations through SQL executed from a client.
  */
 @RunWith(Parameterized.class)
 @UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)

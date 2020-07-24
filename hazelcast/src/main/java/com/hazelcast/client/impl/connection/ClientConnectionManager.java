@@ -59,8 +59,8 @@ public interface ClientConnectionManager extends ConnectionListenable<ClientConn
     UUID getClientUuid();
 
     /**
-     * For the smart client, Random ClientConnection is chosen via LoadBalancer
-     * For the unisocket client, the only ClientConnection will be returned
+     * For a smart client a random ClientConnection is chosen via LoadBalancer.
+     * For a unisocket client the only ClientConnection will be returned.
      *
      * @return random ClientConnection if available, null otherwise
      */
@@ -69,8 +69,8 @@ public interface ClientConnectionManager extends ConnectionListenable<ClientConn
     }
 
     /**
-     * For the smart client, Random ClientConnection is chosen via LoadBalancer
-     * For the unisocket client, the only ClientConnection will be returned
+     * For a smart client a random ClientConnection is chosen via LoadBalancer.
+     * For a unisocket client the only ClientConnection will be returned.
      *
      * @param dataMember {@code true} only data members should be considered
      * @return random ClientConnection if available, null otherwise

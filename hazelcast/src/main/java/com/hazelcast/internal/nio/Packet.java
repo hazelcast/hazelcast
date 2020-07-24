@@ -89,7 +89,6 @@ public final class Packet extends HeapData implements OutboundFrame {
      */
     public static final int FLAG_OP_CONTROL = 1 << 6;
 
-
     // 3.b Jet packet flags
 
     /**
@@ -303,11 +302,11 @@ public final class Packet extends HeapData implements OutboundFrame {
             }
         },
         /**
-         * The type of a Bind Message packet.
+         * TcpServer specific control messages.
          * <p>
          * {@code ordinal = 4}
          */
-        MEMBER_HANDSHAKE,
+        SERVER_CONTROL,
         /**
          * The type of an SQL packet.
          * <p>

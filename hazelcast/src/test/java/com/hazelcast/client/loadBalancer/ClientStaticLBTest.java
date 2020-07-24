@@ -50,8 +50,8 @@ public class ClientStaticLBTest {
 
         StaticLB lb = new StaticLB(member);
 
-        assertEquals(member, lb.next(false));
-        assertEquals(member, lb.next(true));
+        assertEquals(member, lb.next());
+        assertEquals(member, lb.nextDataMember());
     }
 
     @Test
@@ -61,7 +61,7 @@ public class ClientStaticLBTest {
 
         StaticLB lb = new StaticLB(member);
 
-        assertEquals(member, lb.next(false));
-        assertNull(lb.next(true));
+        assertEquals(member, lb.next());
+        assertNull(lb.nextDataMember());
     }
 }

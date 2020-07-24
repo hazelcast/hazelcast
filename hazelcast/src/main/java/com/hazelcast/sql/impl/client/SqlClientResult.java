@@ -24,6 +24,7 @@ import com.hazelcast.sql.SqlRowMetadata;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.SqlRowImpl;
+import com.hazelcast.sql.impl.row.HeapRow;
 import com.hazelcast.sql.impl.row.Row;
 
 import javax.annotation.Nonnull;
@@ -42,8 +43,8 @@ public class SqlClientResult implements SqlResult {
     private final QueryId queryId;
     private final SqlRowMetadata rowMetadata;
     private final ClientIterator iterator = new ClientIterator();
+    private final int cursorBufferSize;
 
-    private int cursorBufferSize;
     private boolean closed;
     private boolean iteratorAccessed;
 
@@ -52,7 +53,8 @@ public class SqlClientResult implements SqlResult {
         Connection connection,
         QueryId queryId,
         SqlRowMetadata rowMetadata,
-        SqlPage page,
+        List<List<Data>> rowPage,
+        boolean rowPageLast,
         int cursorBufferSize
     ) {
         this.service = service;
@@ -61,7 +63,7 @@ public class SqlClientResult implements SqlResult {
         this.rowMetadata = rowMetadata;
         this.cursorBufferSize = cursorBufferSize;
 
-        iterator.onNextPage(page);
+        iterator.onNextPage(rowPage, rowPageLast);
     }
 
     @Nonnull
@@ -98,27 +100,23 @@ public class SqlClientResult implements SqlResult {
         }
     }
 
-    public int getCursorBufferSize() {
-        return cursorBufferSize;
-    }
-
-    public void setCursorBufferSize(int cursorBufferSize) {
-        assert cursorBufferSize >= 0;
-
-        this.cursorBufferSize = cursorBufferSize;
-    }
-
     private void fetchNextPage(ClientIterator iterator) {
         SqlPage page = service.fetch(connection, queryId, cursorBufferSize);
 
-        iterator.onNextPage(page);
+        iterator.onNextPage(page.getRows(), page.isLast());
     }
 
-    private List<Row> convertPageRows(List<Data> serializedRows) {
+    private List<Row> convertPageRows(List<List<Data>> serializedRows) {
         List<Row> rows = new ArrayList<>(serializedRows.size());
 
-        for (Data serializedRow : serializedRows) {
-            rows.add(service.deserializeRow(serializedRow));
+        for (List<Data> serializedRow : serializedRows) {
+            Object[] values = new Object[serializedRow.size()];
+
+            for (int i = 0; i < serializedRow.size(); i++) {
+                values[i] = service.deserializeRowValue(serializedRow.get(i));
+            }
+
+            rows.add(new HeapRow(values));
         }
 
         return rows;
@@ -163,11 +161,11 @@ public class SqlClientResult implements SqlResult {
             return new SqlRowImpl(rowMetadata, row);
         }
 
-        private void onNextPage(SqlPage page) {
-            currentRows = convertPageRows(page.getRows());
+        private void onNextPage(List<List<Data>> rowPage, boolean rowPageLast) {
+            currentRows = convertPageRows(rowPage);
             currentPosition = 0;
 
-            this.last = page.isLast();
+            this.last = rowPageLast;
         }
     }
 }

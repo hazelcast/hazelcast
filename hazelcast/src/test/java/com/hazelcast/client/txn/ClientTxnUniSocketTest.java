@@ -65,6 +65,23 @@ public class ClientTxnUniSocketTest extends ClientTestSupport {
                 }
                 return members[0];
             }
+
+            @Override
+            public Member nextDataMember() {
+                Member[] members = getDataMembers();
+                if (members == null || members.length == 0) {
+                    return null;
+                }
+                if (members.length == 2) {
+                    return members[1];
+                }
+                return members[0];
+            }
+
+            @Override
+            public boolean canGetNextDataMember() {
+                return true;
+            }
         });
         final HazelcastInstance client = hazelcastFactory.newHazelcastClient(config);
         hazelcastFactory.newHazelcastInstance();

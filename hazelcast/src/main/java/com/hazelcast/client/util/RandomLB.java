@@ -28,8 +28,22 @@ public class RandomLB extends AbstractLoadBalancer {
     private final Random random = new Random();
 
     @Override
-    public Member next(boolean dataMembers) {
-        Member[] members = getMembers(dataMembers);
+    public Member next() {
+        return nextInternal(false);
+    }
+
+    @Override
+    public Member nextDataMember() {
+        return nextInternal(true);
+    }
+
+    @Override
+    public boolean canGetNextDataMember() {
+        return true;
+    }
+
+    private Member nextInternal(boolean dataMembers) {
+        Member[] members = dataMembers ? getDataMembers() : getMembers();
         if (members == null || members.length == 0) {
             return null;
         }

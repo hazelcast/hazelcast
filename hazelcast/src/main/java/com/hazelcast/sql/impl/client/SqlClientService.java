@@ -16,8 +16,6 @@
 
 package com.hazelcast.sql.impl.client;
 
-import com.hazelcast.client.impl.ClientDelegatingFuture;
-import com.hazelcast.client.impl.clientside.ClientMessageDecoder;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.SqlCloseCodec;
@@ -28,17 +26,19 @@ import com.hazelcast.client.impl.spi.impl.ClientInvocationFuture;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.sql.SqlErrorCode;
 import com.hazelcast.sql.SqlException;
 import com.hazelcast.sql.SqlQuery;
 import com.hazelcast.sql.SqlResult;
+import com.hazelcast.sql.SqlRowMetadata;
 import com.hazelcast.sql.SqlService;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.QueryUtils;
-import com.hazelcast.sql.impl.row.Row;
 
 import javax.annotation.Nonnull;
+import java.security.AccessControlException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -48,23 +48,16 @@ import java.util.UUID;
  */
 public class SqlClientService implements SqlService {
 
-    private static final ClientMessageDecoder<SqlExecuteResponse> EXECUTE_DECODER = clientMessage -> {
-        SqlExecuteCodec.ResponseParameters response = SqlExecuteCodec.decodeResponse(clientMessage);
+    private static final int SERVICE_ID_MASK = 0x00FF0000;
+    private static final int SERVICE_ID_SHIFT = 16;
 
-        return new SqlExecuteResponse(response.queryId, response.rowMetadata, response.rowPage, response.error);
-    };
+    private static final int METHOD_ID_MASK = 0x0000FF00;
+    private static final int METHOD_ID_SHIFT = 8;
 
-    private static final ClientMessageDecoder<SqlFetchResponse> FETCH_DECODER = clientMessage -> {
-        SqlFetchCodec.ResponseParameters response = SqlFetchCodec.decodeResponse(clientMessage);
+    /** ID of the SQL beta service. Should match the ID declared in Sql.yaml */
+    private static final int SQL_SERVICE_ID = 33;
 
-        return new SqlFetchResponse(response.rowPage, response.error);
-    };
-
-    private static final ClientMessageDecoder<Void> CLOSE_DECODER = clientMessage -> {
-        SqlCloseCodec.decodeResponse(clientMessage);
-
-        return null;
-    };
+    private static final int INVALID_MESSAGE_ID = 255;
 
     private final HazelcastClientInstanceImpl client;
 
@@ -79,42 +72,40 @@ public class SqlClientService implements SqlService {
 
         if (connection == null) {
             throw rethrow(QueryException.error(
-                SqlErrorCode.MEMBER_CONNECTION,
+                SqlErrorCode.CONNECTION_PROBLEM,
                 "Client must be connected to at least one data member to execute SQL queries"
             ));
         }
 
         try {
             List<Object> params = query.getParameters();
-            List<Data> params0;
 
-            if (!params.isEmpty()) {
-                params0 = new ArrayList<>(params.size());
+            List<Data> params0 = new ArrayList<>(params.size());
 
-                for (Object param : params) {
-                    params0.add(serializeParameter(param));
-                }
-            } else {
-                params0 = null;
+            for (Object param : params) {
+                params0.add(serializeParameter(param));
             }
 
-            ClientMessage message = SqlExecuteCodec.encodeRequest(
+            ClientMessage requestMessage = SqlExecuteCodec.encodeRequest(
                 query.getSql(),
                 params0,
                 query.getTimeoutMillis(),
                 query.getCursorBufferSize()
             );
 
-            SqlExecuteResponse response = invoke(message, connection, EXECUTE_DECODER);
+            ClientMessage responseMessage = invoke(requestMessage, connection);
 
-            handleResponseError(response.getError());
+            SqlExecuteCodec.ResponseParameters response = SqlExecuteCodec.decodeResponse(responseMessage);
+
+            handleResponseError(response.error);
 
             return new SqlClientResult(
                 this,
                 connection,
-                response.getQueryId(),
-                response.getRowMetadata(),
-                response.getPage(),
+                response.queryId,
+                response.rowMetadata != null ? new SqlRowMetadata(response.rowMetadata) : null,
+                response.rowPage,
+                response.rowPageLast,
                 query.getCursorBufferSize()
             );
         } catch (Exception e) {
@@ -131,13 +122,13 @@ public class SqlClientService implements SqlService {
      */
     public SqlPage fetch(Connection connection, QueryId queryId, int cursorBufferSize) {
         try {
-            ClientMessage message = SqlFetchCodec.encodeRequest(queryId, cursorBufferSize);
+            ClientMessage requestMessage = SqlFetchCodec.encodeRequest(queryId, cursorBufferSize);
+            ClientMessage responseMessage = invoke(requestMessage, connection);
+            SqlFetchCodec.ResponseParameters responseParameters = SqlFetchCodec.decodeResponse(responseMessage);
 
-            SqlFetchResponse res = invoke(message, connection, FETCH_DECODER);
+            handleResponseError(responseParameters.error);
 
-            handleResponseError(res.getError());
-
-            return res.getPage();
+            return new SqlPage(responseParameters.rowPage, responseParameters.rowPageLast);
         } catch (Exception e) {
             throw rethrow(e, connection);
         }
@@ -151,11 +142,39 @@ public class SqlClientService implements SqlService {
      */
     void close(Connection connection, QueryId queryId) {
         try {
-            ClientMessage request = SqlCloseCodec.encodeRequest(queryId);
+            ClientMessage requestMessage = SqlCloseCodec.encodeRequest(queryId);
 
-            invoke(request, connection, CLOSE_DECODER);
+            invoke(requestMessage, connection);
         } catch (Exception e) {
             throw rethrow(e, connection);
+        }
+    }
+
+    /**
+     * Invokes a method that do not have an associated handler on the server side.
+     * For testing purposes only.
+     */
+    public void missing() {
+        Connection connection = client.getConnectionManager().getRandomConnection(false);
+
+        if (connection == null) {
+            throw rethrow(QueryException.error(
+                SqlErrorCode.CONNECTION_PROBLEM,
+                "Client is not connected to topology"
+            ));
+        }
+
+        try {
+            ClientMessage requestMessage = SqlCloseCodec.encodeRequest(QueryId.create(UuidUtil.newSecureUUID()));
+
+            int messageType = requestMessage.getMessageType();
+            int messageTypeWithInvalidMethodId = (messageType & (~METHOD_ID_MASK)) | (INVALID_MESSAGE_ID << METHOD_ID_SHIFT);
+
+            requestMessage.setMessageType(messageTypeWithInvalidMethodId);
+
+            invoke(requestMessage, connection);
+        } catch (Exception e) {
+            throw rethrow(e);
         }
     }
 
@@ -169,12 +188,12 @@ public class SqlClientService implements SqlService {
         }
     }
 
-    Row deserializeRow(Data data) {
+    Object deserializeRowValue(Data data) {
         try {
             return getSerializationService().toObject(data);
         } catch (Exception e) {
             throw rethrow(
-                QueryException.error("Failed to deserialize query result row: " + e.getMessage())
+                QueryException.error("Failed to deserialize query result value: " + e.getMessage())
             );
         }
     }
@@ -187,12 +206,12 @@ public class SqlClientService implements SqlService {
         return client.getSerializationService();
     }
 
-    private <T> T invoke(ClientMessage request, Connection connection, ClientMessageDecoder<T> decoder) throws Exception {
+    private ClientMessage invoke(ClientMessage request, Connection connection) throws Exception {
         ClientInvocation invocation = new ClientInvocation(client, request, null, connection);
 
         ClientInvocationFuture fut = invocation.invoke();
 
-        return new ClientDelegatingFuture<T>(fut, getSerializationService(), decoder, false).get();
+        return fut.get();
     }
 
     private static void handleResponseError(SqlError error) {
@@ -201,7 +220,7 @@ public class SqlClientService implements SqlService {
         }
     }
 
-    private SqlException rethrow(Exception cause, Connection connection) {
+    private RuntimeException rethrow(Exception cause, Connection connection) {
         if (!connection.isAlive()) {
             return QueryUtils.toPublicException(
                 QueryException.memberConnection(connection.getRemoteAddress()),
@@ -212,7 +231,18 @@ public class SqlClientService implements SqlService {
         return rethrow(cause);
     }
 
-    SqlException rethrow(Exception cause) {
+    RuntimeException rethrow(Exception cause) {
+        // Make sure that AccessControlException is thrown as a top-level exception
+        if (cause.getCause() instanceof AccessControlException) {
+            return (AccessControlException) cause.getCause();
+        }
+
         throw QueryUtils.toPublicException(cause, getClientId());
+    }
+
+    public static boolean isSqlMessage(int messageType) {
+        int serviceId = (messageType & SERVICE_ID_MASK) >> SERVICE_ID_SHIFT;
+
+        return serviceId == SQL_SERVICE_ID;
     }
 }

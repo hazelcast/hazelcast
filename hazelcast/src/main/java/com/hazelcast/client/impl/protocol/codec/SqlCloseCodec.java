@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Closes server-side query cursor.
  */
-@Generated("15d0b162586e03214740301724f78af4")
+@Generated("91a9e9d686272dfa2caf8a619168693e")
 public final class SqlCloseCodec {
     //hex: 0x210300
     public static final int REQUEST_MESSAGE_TYPE = 2163456;
@@ -48,14 +48,11 @@ public final class SqlCloseCodec {
     private SqlCloseCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class RequestParameters {
-
-        /**
-         * Query ID.
-         */
-        public com.hazelcast.sql.impl.QueryId queryId;
-    }
+    /**
+     * Query ID.
+     */
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"UUF_UNUSED_PUBLIC_OR_PROTECTED_FIELD"})
+    public com.hazelcast.sql.impl.QueryId queryId;
 
     public static ClientMessage encodeRequest(com.hazelcast.sql.impl.QueryId queryId) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
@@ -69,17 +66,11 @@ public final class SqlCloseCodec {
         return clientMessage;
     }
 
-    public static SqlCloseCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
+    public static com.hazelcast.sql.impl.QueryId decodeRequest(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        RequestParameters request = new RequestParameters();
         //empty initial frame
         iterator.next();
-        request.queryId = SqlQueryIdCodec.decode(iterator);
-        return request;
-    }
-
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class ResponseParameters {
+        return SqlQueryIdCodec.decode(iterator);
     }
 
     public static ClientMessage encodeResponse() {
@@ -91,12 +82,5 @@ public final class SqlCloseCodec {
         return clientMessage;
     }
 
-    public static SqlCloseCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
-        ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        ResponseParameters response = new ResponseParameters();
-        //empty initial frame
-        iterator.next();
-        return response;
-    }
 
 }

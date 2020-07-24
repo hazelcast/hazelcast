@@ -66,7 +66,7 @@ public class NodeServiceProviderImpl implements NodeServiceProvider {
     }
 
     @Override
-    public Collection<UUID> getClientMembersIds() {
+    public Set<UUID> getClientIds() {
         Set<UUID> res = new HashSet<>();
 
         for (Client client : nodeEngine.getHazelcastInstance().getClientService().getConnectedClients()) {

@@ -58,14 +58,38 @@ public final class QueryId implements IdentifiedDataSerializable {
      * @return Query ID.
      */
     public static QueryId create(UUID memberId) {
-        UUID qryId = UuidUtil.newUnsecureUUID();
+        UUID localId = UuidUtil.newUnsecureUUID();
 
         return new QueryId(
             memberId.getMostSignificantBits(),
             memberId.getLeastSignificantBits(),
-            qryId.getMostSignificantBits(),
-            qryId.getLeastSignificantBits()
+            localId.getMostSignificantBits(),
+            localId.getLeastSignificantBits()
         );
+    }
+
+    public static QueryId parse(String input) {
+        assert input != null;
+
+        int underscorePos = input.indexOf("_");
+
+        if (underscorePos < 0) {
+            throw new IllegalArgumentException("Query ID is malformed: " + input);
+        }
+
+        try {
+            UUID memberId = UUID.fromString(input.substring(0, underscorePos));
+            UUID localId = UUID.fromString(input.substring(underscorePos + 1));
+
+            return new QueryId(
+                memberId.getMostSignificantBits(),
+                memberId.getLeastSignificantBits(),
+                localId.getMostSignificantBits(),
+                localId.getLeastSignificantBits()
+            );
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("Query ID is malformed: " + input, e);
+        }
     }
 
     public UUID getMemberId() {

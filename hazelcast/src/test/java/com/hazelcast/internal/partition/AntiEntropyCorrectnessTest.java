@@ -85,7 +85,7 @@ public class AntiEntropyCorrectnessTest extends PartitionCorrectnessTestSupport 
                     assertEquals(PARALLEL_REPLICATIONS, availablePermits);
                 }
             }
-        }, 10);
+        }, 30);
     }
 
     public static void setBackupPacketDropFilter(HazelcastInstance instance, float blockRatio) {

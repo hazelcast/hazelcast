@@ -21,7 +21,8 @@ import com.hazelcast.map.IMap;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
-import com.hazelcast.sql.impl.client.QueryClientStateRegistry;
+import com.hazelcast.sql.impl.client.SqlClientService;
+import com.hazelcast.sql.impl.state.QueryClientStateRegistry;
 import com.hazelcast.sql.impl.exec.BlockingExec;
 import com.hazelcast.sql.impl.exec.scan.MapScanExec;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
@@ -47,7 +48,7 @@ import static org.junit.runners.Parameterized.Parameters;
 import static org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
 /**
- * Test for different error conditions (client member).
+ * Test for different error conditions (client).
  */
 @RunWith(Parameterized.class)
 @UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
@@ -121,7 +122,7 @@ public class SqlErrorClientTest extends SqlErrorAbstractTest {
         client = factory.newHazelcastClient();
 
         SqlException error = assertSqlException(client, query());
-        assertEquals(SqlErrorCode.MEMBER_CONNECTION, error.getCode());
+        assertEquals(SqlErrorCode.CONNECTION_PROBLEM, error.getCode());
         assertEquals("Client must be connected to at least one data member to execute SQL queries", error.getMessage());
     }
 
@@ -166,7 +167,7 @@ public class SqlErrorClientTest extends SqlErrorAbstractTest {
         }).start();
 
         SqlException error = assertSqlException(client, query());
-        assertEquals(SqlErrorCode.MEMBER_CONNECTION, error.getCode());
+        assertEquals(SqlErrorCode.CONNECTION_PROBLEM, error.getCode());
     }
 
     @Test
@@ -191,7 +192,7 @@ public class SqlErrorClientTest extends SqlErrorAbstractTest {
 
             fail("Should fail");
         } catch (SqlException e) {
-            assertEquals(SqlErrorCode.MEMBER_CONNECTION, e.getCode());
+            assertEquals(SqlErrorCode.CONNECTION_PROBLEM, e.getCode());
         }
     }
 
@@ -211,7 +212,7 @@ public class SqlErrorClientTest extends SqlErrorAbstractTest {
 
             fail("Should fail");
         } catch (SqlException e) {
-            assertEquals(SqlErrorCode.MEMBER_CONNECTION, e.getCode());
+            assertEquals(SqlErrorCode.CONNECTION_PROBLEM, e.getCode());
         }
     }
 
@@ -297,10 +298,25 @@ public class SqlErrorClientTest extends SqlErrorAbstractTest {
             } catch (SqlException e) {
                 assertEquals(SqlErrorCode.GENERIC, e.getCode());
                 assertEquals(client.getLocalEndpoint().getUuid(), e.getOriginatingMemberId());
-                assertTrue(e.getMessage().contains("Failed to deserialize query result row"));
+                assertTrue(e.getMessage().contains("Failed to deserialize query result value"));
             }
         } finally {
             BadValue.READ_ERROR.set(false);
+        }
+    }
+
+    @Test
+    public void testMissingHandler() {
+        instance1 = factory.newHazelcastInstance();
+        client = newClient();
+
+        try {
+            ((SqlClientService) client.getSql()).missing();
+
+            fail("Must fail");
+        } catch (Exception e) {
+            assertTrue(e.getMessage().contains("Cannot process SQL client operation due to version mismatch "
+                + "(please ensure that a client and a member have the same version)"));
         }
     }
 

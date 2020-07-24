@@ -870,6 +870,7 @@
                     <action>all</action>
                 </actions>
             </reliable-topic-permission>
+            <sql-permission principal="dev"/>
         </client-permissions>
         <client-block-unmapped-actions>true</client-block-unmapped-actions>
     </security>

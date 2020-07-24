@@ -18,18 +18,21 @@ package com.hazelcast.sql.impl.client;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.SqlFetchCodec;
-import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.security.permission.SqlPermission;
 import com.hazelcast.sql.impl.SqlInternalService;
 
 import java.security.Permission;
+import java.util.Collection;
+import java.util.List;
 import java.util.UUID;
 
 /**
  * SQL query fetch task.
  */
-public class SqlFetchMessageTask extends AbstractCallableMessageTask<SqlFetchCodec.RequestParameters> {
+public class SqlFetchMessageTask extends SqlAbstractMessageTask<SqlFetchCodec.RequestParameters> {
     public SqlFetchMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
@@ -39,21 +42,20 @@ public class SqlFetchMessageTask extends AbstractCallableMessageTask<SqlFetchCod
         UUID localMemberId = nodeEngine.getLocalMember().getUuid();
         SqlInternalService service = nodeEngine.getSqlService().getInternalService();
 
-        SqlPage page = null;
-        SqlError error = null;
-
         try {
-            page = service.getClientStateRegistry().fetch(
+            SqlPage page = service.getClientStateRegistry().fetch(
                 endpoint.getUuid(),
                 parameters.queryId,
                 parameters.cursorBufferSize,
                 serializationService
             );
-        } catch (Exception e) {
-            error = SqlClientUtils.exceptionToClientError(e, localMemberId);
-        }
 
-        return new SqlFetchResponse(page, error);
+            return new SqlFetchResponse(page.getRows(), page.isLast(), null);
+        } catch (Exception e) {
+            SqlError error = SqlClientUtils.exceptionToClientError(e, localMemberId);
+
+            return new SqlFetchResponse(null, false, error);
+        }
     }
 
     @Override
@@ -61,11 +63,15 @@ public class SqlFetchMessageTask extends AbstractCallableMessageTask<SqlFetchCod
         return SqlFetchCodec.decodeRequest(clientMessage);
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     protected ClientMessage encodeResponse(Object response) {
         SqlFetchResponse response0 = ((SqlFetchResponse) response);
 
-        return SqlFetchCodec.encodeResponse(response0.getPage(), response0.getError());
+        List<List<Data>> rowPage = response0.getRowPage();
+        Collection<Collection<Data>> rowPage0 = (Collection<Collection<Data>>) (Object) rowPage;
+
+        return SqlFetchCodec.encodeResponse(rowPage0, response0.isRowPageLast(), response0.getError());
     }
 
     @Override
@@ -90,6 +96,6 @@ public class SqlFetchMessageTask extends AbstractCallableMessageTask<SqlFetchCod
 
     @Override
     public Permission getRequiredPermission() {
-        return null;
+        return new SqlPermission();
     }
 }

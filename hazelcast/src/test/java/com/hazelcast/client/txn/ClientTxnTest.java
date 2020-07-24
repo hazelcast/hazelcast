@@ -69,6 +69,20 @@ public class ClientTxnTest extends HazelcastTestSupport {
                 }
                 return members[0];
             }
+
+            @Override
+            public Member nextDataMember() {
+                Member[] members = getDataMembers();
+                if (members == null || members.length == 0) {
+                    return null;
+                }
+                return members[0];
+            }
+
+            @Override
+            public boolean canGetNextDataMember() {
+                return true;
+            }
         });
         client = hazelcastFactory.newHazelcastClient(config);
         hazelcastFactory.newHazelcastInstance();

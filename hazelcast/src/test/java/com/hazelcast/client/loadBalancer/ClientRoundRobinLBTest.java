@@ -49,7 +49,8 @@ public class ClientRoundRobinLBTest {
     public void testRoundRobinLB_withoutMembers() {
         RoundRobinLB lb = new RoundRobinLB();
 
-        assertNull(lb.next(false));
+        assertNull(lb.next());
+        assertNull(lb.nextDataMember());
     }
 
     @Test
@@ -66,8 +67,8 @@ public class ClientRoundRobinLBTest {
 
         Member member = cluster.getLocalMember();
 
-        assertEquals(member, roundRobinLB.next(false));
-        assertEquals(member, roundRobinLB.next(true));
+        assertEquals(member, roundRobinLB.next());
+        assertEquals(member, roundRobinLB.nextDataMember());
     }
 
     @Test
@@ -84,7 +85,7 @@ public class ClientRoundRobinLBTest {
 
         Member member = cluster.getLocalMember();
 
-        assertEquals(member, roundRobinLB.next(false));
-        assertNull(roundRobinLB.next(true));
+        assertEquals(member, roundRobinLB.next());
+        assertNull(roundRobinLB.nextDataMember());
     }
 }

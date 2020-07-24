@@ -17,13 +17,15 @@
 package com.hazelcast.ringbuffer;
 
 import com.hazelcast.spi.exception.SilentException;
+import com.hazelcast.spi.impl.operationservice.WrappableException;
 
 /**
  * An {@link RuntimeException} that is thrown when accessing an item in the {@link Ringbuffer} using a sequence that is smaller
  * than the current head sequence and that the ringbuffer store is disabled. This means that the item isn't available in the
  * ringbuffer and it cannot be loaded from the store either, thus being completely unavailable.
  */
-public class StaleSequenceException extends RuntimeException implements SilentException {
+public class StaleSequenceException extends RuntimeException
+        implements SilentException, WrappableException<StaleSequenceException> {
 
     private final long headSeq;
 
@@ -46,5 +48,12 @@ public class StaleSequenceException extends RuntimeException implements SilentEx
      */
     public long getHeadSeq() {
         return headSeq;
+    }
+
+    @Override
+    public StaleSequenceException wrap() {
+        StaleSequenceException staleSequenceException = new StaleSequenceException(getMessage(), headSeq);
+        staleSequenceException.initCause(this);
+        return staleSequenceException;
     }
 }

@@ -18,9 +18,10 @@ package com.hazelcast.sql.impl.client;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.SqlCloseCodec;
-import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.security.permission.SqlPermission;
+import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.SqlInternalService;
 
 import java.security.Permission;
@@ -28,7 +29,7 @@ import java.security.Permission;
 /**
  * SQL query close task.
  */
-public class SqlCloseMessageTask extends AbstractCallableMessageTask<SqlCloseCodec.RequestParameters> {
+public class SqlCloseMessageTask extends SqlAbstractMessageTask<QueryId> {
     public SqlCloseMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
@@ -37,13 +38,13 @@ public class SqlCloseMessageTask extends AbstractCallableMessageTask<SqlCloseCod
     protected Object call() throws Exception {
         SqlInternalService service = nodeEngine.getSqlService().getInternalService();
 
-        service.getClientStateRegistry().close(endpoint.getUuid(), parameters.queryId);
+        service.getClientStateRegistry().close(endpoint.getUuid(), parameters);
 
         return null;
     }
 
     @Override
-    protected SqlCloseCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+    protected QueryId decodeClientMessage(ClientMessage clientMessage) {
         return SqlCloseCodec.decodeRequest(clientMessage);
     }
 
@@ -69,11 +70,11 @@ public class SqlCloseMessageTask extends AbstractCallableMessageTask<SqlCloseCod
 
     @Override
     public Object[] getParameters() {
-        return new Object[] { parameters.queryId } ;
+        return new Object[] { parameters } ;
     }
 
     @Override
     public Permission getRequiredPermission() {
-        return null;
+        return new SqlPermission();
     }
 }

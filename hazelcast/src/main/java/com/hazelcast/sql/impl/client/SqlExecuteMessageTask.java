@@ -18,21 +18,23 @@ package com.hazelcast.sql.impl.client;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.SqlExecuteCodec;
-import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.security.permission.SqlPermission;
 import com.hazelcast.sql.SqlQuery;
-import com.hazelcast.sql.impl.AbstractSqlResult;
 import com.hazelcast.sql.impl.SqlInternalService;
+import com.hazelcast.sql.impl.SqlResultImpl;
 import com.hazelcast.sql.impl.SqlServiceImpl;
 
 import java.security.Permission;
+import java.util.Collection;
+import java.util.List;
 
 /**
  * SQL query execute task.
  */
-public class SqlExecuteMessageTask extends AbstractCallableMessageTask<SqlExecuteCodec.RequestParameters> {
+public class SqlExecuteMessageTask extends SqlAbstractMessageTask<SqlExecuteCodec.RequestParameters> {
     public SqlExecuteMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
@@ -42,10 +44,8 @@ public class SqlExecuteMessageTask extends AbstractCallableMessageTask<SqlExecut
         try {
             SqlQuery query = new SqlQuery(parameters.sql);
 
-            if (parameters.parameters != null && !parameters.parameters.isEmpty()) {
-                for (Data param : parameters.parameters) {
-                    query.addParameter(serializationService.toObject(param));
-                }
+            for (Data param : parameters.parameters) {
+                query.addParameter(serializationService.toObject(param));
             }
 
             query.setTimeoutMillis(parameters.timeoutMillis);
@@ -53,7 +53,7 @@ public class SqlExecuteMessageTask extends AbstractCallableMessageTask<SqlExecut
 
             SqlServiceImpl sqlService = nodeEngine.getSqlService();
 
-            AbstractSqlResult cursor = (AbstractSqlResult) sqlService.query(query);
+            SqlResultImpl cursor = (SqlResultImpl) sqlService.query(query);
 
             SqlPage page = sqlService.getInternalService().getClientStateRegistry().registerAndFetch(
                 endpoint.getUuid(),
@@ -64,14 +64,15 @@ public class SqlExecuteMessageTask extends AbstractCallableMessageTask<SqlExecut
 
             return new SqlExecuteResponse(
                 cursor.getQueryId(),
-                cursor.getRowMetadata(),
-                page,
+                cursor.getRowMetadata().getColumns(),
+                page.getRows(),
+                page.isLast(),
                 null
             );
         } catch (Exception e) {
             SqlError error = SqlClientUtils.exceptionToClientError(e, nodeEngine.getLocalMember().getUuid());
 
-            return new SqlExecuteResponse(null, null, null, error);
+            return new SqlExecuteResponse(null, null, null, false, error);
         }
     }
 
@@ -80,14 +81,19 @@ public class SqlExecuteMessageTask extends AbstractCallableMessageTask<SqlExecut
         return SqlExecuteCodec.decodeRequest(clientMessage);
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     protected ClientMessage encodeResponse(Object response) {
         SqlExecuteResponse response0 = (SqlExecuteResponse) response;
 
+        List<List<Data>> rowPage = response0.getRowPage();
+        Collection<Collection<Data>> rowPage0 = (Collection<Collection<Data>>) (Object) rowPage;
+
         return SqlExecuteCodec.encodeResponse(
             response0.getQueryId(),
             response0.getRowMetadata(),
-            response0.getPage(),
+            rowPage0,
+            response0.isRowPageLast(),
             response0.getError()
         );
     }
@@ -119,6 +125,6 @@ public class SqlExecuteMessageTask extends AbstractCallableMessageTask<SqlExecut
 
     @Override
     public Permission getRequiredPermission() {
-        return null;
+        return new SqlPermission();
     }
 }

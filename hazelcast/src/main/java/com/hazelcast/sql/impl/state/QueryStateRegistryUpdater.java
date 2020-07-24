@@ -27,6 +27,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 import static com.hazelcast.sql.impl.QueryUtils.WORKER_TYPE_STATE_CHECKER;
@@ -35,19 +36,11 @@ import static com.hazelcast.sql.impl.QueryUtils.WORKER_TYPE_STATE_CHECKER;
  * Class performing periodic query state check.
  */
 public class QueryStateRegistryUpdater {
-    /** Node service provider. */
+
     private final NodeServiceProvider nodeServiceProvider;
-
-    /** State to be checked. */
     private final QueryStateRegistry stateRegistry;
-
-    /** Client state registry. */
     private final QueryClientStateRegistry clientStateRegistry;
-
-    /** Operation handler. */
     private final QueryOperationHandler operationHandler;
-
-    /** State check frequency. */
     private final long stateCheckFrequency;
 
     /** Worker performing periodic state check. */
@@ -83,6 +76,7 @@ public class QueryStateRegistryUpdater {
     }
 
     private final class Worker implements Runnable {
+
         private final Object startMux = new Object();
         private final String instanceName;
         private Thread thread;
@@ -161,7 +155,7 @@ public class QueryStateRegistryUpdater {
         }
 
         private void checkClientState() {
-            Collection<UUID> activeClientIds = nodeServiceProvider.getClientMembersIds();
+            Set<UUID> activeClientIds = nodeServiceProvider.getClientIds();
 
             clientStateRegistry.update(activeClientIds);
         }

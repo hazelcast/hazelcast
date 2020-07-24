@@ -19,18 +19,22 @@ package com.hazelcast.sql.impl.client;
 import com.hazelcast.internal.serialization.Data;
 
 import java.util.List;
+import java.util.Objects;
 
+/**
+ * A finite set of rows returned to the client.
+ */
 public class SqlPage {
 
-    private final List<Data> rows;
+    private final List<List<Data>> rows;
     private final boolean last;
 
-    public SqlPage(List<Data> rows, boolean last) {
+    public SqlPage(List<List<Data>> rows, boolean last) {
         this.rows = rows;
         this.last = last;
     }
 
-    public List<Data> getRows() {
+    public List<List<Data>> getRows() {
         return rows;
     }
 
@@ -54,7 +58,7 @@ public class SqlPage {
             return false;
         }
 
-        return rows != null ? rows.equals(page.rows) : page.rows == null;
+        return Objects.equals(rows, page.rows);
     }
 
     @Override

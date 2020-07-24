@@ -16,20 +16,31 @@
 
 package com.hazelcast.sql.impl.client;
 
-import com.hazelcast.sql.SqlRowMetadata;
+import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.sql.SqlColumnMetadata;
 import com.hazelcast.sql.impl.QueryId;
+
+import java.util.List;
 
 public class SqlExecuteResponse {
 
     private final QueryId queryId;
-    private final SqlRowMetadata rowMetadata;
-    private final SqlPage page;
+    private final List<SqlColumnMetadata> rowMetadata;
+    private final List<List<Data>> rowPage;
+    private final boolean rowPageLast;
     private final SqlError error;
 
-    public SqlExecuteResponse(QueryId queryId, SqlRowMetadata rowMetadata, SqlPage page, SqlError error) {
+    public SqlExecuteResponse(
+        QueryId queryId,
+        List<SqlColumnMetadata> rowMetadata,
+        List<List<Data>> rowPage,
+        boolean rowPageLast,
+        SqlError error
+    ) {
         this.queryId = queryId;
         this.rowMetadata = rowMetadata;
-        this.page = page;
+        this.rowPage = rowPage;
+        this.rowPageLast = rowPageLast;
         this.error = error;
     }
 
@@ -37,12 +48,16 @@ public class SqlExecuteResponse {
         return queryId;
     }
 
-    public SqlRowMetadata getRowMetadata() {
+    public List<SqlColumnMetadata> getRowMetadata() {
         return rowMetadata;
     }
 
-    public SqlPage getPage() {
-        return page;
+    public List<List<Data>> getRowPage() {
+        return rowPage;
+    }
+
+    public boolean isRowPageLast() {
+        return rowPageLast;
     }
 
     public SqlError getError() {

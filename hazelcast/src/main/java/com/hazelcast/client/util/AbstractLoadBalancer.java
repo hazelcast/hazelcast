@@ -54,10 +54,12 @@ public abstract class AbstractLoadBalancer implements LoadBalancer, InitialMembe
         membersRef.set(new Members(members, dataMembers));
     }
 
-    protected Member[] getMembers(boolean dataMembers) {
-        Members members = membersRef.get();
+    protected Member[] getMembers() {
+        return membersRef.get().getMembers();
+    }
 
-        return dataMembers ? members.getDataMembers() : members.getMembers();
+    protected Member[] getDataMembers() {
+        return membersRef.get().getDataMembers();
     }
 
     @Override

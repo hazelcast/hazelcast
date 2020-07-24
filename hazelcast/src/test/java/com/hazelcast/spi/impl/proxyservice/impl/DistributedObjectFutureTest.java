@@ -89,7 +89,7 @@ public class DistributedObjectFutureTest {
         try {
             future.get();
         } catch (Exception e) {
-            assertSame(error, e);
+            assertSame(error.getClass(), e.getClass());
         }
     }
 

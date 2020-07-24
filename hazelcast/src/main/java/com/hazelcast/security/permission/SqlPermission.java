@@ -14,32 +14,23 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.client;
+package com.hazelcast.security.permission;
 
-import com.hazelcast.internal.serialization.Data;
+import java.security.Permission;
 
-import java.util.List;
+public class SqlPermission extends ClusterPermission {
 
-public class SqlFetchResponse {
-    private final List<List<Data>> rowPage;
-    private final boolean rowPageLast;
-    private final SqlError error;
-
-    public SqlFetchResponse(List<List<Data>> rowPage, boolean rowPageLast, SqlError error) {
-        this.rowPage = rowPage;
-        this.rowPageLast = rowPageLast;
-        this.error = error;
+    public SqlPermission() {
+        super("<sql>");
     }
 
-    public List<List<Data>> getRowPage() {
-        return rowPage;
+    @Override
+    public boolean implies(Permission permission) {
+        return getClass() == permission.getClass();
     }
 
-    public boolean isRowPageLast() {
-        return rowPageLast;
-    }
-
-    public SqlError getError() {
-        return error;
+    @Override
+    public String getActions() {
+        return "sql";
     }
 }

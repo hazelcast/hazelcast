@@ -115,7 +115,7 @@ public class OutboxTest extends SqlTestSupport {
 
             fail();
         } catch (QueryException e) {
-            assertEquals(SqlErrorCode.MEMBER_CONNECTION, e.getCode());
+            assertEquals(SqlErrorCode.CONNECTION_PROBLEM, e.getCode());
         }
     }
 

@@ -878,6 +878,7 @@ public class DefaultMessageTaskFactoryProvider implements MessageTaskFactoryProv
         initializeFencedLockTaskFactories();
         initializeSemaphoreTaskFactories();
         initializeManagementCenterTaskFactories();
+        initializeSqlTaskFactories();
     }
 
     private void initializeSetTaskFactories() {
@@ -1794,6 +1795,15 @@ public class DefaultMessageTaskFactoryProvider implements MessageTaskFactoryProv
         factories.put(SqlCloseCodec.REQUEST_MESSAGE_TYPE,
             (cm, con) -> new SqlCloseMessageTask(cm, node, con));
 //endregion
+    }
+
+    private void initializeSqlTaskFactories() {
+        factories.put(SqlExecuteCodec.REQUEST_MESSAGE_TYPE,
+                (cm, con) -> new SqlExecuteMessageTask(cm, node, con));
+        factories.put(SqlFetchCodec.REQUEST_MESSAGE_TYPE,
+                (cm, con) -> new SqlFetchMessageTask(cm, node, con));
+        factories.put(SqlCloseCodec.REQUEST_MESSAGE_TYPE,
+                (cm, con) -> new SqlCloseMessageTask(cm, node, con));
     }
 
     @SuppressFBWarnings({"MS_EXPOSE_REP", "EI_EXPOSE_REP"})
