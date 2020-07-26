@@ -50,6 +50,7 @@ import static com.hazelcast.query.impl.QueryableEntry.extractAttributeValue;
  * structures used to establish the correspondence between long bitmap keys and
  * actual user-provided keys.
  */
+@SuppressWarnings("rawtypes")
 public final class BitmapIndexStore extends BaseIndexStore {
 
     private static final long NO_KEY = -1;
@@ -319,27 +320,7 @@ public final class BitmapIndexStore extends BaseIndexStore {
     }
 
     @Override
-    public Set<QueryableEntry> getRecords(Comparable value) {
-        throw makeUnsupportedOperationException();
-    }
-
-    @Override
-    public Iterator<QueryableEntry> getRecordIterator(Set<Comparable> values) {
-        throw makeUnsupportedOperationException();
-    }
-
-    @Override
-    public Set<QueryableEntry> getRecords(Set<Comparable> values) {
-        throw makeUnsupportedOperationException();
-    }
-
-    @Override
     public Iterator<QueryableEntry> getRecordIterator(Comparison comparison, Comparable value) {
-        throw makeUnsupportedOperationException();
-    }
-
-    @Override
-    public Set<QueryableEntry> getRecords(Comparison comparison, Comparable value) {
         throw makeUnsupportedOperationException();
     }
 
@@ -350,6 +331,21 @@ public final class BitmapIndexStore extends BaseIndexStore {
         Comparable to,
         boolean toInclusive
     ) {
+        throw makeUnsupportedOperationException();
+    }
+
+    @Override
+    public Set<QueryableEntry> getRecords(Comparable value) {
+        throw makeUnsupportedOperationException();
+    }
+
+    @Override
+    public Set<QueryableEntry> getRecords(Set<Comparable> values) {
+        throw makeUnsupportedOperationException();
+    }
+
+    @Override
+    public Set<QueryableEntry> getRecords(Comparison comparison, Comparable value) {
         throw makeUnsupportedOperationException();
     }
 

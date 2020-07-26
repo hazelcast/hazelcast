@@ -40,7 +40,6 @@ import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.schema.map.sample.MapSampleMetadata;
 import com.hazelcast.sql.impl.schema.map.sample.MapSampleMetadataResolver;
 import com.hazelcast.sql.impl.type.QueryDataType;
-import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 import com.hazelcast.sql.impl.type.QueryDataTypeUtils;
 
 import javax.annotation.Nullable;
@@ -122,7 +121,7 @@ public final class MapTableUtils {
                     break;
                 }
 
-                QueryDataType fieldType = fields.get(i).getType();
+                QueryDataType fieldType = fields.get(ordinal).getType();
                 QueryDataType converterType = resolvedFieldConverterTypes.get(i);
 
                 if (!isCompatibleForIndexRequest(fieldType, converterType)) {
@@ -137,6 +136,7 @@ public final class MapTableUtils {
             MapTableIndex index0 = new MapTableIndex(
                 indexConfig.getName(),
                 indexConfig.getType(),
+                index.getComponents().length,
                 indexFieldOrdinals,
                 indexFieldConverterTypes
             );
@@ -253,6 +253,10 @@ public final class MapTableUtils {
     }
 
     public static List<QueryDataType> indexConverterToSqlTypes(TypeConverter converter) {
+        if (converter == null) {
+            return Collections.emptyList();
+        }
+
         if (converter instanceof CompositeConverter) {
             CompositeConverter converter0 = ((CompositeConverter) converter);
 
@@ -282,8 +286,12 @@ public final class MapTableUtils {
         return Collections.emptyList();
     }
 
-    @SuppressWarnings("checkstyle:ReturnCount")
-    private static QueryDataType indexConverterToSqlType(TypeConverter converter) {
+    @SuppressWarnings({"checkstyle:ReturnCount", "checkstyle:CyclomaticComplexity"})
+    public static QueryDataType indexConverterToSqlType(TypeConverter converter) {
+        if (converter == null) {
+            return null;
+        }
+
         assert !(converter instanceof CompositeConverter) : converter;
 
         if (converter == TypeConverters.BOOLEAN_CONVERTER) {
@@ -300,30 +308,33 @@ public final class MapTableUtils {
             return QueryDataType.DECIMAL;
         } else if (converter == TypeConverters.BIG_INTEGER_CONVERTER) {
             return QueryDataType.DECIMAL_BIG_INTEGER;
+        } else if (converter == TypeConverters.FLOAT_CONVERTER) {
+            return QueryDataType.REAL;
+        } else if (converter == TypeConverters.DOUBLE_CONVERTER) {
+            return QueryDataType.DOUBLE;
         } else if (converter == TypeConverters.STRING_CONVERTER) {
             return QueryDataType.VARCHAR;
         } else if (converter == TypeConverters.CHAR_CONVERTER) {
             return QueryDataType.VARCHAR_CHARACTER;
+        } else if (converter == TypeConverters.ENUM_CONVERTER) {
+            return QueryDataType.OBJECT;
+        } else if (converter == TypeConverters.IDENTITY_CONVERTER) {
+            return QueryDataType.OBJECT;
+        } else if (converter == TypeConverters.PORTABLE_CONVERTER) {
+            return QueryDataType.OBJECT;
+        } else if (converter == TypeConverters.UUID_CONVERTER) {
+            return QueryDataType.OBJECT;
         }
-
-        // TODO: Add identity converter?
 
         return null;
     }
 
-    private static boolean isCompatibleForIndexRequest(QueryDataType columnType, QueryDataType indexConverterType) {
-        QueryDataTypeFamily indexConverterTypeFamily = indexConverterType.getTypeFamily();
-
-        switch (columnType.getTypeFamily()) {
-            case BOOLEAN:
-                return indexConverterTypeFamily == QueryDataTypeFamily.BOOLEAN;
-
-            case VARCHAR:
-                return indexConverterTypeFamily == QueryDataTypeFamily.VARCHAR;
-
-            default:
-                return QueryDataTypeUtils.isNumeric(columnType) && QueryDataTypeUtils.isNumeric(indexConverterType);
+    public static boolean isCompatibleForIndexRequest(QueryDataType columnType, QueryDataType indexConverterType) {
+        if (columnType.getTypeFamily().equals(indexConverterType.getTypeFamily())) {
+            return true;
         }
+
+        return QueryDataTypeUtils.isNumeric(columnType) && QueryDataTypeUtils.isNumeric(indexConverterType);
     }
 
     public static final class ResolveResult {

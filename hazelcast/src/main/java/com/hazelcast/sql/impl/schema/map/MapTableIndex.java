@@ -28,6 +28,7 @@ public class MapTableIndex {
 
     private final String name;
     private final IndexType type;
+    private final int componentsCount;
 
     /** Ordinals of the fields in the owning table. */
     private final List<Integer> fieldOrdinals;
@@ -38,11 +39,13 @@ public class MapTableIndex {
     public MapTableIndex(
         String name,
         IndexType type,
+        int componentsCount,
         List<Integer> fieldOrdinals,
         List<QueryDataType> fieldConverterTypes
     ) {
         this.name = name;
         this.type = type;
+        this.componentsCount = componentsCount;
         this.fieldOrdinals = fieldOrdinals;
         this.fieldConverterTypes = fieldConverterTypes;
     }
@@ -55,11 +58,21 @@ public class MapTableIndex {
         return type;
     }
 
+    public int getComponentsCount() {
+        return componentsCount;
+    }
+
     public List<Integer> getFieldOrdinals() {
         return fieldOrdinals;
     }
 
     public List<QueryDataType> getFieldConverterTypes() {
         return fieldConverterTypes;
+    }
+
+    @Override
+    public String toString() {
+        return "MapTableIndex {name='" + name + '\'' + ", type=" + type + ", componentsCount=" + componentsCount
+            + ", fieldOrdinals=" + fieldOrdinals + ", fieldConverterTypes=" + fieldConverterTypes + '}';
     }
 }

@@ -72,6 +72,7 @@ public class GlobalQueryContextWithStats extends QueryContext {
         return trackingIndex;
     }
 
+    @SuppressWarnings("rawtypes")
     private static class QueryTrackingIndex implements InternalIndex {
 
         private InternalIndex delegate;
@@ -159,22 +160,8 @@ public class GlobalQueryContextWithStats extends QueryContext {
         }
 
         @Override
-        public Set<QueryableEntry> getRecords(Comparable value) {
-            Set<QueryableEntry> result = delegate.getRecords(value);
-            hasQueries = true;
-            return result;
-        }
-
-        @Override
-        public Iterator<QueryableEntry> getRecordIterator(Comparable[] values) {
-            Iterator<QueryableEntry> result = delegate.getRecordIterator(values);
-            hasQueries = true;
-            return result;
-        }
-
-        @Override
-        public Set<QueryableEntry> getRecords(Comparable[] values) {
-            Set<QueryableEntry> result = delegate.getRecords(values);
+        public Iterator<QueryableEntry> getRecordIterator(Comparison comparison, Comparable value) {
+            Iterator<QueryableEntry> result = delegate.getRecordIterator(comparison, value);
             hasQueries = true;
             return result;
         }
@@ -192,15 +179,22 @@ public class GlobalQueryContextWithStats extends QueryContext {
         }
 
         @Override
-        public Set<QueryableEntry> getRecords(Comparable from, boolean fromInclusive, Comparable to, boolean toInclusive) {
-            Set<QueryableEntry> result = delegate.getRecords(from, fromInclusive, to, toInclusive);
+        public Set<QueryableEntry> getRecords(Comparable value) {
+            Set<QueryableEntry> result = delegate.getRecords(value);
             hasQueries = true;
             return result;
         }
 
         @Override
-        public Iterator<QueryableEntry> getRecordIterator(Comparison comparison, Comparable value) {
-            Iterator<QueryableEntry> result = delegate.getRecordIterator(comparison, value);
+        public Set<QueryableEntry> getRecords(Comparable[] values) {
+            Set<QueryableEntry> result = delegate.getRecords(values);
+            hasQueries = true;
+            return result;
+        }
+
+        @Override
+        public Set<QueryableEntry> getRecords(Comparable from, boolean fromInclusive, Comparable to, boolean toInclusive) {
+            Set<QueryableEntry> result = delegate.getRecords(from, fromInclusive, to, toInclusive);
             hasQueries = true;
             return result;
         }

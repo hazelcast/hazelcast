@@ -14,24 +14,11 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.calcite.opt.physical.index;
+package com.hazelcast.sql.index;
 
-import com.hazelcast.sql.impl.plan.node.PlanNodeFieldTypeProvider;
-import com.hazelcast.sql.impl.type.QueryDataType;
-
-/**
- * Specialized field type provider that do not expect any fields.
- */
-public final class IndexFieldTypeProvider implements PlanNodeFieldTypeProvider {
-
-    public static final IndexFieldTypeProvider INSTANCE = new IndexFieldTypeProvider();
-
-    private IndexFieldTypeProvider() {
-        // No-op.
-    }
-
+public abstract class HeapSqlIndexAbstractTest extends SqlIndexAbstractTest {
     @Override
-    public QueryDataType getType(int index) {
-        throw new IllegalStateException("The operation should not be called.");
+    protected boolean isHd() {
+        return false;
     }
 }

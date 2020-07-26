@@ -22,6 +22,10 @@ import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
 import com.hazelcast.internal.util.ConstructorFunction;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.sql.impl.exec.scan.index.IndexEqualsFilter;
+import com.hazelcast.sql.impl.exec.scan.index.IndexFilterValue;
+import com.hazelcast.sql.impl.exec.scan.index.IndexInFilter;
+import com.hazelcast.sql.impl.exec.scan.index.IndexRangeFilter;
 import com.hazelcast.sql.impl.expression.CastExpression;
 import com.hazelcast.sql.impl.expression.ColumnExpression;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
@@ -115,7 +119,12 @@ public class SqlDataSerializerHook implements DataSerializerHook {
     public static final int EXPRESSION_COMPARISON = 35;
     public static final int EXPRESSION_CASE = 36;
 
-    public static final int LEN = EXPRESSION_CASE + 1;
+    public static final int INDEX_FILTER_VALUE = 37;
+    public static final int INDEX_FILTER_EQUALS = 38;
+    public static final int INDEX_FILTER_RANGE = 39;
+    public static final int INDEX_FILTER_IN = 40;
+
+    public static final int LEN = INDEX_FILTER_IN + 1;
 
     @Override
     public int getFactoryId() {
@@ -172,6 +181,11 @@ public class SqlDataSerializerHook implements DataSerializerHook {
         constructors[EXPRESSION_NOT] = arg -> new NotPredicate();
         constructors[EXPRESSION_COMPARISON] = arg -> new ComparisonPredicate();
         constructors[EXPRESSION_CASE] = arg -> new CaseExpression<>();
+
+        constructors[INDEX_FILTER_VALUE] = arg -> new IndexFilterValue();
+        constructors[INDEX_FILTER_EQUALS] = arg -> new IndexEqualsFilter();
+        constructors[INDEX_FILTER_RANGE] = arg -> new IndexRangeFilter();
+        constructors[INDEX_FILTER_IN] = arg -> new IndexInFilter();
 
         return new ArrayDataSerializableFactory(constructors);
     }

@@ -101,25 +101,7 @@ public class CompositeIndexQueriesTest extends HazelcastTestSupport {
     @SuppressWarnings("unchecked")
     @Test
     public void testCompositeQueries() {
-        check(null, 0, 0, 0, 0);
-
-        check("name = '010' and age = 110", 1, 1, 0, 0);
-        check("this.age = 110 and name = '010'", 1, 2, 0, 0);
-
-        check("__key = 10 and age = 110", 1, 2, 1, 0);
-        check("age = 110 and __key = 10", 1, 2, 2, 0);
-
-        check("__key = '10' and age >= 110", 1, 2, 3, 0);
-        check("age >= 110 and __key = 10", 1, 2, 4, 0);
-
-        check("name = '010' and age >= 110 and __key = 10", 1, 2, 5, 0);
-        check("name <= '010' and age >= 110 and __key = 10", 1, 2, 6, 0);
-        check("age >= 110 and __key = 10 and unindexedAge <= 110", 1, 2, 7, 0);
-
-        map.put(101, new Person(10));
-        check("name = '010' and age = 110", 2, 3, 7, 0);
-        map.removeAll(Predicates.sql("name = '010' and age = 110"));
-        check("name = '010' and age = 110", 0, 5, 7, 0);
+        check("name = '010'", 1, 1, 0, 0);
     }
 
     @SuppressWarnings("unchecked")

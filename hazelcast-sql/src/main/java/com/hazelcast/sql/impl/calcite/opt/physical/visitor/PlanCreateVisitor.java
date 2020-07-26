@@ -281,7 +281,7 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
     public void onMapScan(MapScanPhysicalRel rel) {
         AbstractMapTable table = rel.getMap();
 
-        if (((PartitionedMapTable) table).nativeMemoryEnabled()) {
+        if (((PartitionedMapTable) table).isHd()) {
             throw QueryException.error("Cannot query IMap " + table.getName()
                     + " with InMemoryFormat.NATIVE because it does not have indexes "
                     + "(please add at least one index to query this IMap)");
@@ -313,17 +313,18 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
         PlanNodeSchema schemaBefore = getScanSchemaBeforeProject(table);
 
         MapIndexScanPlanNode scanNode = new MapIndexScanPlanNode(
-                pollId(rel),
-                table.getName(),
-                table.getKeyDescriptor(),
-                table.getValueDescriptor(),
-                getScanFieldPaths(table),
-                schemaBefore.getTypes(),
-                hazelcastTable.getProjects(),
-                rel.getIndex().getName(),
-                rel.getIndexFilters(),
-                rel.getConverterTypes(),
-                convertFilter(schemaBefore, rel.getRemainderExp())
+            pollId(rel),
+            table.getName(),
+            table.getKeyDescriptor(),
+            table.getValueDescriptor(),
+            getScanFieldPaths(table),
+            schemaBefore.getTypes(),
+            hazelcastTable.getProjects(),
+            rel.getIndex().getName(),
+            rel.getIndex().getComponentsCount(),
+            rel.getIndexFilter(),
+            rel.getConverterTypes(),
+            convertFilter(schemaBefore, rel.getRemainderExp())
         );
 
         pushUpstream(scanNode);

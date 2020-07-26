@@ -125,21 +125,19 @@ public class PartitionedMapTableResolver extends AbstractMapTableResolver {
             int distributionFieldOrdinal =
                 MapTableUtils.getPartitionedMapDistributionField(mapContainer, context, resolved.getFields());
 
-            boolean nativeMemoryEnabled = config.getInMemoryFormat() == InMemoryFormat.NATIVE;
-
             // Done.
             return new PartitionedMapTable(
-                    SCHEMA_NAME_PARTITIONED,
-                    name,
-                    resolved.getFields(),
-                    new ConstantTableStatistics(estimatedRowCount),
-                    resolved.getKeyDescriptor(),
-                    resolved.getValueDescriptor(),
-                    null,
-                    null,
-                    indexes,
-                    distributionFieldOrdinal,
-                    nativeMemoryEnabled
+                SCHEMA_NAME_PARTITIONED,
+                name,
+                resolved.getFields(),
+                new ConstantTableStatistics(estimatedRowCount),
+                resolved.getKeyDescriptor(),
+                resolved.getValueDescriptor(),
+                null,
+                null,
+                indexes,
+                distributionFieldOrdinal,
+                config.getInMemoryFormat() == InMemoryFormat.NATIVE
             );
         } catch (QueryException e) {
             return new PartitionedMapTable(name, e);

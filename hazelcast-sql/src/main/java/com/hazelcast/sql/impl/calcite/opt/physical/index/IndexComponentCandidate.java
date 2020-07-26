@@ -16,35 +16,34 @@
 
 package com.hazelcast.sql.impl.calcite.opt.physical.index;
 
-import com.hazelcast.sql.impl.expression.Expression;
+import com.hazelcast.sql.impl.exec.scan.index.IndexFilter;
 import org.apache.calcite.rex.RexNode;
 
 /**
- * Node that could be potentially used for filtering.
+ * A candidate expression that could potentially be used to form a filter on some index component.
+ * <p>
+ * Consider the query {@code SELECT * FROM person WHERE name=? AND age=?}. After analysis two candidates would be
+ * created: one for the {@code name=?} expression, and another for the {@code age=?} expression. If there is an index
+ * on any of thos columns, the engine will attempt to apply the candidate to the index to form an {@link IndexComponentFilter}.
  */
-public class IndexCandidate {
-    /** Expression that was used to form this candidate. */
+public class IndexComponentCandidate {
+    /** Original Calcite expression that formed this candidate. */
     private final RexNode expression;
 
-    /** Index of the column in the original scan. */
+    /** Ordinal of the column in the owning table. */
     private final int columnIndex;
 
-    /** Filter type. */
-    private final IndexCandidateType filterType;
+    /** Index filter created from the Calcite expression. */
+    private final IndexFilter filter;
 
-    /** Filter value (constant, parameter, or their collection). */
-    private final Expression<?> filterValue;
-
-    public IndexCandidate(
+    public IndexComponentCandidate(
         RexNode expression,
         int columnIndex,
-        IndexCandidateType filterType,
-        Expression<?> filterValue
+        IndexFilter filter
     ) {
-        this.columnIndex = columnIndex;
         this.expression = expression;
-        this.filterType = filterType;
-        this.filterValue = filterValue;
+        this.columnIndex = columnIndex;
+        this.filter = filter;
     }
 
     public RexNode getExpression() {
@@ -55,11 +54,7 @@ public class IndexCandidate {
         return columnIndex;
     }
 
-    public IndexCandidateType getFilterType() {
-        return filterType;
-    }
-
-    public Expression<?> getFilterValue() {
-        return filterValue;
+    public IndexFilter getFilter() {
+        return filter;
     }
 }

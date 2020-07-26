@@ -18,7 +18,6 @@ package com.hazelcast.sql.impl.exec.scan.index;
 
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.map.impl.MapContainer;
-import com.hazelcast.query.impl.Comparison;
 import com.hazelcast.query.impl.InternalIndex;
 import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.sql.impl.QueryException;
@@ -27,7 +26,6 @@ import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.schema.map.MapTableUtils;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
-import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 
@@ -35,12 +33,12 @@ import java.util.List;
  * Iterator for index-based partitioned map access.
  */
 @SuppressWarnings("rawtypes")
-// TODO: Proper conversions of value
 public class MapIndexScanExecIterator implements KeyValueIterator {
 
     private final MapContainer map;
     private final String indexName;
-    private final List<IndexFilter> indexFilters;
+    private final int componentCount;
+    private final IndexFilter indexFilter;
     private final List<QueryDataType> expectedConverterTypes;
     private final ExpressionEvalContext evalContext;
 
@@ -54,13 +52,15 @@ public class MapIndexScanExecIterator implements KeyValueIterator {
     public MapIndexScanExecIterator(
         MapContainer map,
         String indexName,
-        List<IndexFilter> indexFilters,
+        int componentCount,
+        IndexFilter indexFilter,
         List<QueryDataType> expectedConverterTypes,
         ExpressionEvalContext evalContext
     ) {
         this.map = map;
         this.indexName = indexName;
-        this.indexFilters = indexFilters;
+        this.componentCount = componentCount;
+        this.indexFilter = indexFilter;
         this.expectedConverterTypes = expectedConverterTypes;
         this.evalContext = evalContext;
 
@@ -114,132 +114,54 @@ public class MapIndexScanExecIterator implements KeyValueIterator {
         MapContainer mapContainer = map.getMapServiceContext().getMapContainer(map.getName());
         InternalIndex index = mapContainer.getIndexes().getIndex(indexName);
 
-        // TODO: Check index existence earlier?
         if (index == null) {
-            // TODO: Proper error
-            throw QueryException.error("Index doesn't exist: " + indexName);
+            throw QueryException.error("Index \"" + indexName + "\" doesn't exist");
         }
 
+        if (indexFilter == null) {
+            // No filter => this is a full scan (e.g. for HD)
+            return index.getRecordIterator();
+        }
+
+        int actualComponentCount = index.getComponents().length;
+
+        if (actualComponentCount != componentCount) {
+            throw QueryException.error("Index \"" + indexName + "\" has " + actualComponentCount + " component(s), but "
+                + componentCount + " expected");
+        }
+
+        // Validate component types
         List<QueryDataType> currentConverterTypes = MapTableUtils.indexConverterToSqlTypes(index.getConverter());
 
-        validateConverterTypes(expectedConverterTypes, currentConverterTypes);
+        validateConverterTypes(index, expectedConverterTypes, currentConverterTypes);
 
-        IndexFilter lastFilter = lastFilter();
-
-        if (lastFilter == null) {
-            return processScan(index);
-        }
-
-        switch (lastFilter.getType()) {
-            case EQUALS:
-                return processEquals(index);
-
-            case IN:
-                return processIn(index);
-
-            default:
-                assert lastFilter.getType() == IndexFilterType.RANGE;
-
-                return processRange(index);
-        }
+        // Query the index
+        return indexFilter.getEntries(index, evalContext);
     }
 
-    private Iterator<QueryableEntry> processScan(InternalIndex index) {
-        assert indexFilters.isEmpty();
-
-        return index.getRecordIterator();
-    }
-
-    private Iterator<QueryableEntry> processEquals(InternalIndex index) {
-        if (indexFilters.size() > 1) {
-            // TODO
-            throw new UnsupportedOperationException("Implement me!");
-        }
-
-        IndexFilter lastFilter = lastFilter();
-
-        assert lastFilter != null;
-
-        Comparable value = (Comparable) lastFilter.getFrom().eval(null, evalContext);
-
-        if (value == null) {
-            return Collections.emptyIterator();
-        } else {
-            return index.getRecordIterator(value);
-        }
-    }
-
-    private Iterator<QueryableEntry> processIn(InternalIndex index) {
-        if (indexFilters.size() > 1) {
-            // TODO
-            throw new UnsupportedOperationException("Implement me!");
-        }
-
-        IndexFilter lastFilter = lastFilter();
-
-        assert lastFilter != null;
-
-        Comparable[] values = (Comparable[]) lastFilter.getFrom().eval(null, evalContext);
-
-        return index.getRecordIterator(values);
-    }
-
-    private Iterator<QueryableEntry> processRange(InternalIndex index) {
-        if (indexFilters.size() > 1) {
-            // TODO
-            throw new UnsupportedOperationException("Implement me!");
-        }
-
-        IndexFilter lastFilter = lastFilter();
-
-        assert lastFilter != null;
-
-        Comparable from = lastFilter.getFrom() != null ? (Comparable) lastFilter.getFrom().eval(null, evalContext) : null;
-        Comparison fromComparison = lastFilter.isFromInclusive() ? Comparison.GREATER_OR_EQUAL : Comparison.GREATER;
-
-        Comparable to = lastFilter.getTo() != null ? (Comparable) lastFilter.getTo().eval(null, evalContext) : null;
-        Comparison toComparison = lastFilter.isToInclusive() ? Comparison.LESS_OR_EQUAL : Comparison.LESS;
-
-        if (from != null && to == null) {
-            // Left bound only
-            return index.getRecordIterator(fromComparison, from);
-        } else if (from == null && to != null) {
-            // Right bound only
-            return index.getRecordIterator(toComparison, to);
-        } else {
-            // Both left and right bounds
-            return index.getRecordIterator(from, lastFilter.isFromInclusive(), to, lastFilter.isToInclusive());
-        }
-    }
-
-    private IndexFilter lastFilter() {
-        return indexFilters.isEmpty() ? null : indexFilters.get(indexFilters.size() - 1);
-    }
-
-    private static void validateConverterTypes(
+    private void validateConverterTypes(
+        InternalIndex index,
         List<QueryDataType> expectedConverterTypes,
         List<QueryDataType> actualConverterTypes
     ) {
-        if (expectedConverterTypes.size() <= actualConverterTypes.size()) {
-            boolean valid = true;
+        for (int i = 0; i < Math.min(expectedConverterTypes.size(), actualConverterTypes.size()); i++) {
+            QueryDataType expected = expectedConverterTypes.get(i);
+            QueryDataType actual = actualConverterTypes.get(i);
 
-            for (int i = 0; i < expectedConverterTypes.size(); i++) {
-                QueryDataType expected = expectedConverterTypes.get(i);
-                QueryDataType actual = actualConverterTypes.get(i);
+            if (!expected.equals(actual)) {
+                String component = index.getComponents()[i];
 
-                if (!expected.equals(actual)) {
-                    valid = false;
-
-                    break;
-                }
-            }
-
-            if (valid) {
-                return;
+                throw QueryException.dataException("Index \"" + indexName + "\" has component \"" + component + "\" of type "
+                    + actual.getTypeFamily() + ", but " + expected.getTypeFamily() + " was expected");
             }
         }
 
-        // TODO: Proper exception
-        throw QueryException.error("Converters do no match");
+        if (expectedConverterTypes.size() > actualConverterTypes.size()) {
+            QueryDataType expected = expectedConverterTypes.get(actualConverterTypes.size());
+            String component = index.getComponents()[actualConverterTypes.size()];
+
+            throw QueryException.dataException("Index \"" + indexName + "\" do not have suitable SQL converter for component \""
+                + component + "\" (expected " + expected.getTypeFamily() + ")");
+        }
     }
 }

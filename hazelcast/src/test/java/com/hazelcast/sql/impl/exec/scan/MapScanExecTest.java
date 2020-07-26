@@ -73,7 +73,7 @@ import static org.junit.Assert.assertNotEquals;
 @SuppressWarnings("unused")
 public class MapScanExecTest extends SqlTestSupport {
 
-    private static final int BATCH_SIZE = MapScanExec.BATCH_SIZE;
+    private static final int BATCH_SIZE = AbstractMapScanExec.BATCH_SIZE;
     private static final int PARTITION_COUNT = 10;
 
     private static final String MAP_OBJECT = "mo";

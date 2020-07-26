@@ -19,13 +19,17 @@ package com.hazelcast.sql.impl.exec.scan.index;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.map.impl.MapContainer;
+import com.hazelcast.sql.SqlErrorCode;
+import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.exec.scan.KeyValueIterator;
 import com.hazelcast.sql.impl.exec.scan.MapScanExec;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.extract.QueryTargetDescriptor;
 import com.hazelcast.sql.impl.type.QueryDataType;
+import com.hazelcast.sql.impl.worker.QueryFragmentContext;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -34,8 +38,9 @@ import java.util.List;
 public class MapIndexScanExec extends MapScanExec {
 
     private final String indexName;
-    private final List<IndexFilter> indexFilters;
+    private final IndexFilter indexFilter;
     private final List<QueryDataType> converterTypes;
+    private final int componentCount;
 
     @SuppressWarnings("checkstyle:ParameterNumber")
     public MapIndexScanExec(
@@ -50,7 +55,8 @@ public class MapIndexScanExec extends MapScanExec {
         Expression<Boolean> filter,
         InternalSerializationService serializationService,
         String indexName,
-        List<IndexFilter> indexFilters,
+        int componentCount,
+        IndexFilter indexFilter,
         List<QueryDataType> converterTypes
     ) {
         // TODO: How to deal with passed partitions? Should we check that they are still owned during setup?
@@ -68,7 +74,8 @@ public class MapIndexScanExec extends MapScanExec {
         );
 
         this.indexName = indexName;
-        this.indexFilters = indexFilters;
+        this.componentCount = componentCount;
+        this.indexFilter = indexFilter;
         this.converterTypes = converterTypes;
     }
 
@@ -78,13 +85,39 @@ public class MapIndexScanExec extends MapScanExec {
 
     @Override
     protected KeyValueIterator createIterator() {
-        return new MapIndexScanExecIterator(map, indexName, indexFilters, converterTypes, ctx);
+        return new MapIndexScanExecIterator(map, indexName, componentCount, indexFilter, converterTypes, ctx);
+    }
+
+    @Override
+    protected void setup1(QueryFragmentContext ctx) {
+        // TODO: Move this into iterator (see IndexImpl.indexedPartitions)
+        // Check if expected partitions are owned by this member. Future migrations are tracked via migration stamp.
+        PartitionIdSet owned = map.getMapServiceContext().getOwnedPartitions();
+
+        if (owned.containsAll(partitions)) {
+            return;
+        }
+
+        List<Integer> missedPartitions = new ArrayList<>();
+
+        for (int partition : partitions) {
+            boolean isOwned = map.getMapServiceContext().getOwnedPartitions().contains(partition);
+
+            if (!isOwned) {
+                missedPartitions.add(partition);
+            }
+        }
+
+        if (!partitions.isEmpty()) {
+            throw QueryException.error(SqlErrorCode.PARTITION_MIGRATED,
+                "Partitions are not owned by member: " + missedPartitions);
+        }
     }
 
     @Override
     public String toString() {
         return getClass().getSimpleName() + "{mapName=" + mapName + ", fieldPaths=" + fieldPaths + ", projects=" + projects
-            + "indexName=" + indexName + ", indexFilters=" + indexFilters + ", remainderFilter=" + filter
+            + "indexName=" + indexName + ", indexFilter=" + indexFilter + ", remainderFilter=" + filter
             + ", partitionCount=" + partitions.size() + '}';
     }
 }

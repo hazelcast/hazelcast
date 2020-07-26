@@ -62,22 +62,21 @@ public final class MapScanPhysicalRule extends RelOptRule {
         } else {
             PartitionedMapTable table = (PartitionedMapTable) scan.getMap();
 
-            boolean nativeMemoryEnabled = table.nativeMemoryEnabled();
-
             DistributionTrait distribution = getDistributionTrait(
-                    OptUtils.getDistributionDef(scan),
-                    table,
-                    scan.getTableUnwrapped().getProjects()
+                OptUtils.getDistributionDef(scan),
+                table,
+                scan.getTableUnwrapped().getProjects()
             );
 
             List<RelNode> transforms = new ArrayList<>(1);
 
             MapScanPhysicalRel mapScan = new MapScanPhysicalRel(
-                    scan.getCluster(),
-                    OptUtils.toPhysicalConvention(scan.getTraitSet(), distribution),
-                    scan.getTable()
+                scan.getCluster(),
+                OptUtils.toPhysicalConvention(scan.getTraitSet(), distribution),
+                scan.getTable()
             );
-            if (!nativeMemoryEnabled) {
+
+            if (!table.isHd()) {
                 // Add normal map scan. For HD, Map scan is not supported
                 transforms.add(mapScan);
             }
@@ -87,14 +86,15 @@ public final class MapScanPhysicalRule extends RelOptRule {
             List<RelNode> indexScans = IndexResolver.createIndexScans(scan, distribution, indexes);
             transforms.addAll(indexScans);
 
-            if (nativeMemoryEnabled && indexScans.isEmpty()) {
-                if (!indexes.isEmpty()) {
-                    // Create index scan, even if there is no matching filters
-                    RelNode rel = createFullIndexScan(scan, distribution, indexes);
-                    transforms.add(rel);
+            if (transforms.isEmpty() && table.isHd()) {
+                // No transforms created so far for HD, try using the index scan.
+                RelNode indexScan = createFullIndexScan(scan, distribution, indexes);
+
+                if (indexScan != null) {
+                    transforms.add(indexScan);
                 } else {
-                    // Most likely this will throw a not supported exception on the
-                    // creation of query plan.
+                    // Failed to create any index-based access path for HD. Add standard map scan. It will fail during plan
+                    // creation with proper exception.
                     transforms.add(mapScan);
                 }
             }

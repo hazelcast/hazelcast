@@ -18,16 +18,13 @@ package com.hazelcast.query.impl;
 
 import com.hazelcast.core.TypeConverter;
 import com.hazelcast.internal.serialization.Data;
-import com.hazelcast.internal.util.AbstractCompositeIterator;
 import com.hazelcast.internal.util.FlatCompositeIterator;
 import com.hazelcast.query.Predicate;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.SortedMap;
@@ -41,6 +38,7 @@ import static java.util.Collections.emptySet;
 /**
  * Store indexes rankly.
  */
+@SuppressWarnings("rawtypes")
 public class OrderedIndexStore extends BaseSingleValueIndexStore {
 
     private final ConcurrentSkipListMap<Comparable, Map<Data, QueryableEntry>> recordMap =
@@ -119,7 +117,7 @@ public class OrderedIndexStore extends BaseSingleValueIndexStore {
 
     @Override
     public Iterator<QueryableEntry> getRecordIterator() {
-        Iterator<QueryableEntry> iterator = new EntryCompositeIterator(recordMap.values().iterator());
+        Iterator<QueryableEntry> iterator = new IndexEntryCompositeIterator(recordMap.values().iterator());
         Iterator<QueryableEntry> nullIterator = recordsWithNullValue.values().iterator();
 
         return new FlatCompositeIterator<>(Arrays.asList(iterator, nullIterator).iterator());
@@ -130,54 +128,13 @@ public class OrderedIndexStore extends BaseSingleValueIndexStore {
         if (value == NULL) {
             return recordsWithNullValue.values().iterator();
         } else {
-            return recordMap.get(value).values().iterator();
-        }
-    }
+            Map<Data, QueryableEntry> entries = recordMap.get(value);
 
-    @Override
-    public Set<QueryableEntry> getRecords(Comparable value) {
-        takeReadLock();
-        try {
-            if (value == NULL) {
-                return toSingleResultSet(recordsWithNullValue);
+            if (entries == null) {
+                return Collections.emptyIterator();
             } else {
-                return toSingleResultSet(recordMap.get(value));
+                return entries.values().iterator();
             }
-        } finally {
-            releaseReadLock();
-        }
-    }
-
-    @Override
-    public Iterator<QueryableEntry> getRecordIterator(Set<Comparable> values) {
-        List<Iterator<QueryableEntry>> iterators = new ArrayList<>(values.size());
-
-        for (Comparable value : values) {
-            iterators.add(getRecordIterator(value));
-        }
-
-        return new FlatCompositeIterator<>(iterators.iterator());
-    }
-
-    @Override
-    public Set<QueryableEntry> getRecords(Set<Comparable> values) {
-        takeReadLock();
-        try {
-            MultiResultSet results = createMultiResultSet();
-            for (Comparable value : values) {
-                Map<Data, QueryableEntry> records;
-                if (value == NULL) {
-                    records = recordsWithNullValue;
-                } else {
-                    records = recordMap.get(value);
-                }
-                if (records != null) {
-                    copyToMultiResultSet(results, records);
-                }
-            }
-            return results;
-        } finally {
-            releaseReadLock();
         }
     }
 
@@ -202,7 +159,71 @@ public class OrderedIndexStore extends BaseSingleValueIndexStore {
                 throw new IllegalArgumentException("Unrecognized comparison: " + comparison);
         }
 
-        return new EntryCompositeIterator(iterator);
+        return new IndexEntryCompositeIterator(iterator);
+    }
+
+    @Override
+    public Iterator<QueryableEntry> getRecordIterator(
+        Comparable from,
+        boolean fromInclusive,
+        Comparable to,
+        boolean toInclusive
+    ) {
+        int order = Comparables.compare(from, to);
+
+        if (order == 0) {
+            if (!fromInclusive || !toInclusive) {
+                return emptyIterator();
+            }
+
+            Map<Data, QueryableEntry> res = recordMap.get(from);
+
+            if (res == null) {
+                return emptyIterator();
+            }
+
+            return res.values().iterator();
+        } else if (order > 0) {
+            return emptyIterator();
+        }
+
+        return new IndexEntryCompositeIterator(recordMap.subMap(from, fromInclusive, to, toInclusive).values().iterator());
+    }
+
+    @Override
+    public Set<QueryableEntry> getRecords(Comparable value) {
+        takeReadLock();
+        try {
+            if (value == NULL) {
+                return toSingleResultSet(recordsWithNullValue);
+            } else {
+                return toSingleResultSet(recordMap.get(value));
+            }
+        } finally {
+            releaseReadLock();
+        }
+    }
+
+    @Override
+    public Set<QueryableEntry> getRecords(Set<Comparable> values) {
+        takeReadLock();
+        try {
+            MultiResultSet results = createMultiResultSet();
+            for (Comparable value : values) {
+                Map<Data, QueryableEntry> records;
+                if (value == NULL) {
+                    records = recordsWithNullValue;
+                } else {
+                    records = recordMap.get(value);
+                }
+                if (records != null) {
+                    copyToMultiResultSet(results, records);
+                }
+            }
+            return results;
+        } finally {
+            releaseReadLock();
+        }
     }
 
     @Override
@@ -234,27 +255,6 @@ public class OrderedIndexStore extends BaseSingleValueIndexStore {
         } finally {
             releaseReadLock();
         }
-    }
-
-    @Override
-    public Iterator<QueryableEntry> getRecordIterator(
-        Comparable from,
-        boolean fromInclusive,
-        Comparable to,
-        boolean toInclusive
-    ) {
-        int order = Comparables.compare(from, to);
-
-        if (order == 0) {
-            if (!fromInclusive || !toInclusive) {
-                return emptyIterator();
-            }
-            return recordMap.get(from).values().iterator();
-        } else if (order > 0) {
-            return emptyIterator();
-        }
-
-        return new EntryCompositeIterator(recordMap.subMap(from, fromInclusive, to, toInclusive).values().iterator());
     }
 
     @Override
@@ -402,28 +402,4 @@ public class OrderedIndexStore extends BaseSingleValueIndexStore {
 
     }
 
-    @SuppressWarnings("rawtypes")
-    private static final class EntryCompositeIterator extends AbstractCompositeIterator<QueryableEntry> {
-
-        private final Iterator<Map<Data, QueryableEntry>> iterator;
-
-        private EntryCompositeIterator(Iterator<Map<Data, QueryableEntry>> iterator) {
-            this.iterator = iterator;
-        }
-
-        @Override
-        protected Iterator<QueryableEntry> nextIterator() {
-            while (iterator.hasNext()) {
-                Map<Data, QueryableEntry> map = iterator.next();
-
-                Iterator<QueryableEntry> currentIterator0 = map.values().iterator();
-
-                if (currentIterator0.hasNext()) {
-                    return currentIterator0;
-                }
-            }
-
-            return null;
-        }
-    }
 }

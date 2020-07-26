@@ -41,7 +41,7 @@ import java.util.List;
 public class MapIndexScanPhysicalRel extends AbstractMapScanRel implements PhysicalRel {
 
     private final MapTableIndex index;
-    private final List<IndexFilter> indexFilters;
+    private final IndexFilter indexFilter;
     private final List<QueryDataType> converterTypes;
     private final RexNode indexExp;
     private final RexNode remainderExp;
@@ -51,7 +51,7 @@ public class MapIndexScanPhysicalRel extends AbstractMapScanRel implements Physi
         RelTraitSet traitSet,
         RelOptTable table,
         MapTableIndex index,
-        List<IndexFilter> indexFilters,
+        IndexFilter indexFilter,
         List<QueryDataType> converterTypes,
         RexNode indexExp,
         RexNode remainderExp
@@ -59,7 +59,7 @@ public class MapIndexScanPhysicalRel extends AbstractMapScanRel implements Physi
         super(cluster, traitSet, table);
 
         this.index = index;
-        this.indexFilters = indexFilters;
+        this.indexFilter = indexFilter;
         this.converterTypes = converterTypes;
         this.indexExp = indexExp;
         this.remainderExp = remainderExp;
@@ -69,8 +69,8 @@ public class MapIndexScanPhysicalRel extends AbstractMapScanRel implements Physi
         return index;
     }
 
-    public List<IndexFilter> getIndexFilters() {
-        return indexFilters;
+    public IndexFilter getIndexFilter() {
+        return indexFilter;
     }
 
     public List<QueryDataType> getConverterTypes() {
@@ -88,7 +88,7 @@ public class MapIndexScanPhysicalRel extends AbstractMapScanRel implements Physi
             traitSet,
             getTable(),
             index,
-            indexFilters,
+            indexFilter,
             converterTypes,
             indexExp,
             remainderExp

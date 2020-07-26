@@ -21,11 +21,10 @@ import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.util.FlatCompositeIterator;
 import com.hazelcast.query.Predicate;
 
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -36,6 +35,7 @@ import static com.hazelcast.query.impl.AbstractIndex.NULL;
 /**
  * Store indexes out of turn.
  */
+@SuppressWarnings("rawtypes")
 public class UnorderedIndexStore extends BaseSingleValueIndexStore {
 
     private final ConcurrentMap<Comparable, Map<Data, QueryableEntry>> recordMap = new ConcurrentHashMap<>();
@@ -142,7 +142,10 @@ public class UnorderedIndexStore extends BaseSingleValueIndexStore {
 
     @Override
     public Iterator<QueryableEntry> getRecordIterator() {
-        throw new UnsupportedOperationException();
+        Iterator<QueryableEntry> iterator = new IndexEntryCompositeIterator(recordMap.values().iterator());
+        Iterator<QueryableEntry> nullIterator = recordsWithNullValue.values().iterator();
+
+        return new FlatCompositeIterator<>(Arrays.asList(iterator, nullIterator).iterator());
     }
 
     @Override
@@ -150,8 +153,29 @@ public class UnorderedIndexStore extends BaseSingleValueIndexStore {
         if (value == NULL) {
             return recordsWithNullValue.values().iterator();
         } else {
-            return recordMap.get(canonicalize(value)).values().iterator();
+            Map<Data, QueryableEntry> res = recordMap.get(canonicalize(value));
+
+            if (res == null) {
+                return Collections.emptyIterator();
+            }
+
+            return res.values().iterator();
         }
+    }
+
+    @Override
+    public Iterator<QueryableEntry> getRecordIterator(Comparison comparison, Comparable value) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public Iterator<QueryableEntry> getRecordIterator(
+        Comparable from,
+        boolean fromInclusive,
+        Comparable to,
+        boolean toInclusive
+    ) {
+        throw new UnsupportedOperationException();
     }
 
     @Override
@@ -166,17 +190,6 @@ public class UnorderedIndexStore extends BaseSingleValueIndexStore {
         } finally {
             releaseReadLock();
         }
-    }
-
-    @Override
-    public Iterator<QueryableEntry> getRecordIterator(Set<Comparable> values) {
-        List<Iterator<QueryableEntry>> iterators = new ArrayList<>(values.size());
-
-        for (Comparable value : values) {
-            iterators.add(getRecordIterator(value));
-        }
-
-        return new FlatCompositeIterator<>(iterators.iterator());
     }
 
     @Override
@@ -200,11 +213,6 @@ public class UnorderedIndexStore extends BaseSingleValueIndexStore {
         } finally {
             releaseReadLock();
         }
-    }
-
-    @Override
-    public Iterator<QueryableEntry> getRecordIterator(Comparison comparison, Comparable value) {
-        throw new UnsupportedOperationException();
     }
 
     @Override
@@ -243,16 +251,6 @@ public class UnorderedIndexStore extends BaseSingleValueIndexStore {
         } finally {
             releaseReadLock();
         }
-    }
-
-    @Override
-    public Iterator<QueryableEntry> getRecordIterator(
-        Comparable from,
-        boolean fromInclusive,
-        Comparable to,
-        boolean toInclusive
-    ) {
-        throw new UnsupportedOperationException();
     }
 
     @SuppressWarnings({"checkstyle:npathcomplexity"})

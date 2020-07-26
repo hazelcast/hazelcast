@@ -28,6 +28,7 @@ import java.util.Set;
  * Defines a contract for index stores, so different index stores may be used
  * interchangeably with the same {@link Index} implementation.
  */
+@SuppressWarnings("rawtypes")
 public interface IndexStore {
 
     /**
@@ -129,6 +130,10 @@ public interface IndexStore {
 
     Iterator<QueryableEntry> getRecordIterator(Comparable value);
 
+    Iterator<QueryableEntry> getRecordIterator(Comparison comparison, Comparable value);
+
+    Iterator<QueryableEntry> getRecordIterator(Comparable from, boolean fromInclusive, Comparable to, boolean toInclusive);
+
     /**
      * Obtains entries that have indexed attribute value equal to the given
      * value.
@@ -138,8 +143,6 @@ public interface IndexStore {
      * @see Index#getRecords(Comparable)
      */
     Set<QueryableEntry> getRecords(Comparable value);
-
-    Iterator<QueryableEntry> getRecordIterator(Set<Comparable> values);
 
     /**
      * Obtains entries that have indexed attribute value equal to one of the
@@ -151,8 +154,6 @@ public interface IndexStore {
      */
     Set<QueryableEntry> getRecords(Set<Comparable> values);
 
-    Iterator<QueryableEntry> getRecordIterator(Comparison comparison, Comparable value);
-
     /**
      * Obtains entries that have indexed attribute value satisfying the given
      * comparison with the given value.
@@ -163,8 +164,6 @@ public interface IndexStore {
      * @see Index#getRecords(Comparison, Comparable)
      */
     Set<QueryableEntry> getRecords(Comparison comparison, Comparable value);
-
-    Iterator<QueryableEntry> getRecordIterator(Comparable from, boolean fromInclusive, Comparable to, boolean toInclusive);
 
     /**
      * Obtains entries that have indexed attribute value belonging to the given

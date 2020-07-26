@@ -35,7 +35,8 @@ import java.util.Objects;
 public class MapIndexScanPlanNode extends AbstractMapScanPlanNode {
 
     private String indexName;
-    private List<IndexFilter> indexFilters;
+    private int indexComponentCount;
+    private IndexFilter indexFilter;
     private List<QueryDataType> converterTypes;
 
     public MapIndexScanPlanNode() {
@@ -52,14 +53,16 @@ public class MapIndexScanPlanNode extends AbstractMapScanPlanNode {
         List<QueryDataType> fieldTypes,
         List<Integer> projects,
         String indexName,
-        List<IndexFilter> indexFilters,
+        int indexComponentCount,
+        IndexFilter indexFilter,
         List<QueryDataType> converterTypes,
         Expression<Boolean> remainderFilter
     ) {
         super(id, mapName, keyDescriptor, valueDescriptor, fieldPaths, fieldTypes, projects, remainderFilter);
 
         this.indexName = indexName;
-        this.indexFilters = indexFilters;
+        this.indexComponentCount = indexComponentCount;
+        this.indexFilter = indexFilter;
         this.converterTypes = converterTypes;
     }
 
@@ -67,8 +70,12 @@ public class MapIndexScanPlanNode extends AbstractMapScanPlanNode {
         return indexName;
     }
 
-    public List<IndexFilter> getIndexFilters() {
-        return indexFilters;
+    public int getIndexComponentCount() {
+        return indexComponentCount;
+    }
+
+    public IndexFilter getIndexFilter() {
+        return indexFilter;
     }
 
     public List<QueryDataType> getConverterTypes() {
@@ -85,7 +92,8 @@ public class MapIndexScanPlanNode extends AbstractMapScanPlanNode {
         super.writeData0(out);
 
         out.writeUTF(indexName);
-        SerializationUtil.writeList(indexFilters, out);
+        out.writeInt(indexComponentCount);
+        out.writeObject(indexFilter);
         SerializationUtil.writeList(converterTypes, out);
     }
 
@@ -94,13 +102,14 @@ public class MapIndexScanPlanNode extends AbstractMapScanPlanNode {
         super.readData0(in);
 
         indexName = in.readUTF();
-        indexFilters = SerializationUtil.readList(in);
+        indexComponentCount = in.readInt();
+        indexFilter = in.readObject();
         converterTypes = SerializationUtil.readList(in);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, mapName, fieldPaths, projects, indexName, indexFilters, converterTypes, filter);
+        return Objects.hash(id, mapName, fieldPaths, projects, indexName, indexFilter, converterTypes, filter);
     }
 
     @Override
@@ -120,7 +129,7 @@ public class MapIndexScanPlanNode extends AbstractMapScanPlanNode {
             && fieldPaths.equals(that.fieldPaths)
             && projects.equals(that.projects)
             && indexName.equals(that.indexName)
-            && Objects.equals(indexFilters, that.indexFilters)
+            && Objects.equals(indexFilter, that.indexFilter)
             && Objects.equals(converterTypes, that.converterTypes)
             && Objects.equals(filter, that.filter);
     }
@@ -128,7 +137,7 @@ public class MapIndexScanPlanNode extends AbstractMapScanPlanNode {
     @Override
     public String toString() {
         return getClass().getSimpleName() + "{id=" + id + ", mapName=" + mapName + ", fieldPaths=" + fieldPaths
-            + ", projects=" + projects + ", indexName=" + indexName + ", indexFilters=" + indexFilters
+            + ", projects=" + projects + ", indexName=" + indexName + ", indexFilter=" + indexFilter
             + ", remainderFilter=" + filter + '}';
     }
 }

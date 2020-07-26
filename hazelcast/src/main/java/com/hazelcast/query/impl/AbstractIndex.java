@@ -44,6 +44,7 @@ import static java.util.Collections.emptySet;
 /**
  * Provides an abstract base for indexes.
  */
+@SuppressWarnings("rawtypes")
 public abstract class AbstractIndex implements InternalIndex {
 
     /**
@@ -194,6 +195,29 @@ public abstract class AbstractIndex implements InternalIndex {
     }
 
     @Override
+    public Iterator<QueryableEntry> getRecordIterator(Comparison comparison, Comparable value) {
+        if (converter == null) {
+            return emptyIterator();
+        }
+
+        return indexStore.getRecordIterator(comparison, convert(value));
+    }
+
+    @Override
+    public Iterator<QueryableEntry> getRecordIterator(
+        Comparable from,
+        boolean fromInclusive,
+        Comparable to,
+        boolean toInclusive
+    ) {
+        if (converter == null) {
+            return emptyIterator();
+        }
+
+        return indexStore.getRecordIterator(convert(from), fromInclusive, convert(to), toInclusive);
+    }
+
+    @Override
     public Set<QueryableEntry> getRecords(Comparable value) {
         long timestamp = stats.makeTimestamp();
 
@@ -205,29 +229,6 @@ public abstract class AbstractIndex implements InternalIndex {
         Set<QueryableEntry> result = indexStore.getRecords(convert(value));
         stats.onIndexHit(timestamp, result.size());
         return result;
-    }
-
-    @Override
-    public Iterator<QueryableEntry> getRecordIterator(Comparable[] values) {
-        if (values.length == 1) {
-            return getRecordIterator(values[0]);
-        }
-
-        if (converter == null || values.length == 0) {
-            return emptyIterator();
-        }
-
-        Set<Comparable> convertedValues = createHashSet(values.length);
-        for (Comparable value : values) {
-            Comparable converted = convert(value);
-            convertedValues.add(canonicalizeQueryArgumentScalar(converted));
-        }
-
-        if (convertedValues.size() == 1) {
-            return getRecordIterator(convertedValues.iterator().next());
-        }
-
-        return indexStore.getRecordIterator(convertedValues);
     }
 
     @Override
@@ -254,20 +255,6 @@ public abstract class AbstractIndex implements InternalIndex {
     }
 
     @Override
-    public Iterator<QueryableEntry> getRecordIterator(
-        Comparable from,
-        boolean fromInclusive,
-        Comparable to,
-        boolean toInclusive
-    ) {
-        if (converter == null) {
-            return emptyIterator();
-        }
-
-        return indexStore.getRecordIterator(convert(from), fromInclusive, convert(to), toInclusive);
-    }
-
-    @Override
     public Set<QueryableEntry> getRecords(Comparable from, boolean fromInclusive, Comparable to, boolean toInclusive) {
         long timestamp = stats.makeTimestamp();
 
@@ -279,15 +266,6 @@ public abstract class AbstractIndex implements InternalIndex {
         Set<QueryableEntry> result = indexStore.getRecords(convert(from), fromInclusive, convert(to), toInclusive);
         stats.onIndexHit(timestamp, result.size());
         return result;
-    }
-
-    @Override
-    public Iterator<QueryableEntry> getRecordIterator(Comparison comparison, Comparable value) {
-        if (converter == null) {
-            return emptyIterator();
-        }
-
-        return indexStore.getRecordIterator(comparison, convert(value));
     }
 
     @Override

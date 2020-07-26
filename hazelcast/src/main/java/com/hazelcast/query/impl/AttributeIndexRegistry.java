@@ -20,13 +20,10 @@ import com.hazelcast.config.IndexConfig;
 import com.hazelcast.core.TypeConverter;
 import com.hazelcast.internal.monitor.impl.PerIndexStats;
 import com.hazelcast.internal.serialization.Data;
-import com.hazelcast.internal.util.FlatCompositeIterator;
 import com.hazelcast.query.Predicate;
 
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -36,7 +33,6 @@ import static com.hazelcast.query.impl.Comparison.GREATER;
 import static com.hazelcast.query.impl.Comparison.GREATER_OR_EQUAL;
 import static com.hazelcast.query.impl.CompositeValue.NEGATIVE_INFINITY;
 import static com.hazelcast.query.impl.CompositeValue.POSITIVE_INFINITY;
-import static java.util.Collections.emptyIterator;
 import static java.util.Collections.emptySet;
 
 /**
@@ -169,6 +165,7 @@ public class AttributeIndexRegistry {
      * <p>
      * Exposed as a package-private class only for testing purposes.
      */
+    @SuppressWarnings("rawtypes")
     static final class FirstComponentDecorator implements InternalIndex {
 
         // See CompositeValue docs for more details on what is going on in the
@@ -253,43 +250,42 @@ public class AttributeIndexRegistry {
         }
 
         @Override
+        public Iterator<QueryableEntry> getRecordIterator(Comparison comparison, Comparable value) {
+            switch (comparison) {
+                case LESS:
+                    CompositeValue lessFrom = new CompositeValue(width, NULL, POSITIVE_INFINITY);
+                    CompositeValue lessTo = new CompositeValue(width, value, NEGATIVE_INFINITY);
+                    return delegate.getRecordIterator(lessFrom, false, lessTo, false);
+                case GREATER:
+                    return delegate.getRecordIterator(GREATER, new CompositeValue(width, value, POSITIVE_INFINITY));
+                case LESS_OR_EQUAL:
+                    CompositeValue greaterOrEqualFrom = new CompositeValue(width, NULL, POSITIVE_INFINITY);
+                    CompositeValue greaterOrEqualTo = new CompositeValue(width, value, POSITIVE_INFINITY);
+                    return delegate.getRecordIterator(greaterOrEqualFrom, false, greaterOrEqualTo, false);
+                case GREATER_OR_EQUAL:
+                    return delegate.getRecordIterator(GREATER_OR_EQUAL, new CompositeValue(width, value, NEGATIVE_INFINITY));
+                default:
+                    throw new IllegalStateException("unexpected comparison: " + comparison);
+            }
+        }
+
+        @Override
+        public Iterator<QueryableEntry> getRecordIterator(
+            Comparable from,
+            boolean fromInclusive,
+            Comparable to,
+            boolean toInclusive
+        ) {
+            Comparable compositeFrom = new CompositeValue(width, from, fromInclusive ? NEGATIVE_INFINITY : POSITIVE_INFINITY);
+            Comparable compositeTo = new CompositeValue(width, to, toInclusive ? POSITIVE_INFINITY : NEGATIVE_INFINITY);
+            return delegate.getRecordIterator(compositeFrom, false, compositeTo, false);
+        }
+
+        @Override
         public Set<QueryableEntry> getRecords(Comparable value) {
             Comparable from = new CompositeValue(width, value, NEGATIVE_INFINITY);
             Comparable to = new CompositeValue(width, value, POSITIVE_INFINITY);
             return delegate.getRecords(from, false, to, false);
-        }
-
-        @Override
-        public Iterator<QueryableEntry> getRecordIterator(Comparable[] values) {
-            if (values.length == 0) {
-                return emptyIterator();
-            }
-
-            TypeConverter converter = getConverter();
-            if (converter == null) {
-                return emptyIterator();
-            }
-
-            if (values.length == 1) {
-                return getRecordIterator(values[0]);
-            }
-
-            Set<Comparable> convertedValues = new HashSet<>();
-            for (Comparable value : values) {
-                Comparable converted = converter.convert(value);
-                convertedValues.add(canonicalizeQueryArgumentScalar(converted));
-            }
-
-            if (convertedValues.size() == 1) {
-                return getRecordIterator(convertedValues.iterator().next());
-            }
-
-            List<Iterator<QueryableEntry>> iterators = new ArrayList<>(convertedValues.size());
-            for (Comparable value : convertedValues) {
-                iterators.add(getRecordIterator(value));
-            }
-
-            return new FlatCompositeIterator<>(iterators.iterator());
         }
 
         @SuppressWarnings("checkstyle:npathcomplexity")
@@ -327,42 +323,10 @@ public class AttributeIndexRegistry {
         }
 
         @Override
-        public Iterator<QueryableEntry> getRecordIterator(
-            Comparable from,
-            boolean fromInclusive,
-            Comparable to,
-            boolean toInclusive
-        ) {
-            Comparable compositeFrom = new CompositeValue(width, from, fromInclusive ? NEGATIVE_INFINITY : POSITIVE_INFINITY);
-            Comparable compositeTo = new CompositeValue(width, to, toInclusive ? POSITIVE_INFINITY : NEGATIVE_INFINITY);
-            return delegate.getRecordIterator(compositeFrom, false, compositeTo, false);
-        }
-
-        @Override
         public Set<QueryableEntry> getRecords(Comparable from, boolean fromInclusive, Comparable to, boolean toInclusive) {
             Comparable compositeFrom = new CompositeValue(width, from, fromInclusive ? NEGATIVE_INFINITY : POSITIVE_INFINITY);
             Comparable compositeTo = new CompositeValue(width, to, toInclusive ? POSITIVE_INFINITY : NEGATIVE_INFINITY);
             return delegate.getRecords(compositeFrom, false, compositeTo, false);
-        }
-
-        @Override
-        public Iterator<QueryableEntry> getRecordIterator(Comparison comparison, Comparable value) {
-            switch (comparison) {
-                case LESS:
-                    CompositeValue lessFrom = new CompositeValue(width, NULL, POSITIVE_INFINITY);
-                    CompositeValue lessTo = new CompositeValue(width, value, NEGATIVE_INFINITY);
-                    return delegate.getRecordIterator(lessFrom, false, lessTo, false);
-                case GREATER:
-                    return delegate.getRecordIterator(GREATER, new CompositeValue(width, value, POSITIVE_INFINITY));
-                case LESS_OR_EQUAL:
-                    CompositeValue greaterOrEqualFrom = new CompositeValue(width, NULL, POSITIVE_INFINITY);
-                    CompositeValue greaterOrEqualTo = new CompositeValue(width, value, POSITIVE_INFINITY);
-                    return delegate.getRecordIterator(greaterOrEqualFrom, false, greaterOrEqualTo, false);
-                case GREATER_OR_EQUAL:
-                    return delegate.getRecordIterator(GREATER_OR_EQUAL, new CompositeValue(width, value, NEGATIVE_INFINITY));
-                default:
-                    throw new IllegalStateException("unexpected comparison: " + comparison);
-            }
         }
 
         @Override

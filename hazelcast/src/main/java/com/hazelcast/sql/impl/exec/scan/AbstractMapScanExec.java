@@ -42,7 +42,7 @@ import java.util.List;
 public abstract class AbstractMapScanExec extends AbstractExec {
 
     /** Batch size. To be moved outside when the memory management is ready. */
-    static final int BATCH_SIZE = 1024;
+    public static final int BATCH_SIZE = 1024;
 
     protected final String mapName;
     protected final QueryTargetDescriptor keyDescriptor;
@@ -182,8 +182,12 @@ public abstract class AbstractMapScanExec extends AbstractExec {
         row.setKeyValue(rawKey, rawValue);
 
         // Filter.
-        if (filter != null && !filter.eval(row, ctx)) {
-            return null;
+        if (filter != null) {
+            Boolean filterRes = filter.eval(row, ctx);
+
+            if (filterRes == null || !filterRes) {
+                return null;
+            }
         }
 
         // Project.
