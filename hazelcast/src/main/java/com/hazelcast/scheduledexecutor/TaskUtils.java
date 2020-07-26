@@ -16,6 +16,7 @@
 
 package com.hazelcast.scheduledexecutor;
 
+import com.hazelcast.scheduledexecutor.impl.AutoDisposableTaskDecorator;
 import com.hazelcast.scheduledexecutor.impl.NamedTaskDecorator;
 
 import java.util.concurrent.Callable;
@@ -49,5 +50,26 @@ public final class TaskUtils {
      */
     public static <V> Callable<V> named(final String name, final Callable<V> callable) {
         return NamedTaskDecorator.named(name, callable);
+    }
+
+    /**
+     * Decorate any {@link Runnable} with a {@link AutoDisposableTask} to destroy automatically after execution
+     *
+     * @param runnable The runnable task to be disposed automatically
+     * @return A new Runnable implementing the {@link AutoDisposableTask} interface
+     */
+    public static Runnable autoDisposable(final Runnable runnable) {
+        return AutoDisposableTaskDecorator.autoDisposable(runnable);
+    }
+
+    /**
+     * Decorate any {@link Callable} with a {@link AutoDisposableTask} to destroy automatically after execution
+     *
+     * @param callable The callable task to be disposed automatically
+     * @param <V>      The return type of callable task
+     * @return A new Callable implementing the {@link AutoDisposableTask} interface
+     */
+    public static <V> Callable<V> autoDisposable(final Callable<V> callable) {
+        return AutoDisposableTaskDecorator.autoDisposable(callable);
     }
 }

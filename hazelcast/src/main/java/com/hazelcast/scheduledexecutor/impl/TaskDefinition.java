@@ -58,25 +58,29 @@ public class TaskDefinition<V>
     private long initialDelay;
     private long period;
     private TimeUnit unit;
+    private boolean autoDisposable;
 
     public TaskDefinition() {
     }
 
-    public TaskDefinition(Type type, String name, Callable<V> command, long delay, TimeUnit unit) {
+    public TaskDefinition(Type type, String name, Callable<V> command, long delay, TimeUnit unit, boolean autoDisposable) {
         this.type = type;
         this.name = name;
         this.command = command;
         this.initialDelay = delay;
         this.unit = unit;
+        this.autoDisposable = autoDisposable;
     }
 
-    public TaskDefinition(Type type, String name, Callable<V> command, long initialDelay, long period, TimeUnit unit) {
+    public TaskDefinition(Type type, String name, Callable<V> command, long initialDelay, long period,
+                          TimeUnit unit, boolean autoDisposable) {
         this.type = type;
         this.name = name;
         this.command = command;
         this.initialDelay = initialDelay;
         this.period = period;
         this.unit = unit;
+        this.autoDisposable = autoDisposable;
     }
 
     public Type getType() {
@@ -103,6 +107,10 @@ public class TaskDefinition<V>
         return unit;
     }
 
+    public boolean isAutoDisposable() {
+        return autoDisposable;
+    }
+
     @Override
     public int getFactoryId() {
         return ScheduledExecutorDataSerializerHook.F_ID;
@@ -122,6 +130,7 @@ public class TaskDefinition<V>
         out.writeLong(initialDelay);
         out.writeLong(period);
         out.writeUTF(unit.name());
+        out.writeBoolean(autoDisposable);
     }
 
     @Override
@@ -133,6 +142,7 @@ public class TaskDefinition<V>
         initialDelay = in.readLong();
         period = in.readLong();
         unit = TimeUnit.valueOf(in.readUTF());
+        autoDisposable = in.readBoolean();
     }
 
     @Override
@@ -145,12 +155,12 @@ public class TaskDefinition<V>
         }
         TaskDefinition<?> that = (TaskDefinition<?>) o;
         return initialDelay == that.initialDelay && period == that.period && type == that.type && name.equals(that.name)
-                && unit == that.unit;
+                && unit == that.unit && autoDisposable == that.autoDisposable;
     }
 
     @Override
     public int hashCode() {
-        return Arrays.hashCode(new Object[]{type, name, initialDelay, period, unit});
+        return Arrays.hashCode(new Object[]{type, name, initialDelay, period, unit, autoDisposable});
     }
 
     @Override
@@ -162,6 +172,7 @@ public class TaskDefinition<V>
                 + ", initialDelay=" + initialDelay
                 + ", period=" + period
                 + ", unit=" + unit
+                + ", autoDisposable=" + autoDisposable
                 + '}';
     }
 }

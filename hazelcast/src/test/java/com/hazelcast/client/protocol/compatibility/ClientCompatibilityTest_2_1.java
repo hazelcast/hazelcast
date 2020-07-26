@@ -5377,7 +5377,7 @@ public class ClientCompatibilityTest_2_1 {
     @Test
     public void test_ScheduledExecutorSubmitToPartitionCodec_encodeRequest() {
         int fileClientMessageIndex = 675;
-        ClientMessage encoded = ScheduledExecutorSubmitToPartitionCodec.encodeRequest(aString, aByte, aString, aData, aLong, aLong);
+        ClientMessage encoded = ScheduledExecutorSubmitToPartitionCodec.encodeRequest(aString, aByte, aString, aData, aLong, aLong, aBoolean);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }
@@ -5390,7 +5390,7 @@ public class ClientCompatibilityTest_2_1 {
     @Test
     public void test_ScheduledExecutorSubmitToMemberCodec_encodeRequest() {
         int fileClientMessageIndex = 677;
-        ClientMessage encoded = ScheduledExecutorSubmitToMemberCodec.encodeRequest(aString, aUUID, aByte, aString, aData, aLong, aLong);
+        ClientMessage encoded = ScheduledExecutorSubmitToMemberCodec.encodeRequest(aString, aUUID, aByte, aString, aData, aLong, aLong, aBoolean);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }

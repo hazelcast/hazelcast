@@ -44,7 +44,7 @@ public class ScheduledExecutorSubmitToPartitionMessageTask
         Callable callable = serializationService.toObject(parameters.task);
         TaskDefinition def = new TaskDefinition(TaskDefinition.Type.getById(parameters.type),
                 parameters.taskName, callable, parameters.initialDelayInMillis, parameters.periodInMillis,
-                TimeUnit.MILLISECONDS);
+                TimeUnit.MILLISECONDS, isAutoDisposable());
         return new ScheduleTaskOperation(parameters.schedulerName, def);
     }
 
@@ -83,7 +83,11 @@ public class ScheduledExecutorSubmitToPartitionMessageTask
         Callable callable = serializationService.toObject(parameters.task);
         TaskDefinition def = new TaskDefinition(TaskDefinition.Type.getById(parameters.type),
                 parameters.taskName, callable, parameters.initialDelayInMillis, parameters.periodInMillis,
-                TimeUnit.MILLISECONDS);
+                TimeUnit.MILLISECONDS, isAutoDisposable());
         return new Object[] { parameters.schedulerName, def };
+    }
+
+    private boolean isAutoDisposable() {
+        return parameters.isAutoDisposableExists && parameters.autoDisposable;
     }
 }
