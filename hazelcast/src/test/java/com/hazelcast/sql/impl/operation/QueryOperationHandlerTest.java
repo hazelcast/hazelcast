@@ -504,6 +504,7 @@ public class QueryOperationHandlerTest extends SqlTestSupport {
             Collections.emptyMap(),
             null,
             null,
+            null,
             null
         );
 
@@ -511,7 +512,7 @@ public class QueryOperationHandlerTest extends SqlTestSupport {
             initiatorId,
             timeout,
             plan,
-            null,
+            null, null,
             new BlockingRootResultConsumer(),
             initiatorService.getOperationHandler()
         ).getQueryId();

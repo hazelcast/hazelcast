@@ -56,7 +56,7 @@ public class QueryStateRegistryTest extends SqlTestSupport {
             localMemberId,
             timeout,
             initiatorPlan,
-            null,
+            null, null,
             resultProducer,
             completionCallback
         );

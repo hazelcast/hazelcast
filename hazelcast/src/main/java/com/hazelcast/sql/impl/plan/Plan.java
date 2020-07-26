@@ -20,7 +20,7 @@ import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.sql.SqlRowMetadata;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.explain.QueryExplain;
-import com.hazelcast.sql.impl.optimizer.SqlPlan;
+import com.hazelcast.sql.impl.SqlCacheablePlan;
 import com.hazelcast.sql.impl.optimizer.SqlPlanType;
 import com.hazelcast.sql.impl.plan.node.PlanNode;
 
@@ -28,11 +28,23 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Query plan implementation.
  */
-public class Plan implements SqlPlan {
+public class Plan implements SqlCacheablePlan {
+
+    private static final AtomicLong PLAN_TIMESTAMP_GENERATOR = new AtomicLong();
+
+    /** Unique plan timestamp that used to compare older and newer plans.  */
+    private final long planTimestamp = PLAN_TIMESTAMP_GENERATOR.incrementAndGet();
+
+    /** Time when the plan was used for the last time. */
+    private volatile long planLastUsed;
+
+    private final String planSql;
+
     /** Partition mapping. */
     private final Map<UUID, PartitionIdSet> partMap;
 
@@ -64,6 +76,7 @@ public class Plan implements SqlPlan {
         Map<Integer, Integer> inboundEdgeMemberCountMap,
         QueryParameterMetadata parameterMetadata,
         SqlRowMetadata rowMetadata,
+        String planSql,
         QueryExplain explain
     ) {
         this.partMap = partMap;
@@ -74,6 +87,7 @@ public class Plan implements SqlPlan {
         this.inboundEdgeMemberCountMap = inboundEdgeMemberCountMap;
         this.parameterMetadata = parameterMetadata;
         this.rowMetadata = rowMetadata;
+        this.planSql = planSql;
         this.explain = explain;
     }
 
@@ -85,6 +99,26 @@ public class Plan implements SqlPlan {
     @Override
     public QueryExplain getExplain() {
         return explain;
+    }
+
+    @Override
+    public String getPlanSql() {
+        return planSql;
+    }
+
+    @Override
+    public long getPlanCreationTimestamp() {
+        return planTimestamp;
+    }
+
+    @Override
+    public long getPlanLastUsed() {
+        return planLastUsed;
+    }
+
+    @Override
+    public void onPlanUsed() {
+        planLastUsed = System.currentTimeMillis();
     }
 
     public Map<UUID, PartitionIdSet> getPartitionMap() {

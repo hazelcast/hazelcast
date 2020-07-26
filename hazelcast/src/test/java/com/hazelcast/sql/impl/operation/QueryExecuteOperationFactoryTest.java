@@ -75,6 +75,7 @@ public class QueryExecuteOperationFactoryTest {
             inboundEdgeMemberCountMap,
             null,
             null,
+            null,
             null
         );
 

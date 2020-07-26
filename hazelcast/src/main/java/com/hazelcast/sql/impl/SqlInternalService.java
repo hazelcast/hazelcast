@@ -137,7 +137,13 @@ public class SqlInternalService {
      *
      * @return Query state.
      */
-    public QueryState execute(Plan plan, List<Object> params, long timeout, int pageSize) {
+    public QueryState execute(
+        Plan plan,
+        List<Object> params,
+        long timeout,
+        int pageSize,
+        SqlCacheablePlanInvalidationCallback planInvalidationCallback
+    ) {
         // Prepare parameters.
         params = prepareParameters(plan, params);
 
@@ -162,6 +168,7 @@ public class SqlInternalService {
             localMemberId,
             timeout,
             plan,
+            planInvalidationCallback,
             plan.getRowMetadata(),
             consumer,
             operationHandler

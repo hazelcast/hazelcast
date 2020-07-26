@@ -91,8 +91,10 @@ public class MapScanExecIterator implements KeyValueIterator {
                     boolean isOwned = map.getMapServiceContext().getOwnedPartitions().contains(nextPart);
 
                     if (!isOwned) {
-                        throw QueryException.error(SqlErrorCode.PARTITION_MIGRATED,
-                            "Partition is not owned by member: " + nextPart);
+                        throw QueryException.error(
+                            SqlErrorCode.PARTITION_MIGRATED,
+                            "Partition is not owned by member: " + nextPart
+                        ).withInvalidate();
                     }
 
                     currentRecordStore = map.getMapServiceContext().getRecordStore(nextPart, map.getName());

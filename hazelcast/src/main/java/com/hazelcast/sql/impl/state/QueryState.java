@@ -22,6 +22,7 @@ import com.hazelcast.sql.impl.ClockProvider;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.QueryResultProducer;
+import com.hazelcast.sql.impl.SqlCacheablePlanInvalidationCallback;
 import com.hazelcast.sql.impl.plan.Plan;
 
 import java.util.Collection;
@@ -69,6 +70,7 @@ public final class QueryState implements QueryStateCallback {
         boolean initiator,
         long initiatorTimeout,
         Plan initiatorPlan,
+        SqlCacheablePlanInvalidationCallback initiatorPlanInvalidationCallback,
         SqlRowMetadata initiatorRowMetadata,
         QueryResultProducer initiatorRowSource,
         ClockProvider clockProvider
@@ -82,6 +84,7 @@ public final class QueryState implements QueryStateCallback {
             initiatorState = new QueryInitiatorState(
                 queryId,
                 initiatorPlan,
+                initiatorPlanInvalidationCallback,
                 initiatorRowMetadata,
                 initiatorRowSource,
                 initiatorTimeout
@@ -96,12 +99,14 @@ public final class QueryState implements QueryStateCallback {
         checkTime = startTime;
     }
 
+    @SuppressWarnings("checkstyle:ParameterNumber")
     public static QueryState createInitiatorState(
         QueryId queryId,
         UUID localMemberId,
         QueryStateCompletionCallback completionCallback,
         long initiatorTimeout,
         Plan initiatorPlan,
+        SqlCacheablePlanInvalidationCallback initiatorPlanInvalidationCallback,
         SqlRowMetadata initiatorRowMetadata,
         QueryResultProducer initiatorResultProducer,
         ClockProvider clockProvider
@@ -113,6 +118,7 @@ public final class QueryState implements QueryStateCallback {
             true,
             initiatorTimeout,
             initiatorPlan,
+            initiatorPlanInvalidationCallback,
             initiatorRowMetadata,
             initiatorResultProducer,
             clockProvider
@@ -138,7 +144,7 @@ public final class QueryState implements QueryStateCallback {
             false,
             -1,
             null,
-            null,
+            null, null,
             null,
             clockProvider
         );
@@ -189,6 +195,15 @@ public final class QueryState implements QueryStateCallback {
         }
 
         QueryException error0 = prepareCancelError(error);
+
+        // Invalidate plan if needed.
+        if (error0.isInvalidatePlan()) {
+            SqlCacheablePlanInvalidationCallback planInvalidationCallback = initiatorState.getPlanInvalidationCallback();
+
+            if (planInvalidationCallback != null) {
+                planInvalidationCallback.invalidate(initiatorState.getPlan());
+            }
+        }
 
         // Determine members which should be notified.
         Collection<UUID> memberIds;

@@ -55,6 +55,8 @@ public class SqlServiceImpl implements SqlService, Consumer<Packet> {
     /** Default state check frequency. */
     private static final long STATE_CHECK_FREQUENCY = 1_000L;
 
+    private static final int PLAN_CACHE_SIZE = 10_000;
+
     private static final String OPTIMIZER_CLASS_PROPERTY_NAME = "hazelcast.sql.optimizerClass";
     private static final String SQL_MODULE_OPTIMIZER_CLASS = "com.hazelcast.sql.impl.calcite.CalciteSqlOptimizer";
 
@@ -67,6 +69,8 @@ public class SqlServiceImpl implements SqlService, Consumer<Packet> {
 
     private volatile SqlInternalService internalService;
     private JetSqlBackend jetSqlBackend;
+
+    private final SqlPlanCache planCache = new SqlPlanCache(PLAN_CACHE_SIZE);
 
     public SqlServiceImpl(NodeEngineImpl nodeEngine) {
         this.nodeEngine = nodeEngine;
@@ -128,10 +132,12 @@ public class SqlServiceImpl implements SqlService, Consumer<Packet> {
     }
 
     public void reset() {
+        planCache.clear();
         internalService.reset();
     }
 
     public void shutdown() {
+        planCache.clear();
         internalService.shutdown();
     }
 
@@ -218,7 +224,19 @@ public class SqlServiceImpl implements SqlService, Consumer<Packet> {
     }
 
     private SqlPlan prepare(String sql) {
-        return optimizer.prepare(new OptimizationTask.Builder(sql).build());
+        SqlPlan plan = planCache.get(sql);
+
+        if (plan == null) {
+            plan = optimizer.prepare(new OptimizationTask.Builder(sql).build());
+
+            if (plan instanceof SqlCacheablePlan) {
+                SqlCacheablePlan plan0 = (SqlCacheablePlan) plan;
+
+                planCache.set(sql, plan0);
+            }
+        }
+
+        return plan;
     }
 
     private SqlResult execute(SqlPlan plan, List<Object> params, long timeout, int pageSize) {
@@ -243,7 +261,7 @@ public class SqlServiceImpl implements SqlService, Consumer<Packet> {
     }
 
     private SqlResult executeImdg(Plan plan, List<Object> params, long timeout, int pageSize) {
-        QueryState state = internalService.execute(plan, params, timeout, pageSize);
+        QueryState state = internalService.execute(plan, params, timeout, pageSize, planCache);
 
         return new SqlResultImpl(state);
     }
