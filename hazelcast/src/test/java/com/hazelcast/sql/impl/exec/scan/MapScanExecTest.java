@@ -421,7 +421,7 @@ public class MapScanExecTest extends SqlTestSupport {
         );
 
         QueryException exception = assertThrows(QueryException.class, () -> exec.setup(emptyFragmentContext()));
-        assertEquals(SqlErrorCode.PARTITION_MIGRATED, exception.getCode());
+        assertEquals(SqlErrorCode.PARTITION_NOT_OWNED, exception.getCode());
     }
 
     /**

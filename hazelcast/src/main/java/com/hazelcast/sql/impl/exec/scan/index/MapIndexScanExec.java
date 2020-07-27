@@ -19,17 +19,13 @@ package com.hazelcast.sql.impl.exec.scan.index;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.map.impl.MapContainer;
-import com.hazelcast.sql.SqlErrorCode;
-import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.exec.scan.KeyValueIterator;
 import com.hazelcast.sql.impl.exec.scan.MapScanExec;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.extract.QueryTargetDescriptor;
 import com.hazelcast.sql.impl.type.QueryDataType;
-import com.hazelcast.sql.impl.worker.QueryFragmentContext;
 
-import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -79,39 +75,9 @@ public class MapIndexScanExec extends MapScanExec {
         this.converterTypes = converterTypes;
     }
 
-    public String getIndexName() {
-        return indexName;
-    }
-
     @Override
     protected KeyValueIterator createIterator() {
-        return new MapIndexScanExecIterator(map, indexName, componentCount, indexFilter, converterTypes, ctx);
-    }
-
-    @Override
-    protected void setup1(QueryFragmentContext ctx) {
-        // TODO: Move this into iterator (see IndexImpl.indexedPartitions)
-        // Check if expected partitions are owned by this member. Future migrations are tracked via migration stamp.
-        PartitionIdSet owned = map.getMapServiceContext().getOwnedPartitions();
-
-        if (owned.containsAll(partitions)) {
-            return;
-        }
-
-        List<Integer> missedPartitions = new ArrayList<>();
-
-        for (int partition : partitions) {
-            boolean isOwned = map.getMapServiceContext().getOwnedPartitions().contains(partition);
-
-            if (!isOwned) {
-                missedPartitions.add(partition);
-            }
-        }
-
-        if (!partitions.isEmpty()) {
-            throw QueryException.error(SqlErrorCode.PARTITION_MIGRATED,
-                "Partitions are not owned by member: " + missedPartitions);
-        }
+        return new MapIndexScanExecIterator(map, indexName, componentCount, indexFilter, converterTypes, partitions, ctx);
     }
 
     @Override

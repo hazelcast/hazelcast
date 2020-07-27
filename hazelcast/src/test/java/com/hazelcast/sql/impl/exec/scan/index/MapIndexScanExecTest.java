@@ -276,7 +276,7 @@ public class MapIndexScanExecTest extends SqlTestSupport {
 
             fail("Must fail");
         } catch (QueryException e) {
-            assertEquals(SqlErrorCode.PARTITION_MIGRATED, e.getCode());
+            assertEquals(SqlErrorCode.PARTITION_NOT_OWNED, e.getCode());
             assertEquals("Partitions are not owned by member: " + instance2Partitions, e.getMessage());
         }
     }
@@ -298,8 +298,8 @@ public class MapIndexScanExecTest extends SqlTestSupport {
 
             fail("Must fail");
         } catch (QueryException e) {
-            assertEquals(SqlErrorCode.GENERIC, e.getCode());
-            assertEquals("Index \"bad_index\" doesn't exist", e.getMessage());
+            assertEquals(SqlErrorCode.MAP_INDEX_NOT_EXISTS, e.getCode());
+            assertEquals("Index \"bad_index\" of the map \"map\" doesn't exist", e.getMessage());
         }
     }
 

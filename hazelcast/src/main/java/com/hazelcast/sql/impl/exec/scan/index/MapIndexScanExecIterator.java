@@ -17,15 +17,18 @@
 package com.hazelcast.sql.impl.exec.scan.index;
 
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.query.impl.InternalIndex;
 import com.hazelcast.query.impl.QueryableEntry;
+import com.hazelcast.sql.SqlErrorCode;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.exec.scan.KeyValueIterator;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.schema.map.MapTableUtils;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
@@ -34,13 +37,6 @@ import java.util.List;
  */
 @SuppressWarnings("rawtypes")
 public class MapIndexScanExecIterator implements KeyValueIterator {
-
-    private final MapContainer map;
-    private final String indexName;
-    private final int componentCount;
-    private final IndexFilter indexFilter;
-    private final List<QueryDataType> expectedConverterTypes;
-    private final ExpressionEvalContext evalContext;
 
     private final Iterator<QueryableEntry> iterator;
 
@@ -52,19 +48,21 @@ public class MapIndexScanExecIterator implements KeyValueIterator {
     public MapIndexScanExecIterator(
         MapContainer map,
         String indexName,
-        int componentCount,
+        int expectedComponentCount,
         IndexFilter indexFilter,
         List<QueryDataType> expectedConverterTypes,
+        PartitionIdSet expectedPartitions,
         ExpressionEvalContext evalContext
     ) {
-        this.map = map;
-        this.indexName = indexName;
-        this.componentCount = componentCount;
-        this.indexFilter = indexFilter;
-        this.expectedConverterTypes = expectedConverterTypes;
-        this.evalContext = evalContext;
-
-        iterator = getIndexEntries();
+        iterator = getIndexEntries(
+            map,
+            indexName,
+            indexFilter,
+            evalContext,
+            expectedComponentCount,
+            expectedConverterTypes,
+            expectedPartitions
+        );
 
         advance0();
     }
@@ -110,13 +108,27 @@ public class MapIndexScanExecIterator implements KeyValueIterator {
         }
     }
 
-    private Iterator<QueryableEntry> getIndexEntries() {
-        MapContainer mapContainer = map.getMapServiceContext().getMapContainer(map.getName());
-        InternalIndex index = mapContainer.getIndexes().getIndex(indexName);
+    private Iterator<QueryableEntry> getIndexEntries(
+        MapContainer map,
+        String indexName,
+        IndexFilter indexFilter,
+        ExpressionEvalContext evalContext,
+        int expectedComponentCount,
+        List<QueryDataType> expectedConverterTypes,
+        PartitionIdSet expectedPartitions
+    ) {
+        // Find the index
+        InternalIndex index = map.getIndexes().getIndex(indexName);
 
         if (index == null) {
-            throw QueryException.error("Index \"" + indexName + "\" doesn't exist");
+            throw QueryException.error(
+                SqlErrorCode.MAP_INDEX_NOT_EXISTS,
+                "Index \"" + indexName + "\" of the map \"" + map.getName() + "\" doesn't exist"
+            ).withInvalidate();
         }
+
+        // Make sure that required partitions are indexes
+        validatePartitions(index, expectedPartitions);
 
         if (indexFilter == null) {
             // No filter => this is a full scan (e.g. for HD)
@@ -125,9 +137,9 @@ public class MapIndexScanExecIterator implements KeyValueIterator {
 
         int actualComponentCount = index.getComponents().length;
 
-        if (actualComponentCount != componentCount) {
+        if (actualComponentCount != expectedComponentCount) {
             throw QueryException.error("Index \"" + indexName + "\" has " + actualComponentCount + " component(s), but "
-                + componentCount + " expected");
+                + expectedComponentCount + " expected");
         }
 
         // Validate component types
@@ -137,6 +149,29 @@ public class MapIndexScanExecIterator implements KeyValueIterator {
 
         // Query the index
         return indexFilter.getEntries(index, evalContext);
+    }
+
+    private void validatePartitions(InternalIndex index, PartitionIdSet expectedPartitions) {
+        List<Integer> missingPartitions = null;
+
+        for (int partition : expectedPartitions) {
+            if (!index.hasPartitionIndexed(partition)) {
+                if (missingPartitions == null) {
+                    missingPartitions = new ArrayList<>();
+                }
+
+                missingPartitions.add(partition);
+            }
+        }
+
+        if (missingPartitions != null) {
+            assert !missingPartitions.isEmpty();
+
+            throw QueryException.error(
+                SqlErrorCode.PARTITION_NOT_OWNED,
+                "Partitions are not owned by member: " + missingPartitions
+            ).withInvalidate();
+        }
     }
 
     private void validateConverterTypes(
@@ -151,8 +186,8 @@ public class MapIndexScanExecIterator implements KeyValueIterator {
             if (!expected.equals(actual)) {
                 String component = index.getComponents()[i];
 
-                throw QueryException.dataException("Index \"" + indexName + "\" has component \"" + component + "\" of type "
-                    + actual.getTypeFamily() + ", but " + expected.getTypeFamily() + " was expected");
+                throw QueryException.dataException("Index \"" + index.getName() + "\" has component \"" + component
+                    + "\" of type " + actual.getTypeFamily() + ", but " + expected.getTypeFamily() + " was expected");
             }
         }
 
@@ -160,8 +195,8 @@ public class MapIndexScanExecIterator implements KeyValueIterator {
             QueryDataType expected = expectedConverterTypes.get(actualConverterTypes.size());
             String component = index.getComponents()[actualConverterTypes.size()];
 
-            throw QueryException.dataException("Index \"" + indexName + "\" do not have suitable SQL converter for component \""
-                + component + "\" (expected " + expected.getTypeFamily() + ")");
+            throw QueryException.dataException("Index \"" + index.getName() + "\" do not have suitable SQL converter "
+                + "for component \"" + component + "\" (expected " + expected.getTypeFamily() + ")");
         }
     }
 }
