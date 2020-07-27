@@ -20,6 +20,7 @@ import org.apache.calcite.runtime.CalciteException;
 import org.apache.calcite.runtime.Resources;
 import org.apache.calcite.runtime.Resources.BaseMessage;
 import org.apache.calcite.runtime.Resources.ExInst;
+import org.apache.calcite.sql.validate.SqlValidatorException;
 
 public interface ParserResource {
 
@@ -30,4 +31,7 @@ public interface ParserResource {
 
     @BaseMessage("Duplicate option name - ''{0}''")
     ExInst<CalciteException> duplicateOption(String optionName);
+
+    @BaseMessage("Missing column type")
+    ExInst<SqlValidatorException> missingColumnType();
 }

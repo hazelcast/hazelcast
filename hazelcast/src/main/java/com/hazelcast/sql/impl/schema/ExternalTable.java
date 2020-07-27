@@ -41,9 +41,7 @@ public class ExternalTable implements IdentifiedDataSerializable {
     private List<ExternalField> externalFields;
     private Map<String, String> options;
 
-    @SuppressWarnings("unused")
-    private ExternalTable() {
-    }
+    public ExternalTable() { }
 
     public ExternalTable(String name,
                          String type,
@@ -108,9 +106,7 @@ public class ExternalTable implements IdentifiedDataSerializable {
         // persisted schema.
         private Map<String, Object> properties;
 
-        @SuppressWarnings("unused")
-        private ExternalField() {
-        }
+        public ExternalField() { }
 
         public ExternalField(@Nonnull String name, @Nonnull QueryDataType type, @Nullable String externalName) {
             this.properties = new HashMap<>();

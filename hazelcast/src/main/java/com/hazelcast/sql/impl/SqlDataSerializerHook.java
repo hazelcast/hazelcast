@@ -44,6 +44,8 @@ import com.hazelcast.sql.impl.row.EmptyRowBatch;
 import com.hazelcast.sql.impl.row.HeapRow;
 import com.hazelcast.sql.impl.row.JoinRow;
 import com.hazelcast.sql.impl.row.ListRowBatch;
+import com.hazelcast.sql.impl.schema.ExternalTable;
+import com.hazelcast.sql.impl.schema.ExternalTable.ExternalField;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.SQL_DS_FACTORY;
@@ -134,6 +136,9 @@ public class SqlDataSerializerHook implements DataSerializerHook {
         constructors[TARGET_DESCRIPTOR_GENERIC] = arg -> GenericQueryTargetDescriptor.INSTANCE;
 
         constructors[QUERY_PATH] = arg -> new QueryPath();
+
+        constructors[EXTERNAL_TABLE] = arg -> new ExternalTable();
+        constructors[EXTERNAL_FIELD] = arg -> new ExternalTable.ExternalField();
 
         return new ArrayDataSerializableFactory(constructors);
     }

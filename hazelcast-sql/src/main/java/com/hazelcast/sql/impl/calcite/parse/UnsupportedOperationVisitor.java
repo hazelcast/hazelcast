@@ -30,6 +30,7 @@ import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlLiteral;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.SqlNodeList;
+import org.apache.calcite.sql.SqlOperator;
 import org.apache.calcite.sql.SqlSelect;
 import org.apache.calcite.sql.SqlUtil;
 import org.apache.calcite.sql.type.SqlTypeName;
@@ -155,6 +156,31 @@ public final class UnsupportedOperationVisitor implements SqlVisitor<Void> {
             case INTEGER:
             case BIGINT:
             case DECIMAL:
+            case REAL:
+            case FLOAT:
+            case DOUBLE:
+            case CHAR:
+            case VARCHAR:
+            case DATE:
+            case TIME:
+            case TIME_WITH_LOCAL_TIME_ZONE:
+            case TIMESTAMP:
+            case TIMESTAMP_WITH_LOCAL_TIME_ZONE:
+            case INTERVAL_YEAR:
+            case INTERVAL_MONTH:
+            case INTERVAL_YEAR_MONTH:
+            case INTERVAL_DAY:
+            case INTERVAL_DAY_HOUR:
+            case INTERVAL_DAY_MINUTE:
+            case INTERVAL_DAY_SECOND:
+            case INTERVAL_HOUR:
+            case INTERVAL_HOUR_MINUTE:
+            case INTERVAL_HOUR_SECOND:
+            case INTERVAL_MINUTE:
+            case INTERVAL_MINUTE_SECOND:
+            case INTERVAL_SECOND:
+            case SYMBOL:
+            case NULL:
                 return null;
 
             default:
@@ -190,6 +216,10 @@ public final class UnsupportedOperationVisitor implements SqlVisitor<Void> {
             case COLUMN_DECL:
                 break;
 
+            case OTHER:
+                processOther(call);
+                break;
+
             case HINT:
                 break;
 
@@ -206,6 +236,16 @@ public final class UnsupportedOperationVisitor implements SqlVisitor<Void> {
         if (select.getGroup() != null && select.getGroup().size() > 0) {
             throw unsupported(select.getGroup(), "GROUP BY");
         }
+    }
+
+    private void processOther(SqlCall call) {
+        SqlOperator operator = call.getOperator();
+
+        if (operator.equals(SqlOption.OPERATOR)) {
+            return;
+        }
+
+        throw unsupported(call, operator.getName());
     }
 
     private CalciteContextException unsupported(SqlNode node, SqlKind kind) {
