@@ -44,7 +44,7 @@ Take no action if a table with the same name already exists.
 
 **table_name**
 
-The unqualified name of the table to be created.
+The name of the table to be created.
 
 **column_name**
 
@@ -175,7 +175,7 @@ Take no action and do not insert any data if a table with the same name already 
 
 **table_name**
 
-The unqualified name of the table to be created.
+The name of the table to be created.
 
 **column_name**
 
@@ -253,7 +253,7 @@ Take no action if a table with the given name does not exist.
 
 **table_name**
 
-The unqualified name of the table to be removed.
+The name of the table to be removed.
 
 ### 3.4 Examples
 
