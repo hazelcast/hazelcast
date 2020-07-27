@@ -147,7 +147,7 @@ class Index extends React.Component {
         <Block id="data-layer" background="dark">
         {[
           {
-            title: 'Streaming and Batch Analytics',
+            title: 'Perform Streaming and Batch Analytics',
             image: `${baseUrl}img/layers2.svg`,
             imageAlign: 'left',
             content: ' Ingest data from a wide-variety of batch and streaming <a href="/docs/api/sources-sinks">data sources</a>, '
