@@ -25,9 +25,9 @@ TYPE table_type
 
 ### 1.2 Description
 
-`CREATE EXTERNAL TABLE` registers a virtual table that references an external storage system. For some storage systems,
-it does not create a physical entity until a write occurs. Column list is optional, as for some storage systems and
-serialization formats, it is possible to infer it.
+`CREATE EXTERNAL TABLE` registers a virtual table that references an external storage system. For some storage systems
+it does not create a physical entity until a write occurs. Column list is optional; if not specified, we will attempt
+to infer it from sample data or from the options.
 
 The table is created in the `public` schema. The name of the table must be distinct from the name of any other table in
 the schema.
