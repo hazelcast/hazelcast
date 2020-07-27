@@ -52,13 +52,12 @@ The name of the column in the table.
 
 **column_type**
 
-The data type of the column. For more information on the supported data types, refer to [type system
-document](01-type-system.md).
+The data type of the column. For more information on the supported data types, refer to [type system document](01-type-system.md).
 
 **column_external_name**
 
 The path to the field in the external storage system. Used to link the column to a physical field with a different name.
-It's optional, the default value is specific for each table type. For example for IMap it defaults to `this.<columnName>` 
+It's optional, the default value is specific for each table type. For example for `IMap` it defaults to `this.<columnName>`
 where `this` refers to the entry value.
 
 **table_type**
@@ -70,9 +69,9 @@ full set of operations, so for instance you might be able to `SELECT` from a giv
 
 | Table type | Description |
 |---|---|
-| com.hazelcast.IMap | Table backed by Hazelcast `IMap` |
-| com.hazelcast.ReplicatedMap | Table backed by Hazelcast `ReplicatedMap` |
-| com.hazelcast.File | Table backed by files in a directory |
+| IMap | Table backed by Hazelcast `IMap` |
+| ReplicatedMap | Table backed by Hazelcast `ReplicatedMap` |
+| File | Table backed by files in a directory |
 
 **table_parameter**
 
@@ -140,37 +139,6 @@ Parameter value as a string literal.
   )
   ```
 
-- Create an external table referencing an `IMap` with schema inferred from `Portable` class definitions.
-
-  ```sql
-  CREATE EXTERNAL TABLE persons
-  TYPE "com.hazelcast.IMap"
-  OPTIONS (
-    "serialization.key.format" 'portable',
-    "serialization.key.portable.factoryId" '1',
-    "serialization.key.portable.classId" '2',
-    "serialization.key.portable.classVersion" '3',
-    "serialization.value.format" 'portable',
-    "serialization.value.portable.factoryId" '4',
-    "serialization.value.portable.classId" '5',
-    "serialization.value.portable.classVersion" '6'
-  )
-  ```
-
-- Create an external table referencing an `IMap` with JSON as the serialization format.
-
-  ```sql
-  CREATE EXTERNAL TABLE persons (
-    id INT EXTERNAL NAME "__key.id",
-    name VARCHAR EXTERNAL NAME "this.name"
-  )
-  TYPE "com.hazelcast.IMap"
-  OPTIONS (
-    "serialization.key.format" 'json',
-    "serialization.value.format" 'json'
-  )
-  ```
-
 ## 2 CREATE EXTERNAL TABLE AS
 
 `CREATE EXTERNAL TABLE AS` -- define a new external table from the results of a query
@@ -216,8 +184,9 @@ the query.
 
 **column_external_name**
 
-The path to the field in the external storage system. Used to link a column to physical field under a different name
-(i.e. to be able to access both key and value `IMap` fields having same name).
+The path to the field in the external storage system. Used to link the column to a physical field with a different name.
+It's optional, the default value is specific for each table type. For example for `IMap` it defaults to `this.<columnName>`
+where `this` refers to the entry value.
 
 **table_type**
 
@@ -227,40 +196,24 @@ The external storage system identifier. Supported table types are listed in Tabl
 
 | Table type | Description |
 |---|---|
-| com.hazelcast.IMap | Table backed by Hazelcast `IMap` |
-| com.hazelcast.ReplicatedMap | Table backed by Hazelcast `ReplicatedMap` |
+| IMap | Table backed by Hazelcast `IMap` |
+| ReplicatedMap | Table backed by Hazelcast `ReplicatedMap` |
 
 **table_parameter**
 
 Parameter specific to the external storage system - connection string, serialization format etc.
+This is an identifier, not a string. Therefore it must not be quoted as a string. It can be quoted in double
+quotes if it contains special characters (such as space, period...).
 
 **table_parameter_value**
 
-Parameter value as string literal.
+Parameter value as a string literal.
 
 **query**
 
 A query statement (that is, a `SELECT` statement).
 
 ### 2.4 Examples
-
-- Create an external table referencing an `IMap` and filling it with data from files in the given directory.
-
-  ```sql
-  CREATE EXTERNAL TABLE persons (
-    id EXTERNAL NAME "__key"
-  )
-  TYPE "com.hazelcast.IMap"
-  OPTIONS (
-    "serialization.key.format" 'java',
-    "serialization.key.java.class" 'java.lang.Integer',
-    "serialization.value.format" 'java',
-    "serialization.value.java.class" 'java.lang.String'
-  )
-  AS SELECT id, name FROM TABLE (
-    FILE ('avro', '/path/to/directory')
-  )
-  ```
 
 - Create an external table referencing an `IMap` and filling it with data from existing table.
 
@@ -269,7 +222,7 @@ A query statement (that is, a `SELECT` statement).
     id EXTERNAL NAME "__key.id"
     name
   )
-  TYPE "com.hazelcast.IMap"
+  TYPE IMap
   OPTIONS (
     "serialization.key.format" 'json',
     "serialization.value.format" 'json',
@@ -296,7 +249,7 @@ does NOT delete any physical entity or data.
 
 **IF EXISTS**
 
-DTake no action if a table with the given name does not exist.
+Take no action if a table with the given name does not exist.
 
 **table_name**
 
