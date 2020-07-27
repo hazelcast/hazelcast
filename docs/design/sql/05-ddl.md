@@ -36,7 +36,8 @@ the schema.
 
 **OR REPLACE**
 
-Replace table definition if one with the same name already exists.
+Replace table definition if one with the same name already exists. Atomically, drops and creates a reference to the
+external storage system, as a result no physical entity or data is being deleted though.
 
 **IF NOT EXISTS**
 
@@ -167,7 +168,8 @@ the schema.
 
 **OR REPLACE**
 
-Replace table definition if one with the same name already exists.
+Replace table definition if one with the same name already exists. Atomically, drops and creates a reference to the
+external storage system, as a result no physical entity or data is being deleted though.
 
 **IF NOT EXISTS**
 
