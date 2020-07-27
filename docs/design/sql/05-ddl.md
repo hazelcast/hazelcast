@@ -203,7 +203,7 @@ Replace table definition if one with the same name already exists.
 
 **IF NOT EXISTS**
 
-Do not fail and do not insert any data if a table with the same name already exists.
+Take no action and do not insert any data if a table with the same name already exists.
 
 **table_name**
 
@@ -296,7 +296,7 @@ does NOT delete any physical entity or data.
 
 **IF EXISTS**
 
-Do not fail if a table with the given name does not exist.
+DTake no action if a table with the given name does not exist.
 
 **table_name**
 
