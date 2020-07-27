@@ -26,6 +26,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.math.BigDecimal;
+import java.math.BigInteger;
 
 import static com.hazelcast.sql.SqlColumnType.BIGINT;
 import static com.hazelcast.sql.SqlColumnType.BOOLEAN;
@@ -132,6 +133,7 @@ public class ParameterEndToEndTest extends ExpressionEndToEndTestBase {
         assertRow("bigInteger1 + ?", EXPR0, DECIMAL, BigDecimal.valueOf(2), "1");
         assertRow("bigInteger1 + ?", EXPR0, DECIMAL, BigDecimal.valueOf(2.1), "1.1");
         assertRow("bigInteger1 + ?", EXPR0, DECIMAL, BigDecimal.valueOf(2.1), BigDecimal.valueOf(1.1));
+        assertRow("bigInteger1 + ?", EXPR0, DECIMAL, BigDecimal.valueOf(3), BigInteger.valueOf(2));
         assertDataError("bigInteger1 + ?", "failed to convert parameter", "foo");
     }
 
@@ -152,6 +154,7 @@ public class ParameterEndToEndTest extends ExpressionEndToEndTestBase {
         assertRow("char1 + ?", EXPR0, DOUBLE, 2.1d, 1.1d);
         assertRow("char1 + ?", EXPR0, DOUBLE, 2.0d, "1");
         assertRow("char1 + ?", EXPR0, DOUBLE, 2.1d, "1.1");
+        assertRow("char1 + ?", EXPR0, DOUBLE, 3.0d, '2');
         assertDataError("char1 + ?", "failed to convert parameter", "foo");
     }
 
