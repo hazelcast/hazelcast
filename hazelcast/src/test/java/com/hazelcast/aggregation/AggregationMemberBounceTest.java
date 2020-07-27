@@ -23,6 +23,7 @@ import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.SlowTest;
 import com.hazelcast.test.bounce.BounceMemberRule;
+import com.hazelcast.test.bounce.BounceTestConfiguration;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -43,7 +44,7 @@ public class AggregationMemberBounceTest extends HazelcastTestSupport {
     @Rule
     public BounceMemberRule bounceMemberRule = BounceMemberRule.with(getConfig())
             .clusterSize(MEMBER_COUNT)
-            .driverCount(DRIVER_COUNT).build();
+            .driverCount(DRIVER_COUNT).driverType(BounceTestConfiguration.DriverType.MEMBER).build();
 
     protected Config getConfig() {
         return new Config();

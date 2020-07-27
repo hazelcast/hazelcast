@@ -18,9 +18,9 @@ package com.hazelcast.test.bounce;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.internal.nio.ClassLoaderUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-import com.hazelcast.internal.nio.ClassLoaderUtil;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.bounce.BounceTestConfiguration.DriverType;
 import org.junit.rules.TestRule;
@@ -41,13 +41,11 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReferenceArray;
 
-import static com.hazelcast.internal.nio.ClassLoaderUtil.isClassAvailable;
+import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
+import static com.hazelcast.internal.util.StringUtil.timeToString;
 import static com.hazelcast.test.HazelcastTestSupport.sleepSeconds;
 import static com.hazelcast.test.bounce.BounceTestConfiguration.DriverType.ALWAYS_UP_MEMBER;
 import static com.hazelcast.test.bounce.BounceTestConfiguration.DriverType.CLIENT;
-import static com.hazelcast.test.bounce.BounceTestConfiguration.DriverType.MEMBER;
-import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
-import static com.hazelcast.internal.util.StringUtil.timeToString;
 import static java.lang.Math.max;
 import static java.lang.System.currentTimeMillis;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -461,13 +459,7 @@ public class BounceMemberRule implements TestRule {
         public BounceMemberRule build() {
 
             if (testDriverType == null) {
-                // guess driver: if HazelcastTestFactory class is available, then use the client driver,
-                // otherwise use member driver as default
-                if (isClassAvailable(null, "com.hazelcast.client.test.TestHazelcastFactory")) {
-                    testDriverType = CLIENT;
-                } else {
-                    testDriverType = MEMBER;
-                }
+                throw new AssertionError("testDriverType must be set");
             }
 
             if (testDriverType == ALWAYS_UP_MEMBER) {
