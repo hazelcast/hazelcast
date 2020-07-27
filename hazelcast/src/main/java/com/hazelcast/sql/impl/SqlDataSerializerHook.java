@@ -88,7 +88,10 @@ public class SqlDataSerializerHook implements DataSerializerHook {
 
     public static final int QUERY_PATH = 23;
 
-    public static final int LEN = QUERY_PATH + 1;
+    public static final int EXTERNAL_TABLE = 24;
+    public static final int EXTERNAL_FIELD = 25;
+
+    public static final int LEN = EXTERNAL_FIELD + 1;
 
     @Override
     public int getFactoryId() {

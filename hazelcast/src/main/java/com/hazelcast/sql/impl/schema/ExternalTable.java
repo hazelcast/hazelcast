@@ -18,7 +18,8 @@ package com.hazelcast.sql.impl.schema;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.sql.impl.SqlDataSerializerHook;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
 import javax.annotation.Nonnull;
@@ -33,7 +34,7 @@ import java.util.Objects;
 /**
  * User-defined table schema definition.
  */
-public class ExternalTable implements DataSerializable {
+public class ExternalTable implements IdentifiedDataSerializable {
 
     private String name;
     private String type;
@@ -71,6 +72,16 @@ public class ExternalTable implements DataSerializable {
     }
 
     @Override
+    public int getFactoryId() {
+        return SqlDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getClassId() {
+        return SqlDataSerializerHook.EXTERNAL_TABLE;
+    }
+
+    @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeUTF(name);
         out.writeUTF(type);
@@ -86,7 +97,7 @@ public class ExternalTable implements DataSerializable {
         options = in.readObject();
     }
 
-    public static class ExternalField implements DataSerializable {
+    public static class ExternalField implements IdentifiedDataSerializable {
 
         private static final String NAME = "name";
         private static final String TYPE = "type";
@@ -127,6 +138,16 @@ public class ExternalTable implements DataSerializable {
          */
         public String externalName() {
             return (String) properties.get(EXTERNAL_NAME);
+        }
+
+        @Override
+        public int getFactoryId() {
+            return SqlDataSerializerHook.F_ID;
+        }
+
+        @Override
+        public int getClassId() {
+            return SqlDataSerializerHook.EXTERNAL_FIELD;
         }
 
         @Override
