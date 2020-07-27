@@ -147,7 +147,8 @@ public class SchemaTest extends CalciteSqlTestSupport {
                 ));
 
         // then schema is available on another one
-        // TODO: fix it properly - sticky client, different catalog storage ???
+        // due to the limitation of ReplicatedMap, if the client connects to a different cluster member, the table
+        // might not be visible immediately
         assertTrueEventually(
                 "Table is not available on the second node", () ->
                         assertThatCode(() -> getQueryRows(instances[1], format("SELECT * FROM public.%s", name)))

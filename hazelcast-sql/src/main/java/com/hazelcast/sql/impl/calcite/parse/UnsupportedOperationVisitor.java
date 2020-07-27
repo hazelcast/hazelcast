@@ -136,7 +136,6 @@ public final class UnsupportedOperationVisitor implements SqlVisitor<Void> {
 
     @Override
     public Void visit(SqlDataTypeSpec type) {
-        // TODO: proper validation for types - do we need second (in addition to DDL) validation ?
         return null;
     }
 
@@ -186,15 +185,12 @@ public final class UnsupportedOperationVisitor implements SqlVisitor<Void> {
             case DROP_TABLE:
                 SqlIdentifier identifier = (SqlIdentifier) call.getOperandList().get(0);
                 this.ddlOperandTableNames = identifier.names;
-                // TODO: Proper validation for DDL
                 break;
 
             case COLUMN_DECL:
-                // TODO: Proper validation for DDL
                 break;
 
             case HINT:
-                // TODO: Proper validation for hints
                 break;
 
             default:
