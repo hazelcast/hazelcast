@@ -25,13 +25,11 @@ import org.apache.calcite.sql.SqlIdentifier;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.SqlOperatorTable;
-import org.apache.calcite.sql.SqlSelect;
 import org.apache.calcite.sql.validate.SelectScope;
 import org.apache.calcite.sql.validate.SqlConformance;
 import org.apache.calcite.sql.validate.SqlQualified;
 import org.apache.calcite.sql.validate.SqlValidatorCatalogReader;
 import org.apache.calcite.sql.validate.SqlValidatorImpl;
-import org.apache.calcite.sql.validate.SqlValidatorScope;
 import org.apache.calcite.sql.validate.SqlValidatorTable;
 import org.apache.calcite.util.Util;
 
@@ -59,28 +57,6 @@ public class HazelcastSqlValidator extends SqlValidatorImpl {
         super(operatorTable, catalogReader, typeFactory, CONFIG.withSqlConformance(conformance));
         assert typeFactory instanceof HazelcastTypeFactory;
         this.validator = validator;
-    }
-
-    @Override
-    public void validateQuery(SqlNode node, SqlValidatorScope scope, RelDataType targetRowType) {
-        super.validateQuery(node, scope, targetRowType);
-
-        if (node instanceof SqlSelect) {
-            // Derive the types for offset-fetch expressions, Calcite doesn't do
-            // that automatically.
-
-            SqlSelect select = (SqlSelect) node;
-
-            SqlNode offset = select.getOffset();
-            if (offset != null) {
-                deriveType(scope, offset);
-            }
-
-            SqlNode fetch = select.getFetch();
-            if (fetch != null) {
-                deriveType(scope, fetch);
-            }
-        }
     }
 
     @Override
