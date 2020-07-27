@@ -16,6 +16,7 @@
 
 package com.hazelcast.sql.impl.calcite.parse;
 
+import com.google.common.collect.ImmutableList;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.calcite.sql.SqlCall;
 import org.apache.calcite.sql.SqlIdentifier;
@@ -25,7 +26,6 @@ import org.apache.calcite.sql.SqlOperator;
 import org.apache.calcite.sql.SqlSpecialOperator;
 import org.apache.calcite.sql.SqlWriter;
 import org.apache.calcite.sql.parser.SqlParserPos;
-import org.apache.calcite.util.ImmutableNullableList;
 
 import javax.annotation.Nonnull;
 import java.util.List;
@@ -69,7 +69,11 @@ public class SqlTableColumn extends SqlCall {
     @Override
     @Nonnull
     public List<SqlNode> getOperandList() {
-        return ImmutableNullableList.of(name, type, externalName);
+        if (externalName != null) {
+            return ImmutableList.of(name, type, externalName);
+        } else {
+            return ImmutableList.of(name, type);
+        }
     }
 
     @Override
@@ -79,8 +83,7 @@ public class SqlTableColumn extends SqlCall {
         type.unparse(writer, leftPrec, rightPrec);
         if (externalName != null) {
             writer.print(" ");
-            writer.keyword("EXTERNAL");
-            writer.keyword("NAME");
+            writer.keyword("EXTERNAL NAME");
             externalName.unparse(writer, leftPrec, rightPrec);
         }
     }

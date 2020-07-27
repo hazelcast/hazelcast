@@ -27,9 +27,7 @@ import com.hazelcast.sql.support.CalciteSqlTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -63,9 +61,6 @@ public class SchemaTest extends CalciteSqlTestSupport {
 
     private static HazelcastInstance member;
 
-    @Rule
-    public ExpectedException exception = ExpectedException.none();
-
     @BeforeClass
     public static void beforeClass() {
         member = FACTORY.newHazelcastInstance();
@@ -89,7 +84,8 @@ public class SchemaTest extends CalciteSqlTestSupport {
                                 + "TYPE \"%s\"",
                         name, LocalPartitionedMapConnector.TYPE_NAME
                 ))
-        ).isInstanceOf(SqlException.class);
+        ).isInstanceOf(SqlException.class)
+         .hasMessageContaining("Unknown type: " + name);
     }
 
     @Test
@@ -340,10 +336,12 @@ public class SchemaTest extends CalciteSqlTestSupport {
 
     @Test
     public void when_createOrReplaceIfNotExists_then_fail() {
-        exception.expectMessage("fooo");
-
-        executeQuery(
-                member, "CREATE OR REPLACE EXTERNAL TABLE IF NOT EXISTS CreateOrReplaceIfNotExists " +
-                        "TYPE \"" + LocalPartitionedMapConnector.TYPE_NAME + "\"");
+        assertThatThrownBy(() ->
+                executeQuery(
+                        member, "CREATE EXTERNAL TABLE IF NOT EXISTS CreateOrReplaceIfNotExists (" +
+                                "__key INT, this INT) " +
+                                "TYPE \"" + LocalPartitionedMapConnector.TYPE_NAME + "\""))
+                .isInstanceOf(SqlException.class)
+                .hasMessageContaining("Only one of <OR REPLACE> or <IF NOT EXISTS> modifiers can be used");
     }
 }
