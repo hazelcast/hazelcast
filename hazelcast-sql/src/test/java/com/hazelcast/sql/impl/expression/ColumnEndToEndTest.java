@@ -43,7 +43,6 @@ import static com.hazelcast.sql.SqlColumnType.SMALLINT;
 import static com.hazelcast.sql.SqlColumnType.TINYINT;
 import static com.hazelcast.sql.SqlColumnType.VARCHAR;
 import static java.util.Arrays.asList;
-import static org.junit.Assume.assumeTrue;
 
 @RunWith(Parameterized.class)
 @UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
@@ -160,7 +159,6 @@ public class ColumnEndToEndTest extends ExpressionEndToEndTestBase {
 
     @Test
     public void testValue() {
-        assumeTrue(!getMapName().equals("portableRecords"));
         assertRow("this", "this", OBJECT, getRecord());
     }
 
