@@ -40,7 +40,7 @@ Replace table definition if one with the same name already exists.
 
 **IF NOT EXISTS**
 
-Do not fail if a table with the same name already exists.
+Take no action if a table with the same name already exists.
 
 **table_name**
 
