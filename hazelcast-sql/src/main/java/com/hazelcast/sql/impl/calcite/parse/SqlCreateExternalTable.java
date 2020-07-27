@@ -109,13 +109,15 @@ public class SqlCreateExternalTable extends SqlCreate {
 
         name.unparse(writer, leftPrec, rightPrec);
 
-        SqlWriter.Frame frame = writer.startList("(", ")");
-        for (SqlNode column : columns) {
-            printIndent(writer);
-            column.unparse(writer, 0, 0);
+        if (columns.size() > 0) {
+            SqlWriter.Frame frame = writer.startList("(", ")");
+            for (SqlNode column : columns) {
+                printIndent(writer);
+                column.unparse(writer, 0, 0);
+            }
+            writer.newlineAndIndent();
+            writer.endList(frame);
         }
-        writer.newlineAndIndent();
-        writer.endList(frame);
 
         writer.newlineAndIndent();
         writer.keyword("TYPE");

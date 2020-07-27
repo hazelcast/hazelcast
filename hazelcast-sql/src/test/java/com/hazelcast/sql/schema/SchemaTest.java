@@ -27,7 +27,9 @@ import com.hazelcast.sql.support.CalciteSqlTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -60,6 +62,9 @@ public class SchemaTest extends CalciteSqlTestSupport {
     private static final TestHazelcastInstanceFactory FACTORY = new TestHazelcastInstanceFactory();
 
     private static HazelcastInstance member;
+
+    @Rule
+    public ExpectedException exception = ExpectedException.none();
 
     @BeforeClass
     public static void beforeClass() {
@@ -331,5 +336,14 @@ public class SchemaTest extends CalciteSqlTestSupport {
 
         // then
         assertThatThrownBy(() -> executeQuery(member, format("SELECT * FROM public.%s", name))).isInstanceOf(SqlException.class);
+    }
+
+    @Test
+    public void when_createOrReplaceIfNotExists_then_fail() {
+        exception.expectMessage("fooo");
+
+        executeQuery(
+                member, "CREATE OR REPLACE EXTERNAL TABLE IF NOT EXISTS CreateOrReplaceIfNotExists " +
+                        "TYPE \"" + LocalPartitionedMapConnector.TYPE_NAME + "\"");
     }
 }

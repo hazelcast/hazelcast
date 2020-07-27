@@ -37,44 +37,51 @@ public class SqlDataType extends SqlIdentifier {
     @Override
     @SuppressWarnings("checkstyle:CyclomaticComplexity")
     public void unparse(SqlWriter writer, int leftPrec, int rightPrec) {
-        if (type == QueryDataType.BOOLEAN) {
-            writer.keyword("BOOLEAN");
-        } else if (type == QueryDataType.TINYINT) {
-            writer.keyword("TINYINT");
-        } else if (type == QueryDataType.SMALLINT) {
-            writer.keyword("SMALLINT");
-        } else if (type == QueryDataType.INT) {
-            writer.keyword("INT");
-        } else if (type == QueryDataType.BIGINT) {
-            writer.keyword("BIGINT");
-        } else if (type == QueryDataType.REAL) {
-            writer.keyword("REAL");
-        } else if (type == QueryDataType.DOUBLE) {
-            writer.keyword("DOUBLE");
-        } else if (type == QueryDataType.DECIMAL) {
-            writer.keyword("DECIMAL");
-        } else if (type == QueryDataType.DECIMAL_BIG_INTEGER) {
-            writer.keyword("DECIMAL");
-        } else if (type == QueryDataType.VARCHAR_CHARACTER) {
-            writer.keyword("CHAR");
-        } else if (type == QueryDataType.VARCHAR) {
-            writer.keyword("VARCHAR");
-        } else if (type == QueryDataType.TIME) {
-            writer.keyword("TIME");
-        } else if (type == QueryDataType.DATE) {
-            writer.keyword("DATE");
-        } else if (type == QueryDataType.TIMESTAMP) {
-            writer.keyword("TIMESTAMP");
-        } else if (type == QueryDataType.TIMESTAMP_WITH_TZ_DATE) {
-            writer.keyword("TIMESTAMP WITH LOCAL TIME ZONE (\"DATE\")");
-        } else if (type == QueryDataType.TIMESTAMP_WITH_TZ_CALENDAR) {
-            writer.keyword("TIMESTAMP WITH TIME ZONE (\"CALENDAR\")");
-        } else if (type == QueryDataType.TIMESTAMP_WITH_TZ_INSTANT) {
-            writer.keyword("TIMESTAMP WITH LOCAL TIME ZONE");
-        } else if (type == QueryDataType.TIMESTAMP_WITH_TZ_ZONED_DATE_TIME) {
-            writer.keyword("TIMESTAMP WITH TIME ZONE (\"ZONED_DATE_TIME\")");
-        } else if (type == QueryDataType.TIMESTAMP_WITH_TZ_OFFSET_DATE_TIME) {
-            writer.keyword("TIMESTAMP WITH TIME ZONE");
+        switch (type.getTypeFamily()) {
+            case BOOLEAN:
+                writer.keyword("BOOLEAN");
+                break;
+            case TINYINT:
+                writer.keyword("TINYINT");
+                break;
+            case SMALLINT:
+                writer.keyword("SMALLINT");
+                break;
+            case INT:
+                writer.keyword("INT");
+                break;
+            case BIGINT:
+                writer.keyword("BIGINT");
+                break;
+            case REAL:
+                writer.keyword("REAL");
+                break;
+            case DOUBLE:
+                writer.keyword("DOUBLE");
+                break;
+            case DECIMAL:
+                writer.keyword("DECIMAL");
+                break;
+            case VARCHAR:
+                writer.keyword("VARCHAR");
+                break;
+            case TIME:
+                writer.keyword("TIME");
+                break;
+            case DATE:
+                writer.keyword("DATE");
+                break;
+            case TIMESTAMP:
+                writer.keyword("TIMESTAMP");
+                break;
+            case TIMESTAMP_WITH_TIME_ZONE:
+                writer.keyword("TIMESTAMP WITH TIME ZONE");
+                break;
+            case OBJECT:
+                writer.keyword("OBJECT");
+                break;
+            default:
+                throw new RuntimeException("Unsupported type family: " + type.getTypeFamily());
         }
     }
 }

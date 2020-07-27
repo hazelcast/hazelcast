@@ -26,7 +26,6 @@ SqlCreate SqlCreateExternalTable(Span span, boolean replace) :
     SqlNodeList columns = SqlNodeList.EMPTY;
     SqlIdentifier type;
     SqlNodeList sqlOptions = SqlNodeList.EMPTY;
-    SqlNode source = null;
 }
 {
     <EXTERNAL> <TABLE>

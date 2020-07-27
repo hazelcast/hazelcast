@@ -24,8 +24,8 @@ import javax.annotation.Nonnull;
 import java.util.List;
 import java.util.Map;
 
-// TODO: make this class public for user connectors
-//   (TableSchemaField, Table, TableField, QueryDataType etc. need to be public then?)
+// Consider making this class public for user connectors (ExternalTable, QueryDataType need to be
+// public then or have a public representation)
 public interface SqlConnector {
 
     String JAVA_SERIALIZATION_FORMAT = "java";

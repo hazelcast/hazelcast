@@ -39,10 +39,9 @@ import java.util.stream.Stream;
 import static com.hazelcast.sql.impl.schema.map.MapTableUtils.estimatePartitionedMapRowCount;
 import static java.util.stream.Collectors.toMap;
 
-// TODO: do we want to keep it? maps are auto discovered...
 public class LocalPartitionedMapConnector extends SqlKeyValueConnector {
 
-    public static final String TYPE_NAME = "com.hazelcast.IMap";
+    public static final String TYPE_NAME = "IMAP";
 
     private static final Map<String, MapOptionsMetadataResolver> METADATA_RESOLVERS = Stream.of(
             JavaMapOptionsMetadataResolver.INSTANCE,
@@ -70,7 +69,7 @@ public class LocalPartitionedMapConnector extends SqlKeyValueConnector {
         MapOptionsMetadata valueMetadata = resolveMetadata(externalFields, options, false, ss);
         List<TableField> fields = mergeFields(keyMetadata.getFields(), valueMetadata.getFields());
 
-        // TODO: deduplicate with PartitionedMapTableResolver ???
+        // TODO: deduplicate with PartitionedMapTableResolver
         MapService service = nodeEngine.getService(MapService.SERVICE_NAME);
         MapServiceContext context = service.getMapServiceContext();
 

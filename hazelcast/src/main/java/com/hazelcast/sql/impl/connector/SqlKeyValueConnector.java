@@ -72,7 +72,6 @@ public abstract class SqlKeyValueConnector implements SqlConnector {
         return format;
     }
 
-    // TODO: deduplicate with AbstractMapTableResolver
     protected static List<TableField> mergeFields(
             Map<String, TableField> keyFields,
             Map<String, TableField> valueFields

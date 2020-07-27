@@ -21,6 +21,8 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
@@ -99,11 +101,13 @@ public class ExternalTable implements DataSerializable {
         private ExternalField() {
         }
 
-        public ExternalField(String name, QueryDataType type, String externalName) {
+        public ExternalField(@Nonnull String name, @Nonnull QueryDataType type, @Nullable String externalName) {
             this.properties = new HashMap<>();
             this.properties.put(NAME, name);
             this.properties.put(TYPE, type);
-            this.properties.put(EXTERNAL_NAME, externalName);
+            if (externalName != null) {
+                this.properties.put(EXTERNAL_NAME, externalName);
+            }
         }
 
         /**
