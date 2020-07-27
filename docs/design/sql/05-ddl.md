@@ -57,8 +57,9 @@ document](01-type-system.md).
 
 **column_external_name**
 
-The path to the field in the external storage system. Used to link a column to physical field under a different name
-(i.e. to be able to access both key and value `IMap` fields having same name).
+The path to the field in the external storage system. Used to link the column to a physical field with a different name.
+It's optional, the default value is specific for each table type. For example for IMap it defaults to `this.<columnName>` 
+where `this` refers to the entry value.
 
 **table_type**
 
