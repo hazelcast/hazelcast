@@ -33,7 +33,6 @@ import com.hazelcast.sql.impl.type.QueryDataTypeUtils;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -142,7 +141,6 @@ public final class JavaMapOptionsMetadataResolver implements MapOptionsMetadataR
                 : extractValueFields(externalFields, name -> new QueryPath(name, false));
 
         LinkedHashMap<String, TableField> fields = new LinkedHashMap<>();
-        Map<String, String> typeNamesByPaths = new HashMap<>();
 
         for (Entry<String, Class<?>> entry : resolveClass(clazz).entrySet()) {
             QueryPath path = new QueryPath(entry.getKey(), isKey);
@@ -155,10 +153,7 @@ public final class JavaMapOptionsMetadataResolver implements MapOptionsMetadataR
             String name = externalField == null ? entry.getKey() : externalField.name();
 
             MapTableField field = new MapTableField(name, type, false, path);
-
-            if (fields.putIfAbsent(field.getName(), field) == null) {
-                typeNamesByPaths.put(field.getPath().getPath(), entry.getValue().getName());
-            }
+            fields.putIfAbsent(field.getName(), field);
         }
 
         for (Entry<QueryPath, ExternalField> entry : externalFieldsByPath.entrySet()) {

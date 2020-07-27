@@ -17,7 +17,6 @@
 package com.hazelcast.sql.impl.connector;
 
 import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.spi.impl.NodeEngine;
@@ -74,7 +73,6 @@ public class LocalPartitionedMapConnector extends SqlKeyValueConnector {
         // TODO: deduplicate with PartitionedMapTableResolver ???
         MapService service = nodeEngine.getService(MapService.SERVICE_NAME);
         MapServiceContext context = service.getMapServiceContext();
-        MapContainer container = context.getMapContainer(mapName);
 
         long estimatedRowCount = estimatePartitionedMapRowCount(nodeEngine, context, mapName);
 
