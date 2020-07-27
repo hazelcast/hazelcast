@@ -77,6 +77,8 @@ full set of operations, so for instance you might be able to `SELECT` from a giv
 **table_parameter**
 
 Parameter specific to the external storage system - connection string, serialization format etc.
+This is an identifier, not a string. Therefore it must not be quoted as a string. It can be quoted in double
+quotes if it contains special characters (such as space, period...).
 
 **table_parameter_value**
 
