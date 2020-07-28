@@ -23,9 +23,9 @@ import com.hazelcast.instance.impl.Node;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.map.impl.MapService;
-import com.hazelcast.map.impl.operation.MultipleEntryOperationFactory;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.map.impl.operation.MapOperationProvider;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.spi.impl.operationservice.OperationFactory;
@@ -38,8 +38,6 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-
 public class MapExecuteOnKeysMessageTask
         extends AbstractMultiPartitionMessageTask<MapExecuteOnKeysCodec.RequestParameters> {
 
@@ -49,9 +47,10 @@ public class MapExecuteOnKeysMessageTask
 
     @Override
     protected OperationFactory createOperationFactory() {
-        EntryProcessor entryProcessor = serializationService.toObject(parameters.entryProcessor);
-        Set<Data> keys = new HashSet<Data>(parameters.keys);
-        return new MultipleEntryOperationFactory(parameters.name, keys, entryProcessor);
+        EntryProcessor processor = serializationService.toObject(parameters.entryProcessor);
+        MapOperationProvider operationProvider = getMapOperationProvider(parameters.name);
+        return operationProvider.createMultipleEntryOperationFactory(parameters.name,
+                new HashSet<Data>(parameters.keys), processor);
     }
 
     @Override
