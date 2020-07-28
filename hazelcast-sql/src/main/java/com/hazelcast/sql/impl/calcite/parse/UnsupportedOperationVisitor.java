@@ -150,11 +150,6 @@ public final class UnsupportedOperationVisitor implements SqlVisitor<Void> {
             case DOUBLE:
             case VARCHAR:
             case NULL:
-            case TIME:
-            case TIME_WITH_LOCAL_TIME_ZONE:
-            case DATE:
-            case TIMESTAMP:
-            case TIMESTAMP_WITH_LOCAL_TIME_ZONE:
                 return null;
 
             case CHAR:
@@ -192,11 +187,6 @@ public final class UnsupportedOperationVisitor implements SqlVisitor<Void> {
             case CHAR:
             case ANY:
             case NULL:
-            case TIME:
-            case TIME_WITH_LOCAL_TIME_ZONE:
-            case DATE:
-            case TIMESTAMP:
-            case TIMESTAMP_WITH_LOCAL_TIME_ZONE:
                 return null;
 
             default:
