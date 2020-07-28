@@ -20,6 +20,9 @@ import com.hazelcast.client.impl.operations.OperationFactoryWrapper;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.instance.Node;
+import com.hazelcast.map.impl.MapService;
+import com.hazelcast.map.impl.MapServiceContext;
+import com.hazelcast.map.impl.operation.MapOperationProvider;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.spi.OperationFactory;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
@@ -39,6 +42,12 @@ public abstract class AbstractMultiPartitionMessageTask<P> extends AbstractMessa
         OperationFactory operationFactory = new OperationFactoryWrapper(createOperationFactory(), endpoint.getUuid());
         InternalOperationService operationService = nodeEngine.getOperationService();
         operationService.invokeOnPartitionsAsync(getServiceName(), operationFactory, getPartitions(), this);
+    }
+
+    protected final MapOperationProvider getMapOperationProvider(String mapName) {
+        MapService mapService = getService(MapService.SERVICE_NAME);
+        MapServiceContext mapServiceContext = mapService.getMapServiceContext();
+        return mapServiceContext.getMapOperationProvider(mapName);
     }
 
     public abstract Collection<Integer> getPartitions();
