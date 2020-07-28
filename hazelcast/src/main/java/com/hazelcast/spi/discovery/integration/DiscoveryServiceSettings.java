@@ -36,6 +36,7 @@ public final class DiscoveryServiceSettings {
     private ClassLoader configClassLoader;
     private DiscoveryConfig discoveryConfig;
     private List<DiscoveryStrategyConfig> aliasedDiscoveryConfigs = new ArrayList<DiscoveryStrategyConfig>();
+    private boolean autoDetectionEnabled;
     private DiscoveryMode discoveryMode;
 
     public DiscoveryNode getDiscoveryNode() {
@@ -92,6 +93,15 @@ public final class DiscoveryServiceSettings {
 
     public DiscoveryServiceSettings setAliasedDiscoveryConfigs(List<DiscoveryStrategyConfig> aliasedDiscoveryConfigs) {
         this.aliasedDiscoveryConfigs = aliasedDiscoveryConfigs;
+        return this;
+    }
+
+    public boolean isAutoDetectionEnabled() {
+        return autoDetectionEnabled;
+    }
+
+    public DiscoveryServiceSettings setAutoDetectionEnabled(boolean enabled) {
+        this.autoDetectionEnabled = enabled;
         return this;
     }
 }

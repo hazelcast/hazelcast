@@ -64,7 +64,7 @@ public class MemcachedTest extends HazelcastTestSupport {
         config.getNetworkConfig().getMemcacheProtocolConfig().setEnabled(true);
         // Join is disabled intentionally. will start standalone HazelcastInstances.
         JoinConfig join = config.getNetworkConfig().getJoin();
-        join.getMulticastConfig().setEnabled(false);
+        join.getAutoDetectionConfig().setEnabled(false);
         join.getTcpIpConfig().setEnabled(false);
         return config;
     }

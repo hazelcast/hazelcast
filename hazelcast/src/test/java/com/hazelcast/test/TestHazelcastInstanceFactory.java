@@ -400,7 +400,7 @@ public class TestHazelcastInstanceFactory {
         String gracefulShutdownMaxWaitValue = System.getProperty(ClusterProperty.GRACEFUL_SHUTDOWN_MAX_WAIT.getName(), "120");
         config.setProperty(ClusterProperty.GRACEFUL_SHUTDOWN_MAX_WAIT.getName(), gracefulShutdownMaxWaitValue);
         config.setProperty(ClusterProperty.PARTITION_BACKUP_SYNC_INTERVAL.getName(), "1");
-        config.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
+        config.getNetworkConfig().getJoin().getAutoDetectionConfig().setEnabled(false);
         return config;
     }
 

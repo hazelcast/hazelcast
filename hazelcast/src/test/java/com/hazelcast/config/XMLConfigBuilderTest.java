@@ -3242,7 +3242,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         MemberAddressProviderConfig providerConfig = advancedNetworkConfig.getMemberAddressProviderConfig();
 
         assertFalse(advancedNetworkConfig.isEnabled());
-        assertTrue(joinConfig.getMulticastConfig().isEnabled());
+        assertTrue(joinConfig.getAutoDetectionConfig().isEnabled());
         assertNull(fdConfig);
         assertFalse(providerConfig.isEnabled());
 

@@ -271,6 +271,8 @@ hazelcast-client:
         keyStorePassword: keystorePassword123
         keyStoreType: JKS
 
+    auto-detection:
+      enabled: false
     aws:
       enabled: true
       connection-timeout-seconds: 11

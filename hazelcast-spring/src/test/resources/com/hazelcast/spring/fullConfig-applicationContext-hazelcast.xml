@@ -172,6 +172,7 @@
                     <hz:eureka enabled="false"
                                self-registration="true"
                                namespace="hazelcast"/>
+                    <hz:auto-detection enabled="${boolean.false}"/>
                 </hz:join>
                 <hz:interfaces enabled="false">
                     <hz:interface>10.10.1.*</hz:interface>

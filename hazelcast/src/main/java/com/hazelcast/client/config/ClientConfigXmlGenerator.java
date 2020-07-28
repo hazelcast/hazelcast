@@ -20,6 +20,7 @@ import com.hazelcast.client.LoadBalancer;
 import com.hazelcast.client.util.RandomLB;
 import com.hazelcast.client.util.RoundRobinLB;
 import com.hazelcast.config.AliasedDiscoveryConfig;
+import com.hazelcast.config.AutoDetectionConfig;
 import com.hazelcast.config.ConfigXmlGenerator.XmlGenerator;
 import com.hazelcast.config.CredentialsFactoryConfig;
 import com.hazelcast.config.DiscoveryConfig;
@@ -211,6 +212,7 @@ public final class ClientConfigXmlGenerator {
         socketInterceptor(gen, network.getSocketInterceptorConfig());
         ssl(gen, network.getSSLConfig());
         aliasedDiscoveryConfigsGenerator(gen, aliasedDiscoveryConfigsFrom(network));
+        autoDetection(gen, network.getAutoDetectionConfig());
         discovery(gen, network.getDiscoveryConfig());
         outboundPort(gen, network.getOutboundPortDefinitions());
         icmp(gen, network.getClientIcmpPingConfig());
@@ -569,6 +571,13 @@ public final class ClientConfigXmlGenerator {
             }
             gen.close();
         }
+    }
+
+    private static void autoDetection(XmlGenerator gen, AutoDetectionConfig config) {
+        if (config == null) {
+            return;
+        }
+        gen.open("auto-detection", "enabled", config.isEnabled()).close();
     }
 
     private static void discovery(XmlGenerator gen, DiscoveryConfig discovery) {

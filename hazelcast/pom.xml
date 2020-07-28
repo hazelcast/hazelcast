@@ -80,13 +80,14 @@
                         <version>1.0</version>
                     </signature>
                     <ignores>
+                        <ignore>java.lang.invoke.MethodHandle</ignore>
                         <ignore>sun.misc.Unsafe</ignore>
                     </ignores>
                 </configuration>
                 <executions>
                     <execution>
                         <id>source-java8-check</id>
-                        <phase>compile</phase>
+                        <phase>test-compile</phase>
                         <goals>
                             <goal>check</goal>
                         </goals>

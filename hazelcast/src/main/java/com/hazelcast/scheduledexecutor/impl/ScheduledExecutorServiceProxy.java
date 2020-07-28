@@ -22,6 +22,7 @@ import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.partition.PartitionAware;
+import com.hazelcast.scheduledexecutor.AutoDisposableTask;
 import com.hazelcast.splitbrainprotection.SplitBrainProtectionException;
 import com.hazelcast.scheduledexecutor.IScheduledExecutorService;
 import com.hazelcast.scheduledexecutor.IScheduledFuture;
@@ -126,8 +127,10 @@ public class ScheduledExecutorServiceProxy
 
         String name = extractNameOrGenerateOne(command);
         int partitionId = getTaskOrKeyPartitionId(command, name);
+        boolean autoDisposable = isAutoDisposable(command);
 
-        TaskDefinition<V> definition = new TaskDefinition<>(TaskDefinition.Type.SINGLE_RUN, name, command, delay, unit);
+        TaskDefinition<V> definition = new TaskDefinition<>(TaskDefinition.Type.SINGLE_RUN, name, command, delay,
+                unit, autoDisposable);
 
         return submitOnPartitionSync(name, new ScheduleTaskOperation(getName(), definition), partitionId);
     }
@@ -142,10 +145,10 @@ public class ScheduledExecutorServiceProxy
 
         String name = extractNameOrGenerateOne(command);
         int partitionId = getTaskOrKeyPartitionId(command, name);
-
         ScheduledRunnableAdapter<?> adapter = createScheduledRunnableAdapter(command);
+
         TaskDefinition definition =
-                new TaskDefinition(TaskDefinition.Type.AT_FIXED_RATE, name, adapter, initialDelay, period, unit);
+                new TaskDefinition(TaskDefinition.Type.AT_FIXED_RATE, name, adapter, initialDelay, period, unit, false);
 
         return submitOnPartitionSync(name, new ScheduleTaskOperation(getName(), definition), partitionId);
     }
@@ -214,8 +217,10 @@ public class ScheduledExecutorServiceProxy
 
         String name = extractNameOrGenerateOne(command);
         int partitionId = getKeyPartitionId(key);
+        boolean autoDisposable = isAutoDisposable(command);
 
-        TaskDefinition definition = new TaskDefinition(TaskDefinition.Type.SINGLE_RUN, name, command, delay, unit);
+        TaskDefinition definition = new TaskDefinition(TaskDefinition.Type.SINGLE_RUN, name, command, delay,
+                unit, autoDisposable);
         return submitOnPartitionSync(name, new ScheduleTaskOperation(getName(), definition), partitionId);
     }
 
@@ -232,8 +237,9 @@ public class ScheduledExecutorServiceProxy
         String name = extractNameOrGenerateOne(command);
         int partitionId = getKeyPartitionId(key);
         ScheduledRunnableAdapter<?> adapter = createScheduledRunnableAdapter(command);
+
         TaskDefinition definition =
-                new TaskDefinition(TaskDefinition.Type.AT_FIXED_RATE, name, adapter, initialDelay, period, unit);
+                new TaskDefinition(TaskDefinition.Type.AT_FIXED_RATE, name, adapter, initialDelay, period, unit, false);
 
         return submitOnPartitionSync(name, new ScheduleTaskOperation(getName(), definition), partitionId);
     }
@@ -295,8 +301,11 @@ public class ScheduledExecutorServiceProxy
 
         String name = extractNameOrGenerateOne(command);
         Map<Member, IScheduledFuture<V>> futures = createHashMap(members.size());
+        boolean autoDisposable = isAutoDisposable(command);
+
         for (Member member : members) {
-            TaskDefinition<V> definition = new TaskDefinition<>(TaskDefinition.Type.SINGLE_RUN, name, command, delay, unit);
+            TaskDefinition<V> definition = new TaskDefinition<>(TaskDefinition.Type.SINGLE_RUN, name, command, delay,
+                    unit, autoDisposable);
 
             futures.put(member,
                     submitOnMemberSync(name, new ScheduleTaskOperation(getName(), definition), member));
@@ -319,9 +328,10 @@ public class ScheduledExecutorServiceProxy
         String name = extractNameOrGenerateOne(command);
         ScheduledRunnableAdapter<?> adapter = createScheduledRunnableAdapter(command);
         Map<Member, IScheduledFuture<V>> futures = createHashMapAdapter(members.size());
+
         for (Member member : members) {
             TaskDefinition definition =
-                    new TaskDefinition(TaskDefinition.Type.AT_FIXED_RATE, name, adapter, initialDelay, period, unit);
+                    new TaskDefinition(TaskDefinition.Type.AT_FIXED_RATE, name, adapter, initialDelay, period, unit, false);
 
             futures.put(member, submitOnMemberSync(name, new ScheduleTaskOperation(getName(), definition), member));
         }
@@ -470,12 +480,21 @@ public class ScheduledExecutorServiceProxy
     }
 
     private String extractNameOrGenerateOne(Object command) {
-        String name = null;
-        if (command instanceof NamedTask) {
-            name = ((NamedTask) command).getName();
-        }
+        String taskName = getNamedTaskName(command);
+        return taskName != null ? taskName : UuidUtil.newUnsecureUuidString();
+    }
 
-        return name != null ? name : UuidUtil.newUnsecureUuidString();
+    private String getNamedTaskName(Object command) {
+        if (command instanceof AbstractTaskDecorator) {
+            NamedTask namedTask = ((AbstractTaskDecorator<?>) command).undecorateTo(NamedTask.class);
+            if (namedTask != null) {
+                return namedTask.getName();
+            }
+        }
+        if (command instanceof NamedTask) {
+            return ((NamedTask) command).getName();
+        }
+        return null;
     }
 
     private @Nonnull
@@ -493,11 +512,10 @@ public class ScheduledExecutorServiceProxy
         return createFutureProxy(uuid, taskName);
     }
 
-    @SuppressWarnings("unchecked")
     private <T> T initializeManagedContext(Object object) {
         ManagedContext context = getNodeEngine().getSerializationService().getManagedContext();
-        if (object instanceof NamedTaskDecorator) {
-            ((NamedTaskDecorator) object).initializeContext(context);
+        if (object instanceof AbstractTaskDecorator) {
+            ((AbstractTaskDecorator) object).initializeContext(context);
         } else {
             object = context.initialize(object);
         }
@@ -517,5 +535,12 @@ public class ScheduledExecutorServiceProxy
         public Operation get() {
             return new GetAllScheduledOnMemberOperation(schedulerName);
         }
+    }
+
+    private boolean isAutoDisposable(Object command) {
+        if (command instanceof AbstractTaskDecorator) {
+            return ((AbstractTaskDecorator) command).isDecoratedWith(AutoDisposableTask.class);
+        }
+        return command instanceof AutoDisposableTask;
     }
 }

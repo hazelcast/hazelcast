@@ -23,6 +23,8 @@ import com.hazelcast.logging.ILogger;
 import java.util.Collection;
 import java.util.Map;
 
+import static com.hazelcast.spi.discovery.DiscoveryStrategyFactory.DiscoveryStrategyLevel.UNKNOWN;
+
 /**
  * The <code>DiscoveryStrategyFactory</code> is the entry point for strategy vendors. Every
  * {@link DiscoveryStrategy} should have its own factory building it. In rare cases (like
@@ -73,4 +75,69 @@ public interface DiscoveryStrategyFactory {
      * @return a set of expected configuration properties
      */
     Collection<PropertyDefinition> getConfigurationProperties();
+
+    /**
+     * Checks whether the given discovery strategy may be applied with no additional config to the environment in which Hazelcast
+     * is currently running.
+     * <p>
+     * Used by the auto detection mechanism to decide which strategy should be used.
+     */
+    default boolean isAutoDetectionApplicable() {
+        return false;
+    }
+
+    /**
+     * Level of the discovery strategy.
+     */
+    default DiscoveryStrategyLevel discoveryStrategyLevel() {
+        return UNKNOWN;
+    }
+
+    /**
+     * Level of the discovery strategy.
+     * <p>
+     * Discovery strategies can have different levels. They can be at the level of Cloud Virtual Machines, for example, AWS EC2
+     * Instance or GCP Virtual Machine. They can also be at the level of some specific platform or framework, like Kubernetes.
+     * <p>
+     * It decides on the priority in the auto detection mechanism. As an example, let's take Kubernetes environment installed
+     * on AWS EC2 instances. In this case two plugins are auto-detected: hazelcast-aws and hazelcast-kubernetes.
+     * This level decides which one to pick:
+     * <ul>
+     *     <li>hazelcast-aws implements level {@code CLOUD_VM}</li>
+     *     <li>hazelcast-kubernetes implements level {@code PLATFORM}</li>
+     * </ul>
+     * {@code PLATFORM} has higher priority than {@code CLOUD_VM}, so hazelcast-kubernetes plugin is selected.
+     */
+    enum DiscoveryStrategyLevel {
+
+        /**
+         * Level unknown, lowest priority.
+         */
+        UNKNOWN(0),
+
+        /**
+         * VM Machine level, for example, hazelcast-aws or hazelcast-azure.
+         */
+        CLOUD_VM(10),
+
+        /**
+         * Platform level, for example, hazelcast-kubernetes.
+         */
+        PLATFORM(20),
+
+        /**
+         * Custom strategy level, highest priority.
+         */
+        CUSTOM(50);
+
+        private int priority;
+
+        DiscoveryStrategyLevel(int priority) {
+            this.priority = priority;
+        }
+
+        public int getPriority() {
+            return priority;
+        }
+    }
 }

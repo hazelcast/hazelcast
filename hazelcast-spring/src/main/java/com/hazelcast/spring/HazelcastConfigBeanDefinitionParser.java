@@ -838,6 +838,8 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                     handleAliasedDiscoveryStrategy(child, joinConfigBuilder, name);
                 } else if ("discovery-strategies".equals(name)) {
                     handleDiscoveryStrategies(child, joinConfigBuilder);
+                } else if ("auto-detection".equals(name)) {
+                    handleAutoDetection(child, joinConfigBuilder);
                 }
             }
             networkConfigBuilder.addPropertyValue("join", beanDefinition);

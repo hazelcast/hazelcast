@@ -29,20 +29,23 @@ public class JoinConfigTest {
 
     @Test
     public void joinConfigTest() {
-        assertOk(false, false, false, false, false, false, false, false);
-        assertOk(true, false, false, false, false, false, false, false);
-        assertOk(false, true, false, false, false, false, false, false);
-        assertOk(false, false, true, false, false, false, false, false);
-        assertOk(false, false, false, true, false, false, false, false);
-        assertOk(false, false, false, false, true, false, false, false);
-        assertOk(false, false, false, false, false, true, false, false);
-        assertOk(false, false, false, false, false, false, true, false);
-        assertOk(false, false, false, false, false, false, false, true);
+        assertOk(true, false, false, false, false, false, false, false, false);
+        assertOk(true, true, false, false, false, false, false, false, false);
+        assertOk(true, false, true, false, false, false, false, false, false);
+        assertOk(true, false, false, true, false, false, false, false, false);
+        assertOk(true, false, false, false, true, false, false, false, false);
+        assertOk(true, false, false, false, false, true, false, false, false);
+        assertOk(true, false, false, false, false, false, true, false, false);
+        assertOk(true, false, false, false, false, false, false, true, false);
+        assertOk(true, false, false, false, false, false, false, false, true);
+        assertOk(false, false, false, false, false, false, false, false, true);
     }
 
-    private static void assertOk(boolean tcp, boolean multicast, boolean aws, boolean gcp, boolean azure,
+    @SuppressWarnings("checkstyle:parameternumber")
+    private static void assertOk(boolean autoDetection, boolean tcp, boolean multicast, boolean aws, boolean gcp, boolean azure,
                                  boolean kubernetes, boolean eureka, boolean discoveryConfig) {
         JoinConfig config = new JoinConfig();
+        config.getAutoDetectionConfig().setEnabled(autoDetection);
         config.getMulticastConfig().setEnabled(multicast);
         config.getTcpIpConfig().setEnabled(tcp);
         config.getAwsConfig().setEnabled(aws);

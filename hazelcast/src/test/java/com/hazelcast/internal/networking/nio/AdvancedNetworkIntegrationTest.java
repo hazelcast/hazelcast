@@ -84,7 +84,6 @@ public class AdvancedNetworkIntegrationTest extends AbstractAdvancedNetworkInteg
         config.getAdvancedNetworkConfig().setMemberEndpointConfig(createServerSocketConfig(firstMemberPort))
                 .setClientEndpointConfig(createServerSocketConfig(firstClientPort));
         JoinConfig joinConfig = config.getAdvancedNetworkConfig().getJoin();
-        joinConfig.getMulticastConfig().setEnabled(false);
         joinConfig.getTcpIpConfig().setEnabled(true).addMember("127.0.0.1:" + secondMemberPort);
         HazelcastInstance hz = newHazelcastInstance(config);
 
@@ -92,7 +91,6 @@ public class AdvancedNetworkIntegrationTest extends AbstractAdvancedNetworkInteg
         other.getAdvancedNetworkConfig().setEnabled(true);
         other.getAdvancedNetworkConfig().setMemberEndpointConfig(createServerSocketConfig(secondMemberPort));
         JoinConfig otherJoinConfig = other.getAdvancedNetworkConfig().getJoin();
-        otherJoinConfig.getMulticastConfig().setEnabled(false);
         // Mis-configured to point to Client port of 1st member
         otherJoinConfig.getTcpIpConfig().setEnabled(true).addMember("127.0.0.1:" + firstClientPort);
         other.setProperty(ClusterProperty.MAX_JOIN_SECONDS.getName(), "1");

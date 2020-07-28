@@ -34,8 +34,10 @@ hazelcast:
       # 0 or * means use system provided port.
       - 0
     join:
-      multicast:
+      auto-detection:
         enabled: true
+      multicast:
+        enabled: false
         multicast-group: 224.2.2.3
         multicast-port: 54327
       tcp-ip:

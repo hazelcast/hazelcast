@@ -31,6 +31,7 @@ import com.hazelcast.internal.util.ServiceLoader;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -133,13 +134,24 @@ public class DefaultDiscoveryService
         try {
             Collection<DiscoveryStrategyConfig> discoveryStrategyConfigs = new ArrayList<DiscoveryStrategyConfig>(
                     settings.getAllDiscoveryConfigs());
-
             List<DiscoveryStrategyFactory> factories = collectFactories(discoveryStrategyConfigs, configClassLoader);
 
             List<DiscoveryStrategy> discoveryStrategies = new ArrayList<DiscoveryStrategy>();
             for (DiscoveryStrategyConfig config : discoveryStrategyConfigs) {
                 DiscoveryStrategy discoveryStrategy = buildDiscoveryStrategy(config, factories);
                 discoveryStrategies.add(discoveryStrategy);
+            }
+
+            if (discoveryStrategies.isEmpty() && settings.isAutoDetectionEnabled()) {
+                logger.fine("Discovery auto-detection enabled, looking for available discovery strategies");
+                DiscoveryStrategyFactory autoDetectedFactory = detectDiscoveryStrategyFactory(factories);
+                if (autoDetectedFactory != null) {
+                    logger.info(String.format("Auto-detection selected discovery strategy: %s", autoDetectedFactory.getClass()));
+                    discoveryStrategies
+                            .add(autoDetectedFactory.newDiscoveryStrategy(discoveryNode, logger, Collections.emptyMap()));
+                } else {
+                    logger.info("No discovery strategy is applicable for auto-detection");
+                }
             }
             return discoveryStrategies;
         } catch (Exception e) {
@@ -186,6 +198,30 @@ public class DefaultDiscoveryService
         throw new ValidationException(
                 "There is no discovery strategy factory to create '" + config + "' Is it a typo in a strategy classname? "
                         + "Perhaps you forgot to include implementation on a classpath?");
+    }
+
+    private DiscoveryStrategyFactory detectDiscoveryStrategyFactory(List<DiscoveryStrategyFactory> factories) {
+        DiscoveryStrategyFactory highestPriorityFactory = null;
+        for (DiscoveryStrategyFactory factory : factories) {
+            try {
+                if (factory.isAutoDetectionApplicable()) {
+                    logger.fine(
+                            String.format("Discovery strategy factory '%s' is auto-applicable to the current runtime environment",
+                                    factory.getClass()));
+                    if (highestPriorityFactory == null || factory.discoveryStrategyLevel().getPriority()
+                            > highestPriorityFactory.discoveryStrategyLevel().getPriority()) {
+                        highestPriorityFactory = factory;
+                    }
+                } else {
+                    logger.fine(String.format("Discovery Factory '%s' is not auto-applicable to the current runtime environment",
+                            factory.getClass()));
+                }
+            } catch (Exception e) {
+                // exception in auto-detection should not prevent Hazelcast from starting
+                logger.finest(e);
+            }
+        }
+        return highestPriorityFactory;
     }
 
     private String getFactoryClassName(DiscoveryStrategyConfig config) {

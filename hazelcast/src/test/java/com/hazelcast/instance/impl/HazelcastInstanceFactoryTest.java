@@ -128,7 +128,7 @@ public class HazelcastInstanceFactoryTest extends HazelcastTestSupport {
         };
 
         Config config = new Config();
-        config.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
+        config.getNetworkConfig().getJoin().getAutoDetectionConfig().setEnabled(false);
 
         hazelcastInstance = HazelcastInstanceFactory.newHazelcastInstance(config, randomString(), context);
     }
@@ -145,7 +145,7 @@ public class HazelcastInstanceFactoryTest extends HazelcastTestSupport {
         };
 
         Config config = new Config();
-        config.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
+        config.getNetworkConfig().getJoin().getAutoDetectionConfig().setEnabled(false);
 
         hazelcastInstance = HazelcastInstanceFactory.newHazelcastInstance(config, randomString(), context);
     }
@@ -162,7 +162,7 @@ public class HazelcastInstanceFactoryTest extends HazelcastTestSupport {
         };
 
         Config config = new Config();
-        config.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
+        config.getNetworkConfig().getJoin().getAutoDetectionConfig().setEnabled(false);
 
         hazelcastInstance = HazelcastInstanceFactory.newHazelcastInstance(config, randomString(), context);
     }
@@ -189,7 +189,7 @@ public class HazelcastInstanceFactoryTest extends HazelcastTestSupport {
         };
 
         Config config = new Config();
-        config.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
+        config.getNetworkConfig().getJoin().getAutoDetectionConfig().setEnabled(false);
 
         hazelcastInstance = HazelcastInstanceFactory.newHazelcastInstance(config, randomString(), context);
         try {
@@ -220,7 +220,7 @@ public class HazelcastInstanceFactoryTest extends HazelcastTestSupport {
         };
 
         Config config = new Config();
-        config.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
+        config.getNetworkConfig().getJoin().getAutoDetectionConfig().setEnabled(false);
 
         hazelcastInstance = HazelcastInstanceFactory.newHazelcastInstance(config, randomString(), context);
     }
