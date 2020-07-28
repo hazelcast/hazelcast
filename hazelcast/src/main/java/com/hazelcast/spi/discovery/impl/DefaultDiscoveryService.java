@@ -203,16 +203,23 @@ public class DefaultDiscoveryService
     private DiscoveryStrategyFactory detectDiscoveryStrategyFactory(List<DiscoveryStrategyFactory> factories) {
         DiscoveryStrategyFactory highestPriorityFactory = null;
         for (DiscoveryStrategyFactory factory : factories) {
-            if (factory.isAutoDetectionApplicable()) {
-                logger.fine(String.format("Discovery strategy factory '%s' is auto-applicable to the current runtime environment",
-                        factory.getClass()));
-                if (highestPriorityFactory == null || factory.discoveryStrategyLevel().getPriority()
-                        > highestPriorityFactory.discoveryStrategyLevel().getPriority()) {
-                    highestPriorityFactory = factory;
+            try {
+                if (factory.isAutoDetectionApplicable()) {
+                    logger.fine(
+                            String.format("Discovery strategy factory '%s' is auto-applicable to the current runtime environment",
+                                    factory.getClass()));
+                    if (highestPriorityFactory == null || factory.discoveryStrategyLevel().getPriority()
+                            > highestPriorityFactory.discoveryStrategyLevel().getPriority()) {
+                        highestPriorityFactory = factory;
+                    }
+                } else {
+                    logger.fine(String.format("Discovery Factory '%s' is not auto-applicable to the current runtime environment",
+                            factory.getClass()));
                 }
-            } else {
-                logger.fine(String.format("Discovery Factory '%s' is not auto-applicable to the current runtime environment",
-                        factory.getClass()));
+            }
+            catch (Exception e) {
+                // exception in auto-detection should not prevent Hazelcast from starting
+                logger.finest(e);
             }
         }
         return highestPriorityFactory;
