@@ -392,7 +392,7 @@ public class ObservableResultsTest extends TestInClusterSupport {
         testObservable.removeObserver(registrationId);
         //then
         int resultsSoFar = testObserver.getNoOfValues();
-        assertTrueAllTheTime(() -> assertEquals(resultsSoFar, testObserver.getNoOfValues()), 2);
+        assertTrueAllTheTime(() -> assertTrue(testObserver.getNoOfValues() <= resultsSoFar + 1), 2);
 
         job.cancel();
     }
@@ -419,7 +419,7 @@ public class ObservableResultsTest extends TestInClusterSupport {
         destroyedObservable.destroy();
         //then
         int resultsSoFar = otherTestObserver.getNoOfValues();
-        assertTrueAllTheTime(() -> assertEquals(resultsSoFar, otherTestObserver.getNoOfValues()), 2);
+        assertTrueAllTheTime(() -> assertTrue(otherTestObserver.getNoOfValues() <= resultsSoFar + 1), 2);
         job.cancel();
         assertError(otherTestObserver, null);
         assertCompletions(otherTestObserver, 0);

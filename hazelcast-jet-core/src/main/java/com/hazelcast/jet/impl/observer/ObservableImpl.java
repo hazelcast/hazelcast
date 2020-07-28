@@ -216,6 +216,9 @@ public class ObservableImpl<T> implements Observable<T> {
 
                 for (int i = 0; i < result.size(); i++) {
                     try {
+                        if (cancelled) {
+                            return;
+                        }
                         onNewMessage(result.get(i));
                     } catch (Throwable t) {
                         logger.warning("Terminating message listener '" + id + "'. " +
