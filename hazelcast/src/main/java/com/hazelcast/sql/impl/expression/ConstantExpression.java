@@ -49,14 +49,10 @@ public final class ConstantExpression<T> implements Expression<T>, IdentifiedDat
     }
 
     public static ConstantExpression<?> create(Object value, QueryDataType type) {
-        if (type.getTypeFamily() == QueryDataTypeFamily.NULL) {
-            assert value == null;
-            return new ConstantExpression<>(null, QueryDataType.NULL);
-        }
-
         if (value == null) {
             return new ConstantExpression<>(null, type);
         }
+        assert type.getTypeFamily() != QueryDataTypeFamily.NULL;
 
         Converter valueConverter = Converters.getConverter(value.getClass());
         Converter typeConverter = type.getConverter();
