@@ -119,6 +119,7 @@
             <xs:element name="kubernetes" type="aliased-discovery-strategy" minOccurs="0" maxOccurs="1" />
             <xs:element name="eureka" type="aliased-discovery-strategy" minOccurs="0" maxOccurs="1" />
             <xs:element name="discovery-strategies" type="discovery-strategies" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="auto-detection" type="auto-detection" minOccurs="0" maxOccurs="1"/>
             <xs:element name="outbound-ports" type="outbound-ports" minOccurs="0" maxOccurs="1"/>
             <xs:element name="icmp-ping" type="icmp-ping" minOccurs="0" maxOccurs="1"/>
             <xs:element name="hazelcast-cloud" type="hazelcast-cloud" minOccurs="0" maxOccurs="1"/>
@@ -141,6 +142,10 @@
             <xs:element name="echo-fail-fast-on-startup" type="xs:boolean" minOccurs="0" maxOccurs="1" default="true"/>
         </xs:all>
         <xs:attribute name="enabled" type="xs:boolean" default="false"/>
+    </xs:complexType>
+
+    <xs:complexType name="auto-detection">
+        <xs:attribute name="enabled" type="xs:boolean" use="required"/>
     </xs:complexType>
 
     <xs:complexType name="hazelcast-cloud">

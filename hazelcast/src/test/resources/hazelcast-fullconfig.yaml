@@ -47,6 +47,8 @@ hazelcast:
       - 37000,37001,37002,37003
       - 38000,38500-38600
     join:
+      auto-detection:
+        enabled: false
       multicast:
         enabled: true
         loopbackModeEnabled: true

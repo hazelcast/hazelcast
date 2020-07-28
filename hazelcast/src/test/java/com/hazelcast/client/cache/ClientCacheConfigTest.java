@@ -62,14 +62,14 @@ public class ClientCacheConfigTest extends HazelcastTestSupport {
         JsrClientTestUtil.setup();
 
         Config config = new Config();
-        config.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
+        config.getNetworkConfig().getJoin().getAutoDetectionConfig().setEnabled(false);
         config.getNetworkConfig().setPort(5701);
         config.setClusterName("cluster1");
         config.addCacheConfig(simpleConfig);
         Hazelcast.newHazelcastInstance(config);
 
         Config config2 = new Config();
-        config2.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
+        config2.getNetworkConfig().getJoin().getAutoDetectionConfig().setEnabled(false);
         config2.getNetworkConfig().setPort(5702);
         config2.setClusterName("cluster2");
         config.addCacheConfig(simpleConfig);
@@ -128,6 +128,7 @@ public class ClientCacheConfigTest extends HazelcastTestSupport {
         String instanceName = "ClientInstanceTest";
 
         ClientConfig clientConfig = new ClientConfig();
+        clientConfig.getNetworkConfig().getAutoDetectionConfig().setEnabled(false);
         clientConfig.setClusterName("cluster1");
         clientConfig.setInstanceName(instanceName);
 
@@ -147,6 +148,7 @@ public class ClientCacheConfigTest extends HazelcastTestSupport {
     @Test
     public void testGetPreConfiguredCache() {
         ClientConfig config = new ClientConfig();
+        config.getNetworkConfig().getAutoDetectionConfig().setEnabled(false);
         config.setClusterName("cluster1");
 
         for (int i = 0; i < 4; i++) {

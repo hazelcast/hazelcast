@@ -42,6 +42,7 @@
 
     <advanced-network enabled="true">
         <join>
+            <auto-detection enabled="false"/>
             <multicast enabled="true" loopbackModeEnabled="true">
                 <multicast-group>1.2.3.4</multicast-group>
                 <multicast-port>12345</multicast-port>

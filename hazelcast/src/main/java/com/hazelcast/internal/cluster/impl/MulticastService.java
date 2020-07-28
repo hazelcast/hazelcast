@@ -105,7 +105,7 @@ public final class MulticastService implements Runnable {
     public static MulticastService createMulticastService(Address bindAddress, Node node, Config config, ILogger logger) {
         JoinConfig join = getActiveMemberNetworkConfig(config).getJoin();
         MulticastConfig multicastConfig = join.getMulticastConfig();
-        if (!multicastConfig.isEnabled()) {
+        if (!node.shouldUseMulticastJoiner(join)) {
             return null;
         }
 

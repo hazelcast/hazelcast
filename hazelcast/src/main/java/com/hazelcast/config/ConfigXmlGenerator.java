@@ -815,6 +815,7 @@ public class ConfigXmlGenerator {
 
         JoinConfig join = netCfg.getJoin();
         gen.open("join");
+        autoDetectionConfigXmlGenerator(gen, join);
         multicastConfigXmlGenerator(gen, join);
         tcpConfigXmlGenerator(gen, join);
         aliasedDiscoveryConfigsGenerator(gen, aliasedDiscoveryConfigsFrom(join));
@@ -842,6 +843,7 @@ public class ConfigXmlGenerator {
 
         JoinConfig join = netCfg.getJoin();
         gen.open("join");
+        autoDetectionConfigXmlGenerator(gen, join);
         multicastConfigXmlGenerator(gen, join);
         tcpConfigXmlGenerator(gen, join);
         aliasedDiscoveryConfigsGenerator(gen, aliasedDiscoveryConfigsFrom(join));
@@ -1253,6 +1255,10 @@ public class ConfigXmlGenerator {
                 "max-size-policy", e.getMaxSizePolicy(),
                 "eviction-policy", e.getEvictionPolicy(),
                 "comparator-class-name", comparatorClassName);
+    }
+
+    private static void autoDetectionConfigXmlGenerator(XmlGenerator gen, JoinConfig join) {
+        gen.open("auto-detection", "enabled", join.getAutoDetectionConfig().isEnabled()).close();
     }
 
     private static void multicastConfigXmlGenerator(XmlGenerator gen, JoinConfig join) {

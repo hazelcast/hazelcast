@@ -116,6 +116,7 @@
                        self-registration="true"
                        namespace="hazelcast"/>
             <hz:discovery-strategies/>
+            <hz:auto-detection enabled="${boolean:false}"/>
             <hz:outbound-ports>
                 <hz:ports>34600</hz:ports>
                 <hz:ports>34700-34710</hz:ports>

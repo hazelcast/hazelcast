@@ -315,6 +315,8 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
                     handleAliasedDiscoveryStrategy(child, clientNetworkConfig, nodeName);
                 } else if ("discovery-strategies".equals(nodeName)) {
                     handleDiscoveryStrategies(child, clientNetworkConfig);
+                } else if ("auto-detection".equals(nodeName)) {
+                    handleAutoDetection(child, clientNetworkConfig);
                 } else if ("outbound-ports".equals(nodeName)) {
                     handleOutboundPorts(child, clientNetworkConfig);
                 } else if ("icmp-ping".equals(nodeName)) {

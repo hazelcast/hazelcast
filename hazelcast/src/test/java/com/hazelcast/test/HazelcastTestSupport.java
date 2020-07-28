@@ -197,10 +197,10 @@ public abstract class HazelcastTestSupport {
         return new Config();
     }
 
-    // disables multicast/tcp-ip network discovery on the given config and returns the same
+    // disables auto-detection/tcp-ip network discovery on the given config and returns the same
     public static Config withoutNetworkJoin(Config config) {
         config.getNetworkConfig().getJoin().getTcpIpConfig().setEnabled(false);
-        config.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
+        config.getNetworkConfig().getJoin().getAutoDetectionConfig().setEnabled(false);
         return config;
     }
 
