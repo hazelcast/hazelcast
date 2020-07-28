@@ -1786,15 +1786,6 @@ public class DefaultMessageTaskFactoryProvider implements MessageTaskFactoryProv
                 (cm, con) -> new HotRestartTriggerBackupMessageTask(cm, node, con));
         factories.put(MCInterruptHotRestartBackupCodec.REQUEST_MESSAGE_TYPE,
                 (cm, con) -> new HotRestartInterruptBackupMessageTask(cm, node, con));
-
-// region ----------- REGISTRATION FOR SQL
-        factories.put(SqlExecuteCodec.REQUEST_MESSAGE_TYPE,
-            (cm, con) -> new SqlExecuteMessageTask(cm, node, con));
-        factories.put(SqlFetchCodec.REQUEST_MESSAGE_TYPE,
-            (cm, con) -> new SqlFetchMessageTask(cm, node, con));
-        factories.put(SqlCloseCodec.REQUEST_MESSAGE_TYPE,
-            (cm, con) -> new SqlCloseMessageTask(cm, node, con));
-//endregion
     }
 
     private void initializeSqlTaskFactories() {

@@ -25,7 +25,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * to a next member to send a request to.
  * <p/>
  * Round robin is done based on best effort basis, the order of members for concurrent calls to
- * the {@link #next(boolean)} is not guaranteed.
+ * the {@link #next()} is not guaranteed.
  */
 public class RoundRobinLB extends AbstractLoadBalancer {
 
