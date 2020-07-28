@@ -55,7 +55,7 @@ public class PlusEndToEndTest extends ExpressionEndToEndTestBase {
         assertParsingError("booleanTrue + string1", "Cannot apply '+' to arguments of type '<BOOLEAN> + <BOOLEAN>'");
         assertParsingError("booleanTrue + char1", "Cannot apply '+' to arguments of type '<BOOLEAN> + <BOOLEAN>'");
 
-        assertParsingError("booleanTrue + object", "Cannot apply '+' to arguments of type '<BOOLEAN> + <ANY>'");
+        assertParsingError("booleanTrue + object", "Cannot apply '+' to arguments of type '<BOOLEAN> + <OBJECT>'");
     }
 
     @Test
@@ -87,7 +87,7 @@ public class PlusEndToEndTest extends ExpressionEndToEndTestBase {
         assertRow("byte1 + char1", EXPR0, BIGINT, 2L);
         assertDataError("byte1 + charF", "Cannot convert VARCHAR to BIGINT: f");
 
-        assertParsingError("byte1 + object", "Cannot apply '+' to arguments of type '<TINYINT> + <ANY>'");
+        assertParsingError("byte1 + object", "Cannot apply '+' to arguments of type '<TINYINT> + <OBJECT>'");
     }
 
     @Test
@@ -119,7 +119,7 @@ public class PlusEndToEndTest extends ExpressionEndToEndTestBase {
         assertRow("short1 + char1", EXPR0, BIGINT, 2L);
         assertDataError("short1 + charF", "Cannot convert VARCHAR to BIGINT: f");
 
-        assertParsingError("short1 + object", "Cannot apply '+' to arguments of type '<SMALLINT> + <ANY>'");
+        assertParsingError("short1 + object", "Cannot apply '+' to arguments of type '<SMALLINT> + <OBJECT>'");
     }
 
     @Test
@@ -151,7 +151,7 @@ public class PlusEndToEndTest extends ExpressionEndToEndTestBase {
         assertRow("int1 + char1", EXPR0, BIGINT, 2L);
         assertDataError("int1 + charF", "Cannot convert VARCHAR to BIGINT: f");
 
-        assertParsingError("int1 + object", "Cannot apply '+' to arguments of type '<INTEGER> + <ANY>'");
+        assertParsingError("int1 + object", "Cannot apply '+' to arguments of type '<INTEGER> + <OBJECT>'");
     }
 
     @Test
@@ -183,7 +183,7 @@ public class PlusEndToEndTest extends ExpressionEndToEndTestBase {
         assertRow("long1 + char1", EXPR0, BIGINT, 2L);
         assertDataError("long1 + charF", "Cannot convert VARCHAR to BIGINT: f");
 
-        assertParsingError("long1 + object", "Cannot apply '+' to arguments of type '<BIGINT> + <ANY>'");
+        assertParsingError("long1 + object", "Cannot apply '+' to arguments of type '<BIGINT> + <OBJECT>'");
     }
 
     @Test
@@ -215,7 +215,7 @@ public class PlusEndToEndTest extends ExpressionEndToEndTestBase {
         assertRow("float1 + char1", EXPR0, REAL, 2.0f);
         assertDataError("float1 + charF", "Cannot convert VARCHAR to REAL: f");
 
-        assertParsingError("float1 + object", "Cannot apply '+' to arguments of type '<REAL> + <ANY>'");
+        assertParsingError("float1 + object", "Cannot apply '+' to arguments of type '<REAL> + <OBJECT>'");
     }
 
     @Test
@@ -247,7 +247,7 @@ public class PlusEndToEndTest extends ExpressionEndToEndTestBase {
         assertRow("double1 + char1", EXPR0, DOUBLE, 2.0);
         assertDataError("double1 + charF", "Cannot convert VARCHAR to DOUBLE: f");
 
-        assertParsingError("double1 + object", "Cannot apply '+' to arguments of type '<DOUBLE> + <ANY>'");
+        assertParsingError("double1 + object", "Cannot apply '+' to arguments of type '<DOUBLE> + <OBJECT>'");
     }
 
     @Test
@@ -279,7 +279,7 @@ public class PlusEndToEndTest extends ExpressionEndToEndTestBase {
         assertRow("decimal1 + char1", EXPR0, DECIMAL, BigDecimal.valueOf(2));
         assertDataError("decimal1 + charF", "Cannot convert VARCHAR to DECIMAL: f");
 
-        assertParsingError("decimal1 + object", "Cannot apply '+' to arguments of type '<DECIMAL(38, 38)> + <ANY>'");
+        assertParsingError("decimal1 + object", "Cannot apply '+' to arguments of type '<DECIMAL(38, 38)> + <OBJECT>'");
     }
 
     @Test
@@ -311,28 +311,28 @@ public class PlusEndToEndTest extends ExpressionEndToEndTestBase {
         assertRow("string1 + char1", EXPR0, DOUBLE, 2.0);
         assertDataError("string1 + charF", "Cannot convert VARCHAR to DOUBLE: f");
 
-        assertParsingError("string1 + object", "Cannot apply '+' to arguments of type '<VARCHAR> + <ANY>'");
+        assertParsingError("string1 + object", "Cannot apply '+' to arguments of type '<VARCHAR> + <OBJECT>'");
     }
 
     @Test
     public void testObject() {
-        assertParsingError("object + booleanTrue", "Cannot apply '+' to arguments of type '<ANY> + <BOOLEAN>'");
+        assertParsingError("object + booleanTrue", "Cannot apply '+' to arguments of type '<OBJECT> + <BOOLEAN>'");
 
-        assertParsingError("object + byte1", "Cannot apply '+' to arguments of type '<ANY> + <TINYINT>'");
-        assertParsingError("object + short1", "Cannot apply '+' to arguments of type '<ANY> + <SMALLINT>'");
-        assertParsingError("object + int1", "Cannot apply '+' to arguments of type '<ANY> + <INTEGER>'");
-        assertParsingError("object + long1", "Cannot apply '+' to arguments of type '<ANY> + <BIGINT>'");
+        assertParsingError("object + byte1", "Cannot apply '+' to arguments of type '<OBJECT> + <TINYINT>'");
+        assertParsingError("object + short1", "Cannot apply '+' to arguments of type '<OBJECT> + <SMALLINT>'");
+        assertParsingError("object + int1", "Cannot apply '+' to arguments of type '<OBJECT> + <INTEGER>'");
+        assertParsingError("object + long1", "Cannot apply '+' to arguments of type '<OBJECT> + <BIGINT>'");
 
-        assertParsingError("object + float1", "Cannot apply '+' to arguments of type '<ANY> + <REAL>'");
-        assertParsingError("object + double1", "Cannot apply '+' to arguments of type '<ANY> + <DOUBLE>'");
+        assertParsingError("object + float1", "Cannot apply '+' to arguments of type '<OBJECT> + <REAL>'");
+        assertParsingError("object + double1", "Cannot apply '+' to arguments of type '<OBJECT> + <DOUBLE>'");
 
-        assertParsingError("object + decimal1", "Cannot apply '+' to arguments of type '<ANY> + <DECIMAL(38, 38)>'");
-        assertParsingError("object + bigInteger1", "Cannot apply '+' to arguments of type '<ANY> + <DECIMAL(38, 38)>'");
+        assertParsingError("object + decimal1", "Cannot apply '+' to arguments of type '<OBJECT> + <DECIMAL(38, 38)>'");
+        assertParsingError("object + bigInteger1", "Cannot apply '+' to arguments of type '<OBJECT> + <DECIMAL(38, 38)>'");
 
-        assertParsingError("object + string1", "Cannot apply '+' to arguments of type '<ANY> + <VARCHAR>'");
-        assertParsingError("object + char1", "Cannot apply '+' to arguments of type '<ANY> + <VARCHAR>'");
+        assertParsingError("object + string1", "Cannot apply '+' to arguments of type '<OBJECT> + <VARCHAR>'");
+        assertParsingError("object + char1", "Cannot apply '+' to arguments of type '<OBJECT> + <VARCHAR>'");
 
-        assertParsingError("object + object", "Cannot apply '+' to arguments of type '<ANY> + <ANY>'");
+        assertParsingError("object + object", "Cannot apply '+' to arguments of type '<OBJECT> + <OBJECT>'");
     }
 
 }

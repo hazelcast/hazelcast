@@ -16,7 +16,6 @@
 
 package com.hazelcast.sql.impl.expression.math;
 
-import com.hazelcast.sql.SqlService;
 import com.hazelcast.sql.impl.SqlDataSerializerHook;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastReturnTypes;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
@@ -45,16 +44,6 @@ import static org.junit.Assert.assertTrue;
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class PlusTest extends ExpressionTestBase {
-
-    @Test
-    public void testEndToEnd() {
-        SqlService sql = createEndToEndRecords();
-        assertRows(query(sql, "select __key from records where int1 + 100 > 0"), keyRange(0, 1000));
-        assertRows(query(sql, "select __key, double1 + ? from records where __key < 1000", "2.1"), keyRange(0, 1000),
-                k -> (k + 2000.1) + 2.1);
-        assertRows(query(sql, "select __key, double1 + null from records"), keyRange(0, 1000, 5000, 6000), k -> null);
-        assertQueryThrows(sql, "select ? + int1 from records", "bigint overflow", Long.MAX_VALUE);
-    }
 
     @Test
     public void verify() {

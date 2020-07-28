@@ -26,6 +26,7 @@ import java.util.List;
 
 import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeSystem.MAX_DECIMAL_PRECISION;
 import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeSystem.MAX_DECIMAL_SCALE;
+import static org.apache.calcite.sql.type.SqlTypeName.ANY;
 import static org.apache.calcite.sql.type.SqlTypeName.DECIMAL;
 import static org.apache.calcite.sql.type.SqlTypeName.DOUBLE;
 import static org.apache.calcite.sql.type.SqlTypeName.REAL;
@@ -79,6 +80,8 @@ public final class HazelcastTypeFactory extends SqlTypeFactoryImpl {
     public RelDataType createSqlType(SqlTypeName typeName) {
         if (typeName == DECIMAL) {
             return createDecimal();
+        } else if (typeName == ANY) {
+            return HazelcastObjectType.INSTANCE;
         }
 
         if (HazelcastIntegerType.supports(typeName)) {
@@ -92,6 +95,8 @@ public final class HazelcastTypeFactory extends SqlTypeFactoryImpl {
     public RelDataType createSqlType(SqlTypeName typeName, int precision) {
         if (typeName == DECIMAL) {
             return createDecimal();
+        } else if (typeName == ANY) {
+            return HazelcastObjectType.INSTANCE;
         }
 
         if (HazelcastIntegerType.supports(typeName)) {
@@ -105,6 +110,8 @@ public final class HazelcastTypeFactory extends SqlTypeFactoryImpl {
     public RelDataType createSqlType(SqlTypeName typeName, int precision, int scale) {
         if (typeName == DECIMAL) {
             return createDecimal();
+        } else if (typeName == ANY) {
+            return HazelcastObjectType.INSTANCE;
         }
 
         if (HazelcastIntegerType.supports(typeName)) {
@@ -118,6 +125,8 @@ public final class HazelcastTypeFactory extends SqlTypeFactoryImpl {
     public RelDataType createTypeWithNullability(RelDataType type, boolean nullable) {
         if (HazelcastIntegerType.supports(type.getSqlTypeName())) {
             return HazelcastIntegerType.of(type, nullable);
+        } else if (type.getSqlTypeName() == ANY) {
+            return nullable ? HazelcastObjectType.NULLABLE_INSTANCE : HazelcastObjectType.INSTANCE;
         }
 
         return super.createTypeWithNullability(type, nullable);

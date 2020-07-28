@@ -85,6 +85,11 @@ public final class HazelcastTypeSystem extends RelDataTypeSystemImpl {
     public static final int MAX_DECIMAL_SCALE = MAX_DECIMAL_PRECISION;
 
     /**
+     * The name of Hazelcast OBJECT type.
+     */
+    public static final String OBJECT_TYPE_NAME = "OBJECT";
+
+    /**
      * Defines the set of supported types. Order is important for precedence
      * determination: types at the end of the array have higher precedence.
      * Types in this array have one-to-one relation with the types defined by
@@ -101,8 +106,6 @@ public final class HazelcastTypeSystem extends RelDataTypeSystemImpl {
             TYPE_TO_PRECEDENCE.put(TYPE_NAMES[i], i);
         }
     }
-
-    private static final String OBJECT_TYPE_NAME = "OBJECT";
 
     private HazelcastTypeSystem() {
     }
