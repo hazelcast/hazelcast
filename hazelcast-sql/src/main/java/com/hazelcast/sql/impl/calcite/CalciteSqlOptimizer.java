@@ -177,8 +177,8 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         SqlCreateExternalTable create = (SqlCreateExternalTable) parseResult.getNode();
 
         List<ExternalField> externalFields = create.columns()
-                                                   .map(field -> new ExternalField(field.name(), field.type(), field.externalName()))
-                                                   .collect(toList());
+                .map(field -> new ExternalField(field.name(), field.type(), field.externalName()))
+                .collect(toList());
         ExternalTable externalTable = new ExternalTable(create.name(), create.type(), externalFields, create.options());
 
         return new CreateExternalTablePlan(catalog, externalTable, create.getReplace(), create.ifNotExists());
@@ -203,7 +203,8 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
                     convertResult.getFieldNames()
             );
         } else {
-            return jetSqlBackend.optimizeAndCreatePlan(nodeEngine, context, convertResult.getRel(), convertResult.getFieldNames());
+            return jetSqlBackend.optimizeAndCreatePlan(nodeEngine, context, convertResult.getRel(),
+                    convertResult.getFieldNames());
         }
     }
 

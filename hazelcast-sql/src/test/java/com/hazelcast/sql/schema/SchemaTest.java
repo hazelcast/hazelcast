@@ -72,7 +72,7 @@ public class SchemaTest extends CalciteSqlTestSupport {
     }
 
     @Test
-    public void testTableValidation() {
+    public void when_missingRequiredOptions_then_fail() {
         // given
         String name = "InvalidTable";
 
@@ -87,6 +87,15 @@ public class SchemaTest extends CalciteSqlTestSupport {
         ).isInstanceOf(SqlException.class)
          .hasMessageContaining("Invalid table definition: Missing")
          .hasMessageContaining("option");
+    }
+
+    @Test
+    public void when_unknownType_then_fail() {
+        assertThatThrownBy(() -> executeQuery(
+                member,
+                "CREATE EXTERNAL TABLE invalid_type_table TYPE foo_boo")
+        ).isInstanceOf(SqlException.class)
+         .hasMessageContaining("Unknown type: foo_boo");
     }
 
     @Test
@@ -339,13 +348,13 @@ public class SchemaTest extends CalciteSqlTestSupport {
     public void when_createOrReplaceIfNotExists_then_fail() {
         assertThatThrownBy(() ->
                 executeQuery(
-                        member, "CREATE OR REPLACE EXTERNAL TABLE IF NOT EXISTS CreateOrReplaceIfNotExists " +
-                                "TYPE \"" + LocalPartitionedMapConnector.TYPE_NAME + "\" " +
-                                "OPTIONS (" +
-                                "\"" + TO_SERIALIZATION_KEY_FORMAT + "\" '" + JAVA_SERIALIZATION_FORMAT + "'," +
-                                "\"" + TO_KEY_CLASS + "\" 'java.lang.Integer'," +
-                                "\"" + TO_SERIALIZATION_VALUE_FORMAT + "\" '" + JAVA_SERIALIZATION_FORMAT + "'," +
-                                "\"" + TO_VALUE_CLASS + "\" 'java.lang.Integer')"))
+                        member, "CREATE OR REPLACE EXTERNAL TABLE IF NOT EXISTS CreateOrReplaceIfNotExists "
+                                + "TYPE \"" + LocalPartitionedMapConnector.TYPE_NAME + "\" "
+                                + "OPTIONS ("
+                                + "\"" + TO_SERIALIZATION_KEY_FORMAT + "\" '" + JAVA_SERIALIZATION_FORMAT + "',"
+                                + "\"" + TO_KEY_CLASS + "\" 'java.lang.Integer',"
+                                + "\"" + TO_SERIALIZATION_VALUE_FORMAT + "\" '" + JAVA_SERIALIZATION_FORMAT + "',"
+                                + "\"" + TO_VALUE_CLASS + "\" 'java.lang.Integer')"))
                 .isInstanceOf(SqlException.class)
                 .hasMessageContaining("You can't use both <OR REPLACE> and <IF NOT EXISTS> options");
     }

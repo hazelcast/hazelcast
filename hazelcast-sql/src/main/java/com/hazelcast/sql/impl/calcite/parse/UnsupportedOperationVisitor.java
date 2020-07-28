@@ -146,6 +146,7 @@ public final class UnsupportedOperationVisitor implements SqlVisitor<Void> {
     }
 
     @Override
+    @SuppressWarnings("checkstyle:cyclomaticcomplexity")
     public Void visit(SqlLiteral literal) {
         SqlTypeName typeName = literal.getTypeName();
 

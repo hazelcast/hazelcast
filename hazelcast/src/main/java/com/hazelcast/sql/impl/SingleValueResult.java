@@ -32,24 +32,24 @@ public class SingleValueResult implements SqlResult {
 
     private static final String COLUMN_NAME = "VALUE";
 
-    private final SqlColumnMetadata metadata;
+    private final SqlRowMetadata metadata;
     private Iterator<SqlRow> iterator;
 
     public <T> SingleValueResult(T value) {
         QueryDataType queryDataType = QueryDataTypeUtils.resolveTypeForClass(value.getClass());
-        this.metadata = QueryUtils.getColumnMetadata(COLUMN_NAME, queryDataType);
+        SqlColumnMetadata columnMetadata = QueryUtils.getColumnMetadata(COLUMN_NAME, queryDataType);
+        this.metadata = new SqlRowMetadata(Collections.singletonList(columnMetadata));
 
-        SqlRow row = new SqlRowImpl(new SqlRowMetadata(Collections.singletonList(metadata)), new HeapRow(new Object[]{value}));
+        SqlRow row = new SqlRowImpl(metadata, new HeapRow(new Object[]{value}));
         this.iterator = Collections.singleton(row).iterator();
     }
 
-    @Override
+    @Override @Nonnull
     public SqlRowMetadata getRowMetadata() {
-        return new SqlRowMetadata(Collections.singletonList(metadata));
+        return metadata;
     }
 
-    @Override
-    @Nonnull
+    @Override @Nonnull
     public Iterator<SqlRow> iterator() {
         if (iterator == null) {
             throw QueryException.error("Iterator can be requested only once.");
