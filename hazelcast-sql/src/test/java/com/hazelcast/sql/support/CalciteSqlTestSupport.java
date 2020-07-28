@@ -33,10 +33,10 @@ public class CalciteSqlTestSupport extends SqlTestSupport {
         return target.getSql().query(sql);
     }
 
-    protected List<SqlRow> getQueryRows(SqlResult cursor) {
+    protected List<SqlRow> getQueryRows(SqlResult result) {
         List<SqlRow> rows = new ArrayList<>();
 
-        for (SqlRow row : cursor) {
+        for (SqlRow row : result) {
             rows.add(row);
         }
 
@@ -44,8 +44,8 @@ public class CalciteSqlTestSupport extends SqlTestSupport {
     }
 
     protected List<SqlRow> getQueryRows(HazelcastInstance target, String sql) {
-        try (SqlResult cursor = executeQuery(target, sql)) {
-            return getQueryRows(cursor);
+        try (SqlResult result = executeQuery(target, sql)) {
+            return getQueryRows(result);
         } catch (Exception e) {
             throw new RuntimeException("Failed to execute query and get result set rows: " + sql, e);
         }
