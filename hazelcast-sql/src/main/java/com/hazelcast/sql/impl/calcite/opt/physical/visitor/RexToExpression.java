@@ -39,14 +39,12 @@ import com.hazelcast.sql.impl.expression.predicate.IsTruePredicate;
 import com.hazelcast.sql.impl.expression.predicate.NotPredicate;
 import com.hazelcast.sql.impl.expression.predicate.OrPredicate;
 import com.hazelcast.sql.impl.type.QueryDataType;
-import com.hazelcast.sql.impl.type.converter.CalendarConverter;
 import org.apache.calcite.rex.RexCall;
 import org.apache.calcite.rex.RexLiteral;
 import org.apache.calcite.sql.SqlOperator;
 import org.apache.calcite.sql.type.SqlTypeName;
 
 import java.math.BigDecimal;
-import java.util.Calendar;
 
 /**
  * Utility methods for REX to Hazelcast expression conversion.
@@ -85,13 +83,6 @@ public final class RexToExpression {
             case CHAR:
             case VARCHAR:
                 return convertStringLiteral(literal, type);
-
-            case DATE:
-            case TIME:
-            case TIME_WITH_LOCAL_TIME_ZONE:
-            case TIMESTAMP:
-            case TIMESTAMP_WITH_LOCAL_TIME_ZONE:
-                return convertTemporalLiteral(literal, type);
 
             case NULL:
                 return ConstantExpression.create(null, QueryDataType.NULL);
@@ -246,36 +237,6 @@ public final class RexToExpression {
             case CHAR:
             case VARCHAR:
                 value = literal.getValueAs(String.class);
-                break;
-
-            default:
-                throw new IllegalArgumentException("Unsupported literal type: " + type);
-        }
-
-        return ConstantExpression.create(value, SqlToQueryType.map(type));
-    }
-
-    private static Expression<?> convertTemporalLiteral(RexLiteral literal, SqlTypeName type) {
-        Calendar calendar = literal.getValueAs(Calendar.class);
-        CalendarConverter converter = CalendarConverter.INSTANCE;
-
-        Object value;
-        switch (type) {
-            case DATE:
-                value = converter.asDate(calendar);
-                break;
-
-            case TIME:
-            case TIME_WITH_LOCAL_TIME_ZONE:
-                value = converter.asTime(calendar);
-                break;
-
-            case TIMESTAMP:
-                value = converter.asTimestamp(calendar);
-                break;
-
-            case TIMESTAMP_WITH_LOCAL_TIME_ZONE:
-                value = converter.asTimestampWithTimezone(calendar);
                 break;
 
             default:
