@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Submits the task to a member for execution. Member is provided with its uuid.
  */
-@Generated("b298bb4b22ff8aa221b4c64bfa2d73f2")
+@Generated("3a3d6458aba40a886baf0b1eb0d28c42")
 public final class ScheduledExecutorSubmitToMemberCodec {
     //hex: 0x1A0300
     public static final int REQUEST_MESSAGE_TYPE = 1704704;
@@ -46,7 +46,8 @@ public final class ScheduledExecutorSubmitToMemberCodec {
     private static final int REQUEST_TYPE_FIELD_OFFSET = REQUEST_MEMBER_UUID_FIELD_OFFSET + UUID_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_DELAY_IN_MILLIS_FIELD_OFFSET = REQUEST_TYPE_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
     private static final int REQUEST_PERIOD_IN_MILLIS_FIELD_OFFSET = REQUEST_INITIAL_DELAY_IN_MILLIS_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
-    private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_PERIOD_IN_MILLIS_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
+    private static final int REQUEST_AUTO_DISPOSABLE_FIELD_OFFSET = REQUEST_PERIOD_IN_MILLIS_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
+    private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_AUTO_DISPOSABLE_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
 
     private ScheduledExecutorSubmitToMemberCodec() {
@@ -89,9 +90,20 @@ public final class ScheduledExecutorSubmitToMemberCodec {
          * period between each run in milliseconds
          */
         public long periodInMillis;
+
+        /**
+         * A boolean flag to indicate whether the task should be destroyed automatically after execution.
+         */
+        public boolean autoDisposable;
+
+        /**
+         * True if the autoDisposable is received from the client, false otherwise.
+         * If this is false, autoDisposable has the default value for its type.
+        */
+        public boolean isAutoDisposableExists;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String schedulerName, java.util.UUID memberUuid, byte type, java.lang.String taskName, com.hazelcast.internal.serialization.Data task, long initialDelayInMillis, long periodInMillis) {
+    public static ClientMessage encodeRequest(java.lang.String schedulerName, java.util.UUID memberUuid, byte type, java.lang.String taskName, com.hazelcast.internal.serialization.Data task, long initialDelayInMillis, long periodInMillis, boolean autoDisposable) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(true);
         clientMessage.setOperationName("ScheduledExecutor.SubmitToMember");
@@ -102,6 +114,7 @@ public final class ScheduledExecutorSubmitToMemberCodec {
         encodeByte(initialFrame.content, REQUEST_TYPE_FIELD_OFFSET, type);
         encodeLong(initialFrame.content, REQUEST_INITIAL_DELAY_IN_MILLIS_FIELD_OFFSET, initialDelayInMillis);
         encodeLong(initialFrame.content, REQUEST_PERIOD_IN_MILLIS_FIELD_OFFSET, periodInMillis);
+        encodeBoolean(initialFrame.content, REQUEST_AUTO_DISPOSABLE_FIELD_OFFSET, autoDisposable);
         clientMessage.add(initialFrame);
         StringCodec.encode(clientMessage, schedulerName);
         StringCodec.encode(clientMessage, taskName);
@@ -117,6 +130,12 @@ public final class ScheduledExecutorSubmitToMemberCodec {
         request.type = decodeByte(initialFrame.content, REQUEST_TYPE_FIELD_OFFSET);
         request.initialDelayInMillis = decodeLong(initialFrame.content, REQUEST_INITIAL_DELAY_IN_MILLIS_FIELD_OFFSET);
         request.periodInMillis = decodeLong(initialFrame.content, REQUEST_PERIOD_IN_MILLIS_FIELD_OFFSET);
+        if (initialFrame.content.length >= REQUEST_AUTO_DISPOSABLE_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES) {
+            request.autoDisposable = decodeBoolean(initialFrame.content, REQUEST_AUTO_DISPOSABLE_FIELD_OFFSET);
+            request.isAutoDisposableExists = true;
+        } else {
+            request.isAutoDisposableExists = false;
+        }
         request.schedulerName = StringCodec.decode(iterator);
         request.taskName = StringCodec.decode(iterator);
         request.task = DataCodec.decode(iterator);

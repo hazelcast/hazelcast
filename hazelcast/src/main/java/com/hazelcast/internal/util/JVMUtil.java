@@ -68,6 +68,28 @@ public final class JVMUtil {
     }
 
     /**
+     * Returns the process ID. The algorithm does not guarantee it will be able
+     * to get the correct process ID, in which case it returns {@code -1}.
+     */
+    public static long getPid() {
+        String name = ManagementFactory.getRuntimeMXBean().getName();
+
+        if (name == null) {
+            return -1;
+        }
+        int separatorIndex = name.indexOf("@");
+        if (separatorIndex < 0) {
+            return -1;
+        }
+        String potentialPid = name.substring(0, separatorIndex);
+        try {
+            return Long.parseLong(potentialPid);
+        } catch (NumberFormatException e) {
+            return -1;
+        }
+    }
+
+    /**
      * Returns used memory as reported by the {@link Runtime} and the function (totalMemory - freeMemory)
      * It attempts to correct atomicity issues (ie. when totalMemory expands) and reported usedMemory
      * results in negative values

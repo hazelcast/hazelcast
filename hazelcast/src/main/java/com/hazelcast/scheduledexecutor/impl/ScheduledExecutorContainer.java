@@ -217,6 +217,10 @@ public class ScheduledExecutorContainer {
         } else {
             descriptor.setTaskResult(resolution);
         }
+
+        if (descriptor.getDefinition().isAutoDisposable() && descriptor.isDone()) {
+            dispose(taskName);
+        }
     }
 
     public boolean shouldParkGetResult(String taskName) {

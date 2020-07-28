@@ -309,3 +309,6 @@ hazelcast-client:
     jmx:
       enabled: false
     collection-frequency-seconds: 42
+
+  instance-tracking:
+    enabled: false

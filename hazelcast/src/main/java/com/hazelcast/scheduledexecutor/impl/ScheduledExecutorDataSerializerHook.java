@@ -95,6 +95,8 @@ public class ScheduledExecutorDataSerializerHook
 
     public static final int HASH_MAP_ADAPTER = 29;
 
+    public static final int AUTO_DISPOSABLE_TASK_DECORATOR = 30;
+
     @Override
     public int getFactoryId() {
         return F_ID;
@@ -164,6 +166,8 @@ public class ScheduledExecutorDataSerializerHook
                         return new MergeBackupOperation();
                     case HASH_MAP_ADAPTER:
                         return new HashMapAdapter<>();
+                    case AUTO_DISPOSABLE_TASK_DECORATOR:
+                        return new AutoDisposableTaskDecorator();
                     default:
                         throw new IllegalArgumentException("Illegal Scheduled Executor serializer type ID: " + typeId);
                 }

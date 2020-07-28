@@ -173,6 +173,7 @@ import static com.hazelcast.internal.config.ConfigSections.FLAKE_ID_GENERATOR;
 import static com.hazelcast.internal.config.ConfigSections.HOT_RESTART_PERSISTENCE;
 import static com.hazelcast.internal.config.ConfigSections.IMPORT;
 import static com.hazelcast.internal.config.ConfigSections.INSTANCE_NAME;
+import static com.hazelcast.internal.config.ConfigSections.INSTANCE_TRACKING;
 import static com.hazelcast.internal.config.ConfigSections.LICENSE_KEY;
 import static com.hazelcast.internal.config.ConfigSections.LIST;
 import static com.hazelcast.internal.config.ConfigSections.LISTENERS;
@@ -338,6 +339,8 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             handleCPSubsystem(node);
         } else if (METRICS.isEqual(nodeName)) {
             handleMetrics(node);
+        } else if (INSTANCE_TRACKING.isEqual(nodeName)) {
+            handleInstanceTracking(node, config.getInstanceTrackingConfig());
         } else if (SQL.isEqual(nodeName)) {
             handleSql(node);
         } else {

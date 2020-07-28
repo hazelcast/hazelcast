@@ -3460,6 +3460,23 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
 
     @Override
     @Test
+    public void testInstanceTrackingConfig() {
+        String yaml = ""
+                + "hazelcast:\n"
+                + "  instance-tracking:\n"
+                + "    enabled: true\n"
+                + "    file-name: /dummy/file\n"
+                + "    format-pattern: dummy-pattern with $HZ_INSTANCE_TRACKING{placeholder} and $RND{placeholder}";
+        Config config = new InMemoryYamlConfig(yaml);
+        InstanceTrackingConfig trackingConfig = config.getInstanceTrackingConfig();
+        assertTrue(trackingConfig.isEnabled());
+        assertEquals("/dummy/file", trackingConfig.getFileName());
+        assertEquals("dummy-pattern with $HZ_INSTANCE_TRACKING{placeholder} and $RND{placeholder}",
+                trackingConfig.getFormatPattern());
+    }
+
+    @Override
+    @Test
     public void testMetricsConfigMasterSwitchDisabled() {
         String yaml = ""
                 + "hazelcast:\n"

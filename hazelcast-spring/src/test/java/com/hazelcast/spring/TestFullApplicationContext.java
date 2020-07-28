@@ -33,6 +33,7 @@ import com.hazelcast.config.CardinalityEstimatorConfig;
 import com.hazelcast.config.ClassFilter;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ConsistencyCheckStrategy;
+import com.hazelcast.config.InstanceTrackingConfig;
 import com.hazelcast.config.SqlConfig;
 import com.hazelcast.config.WanBatchPublisherConfig;
 import com.hazelcast.config.WanCustomPublisherConfig;
@@ -590,7 +591,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         final Set<PermissionConfig> clientPermissionConfigs = securityConfig.getClientPermissionConfigs();
         assertFalse(securityConfig.getClientBlockUnmappedActions());
         assertTrue(isNotEmpty(clientPermissionConfigs));
-        assertEquals(24, clientPermissionConfigs.size());
+        assertEquals(25, clientPermissionConfigs.size());
         final PermissionConfig pnCounterPermission = new PermissionConfig(PermissionType.PN_COUNTER, "pnCounterPermission", "*")
                 .addAction("create")
                 .setEndpoints(Collections.emptySet());
@@ -1435,6 +1436,15 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertEquals(42, metricsConfig.getManagementCenterConfig().getRetentionSeconds());
         assertFalse(metricsConfig.getJmxConfig().isEnabled());
         assertEquals(24, metricsConfig.getCollectionFrequencySeconds());
+    }
+
+    @Test
+    public void testInstanceTrackingConfig() {
+        InstanceTrackingConfig trackingConfig = config.getInstanceTrackingConfig();
+        assertTrue(trackingConfig.isEnabled());
+        assertEquals("/dummy/file", trackingConfig.getFileName());
+        assertEquals("dummy-pattern with $HZ_INSTANCE_TRACKING{placeholder} and $RND{placeholder}",
+                trackingConfig.getFormatPattern());
     }
 
     @Test

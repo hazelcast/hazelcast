@@ -182,6 +182,9 @@ public final class FailoverClientConfigSupport {
         if (notEqual(mainConfig.getMetricsConfig(), alternativeConfig.getMetricsConfig())) {
             throwInvalidConfigurationException(mainClusterName, alterNativeClusterName, "metricsConfig");
         }
+        if (notEqual(mainConfig.getInstanceTrackingConfig(), alternativeConfig.getInstanceTrackingConfig())) {
+            throwInvalidConfigurationException(mainClusterName, alterNativeClusterName, "instanceTrackingConfig");
+        }
         if (mainConfig.isBackupAckToClientEnabled() != alternativeConfig.isBackupAckToClientEnabled()) {
             throwInvalidConfigurationException(mainClusterName, alterNativeClusterName, "isBackupAckToClientEnabled");
         }

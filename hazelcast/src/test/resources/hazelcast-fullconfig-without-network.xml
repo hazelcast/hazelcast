@@ -870,6 +870,7 @@
                     <action>all</action>
                 </actions>
             </reliable-topic-permission>
+            <sql-permission principal="dev"/>
         </client-permissions>
         <client-block-unmapped-actions>true</client-block-unmapped-actions>
     </security>
@@ -973,6 +974,10 @@
         <jmx enabled="false"/>
         <collection-frequency-seconds>24</collection-frequency-seconds>
     </metrics>
+
+    <instance-tracking enabled="false">
+
+    </instance-tracking>
 
     <sql>
         <executor-pool-size>16</executor-pool-size>

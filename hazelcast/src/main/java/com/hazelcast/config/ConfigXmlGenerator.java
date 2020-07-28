@@ -61,6 +61,7 @@ import java.util.Set;
 
 import static com.hazelcast.config.PermissionConfig.PermissionType.ALL;
 import static com.hazelcast.config.PermissionConfig.PermissionType.CONFIG;
+import static com.hazelcast.config.PermissionConfig.PermissionType.SQL;
 import static com.hazelcast.config.PermissionConfig.PermissionType.TRANSACTION;
 import static com.hazelcast.internal.config.AliasedDiscoveryConfigUtils.aliasedDiscoveryConfigsFrom;
 import static com.hazelcast.internal.nio.IOUtil.closeResource;
@@ -166,6 +167,7 @@ public class ConfigXmlGenerator {
         splitBrainProtectionXmlGenerator(gen, config);
         cpSubsystemConfig(gen, config);
         metricsConfig(gen, config);
+        instanceTrackingConfig(gen, config);
         sqlConfig(gen, config);
         userCodeDeploymentConfig(gen, config);
 
@@ -396,7 +398,7 @@ public class ConfigXmlGenerator {
     }
 
     private static void appendSecurityPermissions(XmlGenerator gen, String tag, Set<PermissionConfig> cpc, Object... attributes) {
-        final List<PermissionConfig.PermissionType> clusterPermTypes = asList(ALL, CONFIG, TRANSACTION);
+        final List<PermissionConfig.PermissionType> clusterPermTypes = asList(ALL, CONFIG, TRANSACTION, SQL);
 
         if (!cpc.isEmpty()) {
             gen.open(tag, attributes);
@@ -1578,6 +1580,14 @@ public class ConfigXmlGenerator {
         }
 
         gen.close().close();
+    }
+
+    private static void instanceTrackingConfig(XmlGenerator gen, Config config) {
+        InstanceTrackingConfig trackingConfig = config.getInstanceTrackingConfig();
+        gen.open("instance-tracking", "enabled", trackingConfig.isEnabled())
+           .node("file-name", trackingConfig.getFileName())
+           .node("format-pattern", trackingConfig.getFormatPattern())
+           .close();
     }
 
     private static void metricsConfig(XmlGenerator gen, Config config) {

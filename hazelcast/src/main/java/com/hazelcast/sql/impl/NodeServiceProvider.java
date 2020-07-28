@@ -21,6 +21,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.MapContainer;
 
 import java.util.Collection;
+import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -33,6 +34,11 @@ public interface NodeServiceProvider extends ClockProvider, LocalMemberIdProvide
      * @return IDs of data members.
      */
     Collection<UUID> getDataMemberIds();
+
+    /**
+     * @return IDs of active clients.
+     */
+    Set<UUID> getClientIds();
 
     /**
      * Get connection to member.

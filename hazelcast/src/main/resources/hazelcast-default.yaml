@@ -326,6 +326,9 @@ hazelcast:
       enabled: true
     collection-frequency-seconds: 5
 
+  instance-tracking:
+    enabled: false
+
   sql:
     executor-pool-size: -1
     operation-pool-size: -1

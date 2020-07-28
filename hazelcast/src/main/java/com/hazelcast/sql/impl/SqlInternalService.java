@@ -18,6 +18,7 @@ package com.hazelcast.sql.impl;
 
 import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.sql.impl.state.QueryClientStateRegistry;
 import com.hazelcast.sql.impl.exec.io.flowcontrol.FlowControlFactory;
 import com.hazelcast.sql.impl.exec.io.flowcontrol.simple.SimpleFlowControlFactory;
 import com.hazelcast.sql.impl.exec.root.BlockingRootResultConsumer;
@@ -38,6 +39,9 @@ import java.util.UUID;
  * Proxy for SQL service. Backed by either Calcite-based or no-op implementation.
  */
 public class SqlInternalService {
+
+    public static final String SERVICE_NAME = "hz:impl:sqlService";
+
     /** Memory assigned to a single edge mailbox. Will be reworked to dynamic mode when memory manager is implemented. */
     private static final long MEMORY_PER_EDGE_MAILBOX = 512 * 1024;
 
@@ -49,6 +53,9 @@ public class SqlInternalService {
 
     /** Registry for running queries. */
     private final QueryStateRegistry stateRegistry;
+
+    /** Registry for client queries. */
+    private final QueryClientStateRegistry clientStateRegistry;
 
     /** Operation manager. */
     private final QueryOperationHandlerImpl operationHandler;
@@ -69,6 +76,7 @@ public class SqlInternalService {
 
         // Create state registries since they do not depend on anything.
         stateRegistry = new QueryStateRegistry(nodeServiceProvider);
+        clientStateRegistry = new QueryClientStateRegistry();
 
         // Operation handler depends on state registry.
         operationHandler = new QueryOperationHandlerImpl(
@@ -87,6 +95,7 @@ public class SqlInternalService {
             instanceName,
             nodeServiceProvider,
             stateRegistry,
+            clientStateRegistry,
             operationHandler,
             stateCheckFrequency
         );
@@ -98,6 +107,7 @@ public class SqlInternalService {
 
     public void reset() {
         stateRegistry.reset();
+        clientStateRegistry.reset();
     }
 
     public void shutdown() {
@@ -121,7 +131,7 @@ public class SqlInternalService {
         UUID localMemberId = nodeServiceProvider.getLocalMemberId();
 
         if (!plan.getPartitionMap().containsKey(localMemberId)) {
-            throw QueryException.memberLeave(localMemberId);
+            throw QueryException.memberConnection(localMemberId);
         }
 
         // Prepare mappings.
@@ -194,5 +204,9 @@ public class SqlInternalService {
 
     public QueryOperationHandlerImpl getOperationHandler() {
         return operationHandler;
+    }
+
+    public QueryClientStateRegistry getClientStateRegistry() {
+        return clientStateRegistry;
     }
 }

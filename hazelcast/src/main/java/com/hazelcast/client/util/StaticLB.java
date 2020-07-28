@@ -41,4 +41,14 @@ public class StaticLB implements LoadBalancer {
     public Member next() {
         return member;
     }
+
+    @Override
+    public Member nextDataMember() {
+        return member.isLiteMember() ? null : member;
+    }
+
+    @Override
+    public boolean canGetNextDataMember() {
+        return true;
+    }
 }

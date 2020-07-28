@@ -35,20 +35,20 @@ public final class QueryId implements IdentifiedDataSerializable {
     private long memberIdLow;
 
     /** Local ID: most significant bits. */
-    private long localHigh;
+    private long localIdHigh;
 
     /** Local ID: least significant bits. */
-    private long localLow;
+    private long localIdLow;
 
     public QueryId() {
         // No-op.
     }
 
-    QueryId(long memberIdHigh, long memberIdLow, long localHigh, long localLow) {
+    public QueryId(long memberIdHigh, long memberIdLow, long localIdHigh, long localIdLow) {
         this.memberIdHigh = memberIdHigh;
         this.memberIdLow = memberIdLow;
-        this.localHigh = localHigh;
-        this.localLow = localLow;
+        this.localIdHigh = localIdHigh;
+        this.localIdLow = localIdLow;
     }
 
     /**
@@ -58,14 +58,38 @@ public final class QueryId implements IdentifiedDataSerializable {
      * @return Query ID.
      */
     public static QueryId create(UUID memberId) {
-        UUID qryId = UuidUtil.newUnsecureUUID();
+        UUID localId = UuidUtil.newUnsecureUUID();
 
         return new QueryId(
             memberId.getMostSignificantBits(),
             memberId.getLeastSignificantBits(),
-            qryId.getMostSignificantBits(),
-            qryId.getLeastSignificantBits()
+            localId.getMostSignificantBits(),
+            localId.getLeastSignificantBits()
         );
+    }
+
+    public static QueryId parse(String input) {
+        assert input != null;
+
+        int underscorePos = input.indexOf("_");
+
+        if (underscorePos < 0) {
+            throw new IllegalArgumentException("Query ID is malformed: " + input);
+        }
+
+        try {
+            UUID memberId = UUID.fromString(input.substring(0, underscorePos));
+            UUID localId = UUID.fromString(input.substring(underscorePos + 1));
+
+            return new QueryId(
+                memberId.getMostSignificantBits(),
+                memberId.getLeastSignificantBits(),
+                localId.getMostSignificantBits(),
+                localId.getLeastSignificantBits()
+            );
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("Query ID is malformed: " + input, e);
+        }
     }
 
     public UUID getMemberId() {
@@ -73,7 +97,23 @@ public final class QueryId implements IdentifiedDataSerializable {
     }
 
     public UUID getLocalId() {
-        return new UUID(localHigh, localLow);
+        return new UUID(localIdHigh, localIdLow);
+    }
+
+    public long getMemberIdHigh() {
+        return memberIdHigh;
+    }
+
+    public long getMemberIdLow() {
+        return memberIdLow;
+    }
+
+    public long getLocalIdHigh() {
+        return localIdHigh;
+    }
+
+    public long getLocalIdLow() {
+        return localIdLow;
     }
 
     @Override
@@ -90,16 +130,16 @@ public final class QueryId implements IdentifiedDataSerializable {
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeLong(memberIdHigh);
         out.writeLong(memberIdLow);
-        out.writeLong(localHigh);
-        out.writeLong(localLow);
+        out.writeLong(localIdHigh);
+        out.writeLong(localIdLow);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         memberIdHigh = in.readLong();
         memberIdLow = in.readLong();
-        localHigh = in.readLong();
-        localLow = in.readLong();
+        localIdHigh = in.readLong();
+        localIdLow = in.readLong();
     }
 
     @Override
@@ -115,7 +155,7 @@ public final class QueryId implements IdentifiedDataSerializable {
         QueryId other = (QueryId) o;
 
         return memberIdHigh == other.memberIdHigh && memberIdLow == other.memberIdLow
-            && localHigh == other.localHigh && localLow == other.localLow;
+            && localIdHigh == other.localIdHigh && localIdLow == other.localIdLow;
     }
 
     @Override
@@ -123,14 +163,14 @@ public final class QueryId implements IdentifiedDataSerializable {
         int result = (int) (memberIdHigh ^ (memberIdHigh >>> 32));
 
         result = 31 * result + (int) (memberIdLow ^ (memberIdLow >>> 32));
-        result = 31 * result + (int) (localHigh ^ (localHigh >>> 32));
-        result = 31 * result + (int) (localLow ^ (localLow >>> 32));
+        result = 31 * result + (int) (localIdHigh ^ (localIdHigh >>> 32));
+        result = 31 * result + (int) (localIdLow ^ (localIdLow >>> 32));
 
         return result;
     }
 
     @Override
     public String toString() {
-        return "QueryId {memberId=" + getMemberId() + ", localId=" + getLocalId() + '}';
+        return getMemberId() + "_" + getLocalId();
     }
 }

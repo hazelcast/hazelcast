@@ -23,11 +23,8 @@ public final class SqlErrorCode {
     /** Generic error. */
     public static final int GENERIC = -1;
 
-    /** Member cannot be reached. */
-    public static final int MEMBER_CONNECTION = 1001;
-
-    /** Member has left the topology. */
-    public static final int MEMBER_LEAVE = 1002;
+    /** A network connection problem between members, or between a client and a member. */
+    public static final int CONNECTION_PROBLEM = 1001;
 
     /** Query was cancelled due to user request. */
     public static final int CANCELLED_BY_USER = 1003;

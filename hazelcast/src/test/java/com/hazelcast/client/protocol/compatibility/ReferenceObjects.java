@@ -58,12 +58,15 @@ import com.hazelcast.map.impl.querycache.event.DefaultQueryCacheEventData;
 import com.hazelcast.map.impl.querycache.event.QueryCacheEventData;
 import com.hazelcast.scheduledexecutor.ScheduledTaskHandler;
 import com.hazelcast.scheduledexecutor.impl.ScheduledTaskHandlerImpl;
+import com.hazelcast.sql.SqlColumnMetadata;
+import com.hazelcast.sql.SqlColumnType;
+import com.hazelcast.sql.impl.QueryId;
+import com.hazelcast.sql.impl.client.SqlError;
 import com.hazelcast.transaction.impl.xa.SerializableXID;
 import com.hazelcast.version.MemberVersion;
 
 import javax.transaction.xa.Xid;
 import java.lang.reflect.Array;
-import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.AbstractMap;
 import java.util.Collection;
@@ -771,6 +774,7 @@ public class ReferenceObjects {
     public static List<CacheSimpleEntryListenerConfig> aListOfCacheSimpleEntryListenerConfigs
             = Collections.singletonList(aCacheSimpleEntryListenerConfig);
     public static List<Data> aListOfData = Collections.singletonList(aData);
+    public static List<Collection<Data>> aListOfListOfData = Collections.singletonList(aListOfData);
     public static Collection<Map.Entry<Data, Collection<Data>>> aListOfDataToListOfData
             = Collections.singletonList(new AbstractMap.SimpleEntry<>(aData, aListOfData));
     public static List<DistributedObjectInfo> aListOfDistributedObjectInfo = Collections.singletonList(aDistributedObjectInfo);
@@ -792,4 +796,9 @@ public class ReferenceObjects {
     public static AnchorDataListHolder anAnchorDataListHolder = new AnchorDataListHolder(aListOfIntegers, aListOfDataToData);
     public static PagingPredicateHolder aPagingPredicateHolder = new PagingPredicateHolder(anAnchorDataListHolder, aData, aData,
             anInt, anInt, aByte, aData);
+
+    public static QueryId anSqlQueryId = new QueryId(aLong, aLong, aLong, aLong);
+    public static SqlColumnMetadata anSqlColumnMetadata = CustomTypeFactory.createSqlColumnMetadata(aString, SqlColumnType.BOOLEAN.getId());
+    public static List<SqlColumnMetadata> aListOfSqlColumnMetadata = Collections.singletonList(anSqlColumnMetadata);
+    public static SqlError anSqlError = new SqlError(anInt, aString, aUUID);
 }

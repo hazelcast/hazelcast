@@ -71,6 +71,10 @@ public class SqlResultImpl implements SqlResult {
         state.cancel(error);
     }
 
+    public QueryId getQueryId() {
+        return getQueryInitiatorState().getQueryId();
+    }
+
     private QueryInitiatorState getQueryInitiatorState() {
         return state.getInitiatorState();
     }

@@ -67,6 +67,7 @@ import static com.hazelcast.client.config.impl.ClientConfigSections.CLUSTER_NAME
 import static com.hazelcast.client.config.impl.ClientConfigSections.CONNECTION_STRATEGY;
 import static com.hazelcast.client.config.impl.ClientConfigSections.FLAKE_ID_GENERATOR;
 import static com.hazelcast.client.config.impl.ClientConfigSections.INSTANCE_NAME;
+import static com.hazelcast.client.config.impl.ClientConfigSections.INSTANCE_TRACKING;
 import static com.hazelcast.client.config.impl.ClientConfigSections.LABELS;
 import static com.hazelcast.client.config.impl.ClientConfigSections.LISTENERS;
 import static com.hazelcast.client.config.impl.ClientConfigSections.LOAD_BALANCER;
@@ -169,6 +170,8 @@ public class ClientDomConfigProcessor extends AbstractDomConfigProcessor {
             clientConfig.setClusterName(getTextContent(node));
         } else if (METRICS.isEqual(nodeName)) {
             handleMetrics(node);
+        } else if (INSTANCE_TRACKING.isEqual(nodeName)) {
+            handleInstanceTracking(node, clientConfig.getInstanceTrackingConfig());
         }
     }
 

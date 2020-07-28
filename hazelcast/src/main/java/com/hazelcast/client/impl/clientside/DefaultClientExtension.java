@@ -23,13 +23,17 @@ import com.hazelcast.client.config.SocketOptions;
 import com.hazelcast.client.impl.ClientExtension;
 import com.hazelcast.client.impl.connection.tcp.ClientPlainChannelInitializer;
 import com.hazelcast.client.impl.proxy.ClientMapProxy;
-import com.hazelcast.client.map.impl.nearcache.NearCachedClientMapProxy;
 import com.hazelcast.client.impl.spi.ClientProxyFactory;
+import com.hazelcast.client.map.impl.nearcache.NearCachedClientMapProxy;
+import com.hazelcast.config.InstanceTrackingConfig;
+import com.hazelcast.config.InstanceTrackingConfig.InstanceMode;
+import com.hazelcast.config.InstanceTrackingConfig.InstanceProductName;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.config.SSLConfig;
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.instance.BuildInfo;
 import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.internal.memory.DefaultMemoryStats;
 import com.hazelcast.internal.memory.MemoryStats;
@@ -41,6 +45,8 @@ import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.serialization.SerializationServiceBuilder;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
+import com.hazelcast.internal.util.JVMUtil;
+import com.hazelcast.internal.util.MapUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.map.impl.MapService;
@@ -51,9 +57,18 @@ import com.hazelcast.spi.impl.executionservice.TaskScheduler;
 import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
 
+import java.util.Map;
+
+import static com.hazelcast.config.InstanceTrackingConfig.InstanceTrackingProperties.LICENSED;
+import static com.hazelcast.config.InstanceTrackingConfig.InstanceTrackingProperties.MODE;
+import static com.hazelcast.config.InstanceTrackingConfig.InstanceTrackingProperties.PID;
+import static com.hazelcast.config.InstanceTrackingConfig.InstanceTrackingProperties.PRODUCT;
+import static com.hazelcast.config.InstanceTrackingConfig.InstanceTrackingProperties.START_TIMESTAMP;
+import static com.hazelcast.config.InstanceTrackingConfig.InstanceTrackingProperties.VERSION;
 import static com.hazelcast.config.NearCacheConfigAccessor.initDefaultMaxSizeForOnHeapMaps;
 import static com.hazelcast.internal.config.ConfigValidator.checkNearCacheConfig;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
+import static com.hazelcast.internal.util.InstanceTrackingUtil.writeInstanceTrackingFile;
 import static com.hazelcast.spi.properties.ClusterProperty.SOCKET_CLIENT_BUFFER_DIRECT;
 
 @SuppressWarnings("WeakerAccess")
@@ -72,6 +87,33 @@ public class DefaultClientExtension implements ClientExtension {
 
     @Override
     public void afterStart(HazelcastClientInstanceImpl client) {
+    }
+
+    @Override
+    public void logInstanceTrackingMetadata() {
+        InstanceTrackingConfig trackingConfig = client.getClientConfig().getInstanceTrackingConfig();
+        if (trackingConfig.isEnabled()) {
+            writeInstanceTrackingFile(trackingConfig.getFileName(), trackingConfig.getFormatPattern(),
+                    getTrackingFileProperties(BuildInfoProvider.getBuildInfo()), LOGGER);
+        }
+    }
+
+
+    /**
+     * Returns a map with supported instance tracking properties.
+     *
+     * @param buildInfo this node's build information
+     */
+    @SuppressWarnings("checkstyle:magicnumber")
+    protected Map<String, Object> getTrackingFileProperties(BuildInfo buildInfo) {
+        Map<String, Object> props = MapUtil.createHashMap(6);
+        props.put(PRODUCT.getPropertyName(), InstanceProductName.HAZELCAST_CLIENT);
+        props.put(VERSION.getPropertyName(), buildInfo.getVersion());
+        props.put(MODE.getPropertyName(), InstanceMode.CLIENT.getModeName());
+        props.put(START_TIMESTAMP.getPropertyName(), System.currentTimeMillis());
+        props.put(LICENSED.getPropertyName(), 0);
+        props.put(PID.getPropertyName(), JVMUtil.getPid());
+        return props;
     }
 
     @Override

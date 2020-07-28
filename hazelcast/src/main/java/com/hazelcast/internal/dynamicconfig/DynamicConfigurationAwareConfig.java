@@ -27,6 +27,7 @@ import com.hazelcast.config.DurableExecutorConfig;
 import com.hazelcast.config.ExecutorConfig;
 import com.hazelcast.config.FlakeIdGeneratorConfig;
 import com.hazelcast.config.HotRestartPersistenceConfig;
+import com.hazelcast.config.InstanceTrackingConfig;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.ListConfig;
 import com.hazelcast.config.ListenerConfig;
@@ -1086,6 +1087,18 @@ public class DynamicConfigurationAwareConfig extends Config {
     @Nonnull
     @Override
     public Config setMetricsConfig(@Nonnull MetricsConfig metricsConfig) {
+        throw new UnsupportedOperationException("Unsupported operation");
+    }
+
+    @Nonnull
+    @Override
+    public InstanceTrackingConfig getInstanceTrackingConfig() {
+        return staticConfig.getInstanceTrackingConfig();
+    }
+
+    @Nonnull
+    @Override
+    public Config setInstanceTrackingConfig(@Nonnull InstanceTrackingConfig instanceTrackingConfig) {
         throw new UnsupportedOperationException("Unsupported operation");
     }
 

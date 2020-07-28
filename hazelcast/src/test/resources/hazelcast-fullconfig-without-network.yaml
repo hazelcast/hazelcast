@@ -825,6 +825,8 @@ hazelcast:
           principal: "*"
           actions:
             - all
+      sql:
+        principal: dev
     client-block-unmapped-actions: true
 
   member-attributes:
@@ -918,6 +920,9 @@ hazelcast:
     jmx:
       enabled: false
     collection-frequency-seconds: 24
+
+  instance-tracking:
+    enabled: false
 
   sql:
     executor-pool-size: 16

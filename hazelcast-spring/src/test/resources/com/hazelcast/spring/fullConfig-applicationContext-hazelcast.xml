@@ -844,6 +844,7 @@
                             <hz:action>all</hz:action>
                         </hz:actions>
                     </hz:reliable-topic-permission>
+                    <hz:sql-permission principal="dev"/>
                 </hz:client-permissions>
                 <hz:client-block-unmapped-actions>false</hz:client-block-unmapped-actions>
             </hz:security>
@@ -965,6 +966,11 @@
                 <hz:jmx enabled="false"/>
                 <hz:collection-frequency-seconds>24</hz:collection-frequency-seconds>
             </hz:metrics>
+
+            <hz:instance-tracking enabled="true">
+                <hz:file-name>/dummy/file</hz:file-name>
+                <hz:format-pattern>dummy-pattern with $HZ_INSTANCE_TRACKING{placeholder} and $RND{placeholder}</hz:format-pattern>
+            </hz:instance-tracking>
 
             <hz:sql>
                 <hz:executor-pool-size>10</hz:executor-pool-size>
