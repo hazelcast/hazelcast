@@ -138,11 +138,13 @@ public class ChangeRecordImpl implements ChangeRecord {
         return json;
     }
 
-    public long getSequenceSource() {
+    @Override
+    public long sequenceSource() {
         return sequenceSource;
     }
 
-    public long getSequenceValue() {
+    @Override
+    public long sequenceValue() {
         return sequenceValue;
     }
 

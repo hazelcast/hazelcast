@@ -420,9 +420,10 @@ public class OrdersOfCustomer implements Serializable {
 
 There is also another element in the pipeline, an extra processing stage
 which handles and fixes event reordering that might happen due to
-parallel processing. It's based on non-public classes because future
-versions of Jet (4.3 most likely) will contain generic solutions for
-the reordering problem and then this code will no longer be necessary:
+parallel processing. It's based on sequence numbers specific to CDC
+sources and so can be used only for these kinds of pipelines. Hopefully
+a future version of Jet will introduce a generic solution for the
+reoreding problem.
 
 ```java
 package org.example;

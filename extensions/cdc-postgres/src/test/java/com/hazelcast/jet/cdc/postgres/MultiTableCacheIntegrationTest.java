@@ -22,7 +22,6 @@ import com.hazelcast.jet.cdc.ChangeRecord;
 import com.hazelcast.jet.cdc.Operation;
 import com.hazelcast.jet.cdc.ParsingException;
 import com.hazelcast.jet.cdc.RecordPart;
-import com.hazelcast.jet.cdc.impl.ChangeRecordImpl;
 import com.hazelcast.jet.function.TriFunction;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
@@ -140,9 +139,8 @@ public class MultiTableCacheIntegrationTest extends AbstractPostgresCdcIntegrati
                         TimeUnit.SECONDS.toMillis(10),
                         () -> new Sequence(0, 0),
                         (lastSequence, key, record) -> {
-                            ChangeRecordImpl recordImpl = (ChangeRecordImpl) record;
-                            long source = recordImpl.getSequenceSource();
-                            long sequence = recordImpl.getSequenceValue();
+                            long source = record.sequenceSource();
+                            long sequence = record.sequenceValue();
                             if (lastSequence.update(source, sequence)) {
                                 return record;
                             }

@@ -50,8 +50,8 @@ public class CdcSerializerHooks {
 
                 @Override
                 public void write(ObjectDataOutput out, ChangeRecordImpl record) throws IOException {
-                    out.writeLong(record.getSequenceSource());
-                    out.writeLong(record.getSequenceValue());
+                    out.writeLong(record.sequenceSource());
+                    out.writeLong(record.sequenceValue());
                     out.writeUTF(record.getKeyJson());
                     out.writeUTF(record.getValueJson());
                 }

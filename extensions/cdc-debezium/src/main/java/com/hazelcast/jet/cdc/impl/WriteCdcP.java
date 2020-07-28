@@ -122,9 +122,8 @@ public class WriteCdcP<K, V> extends AbstractUpdateMapP<ChangeRecord, K, V> {
     }
 
     private boolean shouldBeDropped(K key, ChangeRecord item) {
-        ChangeRecordImpl recordImpl = (ChangeRecordImpl) item;
-        long sequenceSource = recordImpl.getSequenceSource();
-        long sequenceValue = recordImpl.getSequenceValue();
+        long sequenceSource = item.sequenceSource();
+        long sequenceValue = item.sequenceValue();
 
         return !updateSequence(key, sequenceSource, sequenceValue);
     }

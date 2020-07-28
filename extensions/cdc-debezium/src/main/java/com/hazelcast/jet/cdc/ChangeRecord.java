@@ -21,27 +21,34 @@ import com.hazelcast.jet.annotation.EvolvingApi;
 import javax.annotation.Nonnull;
 
 /**
- * Information pertaining to a single data change event (insertion,
- * delete or update), affecting a single database record.
+ * Information pertaining to a single data change event (insert, delete or
+ * update), affecting a single database record.
  * <p>
  * Each event has a <em>key</em>, identifying the affected record, and a
  * <em>value</em>, describing the change to that record.
  * <p>
- * Most events have an <em>operation</em> which specifies the type of
- * change (insertion, delete or update). Events without an operation
- * have specialized usage, for example heartbeats, and aren't supposed
- * to affect the data model. You can observe and act upon them in a Jet
- * CDC sink, but we discourage such usage.
+ * Most events have an <em>operation</em> which specifies the type of change
+ * (insert, delete or update). Events without an operation have specialized
+ * usage, for example heartbeats, and aren't supposed to affect the data model.
+ * You can observe and act upon them in a Jet CDC sink, but we discourage such
+ * usage.
  * <p>
- * All events have a <em>timestamp</em> specifying the moment when the
- * change event occurred in the database. Normally this is the timestamp
- * recorded in the database's change log, but since it has a finite size,
- * the change stream begins with virtual events that reproduce the state of
- * the table at the start of the change log. These events have an
- * artificial timestamp. In principle, it should be easy to identify them
- * because they have a separate {@code SYNC} operation instead of {@code
- * INSERT}, however some databases emit {@code INSERT} events in both
- * cases (a notable example is MySQL).
+ * All events have a <em>timestamp</em> specifying the moment when the change
+ * event occurred in the database. Normally this is the timestamp recorded in
+ * the database's change log, but since it has a finite size, the change stream
+ * begins with virtual events that reproduce the state of the table at the start
+ * of the change log. These events have an artificial timestamp. In principle,
+ * it should be easy to identify them because they have a separate {@code SYNC}
+ * operation instead of {@code INSERT}, however some databases emit {@code INSERT}
+ * events in both cases (a notable example is MySQL).
+ * <p>
+ * All events have a source-specific <em>sequence</em> which can be used to
+ * ensure their ordering. The sequence consists of two parts: a monotonically
+ * increasing <em>numeric value</em> and a <em>source descriptor</em>, which
+ * provides the scope of validity of the numeric value. This is needed because
+ * many CDC sources don't provide a globally valid sequence. For example, the
+ * sequence may be the offset in a write-ahead log. Then it makes sense to
+ * compare them only if they come from the same log file.
  *
  * @since 4.2
  */
@@ -62,6 +69,25 @@ public interface ChangeRecord {
      *                          is unparsable
      */
     long timestamp() throws ParsingException;
+
+    /**
+     * Specifies the numeric value part of the record's source sequence. As long
+     * as the source sequence doesn't change, the values will be monotonically
+     * increasing and can be used to impose ordering over the stream of records.
+     *
+     * @since 4.3
+     */
+    long sequenceValue();
+
+    /**
+     * Specifies the source descriptor of the record's sequence. Any changes
+     * observed in its value should be interpreted as a reset in the sequence's
+     * numeric values. No ordering can be deduced for two records with different
+     * sequence sources.
+     *
+     * @since 4.3
+     */
+    long sequenceSource();
 
     /**
      * Returns the type of change this record describes (insert, delete or
