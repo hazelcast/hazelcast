@@ -136,8 +136,6 @@ QueryDataType QueryDataType() :
 QueryDataType NumericType() :
 {
     QueryDataType type;
-    int precision = -1;
-    int scale = -1;
 }
 {
     (
@@ -178,7 +176,6 @@ QueryDataType CharacterType() :
 QueryDataType DateTimeType() :
 {
     QueryDataType type;
-    SqlIdentifier variant = null;
 }
 {
     (
