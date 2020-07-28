@@ -85,7 +85,8 @@ public class SchemaTest extends CalciteSqlTestSupport {
                         name, LocalPartitionedMapConnector.TYPE_NAME
                 ))
         ).isInstanceOf(SqlException.class)
-         .hasMessageContaining("Unknown type: " + name);
+         .hasMessageContaining("Invalid table definition: Missing")
+         .hasMessageContaining("option");
     }
 
     @Test
@@ -338,10 +339,14 @@ public class SchemaTest extends CalciteSqlTestSupport {
     public void when_createOrReplaceIfNotExists_then_fail() {
         assertThatThrownBy(() ->
                 executeQuery(
-                        member, "CREATE EXTERNAL TABLE IF NOT EXISTS CreateOrReplaceIfNotExists (" +
-                                "__key INT, this INT) " +
-                                "TYPE \"" + LocalPartitionedMapConnector.TYPE_NAME + "\""))
+                        member, "CREATE OR REPLACE EXTERNAL TABLE IF NOT EXISTS CreateOrReplaceIfNotExists " +
+                                "TYPE \"" + LocalPartitionedMapConnector.TYPE_NAME + "\" " +
+                                "OPTIONS (" +
+                                "\"" + TO_SERIALIZATION_KEY_FORMAT + "\" '" + JAVA_SERIALIZATION_FORMAT + "'," +
+                                "\"" + TO_KEY_CLASS + "\" 'java.lang.Integer'," +
+                                "\"" + TO_SERIALIZATION_VALUE_FORMAT + "\" '" + JAVA_SERIALIZATION_FORMAT + "'," +
+                                "\"" + TO_VALUE_CLASS + "\" 'java.lang.Integer')"))
                 .isInstanceOf(SqlException.class)
-                .hasMessageContaining("Only one of <OR REPLACE> or <IF NOT EXISTS> modifiers can be used");
+                .hasMessageContaining("You can't use both <OR REPLACE> and <IF NOT EXISTS> options");
     }
 }

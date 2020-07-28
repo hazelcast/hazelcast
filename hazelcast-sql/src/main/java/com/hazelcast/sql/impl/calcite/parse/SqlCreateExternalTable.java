@@ -16,6 +16,7 @@
 
 package com.hazelcast.sql.impl.calcite.parse;
 
+import com.hazelcast.sql.impl.QueryException;
 import org.apache.calcite.sql.SqlCreate;
 import org.apache.calcite.sql.SqlIdentifier;
 import org.apache.calcite.sql.SqlKind;
@@ -63,6 +64,10 @@ public class SqlCreateExternalTable extends SqlCreate {
         this.columns = requireNonNull(columns, "Columns should not be null");
         this.type = requireNonNull(type, "Type should not be null");
         this.options = requireNonNull(options, "Options should not be null");
+
+        if (replace && ifNotExists) {
+            throw QueryException.error("You can't use both <OR REPLACE> and <IF NOT EXISTS> options");
+        }
     }
 
     public String name() {

@@ -49,6 +49,7 @@ public class ExternalCatalog implements TableResolver {
     }
 
     public void createTable(ExternalTable table, boolean replace, boolean ifNotExists) {
+        assert !replace || !ifNotExists : "both replace and ifNotExists are true";
         // catch all the potential errors - missing connector, class, invalid format or field definitions etc. - early
         try {
             toTable(table);
