@@ -140,9 +140,7 @@ class ClusterDiscoveryServiceBuilder {
             int connectionTimeoutMillis = getConnectionTimeoutMillis(networkConfig);
             HazelcastCloudDiscovery cloudDiscovery = new HazelcastCloudDiscovery(urlEndpoint, connectionTimeoutMillis);
             return new RemoteAddressProvider(cloudDiscovery::discoverNodes, true);
-        } else if (!networkConfig.getAddresses().isEmpty()) {
-            return new DefaultAddressProvider(networkConfig);
-        } else if (discoveryService != null) {
+        } else if (networkConfig.getAddresses().isEmpty() && discoveryService != null) {
             return new RemoteAddressProvider(() -> discoverAddresses(discoveryService), usePublicAddress(clientConfig));
         }
         return new DefaultAddressProvider(networkConfig);
