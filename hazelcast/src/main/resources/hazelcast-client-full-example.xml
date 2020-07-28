@@ -305,6 +305,7 @@
                 <property name="keyStoreType">JKS</property>
             </properties>
         </ssl>
+        <auto-detection enabled="false"/>
         <aws enabled="true" connection-timeout-seconds="11">
             <inside-aws>true</inside-aws>
             <access-key>TEST_ACCESS_KEY</access-key>
@@ -907,5 +908,50 @@
         <jmx enabled="false"/>
         <collection-frequency-seconds>42</collection-frequency-seconds>
     </metrics>
+
+    <!--
+      ===== HAZELCAST INSTANCE TRACKING CONFIGURATION =====
+
+      Configuration element's name is <instance-tracking>.
+
+      It has the following attributes:
+      - enabled:
+          Enables or disables instance tracking.
+
+      It has the following sub-elements:
+      * <format-pattern>:
+          Sets the pattern used to render the contents of the instance tracking file.
+          It may contain placeholders for these properties:
+          - "product": The instance product name, e.g. "Hazelcast" or "Hazelcast Enterprise".
+          - "version": The instance version.
+          - "mode": The instance mode which can be "server", "embedded" or "client".
+          - "start_timestamp": The timestamp of when the instance was started expressed the difference,
+          measured in milliseconds, between the current time and midnight, January 1, 1970 UTC
+          - "licensed": If this instance is using a license or not. The value 0 signifies
+          that there is no license set and the value 1 signifies that a license is in use.
+          - "pid": Attempts to get the process ID value. The algorithm does not guarantee to get the
+          process ID on all JVMs and operating systems so please test before use. In case we are unable to
+          get the PID, the value will be -1.
+          The placeholders are defined by a $HZ_INSTANCE_TRACKING{ prefix and followed by }. For instance,
+          a placeholder for the "start_timestamp" would be $HZ_INSTANCE_TRACKING{start_timestamp}.
+          The placeholders are resolved in a fail-safe manner. Any incorrect syntax
+          is ignored and only the known properties are resolved, placeholders for
+          any parameters which do not have defined values will be ignored. This also
+          means that if there is a missing closing bracket in one of the placeholders,
+          the property name will be resolved as anything from the opening bracket
+          to the next closing bracket, which might contain additional opening brackets.
+          If unset, a JSON formatted output will be used.
+      * <file-name>:
+          Sets the name of the file which will contain the tracking metadata. If left unset
+          a file named "Hazelcast.process" will be created in the directory as returned by
+          System.getProperty("java.io.tmpdir").
+          The filename can contain placeholders that will be resolved in the same way
+          as placeholders for the format pattern.
+
+  -->
+    <instance-tracking enabled="false">
+        <file-name>hazelcast.process</file-name>
+        <format-pattern>$HZ_INSTANCE_TRACKING{product}:$HZ_INSTANCE_TRACKING{version}</format-pattern>
+    </instance-tracking>
 
 </hazelcast-client>

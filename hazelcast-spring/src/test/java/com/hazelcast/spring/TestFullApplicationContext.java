@@ -33,6 +33,7 @@ import com.hazelcast.config.CardinalityEstimatorConfig;
 import com.hazelcast.config.ClassFilter;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ConsistencyCheckStrategy;
+import com.hazelcast.config.InstanceTrackingConfig;
 import com.hazelcast.config.SqlConfig;
 import com.hazelcast.config.WanBatchPublisherConfig;
 import com.hazelcast.config.WanCustomPublisherConfig;
@@ -762,6 +763,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         Iterator portIter = allowedPorts.iterator();
         assertEquals("35000-35100", portIter.next());
         assertEquals("36000,36100", portIter.next());
+        assertFalse(networkConfig.getJoin().getAutoDetectionConfig().isEnabled());
         assertFalse(networkConfig.getJoin().getMulticastConfig().isEnabled());
         assertEquals(networkConfig.getJoin().getMulticastConfig().getMulticastTimeoutSeconds(), 8);
         assertEquals(networkConfig.getJoin().getMulticastConfig().getMulticastTimeToLive(), 16);
@@ -1434,6 +1436,15 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertEquals(42, metricsConfig.getManagementCenterConfig().getRetentionSeconds());
         assertFalse(metricsConfig.getJmxConfig().isEnabled());
         assertEquals(24, metricsConfig.getCollectionFrequencySeconds());
+    }
+
+    @Test
+    public void testInstanceTrackingConfig() {
+        InstanceTrackingConfig trackingConfig = config.getInstanceTrackingConfig();
+        assertTrue(trackingConfig.isEnabled());
+        assertEquals("/dummy/file", trackingConfig.getFileName());
+        assertEquals("dummy-pattern with $HZ_INSTANCE_TRACKING{placeholder} and $RND{placeholder}",
+                trackingConfig.getFormatPattern());
     }
 
     @Test

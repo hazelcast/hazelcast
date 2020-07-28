@@ -39,7 +39,7 @@ public class MemcachedMultiendpointTest
 
         // Join is disabled intentionally. will start standalone HazelcastInstances.
         JoinConfig join = anc.getJoin();
-        join.getMulticastConfig().setEnabled(false);
+        join.getAutoDetectionConfig().setEnabled(false);
         join.getTcpIpConfig().setEnabled(false);
         return config;
     }

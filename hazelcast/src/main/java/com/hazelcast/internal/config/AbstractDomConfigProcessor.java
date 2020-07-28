@@ -18,6 +18,7 @@ package com.hazelcast.internal.config;
 
 import com.hazelcast.config.ClassFilter;
 import com.hazelcast.config.GlobalSerializerConfig;
+import com.hazelcast.config.InstanceTrackingConfig;
 import com.hazelcast.config.JavaSerializationFilterConfig;
 import com.hazelcast.config.LoginModuleConfig;
 import com.hazelcast.config.NativeMemoryConfig;
@@ -307,5 +308,20 @@ public abstract class AbstractDomConfigProcessor implements DomConfigProcessor {
             }
         }
         return moduleConfig;
+    }
+
+    protected void handleInstanceTracking(Node node, InstanceTrackingConfig trackingConfig) {
+        Node attrEnabled = node.getAttributes().getNamedItem("enabled");
+        boolean enabled = getBooleanValue(getTextContent(attrEnabled));
+        trackingConfig.setEnabled(enabled);
+
+        for (Node n : childElements(node)) {
+            final String name = cleanNodeName(n);
+            if ("file-name".equals(name)) {
+                trackingConfig.setFileName(getTextContent(n));
+            } else if ("format-pattern".equals(name)) {
+                trackingConfig.setFormatPattern(getTextContent(n));
+            }
+        }
     }
 }

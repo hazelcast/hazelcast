@@ -232,6 +232,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         concurrencyDetection = initConcurrencyDetection();
         clientExtension = createClientInitializer(classLoader);
         clientExtension.beforeStart(this);
+        clientExtension.logInstanceTrackingMetadata();
         lifecycleService = new LifecycleServiceImpl(this);
         metricsRegistry = initMetricsRegistry();
         serializationService = clientExtension.createSerializationService((byte) -1);

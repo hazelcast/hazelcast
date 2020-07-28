@@ -41,6 +41,7 @@ import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.IndexType;
+import com.hazelcast.config.InstanceTrackingConfig;
 import com.hazelcast.config.LoginModuleConfig;
 import com.hazelcast.config.MaxSizePolicy;
 import com.hazelcast.config.NearCacheConfig;
@@ -141,6 +142,9 @@ public class TestClientApplicationContext {
 
     @Resource(name = "client18-metrics")
     private HazelcastClientProxy metricsClient;
+
+    @Resource(name = "client19-instance-tracking")
+    private HazelcastClientProxy instanceTrackingClient;
 
     @Resource(name = "instance")
     private HazelcastInstance instance;
@@ -519,5 +523,15 @@ public class TestClientApplicationContext {
         assertFalse(metricsConfig.isEnabled());
         assertFalse(metricsConfig.getJmxConfig().isEnabled());
         assertEquals(42, metricsConfig.getCollectionFrequencySeconds());
+    }
+
+    @Test
+    public void testInstanceTracking() {
+        InstanceTrackingConfig trackingConfig = instanceTrackingClient.getClientConfig().getInstanceTrackingConfig();
+
+        assertTrue(trackingConfig.isEnabled());
+        assertEquals("/dummy/file", trackingConfig.getFileName());
+        assertEquals("dummy-pattern with $HZ_INSTANCE_TRACKING{placeholder} and $RND{placeholder}",
+                trackingConfig.getFormatPattern());
     }
 }

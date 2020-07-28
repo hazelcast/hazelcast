@@ -41,7 +41,8 @@ public enum ClientConfigSections {
     RELIABLE_TOPIC("reliable-topic", true),
     LABELS("client-labels", false),
     CLUSTER_NAME("cluster-name", false),
-    METRICS("metrics", false);
+    METRICS("metrics", false),
+    INSTANCE_TRACKING("instance-tracking", false);
 
     final boolean multipleOccurrence;
     private final String name;

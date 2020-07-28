@@ -42,6 +42,7 @@ import com.hazelcast.nio.SocketInterceptor;
 import com.hazelcast.security.ICredentialsFactory;
 import com.hazelcast.security.UsernamePasswordCredentials;
 import com.hazelcast.spi.discovery.DiscoveryNode;
+import com.hazelcast.spi.discovery.impl.DefaultDiscoveryService;
 import com.hazelcast.spi.discovery.impl.DefaultDiscoveryServiceProvider;
 import com.hazelcast.spi.discovery.integration.DiscoveryMode;
 import com.hazelcast.spi.discovery.integration.DiscoveryService;
@@ -132,22 +133,16 @@ class ClusterDiscoveryServiceBuilder {
         isDiscoveryConfigurationConsistent(addressListProvided, awsDiscoveryEnabled, gcpDiscoveryEnabled, azureDiscoveryEnabled,
                 kubernetesDiscoveryEnabled, eurekaDiscoveryEnabled, discoverySpiEnabled, hazelcastCloudEnabled);
 
-        if (discoveryService != null) {
-            return new RemoteAddressProvider(() -> discoverAddresses(discoveryService), usePublicAddress(clientConfig));
-        } else if (hazelcastCloudEnabled) {
-            String discoveryToken;
-            if (cloudConfig.isEnabled()) {
-                discoveryToken = cloudConfig.getDiscoveryToken();
-            } else {
-                discoveryToken = cloudDiscoveryToken;
-            }
+        if (hazelcastCloudEnabled) {
+            String discoveryToken = cloudDiscoveryToken(cloudConfig, cloudDiscoveryToken);
             String cloudUrlBase = properties.getString(HazelcastCloudDiscovery.CLOUD_URL_BASE_PROPERTY);
             String urlEndpoint = HazelcastCloudDiscovery.createUrlEndpoint(cloudUrlBase, discoveryToken);
             int connectionTimeoutMillis = getConnectionTimeoutMillis(networkConfig);
             HazelcastCloudDiscovery cloudDiscovery = new HazelcastCloudDiscovery(urlEndpoint, connectionTimeoutMillis);
             return new RemoteAddressProvider(cloudDiscovery::discoverNodes, true);
+        } else if (networkConfig.getAddresses().isEmpty() && discoveryService != null) {
+            return new RemoteAddressProvider(() -> discoverAddresses(discoveryService), usePublicAddress(clientConfig));
         }
-
         return new DefaultAddressProvider(networkConfig);
     }
 
@@ -214,13 +209,22 @@ class ClusterDiscoveryServiceBuilder {
         }
     }
 
+    private static String cloudDiscoveryToken(ClientCloudConfig cloudConfig, String cloudDiscoveryToken) {
+        if (cloudConfig.isEnabled()) {
+            return cloudConfig.getDiscoveryToken();
+        } else {
+            return cloudDiscoveryToken;
+        }
+    }
+
     private DiscoveryService initDiscoveryService(ClientConfig config) {
         // Prevent confusing behavior where the DiscoveryService is started
         // and strategies are resolved but the AddressProvider is never registered
         List<DiscoveryStrategyConfig> aliasedDiscoveryConfigs =
                 ClientAliasedDiscoveryConfigUtils.createDiscoveryStrategyConfigs(config);
 
-        if (!properties.getBoolean(ClientProperty.DISCOVERY_SPI_ENABLED) && aliasedDiscoveryConfigs.isEmpty()) {
+        if (!properties.getBoolean(ClientProperty.DISCOVERY_SPI_ENABLED) && aliasedDiscoveryConfigs.isEmpty()
+                && !config.getNetworkConfig().isAutoDetectionEnabled()) {
             return null;
         }
 
@@ -233,16 +237,26 @@ class ClusterDiscoveryServiceBuilder {
             factory = new DefaultDiscoveryServiceProvider();
         }
 
+        boolean isAutoDetectionEnabled = networkConfig.isAutoDetectionEnabled();
         DiscoveryServiceSettings settings = new DiscoveryServiceSettings()
                 .setConfigClassLoader(config.getClassLoader())
                 .setLogger(logger)
                 .setDiscoveryMode(DiscoveryMode.Client)
                 .setAliasedDiscoveryConfigs(aliasedDiscoveryConfigs)
-                .setDiscoveryConfig(discoveryConfig);
+                .setDiscoveryConfig(discoveryConfig)
+                .setAutoDetectionEnabled(isAutoDetectionEnabled);
 
         DiscoveryService discoveryService = factory.newDiscoveryService(settings);
+        if (isAutoDetectionEnabled && isEmptyDiscoveryStrategies(discoveryService)) {
+            return null;
+        }
         discoveryService.start();
         return discoveryService;
+    }
+
+    private boolean isEmptyDiscoveryStrategies(DiscoveryService discoveryService) {
+        return discoveryService instanceof DefaultDiscoveryService
+                && !((DefaultDiscoveryService) discoveryService).getDiscoveryStrategies().iterator().hasNext();
     }
 
     private ICredentialsFactory initCredentialsFactory(ClientConfig config) {

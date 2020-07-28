@@ -20,6 +20,7 @@ import com.hazelcast.client.LoadBalancer;
 import com.hazelcast.client.util.RandomLB;
 import com.hazelcast.client.util.RoundRobinLB;
 import com.hazelcast.config.AliasedDiscoveryConfig;
+import com.hazelcast.config.AutoDetectionConfig;
 import com.hazelcast.config.ConfigXmlGenerator.XmlGenerator;
 import com.hazelcast.config.CredentialsFactoryConfig;
 import com.hazelcast.config.DiscoveryConfig;
@@ -27,6 +28,7 @@ import com.hazelcast.config.DiscoveryStrategyConfig;
 import com.hazelcast.config.EntryListenerConfig;
 import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.GlobalSerializerConfig;
+import com.hazelcast.config.InstanceTrackingConfig;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.LoginModuleConfig;
 import com.hazelcast.config.NativeMemoryConfig;
@@ -139,6 +141,7 @@ public final class ClientConfigXmlGenerator {
         flakeIdGenerator(gen, clientConfig.getFlakeIdGeneratorConfigMap());
         //Metrics
         metrics(gen, clientConfig.getMetricsConfig());
+        instanceTrackingConfig(gen, clientConfig.getInstanceTrackingConfig());
 
         //close HazelcastClient
         gen.close();
@@ -209,6 +212,7 @@ public final class ClientConfigXmlGenerator {
         socketInterceptor(gen, network.getSocketInterceptorConfig());
         ssl(gen, network.getSSLConfig());
         aliasedDiscoveryConfigsGenerator(gen, aliasedDiscoveryConfigsFrom(network));
+        autoDetection(gen, network.getAutoDetectionConfig());
         discovery(gen, network.getDiscoveryConfig());
         outboundPort(gen, network.getOutboundPortDefinitions());
         icmp(gen, network.getClientIcmpPingConfig());
@@ -569,6 +573,13 @@ public final class ClientConfigXmlGenerator {
         }
     }
 
+    private static void autoDetection(XmlGenerator gen, AutoDetectionConfig config) {
+        if (config == null) {
+            return;
+        }
+        gen.open("auto-detection", "enabled", config.isEnabled()).close();
+    }
+
     private static void discovery(XmlGenerator gen, DiscoveryConfig discovery) {
         if (discovery.getNodeFilter() == null && discovery.getNodeFilterClass() == null
                 && discovery.getDiscoveryStrategyConfigs().isEmpty()) {
@@ -661,6 +672,13 @@ public final class ClientConfigXmlGenerator {
            .open("jmx", "enabled", metricsConfig.getJmxConfig().isEnabled())
            .close()
            .node("collection-frequency-seconds", metricsConfig.getCollectionFrequencySeconds())
+           .close();
+    }
+
+    private static void instanceTrackingConfig(XmlGenerator gen, InstanceTrackingConfig trackingConfig) {
+        gen.open("instance-tracking", "enabled", trackingConfig.isEnabled())
+           .node("file-name", trackingConfig.getFileName())
+           .node("format-pattern", trackingConfig.getFormatPattern())
            .close();
     }
 }

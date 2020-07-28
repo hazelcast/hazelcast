@@ -86,6 +86,8 @@ hazelcast-client:
         keyStorePassword: keystorePassword123
         keyStoreType: JKS
 
+    auto-detection:
+      enabled: false
     aws:
       enabled: true
       connection-timeout-seconds: 11
@@ -307,3 +309,6 @@ hazelcast-client:
     jmx:
       enabled: false
     collection-frequency-seconds: 42
+
+  instance-tracking:
+    enabled: false

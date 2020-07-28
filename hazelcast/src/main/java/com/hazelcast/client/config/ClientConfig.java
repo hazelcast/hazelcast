@@ -22,6 +22,7 @@ import com.hazelcast.client.config.impl.XmlClientConfigLocator;
 import com.hazelcast.client.config.impl.YamlClientConfigLocator;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ConfigPatternMatcher;
+import com.hazelcast.config.InstanceTrackingConfig;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.NativeMemoryConfig;
@@ -108,6 +109,7 @@ public class ClientConfig {
     private final Set<String> labels;
     private final ConcurrentMap<String, Object> userContext;
     private ClientMetricsConfig metricsConfig = new ClientMetricsConfig();
+    private InstanceTrackingConfig instanceTrackingConfig = new InstanceTrackingConfig();
 
     public ClientConfig() {
         listenerConfigs = new LinkedList<>();
@@ -170,6 +172,7 @@ public class ClientConfig {
         labels = new HashSet<>(config.labels);
         userContext = new ConcurrentHashMap<>(config.userContext);
         metricsConfig = new ClientMetricsConfig(config.metricsConfig);
+        instanceTrackingConfig = new InstanceTrackingConfig(config.instanceTrackingConfig);
     }
 
     /**
@@ -920,13 +923,31 @@ public class ClientConfig {
         return this;
     }
 
+    /**
+     * Returns the configuration for tracking use of this Hazelcast instance.
+     */
+    @Nonnull
+    public InstanceTrackingConfig getInstanceTrackingConfig() {
+        return instanceTrackingConfig;
+    }
+
+    /**
+     * Returns the configuration for tracking use of this Hazelcast instance.
+     */
+    @Nonnull
+    public ClientConfig setInstanceTrackingConfig(@Nonnull InstanceTrackingConfig instanceTrackingConfig) {
+        Preconditions.checkNotNull(instanceTrackingConfig, "instanceTrackingConfig");
+        this.instanceTrackingConfig = instanceTrackingConfig;
+        return this;
+    }
+
     @Override
     public int hashCode() {
         return Objects.hash(backupAckToClientEnabled, classLoader, clusterName, configPatternMatcher, connectionStrategyConfig,
                 flakeIdGeneratorConfigMap, instanceName, labels, listenerConfigs, loadBalancer,
                 managedContext, metricsConfig, nativeMemoryConfig, nearCacheConfigMap, networkConfig, properties,
                 proxyFactoryConfigs, queryCacheConfigs, reliableTopicConfigMap, securityConfig, serializationConfig,
-                userCodeDeploymentConfig, userContext);
+                userCodeDeploymentConfig, userContext, instanceTrackingConfig);
     }
 
     @Override
@@ -959,7 +980,8 @@ public class ClientConfig {
                 && Objects.equals(securityConfig, other.securityConfig)
                 && Objects.equals(serializationConfig, other.serializationConfig)
                 && Objects.equals(userCodeDeploymentConfig, other.userCodeDeploymentConfig)
-                && Objects.equals(userContext, other.userContext);
+                && Objects.equals(userContext, other.userContext)
+                && Objects.equals(instanceTrackingConfig, other.instanceTrackingConfig);
     }
 
     @Override
@@ -985,6 +1007,7 @@ public class ClientConfig {
                 + ", flakeIdGeneratorConfigMap=" + flakeIdGeneratorConfigMap
                 + ", labels=" + labels
                 + ", metricsConfig=" + metricsConfig
+                + ", instanceTrackingConfig=" + instanceTrackingConfig
                 + '}';
     }
 }

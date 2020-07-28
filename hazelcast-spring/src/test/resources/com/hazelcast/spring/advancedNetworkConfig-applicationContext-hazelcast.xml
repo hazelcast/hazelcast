@@ -172,6 +172,7 @@
                     <hz:eureka enabled="false"
                                self-registration="true"
                                namespace="hazelcast"/>
+                    <hz:auto-detection enabled="${boolean:false}"/>
                 </hz:join>
                 <hz:member-server-socket-endpoint-config name="member-server-socket"
                         port="${cluster.port}" port-auto-increment="false" port-count="99">

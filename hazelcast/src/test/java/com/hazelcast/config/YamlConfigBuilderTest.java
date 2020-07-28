@@ -3171,7 +3171,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
         MemberAddressProviderConfig providerConfig = advancedNetworkConfig.getMemberAddressProviderConfig();
 
         assertFalse(advancedNetworkConfig.isEnabled());
-        assertTrue(joinConfig.getMulticastConfig().isEnabled());
+        assertTrue(joinConfig.getAutoDetectionConfig().isEnabled());
         assertNull(fdConfig);
         assertFalse(providerConfig.isEnabled());
 
@@ -3456,6 +3456,23 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
         assertFalse(metricsConfig.getJmxConfig().isEnabled());
         assertEquals(10, metricsConfig.getCollectionFrequencySeconds());
         assertEquals(11, metricsMcConfig.getRetentionSeconds());
+    }
+
+    @Override
+    @Test
+    public void testInstanceTrackingConfig() {
+        String yaml = ""
+                + "hazelcast:\n"
+                + "  instance-tracking:\n"
+                + "    enabled: true\n"
+                + "    file-name: /dummy/file\n"
+                + "    format-pattern: dummy-pattern with $HZ_INSTANCE_TRACKING{placeholder} and $RND{placeholder}";
+        Config config = new InMemoryYamlConfig(yaml);
+        InstanceTrackingConfig trackingConfig = config.getInstanceTrackingConfig();
+        assertTrue(trackingConfig.isEnabled());
+        assertEquals("/dummy/file", trackingConfig.getFileName());
+        assertEquals("dummy-pattern with $HZ_INSTANCE_TRACKING{placeholder} and $RND{placeholder}",
+                trackingConfig.getFormatPattern());
     }
 
     @Override

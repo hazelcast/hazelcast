@@ -22,6 +22,7 @@ import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig;
 import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.DurationConfig;
 import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig;
 import com.hazelcast.config.ConfigCompatibilityChecker.CPSubsystemConfigChecker;
+import com.hazelcast.config.ConfigCompatibilityChecker.InstanceTrackingConfigChecker;
 import com.hazelcast.config.ConfigCompatibilityChecker.MetricsConfigChecker;
 import com.hazelcast.config.ConfigCompatibilityChecker.SplitBrainProtectionConfigChecker;
 import com.hazelcast.config.cp.CPSubsystemConfig;
@@ -241,6 +242,14 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         IcmpFailureDetectorConfig actual = newConfigViaXMLGenerator.getNetworkConfig().getIcmpFailureDetectorConfig();
 
         assertFailureDetectorConfigEquals(expected, actual);
+    }
+
+    @Test
+    public void testNetworkAutoDetectionJoinConfig() {
+        Config cfg = new Config();
+        cfg.getNetworkConfig().getJoin().getAutoDetectionConfig().setEnabled(false);
+        Config actualConfig = getNewConfigViaXMLGenerator(cfg);
+        assertFalse(actualConfig.getNetworkConfig().getJoin().getAutoDetectionConfig().isEnabled());
     }
 
     @Test
@@ -982,11 +991,11 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
     @Test
     public void testRingbufferWithStoreFactoryImplementation() {
         RingbufferStoreConfig ringbufferStoreConfig = new RingbufferStoreConfig()
-            .setEnabled(true)
-            .setFactoryImplementation(new TestRingbufferStoreFactory())
-            .setProperty("p1", "v1")
-            .setProperty("p2", "v2")
-            .setProperty("p3", "v3");
+                .setEnabled(true)
+                .setFactoryImplementation(new TestRingbufferStoreFactory())
+                .setProperty("p1", "v1")
+                .setProperty("p2", "v2")
+                .setProperty("p3", "v3");
 
         testRingbuffer(ringbufferStoreConfig);
     }
@@ -1797,6 +1806,20 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testInstanceTrackingConfig() {
+        Config config = new Config();
+
+        config.getInstanceTrackingConfig()
+              .setEnabled(true)
+              .setFileName("/dummy/file")
+              .setFormatPattern("dummy-pattern with $HZ_INSTANCE_TRACKING{placeholder} and $RND{placeholder}");
+
+        InstanceTrackingConfig generatedConfig = getNewConfigViaXMLGenerator(config).getInstanceTrackingConfig();
+        assertTrue(generatedConfig + " should be compatible with " + config.getInstanceTrackingConfig(),
+                new InstanceTrackingConfigChecker().check(config.getInstanceTrackingConfig(), generatedConfig));
+    }
+
+    @Test
     public void testSqlConfig() {
         Config confiig = new Config();
 
@@ -1854,6 +1877,14 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         RestApiConfig generatedConfig = getNewConfigViaXMLGenerator(config).getNetworkConfig().getRestApiConfig();
         assertTrue(generatedConfig.toString() + " should be compatible with " + restApiConfig.toString(),
                 new ConfigCompatibilityChecker.RestApiConfigChecker().check(restApiConfig, generatedConfig));
+    }
+
+    @Test
+    public void testAdvancedNetworkAutoDetectionJoinConfig() {
+        Config cfg = new Config();
+        cfg.getAdvancedNetworkConfig().setEnabled(true).getJoin().getAutoDetectionConfig().setEnabled(false);
+        Config actualConfig = getNewConfigViaXMLGenerator(cfg);
+        assertFalse(actualConfig.getAdvancedNetworkConfig().getJoin().getAutoDetectionConfig().isEnabled());
     }
 
     @Test

@@ -5976,6 +5976,8 @@ public class MemberCompatibilityNullTest_2_1 {
         assertTrue(isEqual(aData, parameters.task));
         assertTrue(isEqual(aLong, parameters.initialDelayInMillis));
         assertTrue(isEqual(aLong, parameters.periodInMillis));
+        assertTrue(parameters.isAutoDisposableExists);
+        assertTrue(isEqual(aBoolean, parameters.autoDisposable));
     }
 
     @Test
@@ -5998,6 +6000,8 @@ public class MemberCompatibilityNullTest_2_1 {
         assertTrue(isEqual(aData, parameters.task));
         assertTrue(isEqual(aLong, parameters.initialDelayInMillis));
         assertTrue(isEqual(aLong, parameters.periodInMillis));
+        assertTrue(parameters.isAutoDisposableExists);
+        assertTrue(isEqual(aBoolean, parameters.autoDisposable));
     }
 
     @Test

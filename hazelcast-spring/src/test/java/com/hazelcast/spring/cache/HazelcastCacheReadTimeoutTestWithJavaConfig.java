@@ -67,7 +67,6 @@ public class HazelcastCacheReadTimeoutTestWithJavaConfig extends AbstractHazelca
             config.setProperty("hazelcast.partition.backup.sync.interval", "1");
 
             config.getNetworkConfig().setPort(5701).setPortAutoIncrement(false);
-            config.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
             config.getNetworkConfig().getJoin()
                     .getTcpIpConfig()
                     .setEnabled(true)

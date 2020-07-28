@@ -24,6 +24,7 @@ import com.hazelcast.map.IMap;
 import com.hazelcast.partition.PartitionAware;
 import com.hazelcast.scheduledexecutor.IScheduledExecutorService;
 import com.hazelcast.scheduledexecutor.IScheduledFuture;
+import com.hazelcast.scheduledexecutor.AutoDisposableTask;
 import com.hazelcast.scheduledexecutor.NamedTask;
 import com.hazelcast.scheduledexecutor.StatefulTask;
 import com.hazelcast.test.AssertTask;
@@ -396,6 +397,29 @@ public class ScheduledExecutorServiceTestSupport extends HazelcastTestSupport {
         @Override
         public Boolean call() {
             return (instance != null);
+        }
+    }
+
+    public static class AutoDisposableCallable implements Callable<Boolean>, AutoDisposableTask {
+
+        @Override
+        public Boolean call() {
+            return true;
+        }
+    }
+
+    public static class NamedCallable implements Callable<Boolean>, NamedTask, Serializable {
+
+        public static final String NAME = "NAMED-CALLABLE";
+
+        @Override
+        public Boolean call() {
+            return true;
+        }
+
+        @Override
+        public String getName() {
+            return NAME;
         }
     }
 

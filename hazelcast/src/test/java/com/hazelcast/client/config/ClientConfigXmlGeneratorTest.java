@@ -29,8 +29,10 @@ import com.hazelcast.config.GlobalSerializerConfig;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.IndexType;
+import com.hazelcast.config.InstanceTrackingConfig;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.LoginModuleConfig;
+import com.hazelcast.config.LoginModuleConfig.LoginModuleUsage;
 import com.hazelcast.config.NativeMemoryConfig;
 import com.hazelcast.config.NativeMemoryConfig.MemoryAllocatorType;
 import com.hazelcast.config.NearCacheConfig;
@@ -41,7 +43,6 @@ import com.hazelcast.config.SSLConfig;
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.config.SerializerConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
-import com.hazelcast.config.LoginModuleConfig.LoginModuleUsage;
 import com.hazelcast.config.security.JaasAuthenticationConfig;
 import com.hazelcast.config.security.KerberosIdentityConfig;
 import com.hazelcast.config.security.RealmConfig;
@@ -250,7 +251,13 @@ public class ClientConfigXmlGeneratorTest extends HazelcastTestSupport {
             String testKey = generatedDiscoveryConfig.getProperty("testKey");
             assertEquals("testValue", testKey);
         }
+    }
 
+    @Test
+    public void networkAutoDetectionConfig() {
+        clientConfig.getNetworkConfig().getAutoDetectionConfig().setEnabled(false);
+        ClientConfig actualConfig = newConfigViaGenerator();
+        assertFalse(actualConfig.getNetworkConfig().getAutoDetectionConfig().isEnabled());
     }
 
     @Test
@@ -648,6 +655,20 @@ public class ClientConfigXmlGeneratorTest extends HazelcastTestSupport {
         assertEquals(originalConfig.isEnabled(), generatedConfig.isEnabled());
         assertEquals(originalConfig.getJmxConfig().isEnabled(), generatedConfig.getJmxConfig().isEnabled());
         assertEquals(originalConfig.getCollectionFrequencySeconds(), generatedConfig.getCollectionFrequencySeconds());
+    }
+
+    @Test
+    public void testInstanceTrackingConfig() {
+        clientConfig.getInstanceTrackingConfig()
+                    .setEnabled(true)
+                    .setFileName("/dummy/file")
+                    .setFormatPattern("dummy-pattern with $HZ_INSTANCE_TRACKING{placeholder} and $RND{placeholder}");
+
+        InstanceTrackingConfig originalConfig = clientConfig.getInstanceTrackingConfig();
+        InstanceTrackingConfig generatedConfig = newConfigViaGenerator().getInstanceTrackingConfig();
+        assertEquals(originalConfig.isEnabled(), generatedConfig.isEnabled());
+        assertEquals(originalConfig.getFileName(), generatedConfig.getFileName());
+        assertEquals(originalConfig.getFormatPattern(), generatedConfig.getFormatPattern());
     }
 
     private ClientConfig newConfigViaGenerator() {

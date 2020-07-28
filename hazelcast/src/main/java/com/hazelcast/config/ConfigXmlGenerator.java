@@ -167,6 +167,7 @@ public class ConfigXmlGenerator {
         splitBrainProtectionXmlGenerator(gen, config);
         cpSubsystemConfig(gen, config);
         metricsConfig(gen, config);
+        instanceTrackingConfig(gen, config);
         sqlConfig(gen, config);
         userCodeDeploymentConfig(gen, config);
 
@@ -814,6 +815,7 @@ public class ConfigXmlGenerator {
 
         JoinConfig join = netCfg.getJoin();
         gen.open("join");
+        autoDetectionConfigXmlGenerator(gen, join);
         multicastConfigXmlGenerator(gen, join);
         tcpConfigXmlGenerator(gen, join);
         aliasedDiscoveryConfigsGenerator(gen, aliasedDiscoveryConfigsFrom(join));
@@ -841,6 +843,7 @@ public class ConfigXmlGenerator {
 
         JoinConfig join = netCfg.getJoin();
         gen.open("join");
+        autoDetectionConfigXmlGenerator(gen, join);
         multicastConfigXmlGenerator(gen, join);
         tcpConfigXmlGenerator(gen, join);
         aliasedDiscoveryConfigsGenerator(gen, aliasedDiscoveryConfigsFrom(join));
@@ -1254,6 +1257,10 @@ public class ConfigXmlGenerator {
                 "comparator-class-name", comparatorClassName);
     }
 
+    private static void autoDetectionConfigXmlGenerator(XmlGenerator gen, JoinConfig join) {
+        gen.open("auto-detection", "enabled", join.getAutoDetectionConfig().isEnabled()).close();
+    }
+
     private static void multicastConfigXmlGenerator(XmlGenerator gen, JoinConfig join) {
         MulticastConfig mcConfig = join.getMulticastConfig();
         gen.open("multicast", "enabled", mcConfig.isEnabled(), "loopbackModeEnabled", mcConfig.isLoopbackModeEnabled())
@@ -1573,6 +1580,14 @@ public class ConfigXmlGenerator {
         }
 
         gen.close().close();
+    }
+
+    private static void instanceTrackingConfig(XmlGenerator gen, Config config) {
+        InstanceTrackingConfig trackingConfig = config.getInstanceTrackingConfig();
+        gen.open("instance-tracking", "enabled", trackingConfig.isEnabled())
+           .node("file-name", trackingConfig.getFileName())
+           .node("format-pattern", trackingConfig.getFormatPattern())
+           .close();
     }
 
     private static void metricsConfig(XmlGenerator gen, Config config) {

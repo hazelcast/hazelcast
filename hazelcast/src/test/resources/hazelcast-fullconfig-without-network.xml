@@ -975,6 +975,10 @@
         <collection-frequency-seconds>24</collection-frequency-seconds>
     </metrics>
 
+    <instance-tracking enabled="false">
+
+    </instance-tracking>
+
     <sql>
         <executor-pool-size>16</executor-pool-size>
         <operation-pool-size>8</operation-pool-size>

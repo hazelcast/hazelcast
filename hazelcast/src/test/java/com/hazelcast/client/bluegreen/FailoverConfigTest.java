@@ -62,13 +62,14 @@ public class FailoverConfigTest {
                 "setConnectionStrategyConfig", "getUserCodeDeploymentConfig", "setUserCodeDeploymentConfig",
                 "getOrCreateQueryCacheConfig", "getOrNullQueryCacheConfig", "addLabel", "setLabels",
                 "setUserContext", "getUserContext", "setMetricsConfig", "load",
-                "setBackupAckToClientEnabled", "isBackupAckToClientEnabled", "getMetricsConfig", "equals", "hashCode", "toString");
+                "setBackupAckToClientEnabled", "isBackupAckToClientEnabled", "getMetricsConfig", "equals", "hashCode", "toString",
+                "setInstanceTrackingConfig", "getInstanceTrackingConfig");
         Method[] declaredMethods = ClientConfig.class.getDeclaredMethods();
         for (Method method : declaredMethods) {
             String methodName = method.getName();
             if (!methodName.startsWith("$") && !allClientConfigMethods.contains(methodName)) {
                 throw new IllegalStateException("There is a new method on client config. " + methodName
-                        + "Handle it on FailoverClientConfigSupport first, and add it to  allClientConfigMethods set above.");
+                        + ". Handle it on FailoverClientConfigSupport first, and add it to  allClientConfigMethods set above.");
             }
         }
     }
@@ -77,14 +78,14 @@ public class FailoverConfigTest {
     public void testAllClientNetworkConfigsAreHandledInMultipleClientConfigSupport() {
         Set<String> allClientNetworkConfigMethods = new HashSet<>();
         Collections.addAll(allClientNetworkConfigMethods, "isSmartRouting", "setSmartRouting", "getSocketInterceptorConfig",
-                "setSocketInterceptorConfig", "getConnectionTimeout", "setConnectionTimeout",
-                "addAddress", "setAddresses", "getAddresses", "isRedoOperation", "setRedoOperation", "getSocketOptions",
-                "setSocketOptions", "getDiscoveryConfig", "setDiscoveryConfig", "getSSLConfig", "setSSLConfig", "setAwsConfig",
-                "getAwsConfig", "setGcpConfig", "getGcpConfig", "setAzureConfig", "getAzureConfig", "setKubernetesConfig",
-                "getKubernetesConfig", "setEurekaConfig", "getEurekaConfig", "getCloudConfig", "setCloudConfig",
-                "getOutboundPortDefinitions", "getOutboundPorts", "setOutboundPortDefinitions", "setOutboundPorts",
-                "addOutboundPort", "addOutboundPortDefinition", "getClientIcmpPingConfig", "setClientIcmpPingConfig",
-                "equals", "hashCode", "toString");
+                "setSocketInterceptorConfig", "getConnectionTimeout", "setConnectionTimeout", "addAddress", "setAddresses",
+                "getAddresses", "isRedoOperation", "setRedoOperation", "getSocketOptions", "setSocketOptions",
+                "getDiscoveryConfig", "setDiscoveryConfig", "getSSLConfig", "setSSLConfig", "setAwsConfig", "getAwsConfig",
+                "setGcpConfig", "getGcpConfig", "setAzureConfig", "getAzureConfig", "setKubernetesConfig", "getKubernetesConfig",
+                "setEurekaConfig", "getEurekaConfig", "setAutoDetectionConfig", "getAutoDetectionConfig", "isAutoDetectionEnabled",
+                "getCloudConfig", "setCloudConfig", "getOutboundPortDefinitions", "getOutboundPorts", "setOutboundPortDefinitions",
+                "setOutboundPorts", "addOutboundPort", "addOutboundPortDefinition", "getClientIcmpPingConfig",
+                "setClientIcmpPingConfig", "equals", "hashCode", "toString");
         Method[] declaredMethods = ClientNetworkConfig.class.getDeclaredMethods();
         for (Method method : declaredMethods) {
             if (!method.getName().startsWith("$") && !allClientNetworkConfigMethods.contains(method.getName())) {

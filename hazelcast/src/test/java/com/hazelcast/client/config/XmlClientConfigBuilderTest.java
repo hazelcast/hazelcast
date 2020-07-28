@@ -21,6 +21,7 @@ import com.hazelcast.client.util.RoundRobinLB;
 import com.hazelcast.config.CredentialsFactoryConfig;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.InMemoryFormat;
+import com.hazelcast.config.InstanceTrackingConfig;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.config.XMLConfigBuilderTest;
@@ -417,6 +418,22 @@ public class XmlClientConfigBuilderTest extends AbstractClientConfigBuilderTest 
         assertFalse(metricsConfig.isEnabled());
         assertFalse(metricsConfig.getJmxConfig().isEnabled());
         assertEquals(10, metricsConfig.getCollectionFrequencySeconds());
+    }
+
+    @Override
+    public void testInstanceTrackingConfig() {
+        String xml = HAZELCAST_CLIENT_START_TAG
+                + "<instance-tracking enabled=\"true\">"
+                + "  <file-name>/dummy/file</file-name>"
+                + "  <format-pattern>dummy-pattern with $HZ_INSTANCE_TRACKING{placeholder} and $RND{placeholder}</format-pattern>"
+                + "</instance-tracking>"
+                + HAZELCAST_CLIENT_END_TAG;
+        ClientConfig config = buildConfig(xml);
+        InstanceTrackingConfig trackingConfig = config.getInstanceTrackingConfig();
+        assertTrue(trackingConfig.isEnabled());
+        assertEquals("/dummy/file", trackingConfig.getFileName());
+        assertEquals("dummy-pattern with $HZ_INSTANCE_TRACKING{placeholder} and $RND{placeholder}",
+                trackingConfig.getFormatPattern());
     }
 
     @Override

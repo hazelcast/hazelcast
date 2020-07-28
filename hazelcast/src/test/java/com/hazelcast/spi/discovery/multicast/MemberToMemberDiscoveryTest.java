@@ -57,7 +57,7 @@ public class MemberToMemberDiscoveryTest extends HazelcastTestSupport {
     @Before
     public void setUp() {
         String xmlFileName = "hazelcast-multicast-plugin.xml";
-        InputStream xmlResource = MulticastDiscoveryStrategy.class.getClassLoader().getResourceAsStream(xmlFileName);
+        InputStream xmlResource = MulticastPropertiesTest.class.getClassLoader().getResourceAsStream(xmlFileName);
         config = new XmlConfigBuilder(xmlResource).build();
     }
 

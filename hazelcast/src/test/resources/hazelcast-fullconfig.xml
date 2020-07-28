@@ -51,6 +51,7 @@
             <ports>38000,38500-38600</ports>
         </outbound-ports>
         <join>
+            <auto-detection enabled="false"/>
             <multicast enabled="true" loopbackModeEnabled="true">
                 <multicast-group>1.2.3.4</multicast-group>
                 <multicast-port>12345</multicast-port>

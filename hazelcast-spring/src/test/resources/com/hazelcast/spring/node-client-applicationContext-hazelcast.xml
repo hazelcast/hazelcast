@@ -411,6 +411,18 @@
         </hz:metrics>
     </hz:client>
 
+    <hz:client id="client19-instance-tracking">
+        <hz:cluster-name>${cluster.name}</hz:cluster-name>
+        <hz:network>
+            <hz:member>127.0.0.1:5700</hz:member>
+            <hz:member>127.0.0.1:5701</hz:member>
+        </hz:network>
+        <hz:instance-tracking enabled="true">
+            <hz:file-name>/dummy/file</hz:file-name>
+            <hz:format-pattern>dummy-pattern with $HZ_INSTANCE_TRACKING{placeholder} and $RND{placeholder}</hz:format-pattern>
+        </hz:instance-tracking>
+    </hz:client>
+
     <bean id="credentials" class="com.hazelcast.security.UsernamePasswordCredentials">
         <property name="name" value="spring-cluster"/>
         <property name="password" value="spring-cluster-pass"/>

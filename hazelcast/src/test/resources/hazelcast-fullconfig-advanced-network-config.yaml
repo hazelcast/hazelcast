@@ -38,6 +38,8 @@ hazelcast:
   advanced-network:
     enabled: true
     join:
+      auto-detection:
+        enabled: false
       multicast:
         enabled: true
         loopbackModeEnabled: true

@@ -129,6 +129,12 @@ public class ConfigCompatibilityChecker {
         checkCompatibleConfigs("cp subsystem", c1, c2, singletonMap("", c1.getCPSubsystemConfig()),
                 singletonMap("", c2.getCPSubsystemConfig()), new CPSubsystemConfigChecker());
 
+        checkCompatibleConfigs("metrics", c1.getMetricsConfig(), c2.getMetricsConfig(), new MetricsConfigChecker());
+        checkCompatibleConfigs("sql", c1.getSqlConfig(), c2.getSqlConfig(), new SqlConfigChecker());
+
+        checkCompatibleConfigs("instance-tracking", c1.getInstanceTrackingConfig(), c2.getInstanceTrackingConfig(),
+                new InstanceTrackingConfigChecker());
+
         return true;
     }
 
@@ -772,6 +778,50 @@ public class ConfigCompatibilityChecker {
         @Override
         MetricsConfig getDefault(Config c) {
             return c.getMetricsConfig();
+        }
+    }
+
+    public static class SqlConfigChecker extends ConfigChecker<SqlConfig> {
+
+        @Override
+        boolean check(SqlConfig c1, SqlConfig c2) {
+            if (c1 == c2) {
+                return true;
+            }
+            if (c1 == null || c2 == null) {
+                return false;
+            }
+
+            return c1.getExecutorPoolSize() == c2.getExecutorPoolSize()
+                    && c1.getOperationPoolSize() == c2.getOperationPoolSize()
+                    && c1.getQueryTimeoutMillis() == c2.getQueryTimeoutMillis();
+        }
+
+        @Override
+        SqlConfig getDefault(Config c) {
+            return c.getSqlConfig();
+        }
+    }
+
+    public static class InstanceTrackingConfigChecker extends ConfigChecker<InstanceTrackingConfig> {
+
+        @Override
+        boolean check(InstanceTrackingConfig c1, InstanceTrackingConfig c2) {
+            if (c1 == c2) {
+                return true;
+            }
+            if (c1 == null || c2 == null) {
+                return false;
+            }
+
+            return c1.isEnabled() == c2.isEnabled()
+                    && nullSafeEqual(c1.getFileName(), c2.getFileName())
+                    && nullSafeEqual(c1.getFormatPattern(), c2.getFormatPattern());
+        }
+
+        @Override
+        InstanceTrackingConfig getDefault(Config c) {
+            return c.getInstanceTrackingConfig();
         }
     }
 

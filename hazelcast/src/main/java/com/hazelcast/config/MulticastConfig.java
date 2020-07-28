@@ -36,7 +36,7 @@ public class MulticastConfig implements TrustedInterfacesConfigurable<MulticastC
     /**
      * Whether the multicast discovery mechanism has been enabled
      */
-    public static final boolean DEFAULT_ENABLED = true;
+    public static final boolean DEFAULT_ENABLED = false;
     /**
      * Default group of multicast.
      */

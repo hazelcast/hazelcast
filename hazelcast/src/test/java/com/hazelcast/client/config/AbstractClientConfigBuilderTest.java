@@ -478,6 +478,9 @@ public abstract class AbstractClientConfigBuilderTest extends HazelcastTestSuppo
     public abstract void testMetricsConfig();
 
     @Test
+    public abstract void testInstanceTrackingConfig();
+
+    @Test
     public abstract void testMetricsConfigMasterSwitchDisabled();
 
     @Test

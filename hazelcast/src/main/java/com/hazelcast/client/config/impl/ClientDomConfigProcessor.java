@@ -32,6 +32,7 @@ import com.hazelcast.client.config.SocketOptions;
 import com.hazelcast.client.util.RandomLB;
 import com.hazelcast.client.util.RoundRobinLB;
 import com.hazelcast.config.AliasedDiscoveryConfig;
+import com.hazelcast.config.AutoDetectionConfig;
 import com.hazelcast.config.CredentialsFactoryConfig;
 import com.hazelcast.config.DiscoveryConfig;
 import com.hazelcast.config.DiscoveryStrategyConfig;
@@ -66,6 +67,7 @@ import static com.hazelcast.client.config.impl.ClientConfigSections.CLUSTER_NAME
 import static com.hazelcast.client.config.impl.ClientConfigSections.CONNECTION_STRATEGY;
 import static com.hazelcast.client.config.impl.ClientConfigSections.FLAKE_ID_GENERATOR;
 import static com.hazelcast.client.config.impl.ClientConfigSections.INSTANCE_NAME;
+import static com.hazelcast.client.config.impl.ClientConfigSections.INSTANCE_TRACKING;
 import static com.hazelcast.client.config.impl.ClientConfigSections.LABELS;
 import static com.hazelcast.client.config.impl.ClientConfigSections.LISTENERS;
 import static com.hazelcast.client.config.impl.ClientConfigSections.LOAD_BALANCER;
@@ -168,6 +170,8 @@ public class ClientDomConfigProcessor extends AbstractDomConfigProcessor {
             clientConfig.setClusterName(getTextContent(node));
         } else if (METRICS.isEqual(nodeName)) {
             handleMetrics(node);
+        } else if (INSTANCE_TRACKING.isEqual(nodeName)) {
+            handleInstanceTracking(node, clientConfig.getInstanceTrackingConfig());
         }
     }
 
@@ -412,6 +416,8 @@ public class ClientDomConfigProcessor extends AbstractDomConfigProcessor {
                 handleAliasedDiscoveryStrategy(child, clientNetworkConfig, nodeName);
             } else if ("discovery-strategies".equals(nodeName)) {
                 handleDiscoveryStrategies(child, clientNetworkConfig);
+            } else if ("auto-detection".equals(nodeName)) {
+                handleAutoDetection(child, clientNetworkConfig);
             } else if ("outbound-ports".equals(nodeName)) {
                 handleOutboundPorts(child, clientNetworkConfig);
             } else if ("icmp-ping".equals(nodeName)) {
@@ -472,6 +478,18 @@ public class ClientDomConfigProcessor extends AbstractDomConfigProcessor {
                 handleDiscoveryStrategy(child, discoveryConfig);
             } else if ("node-filter".equals(name)) {
                 handleDiscoveryNodeFilter(child, discoveryConfig);
+            }
+        }
+    }
+
+    protected void handleAutoDetection(Node node, ClientNetworkConfig clientNetworkConfig) {
+        AutoDetectionConfig discoveryConfig = clientNetworkConfig.getAutoDetectionConfig();
+        NamedNodeMap atts = node.getAttributes();
+        for (int i = 0; i < atts.getLength(); i++) {
+            Node att = atts.item(i);
+            String value = getTextContent(att).trim();
+            if ("enabled".equalsIgnoreCase(att.getNodeName())) {
+                discoveryConfig.setEnabled(getBooleanValue(value));
             }
         }
     }
