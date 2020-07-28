@@ -216,8 +216,7 @@ public class DefaultDiscoveryService
                     logger.fine(String.format("Discovery Factory '%s' is not auto-applicable to the current runtime environment",
                             factory.getClass()));
                 }
-            }
-            catch (Exception e) {
+            } catch (Exception e) {
                 // exception in auto-detection should not prevent Hazelcast from starting
                 logger.finest(e);
             }
