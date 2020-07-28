@@ -19,6 +19,8 @@ package com.hazelcast.sql.impl.schema.map;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.extract.QueryTargetDescriptor;
 import com.hazelcast.sql.impl.inject.UpsertTargetDescriptor;
+import com.hazelcast.sql.impl.plan.cache.PartitionedMapPlanObjectId;
+import com.hazelcast.sql.impl.plan.cache.PlanObjectId;
 import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.schema.TableStatistics;
 
@@ -32,7 +34,7 @@ public class PartitionedMapTable extends AbstractMapTable {
     public static final int DISTRIBUTION_FIELD_ORDINAL_NONE = -1;
 
     private final List<MapTableIndex> indexes;
-    private final int distributionFieldIndex;
+    private final int distributionFieldOrdinal;
     private final boolean hd;
 
     @SuppressWarnings("checkstyle:ParameterNumber")
@@ -61,7 +63,7 @@ public class PartitionedMapTable extends AbstractMapTable {
         );
 
         this.indexes = indexes;
-        this.distributionFieldIndex = distributionFieldOrdinal;
+        this.distributionFieldOrdinal = distributionFieldOrdinal;
         this.hd = hd;
     }
 
@@ -69,8 +71,27 @@ public class PartitionedMapTable extends AbstractMapTable {
         super(SCHEMA_NAME_PARTITIONED, name, exception);
 
         this.indexes = null;
-        this.distributionFieldIndex = DISTRIBUTION_FIELD_ORDINAL_NONE;
+        this.distributionFieldOrdinal = DISTRIBUTION_FIELD_ORDINAL_NONE;
         this.hd = false;
+    }
+
+    @Override
+    public PlanObjectId getObjectId() {
+        if (!isValid()) {
+            return null;
+        }
+
+        return new PartitionedMapPlanObjectId(
+            getSchemaName(),
+            getName(),
+            getFields(),
+            getConflictingSchemas(),
+            getKeyDescriptor(),
+            getValueDescriptor(),
+            getIndexes(),
+            getDistributionFieldOrdinal(),
+            isHd()
+        );
     }
 
     public List<MapTableIndex> getIndexes() {
@@ -80,13 +101,13 @@ public class PartitionedMapTable extends AbstractMapTable {
     }
 
     public boolean hasDistributionField() {
-        return distributionFieldIndex != DISTRIBUTION_FIELD_ORDINAL_NONE;
+        return distributionFieldOrdinal != DISTRIBUTION_FIELD_ORDINAL_NONE;
     }
 
-    public int getDistributionFieldIndex() {
+    public int getDistributionFieldOrdinal() {
         checkException();
 
-        return distributionFieldIndex;
+        return distributionFieldOrdinal;
     }
 
     public boolean isHd() {

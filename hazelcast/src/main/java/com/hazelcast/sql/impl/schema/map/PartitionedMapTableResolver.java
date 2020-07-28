@@ -33,7 +33,6 @@ import com.hazelcast.sql.impl.schema.map.MapTableUtils.ResolveResult;
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -52,7 +51,7 @@ public class PartitionedMapTableResolver extends AbstractMapTableResolver {
     }
 
     @Override @Nonnull
-    public Collection<Table> getTables() {
+    public List<Table> getTables() {
         MapService mapService = nodeEngine.getService(MapService.SERVICE_NAME);
         MapServiceContext context = mapService.getMapServiceContext();
 

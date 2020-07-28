@@ -122,7 +122,7 @@ public final class MapScanPhysicalRule extends RelOptRule {
         }
 
         // TODO: Simplify, there is only one field here!
-        List<Integer> distributionFields = Collections.singletonList(table.getDistributionFieldIndex());
+        List<Integer> distributionFields = Collections.singletonList(table.getDistributionFieldOrdinal());
 
         // Remap internal scan distribution fields to projected fields.
         List<Integer> res = new ArrayList<>(distributionFields.size());

@@ -17,6 +17,7 @@
 package com.hazelcast.sql.impl.calcite.opt;
 
 import com.hazelcast.sql.impl.QueryParameterMetadata;
+import com.hazelcast.sql.impl.QueryUtils;
 import com.hazelcast.sql.impl.SqlTestSupport;
 import com.hazelcast.sql.impl.calcite.OptimizerContext;
 import com.hazelcast.sql.impl.calcite.TestMapTable;
@@ -106,7 +107,7 @@ public abstract class OptimizerTestSupport extends SqlTestSupport {
             null,
             null,
             HazelcastSchemaUtils.createCatalog(schema),
-            HazelcastSchemaUtils.prepareSearchPaths(null, null),
+            QueryUtils.prepareSearchPaths(null, null),
             nodeCount
         );
 
@@ -160,7 +161,7 @@ public abstract class OptimizerTestSupport extends SqlTestSupport {
             List<TableField> fields,
             List<MapTableIndex> indexes,
             long rowCount
-            ) {
+    ) {
         return partitionedTable(name, fields, indexes, rowCount, false);
     }
 

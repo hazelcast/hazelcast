@@ -21,12 +21,12 @@ import com.hazelcast.internal.util.RuntimeAvailableProcessors;
 import com.hazelcast.sql.SqlErrorCode;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
+import com.hazelcast.sql.impl.QueryUtils;
 import com.hazelcast.sql.impl.calcite.OptimizerContext;
 import com.hazelcast.sql.impl.calcite.SqlToQueryType;
 import com.hazelcast.sql.impl.calcite.opt.physical.visitor.RexToExpressionVisitor;
 import com.hazelcast.sql.impl.calcite.parse.QueryParseResult;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastSchema;
-import com.hazelcast.sql.impl.calcite.schema.HazelcastSchemaUtils;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
 import com.hazelcast.sql.impl.calcite.schema.MapTableStatistic;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeFactory;
@@ -1031,7 +1031,7 @@ public abstract class ExpressionTestBase {
 
         HazelcastTable hazelcastTable = new HazelcastTable(table, new MapTableStatistic(100));
         return OptimizerContext.create(null, null, new HazelcastSchema(singletonMap("t", hazelcastTable)),
-                HazelcastSchemaUtils.prepareSearchPaths(null, null), 1);
+                QueryUtils.prepareSearchPaths(null, null), 1);
     }
 
     private static RelDataType nodeType(SqlNode node, SqlValidator validator) {

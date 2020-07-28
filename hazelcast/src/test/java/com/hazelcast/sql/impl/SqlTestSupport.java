@@ -160,7 +160,8 @@ public class SqlTestSupport extends HazelcastTestSupport {
             null,
             null,
             null,
-            null
+            null,
+            Collections.emptySet()
         );
     }
 

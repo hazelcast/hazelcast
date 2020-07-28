@@ -14,40 +14,39 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.optimizer;
-
-import com.hazelcast.sql.impl.schema.SqlCatalog;
+package com.hazelcast.sql.impl.plan.cache;
 
 import java.util.List;
 
-/**
- * Encapsulates the optimization task.
- */
-public final class OptimizationTask {
-    /** The query. */
+public class PlanCacheKey {
+
+    private final List<List<String>> searchPaths;
     private final String sql;
 
-    /** The scopes for object lookup in addition to the default ones. */
-    private final List<List<String>> searchPaths;
-
-    /** The resolved schema. */
-    private final SqlCatalog schema;
-
-    public OptimizationTask(String sql, List<List<String>> searchPaths, SqlCatalog schema) {
-        this.sql = sql;
+    public PlanCacheKey(List<List<String>> searchPaths, String sql) {
         this.searchPaths = searchPaths;
-        this.schema = schema;
+        this.sql = sql;
     }
 
-    public String getSql() {
-        return sql;
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        PlanCacheKey that = (PlanCacheKey) o;
+
+        return sql.equals(that.sql) && searchPaths.equals(that.searchPaths);
     }
 
-    public List<List<String>> getSearchPaths() {
-        return searchPaths;
-    }
-
-    public SqlCatalog getSchema() {
-        return schema;
+    @Override
+    public int hashCode() {
+        int result = searchPaths.hashCode();
+        result = 31 * result + sql.hashCode();
+        return result;
     }
 }

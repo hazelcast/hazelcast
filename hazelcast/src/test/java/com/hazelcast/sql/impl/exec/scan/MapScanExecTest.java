@@ -67,6 +67,7 @@ import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -390,6 +391,7 @@ public class MapScanExecTest extends SqlTestSupport {
                 + "[expectedClass=java.time.LocalDateTime, actualClass=java.lang.Long]",
             exception.getMessage()
         );
+        assertTrue(exception.isInvalidatePlan());
     }
 
     /**
@@ -422,12 +424,13 @@ public class MapScanExecTest extends SqlTestSupport {
 
         QueryException exception = assertThrows(QueryException.class, () -> exec.setup(emptyFragmentContext()));
         assertEquals(SqlErrorCode.PARTITION_NOT_OWNED, exception.getCode());
+        assertTrue(exception.isInvalidatePlan());
     }
 
     /**
      * Simulates the case when partitions are migrated during query execution. Tp achieve this we load keys into local
      * partitions in a way that iteration stops before the first partition is read. Then we start the new member, that
-     * chagnes the migration stamp. Then we try to read the remaining data.
+     * changes the migration stamp. Then we try to read the remaining data.
      */
     @Test
     public void testConcurrentMigration() {
@@ -500,6 +503,7 @@ public class MapScanExecTest extends SqlTestSupport {
             // Try advance, should fail.
             QueryException exception = assertThrows(QueryException.class, exec::advance);
             assertEquals(SqlErrorCode.PARTITION_MIGRATED, exception.getCode());
+            assertTrue(exception.isInvalidatePlan());
         } finally {
             instance3.shutdown();
         }
@@ -562,6 +566,7 @@ public class MapScanExecTest extends SqlTestSupport {
         // Advance after destroy.
         QueryException exception = assertThrows(QueryException.class, exec::advance);
         assertEquals(SqlErrorCode.MAP_DESTROYED, exception.getCode());
+        assertTrue(exception.isInvalidatePlan());
     }
 
     @Test

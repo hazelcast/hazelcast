@@ -139,7 +139,7 @@ public class MapIndexScanExecIterator implements KeyValueIterator {
 
         if (actualComponentCount != expectedComponentCount) {
             throw QueryException.error("Index \"" + indexName + "\" has " + actualComponentCount + " component(s), but "
-                + expectedComponentCount + " expected");
+                + expectedComponentCount + " expected").withInvalidate();
         }
 
         // Validate component types
@@ -187,7 +187,8 @@ public class MapIndexScanExecIterator implements KeyValueIterator {
                 String component = index.getComponents()[i];
 
                 throw QueryException.dataException("Index \"" + index.getName() + "\" has component \"" + component
-                    + "\" of type " + actual.getTypeFamily() + ", but " + expected.getTypeFamily() + " was expected");
+                    + "\" of type " + actual.getTypeFamily() + ", but " + expected.getTypeFamily()
+                    + " was expected").withInvalidate();
             }
         }
 
@@ -196,7 +197,7 @@ public class MapIndexScanExecIterator implements KeyValueIterator {
             String component = index.getComponents()[actualConverterTypes.size()];
 
             throw QueryException.dataException("Index \"" + index.getName() + "\" do not have suitable SQL converter "
-                + "for component \"" + component + "\" (expected " + expected.getTypeFamily() + ")");
+                + "for component \"" + component + "\" (expected " + expected.getTypeFamily() + ")").withInvalidate();
         }
     }
 }

@@ -76,7 +76,8 @@ public class QueryExecuteOperationFactoryTest {
             null,
             null,
             null,
-            null
+            null,
+            Collections.emptySet()
         );
 
         QueryId queryId = QueryId.create(UUID.randomUUID());

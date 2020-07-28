@@ -21,6 +21,7 @@ import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.QueryUtils;
 import com.hazelcast.sql.impl.operation.QueryCheckOperation;
 import com.hazelcast.sql.impl.operation.QueryOperationHandler;
+import com.hazelcast.sql.impl.plan.cache.PlanCacheChecker;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -40,6 +41,7 @@ public class QueryStateRegistryUpdater {
     private final QueryStateRegistry stateRegistry;
     private final QueryClientStateRegistry clientStateRegistry;
     private final QueryOperationHandler operationHandler;
+    private final PlanCacheChecker planCacheChecker;
     private final long stateCheckFrequency;
 
     /** Worker performing periodic state check. */
@@ -51,6 +53,7 @@ public class QueryStateRegistryUpdater {
         QueryStateRegistry stateRegistry,
         QueryClientStateRegistry clientStateRegistry,
         QueryOperationHandler operationHandler,
+        PlanCacheChecker planCacheChecker,
         long stateCheckFrequency
     ) {
         if (stateCheckFrequency <= 0) {
@@ -61,6 +64,7 @@ public class QueryStateRegistryUpdater {
         this.stateRegistry = stateRegistry;
         this.clientStateRegistry = clientStateRegistry;
         this.operationHandler = operationHandler;
+        this.planCacheChecker = planCacheChecker;
         this.stateCheckFrequency = stateCheckFrequency;
 
         worker = new Worker(instanceName);
@@ -111,6 +115,7 @@ public class QueryStateRegistryUpdater {
 
                     checkMemberState();
                     checkClientState();
+                    checkPlans();
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
 
@@ -157,6 +162,12 @@ public class QueryStateRegistryUpdater {
             Set<UUID> activeClientIds = nodeServiceProvider.getClientIds();
 
             clientStateRegistry.update(activeClientIds);
+        }
+
+        private void checkPlans() {
+            if (planCacheChecker != null) {
+                planCacheChecker.check();
+            }
         }
 
         public void stop() {

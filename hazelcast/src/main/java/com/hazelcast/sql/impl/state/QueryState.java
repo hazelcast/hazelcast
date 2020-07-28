@@ -22,7 +22,7 @@ import com.hazelcast.sql.impl.ClockProvider;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.QueryResultProducer;
-import com.hazelcast.sql.impl.SqlCacheablePlanInvalidationCallback;
+import com.hazelcast.sql.impl.plan.cache.CachedPlanInvalidationCallback;
 import com.hazelcast.sql.impl.plan.Plan;
 
 import java.util.Collection;
@@ -70,7 +70,7 @@ public final class QueryState implements QueryStateCallback {
         boolean initiator,
         long initiatorTimeout,
         Plan initiatorPlan,
-        SqlCacheablePlanInvalidationCallback initiatorPlanInvalidationCallback,
+        CachedPlanInvalidationCallback initiatorPlanInvalidationCallback,
         SqlRowMetadata initiatorRowMetadata,
         QueryResultProducer initiatorRowSource,
         ClockProvider clockProvider
@@ -106,7 +106,7 @@ public final class QueryState implements QueryStateCallback {
         QueryStateCompletionCallback completionCallback,
         long initiatorTimeout,
         Plan initiatorPlan,
-        SqlCacheablePlanInvalidationCallback initiatorPlanInvalidationCallback,
+        CachedPlanInvalidationCallback initiatorPlanInvalidationCallback,
         SqlRowMetadata initiatorRowMetadata,
         QueryResultProducer initiatorResultProducer,
         ClockProvider clockProvider
@@ -197,8 +197,8 @@ public final class QueryState implements QueryStateCallback {
         QueryException error0 = prepareCancelError(error);
 
         // Invalidate plan if needed.
-        if (error0.isInvalidatePlan()) {
-            SqlCacheablePlanInvalidationCallback planInvalidationCallback = initiatorState.getPlanInvalidationCallback();
+        if (isInitiator() && error0.isInvalidatePlan()) {
+            CachedPlanInvalidationCallback planInvalidationCallback = initiatorState.getPlanInvalidationCallback();
 
             if (planInvalidationCallback != null) {
                 planInvalidationCallback.invalidate(initiatorState.getPlan());
@@ -248,7 +248,13 @@ public final class QueryState implements QueryStateCallback {
             QueryException error0 = (QueryException) error;
 
             if (error0.getOriginatingMemberId() == null) {
+                boolean invalidatePlan = error0.isInvalidatePlan();
+
                 error0 = QueryException.error(error0.getCode(), error0.getMessage(), error0.getCause(), localMemberId);
+
+                if (invalidatePlan) {
+                    error0 = error0.withInvalidate();
+                }
             }
 
             return error0;

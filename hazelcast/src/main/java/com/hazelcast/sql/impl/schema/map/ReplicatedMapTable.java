@@ -19,6 +19,8 @@ package com.hazelcast.sql.impl.schema.map;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.extract.QueryTargetDescriptor;
 import com.hazelcast.sql.impl.inject.UpsertTargetDescriptor;
+import com.hazelcast.sql.impl.plan.cache.PlanObjectId;
+import com.hazelcast.sql.impl.plan.cache.ReplicatedMapPlanObjectId;
 import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.schema.TableStatistics;
 
@@ -44,5 +46,21 @@ public class ReplicatedMapTable extends AbstractMapTable {
 
     public ReplicatedMapTable(String name, QueryException exception) {
         super(SCHEMA_NAME_REPLICATED, name, exception);
+    }
+
+    @Override
+    public PlanObjectId getObjectId() {
+        if (!isValid()) {
+            return null;
+        }
+
+        return new ReplicatedMapPlanObjectId(
+            getSchemaName(),
+            getName(),
+            getFields(),
+            getConflictingSchemas(),
+            getKeyDescriptor(),
+            getValueDescriptor()
+        );
     }
 }

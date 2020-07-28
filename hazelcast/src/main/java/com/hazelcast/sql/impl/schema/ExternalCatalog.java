@@ -22,7 +22,6 @@ import com.hazelcast.sql.impl.connector.SqlConnector;
 import com.hazelcast.sql.impl.connector.SqlConnectorCache;
 
 import javax.annotation.Nonnull;
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
@@ -79,7 +78,7 @@ public class ExternalCatalog implements TableResolver {
     }
 
     @Override @Nonnull
-    public Collection<Table> getTables() {
+    public List<Table> getTables() {
         return tables().values().stream()
                        .map(this::toTable)
                        .collect(toList());

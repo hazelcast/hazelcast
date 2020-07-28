@@ -18,6 +18,8 @@ package com.hazelcast.sql.impl;
 
 import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.sql.impl.plan.cache.CachedPlanInvalidationCallback;
+import com.hazelcast.sql.impl.plan.cache.PlanCacheChecker;
 import com.hazelcast.sql.impl.state.QueryClientStateRegistry;
 import com.hazelcast.sql.impl.exec.io.flowcontrol.FlowControlFactory;
 import com.hazelcast.sql.impl.exec.io.flowcontrol.simple.SimpleFlowControlFactory;
@@ -82,7 +84,8 @@ public class SqlInternalService {
         int fragmentThreadCount,
         int outboxBatchSize,
         long stateCheckFrequency,
-        long maxMemory
+        long maxMemory,
+        PlanCacheChecker planCacheChecker
     ) {
         this.nodeServiceProvider = nodeServiceProvider;
 
@@ -112,6 +115,7 @@ public class SqlInternalService {
             stateRegistry,
             clientStateRegistry,
             operationHandler,
+            planCacheChecker,
             stateCheckFrequency
         );
     }
@@ -142,7 +146,7 @@ public class SqlInternalService {
         List<Object> params,
         long timeout,
         int pageSize,
-        SqlCacheablePlanInvalidationCallback planInvalidationCallback
+        CachedPlanInvalidationCallback planInvalidationCallback
     ) {
         // Prepare parameters.
         params = prepareParameters(plan, params);

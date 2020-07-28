@@ -505,7 +505,8 @@ public class QueryOperationHandlerTest extends SqlTestSupport {
             null,
             null,
             null,
-            null
+            null,
+            Collections.emptySet()
         );
 
         QueryId queryId = initiatorService.getStateRegistry().onInitiatorQueryStarted(
@@ -599,7 +600,8 @@ public class QueryOperationHandlerTest extends SqlTestSupport {
             Runtime.getRuntime().availableProcessors(),
             1000,
             stateCheckFrequency,
-            Long.MAX_VALUE
+            Long.MAX_VALUE,
+            null
         );
 
         internalService.start();

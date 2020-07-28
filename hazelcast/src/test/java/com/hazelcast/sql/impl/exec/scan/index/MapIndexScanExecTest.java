@@ -54,6 +54,7 @@ import java.util.Map;
 import java.util.stream.IntStream;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -192,6 +193,7 @@ public class MapIndexScanExecTest extends SqlTestSupport {
         } catch (QueryException e) {
             assertEquals(SqlErrorCode.GENERIC, e.getCode());
             assertEquals("Index \"index\" has 1 component(s), but 2 expected", e.getMessage());
+            assertTrue(e.isInvalidatePlan());
         }
     }
 
@@ -236,6 +238,7 @@ public class MapIndexScanExecTest extends SqlTestSupport {
             assertEquals(
                 "Index \"index\" do not have suitable SQL converter for component \"this\" (expected INT)", e.getMessage()
             );
+            assertTrue(e.isInvalidatePlan());
         }
 
         // Check converter mismatch (i.e. data differs!).
@@ -255,6 +258,7 @@ public class MapIndexScanExecTest extends SqlTestSupport {
         } catch (QueryException e) {
             assertEquals(SqlErrorCode.DATA_EXCEPTION, e.getCode());
             assertEquals("Index \"index\" has component \"this\" of type INT, but VARCHAR was expected", e.getMessage());
+            assertTrue(e.isInvalidatePlan());
         }
     }
 
@@ -278,6 +282,7 @@ public class MapIndexScanExecTest extends SqlTestSupport {
         } catch (QueryException e) {
             assertEquals(SqlErrorCode.PARTITION_NOT_OWNED, e.getCode());
             assertEquals("Partitions are not owned by member: " + instance2Partitions, e.getMessage());
+            assertTrue(e.isInvalidatePlan());
         }
     }
 
@@ -300,6 +305,7 @@ public class MapIndexScanExecTest extends SqlTestSupport {
         } catch (QueryException e) {
             assertEquals(SqlErrorCode.MAP_INDEX_NOT_EXISTS, e.getCode());
             assertEquals("Index \"bad_index\" of the map \"map\" doesn't exist", e.getMessage());
+            assertTrue(e.isInvalidatePlan());
         }
     }
 

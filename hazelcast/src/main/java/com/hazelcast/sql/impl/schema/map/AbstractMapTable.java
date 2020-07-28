@@ -83,6 +83,10 @@ public abstract class AbstractMapTable extends Table {
         return super.getField(index);
     }
 
+    protected boolean isValid() {
+        return exception == null;
+    }
+
     public QueryTargetDescriptor getKeyDescriptor() {
         return keyDescriptor;
     }

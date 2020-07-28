@@ -50,7 +50,7 @@ public class ReplicatedMapTableResolver extends AbstractMapTableResolver {
     }
 
     @Override @Nonnull
-    public Collection<Table> getTables() {
+    public List<Table> getTables() {
         ReplicatedMapService mapService = nodeEngine.getService(ReplicatedMapService.SERVICE_NAME);
 
         List<Table> res = new ArrayList<>();

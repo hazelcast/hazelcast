@@ -17,8 +17,6 @@
 package com.hazelcast.sql.impl.calcite.opt.physical.visitor;
 
 import com.hazelcast.internal.util.collection.PartitionIdSet;
-import com.hazelcast.partition.Partition;
-import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.SqlColumnMetadata;
 import com.hazelcast.sql.SqlRowMetadata;
 import com.hazelcast.sql.impl.QueryException;
@@ -63,6 +61,8 @@ import com.hazelcast.sql.impl.partitioner.AllFieldsRowPartitioner;
 import com.hazelcast.sql.impl.partitioner.FieldsRowPartitioner;
 import com.hazelcast.sql.impl.plan.Plan;
 import com.hazelcast.sql.impl.plan.PlanFragmentMapping;
+import com.hazelcast.sql.impl.plan.cache.PlanCacheKey;
+import com.hazelcast.sql.impl.plan.cache.PlanObjectId;
 import com.hazelcast.sql.impl.plan.node.AggregatePlanNode;
 import com.hazelcast.sql.impl.plan.node.FetchOffsetPlanNodeFieldTypeProvider;
 import com.hazelcast.sql.impl.plan.node.FetchPlanNode;
@@ -97,12 +97,10 @@ import org.apache.calcite.sql.SqlAggFunction;
 import javax.annotation.Nullable;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -136,6 +134,8 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
     /** Original SQL. */
     private final String sql;
 
+    private final PlanCacheKey planKey;
+
     private final QueryParameterMetadata parameterMetadata;
 
     /** Names of the returned columns from the original query. */
@@ -165,6 +165,9 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
     /** Row metadata. */
     private SqlRowMetadata rowMetadata;
 
+    /** Collected IDs of objects used in the plan. */
+    private final Set<PlanObjectId> objectIds = new HashSet<>();
+
     /**
      * @param rootColumnNames Root column names. They are null when called from
      *     Jet for a sub-relNode and the row metadata aren't needed
@@ -174,6 +177,7 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
         Map<UUID, PartitionIdSet> partMap,
         Map<PhysicalRel, List<Integer>> relIdMap,
         String sql,
+        PlanCacheKey planKey,
         QueryParameterMetadata parameterMetadata,
         @Nullable List<String> rootColumnNames
     ) {
@@ -181,24 +185,11 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
         this.partMap = partMap;
         this.relIdMap = relIdMap;
         this.sql = sql;
+        this.planKey = planKey;
         this.parameterMetadata = parameterMetadata;
         this.rootColumnNames = rootColumnNames;
 
         memberIds = new HashSet<>(partMap.keySet());
-    }
-
-    public static Map<UUID, PartitionIdSet> createPartitionMap(NodeEngine nodeEngine) {
-        // Get partition mapping.
-        Collection<Partition> parts = nodeEngine.getHazelcastInstance().getPartitionService().getPartitions();
-        int partCnt = parts.size();
-        Map<UUID, PartitionIdSet> partMap = new LinkedHashMap<>();
-
-        for (Partition part : parts) {
-            UUID ownerId = part.getOwner().getUuid();
-            partMap.computeIfAbsent(ownerId, (key) -> new PartitionIdSet(partCnt)).add(part.getPartitionId());
-        }
-
-        return partMap;
     }
 
     public Plan getPlan() {
@@ -240,8 +231,9 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
             inboundEdgeMemberCountMap,
             parameterMetadata,
             rowMetadata,
-            sql,
-            explain
+            planKey,
+            explain,
+            objectIds
         );
     }
 
@@ -292,17 +284,19 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
         PlanNodeSchema schemaBefore = getScanSchemaBeforeProject(table);
 
         MapScanPlanNode scanNode = new MapScanPlanNode(
-                pollId(rel),
-                table.getName(),
-                table.getKeyDescriptor(),
-                table.getValueDescriptor(),
-                getScanFieldPaths(table),
-                schemaBefore.getTypes(),
-                hazelcastTable.getProjects(),
-                convertFilter(schemaBefore, hazelcastTable.getFilter())
+            pollId(rel),
+            table.getName(),
+            table.getKeyDescriptor(),
+            table.getValueDescriptor(),
+            getScanFieldPaths(table),
+            schemaBefore.getTypes(),
+            hazelcastTable.getProjects(),
+            convertFilter(schemaBefore, hazelcastTable.getFilter())
         );
 
         pushUpstream(scanNode);
+
+        objectIds.add(table.getObjectId());
     }
 
     @Override
@@ -328,6 +322,8 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
         );
 
         pushUpstream(scanNode);
+
+        objectIds.add(table.getObjectId());
     }
 
     @Override
@@ -339,17 +335,19 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
         PlanNodeSchema schemaBefore = getScanSchemaBeforeProject(table);
 
         ReplicatedMapScanPlanNode scanNode = new ReplicatedMapScanPlanNode(
-                pollId(rel),
-                table.getName(),
-                table.getKeyDescriptor(),
-                table.getValueDescriptor(),
-                getScanFieldPaths(table),
-                schemaBefore.getTypes(),
-                hazelcastTable.getProjects(),
-                convertFilter(schemaBefore, hazelcastTable.getFilter())
+            pollId(rel),
+            table.getName(),
+            table.getKeyDescriptor(),
+            table.getValueDescriptor(),
+            getScanFieldPaths(table),
+            schemaBefore.getTypes(),
+            hazelcastTable.getProjects(),
+            convertFilter(schemaBefore, hazelcastTable.getFilter())
         );
 
         pushUpstream(scanNode);
+
+        objectIds.add(table.getObjectId());
     }
 
     @Override

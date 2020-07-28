@@ -20,6 +20,7 @@ import com.hazelcast.cluster.memberselector.MemberSelectors;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.JetSqlBackend;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
+import com.hazelcast.sql.impl.QueryUtils;
 import com.hazelcast.sql.impl.calcite.opt.HazelcastConventions;
 import com.hazelcast.sql.impl.calcite.opt.OptUtils;
 import com.hazelcast.sql.impl.calcite.opt.logical.LogicalRules;
@@ -37,15 +38,13 @@ import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
 import com.hazelcast.sql.impl.optimizer.OptimizationTask;
 import com.hazelcast.sql.impl.optimizer.SqlOptimizer;
 import com.hazelcast.sql.impl.optimizer.SqlPlan;
+import com.hazelcast.sql.impl.plan.cache.PlanCacheKey;
 import com.hazelcast.sql.impl.schema.ExternalCatalog;
 import com.hazelcast.sql.impl.schema.ExternalTable;
 import com.hazelcast.sql.impl.schema.ExternalTable.ExternalField;
 import com.hazelcast.sql.impl.schema.SchemaPlan.CreateExternalTablePlan;
 import com.hazelcast.sql.impl.schema.SchemaPlan.RemoveExternalTablePlan;
 import com.hazelcast.sql.impl.schema.TableField;
-import com.hazelcast.sql.impl.schema.TableResolver;
-import com.hazelcast.sql.impl.schema.map.PartitionedMapTableResolver;
-import com.hazelcast.sql.impl.schema.map.ReplicatedMapTableResolver;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.calcite.plan.Convention;
 import org.apache.calcite.plan.RelTraitSet;
@@ -54,6 +53,7 @@ import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.sql.SqlNode;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -127,13 +127,15 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
 
     private final NodeEngine nodeEngine;
     private final ExternalCatalog catalog;
-    private final List<TableResolver> tableResolvers;
     private final JetSqlBackend jetSqlBackend;
 
-    public CalciteSqlOptimizer(NodeEngine nodeEngine, JetSqlBackend jetSqlBackend) {
+    public CalciteSqlOptimizer(
+        NodeEngine nodeEngine,
+        ExternalCatalog catalog,
+        JetSqlBackend jetSqlBackend
+    ) {
         this.nodeEngine = nodeEngine;
-        this.catalog = new ExternalCatalog(nodeEngine);
-        this.tableResolvers = createTableResolvers(catalog, nodeEngine);
+        this.catalog = catalog;
         this.jetSqlBackend = jetSqlBackend;
     }
 
@@ -145,7 +147,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         OptimizerContext context = OptimizerContext.create(
             jetSqlBackend,
             catalog,
-            tableResolvers,
+            task.getSchema(),
             task.getSearchPaths(),
             memberCount
         );
@@ -161,7 +163,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         QueryConvertResult convertResult = context.convert(parseResult.getNode());
 
         // 4. Create plan.
-        return createPlan(task.getSql(), context, parseResult, convertResult);
+        return createPlan(task.getSearchPaths(), task.getSql(), context, parseResult, convertResult);
     }
 
     private SqlPlan createSchemaPlan(
@@ -211,7 +213,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
             assert !columns.hasNext() : "there are too many columns specified";
             ExternalTable externalTable = new ExternalTable(create.name(), create.type(), externalFields, create.options());
 
-            SqlPlan populateTablePlan = createPlan(sql, context, parseResult, convertedResult);
+            SqlPlan populateTablePlan = createPlan(Collections.emptyList(), sql, context, parseResult, convertedResult);
             return new CreateExternalTablePlan(
                     catalog,
                     externalTable,
@@ -227,6 +229,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
     }
 
     private SqlPlan createPlan(
+        List<List<String>> searchPaths,
         String sql,
         OptimizerContext context,
         QueryParseResult parseResult,
@@ -239,6 +242,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
             PhysicalRel physicalRel = optimize(context, convertResult.getRel(), parameterMetadata);
 
             return createImdgPlan(
+                searchPaths,
                 sql,
                 parameterMetadata,
                 physicalRel,
@@ -278,6 +282,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
      * @return Plan.
      */
     private SqlPlan createImdgPlan(
+        List<List<String>> searchPaths,
         String sql,
         QueryParameterMetadata parameterMetadata,
         PhysicalRel rel,
@@ -291,9 +296,10 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         // Create the plan.
         PlanCreateVisitor visitor = new PlanCreateVisitor(
             nodeEngine.getLocalMember().getUuid(),
-            PlanCreateVisitor.createPartitionMap(nodeEngine),
+            QueryUtils.createPartitionMap(nodeEngine),
             relIdMap,
             sql,
+            new PlanCacheKey(searchPaths, sql),
             parameterMetadata,
             rootColumnNames
         );
@@ -301,15 +307,5 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         rel.visit(visitor);
 
         return visitor.getPlan();
-    }
-
-    private static List<TableResolver> createTableResolvers(ExternalCatalog catalog, NodeEngine nodeEngine) {
-        List<TableResolver> res = new ArrayList<>(3);
-
-        res.add(catalog);
-        res.add(new PartitionedMapTableResolver(nodeEngine));
-        res.add(new ReplicatedMapTableResolver(nodeEngine));
-
-        return res;
     }
 }

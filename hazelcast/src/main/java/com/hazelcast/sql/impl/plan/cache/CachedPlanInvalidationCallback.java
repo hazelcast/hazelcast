@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl;
+package com.hazelcast.sql.impl.plan.cache;
 
-public interface SqlCacheablePlanInvalidationCallback {
-    void invalidate(SqlCacheablePlan plan);
+public interface CachedPlanInvalidationCallback {
+    void invalidate(CachedPlan plan);
 }

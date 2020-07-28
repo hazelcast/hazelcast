@@ -71,6 +71,35 @@ public class MapTableIndex {
     }
 
     @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        MapTableIndex index = (MapTableIndex) o;
+
+        return componentsCount == index.componentsCount
+            && name.equals(index.name)
+            && type == index.type
+            && fieldOrdinals.equals(index.fieldOrdinals)
+            && fieldConverterTypes.equals(index.fieldConverterTypes);
+    }
+
+    @Override
+    public int hashCode() {
+        int result = name.hashCode();
+        result = 31 * result + type.hashCode();
+        result = 31 * result + componentsCount;
+        result = 31 * result + fieldOrdinals.hashCode();
+        result = 31 * result + fieldConverterTypes.hashCode();
+        return result;
+    }
+
+    @Override
     public String toString() {
         return "MapTableIndex {name='" + name + '\'' + ", type=" + type + ", componentsCount=" + componentsCount
             + ", fieldOrdinals=" + fieldOrdinals + ", fieldConverterTypes=" + fieldConverterTypes + '}';

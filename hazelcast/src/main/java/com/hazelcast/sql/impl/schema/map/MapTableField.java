@@ -24,7 +24,6 @@ import com.hazelcast.sql.impl.type.QueryDataType;
  * Field of IMap or ReplicatedMap.
  */
 public class MapTableField extends TableField {
-
     /** Path to the field. */
     private final QueryPath path;
 

@@ -20,30 +20,27 @@ import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.sql.SqlRowMetadata;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.explain.QueryExplain;
-import com.hazelcast.sql.impl.SqlCacheablePlan;
 import com.hazelcast.sql.impl.optimizer.SqlPlanType;
+import com.hazelcast.sql.impl.plan.cache.CachedPlan;
+import com.hazelcast.sql.impl.plan.cache.PlanCacheKey;
+import com.hazelcast.sql.impl.plan.cache.PlanCheckContext;
+import com.hazelcast.sql.impl.plan.cache.PlanObjectId;
 import com.hazelcast.sql.impl.plan.node.PlanNode;
 
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Query plan implementation.
  */
-public class Plan implements SqlCacheablePlan {
-
-    private static final AtomicLong PLAN_TIMESTAMP_GENERATOR = new AtomicLong();
-
-    /** Unique plan timestamp that used to compare older and newer plans.  */
-    private final long planTimestamp = PLAN_TIMESTAMP_GENERATOR.incrementAndGet();
-
+public class Plan implements CachedPlan {
     /** Time when the plan was used for the last time. */
     private volatile long planLastUsed;
 
-    private final String planSql;
+    private final PlanCacheKey planKey;
 
     /** Partition mapping. */
     private final Map<UUID, PartitionIdSet> partMap;
@@ -67,6 +64,10 @@ public class Plan implements SqlCacheablePlan {
     private final SqlRowMetadata rowMetadata;
     private final QueryExplain explain;
 
+    /** IDs of objects used in the plan. */
+    private final Set<PlanObjectId> objectIds;
+
+    @SuppressWarnings("checkstyle:ParameterNumber")
     public Plan(
         Map<UUID, PartitionIdSet> partMap,
         List<PlanNode> fragments,
@@ -76,8 +77,9 @@ public class Plan implements SqlCacheablePlan {
         Map<Integer, Integer> inboundEdgeMemberCountMap,
         QueryParameterMetadata parameterMetadata,
         SqlRowMetadata rowMetadata,
-        String planSql,
-        QueryExplain explain
+        PlanCacheKey planKey,
+        QueryExplain explain,
+        Set<PlanObjectId> objectIds
     ) {
         this.partMap = partMap;
         this.fragments = fragments;
@@ -87,8 +89,9 @@ public class Plan implements SqlCacheablePlan {
         this.inboundEdgeMemberCountMap = inboundEdgeMemberCountMap;
         this.parameterMetadata = parameterMetadata;
         this.rowMetadata = rowMetadata;
-        this.planSql = planSql;
+        this.planKey = planKey;
         this.explain = explain;
+        this.objectIds = objectIds;
     }
 
     @Override
@@ -102,13 +105,8 @@ public class Plan implements SqlCacheablePlan {
     }
 
     @Override
-    public String getPlanSql() {
-        return planSql;
-    }
-
-    @Override
-    public long getPlanCreationTimestamp() {
-        return planTimestamp;
+    public PlanCacheKey getPlanKey() {
+        return planKey;
     }
 
     @Override
@@ -119,6 +117,11 @@ public class Plan implements SqlCacheablePlan {
     @Override
     public void onPlanUsed() {
         planLastUsed = System.currentTimeMillis();
+    }
+
+    @Override
+    public boolean isPlanValid(PlanCheckContext context) {
+        return context.isValid(objectIds, partMap);
     }
 
     public Map<UUID, PartitionIdSet> getPartitionMap() {

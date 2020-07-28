@@ -57,7 +57,8 @@ public class PlanTest extends SqlTestSupport {
             null,
             null,
             null,
-            null
+            null,
+            Collections.emptySet()
         );
 
         assertSame(partitionMap, plan.getPartitionMap());
