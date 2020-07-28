@@ -18,6 +18,7 @@ package com.hazelcast.sql.impl.expression.predicate;
 
 import com.hazelcast.sql.SqlService;
 import com.hazelcast.sql.impl.SqlDataSerializerHook;
+import com.hazelcast.sql.impl.calcite.validate.types.HazelcastObjectType;
 import com.hazelcast.sql.impl.expression.ColumnExpression;
 import com.hazelcast.sql.impl.expression.ExpressionTestBase;
 import com.hazelcast.sql.impl.expression.SimpleExpressionEvalContext;
@@ -87,8 +88,7 @@ public class IsNullTest extends ExpressionTestBase {
         RelDataType type = operand.type;
 
         if (operand.isParameter()) {
-            // can't infer type for parameters
-            return null;
+            return new RelDataType[]{HazelcastObjectType.NULLABLE_INSTANCE, TYPE_FACTORY.createSqlType(BOOLEAN)};
         }
 
         // Assign type to numeric literals.

@@ -34,6 +34,7 @@ import org.apache.calcite.sql.type.OperandTypes;
 import org.apache.calcite.sql.type.ReturnTypes;
 import org.apache.calcite.sql.util.ReflectiveSqlOperatorTable;
 
+import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastInferTypes.NULLABLE_OBJECT;
 import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastOperandTypes.notAllNull;
 import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastOperandTypes.notAny;
 
@@ -250,7 +251,7 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
         SqlKind.IS_NULL,
         28,
         ReturnTypes.BOOLEAN_NOT_NULL,
-        null,
+        NULLABLE_OBJECT,
         OperandTypes.ANY
     );
 
@@ -259,7 +260,7 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
         SqlKind.IS_NOT_NULL,
         28,
         ReturnTypes.BOOLEAN_NOT_NULL,
-        null,
+        NULLABLE_OBJECT,
         OperandTypes.ANY
     );
 
