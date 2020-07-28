@@ -17,6 +17,7 @@
 package com.hazelcast.sql.impl;
 
 import com.hazelcast.sql.SqlResult;
+import com.hazelcast.sql.SqlResultType;
 import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.SqlRowMetadata;
 import com.hazelcast.sql.impl.row.Row;
@@ -60,6 +61,12 @@ public class SqlResultImpl implements SqlResult {
         } else {
             throw new IllegalStateException("Iterator can be requested only once.");
         }
+    }
+
+    @Nonnull
+    @Override
+    public SqlResultType getResultType() {
+        return SqlResultType.ROWS;
     }
 
     @Override

@@ -211,7 +211,7 @@ public class SqlServiceImpl implements SqlService, Consumer<Packet> {
     private SqlResult executeSchemaChange(SchemaPlan plan) {
         plan.execute();
 
-        return new SingleValueResult(0);
+        return new VoidResult();
     }
 
     private SqlResult executeImdg(Plan plan, List<Object> params, long timeout, int pageSize) {

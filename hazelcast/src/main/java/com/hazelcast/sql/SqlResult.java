@@ -20,13 +20,22 @@ import javax.annotation.Nonnull;
 import java.util.Iterator;
 
 /**
- * SQL query result. Represents a stream of rows.
+ * SQL query result. Depending on the statement type it represents a stream of
+ * rows or a void result.
  * <p>
- * Use {@link #iterator()} to iterate over the rows. The iterator can be requested only once.
+ * <h4>Usage for {@link SqlResultType#ROWS ROWS} {@linkplain #getResultType()
+ * result type}</h4>
+ *
+ * <ol>
+ *     <li>Use {@link #iterator()} to iterate over the rows. The iterator can
+ *     be requested only once.
+
+ *     <li>Use {@link #close()} to release the resources associated with the
+ *     result.
+ * </ol>
+
  * <p>
- * Use {@link #close()} to release the resources associated with the result.
- * <p>
- * Typical usage pattern:
+ * Code example:
  * <pre>
  * try (SqlResult result = hazelcastInstance.getSql().query("SELECT ...")) {
  *     for (SqlRow row : result) {
@@ -35,13 +44,20 @@ import java.util.Iterator;
  * }
  * </pre>
  *
- * @see #iterator()
- * @see #close()
+ * <p>
+ * <h4>Usage for {@link SqlResultType#VOID VOID} {@linkplain #getResultType()
+ * result type}</h4>
+ *
+ * <pre>
+ *     hazelcastInstance.getSql().query("CREATE ...");
+ * </pre>
  */
 public interface SqlResult extends Iterable<SqlRow>, AutoCloseable {
     /**
      * Gets row metadata.
      *
+     * @throws IllegalStateException if the {@linkplain #getResultType() result
+     *      type} isn't {@link SqlResultType#ROWS ROWS}.
      * @return row metadata
      */
     @Nonnull
@@ -53,7 +69,9 @@ public interface SqlResult extends Iterable<SqlRow>, AutoCloseable {
      * The iterator may be requested only once.
      *
      * @return iterator
-     * @throws IllegalStateException if the method is invoked more than once
+     * @throws IllegalStateException if the method is invoked more than once or
+     *      if the {@linkplain #getResultType() result type} isn't {@link
+     *      SqlResultType#ROWS ROWS}.
      * @throws SqlException in case of an SQL-related error condition
      */
     @Nonnull
@@ -61,9 +79,16 @@ public interface SqlResult extends Iterable<SqlRow>, AutoCloseable {
     Iterator<SqlRow> iterator();
 
     /**
-     * Release the resources associated with the query result.
+     * Returns the result type.
+     */
+    @Nonnull
+    SqlResultType getResultType();
+
+    /**
+     * Release the resources associated with the query result. Only must be called if the {@linkplain
+     * #getResultType() result type} is {@link SqlResultType#ROWS ROWS}, for other result types it's a no-op.
      * <p>
-     * The query engine delivers the results asynchronously. The query may become inactive even before all rows are
+     * The query engine delivers the rows asynchronously. The query may become inactive even before all rows are
      * consumed. The invocation of this command will cancel the execution of the query on all members if the query
      * is still active. Otherwise it is no-op.
      */

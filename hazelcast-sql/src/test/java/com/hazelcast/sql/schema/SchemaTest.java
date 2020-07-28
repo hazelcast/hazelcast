@@ -18,6 +18,8 @@ package com.hazelcast.sql.schema;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.sql.SqlException;
+import com.hazelcast.sql.SqlResult;
+import com.hazelcast.sql.SqlResultType;
 import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.impl.connector.LocalPartitionedMapConnector;
 import com.hazelcast.sql.schema.model.AllTypesValue;
@@ -99,12 +101,12 @@ public class SchemaTest extends CalciteSqlTestSupport {
     }
 
     @Test
-    public void testTableCreation() {
+    public void testTableCreationResult() {
         // given
         String name = "DeclaredTable";
 
         // when
-        List<SqlRow> updateRows = getQueryRows(
+        SqlResult result = executeQuery(
                 member,
                 format("CREATE EXTERNAL TABLE %s "
                                 + "TYPE \"%s\" "
@@ -122,8 +124,10 @@ public class SchemaTest extends CalciteSqlTestSupport {
                 ));
 
         // then
-        assertThat(updateRows).hasSize(1);
-        assertThat((int) updateRows.get(0).getObject(0)).isEqualTo(0);
+        assertEquals(SqlResultType.VOID, result.getResultType());
+        assertThrows(IllegalStateException.class, () -> result.iterator());
+        assertThrows(IllegalStateException.class, () -> result.getRowMetadata());
+        result.close();
 
         // when
         List<SqlRow> queryRows = getQueryRows(member, format("SELECT __key, this FROM public.%s", name));

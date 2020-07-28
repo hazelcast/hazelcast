@@ -19,6 +19,7 @@ package com.hazelcast.sql.impl.client;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.sql.SqlResult;
+import com.hazelcast.sql.SqlResultType;
 import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.SqlRowMetadata;
 import com.hazelcast.sql.impl.QueryException;
@@ -82,6 +83,12 @@ public class SqlClientResult implements SqlResult {
         } else {
             throw new IllegalStateException("Iterator could be requested only once");
         }
+    }
+
+    @Nonnull
+    @Override
+    public SqlResultType getResultType() {
+        return SqlResultType.ROWS;
     }
 
     @Override
