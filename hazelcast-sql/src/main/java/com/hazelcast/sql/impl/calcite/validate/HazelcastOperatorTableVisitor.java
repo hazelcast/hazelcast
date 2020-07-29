@@ -33,6 +33,12 @@ import java.util.List;
 
 /**
  * Rewrites operators in SqlNode tree from Calcite ones to Hazelcast ones.
+ * <p>
+ * {@link HazelcastSqlOperatorTable} provides operators with customized type
+ * inference and validation, while Calcite parser always uses {@link
+ * SqlStdOperatorTable} to resolve operators. This visitor workarounds that by
+ * rewriting the standard Calcite operator implementations with the customized
+ * ones.
  *
  * @see SqlStdOperatorTable
  * @see HazelcastSqlOperatorTable
