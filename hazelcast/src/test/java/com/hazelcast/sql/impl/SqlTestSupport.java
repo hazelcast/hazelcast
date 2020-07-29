@@ -72,7 +72,7 @@ public class SqlTestSupport extends HazelcastTestSupport {
         return new DefaultSerializationServiceBuilder().build();
     }
 
-    public static InternalSerializationService getSerializationSerivce(HazelcastInstance instance) {
+    public static InternalSerializationService getSerializationService(HazelcastInstance instance) {
         return (InternalSerializationService) nodeEngine(instance).getSerializationService();
     }
 
