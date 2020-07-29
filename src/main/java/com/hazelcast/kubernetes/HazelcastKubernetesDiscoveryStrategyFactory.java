@@ -21,7 +21,9 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.discovery.DiscoveryNode;
 import com.hazelcast.spi.discovery.DiscoveryStrategy;
 import com.hazelcast.spi.discovery.DiscoveryStrategyFactory;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
+import java.io.File;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -66,5 +68,25 @@ public class HazelcastKubernetesDiscoveryStrategyFactory
 
     public Collection<PropertyDefinition> getConfigurationProperties() {
         return PROPERTY_DEFINITIONS;
+    }
+
+    /**
+     * In all Kubernetes environments the file "/var/run/secrets/kubernetes.io/serviceaccount/token" is injected into the
+     * container. That is why we can use it to verify if this code is run in the Kubernetes environment.
+     * <p>
+     * Note that if the Kubernetes environment is not configured correctly, this file my not exist. However, in such case,
+     * this plugin won't work anyway, so it makes perfect sense to return {@code false}.
+     *
+     * @return true if running in the Kubernetes environment
+     */
+    @Override
+    @SuppressFBWarnings("DMI_HARDCODED_ABSOLUTE_FILENAME")
+    public boolean isAutoDetectionApplicable() {
+        return new File("/var/run/secrets/kubernetes.io/serviceaccount/token").exists();
+    }
+
+    @Override
+    public DiscoveryStrategyLevel discoveryStrategyLevel() {
+        return DiscoveryStrategyLevel.PLATFORM;
     }
 }

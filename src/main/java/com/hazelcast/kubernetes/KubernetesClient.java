@@ -57,9 +57,10 @@ class KubernetesClient {
     private boolean useNodeNameAsExternalAddress;
 
     private boolean isNoPublicIpAlreadyLogged;
+    private boolean isKnownExceptionAlreadyLogged;
 
     KubernetesClient(String namespace, String kubernetesMaster, String apiToken, String caCertificate, int retries,
-            boolean useNodeNameAsExternalAddress) {
+                     boolean useNodeNameAsExternalAddress) {
         this.namespace = namespace;
         this.kubernetesMaster = kubernetesMaster;
         this.apiToken = apiToken;
@@ -422,9 +423,9 @@ class KubernetesClient {
 
     private static String extractLoadBalancerIp(JsonObject serviceResponse) {
         return serviceResponse.get("status").asObject()
-                              .get("loadBalancer").asObject()
-                              .get("ingress").asArray().get(0).asObject()
-                              .get("ip").asString();
+                .get("loadBalancer").asObject()
+                .get("ingress").asArray().get(0).asObject()
+                .get("ip").asString();
     }
 
     private static Integer extractServicePort(JsonObject serviceJson) {
@@ -491,24 +492,28 @@ class KubernetesClient {
             public JsonObject call() {
                 return Json
                         .parse(RestClient.create(urlString).withHeader("Authorization", String.format("Bearer %s", apiToken))
-                                         .withCaCertificates(caCertificate)
-                                         .get())
+                                .withCaCertificates(caCertificate)
+                                .get())
                         .asObject();
             }
         }, retries, NON_RETRYABLE_KEYWORDS);
     }
 
     @SuppressWarnings("checkstyle:magicnumber")
-    private static List<Endpoint> handleKnownException(RestClientException e) {
+    private List<Endpoint> handleKnownException(RestClientException e) {
         if (e.getHttpErrorCode() == 401) {
-            LOGGER.severe("Kubernetes API authorization failure, please check your 'api-token' property");
+            if (!isKnownExceptionAlreadyLogged) {
+                LOGGER.warning("Kubernetes API authorization failure! To use Hazelcast Kubernetes discovery, "
+                        + "please check your 'api-token' property. Starting standalone.");
+                isKnownExceptionAlreadyLogged = true;
+            }
         } else if (e.getHttpErrorCode() == 403) {
-            LOGGER.severe(
-                    "Kubernetes API forbidden access, please check that your Service Account have the correct "
-                            + "(Cluster) Role rules. To assign them to `default` Service Account in `default` namespace, "
-                            + "execute the following command: `kubectl apply -f "
-                            + "https://raw.githubusercontent.com/hazelcast/hazelcast-kubernetes/master/rbac.yaml`"
-            );
+            if (!isKnownExceptionAlreadyLogged) {
+                LOGGER.warning("Kubernetes API access is forbidden! Starting standalone. To use Hazelcast Kubernetes discovery "
+                        + "configure the required RBAC. For 'default' service account in 'default' namespace execute: "
+                        + "`kubectl apply -f https://raw.githubusercontent.com/hazelcast/hazelcast-kubernetes/master/rbac.yaml`");
+                isKnownExceptionAlreadyLogged = true;
+            }
         } else {
             throw e;
         }

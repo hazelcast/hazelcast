@@ -21,22 +21,26 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.NoLogFactory;
 import com.hazelcast.spi.discovery.DiscoveryNode;
 import com.hazelcast.spi.discovery.DiscoveryStrategy;
+import com.hazelcast.spi.discovery.DiscoveryStrategyFactory.DiscoveryStrategyLevel;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
+import java.io.File;
 import java.util.Collection;
 import java.util.HashMap;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.powermock.api.mockito.PowerMockito.mock;
 
 @RunWith(PowerMockRunner.class)
-@PrepareForTest({KubernetesApiEndpointResolver.class})
+@PrepareForTest({KubernetesApiEndpointResolver.class, HazelcastKubernetesDiscoveryStrategyFactory.class})
 public class HazelcastKubernetesDiscoveryStrategyFactoryTest {
 
     private static final ILogger LOGGER = new NoLogFactory().getLogger("no");
@@ -82,5 +86,19 @@ public class HazelcastKubernetesDiscoveryStrategyFactoryTest {
         assertTrue(strategy instanceof HazelcastKubernetesDiscoveryStrategy);
         strategy.start();
         strategy.destroy();
+    }
+
+    @Test
+    public void autoDetection() throws Exception {
+        // given
+        File mockFile = mock(File.class);
+        Mockito.doReturn(true).when(mockFile).exists();
+        PowerMockito.whenNew(File.class).withArguments("/var/run/secrets/kubernetes.io/serviceaccount/token")
+                .thenReturn(mockFile);
+        HazelcastKubernetesDiscoveryStrategyFactory factory = new HazelcastKubernetesDiscoveryStrategyFactory();
+
+        // when & then
+        assertTrue(factory.isAutoDetectionApplicable());
+        assertEquals(DiscoveryStrategyLevel.PLATFORM, factory.discoveryStrategyLevel());
     }
 }
