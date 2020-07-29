@@ -145,23 +145,19 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         QueryParseResult parseResult = context.parse(task.getSql());
 
         if (parseResult.isDdl()) {
-            return createSchemaPlan(task.getSql(), context, parseResult);
+            return createSchemaPlan(parseResult);
         }
 
         // 3. Convert parse tree to relational tree.
         QueryConvertResult convertResult = context.convert(parseResult.getNode());
 
         // 4. Create plan.
-        return createPlan(task.getSql(), context, parseResult, convertResult);
+        return createPlan(context, parseResult, convertResult);
     }
 
-    private SqlPlan createSchemaPlan(
-            String sql,
-            OptimizerContext context,
-            QueryParseResult parseResult
-    ) {
+    private SqlPlan createSchemaPlan(QueryParseResult parseResult) {
         if (parseResult.getNode() instanceof SqlCreateMapping) {
-            return toCreateTablePlan(sql, context, parseResult);
+            return toCreateTablePlan(parseResult);
         } else if (parseResult.getNode() instanceof SqlDropMapping) {
             return toRemoveTablePlan((SqlDropMapping) parseResult.getNode());
         } else {
@@ -169,16 +165,12 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         }
     }
 
-    private SqlPlan toCreateTablePlan(
-            String sql,
-            OptimizerContext context,
-            QueryParseResult parseResult
-    ) {
+    private SqlPlan toCreateTablePlan(QueryParseResult parseResult) {
         SqlCreateMapping create = (SqlCreateMapping) parseResult.getNode();
 
         List<TableMappingField> fields = create.columns()
-                                               .map(field -> new TableMappingField(field.name(), field.type(), field.externalName()))
-                                               .collect(toList());
+                .map(field -> new TableMappingField(field.name(), field.type(), field.externalName()))
+                .collect(toList());
         TableMapping tableMapping = new TableMapping(create.name(), create.type(), fields, create.options());
 
         return new CreateMappingPlan(catalog, tableMapping, create.getReplace(), create.ifNotExists());
@@ -189,7 +181,6 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
     }
 
     private SqlPlan createPlan(
-            String sql,
             OptimizerContext context,
             QueryParseResult parseResult,
             QueryConvertResult convertResult
@@ -197,11 +188,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         if (parseResult.isImdg()) {
             PhysicalRel physicalRel = optimize(context, convertResult.getRel());
 
-            return createImdgPlan(
-                    sql,
-                    physicalRel,
-                    convertResult.getFieldNames()
-            );
+            return createImdgPlan(physicalRel, convertResult.getFieldNames());
         } else {
             return jetSqlBackend.optimizeAndCreatePlan(nodeEngine, context, convertResult.getRel(),
                     convertResult.getFieldNames());
@@ -233,7 +220,6 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
      * @return Plan.
      */
     private SqlPlan createImdgPlan(
-            String sql,
             PhysicalRel rel,
             List<String> rootColumnNames
     ) {
