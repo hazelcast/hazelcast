@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.schema.model;
+package com.hazelcast.sql.impl.calcite.schema.model;
 
 import java.io.Serializable;
 import java.util.Objects;

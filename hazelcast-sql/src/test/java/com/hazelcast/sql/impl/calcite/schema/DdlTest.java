@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.schema;
+package com.hazelcast.sql.impl.calcite.schema;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.sql.SqlException;
@@ -22,9 +22,9 @@ import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlResultType;
 import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.impl.connector.LocalPartitionedMapConnector;
-import com.hazelcast.sql.schema.model.AllTypesValue;
-import com.hazelcast.sql.schema.model.IdentifiedPerson;
-import com.hazelcast.sql.schema.model.Person;
+import com.hazelcast.sql.impl.calcite.schema.model.AllTypesValue;
+import com.hazelcast.sql.impl.calcite.schema.model.IdentifiedPerson;
+import com.hazelcast.sql.impl.calcite.schema.model.Person;
 import com.hazelcast.sql.support.CalciteSqlTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import org.junit.AfterClass;
@@ -57,7 +57,7 @@ import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
 
-public class SchemaTest extends CalciteSqlTestSupport {
+public class DdlTest extends CalciteSqlTestSupport {
 
     private static final TestHazelcastInstanceFactory FACTORY = new TestHazelcastInstanceFactory();
 
