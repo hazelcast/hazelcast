@@ -24,11 +24,14 @@ import com.hazelcast.config.ClassFilter;
 import com.hazelcast.config.DiscoveryConfig;
 import com.hazelcast.config.GlobalSerializerConfig;
 import com.hazelcast.config.ListenerConfig;
+import com.hazelcast.config.PersistentMemoryConfig;
+import com.hazelcast.config.PersistentMemoryDirectoryConfig;
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.config.SerializerConfig;
 import com.hazelcast.config.security.JaasAuthenticationConfig;
 import com.hazelcast.config.security.RealmConfig;
 import com.hazelcast.config.security.TokenIdentityConfig;
+import com.hazelcast.internal.util.StringUtil;
 import com.hazelcast.internal.yaml.YamlMapping;
 import com.hazelcast.internal.yaml.YamlNode;
 import com.hazelcast.internal.yaml.YamlScalar;
@@ -39,11 +42,11 @@ import java.nio.ByteOrder;
 import java.util.Map;
 import java.util.Properties;
 
+import static com.hazelcast.config.security.TokenEncoding.getTokenEncoding;
 import static com.hazelcast.internal.config.DomConfigHelper.childElements;
 import static com.hazelcast.internal.config.DomConfigHelper.cleanNodeName;
 import static com.hazelcast.internal.config.DomConfigHelper.getBooleanValue;
 import static com.hazelcast.internal.config.DomConfigHelper.getIntegerValue;
-import static com.hazelcast.config.security.TokenEncoding.getTokenEncoding;
 import static com.hazelcast.internal.config.yaml.W3cDomUtil.getWrappedYamlMapping;
 import static com.hazelcast.internal.yaml.YamlUtil.asScalar;
 
@@ -308,5 +311,24 @@ public class YamlClientDomConfigProcessor extends ClientDomConfigProcessor {
             jaasAuthenticationConfig.addLoginModuleConfig(handleLoginModule(child));
         }
         realmConfig.setJaasAuthenticationConfig(jaasAuthenticationConfig);
+    }
+
+    @Override
+    protected void handlePersistentMemoryConfig(PersistentMemoryConfig persistentMemoryConfig, Node n) {
+        for (Node dirsNode : childElements(n)) {
+            String nodeName = cleanNodeName(dirsNode);
+            if ("directories".equals(nodeName)) {
+                for (Node dirNode : childElements(dirsNode)) {
+                    String directory = getTextContent(dirNode.getAttributes().getNamedItem("directory"));
+                    String numaNodeIdStr = getTextContent(dirNode.getAttributes().getNamedItem("numa-node"));
+                    if (!StringUtil.isNullOrEmptyAfterTrim(numaNodeIdStr)) {
+                        int numaNodeId = getIntegerValue("numa-node", numaNodeIdStr);
+                        persistentMemoryConfig.addDirectoryConfig(new PersistentMemoryDirectoryConfig(directory, numaNodeId));
+                    } else {
+                        persistentMemoryConfig.addDirectoryConfig(new PersistentMemoryDirectoryConfig(directory));
+                    }
+                }
+            }
+        }
     }
 }

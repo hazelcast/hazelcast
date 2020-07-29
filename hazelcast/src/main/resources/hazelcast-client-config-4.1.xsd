@@ -699,6 +699,7 @@
                 </xs:simpleType>
             </xs:element>
             <xs:element name="persistent-memory-directory" type="xs:string" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="persistent-memory" type="persistent-memory" minOccurs="0" maxOccurs="1"/>
         </xs:all>
         <xs:attribute name="allocator-type" default="POOLED" type="memory-allocator-type"/>
         <xs:attribute name="enabled" default="false" type="xs:boolean"/>
@@ -724,6 +725,49 @@
             <xs:enumeration value="POOLED"/>
         </xs:restriction>
     </xs:simpleType>
+
+    <xs:complexType name="persistent-memory">
+        <xs:annotation>
+            <xs:documentation>
+                Configuration for persistent memory (e.g. Intel Optane) devices.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:all>
+            <xs:element name="directories">
+                <xs:annotation>
+                    <xs:documentation>
+                        List of directories where the persistent memory
+                        is mounted to.
+                    </xs:documentation>
+                </xs:annotation>
+                <xs:complexType>
+                    <xs:choice maxOccurs="unbounded">
+                        <xs:element name="directory" type="persistent-memory-directory"/>
+                    </xs:choice>
+                </xs:complexType>
+            </xs:element>
+        </xs:all>
+    </xs:complexType>
+
+    <xs:complexType name="persistent-memory-directory">
+        <xs:annotation>
+            <xs:documentation>
+                The directory where persistent memory is mounted to.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:simpleContent>
+            <xs:extension base="xs:string">
+                <xs:attribute name="numa-node" type="xs:int" default="-1">
+                    <xs:annotation>
+                        <xs:documentation>
+                            The NUMA node that the persistent memory mounted
+                            to the given directory is attached to.
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
+            </xs:extension>
+        </xs:simpleContent>
+    </xs:complexType>
 
     <xs:complexType name="property">
         <xs:simpleContent>
