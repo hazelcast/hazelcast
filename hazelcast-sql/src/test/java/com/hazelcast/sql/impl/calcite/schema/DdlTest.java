@@ -21,11 +21,11 @@ import com.hazelcast.sql.SqlException;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlResultType;
 import com.hazelcast.sql.SqlRow;
-import com.hazelcast.sql.impl.connector.LocalPartitionedMapConnector;
+import com.hazelcast.sql.impl.SqlTestSupport;
 import com.hazelcast.sql.impl.calcite.schema.model.AllTypesValue;
 import com.hazelcast.sql.impl.calcite.schema.model.IdentifiedPerson;
 import com.hazelcast.sql.impl.calcite.schema.model.Person;
-import com.hazelcast.sql.support.CalciteSqlTestSupport;
+import com.hazelcast.sql.impl.connector.LocalPartitionedMapConnector;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -57,7 +57,7 @@ import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
 
-public class DdlTest extends CalciteSqlTestSupport {
+public class DdlTest extends SqlTestSupport {
 
     private static final TestHazelcastInstanceFactory FACTORY = new TestHazelcastInstanceFactory();
 
