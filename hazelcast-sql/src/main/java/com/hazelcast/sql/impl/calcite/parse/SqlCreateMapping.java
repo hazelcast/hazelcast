@@ -108,7 +108,7 @@ public class SqlCreateMapping extends SqlCreate {
         if (getReplace()) {
             writer.keyword("OR REPLACE");
         }
-        writer.keyword("MAPPING");
+        writer.keyword("TABLE MAPPING");
         if (ifNotExists) {
             writer.keyword("IF NOT EXISTS");
         }

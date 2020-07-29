@@ -63,7 +63,7 @@ public class SqlDropMapping extends SqlDrop {
 
     @Override
     public void unparse(SqlWriter writer, int leftPrec, int rightPrec) {
-        writer.keyword("DROP MAPPING");
+        writer.keyword("DROP TABLE MAPPING");
         if (ifExists) {
             writer.keyword("IF EXISTS");
         }
