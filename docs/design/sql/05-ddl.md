@@ -90,7 +90,7 @@ Parameter value as a string literal.
 
   ```sql
   CREATE EXTERNAL TABLE persons
-  TYPE "com.hazelcast.IMap"
+  TYPE IMap
   OPTIONS (
     "serialization.key.format" 'java',
     "serialization.key.java.class" 'java.lang.Integer',
@@ -115,7 +115,7 @@ Parameter value as a string literal.
     id INT EXTERNAL NAME __key,
     name VARCHAR
   )
-  TYPE "com.hazelcast.IMap"
+  TYPE IMap
   OPTIONS (
     "serialization.key.format" 'java',
     "serialization.key.java.class" 'java.lang.Integer',
@@ -131,7 +131,7 @@ Parameter value as a string literal.
     key_id INT EXTERNAL NAME "__key.id",
     value_id INT EXTERNAL NAME "this.id"
   )
-  TYPE "com.hazelcast.IMap"
+  TYPE IMap
   OPTIONS (
     "serialization.key.format" 'java',
     "serialization.key.java.class" 'com.hazelcast.Person',
