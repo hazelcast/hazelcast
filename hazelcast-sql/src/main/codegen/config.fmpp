@@ -46,11 +46,11 @@ data: {
       "org.apache.calcite.sql.SqlCreate"
       "org.apache.calcite.sql.SqlDrop"
       "com.hazelcast.sql.impl.type.QueryDataType"
-      "com.hazelcast.sql.impl.calcite.parse.SqlCreateExternalTable"
+      "com.hazelcast.sql.impl.calcite.parse.SqlCreateMapping"
       "com.hazelcast.sql.impl.calcite.parse.SqlTableColumn"
       "com.hazelcast.sql.impl.calcite.parse.SqlDataType"
       "com.hazelcast.sql.impl.calcite.parse.SqlOption"
-      "com.hazelcast.sql.impl.calcite.parse.SqlDropExternalTable"
+      "com.hazelcast.sql.impl.calcite.parse.SqlDropMapping"
       "com.hazelcast.sql.impl.calcite.parse.ParserResource"
     ]
 
@@ -58,6 +58,7 @@ data: {
     # keyword add it to 'nonReservedKeywords' section.
     keywords: [
       # added by Hazelcast
+      "MAPPING"
       "IF"
     ]
 
@@ -377,6 +378,7 @@ data: {
 
       # added by Hazelcast
       "IF"
+      "MAPPING"
     ]
 
     # List of non-reserved keywords to add;
@@ -427,13 +429,13 @@ data: {
     # List of methods for parsing extensions to "CREATE [OR REPLACE]" calls.
     # Each must accept arguments "(SqlParserPos pos, boolean replace)".
     createStatementParserMethods: [
-      "SqlCreateExternalTable"
+      "SqlCreateMapping"
     ]
 
     # List of methods for parsing extensions to "DROP" calls.
     # Each must accept arguments "(SqlParserPos pos)".
     dropStatementParserMethods: [
-      "SqlDropExternalTable"
+      "SqlDropMapping"
     ]
 
     # Binary operators tokens

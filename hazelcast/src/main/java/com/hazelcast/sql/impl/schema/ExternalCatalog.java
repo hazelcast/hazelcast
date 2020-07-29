@@ -48,7 +48,7 @@ public class ExternalCatalog implements TableResolver {
         this.sqlConnectorCache = new SqlConnectorCache(nodeEngine);
     }
 
-    public void createTable(ExternalTable table, boolean replace, boolean ifNotExists) {
+    public void createTable(TableMapping table, boolean replace, boolean ifNotExists) {
         assert !replace || !ifNotExists : "both replace and ifNotExists are true";
         // catch all the potential errors - missing connector, class, invalid format or field definitions etc. - early
         try {
@@ -85,12 +85,12 @@ public class ExternalCatalog implements TableResolver {
                        .collect(toList());
     }
 
-    private Map<String, ExternalTable> tables() {
+    private Map<String, TableMapping> tables() {
         // TODO: use the right storage
         return nodeEngine.getHazelcastInstance().getReplicatedMap(CATALOG_MAP_NAME);
     }
 
-    private Table toTable(ExternalTable table) {
+    private Table toTable(TableMapping table) {
         String type = table.type();
         SqlConnector connector = requireNonNull(sqlConnectorCache.forType(type), "Unknown connector type - '" + type + "'");
         return connector.createTable(nodeEngine, SCHEMA_NAME_PUBLIC, table.name(), table.options(), table.fields());

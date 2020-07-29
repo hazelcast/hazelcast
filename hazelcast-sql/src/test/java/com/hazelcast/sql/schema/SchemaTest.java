@@ -82,7 +82,7 @@ public class SchemaTest extends CalciteSqlTestSupport {
         // then
         assertThatThrownBy(() -> executeQuery(
                 member,
-                format("CREATE EXTERNAL TABLE %s "
+                format("CREATE MAPPING %s "
                                 + "TYPE \"%s\"",
                         name, LocalPartitionedMapConnector.TYPE_NAME
                 ))
@@ -95,7 +95,7 @@ public class SchemaTest extends CalciteSqlTestSupport {
     public void when_unknownType_then_fail() {
         assertThatThrownBy(() -> executeQuery(
                 member,
-                "CREATE EXTERNAL TABLE invalid_type_table TYPE foo_boo")
+                "CREATE MAPPING invalid_type_table TYPE foo_boo")
         ).isInstanceOf(SqlException.class)
          .hasMessageContaining("Unknown type: foo_boo");
     }
@@ -108,7 +108,7 @@ public class SchemaTest extends CalciteSqlTestSupport {
         // when
         SqlResult result = executeQuery(
                 member,
-                format("CREATE EXTERNAL TABLE %s "
+                format("CREATE TABLE MAPPING %s "
                                 + "TYPE \"%s\" "
                                 + "OPTIONS ("
                                 + " \"%s\" '%s',"
@@ -146,7 +146,7 @@ public class SchemaTest extends CalciteSqlTestSupport {
         // when create table statement is executed on one member
         executeQuery(
                 instances[0],
-                format("CREATE EXTERNAL TABLE %s "
+                format("CREATE MAPPING %s "
                                 + "TYPE \"%s\" "
                                 + "OPTIONS ("
                                 + " \"%s\" '%s',"
@@ -177,7 +177,7 @@ public class SchemaTest extends CalciteSqlTestSupport {
         String name = "PriorityTable";
         executeQuery(
                 member,
-                format("CREATE EXTERNAL TABLE %s "
+                format("CREATE MAPPING %s "
                                 + "TYPE \"%s\" "
                                 + "OPTIONS ("
                                 + " \"%s\" '%s',"
@@ -206,7 +206,7 @@ public class SchemaTest extends CalciteSqlTestSupport {
     public void testSelectAllSupportedTypes() {
         // given
         String name = "AllFieldsTable";
-        executeQuery(member, format("CREATE EXTERNAL TABLE %s "
+        executeQuery(member, format("CREATE MAPPING %s "
                         + "TYPE \"%s\" "
                         + "OPTIONS ("
                         + " \"%s\" '%s',"
@@ -326,7 +326,7 @@ public class SchemaTest extends CalciteSqlTestSupport {
         String name = "ToBeDroppedTable";
         executeQuery(
                 member,
-                format("CREATE EXTERNAL TABLE %s "
+                format("CREATE MAPPING %s "
                                 + "TYPE \"%s\" "
                                 + "OPTIONS ("
                                 + " \"%s\" '%s',"
@@ -342,7 +342,7 @@ public class SchemaTest extends CalciteSqlTestSupport {
                 ));
 
         // when
-        executeQuery(member, format("DROP EXTERNAL TABLE %s", name));
+        executeQuery(member, format("DROP MAPPING %s", name));
 
         // then
         assertThatThrownBy(() -> executeQuery(member, format("SELECT * FROM public.%s", name))).isInstanceOf(SqlException.class);
@@ -352,7 +352,7 @@ public class SchemaTest extends CalciteSqlTestSupport {
     public void when_createOrReplaceIfNotExists_then_fail() {
         assertThatThrownBy(() ->
                 executeQuery(
-                        member, "CREATE OR REPLACE EXTERNAL TABLE IF NOT EXISTS CreateOrReplaceIfNotExists "
+                        member, "CREATE OR REPLACE MAPPING IF NOT EXISTS CreateOrReplaceIfNotExists "
                                 + "TYPE \"" + LocalPartitionedMapConnector.TYPE_NAME + "\" "
                                 + "OPTIONS ("
                                 + "\"" + TO_SERIALIZATION_KEY_FORMAT + "\" '" + JAVA_SERIALIZATION_FORMAT + "',"

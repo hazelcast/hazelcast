@@ -18,7 +18,7 @@ package com.hazelcast.sql.impl.connector;
 
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.sql.impl.QueryException;
-import com.hazelcast.sql.impl.schema.ExternalTable.ExternalField;
+import com.hazelcast.sql.impl.schema.TableMapping.TableMappingField;
 import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.schema.map.options.MapOptionsMetadata;
 import com.hazelcast.sql.impl.schema.map.options.MapOptionsMetadataResolver;
@@ -50,7 +50,7 @@ public abstract class SqlKeyValueConnector implements SqlConnector {
     protected abstract Map<String, MapOptionsMetadataResolver> supportedResolvers();
 
     protected MapOptionsMetadata resolveMetadata(
-            List<ExternalField> externalFields,
+            List<TableMappingField> fields,
             Map<String, String> options,
             boolean isKey,
             InternalSerializationService serializationService
@@ -60,7 +60,7 @@ public abstract class SqlKeyValueConnector implements SqlConnector {
         if (resolver == null) {
             throw QueryException.error(format("Unsupported serialization format - '%s'", format));
         }
-        return requireNonNull(resolver.resolve(externalFields, options, isKey, serializationService));
+        return requireNonNull(resolver.resolve(fields, options, isKey, serializationService));
     }
 
     private static String resolveFormat(Map<String, String> options, boolean isKey) {

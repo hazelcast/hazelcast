@@ -77,7 +77,7 @@ public class ExternalCatalogTest extends SqlTestSupport {
         catalog.createTable(table(name, Integer.class, String.class), true, false);
 
         // when
-        ExternalTable table = table(name, String.class, Integer.class);
+        TableMapping table = table(name, String.class, Integer.class);
         catalog.createTable(table, true, false);
 
         // then
@@ -92,7 +92,7 @@ public class ExternalCatalogTest extends SqlTestSupport {
         catalog.createTable(table(name, Integer.class, String.class), false, true);
 
         // when
-        ExternalTable table = table(name, String.class, Integer.class);
+        TableMapping table = table(name, String.class, Integer.class);
         catalog.createTable(table, false, true);
 
         // then
@@ -119,12 +119,12 @@ public class ExternalCatalogTest extends SqlTestSupport {
         catalog.removeTable("table_if_exists", true);
     }
 
-    private static ExternalTable table(String name) {
+    private static TableMapping table(String name) {
         return table(name, Integer.class, String.class);
     }
 
-    private static ExternalTable table(String name, Class<?> keyClass, Class<?> valueClass) {
-        return new ExternalTable(
+    private static TableMapping table(String name, Class<?> keyClass, Class<?> valueClass) {
+        return new TableMapping(
                 name,
                 LocalPartitionedMapConnector.TYPE_NAME,
                 emptyList(),

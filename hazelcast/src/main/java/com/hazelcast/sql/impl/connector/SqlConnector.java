@@ -17,14 +17,14 @@
 package com.hazelcast.sql.impl.connector;
 
 import com.hazelcast.spi.impl.NodeEngine;
-import com.hazelcast.sql.impl.schema.ExternalTable.ExternalField;
+import com.hazelcast.sql.impl.schema.TableMapping.TableMappingField;
 import com.hazelcast.sql.impl.schema.Table;
 
 import javax.annotation.Nonnull;
 import java.util.List;
 import java.util.Map;
 
-// Consider making this class public for user connectors (ExternalTable, QueryDataType need to be
+// Consider making this class public for user connectors (TableMapping, QueryDataType need to be
 // public then or have a public representation)
 public interface SqlConnector {
 
@@ -34,14 +34,14 @@ public interface SqlConnector {
     /**
      * A key in the table options (TO).
      * <p>
-     * Specifies the accessed object name. If missing, the external table name
-     * itself is used.
+     * Specifies the accessed object name. If missing, the mapping name itself
+     * is used.
      */
     String TO_OBJECT_NAME = "objectName";
 
     /**
-     * Return the name of the connector as seen in the {@code TYPE} clause in
-     * the {@code CREATE EXTERNAL TABLE} command.
+     * Return the name of the connector as seen in the {@code TYPE} clause of
+     * the {@code CREATE MAPPING} command.
      */
     String typeName();
 
@@ -49,7 +49,7 @@ public interface SqlConnector {
      * Creates a Table object with the given fields. Will not attempt to
      * connect to the remote service.
      *
-     * @param externalFields optional list of fields. If {@code null},
+     * @param fields optional list of fields. If {@code null},
      *     an attempt to resolve them automatically will be made. If not
      *     successful, an exception will be thrown. An empty list is
      *     valid, it means there are zero columns in the table: you can
@@ -63,6 +63,6 @@ public interface SqlConnector {
             @Nonnull String schemaName,
             @Nonnull String tableName,
             @Nonnull Map<String, String> options,
-            @Nonnull List<ExternalField> externalFields
+            @Nonnull List<TableMappingField> fields
     );
 }

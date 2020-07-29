@@ -34,22 +34,22 @@ import java.util.Objects;
 /**
  * User-defined table schema definition.
  */
-public class ExternalTable implements IdentifiedDataSerializable {
+public class TableMapping implements IdentifiedDataSerializable {
 
     private String name;
     private String type;
-    private List<ExternalField> externalFields;
+    private List<TableMappingField> fields;
     private Map<String, String> options;
 
-    public ExternalTable() { }
+    public TableMapping() { }
 
-    public ExternalTable(String name,
-                         String type,
-                         List<ExternalField> externalFields,
-                         Map<String, String> options) {
+    public TableMapping(String name,
+                        String type,
+                        List<TableMappingField> fields,
+                        Map<String, String> options) {
         this.name = name;
         this.type = type;
-        this.externalFields = externalFields;
+        this.fields = fields;
         this.options = options;
     }
 
@@ -61,8 +61,8 @@ public class ExternalTable implements IdentifiedDataSerializable {
         return type;
     }
 
-    public List<ExternalField> fields() {
-        return Collections.unmodifiableList(externalFields);
+    public List<TableMappingField> fields() {
+        return Collections.unmodifiableList(fields);
     }
 
     public Map<String, String> options() {
@@ -76,14 +76,14 @@ public class ExternalTable implements IdentifiedDataSerializable {
 
     @Override
     public int getClassId() {
-        return SqlDataSerializerHook.EXTERNAL_TABLE;
+        return SqlDataSerializerHook.TABLE_MAPPING;
     }
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeUTF(name);
         out.writeUTF(type);
-        out.writeObject(externalFields);
+        out.writeObject(fields);
         out.writeObject(options);
     }
 
@@ -91,11 +91,11 @@ public class ExternalTable implements IdentifiedDataSerializable {
     public void readData(ObjectDataInput in) throws IOException {
         name = in.readUTF();
         type = in.readUTF();
-        externalFields = in.readObject();
+        fields = in.readObject();
         options = in.readObject();
     }
 
-    public static class ExternalField implements IdentifiedDataSerializable {
+    public static class TableMappingField implements IdentifiedDataSerializable {
 
         private static final String NAME = "name";
         private static final String TYPE = "type";
@@ -106,9 +106,9 @@ public class ExternalTable implements IdentifiedDataSerializable {
         // persisted schema.
         private Map<String, Object> properties;
 
-        public ExternalField() { }
+        public TableMappingField() { }
 
-        public ExternalField(@Nonnull String name, @Nonnull QueryDataType type, @Nullable String externalName) {
+        public TableMappingField(@Nonnull String name, @Nonnull QueryDataType type, @Nullable String externalName) {
             this.properties = new HashMap<>();
             this.properties.put(NAME, name);
             this.properties.put(TYPE, type);
@@ -143,7 +143,7 @@ public class ExternalTable implements IdentifiedDataSerializable {
 
         @Override
         public int getClassId() {
-            return SqlDataSerializerHook.EXTERNAL_FIELD;
+            return SqlDataSerializerHook.TABLE_MAPPING_FIELD;
         }
 
         @Override

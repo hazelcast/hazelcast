@@ -16,6 +16,7 @@
 
 package com.hazelcast.sql.impl.calcite.parse;
 
+import com.google.common.collect.ImmutableList;
 import org.apache.calcite.sql.SqlDrop;
 import org.apache.calcite.sql.SqlIdentifier;
 import org.apache.calcite.sql.SqlKind;
@@ -24,21 +25,20 @@ import org.apache.calcite.sql.SqlOperator;
 import org.apache.calcite.sql.SqlSpecialOperator;
 import org.apache.calcite.sql.SqlWriter;
 import org.apache.calcite.sql.parser.SqlParserPos;
-import org.apache.calcite.util.ImmutableNullableList;
 
 import javax.annotation.Nonnull;
 import java.util.List;
 
 import static java.util.Objects.requireNonNull;
 
-public class SqlDropExternalTable extends SqlDrop {
+public class SqlDropMapping extends SqlDrop {
 
     private static final SqlSpecialOperator OPERATOR =
-            new SqlSpecialOperator("DROP EXTERNAL TABLE", SqlKind.DROP_TABLE);
+            new SqlSpecialOperator("DROP MAPPING", SqlKind.DROP_TABLE);
 
     private final SqlIdentifier name;
 
-    public SqlDropExternalTable(SqlIdentifier name, boolean ifExists, SqlParserPos pos) {
+    public SqlDropMapping(SqlIdentifier name, boolean ifExists, SqlParserPos pos) {
         super(OPERATOR, pos, ifExists);
         this.name = requireNonNull(name, "Name should not be null");
     }
@@ -51,29 +51,22 @@ public class SqlDropExternalTable extends SqlDrop {
         return ifExists;
     }
 
-    @Override
-    @Nonnull
+    @Override @Nonnull
     public SqlOperator getOperator() {
         return OPERATOR;
     }
 
-    @Override
-    @Nonnull
+    @Override @Nonnull
     public List<SqlNode> getOperandList() {
-        return ImmutableNullableList.of(name);
+        return ImmutableList.of(name);
     }
 
     @Override
     public void unparse(SqlWriter writer, int leftPrec, int rightPrec) {
-        writer.keyword("DROP");
-        writer.keyword("EXTERNAL");
-        writer.keyword("TABLE");
-
+        writer.keyword("DROP MAPPING");
         if (ifExists) {
-            writer.keyword("IF");
-            writer.keyword("EXISTS");
+            writer.keyword("IF EXISTS");
         }
-
         name.unparse(writer, leftPrec, rightPrec);
     }
 }

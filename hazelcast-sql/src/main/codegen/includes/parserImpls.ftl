@@ -15,9 +15,9 @@
 -->
 
 /**
-* Parses CREATE EXTERNAL TABLE statement.
+* Parses CREATE MAPPING statement.
 */
-SqlCreate SqlCreateExternalTable(Span span, boolean replace) :
+SqlCreate SqlCreateMapping(Span span, boolean replace) :
 {
     SqlParserPos startPos = span.pos();
 
@@ -28,7 +28,7 @@ SqlCreate SqlCreateExternalTable(Span span, boolean replace) :
     SqlNodeList sqlOptions = SqlNodeList.EMPTY;
 }
 {
-    <EXTERNAL> <TABLE>
+    [<TABLE>] <MAPPING>
     [
         <IF> <NOT> <EXISTS> { ifNotExists = true; }
     ]
@@ -41,7 +41,7 @@ SqlCreate SqlCreateExternalTable(Span span, boolean replace) :
         sqlOptions = SqlOptions()
     ]
     {
-        return new SqlCreateExternalTable(
+        return new SqlCreateMapping(
             name,
             columns,
             type,
@@ -244,9 +244,9 @@ SqlOption SqlOption() :
 }
 
 /**
-* Parses DROP EXTERNAL TABLE statement.
+* Parses DROP MAPPING statement.
 */
-SqlDrop SqlDropExternalTable(Span span, boolean replace) :
+SqlDrop SqlDropMapping(Span span, boolean replace) :
 {
     SqlParserPos pos = span.pos();
 
@@ -254,12 +254,12 @@ SqlDrop SqlDropExternalTable(Span span, boolean replace) :
     boolean ifExists = false;
 }
 {
-    <EXTERNAL> <TABLE>
+    [<TABLE>] <MAPPING>
     [
         <IF> <EXISTS> { ifExists = true; }
     ]
     name = SimpleIdentifier()
     {
-        return new SqlDropExternalTable(name, ifExists, pos.plus(getPos()));
+        return new SqlDropMapping(name, ifExists, pos.plus(getPos()));
     }
 }

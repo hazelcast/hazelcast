@@ -23,7 +23,7 @@ import com.hazelcast.nio.serialization.FieldType;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.extract.GenericQueryTargetDescriptor;
 import com.hazelcast.sql.impl.extract.QueryPath;
-import com.hazelcast.sql.impl.schema.ExternalTable.ExternalField;
+import com.hazelcast.sql.impl.schema.TableMapping.TableMappingField;
 import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.schema.map.MapTableField;
 import com.hazelcast.sql.impl.type.QueryDataType;
@@ -56,7 +56,7 @@ public final class PortableMapOptionsMetadataResolver implements MapOptionsMetad
 
     @Override
     public MapOptionsMetadata resolve(
-            List<ExternalField> externalFields,
+            List<TableMappingField> fields,
             Map<String, String> options,
             boolean isKey,
             InternalSerializationService serializationService
@@ -83,7 +83,7 @@ public final class PortableMapOptionsMetadataResolver implements MapOptionsMetad
                 Integer.parseInt(classId),
                 Integer.parseInt(classVersion)
         );
-        return resolvePortable(externalFields, classDefinition, isKey);
+        return resolvePortable(fields, classDefinition, isKey);
     }
 
     // TODO: extract to util class ???
@@ -106,12 +106,12 @@ public final class PortableMapOptionsMetadataResolver implements MapOptionsMetad
     }
 
     private MapOptionsMetadata resolvePortable(
-            List<ExternalField> externalFields,
+            List<TableMappingField> externalFields,
             ClassDefinition classDefinition,
             boolean isKey
     ) {
 
-        Map<QueryPath, ExternalField> externalFieldsByPath = isKey
+        Map<QueryPath, TableMappingField> externalFieldsByPath = isKey
                 ? extractKeyFields(externalFields)
                 : extractValueFields(externalFields, name -> new QueryPath(name, false));
 
@@ -121,7 +121,7 @@ public final class PortableMapOptionsMetadataResolver implements MapOptionsMetad
             QueryPath path = new QueryPath(entry.getKey(), isKey);
             QueryDataType type = resolvePortableType(entry.getValue());
 
-            ExternalField externalField = externalFieldsByPath.get(path);
+            TableMappingField externalField = externalFieldsByPath.get(path);
             if (externalField != null && !type.getTypeFamily().equals(externalField.type().getTypeFamily())) {
                 throw QueryException.error("Mismatch between declared and inferred type - '" + externalField.name() + "'");
             }
@@ -132,7 +132,7 @@ public final class PortableMapOptionsMetadataResolver implements MapOptionsMetad
             fields.putIfAbsent(field.getName(), field);
         }
 
-        for (Entry<QueryPath, ExternalField> entry : externalFieldsByPath.entrySet()) {
+        for (Entry<QueryPath, TableMappingField> entry : externalFieldsByPath.entrySet()) {
             QueryPath path = entry.getKey();
             String name = entry.getValue().name();
             QueryDataType type = entry.getValue().type();

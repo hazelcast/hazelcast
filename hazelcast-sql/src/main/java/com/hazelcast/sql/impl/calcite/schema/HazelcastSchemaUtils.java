@@ -54,7 +54,7 @@ public final class HazelcastSchemaUtils {
      * Construct a schema from the given table resolvers.
      * <p>
      * Currently we assume that all tables are resolved upfront by querying a table resolver. It works well for predefined
-     * objects such as IMap and ReplicatedMap as well as external tables created by Jet. This approach will not work well
+     * objects such as IMap and ReplicatedMap as well as table mappings created by Jet. This approach will not work well
      * should we need a relaxed/dynamic object resolution at some point in future.
      *
      * @param tableResolvers Table resolver to be used to get the list of existing tables.

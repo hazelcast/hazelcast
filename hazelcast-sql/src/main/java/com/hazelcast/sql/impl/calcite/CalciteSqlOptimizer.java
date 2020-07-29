@@ -29,16 +29,16 @@ import com.hazelcast.sql.impl.calcite.opt.physical.visitor.NodeIdVisitor;
 import com.hazelcast.sql.impl.calcite.opt.physical.visitor.PlanCreateVisitor;
 import com.hazelcast.sql.impl.calcite.parse.QueryConvertResult;
 import com.hazelcast.sql.impl.calcite.parse.QueryParseResult;
-import com.hazelcast.sql.impl.calcite.parse.SqlCreateExternalTable;
-import com.hazelcast.sql.impl.calcite.parse.SqlDropExternalTable;
+import com.hazelcast.sql.impl.calcite.parse.SqlCreateMapping;
+import com.hazelcast.sql.impl.calcite.parse.SqlDropMapping;
 import com.hazelcast.sql.impl.optimizer.OptimizationTask;
 import com.hazelcast.sql.impl.optimizer.SqlOptimizer;
 import com.hazelcast.sql.impl.optimizer.SqlPlan;
 import com.hazelcast.sql.impl.schema.ExternalCatalog;
-import com.hazelcast.sql.impl.schema.ExternalTable;
-import com.hazelcast.sql.impl.schema.ExternalTable.ExternalField;
-import com.hazelcast.sql.impl.schema.SchemaPlan.CreateExternalTablePlan;
-import com.hazelcast.sql.impl.schema.SchemaPlan.RemoveExternalTablePlan;
+import com.hazelcast.sql.impl.schema.TableMapping;
+import com.hazelcast.sql.impl.schema.TableMapping.TableMappingField;
+import com.hazelcast.sql.impl.schema.SchemaPlan.CreateMappingPlan;
+import com.hazelcast.sql.impl.schema.SchemaPlan.DropMappingPlan;
 import com.hazelcast.sql.impl.schema.TableResolver;
 import com.hazelcast.sql.impl.schema.map.PartitionedMapTableResolver;
 import org.apache.calcite.plan.Convention;
@@ -160,10 +160,10 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
             OptimizerContext context,
             QueryParseResult parseResult
     ) {
-        if (parseResult.getNode() instanceof SqlCreateExternalTable) {
+        if (parseResult.getNode() instanceof SqlCreateMapping) {
             return toCreateTablePlan(sql, context, parseResult);
-        } else if (parseResult.getNode() instanceof SqlDropExternalTable) {
-            return toRemoveTablePlan((SqlDropExternalTable) parseResult.getNode());
+        } else if (parseResult.getNode() instanceof SqlDropMapping) {
+            return toRemoveTablePlan((SqlDropMapping) parseResult.getNode());
         } else {
             throw new IllegalArgumentException("Unsupported SQL statement - " + parseResult.getNode());
         }
@@ -174,18 +174,18 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
             OptimizerContext context,
             QueryParseResult parseResult
     ) {
-        SqlCreateExternalTable create = (SqlCreateExternalTable) parseResult.getNode();
+        SqlCreateMapping create = (SqlCreateMapping) parseResult.getNode();
 
-        List<ExternalField> externalFields = create.columns()
-                .map(field -> new ExternalField(field.name(), field.type(), field.externalName()))
-                .collect(toList());
-        ExternalTable externalTable = new ExternalTable(create.name(), create.type(), externalFields, create.options());
+        List<TableMappingField> fields = create.columns()
+                                               .map(field -> new TableMappingField(field.name(), field.type(), field.externalName()))
+                                               .collect(toList());
+        TableMapping tableMapping = new TableMapping(create.name(), create.type(), fields, create.options());
 
-        return new CreateExternalTablePlan(catalog, externalTable, create.getReplace(), create.ifNotExists());
+        return new CreateMappingPlan(catalog, tableMapping, create.getReplace(), create.ifNotExists());
     }
 
-    private SqlPlan toRemoveTablePlan(SqlDropExternalTable sqlDropTable) {
-        return new RemoveExternalTablePlan(catalog, sqlDropTable.name(), sqlDropTable.ifExists());
+    private SqlPlan toRemoveTablePlan(SqlDropMapping sqlDropTable) {
+        return new DropMappingPlan(catalog, sqlDropTable.name(), sqlDropTable.ifExists());
     }
 
     private SqlPlan createPlan(

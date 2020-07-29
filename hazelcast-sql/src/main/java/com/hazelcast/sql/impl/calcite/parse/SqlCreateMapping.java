@@ -16,6 +16,7 @@
 
 package com.hazelcast.sql.impl.calcite.parse;
 
+import com.google.common.collect.ImmutableList;
 import com.hazelcast.sql.impl.QueryException;
 import org.apache.calcite.sql.SqlCreate;
 import org.apache.calcite.sql.SqlIdentifier;
@@ -29,7 +30,6 @@ import org.apache.calcite.sql.SqlWriter;
 import org.apache.calcite.sql.parser.SqlParserPos;
 import org.apache.calcite.sql.validate.SqlValidator;
 import org.apache.calcite.sql.validate.SqlValidatorScope;
-import org.apache.calcite.util.ImmutableNullableList;
 
 import javax.annotation.Nonnull;
 import java.util.List;
@@ -40,17 +40,17 @@ import static com.hazelcast.sql.impl.calcite.parse.ParserResource.RESOURCE;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toMap;
 
-public class SqlCreateExternalTable extends SqlCreate {
+public class SqlCreateMapping extends SqlCreate {
 
     private static final SqlSpecialOperator OPERATOR =
-            new SqlSpecialOperator("CREATE EXTERNAL TABLE", SqlKind.CREATE_TABLE);
+            new SqlSpecialOperator("CREATE MAPPING", SqlKind.CREATE_TABLE);
 
     private final SqlIdentifier name;
     private final SqlNodeList columns;
     private final SqlIdentifier type;
     private final SqlNodeList options;
 
-    public SqlCreateExternalTable(
+    public SqlCreateMapping(
             SqlIdentifier name,
             SqlNodeList columns,
             SqlIdentifier type,
@@ -99,25 +99,18 @@ public class SqlCreateExternalTable extends SqlCreate {
     @Override
     @Nonnull
     public List<SqlNode> getOperandList() {
-        return ImmutableNullableList.of(name, columns, type, options);
+        return ImmutableList.of(name, columns, type, options);
     }
 
     @Override
     public void unparse(SqlWriter writer, int leftPrec, int rightPrec) {
         writer.keyword("CREATE");
-
         if (getReplace()) {
-            writer.keyword("OR");
-            writer.keyword("REPLACE");
+            writer.keyword("OR REPLACE");
         }
-
-        writer.keyword("EXTERNAL");
-        writer.keyword("TABLE");
-
+        writer.keyword("MAPPING");
         if (ifNotExists) {
-            writer.keyword("IF");
-            writer.keyword("NOT");
-            writer.keyword("EXISTS");
+            writer.keyword("IF NOT EXISTS");
         }
 
         name.unparse(writer, leftPrec, rightPrec);

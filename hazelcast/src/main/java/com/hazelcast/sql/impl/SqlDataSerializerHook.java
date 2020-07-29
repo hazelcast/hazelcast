@@ -44,7 +44,8 @@ import com.hazelcast.sql.impl.row.EmptyRowBatch;
 import com.hazelcast.sql.impl.row.HeapRow;
 import com.hazelcast.sql.impl.row.JoinRow;
 import com.hazelcast.sql.impl.row.ListRowBatch;
-import com.hazelcast.sql.impl.schema.ExternalTable;
+import com.hazelcast.sql.impl.schema.TableMapping;
+import com.hazelcast.sql.impl.schema.TableMapping.TableMappingField;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.SQL_DS_FACTORY;
@@ -89,10 +90,10 @@ public class SqlDataSerializerHook implements DataSerializerHook {
 
     public static final int QUERY_PATH = 23;
 
-    public static final int EXTERNAL_TABLE = 24;
-    public static final int EXTERNAL_FIELD = 25;
+    public static final int TABLE_MAPPING = 24;
+    public static final int TABLE_MAPPING_FIELD = 25;
 
-    public static final int LEN = EXTERNAL_FIELD + 1;
+    public static final int LEN = TABLE_MAPPING_FIELD + 1;
 
     @Override
     public int getFactoryId() {
@@ -136,8 +137,8 @@ public class SqlDataSerializerHook implements DataSerializerHook {
 
         constructors[QUERY_PATH] = arg -> new QueryPath();
 
-        constructors[EXTERNAL_TABLE] = arg -> new ExternalTable();
-        constructors[EXTERNAL_FIELD] = arg -> new ExternalTable.ExternalField();
+        constructors[TABLE_MAPPING] = arg -> new TableMapping();
+        constructors[TABLE_MAPPING_FIELD] = arg -> new TableMappingField();
 
         return new ArrayDataSerializableFactory(constructors);
     }

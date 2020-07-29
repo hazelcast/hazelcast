@@ -21,7 +21,7 @@ import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.schema.ConstantTableStatistics;
-import com.hazelcast.sql.impl.schema.ExternalTable.ExternalField;
+import com.hazelcast.sql.impl.schema.TableMapping.TableMappingField;
 import com.hazelcast.sql.impl.schema.Table;
 import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.schema.map.PartitionedMapTable;
@@ -59,7 +59,7 @@ public class LocalPartitionedMapConnector extends SqlKeyValueConnector {
             @Nonnull String schemaName,
             @Nonnull String name,
             @Nonnull Map<String, String> options,
-            @Nonnull List<ExternalField> externalFields
+            @Nonnull List<TableMappingField> externalFields
     ) {
         String mapName = options.getOrDefault(TO_OBJECT_NAME, name);
 

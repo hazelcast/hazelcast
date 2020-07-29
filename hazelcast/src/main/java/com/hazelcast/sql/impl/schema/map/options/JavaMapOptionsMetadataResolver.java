@@ -24,7 +24,7 @@ import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.extract.GenericQueryTargetDescriptor;
 import com.hazelcast.sql.impl.extract.QueryPath;
-import com.hazelcast.sql.impl.schema.ExternalTable.ExternalField;
+import com.hazelcast.sql.impl.schema.TableMapping.TableMappingField;
 import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.schema.map.MapTableField;
 import com.hazelcast.sql.impl.type.QueryDataType;
@@ -69,7 +69,7 @@ public final class JavaMapOptionsMetadataResolver implements MapOptionsMetadataR
 
     @Override
     public MapOptionsMetadata resolve(
-            List<ExternalField> externalFields,
+            List<TableMappingField> fields,
             Map<String, String> options,
             boolean isKey,
             InternalSerializationService serializationService
@@ -85,9 +85,9 @@ public final class JavaMapOptionsMetadataResolver implements MapOptionsMetadataR
 
         QueryDataType type = QueryDataTypeUtils.resolveTypeForClass(clazz);
         if (type != QueryDataType.OBJECT) {
-            return resolvePrimitive(externalFields, type, isKey);
+            return resolvePrimitive(fields, type, isKey);
         } else {
-            return resolveObject(externalFields, clazz, isKey);
+            return resolveObject(fields, clazz, isKey);
         }
     }
 
@@ -101,17 +101,17 @@ public final class JavaMapOptionsMetadataResolver implements MapOptionsMetadataR
     }
 
     private MapOptionsMetadata resolvePrimitive(
-            List<ExternalField> externalFields,
+            List<TableMappingField> fields,
             QueryDataType type,
             boolean isKey
     ) {
-        Map<QueryPath, ExternalField> externalFieldsByPath = isKey
-                ? extractKeyFields(externalFields)
-                : extractValueFields(externalFields, name -> VALUE_PATH);
+        Map<QueryPath, TableMappingField> externalFieldsByPath = isKey
+                ? extractKeyFields(fields)
+                : extractValueFields(fields, name -> VALUE_PATH);
 
         QueryPath path = isKey ? QueryPath.KEY_PATH : QueryPath.VALUE_PATH;
 
-        ExternalField externalField = externalFieldsByPath.get(path);
+        TableMappingField externalField = externalFieldsByPath.get(path);
         if (externalField != null && !type.getTypeFamily().equals(externalField.type().getTypeFamily())) {
             throw QueryException.error("Mismatch between declared and inferred type - '" + externalField.name() + "'");
         }
@@ -119,7 +119,7 @@ public final class JavaMapOptionsMetadataResolver implements MapOptionsMetadataR
 
         TableField field = new MapTableField(name, type, false, path);
 
-        for (ExternalField ef : externalFieldsByPath.values()) {
+        for (TableMappingField ef : externalFieldsByPath.values()) {
             if (!field.getName().equals(ef.name())) {
                 throw QueryException.error("Unmapped field - '" + ef.name() + "'");
             }
@@ -132,11 +132,11 @@ public final class JavaMapOptionsMetadataResolver implements MapOptionsMetadataR
     }
 
     private MapOptionsMetadata resolveObject(
-            List<ExternalField> externalFields,
+            List<TableMappingField> externalFields,
             Class<?> clazz,
             boolean isKey
     ) {
-        Map<QueryPath, ExternalField> externalFieldsByPath = isKey
+        Map<QueryPath, TableMappingField> externalFieldsByPath = isKey
                 ? extractKeyFields(externalFields)
                 : extractValueFields(externalFields, name -> new QueryPath(name, false));
 
@@ -146,7 +146,7 @@ public final class JavaMapOptionsMetadataResolver implements MapOptionsMetadataR
             QueryPath path = new QueryPath(entry.getKey(), isKey);
             QueryDataType type = QueryDataTypeUtils.resolveTypeForClass(entry.getValue());
 
-            ExternalField externalField = externalFieldsByPath.get(path);
+            TableMappingField externalField = externalFieldsByPath.get(path);
             if (externalField != null && !type.getTypeFamily().equals(externalField.type().getTypeFamily())) {
                 throw QueryException.error("Mismatch between declared and inferred type - '" + externalField.name() + "'");
             }
@@ -156,7 +156,7 @@ public final class JavaMapOptionsMetadataResolver implements MapOptionsMetadataR
             fields.putIfAbsent(field.getName(), field);
         }
 
-        for (Entry<QueryPath, ExternalField> entry : externalFieldsByPath.entrySet()) {
+        for (Entry<QueryPath, TableMappingField> entry : externalFieldsByPath.entrySet()) {
             QueryPath path = entry.getKey();
             String name = entry.getValue().name();
             QueryDataType type = entry.getValue().type();
