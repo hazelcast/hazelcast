@@ -43,13 +43,15 @@ public class SqlClientResult implements SqlResult {
     private final Connection connection;
     private final QueryId queryId;
     private final SqlRowMetadata rowMetadata;
-    private final ClientIterator iterator = new ClientIterator();
+    private final ClientIterator iterator;
     private final int cursorBufferSize;
+    private final SqlResultType resultType;
 
     private boolean closed;
     private boolean iteratorAccessed;
 
     public SqlClientResult(
+        SqlResultType resultType,
         SqlClientService service,
         Connection connection,
         QueryId queryId,
@@ -63,19 +65,29 @@ public class SqlClientResult implements SqlResult {
         this.queryId = queryId;
         this.rowMetadata = rowMetadata;
         this.cursorBufferSize = cursorBufferSize;
+        this.resultType = resultType;
 
-        iterator.onNextPage(rowPage, rowPageLast);
+        if (resultType == SqlResultType.ROWS) {
+            iterator = new ClientIterator();
+            iterator.onNextPage(rowPage, rowPageLast);
+        } else {
+            iterator = null;
+        }
     }
 
     @Nonnull
     @Override
     public SqlRowMetadata getRowMetadata() {
+        checkIsRowsResult();
+
         return rowMetadata;
     }
 
     @Override
     @Nonnull
     public Iterator<SqlRow> iterator() {
+        checkIsRowsResult();
+
         if (!iteratorAccessed) {
             iteratorAccessed = true;
 
@@ -88,11 +100,15 @@ public class SqlClientResult implements SqlResult {
     @Nonnull
     @Override
     public SqlResultType getResultType() {
-        return SqlResultType.ROWS;
+        return resultType;
     }
 
     @Override
     public void close() {
+        if (resultType != SqlResultType.ROWS) {
+            return;
+        }
+
         try {
             if (!closed) {
                 if (iterator.last) {
@@ -104,6 +120,12 @@ public class SqlClientResult implements SqlResult {
             }
         } finally {
             closed = true;
+        }
+    }
+
+    private void checkIsRowsResult() {
+        if (resultType != SqlResultType.ROWS) {
+            throw new IllegalStateException("Not a " + SqlResultType.ROWS.name() + " result");
         }
     }
 

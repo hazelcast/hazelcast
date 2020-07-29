@@ -25,6 +25,7 @@ import com.hazelcast.sql.impl.state.QueryInitiatorState;
 import com.hazelcast.sql.impl.state.QueryState;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 
@@ -33,25 +34,31 @@ import java.util.NoSuchElementException;
  */
 public class SqlResultImpl implements SqlResult {
 
+    private final SqlResultType resultType;
     private final QueryState state;
     private final SqlRowMetadata rowMetadata;
     private Iterator<SqlRow> iterator;
 
-    public SqlResultImpl(QueryState state) {
+    public SqlResultImpl(SqlResultType resultType, QueryState state) {
+        this.resultType = resultType;
         this.state = state;
+        assert resultType == SqlResultType.ROWS ^ state == null : "resultType=" + resultType + ", state=" + state;
 
-        rowMetadata = state.getInitiatorState().getRowMetadata();
+        rowMetadata = state != null ? state.getInitiatorState().getRowMetadata() : null;
     }
 
     @Nonnull
     @Override
     public SqlRowMetadata getRowMetadata() {
+        checkIsRowsResult();
         return rowMetadata;
     }
 
     @Nonnull
     @Override
     public Iterator<SqlRow> iterator() {
+        checkIsRowsResult();
+
         if (iterator == null) {
             Iterator<SqlRow> iterator0 = new RowToSqlRowIterator(getQueryInitiatorState().getResultProducer().iterator());
 
@@ -66,7 +73,7 @@ public class SqlResultImpl implements SqlResult {
     @Nonnull
     @Override
     public SqlResultType getResultType() {
-        return SqlResultType.ROWS;
+        return resultType;
     }
 
     @Override
@@ -74,11 +81,26 @@ public class SqlResultImpl implements SqlResult {
         closeOnError(QueryException.cancelledByUser());
     }
 
-    public void closeOnError(QueryException error) {
-        state.cancel(error);
+    private void checkIsRowsResult() {
+        if (resultType != SqlResultType.ROWS) {
+            throw new IllegalStateException("Not a " + SqlResultType.ROWS.name() + " result");
+        }
     }
 
+    public void closeOnError(QueryException error) {
+        if (state != null) {
+            state.cancel(error);
+        }
+    }
+
+    /**
+     * Return the query ID or null if it's not a result with ROWS.
+     */
+    @Nullable
     public QueryId getQueryId() {
+        if (resultType != SqlResultType.ROWS) {
+            return null;
+        }
         return getQueryInitiatorState().getQueryId();
     }
 

@@ -40,16 +40,16 @@ public class QueryClientStateRegistry {
 
     public SqlPage registerAndFetch(
         UUID clientId,
-        SqlResultImpl cursor,
+        SqlResultImpl result,
         int cursorBufferSize,
         InternalSerializationService serializationService
     ) {
-        QueryClientState clientCursor = new QueryClientState(clientId, cursor);
+        QueryClientState clientCursor = new QueryClientState(clientId, result);
 
         SqlPage page = fetchInternal(clientCursor, cursorBufferSize, serializationService);
 
         if (!page.isLast()) {
-            clientCursors.put(cursor.getQueryId(), clientCursor);
+            clientCursors.put(result.getQueryId(), clientCursor);
         }
 
         return page;

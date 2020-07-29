@@ -18,30 +18,60 @@ package com.hazelcast.sql.impl.client;
 
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.sql.SqlColumnMetadata;
+import com.hazelcast.sql.SqlResultType;
 import com.hazelcast.sql.impl.QueryId;
 
+import javax.annotation.Nonnull;
 import java.util.List;
+
+import static com.hazelcast.sql.SqlResultType.ROWS;
+import static com.hazelcast.sql.SqlResultType.VOID;
 
 public class SqlExecuteResponse {
 
+    private final SqlResultType resultType;
     private final QueryId queryId;
     private final List<SqlColumnMetadata> rowMetadata;
     private final List<List<Data>> rowPage;
     private final boolean rowPageLast;
     private final SqlError error;
 
-    public SqlExecuteResponse(
+    private SqlExecuteResponse(
+        @Nonnull SqlResultType resultType,
         QueryId queryId,
         List<SqlColumnMetadata> rowMetadata,
         List<List<Data>> rowPage,
         boolean rowPageLast,
         SqlError error
     ) {
+        this.resultType = resultType;
         this.queryId = queryId;
         this.rowMetadata = rowMetadata;
         this.rowPage = rowPage;
         this.rowPageLast = rowPageLast;
         this.error = error;
+    }
+
+    public static SqlExecuteResponse rowsResponse(
+        QueryId queryId,
+        List<SqlColumnMetadata> rowMetadata,
+        List<List<Data>> rowPage,
+        boolean rowPageLast
+    ) {
+        return new SqlExecuteResponse(ROWS, queryId, rowMetadata, rowPage, rowPageLast, null);
+    }
+
+    public static SqlExecuteResponse voidResponse() {
+        return new SqlExecuteResponse(VOID, null, null, null, true, null);
+    }
+
+    public static SqlExecuteResponse errorResponse(SqlError error) {
+        return new SqlExecuteResponse(VOID, null, null, null, true, error);
+    }
+
+    @Nonnull
+    public SqlResultType getResultType() {
+        return resultType;
     }
 
     public QueryId getQueryId() {

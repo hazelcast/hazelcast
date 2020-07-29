@@ -43,6 +43,9 @@ import java.util.List;
 import java.util.function.Consumer;
 import java.util.logging.Level;
 
+import static com.hazelcast.sql.SqlResultType.ROWS;
+import static com.hazelcast.sql.SqlResultType.VOID;
+
 /**
  * Base SQL service implementation that bridges optimizer implementation, public and private APIs.
  */
@@ -211,13 +214,13 @@ public class SqlServiceImpl implements SqlService, Consumer<Packet> {
     private SqlResult executeSchemaChange(SchemaPlan plan) {
         plan.execute();
 
-        return new VoidResult();
+        return new SqlResultImpl(VOID, null);
     }
 
     private SqlResult executeImdg(Plan plan, List<Object> params, long timeout, int pageSize) {
         QueryState state = internalService.execute(plan, params, timeout, pageSize);
 
-        return new SqlResultImpl(state);
+        return new SqlResultImpl(ROWS, state);
     }
 
     private SqlResult executeJet(SqlPlan plan, List<Object> params, long timeout, int pageSize) {

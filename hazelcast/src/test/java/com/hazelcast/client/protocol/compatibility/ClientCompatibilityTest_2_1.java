@@ -6478,6 +6478,7 @@ public class ClientCompatibilityTest_2_1 {
         int fileClientMessageIndex = 826;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         SqlExecuteCodec.ResponseParameters parameters = SqlExecuteCodec.decodeResponse(fromFile);
+        assertTrue(isEqual(anInt, parameters.resultType));
         assertTrue(isEqual(anSqlQueryId, parameters.queryId));
         assertTrue(isEqual(aListOfSqlColumnMetadata, parameters.rowMetadata));
         assertTrue(isEqual(aListOfListOfData, parameters.rowPage));
