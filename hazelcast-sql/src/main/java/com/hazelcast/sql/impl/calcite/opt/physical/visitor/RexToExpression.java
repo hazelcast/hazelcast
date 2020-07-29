@@ -112,6 +112,27 @@ public final class RexToExpression {
 
         switch (operator.getKind()) {
             case CAST:
+                if (operands[0].getType().equals(resultType)) {
+                    // It might happen that two types Calcite considers different
+                    // are mapped to the same Hazelcast type. For instance, to
+                    // preserve the row signature, Calcite may insert synthetic
+                    // casts from a non-nullable type to the same nullable type.
+                    // Technically, such casts are not 100% valid SQL construct
+                    // since casts can't change the nullability of the operand
+                    // being casted, but they are valid on the RexNode level.
+                    //
+                    // Consider nullableBooleanColumn OR TRUE, the type of this
+                    // expression is nullable BOOLEAN. When Calcite simplifies it
+                    // to TRUE, the type changes to non-nullable BOOLEAN since
+                    // literals are non-nullable (except NULL literal itself).
+                    // That changes the row signature, to preserve it Calcite
+                    // synthetically casts TRUE to a nullable BOOLEAN.
+                    //
+                    // Currently, all Hazelcast types are nullable, therefore
+                    // there is no distinction between non-nullable types and
+                    // nullable ones after the conversion.
+                    return operands[0];
+                }
                 return CastExpression.create(operands[0], resultType);
 
             case CASE:
