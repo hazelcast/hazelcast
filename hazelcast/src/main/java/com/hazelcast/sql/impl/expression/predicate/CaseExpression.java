@@ -49,26 +49,27 @@ public final class CaseExpression<T> implements Expression<T>, IdentifiedDataSer
 
     @SuppressWarnings("unchecked")
     public static CaseExpression<?> create(Expression<?>[] expressions, QueryDataType resultType) {
-        // Split conditions and expressions.
-        assert expressions != null;
+        // The received expressions are going in the interleaved condition-result
+        // order, except the last 'else' result which doesn't have a condition:
+        // [condition1, result1, condition2, result2, ..., elseResult].
+
+        // The 'else' result doesn't have a condition, so the number of
+        // expressions should be always odd.
         assert expressions.length % 2 == 1;
 
+        // Split the received interleaved expressions into conditions and
+        // results.
         int conditionCount = expressions.length / 2;
-
         Expression<Boolean>[] conditions = new Expression[conditionCount];
         Expression<?>[] results = new Expression[conditionCount + 1];
-
-        int idx = 0;
-
         for (int i = 0; i < conditionCount; i++) {
-            conditions[i] = (Expression<Boolean>) expressions[idx++];
-            results[i] = expressions[idx++];
+            conditions[i] = (Expression<Boolean>) expressions[i * 2];
+            results[i] = expressions[i * 2 + 1];
         }
 
-        // Last expression might be null.
-        results[results.length - 1] = expressions.length == idx + 1 ? expressions[idx] : null;
+        // Add the 'else' result into the results.
+        results[results.length - 1] = expressions[expressions.length - 1];
 
-        // Done.
         return new CaseExpression<>(conditions, results, resultType);
     }
 
@@ -85,6 +86,7 @@ public final class CaseExpression<T> implements Expression<T>, IdentifiedDataSer
     @SuppressWarnings("unchecked")
     @Override
     public T eval(Row row, ExpressionEvalContext context) {
+        // Test for conditions one-by-one.
         for (int i = 0; i < conditions.length; i++) {
             Expression<Boolean> condition = conditions[i];
 
@@ -94,14 +96,9 @@ public final class CaseExpression<T> implements Expression<T>, IdentifiedDataSer
             }
         }
 
-        // Return the last result if none conditions were met.
-        Expression<?> lastResult = results[results.length - 1];
-
-        if (lastResult != null) {
-            return (T) lastResult.eval(row, context);
-        } else {
-            return null;
-        }
+        // Return the 'else' result if no conditions were met.
+        Expression<?> elseResult = results[results.length - 1];
+        return (T) elseResult.eval(row, context);
     }
 
     @Override
