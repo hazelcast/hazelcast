@@ -20,8 +20,13 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.impl.HazelcastInstanceProxy;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
+import com.hazelcast.map.IMap;
+import com.hazelcast.map.impl.MapContainer;
+import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.sql.SqlResult;
+import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.impl.exec.CreateExecPlanNodeVisitorHook;
 import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.operation.QueryOperationHandlerImpl;
@@ -65,6 +70,14 @@ public class SqlTestSupport extends HazelcastTestSupport {
 
     public static InternalSerializationService getSerializationService() {
         return new DefaultSerializationServiceBuilder().build();
+    }
+
+    public static InternalSerializationService getSerializationSerivce(HazelcastInstance instance) {
+        return (InternalSerializationService) nodeEngine(instance).getSerializationService();
+    }
+
+    public static MapContainer getMapContainer(IMap<?, ?> map) {
+        return ((MapProxyImpl<?, ?>) map).getService().getMapServiceContext().getMapContainer(map.getName());
     }
 
     public static <T> T serialize(Object original) {
@@ -138,7 +151,9 @@ public class SqlTestSupport extends HazelcastTestSupport {
             Collections.emptyMap(),
             Collections.emptyMap(),
             Collections.emptyMap(),
-            null
+            null,
+            null,
+            Collections.emptySet()
         );
     }
 
@@ -174,5 +189,17 @@ public class SqlTestSupport extends HazelcastTestSupport {
 
     public static SqlInternalService sqlInternalService(HazelcastInstance instance) {
         return nodeEngine(instance).getSqlService().getInternalService();
+    }
+
+    public List<SqlRow> execute(HazelcastInstance member, String sql) {
+        List<SqlRow> rows = new ArrayList<>();
+
+        try (SqlResult res = member.getSql().query(sql)) {
+            for (SqlRow row : res) {
+                rows.add(row);
+            }
+        }
+
+        return rows;
     }
 }

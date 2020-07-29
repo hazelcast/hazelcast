@@ -17,11 +17,13 @@
 package com.hazelcast.sql.impl.calcite;
 
 import com.hazelcast.sql.impl.extract.GenericQueryTargetDescriptor;
+import com.hazelcast.sql.impl.plan.cache.PlanObjectId;
 import com.hazelcast.sql.impl.schema.ConstantTableStatistics;
 import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.schema.TableStatistics;
 import com.hazelcast.sql.impl.schema.map.AbstractMapTable;
 import com.hazelcast.sql.impl.type.QueryDataType;
+import com.sun.corba.se.spi.ior.ObjectId;
 
 import java.util.Arrays;
 import java.util.List;
@@ -36,9 +38,18 @@ public class TestMapTable extends AbstractMapTable {
             name,
             fields,
             statistics,
-            GenericQueryTargetDescriptor.INSTANCE,
-            GenericQueryTargetDescriptor.INSTANCE
+            GenericQueryTargetDescriptor.DEFAULT,
+            GenericQueryTargetDescriptor.DEFAULT
         );
+    }
+
+    @Override
+    public PlanObjectId getObjectId() {
+        if (!isValid()) {
+            return null;
+        }
+
+        return new ObjectId(getSchemaName(), getName(), getFields());
     }
 
     public static TestMapTable create(String schemaName, String name, TableField... fields) {
@@ -64,6 +75,50 @@ public class TestMapTable extends AbstractMapTable {
     private static class Field extends TableField {
         private Field(String name, QueryDataType type, boolean hidden) {
             super(name, type, hidden);
+        }
+    }
+
+    private static class ObjectId implements PlanObjectId {
+
+        private final String schemaName;
+        private final String name;
+        private final List<TableField> fields;
+
+        private ObjectId(String schemaName, String name, List<TableField> fields) {
+            this.schemaName = schemaName;
+            this.name = name;
+            this.fields = fields;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+
+            ObjectId objectId = (ObjectId) o;
+
+            if (!schemaName.equals(objectId.schemaName)) {
+                return false;
+            }
+
+            if (!name.equals(objectId.name)) {
+                return false;
+            }
+
+            return fields.equals(objectId.fields);
+        }
+
+        @Override
+        public int hashCode() {
+            int result = schemaName.hashCode();
+            result = 31 * result + name.hashCode();
+            result = 31 * result + fields.hashCode();
+            return result;
         }
     }
 }

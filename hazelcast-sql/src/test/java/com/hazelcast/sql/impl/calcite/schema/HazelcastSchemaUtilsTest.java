@@ -30,7 +30,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-import static com.hazelcast.sql.impl.calcite.schema.HazelcastSchemaUtils.prepareSearchPaths;
+import static com.hazelcast.sql.impl.QueryUtils.prepareSearchPaths;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)

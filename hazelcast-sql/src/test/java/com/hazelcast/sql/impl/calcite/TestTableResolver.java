@@ -20,8 +20,8 @@ import com.hazelcast.sql.impl.QueryUtils;
 import com.hazelcast.sql.impl.schema.Table;
 import com.hazelcast.sql.impl.schema.TableResolver;
 
+import javax.annotation.Nonnull;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
@@ -31,7 +31,7 @@ import java.util.List;
 public class TestTableResolver implements TableResolver {
 
     private final String searchPath;
-    private final Collection<Table> tables;
+    private final List<Table> tables;
 
     public static TestTableResolver create(Table... tables) {
         return create(null, tables);
@@ -41,7 +41,7 @@ public class TestTableResolver implements TableResolver {
         return new TestTableResolver(searchPath, Arrays.asList(tables));
     }
 
-    private TestTableResolver(String searchPath, Collection<Table> tables) {
+    private TestTableResolver(String searchPath, List<Table> tables) {
         this.searchPath = searchPath;
         this.tables = tables;
     }
@@ -55,8 +55,9 @@ public class TestTableResolver implements TableResolver {
         }
     }
 
+    @Nonnull
     @Override
-    public Collection<Table> getTables() {
+    public List<Table> getTables() {
         return tables;
     }
 }

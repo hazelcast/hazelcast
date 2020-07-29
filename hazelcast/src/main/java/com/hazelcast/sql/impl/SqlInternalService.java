@@ -18,6 +18,8 @@ package com.hazelcast.sql.impl;
 
 import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.sql.impl.plan.cache.CachedPlanInvalidationCallback;
+import com.hazelcast.sql.impl.plan.cache.PlanCacheChecker;
 import com.hazelcast.sql.impl.state.QueryClientStateRegistry;
 import com.hazelcast.sql.impl.exec.io.flowcontrol.FlowControlFactory;
 import com.hazelcast.sql.impl.exec.io.flowcontrol.simple.SimpleFlowControlFactory;
@@ -70,7 +72,8 @@ public class SqlInternalService {
         int operationThreadCount,
         int fragmentThreadCount,
         int outboxBatchSize,
-        long stateCheckFrequency
+        long stateCheckFrequency,
+        PlanCacheChecker planCacheChecker
     ) {
         this.nodeServiceProvider = nodeServiceProvider;
 
@@ -97,6 +100,7 @@ public class SqlInternalService {
             stateRegistry,
             clientStateRegistry,
             operationHandler,
+            planCacheChecker,
             stateCheckFrequency
         );
     }
@@ -122,7 +126,13 @@ public class SqlInternalService {
      *
      * @return Query state.
      */
-    public QueryState execute(Plan plan, List<Object> params, long timeout, int pageSize) {
+    public QueryState execute(
+        Plan plan,
+        List<Object> params,
+        long timeout,
+        int pageSize,
+        CachedPlanInvalidationCallback planInvalidationCallback
+    ) {
         if (!params.isEmpty()) {
             throw new UnsupportedOperationException("SQL queries with parameters are not supported yet!");
         }
@@ -148,6 +158,7 @@ public class SqlInternalService {
             localMemberId,
             timeout,
             plan,
+            planInvalidationCallback,
             plan.getRowMetadata(),
             consumer,
             operationHandler

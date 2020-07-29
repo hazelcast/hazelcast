@@ -18,19 +18,29 @@ package com.hazelcast.sql.impl.plan;
 
 import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.sql.SqlRowMetadata;
-import com.hazelcast.sql.impl.optimizer.SqlPlan;
 import com.hazelcast.sql.impl.optimizer.SqlPlanType;
+import com.hazelcast.sql.impl.plan.cache.CachedPlan;
+import com.hazelcast.sql.impl.plan.cache.PlanCacheKey;
+import com.hazelcast.sql.impl.plan.cache.PlanCheckContext;
+import com.hazelcast.sql.impl.plan.cache.PlanObjectId;
 import com.hazelcast.sql.impl.plan.node.PlanNode;
 
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 /**
  * Query plan implementation.
  */
-public class Plan implements SqlPlan {
+public class Plan implements CachedPlan {
+    /** Time when the plan was used for the last time. */
+    private volatile long planLastUsed;
+
+    /** Key used for plan cache. */
+    private final PlanCacheKey planKey;
+
     /** Partition mapping. */
     private final Map<UUID, PartitionIdSet> partMap;
 
@@ -51,6 +61,10 @@ public class Plan implements SqlPlan {
 
     private final SqlRowMetadata rowMetadata;
 
+    /** IDs of objects used in the plan. */
+    private final Set<PlanObjectId> objectIds;
+
+    @SuppressWarnings("checkstyle:ParameterNumber")
     public Plan(
         Map<UUID, PartitionIdSet> partMap,
         List<PlanNode> fragments,
@@ -58,7 +72,9 @@ public class Plan implements SqlPlan {
         Map<Integer, Integer> outboundEdgeMap,
         Map<Integer, Integer> inboundEdgeMap,
         Map<Integer, Integer> inboundEdgeMemberCountMap,
-        SqlRowMetadata rowMetadata
+        SqlRowMetadata rowMetadata,
+        PlanCacheKey planKey,
+        Set<PlanObjectId> objectIds
     ) {
         this.partMap = partMap;
         this.fragments = fragments;
@@ -67,11 +83,33 @@ public class Plan implements SqlPlan {
         this.inboundEdgeMap = inboundEdgeMap;
         this.inboundEdgeMemberCountMap = inboundEdgeMemberCountMap;
         this.rowMetadata = rowMetadata;
+        this.planKey = planKey;
+        this.objectIds = objectIds;
     }
 
     @Override
     public SqlPlanType getType() {
         return SqlPlanType.IMDG;
+    }
+
+    @Override
+    public PlanCacheKey getPlanKey() {
+        return planKey;
+    }
+
+    @Override
+    public long getPlanLastUsed() {
+        return planLastUsed;
+    }
+
+    @Override
+    public void onPlanUsed() {
+        planLastUsed = System.currentTimeMillis();
+    }
+
+    @Override
+    public boolean isPlanValid(PlanCheckContext context) {
+        return context.isValid(objectIds, partMap);
     }
 
     public Map<UUID, PartitionIdSet> getPartitionMap() {

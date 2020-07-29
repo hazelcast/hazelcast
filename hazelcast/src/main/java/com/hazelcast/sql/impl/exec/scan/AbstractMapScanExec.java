@@ -18,22 +18,31 @@ package com.hazelcast.sql.impl.exec.scan;
 
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.query.impl.getters.Extractors;
+import com.hazelcast.sql.SqlErrorCode;
+import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.exec.AbstractExec;
+import com.hazelcast.sql.impl.exec.IterationResult;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.extract.QueryTargetDescriptor;
 import com.hazelcast.sql.impl.row.EmptyRow;
 import com.hazelcast.sql.impl.row.HeapRow;
+import com.hazelcast.sql.impl.row.ListRowBatch;
 import com.hazelcast.sql.impl.row.Row;
+import com.hazelcast.sql.impl.row.RowBatch;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.sql.impl.worker.QueryFragmentContext;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
  * Common operator for map scans.
  */
 public abstract class AbstractMapScanExec extends AbstractExec {
+
+    /** Batch size. To be moved outside when the memory management is ready. */
+    public static final int BATCH_SIZE = 1024;
 
     protected final String mapName;
     protected final QueryTargetDescriptor keyDescriptor;
@@ -42,8 +51,14 @@ public abstract class AbstractMapScanExec extends AbstractExec {
     protected final List<QueryDataType> fieldTypes;
     protected final List<Integer> projects;
     protected final Expression<Boolean> filter;
+
     private final InternalSerializationService serializationService;
+
+    private int migrationStamp;
+    private KeyValueIterator recordIterator;
+
     private MapScanRow row;
+    private List<Row> currentRows;
 
     protected AbstractMapScanExec(
         int id,
@@ -79,12 +94,69 @@ public abstract class AbstractMapScanExec extends AbstractExec {
             serializationService
         );
 
+        migrationStamp = getMigrationStamp();
+        recordIterator = createIterator();
+
         setup1(ctx);
     }
 
     protected void setup1(QueryFragmentContext ctx) {
         // No-op.
     }
+
+    @Override
+    protected IterationResult advance0() {
+        currentRows = null;
+
+        while (recordIterator.tryAdvance()) {
+            Row row = prepareRow(recordIterator.getKey(), recordIterator.getValue());
+
+            if (row != null) {
+                if (currentRows == null) {
+                    currentRows = new ArrayList<>(BATCH_SIZE);
+                }
+
+                currentRows.add(row);
+
+                if (currentRows.size() == BATCH_SIZE) {
+                    break;
+                }
+            }
+        }
+
+        boolean done = recordIterator.done();
+
+        // Check for concurrent migration
+        if (!validateMigrationStamp(migrationStamp)) {
+            throw QueryException.error(
+                SqlErrorCode.PARTITION_MIGRATED, "Map scan failed due to concurrent partition migration "
+                + "(result consistency cannot be guaranteed)"
+            ).withInvalidate();
+        }
+
+        // Check for concurrent map destroy
+        if (isDestroyed()) {
+            throw QueryException.error(
+                SqlErrorCode.MAP_DESTROYED,
+                "IMap has been destroyed concurrently: " + mapName
+            ).withInvalidate();
+        }
+
+        return done ? IterationResult.FETCHED_DONE : IterationResult.FETCHED;
+    }
+
+    @Override
+    public RowBatch currentBatch0() {
+        return currentRows != null ? new ListRowBatch(currentRows) : null;
+    }
+
+    protected abstract int getMigrationStamp();
+
+    protected abstract boolean validateMigrationStamp(int migrationStamp);
+
+    protected abstract KeyValueIterator createIterator();
+
+    protected abstract boolean isDestroyed();
 
     /**
      * Prepare the row for the given key and value:
@@ -99,8 +171,12 @@ public abstract class AbstractMapScanExec extends AbstractExec {
         row.setKeyValue(rawKey, rawValue);
 
         // Filter.
-        if (filter != null && !filter.eval(row, ctx)) {
-            return null;
+        if (filter != null) {
+            Boolean filterRes = filter.eval(row, ctx);
+
+            if (filterRes == null || !filterRes) {
+                return null;
+            }
         }
 
         // Project.

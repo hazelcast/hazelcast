@@ -32,8 +32,8 @@ import com.hazelcast.sql.impl.calcite.schema.HazelcastSchemaUtils;
 import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlConformance;
 import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlOperatorTable;
 import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlValidator;
-import com.hazelcast.sql.impl.schema.TableResolver;
 import org.apache.calcite.adapter.java.JavaTypeFactory;
+import com.hazelcast.sql.impl.schema.SqlCatalog;
 import org.apache.calcite.config.CalciteConnectionConfig;
 import org.apache.calcite.jdbc.HazelcastRootCalciteSchema;
 import org.apache.calcite.plan.Contexts;
@@ -88,21 +88,17 @@ public final class OptimizerContext {
     /**
      * Create the optimization context.
      *
-     * @param tableResolvers Resolver to collect information about tables.
-     * @param currentSearchPaths Search paths to support "current schema" feature.
+     * @param searchPaths Search paths to support "current schema" feature.
      * @param memberCount Number of member that is important for distribution-related rules and converters.
      * @return Context.
      */
     public static OptimizerContext create(
-        List<TableResolver> tableResolvers,
-        List<List<String>> currentSearchPaths,
+        SqlCatalog schema,
+        List<List<String>> searchPaths,
         int memberCount
     ) {
-        // Prepare search paths.
-        List<List<String>> searchPaths = HazelcastSchemaUtils.prepareSearchPaths(currentSearchPaths, tableResolvers);
-
         // Resolve tables.
-        HazelcastSchema rootSchema = HazelcastSchemaUtils.createRootSchema(tableResolvers);
+        HazelcastSchema rootSchema = HazelcastSchemaUtils.createRootSchema(schema);
 
         return create(rootSchema, searchPaths, memberCount);
     }
@@ -165,6 +161,8 @@ public final class OptimizerContext {
         HazelcastSchema rootSchema,
         List<List<String>> schemaPaths
     ) {
+        assert schemaPaths != null;
+
         return new HazelcastCalciteCatalogReader(
             new HazelcastRootCalciteSchema(rootSchema),
             schemaPaths,

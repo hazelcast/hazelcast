@@ -18,9 +18,11 @@ package com.hazelcast.sql.impl.calcite.parse;
 
 import com.hazelcast.sql.SqlErrorCode;
 import com.hazelcast.sql.impl.QueryException;
+import com.hazelcast.sql.impl.QueryUtils;
 import com.hazelcast.sql.impl.calcite.OptimizerContext;
 import com.hazelcast.sql.impl.calcite.TestMapTable;
 import com.hazelcast.sql.impl.calcite.TestTableResolver;
+import com.hazelcast.sql.impl.schema.SqlCatalog;
 import com.hazelcast.sql.impl.schema.TableResolver;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -165,7 +167,7 @@ public class ParserNameResolutionTest {
         return createContext(null);
     }
 
-    private static OptimizerContext createContext(String searchPath) {
+    private static OptimizerContext createContext(String additionalSearchPath) {
         TableResolver resolverWithoutSearchPath = TestTableResolver.create(
             TestMapTable.create(SCHEMA_1, TABLE_1, TestMapTable.field(FIELD_1))
         );
@@ -175,11 +177,18 @@ public class ParserNameResolutionTest {
             TestMapTable.create(SCHEMA_2, TABLE_2, TestMapTable.field(FIELD_2))
         );
 
-        List<List<String>> searchPaths =
-            searchPath != null ? Collections.singletonList(Arrays.asList(CATALOG, searchPath)) : null;
+        List<TableResolver> tableResolvers = Arrays.asList(resolverWithoutSearchPath, resolverWithSearchPath);
+
+        List<List<String>> additionalSearchPaths = additionalSearchPath != null
+            ? Collections.singletonList(Arrays.asList(CATALOG, additionalSearchPath)) : Collections.emptyList();
+
+        List<List<String>> searchPaths = QueryUtils.prepareSearchPaths(
+            additionalSearchPaths,
+            tableResolvers
+        );
 
         return OptimizerContext.create(
-            Arrays.asList(resolverWithoutSearchPath, resolverWithSearchPath),
+            new SqlCatalog(tableResolvers),
             searchPaths,
             1
         );

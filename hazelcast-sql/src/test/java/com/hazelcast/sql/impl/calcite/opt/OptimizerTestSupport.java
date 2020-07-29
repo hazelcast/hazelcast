@@ -16,6 +16,7 @@
 
 package com.hazelcast.sql.impl.calcite.opt;
 
+import com.hazelcast.sql.impl.QueryUtils;
 import com.hazelcast.sql.impl.SqlTestSupport;
 import com.hazelcast.sql.impl.calcite.OptimizerContext;
 import com.hazelcast.sql.impl.calcite.TestMapTable;
@@ -89,10 +90,15 @@ public abstract class OptimizerTestSupport extends SqlTestSupport {
      * @param schema Schema.
      * @return Result.
      */
-    protected static Result optimize(String sql, HazelcastSchema schema, int nodeCount, boolean physical) {
+    protected static Result optimize(
+        String sql,
+        HazelcastSchema schema,
+        int nodeCount,
+        boolean physical
+    ) {
         OptimizerContext context = OptimizerContext.create(
             HazelcastSchemaUtils.createCatalog(schema),
-            HazelcastSchemaUtils.prepareSearchPaths(null, null),
+            QueryUtils.prepareSearchPaths(null, null),
             nodeCount
         );
 

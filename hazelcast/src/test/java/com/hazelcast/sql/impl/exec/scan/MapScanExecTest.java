@@ -67,13 +67,14 @@ import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 @SuppressWarnings("unused")
 public class MapScanExecTest extends SqlTestSupport {
 
-    private static final int BATCH_SIZE = MapScanExec.BATCH_SIZE;
+    private static final int BATCH_SIZE = AbstractMapScanExec.BATCH_SIZE;
     private static final int PARTITION_COUNT = 10;
 
     private static final String MAP_OBJECT = "mo";
@@ -163,8 +164,8 @@ public class MapScanExecTest extends SqlTestSupport {
             id,
             mapContainer,
             parts,
-            GenericQueryTargetDescriptor.INSTANCE,
-            GenericQueryTargetDescriptor.INSTANCE,
+            GenericQueryTargetDescriptor.DEFAULT,
+            GenericQueryTargetDescriptor.DEFAULT,
             fieldPaths,
             fieldTypes,
             Collections.emptyList(),
@@ -257,8 +258,8 @@ public class MapScanExecTest extends SqlTestSupport {
             id,
             mapContainer,
             parts,
-            GenericQueryTargetDescriptor.INSTANCE,
-            GenericQueryTargetDescriptor.INSTANCE,
+            GenericQueryTargetDescriptor.DEFAULT,
+            GenericQueryTargetDescriptor.DEFAULT,
             fieldPaths,
             fieldTypes,
             projects,
@@ -269,8 +270,8 @@ public class MapScanExecTest extends SqlTestSupport {
         assertEquals(id, exec.getId());
         assertEquals(mapContainer, exec.getMap());
         assertEquals(parts, exec.getPartitions());
-        assertEquals(GenericQueryTargetDescriptor.INSTANCE, exec.getKeyDescriptor());
-        assertEquals(GenericQueryTargetDescriptor.INSTANCE, exec.getValueDescriptor());
+        assertEquals(GenericQueryTargetDescriptor.DEFAULT, exec.getKeyDescriptor());
+        assertEquals(GenericQueryTargetDescriptor.DEFAULT, exec.getValueDescriptor());
         assertEquals(fieldPaths, exec.getFieldPaths());
         assertEquals(fieldTypes, exec.getFieldTypes());
         assertEquals(projects, exec.getProjects());
@@ -340,8 +341,8 @@ public class MapScanExecTest extends SqlTestSupport {
             1,
             mapProxy.getService().getMapServiceContext().getMapContainer(mapProxy.getName()),
             partitionIdSet,
-            GenericQueryTargetDescriptor.INSTANCE,
-            GenericQueryTargetDescriptor.INSTANCE,
+            GenericQueryTargetDescriptor.DEFAULT,
+            GenericQueryTargetDescriptor.DEFAULT,
             Collections.singletonList(valuePath("val2")),
             Collections.singletonList(QueryDataType.BIGINT),
             Collections.singletonList(0),
@@ -372,8 +373,8 @@ public class MapScanExecTest extends SqlTestSupport {
             1,
             mapProxy.getService().getMapServiceContext().getMapContainer(mapProxy.getName()),
             partitionIdSet,
-            GenericQueryTargetDescriptor.INSTANCE,
-            GenericQueryTargetDescriptor.INSTANCE,
+            GenericQueryTargetDescriptor.DEFAULT,
+            GenericQueryTargetDescriptor.DEFAULT,
             Collections.singletonList(valuePath("val2")),
             Collections.singletonList(QueryDataType.TIMESTAMP),
             Collections.singletonList(0),
@@ -390,6 +391,7 @@ public class MapScanExecTest extends SqlTestSupport {
                 + "[expectedClass=java.time.LocalDateTime, actualClass=java.lang.Long]",
             exception.getMessage()
         );
+        assertTrue(exception.isInvalidatePlan());
     }
 
     /**
@@ -411,8 +413,8 @@ public class MapScanExecTest extends SqlTestSupport {
             1,
             localMapProxy.getService().getMapServiceContext().getMapContainer(localMapProxy.getName()),
             partitionIdSet,
-            GenericQueryTargetDescriptor.INSTANCE,
-            GenericQueryTargetDescriptor.INSTANCE,
+            GenericQueryTargetDescriptor.DEFAULT,
+            GenericQueryTargetDescriptor.DEFAULT,
             Collections.singletonList(valuePath("val2")),
             Collections.singletonList(QueryDataType.TIMESTAMP),
             Collections.singletonList(0),
@@ -421,13 +423,14 @@ public class MapScanExecTest extends SqlTestSupport {
         );
 
         QueryException exception = assertThrows(QueryException.class, () -> exec.setup(emptyFragmentContext()));
-        assertEquals(SqlErrorCode.PARTITION_MIGRATED, exception.getCode());
+        assertEquals(SqlErrorCode.PARTITION_NOT_OWNED, exception.getCode());
+        assertTrue(exception.isInvalidatePlan());
     }
 
     /**
      * Simulates the case when partitions are migrated during query execution. Tp achieve this we load keys into local
      * partitions in a way that iteration stops before the first partition is read. Then we start the new member, that
-     * chagnes the migration stamp. Then we try to read the remaining data.
+     * changes the migration stamp. Then we try to read the remaining data.
      */
     @Test
     public void testConcurrentMigration() {
@@ -475,8 +478,8 @@ public class MapScanExecTest extends SqlTestSupport {
             1,
             mapProxy.getService().getMapServiceContext().getMapContainer(mapProxy.getName()),
             partitionIdSet,
-            GenericQueryTargetDescriptor.INSTANCE,
-            GenericQueryTargetDescriptor.INSTANCE,
+            GenericQueryTargetDescriptor.DEFAULT,
+            GenericQueryTargetDescriptor.DEFAULT,
             Collections.singletonList(valuePath("val2")),
             Collections.singletonList(QueryDataType.BIGINT),
             Collections.singletonList(0),
@@ -500,6 +503,7 @@ public class MapScanExecTest extends SqlTestSupport {
             // Try advance, should fail.
             QueryException exception = assertThrows(QueryException.class, exec::advance);
             assertEquals(SqlErrorCode.PARTITION_MIGRATED, exception.getCode());
+            assertTrue(exception.isInvalidatePlan());
         } finally {
             instance3.shutdown();
         }
@@ -545,8 +549,8 @@ public class MapScanExecTest extends SqlTestSupport {
             1,
             mapProxy.getService().getMapServiceContext().getMapContainer(mapProxy.getName()),
             partitionIdSet,
-            GenericQueryTargetDescriptor.INSTANCE,
-            GenericQueryTargetDescriptor.INSTANCE,
+            GenericQueryTargetDescriptor.DEFAULT,
+            GenericQueryTargetDescriptor.DEFAULT,
             Collections.singletonList(valuePath("val2")),
             Collections.singletonList(QueryDataType.BIGINT),
             Collections.singletonList(0),
@@ -562,6 +566,7 @@ public class MapScanExecTest extends SqlTestSupport {
         // Advance after destroy.
         QueryException exception = assertThrows(QueryException.class, exec::advance);
         assertEquals(SqlErrorCode.MAP_DESTROYED, exception.getCode());
+        assertTrue(exception.isInvalidatePlan());
     }
 
     @Test
@@ -582,8 +587,8 @@ public class MapScanExecTest extends SqlTestSupport {
             1,
             mapProxy.getService().getMapServiceContext().getMapContainer(mapProxy.getName()),
             partitionIdSet,
-            GenericQueryTargetDescriptor.INSTANCE,
-            GenericQueryTargetDescriptor.INSTANCE,
+            GenericQueryTargetDescriptor.DEFAULT,
+            GenericQueryTargetDescriptor.DEFAULT,
             Collections.singletonList(valuePath("val2")),
             Collections.singletonList(QueryDataType.BIGINT),
             Collections.singletonList(0),

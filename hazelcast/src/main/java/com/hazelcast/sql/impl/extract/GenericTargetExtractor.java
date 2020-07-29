@@ -31,13 +31,13 @@ public class GenericTargetExtractor extends AbstractGenericExtractor {
     @Override
     public Object get() {
         try {
-            Object target = getTarget();
+            Object target = targetAccessor.getTargetDeserialized();
 
             return type.normalize(target);
         } catch (QueryDataTypeMismatchException e) {
             throw QueryException.dataException("Failed to extract map entry " + (key ? "key" : "value")
                 + " because of type mismatch [expectedClass=" + e.getExpectedClass().getName()
-                + ", actualClass=" + e.getActualClass().getName() + ']');
+                + ", actualClass=" + e.getActualClass().getName() + ']').withInvalidate();
         } catch (Exception e) {
             throw QueryException.dataException("Failed to extract map entry " + (key ? "key" : "value") + ": "
                 + e.getMessage(), e);

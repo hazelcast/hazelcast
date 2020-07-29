@@ -20,35 +20,20 @@ import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.query.impl.getters.Extractors;
-import com.hazelcast.sql.SqlErrorCode;
-import com.hazelcast.sql.impl.QueryException;
-import com.hazelcast.sql.impl.exec.IterationResult;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.extract.QueryTargetDescriptor;
-import com.hazelcast.sql.impl.row.ListRowBatch;
-import com.hazelcast.sql.impl.row.Row;
-import com.hazelcast.sql.impl.row.RowBatch;
 import com.hazelcast.sql.impl.type.QueryDataType;
-import com.hazelcast.sql.impl.worker.QueryFragmentContext;
 
-import java.util.ArrayList;
 import java.util.List;
 
 /**
  * Executor for map scan.
  */
 public class MapScanExec extends AbstractMapScanExec {
-    /** Batch size. To be moved outside when the memory management is ready. */
-    static final int BATCH_SIZE = 1024;
 
-    private final MapContainer map;
-    private final PartitionIdSet partitions;
-
-    private int migrationStamp;
-    private MapScanExecIterator recordIterator;
-
-    private List<Row> currentRows;
+    protected final MapContainer map;
+    protected final PartitionIdSet partitions;
 
     public MapScanExec(
         int id,
@@ -69,55 +54,28 @@ public class MapScanExec extends AbstractMapScanExec {
     }
 
     @Override
-    protected void setup1(QueryFragmentContext ctx) {
-        migrationStamp = map.getMapServiceContext().getService().getMigrationStamp();
-        recordIterator = MapScanExecUtils.createIterator(map, partitions);
-    }
-
-    @Override
-    public IterationResult advance0() {
-        currentRows = null;
-
-        while (recordIterator.tryAdvance()) {
-            Row row = prepareRow(recordIterator.getKey(), recordIterator.getValue());
-
-            if (row != null) {
-                if (currentRows == null) {
-                    currentRows = new ArrayList<>(BATCH_SIZE);
-                }
-
-                currentRows.add(row);
-
-                if (currentRows.size() == BATCH_SIZE) {
-                    break;
-                }
-            }
-        }
-
-        boolean done = !recordIterator.hasNext();
-
-        // Check for concurrent migration
-        if (!map.getMapServiceContext().getService().validateMigrationStamp(migrationStamp)) {
-            throw QueryException.error(SqlErrorCode.PARTITION_MIGRATED, "Map scan failed due to concurrent partition migration "
-                + "(result consistency cannot be guaranteed)");
-        }
-
-        // Check for concurrent map destroy
-        if (map.isDestroyed()) {
-            throw QueryException.error(SqlErrorCode.MAP_DESTROYED, "IMap has been destroyed concurrently: " + mapName);
-        }
-
-        return done ? IterationResult.FETCHED_DONE : IterationResult.FETCHED;
-    }
-
-    @Override
-    public RowBatch currentBatch0() {
-        return currentRows != null ? new ListRowBatch(currentRows) : null;
-    }
-
-    @Override
     protected Extractors createExtractors() {
         return MapScanExecUtils.createExtractors(map);
+    }
+
+    @Override
+    protected int getMigrationStamp() {
+        return map.getMapServiceContext().getService().getMigrationStamp();
+    }
+
+    @Override
+    protected boolean validateMigrationStamp(int migrationStamp) {
+        return map.getMapServiceContext().getService().validateMigrationStamp(migrationStamp);
+    }
+
+    @Override
+    protected KeyValueIterator createIterator() {
+        return MapScanExecUtils.createIterator(map, partitions);
+    }
+
+    @Override
+    protected boolean isDestroyed() {
+        return map.isDestroyed();
     }
 
     public MapContainer getMap() {

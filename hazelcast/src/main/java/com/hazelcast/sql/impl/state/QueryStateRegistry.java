@@ -20,6 +20,7 @@ import com.hazelcast.sql.SqlRowMetadata;
 import com.hazelcast.sql.impl.ClockProvider;
 import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.QueryResultProducer;
+import com.hazelcast.sql.impl.plan.cache.CachedPlanInvalidationCallback;
 import com.hazelcast.sql.impl.plan.Plan;
 
 import java.util.Collection;
@@ -41,19 +42,12 @@ public class QueryStateRegistry {
 
     /**
      * Registers a query on the initiator member before the query is started on participants.
-     *
-     * @param localMemberId Cache local member ID.
-     * @param initiatorTimeout Query timeout.
-     * @param initiatorPlan Query plan.
-     * @param initiatorRowMetadata Metadata.
-     * @param initiatorResultProducer An object that will produce final query results.
-     * @param completionCallback Callback that will be invoked when the query is completed.
-     * @return Query state.
      */
     public QueryState onInitiatorQueryStarted(
         UUID localMemberId,
         long initiatorTimeout,
         Plan initiatorPlan,
+        CachedPlanInvalidationCallback initiatorPlanInvalidationCallback,
         SqlRowMetadata initiatorRowMetadata,
         QueryResultProducer initiatorResultProducer,
         QueryStateCompletionCallback completionCallback
@@ -66,6 +60,7 @@ public class QueryStateRegistry {
             completionCallback,
             initiatorTimeout,
             initiatorPlan,
+            initiatorPlanInvalidationCallback,
             initiatorRowMetadata,
             initiatorResultProducer,
             clockProvider

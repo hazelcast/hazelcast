@@ -112,7 +112,7 @@ public final class MapSampleMetadataResolver {
         QueryPath topPath = isKey ? QueryPath.KEY_PATH : QueryPath.VALUE_PATH;
         fields.put(topName, new MapTableField(topName, QueryDataType.OBJECT, !fields.isEmpty(), topPath));
 
-        return new MapSampleMetadata(GenericQueryTargetDescriptor.INSTANCE, new LinkedHashMap<>(fields));
+        return new MapSampleMetadata(GenericQueryTargetDescriptor.DEFAULT, new LinkedHashMap<>(fields));
     }
 
     @SuppressWarnings("checkstyle:ReturnCount")
@@ -200,7 +200,7 @@ public final class MapSampleMetadataResolver {
         QueryPath topPath = isKey ? QueryPath.KEY_PATH : QueryPath.VALUE_PATH;
         fields.put(topName, new MapTableField(topName, topType, !fields.isEmpty(), topPath));
 
-        return new MapSampleMetadata(GenericQueryTargetDescriptor.INSTANCE, new LinkedHashMap<>(fields));
+        return new MapSampleMetadata(GenericQueryTargetDescriptor.DEFAULT, new LinkedHashMap<>(fields));
     }
 
     private static String extractAttributeNameFromMethod(Class<?> clazz, Method method) {
@@ -242,12 +242,9 @@ public final class MapSampleMetadataResolver {
 
         // Exclude void return type.
         Class<?> returnType = method.getReturnType();
-
         if (returnType == void.class || returnType == Void.class) {
             return true;
         }
-
-        String methodName = method.getName();
 
         // Skip methods with parameters.
         if (method.getParameterCount() != 0) {
@@ -260,6 +257,7 @@ public final class MapSampleMetadataResolver {
         }
 
         // Skip getFactoryId() and getClassId() from Portable and IdentifiedDataSerializable.
+        String methodName = method.getName();
         if (methodName.equals(METHOD_GET_FACTORY_ID) || methodName.equals(METHOD_GET_CLASS_ID)) {
             if (IdentifiedDataSerializable.class.isAssignableFrom(clazz) || Portable.class.isAssignableFrom(clazz)) {
                 return true;
