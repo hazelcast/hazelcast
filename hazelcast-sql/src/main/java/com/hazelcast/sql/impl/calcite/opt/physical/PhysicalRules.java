@@ -38,6 +38,7 @@ public final class PhysicalRules {
             FilterPhysicalRule.INSTANCE,
             ProjectPhysicalRule.INSTANCE,
             MapScanPhysicalRule.INSTANCE,
+            ValuesPhysicalRule.INSTANCE,
             AggregatePhysicalRule.INSTANCE,
             JoinPhysicalRule.INSTANCE,
 

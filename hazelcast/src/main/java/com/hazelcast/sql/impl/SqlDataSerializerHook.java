@@ -38,7 +38,11 @@ import com.hazelcast.sql.impl.expression.math.UnaryMinusFunction;
 import com.hazelcast.sql.impl.expression.predicate.AndPredicate;
 import com.hazelcast.sql.impl.expression.predicate.CaseExpression;
 import com.hazelcast.sql.impl.expression.predicate.ComparisonPredicate;
+import com.hazelcast.sql.impl.expression.predicate.IsFalsePredicate;
+import com.hazelcast.sql.impl.expression.predicate.IsNotFalsePredicate;
+import com.hazelcast.sql.impl.expression.predicate.IsNotTruePredicate;
 import com.hazelcast.sql.impl.expression.predicate.IsNullPredicate;
+import com.hazelcast.sql.impl.expression.predicate.IsTruePredicate;
 import com.hazelcast.sql.impl.expression.predicate.NotPredicate;
 import com.hazelcast.sql.impl.expression.predicate.OrPredicate;
 import com.hazelcast.sql.impl.extract.GenericQueryTargetDescriptor;
@@ -50,6 +54,7 @@ import com.hazelcast.sql.impl.operation.QueryCheckResponseOperation;
 import com.hazelcast.sql.impl.operation.QueryExecuteOperation;
 import com.hazelcast.sql.impl.operation.QueryExecuteOperationFragment;
 import com.hazelcast.sql.impl.operation.QueryFlowControlExchangeOperation;
+import com.hazelcast.sql.impl.plan.node.EmptyPlanNode;
 import com.hazelcast.sql.impl.plan.node.FilterPlanNode;
 import com.hazelcast.sql.impl.plan.node.MapScanPlanNode;
 import com.hazelcast.sql.impl.plan.node.ProjectPlanNode;
@@ -124,7 +129,14 @@ public class SqlDataSerializerHook implements DataSerializerHook {
     public static final int INDEX_FILTER_RANGE = 39;
     public static final int INDEX_FILTER_IN = 40;
 
-    public static final int LEN = INDEX_FILTER_IN + 1;
+    public static final int NODE_EMPTY = 41;
+
+    public static final int EXPRESSION_IS_TRUE = 42;
+    public static final int EXPRESSION_IS_FALSE = 43;
+    public static final int EXPRESSION_IS_NOT_TRUE = 44;
+    public static final int EXPRESSION_IS_NOT_FALSE = 45;
+
+    public static final int LEN = EXPRESSION_IS_NOT_FALSE + 1;
 
     @Override
     public int getFactoryId() {
@@ -186,6 +198,13 @@ public class SqlDataSerializerHook implements DataSerializerHook {
         constructors[INDEX_FILTER_EQUALS] = arg -> new IndexEqualsFilter();
         constructors[INDEX_FILTER_RANGE] = arg -> new IndexRangeFilter();
         constructors[INDEX_FILTER_IN] = arg -> new IndexInFilter();
+
+        constructors[NODE_EMPTY] = arg -> new EmptyPlanNode();
+
+        constructors[EXPRESSION_IS_TRUE] = arg -> new IsTruePredicate();
+        constructors[EXPRESSION_IS_FALSE] = arg -> new IsFalsePredicate();
+        constructors[EXPRESSION_IS_NOT_TRUE] = arg -> new IsNotTruePredicate();
+        constructors[EXPRESSION_IS_NOT_FALSE] = arg -> new IsNotFalsePredicate();
 
         return new ArrayDataSerializableFactory(constructors);
     }

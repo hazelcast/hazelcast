@@ -86,6 +86,11 @@ public abstract class TestPlanNodeVisitorAdapter implements PlanNodeVisitor {
     }
 
     @Override
+    public void onEmptyNode(EmptyPlanNode node) {
+        // No-op.
+    }
+
+    @Override
     public void onAggregateNode(AggregatePlanNode node) {
         // No-op.
     }

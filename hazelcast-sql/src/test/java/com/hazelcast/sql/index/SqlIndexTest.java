@@ -26,7 +26,12 @@ import org.junit.runners.Parameterized;
 @RunWith(Parameterized.class)
 @Parameterized.UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class HeapSqlIndexSingleNodeTest extends HeapSqlIndexAbstractTest {
+public class SqlIndexTest extends SqlIndexAbstractTest {
+    @Override
+    protected boolean isHd() {
+        return false;
+    }
+
     @Override
     protected int getMemberCount() {
         return 1;

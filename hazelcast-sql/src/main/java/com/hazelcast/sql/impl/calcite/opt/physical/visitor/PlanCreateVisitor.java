@@ -22,6 +22,7 @@ import com.hazelcast.sql.SqlRowMetadata;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.QueryUtils;
+import com.hazelcast.sql.impl.calcite.SqlToQueryType;
 import com.hazelcast.sql.impl.calcite.opt.ExplainCreator;
 import com.hazelcast.sql.impl.calcite.opt.physical.FetchPhysicalRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.FilterPhysicalRel;
@@ -34,6 +35,7 @@ import com.hazelcast.sql.impl.calcite.opt.physical.ReplicatedMapScanPhysicalRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.ReplicatedToDistributedPhysicalRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.RootPhysicalRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.SortPhysicalRel;
+import com.hazelcast.sql.impl.calcite.opt.physical.ValuesPhysicalRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.agg.AggregatePhysicalRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.exchange.AbstractExchangePhysicalRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.exchange.BroadcastExchangePhysicalRel;
@@ -64,6 +66,7 @@ import com.hazelcast.sql.impl.plan.PlanFragmentMapping;
 import com.hazelcast.sql.impl.plan.cache.PlanCacheKey;
 import com.hazelcast.sql.impl.plan.cache.PlanObjectId;
 import com.hazelcast.sql.impl.plan.node.AggregatePlanNode;
+import com.hazelcast.sql.impl.plan.node.EmptyPlanNode;
 import com.hazelcast.sql.impl.plan.node.FetchOffsetPlanNodeFieldTypeProvider;
 import com.hazelcast.sql.impl.plan.node.FetchPlanNode;
 import com.hazelcast.sql.impl.plan.node.FilterPlanNode;
@@ -97,6 +100,7 @@ import org.apache.calcite.sql.SqlAggFunction;
 import javax.annotation.Nullable;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Deque;
 import java.util.HashMap;
@@ -553,6 +557,22 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
         );
 
         pushUpstream(filterNode);
+    }
+
+    @Override
+    public void onValues(ValuesPhysicalRel rel) {
+        if (!rel.getTuples().isEmpty()) {
+            throw QueryException.error("Non-empty VALUES are not supported");
+        }
+
+        QueryDataType[] fieldTypes = SqlToQueryType.mapRowType(rel.getRowType());
+
+        EmptyPlanNode planNode = new EmptyPlanNode(
+            pollId(rel),
+            Arrays.asList(fieldTypes)
+        );
+
+        pushUpstream(planNode);
     }
 
     @Override

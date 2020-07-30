@@ -28,6 +28,7 @@ import org.apache.calcite.rel.rules.ProjectFilterTransposeRule;
 import org.apache.calcite.rel.rules.ProjectJoinTransposeRule;
 import org.apache.calcite.rel.rules.ProjectMergeRule;
 import org.apache.calcite.rel.rules.ProjectRemoveRule;
+import org.apache.calcite.rel.rules.PruneEmptyRules;
 import org.apache.calcite.rel.rules.SemiJoinRule;
 import org.apache.calcite.rel.type.RelDataTypeField;
 import org.apache.calcite.rex.RexNode;
@@ -72,6 +73,10 @@ public final class LogicalRules {
             ProjectJoinTransposeRule.INSTANCE,
             ProjectIntoScanLogicalRule.INSTANCE,
 
+            // Values rules
+            PruneEmptyRules.PROJECT_INSTANCE,
+            PruneEmptyRules.FILTER_INSTANCE,
+
             // TODO: Aggregate rules
 
             // Semi-join rules.
@@ -82,6 +87,7 @@ public final class LogicalRules {
             MapScanLogicalRule.INSTANCE,
             FilterLogicalRule.INSTANCE,
             ProjectLogicalRule.INSTANCE,
+            ValuesLogicalRule.INSTANCE,
             AggregateLogicalRule.INSTANCE,
             SortLogicalRule.INSTANCE,
             JoinLogicalRule.INSTANCE

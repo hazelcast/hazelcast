@@ -47,6 +47,7 @@ public interface PlanNodeVisitor {
     void onReceiveSortMergeNode(ReceiveSortMergePlanNode node);
     void onProjectNode(ProjectPlanNode node);
     void onFilterNode(FilterPlanNode node);
+    void onEmptyNode(EmptyPlanNode node);
     void onMapScanNode(MapScanPlanNode node);
     void onAggregateNode(AggregatePlanNode node);
     void onNestedLoopJoinNode(NestedLoopJoinPlanNode node);

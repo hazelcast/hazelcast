@@ -363,7 +363,7 @@ public class MapIndexScanExecTest extends SqlTestSupport {
             fieldTypes,
             projects,
             remainderFilter,
-            getSerializationSerivce(member),
+            getSerializationService(member),
             indexName,
             expectedComponentCount,
             indexFilter,

@@ -22,6 +22,7 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
 import com.hazelcast.sql.SqlResult;
+import com.hazelcast.sql.impl.SqlTestSupport;
 import com.hazelcast.sql.impl.plan.node.MapIndexScanPlanNode;
 import com.hazelcast.sql.impl.schema.Table;
 import com.hazelcast.sql.impl.schema.map.MapTableField;
@@ -29,6 +30,9 @@ import com.hazelcast.sql.impl.schema.map.MapTableIndex;
 import com.hazelcast.sql.impl.schema.map.PartitionedMapTable;
 import com.hazelcast.sql.impl.schema.map.PartitionedMapTableResolver;
 import com.hazelcast.sql.impl.type.QueryDataType;
+import com.hazelcast.sql.support.expressions.ExpressionBiValue;
+import com.hazelcast.sql.support.expressions.ExpressionType;
+import com.hazelcast.sql.support.expressions.ExpressionTypes;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -59,7 +63,7 @@ import static org.junit.Assert.fail;
 @RunWith(Parameterized.class)
 @Parameterized.UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class SqlIndexResolutionTest extends SqlIndexTestSupport {
+public class SqlIndexResolutionTest extends SqlTestSupport {
 
     private static final AtomicInteger MAP_NAME_GEN = new AtomicInteger();
     private static final String INDEX_NAME = "index";
@@ -74,14 +78,14 @@ public class SqlIndexResolutionTest extends SqlIndexTestSupport {
     public boolean composite;
 
     @Parameterized.Parameter(2)
-    public FieldDescriptor<?> f1;
+    public ExpressionType<?> f1;
 
     @Parameterized.Parameter(3)
-    public FieldDescriptor<?> f2;
+    public ExpressionType<?> f2;
 
     private final Set<String> createdMapNames = new HashSet<>();
 
-    private Class<? extends Value> valueClass;
+    private Class<? extends ExpressionBiValue> valueClass;
 
     @Parameterized.Parameters(name = "indexType:{0}, composite:{1}, field1:{2}, field2:{3}")
     public static Collection<Object[]> parameters() {
@@ -89,9 +93,9 @@ public class SqlIndexResolutionTest extends SqlIndexTestSupport {
 
         for (IndexType indexType : Arrays.asList(IndexType.SORTED, IndexType.HASH)) {
             for (boolean composite : Arrays.asList(true, false)) {
-                for (FieldDescriptor<?> firstFieldDescriptor : FIELD_DESCRIPTORS) {
-                    for (FieldDescriptor<?> secondFieldDescriptor : FIELD_DESCRIPTORS) {
-                        res.add(new Object[] { indexType, composite, firstFieldDescriptor, secondFieldDescriptor });
+                for (ExpressionType<?> firstType : ExpressionTypes.allTypes()) {
+                    for (ExpressionType<?> secondType : ExpressionTypes.allTypes()) {
+                        res.add(new Object[] { indexType, composite, firstType, secondType });
                     }
                 }
             }
@@ -106,7 +110,7 @@ public class SqlIndexResolutionTest extends SqlIndexTestSupport {
             member = FACTORY.newHazelcastInstance();
         }
 
-        valueClass = getValueClass(f1, f2);
+        valueClass = ExpressionBiValue.createBiClass(f1, f2);
     }
 
     @After
@@ -124,44 +128,35 @@ public class SqlIndexResolutionTest extends SqlIndexTestSupport {
     }
 
     @Test
-    public void testIndexResolution() throws Exception {
+    public void testIndexResolution() {
         // Check empty map
-        IMap<Integer, Value> map = nextMap();
-        map.put(1, createValue(null, null));
+        IMap<Integer, ExpressionBiValue> map = nextMap();
+        map.put(1, ExpressionBiValue.createBiValue(valueClass, 1, null, null));
         checkIndex(map);
         checkIndexUsage(map, false, false);
 
         // Check first component with known type
         map = nextMap();
-        map.put(1, createValue(f1.valueFrom(), null));
+        map.put(1, ExpressionBiValue.createBiValue(valueClass, 1, f1.valueFrom(), null));
         checkIndex(map, f1.getFieldConverterType());
         checkIndexUsage(map, true, false);
 
         if (composite) {
             // Check second component with known type
             map = nextMap();
-            map.put(1, createValue(null, f2.valueFrom()));
+            map.put(1, ExpressionBiValue.createBiValue(valueClass, 1, null, f2.valueFrom()));
             checkIndex(map);
             checkIndexUsage(map, false, true);
 
             // Check both components known
             map = nextMap();
-            map.put(1, createValue(f1.valueFrom(), f2.valueFrom()));
+            map.put(1, ExpressionBiValue.createBiValue(valueClass, 1, f1.valueFrom(), f2.valueFrom()));
             checkIndex(map, f1.getFieldConverterType(), f2.getFieldConverterType());
             checkIndexUsage(map, true, true);
         }
     }
 
-    private Value createValue(Object first, Object second) throws Exception {
-        Value value = valueClass.newInstance();
-
-        value.setField1(first);
-        value.setField2(second);
-
-        return value;
-    }
-
-    private IMap<Integer, Value> nextMap() {
+    private IMap<Integer, ExpressionBiValue> nextMap() {
         String mapName = "map" + MAP_NAME_GEN.incrementAndGet();
 
         createdMapNames.add(mapName);
@@ -284,7 +279,7 @@ public class SqlIndexResolutionTest extends SqlIndexTestSupport {
 
     private void checkIndexUsage(String sql, Usage expectedUsage) {
         try (SqlResult result = member.getSql().query(sql)) {
-            MapIndexScanPlanNode indexNode = findIndexNode(result);
+            MapIndexScanPlanNode indexNode = findFirstIndexNode(result);
 
             switch (expectedUsage) {
                 case NONE:

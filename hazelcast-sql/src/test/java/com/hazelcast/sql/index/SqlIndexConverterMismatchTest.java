@@ -26,6 +26,8 @@ import com.hazelcast.sql.SqlErrorCode;
 import com.hazelcast.sql.SqlException;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlRow;
+import com.hazelcast.sql.impl.SqlTestSupport;
+import com.hazelcast.sql.support.expressions.ExpressionBiValue;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -52,14 +54,14 @@ import static org.junit.Assert.fail;
 @RunWith(Parameterized.class)
 @Parameterized.UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class SqlIndexConverterMismatchTest extends SqlIndexTestSupport {
+public class SqlIndexConverterMismatchTest extends SqlTestSupport {
 
     private static final String MAP_NAME = "map";
 
     private final TestHazelcastInstanceFactory factory = new TestHazelcastInstanceFactory(2);
     private HazelcastInstance member1;
     private HazelcastInstance member2;
-    private IMap<Integer, Value> map;
+    private IMap<Integer, ExpressionBiValue> map;
 
     @Parameterized.Parameter
     public boolean composite;
@@ -94,13 +96,13 @@ public class SqlIndexConverterMismatchTest extends SqlIndexTestSupport {
     @SuppressWarnings("StatementWithEmptyBody")
     @Test
     public void testMismatch() {
-        Value value1 = new IntegerInteger();
-        value1.setField1(10);
-        value1.setField2(10);
+        ExpressionBiValue value1 = new ExpressionBiValue.IntegerIntegerVal();
+        value1.field1(10);
+        value1.field2(10);
 
-        Value value2 = new StringInteger();
-        value2.setField1("10");
-        value2.setField2(10);
+        ExpressionBiValue value2 = new ExpressionBiValue.StringIntegerVal();
+        value2.field1("10");
+        value2.field2(10);
 
         map.put(getLocalKey(member1, key -> key), value1);
         map.put(getLocalKey(member2, key -> key), value2);

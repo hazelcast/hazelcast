@@ -14,11 +14,22 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.index;
+package com.hazelcast.sql.impl.calcite.opt.logical;
 
-public abstract class HeapSqlIndexAbstractTest extends SqlIndexAbstractTest {
-    @Override
-    protected boolean isHd() {
-        return false;
+import com.google.common.collect.ImmutableList;
+import org.apache.calcite.plan.RelOptCluster;
+import org.apache.calcite.plan.RelTraitSet;
+import org.apache.calcite.rel.core.Values;
+import org.apache.calcite.rel.type.RelDataType;
+import org.apache.calcite.rex.RexLiteral;
+
+public class ValuesLogicalRel extends Values implements LogicalRel {
+    public ValuesLogicalRel(
+        RelOptCluster cluster,
+        RelDataType rowType,
+        ImmutableList<ImmutableList<RexLiteral>> tuples,
+        RelTraitSet traits
+    ) {
+        super(cluster, rowType, tuples, traits);
     }
 }

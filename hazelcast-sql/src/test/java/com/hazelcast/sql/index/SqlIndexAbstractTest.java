@@ -24,7 +24,12 @@ import com.hazelcast.map.IMap;
 import com.hazelcast.sql.SqlQuery;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlRow;
+import com.hazelcast.sql.impl.SqlTestSupport;
 import com.hazelcast.sql.impl.plan.node.MapIndexScanPlanNode;
+import com.hazelcast.sql.support.expressions.ExpressionBiValue;
+import com.hazelcast.sql.support.expressions.ExpressionType;
+import com.hazelcast.sql.support.expressions.ExpressionTypes;
+import com.hazelcast.sql.support.expressions.ExpressionValue;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import org.junit.After;
 import org.junit.AfterClass;
@@ -45,13 +50,21 @@ import java.util.TreeSet;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Predicate;
 
+import static com.hazelcast.sql.support.expressions.ExpressionPredicates.and;
+import static com.hazelcast.sql.support.expressions.ExpressionPredicates.eq;
+import static com.hazelcast.sql.support.expressions.ExpressionPredicates.gt;
+import static com.hazelcast.sql.support.expressions.ExpressionPredicates.gte;
+import static com.hazelcast.sql.support.expressions.ExpressionPredicates.lt;
+import static com.hazelcast.sql.support.expressions.ExpressionPredicates.lte;
+import static com.hazelcast.sql.support.expressions.ExpressionPredicates.isNull;
+import static com.hazelcast.sql.support.expressions.ExpressionPredicates.or;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 @SuppressWarnings({"unchecked", "rawtypes", "unused"})
-public abstract class SqlIndexAbstractTest extends SqlIndexTestSupport {
+public abstract class SqlIndexAbstractTest extends SqlTestSupport {
 
     private static final AtomicInteger MAP_NAME_GEN = new AtomicInteger();
     private static final String INDEX_NAME = "index";
@@ -67,15 +80,15 @@ public abstract class SqlIndexAbstractTest extends SqlIndexTestSupport {
     public boolean composite;
 
     @Parameterized.Parameter(2)
-    public FieldDescriptor<?> f1;
+    public ExpressionType<?> f1;
 
     @Parameterized.Parameter(3)
-    public FieldDescriptor<?> f2;
+    public ExpressionType<?> f2;
 
     protected final String mapName = "map" + MAP_NAME_GEN.incrementAndGet();
 
-    private IMap<Integer, Value> map;
-    private Class<? extends Value> valueClass;
+    private IMap<Integer, ExpressionBiValue> map;
+    private Class<? extends ExpressionBiValue> valueClass;
     private int runIdGen;
 
     @Parameterized.Parameters(name = "indexType:{0}, composite:{1}, field1:{2}, field2:{3}")
@@ -84,9 +97,9 @@ public abstract class SqlIndexAbstractTest extends SqlIndexTestSupport {
 
         for (IndexType indexType : Arrays.asList(IndexType.SORTED, IndexType.HASH)) {
             for (boolean composite : Arrays.asList(true, false)) {
-                for (FieldDescriptor<?> firstFieldDescriptor : FIELD_DESCRIPTORS) {
-                    for (FieldDescriptor<?> secondFieldDescriptor : FIELD_DESCRIPTORS) {
-                        res.add(new Object[] { indexType, composite, firstFieldDescriptor, secondFieldDescriptor });
+                for (ExpressionType<?> firstType : ExpressionTypes.allTypes()) {
+                    for (ExpressionType<?> secondType : ExpressionTypes.allTypes()) {
+                        res.add(new Object[] { indexType, composite, firstType, secondType });
                     }
                 }
             }
@@ -96,7 +109,7 @@ public abstract class SqlIndexAbstractTest extends SqlIndexTestSupport {
     }
 
     @Before
-    public void before() throws Exception {
+    public void before() {
         // Start members if needed
         if (members == null) {
             members = new ArrayList<>();
@@ -114,7 +127,7 @@ public abstract class SqlIndexAbstractTest extends SqlIndexTestSupport {
             }
         }
 
-        valueClass = getValueClass(f1, f2);
+        valueClass = ExpressionBiValue.createBiClass(f1, f2);
 
         MapConfig mapConfig = getMapConfig();
 
@@ -138,37 +151,29 @@ public abstract class SqlIndexAbstractTest extends SqlIndexTestSupport {
         FACTORY.shutdownAll();
     }
 
-    private void fill(IMap map) throws Exception {
+    private void fill(IMap map) {
         // Create an object with non-null fields to initialize converters
-        Value initialValue = valueClass.newInstance();
-        initialValue.setField1(f1.valueFrom());
-        initialValue.setField2(f2.valueFrom());
-
         for (HazelcastInstance member : members) {
-            int memberKey = getLocalKey(member, value -> value);
+            int key = getLocalKey(member, value -> value);
+            ExpressionBiValue value = ExpressionBiValue.createBiValue(valueClass, key, f1.valueFrom(), f2.valueFrom());
 
-            map.put(memberKey, initialValue);
-            map.remove(memberKey);
+            map.put(key, value);
+            map.remove(key);
         }
 
         // Fill with values
-        int key = 0;
+        int keyCounter = 0;
 
         Map localMap = new HashMap();
 
         for (Object firstField : f1.values()) {
             for (Object secondField : f2.values()) {
-                Value value = valueClass.newInstance();
-
-                value.setField1(firstField);
-                value.setField2(secondField);
-
                 // Put the same value twice intentionally to test index key with multiple values
                 for (int i = 0; i < 2 * getMemberCount(); i++) {
-                    int currentKey = key++;
+                    int key = keyCounter++;
+                    ExpressionBiValue value = ExpressionBiValue.createBiValue(valueClass, key, firstField, secondField);
 
-                    value.key = currentKey;
-                    localMap.put(currentKey, value);
+                    localMap.put(key, value);
                 }
             }
         }
@@ -199,85 +204,85 @@ public abstract class SqlIndexAbstractTest extends SqlIndexTestSupport {
         check0(
             query("field1=" + f1.toLiteral(f1.valueFrom())),
             c_sortedOrHashNotComposite(),
-            eq_1(f1.valueFrom())
+            eq(f1.valueFrom())
         );
 
         check0(
             query(f1.toLiteral(f1.valueFrom()) + "=field1"),
             c_sortedOrHashNotComposite(),
-            eq_1(f1.valueFrom())
+            eq(f1.valueFrom())
         );
 
         // WHERE f1=?
         check0(
             query("field1=?", p_1(f1.valueFrom())),
             c_sortedOrHashNotComposite(),
-            eq_1(f1.valueFrom())
+            eq(f1.valueFrom())
         );
 
         check0(
             query("?=field1", p_1(f1.valueFrom())),
             c_sortedOrHashNotComposite(),
-            eq_1(f1.valueFrom())
+            eq(f1.valueFrom())
         );
 
         // WHERE f1 IS NULL
         check0(
             query("field1 IS NULL"),
             c_sortedOrHashNotComposite(),
-            null_1()
+            isNull()
         );
 
         // WHERE f1>literal
         check0(
             query("field1>" + f1.toLiteral(f1.valueFrom())),
             c_sortedOrHashNotCompositeAndBooleanComponent(),
-            gt_1(f1.valueFrom())
+            gt(f1.valueFrom())
         );
 
         check0(
             query(f1.toLiteral(f1.valueFrom()) + "<field1"),
             c_sortedOrHashNotCompositeAndBooleanComponent(),
-            gt_1(f1.valueFrom())
+            gt(f1.valueFrom())
         );
 
         // WHERE f1>=literal
         check0(
             query("field1>=" + f1.toLiteral(f1.valueFrom())),
             c_sorted(),
-            gte_1(f1.valueFrom())
+            gte(f1.valueFrom())
         );
 
         check0(
             query(f1.toLiteral(f1.valueFrom()) + "<=field1"),
             c_sorted(),
-            gte_1(f1.valueFrom())
+            gte(f1.valueFrom())
         );
 
         // WHERE f1<literal
         check0(
             query("field1<" + f1.toLiteral(f1.valueFrom())),
             c_sorted(),
-            lt_1(f1.valueFrom())
+            lt(f1.valueFrom())
         );
 
         check0(
             query(f1.toLiteral(f1.valueFrom()) + ">field1"),
             c_sorted(),
-            lt_1(f1.valueFrom())
+            lt(f1.valueFrom())
         );
 
         // WHERE f1<=literal
         check0(
             query("field1<=" + f1.toLiteral(f1.valueFrom())),
             c_sortedOrHashNotCompositeAndBooleanComponent(),
-            lte_1(f1.valueFrom())
+            lte(f1.valueFrom())
         );
 
         check0(
             query(f1.toLiteral(f1.valueFrom()) + ">=field1"),
             c_sortedOrHashNotCompositeAndBooleanComponent(),
-            lte_1(f1.valueFrom())
+            lte(f1.valueFrom())
         );
 
         // TODO: Range open, param
@@ -287,40 +292,40 @@ public abstract class SqlIndexAbstractTest extends SqlIndexTestSupport {
         // TODO: IN (simple, composite)
 
         // Special cases for boolean field
-        if (f1 instanceof BooleanFieldDescriptor) {
+        if (f1 instanceof ExpressionType.BooleanType) {
             // WHERE f1
             check0(
                 query("field1"),
                 c_sortedOrHashNotComposite(),
-                eq_1(true)
+                eq(true)
             );
 
             // WHERE f1 IS TRUE
             check0(
                 query("field1 IS TRUE"),
                 c_sortedOrHashNotComposite(),
-                eq_1(true)
+                eq(true)
             );
 
             // WHERE f1 IS FALSE
             check0(
                 query("field1 IS FALSE"),
                 c_sortedOrHashNotComposite(),
-                eq_1(false)
+                eq(false)
             );
 
             // WHERE f1 IS NOT TRUE
             check0(
                 query("field1 IS NOT TRUE"),
                 c_sortedOrHashNotComposite(),
-                or(eq_1(false), null_1())
+                or(eq(false), isNull())
             );
 
             // WHERE f1 IS NOT FALSE
             check0(
                 query("field1 IS NOT FALSE"),
                 c_sortedOrHashNotComposite(),
-                or(eq_1(true), null_1())
+                or(eq(true), isNull())
             );
         }
     }
@@ -342,18 +347,19 @@ public abstract class SqlIndexAbstractTest extends SqlIndexTestSupport {
     }
 
     private boolean c_sortedOrHashNotCompositeAndBooleanComponent() {
-        return c_sorted() || (!composite && f1 instanceof BooleanFieldDescriptor);
+        return c_sorted() || (!composite && f1 instanceof ExpressionType.BooleanType);
     }
 
-    private void check(Query query, boolean expectedUseIndex, Predicate<Value> expectedKeysPredicate) {
+    // TODO: check0 is mistakenly used here!
+    private void check(Query query, boolean expectedUseIndex, Predicate<ExpressionValue> expectedKeysPredicate) {
         // Prepare two additional queries with an additional AND/OR predicate
         String condition = "key / 2 = 0";
         Query queryWithAnd = addConditionToQuery(query, condition, true);
         Query queryWithOr = addConditionToQuery(query, condition, false);
 
-        Predicate<Value> predicate = value -> value.key / 2 == 0;
-        Predicate<Value> expectedKeysPredicateWithAnd = and(expectedKeysPredicate, predicate);
-        Predicate<Value> expectedKeysPredicateWithOr = or(expectedKeysPredicate, predicate);
+        Predicate<ExpressionValue> predicate = value -> value.key / 2 == 0;
+        Predicate<ExpressionValue> expectedKeysPredicateWithAnd = and(expectedKeysPredicate, predicate);
+        Predicate<ExpressionValue> expectedKeysPredicateWithOr = or(expectedKeysPredicate, predicate);
 
         // Run the original query
         check0(query, expectedUseIndex, expectedKeysPredicate);
@@ -365,7 +371,7 @@ public abstract class SqlIndexAbstractTest extends SqlIndexTestSupport {
         check0(queryWithOr, false, expectedKeysPredicateWithOr);
     }
 
-    private void check0(Query query, boolean expectedUseIndex, Predicate<Value> expectedKeysPredicate) {
+    private void check0(Query query, boolean expectedUseIndex, Predicate<ExpressionValue> expectedKeysPredicate) {
         System.out.println(">>> SQL: " + query.sql);
 
         for (List<Object> params0 : generateParameters(query.parameters)) {
@@ -373,7 +379,12 @@ public abstract class SqlIndexAbstractTest extends SqlIndexTestSupport {
         }
     }
 
-    private void check0(String sql, List<Object> params, boolean expectedUseIndex, Predicate<Value> expectedKeysPredicate) {
+    private void check0(
+        String sql,
+        List<Object> params,
+        boolean expectedUseIndex,
+        Predicate<ExpressionValue> expectedKeysPredicate
+    ) {
         int runId = runIdGen++;
 
         Set<Integer> sqlKeys = sqlKeys(expectedUseIndex, sql, params);
@@ -483,7 +494,7 @@ public abstract class SqlIndexAbstractTest extends SqlIndexTestSupport {
         Set<Integer> keys = new HashSet<>();
 
         try (SqlResult result = member.getSql().query(query)) {
-            MapIndexScanPlanNode indexNode = findIndexNode(result);
+            MapIndexScanPlanNode indexNode = findFirstIndexNode(result);
 
             if (withIndex) {
                 assertNotNull(indexNode);
@@ -504,12 +515,12 @@ public abstract class SqlIndexAbstractTest extends SqlIndexTestSupport {
         return keys;
     }
 
-    private Set<Integer> expectedMapKeys(Predicate<Value> predicate) {
+    private Set<Integer> expectedMapKeys(Predicate<ExpressionValue> predicate) {
         Set<Integer> keys = new HashSet<>();
 
-        for (Map.Entry<Integer, Value> entry : map.entrySet()) {
+        for (Map.Entry<Integer, ExpressionBiValue> entry : map.entrySet()) {
             Integer key = entry.getKey();
-            Value value = entry.getValue();
+            ExpressionBiValue value = entry.getValue();
 
             if (predicate.test(value)) {
                 keys.add(key);
@@ -519,7 +530,7 @@ public abstract class SqlIndexAbstractTest extends SqlIndexTestSupport {
         return keys;
     }
 
-    private Set<Integer> expectedSqlKeys(Predicate<Value> predicate) {
+    private Set<Integer> expectedSqlKeys(Predicate<ExpressionValue> predicate) {
         String sql = "SELECT __key, this FROM " + mapName;
 
         SqlQuery query = new SqlQuery(sql);
@@ -529,7 +540,7 @@ public abstract class SqlIndexAbstractTest extends SqlIndexTestSupport {
         try (SqlResult result = member.getSql().query(query)) {
             for (SqlRow row : result) {
                 Integer key = row.getObject(0);
-                Value value = row.getObject(1);
+                ExpressionBiValue value = row.getObject(1);
 
                 if (predicate.test(value)) {
                     keys.add(key);
@@ -581,7 +592,7 @@ public abstract class SqlIndexAbstractTest extends SqlIndexTestSupport {
     }
 
     private List<Object> parameterVariations(Parameter parameter) {
-        FieldDescriptor f = parameter.first ? f1 : f2;
+        ExpressionType f = parameter.first ? f1 : f2;
 
         return new ArrayList(f.parameterVariations(parameter.parameter));
     }

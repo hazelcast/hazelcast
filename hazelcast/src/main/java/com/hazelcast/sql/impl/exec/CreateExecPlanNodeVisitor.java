@@ -45,6 +45,7 @@ import com.hazelcast.sql.impl.operation.QueryExecuteOperation;
 import com.hazelcast.sql.impl.operation.QueryExecuteOperationFragment;
 import com.hazelcast.sql.impl.operation.QueryExecuteOperationFragmentMapping;
 import com.hazelcast.sql.impl.operation.QueryOperationHandler;
+import com.hazelcast.sql.impl.plan.node.EmptyPlanNode;
 import com.hazelcast.sql.impl.plan.node.MapScanPlanNode;
 import com.hazelcast.sql.impl.plan.node.AggregatePlanNode;
 import com.hazelcast.sql.impl.plan.node.FetchPlanNode;
@@ -320,6 +321,15 @@ public class CreateExecPlanNodeVisitor implements PlanNodeVisitor {
             node.getId(),
             pop(),
             node.getFilter()
+        );
+
+        push(res);
+    }
+
+    @Override
+    public void onEmptyNode(EmptyPlanNode node) {
+        Exec res = new EmptyExec(
+            node.getId()
         );
 
         push(res);

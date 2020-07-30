@@ -28,12 +28,17 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.partition.Partition;
 import com.hazelcast.partition.PartitionService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.sql.SqlException;
+import com.hazelcast.sql.SqlQuery;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.impl.exec.CreateExecPlanNodeVisitorHook;
 import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.operation.QueryOperationHandlerImpl;
 import com.hazelcast.sql.impl.plan.Plan;
+import com.hazelcast.sql.impl.plan.node.MapIndexScanPlanNode;
+import com.hazelcast.sql.impl.plan.node.PlanNode;
+import com.hazelcast.sql.impl.plan.node.TestPlanNodeVisitorAdapter;
 import com.hazelcast.sql.impl.row.HeapRow;
 import com.hazelcast.sql.impl.row.ListRowBatch;
 import com.hazelcast.sql.impl.row.Row;
@@ -47,12 +52,14 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.IntFunction;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * Helper test classes.
@@ -78,7 +85,7 @@ public class SqlTestSupport extends HazelcastTestSupport {
         return new DefaultSerializationServiceBuilder().build();
     }
 
-    public static InternalSerializationService getSerializationSerivce(HazelcastInstance instance) {
+    public static InternalSerializationService getSerializationService(HazelcastInstance instance) {
         return (InternalSerializationService) nodeEngine(instance).getSerializationService();
     }
 
@@ -199,16 +206,51 @@ public class SqlTestSupport extends HazelcastTestSupport {
         return nodeEngine(instance).getSqlService().getInternalService();
     }
 
-    public List<SqlRow> execute(HazelcastInstance member, String sql) {
+    public List<SqlRow> execute(HazelcastInstance member, String sql, Object... params) {
+        SqlQuery query = new SqlQuery(sql);
+
+        if (params != null) {
+            for (Object param : params) {
+                query.addParameter(param);
+            }
+        }
+
         List<SqlRow> rows = new ArrayList<>();
 
-        try (SqlResult res = member.getSql().query(sql)) {
+        try (SqlResult res = member.getSql().query(query)) {
             for (SqlRow row : res) {
                 rows.add(row);
             }
         }
 
         return rows;
+    }
+
+    public SqlException executeWithException(HazelcastInstance member, String sql, Object... params) {
+        SqlQuery query = new SqlQuery(sql);
+
+        if (params != null) {
+            for (Object param : params) {
+                query.addParameter(param);
+            }
+        }
+
+        return executeWithException(member, query);
+    }
+
+    @SuppressWarnings("StatementWithEmptyBody")
+    public SqlException executeWithException(HazelcastInstance member, SqlQuery query) {
+        try (SqlResult res = member.getSql().query(query)) {
+            for (SqlRow ignore : res) {
+                // No-op.
+            }
+        } catch (SqlException e) {
+            return e;
+        }
+
+        fail("Must fail");
+
+        return null;
     }
 
     public static int getLocalPartition(HazelcastInstance member) {
@@ -303,5 +345,26 @@ public class SqlTestSupport extends HazelcastTestSupport {
         }
 
         return res;
+    }
+
+    protected static MapIndexScanPlanNode findFirstIndexNode(SqlResult result) {
+        SqlResultImpl result0 = (SqlResultImpl) result;
+
+        AtomicReference<MapIndexScanPlanNode> nodeRef = new AtomicReference<>();
+
+        for (int i = 0; i < result0.getPlan().getFragmentCount(); i++) {
+            PlanNode fragment = result0.getPlan().getFragment(i);
+
+            fragment.visit(new TestPlanNodeVisitorAdapter() {
+                @Override
+                public void onMapIndexScanNode(MapIndexScanPlanNode node) {
+                    nodeRef.compareAndSet(null, node);
+
+                    super.onMapIndexScanNode(node);
+                }
+            });
+        }
+
+        return nodeRef.get();
     }
 }

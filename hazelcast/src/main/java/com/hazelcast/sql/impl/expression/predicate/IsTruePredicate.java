@@ -16,6 +16,8 @@
 
 package com.hazelcast.sql.impl.expression.predicate;
 
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.sql.impl.SqlDataSerializerHook;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.expression.util.EnsureConvertible;
 import com.hazelcast.sql.impl.expression.util.Eval;
@@ -24,7 +26,7 @@ import com.hazelcast.sql.impl.expression.UniExpression;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
-public class IsTruePredicate extends UniExpression<Boolean> {
+public class IsTruePredicate extends UniExpression<Boolean> implements IdentifiedDataSerializable {
     public IsTruePredicate() {
         // No-op.
     }
@@ -47,5 +49,15 @@ public class IsTruePredicate extends UniExpression<Boolean> {
     @Override
     public QueryDataType getType() {
         return QueryDataType.BOOLEAN;
+    }
+
+    @Override
+    public int getFactoryId() {
+        return SqlDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getClassId() {
+        return SqlDataSerializerHook.EXPRESSION_IS_TRUE;
     }
 }

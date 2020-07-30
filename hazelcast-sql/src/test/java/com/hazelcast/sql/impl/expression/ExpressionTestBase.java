@@ -127,7 +127,7 @@ public abstract class ExpressionTestBase {
     private static final boolean VERIFY_EVALUATION = true;
 
     private static final boolean TRACE = true;
-    private static final boolean LOG_ON_SUCCESS = false;
+    private static final boolean LOG_ON_SUCCESS = true;
 
     protected static final boolean TEMPORAL_TYPES_ENABLED = false;
 
