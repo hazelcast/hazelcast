@@ -68,6 +68,15 @@ public class HazelcastSqlValidator extends SqlValidatorImpl {
 
     private static final Config CONFIG = Config.DEFAULT.withIdentifierExpansion(true);
 
+    /**
+     * We manage an additional map of known node types on our own to workaround
+     * a bug in {@link SqlValidatorImpl#getValidatedNodeTypeIfKnown}: it's
+     * supposed to return {@code null} if a node type is unknown, but for
+     * rewritten expressions ({@code originalExprs}) it still invokes {@link
+     * SqlValidatorImpl#getValidatedNodeType} under the hood and that leads to
+     * exceptions for nodes with unknown types instead of the expected {@code
+     * null} result.
+     */
     private final Map<SqlNode, RelDataType> knownNodeTypes = new IdentityHashMap<>();
 
     public HazelcastSqlValidator(SqlOperatorTable opTab, SqlValidatorCatalogReader catalogReader,
