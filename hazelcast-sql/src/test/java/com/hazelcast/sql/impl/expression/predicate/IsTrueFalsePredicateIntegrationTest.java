@@ -323,11 +323,27 @@ public class IsTrueFalsePredicateIntegrationTest extends SqlTestSupport {
 
         assertEquals(set(key), keys("SELECT key FROM " + MAP_NAME + " WHERE ? IS TRUE", true));
         assertEquals(set(), keys("SELECT key FROM " + MAP_NAME + " WHERE ? IS TRUE", false));
-
         assertEquals(set(key), keys("SELECT key FROM " + MAP_NAME + " WHERE ? IS TRUE", "true"));
         assertEquals(set(), keys("SELECT key FROM " + MAP_NAME + " WHERE ? IS TRUE", "false"));
-
         assertEquals(set(), keys("SELECT key FROM " + MAP_NAME + " WHERE ? IS TRUE", new Object[] { null }));
+
+        assertEquals(set(), keys("SELECT key FROM " + MAP_NAME + " WHERE ? IS FALSE", true));
+        assertEquals(set(key), keys("SELECT key FROM " + MAP_NAME + " WHERE ? IS FALSE", false));
+        assertEquals(set(), keys("SELECT key FROM " + MAP_NAME + " WHERE ? IS FALSE", "true"));
+        assertEquals(set(key), keys("SELECT key FROM " + MAP_NAME + " WHERE ? IS FALSE", "false"));
+        assertEquals(set(), keys("SELECT key FROM " + MAP_NAME + " WHERE ? IS FALSE", new Object[] { null }));
+
+        assertEquals(set(), keys("SELECT key FROM " + MAP_NAME + " WHERE ? IS NOT TRUE", true));
+        assertEquals(set(key), keys("SELECT key FROM " + MAP_NAME + " WHERE ? IS NOT TRUE", false));
+        assertEquals(set(), keys("SELECT key FROM " + MAP_NAME + " WHERE ? IS NOT TRUE", "true"));
+        assertEquals(set(key), keys("SELECT key FROM " + MAP_NAME + " WHERE ? IS NOT TRUE", "false"));
+        assertEquals(set(key), keys("SELECT key FROM " + MAP_NAME + " WHERE ? IS NOT TRUE", new Object[] { null }));
+
+        assertEquals(set(key), keys("SELECT key FROM " + MAP_NAME + " WHERE ? IS NOT FALSE", true));
+        assertEquals(set(), keys("SELECT key FROM " + MAP_NAME + " WHERE ? IS NOT FALSE", false));
+        assertEquals(set(key), keys("SELECT key FROM " + MAP_NAME + " WHERE ? IS NOT FALSE", "true"));
+        assertEquals(set(), keys("SELECT key FROM " + MAP_NAME + " WHERE ? IS NOT FALSE", "false"));
+        assertEquals(set(key), keys("SELECT key FROM " + MAP_NAME + " WHERE ? IS NOT FALSE", new Object[] { null }));
 
         checkUnsupportedParameter((byte) 1, "TINYINT");
         checkUnsupportedParameter((short) 1, "SMALLINT");
