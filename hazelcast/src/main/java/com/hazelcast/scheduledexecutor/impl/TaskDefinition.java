@@ -16,6 +16,7 @@
 
 package com.hazelcast.scheduledexecutor.impl;
 
+import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -130,7 +131,9 @@ public class TaskDefinition<V>
         out.writeLong(initialDelay);
         out.writeLong(period);
         out.writeUTF(unit.name());
-        out.writeBoolean(autoDisposable);
+        if (out.getVersion().isGreaterOrEqual(Versions.V4_1)) {
+            out.writeBoolean(autoDisposable);
+        }
     }
 
     @Override
@@ -142,7 +145,9 @@ public class TaskDefinition<V>
         initialDelay = in.readLong();
         period = in.readLong();
         unit = TimeUnit.valueOf(in.readUTF());
-        autoDisposable = in.readBoolean();
+        if (in.getVersion().isGreaterOrEqual(Versions.V4_1)) {
+            autoDisposable = in.readBoolean();
+        }
     }
 
     @Override
