@@ -27,7 +27,7 @@ import java.util.List;
 import static com.hazelcast.sql.SqlResultType.ROWS;
 import static com.hazelcast.sql.SqlResultType.VOID;
 
-public class SqlExecuteResponse {
+public final class SqlExecuteResponse {
 
     private final SqlResultType resultType;
     private final QueryId queryId;
