@@ -31,7 +31,7 @@ import java.util.NoSuchElementException;
 /**
  * Cursor implementation.
  */
-public class SqlResultImpl implements SqlResult {
+public final class SqlResultImpl implements SqlResult {
 
     private final boolean isUpdateCount;
     private final QueryState state;
@@ -39,13 +39,21 @@ public class SqlResultImpl implements SqlResult {
     private Iterator<SqlRow> iterator;
     private final long updatedCount;
 
-    public SqlResultImpl(boolean isUpdateCount, QueryState state, long updatedCount) {
+    private SqlResultImpl(boolean isUpdateCount, QueryState state, long updatedCount) {
         this.isUpdateCount = isUpdateCount;
         this.state = state;
         this.updatedCount = updatedCount;
         assert isUpdateCount ^ state != null : "isUpdateCount" + isUpdateCount + ", state=" + state;
 
         rowMetadata = state != null ? state.getInitiatorState().getRowMetadata() : null;
+    }
+
+    public static SqlResultImpl createRowsResult(QueryState state) {
+        return new SqlResultImpl(false, state, 0);
+    }
+
+    public static SqlResultImpl createUpdateCountResult(long updatedCount) {
+        return new SqlResultImpl(true, null, updatedCount);
     }
 
     @Nonnull
