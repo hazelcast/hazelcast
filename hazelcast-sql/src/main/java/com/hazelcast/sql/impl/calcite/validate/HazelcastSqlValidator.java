@@ -158,7 +158,11 @@ public class HazelcastSqlValidator extends SqlValidatorImpl {
         SqlNode rewritten = super.performUnconditionalRewrites(node, underFrom);
 
         if (rewritten != null && rewritten.isA(SqlKind.TOP_LEVEL)) {
-            // rewrite operators to Hazelcast ones starting at every top node
+            // Rewrite operators to Hazelcast ones starting at every top node.
+            // For instance, SELECT a + b is rewritten to SELECT a + b, where
+            // the first '+' refers to the standard Calcite SqlStdOperatorTable.PLUS
+            // operator and the second '+' refers to HazelcastSqlOperatorTable.PLUS
+            // operator.
             rewritten.accept(HazelcastOperatorTableVisitor.INSTANCE);
         }
 
