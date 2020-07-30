@@ -372,8 +372,6 @@ public abstract class SqlIndexAbstractTest extends SqlTestSupport {
     }
 
     private void check0(Query query, boolean expectedUseIndex, Predicate<ExpressionValue> expectedKeysPredicate) {
-        System.out.println(">>> SQL: " + query.sql);
-
         for (List<Object> params0 : generateParameters(query.parameters)) {
             check0(query.sql, params0, expectedUseIndex, expectedKeysPredicate);
         }

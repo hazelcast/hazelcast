@@ -66,7 +66,7 @@ public class SqlIndexConverterMismatchTest extends SqlTestSupport {
     @Parameterized.Parameter
     public boolean composite;
 
-    @Parameterized.Parameters(name = "composite:{1}")
+    @Parameterized.Parameters(name = "composite:{0}")
     public static Collection<Object[]> parameters() {
         List<Object[]> res = new ArrayList<>();
 
