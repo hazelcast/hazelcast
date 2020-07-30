@@ -28,6 +28,8 @@ import java.util.Scanner;
 import java.util.concurrent.TimeUnit;
 
 final class RestClient {
+    private static final int HTTP_OK = 200;
+
     private final String url;
     private final List<Parameter> headers = new ArrayList<>();
     private String body;
@@ -106,11 +108,7 @@ final class RestClient {
                 }
             }
 
-            if (connection.getResponseCode() != HttpURLConnection.HTTP_OK) {
-                throw new RestClientException(String.format("Failure executing: %s at: %s. HTTP Response Code: %s, "
-                        + "Message: \"%s\",", method, url, connection.getResponseCode(),
-                    read(connection.getErrorStream())));
-            }
+            checkHttpOk(method, connection);
             return read(connection.getInputStream());
         } catch (IOException e) {
             throw new RestClientException("Failure in executing REST call", e);
@@ -118,6 +116,22 @@ final class RestClient {
             if (connection != null) {
                 connection.disconnect();
             }
+        }
+    }
+
+    private void checkHttpOk(String method, HttpURLConnection connection)
+            throws IOException {
+        if (connection.getResponseCode() != HTTP_OK) {
+            String errorMessage;
+            try {
+                errorMessage = read(connection.getErrorStream());
+            } catch (Exception e) {
+                throw new RestClientException(
+                        String.format("Failure executing: %s at: %s", method, url), connection.getResponseCode());
+            }
+            throw new RestClientException(String.format("Failure executing: %s at: %s. Message: %s", method, url, errorMessage),
+                    connection.getResponseCode());
+
         }
     }
 

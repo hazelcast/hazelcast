@@ -21,8 +21,13 @@
         <Bug pattern="SE_BAD_FIELD_STORE"/>
     </Match>
     <Match>
-        <!-- AwsEc2RequestSigner should always use '\n' as new line (and not platform-specific '%n' -->
+        <!-- AwsEc2RequestSigner should always use '\n' as new line (and not platform-specific '%n') -->
         <Class name="com.hazelcast.aws.AwsRequestSigner"/>
         <Bug pattern="VA_FORMAT_STRING_USES_NEWLINE"/>
+    </Match>
+    <Match>
+        <!-- We need an absolute path -->
+        <Class name="com.hazelcast.aws.AwsDiscoveryStrategyFactory"/>
+        <Bug pattern="DMI_HARDCODED_ABSOLUTE_FILENAME"/>
     </Match>
 </FindBugsFilter>

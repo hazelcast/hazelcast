@@ -15,22 +15,39 @@
 
 package com.hazelcast.aws;
 
+import com.github.tomakehurst.wiremock.junit.WireMockRule;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.DiscoveryConfig;
 import com.hazelcast.config.XmlConfigBuilder;
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.spi.discovery.DiscoveryStrategy;
 import com.hazelcast.spi.discovery.impl.DefaultDiscoveryService;
 import com.hazelcast.spi.discovery.integration.DiscoveryServiceSettings;
+import org.junit.Rule;
 import org.junit.Test;
 
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStreamWriter;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
+import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
+import static com.github.tomakehurst.wiremock.client.WireMock.get;
+import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
+import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
+import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 public class AwsDiscoveryStrategyFactoryTest {
+    @Rule
+    public WireMockRule wireMockRule = new WireMockRule(wireMockConfig().dynamicPort());
 
     private static void createStrategy(Map<String, Comparable> props) {
         final AwsDiscoveryStrategyFactory factory = new AwsDiscoveryStrategyFactory();
@@ -86,5 +103,47 @@ public class AwsDiscoveryStrategyFactoryTest {
         assertTrue(strategies.hasNext());
         final DiscoveryStrategy strategy = strategies.next();
         assertTrue(strategy instanceof AwsDiscoveryStrategy);
+    }
+
+    @Test
+    public void isEndpointAvailable() {
+        // given
+        String endpoint = "/some-endpoint";
+        String url = String.format("http://localhost:%d%s", wireMockRule.port(), endpoint);
+        stubFor(get(urlEqualTo(endpoint)).willReturn(aResponse().withStatus(200).withBody("some-body")));
+
+        // when
+        boolean isAvailable = AwsDiscoveryStrategyFactory.isEndpointAvailable(url);
+
+        // then
+        assertTrue(isAvailable);
+    }
+
+    @Test
+    public void readFileContents()
+            throws IOException {
+        // given
+        String expectedContents = "Hello, world!\nThis is a test with Unicode ✓.";
+        String testFile = createTestFile(expectedContents);
+
+        // when
+        String actualContents = AwsDiscoveryStrategyFactory.readFileContents(testFile);
+
+        // then
+        assertEquals(expectedContents, actualContents);
+    }
+
+    private static String createTestFile(String expectedContents)
+            throws IOException {
+        File temp = File.createTempFile("test", ".tmp");
+        temp.deleteOnExit();
+        BufferedWriter bufferedWriter = null;
+        try {
+            bufferedWriter = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(temp), StandardCharsets.UTF_8));
+            bufferedWriter.write(expectedContents);
+        } finally {
+            IOUtil.closeResource(bufferedWriter);
+        }
+        return temp.getAbsolutePath();
     }
 }

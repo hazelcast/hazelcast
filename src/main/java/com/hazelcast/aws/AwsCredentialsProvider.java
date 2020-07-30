@@ -22,6 +22,8 @@ import com.hazelcast.logging.Logger;
 class AwsCredentialsProvider {
     private static final ILogger LOGGER = Logger.getLogger(AwsCredentialsProvider.class);
 
+    private static final int HTTP_NOT_FOUND = 404;
+
     private final AwsConfig awsConfig;
     private final AwsMetadataApi awsMetadataApi;
     private final Environment environment;
@@ -50,9 +52,21 @@ class AwsCredentialsProvider {
             return null;
         }
 
-        String ec2IamRole = awsMetadataApi.defaultIamRoleEc2();
-        LOGGER.info(String.format("Using IAM Role attached to EC2 Instance: '%s'", ec2IamRole));
-        return ec2IamRole;
+        try {
+            String ec2IamRole = awsMetadataApi.defaultIamRoleEc2();
+            LOGGER.info(String.format("Using IAM Role attached to EC2 Instance: '%s'", ec2IamRole));
+            return ec2IamRole;
+        } catch (RestClientException e) {
+            if (e.getHttpErrorCode() == HTTP_NOT_FOUND) {
+                // no IAM Role attached to EC2 instance, no need to log any warning at this point
+                LOGGER.finest("IAM Role not found", e);
+            } else {
+                LOGGER.warning("Couldn't retrieve IAM Role from EC2 instance", e);
+            }
+        } catch (Exception e) {
+            LOGGER.warning("Couldn't retrieve IAM Role from EC2 instance", e);
+        }
+        return null;
     }
 
     AwsCredentials credentials() {
@@ -65,7 +79,10 @@ class AwsCredentialsProvider {
         if (StringUtils.isNotEmpty(ec2IamRole)) {
             return fetchCredentialsFromEc2();
         }
-        return fetchCredentialsFromEcs();
+        if (environment.isRunningOnEcs()) {
+            return fetchCredentialsFromEcs();
+        }
+        throw new NoCredentialsException();
     }
 
     private AwsCredentials fetchCredentialsFromEc2() {

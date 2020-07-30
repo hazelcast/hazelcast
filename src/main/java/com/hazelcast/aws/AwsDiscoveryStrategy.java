@@ -53,8 +53,10 @@ import static com.hazelcast.aws.AwsProperties.TAG_VALUE;
  * @see AwsClient
  */
 public class AwsDiscoveryStrategy
-    extends AbstractDiscoveryStrategy {
+        extends AbstractDiscoveryStrategy {
     private static final ILogger LOGGER = Logger.getLogger(AwsDiscoveryStrategy.class);
+
+    private static final int HTTP_FORBIDDEN = 403;
 
     private static final String DEFAULT_PORT_RANGE = "5701-5708";
     private static final Integer DEFAULT_CONNECTION_RETRIES = 3;
@@ -65,6 +67,8 @@ public class AwsDiscoveryStrategy
     private final PortRange portRange;
 
     private final Map<String, String> memberMetadata = new HashMap<>();
+
+    private boolean isKnownExceptionAlreadyLogged;
 
     AwsDiscoveryStrategy(Map<String, Comparable> properties) {
         super(LOGGER, properties);
@@ -147,15 +151,32 @@ public class AwsDiscoveryStrategy
                 }
             }
             return result;
+        } catch (NoCredentialsException e) {
+            if (!isKnownExceptionAlreadyLogged) {
+                LOGGER.warning("No AWS credentials found! Starting standalone. To use Hazelcast AWS discovery, configure"
+                        + " properties (access-key, secret-key) or assign the required IAM Role to your EC2 instance");
+                LOGGER.finest(e);
+                isKnownExceptionAlreadyLogged = true;
+            }
+        } catch (RestClientException e) {
+            if (e.getHttpErrorCode() == HTTP_FORBIDDEN) {
+                if (!isKnownExceptionAlreadyLogged) {
+                    LOGGER.warning("AWS IAM Role Policy missing 'ec2:DescribeInstances' Action! Starting standalone.");
+                    isKnownExceptionAlreadyLogged = true;
+                }
+                LOGGER.finest(e);
+            } else {
+                LOGGER.warning("Cannot discover nodes. Starting standalone.", e);
+            }
         } catch (Exception e) {
-            LOGGER.warning("Cannot discover nodes, returning empty list", e);
-            return Collections.emptyList();
+            LOGGER.warning("Cannot discover nodes. Starting standalone.", e);
         }
+        return Collections.emptyList();
     }
 
     private static void logResult(Map<String, String> addresses) {
         if (addresses.isEmpty()) {
-            LOGGER.warning("No IP addresses found!");
+            LOGGER.warning("No IP addresses found! Starting standalone.");
         }
 
         LOGGER.fine(String.format("Found the following (private => public) addresses: %s", addresses));
