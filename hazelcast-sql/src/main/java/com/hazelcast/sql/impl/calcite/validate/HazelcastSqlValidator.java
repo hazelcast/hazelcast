@@ -107,15 +107,6 @@ public class HazelcastSqlValidator extends SqlValidatorImpl {
     }
 
     @Override
-    public SqlNode validate(SqlNode topNode) {
-        if (topNode.getKind().belongsTo(SqlKind.DDL)) {
-            return topNode;
-        }
-
-        return super.validate(topNode);
-    }
-
-    @Override
     protected void addToSelectList(List<SqlNode> list, Set<String> aliases, List<Map.Entry<String, RelDataType>> fieldList,
                                    SqlNode exp, SelectScope scope, boolean includeSystemVars) {
         if (isHiddenColumn(exp, scope)) {
