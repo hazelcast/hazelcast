@@ -22,26 +22,55 @@ import com.hazelcast.sql.impl.QueryId;
 
 import java.util.List;
 
-public class SqlExecuteResponse {
+public final class SqlExecuteResponse {
 
+    private final boolean isUpdateCount;
     private final QueryId queryId;
     private final List<SqlColumnMetadata> rowMetadata;
     private final List<List<Data>> rowPage;
     private final boolean rowPageLast;
     private final SqlError error;
+    private final long updatedCount;
 
-    public SqlExecuteResponse(
+    private SqlExecuteResponse(
+        boolean isUpdateCount,
         QueryId queryId,
         List<SqlColumnMetadata> rowMetadata,
         List<List<Data>> rowPage,
         boolean rowPageLast,
+        long updatedCount,
         SqlError error
     ) {
+        this.isUpdateCount = isUpdateCount;
         this.queryId = queryId;
         this.rowMetadata = rowMetadata;
         this.rowPage = rowPage;
         this.rowPageLast = rowPageLast;
+        this.updatedCount = updatedCount;
         this.error = error;
+    }
+
+    public static SqlExecuteResponse rowsResponse(
+        QueryId queryId,
+        List<SqlColumnMetadata> rowMetadata,
+        List<List<Data>> rowPage,
+        boolean rowPageLast
+    ) {
+        return new SqlExecuteResponse(false, queryId, rowMetadata, rowPage, rowPageLast, 0, null);
+    }
+
+    public static SqlExecuteResponse errorResponse(SqlError error) {
+        return new SqlExecuteResponse(false, null, null, null, true, 0, error);
+    }
+
+    // used by Jet
+    @SuppressWarnings("unused")
+    public static SqlExecuteResponse updateCountResponse(long updatedCount) {
+        return new SqlExecuteResponse(true, null, null, null, true, updatedCount, null);
+    }
+
+    public boolean isUpdateCount() {
+        return isUpdateCount;
     }
 
     public QueryId getQueryId() {
@@ -62,5 +91,9 @@ public class SqlExecuteResponse {
 
     public SqlError getError() {
         return error;
+    }
+
+    public long getUpdatedCount() {
+        return updatedCount;
     }
 }

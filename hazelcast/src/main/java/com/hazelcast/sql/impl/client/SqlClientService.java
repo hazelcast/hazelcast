@@ -100,13 +100,15 @@ public class SqlClientService implements SqlService {
             handleResponseError(response.error);
 
             return new SqlClientResult(
+                response.isUpdateCount,
                 this,
                 connection,
                 response.queryId,
                 response.rowMetadata != null ? new SqlRowMetadata(response.rowMetadata) : null,
                 response.rowPage,
                 response.rowPageLast,
-                query.getCursorBufferSize()
+                query.getCursorBufferSize(),
+                response.updatedCount
             );
         } catch (Exception e) {
             throw rethrow(e, connection);

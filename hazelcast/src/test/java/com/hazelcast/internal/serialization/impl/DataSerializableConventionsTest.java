@@ -65,7 +65,7 @@ import static org.junit.Assert.fail;
  * interface, then verifies that it's either annotated with {@link
  * BinaryInterface}, is excluded from conventions tests by being annotated
  * with {@link SerializableByConvention} or they also implement {@code
- * IdentifiedDataSerializable}. Additionally, tests whether IDS instanced
+ * IdentifiedDataSerializable}. Additionally, tests whether IDS instances
  * obtained from DS factories have the same ID as the one reported by
  * their `getClassId` method and that F_ID/ID combinations are unique.
  */

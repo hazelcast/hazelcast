@@ -24,6 +24,7 @@ import com.hazelcast.sql.impl.state.QueryInitiatorState;
 import com.hazelcast.sql.impl.state.QueryState;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 
@@ -32,25 +33,33 @@ import java.util.NoSuchElementException;
  */
 public class SqlResultImpl implements SqlResult {
 
+    private final boolean isUpdateCount;
     private final QueryState state;
     private final SqlRowMetadata rowMetadata;
     private Iterator<SqlRow> iterator;
+    private final long updatedCount;
 
-    public SqlResultImpl(QueryState state) {
+    public SqlResultImpl(boolean isUpdateCount, QueryState state, long updatedCount) {
+        this.isUpdateCount = isUpdateCount;
         this.state = state;
+        this.updatedCount = updatedCount;
+        assert isUpdateCount ^ state != null : "isUpdateCount" + isUpdateCount + ", state=" + state;
 
-        rowMetadata = state.getInitiatorState().getRowMetadata();
+        rowMetadata = state != null ? state.getInitiatorState().getRowMetadata() : null;
     }
 
     @Nonnull
     @Override
     public SqlRowMetadata getRowMetadata() {
+        checkIsRowsResult();
         return rowMetadata;
     }
 
     @Nonnull
     @Override
     public Iterator<SqlRow> iterator() {
+        checkIsRowsResult();
+
         if (iterator == null) {
             Iterator<SqlRow> iterator0 = new RowToSqlRowIterator(getQueryInitiatorState().getResultProducer().iterator());
 
@@ -63,15 +72,45 @@ public class SqlResultImpl implements SqlResult {
     }
 
     @Override
+    public long updatedCount() {
+        if (!isUpdateCount) {
+            throw new IllegalStateException("This result doesn't contain update count");
+        }
+        return updatedCount;
+    }
+
+    @Override
+    public boolean isUpdateCount() {
+        return isUpdateCount;
+    }
+
+    @Override
     public void close() {
         closeOnError(QueryException.cancelledByUser());
     }
 
-    public void closeOnError(QueryException error) {
-        state.cancel(error);
+    private void checkIsRowsResult() {
+        if (isUpdateCount) {
+            throw new IllegalStateException("This result contains only update count");
+        }
     }
 
+    public void closeOnError(QueryException error) {
+        if (state != null) {
+            state.cancel(error);
+        }
+    }
+
+    /**
+     * Return the query ID.
+     *
+     * @throws IllegalStateException If the result doesn't contain rows and
+     *     therefore the query is complete when the result is returned to the
+     *     user.
+     */
+    @Nullable
     public QueryId getQueryId() {
+        checkIsRowsResult();
         return getQueryInitiatorState().getQueryId();
     }
 
