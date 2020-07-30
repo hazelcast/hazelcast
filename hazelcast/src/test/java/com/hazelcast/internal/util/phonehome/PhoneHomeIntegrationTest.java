@@ -31,6 +31,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.crdt.pncounter.PNCounter;
 import com.hazelcast.flakeidgen.FlakeIdGenerator;
 import com.hazelcast.instance.impl.Node;
+import com.hazelcast.internal.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.map.IMap;
 import com.hazelcast.multimap.MultiMap;
 import com.hazelcast.replicatedmap.ReplicatedMap;
@@ -85,6 +86,9 @@ public class PhoneHomeIntegrationTest extends HazelcastTestSupport {
         node.getConfig().getMapConfig("hazelcast").getAttributeConfigs().add(new AttributeConfig());
         node.getConfig().getMapConfig("hazelcast").getEvictionConfig().setEvictionPolicy(EvictionPolicy.LRU);
         node.getConfig().getMapConfig("hazelcast").setInMemoryFormat(InMemoryFormat.NATIVE);
+        LocalMapStatsImpl localMapStats = (LocalMapStatsImpl) map1.getLocalMapStats();
+        localMapStats.incrementPutLatencyNanos(2000000000L);
+        localMapStats.incrementPutLatencyNanos(1000000000L);
 
 
         stubFor(get(urlPathEqualTo("/ping"))
@@ -103,7 +107,9 @@ public class PhoneHomeIntegrationTest extends HazelcastTestSupport {
                 .withQueryParam("mpwact", equalTo("1"))
                 .withQueryParam("mpaocct", equalTo("1"))
                 .withQueryParam("mpevct", equalTo("1"))
-                .withQueryParam("mpnmct", equalTo("1")));
+                .withQueryParam("mpnmct", equalTo("1"))
+                .withQueryParam("mpptla", equalTo("1500"))
+                .withQueryParam("mpgtla", equalTo("-1")));
 
     }
 

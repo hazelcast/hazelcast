@@ -16,13 +16,16 @@
 package com.hazelcast.internal.util.phonehome;
 
 import com.hazelcast.config.EvictionPolicy;
+import com.hazelcast.config.HotRestartConfig;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapConfig;
+import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.core.DistributedObject;
 
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 import static java.util.stream.Collectors.toList;
 
@@ -31,7 +34,7 @@ import com.hazelcast.map.impl.MapService;
 
 class MapInfoCollector implements MetricsCollector {
 
-    private static final int COUNT_OF_MAP_METRICS = 9;
+    private static final int COUNT_OF_MAP_METRICS = 11;
     Collection<MapConfig> mapConfigs;
 
     @Override
@@ -42,6 +45,7 @@ class MapInfoCollector implements MetricsCollector {
         mapConfigs = distributedObjects.stream()
                 .filter(distributedObject -> distributedObject.getServiceName().equals(MapService.SERVICE_NAME))
                 .map(distributedObject -> hazelcastNode.getConfig().getMapConfig(distributedObject.getName()))
+                .filter(Objects::nonNull)
                 .collect(toList());
 
         Map<String, String> mapInfo = new HashMap<>(COUNT_OF_MAP_METRICS);
@@ -55,68 +59,71 @@ class MapInfoCollector implements MetricsCollector {
         mapInfo.put("mpaocct", String.valueOf(countMapWithAtleastOneAttribute()));
         mapInfo.put("mpevct", String.valueOf(countMapUsingEviction()));
         mapInfo.put("mpnmct", String.valueOf(countMapWithNativeInMemoryFormat()));
-        mapInfo.put("mpgtla", String.valueOf(MapGetLatency(hazelcastNode)));
-        mapInfo.put("mpptla", String.valueOf(MapPutLatency(hazelcastNode)));
+        mapInfo.put("mpgtla", String.valueOf(mapGetLatency(hazelcastNode)));
+        mapInfo.put("mpptla", String.valueOf(mapPutLatency(hazelcastNode)));
 
         return mapInfo;
     }
 
     private long countMapWithBackupReadEnabled() {
         return mapConfigs.stream()
-                .filter(mapConfig -> mapConfig != null && mapConfig.isReadBackupData()).count();
+                .filter(MapConfig::isReadBackupData).count();
     }
 
     private long countMapWithMapStoreEnabled() {
-        return mapConfigs.stream()
-                .filter(mapConfig -> mapConfig != null && mapConfig.getMapStoreConfig().isEnabled()).count();
+        return mapConfigs.stream().map(MapConfig::getMapStoreConfig)
+                .filter(MapStoreConfig::isEnabled).count();
     }
 
     private long countMapWithAtleastOneQueryCache() {
-        return mapConfigs.stream()
-                .filter(mapConfig -> mapConfig != null && !(mapConfig.getQueryCacheConfigs().isEmpty())).count();
+        return mapConfigs.stream().map(MapConfig::getQueryCacheConfigs)
+                .filter(queryCacheConfigs -> !(queryCacheConfigs.isEmpty())).count();
     }
 
     private long countMapWithAtleastOneIndex() {
-        return mapConfigs.stream()
-                .filter(mapConfig -> mapConfig != null && !(mapConfig.getIndexConfigs().isEmpty())).count();
+        return mapConfigs.stream().map(MapConfig::getIndexConfigs)
+                .filter(indexConfigs -> !(indexConfigs.isEmpty())).count();
     }
 
     private long countMapWithHotRestartEnabled() {
-        return mapConfigs.stream()
-                .filter(mapConfig -> mapConfig != null && mapConfig.getHotRestartConfig().isEnabled()).count();
+        return mapConfigs.stream().map(MapConfig::getHotRestartConfig)
+                .filter(HotRestartConfig::isEnabled).count();
     }
 
     private long countMapWithWANReplication() {
-        return mapConfigs.stream()
-                .filter(mapConfig -> mapConfig != null && mapConfig.getWanReplicationRef() != null).count();
+        return mapConfigs.stream().map(MapConfig::getWanReplicationRef)
+                .filter(Objects::nonNull).count();
     }
 
     private long countMapWithAtleastOneAttribute() {
-        return mapConfigs.stream()
-                .filter(mapConfig -> mapConfig != null && !(mapConfig.getAttributeConfigs().isEmpty())).count();
+        return mapConfigs.stream().map(MapConfig::getAttributeConfigs)
+                .filter(attributeConfigs -> !(attributeConfigs.isEmpty())).count();
     }
 
     private long countMapUsingEviction() {
-        return mapConfigs.stream().filter(mapConfig -> mapConfig != null
-                && mapConfig.getEvictionConfig().getEvictionPolicy() != EvictionPolicy.NONE).count();
+        return mapConfigs.stream().filter(mapConfig -> mapConfig.getEvictionConfig().getEvictionPolicy() != EvictionPolicy.NONE).count();
     }
 
     private long countMapWithNativeInMemoryFormat() {
         return mapConfigs.stream()
-                .filter(mapConfig -> mapConfig != null && mapConfig.getInMemoryFormat() == InMemoryFormat.NATIVE).count();
+                .filter(mapConfig -> mapConfig.getInMemoryFormat() == InMemoryFormat.NATIVE).count();
     }
 
-    private long MapPutLatency(Node node) {
-        return (long) mapConfigs.stream().map(mapConfig -> node.hazelcastInstance.getMap(mapConfig.getName()))
-                .filter(map -> map.getLocalMapStats().getPutOperationCount() != 0L)
-                .mapToDouble(map -> map.getLocalMapStats().getTotalPutLatency() / map.getLocalMapStats().getPutOperationCount())
-                .average().orElse(0);
+    private long mapPutLatency(Node node) {
+        return (long) mapConfigs.stream()
+                .filter(mapConfig -> node.hazelcastInstance.getMap(mapConfig.getName()).getLocalMapStats() != null)
+                .map(mapConfig -> node.hazelcastInstance.getMap(mapConfig.getName()).getLocalMapStats())
+                .filter(localMapStats -> localMapStats.getPutOperationCount() != 0L)
+                .mapToDouble(localMapstats -> localMapstats.getTotalPutLatency() / localMapstats.getPutOperationCount())
+                .average().orElse(-1);
     }
 
-    private long MapGetLatency(Node node) {
-        return (long) mapConfigs.stream().map(mapConfig -> node.hazelcastInstance.getMap(mapConfig.getName()))
-                .filter(map -> map.getLocalMapStats().getGetOperationCount() != 0L)
-                .mapToDouble(map -> map.getLocalMapStats().getTotalGetLatency() / map.getLocalMapStats().getGetOperationCount())
-                .average().orElse(0);
+    private long mapGetLatency(Node node) {
+        return (long) mapConfigs.stream()
+                .filter(mapConfig -> node.hazelcastInstance.getMap(mapConfig.getName()).getLocalMapStats() != null)
+                .map(mapConfig -> node.hazelcastInstance.getMap(mapConfig.getName()).getLocalMapStats())
+                .filter(localMapStats -> localMapStats.getGetOperationCount() != 0L)
+                .mapToDouble(localMapstats -> localMapstats.getTotalGetLatency() / localMapstats.getGetOperationCount())
+                .average().orElse(-1);
     }
 }

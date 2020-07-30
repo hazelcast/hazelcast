@@ -34,6 +34,7 @@ import com.hazelcast.crdt.pncounter.PNCounter;
 import com.hazelcast.flakeidgen.FlakeIdGenerator;
 import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.instance.impl.Node;
+import com.hazelcast.internal.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.map.IMap;
 import com.hazelcast.multimap.MultiMap;
 import com.hazelcast.replicatedmap.ReplicatedMap;
@@ -508,38 +509,41 @@ public class PhoneHomeTest extends HazelcastTestSupport {
     public void testMapPutLatency() {
         Map<String, String> parameters;
         parameters = phoneHome.phoneHome(true);
-        assertEquals(parameters.get("mpptla"), "0");
+        assertEquals(parameters.get("mpptla"), "-1");
 
         IMap<Object, Object> iMap = node.hazelcastInstance.getMap("hazelcast");
-        iMap.put("1", "hazelcast");
-        parameters = phoneHome.phoneHome(true);
-        assertEquals(parameters.get("mpptla"),
-                String.valueOf(iMap.getLocalMapStats().getTotalPutLatency() / iMap.getLocalMapStats().getPutOperationCount()));
+        LocalMapStatsImpl localMapStats = (LocalMapStatsImpl) iMap.getLocalMapStats();
 
-        iMap.put("2", "phonehome");
+        localMapStats.incrementPutLatencyNanos(2000000000L);
         parameters = phoneHome.phoneHome(true);
-        assertEquals(parameters.get("mpptla"),
-                String.valueOf(iMap.getLocalMapStats().getTotalPutLatency() / iMap.getLocalMapStats().getPutOperationCount()));
+        assertEquals(parameters.get("mpptla"), String.valueOf(2000));
+
+        localMapStats.incrementPutLatencyNanos(1000000000L);
+        parameters = phoneHome.phoneHome(true);
+        assertEquals(parameters.get("mpptla"), String.valueOf(1500));
+
+        localMapStats.incrementPutLatencyNanos(2000000000L);
+        parameters = phoneHome.phoneHome(true);
+        assertEquals(parameters.get("mpptla"), String.valueOf(1666));
+
     }
 
     @Test
     public void testMapGetLatency() {
         Map<String, String> parameters;
         parameters = phoneHome.phoneHome(true);
-        assertEquals(parameters.get("mpgtla"), "0");
+        assertEquals(parameters.get("mpgtla"), "-1");
 
         IMap<Object, Object> iMap = node.hazelcastInstance.getMap("hazelcast");
-        iMap.put("1", "hazelcast");
-        iMap.get("1");
-        parameters = phoneHome.phoneHome(true);
-        assertEquals(parameters.get("mpgtla"),
-                String.valueOf(iMap.getLocalMapStats().getTotalGetLatency() / iMap.getLocalMapStats().getGetOperationCount()));
+        LocalMapStatsImpl localMapStats = (LocalMapStatsImpl) iMap.getLocalMapStats();
 
-        iMap.put("2", "phonehome");
-        iMap.get("2");
+        localMapStats.incrementGetLatencyNanos(2000000000L);
         parameters = phoneHome.phoneHome(true);
-        assertEquals(parameters.get("mpgtla"),
-                String.valueOf(iMap.getLocalMapStats().getTotalGetLatency() / iMap.getLocalMapStats().getGetOperationCount()));
+        assertEquals(parameters.get("mpgtla"), String.valueOf(2000));
+
+        localMapStats.incrementGetLatencyNanos(2000000000L);
+        parameters = phoneHome.phoneHome(true);
+        assertEquals(parameters.get("mpgtla"), String.valueOf(2000));
     }
 
 }
