@@ -25,8 +25,13 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.crdt.pncounter.PNCounter;
 import com.hazelcast.flakeidgen.FlakeIdGenerator;
 import com.hazelcast.instance.impl.Node;
+import com.hazelcast.internal.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.map.IMap;
+import com.hazelcast.map.MapStore;
+import com.hazelcast.map.impl.mapstore.MapStoreTest;
 import com.hazelcast.multimap.MultiMap;
+import com.hazelcast.query.extractor.ValueCollector;
+import com.hazelcast.query.extractor.ValueExtractor;
 import com.hazelcast.replicatedmap.ReplicatedMap;
 import com.hazelcast.ringbuffer.Ringbuffer;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -38,7 +43,11 @@ import org.junit.Test;
 
 import javax.cache.CacheManager;
 import javax.cache.spi.CachingProvider;
+import java.util.Collection;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CountDownLatch;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
@@ -72,12 +81,12 @@ public class PhoneHomeIntegrationTest extends HazelcastTestSupport {
         IMap<String, String> map2 = node.hazelcastInstance.getMap("phonehome");
 
         node.getConfig().getMapConfig("hazelcast").setReadBackupData(true);
-//        node.getConfig().getMapConfig("phonehome").getMapStoreConfig().setClassName(node.getClass().getName()).setEnabled(true);
+        node.getConfig().getMapConfig("phonehome").getMapStoreConfig().setClassName(getClass().getName()).setEnabled(true);
         node.getConfig().getMapConfig("hazelcast").addQueryCacheConfig(new QueryCacheConfig("queryconfig"));
         node.getConfig().getMapConfig("hazelcast").getHotRestartConfig().setEnabled(true);
         node.getConfig().getMapConfig("hazelcast").getIndexConfigs().add(new IndexConfig().setName("index"));
         node.getConfig().getMapConfig("hazelcast").setWanReplicationRef(new WanReplicationRef().setName("wan"));
-//        node.getConfig().getMapConfig("hazelcast").getAttributeConfigs().add(new AttributeConfig("hz",node.getClass().getName()));
+//        node.getConfig().getMapConfig("hazelcast").getAttributeConfigs().add(new AttributeConfig("hz", getClass().getName()));
         node.getConfig().getMapConfig("hazelcast").getEvictionConfig().setEvictionPolicy(EvictionPolicy.LRU);
         node.getConfig().getMapConfig("hazelcast").setInMemoryFormat(InMemoryFormat.NATIVE);
 
@@ -91,7 +100,7 @@ public class PhoneHomeIntegrationTest extends HazelcastTestSupport {
         verify(1, getRequestedFor(urlPathEqualTo("/ping"))
                 .withQueryParam("mpct", equalTo("2"))
                 .withQueryParam("mpbrct", equalTo("1"))
-//                .withQueryParam("mpmsct", equalTo("1"))
+                .withQueryParam("mpmsct", equalTo("1"))
                 .withQueryParam("mpaoqcct", equalTo("1"))
                 .withQueryParam("mpaoict", equalTo("1"))
                 .withQueryParam("mphect", equalTo("1"))
@@ -160,13 +169,14 @@ public class PhoneHomeIntegrationTest extends HazelcastTestSupport {
 
     @Test
     public void testMapLatencies() {
-        IMap<Object, Object> iMap = node.hazelcastInstance.getMap("hazelcast");
-        node.getConfig().getMapConfig(iMap.getName()).getMapStoreConfig().setWriteDelaySeconds(200);
-
-        iMap.put("1", "hz");
-        sleepMillis(200);
-        iMap.put("2","ph");
-        sleepMillis(200);
+        DelayMapStore mapStore = new DelayMapStore();
+        MapStoreConfig mapStoreConfig = new MapStoreConfig();
+        mapStoreConfig.setEnabled(true);
+        mapStoreConfig.setClassName(getClass().getName());
+        mapStoreConfig.setImplementation(mapStore);
+        IMap<String, String> iMap = node.hazelcastInstance.getMap("hazelcast");
+        node.getConfig().getMapConfig("hazelcast").setMapStoreConfig(mapStoreConfig);
+        iMap.put("1", "hazelcast");
 
 
         stubFor(get(urlPathEqualTo("/ping"))
@@ -178,9 +188,54 @@ public class PhoneHomeIntegrationTest extends HazelcastTestSupport {
                 .withQueryParam("mpptla", equalTo(String.valueOf(iMap.getLocalMapStats().getTotalPutLatency() / iMap.getLocalMapStats().getPutOperationCount())))
                 .withQueryParam("mpgtla", equalTo("-1")));
 
-        assertGreaterOrEquals("mpptla",iMap.getLocalMapStats().getTotalPutLatency() / iMap.getLocalMapStats().getPutOperationCount(),200);
+        assertGreaterOrEquals("mpptla", iMap.getLocalMapStats().getTotalPutLatency() / iMap.getLocalMapStats().getPutOperationCount(), 200);
 
     }
+
+    public static class DelayMapStore implements MapStore {
+        final Map<Object, Object> store = new ConcurrentHashMap<>();
+
+        @Override
+        public void store(Object key, Object value) {
+            sleepMillis(200);
+            store.put(key, value);
+
+        }
+
+        @Override
+        public void storeAll(Map map) {
+            store.putAll(map);
+
+        }
+
+        @Override
+        public void delete(Object key) {
+            store.remove(key);
+
+        }
+
+        @Override
+        public void deleteAll(Collection keys) {
+            store.clear();
+
+        }
+
+        @Override
+        public Object load(Object key) {
+            return store.get(key);
+        }
+
+        @Override
+        public Map loadAll(Collection keys) {
+            return store;
+        }
+
+        @Override
+        public Iterable loadAllKeys() {
+            return store.keySet();
+        }
+    }
+
 
 }
 
