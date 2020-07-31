@@ -171,16 +171,14 @@ public class PhoneHomeIntegrationTest extends HazelcastTestSupport {
 
     @Test
     public void testMapLatencies() {
-        DelayMapStore mapStore = new DelayMapStore();
         MapStoreConfig mapStoreConfig = new MapStoreConfig();
         mapStoreConfig.setEnabled(true);
-        mapStoreConfig.setClassName(getClass().getName());
-        mapStoreConfig.setImplementation(mapStore);
+        mapStoreConfig.setImplementation(new DelayMapStore());
         IMap<String, String> iMap = node.hazelcastInstance.getMap("hazelcast");
         node.getConfig().getMapConfig("hazelcast").setMapStoreConfig(mapStoreConfig);
-        iMap.put("1", "hazelcast");
-        iMap.put("2", "phonehome");
-        iMap.get("3");
+        iMap.put("key1", "hazelcast");
+        iMap.put("key2", "phonehome");
+        iMap.get("key3");
         LocalMapStatsImpl mapStats = (LocalMapStatsImpl) iMap.getLocalMapStats();
 
 
