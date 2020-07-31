@@ -35,7 +35,7 @@ import com.hazelcast.map.impl.MapService;
 class MapInfoCollector implements MetricsCollector {
 
     private static final int COUNT_OF_MAP_METRICS = 11;
-    Collection<MapConfig> mapConfigs;
+    private Collection<MapConfig> mapConfigs;
 
     @Override
     public Map<String, String> computeMetrics(Node hazelcastNode) {
@@ -111,7 +111,6 @@ class MapInfoCollector implements MetricsCollector {
 
     private long mapPutLatency(Node node) {
         return (long) mapConfigs.stream()
-                .filter(mapConfig -> node.hazelcastInstance.getMap(mapConfig.getName()).getLocalMapStats() != null)
                 .map(mapConfig -> node.hazelcastInstance.getMap(mapConfig.getName()).getLocalMapStats())
                 .filter(localMapStats -> localMapStats.getPutOperationCount() != 0L)
                 .mapToDouble(localMapstats -> localMapstats.getTotalPutLatency() / localMapstats.getPutOperationCount())
@@ -120,7 +119,6 @@ class MapInfoCollector implements MetricsCollector {
 
     private long mapGetLatency(Node node) {
         return (long) mapConfigs.stream()
-                .filter(mapConfig -> node.hazelcastInstance.getMap(mapConfig.getName()).getLocalMapStats() != null)
                 .map(mapConfig -> node.hazelcastInstance.getMap(mapConfig.getName()).getLocalMapStats())
                 .filter(localMapStats -> localMapStats.getGetOperationCount() != 0L)
                 .mapToDouble(localMapstats -> localMapstats.getTotalGetLatency() / localMapstats.getGetOperationCount())

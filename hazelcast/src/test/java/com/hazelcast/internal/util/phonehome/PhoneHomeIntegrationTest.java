@@ -15,12 +15,18 @@
  */
 package com.hazelcast.internal.util.phonehome;
 
-import com.github.tomakehurst.wiremock.client.WireMock;
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
 import com.hazelcast.cardinality.CardinalityEstimator;
 import com.hazelcast.collection.IQueue;
 import com.hazelcast.collection.ISet;
-import com.hazelcast.config.*;
+import com.hazelcast.config.CacheConfig;
+import com.hazelcast.config.CacheSimpleConfig;
+import com.hazelcast.config.EvictionPolicy;
+import com.hazelcast.config.InMemoryFormat;
+import com.hazelcast.config.IndexConfig;
+import com.hazelcast.config.MapStoreConfig;
+import com.hazelcast.config.QueryCacheConfig;
+import com.hazelcast.config.WanReplicationRef;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.crdt.pncounter.PNCounter;
 import com.hazelcast.flakeidgen.FlakeIdGenerator;
@@ -28,10 +34,7 @@ import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.MapStore;
-import com.hazelcast.map.impl.mapstore.MapStoreTest;
 import com.hazelcast.multimap.MultiMap;
-import com.hazelcast.query.extractor.ValueCollector;
-import com.hazelcast.query.extractor.ValueExtractor;
 import com.hazelcast.replicatedmap.ReplicatedMap;
 import com.hazelcast.ringbuffer.Ringbuffer;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -47,7 +50,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CountDownLatch;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
@@ -177,6 +179,9 @@ public class PhoneHomeIntegrationTest extends HazelcastTestSupport {
         IMap<String, String> iMap = node.hazelcastInstance.getMap("hazelcast");
         node.getConfig().getMapConfig("hazelcast").setMapStoreConfig(mapStoreConfig);
         iMap.put("1", "hazelcast");
+        iMap.put("2", "phonehome");
+        iMap.get("3");
+        LocalMapStatsImpl mapStats = (LocalMapStatsImpl) iMap.getLocalMapStats();
 
 
         stubFor(get(urlPathEqualTo("/ping"))
@@ -185,10 +190,17 @@ public class PhoneHomeIntegrationTest extends HazelcastTestSupport {
 
         phoneHome.phoneHome(false);
         verify(1, getRequestedFor(urlPathEqualTo("/ping"))
-                .withQueryParam("mpptla", equalTo(String.valueOf(iMap.getLocalMapStats().getTotalPutLatency() / iMap.getLocalMapStats().getPutOperationCount())))
-                .withQueryParam("mpgtla", equalTo("-1")));
+                .withQueryParam("mpptla",
+                        equalTo(String.valueOf(mapStats.getTotalPutLatency() / mapStats.getPutOperationCount())))
+                .withQueryParam("mpgtla",
+                        equalTo(String.valueOf(mapStats.getTotalGetLatency() / mapStats.getGetOperationCount()))));
 
-        assertGreaterOrEquals("mpptla", iMap.getLocalMapStats().getTotalPutLatency() / iMap.getLocalMapStats().getPutOperationCount(), 200);
+        assertGreaterOrEquals("mpptla",
+                mapStats.getTotalPutLatency() / mapStats.getPutOperationCount(), 200);
+
+        assertGreaterOrEquals("mpgtla",
+                mapStats.getTotalGetLatency() / mapStats.getGetOperationCount(), 200);
+
 
     }
 
@@ -197,7 +209,6 @@ public class PhoneHomeIntegrationTest extends HazelcastTestSupport {
 
         @Override
         public void store(Object key, Object value) {
-            sleepMillis(200);
             store.put(key, value);
 
         }
@@ -222,6 +233,7 @@ public class PhoneHomeIntegrationTest extends HazelcastTestSupport {
 
         @Override
         public Object load(Object key) {
+            sleepMillis(200);
             return store.get(key);
         }
 
@@ -235,7 +247,5 @@ public class PhoneHomeIntegrationTest extends HazelcastTestSupport {
             return store.keySet();
         }
     }
-
-
 }
 
