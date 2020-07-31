@@ -24,7 +24,6 @@ import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.QueryUtils;
 import com.hazelcast.sql.impl.schema.ConstantTableStatistics;
-import com.hazelcast.sql.impl.schema.ExternalCatalog;
 import com.hazelcast.sql.impl.schema.Table;
 import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.schema.map.sample.MapSampleMetadata;
@@ -57,9 +56,6 @@ public class ReplicatedMapTableResolver extends AbstractMapTableResolver {
 
         for (String mapName : mapService.getPartitionContainer(0).getStores().keySet()) {
             // TODO: skip all system tables, i.e. `__jet` prefixed
-            if (mapName.equalsIgnoreCase(ExternalCatalog.CATALOG_MAP_NAME)) {
-                continue;
-            }
 
             ReplicatedMapTable table = createTable(mapService, mapName);
             res.add(table);

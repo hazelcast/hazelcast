@@ -17,7 +17,6 @@
 package com.hazelcast.sql.impl.calcite.parse;
 
 import org.apache.calcite.rel.type.RelDataType;
-import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlNode;
 
 /**
@@ -27,16 +26,16 @@ public class QueryParseResult {
 
     private final SqlNode node;
     private final RelDataType parameterRowType;
-    private final boolean isImdg;
+    private final boolean exclusivelyImdgStatement;
 
-    public QueryParseResult(SqlNode node, RelDataType parameterRowType, boolean isImdg) {
+    public QueryParseResult(
+        SqlNode node,
+        RelDataType parameterRowType,
+        boolean exclusivelyImdgStatement
+    ) {
         this.node = node;
         this.parameterRowType = parameterRowType;
-        this.isImdg = isImdg;
-    }
-
-    public boolean isDdl() {
-        return node.getKind().belongsTo(SqlKind.DDL);
+        this.exclusivelyImdgStatement = exclusivelyImdgStatement;
     }
 
     public SqlNode getNode() {
@@ -47,7 +46,7 @@ public class QueryParseResult {
         return parameterRowType;
     }
 
-    public boolean isImdg() {
-        return isImdg;
+    public boolean isExclusivelyImdgStatement() {
+        return exclusivelyImdgStatement;
     }
 }

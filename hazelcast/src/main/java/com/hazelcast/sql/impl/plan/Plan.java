@@ -20,7 +20,6 @@ import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.sql.SqlRowMetadata;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.explain.QueryExplain;
-import com.hazelcast.sql.impl.optimizer.SqlPlanType;
 import com.hazelcast.sql.impl.plan.cache.CachedPlan;
 import com.hazelcast.sql.impl.plan.cache.PlanCacheKey;
 import com.hazelcast.sql.impl.plan.cache.PlanCheckContext;
@@ -92,11 +91,6 @@ public class Plan implements CachedPlan {
         this.planKey = planKey;
         this.explain = explain;
         this.objectIds = objectIds;
-    }
-
-    @Override
-    public SqlPlanType getType() {
-        return SqlPlanType.IMDG;
     }
 
     @Override

@@ -31,34 +31,19 @@ import com.hazelcast.sql.impl.calcite.opt.physical.visitor.NodeIdVisitor;
 import com.hazelcast.sql.impl.calcite.opt.physical.visitor.PlanCreateVisitor;
 import com.hazelcast.sql.impl.calcite.parse.QueryConvertResult;
 import com.hazelcast.sql.impl.calcite.parse.QueryParseResult;
-import com.hazelcast.sql.impl.calcite.parse.SqlCreateExternalTable;
-import com.hazelcast.sql.impl.calcite.parse.SqlDropExternalTable;
-import com.hazelcast.sql.impl.calcite.parse.SqlTableColumn;
-import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
 import com.hazelcast.sql.impl.optimizer.OptimizationTask;
 import com.hazelcast.sql.impl.optimizer.SqlOptimizer;
 import com.hazelcast.sql.impl.optimizer.SqlPlan;
 import com.hazelcast.sql.impl.plan.cache.PlanCacheKey;
-import com.hazelcast.sql.impl.schema.ExternalCatalog;
-import com.hazelcast.sql.impl.schema.ExternalTable;
-import com.hazelcast.sql.impl.schema.ExternalTable.ExternalField;
-import com.hazelcast.sql.impl.schema.SchemaPlan.CreateExternalTablePlan;
-import com.hazelcast.sql.impl.schema.SchemaPlan.RemoveExternalTablePlan;
-import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.calcite.plan.Convention;
 import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.plan.volcano.VolcanoPlanner;
 import org.apache.calcite.rel.RelNode;
-import org.apache.calcite.sql.SqlNode;
+import org.apache.calcite.rel.type.RelDataType;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-
-import static java.util.stream.Collectors.toList;
 
 /**
  * SQL optimizer based on Apache Calcite.
@@ -126,16 +111,13 @@ import static java.util.stream.Collectors.toList;
 public class CalciteSqlOptimizer implements SqlOptimizer {
 
     private final NodeEngine nodeEngine;
-    private final ExternalCatalog catalog;
     private final JetSqlBackend jetSqlBackend;
 
     public CalciteSqlOptimizer(
         NodeEngine nodeEngine,
-        ExternalCatalog catalog,
         JetSqlBackend jetSqlBackend
     ) {
         this.nodeEngine = nodeEngine;
-        this.catalog = catalog;
         this.jetSqlBackend = jetSqlBackend;
     }
 
@@ -146,7 +128,6 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
 
         OptimizerContext context = OptimizerContext.create(
             jetSqlBackend,
-            catalog,
             task.getSchema(),
             task.getSearchPaths(),
             memberCount
@@ -155,102 +136,50 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         // 2. Parse SQL string and validate it.
         QueryParseResult parseResult = context.parse(task.getSql());
 
-        if (parseResult.isDdl()) {
-            return createSchemaPlan(task.getSql(), context, parseResult);
-        }
+        if (parseResult.isExclusivelyImdgStatement()) {
+            // 3. Convert parse tree to relational tree.
+            QueryConvertResult convertResult = context.convert(parseResult.getNode());
 
-        // 3. Convert parse tree to relational tree.
-        QueryConvertResult convertResult = context.convert(parseResult.getNode());
-
-        // 4. Create plan.
-        return createPlan(task.getSearchPaths(), task.getSql(), context, parseResult, convertResult);
-    }
-
-    private SqlPlan createSchemaPlan(
-            String sql,
-            OptimizerContext context,
-            QueryParseResult parseResult
-    ) {
-        if (parseResult.getNode() instanceof SqlCreateExternalTable) {
-            return toCreateTablePlan(sql, context, parseResult);
-        } else if (parseResult.getNode() instanceof SqlDropExternalTable) {
-            return toRemoveTablePlan((SqlDropExternalTable) parseResult.getNode());
+            // 4. Create plan.
+            return createPlan(
+                task.getSearchPaths(),
+                task.getSql(),
+                parseResult.getParameterRowType(),
+                convertResult.getRel(),
+                convertResult.getFieldNames(),
+                context
+            );
         } else {
-            throw new IllegalArgumentException("Unsupported SQL statement - " + parseResult.getNode());
-        }
-    }
-
-    private SqlPlan toCreateTablePlan(
-        String sql,
-        OptimizerContext context,
-        QueryParseResult parseResult
-    ) {
-        SqlCreateExternalTable create = (SqlCreateExternalTable) parseResult.getNode();
-
-        SqlNode source = create.source();
-        if (source == null) {
-            List<ExternalField> externalFields = create.columns()
-                    .map(field -> new ExternalField(field.name(), field.type(), field.externalName()))
-                    .collect(toList());
-            ExternalTable externalTable = new ExternalTable(create.name(), create.type(), externalFields, create.options());
-
-            return new CreateExternalTablePlan(catalog, externalTable, create.getReplace(), create.ifNotExists(), null);
-        } else {
-            QueryConvertResult convertedResult = context.convert(create);
-
-            // TODO: ExternalTable is already being created in HazelcastSqlToRelConverter, any way to reuse it ???
-            List<ExternalField> externalFields = new ArrayList<>();
-            Iterator<SqlTableColumn> columns = create.columns().iterator();
-            for (TableField field : convertedResult.getRel().getTable().unwrap(HazelcastTable.class).getTarget().getFields()) {
-                SqlTableColumn column = columns.hasNext() ? columns.next() : null;
-
-                String name = field.getName();
-                QueryDataType type = field.getType();
-                String externalName = column != null ? column.externalName() : null;
-
-                externalFields.add(new ExternalField(name, type, externalName));
-            }
-            assert !columns.hasNext() : "there are too many columns specified";
-            ExternalTable externalTable = new ExternalTable(create.name(), create.type(), externalFields, create.options());
-
-            SqlPlan populateTablePlan = createPlan(Collections.emptyList(), sql, context, parseResult, convertedResult);
-            return new CreateExternalTablePlan(
-                    catalog,
-                    externalTable,
-                    create.getReplace(),
-                    create.ifNotExists(),
-                    populateTablePlan
+            return (SqlPlan) jetSqlBackend.createPlan(
+                task.getSearchPaths(),
+                task.getSql(),
+                parseResult.getNode(),
+                parseResult.getParameterRowType(),
+                context
             );
         }
-    }
-
-    private SqlPlan toRemoveTablePlan(SqlDropExternalTable sqlDropTable) {
-        return new RemoveExternalTablePlan(catalog, sqlDropTable.name(), sqlDropTable.ifExists());
     }
 
     private SqlPlan createPlan(
         List<List<String>> searchPaths,
         String sql,
-        OptimizerContext context,
-        QueryParseResult parseResult,
-        QueryConvertResult convertResult
+        RelDataType parameterRowType,
+        RelNode rel,
+        List<String> fieldNames,
+        OptimizerContext context
     ) {
-        if (parseResult.isImdg()) {
-            QueryDataType[] mappedParameterRowType = SqlToQueryType.mapRowType(parseResult.getParameterRowType());
-            QueryParameterMetadata parameterMetadata = new QueryParameterMetadata(mappedParameterRowType);
+        QueryDataType[] mappedParameterRowType = SqlToQueryType.mapRowType(parameterRowType);
+        QueryParameterMetadata parameterMetadata = new QueryParameterMetadata(mappedParameterRowType);
 
-            PhysicalRel physicalRel = optimize(context, convertResult.getRel(), parameterMetadata);
+        PhysicalRel physicalRel = optimize(context, rel, parameterMetadata);
 
-            return createImdgPlan(
+        return createImdgPlan(
                 searchPaths,
                 sql,
                 parameterMetadata,
                 physicalRel,
-                convertResult.getFieldNames()
-            );
-        } else {
-            return jetSqlBackend.optimizeAndCreatePlan(context, convertResult.getRel(), convertResult.getFieldNames());
-        }
+                fieldNames
+        );
     }
 
     private PhysicalRel optimize(

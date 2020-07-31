@@ -19,100 +19,70 @@ package com.hazelcast.sql.impl.calcite.parse;
 import com.hazelcast.sql.SqlErrorCode;
 import com.hazelcast.sql.impl.JetSqlBackend;
 import com.hazelcast.sql.impl.QueryException;
-import com.hazelcast.sql.impl.calcite.parser.HazelcastSqlParser;
 import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlConformance;
-import org.apache.calcite.rel.type.RelDataType;
-import org.apache.calcite.sql.SqlCall;
-import org.apache.calcite.sql.SqlHint;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.SqlOperator;
-import org.apache.calcite.sql.SqlOperatorTable;
-import org.apache.calcite.sql.SqlSelect;
 import org.apache.calcite.sql.parser.SqlParser;
-import org.apache.calcite.sql.util.SqlBasicVisitor;
+import org.apache.calcite.sql.parser.SqlParserImplFactory;
 import org.apache.calcite.sql.validate.SqlValidator;
 
-import java.util.Collections;
-import java.util.HashSet;
+import javax.annotation.Nullable;
 import java.util.Set;
+
+import static java.util.Collections.emptySet;
 
 /**
  * Performs syntactic and semantic validation of the query, and converts the parse tree into a relational tree.
  */
 public class QueryParser {
 
-    /** A hint to force execution of a query on Jet. */
-    private static final String RUN_ON_JET_HINT = "jet";
+    private final SqlParser.Config parserConfig;
 
-    private static final SqlParser.Config CONFIG;
     private final SqlValidator validator;
+    private final Set<SqlKind> extensionSqlKinds;
+    private final Set<SqlOperator> extensionSqlOperators;
 
-    static {
+    @SuppressWarnings("unchecked")
+    public QueryParser(
+            SqlValidator validator,
+            @Nullable JetSqlBackend jetSqlBackend
+    ) {
         SqlParser.ConfigBuilder configBuilder = SqlParser.configBuilder();
-
         CasingConfiguration.DEFAULT.toParserConfig(configBuilder);
         configBuilder.setConformance(HazelcastSqlConformance.INSTANCE);
-        configBuilder.setParserFactory(HazelcastSqlParser.FACTORY);
+        if (jetSqlBackend != null) {
+            configBuilder.setParserFactory((SqlParserImplFactory) jetSqlBackend.createParserFactory());
+        }
+        this.parserConfig = configBuilder.build();
 
-        CONFIG = configBuilder.build();
-    }
-
-    public QueryParser(SqlValidator validator) {
         this.validator = validator;
+        this.extensionSqlKinds = jetSqlBackend == null ? emptySet() : (Set<SqlKind>) jetSqlBackend.kinds();
+        this.extensionSqlOperators = jetSqlBackend == null ? emptySet() : (Set<SqlOperator>) jetSqlBackend.operators();
     }
 
-    public QueryParseResult parse(String sql, JetSqlBackend jetSqlBackend) {
-        SqlNode node;
-        RelDataType parameterRowType;
-
-        boolean isImdg;
+    public QueryParseResult parse(String sql) {
         try {
-            SqlParser parser = SqlParser.create(sql, CONFIG);
+            SqlParser parser = SqlParser.create(sql, parserConfig);
 
-            node = validator.validate(parser.parseStmt());
+            SqlNode node = validator.validate(parser.parseStmt());
 
-            Set<SqlOperator> jetSqlOperators = jetSqlBackend == null
-                    ? Collections.emptySet()
-                    : new HashSet<>(((SqlOperatorTable) jetSqlBackend.operatorTable()).getOperatorList());
-            UnsupportedOperationVisitor visitor = new UnsupportedOperationVisitor(validator.getCatalogReader(), jetSqlOperators);
+            UnsupportedOperationVisitor visitor = new UnsupportedOperationVisitor(
+                validator.getCatalogReader(),
+                extensionSqlKinds,
+                extensionSqlOperators
+            );
             node.accept(visitor);
 
-            if (!visitor.runsOnImdg() && !visitor.runsOnJet()) {
-                // If there's a single feature that's not supported by either engine, the visitor already
-                // threw an error when visiting. If we get here it means that there's some feature
-                // missing in IMDG and a distinct feature missing in Jet.
-                throw QueryException.error("The query contains an unsupported combination of features");
-            }
-
-            if (!visitor.runsOnImdg() && jetSqlBackend == null) {
-                throw QueryException.error("To run this query Hazelcast Jet must be on the classpath");
-            }
-
-            isImdg = visitor.runsOnImdg();
-            // check for the Jet hint to force execution on Jet. Ignore the hint if query doesn't run on Jet
-            if (isImdg && visitor.runsOnJet()) {
-                boolean[] jetHinted = {false};
-                node.accept(new SqlBasicVisitor<Void>() {
-                    @Override
-                    public Void visit(SqlCall node) {
-                        jetHinted[0] |= node.getKind() == SqlKind.SELECT
-                                && ((SqlSelect) node).getHints().getList().stream()
-                                                     .anyMatch(n -> ((SqlHint) n).getName().equals(RUN_ON_JET_HINT));
-                        return super.visit(node);
-                    }
-                });
-
-                isImdg = !jetHinted[0];
-            }
-
-            parameterRowType = validator.getParameterRowType(node);
+            return new QueryParseResult(
+                node,
+                validator.getParameterRowType(node),
+                visitor.isExclusivelyImdgStatement()
+            );
 
             // TODO: Get column names through SqlSelect.selectList[i].toString() (and, possibly, origins?)?
         } catch (Exception e) {
             throw QueryException.error(SqlErrorCode.PARSING, e.getMessage(), e);
         }
-
-        return new QueryParseResult(node, parameterRowType, isImdg);
     }
 }

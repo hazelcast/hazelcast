@@ -20,7 +20,6 @@ import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.impl.optimizer.SqlPlan;
 
 import java.util.List;
-import java.util.function.BiFunction;
 
 /**
  * A service to optimize a RelNode and execute the SqlPlan implemented by Jet.
@@ -29,26 +28,32 @@ public interface JetSqlBackend {
 
     String SERVICE_NAME = "hz:impl:jetSqlService";
 
-    /**
-     * @return Actual returned type is org.apache.calcite.sql.SqlOperatorTable
-     */
-    Object operatorTable();
+    Object tableResolver();
 
-    /**
-     * @return Actual returned type is:<br>
-     * BiFunction&lt;<br>
-     * org.apache.calcite.prepare.Prepare.CatalogReader,<br>
-     * org.apache.calcite.sql.SqlNode,<br>
-     * org.apache.calcite.sql.SqlNode<br>
-     * &gt;
-     */
-    BiFunction<Object, Object, Object> validator();
+    Object kinds();
 
-    /**
-     * @param context  Actual type is com.hazelcast.sql.impl.calcite.OptimizerContext
-     * @param inputRel Actual type is org.apache.calcite.rel.RelNode
-     */
-    SqlPlan optimizeAndCreatePlan(Object context, Object inputRel, List<String> rootColumnNames);
+    Object operators();
+
+    Object createParserFactory();
+
+    Object createValidator(Object catalogReader, Object typeFactory, Object conformance);
+
+    Object createConverter(
+        Object viewExpander,
+        Object validator,
+        Object catalogReader,
+        Object cluster,
+        Object convertletTable,
+        Object config
+    );
+
+    Object createPlan(
+        List<List<String>> searchPaths,
+        String sql,
+        Object node,
+        Object parameterRowType,
+        Object context
+    );
 
     /**
      * Execute the SqlPlan.

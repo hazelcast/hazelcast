@@ -16,8 +16,8 @@
 
 package com.hazelcast.sql.impl.calcite.parse;
 
+import com.hazelcast.sql.impl.JetSqlBackend;
 import com.hazelcast.sql.impl.calcite.HazelcastSqlToRelConverter;
-import com.hazelcast.sql.impl.schema.ExternalCatalog;
 import org.apache.calcite.plan.Contexts;
 import org.apache.calcite.plan.HazelcastRelOptCluster;
 import org.apache.calcite.plan.RelOptCostImpl;
@@ -32,6 +32,8 @@ import org.apache.calcite.sql.validate.SqlValidator;
 import org.apache.calcite.sql2rel.SqlToRelConverter;
 import org.apache.calcite.sql2rel.StandardConvertletTable;
 import org.apache.calcite.util.Pair;
+
+import javax.annotation.Nullable;
 
 /**
  * Converts a parse tree into a relational tree.
@@ -65,17 +67,27 @@ public class QueryConverter {
         Prepare.CatalogReader catalogReader,
         SqlValidator validator,
         HazelcastRelOptCluster cluster,
-        ExternalCatalog externalCatalog
+        @Nullable JetSqlBackend jetSqlBackend
     ) {
-        converter = new HazelcastSqlToRelConverter(
-            null,
-            validator,
-            catalogReader,
-            cluster,
-            StandardConvertletTable.INSTANCE,
-            CONFIG,
-            externalCatalog
-        );
+        if (jetSqlBackend == null) {
+            this.converter = new HazelcastSqlToRelConverter(
+                null,
+                validator,
+                catalogReader,
+                cluster,
+                StandardConvertletTable.INSTANCE,
+                CONFIG
+            );
+        } else {
+            this.converter = (SqlToRelConverter) jetSqlBackend.createConverter(
+                null,
+                validator,
+                catalogReader,
+                cluster,
+                StandardConvertletTable.INSTANCE,
+                CONFIG
+            );
+        }
     }
 
     public QueryConvertResult convert(SqlNode node) {

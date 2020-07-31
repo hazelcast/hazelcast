@@ -23,11 +23,6 @@ import com.hazelcast.sql.impl.explain.QueryExplain;
  */
 public interface SqlPlan {
     /**
-     * @return Type of the plan.
-     */
-    SqlPlanType getType();
-
-    /**
      * @return Explain metadata.
      */
     QueryExplain getExplain();

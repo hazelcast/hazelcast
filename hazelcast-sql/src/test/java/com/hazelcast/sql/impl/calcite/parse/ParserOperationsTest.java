@@ -111,7 +111,6 @@ public class ParserOperationsTest {
 
         return OptimizerContext.create(
             null,
-            null,
             new SqlCatalog(tableResolvers),
             searchPaths,
             1
