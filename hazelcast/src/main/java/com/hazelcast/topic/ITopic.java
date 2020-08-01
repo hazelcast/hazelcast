@@ -74,7 +74,7 @@ public interface ITopic<E> extends DistributedObject {
      * @throws TopicOverloadException if the consumer is too slow
      *                                (only works in combination with reliable topic)
      */
-    CompletionStage<E> publishAsync(@Nonnull E message);
+    CompletionStage<Void> publishAsync(@Nonnull E message);
 
     /**
      * Subscribes to this topic. When a message is published, the
@@ -126,5 +126,5 @@ public interface ITopic<E> extends DistributedObject {
      * @throws TopicOverloadException if the consumer is too slow
      *                                (only works in combination with reliable topic)
      */
-    CompletionStage<E> publishAllAsync(@Nonnull Collection<? extends E> messages);
+    CompletionStage<Void> publishAllAsync(@Nonnull Collection<? extends E> messages);
 }

@@ -56,7 +56,7 @@ public class TopicProxy<E> extends TopicProxySupport implements ITopic<E> {
     }
 
     @Override
-    public CompletionStage<E> publishAsync(@Nonnull E message) {
+    public CompletionStage<Void> publishAsync(@Nonnull E message) {
         checkNotNull(message, NULL_MESSAGE_IS_NOT_ALLOWED);
         publish(message);
         return InternalCompletableFuture.completedFuture(null);
@@ -88,7 +88,7 @@ public class TopicProxy<E> extends TopicProxySupport implements ITopic<E> {
     }
 
     @Override
-    public CompletionStage<E> publishAllAsync(@Nonnull Collection<? extends E> messages) {
+    public CompletionStage<Void> publishAllAsync(@Nonnull Collection<? extends E> messages) {
         checkNotNull(messages, NULL_MESSAGE_IS_NOT_ALLOWED);
         checkNoNullInside(messages, NULL_MESSAGE_IS_NOT_ALLOWED);
         publishAll(messages);

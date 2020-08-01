@@ -17,15 +17,9 @@
 package com.hazelcast.client.impl.proxy;
 
 import com.hazelcast.client.config.ClientReliableTopicConfig;
-import com.hazelcast.client.impl.ClientDelegatingFuture;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
-import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.codec.TopicPublishAllCodec;
-import com.hazelcast.client.impl.protocol.codec.TopicPublishCodec;
 import com.hazelcast.client.impl.spi.ClientContext;
 import com.hazelcast.client.impl.spi.ClientProxy;
-import com.hazelcast.client.impl.spi.impl.ClientInvocation;
-import com.hazelcast.client.impl.spi.impl.ClientInvocationFuture;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.util.UuidUtil;
@@ -44,16 +38,18 @@ import com.hazelcast.topic.impl.reliable.ReliableMessageListenerAdapter;
 import com.hazelcast.topic.impl.reliable.ReliableTopicMessage;
 
 import javax.annotation.Nonnull;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executor;
+import java.util.stream.Collectors;
 
-import static com.hazelcast.internal.util.CollectionUtil.objectToDataCollection;
 import static com.hazelcast.internal.util.ConcurrencyUtil.DEFAULT_ASYNC_EXECUTOR;
 import static com.hazelcast.internal.util.ExceptionUtil.peel;
-import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.internal.util.Preconditions.checkNoNullInside;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.ringbuffer.impl.RingbufferService.TOPIC_RB_PREFIX;
@@ -82,6 +78,7 @@ public class ClientReliableTopicProxy<E> extends ClientProxy implements ITopic<E
     private final ClientReliableTopicConfig config;
     private final Executor executor;
     private final TopicOverloadPolicy overloadPolicy;
+
 
     public ClientReliableTopicProxy(String objectId, ClientContext context, HazelcastClientInstanceImpl client) {
         super(SERVICE_NAME, objectId, context);
@@ -130,12 +127,11 @@ public class ClientReliableTopicProxy<E> extends ClientProxy implements ITopic<E
     }
 
     @Override
-    public InternalCompletableFuture<E> publishAsync(@Nonnull E message) {
-        checkNotNull(message, NULL_MESSAGE_IS_NOT_ALLOWED);
-
-        Data element = toData(message);
-        ClientMessage request = TopicPublishCodec.encodeRequest(name, element);
-        return publishAsyncInternal(request);
+    public CompletionStage<Void> publishAsync(@Nonnull E payload) {
+        checkNotNull(payload, NULL_MESSAGE_IS_NOT_ALLOWED);
+        Collection<E> messages = new ArrayList<>();
+        messages.add(payload);
+        return publishAllAsync(messages);
     }
 
     private void addOrOverwrite(ReliableTopicMessage message) throws Exception {
@@ -218,33 +214,122 @@ public class ClientReliableTopicProxy<E> extends ClientProxy implements ITopic<E
     }
 
     @Override
-    public void publishAll(@Nonnull Collection<? extends E> messages) {
-        checkNotNull(messages, NULL_MESSAGE_IS_NOT_ALLOWED);
-        checkNoNullInside(messages, NULL_MESSAGE_IS_NOT_ALLOWED);
+    public void publishAll(@Nonnull Collection<? extends E> payload) {
+        checkNotNull(payload, NULL_MESSAGE_IS_NOT_ALLOWED);
+        checkNoNullInside(payload, NULL_MESSAGE_IS_NOT_ALLOWED);
 
+        try {
+            List<ReliableTopicMessage> messages = payload.stream()
+                    .map(m -> new ReliableTopicMessage(toData(m), null))
+                    .collect(Collectors.toList());
+            switch (overloadPolicy) {
+                case ERROR:
+                    long sequenceId = ringbuffer.addAllAsync(messages, OverflowPolicy.FAIL).toCompletableFuture().get();
+                    if (sequenceId == -1) {
+                        throw new TopicOverloadException("Failed to publish messages: " + payload + " on topic:" + getName());
+                    }
+                    break;
+                case DISCARD_OLDEST:
+                    ringbuffer.addAllAsync(messages, OverflowPolicy.OVERWRITE).toCompletableFuture().get();
+                    break;
+                case DISCARD_NEWEST:
+                    ringbuffer.addAllAsync(messages, OverflowPolicy.FAIL).toCompletableFuture().get();
+                    break;
+                case BLOCK:
+                    long timeoutMs = INITIAL_BACKOFF_MS;
+                    for (; ; ) {
+                        long result = ringbuffer.addAllAsync(messages, OverflowPolicy.FAIL).toCompletableFuture().get();
+                        if (result != -1) {
+                            break;
+                        }
 
-        Collection<Data> dataCollection = objectToDataCollection(messages, getSerializationService());
-        ClientMessage request = TopicPublishAllCodec.encodeRequest(name, dataCollection);
-        invoke(request);
+                        MILLISECONDS.sleep(timeoutMs);
+                        timeoutMs *= 2;
+                        if (timeoutMs > MAX_BACKOFF) {
+                            timeoutMs = MAX_BACKOFF;
+                        }
+                    }
+                    break;
+                default:
+                    throw new IllegalArgumentException("Unknown overloadPolicy:" + overloadPolicy);
+            }
+        } catch (RuntimeException e) {
+            throw e;
+        } catch (Exception e) {
+            throw (RuntimeException) peel(e, null,
+                    "Failed to publish messages: " + payload + " to topic:" + getName());
+        }
     }
 
     @Override
-    public InternalCompletableFuture<E> publishAllAsync(@Nonnull Collection<? extends E> messages) {
-        checkNotNull(messages, NULL_MESSAGE_IS_NOT_ALLOWED);
-        checkNoNullInside(messages, NULL_MESSAGE_IS_NOT_ALLOWED);
+    public CompletionStage<Void> publishAllAsync(@Nonnull Collection<? extends E> payload) {
+        checkNotNull(payload, NULL_MESSAGE_IS_NOT_ALLOWED);
+        checkNoNullInside(payload, NULL_MESSAGE_IS_NOT_ALLOWED);
+        InternalCompletableFuture<Void> returnFuture = new InternalCompletableFuture<>();
 
-        Collection<Data> dataCollection = objectToDataCollection(messages, getSerializationService());
-        ClientMessage request = TopicPublishAllCodec.encodeRequest(name, dataCollection);
-        return publishAsyncInternal(request);
+        List<ReliableTopicMessage> messages = payload.stream()
+                .map(m -> new ReliableTopicMessage(toData(m), null))
+                .collect(Collectors.toList());
+        switch (overloadPolicy) {
+            case ERROR:
+                ringbuffer.addAllAsync(messages, OverflowPolicy.FAIL)
+                        .whenCompleteAsync((id, t) -> {
+                            if (t != null) {
+                                returnFuture.completeExceptionally(t);
+                            }
+                            if (id == -1) {
+                                returnFuture.completeExceptionally(new TopicOverloadException(
+                                        "Failed to publish messages: " + payload + " on topic:" + getName()));
+                            }
+                            returnFuture.complete(null);
+                        });
+
+                break;
+            case DISCARD_OLDEST:
+                ringbuffer.addAllAsync(messages, OverflowPolicy.OVERWRITE)
+                        .whenCompleteAsync((id, t) -> {
+                            if (t != null) {
+                                returnFuture.completeExceptionally(t);
+                            }
+                            returnFuture.complete(null);
+                        });
+                break;
+            case DISCARD_NEWEST:
+                ringbuffer.addAllAsync(messages, OverflowPolicy.FAIL)
+                        .whenCompleteAsync((id, t) -> {
+                            if (t != null) {
+                                returnFuture.completeExceptionally(t);
+                            }
+                            returnFuture.complete(null);
+                        });
+                break;
+            case BLOCK:
+                addAsyncAndBlock(payload, returnFuture, messages, INITIAL_BACKOFF_MS);
+                break;
+            default:
+                throw new IllegalArgumentException("Unknown overloadPolicy:" + overloadPolicy);
+        }
+
+        return returnFuture;
     }
 
-    protected <T> InternalCompletableFuture<T> publishAsyncInternal(ClientMessage clientMessage) {
-        try {
-            final ClientInvocationFuture invocationFuture = new ClientInvocation(getClient(), clientMessage, getName()).invoke();
-            return new ClientDelegatingFuture<T>(invocationFuture, getSerializationService(), clientMessageDecoder -> null);
-        } catch (Exception e) {
-            throw rethrow(e);
-        }
+    private void addAsyncAndBlock(@Nonnull Collection<? extends E> payload,
+                                  InternalCompletableFuture<Void> returnFuture,
+                                  List<ReliableTopicMessage> messages,
+                                  long pauseMillis) {
+        ringbuffer.addAllAsync(messages, OverflowPolicy.FAIL).whenCompleteAsync((id, t) -> {
+            if (t != null) {
+                returnFuture.completeExceptionally(t);
+            }
+            if (id == -1) {
+                getContext().getTaskScheduler().schedule(
+                        () -> addAsyncAndBlock(payload, returnFuture, messages, Math.min(pauseMillis * 2, MAX_BACKOFF)),
+                        pauseMillis, MILLISECONDS);
+                returnFuture.completeExceptionally(new TopicOverloadException(
+                        "Failed to publish messages: " + payload + " on topic:" + getName()));
+            }
+            returnFuture.complete(null);
+        });
     }
 
     public Ringbuffer getRingbuffer() {

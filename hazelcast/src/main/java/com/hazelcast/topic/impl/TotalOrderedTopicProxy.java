@@ -67,7 +67,7 @@ public class TotalOrderedTopicProxy<E> extends TopicProxy<E> {
     }
 
     @Override
-    public CompletionStage<E> publishAsync(@Nonnull E message) {
+    public CompletionStage<Void> publishAsync(@Nonnull E message) {
         checkNotNull(message, NULL_MESSAGE_IS_NOT_ALLOWED);
         Operation op = new PublishOperation(getName(), toData(message))
                 .setPartitionId(partitionId);
@@ -84,7 +84,7 @@ public class TotalOrderedTopicProxy<E> extends TopicProxy<E> {
     }
 
     @Override
-    public CompletionStage<E> publishAllAsync(@Nonnull Collection<? extends E> messages) {
+    public CompletionStage<Void> publishAllAsync(@Nonnull Collection<? extends E> messages) {
         checkNotNull(messages, NULL_MESSAGE_IS_NOT_ALLOWED);
         checkNoNullInside(messages, NULL_MESSAGE_IS_NOT_ALLOWED);
 

@@ -50,6 +50,7 @@ import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -155,8 +156,8 @@ public class TopicTest extends HazelcastTestSupport {
             }
         });
 
-        final CompletableFuture<String> f = topic.publishAsync("TestMessage").toCompletableFuture();
-        String result = f.get();
+        final CompletableFuture<Void> f = topic.publishAsync("TestMessage").toCompletableFuture();
+        f.get();
 
         assertTrueEventually(new AssertTask() {
             @Override
@@ -167,7 +168,7 @@ public class TopicTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testTopicPublishAll() {
+    public void testTopicPublishAll() throws ExecutionException, InterruptedException {
         final String randomName = "testTopicPublishAll" + generateRandomString(5);
         final AtomicInteger count = new AtomicInteger(0);
 
@@ -210,8 +211,8 @@ public class TopicTest extends HazelcastTestSupport {
             }
         });
         final List<String> messages = Arrays.asList("message 1", "message 2", "messgae 3");
-        final CompletableFuture<String> f = topic.publishAllAsync(messages).toCompletableFuture();
-        final String result = f.get();
+        final CompletableFuture<Void> f = topic.publishAllAsync(messages).toCompletableFuture();
+        f.get();
 
         assertTrueEventually(new AssertTask() {
             @Override
@@ -223,7 +224,7 @@ public class TopicTest extends HazelcastTestSupport {
 
 
     @Test(expected = NullPointerException.class)
-    public void testTopicPublishingAllException() {
+    public void testTopicPublishingAllException() throws ExecutionException, InterruptedException {
         final int nodeCount = 1;
         final String randomName = "testTopicPublishingAllException" + generateRandomString(5);
 

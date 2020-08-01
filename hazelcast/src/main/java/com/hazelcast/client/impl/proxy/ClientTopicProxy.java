@@ -16,7 +16,6 @@
 
 package com.hazelcast.client.impl.proxy;
 
-import com.hazelcast.client.impl.ClientDelegatingFuture;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.TopicAddMessageListenerCodec;
 import com.hazelcast.client.impl.protocol.codec.TopicPublishAllCodec;
@@ -24,8 +23,6 @@ import com.hazelcast.client.impl.protocol.codec.TopicPublishCodec;
 import com.hazelcast.client.impl.protocol.codec.TopicRemoveMessageListenerCodec;
 import com.hazelcast.client.impl.spi.ClientContext;
 import com.hazelcast.client.impl.spi.EventHandler;
-import com.hazelcast.client.impl.spi.impl.ClientInvocation;
-import com.hazelcast.client.impl.spi.impl.ClientInvocationFuture;
 import com.hazelcast.client.impl.spi.impl.ListenerMessageCodec;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.internal.serialization.Data;
@@ -41,7 +38,6 @@ import java.util.Collection;
 import java.util.UUID;
 
 import static com.hazelcast.internal.util.CollectionUtil.objectToDataCollection;
-import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.internal.util.Preconditions.checkNoNullInside;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
@@ -68,12 +64,12 @@ public class ClientTopicProxy<E> extends PartitionSpecificClientProxy implements
     }
 
     @Override
-    public InternalCompletableFuture<E> publishAsync(@Nonnull E message) {
+    public InternalCompletableFuture<Void> publishAsync(@Nonnull E message) {
         checkNotNull(message, NULL_MESSAGE_IS_NOT_ALLOWED);
 
         Data data = toData(message);
         final ClientMessage clientMessage = TopicPublishCodec.encodeRequest(name, data);
-        return publishAsyncInternal(clientMessage);
+        return invokeOnPartitionAsync(clientMessage, null);
     }
 
     @Nonnull
@@ -104,11 +100,11 @@ public class ClientTopicProxy<E> extends PartitionSpecificClientProxy implements
     }
 
     @Override
-    public InternalCompletableFuture<E> publishAllAsync(@Nonnull Collection<? extends E> messages) {
+    public InternalCompletableFuture<Void> publishAllAsync(@Nonnull Collection<? extends E> messages) {
         checkNotNull(messages, NULL_MESSAGE_IS_NOT_ALLOWED);
         checkNoNullInside(messages, NULL_MESSAGE_IS_NOT_ALLOWED);
         final ClientMessage clientMessage = getClientMessage(messages);
-        return publishAsyncInternal(clientMessage);
+        return invokeOnPartitionAsync(clientMessage, null);
     }
 
     private ClientMessage getClientMessage(@Nonnull Collection<? extends E> messages) {
@@ -134,16 +130,6 @@ public class ClientTopicProxy<E> extends PartitionSpecificClientProxy implements
             Member member = getContext().getClusterService().getMember(uuid);
             Message message = new DataAwareMessage(name, item, publishTime, member, getSerializationService());
             listener.onMessage(message);
-        }
-    }
-
-    protected <T> InternalCompletableFuture<T> publishAsyncInternal(ClientMessage clientMessage) {
-        try {
-            final ClientInvocationFuture future = new ClientInvocation(getClient(),
-                    clientMessage, getName(), getPartitionId()).invoke();
-            return new ClientDelegatingFuture<T>(future, getSerializationService(), clientMessageDecoder -> null);
-        } catch (Exception e) {
-            throw rethrow(e);
         }
     }
 

@@ -39,6 +39,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -211,7 +212,7 @@ public class ClientTopicTest {
     }
 
     @Test(expected = NullPointerException.class)
-    public void testPublishAllException() {
+    public void testPublishAllException() throws ExecutionException, InterruptedException {
         ITopic<Integer> topic = client.getTopic(randomString());
         Collection<Integer> messages = new ArrayList<>();
         messages.add(1);

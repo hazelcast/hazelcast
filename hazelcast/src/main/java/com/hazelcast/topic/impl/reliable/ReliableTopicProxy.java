@@ -29,9 +29,9 @@ import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.ringbuffer.OverflowPolicy;
 import com.hazelcast.ringbuffer.Ringbuffer;
 import com.hazelcast.spi.impl.AbstractDistributedObject;
+import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.Operation;
-import com.hazelcast.spi.impl.operationservice.impl.InvocationFuture;
 import com.hazelcast.topic.ITopic;
 import com.hazelcast.topic.LocalTopicStats;
 import com.hazelcast.topic.MessageListener;
@@ -44,6 +44,7 @@ import com.hazelcast.topic.impl.PublishOperation;
 import javax.annotation.Nonnull;
 import java.util.Collection;
 import java.util.UUID;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executor;
@@ -194,11 +195,19 @@ public class ReliableTopicProxy<E> extends AbstractDistributedObject<ReliableTop
     }
 
     @Override
-    public InvocationFuture<E> publishAsync(@Nonnull E message) {
+    public CompletionStage<Void> publishAsync(@Nonnull E message) {
         checkNotNull(message, NULL_MESSAGE_IS_NOT_ALLOWED);
         Data data = toData(message);
-        Operation op = new PublishOperation(name, data);
-        return invokeOnPartition(op);
+        InternalCompletableFuture<Void> returnFuture = new InternalCompletableFuture<>();
+        invokeOnPartition(new PublishOperation(name, data))
+                .whenCompleteAsync((o, t) -> {
+                    if (t != null) {
+                        returnFuture.completeExceptionally(t);
+                    } else {
+                        returnFuture.complete(null);
+                    }
+                });
+        return returnFuture;
     }
 
     private Long addOrOverwrite(ReliableTopicMessage message) throws Exception {
@@ -288,11 +297,20 @@ public class ReliableTopicProxy<E> extends AbstractDistributedObject<ReliableTop
     }
 
     @Override
-    public InvocationFuture<E> publishAllAsync(@Nonnull Collection<? extends E> messages) {
+    public CompletionStage<Void> publishAllAsync(@Nonnull Collection<? extends E> messages) {
         checkNotNull(messages, NULL_MESSAGE_IS_NOT_ALLOWED);
         checkNoNullInside(messages, NULL_MESSAGE_IS_NOT_ALLOWED);
-        Operation op = new PublishAllOperation(getName(), toDataArray(messages));
-        return invokeOnPartition(op);
+        Data[] data = toDataArray(messages);
+        InternalCompletableFuture<Void> returnFuture = new InternalCompletableFuture<>();
+        invokeOnPartition(new PublishAllOperation(name, data))
+                .whenCompleteAsync((o, t) -> {
+                    if (t != null) {
+                        returnFuture.completeExceptionally(t);
+                    } else {
+                        returnFuture.complete(null);
+                    }
+                });
+        return returnFuture;
     }
 
     private Data[] toDataArray(Collection<? extends E> collection) {
