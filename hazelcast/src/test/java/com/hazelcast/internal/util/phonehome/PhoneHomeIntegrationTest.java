@@ -19,6 +19,7 @@ import com.github.tomakehurst.wiremock.junit.WireMockRule;
 import com.hazelcast.cardinality.CardinalityEstimator;
 import com.hazelcast.collection.IQueue;
 import com.hazelcast.collection.ISet;
+import com.hazelcast.config.AttributeConfig;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.EvictionPolicy;
@@ -35,6 +36,8 @@ import com.hazelcast.internal.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.MapStore;
 import com.hazelcast.multimap.MultiMap;
+import com.hazelcast.query.extractor.ValueCollector;
+import com.hazelcast.query.extractor.ValueExtractor;
 import com.hazelcast.replicatedmap.ReplicatedMap;
 import com.hazelcast.ringbuffer.Ringbuffer;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -61,7 +64,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.verify;
 import static com.hazelcast.cache.CacheTestSupport.createServerCachingProvider;
 import static com.hazelcast.test.Accessors.getNode;
 
-public class PhoneHomeIntegrationTest extends HazelcastTestSupport {
+public class PhoneHomeIntegrationTest extends HazelcastTestSupport implements ValueExtractor {
 
     @Rule
     public WireMockRule wireMockRule = new WireMockRule();
@@ -88,7 +91,7 @@ public class PhoneHomeIntegrationTest extends HazelcastTestSupport {
         node.getConfig().getMapConfig("hazelcast").getHotRestartConfig().setEnabled(true);
         node.getConfig().getMapConfig("hazelcast").getIndexConfigs().add(new IndexConfig().setName("index"));
         node.getConfig().getMapConfig("hazelcast").setWanReplicationRef(new WanReplicationRef().setName("wan"));
-//        node.getConfig().getMapConfig("hazelcast").getAttributeConfigs().add(new AttributeConfig("hz", getClass().getName()));
+        node.getConfig().getMapConfig("hazelcast").getAttributeConfigs().add(new AttributeConfig("hz", getClass().getName()));
         node.getConfig().getMapConfig("hazelcast").getEvictionConfig().setEvictionPolicy(EvictionPolicy.LRU);
         node.getConfig().getMapConfig("hazelcast").setInMemoryFormat(InMemoryFormat.NATIVE);
 
@@ -107,7 +110,7 @@ public class PhoneHomeIntegrationTest extends HazelcastTestSupport {
                 .withQueryParam("mpaoict", equalTo("1"))
                 .withQueryParam("mphect", equalTo("1"))
                 .withQueryParam("mpwact", equalTo("1"))
-//                .withQueryParam("mpaocct", equalTo("1"))
+                .withQueryParam("mpaocct", equalTo("1"))
                 .withQueryParam("mpevct", equalTo("1"))
                 .withQueryParam("mpnmct", equalTo("1")));
 
@@ -176,10 +179,16 @@ public class PhoneHomeIntegrationTest extends HazelcastTestSupport {
         mapStoreConfig.setImplementation(new DelayMapStore());
         IMap<String, String> iMap = node.hazelcastInstance.getMap("hazelcast");
         node.getConfig().getMapConfig("hazelcast").setMapStoreConfig(mapStoreConfig);
+
         iMap.put("key1", "hazelcast");
         iMap.put("key2", "phonehome");
         iMap.get("key3");
+
         LocalMapStatsImpl mapStats = (LocalMapStatsImpl) iMap.getLocalMapStats();
+        long totalGetLatency = mapStats.getTotalGetLatency();
+        long totalPutLatency = mapStats.getTotalPutLatency();
+        long totalGetOperationCount = mapStats.getGetOperationCount();
+        long totalPutOperationCount = mapStats.getPutOperationCount();
 
 
         stubFor(get(urlPathEqualTo("/ping"))
@@ -187,18 +196,22 @@ public class PhoneHomeIntegrationTest extends HazelcastTestSupport {
                         .withStatus(200)));
 
         phoneHome.phoneHome(false);
+
+
         verify(1, getRequestedFor(urlPathEqualTo("/ping"))
-                .withQueryParam("mpptla",
-                        equalTo(String.valueOf(mapStats.getTotalPutLatency() / mapStats.getPutOperationCount())))
-                .withQueryParam("mpgtla",
-                        equalTo(String.valueOf(mapStats.getTotalGetLatency() / mapStats.getGetOperationCount()))));
+                .withQueryParam("mpptla", equalTo(String.valueOf(totalPutLatency / totalPutOperationCount)))
+                .withQueryParam("mpgtla", equalTo(String.valueOf(totalGetLatency / totalGetOperationCount))));
 
         assertGreaterOrEquals("mpptla",
-                mapStats.getTotalPutLatency() / mapStats.getPutOperationCount(), 200);
+                totalPutLatency / totalPutOperationCount, 200);
 
         assertGreaterOrEquals("mpgtla",
-                mapStats.getTotalGetLatency() / mapStats.getGetOperationCount(), 200);
+                totalGetLatency / totalGetOperationCount, 200);
 
+    }
+
+    @Override
+    public void extract(Object target, Object argument, ValueCollector collector) {
 
     }
 
@@ -245,5 +258,6 @@ public class PhoneHomeIntegrationTest extends HazelcastTestSupport {
             return store.keySet();
         }
     }
+
 }
 

@@ -101,19 +101,20 @@ class MapInfoCollector implements MetricsCollector {
     }
 
     private long countMapUsingEviction() {
-        return mapConfigs.stream().filter(mapConfig -> mapConfig.getEvictionConfig().getEvictionPolicy() != EvictionPolicy.NONE).count();
+        return mapConfigs.stream().map(MapConfig::getEvictionConfig)
+                .filter(evictionConfig -> evictionConfig.getEvictionPolicy() != EvictionPolicy.NONE).count();
     }
 
     private long countMapWithNativeInMemoryFormat() {
-        return mapConfigs.stream()
-                .filter(mapConfig -> mapConfig.getInMemoryFormat() == InMemoryFormat.NATIVE).count();
+        return mapConfigs.stream().map(MapConfig::getInMemoryFormat)
+                .filter(inMemoryFormat -> inMemoryFormat == InMemoryFormat.NATIVE).count();
     }
 
     private long mapPutLatency(Node node) {
         return (long) mapConfigs.stream()
                 .map(mapConfig -> node.hazelcastInstance.getMap(mapConfig.getName()).getLocalMapStats())
                 .filter(localMapStats -> localMapStats.getPutOperationCount() != 0L)
-                .mapToDouble(localMapstats -> localMapstats.getTotalPutLatency() / localMapstats.getPutOperationCount())
+                .mapToDouble(localMapstats -> (double) localMapstats.getTotalPutLatency() / localMapstats.getPutOperationCount())
                 .average().orElse(-1);
     }
 
@@ -121,7 +122,7 @@ class MapInfoCollector implements MetricsCollector {
         return (long) mapConfigs.stream()
                 .map(mapConfig -> node.hazelcastInstance.getMap(mapConfig.getName()).getLocalMapStats())
                 .filter(localMapStats -> localMapStats.getGetOperationCount() != 0L)
-                .mapToDouble(localMapstats -> localMapstats.getTotalGetLatency() / localMapstats.getGetOperationCount())
+                .mapToDouble(localMapstats -> (double) localMapstats.getTotalGetLatency() / localMapstats.getGetOperationCount())
                 .average().orElse(-1);
     }
 }

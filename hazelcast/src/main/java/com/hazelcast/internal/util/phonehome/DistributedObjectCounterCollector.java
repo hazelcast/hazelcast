@@ -40,6 +40,8 @@ import static java.util.stream.Collectors.groupingBy;
 class DistributedObjectCounterCollector implements MetricsCollector {
 
     private static final Map<String, String> SERVICE_NAME_TO_METRIC_NAME;
+    private static final int COUNT_OF_DISTRIBUTED_OBJECTS = 11;
+
 
     static {
         SERVICE_NAME_TO_METRIC_NAME = new HashMap<>();
@@ -66,7 +68,7 @@ class DistributedObjectCounterCollector implements MetricsCollector {
                 .filter(distributedObject -> SERVICE_NAME_TO_METRIC_NAME.containsKey(distributedObject.getServiceName()))
                 .collect(groupingBy(DistributedObject::getServiceName, Collectors.counting())));
 
-        Map<String, String> countInfo = new HashMap<>();
+        Map<String, String> countInfo = new HashMap<>(COUNT_OF_DISTRIBUTED_OBJECTS);
 
         SERVICE_NAME_TO_METRIC_NAME.forEach((serviceName, metricName) -> countInfo
                 .put(metricName, String.valueOf(countDistributedObjects.getOrDefault(serviceName, 0L))));
