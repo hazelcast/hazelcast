@@ -202,11 +202,8 @@ public class PhoneHomeIntegrationTest extends HazelcastTestSupport implements Va
                 .withQueryParam("mpptla", equalTo(String.valueOf(totalPutLatency / totalPutOperationCount)))
                 .withQueryParam("mpgtla", equalTo(String.valueOf(totalGetLatency / totalGetOperationCount))));
 
-        assertGreaterOrEquals("mpptla",
-                totalPutLatency / totalPutOperationCount, 200);
-
-        assertGreaterOrEquals("mpgtla",
-                totalGetLatency / totalGetOperationCount, 200);
+        assertGreaterOrEquals("mpptla", totalPutLatency / totalPutOperationCount, 200);
+        assertGreaterOrEquals("mpgtla", totalGetLatency / totalGetOperationCount, 200);
 
     }
 

@@ -34,7 +34,7 @@ import com.hazelcast.map.impl.MapService;
 
 class MapInfoCollector implements MetricsCollector {
 
-    private static final int COUNT_OF_MAP_METRICS = 11;
+    private static final int DISTRIBUTED_OBJECT_TYPE_COUNT = 11;
     private Collection<MapConfig> mapConfigs;
 
     @Override
@@ -48,7 +48,7 @@ class MapInfoCollector implements MetricsCollector {
                 .filter(Objects::nonNull)
                 .collect(toList());
 
-        Map<String, String> mapInfo = new HashMap<>(COUNT_OF_MAP_METRICS);
+        Map<String, String> mapInfo = new HashMap<>(DISTRIBUTED_OBJECT_TYPE_COUNT);
 
         mapInfo.put("mpbrct", String.valueOf(countMapWithBackupReadEnabled()));
         mapInfo.put("mpmsct", String.valueOf(countMapWithMapStoreEnabled()));
