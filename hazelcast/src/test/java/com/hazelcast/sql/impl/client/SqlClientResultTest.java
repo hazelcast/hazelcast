@@ -44,14 +44,14 @@ public class SqlClientResultTest {
 
         assertFalse(r.isUpdateCount());
         assertEquals(metadata, r.getRowMetadata());
-        assertThrows(IllegalStateException.class, "This result doesn't contain update count", () -> r.updatedCount());
+        assertThrows(IllegalStateException.class, "This result doesn't contain update count", () -> r.updateCount());
     }
 
     @Test
     public void test_updateCountResult() {
         SqlClientResult r = new SqlClientResult(true, null, null, null, null, null, true, 0, 10);
         assertTrue(r.isUpdateCount());
-        assertEquals(10, r.updatedCount());
+        assertEquals(10, r.updateCount());
         assertThrows(IllegalStateException.class, "This result contains only update count", () -> r.iterator());
         assertThrows(IllegalStateException.class, "This result contains only update count", () -> r.getRowMetadata());
         r.close();

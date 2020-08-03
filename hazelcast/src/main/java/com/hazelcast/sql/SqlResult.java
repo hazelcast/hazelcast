@@ -45,7 +45,7 @@ import java.util.Iterator;
  * <h4>Usage for update count</h4>
  *
  * <pre>
- *     long updated = hazelcastInstance.getSql().query("UPDATE ...");
+ *     long updated = hazelcastInstance.getSql().query("UPDATE ...").updateCount();
  * </pre>
  *
  * You don't need to call {@link #close()} in this case.
@@ -65,8 +65,8 @@ public interface SqlResult extends Iterable<SqlRow>, AutoCloseable {
     /**
      * Gets row metadata.
      *
-     * @throws IllegalStateException if this result doesn't have rows (i.e. {@link
-     *     #isUpdateCount()} returns {@code true})
+     * @throws IllegalStateException if this result doesn't have rows (i.e.
+     *     when {@link #isUpdateCount()} returns {@code true})
      * @return row metadata
      */
     @Nonnull
@@ -88,12 +88,12 @@ public interface SqlResult extends Iterable<SqlRow>, AutoCloseable {
     Iterator<SqlRow> iterator();
 
     /**
-     * Returns the number of rows updated by the execution.
+     * Returns the number of rows updated by the statement.
      *
      * @throws IllegalStateException if this result doesn't represent an update
      *     count (i.e. when {@link #isUpdateCount()} returns {@code false})
      */
-    long updatedCount();
+    long updateCount();
 
     /**
      * Release the resources associated with the query result. Must be called only if the {@linkplain

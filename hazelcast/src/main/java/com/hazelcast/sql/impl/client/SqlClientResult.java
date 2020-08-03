@@ -100,7 +100,7 @@ public class SqlClientResult implements SqlResult {
     }
 
     @Override
-    public long updatedCount() {
+    public long updateCount() {
         if (!isUpdateCount) {
             throw new IllegalStateException("This result doesn't contain update count");
         }

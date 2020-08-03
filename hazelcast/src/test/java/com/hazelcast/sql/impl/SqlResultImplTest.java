@@ -43,14 +43,14 @@ public class SqlResultImplTest {
         assertFalse(r.isUpdateCount());
         assertEquals(metadata, r.getRowMetadata());
         assertEquals(queryId, r.getQueryId());
-        assertThrows(IllegalStateException.class, "This result doesn't contain update count", () -> r.updatedCount());
+        assertThrows(IllegalStateException.class, "This result doesn't contain update count", () -> r.updateCount());
     }
 
     @Test
     public void test_updateCountResult() {
         SqlResultImpl r = SqlResultImpl.createUpdateCountResult(10);
         assertTrue(r.isUpdateCount());
-        assertEquals(10, r.updatedCount());
+        assertEquals(10, r.updateCount());
         assertThrows(IllegalStateException.class, "This result contains only update count", () -> r.iterator());
         assertThrows(IllegalStateException.class, "This result contains only update count", () -> r.getRowMetadata());
         r.close();

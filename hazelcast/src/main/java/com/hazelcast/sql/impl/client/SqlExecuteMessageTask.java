@@ -56,7 +56,7 @@ public class SqlExecuteMessageTask extends SqlAbstractMessageTask<SqlExecuteCode
             SqlResultImpl result = (SqlResultImpl) sqlService.query(query);
 
             if (result.isUpdateCount()) {
-                return SqlExecuteResponse.updateCountResponse(result.updatedCount());
+                return SqlExecuteResponse.updateCountResponse(result.updateCount());
             } else {
                 SqlPage page = sqlService.getInternalService().getClientStateRegistry().registerAndFetch(
                     endpoint.getUuid(),
