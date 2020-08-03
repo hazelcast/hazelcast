@@ -112,6 +112,7 @@ public class DAGTest {
 
         // Then
         exceptionRule.expect(IllegalArgumentException.class);
+        exceptionRule.expectMessage("Edge has no destination");
 
         // When
         dag.edge(from(a));

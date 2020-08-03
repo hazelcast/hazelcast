@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.core;
 
+import com.hazelcast.cluster.Address;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.config.EdgeConfig;
@@ -32,12 +33,14 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.IOException;
 import java.io.Serializable;
+import java.net.UnknownHostException;
 import java.util.Map;
 import java.util.Objects;
 
 import static com.hazelcast.function.Functions.wholeItem;
 import static com.hazelcast.jet.core.Partitioner.defaultPartitioner;
 import static com.hazelcast.jet.impl.util.Util.checkSerializable;
+import static java.util.Objects.requireNonNull;
 
 /**
  * Represents an edge between two {@link Vertex vertices} in a {@link DAG}.
@@ -63,6 +66,22 @@ import static com.hazelcast.jet.impl.util.Util.checkSerializable;
  */
 public class Edge implements IdentifiedDataSerializable {
 
+    /**
+     * An address returned by {@link #getDistributedTo()} denoting an edge that
+     * distributes the items among all members.
+     *
+     * @since 4.3
+     */
+    public static final Address DISTRIBUTE_TO_ALL;
+
+    static {
+        try {
+            DISTRIBUTE_TO_ALL = new Address("255.255.255.255", 0);
+        } catch (UnknownHostException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     private Vertex source; // transient field, restored during DAG deserialization
     private String sourceName;
     private int sourceOrdinal;
@@ -72,7 +91,7 @@ public class Edge implements IdentifiedDataSerializable {
     private int destOrdinal;
 
     private int priority;
-    private boolean isDistributed;
+    private Address distributedTo;
     private Partitioner<?> partitioner;
     private RoutingPolicy routingPolicy = RoutingPolicy.UNICAST;
 
@@ -115,7 +134,7 @@ public class Edge implements IdentifiedDataSerializable {
 
     /**
      * Returns an edge with the given source vertex at the given ordinal
-     * and no destination vertex. Typically follewed by a call to one of
+     * and no destination vertex. Typically followed by a call to one of
      * the {@code to()} methods.
      */
     @Nonnull
@@ -128,9 +147,7 @@ public class Edge implements IdentifiedDataSerializable {
      */
     @Nonnull
     public Edge to(@Nonnull Vertex destination) {
-        this.destination = destination;
-        this.destName = destination.getName();
-        return this;
+        return to(destination, 0);
     }
 
     /**
@@ -138,6 +155,9 @@ public class Edge implements IdentifiedDataSerializable {
      */
     @Nonnull
     public Edge to(@Nonnull Vertex destination, int ordinal) {
+        if (this.destination != null) {
+            throw new IllegalStateException("destination already set");
+        }
         this.destination = destination;
         this.destName = destination.getName();
         this.destOrdinal = ordinal;
@@ -155,6 +175,7 @@ public class Edge implements IdentifiedDataSerializable {
     /**
      * Returns this edge's destination vertex.
      */
+    @Nullable
     public Vertex getDestination() {
         return destination;
     }
@@ -177,6 +198,7 @@ public class Edge implements IdentifiedDataSerializable {
     /**
      * Returns the name of the destination vertex.
      */
+    @Nullable
     public String getDestName() {
         return destName;
     }
@@ -258,7 +280,7 @@ public class Edge implements IdentifiedDataSerializable {
 
     /**
      * Chooses the {@link RoutingPolicy#UNICAST UNICAST} routing policy for
-     * this edge.
+     * this edge. This policy is the default.
      */
     @Nonnull
     public Edge unicast() {
@@ -344,6 +366,7 @@ public class Edge implements IdentifiedDataSerializable {
      * Returns the instance encapsulating the partitioning strategy in effect
      * on this edge.
      */
+    @Nullable
     public Partitioner<?> getPartitioner() {
         return partitioner;
     }
@@ -354,6 +377,22 @@ public class Edge implements IdentifiedDataSerializable {
     @Nonnull
     public RoutingPolicy getRoutingPolicy() {
         return routingPolicy;
+    }
+
+    /**
+     * Declares that the edge is local. A local edge only transfers data within
+     * the same member, network is not involved. This setting is the default.
+     *
+     * @see #distributed()
+     * @see #distributeTo(Address)
+     * @see #getDistributedTo()
+     *
+     * @since 4.3
+     */
+    @Nonnull
+    public Edge local() {
+        distributedTo = null;
+        return this;
     }
 
     /**
@@ -370,18 +409,67 @@ public class Edge implements IdentifiedDataSerializable {
      * partition ID to be observed by the same unique processor, regardless of
      * whether it is running on the local or a remote member (using the {@link
      * RoutingPolicy#PARTITIONED PARTITIONED} routing policy).
+     *
+     * @see #distributeTo(Address)
+     * @see #local()
+     * @see #getDistributedTo()
      */
+    @Nonnull
     public Edge distributed() {
-        isDistributed = true;
+        distributedTo = DISTRIBUTE_TO_ALL;
         return this;
     }
 
     /**
-     * Says whether this edge is <em>distributed</em>. The effects of this
-     * property are discussed in {@link #distributed()}.
+     * Declares that all items sent over this edge will be delivered to the
+     * specified member. Processors on other members will not receive any data.
+     * <p>
+     * This option is most useful for sinks if we want to ensure that the
+     * results are written (or sent from) only that member.
+     * <p>
+     * It's not suitable for fault-tolerant jobs. If the {@code targetMember}
+     * is not a member, the job can't be executed and will fail.
+     *
+     * @param targetMember the member to deliver the items to
+     *
+     * @see #distributed()
+     * @see #local()
+     * @see #getDistributedTo()
+     *
+     * @since 4.3
+     */
+    @Nonnull
+    public Edge distributeTo(@Nonnull Address targetMember) {
+        if (requireNonNull(targetMember).equals(DISTRIBUTE_TO_ALL)) {
+            throw new IllegalArgumentException();
+        }
+        distributedTo = targetMember;
+        return this;
+    }
+
+    /**
+     * Possible return values:<ul>
+     *     <li>null - route only to local members (after a {@link #local()}
+     *          call)
+     *     <li>"255.255.255.255:0 - route to all members (after a {@link
+     *          #distributed()} call)
+     *     <li>else - route to specific member (after a {@link #distributeTo}
+     *          call)
+     * </ul>
+     *
+     * @since 4.3
+     */
+    @Nullable
+    public Address getDistributedTo() {
+        return distributedTo;
+    }
+
+    /**
+     * Says whether this edge distributes items among all members, as requested
+     * by the {@link #distributed()} method.
      */
     public boolean isDistributed() {
-        return isDistributed;
+        return DISTRIBUTE_TO_ALL.equals(distributedTo);
     }
 
     /**
@@ -397,6 +485,7 @@ public class Edge implements IdentifiedDataSerializable {
      * Assigns an {@code EdgeConfig} to this edge. If {@code null} is supplied,
      * the edge will use {@link JetConfig#getDefaultEdgeConfig()}.
      */
+    @Nonnull
     public Edge setConfig(@Nullable EdgeConfig config) {
         this.config = config;
         return this;
@@ -436,8 +525,10 @@ public class Edge implements IdentifiedDataSerializable {
                 break;
             default:
         }
-        if (isDistributed()) {
+        if (DISTRIBUTE_TO_ALL.equals(distributedTo)) {
             b.append(".distributed()");
+        } else if (distributedTo != null) {
+            b.append(".distributeTo(").append(distributedTo).append(')');
         }
         if (getPriority() != 0) {
             b.append(".priority(").append(getPriority()).append(')');
@@ -477,7 +568,7 @@ public class Edge implements IdentifiedDataSerializable {
         out.writeUTF(getDestName());
         out.writeInt(getDestOrdinal());
         out.writeInt(getPriority());
-        out.writeBoolean(isDistributed());
+        out.writeObject(getDistributedTo());
         out.writeObject(getRoutingPolicy());
         CustomClassLoadedObject.write(out, getPartitioner());
         out.writeObject(getConfig());
@@ -490,7 +581,7 @@ public class Edge implements IdentifiedDataSerializable {
         destName = in.readUTF();
         destOrdinal = in.readInt();
         priority = in.readInt();
-        isDistributed = in.readBoolean();
+        distributedTo = in.readObject();
         routingPolicy = in.readObject();
         try {
             partitioner = CustomClassLoadedObject.read(in);
@@ -590,12 +681,12 @@ public class Edge implements IdentifiedDataSerializable {
         }
 
         @Override
-        public void init(DefaultPartitionStrategy strategy) {
+        public void init(@Nonnull DefaultPartitionStrategy strategy) {
             partitioner.init(strategy);
         }
 
         @Override
-        public int getPartition(T item, int partitionCount) {
+        public int getPartition(@Nonnull T item, int partitionCount) {
             K key = keyExtractor.apply(item);
             if (key == null) {
                 throw new JetException("Null key from key extractor, edge: " + edgeDebugName);

@@ -43,6 +43,7 @@ import java.util.stream.IntStream;
 import static com.hazelcast.internal.util.Preconditions.checkTrue;
 import static com.hazelcast.jet.core.Vertex.LOCAL_PARALLELISM_USE_DEFAULT;
 import static com.hazelcast.jet.impl.TopologicalSorter.topologicalSort;
+import static com.hazelcast.jet.core.Edge.DISTRIBUTE_TO_ALL;
 import static com.hazelcast.jet.impl.pipeline.transform.AggregateTransform.FIRST_STAGE_VERTEX_NAME_SUFFIX;
 import static com.hazelcast.jet.impl.util.Util.escapeGraphviz;
 import static java.util.Collections.emptyList;
@@ -149,6 +150,7 @@ public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
         if (edge.getDestination() == null) {
             throw new IllegalArgumentException("Edge has no destination");
         }
+        assert edge.getDestName() != null;
         if (!containsVertex(edge.getSource())) {
             throw new IllegalArgumentException(
                     containsVertexName(edge.getSource())
@@ -363,7 +365,7 @@ public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
             edge.add("to", e.getDestName());
             edge.add("toOrdinal", e.getDestOrdinal());
             edge.add("priority", e.getPriority());
-            edge.add("distributed", e.isDistributed());
+            edge.add("distributedTo", String.valueOf(e.getDistributedTo()));
             edge.add("type", e.getRoutingPolicy().toString().toLowerCase());
             edges.add(edge);
         }
@@ -453,8 +455,10 @@ public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
 
     private String getEdgeLabel(Edge e) {
         List<String> labels = new ArrayList<>();
-        if (e.isDistributed()) {
+        if (DISTRIBUTE_TO_ALL.equals(e.getDistributedTo())) {
             labels.add("distributed");
+        } else if (e.getDistributedTo() != null) {
+            labels.add("distributed to " + e.getDistributedTo());
         }
         if (e.getRoutingPolicy() != RoutingPolicy.UNICAST) {
             labels.add(e.getRoutingPolicy().toString().toLowerCase());

@@ -172,19 +172,19 @@ public interface OutboundCollector {
             this.partitioner = partitioner;
             this.partitionLookupTable = new OutboundCollector[partitionCount];
 
-            int[] myPartitions = new int[partitionCount];
+            partitions = new int[Arrays.stream(collectors).mapToInt(c -> c.getPartitions().length).sum()];
             int idx = 0;
             for (OutboundCollector collector : collectors) {
                 int[] partitionsForCollector = collector.getPartitions();
                 assert partitionsForCollector != null : "collector must define partitions";
 
                 for (int partition : partitionsForCollector) {
+                    assert partitionLookupTable[partition] == null : "duplicate partition " + partition;
                     partitionLookupTable[partition] = collector;
                 }
-                System.arraycopy(partitionsForCollector, 0, myPartitions, idx, partitionsForCollector.length);
+                System.arraycopy(partitionsForCollector, 0, partitions, idx, partitionsForCollector.length);
                 idx += partitionsForCollector.length;
             }
-            this.partitions = Arrays.copyOf(myPartitions, idx);
         }
 
         @Override
@@ -205,7 +205,7 @@ public interface OutboundCollector {
         public ProgressState offer(Object item, int partitionId) {
             OutboundCollector collector = partitionLookupTable[partitionId];
             assert collector != null : "This item should not be handled by this collector as "
-                    + "requested partitionId is not present";
+                    + "the requested partitionId is not present";
             return collector.offer(item, partitionId);
         }
 

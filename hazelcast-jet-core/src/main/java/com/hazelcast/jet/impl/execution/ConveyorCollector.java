@@ -19,7 +19,10 @@ package com.hazelcast.jet.impl.execution;
 import com.hazelcast.internal.util.concurrent.ConcurrentConveyor;
 import com.hazelcast.jet.impl.util.ProgressState;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+
+import static java.util.Objects.requireNonNull;
 
 public class ConveyorCollector implements OutboundCollector {
 
@@ -27,8 +30,8 @@ public class ConveyorCollector implements OutboundCollector {
     private final int queueIndex;
     private final int[] partitions;
 
-    public ConveyorCollector(ConcurrentConveyor<Object> conveyor, int queueIndex, @Nullable int[] partitions) {
-        this.conveyor = conveyor;
+    public ConveyorCollector(@Nonnull ConcurrentConveyor<Object> conveyor, int queueIndex, @Nullable int[] partitions) {
+        this.conveyor = requireNonNull(conveyor);
         this.queueIndex = queueIndex;
         this.partitions = partitions;
     }

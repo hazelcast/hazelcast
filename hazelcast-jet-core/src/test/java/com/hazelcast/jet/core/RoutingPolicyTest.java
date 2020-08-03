@@ -16,25 +16,20 @@
 
 package com.hazelcast.jet.core;
 
-import com.hazelcast.jet.JetInstance;
-import com.hazelcast.jet.core.TestProcessors.ListSource;
-import com.hazelcast.test.HazelcastSerialClassRunner;
-import org.junit.After;
+import com.hazelcast.jet.SimpleTestInClusterSupport;
+import com.hazelcast.jet.core.TestProcessors.CollectPerProcessorSink;
+import com.hazelcast.jet.core.TestProcessors.ListsSourceP;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 
-import javax.annotation.Nonnull;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-import java.util.stream.Stream;
 
 import static com.hazelcast.function.Functions.wholeItem;
 import static com.hazelcast.jet.core.Edge.between;
@@ -43,31 +38,29 @@ import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-@RunWith(HazelcastSerialClassRunner.class)
-public class RoutingPolicyTest extends JetTestSupport {
+public class RoutingPolicyTest extends SimpleTestInClusterSupport {
 
     private static final List<Integer> NUMBERS_LOW = IntStream.range(0, 4096).boxed().collect(toList());
     private static final List<Integer> NUMBERS_HIGH = IntStream.range(4096, 8192).boxed().collect(toList());
 
-    private JetInstance instance;
-    private ListConsumerSup consumerSup;
+    private CollectPerProcessorSink consumerSup;
 
-    @Before
-    public void setupEngine() {
-        instance = createJetMember();
-        consumerSup = new ListConsumerSup();
+    @BeforeClass
+    public static void beforeClass() {
+        initialize(1, null);
     }
 
-    @After
-    public void tearDown() {
-        ListConsumerSup.processors = null;
+    @Before
+    public void before() {
+        TestProcessors.reset(1);
+        consumerSup = new CollectPerProcessorSink();
     }
 
     @Test
     public void when_unicast() throws Throwable {
         DAG dag = new DAG();
         Vertex producer = producer(NUMBERS_LOW, NUMBERS_HIGH);
-        Vertex consumer = consumer(consumerSup, 2);
+        Vertex consumer = consumer(2);
 
         dag.vertex(producer)
            .vertex(consumer)
@@ -92,7 +85,7 @@ public class RoutingPolicyTest extends JetTestSupport {
     public void when_broadcast() throws Throwable {
         DAG dag = new DAG();
         Vertex producer = producer(NUMBERS_LOW, NUMBERS_HIGH);
-        Vertex consumer = consumer(consumerSup, 4);
+        Vertex consumer = consumer(4);
 
         dag.vertex(producer)
            .vertex(consumer)
@@ -110,7 +103,7 @@ public class RoutingPolicyTest extends JetTestSupport {
     public void when_partitioned() throws Throwable {
         DAG dag = new DAG();
         Vertex producer = producer(NUMBERS_LOW, NUMBERS_LOW, NUMBERS_HIGH, NUMBERS_HIGH);
-        Vertex consumer = consumer(consumerSup, 2);
+        Vertex consumer = consumer(2);
 
         dag.vertex(producer)
            .vertex(consumer)
@@ -126,7 +119,7 @@ public class RoutingPolicyTest extends JetTestSupport {
     public void when_isolated_downstreamEqualsUpstream() throws Throwable {
         DAG dag = new DAG();
         Vertex producer = producer(NUMBERS_LOW, NUMBERS_HIGH);
-        Vertex consumer = consumer(consumerSup, 2);
+        Vertex consumer = consumer(2);
 
         dag.vertex(producer)
            .vertex(consumer)
@@ -143,7 +136,7 @@ public class RoutingPolicyTest extends JetTestSupport {
     public void when_isolated_downstreamGreaterThanUpstream() throws Throwable {
         DAG dag = new DAG();
         Vertex producer = producer(NUMBERS_LOW, NUMBERS_HIGH);
-        Vertex consumer = consumer(consumerSup, 4);
+        Vertex consumer = consumer(4);
 
         dag.vertex(producer)
            .vertex(consumer)
@@ -162,10 +155,10 @@ public class RoutingPolicyTest extends JetTestSupport {
     }
 
     private void execute(DAG dag) throws Throwable {
-        executeAndPeel(instance.newJob(dag));
+        executeAndPeel(instance().newJob(dag));
     }
 
-    private static Vertex consumer(ListConsumerSup consumerSup, int count) {
+    private Vertex consumer(int count) {
         return new Vertex("consumer", consumerSup).localParallelism(count);
     }
 
@@ -174,72 +167,19 @@ public class RoutingPolicyTest extends JetTestSupport {
     }
 
     private static Vertex producer(List<?>... lists) {
-        return new Vertex("producer", new ListProducerSup(lists))
+        return new Vertex("producer", new ListsSourceP(lists))
                 .localParallelism(lists.length);
     }
 
     @SafeVarargs
     private static <T> Set<T> setOf(Collection<T>... collections) {
         Set<T> set = new HashSet<>();
+        int totalSize = 0;
         for (Collection<T> collection : collections) {
             set.addAll(collection);
+            totalSize += collection.size();
         }
+        assertEquals("there were some duplicates in the collections", totalSize, set.size());
         return set;
-    }
-
-    private static class ListProducerSup implements ProcessorSupplier {
-
-        private final List<?>[] lists;
-
-        ListProducerSup(List<?>... lists) {
-            this.lists = lists;
-        }
-
-        @Override
-        public void init(@Nonnull Context context) {
-            if (context.localParallelism() != lists.length) {
-                throw new IllegalArgumentException("Supplied list count does not equal local parallelism");
-            }
-        }
-
-        @Nonnull @Override
-        public Collection<? extends Processor> get(int count) {
-            return Arrays.stream(lists).map(ListSource::new).collect(
-                    Collectors.toList());
-        }
-    }
-
-    private static class ListConsumerSup implements ProcessorSupplier {
-
-        private static volatile List<Processor> processors;
-
-        @Override
-        public void init(@Nonnull Context context) {
-            processors = Stream.generate(ListSink::new).limit(context.localParallelism()).collect(toList());
-        }
-
-        @Override @Nonnull
-        public List<Processor> get(int count) {
-            assertEquals(processors.size(), count);
-            return processors;
-        }
-
-        List<Object> getListAt(int i) {
-            return ((ListSink) processors.get(i)).getList();
-        }
-    }
-
-    private static class ListSink extends AbstractProcessor {
-        private final List<Object> list = new ArrayList<>();
-
-        @Override
-        protected boolean tryProcess(int ordinal, @Nonnull Object item) {
-            list.add(item);
-            return true;
-        }
-
-        public List<Object> getList() {
-            return list;
-        }
     }
 }

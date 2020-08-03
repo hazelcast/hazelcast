@@ -22,6 +22,9 @@ import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.core.processor.Processors;
 
 import javax.annotation.Nonnull;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -31,6 +34,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
@@ -54,8 +58,6 @@ public final class TestProcessors {
     /**
      * Reset the static counters in test processors. Call before starting each
      * test that uses them.
-     *
-     * @param totalParallelism
      */
     public static void reset(int totalParallelism) {
         MockPMS.initCalled.set(false);
@@ -78,6 +80,8 @@ public final class TestProcessors {
 
         DummyStatefulP.parallelism = totalParallelism;
         DummyStatefulP.wasRestored = true;
+
+        CollectPerProcessorSink.lists = null;
     }
 
     public static class Identity extends AbstractProcessor {
@@ -484,6 +488,88 @@ public final class TestProcessors {
             restored = null;
             wasRestored = true;
             return true;
+        }
+    }
+
+    /**
+     * A source processors that takes a collection of lists, one for each
+     * processor. Each processor instance then emits one of the lists.
+     */
+    public static final class ListsSourceP implements ProcessorSupplier {
+
+        private List<?>[] lists;
+
+        ListsSourceP(List<?>... lists) {
+            this.lists = lists;
+        }
+
+        @Override
+        public void init(@Nonnull Context context) {
+            if (context.totalParallelism() != lists.length) {
+                throw new IllegalArgumentException("Supplied list count is not equal to total parallelism");
+            }
+            int fromIndex = context.memberIndex() * context.localParallelism();
+            // We overwrite the field, but at this moment the processor supplier instance is cloned for
+            // each member.
+            lists = Arrays.copyOfRange(lists, fromIndex, fromIndex + context.localParallelism());
+        }
+
+        @Nonnull @Override
+        public Collection<? extends Processor> get(int count) {
+            assertEquals(lists.length, count);
+            return Arrays.stream(lists).map(ListSource::new).collect(
+                    Collectors.toList());
+        }
+    }
+
+    /**
+     * A processor that adds received items to a List, there's a separate list
+     * per processor. The test can examine each of these lists independently
+     * and check what was delivered to each processor.
+     */
+    public static final class CollectPerProcessorSink implements ProcessorMetaSupplier {
+
+        static List<Address> members;
+        static List<List<Object>> lists;
+
+        List<Object> getListAt(int i) {
+            return lists.get(i);
+        }
+
+        List<List<Object>> getLists() {
+            return lists;
+        }
+
+        @Override
+        public void init(@Nonnull Context context) {
+            lists = IntStream.range(0, context.totalParallelism()).mapToObj(i -> new ArrayList<>()).collect(toList());
+            members = new ArrayList<>(context.memberCount());
+            for (int i = 0; i < context.memberCount(); i++) {
+                // add placeholders for the members
+                members.add(null);
+            }
+        }
+
+        @Nonnull @Override
+        public Function<? super Address, ? extends ProcessorSupplier> get(@Nonnull List<Address> addresses) {
+            return address -> ProcessorSupplier.of(() -> new AbstractProcessor() {
+                private List<Object> list;
+
+                @Override
+                protected void init(@Nonnull Context context) {
+                    this.list = lists.get(context.globalProcessorIndex());
+                    members.set(context.memberIndex(), context.jetInstance().getCluster().getLocalMember().getAddress());
+                }
+
+                @Override
+                protected boolean tryProcess(int ordinal, @Nonnull Object item) {
+                    return list.add(item);
+                }
+            });
+        }
+
+        public List<Address> getMembers() {
+            return members;
         }
     }
 }
