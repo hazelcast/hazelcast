@@ -34,7 +34,6 @@ import com.hazelcast.flakeidgen.FlakeIdGenerator;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.map.IMap;
-import com.hazelcast.map.MapStore;
 import com.hazelcast.multimap.MultiMap;
 import com.hazelcast.query.extractor.ValueCollector;
 import com.hazelcast.query.extractor.ValueExtractor;
@@ -49,10 +48,7 @@ import org.junit.Test;
 
 import javax.cache.CacheManager;
 import javax.cache.spi.CachingProvider;
-import java.util.Collection;
 import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
@@ -173,7 +169,7 @@ public class PhoneHomeIntegrationTest extends HazelcastTestSupport implements Va
     }
 
     @Test
-    public void testMapLatencies() {
+    public void testMapLatenciesWithMapStore() {
         MapStoreConfig mapStoreConfig = new MapStoreConfig();
         mapStoreConfig.setEnabled(true);
         mapStoreConfig.setImplementation(new DelayMapStore());
@@ -199,61 +195,42 @@ public class PhoneHomeIntegrationTest extends HazelcastTestSupport implements Va
 
 
         verify(1, getRequestedFor(urlPathEqualTo("/ping"))
-                .withQueryParam("mpptla", equalTo(String.valueOf(totalPutLatency / totalPutOperationCount)))
-                .withQueryParam("mpgtla", equalTo(String.valueOf(totalGetLatency / totalGetOperationCount))));
+                .withQueryParam("mpptlams", equalTo(String.valueOf(totalPutLatency / totalPutOperationCount)))
+                .withQueryParam("mpgtlams", equalTo(String.valueOf(totalGetLatency / totalGetOperationCount))));
 
-        assertGreaterOrEquals("mpptla", totalPutLatency / totalPutOperationCount, 200);
-        assertGreaterOrEquals("mpgtla", totalGetLatency / totalGetOperationCount, 200);
+        assertGreaterOrEquals("mpptlams", totalPutLatency / totalPutOperationCount, 200);
+        assertGreaterOrEquals("mpgtlams", totalGetLatency / totalGetOperationCount, 200);
 
+    }
+
+    @Test
+    public void testMapLatenciesWithoutMapStore() {
+        IMap<Object, Object> iMap1 = node.hazelcastInstance.getMap("hazelcast");
+        LocalMapStatsImpl localMapStats1 = (LocalMapStatsImpl) iMap1.getLocalMapStats();
+        IMap<Object, Object> iMap2 = node.hazelcastInstance.getMap("phonehome");
+        LocalMapStatsImpl localMapStats2 = (LocalMapStatsImpl) iMap2.getLocalMapStats();
+
+        localMapStats1.incrementPutLatencyNanos(2000000000L);
+        localMapStats1.incrementPutLatencyNanos(1000000000L);
+        localMapStats2.incrementPutLatencyNanos(2000000000L);
+        localMapStats1.incrementGetLatencyNanos(1000000000L);
+        localMapStats2.incrementGetLatencyNanos(1000000000L);
+
+        stubFor(get(urlPathEqualTo("/ping"))
+                .willReturn(aResponse()
+                        .withStatus(200)));
+
+        phoneHome.phoneHome(false);
+
+
+        verify(1, getRequestedFor(urlPathEqualTo("/ping"))
+                .withQueryParam("mpptla", equalTo("1666"))
+                .withQueryParam("mpgtla", equalTo("1000")));
     }
 
     @Override
     public void extract(Object target, Object argument, ValueCollector collector) {
 
-    }
-
-    public static class DelayMapStore implements MapStore {
-        final Map<Object, Object> store = new ConcurrentHashMap<>();
-
-        @Override
-        public void store(Object key, Object value) {
-            store.put(key, value);
-
-        }
-
-        @Override
-        public void storeAll(Map map) {
-            store.putAll(map);
-
-        }
-
-        @Override
-        public void delete(Object key) {
-            store.remove(key);
-
-        }
-
-        @Override
-        public void deleteAll(Collection keys) {
-            store.clear();
-
-        }
-
-        @Override
-        public Object load(Object key) {
-            sleepMillis(200);
-            return store.get(key);
-        }
-
-        @Override
-        public Map loadAll(Collection keys) {
-            return store;
-        }
-
-        @Override
-        public Iterable loadAllKeys() {
-            return store.keySet();
-        }
     }
 
 }

@@ -34,7 +34,7 @@ import com.hazelcast.map.impl.MapService;
 
 class MapInfoCollector implements MetricsCollector {
 
-    private static final int DISTRIBUTED_OBJECT_TYPE_COUNT = 11;
+    private static final int DISTRIBUTED_OBJECT_TYPE_COUNT = 13;
     private Collection<MapConfig> mapConfigs;
 
     @Override
@@ -59,8 +59,10 @@ class MapInfoCollector implements MetricsCollector {
         mapInfo.put("mpaocct", String.valueOf(countMapWithAtleastOneAttribute()));
         mapInfo.put("mpevct", String.valueOf(countMapUsingEviction()));
         mapInfo.put("mpnmct", String.valueOf(countMapWithNativeInMemoryFormat()));
-        mapInfo.put("mpgtla", String.valueOf(mapGetLatency(hazelcastNode)));
-        mapInfo.put("mpptla", String.valueOf(mapPutLatency(hazelcastNode)));
+        mapInfo.put("mpptlams", String.valueOf(mapPutLatencyWithMapStore(hazelcastNode)));
+        mapInfo.put("mpptla", String.valueOf(mapPutLatencyWithoutMapStore(hazelcastNode)));
+        mapInfo.put("mpgtlams", String.valueOf(mapGetLatencyWithMapStore(hazelcastNode)));
+        mapInfo.put("mpgtla", String.valueOf(mapGetLatencyWithoutMapStore(hazelcastNode)));
 
         return mapInfo;
     }
@@ -110,19 +112,49 @@ class MapInfoCollector implements MetricsCollector {
                 .filter(inMemoryFormat -> inMemoryFormat == InMemoryFormat.NATIVE).count();
     }
 
-    private long mapPutLatency(Node node) {
-        return (long) mapConfigs.stream()
+    private long mapPutLatencyWithoutMapStore(Node node) {
+        Map<Long, Long> latencyInfo = new HashMap<>();
+        mapConfigs.stream()
+                .filter(mapConfig -> !mapConfig.getMapStoreConfig().isEnabled())
                 .map(mapConfig -> node.hazelcastInstance.getMap(mapConfig.getName()).getLocalMapStats())
-                .filter(localMapStats -> localMapStats.getPutOperationCount() != 0L)
-                .mapToDouble(localMapstats -> (double) localMapstats.getTotalPutLatency() / localMapstats.getPutOperationCount())
-                .average().orElse(-1);
+                .filter(mapStats -> mapStats.getPutOperationCount() != 0L)
+                .forEach(mapStats -> latencyInfo.put(mapStats.getTotalPutLatency(), mapStats.getPutOperationCount()));
+
+        return MetricsCollector.weightedAverageLatency(latencyInfo);
     }
 
-    private long mapGetLatency(Node node) {
-        return (long) mapConfigs.stream()
+    private long mapPutLatencyWithMapStore(Node node) {
+        Map<Long, Long> latencyInfo = new HashMap<>();
+        mapConfigs.stream()
+                .filter(mapConfig -> mapConfig.getMapStoreConfig().isEnabled())
                 .map(mapConfig -> node.hazelcastInstance.getMap(mapConfig.getName()).getLocalMapStats())
-                .filter(localMapStats -> localMapStats.getGetOperationCount() != 0L)
-                .mapToDouble(localMapstats -> (double) localMapstats.getTotalGetLatency() / localMapstats.getGetOperationCount())
-                .average().orElse(-1);
+                .filter(mapStats -> mapStats.getPutOperationCount() != 0L)
+                .forEach(mapStats -> latencyInfo.put(mapStats.getTotalPutLatency(), mapStats.getPutOperationCount()));
+
+        return MetricsCollector.weightedAverageLatency(latencyInfo);
+
+    }
+
+    private long mapGetLatencyWithoutMapStore(Node node) {
+        Map<Long, Long> latencyInfo = new HashMap<>();
+        mapConfigs.stream()
+                .filter(mapConfig -> !mapConfig.getMapStoreConfig().isEnabled())
+                .map(mapConfig -> node.hazelcastInstance.getMap(mapConfig.getName()).getLocalMapStats())
+                .filter(mapStats -> mapStats.getGetOperationCount() != 0L)
+                .forEach(mapStats -> latencyInfo.put(mapStats.getTotalGetLatency(), mapStats.getGetOperationCount()));
+
+        return MetricsCollector.weightedAverageLatency(latencyInfo);
+
+    }
+
+    private long mapGetLatencyWithMapStore(Node node) {
+        Map<Long, Long> latencyInfo = new HashMap<>();
+        mapConfigs.stream()
+                .filter(mapConfig -> mapConfig.getMapStoreConfig().isEnabled())
+                .map(mapConfig -> node.hazelcastInstance.getMap(mapConfig.getName()).getLocalMapStats())
+                .filter(mapStats -> mapStats.getGetOperationCount() != 0L)
+                .forEach(mapStats -> latencyInfo.put(mapStats.getTotalGetLatency(), mapStats.getGetOperationCount()));
+
+        return MetricsCollector.weightedAverageLatency(latencyInfo);
     }
 }
