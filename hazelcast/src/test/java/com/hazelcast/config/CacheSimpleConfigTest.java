@@ -28,12 +28,22 @@ import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
+import static org.junit.Assert.assertEquals;
+
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class CacheSimpleConfigTest extends HazelcastTestSupport {
 
     @Rule
     public ExpectedException expectedException = ExpectedException.none();
+
+    @Test
+    public void testNameInConstructor() {
+        String name = randomMapName();
+        CacheSimpleConfig config = new CacheSimpleConfig(name);
+
+        assertEquals(name, config.getName());
+    }
 
     @Test
     public void givenCacheLoaderIsConfigured_whenConfigureCacheLoaderFactory_thenThrowIllegalStateException() {
