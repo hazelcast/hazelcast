@@ -1,5 +1,5 @@
 @echo off
 
-REM ******* This script kills all the instances started with start.bat script.
+REM ******* This script kills java processes running HazelcastMemberStarter
 
-taskkill /F /FI "WINDOWTITLE eq hazelcast-imdg"
+wmic process where "Name like '%%java%%' AND CommandLine like '%%HazelcastMemberStarter%%'" delete
