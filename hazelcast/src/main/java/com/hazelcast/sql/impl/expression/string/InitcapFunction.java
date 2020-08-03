@@ -43,7 +43,7 @@ public class InitcapFunction extends UniExpression<String> {
     public String eval(Row row, ExpressionEvalContext context) {
         String value = Eval.asVarchar(operand, row, context);
 
-        return StringExpressionUtils.upper(value);
+        return StringExpressionUtils.initcap(value);
     }
 
     @Override
