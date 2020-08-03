@@ -32,7 +32,7 @@
 
         <junit.version>4.12</junit.version>
         <mockito.version>1.10.19</mockito.version>
-        <wiremock.version>2.18.0</wiremock.version>
+        <wiremock.version>2.27.1</wiremock.version>
         <log4j.version>1.2.12</log4j.version>
 
         <maven.compiler.plugin.version>2.5.1</maven.compiler.plugin.version>
