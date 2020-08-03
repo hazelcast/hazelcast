@@ -48,8 +48,6 @@ public interface JetSqlBackend {
     );
 
     Object createPlan(
-        List<List<String>> searchPaths,
-        String sql,
         Object node,
         Object parameterRowType,
         Object context
