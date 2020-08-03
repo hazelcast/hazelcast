@@ -25,8 +25,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.math.BigDecimal;
-
 import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeSystem.narrowestTypeFor;
 import static com.hazelcast.sql.impl.type.QueryDataType.BIGINT;
 import static com.hazelcast.sql.impl.type.QueryDataType.INT;
@@ -70,8 +68,7 @@ public class LiteralTest extends ExpressionTestBase {
         // Assign type to numeric literals.
 
         if (operand.isNumericLiteral()) {
-            BigDecimal numeric = operand.numericValue();
-            //noinspection NumberEquality
+            Number numeric = operand.numericValue();
             assert numeric != null && numeric != INVALID_NUMERIC_VALUE;
             type = narrowestTypeFor(numeric, null);
         }

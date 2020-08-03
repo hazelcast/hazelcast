@@ -94,8 +94,7 @@ public class IsNullTest extends ExpressionTestBase {
         // Assign type to numeric literals.
 
         if (operand.isNumericLiteral()) {
-            BigDecimal numeric = operand.numericValue();
-            //noinspection NumberEquality
+            Number numeric = operand.numericValue();
             assert numeric != null && numeric != INVALID_NUMERIC_VALUE;
             type = narrowestTypeFor(numeric, null);
         }

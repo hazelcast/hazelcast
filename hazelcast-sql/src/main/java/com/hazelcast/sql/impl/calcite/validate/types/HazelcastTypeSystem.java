@@ -35,6 +35,7 @@ import java.math.BigDecimal;
 import java.util.Calendar;
 
 import static org.apache.calcite.sql.type.SqlTypeName.ANY;
+import static org.apache.calcite.sql.type.SqlTypeName.APPROX_TYPES;
 import static org.apache.calcite.sql.type.SqlTypeName.BIGINT;
 import static org.apache.calcite.sql.type.SqlTypeName.BOOLEAN;
 import static org.apache.calcite.sql.type.SqlTypeName.CHAR_TYPES;
@@ -213,41 +214,24 @@ public final class HazelcastTypeSystem extends RelDataTypeSystemImpl {
     }
 
     /**
-     * Selects a type having a higher precedence from the two given types
-     * assuming at least one of the given types is associated with a literal.
-     * <p>
-     * Literal type precedence is used to assign types to literals participating
-     * in expressions. For instance, consider the following expression: {@code
-     * 0.1 + decimalColumn}, the left-hand side receives DOUBLE type if
-     * interpreted as a standalone literal, so the expression as a whole
-     * receives DOUBLE type according to the general type precedence rules. This
-     * method fixes that by selecting DECIMAL type to assign to the literal.
-     *
-     * @param type1 the first type.
-     * @param type2 the second type.
-     * @return the type with the higher precedence.
-     */
-    public static RelDataType withHigherPrecedenceForLiterals(RelDataType type1, RelDataType type2) {
-        if (typeName(type1) == DECIMAL && isNumeric(type2)) {
-            return type1;
-        }
-        if (typeName(type2) == DECIMAL && isNumeric(type1)) {
-            return type2;
-        }
-
-        return withHigherPrecedence(type1, type2);
-    }
-
-    /**
      * Selects the narrowest possible numeric type for the given {@link
-     * BigDecimal} value with a potential fallback to the given other type if
+     * Number} value with a potential fallback to the given other type if
      * that given other type is a floating-point type.
      * <p>
-     * The narrowest integer type is selected if the value can be exactly
-     * represented as TINYINT, SMALLINT, INTEGER or BIGINT. Otherwise, the given
-     * fallback type is selected if it's a floating-point type. If the given
-     * fallback type is not a floating-point type, BIGINT is selected for
-     * integer values and DOUBLE is selected for floating-point values.
+     * The given {@link Number} value can be either {@link BigDecimal}, in this
+     * case the value is considered to be exact (see {@link
+     * SqlTypeName#EXACT_TYPES}), or {@link Double}, in this case the value is
+     * considered to be approximate (see {@link SqlTypeName#APPROX_TYPES}).
+     * <p>
+     * If the given value is exact, the narrowest integer type is selected if the
+     * value can be represented without losses as TINYINT, SMALLINT, INTEGER or
+     * BIGINT. Otherwise, the given fallback type is selected if it's a
+     * floating-point type. If the given fallback type is not a floating-point
+     * type, BIGINT is selected for integer values and DECIMAL is selected for
+     * floating-point values.
+     * <p>
+     * If the given value is approximate, the given fallback type is selected if
+     * the type is REAL; otherwise, DOUBLE is selected.
      * <p>
      * The method performs only the narrowest type selection and doesn't
      * validate the value itself.
@@ -256,18 +240,24 @@ public final class HazelcastTypeSystem extends RelDataTypeSystemImpl {
      * @param otherType the other fallback type.
      * @return the narrowest selected type.
      */
-    public static RelDataType narrowestTypeFor(BigDecimal value, SqlTypeName otherType) {
-        if (value.scale() <= 0) {
-            try {
-                long longValue = value.longValueExact();
+    public static RelDataType narrowestTypeFor(Number value, SqlTypeName otherType) {
+        if (value instanceof BigDecimal) {
+            BigDecimal decimalValue = (BigDecimal) value;
+            if (decimalValue.scale() <= 0) {
+                try {
+                    long longValue = decimalValue.longValueExact();
 
-                int bitWidth = HazelcastIntegerType.bitWidthOf(longValue);
-                return HazelcastIntegerType.of(bitWidth, false);
-            } catch (ArithmeticException e) {
-                return HazelcastTypeFactory.INSTANCE.createSqlType(FRACTIONAL_TYPES.contains(otherType) ? otherType : BIGINT);
+                    int bitWidth = HazelcastIntegerType.bitWidthOf(longValue);
+                    return HazelcastIntegerType.of(bitWidth, false);
+                } catch (ArithmeticException e) {
+                    return HazelcastTypeFactory.INSTANCE.createSqlType(FRACTIONAL_TYPES.contains(otherType) ? otherType : BIGINT);
+                }
+            } else {
+                return HazelcastTypeFactory.INSTANCE.createSqlType(APPROX_TYPES.contains(otherType) ? otherType : DECIMAL);
             }
         } else {
-            return HazelcastTypeFactory.INSTANCE.createSqlType(FRACTIONAL_TYPES.contains(otherType) ? otherType : DOUBLE);
+            assert value instanceof Double;
+            return HazelcastTypeFactory.INSTANCE.createSqlType(APPROX_TYPES.contains(otherType) ? otherType : DOUBLE);
         }
     }
 
@@ -373,7 +363,10 @@ public final class HazelcastTypeSystem extends RelDataTypeSystemImpl {
             case INTEGER:
                 return literal.getValueAs(Integer.class);
             case BIGINT:
-                return literal.getValueAs(Long.class);
+                // XXX: Calcite returns unscaled value of the internally stored
+                // BigDecimal if a long value is requested on the literal.
+                BigDecimal decimalValue = literal.getValueAs(BigDecimal.class);
+                return decimalValue == null ? null : decimalValue.longValue();
 
             case DECIMAL:
                 return literal.getValueAs(BigDecimal.class);

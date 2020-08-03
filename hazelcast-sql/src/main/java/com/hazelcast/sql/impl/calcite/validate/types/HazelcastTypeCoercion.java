@@ -33,7 +33,6 @@ import org.apache.calcite.sql.type.SqlTypeUtil;
 import org.apache.calcite.sql.validate.SqlValidatorScope;
 import org.apache.calcite.sql.validate.implicit.TypeCoercionImpl;
 
-import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -49,7 +48,6 @@ import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeSystem.
 import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeSystem.narrowestTypeFor;
 import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeSystem.typeName;
 import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeSystem.withHigherPrecedence;
-import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeSystem.withHigherPrecedenceForLiterals;
 import static org.apache.calcite.sql.SqlKind.BETWEEN;
 import static org.apache.calcite.sql.SqlKind.BINARY_ARITHMETIC;
 import static org.apache.calcite.sql.SqlKind.BINARY_COMPARISON;
@@ -295,11 +293,12 @@ public final class HazelcastTypeCoercion extends TypeCoercionImpl {
             if (literal.getValue() == null) {
                 operandType = TYPE_FACTORY.createSqlType(NULL);
             } else {
-                BigDecimal numeric = literal.getValueAs(BigDecimal.class);
+                Number numeric = numericValue(literal);
+                assert numeric != null;
                 operandType = narrowestTypeFor(numeric, commonType == null ? null : typeName(commonType));
             }
 
-            commonType = commonType == null ? operandType : withHigherPrecedenceForLiterals(operandType, commonType);
+            commonType = commonType == null ? operandType : withHigherPrecedence(operandType, commonType);
         }
 
         // Continue common type inference on non-numeric literals.
@@ -316,12 +315,12 @@ public final class HazelcastTypeCoercion extends TypeCoercionImpl {
             } else if (isChar(operandType) && (commonType != null && isNumeric(commonType) || assumeNumeric)) {
                 // Infer proper numeric type for char literals.
 
-                BigDecimal numeric = numericValue(operand);
+                Number numeric = numericValue(operand);
                 assert numeric != null;
                 operandType = narrowestTypeFor(numeric, commonType == null ? null : typeName(commonType));
             }
 
-            commonType = commonType == null ? operandType : withHigherPrecedenceForLiterals(operandType, commonType);
+            commonType = commonType == null ? operandType : withHigherPrecedence(operandType, commonType);
         }
 
         // seen only parameters
@@ -370,7 +369,7 @@ public final class HazelcastTypeCoercion extends TypeCoercionImpl {
                     // Assign final numeric types to numeric and char literals.
 
                     RelDataType literalType;
-                    BigDecimal numeric = numericValue(operand);
+                    Number numeric = numericValue(operand);
                     assert numeric != null;
                     if (typeName(commonType) == DECIMAL) {
                         // always enforce DECIMAL interpretation if common type is DECIMAL

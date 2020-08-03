@@ -23,8 +23,11 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.math.BigDecimal;
+
 import static com.hazelcast.sql.SqlColumnType.BIGINT;
 import static com.hazelcast.sql.SqlColumnType.BOOLEAN;
+import static com.hazelcast.sql.SqlColumnType.DECIMAL;
 import static com.hazelcast.sql.SqlColumnType.DOUBLE;
 import static com.hazelcast.sql.SqlColumnType.INT;
 import static com.hazelcast.sql.SqlColumnType.NULL;
@@ -57,18 +60,33 @@ public class LiteralEndToEndTest extends ExpressionEndToEndTestBase {
         assertRow(Long.toString(Integer.MAX_VALUE + 1L), EXPR0, BIGINT, Integer.MAX_VALUE + 1L);
         assertRow(Long.toString(Long.MAX_VALUE), EXPR0, BIGINT, Long.MAX_VALUE);
 
-        assertRow("1.0", EXPR0, DOUBLE, 1.0);
-        assertRow("1.000", EXPR0, DOUBLE, 1.0);
-        assertRow("001.000", EXPR0, DOUBLE, 1.0);
-        assertRow("1.1", EXPR0, DOUBLE, 1.1);
-        assertRow("1.100", EXPR0, DOUBLE, 1.1);
-        assertRow("001.100", EXPR0, DOUBLE, 1.1);
-        assertRow("1e1", EXPR0, DOUBLE, 1e1);
-        assertRow("-0.0", EXPR0, DOUBLE, 0.0);
-        assertRow("-1.0", EXPR0, DOUBLE, -1.0);
-        assertRow("-001.100", EXPR0, DOUBLE, -1.1);
-        assertRow(".0", EXPR0, DOUBLE, 0.0);
-        assertRow(".1", EXPR0, DOUBLE, 0.1);
+        assertRow("0.0", EXPR0, DECIMAL, new BigDecimal("0.0"));
+        assertRow("1.0", EXPR0, DECIMAL, new BigDecimal("1.0"));
+        assertRow("1.000", EXPR0, DECIMAL, new BigDecimal("1.000"));
+        assertRow("001.000", EXPR0, DECIMAL, new BigDecimal("1.000"));
+        assertRow("1.1", EXPR0, DECIMAL, new BigDecimal("1.1"));
+        assertRow("1.100", EXPR0, DECIMAL, new BigDecimal("1.100"));
+        assertRow("001.100", EXPR0, DECIMAL, new BigDecimal("1.100"));
+        assertRow("-0.0", EXPR0, DECIMAL, new BigDecimal("0.0"));
+        assertRow("-1.0", EXPR0, DECIMAL, new BigDecimal("-1.0"));
+        assertRow("-001.100", EXPR0, DECIMAL, new BigDecimal("-1.100"));
+        assertRow(".0", EXPR0, DECIMAL, BigDecimal.valueOf(0.0));
+        assertRow(".1", EXPR0, DECIMAL, BigDecimal.valueOf(0.1));
+
+        assertRow("0e0", EXPR0, DOUBLE, 0.0);
+        assertRow("1e0", EXPR0, DOUBLE, 1.0);
+        assertRow("1e000", EXPR0, DOUBLE, 1.0);
+        assertRow("001e000", EXPR0, DOUBLE, 1.0);
+        assertRow("1.1e0", EXPR0, DOUBLE, 1.1);
+        assertRow("1.100e0", EXPR0, DOUBLE, 1.1);
+        assertRow("001.100e0", EXPR0, DOUBLE, 1.1);
+        assertRow("-0.0e0", EXPR0, DOUBLE, 0.0);
+        assertRow("-1.0e0", EXPR0, DOUBLE, -1.0);
+        assertRow("-001.100e0", EXPR0, DOUBLE, -1.1);
+        assertRow(".0e0", EXPR0, DOUBLE, 0.0);
+        assertRow(".1e0", EXPR0, DOUBLE, 0.1);
+        assertRow("1.1e1", EXPR0, DOUBLE, 11.0);
+        assertRow("1.1e-1", EXPR0, DOUBLE, 0.11);
 
         assertRow("false", EXPR0, BOOLEAN, false);
         assertRow("true", EXPR0, BOOLEAN, true);

@@ -99,7 +99,6 @@ import static com.hazelcast.sql.impl.calcite.SqlToQueryType.map;
 import static com.hazelcast.sql.impl.calcite.SqlToQueryType.mapRowType;
 import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeSystem.narrowestTypeFor;
 import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeSystem.withHigherPrecedence;
-import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeSystem.withHigherPrecedenceForLiterals;
 import static java.util.Collections.singletonMap;
 import static org.apache.calcite.sql.type.SqlTypeName.ANY;
 import static org.apache.calcite.sql.type.SqlTypeName.BIGINT;
@@ -217,72 +216,76 @@ public abstract class ExpressionTestBase extends SqlTestSupport {
     static {
         // Literals.
 
-        LITERALS.add(numericLiteral(0));
-        LITERALS.add(numericLiteral(1));
-        LITERALS.add(numericLiteral(-1));
-        LITERALS.add(numericLiteral(10));
-        LITERALS.add(numericLiteral(-10));
+        LITERALS.add(exactLiteral(0));
+        LITERALS.add(exactLiteral(1));
+        LITERALS.add(exactLiteral(-1));
+        LITERALS.add(exactLiteral(10));
+        LITERALS.add(exactLiteral(-10));
 
         long byteMax = Byte.MAX_VALUE;
         long byteMin = Byte.MIN_VALUE;
-        LITERALS.add(numericLiteral(byteMax));
-        LITERALS.add(numericLiteral(byteMax - 1));
-        LITERALS.add(numericLiteral(byteMax + 1));
-        LITERALS.add(numericLiteral(byteMax - 2));
-        LITERALS.add(numericLiteral(byteMax + 2));
-        LITERALS.add(numericLiteral(byteMin));
-        LITERALS.add(numericLiteral(byteMin - 1));
-        LITERALS.add(numericLiteral(byteMin + 1));
-        LITERALS.add(numericLiteral(byteMin - 2));
-        LITERALS.add(numericLiteral(byteMin + 2));
+        LITERALS.add(exactLiteral(byteMax));
+        LITERALS.add(exactLiteral(byteMax - 1));
+        LITERALS.add(exactLiteral(byteMax + 1));
+        LITERALS.add(exactLiteral(byteMax - 2));
+        LITERALS.add(exactLiteral(byteMax + 2));
+        LITERALS.add(exactLiteral(byteMin));
+        LITERALS.add(exactLiteral(byteMin - 1));
+        LITERALS.add(exactLiteral(byteMin + 1));
+        LITERALS.add(exactLiteral(byteMin - 2));
+        LITERALS.add(exactLiteral(byteMin + 2));
 
         long shortMax = Short.MAX_VALUE;
         long shortMin = Short.MIN_VALUE;
-        LITERALS.add(numericLiteral(shortMax));
-        LITERALS.add(numericLiteral(shortMax - 1));
-        LITERALS.add(numericLiteral(shortMax + 1));
-        LITERALS.add(numericLiteral(shortMax - 2));
-        LITERALS.add(numericLiteral(shortMax + 2));
-        LITERALS.add(numericLiteral(shortMin));
-        LITERALS.add(numericLiteral(shortMin - 1));
-        LITERALS.add(numericLiteral(shortMin + 1));
-        LITERALS.add(numericLiteral(shortMin - 2));
-        LITERALS.add(numericLiteral(shortMin + 2));
+        LITERALS.add(exactLiteral(shortMax));
+        LITERALS.add(exactLiteral(shortMax - 1));
+        LITERALS.add(exactLiteral(shortMax + 1));
+        LITERALS.add(exactLiteral(shortMax - 2));
+        LITERALS.add(exactLiteral(shortMax + 2));
+        LITERALS.add(exactLiteral(shortMin));
+        LITERALS.add(exactLiteral(shortMin - 1));
+        LITERALS.add(exactLiteral(shortMin + 1));
+        LITERALS.add(exactLiteral(shortMin - 2));
+        LITERALS.add(exactLiteral(shortMin + 2));
 
         long intMax = Integer.MAX_VALUE;
         long intMin = Integer.MIN_VALUE;
-        LITERALS.add(numericLiteral(intMax));
-        LITERALS.add(numericLiteral(intMax - 1));
-        LITERALS.add(numericLiteral(intMax + 1));
-        LITERALS.add(numericLiteral(intMax - 2));
-        LITERALS.add(numericLiteral(intMax + 2));
-        LITERALS.add(numericLiteral(intMin));
-        LITERALS.add(numericLiteral(intMin - 1));
-        LITERALS.add(numericLiteral(intMin + 1));
-        LITERALS.add(numericLiteral(intMin - 2));
-        LITERALS.add(numericLiteral(intMin + 2));
+        LITERALS.add(exactLiteral(intMax));
+        LITERALS.add(exactLiteral(intMax - 1));
+        LITERALS.add(exactLiteral(intMax + 1));
+        LITERALS.add(exactLiteral(intMax - 2));
+        LITERALS.add(exactLiteral(intMax + 2));
+        LITERALS.add(exactLiteral(intMin));
+        LITERALS.add(exactLiteral(intMin - 1));
+        LITERALS.add(exactLiteral(intMin + 1));
+        LITERALS.add(exactLiteral(intMin - 2));
+        LITERALS.add(exactLiteral(intMin + 2));
 
         BigInteger longMax = BigInteger.valueOf(Long.MAX_VALUE);
         BigInteger longMin = BigInteger.valueOf(Long.MIN_VALUE);
-        LITERALS.add(numericLiteral(longMax));
-        LITERALS.add(numericLiteral(longMax.subtract(BigInteger.valueOf(1))));
-        LITERALS.add(numericLiteral(longMax.add(BigInteger.valueOf(1))));
-        LITERALS.add(numericLiteral(longMax.subtract(BigInteger.valueOf(2))));
-        LITERALS.add(numericLiteral(longMax.add(BigInteger.valueOf(2))));
-        LITERALS.add(numericLiteral(longMin));
-        LITERALS.add(numericLiteral(longMin.subtract(BigInteger.valueOf(1))));
-        LITERALS.add(numericLiteral(longMin.add(BigInteger.valueOf(1))));
-        LITERALS.add(numericLiteral(longMin.subtract(BigInteger.valueOf(2))));
-        LITERALS.add(numericLiteral(longMin.add(BigInteger.valueOf(2))));
+        LITERALS.add(exactLiteral(longMax));
+        LITERALS.add(exactLiteral(longMax.subtract(BigInteger.valueOf(1))));
+        LITERALS.add(exactLiteral(longMax.add(BigInteger.valueOf(1))));
+        LITERALS.add(exactLiteral(longMax.subtract(BigInteger.valueOf(2))));
+        LITERALS.add(exactLiteral(longMax.add(BigInteger.valueOf(2))));
+        LITERALS.add(exactLiteral(longMin));
+        LITERALS.add(exactLiteral(longMin.subtract(BigInteger.valueOf(1))));
+        LITERALS.add(exactLiteral(longMin.add(BigInteger.valueOf(1))));
+        LITERALS.add(exactLiteral(longMin.subtract(BigInteger.valueOf(2))));
+        LITERALS.add(exactLiteral(longMin.add(BigInteger.valueOf(2))));
 
-        LITERALS.add(numericLiteral("0.0"));
-        LITERALS.add(numericLiteral("1.0"));
-        LITERALS.add(numericLiteral("10.01"));
-        LITERALS.add(numericLiteral("-10.01"));
-        LITERALS.add(numericLiteral("9223372036854775808.01"));
+        LITERALS.add(exactLiteral("0.0"));
+        LITERALS.add(exactLiteral("1.0"));
+        LITERALS.add(exactLiteral("10.01"));
+        LITERALS.add(exactLiteral("-10.01"));
+        LITERALS.add(exactLiteral("9223372036854775808.01"));
 
-        LITERALS.add(numericLiteral("1" + TestStringUtils.repeat("0", HazelcastTypeSystem.MAX_DECIMAL_PRECISION)));
-        LITERALS.add(numericLiteral("1" + TestStringUtils.repeat("0", HazelcastTypeSystem.MAX_DECIMAL_PRECISION) + ".01"));
+        LITERALS.add(exactLiteral("1" + TestStringUtils.repeat("0", HazelcastTypeSystem.MAX_DECIMAL_PRECISION)));
+        LITERALS.add(exactLiteral("1" + TestStringUtils.repeat("0", HazelcastTypeSystem.MAX_DECIMAL_PRECISION) + ".01"));
+
+        LITERALS.add(approxLiteral("0e0"));
+        LITERALS.add(approxLiteral("1.1e0"));
+        LITERALS.add(approxLiteral("1.11e1"));
 
         LITERALS.add(new Operand(TYPE_FACTORY.createSqlType(BOOLEAN), false, "FALSE"));
         LITERALS.add(new Operand(TYPE_FACTORY.createSqlType(BOOLEAN), true, "TRUE"));
@@ -509,9 +512,10 @@ public abstract class ExpressionTestBase extends SqlTestSupport {
                 continue;
             }
 
-            BigDecimal numeric = (BigDecimal) operand.value;
+            Number numeric = operand.numericValue();
+            assert numeric != null;
             RelDataType literalType = narrowestTypeFor(numeric, commonType == null ? null : typeName(commonType));
-            commonType = commonType == null ? literalType : withHigherPrecedenceForLiterals(literalType, commonType);
+            commonType = commonType == null ? literalType : withHigherPrecedence(literalType, commonType);
         }
 
         // Continue inference on non-numeric literals.
@@ -525,12 +529,12 @@ public abstract class ExpressionTestBase extends SqlTestSupport {
             if (isChar(operandType) && (commonType != null && isNumeric(commonType) || assumeNumeric)) {
                 // Infer proper numeric type for char literals.
 
-                BigDecimal numeric = operand.numericValue();
+                Number numeric = operand.numericValue();
                 assert numeric != null;
                 operandType = narrowestTypeFor(numeric, commonType == null ? null : typeName(commonType));
             }
 
-            commonType = commonType == null ? operandType : withHigherPrecedenceForLiterals(operandType, commonType);
+            commonType = commonType == null ? operandType : withHigherPrecedence(operandType, commonType);
         }
 
         // seen only parameters
@@ -572,7 +576,7 @@ public abstract class ExpressionTestBase extends SqlTestSupport {
                 } else if (isNumeric(operandType) || (isChar(operandType) && isNumeric(commonType))) {
                     // Assign final numeric types to numeric and char literals.
 
-                    BigDecimal numeric = operand.numericValue();
+                    Number numeric = operand.numericValue();
                     assert numeric != null;
                     RelDataType literalType;
                     if (typeName(commonType) == DECIMAL) {
@@ -862,7 +866,7 @@ public abstract class ExpressionTestBase extends SqlTestSupport {
         }
 
         public boolean isNumericLiteral() {
-            return isLiteral() && value instanceof BigDecimal;
+            return isLiteral() && (value instanceof BigDecimal || value instanceof Double);
         }
 
         public boolean isParameter() {
@@ -881,19 +885,29 @@ public abstract class ExpressionTestBase extends SqlTestSupport {
             return ExpressionTestBase.typeName(type);
         }
 
-        public BigDecimal numericValue() {
+        public Number numericValue() {
             if (!isLiteral()) {
                 return null;
             }
 
             if (isChar(type)) {
                 try {
-                    return StringConverter.INSTANCE.asDecimal(value);
+                    if (((String) value).toLowerCase().contains("e")) {
+                        // floating point approximate scientific notation
+                        return StringConverter.INSTANCE.asDouble(value);
+                    } else {
+                        // floating point exact doted notation or integer
+                        return StringConverter.INSTANCE.asDecimal(value);
+                    }
                 } catch (QueryException e) {
                     return INVALID_NUMERIC_VALUE;
                 }
+            } else if (typeName() == DECIMAL) {
+                return (BigDecimal) value;
+            } else if (typeName() == DOUBLE) {
+                return (Double) value;
             } else {
-                return value instanceof BigDecimal ? (BigDecimal) value : null;
+                return null;
             }
         }
 
@@ -1035,16 +1049,20 @@ public abstract class ExpressionTestBase extends SqlTestSupport {
         return validator.getValidatedNodeType(node);
     }
 
-    private static Operand numericLiteral(long value) {
-        return numericLiteral(Long.toString(value));
+    private static Operand exactLiteral(long value) {
+        return exactLiteral(Long.toString(value));
     }
 
-    private static Operand numericLiteral(BigInteger value) {
-        return numericLiteral(value.toString());
+    private static Operand exactLiteral(BigInteger value) {
+        return exactLiteral(value.toString());
     }
 
-    private static Operand numericLiteral(String text) {
+    private static Operand exactLiteral(String text) {
         return new Operand(TYPE_FACTORY.createSqlType(DECIMAL), new BigDecimal(text), text);
+    }
+
+    private static Operand approxLiteral(String text) {
+        return new Operand(TYPE_FACTORY.createSqlType(DOUBLE), Double.parseDouble(text), text);
     }
 
     private static Operand stringLiteral(String string) {

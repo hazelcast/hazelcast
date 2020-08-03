@@ -54,7 +54,8 @@ public class DivideTest extends ExpressionTestBase {
         assertRows(query(sql, "select __key from records where int1 / 10 = 100"), keyRange(0, 10));
         assertRows(query(sql, "select __key from records where double1 / cast(20 as decimal) <= 100.5 and double1 > 0"),
                 keyRange(0, 10));
-        assertRows(query(sql, "select __key, __key / 2.1 from records"), keyRange(0, 1000, 5000, 6000), k -> k / 2.1);
+        assertRows(query(sql, "select __key, __key / 2.1 from records"), keyRange(0, 1000, 5000, 6000),
+                k -> BigDecimal.valueOf(k).divide(BigDecimal.valueOf(2.1), DECIMAL_MATH_CONTEXT));
         assertQueryThrows(sql, "select __key / 0 from records", "division by zero");
     }
 

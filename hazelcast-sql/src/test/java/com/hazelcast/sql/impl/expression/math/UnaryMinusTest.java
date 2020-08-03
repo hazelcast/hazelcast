@@ -114,15 +114,14 @@ public class UnaryMinusTest extends ExpressionTestBase {
         RelDataType type = operand.type;
         boolean isChar = isChar(type);
 
-        BigDecimal numeric = operand.numericValue();
-        //noinspection NumberEquality
+        Number numeric = operand.numericValue();
         if (numeric == INVALID_NUMERIC_VALUE) {
             return null;
         }
 
         if (numeric != null) {
             if (!isChar) {
-                numeric = numeric.negate();
+                numeric = numeric instanceof BigDecimal ? ((BigDecimal) numeric).negate() : -((Double) numeric);
             }
             type = narrowestTypeFor(numeric, null);
             if (!canRepresentLiteral(numeric, TYPE_FACTORY.createSqlType(DECIMAL), type)) {
@@ -159,9 +158,8 @@ public class UnaryMinusTest extends ExpressionTestBase {
         // this as a literal (Long.MIN_VALUE), but it's impossible to pass
         // abs(Long.MIN_VALUE) from Java side in a form of a long to negate it.
         if (arg == INVALID_VALUE && operand.isLiteral() && typeName == BIGINT) {
-            BigDecimal numeric = operand.numericValue();
+            BigDecimal numeric = (BigDecimal) operand.numericValue();
             assert numeric != null;
-            //noinspection NumberEquality
             if (numeric != INVALID_NUMERIC_VALUE) {
                 numeric = numeric.negate(DECIMAL_MATH_CONTEXT);
                 if (numeric.longValueExact() == Long.MIN_VALUE) {
@@ -209,7 +207,12 @@ public class UnaryMinusTest extends ExpressionTestBase {
                 }
                 return doubleResult;
             case DECIMAL:
-                return ((BigDecimal) arg).negate(DECIMAL_MATH_CONTEXT);
+                if (operand.isLiteral()) {
+                    // literals are preserved exactly as entered to avoid precision losses
+                    return ((BigDecimal) arg).negate();
+                } else {
+                    return ((BigDecimal) arg).negate(DECIMAL_MATH_CONTEXT);
+                }
             default:
                 throw new IllegalArgumentException("unexpected type name: " + returnTypeName);
         }

@@ -230,7 +230,10 @@ public final class RexToExpression {
                 break;
 
             case BIGINT:
-                value = literal.getValueAs(Long.class);
+                // XXX: Calcite returns unscaled value of the internally stored
+                // BigDecimal if a long value is requested on the literal.
+                BigDecimal decimalValue = literal.getValueAs(BigDecimal.class);
+                value = decimalValue == null ? null : decimalValue.longValue();
                 break;
 
             case DECIMAL:

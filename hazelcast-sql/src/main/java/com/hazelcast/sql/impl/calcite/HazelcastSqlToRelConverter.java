@@ -18,7 +18,7 @@ package com.hazelcast.sql.impl.calcite;
 
 import com.hazelcast.sql.impl.type.converter.BigDecimalConverter;
 import com.hazelcast.sql.impl.type.converter.BooleanConverter;
-import com.hazelcast.sql.impl.type.converter.DoubleConverter;
+import com.hazelcast.sql.impl.type.converter.Converter;
 import com.hazelcast.sql.impl.type.converter.StringConverter;
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelOptTable;
@@ -40,6 +40,7 @@ import java.math.BigDecimal;
 
 import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeSystem.isChar;
 import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeSystem.isNumeric;
+import static com.hazelcast.sql.impl.expression.math.ExpressionMath.DECIMAL_MATH_CONTEXT;
 import static org.apache.calcite.sql.type.SqlTypeName.APPROX_TYPES;
 import static org.apache.calcite.sql.type.SqlTypeName.BOOLEAN_TYPES;
 import static org.apache.calcite.sql.type.SqlTypeName.CHAR_TYPES;
@@ -74,6 +75,7 @@ public final class HazelcastSqlToRelConverter extends SqlToRelConverter {
         return null;
     }
 
+    @SuppressWarnings("UnpredictableBigDecimalConstructorCall")
     private RexNode convertCast(SqlCall call, Blackboard blackboard) {
         RelDataType to = validator.getValidatedNodeType(call);
         RexNode operand = blackboard.convertExpression(call.operand(0));
@@ -86,7 +88,7 @@ public final class HazelcastSqlToRelConverter extends SqlToRelConverter {
 
         RelDataType from = operand.getType();
 
-        // Use our to-string conversions for REAL, DOUBLE and BOOLEAN;
+        // Use our to-string conversions for floating point types and BOOLEAN,
         // Calcite does conversions using its own formatting.
         if (operand.isA(SqlKind.LITERAL) && isChar(to)) {
             RexLiteral literal = (RexLiteral) operand;
@@ -94,9 +96,13 @@ public final class HazelcastSqlToRelConverter extends SqlToRelConverter {
             switch (from.getSqlTypeName()) {
                 case REAL:
                 case DOUBLE:
+                case DECIMAL:
                     BigDecimal decimalValue = literal.getValueAs(BigDecimal.class);
-                    String decimalAsString = DoubleConverter.INSTANCE.asVarchar(decimalValue.doubleValue());
-                    return getRexBuilder().makeLiteral(decimalAsString, to, true);
+                    Converter fromConverter = SqlToQueryType.map(from.getSqlTypeName()).getConverter();
+                    Object value = fromConverter.convertToSelf(BigDecimalConverter.INSTANCE, decimalValue);
+                    Object valueAsString = StringConverter.INSTANCE.convertToSelf(fromConverter, value);
+
+                    return getRexBuilder().makeLiteral(valueAsString, to, true);
                 case BOOLEAN:
                     boolean booleanValue = literal.getValueAs(Boolean.class);
                     String booleanAsString = BooleanConverter.INSTANCE.asVarchar(booleanValue);
@@ -115,10 +121,10 @@ public final class HazelcastSqlToRelConverter extends SqlToRelConverter {
             BigDecimal value = literal.getValueAs(BigDecimal.class);
 
             if (to.getSqlTypeName() == DOUBLE) {
-                value = BigDecimal.valueOf(BigDecimalConverter.INSTANCE.asDouble(value));
+                value = new BigDecimal(BigDecimalConverter.INSTANCE.asDouble(value), DECIMAL_MATH_CONTEXT);
             } else {
                 assert to.getSqlTypeName() == REAL;
-                value = new BigDecimal(Float.toString(BigDecimalConverter.INSTANCE.asReal(value)));
+                value = new BigDecimal(BigDecimalConverter.INSTANCE.asReal(value), DECIMAL_MATH_CONTEXT);
             }
 
             return getRexBuilder().makeLiteral(value, to, false);
@@ -128,6 +134,7 @@ public final class HazelcastSqlToRelConverter extends SqlToRelConverter {
         return getRexBuilder().makeCast(to, operand);
     }
 
+    @SuppressWarnings("UnpredictableBigDecimalConstructorCall")
     private RexNode convertLiteral(SqlLiteral literal) {
         if (literal.getValue() == null) {
             // trust Calcite on generation for NULL literals
@@ -159,9 +166,9 @@ public final class HazelcastSqlToRelConverter extends SqlToRelConverter {
         // values having the same REAL/DOUBLE representation are distinct since
         // their BigDecimal representations might differ.
         if (type.getSqlTypeName() == DOUBLE) {
-            value = BigDecimal.valueOf(BigDecimalConverter.INSTANCE.asDouble(value));
+            value = new BigDecimal(BigDecimalConverter.INSTANCE.asDouble(value), DECIMAL_MATH_CONTEXT);
         } else if (type.getSqlTypeName() == REAL) {
-            value = new BigDecimal(Float.toString(BigDecimalConverter.INSTANCE.asReal(value)));
+            value = new BigDecimal(BigDecimalConverter.INSTANCE.asReal(value), DECIMAL_MATH_CONTEXT);
         }
 
         // Generate the literal.

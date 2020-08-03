@@ -38,7 +38,6 @@ import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeSystem.
 import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeSystem.isObject;
 import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeSystem.narrowestTypeFor;
 import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeSystem.withHigherPrecedence;
-import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeSystem.withHigherPrecedenceForLiterals;
 import static com.hazelcast.sql.impl.expression.ExpressionTestBase.TYPE_FACTORY;
 import static org.apache.calcite.sql.parser.SqlParserPos.ZERO;
 import static org.apache.calcite.sql.type.SqlTypeName.ANY;
@@ -162,30 +161,6 @@ public class HazelcastTypeSystemTest {
     }
 
     @Test
-    public void withHigherPrecedenceForLiteralsTest() {
-        assertPrecedenceForLiterals(type(VARCHAR), type(NULL));
-        assertPrecedenceForLiterals(type(BOOLEAN), type(VARCHAR));
-        assertPrecedenceForLiterals(type(TINYINT), type(BOOLEAN));
-        assertPrecedenceForLiterals(HazelcastIntegerType.of(Byte.SIZE - 1, false), HazelcastIntegerType.of(Byte.SIZE - 2, false));
-        assertPrecedenceForLiterals(type(SMALLINT), type(TINYINT));
-        assertPrecedenceForLiterals(HazelcastIntegerType.of(Short.SIZE - 1, false),
-                HazelcastIntegerType.of(Short.SIZE - 2, false));
-        assertPrecedenceForLiterals(type(INTEGER), type(SMALLINT));
-        assertPrecedenceForLiterals(HazelcastIntegerType.of(Integer.SIZE - 1, false),
-                HazelcastIntegerType.of(Integer.SIZE - 2, false));
-        assertPrecedenceForLiterals(type(BIGINT), type(INTEGER));
-        assertPrecedenceForLiterals(HazelcastIntegerType.of(Long.SIZE - 1, false), HazelcastIntegerType.of(Long.SIZE - 2, false));
-        assertPrecedenceForLiterals(type(REAL), type(BIGINT));
-        assertPrecedenceForLiterals(type(DOUBLE), type(REAL));
-        assertPrecedenceForLiterals(type(DECIMAL), type(DOUBLE));
-        assertPrecedenceForLiterals(type(TIME), type(DECIMAL));
-        assertPrecedenceForLiterals(type(DATE), type(TIME));
-        assertPrecedenceForLiterals(type(TIMESTAMP), type(DATE));
-        assertPrecedenceForLiterals(type(TIMESTAMP_WITH_LOCAL_TIME_ZONE), type(TIMESTAMP));
-        assertPrecedenceForLiterals(type(ANY), type(TIMESTAMP_WITH_LOCAL_TIME_ZONE));
-    }
-
-    @Test
     public void narrowestTypeForTest() {
         assertEquals(HazelcastIntegerType.of(0, false), narrowestTypeFor(BigDecimal.valueOf(0), VARCHAR));
         assertEquals(HazelcastIntegerType.of(1, false), narrowestTypeFor(BigDecimal.valueOf(1), DOUBLE));
@@ -193,21 +168,18 @@ public class HazelcastTypeSystemTest {
         assertEquals(type(BIGINT), narrowestTypeFor(new BigDecimal(Long.MAX_VALUE + "0"), BOOLEAN));
         assertEquals(type(DOUBLE), narrowestTypeFor(new BigDecimal(Long.MAX_VALUE + "0"), DOUBLE));
 
-        assertEquals(type(DOUBLE), narrowestTypeFor(BigDecimal.valueOf(0.1), TIME));
+        assertEquals(type(DECIMAL), narrowestTypeFor(BigDecimal.valueOf(0.1), TIME));
         assertEquals(type(DECIMAL), narrowestTypeFor(BigDecimal.valueOf(0.1), DECIMAL));
+
+        assertEquals(type(DOUBLE), narrowestTypeFor(0.1, TIME));
+        assertEquals(type(DOUBLE), narrowestTypeFor(0.1, DECIMAL));
+        assertEquals(type(REAL), narrowestTypeFor(0.1, REAL));
     }
 
     private static void assertPrecedence(RelDataType expected, RelDataType other) {
         RelDataType actual = withHigherPrecedence(expected, other);
         assertSame(expected, actual);
         actual = withHigherPrecedence(other, expected);
-        assertSame(expected, actual);
-    }
-
-    private static void assertPrecedenceForLiterals(RelDataType expected, RelDataType other) {
-        RelDataType actual = withHigherPrecedenceForLiterals(expected, other);
-        assertSame(expected, actual);
-        actual = withHigherPrecedenceForLiterals(other, expected);
         assertSame(expected, actual);
     }
 

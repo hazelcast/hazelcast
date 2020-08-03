@@ -31,8 +31,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.math.BigDecimal;
-
 import static com.hazelcast.sql.impl.calcite.validate.HazelcastSqlOperatorTable.CAST;
 import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeSystem.narrowestTypeFor;
 import static com.hazelcast.sql.impl.type.QueryDataType.BIGINT;
@@ -101,10 +99,9 @@ public class CastTest extends ExpressionTestBase {
 
         // Assign type to numeric literals.
 
-        BigDecimal numeric = operand.numericValue();
+        Number numeric = operand.numericValue();
 
         if (isNumeric(to) || isNumeric(from)) {
-            //noinspection NumberEquality
             if (numeric == INVALID_NUMERIC_VALUE) {
                 return null;
             }

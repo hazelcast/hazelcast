@@ -38,7 +38,6 @@ import org.apache.calcite.sql.validate.SqlValidatorScope;
 import org.apache.calcite.sql.validate.SqlValidatorTable;
 import org.apache.calcite.util.Util;
 
-import java.math.BigDecimal;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
@@ -54,7 +53,6 @@ import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeSystem.
 import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeSystem.typeName;
 import static org.apache.calcite.sql.type.SqlTypeName.CHAR;
 import static org.apache.calcite.sql.type.SqlTypeName.DECIMAL;
-import static org.apache.calcite.sql.type.SqlTypeName.DOUBLE;
 import static org.apache.calcite.sql.type.SqlTypeName.NULL;
 import static org.apache.calcite.sql.type.SqlTypeName.NUMERIC_TYPES;
 import static org.apache.calcite.sql.type.SqlTypeName.VARCHAR;
@@ -182,13 +180,6 @@ public class HazelcastSqlValidator extends SqlValidatorImpl {
 
             derived = HazelcastIntegerType.deriveLiteralType(literal);
             setKnownAndValidatedNodeType(expression, derived);
-        } else if (typeName(derived) == DECIMAL) {
-            // Assign DOUBLE type to any standalone floating point literal: the
-            // exact type is inferred later from the context in which the literal
-            // appears.
-
-            derived = HazelcastTypeFactory.INSTANCE.createSqlType(DOUBLE);
-            setKnownAndValidatedNodeType(expression, derived);
         }
 
         return derived;
@@ -227,7 +218,7 @@ public class HazelcastSqlValidator extends SqlValidatorImpl {
 
         // Assign type to numeric literals and validate them.
 
-        BigDecimal numeric = isNumeric(from) || isNumeric(to) ? numericValue(operand) : null;
+        Number numeric = isNumeric(from) || isNumeric(to) ? numericValue(operand) : null;
 
         if (numeric != null) {
             from = narrowestTypeFor(numeric, typeName(to));

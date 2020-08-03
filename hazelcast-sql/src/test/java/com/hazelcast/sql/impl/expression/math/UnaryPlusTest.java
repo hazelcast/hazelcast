@@ -47,7 +47,8 @@ public class UnaryPlusTest extends ExpressionTestBase {
         SqlService sql = createEndToEndRecords();
         assertRows(query(sql, "select __key from records where +int1 > 0"), keyRange(0, 1000));
         assertRows(query(sql, "select __key, +__key from records"), keyRange(0, 1000, 5000, 6000), k -> k);
-        assertQueryThrows(sql, "select +cast(? as bigint) + 10 from records", "cannot convert", "10000000000000000000000000000000");
+        assertQueryThrows(sql, "select +cast(? as bigint) + 10 from records", "cannot convert",
+                "10000000000000000000000000000000");
     }
 
     @Test
@@ -76,8 +77,7 @@ public class UnaryPlusTest extends ExpressionTestBase {
 
         RelDataType type = operand.type;
 
-        BigDecimal numeric = operand.numericValue();
-        //noinspection NumberEquality
+        Number numeric = operand.numericValue();
         if (numeric == INVALID_NUMERIC_VALUE) {
             return null;
         }
