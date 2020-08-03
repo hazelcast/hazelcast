@@ -17,7 +17,6 @@
 package com.hazelcast.sql.support.expressions;
 
 import com.hazelcast.sql.impl.type.QueryDataType;
-import org.omg.CORBA.ObjectHolder;
 
 import java.io.Serializable;
 import java.math.BigDecimal;
