@@ -110,6 +110,22 @@ public class ParserOperationsTest {
     }
 
     @Test
+    public void testUnsupportedLimit() {
+        checkFailure(
+              "SELECT a FROM t LIMIT 1",
+              "LIMIT is not supported"
+        );
+    }
+
+    @Test
+    public void testUnsupportedOffset() {
+        checkFailure(
+              "SELECT a FROM t OFFSET 1",
+              "OFFSET is not supported"
+        );
+    }
+
+    @Test
     public void testUnsupportedAggregate() {
         checkFailure(
             "SELECT SUM(a) FROM t",
