@@ -330,7 +330,7 @@ public final class UnsupportedOperationVisitor implements SqlVisitor<Void> {
     }
 
     @SuppressFBWarnings(value = "UC_USELESS_VOID_METHOD", justification = "Not fully implemented yet")
-    @SuppressWarnings({"checkstyle:EmptyBlock",})
+    @SuppressWarnings({"checkstyle:EmptyBlock"})
     private void processSelect(SqlSelect select) {
         if (select.hasOrderBy()) {
             // TODO: Proper validation for ORDER BY (i.e. LIMIT/OFFSET)
