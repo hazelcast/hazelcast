@@ -31,8 +31,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.math.BigDecimal;
-
 import static com.hazelcast.sql.impl.calcite.validate.HazelcastSqlOperatorTable.IS_NULL;
 import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeSystem.narrowestTypeFor;
 import static org.apache.calcite.sql.type.SqlTypeName.BOOLEAN;
