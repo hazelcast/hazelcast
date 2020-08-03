@@ -23,7 +23,7 @@
         <log4j.version>1.2.12</log4j.version>
 
         <maven.compiler.plugin.version>2.5.1</maven.compiler.plugin.version>
-        <maven.source.plugin.version>2.2.1</maven.source.plugin.version>
+        <maven.source.plugin.version>3.2.1</maven.source.plugin.version>
         <maven.gpg.plugin.version>1.4</maven.gpg.plugin.version>
         <maven.javadoc.plugin.version>2.9</maven.javadoc.plugin.version>
 
