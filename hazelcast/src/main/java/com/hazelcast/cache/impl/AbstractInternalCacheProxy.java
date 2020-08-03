@@ -113,11 +113,16 @@ abstract class AbstractInternalCacheProxy<K, V>
     public void setCacheManager(HazelcastCacheManager cacheManager) {
         assert cacheManager instanceof HazelcastServerCacheManager;
 
+        // optimistically assume the CacheManager is already set
         if (cacheManagerRef.get() == cacheManager) {
             return;
         }
 
         if (!this.cacheManagerRef.compareAndSet(null, (HazelcastServerCacheManager) cacheManager)) {
+            if (cacheManagerRef.get() == cacheManager) {
+                // some other thread managed to set the same CacheManager, we are good
+                return;
+            }
             throw new IllegalStateException("Cannot overwrite a Cache's CacheManager.");
         }
     }
