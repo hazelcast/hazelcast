@@ -1479,7 +1479,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
 
         @Override
         public V process(Entry<K, V> entry) {
-            return ((ExtendedMapEntry<V>) entry).setValue(newValue, newTtl.toMillis(), TimeUnit.MILLISECONDS);
+            return ((ExtendedMapEntry<K, V>) entry).setValue(newValue, newTtl.toMillis(), TimeUnit.MILLISECONDS);
         }
 
     }
