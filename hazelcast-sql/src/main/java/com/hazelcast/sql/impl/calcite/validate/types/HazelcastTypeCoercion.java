@@ -218,10 +218,6 @@ public final class HazelcastTypeCoercion extends TypeCoercionImpl {
             // all types can be implicitly interpreted as ANY
             return false;
         }
-        if (typeName(from) == ANY) {
-            // casting from ANY is always required
-            return true;
-        }
 
         if (isParameter(node)) {
             // never cast parameters, just assign types to them
