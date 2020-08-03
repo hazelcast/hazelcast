@@ -39,6 +39,11 @@ public interface ICollection<E> extends Collection<E>, DistributedObject {
      * Adds an item listener for this collection.
      * The listener will be notified of all collection add/remove events.
      *
+     * Listeners are non-destructive: They are notified about changes in a collection,
+     * but they won't have any effect on the collection itself. This is particularly
+     * relevant for IQueue: A listener won't consume queue elements. It's not
+     * a replacement for Queue consumers.
+     *
      * @param listener     the item listener
      * @param includeValue {@code true} if the updated item should be passed
      *                     to the item listener, {@code false} otherwise
