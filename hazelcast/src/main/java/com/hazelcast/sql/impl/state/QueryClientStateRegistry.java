@@ -19,9 +19,9 @@ package com.hazelcast.sql.impl.state;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.sql.SqlRow;
+import com.hazelcast.sql.impl.AbstractSqlResult;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.QueryId;
-import com.hazelcast.sql.impl.SqlResultImpl;
 import com.hazelcast.sql.impl.client.SqlPage;
 
 import java.util.ArrayList;
@@ -40,16 +40,16 @@ public class QueryClientStateRegistry {
 
     public SqlPage registerAndFetch(
         UUID clientId,
-        SqlResultImpl cursor,
+        AbstractSqlResult result,
         int cursorBufferSize,
         InternalSerializationService serializationService
     ) {
-        QueryClientState clientCursor = new QueryClientState(clientId, cursor);
+        QueryClientState clientCursor = new QueryClientState(clientId, result);
 
         SqlPage page = fetchInternal(clientCursor, cursorBufferSize, serializationService);
 
         if (!page.isLast()) {
-            clientCursors.put(cursor.getQueryId(), clientCursor);
+            clientCursors.put(result.getQueryId(), clientCursor);
         }
 
         return page;

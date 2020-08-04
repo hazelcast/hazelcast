@@ -18,6 +18,7 @@ package com.hazelcast.sql.schema;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.sql.SqlException;
+import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.impl.connector.LocalPartitionedMapConnector;
 import com.hazelcast.sql.schema.model.AllTypesValue;
@@ -54,6 +55,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public class SchemaTest extends CalciteSqlTestSupport {
 
@@ -93,7 +95,7 @@ public class SchemaTest extends CalciteSqlTestSupport {
         String name = "DeclaredTable";
 
         // when
-        List<SqlRow> updateRows = getQueryRows(
+        SqlResult result = executeQuery(
                 member,
                 format("CREATE EXTERNAL TABLE %s "
                                 + "TYPE \"%s\" "
@@ -111,8 +113,8 @@ public class SchemaTest extends CalciteSqlTestSupport {
                 ));
 
         // then
-        assertThat(updateRows).hasSize(1);
-        assertThat((int) updateRows.get(0).getObject(0)).isEqualTo(0);
+        assertTrue(result.isUpdateCount());
+        assertEquals(-1, result.updateCount());
 
         // when
         List<SqlRow> queryRows = getQueryRows(member, format("SELECT __key, this FROM public.%s", name));

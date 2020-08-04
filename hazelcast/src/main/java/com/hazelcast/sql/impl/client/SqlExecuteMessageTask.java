@@ -23,6 +23,7 @@ import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.security.permission.SqlPermission;
 import com.hazelcast.sql.SqlQuery;
+import com.hazelcast.sql.impl.AbstractSqlResult;
 import com.hazelcast.sql.impl.SqlInternalService;
 import com.hazelcast.sql.impl.SqlResultImpl;
 import com.hazelcast.sql.impl.SqlServiceImpl;
@@ -53,7 +54,7 @@ public class SqlExecuteMessageTask extends SqlAbstractMessageTask<SqlExecuteCode
 
             SqlServiceImpl sqlService = nodeEngine.getSqlService();
 
-            SqlResultImpl result = (SqlResultImpl) sqlService.query(query);
+            AbstractSqlResult result = (AbstractSqlResult) sqlService.query(query);
 
             if (result.isUpdateCount()) {
                 return SqlExecuteResponse.updateCountResponse(result.updateCount());
