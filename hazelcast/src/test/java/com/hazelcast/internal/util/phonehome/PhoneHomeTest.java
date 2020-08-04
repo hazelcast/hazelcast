@@ -530,25 +530,7 @@ public class PhoneHomeTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testMapPutLatencyWithMapStore() {
-        Map<String, String> parameters;
-        parameters = phoneHome.phoneHome(true);
-        assertEquals(parameters.get("mpptlams"), "-1");
-
-        IMap<Object, Object> iMap = node.hazelcastInstance.getMap("hazelcast");
-        MapStoreConfig mapStoreConfig = new MapStoreConfig();
-        mapStoreConfig.setEnabled(true);
-        mapStoreConfig.setImplementation(new DelayMapStore());
-        node.getConfig().getMapConfig("hazelcast").setMapStoreConfig(mapStoreConfig);
-        iMap.put("key1", "hazelcast");
-        iMap.put("key2", "phonehome");
-        parameters = phoneHome.phoneHome(true);
-        assertGreaterOrEquals("mpptlams", Long.parseLong(parameters.get("mpptlams")), 200);
-
-    }
-
-    @Test
-    public void testMapGetLatency() {
+    public void testMapGetLatencyWithoutMapStore() {
         Map<String, String> parameters;
         parameters = phoneHome.phoneHome(true);
         assertEquals(parameters.get("mpgtla"), "-1");
@@ -565,22 +547,41 @@ public class PhoneHomeTest extends HazelcastTestSupport {
         assertEquals(parameters.get("mpgtla"), String.valueOf(2000));
     }
 
-    @Test
-    public void testMapGetLatencyWithMapStore() {
+    void initialiseForMapStore(String operationType) {
+
         Map<String, String> parameters;
         parameters = phoneHome.phoneHome(true);
         assertEquals(parameters.get("mpgtlams"), "-1");
+        assertEquals(parameters.get("mpptlams"), "-1");
 
         IMap<Object, Object> iMap = node.hazelcastInstance.getMap("hazelcast");
         MapStoreConfig mapStoreConfig = new MapStoreConfig();
         mapStoreConfig.setEnabled(true);
         mapStoreConfig.setImplementation(new DelayMapStore());
         node.getConfig().getMapConfig("hazelcast").setMapStoreConfig(mapStoreConfig);
-        iMap.get("key1");
-        iMap.get("key2");
-        parameters = phoneHome.phoneHome(true);
-        assertGreaterOrEquals("mpgtlams", Long.parseLong(parameters.get("mpgtlams")), 200);
+        if (operationType.equals("put")) {
+            iMap.put("key1", "hazelcast");
+            iMap.put("key2", "phonehome");
+        }
+        if (operationType.equals("get")) {
+            iMap.get("key1");
+            iMap.get("key2");
+        }
     }
 
+    @Test
+    public void testMapPutLatencyWithMapStore() {
+        initialiseForMapStore("put");
+        Map<String, String> parameters = phoneHome.phoneHome(true);
+        assertGreaterOrEquals("mpptlams", Long.parseLong(parameters.get("mpptlams")), 200);
+    }
+
+
+    @Test
+    public void testMapGetLatencyWithMapStore() {
+        initialiseForMapStore("get");
+        Map<String, String> parameters = phoneHome.phoneHome(true);
+        assertGreaterOrEquals("mpgtlams", Long.parseLong(parameters.get("mpgtlams")), 200);
+    }
 }
 

@@ -59,17 +59,4 @@ interface MetricsCollector {
         return letter;
     }
 
-    static long weightedAverageLatency(Map<Long, Long> latencyInfo) {
-        if (latencyInfo.size() == 0) {
-            return -1;
-        }
-        long totalLatency = 0;
-        long totalOperationCount = 0;
-        for (Map.Entry<Long, Long> entry : latencyInfo.entrySet()) {
-            totalLatency = totalLatency + entry.getKey();
-            totalOperationCount = totalOperationCount + entry.getValue();
-        }
-        return totalLatency / totalOperationCount;
-    }
-
 }
