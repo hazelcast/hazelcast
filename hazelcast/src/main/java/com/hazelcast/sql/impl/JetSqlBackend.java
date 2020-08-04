@@ -20,7 +20,6 @@ import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.impl.optimizer.SqlPlan;
 
 import java.util.List;
-import java.util.Set;
 
 /**
  * A service to optimize a RelNode and execute the SqlPlan implemented by Jet.
