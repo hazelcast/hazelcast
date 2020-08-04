@@ -53,26 +53,30 @@ public class SqlExecuteMessageTask extends SqlAbstractMessageTask<SqlExecuteCode
 
             SqlServiceImpl sqlService = nodeEngine.getSqlService();
 
-            SqlResultImpl cursor = (SqlResultImpl) sqlService.query(query);
+            SqlResultImpl result = (SqlResultImpl) sqlService.query(query);
 
-            SqlPage page = sqlService.getInternalService().getClientStateRegistry().registerAndFetch(
-                endpoint.getUuid(),
-                cursor,
-                parameters.cursorBufferSize,
-                serializationService
-            );
+            if (result.isUpdateCount()) {
+                return SqlExecuteResponse.updateCountResponse(result.updateCount());
+            } else {
+                SqlPage page = sqlService.getInternalService().getClientStateRegistry().registerAndFetch(
+                    endpoint.getUuid(),
+                    result,
+                    parameters.cursorBufferSize,
+                    serializationService
+                );
 
-            return new SqlExecuteResponse(
-                cursor.getQueryId(),
-                cursor.getRowMetadata().getColumns(),
-                page.getRows(),
-                page.isLast(),
-                null
-            );
+                return SqlExecuteResponse.rowsResponse(
+                    result.getQueryId(),
+                    result.getRowMetadata().getColumns(),
+                    page.getRows(),
+                    page.isLast()
+                );
+            }
+
         } catch (Exception e) {
             SqlError error = SqlClientUtils.exceptionToClientError(e, nodeEngine.getLocalMember().getUuid());
 
-            return new SqlExecuteResponse(null, null, null, false, error);
+            return SqlExecuteResponse.errorResponse(error);
         }
     }
 
@@ -90,10 +94,12 @@ public class SqlExecuteMessageTask extends SqlAbstractMessageTask<SqlExecuteCode
         Collection<Collection<Data>> rowPage0 = (Collection<Collection<Data>>) (Object) rowPage;
 
         return SqlExecuteCodec.encodeResponse(
+            response0.isUpdateCount(),
             response0.getQueryId(),
             response0.getRowMetadata(),
             rowPage0,
             response0.isRowPageLast(),
+            response0.getUpdatedCount(),
             response0.getError()
         );
     }

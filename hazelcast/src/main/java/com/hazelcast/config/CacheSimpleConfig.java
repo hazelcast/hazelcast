@@ -141,6 +141,15 @@ public class CacheSimpleConfig implements IdentifiedDataSerializable, NamedConfi
         this.disablePerEntryInvalidationEvents = cacheSimpleConfig.disablePerEntryInvalidationEvents;
     }
 
+    /**
+     * Create a Cache Simple Config for a cache with a specific name.
+     *
+     * @param name cache name
+     */
+    public CacheSimpleConfig(String name) {
+        setName(name);
+    }
+
     public CacheSimpleConfig() {
     }
 

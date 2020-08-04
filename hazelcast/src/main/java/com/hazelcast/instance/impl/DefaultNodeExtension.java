@@ -235,7 +235,6 @@ public class DefaultNodeExtension implements NodeExtension {
     private void printNodeInfoInternal(BuildInfo buildInfo, String build) {
         systemLogger.info(getEditionString() + " " + buildInfo.getVersion()
                 + " (" + build + ") starting at " + node.getThisAddress());
-        systemLogger.info("Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.");
         systemLogger.fine("Configured Hazelcast Serialization version: " + buildInfo.getSerializationVersion());
     }
 

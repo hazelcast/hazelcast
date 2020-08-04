@@ -80,6 +80,70 @@ public class ParserOperationsTest {
         checkSuccess("SELECT a, b FROM t WHERE a <= b");
     }
 
+    @Test
+    public void testUnsupportedSelectScalar() {
+        checkFailure(
+            "SELECT (SELECT a FROM t) FROM t",
+            "SCALAR QUERY is not supported"
+        );
+    }
+
+    @Test
+    public void testUnsupportedWhereScalar() {
+        checkFailure(
+            "SELECT a, b FROM t WHERE (SELECT a FROM t) IS NULL",
+            "SCALAR QUERY is not supported"
+        );
+    }
+
+    @Test
+    public void testUnsupportedOrderBy() {
+        checkFailure(
+            "SELECT a FROM t ORDER BY a",
+            "ORDER BY is not supported"
+        );
+    }
+
+    @Test
+    public void testUnsupportedGroupBy() {
+        checkFailure(
+            "SELECT a FROM t GROUP BY a",
+            "GROUP BY is not supported"
+        );
+    }
+
+    @Test
+    public void testUnsupportedLimit() {
+        checkFailure(
+              "SELECT a FROM t LIMIT 1",
+              "LIMIT is not supported"
+        );
+    }
+
+    @Test
+    public void testUnsupportedOffset() {
+        checkFailure(
+              "SELECT a FROM t OFFSET 1",
+              "OFFSET is not supported"
+        );
+    }
+
+    @Test
+    public void testUnsupportedAggregate() {
+        checkFailure(
+            "SELECT SUM(a) FROM t",
+            "SUM is not supported"
+        );
+    }
+
+    @Test
+    public void testUnsupportedJoin() {
+        checkFailure(
+            "SELECT t1.a, t2.a FROM t t1 JOIN t t2 ON t1.a = t2.a",
+            "JOIN is not supported"
+        );
+    }
+
     private static void checkSuccess(String sql) {
         createContext().parse(sql);
     }

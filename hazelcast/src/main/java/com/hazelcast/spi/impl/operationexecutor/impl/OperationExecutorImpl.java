@@ -514,8 +514,10 @@ public final class OperationExecutorImpl implements OperationExecutor, StaticMet
 
     @Override
     public void start() {
-        logger.info("Starting " + partitionThreads.length + " partition threads and "
-                + genericThreads.length + " generic threads (" + priorityThreadCount + " dedicated for priority tasks)");
+        if (logger.isFineEnabled()) {
+            logger.fine("Starting " + partitionThreads.length + " partition threads and "
+                  + genericThreads.length + " generic threads (" + priorityThreadCount + " dedicated for priority tasks)");
+        }
         startAll(partitionThreads);
         startAll(genericThreads);
     }

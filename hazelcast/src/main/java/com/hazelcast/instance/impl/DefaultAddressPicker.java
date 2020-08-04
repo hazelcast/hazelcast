@@ -148,8 +148,11 @@ class DefaultAddressPicker
         int port = serverSocketChannel.socket().getLocalPort();
         bindAddress = createAddress(bindAddressDef, port);
 
-        logger.info("Picked " + bindAddress + (endpointQualifier == null ? "" : ", for endpoint " + endpointQualifier)
-                + ", using socket " + serverSocketChannel.socket() + ", bind any local is " + bindAny);
+        if (logger.isFineEnabled()) {
+            logger.fine("Picked " + bindAddress + (endpointQualifier == null ? "" : ", for endpoint " + endpointQualifier)
+                  + ", using socket " + serverSocketChannel.socket() + ", bind any local is " + bindAny);
+        }
+
         return getPublicAddress(port);
     }
 
@@ -183,7 +186,11 @@ class DefaultAddressPicker
         if (interfaces.contains(new InterfaceDefinition("127.0.0.1"))) {
             return pickLoopbackAddress(null);
         }
-        logger.info("Prefer IPv4 stack is " + preferIPv4Stack() + ", prefer IPv6 addresses is " + preferIPv6Addresses());
+
+        if (logger.isFineEnabled()) {
+            logger.fine("Prefer IPv4 stack is " + preferIPv4Stack() + ", prefer IPv6 addresses is " + preferIPv6Addresses());
+        }
+
         if (interfaces.size() > 0) {
             AddressDefinition addressDef = pickMatchingAddress(interfaces);
             if (addressDef != null) {

@@ -23,6 +23,9 @@ import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.spi.impl.operationservice.OperationFactory;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
+import com.hazelcast.map.impl.MapService;
+import com.hazelcast.map.impl.MapServiceContext;
+import com.hazelcast.map.impl.operation.MapOperationProvider;
 
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -42,6 +45,12 @@ public abstract class AbstractMultiPartitionMessageTask<P>
     }
 
     public abstract PartitionIdSet getPartitions();
+
+    protected final MapOperationProvider getMapOperationProvider(String mapName) {
+        MapService mapService = getService(MapService.SERVICE_NAME);
+        MapServiceContext mapServiceContext = mapService.getMapServiceContext();
+        return mapServiceContext.getMapOperationProvider(mapName);
+    }
 
     protected abstract OperationFactory createOperationFactory();
 
