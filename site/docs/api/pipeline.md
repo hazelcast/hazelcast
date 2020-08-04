@@ -45,18 +45,18 @@ you obtain a source stage. `pipeline.readFrom(someStreamSource)` returns
 a `SourceStreamStage` which offers just these methods:
 
 - `withNativeTimestamps()`
-declares that the stream will use source's native timestamps. This
-typically refers to the timestamps that the external source system sets
-on each event.
+  declares that the stream will use source's native timestamps. This
+  typically refers to the timestamps that the external source system
+  sets on each event.
 
 - `withTimestamps(timestampFn)`
-provides a function to the source that determines the timestamp of
-each event.
+  provides a function to the source that determines the timestamp of
+  each event.
 
 - `withoutTimestamps()`
-declares that the source stage has no timestamps. Use this if you don't
-need them (i.e., your pipeline won't perform windowed aggregation or stateful
-mapping).
+  declares that the source stage has no timestamps. Use this if you
+  don't need them (i.e., your pipeline won't perform windowed
+  aggregation or stateful mapping).
 
 Exceptionally, you may need to call `withoutTimestamps()` on the source
 stage, then perform some transformations that determine the event
