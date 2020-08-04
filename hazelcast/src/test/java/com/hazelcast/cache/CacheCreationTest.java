@@ -47,6 +47,8 @@ import java.io.InputStream;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.cache.CacheTestSupport.createServerCachingProvider;
 import static com.hazelcast.config.MaxSizePolicy.ENTRY_COUNT;
@@ -78,6 +80,45 @@ public class CacheCreationTest extends HazelcastTestSupport {
         CachingProvider cachingProvider = createCachingProvider(getDeclarativeConfig());
         Cache<Object, Object> cache = cachingProvider.getCacheManager().getCache("xmlCache" + 1);
         cache.get(1);
+    }
+
+    @Test
+    public void concurrentCacheCreation() throws InterruptedException {
+        // see https://github.com/hazelcast/hazelcast/issues/17284
+        String cacheName = "myCache";
+        int threadCount = Runtime.getRuntime().availableProcessors() * 20;
+        Config config = new Config().addCacheConfig(new CacheSimpleConfig().setName(cacheName));
+        CacheManager cacheManager = createCachingProvider(config).getCacheManager();
+
+        CountDownLatch startLatch = new CountDownLatch(1);
+        AtomicInteger errorCounter = new AtomicInteger();
+        Runnable getCache = () -> {
+            try {
+                startLatch.await();
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+            try {
+                Cache<?, ?> cache = cacheManager.getCache(cacheName);
+                if (cache == null) {
+                    System.out.println("getCache() returned null!");
+                    errorCounter.incrementAndGet();
+                }
+            } catch (Throwable t) {
+                t.printStackTrace();
+                errorCounter.incrementAndGet();
+            }
+        };
+        ExecutorService executorService = Executors.newFixedThreadPool(threadCount);
+        for (int i = 0; i < threadCount; i++) {
+            executorService.submit(getCache);
+        }
+        // start all threads at once
+        startLatch.countDown();
+
+        executorService.shutdown();
+        executorService.awaitTermination(1, TimeUnit.MINUTES);
+        assertEquals(0, errorCounter.get());
     }
 
     @Test

@@ -38,7 +38,7 @@ public class SubstringFunction extends TriExpression<String> {
 
     public static SubstringFunction create(Expression<?> source, Expression<?> start, Expression<?> length) {
         EnsureConvertible.toVarchar(source);
-        EnsureConvertible.toVarchar(start);
+        EnsureConvertible.toInt(start);
         EnsureConvertible.toInt(length);
 
         return new SubstringFunction(source, start, length);

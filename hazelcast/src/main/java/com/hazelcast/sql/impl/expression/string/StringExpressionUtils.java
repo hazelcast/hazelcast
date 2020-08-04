@@ -110,7 +110,7 @@ public final class StringExpressionUtils {
         return value != null ? value.toLowerCase(Locale.ROOT) : null;
     }
 
-    private static String initcap(String value) {
+    public static String initcap(String value) {
         if (value == null) {
             return null;
         }

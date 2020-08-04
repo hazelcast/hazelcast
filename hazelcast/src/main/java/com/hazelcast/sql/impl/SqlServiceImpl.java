@@ -276,7 +276,7 @@ public class SqlServiceImpl implements SqlService, Consumer<Packet> {
     private SqlResult executeImdg(Plan plan, List<Object> params, long timeout, int pageSize) {
         QueryState state = internalService.execute(plan, params, timeout, pageSize, planCache);
 
-        return new SqlResultImpl(state);
+        return SqlResultImpl.createRowsResult(state);
     }
 
     private SqlResult executeJet(SqlPlan plan, List<Object> params, long timeout, int pageSize) {
