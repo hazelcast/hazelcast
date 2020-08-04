@@ -20,69 +20,104 @@ import com.hazelcast.sql.SqlErrorCode;
 import com.hazelcast.sql.impl.JetSqlBackend;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlConformance;
-import org.apache.calcite.sql.SqlKind;
+import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlValidator;
+import org.apache.calcite.prepare.Prepare.CatalogReader;
+import org.apache.calcite.rel.type.RelDataTypeFactory;
 import org.apache.calcite.sql.SqlNode;
-import org.apache.calcite.sql.SqlOperator;
+import org.apache.calcite.sql.parser.SqlParseException;
 import org.apache.calcite.sql.parser.SqlParser;
+import org.apache.calcite.sql.parser.SqlParser.Config;
 import org.apache.calcite.sql.parser.SqlParserImplFactory;
+import org.apache.calcite.sql.util.SqlVisitor;
+import org.apache.calcite.sql.validate.SqlConformance;
 import org.apache.calcite.sql.validate.SqlValidator;
 
 import javax.annotation.Nullable;
-import java.util.Set;
-
-import static java.util.Collections.emptySet;
 
 /**
  * Performs syntactic and semantic validation of the query, and converts the parse tree into a relational tree.
  */
 public class QueryParser {
 
-    private final SqlParser.Config parserConfig;
+    private final RelDataTypeFactory typeFactory;
+    private final CatalogReader catalogReader;
+    private final SqlConformance conformance;
 
-    private final SqlValidator validator;
-    private final Set<SqlKind> extensionSqlKinds;
-    private final Set<SqlOperator> extensionSqlOperators;
+    private final JetSqlBackend jetSqlBackend;
 
-    @SuppressWarnings("unchecked")
     public QueryParser(
-            SqlValidator validator,
+            RelDataTypeFactory typeFactory,
+            CatalogReader catalogReader,
+            SqlConformance conformance,
             @Nullable JetSqlBackend jetSqlBackend
     ) {
-        SqlParser.ConfigBuilder configBuilder = SqlParser.configBuilder();
-        CasingConfiguration.DEFAULT.toParserConfig(configBuilder);
-        configBuilder.setConformance(HazelcastSqlConformance.INSTANCE);
-        if (jetSqlBackend != null) {
-            configBuilder.setParserFactory((SqlParserImplFactory) jetSqlBackend.createParserFactory());
-        }
-        this.parserConfig = configBuilder.build();
+        this.typeFactory = typeFactory;
+        this.catalogReader = catalogReader;
+        this.conformance = conformance;
 
-        this.validator = validator;
-        this.extensionSqlKinds = jetSqlBackend == null ? emptySet() : (Set<SqlKind>) jetSqlBackend.kinds();
-        this.extensionSqlOperators = jetSqlBackend == null ? emptySet() : (Set<SqlOperator>) jetSqlBackend.operators();
+        this.jetSqlBackend = jetSqlBackend;
     }
 
     public QueryParseResult parse(String sql) {
         try {
-            SqlParser parser = SqlParser.create(sql, parserConfig);
-
-            SqlNode node = validator.validate(parser.parseStmt());
-
-            UnsupportedOperationVisitor visitor = new UnsupportedOperationVisitor(
-                validator.getCatalogReader(),
-                extensionSqlKinds,
-                extensionSqlOperators
-            );
-            node.accept(visitor);
-
-            return new QueryParseResult(
-                node,
-                validator.getParameterRowType(node),
-                visitor.isExclusivelyImdgStatement()
-            );
-
-            // TODO: Get column names through SqlSelect.selectList[i].toString() (and, possibly, origins?)?
+            try {
+                return parseImdg(sql);
+            } catch (Exception e) {
+                if (jetSqlBackend != null) {
+                    return parseJet(sql);
+                } else {
+                    throw e;
+                }
+            }
         } catch (Exception e) {
             throw QueryException.error(SqlErrorCode.PARSING, e.getMessage(), e);
         }
+    }
+
+    private QueryParseResult parseImdg(String sql) throws SqlParseException {
+        Config config = createConfig(null);
+        SqlParser parser = SqlParser.create(sql, config);
+
+        SqlValidator validator = new HazelcastSqlValidator(catalogReader, typeFactory, conformance);
+        SqlNode node = validator.validate(parser.parseStmt());
+
+        SqlVisitor<Void> visitor = new UnsupportedOperationVisitor(catalogReader);
+        node.accept(visitor);
+
+        return new QueryParseResult(
+                node,
+                validator.getParameterRowType(node),
+                true,
+                validator);
+    }
+
+    @SuppressWarnings("unchecked")
+    private QueryParseResult parseJet(String sql) throws SqlParseException {
+        assert jetSqlBackend != null;
+
+        Config config = createConfig((SqlParserImplFactory) jetSqlBackend.createParserFactory());
+        SqlParser parser = SqlParser.create(sql, config);
+
+        SqlValidator validator = (SqlValidator) jetSqlBackend.createValidator(catalogReader, typeFactory, conformance);
+        SqlNode node = validator.validate(parser.parseStmt());
+
+        SqlVisitor<Void> visitor = (SqlVisitor<Void>) jetSqlBackend.createUnsupportedOperationVisitor(catalogReader);
+        node.accept(visitor);
+
+        return new QueryParseResult(
+                node,
+                validator.getParameterRowType(node),
+                false,
+                validator);
+    }
+
+    private static Config createConfig(SqlParserImplFactory parserImplFactory) {
+        SqlParser.ConfigBuilder configBuilder = SqlParser.configBuilder();
+        CasingConfiguration.DEFAULT.toParserConfig(configBuilder);
+        configBuilder.setConformance(HazelcastSqlConformance.INSTANCE);
+        if (parserImplFactory != null) {
+            configBuilder.setParserFactory(parserImplFactory);
+        }
+        return configBuilder.build();
     }
 }

@@ -638,7 +638,6 @@ public abstract class ExpressionTestBase {
     private void verify(SqlOperator operator, ExpectedTypes expectedTypes, ExpectedValues expectedValues, StringBuilder trace,
                         int evaluationId, String format, Operand... operands) {
         OptimizerContext optimizerContext = makeContext();
-        SqlValidator validator = optimizerContext.getValidator();
 
         String query = "SELECT ";
         query += format(format, o -> o.text, operands);
@@ -649,7 +648,10 @@ public abstract class ExpressionTestBase {
         }
 
         try {
-            SqlNode sqlNode = optimizerContext.parse(query).getNode();
+            QueryParseResult parseResult = optimizerContext.parse(query);
+
+            SqlNode sqlNode = parseResult.getNode();
+            SqlValidator validator = parseResult.getValidator();
             assert sqlNode instanceof SqlSelect;
             if (trace != null) {
                 trace.append("parsed: ").append(sqlNode).append('\n');
@@ -707,7 +709,7 @@ public abstract class ExpressionTestBase {
             assertArrayEquals(expected, actual);
 
             if (VERIFY_EVALUATION) {
-                RelNode relNode = optimizerContext.convert(sqlNode).getRel();
+                RelNode relNode = optimizerContext.convert(parseResult).getRel();
                 Expression<?> expression = convertToExpression(relNode, validator.getParameterRowType(sqlNode));
 
                 verifyEvaluation(expected, operands, expression, expectedValues, evaluationId);
@@ -1069,7 +1071,7 @@ public abstract class ExpressionTestBase {
         QueryParseResult parseResult = context.parse("select " + expression + " from t");
 
         SqlSelect select = (SqlSelect) parseResult.getNode();
-        SqlValidator validator = context.getValidator();
+        SqlValidator validator = parseResult.getValidator();
         SqlValidatorScope scope = validator.getSelectScope(select);
 
         return new SqlCallBinding(validator, scope, (SqlCall) select.getSelectList().get(0)) {

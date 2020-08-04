@@ -138,7 +138,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
 
         if (parseResult.isExclusivelyImdgStatement()) {
             // 3. Convert parse tree to relational tree.
-            QueryConvertResult convertResult = context.convert(parseResult.getNode());
+            QueryConvertResult convertResult = context.convert(parseResult);
 
             // 4. Create plan.
             return createPlan(
@@ -151,8 +151,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
             );
         } else {
             return (SqlPlan) jetSqlBackend.createPlan(
-                parseResult.getNode(),
-                parseResult.getParameterRowType(),
+                parseResult,
                 context
             );
         }

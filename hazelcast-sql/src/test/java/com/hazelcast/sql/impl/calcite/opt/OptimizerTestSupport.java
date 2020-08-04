@@ -28,6 +28,7 @@ import com.hazelcast.sql.impl.calcite.opt.logical.LogicalRules;
 import com.hazelcast.sql.impl.calcite.opt.logical.RootLogicalRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.PhysicalRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.PhysicalRules;
+import com.hazelcast.sql.impl.calcite.parse.QueryParseResult;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastSchema;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastSchemaUtils;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
@@ -126,8 +127,9 @@ public abstract class OptimizerTestSupport extends SqlTestSupport {
         boolean physical,
         QueryParameterMetadata parameterMetadata
     ) {
-        SqlNode node = context.parse(sql).getNode();
-        RelNode convertedRel = context.convert(node).getRel();
+        QueryParseResult parseResult = context.parse(sql);
+        SqlNode node = parseResult.getNode();
+        RelNode convertedRel = context.convert(parseResult).getRel();
         LogicalRel logicalRel = optimizeLogicalInternal(context, convertedRel);
         PhysicalRel physicalRel = physical ? optimizePhysicalInternal(context, logicalRel, parameterMetadata) : null;
 

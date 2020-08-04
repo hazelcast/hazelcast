@@ -46,12 +46,11 @@ import java.util.HashSet;
 import java.util.Set;
 
 /**
- * Visitor that throws exceptions for unsupported SQL features. After visiting,
- * {@link #isExclusivelyImdgStatement()} returns whether given SqlNode can be
- * handled exclusively by IMDG.
+ * Visitor that throws exceptions for unsupported SQL features.
  */
 @SuppressWarnings("checkstyle:ExecutableStatementCount")
 public final class UnsupportedOperationVisitor implements SqlVisitor<Void> {
+
     /** Error messages. */
     private static final Resource RESOURCE = Resources.create(Resource.class);
 
@@ -174,22 +173,10 @@ public final class UnsupportedOperationVisitor implements SqlVisitor<Void> {
 
     private final SqlValidatorCatalogReader catalogReader;
 
-    private final Set<SqlKind> extensionSqlKinds;
-    private final Set<SqlOperator> extensionSqlOperators;
-
-    private boolean exclusivelyImdgStatement;
-
     UnsupportedOperationVisitor(
-            SqlValidatorCatalogReader catalogReader,
-            Set<SqlKind> extensionSqlKinds,
-            Set<SqlOperator> extensionSqlOperators
+            SqlValidatorCatalogReader catalogReader
     ) {
         this.catalogReader = catalogReader;
-
-        this.extensionSqlKinds = extensionSqlKinds;
-        this.extensionSqlOperators = extensionSqlOperators;
-
-        this.exclusivelyImdgStatement = true;
     }
 
     @Override
@@ -220,7 +207,7 @@ public final class UnsupportedOperationVisitor implements SqlVisitor<Void> {
             if (hzTable != null) {
                 Table target = hzTable.getTarget();
                 if (target != null && !(target instanceof AbstractMapTable)) {
-                    exclusivelyImdgStatement = false;
+                    throw error(id, RESOURCE.custom(target.getClass().getSimpleName() + " is not supported"));
                 }
             }
         }
@@ -296,11 +283,6 @@ public final class UnsupportedOperationVisitor implements SqlVisitor<Void> {
             return;
         }
 
-        if (extensionSqlKinds.contains(kind)) {
-            exclusivelyImdgStatement = false;
-            return;
-        }
-
         switch (kind) {
             case HINT:
                 // TODO: Proper validation for hints
@@ -356,11 +338,6 @@ public final class UnsupportedOperationVisitor implements SqlVisitor<Void> {
             return;
         }
 
-        if (extensionSqlOperators.contains(operator)) {
-            exclusivelyImdgStatement = false;
-            return;
-        }
-
         throw unsupported(call, operator.getName());
     }
 
@@ -374,10 +351,6 @@ public final class UnsupportedOperationVisitor implements SqlVisitor<Void> {
 
     private CalciteContextException error(SqlNode node, Resources.ExInst<SqlValidatorException> err) {
         return SqlUtil.newContextException(node.getParserPosition(), err);
-    }
-
-    public boolean isExclusivelyImdgStatement() {
-        return exclusivelyImdgStatement;
     }
 
     public interface Resource {

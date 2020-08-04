@@ -31,13 +31,11 @@ public interface JetSqlBackend {
 
     Object tableResolver();
 
-    Set<?> kinds();
-
-    Set<?> operators();
-
     Object createParserFactory();
 
     Object createValidator(Object catalogReader, Object typeFactory, Object conformance);
+
+    Object createUnsupportedOperationVisitor(Object catalogReader);
 
     Object createConverter(
         Object viewExpander,
@@ -48,11 +46,7 @@ public interface JetSqlBackend {
         Object config
     );
 
-    Object createPlan(
-        Object node,
-        Object parameterRowType,
-        Object context
-    );
+    Object createPlan(Object parseResult, Object context);
 
     /**
      * Execute the SqlPlan.

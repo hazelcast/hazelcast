@@ -18,6 +18,7 @@ package com.hazelcast.sql.impl.calcite.parse;
 
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.sql.SqlNode;
+import org.apache.calcite.sql.validate.SqlValidator;
 
 /**
  * Parsing result.
@@ -27,15 +28,17 @@ public class QueryParseResult {
     private final SqlNode node;
     private final RelDataType parameterRowType;
     private final boolean exclusivelyImdgStatement;
+    private final SqlValidator validator;
 
     public QueryParseResult(
-        SqlNode node,
-        RelDataType parameterRowType,
-        boolean exclusivelyImdgStatement
-    ) {
+            SqlNode node,
+            RelDataType parameterRowType,
+            boolean exclusivelyImdgStatement,
+            SqlValidator validator) {
         this.node = node;
         this.parameterRowType = parameterRowType;
         this.exclusivelyImdgStatement = exclusivelyImdgStatement;
+        this.validator = validator;
     }
 
     public SqlNode getNode() {
@@ -48,5 +51,9 @@ public class QueryParseResult {
 
     public boolean isExclusivelyImdgStatement() {
         return exclusivelyImdgStatement;
+    }
+
+    public SqlValidator getValidator() {
+        return validator;
     }
 }

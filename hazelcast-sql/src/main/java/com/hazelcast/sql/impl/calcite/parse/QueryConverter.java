@@ -20,15 +20,16 @@ import com.hazelcast.sql.impl.JetSqlBackend;
 import com.hazelcast.sql.impl.calcite.HazelcastSqlToRelConverter;
 import org.apache.calcite.plan.Contexts;
 import org.apache.calcite.plan.HazelcastRelOptCluster;
+import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelOptCostImpl;
 import org.apache.calcite.plan.hep.HepPlanner;
 import org.apache.calcite.plan.hep.HepProgramBuilder;
 import org.apache.calcite.prepare.Prepare;
+import org.apache.calcite.prepare.Prepare.CatalogReader;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.RelRoot;
 import org.apache.calcite.rel.rules.SubQueryRemoveRule;
 import org.apache.calcite.sql.SqlNode;
-import org.apache.calcite.sql.validate.SqlValidator;
 import org.apache.calcite.sql2rel.SqlToRelConverter;
 import org.apache.calcite.sql2rel.StandardConvertletTable;
 import org.apache.calcite.util.Pair;
@@ -53,7 +54,6 @@ public class QueryConverter {
     private static final boolean TRIM_UNUSED_FIELDS = true;
 
     private static final SqlToRelConverter.Config CONFIG;
-    private final SqlToRelConverter converter;
 
     static {
         SqlToRelConverter.ConfigBuilder configBuilder = SqlToRelConverter.configBuilder()
@@ -63,34 +63,46 @@ public class QueryConverter {
         CONFIG = configBuilder.build();
     }
 
+    private final CatalogReader catalogReader;
+    private final RelOptCluster cluster;
+
+    private final JetSqlBackend jetSqlBackend;
+
     public QueryConverter(
         Prepare.CatalogReader catalogReader,
-        SqlValidator validator,
         HazelcastRelOptCluster cluster,
         @Nullable JetSqlBackend jetSqlBackend
     ) {
-        if (jetSqlBackend == null) {
-            this.converter = new HazelcastSqlToRelConverter(
-                null,
-                validator,
-                catalogReader,
-                cluster,
-                StandardConvertletTable.INSTANCE,
-                CONFIG
-            );
-        } else {
-            this.converter = (SqlToRelConverter) jetSqlBackend.createConverter(
-                null,
-                validator,
-                catalogReader,
-                cluster,
-                StandardConvertletTable.INSTANCE,
-                CONFIG
-            );
-        }
+        this.catalogReader = catalogReader;
+        this.cluster = cluster;
+
+        this.jetSqlBackend = jetSqlBackend;
     }
 
-    public QueryConvertResult convert(SqlNode node) {
+    public QueryConvertResult convert(QueryParseResult parseResult) {
+        SqlNode node = parseResult.getNode();
+
+        SqlToRelConverter converter;
+        if (parseResult.isExclusivelyImdgStatement()) {
+            converter = new HazelcastSqlToRelConverter(
+                    null,
+                    parseResult.getValidator(),
+                    catalogReader,
+                    cluster,
+                    StandardConvertletTable.INSTANCE,
+                    CONFIG
+            );
+        } else {
+            converter = (SqlToRelConverter) jetSqlBackend.createConverter(
+                    null,
+                    parseResult.getValidator(),
+                    catalogReader,
+                    cluster,
+                    StandardConvertletTable.INSTANCE,
+                    CONFIG
+            );
+        }
+
         // 1. Perform initial conversion.
         RelRoot root = converter.convertQuery(node, false, true);
 

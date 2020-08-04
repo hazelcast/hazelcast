@@ -32,7 +32,6 @@ import com.hazelcast.sql.impl.calcite.schema.HazelcastCalciteCatalogReader;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastSchema;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastSchemaUtils;
 import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlConformance;
-import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlValidator;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeFactory;
 import com.hazelcast.sql.impl.schema.SqlCatalog;
 import org.apache.calcite.config.CalciteConnectionConfig;
@@ -43,7 +42,6 @@ import org.apache.calcite.plan.HazelcastRelOptCluster;
 import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.plan.volcano.VolcanoPlanner;
 import org.apache.calcite.prepare.Prepare;
-import org.apache.calcite.prepare.Prepare.CatalogReader;
 import org.apache.calcite.rel.RelCollationTraitDef;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.metadata.ChainedRelMetadataProvider;
@@ -51,8 +49,6 @@ import org.apache.calcite.rel.metadata.DefaultRelMetadataProvider;
 import org.apache.calcite.rel.metadata.JaninoRelMetadataProvider;
 import org.apache.calcite.rel.metadata.RelMetadataProvider;
 import org.apache.calcite.rel.type.RelDataTypeFactory;
-import org.apache.calcite.sql.SqlNode;
-import org.apache.calcite.sql.validate.SqlValidator;
 import org.apache.calcite.tools.RuleSet;
 
 import javax.annotation.Nullable;
@@ -77,26 +73,16 @@ public final class OptimizerContext {
     private final QueryConverter converter;
     private final QueryPlanner planner;
 
-    // for testing purposes only
-    private final SqlValidator validator;
-
     private OptimizerContext(
         HazelcastRelOptCluster cluster,
         QueryParser parser,
         QueryConverter converter,
-        QueryPlanner planner,
-        SqlValidator validator
+        QueryPlanner planner
     ) {
         this.cluster = cluster;
         this.parser = parser;
         this.converter = converter;
         this.planner = planner;
-        this.validator = validator;
-    }
-
-    // for testing purposes only
-    public SqlValidator getValidator() {
-        return validator;
     }
 
     /**
@@ -128,15 +114,14 @@ public final class OptimizerContext {
 
         RelDataTypeFactory typeFactory = HazelcastTypeFactory.INSTANCE;
         Prepare.CatalogReader catalogReader = createCatalogReader(typeFactory, CONNECTION_CONFIG, rootSchema, schemaPaths);
-        SqlValidator sqlValidator = createValidator(typeFactory, catalogReader, jetSqlBackend);
         VolcanoPlanner volcanoPlanner = createPlanner(CONNECTION_CONFIG, distributionTraitDef);
         HazelcastRelOptCluster cluster = createCluster(volcanoPlanner, typeFactory, distributionTraitDef);
 
-        QueryParser parser = new QueryParser(sqlValidator, jetSqlBackend);
-        QueryConverter converter = new QueryConverter(catalogReader, sqlValidator, cluster, jetSqlBackend);
+        QueryParser parser = new QueryParser(typeFactory, catalogReader, HazelcastSqlConformance.INSTANCE, jetSqlBackend);
+        QueryConverter converter = new QueryConverter(catalogReader, cluster, jetSqlBackend);
         QueryPlanner planner = new QueryPlanner(volcanoPlanner);
 
-        return new OptimizerContext(cluster, parser, converter, planner, sqlValidator);
+        return new OptimizerContext(cluster, parser, converter, planner);
     }
 
     /**
@@ -152,11 +137,11 @@ public final class OptimizerContext {
     /**
      * Perform initial conversion of an SQL tree to a relational tree.
      *
-     * @param node SQL tree.
+     * @param parseResult Parse result.
      * @return Relational tree.
      */
-    public QueryConvertResult convert(SqlNode node) {
-        return converter.convert(node);
+    public QueryConvertResult convert(QueryParseResult parseResult) {
+        return converter.convert(parseResult);
     }
 
     public void setParameterMetadata(QueryParameterMetadata parameterMetadata) {
@@ -189,19 +174,6 @@ public final class OptimizerContext {
             typeFactory,
             config
         );
-    }
-
-    private static SqlValidator createValidator(
-        RelDataTypeFactory typeFactory,
-        CatalogReader catalogReader,
-        @Nullable JetSqlBackend jetSqlBackend
-    ) {
-        HazelcastSqlConformance conformance = HazelcastSqlConformance.INSTANCE;
-        if (jetSqlBackend == null) {
-            return new HazelcastSqlValidator(catalogReader, typeFactory, conformance);
-        } else {
-            return (SqlValidator) jetSqlBackend.createValidator(catalogReader, typeFactory, conformance);
-        }
     }
 
     private static VolcanoPlanner createPlanner(
