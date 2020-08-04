@@ -38,43 +38,58 @@ import java.util.NoSuchElementException;
  */
 public class SqlClientResult implements SqlResult {
 
+    private final boolean isUpdateCount;
     private final SqlClientService service;
     private final Connection connection;
     private final QueryId queryId;
     private final SqlRowMetadata rowMetadata;
-    private final ClientIterator iterator = new ClientIterator();
+    private final ClientIterator iterator;
     private final int cursorBufferSize;
+    private final long updatedCount;
 
     private boolean closed;
     private boolean iteratorAccessed;
 
     public SqlClientResult(
+        boolean isUpdateCount,
         SqlClientService service,
         Connection connection,
         QueryId queryId,
         SqlRowMetadata rowMetadata,
         List<List<Data>> rowPage,
         boolean rowPageLast,
-        int cursorBufferSize
+        int cursorBufferSize,
+        long updatedCount
     ) {
         this.service = service;
         this.connection = connection;
         this.queryId = queryId;
         this.rowMetadata = rowMetadata;
         this.cursorBufferSize = cursorBufferSize;
+        this.isUpdateCount = isUpdateCount;
+        this.updatedCount = updatedCount;
 
-        iterator.onNextPage(rowPage, rowPageLast);
+        if (isUpdateCount) {
+            iterator = null;
+        } else {
+            iterator = new ClientIterator();
+            iterator.onNextPage(rowPage, rowPageLast);
+        }
     }
 
     @Nonnull
     @Override
     public SqlRowMetadata getRowMetadata() {
+        checkIsRowsResult();
+
         return rowMetadata;
     }
 
     @Override
     @Nonnull
     public Iterator<SqlRow> iterator() {
+        checkIsRowsResult();
+
         if (!iteratorAccessed) {
             iteratorAccessed = true;
 
@@ -85,7 +100,24 @@ public class SqlClientResult implements SqlResult {
     }
 
     @Override
+    public long updateCount() {
+        if (!isUpdateCount) {
+            throw new IllegalStateException("This result doesn't contain update count");
+        }
+        return updatedCount;
+    }
+
+    @Override
+    public boolean isUpdateCount() {
+        return isUpdateCount;
+    }
+
+    @Override
     public void close() {
+        if (isUpdateCount) {
+            return;
+        }
+
         try {
             if (!closed) {
                 if (iterator.last) {
@@ -97,6 +129,12 @@ public class SqlClientResult implements SqlResult {
             }
         } finally {
             closed = true;
+        }
+    }
+
+    private void checkIsRowsResult() {
+        if (isUpdateCount) {
+            throw new IllegalStateException("This result contains only update count");
         }
     }
 
