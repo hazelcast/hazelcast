@@ -39,7 +39,6 @@ import java.util.List;
 import static com.hazelcast.sql.impl.calcite.validate.SqlNodeUtil.isLiteral;
 import static com.hazelcast.sql.impl.calcite.validate.SqlNodeUtil.isParameter;
 import static com.hazelcast.sql.impl.calcite.validate.SqlNodeUtil.numericValue;
-import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeSystem.canCast;
 import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeSystem.isChar;
 import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeSystem.isFloatingPoint;
 import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeSystem.isInteger;
@@ -183,11 +182,9 @@ public final class HazelcastTypeCoercion extends TypeCoercionImpl {
     @Override
     protected boolean coerceOperandType(SqlValidatorScope scope, SqlCall call, int index, RelDataType to) {
         SqlNode operand = call.getOperandList().get(index);
-        RelDataType from = validator.deriveType(scope, operand);
 
-        // Just update the inferred type if casting is not needed. But if casting
-        // is not possible, still insert the cast to fail on its validation later.
-        if (!needToCast(scope, operand, to) && canCast(from, to)) {
+        // just update the inferred type if casting is not needed
+        if (!needToCast(scope, operand, to)) {
             updateInferredType(operand, to);
             return false;
         }
@@ -234,11 +231,9 @@ public final class HazelcastTypeCoercion extends TypeCoercionImpl {
 
     private boolean coerceElementType(SqlValidatorScope scope, SqlNodeList list, int index, RelDataType to) {
         SqlNode element = list.get(index);
-        RelDataType from = validator.deriveType(scope, element);
 
-        // Just update the inferred type if casting is not needed. But if casting
-        // is not possible, still insert the cast to fail later on its validation.
-        if (!needToCast(scope, element, to) && canCast(from, to)) {
+        // just update the inferred type if casting is not needed
+        if (!needToCast(scope, element, to)) {
             updateInferredType(element, to);
             return false;
         }
