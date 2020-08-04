@@ -171,6 +171,7 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
             } catch (Throwable e) {
                 e.printStackTrace();
             }
+            running = running && hazelcast.getLifecycleService().isRunning();
         }
     }
 

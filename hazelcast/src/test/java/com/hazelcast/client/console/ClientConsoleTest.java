@@ -16,6 +16,8 @@
 
 package com.hazelcast.client.console;
 
+import static com.hazelcast.internal.util.StringUtil.LINE_SEPARATOR;
+import static com.hazelcast.internal.util.StringUtil.stringToBytes;
 import static com.hazelcast.test.AbstractHazelcastClassRunner.getTestMethodName;
 import static com.hazelcast.test.Accessors.getAddress;
 import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
@@ -27,9 +29,12 @@ import static org.junit.Assert.assertTrue;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Files;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.LinkedBlockingQueue;
 
 import org.junit.After;
 import org.junit.Rule;
@@ -87,15 +92,43 @@ public class ClientConsoleTest {
         assertTrue(hz.getClientService().getConnectedClients().isEmpty());
 
         ExecutorService tp = Executors.newFixedThreadPool(1);
+        InputStream origIn = System.in;
         try {
+            BQInputStream bqIn = new BQInputStream();
+            System.setIn(bqIn);
             tp.execute(() -> ClientConsoleApp.main(null));
             assertTrueEventually(() -> assertFalse(hz.getClientService().getConnectedClients().isEmpty()));
             HazelcastInstance client = HazelcastClient.getHazelcastClientByName("clientConsoleApp");
             assertNotNull(client);
             client.shutdown();
+            bqIn.addCommand("");
         } finally {
+            System.setIn(origIn);
             HazelcastClient.shutdownAll();
             tp.shutdown();
         }
+    }
+
+    static class BQInputStream extends InputStream {
+
+        private final BlockingQueue<Byte> bq = new LinkedBlockingQueue<>();
+
+        @Override
+        public int read() throws IOException {
+            try {
+                return bq.take();
+            } catch (InterruptedException e) {
+                throw new IOException(e);
+            }
+        }
+
+       public void addCommand(String cmd) {
+           for (byte b: stringToBytes(cmd)) {
+               bq.offer(b);
+           }
+           for (byte b: stringToBytes(LINE_SEPARATOR)) {
+               bq.offer(b);
+           }
+       }
     }
 }

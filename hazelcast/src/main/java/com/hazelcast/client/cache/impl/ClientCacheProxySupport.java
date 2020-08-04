@@ -232,10 +232,16 @@ abstract class ClientCacheProxySupport<K, V> extends ClientProxy implements ICac
     public void setCacheManager(HazelcastCacheManager cacheManager) {
         assert cacheManager instanceof HazelcastClientCacheManager;
 
+        // optimistically assume the CacheManager is already set
         if (cacheManagerRef.get() == cacheManager) {
             return;
         }
+
         if (!cacheManagerRef.compareAndSet(null, (HazelcastClientCacheManager) cacheManager)) {
+            if (cacheManagerRef.get() == cacheManager) {
+                // some other thread managed to set the same CacheManager, we are good
+                return;
+            }
             throw new IllegalStateException("Cannot overwrite a Cache's CacheManager.");
         }
     }
