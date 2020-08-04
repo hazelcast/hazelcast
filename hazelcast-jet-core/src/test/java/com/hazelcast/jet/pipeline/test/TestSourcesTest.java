@@ -24,10 +24,14 @@ import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.IntStream;
+import java.util.stream.LongStream;
 
 import static com.hazelcast.jet.pipeline.test.Assertions.assertCollectedEventually;
+import static java.util.stream.Collectors.toSet;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -49,6 +53,24 @@ public class TestSourcesTest extends PipelineTestSupport {
     }
 
     @Test
+    public void test_longStream() throws Throwable {
+        int itemsPerSecond = 10;
+        int timeoutSeconds = 10;
+        // we give a 4-second grace period, the runner on Jenkins is sometimes surprisingly slow
+        int numberOfExpectedValues = (timeoutSeconds - 4) * itemsPerSecond;
+        Set<Long> expected = LongStream.range(0, numberOfExpectedValues).boxed().collect(toSet());
+
+        p.readFrom(TestSources.longStream(itemsPerSecond, 0))
+                .withNativeTimestamps(0)
+                .apply(assertCollectedEventually(timeoutSeconds,
+                        items -> assertTrue("some items not received. Expected: " + expected + ", actual: " + items,
+                                new HashSet<>(items).containsAll(expected))));
+
+        expectedException.expectMessage(AssertionCompletedException.class.getName());
+        executeAndPeel();
+    }
+
+    @Test
     public void test_itemStream() throws Throwable {
         int expectedItemCount = 20;
 
@@ -63,7 +85,6 @@ public class TestSourcesTest extends PipelineTestSupport {
 
         expectedException.expectMessage(AssertionCompletedException.class.getName());
         executeAndPeel();
-
     }
 
     @Test

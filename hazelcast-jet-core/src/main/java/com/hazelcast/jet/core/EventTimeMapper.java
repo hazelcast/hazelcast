@@ -187,6 +187,7 @@ public class EventTimeMapper<T> {
      * @param partitionIndex  the source partition index the event came from
      * @param nativeEventTime native event time in case no {@code timestampFn} was supplied or
      *                        {@link #NO_NATIVE_TIME} if the event has no native timestamp
+     * @return a traverser over the given event and the watermark (if it was due)
      */
     @Nonnull
     public Traverser<Object> flatMapEvent(T event, int partitionIndex, long nativeEventTime) {
@@ -194,16 +195,21 @@ public class EventTimeMapper<T> {
     }
 
     /**
-     * Call this method when there is no event coming. It returns a traverser
-     * with 0 or 1 object (the watermark).
+     * Call this method when there is no event to emit. It returns a traverser
+     * over the watermark, if it was due.
      */
     @Nonnull
     public Traverser<Object> flatMapIdle() {
         return flatMapEvent(System.nanoTime(), null, -1, NO_NATIVE_TIME);
     }
 
-    // package-visible for tests
-    Traverser<Object> flatMapEvent(long now, @Nullable T event, int partitionIndex, long nativeEventTime) {
+    /**
+     * A lower-level variant of {@link #flatMapEvent(T, int, long)} that
+     * accepts an explicit result of a {@code System.nanoTime()} call. Use this
+     * variant if you're calling it in a hot loop, in order to avoid repeating
+     * the expensive {@code System.nanoTime()} call.
+     */
+    public Traverser<Object> flatMapEvent(long now, @Nullable T event, int partitionIndex, long nativeEventTime) {
         assert traverser.isEmpty() : "the traverser returned previously not yet drained: remove all " +
                 "items from the traverser before you call this method again.";
         if (event == null) {

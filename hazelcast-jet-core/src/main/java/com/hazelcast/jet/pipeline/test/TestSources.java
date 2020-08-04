@@ -17,11 +17,13 @@
 package com.hazelcast.jet.pipeline.test;
 
 import com.hazelcast.jet.annotation.EvolvingApi;
+import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.pipeline.BatchSource;
 import com.hazelcast.jet.pipeline.SourceBuilder;
-import com.hazelcast.jet.pipeline.SourceBuilder.TimestampedSourceBuffer;
+import com.hazelcast.jet.pipeline.Sources;
 import com.hazelcast.jet.pipeline.StreamSource;
 import com.hazelcast.jet.pipeline.StreamSourceStage;
+import com.hazelcast.jet.pipeline.SourceBuilder.TimestampedSourceBuffer;
 
 import javax.annotation.Nonnull;
 import java.util.Arrays;
@@ -31,8 +33,8 @@ import java.util.concurrent.TimeUnit;
 import static com.hazelcast.jet.impl.util.Util.checkSerializable;
 
 /**
- * Contains factory methods for various mock sources which can be used
- * for pipeline testing and development.
+ * Contains factory methods for various mock sources which can be used for
+ * pipeline testing and development.
  *
  * @since 3.2
  */
@@ -43,8 +45,8 @@ public final class TestSources {
     }
 
     /**
-     * Returns a batch source which iterates through the supplied iterable and then
-     * terminates.
+     * Returns a batch source which iterates through the supplied iterable and
+     * then terminates.
      *
      * @since 3.2
      */
@@ -59,8 +61,8 @@ public final class TestSources {
     }
 
     /**
-     * Returns a batch source which iterates through the supplied items and then
-     * terminates.
+     * Returns a batch source which iterates through the supplied items and
+     * then terminates.
      *
      * @since 3.2
      */
@@ -71,20 +73,20 @@ public final class TestSources {
     }
 
     /**
-     * Returns a streaming source which generates events of type {@link SimpleEvent} at
-     * the specified rate infinitely.
+     * Returns a streaming source that generates events of type {@link
+     * SimpleEvent} at the specified rate.
      * <p>
      * The source supports {@linkplain
      * StreamSourceStage#withNativeTimestamps(long) native timestamps}. The
-     * timestamp is the current system time at the moment they are
-     * generated. The source is not distributed and all the items are
-     * generated on the same node. This source is not fault-tolerant.
-     * The sequence will be reset once a job is restarted.
+     * timestamp is the current system time at the moment they are generated.
+     * The source is not distributed and all the items are generated on the
+     * same node. This source is not fault-tolerant. The sequence will be
+     * reset once a job is restarted.
      * <p>
-     * <b>Note:</b>
-     * There is no absolute guarantee that the actual rate of emitted
-     * items will match the supplied value. It is done on a best-effort
-     * basis.
+     * <strong>Note:</strong>
+     * There is no absolute guarantee that the actual rate of emitted items
+     * will match the supplied value. It is ensured that no emitted event's
+     * timestamp will be in the future.
      *
      * @param itemsPerSecond how many items should be emitted each second
      *
@@ -97,20 +99,20 @@ public final class TestSources {
     }
 
     /**
-     * Returns a streaming source which generates events created by the {@code
-     * generatorFn} at the specified rate infinitely.
+     * Returns a streaming source that generates events created by the {@code
+     * generatorFn} at the specified rate.
      * <p>
      * The source supports {@linkplain
      * StreamSourceStage#withNativeTimestamps(long) native timestamps}. The
-     * timestamp is the current system time at the moment they are
-     * generated. The source is not distributed and all the items are
-     * generated on the same node. This source is not fault-tolerant.
-     * The sequence will be reset once a job is restarted.
+     * timestamp is the current system time at the moment they are generated.
+     * The source is not distributed and all the items are generated on the
+     * same node. This source is not fault-tolerant. The sequence will be
+     * reset once a job is restarted.
      * <p>
-     * <b>Note:</b>
-     * There is no absolute guarantee that the actual rate of emitted
-     * items will match the supplied value. It is done on a best-effort
-     * basis.
+     * <strong>Note:</strong>
+     * There is no absolute guarantee that the actual rate of emitted items
+     * will match the supplied value. It is ensured that no emitted event's
+     * timestamp will be in the future.
      *
      * @param itemsPerSecond how many items should be emitted each second
      * @param generatorFn a function which takes the timestamp and the sequence of the generated
@@ -130,6 +132,52 @@ public final class TestSources {
         return SourceBuilder.timestampedStream("itemStream", ctx -> new ItemStreamSource<T>(itemsPerSecond, generatorFn))
             .<T>fillBufferFn(ItemStreamSource::fillBuffer)
             .build();
+    }
+
+    /**
+     * Returns a {@link StreamSource} that emits an ever-increasing sequence of
+     * {@code Long} numbers with native timestamps that are exactly the same
+     * amount of time apart, as specified by the supplied {@code
+     * eventsPerSecond} parameter. The source is distributed and suitable for
+     * high-throughput performance testing. It emits the events at the maximum
+     * possible speed, constrained by the invariant that it will never emit an
+     * event whose timestamp is in the future.
+     * <p>
+     * The emission of events is distributed across the parallel processors in
+     * a round-robin fashion: processor 0 emits the first event, processor 1
+     * the second one, and so on. There is no coordination that would prevent
+     * processor 1 from emitting its event before processor 0, though, so this
+     * only applies to the event timestamps.
+     * <p>
+     * Use the {@code initialDelayMillis} parameter to give enough time to the
+     * Jet cluster to initialize the job on the whole cluster before the time
+     * of the first event arrives, so that there is no initial flood of events
+     * from the past. The point of reference is the moment at which the
+     * coordinator node creates the job's execution plan, before sending it out
+     * to the rest of the cluster.
+     * <p>
+     * This source is not fault-tolerant. The sequence will be reset once a job
+     * is restarted.
+     * <p>
+     * <strong>Note:</strong>
+     * A clock skew between any two cluster members may result in an artificial
+     * increase of latency.
+     *
+     * @param eventsPerSecond the desired event rate
+     * @param initialDelayMillis initial delay in milliseconds before emitting values
+     *
+     * @since 4.3
+     */
+    @Nonnull
+    public static StreamSource<Long> longStream(long eventsPerSecond, long initialDelayMillis) {
+        return Sources.streamFromProcessorWithWatermarks("longStream",
+                true,
+                eventTimePolicy -> {
+                    long startTime = System.currentTimeMillis() + initialDelayMillis;
+                    return ProcessorMetaSupplier.of(() ->
+                            new LongStreamSourceP(startTime, eventsPerSecond, eventTimePolicy));
+                }
+        );
     }
 
     private static final class ItemStreamSource<T> {
