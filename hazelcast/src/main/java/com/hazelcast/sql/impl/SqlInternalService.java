@@ -231,7 +231,7 @@ public class SqlInternalService {
             Converter typeConverter = parameterMetadata.getParameterType(i).getConverter();
             try {
                 value = typeConverter.convertToSelf(valueConverter, value);
-            } catch (QueryException e) {
+            } catch (RuntimeException e) {
                 throw QueryException.error(SqlErrorCode.DATA_EXCEPTION,
                         "Failed to convert parameter at position " + i + ": " + e.getMessage(), e);
             }
