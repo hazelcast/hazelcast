@@ -29,7 +29,10 @@ import org.junit.Test;
 
 import java.io.IOException;
 import java.io.Serializable;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Set;
 
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
@@ -39,14 +42,16 @@ public class ElasticSinkBuilderTest extends PipelineTestSupport {
 
     @Test
     public void when_writeToFailingSink_then_shouldCloseClient() throws IOException {
+        ClientHolder.elasticClients.clear();
 
         Sink<String> elasticSink = new ElasticSinkBuilder<>()
                 .clientFn(() -> {
                     RestClientBuilder builder = spy(RestClient.builder(HttpHost.create("localhost:9200")));
                     when(builder.build()).thenAnswer(invocation -> {
                         Object result = invocation.callRealMethod();
-                        ClientHolder.elasticClient = (RestClient) spy(result);
-                        return ClientHolder.elasticClient;
+                        RestClient client = (RestClient) spy(result);
+                        ClientHolder.elasticClients.add(client);
+                        return client;
                     });
                     return builder;
                 })
@@ -63,10 +68,12 @@ public class ElasticSinkBuilderTest extends PipelineTestSupport {
             // ignore - elastic is not running
         }
 
-        verify(ClientHolder.elasticClient).close();
+        for (RestClient client : ClientHolder.elasticClients) {
+            verify(client).close();
+        }
     }
 
     static class ClientHolder implements Serializable {
-        static RestClient elasticClient;
+        static Set<RestClient> elasticClients = Collections.synchronizedSet(new HashSet<>());
     }
 }
