@@ -1,5 +1,14 @@
 [
     {
+        "name": "Elasticsearch Source and Sink",
+        "version": "4.2",
+        "docs": "https://jet-start.sh/docs/api/sources-sinks#elasticsearch",
+        "filename": "hazelcast-jet-elasticsearch-6-4.2.tar.gz",
+        "download": "https://github.com/hazelcast/hazelcast-jet/releases/download/v4.2/hazelcast-jet-elasticsearch-6-4.2.tar.gz",
+        "size": 20.4,
+        "contrib": false
+    },
+    {
         "name": "Apache Pulsar Source and Sink",
         "version": "0.1",
         "docs": "https://github.com/hazelcast/hazelcast-jet-contrib/tree/master/pulsar",
