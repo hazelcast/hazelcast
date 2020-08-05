@@ -39,8 +39,8 @@ public enum SqlColumnType {
     /** SMALLINT type, represented by {@link java.lang.Short} */
     SMALLINT(3, Short.class),
 
-    /** INT type, represented by {@link java.lang.Integer} */
-    INT(4, Integer.class),
+    /** INTEGER type, represented by {@link java.lang.Integer} */
+    INTEGER(4, Integer.class),
 
     /** BIGINT type, represented by {@link java.lang.Long} */
     BIGINT(5, Long.class),

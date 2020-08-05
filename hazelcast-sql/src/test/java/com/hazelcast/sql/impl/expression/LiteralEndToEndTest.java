@@ -29,7 +29,7 @@ import static com.hazelcast.sql.SqlColumnType.BIGINT;
 import static com.hazelcast.sql.SqlColumnType.BOOLEAN;
 import static com.hazelcast.sql.SqlColumnType.DECIMAL;
 import static com.hazelcast.sql.SqlColumnType.DOUBLE;
-import static com.hazelcast.sql.SqlColumnType.INT;
+import static com.hazelcast.sql.SqlColumnType.INTEGER;
 import static com.hazelcast.sql.SqlColumnType.NULL;
 import static com.hazelcast.sql.SqlColumnType.SMALLINT;
 import static com.hazelcast.sql.SqlColumnType.TINYINT;
@@ -54,8 +54,8 @@ public class LiteralEndToEndTest extends ExpressionEndToEndTestBase {
         assertRow(Short.toString((short) (Byte.MAX_VALUE + 1)), EXPR0, SMALLINT, (short) (Byte.MAX_VALUE + 1));
         assertRow(Short.toString(Short.MAX_VALUE), EXPR0, SMALLINT, Short.MAX_VALUE);
 
-        assertRow(Integer.toString(Short.MAX_VALUE + 1), EXPR0, INT, Short.MAX_VALUE + 1);
-        assertRow(Integer.toString(Integer.MAX_VALUE), EXPR0, INT, Integer.MAX_VALUE);
+        assertRow(Integer.toString(Short.MAX_VALUE + 1), EXPR0, INTEGER, Short.MAX_VALUE + 1);
+        assertRow(Integer.toString(Integer.MAX_VALUE), EXPR0, INTEGER, Integer.MAX_VALUE);
 
         assertRow(Long.toString(Integer.MAX_VALUE + 1L), EXPR0, BIGINT, Integer.MAX_VALUE + 1L);
         assertRow(Long.toString(Long.MAX_VALUE), EXPR0, BIGINT, Long.MAX_VALUE);

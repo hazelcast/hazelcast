@@ -100,7 +100,7 @@ public final class QueryUtils {
                 break;
 
             case INT:
-                type = SqlColumnType.INT;
+                type = SqlColumnType.INTEGER;
 
                 break;
 

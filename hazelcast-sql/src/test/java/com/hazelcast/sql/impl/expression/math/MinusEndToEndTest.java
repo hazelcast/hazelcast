@@ -29,7 +29,7 @@ import java.math.BigDecimal;
 import static com.hazelcast.sql.SqlColumnType.BIGINT;
 import static com.hazelcast.sql.SqlColumnType.DECIMAL;
 import static com.hazelcast.sql.SqlColumnType.DOUBLE;
-import static com.hazelcast.sql.SqlColumnType.INT;
+import static com.hazelcast.sql.SqlColumnType.INTEGER;
 import static com.hazelcast.sql.SqlColumnType.REAL;
 import static com.hazelcast.sql.SqlColumnType.SMALLINT;
 
@@ -64,8 +64,8 @@ public class MinusEndToEndTest extends ExpressionEndToEndTestBase {
 
         assertRow("byte1 - byte1", EXPR0, SMALLINT, (short) 0);
         assertRow("byte1 - byteMin", EXPR0, SMALLINT, (short) (1 - Byte.MIN_VALUE));
-        assertRow("byte1 - short1", EXPR0, INT, 0);
-        assertRow("byte1 - shortMin", EXPR0, INT, 1 - Short.MIN_VALUE);
+        assertRow("byte1 - short1", EXPR0, INTEGER, 0);
+        assertRow("byte1 - shortMin", EXPR0, INTEGER, 1 - Short.MIN_VALUE);
         assertRow("byte1 - int1", EXPR0, BIGINT, 0L);
         assertRow("byte1 - intMin", EXPR0, BIGINT, 1L - Integer.MIN_VALUE);
         assertRow("byte1 - long1", EXPR0, BIGINT, 0L);
@@ -95,10 +95,10 @@ public class MinusEndToEndTest extends ExpressionEndToEndTestBase {
     public void testSmallint() {
         assertParsingError("short1 - booleanTrue", "Cannot apply '-' to arguments of type '<SMALLINT> - <BOOLEAN>'");
 
-        assertRow("short1 - byte1", EXPR0, INT, 0);
-        assertRow("short1 - byteMin", EXPR0, INT, 1 - Byte.MIN_VALUE);
-        assertRow("short1 - short1", EXPR0, INT, 0);
-        assertRow("short1 - shortMin", EXPR0, INT, 1 - Short.MIN_VALUE);
+        assertRow("short1 - byte1", EXPR0, INTEGER, 0);
+        assertRow("short1 - byteMin", EXPR0, INTEGER, 1 - Byte.MIN_VALUE);
+        assertRow("short1 - short1", EXPR0, INTEGER, 0);
+        assertRow("short1 - shortMin", EXPR0, INTEGER, 1 - Short.MIN_VALUE);
         assertRow("short1 - int1", EXPR0, BIGINT, 0L);
         assertRow("short1 - intMin", EXPR0, BIGINT, 1L - Integer.MIN_VALUE);
         assertRow("short1 - long1", EXPR0, BIGINT, 0L);

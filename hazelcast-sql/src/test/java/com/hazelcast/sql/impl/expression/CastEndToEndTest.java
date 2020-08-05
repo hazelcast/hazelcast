@@ -30,7 +30,7 @@ import static com.hazelcast.sql.SqlColumnType.BIGINT;
 import static com.hazelcast.sql.SqlColumnType.BOOLEAN;
 import static com.hazelcast.sql.SqlColumnType.DECIMAL;
 import static com.hazelcast.sql.SqlColumnType.DOUBLE;
-import static com.hazelcast.sql.SqlColumnType.INT;
+import static com.hazelcast.sql.SqlColumnType.INTEGER;
 import static com.hazelcast.sql.SqlColumnType.OBJECT;
 import static com.hazelcast.sql.SqlColumnType.REAL;
 import static com.hazelcast.sql.SqlColumnType.SMALLINT;
@@ -140,30 +140,30 @@ public class CastEndToEndTest extends ExpressionEndToEndTestBase {
     public void testInteger() {
         assertParsingError("cast(booleanTrue as integer)", "Cast function cannot convert value of type BOOLEAN to type INTEGER");
 
-        assertRow("cast(byte1 as integer)", EXPR0, INT, 1);
-        assertRow("cast(byteMax as integer)", EXPR0, INT, (int) Byte.MAX_VALUE);
-        assertRow("cast(short1 as integer)", EXPR0, INT, 1);
-        assertRow("cast(shortMax as integer)", EXPR0, INT, (int) Short.MAX_VALUE);
-        assertRow("cast(int1 as integer)", EXPR0, INT, 1);
-        assertRow("cast(intMax as integer)", EXPR0, INT, Integer.MAX_VALUE);
-        assertRow("cast(long1 as integer)", EXPR0, INT, 1);
+        assertRow("cast(byte1 as integer)", EXPR0, INTEGER, 1);
+        assertRow("cast(byteMax as integer)", EXPR0, INTEGER, (int) Byte.MAX_VALUE);
+        assertRow("cast(short1 as integer)", EXPR0, INTEGER, 1);
+        assertRow("cast(shortMax as integer)", EXPR0, INTEGER, (int) Short.MAX_VALUE);
+        assertRow("cast(int1 as integer)", EXPR0, INTEGER, 1);
+        assertRow("cast(intMax as integer)", EXPR0, INTEGER, Integer.MAX_VALUE);
+        assertRow("cast(long1 as integer)", EXPR0, INTEGER, 1);
         assertDataError("cast(longMax as integer)", "Numeric overflow while converting BIGINT to INT: 9223372036854775807");
 
-        assertRow("cast(float1 as integer)", EXPR0, INT, 1);
+        assertRow("cast(float1 as integer)", EXPR0, INTEGER, 1);
         assertDataError("cast(floatMax as integer)", "Numeric overflow while converting REAL to INT: 3.4028235E38");
-        assertRow("cast(double1 as integer)", EXPR0, INT, 1);
+        assertRow("cast(double1 as integer)", EXPR0, INTEGER, 1);
         assertDataError("cast(doubleMax as integer)", "Numeric overflow while converting DOUBLE to INT: 1.7976931348623157E308");
 
-        assertRow("cast(decimal1 as integer)", EXPR0, INT, 1);
+        assertRow("cast(decimal1 as integer)", EXPR0, INTEGER, 1);
         assertDataError("cast(decimalBig as integer)", "Numeric overflow while converting DECIMAL to INT: 92233720368547758070");
-        assertRow("cast(bigInteger1 as integer)", EXPR0, INT, 1);
+        assertRow("cast(bigInteger1 as integer)", EXPR0, INTEGER, 1);
         assertDataError("cast(bigIntegerBig as integer)",
                 "Numeric overflow while converting DECIMAL to INT: 92233720368547758070");
 
-        assertRow("cast(string1 as integer)", EXPR0, INT, 1);
+        assertRow("cast(string1 as integer)", EXPR0, INTEGER, 1);
         assertDataError("cast(stringBig as integer)", "Cannot convert VARCHAR to INT: 92233720368547758070");
         assertDataError("cast(stringFoo as integer)", "Cannot convert VARCHAR to INT: foo");
-        assertRow("cast(char1 as integer)", EXPR0, INT, 1);
+        assertRow("cast(char1 as integer)", EXPR0, INTEGER, 1);
         assertDataError("cast(charF as integer)", "Cannot convert VARCHAR to INT: f");
 
         assertDataError("cast(object as integer)", "Cannot convert OBJECT to INT");

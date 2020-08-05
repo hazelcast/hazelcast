@@ -36,7 +36,7 @@ import static com.hazelcast.sql.SqlColumnType.BIGINT;
 import static com.hazelcast.sql.SqlColumnType.BOOLEAN;
 import static com.hazelcast.sql.SqlColumnType.DECIMAL;
 import static com.hazelcast.sql.SqlColumnType.DOUBLE;
-import static com.hazelcast.sql.SqlColumnType.INT;
+import static com.hazelcast.sql.SqlColumnType.INTEGER;
 import static com.hazelcast.sql.SqlColumnType.OBJECT;
 import static com.hazelcast.sql.SqlColumnType.REAL;
 import static com.hazelcast.sql.SqlColumnType.SMALLINT;
@@ -96,7 +96,7 @@ public class ColumnEndToEndTest extends ExpressionEndToEndTestBase {
 
     @Test
     public void testInt() {
-        assertRow("int1", "int1", INT, 1);
+        assertRow("int1", "int1", INTEGER, 1);
     }
 
     @Test
@@ -154,7 +154,7 @@ public class ColumnEndToEndTest extends ExpressionEndToEndTestBase {
     @Test
     public void testKey() {
         assertRow("__key", "__key", OBJECT, new RecordKey(0));
-        assertRow("id", "id", INT, 0);
+        assertRow("id", "id", INTEGER, 0);
     }
 
     @Test
