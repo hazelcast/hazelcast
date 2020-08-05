@@ -47,7 +47,7 @@ public final class HazelcastRexBuilder extends RexBuilder {
     public RexNode makeLiteral(Object value, RelDataType type, boolean allowCast) {
         // XXX: Calcite evaluates casts like CAST(0 AS ANY) statically and
         // assigns imprecise types: BIGINT for any integer value and DOUBLE for
-        // any floating-point value. The code bellow fixes that.
+        // any floating-point value. The code below fixes that.
 
         if (type.getSqlTypeName() == ANY && value instanceof Number) {
             if (value instanceof Byte || value instanceof Short || value instanceof Integer || value instanceof Long) {
