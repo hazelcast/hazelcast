@@ -18,7 +18,7 @@
     xsi:schemaLocation="http://maven.apache.org/ASSEMBLY/2.0.0 http://maven.apache.org/xsd/assembly-2.0.0.xsd">
     <id>hazelcast-jet-module</id>
     <formats>
-        <format>zip</format>
+        <format>tar.gz</format>
     </formats>
     <files>
         <file>
