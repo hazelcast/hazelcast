@@ -62,7 +62,7 @@
     <maven.gpg.plugin.version>1.6</maven.gpg.plugin.version>
     <maven.bundle.plugin.version>2.4.0</maven.bundle.plugin.version>
     <maven.compiler.plugin.version>3.8.1</maven.compiler.plugin.version>
-    <maven.release.plugin.version>2.5</maven.release.plugin.version>
+    <maven.release.plugin.version>2.5.3</maven.release.plugin.version>
   </properties>
 
   <distributionManagement>
