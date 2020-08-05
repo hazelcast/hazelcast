@@ -35,8 +35,6 @@ import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.map.IMap;
 import com.hazelcast.multimap.MultiMap;
-import com.hazelcast.query.extractor.ValueCollector;
-import com.hazelcast.query.extractor.ValueExtractor;
 import com.hazelcast.replicatedmap.ReplicatedMap;
 import com.hazelcast.ringbuffer.Ringbuffer;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -60,7 +58,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.verify;
 import static com.hazelcast.cache.CacheTestSupport.createServerCachingProvider;
 import static com.hazelcast.test.Accessors.getNode;
 
-public class PhoneHomeIntegrationTest extends HazelcastTestSupport implements ValueExtractor {
+public class PhoneHomeIntegrationTest extends HazelcastTestSupport {
 
     @Rule
     public WireMockRule wireMockRule = new WireMockRule();
@@ -87,7 +85,7 @@ public class PhoneHomeIntegrationTest extends HazelcastTestSupport implements Va
         node.getConfig().getMapConfig("hazelcast").getHotRestartConfig().setEnabled(true);
         node.getConfig().getMapConfig("hazelcast").getIndexConfigs().add(new IndexConfig().setName("index"));
         node.getConfig().getMapConfig("hazelcast").setWanReplicationRef(new WanReplicationRef().setName("wan"));
-        node.getConfig().getMapConfig("hazelcast").getAttributeConfigs().add(new AttributeConfig("hz", getClass().getName()));
+        node.getConfig().getMapConfig("hazelcast").getAttributeConfigs().add(new AttributeConfig("hz", AttributeTest.class.getName()));
         node.getConfig().getMapConfig("hazelcast").getEvictionConfig().setEvictionPolicy(EvictionPolicy.LRU);
         node.getConfig().getMapConfig("hazelcast").setInMemoryFormat(InMemoryFormat.NATIVE);
 
@@ -226,11 +224,6 @@ public class PhoneHomeIntegrationTest extends HazelcastTestSupport implements Va
         verify(1, getRequestedFor(urlPathEqualTo("/ping"))
                 .withQueryParam("mpptla", equalTo("1666"))
                 .withQueryParam("mpgtla", equalTo("1000")));
-    }
-
-    @Override
-    public void extract(Object target, Object argument, ValueCollector collector) {
-
     }
 
 }
