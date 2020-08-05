@@ -21,15 +21,4 @@
 
 <suppressions>
 
-    <!-- Suppress strict duplicate code checking -->
-    <suppress checks="StrictDuplicateCode" files="\.java" lines="1-15"/>
-
-    <!-- Exclude implementation packages from JavaDoc checks -->
-    <suppress checks="JavadocPackage" files="/impl/"/>
-    <suppress checks="JavadocType" files="/impl/"/>
-    <suppress checks="JavadocVariable" files="/impl/"/>
-
-    <!-- Exclude Clover instrumented sources -->
-    <suppress checks="" files="/src-instrumented/"/>
-
 </suppressions>

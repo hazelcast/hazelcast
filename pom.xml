@@ -11,7 +11,9 @@
   ~ distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
   ~ WARRANTIES OF ANY KIND, either express or implied. See the License for the
   ~ specific language governing permissions and limitations under the License.
-  --><project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://maven.apache.org/POM/4.0.0" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  -->
+
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://maven.apache.org/POM/4.0.0" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <name>hazelcast-gcp</name>
@@ -41,7 +43,7 @@
         <maven.javadoc.plugin.version>3.2.0</maven.javadoc.plugin.version>
 
         <maven.surefire.plugin.version>2.22.2</maven.surefire.plugin.version>
-        <maven.checkstyle.plugin.version>2.15</maven.checkstyle.plugin.version>
+        <maven.checkstyle.plugin.version>3.1.1</maven.checkstyle.plugin.version>
         <maven.spotbuts.plugin.version>3.1.5</maven.spotbuts.plugin.version>
         <maven.sonar.plugin.version>3.3.0.603</maven.sonar.plugin.version>
         <maven.jacoco.plugin.version>0.8.5</maven.jacoco.plugin.version>
