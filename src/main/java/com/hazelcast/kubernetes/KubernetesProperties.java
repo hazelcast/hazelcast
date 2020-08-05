@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,7 +31,7 @@ import static com.hazelcast.config.properties.PropertyTypeConverter.STRING;
 public final class KubernetesProperties {
 
     /**
-     * <p>Configuration System Environment Prefix: <tt>hazelcast.kubernetes.</tt></p>
+     * <p>Configuration System Environment Prefix: <code>hazelcast.kubernetes.</code></p>
      * Defines the prefix for system environment variables and JVM command line parameters.<br>
      * Defining or overriding properties as JVM parameters or using the system environment, those
      * properties need to be prefixed to prevent collision on property names.<br>
@@ -49,61 +49,61 @@ public final class KubernetesProperties {
     public static final String KUBERNETES_SYSTEM_PREFIX = "hazelcast.kubernetes.";
 
     /**
-     * <p>Configuration key: <tt>service-dns</tt></p>
+     * <p>Configuration key: <code>service-dns</code></p>
      * Defines the DNS service lookup domain. This is defined as something similar
-     * to <tt>my-svc.my-namespace.svc.cluster.local</tt>.<br>
+     * to <code>my-svc.my-namespace.svc.cluster.local</code>.<br>
      * For more information please refer to the official documentation of the Kubernetes DNS addon,
      * <a href="https://github.com/kubernetes/kubernetes/tree/v1.0.6/cluster/addons/dns">here</a>.
      */
     public static final PropertyDefinition SERVICE_DNS = property("service-dns", STRING);
 
     /**
-     * <p>Configuration key: <tt>service-dns-timeout</tt></p>
+     * <p>Configuration key: <code>service-dns-timeout</code></p>
      * Defines the DNS service lookup timeout in seconds. Defaults to: 5 secs.
      */
     public static final PropertyDefinition SERVICE_DNS_TIMEOUT = property("service-dns-timeout", INTEGER);
 
     /**
-     * <p>Configuration key: <tt>service-name</tt></p>
+     * <p>Configuration key: <code>service-name</code></p>
      * Defines the service name of the POD to lookup through the Service Discovery REST API of Kubernetes.
      */
     public static final PropertyDefinition SERVICE_NAME = property("service-name", STRING);
     /**
-     * <p>Configuration key: <tt>service-label-name</tt></p>
+     * <p>Configuration key: <code>service-label-name</code></p>
      * Defines the service label to lookup through the Service Discovery REST API of Kubernetes.
      */
     public static final PropertyDefinition SERVICE_LABEL_NAME = property("service-label-name", STRING);
     /**
-     * <p>Configuration key: <tt>service-label-value</tt></p>
+     * <p>Configuration key: <code>service-label-value</code></p>
      * Defines the service label value to lookup through the Service Discovery REST API of Kubernetes.
      */
     public static final PropertyDefinition SERVICE_LABEL_VALUE = property("service-label-value", STRING);
 
     /**
-     * <p>Configuration key: <tt>namespace</tt></p>
+     * <p>Configuration key: <code>namespace</code></p>
      * Defines the namespace of the application POD through the Service Discovery REST API of Kubernetes.
      */
     public static final PropertyDefinition NAMESPACE = property("namespace", STRING);
 
     /**
-     * <p>Configuration key: <tt>pod-label-name</tt></p>
+     * <p>Configuration key: <code>pod-label-name</code></p>
      * Defines the pod label to lookup through the Service Discovery REST API of Kubernetes.
      */
     public static final PropertyDefinition POD_LABEL_NAME = property("pod-label-name", STRING);
     /**
-     * <p>Configuration key: <tt>pod-label-value</tt></p>
+     * <p>Configuration key: <code>pod-label-value</code></p>
      * Defines the pod label value to lookup through the Service Discovery REST API of Kubernetes.
      */
     public static final PropertyDefinition POD_LABEL_VALUE = property("pod-label-value", STRING);
 
     /**
-     * <p>Configuration key: <tt>resolve-not-ready-addresses</tt></p>
+     * <p>Configuration key: <code>resolve-not-ready-addresses</code></p>
      * Defines if not ready addresses should be evaluated to be discovered on startup.
      */
     public static final PropertyDefinition RESOLVE_NOT_READY_ADDRESSES = property("resolve-not-ready-addresses", BOOLEAN);
 
     /**
-     * <p>Configuration key: <tt>use-node-name-as-external-address</tt></p>
+     * <p>Configuration key: <code>use-node-name-as-external-address</code></p>
      * Defines if the node name should be used as external address, instead of looking up the external IP using
      * the <code>/nodes</code> resource. Default is false.
      */
@@ -111,33 +111,33 @@ public final class KubernetesProperties {
             BOOLEAN);
 
     /**
-     * <p>Configuration key: <tt>kubernetes-api-retries</tt></p>
+     * <p>Configuration key: <code>kubernetes-api-retries</code></p>
      * Defines the number of retries to Kubernetes API. Defaults to: 3.
      */
     public static final PropertyDefinition KUBERNETES_API_RETIRES = property("kubernetes-api-retries", INTEGER);
 
     /**
-     * <p>Configuration key: <tt>kubernetes-master</tt></p>
-     * Defines an alternative address for the kubernetes master. Defaults to: <tt>https://kubernetes.default.svc</tt>
+     * <p>Configuration key: <code>kubernetes-master</code></p>
+     * Defines an alternative address for the kubernetes master. Defaults to: <code>https://kubernetes.default.svc</code>
      */
     public static final PropertyDefinition KUBERNETES_MASTER_URL = property("kubernetes-master", STRING);
 
     /**
-     * <p>Configuration key: <tt>api-token</tt></p>
+     * <p>Configuration key: <code>api-token</code></p>
      * Defines an oauth token for the kubernetes client to access the kubernetes REST API. Defaults to reading the
-     * token from the auto-injected file at: <tt>/var/run/secrets/kubernetes.io/serviceaccount/token</tt>
+     * token from the auto-injected file at: <code>/var/run/secrets/kubernetes.io/serviceaccount/token</code>
      */
     public static final PropertyDefinition KUBERNETES_API_TOKEN = property("api-token", STRING);
 
     /**
-     * Configuration key: <tt>ca-certificate</tt>
+     * Configuration key: <code>ca-certificate</code>
      * CA Authority certificate from Kubernetes Master, defaults to reading the certificate from the auto-injected file at:
-     * <tt>/var/run/secrets/kubernetes.io/serviceaccount/ca.crt</tt>
+     * <code>/var/run/secrets/kubernetes.io/serviceaccount/ca.crt</code>
      */
     public static final PropertyDefinition KUBERNETES_CA_CERTIFICATE = property("ca-certificate", STRING);
 
     /**
-     * <p>Configuration key: <tt>service-port</tt></p>
+     * <p>Configuration key: <code>service-port</code></p>
      * If specified with a value greater than 0, its value defines the endpoint port of the service (overriding the default).
      */
     public static final PropertyDefinition SERVICE_PORT = property("service-port", INTEGER);

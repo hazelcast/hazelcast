@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 
 <!--
-  ~ Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+  ~ Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -21,14 +21,5 @@
         "http://www.puppycrawl.com/dtds/suppressions_1_1.dtd">
 
 <suppressions>
-
-    <!-- Suppress strict duplicate code checking -->
-    <suppress checks="StrictDuplicateCode" files="\.java" lines="1-15"/>
-
-    <!-- Kubernetes -->
-    <suppress checks="JavadocType" files="com/hazelcast/kubernetes/"/>
-
-    <!-- Exclude Clover instrumented sources -->
-    <suppress checks="" files="/src-instrumented/"/>
 
 </suppressions>

@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <!--
-  ~ Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+  ~ Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -59,7 +59,9 @@
     </module>
 
     <!-- Enable suppression of file contents using //CHECKSTYLE:[ON|OFF] comments -->
+    <!--
     <module name="SuppressionCommentFilter"/>
+    -->
 
     <!-- Enable the suppression annotation @SuppressWarnings("checkstyle:lowercasecheckname"} -->
     <module name="SuppressWarningsFilter"/>
@@ -71,7 +73,7 @@
     <!-- Checks whether files end with a new line.                        -->
     <!-- See http://checkstyle.sf.net/config_misc.html#NewlineAtEndOfFile -->
     <module name="NewlineAtEndOfFile">
-        <property name="lineSeparator" value="lf" />
+        <property name="lineSeparator" value="lf"/>
     </module>
 
     <!-- Checks that property files contain the same keys.         -->
@@ -104,10 +106,11 @@
         <property name="fileExtensions" value="java"/>
     </module>
 
-    <module name="TreeWalker">
-        <!-- Activate comment suppression filters -->
-        <module name="FileContentsHolder"/>
+    <module name="LineLength">
+        <property name="max" value="130"/>
+    </module>
 
+    <module name="TreeWalker">
         <!-- Needed for SuppressWarningsFilter to work -->
         <module name="SuppressWarningsHolder"/>
 
@@ -159,9 +162,6 @@
 
         <!-- Checks for Size Violations.                    -->
         <!-- See http://checkstyle.sf.net/config_sizes.html -->
-        <module name="LineLength">
-            <property name="max" value="130"/>
-        </module>
         <module name="MethodLength">
             <property name="tokens" value="METHOD_DEF"/>
             <property name="max" value="60"/>
@@ -225,7 +225,6 @@
 
         <!-- Checks for common coding problems               -->
         <!-- See http://checkstyle.sf.net/config_coding.html -->
-        <module name="ArrayTrailingComma"/>
         <module name="CovariantEquals"/>
         <module name="DeclarationOrder"/>
         <module name="ExplicitInitialization"/>
@@ -249,9 +248,9 @@
             <property name="tokens" value="PARAMETER_DEF, METHOD_DEF"/>
         </module>
         <module name="InnerAssignment"/>
-        <module name="JUnitTestCase"/>
         <module name="ReturnCount">
             <property name="max" value="8"/>
+            <property name="maxForVoid" value="8"/>
         </module>
         <module name="NestedIfDepth">
             <property name="max" value="2"/>
@@ -260,10 +259,6 @@
             <property name="max" value="2"/>
         </module>
         <module name="PackageDeclaration"/>
-        <module name="RedundantThrows">
-            <property name="severity" value="warning"/>
-            <property name="allowUnchecked" value="true"/>
-        </module>
         <module name="SimplifyBooleanExpression"/>
         <module name="SimplifyBooleanReturn"/>
         <module name="StringLiteralEquality"/>
@@ -303,7 +298,12 @@
             <property name="max" value="12"/>
         </module>
         <module name="NPathComplexity">
-            <property name="max" value="50"/>
+            <!-- TODO Agree on the value
+                 Checkstyle 7.7 improved the NPath algorithm further that leads to higher NPath counts.
+                 7.6 passes with max 50, 7.7 needs it to be set to at least 216
+                 the default threshold is 200
+            -->
+            <property name="max" value="250"/>
         </module>
 
         <!-- Miscellaneous other checks.                   -->
@@ -315,7 +315,8 @@
         <module name="RegexpSinglelineJava">
             <property name="format" value="(import static java\.util\.UUID\.randomUUID|UUID\.randomUUID\(\))"/>
             <property name="ignoreComments" value="true"/>
-            <property name="message" value="Please use UuidUtil.buildRandomUUID() instead of UUID.randomUUID()!"/>
+            <property name="message"
+                      value="Please use UuidUtil.newUnsecureUUID() or UuidUtil.newSecureUUID() instead of UUID.randomUUID()"/>
         </module>
     </module>
 </module>
