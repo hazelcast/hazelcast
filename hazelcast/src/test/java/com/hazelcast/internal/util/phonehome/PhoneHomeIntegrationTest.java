@@ -85,7 +85,7 @@ public class PhoneHomeIntegrationTest extends HazelcastTestSupport {
         node.getConfig().getMapConfig("hazelcast").getHotRestartConfig().setEnabled(true);
         node.getConfig().getMapConfig("hazelcast").getIndexConfigs().add(new IndexConfig().setName("index"));
         node.getConfig().getMapConfig("hazelcast").setWanReplicationRef(new WanReplicationRef().setName("wan"));
-        node.getConfig().getMapConfig("hazelcast").getAttributeConfigs().add(new AttributeConfig("hz", AttributeTest.class.getName()));
+        node.getConfig().getMapConfig("hazelcast").getAttributeConfigs().add(new AttributeConfig("hz", AttributeExtractor.class.getName()));
         node.getConfig().getMapConfig("hazelcast").getEvictionConfig().setEvictionPolicy(EvictionPolicy.LRU);
         node.getConfig().getMapConfig("hazelcast").setInMemoryFormat(InMemoryFormat.NATIVE);
 

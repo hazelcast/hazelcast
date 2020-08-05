@@ -547,11 +547,13 @@ public class PhoneHomeTest extends HazelcastTestSupport {
         assertEquals(parameters.get("mpgtla"), String.valueOf(2000));
     }
 
-    void initialiseForMapStore(String mapName) {
+    private IMap<Object, Object> initialiseForMapStore(String mapName) {
+        IMap<Object, Object> iMap = node.hazelcastInstance.getMap(mapName);
         MapStoreConfig mapStoreConfig = new MapStoreConfig();
         mapStoreConfig.setEnabled(true);
         mapStoreConfig.setImplementation(new DelayMapStore());
         node.getConfig().getMapConfig(mapName).setMapStoreConfig(mapStoreConfig);
+        return iMap;
     }
 
     @Test
@@ -560,15 +562,13 @@ public class PhoneHomeTest extends HazelcastTestSupport {
         parameters = phoneHome.phoneHome(true);
         assertEquals(parameters.get("mpptlams"), "-1");
 
-        IMap<Object, Object> iMap1 = node.hazelcastInstance.getMap("hazelcast");
-        initialiseForMapStore(iMap1.getName());
+        IMap<Object, Object> iMap1 = initialiseForMapStore("hazelcast");
         iMap1.put("key1", "hazelcast");
         iMap1.put("key2", "phonehome");
         parameters = phoneHome.phoneHome(true);
         assertGreaterOrEquals("mpptlams", Long.parseLong(parameters.get("mpptlams")), 200);
 
-        IMap<Object, Object> iMap2 = node.hazelcastInstance.getMap("phonehome");
-        initialiseForMapStore(iMap2.getName());
+        IMap<Object, Object> iMap2 = initialiseForMapStore("phonehome");
         iMap2.put("key3", "hazelcast");
         parameters = phoneHome.phoneHome(true);
         assertGreaterOrEquals("mpptlams", Long.parseLong(parameters.get("mpptlams")), 200);
@@ -581,15 +581,13 @@ public class PhoneHomeTest extends HazelcastTestSupport {
         parameters = phoneHome.phoneHome(true);
         assertEquals(parameters.get("mpgtlams"), "-1");
 
-        IMap<Object, Object> iMap1 = node.hazelcastInstance.getMap("hazelcast");
-        initialiseForMapStore(iMap1.getName());
+        IMap<Object, Object> iMap1 = initialiseForMapStore("hazelcast");
         iMap1.get("key1");
         iMap1.get("key2");
         parameters = phoneHome.phoneHome(true);
         assertGreaterOrEquals("mpgtlams", Long.parseLong(parameters.get("mpgtlams")), 200);
 
-        IMap<Object, Object> iMap2 = node.hazelcastInstance.getMap("hazelcast");
-        initialiseForMapStore(iMap2.getName());
+        IMap<Object, Object> iMap2 = initialiseForMapStore("phonehome");
         iMap2.get("key3");
         parameters = phoneHome.phoneHome(true);
         assertGreaterOrEquals("mpgtlams", Long.parseLong(parameters.get("mpgtlams")), 200);
