@@ -264,10 +264,14 @@ public class WriteKafkaPTest extends SimpleTestInClusterSupport {
         producer.commitTransaction();
 
         // verify items are visible
-        polledRecords = consumer.poll(Duration.ofSeconds(2));
         StringBuilder actualContents = new StringBuilder();
-        for (ConsumerRecord<String, String> record : polledRecords) {
-            actualContents.append(record.value()).append('\n');
+        for (int receivedCount = 0; receivedCount < 2; ) {
+            polledRecords = consumer.poll(Duration.ofSeconds(2));
+            for (ConsumerRecord<String, String> record : polledRecords) {
+                actualContents.append(record.value()).append('\n');
+                receivedCount++;
+            }
+            logger.info("Received " + receivedCount + " records so far");
         }
         assertEquals("0\n1\n", actualContents.toString());
 
