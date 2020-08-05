@@ -43,16 +43,14 @@ import org.apache.calcite.sql.validate.SqlValidatorException;
 import org.apache.calcite.sql.validate.SqlValidatorTable;
 
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
 /**
- * Visitor that throws exceptions for unsupported SQL features. After visiting,
- * {@link #runsOnImdg()} and {@link #runsOnJet()} return whether IMDG and
- * Jet support the particular features found in the SqlNode.
+ * Visitor that throws exceptions for unsupported SQL features.
  */
 @SuppressWarnings("checkstyle:ExecutableStatementCount")
 public final class UnsupportedOperationVisitor implements SqlVisitor<Void> {
+
     /** Error messages. */
     private static final Resource RESOURCE = Resources.create(Resource.class);
 
@@ -61,17 +59,6 @@ public final class UnsupportedOperationVisitor implements SqlVisitor<Void> {
 
     /** A set of supported operators for functions. */
     private static final Set<SqlOperator> SUPPORTED_OPERATORS;
-
-    private final SqlValidatorCatalogReader catalogReader;
-
-    private boolean runsOnImdg = true;
-    private boolean runsOnJet = true;
-
-    /**
-     * Names of a table being manipulated using DDL (CREATE/DROP/ALTER table) while processing
-     * the command.
-     */
-    private List<String> ddlOperandTableNames;
 
     static {
         // We define all supported features explicitly instead of getting them from predefined sets of SqlKind class.
@@ -182,19 +169,14 @@ public final class UnsupportedOperationVisitor implements SqlVisitor<Void> {
         SUPPORTED_OPERATORS.add(SqlStdOperatorTable.CURRENT_TIMESTAMP);
         SUPPORTED_OPERATORS.add(SqlStdOperatorTable.LOCALTIMESTAMP);
         SUPPORTED_OPERATORS.add(SqlStdOperatorTable.LOCALTIME);
-
-        // Other/Extensions
-        SUPPORTED_OPERATORS.add(SqlOption.OPERATOR);
     }
 
-    private final Set<SqlOperator> extensionOperators;
+    private final SqlValidatorCatalogReader catalogReader;
 
     UnsupportedOperationVisitor(
-            SqlValidatorCatalogReader catalogReader,
-            Set<SqlOperator> extensionOperators
+            SqlValidatorCatalogReader catalogReader
     ) {
         this.catalogReader = catalogReader;
-        this.extensionOperators = extensionOperators;
     }
 
     @Override
@@ -219,17 +201,13 @@ public final class UnsupportedOperationVisitor implements SqlVisitor<Void> {
 
     @Override
     public Void visit(SqlIdentifier id) {
-        if (id.names.equals(ddlOperandTableNames)) {
-            return null;
-        }
-
         SqlValidatorTable table = catalogReader.getTable(id.names);
         if (table != null) {
             HazelcastTable hzTable = table.unwrap(HazelcastTable.class);
             if (hzTable != null) {
                 Table target = hzTable.getTarget();
                 if (target != null && !(target instanceof AbstractMapTable)) {
-                    runsOnImdg = false;
+                    throw error(id, RESOURCE.custom(target.getClass().getSimpleName() + " is not supported"));
                 }
             }
         }
@@ -306,9 +284,12 @@ public final class UnsupportedOperationVisitor implements SqlVisitor<Void> {
         }
 
         switch (kind) {
+            case HINT:
+                // TODO: Proper validation for hints
+                break;
+
             case SELECT:
                 processSelect((SqlSelect) call);
-
                 break;
 
             case SCALAR_QUERY:
@@ -320,39 +301,9 @@ public final class UnsupportedOperationVisitor implements SqlVisitor<Void> {
                 // TODO: Proper validation for JOIN (e.g. outer, theta, etc)!
                 break;
 
-            case CREATE_TABLE:
-                if (((SqlCreateExternalTable) call).source() != null) {
-                    // TODO: not needed when IMDG supports INSERTs
-                    runsOnImdg = false;
-                }
-                this.ddlOperandTableNames = ((SqlIdentifier) call.getOperandList().get(0)).names;
-                // TODO: Proper validation for DDL
-                break;
-            case DROP_TABLE:
-                this.ddlOperandTableNames = ((SqlIdentifier) call.getOperandList().get(0)).names;
-                // TODO: Proper validation for DDL
-                break;
-
-            case COLUMN_DECL:
-                // TODO: Proper validation for DDL
-                break;
-
             case OTHER:
             case OTHER_FUNCTION:
                 processOther(call);
-                break;
-
-            case ROW:
-            case VALUES:
-            case INSERT:
-            case COLLECTION_TABLE:
-            case ARGUMENT_ASSIGNMENT:
-                // TODO: Proper validation
-                runsOnImdg = false;
-                break;
-
-            case HINT:
-                // TODO: Proper validation for hints
                 break;
 
             default:
@@ -361,7 +312,7 @@ public final class UnsupportedOperationVisitor implements SqlVisitor<Void> {
     }
 
     @SuppressFBWarnings(value = "UC_USELESS_VOID_METHOD", justification = "Not fully implemented yet")
-    @SuppressWarnings({"checkstyle:EmptyBlock", })
+    @SuppressWarnings({"checkstyle:EmptyBlock"})
     private void processSelect(SqlSelect select) {
         if (select.hasOrderBy()) {
             // TODO: Proper validation for ORDER BY (i.e. LIMIT/OFFSET)
@@ -387,10 +338,6 @@ public final class UnsupportedOperationVisitor implements SqlVisitor<Void> {
             return;
         }
 
-        if (extensionOperators.contains(operator)) {
-            return;
-        }
-
         throw unsupported(call, operator.getName());
     }
 
@@ -404,14 +351,6 @@ public final class UnsupportedOperationVisitor implements SqlVisitor<Void> {
 
     private CalciteContextException error(SqlNode node, Resources.ExInst<SqlValidatorException> err) {
         return SqlUtil.newContextException(node.getParserPosition(), err);
-    }
-
-    public boolean runsOnImdg() {
-        return runsOnImdg;
-    }
-
-    public boolean runsOnJet() {
-        return runsOnJet;
     }
 
     public interface Resource {

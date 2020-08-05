@@ -30,7 +30,9 @@ import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.SqlOperatorTable;
 import org.apache.calcite.sql.SqlSelect;
 import org.apache.calcite.sql.SqlUtil;
+import org.apache.calcite.sql.fun.SqlStdOperatorTable;
 import org.apache.calcite.sql.type.SqlTypeName;
+import org.apache.calcite.sql.util.ChainedSqlOperatorTable;
 import org.apache.calcite.sql.validate.SelectScope;
 import org.apache.calcite.sql.validate.SqlConformance;
 import org.apache.calcite.sql.validate.SqlQualified;
@@ -41,11 +43,11 @@ import org.apache.calcite.sql.validate.SqlValidatorTable;
 import org.apache.calcite.util.Util;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.BiFunction;
 
 import static com.hazelcast.sql.impl.calcite.validate.SqlNodeUtil.isLiteral;
 import static com.hazelcast.sql.impl.calcite.validate.SqlNodeUtil.isParameter;
@@ -72,28 +74,36 @@ public class HazelcastSqlValidator extends SqlValidatorImpl {
 
     private final Map<SqlNode, RelDataType> knownNodeTypes = new HashMap<>();
 
-    private final BiFunction<Object, Object, Object> validator;
-
     public HazelcastSqlValidator(
-        SqlOperatorTable operatorTable,
         SqlValidatorCatalogReader catalogReader,
         RelDataTypeFactory typeFactory,
         SqlConformance conformance
     ) {
-        this(operatorTable, catalogReader, typeFactory, conformance, (reader, node) -> node);
+        this(null, catalogReader, typeFactory, conformance);
     }
 
     public HazelcastSqlValidator(
-        SqlOperatorTable operatorTable,
+        SqlOperatorTable extensionOperatorTable,
         SqlValidatorCatalogReader catalogReader,
         RelDataTypeFactory typeFactory,
-        SqlConformance conformance,
-        BiFunction<Object, Object, Object> validator
+        SqlConformance conformance
     ) {
-        super(operatorTable, catalogReader, typeFactory, CONFIG.withSqlConformance(conformance));
+        super(operatorTable(extensionOperatorTable), catalogReader, typeFactory, CONFIG.withSqlConformance(conformance));
         assert typeFactory instanceof HazelcastTypeFactory;
         setTypeCoercion(new HazelcastTypeCoercion(this));
-        this.validator = validator;
+    }
+
+    private static SqlOperatorTable operatorTable(SqlOperatorTable extensionOperatorTable) {
+        List<SqlOperatorTable> operatorTables = new ArrayList<>();
+
+        if (extensionOperatorTable != null) {
+            operatorTables.add(extensionOperatorTable);
+        }
+
+        operatorTables.add(HazelcastSqlOperatorTable.instance());
+        operatorTables.add(SqlStdOperatorTable.instance());
+
+        return new ChainedSqlOperatorTable(operatorTables);
     }
 
     /**
@@ -138,17 +148,6 @@ public class HazelcastSqlValidator extends SqlValidatorImpl {
                 deriveType(scope, fetch);
             }
         }
-    }
-
-    @Override
-    public SqlNode validate(SqlNode topNode) {
-        if (topNode.getKind().belongsTo(SqlKind.DDL)) {
-            topNode.validate(this, getEmptyScope());
-            return topNode;
-        }
-
-        SqlNode node = super.validate(topNode);
-        return (SqlNode) validator.apply(getCatalogReader(), node);
     }
 
     @Override

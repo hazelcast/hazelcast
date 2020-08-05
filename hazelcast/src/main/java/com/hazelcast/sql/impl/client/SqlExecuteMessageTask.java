@@ -25,7 +25,6 @@ import com.hazelcast.security.permission.SqlPermission;
 import com.hazelcast.sql.SqlQuery;
 import com.hazelcast.sql.impl.AbstractSqlResult;
 import com.hazelcast.sql.impl.SqlInternalService;
-import com.hazelcast.sql.impl.SqlResultImpl;
 import com.hazelcast.sql.impl.SqlServiceImpl;
 
 import java.security.Permission;

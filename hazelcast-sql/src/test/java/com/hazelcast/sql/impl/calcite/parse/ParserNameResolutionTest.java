@@ -196,7 +196,6 @@ public class ParserNameResolutionTest {
 
         return OptimizerContext.create(
             null,
-            null,
             new SqlCatalog(tableResolvers),
             searchPaths,
             1

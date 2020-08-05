@@ -38,8 +38,6 @@ import com.hazelcast.sql.impl.plan.cache.CachedPlan;
 import com.hazelcast.sql.impl.plan.cache.PlanCache;
 import com.hazelcast.sql.impl.plan.cache.PlanCacheChecker;
 import com.hazelcast.sql.impl.plan.cache.PlanCacheKey;
-import com.hazelcast.sql.impl.schema.ExternalCatalog;
-import com.hazelcast.sql.impl.schema.SchemaPlan;
 import com.hazelcast.sql.impl.schema.SqlCatalog;
 import com.hazelcast.sql.impl.schema.TableResolver;
 import com.hazelcast.sql.impl.schema.map.PartitionedMapTableResolver;
@@ -47,6 +45,7 @@ import com.hazelcast.sql.impl.schema.map.ReplicatedMapTableResolver;
 import com.hazelcast.sql.impl.state.QueryState;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.lang.reflect.Constructor;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -69,24 +68,25 @@ public class SqlServiceImpl implements SqlService, Consumer<Packet> {
     private static final String OPTIMIZER_CLASS_PROPERTY_NAME = "hazelcast.sql.optimizerClass";
     private static final String SQL_MODULE_OPTIMIZER_CLASS = "com.hazelcast.sql.impl.calcite.CalciteSqlOptimizer";
 
-    private SqlOptimizer optimizer;
     private final ILogger logger;
     private final NodeEngineImpl nodeEngine;
-    private final long queryTimeout;
-
     private final NodeServiceProviderImpl nodeServiceProvider;
-
-    private volatile SqlInternalService internalService;
-    private JetSqlBackend jetSqlBackend;
-
-    private final ExternalCatalog catalog;
-    private final List<TableResolver> tableResolvers;
-
     private final PlanCache planCache = new PlanCache(PLAN_CACHE_SIZE);
 
+    private final int executorPoolSize;
+    private final int operationPoolSize;
+    private final long queryTimeout;
+    private final long maxMemory;
+
+    private JetSqlBackend jetSqlBackend;
+    private List<TableResolver> tableResolvers;
+    private SqlOptimizer optimizer;
+    private volatile SqlInternalService internalService;
+
     public SqlServiceImpl(NodeEngineImpl nodeEngine) {
+        this.logger = nodeEngine.getLogger(getClass());
         this.nodeEngine = nodeEngine;
-        logger = nodeEngine.getLogger(getClass());
+        this.nodeServiceProvider = new NodeServiceProviderImpl(nodeEngine);
 
         SqlConfig config = nodeEngine.getConfig().getSqlConfig();
 
@@ -107,22 +107,32 @@ public class SqlServiceImpl implements SqlService, Consumer<Packet> {
         assert operationPoolSize > 0;
         assert queryTimeout >= 0L;
 
+        this.executorPoolSize = executorPoolSize;
+        this.operationPoolSize = operationPoolSize;
         this.queryTimeout = queryTimeout;
+        this.maxMemory = maxMemory;
+    }
 
-        nodeServiceProvider = new NodeServiceProviderImpl(nodeEngine);
+    public void start() {
+        try {
+            jetSqlBackend = nodeEngine.getService(JetSqlBackend.SERVICE_NAME);
+        } catch (HazelcastException e) {
+            if (!(e.getCause() instanceof ServiceNotFoundException)) {
+                throw e;
+            }
+        }
+
+        tableResolvers = createTableResolvers(nodeEngine, jetSqlBackend);
+
+        optimizer = createOptimizer(nodeEngine, jetSqlBackend);
 
         String instanceName = nodeEngine.getHazelcastInstance().getName();
         InternalSerializationService serializationService = (InternalSerializationService) nodeEngine.getSerializationService();
-
-        this.catalog = new ExternalCatalog(nodeEngine);
-        this.tableResolvers = createTableResolvers(catalog, nodeEngine);
-
         PlanCacheChecker planCacheChecker = new PlanCacheChecker(
             nodeEngine,
             planCache,
             tableResolvers
         );
-
         internalService = new SqlInternalService(
             instanceName,
             nodeServiceProvider,
@@ -134,22 +144,6 @@ public class SqlServiceImpl implements SqlService, Consumer<Packet> {
             maxMemory,
             planCacheChecker
         );
-    }
-
-    public void start() {
-        JetSqlBackend jetSqlBackendTmp;
-        try {
-            jetSqlBackendTmp = nodeEngine.getService(JetSqlBackend.SERVICE_NAME);
-        } catch (HazelcastException e) {
-            if (e.getCause() instanceof ServiceNotFoundException) {
-                jetSqlBackendTmp = null;
-            } else {
-                throw e;
-            }
-        }
-        jetSqlBackend = jetSqlBackendTmp;
-        optimizer = createOptimizer(nodeEngine);
-
         internalService.start();
     }
 
@@ -272,24 +266,11 @@ public class SqlServiceImpl implements SqlService, Consumer<Packet> {
     }
 
     private SqlResult execute(SqlPlan plan, List<Object> params, long timeout, int pageSize) {
-        switch (plan.getType()) {
-            case SCHEMA:
-                return executeSchemaChange((SchemaPlan) plan, params, timeout, pageSize);
-            case IMDG:
-                return executeImdg((Plan) plan, params, timeout, pageSize);
-            case JET:
-                return executeJet(plan, params, timeout, pageSize);
-            default:
-                throw new IllegalArgumentException("Unknown plan type - " + plan.getType());
+        if (plan instanceof Plan) {
+            return executeImdg((Plan) plan, params, timeout, pageSize);
+        } else {
+            return executeJet(plan, params, timeout, pageSize);
         }
-    }
-
-    private SqlResult executeSchemaChange(SchemaPlan plan, List<Object> params, long timeout, int pageSize) {
-        SqlPlan populateTablePlan = plan.execute();
-
-        return populateTablePlan == null
-                ? SqlResultImpl.createUpdateCountResult(-1)
-                : execute(populateTablePlan, params, timeout, pageSize);
     }
 
     private SqlResult executeImdg(Plan plan, List<Object> params, long timeout, int pageSize) {
@@ -309,7 +290,7 @@ public class SqlServiceImpl implements SqlService, Consumer<Packet> {
      * @return Optimizer.
      */
     @SuppressWarnings({"unchecked", "rawtypes"})
-    private SqlOptimizer createOptimizer(NodeEngine nodeEngine) {
+    private SqlOptimizer createOptimizer(NodeEngine nodeEngine, JetSqlBackend jetSqlBackend) {
         // 1. Resolve class name.
         String className = System.getProperty(OPTIMIZER_CLASS_PROPERTY_NAME, SQL_MODULE_OPTIMIZER_CLASS);
 
@@ -333,7 +314,6 @@ public class SqlServiceImpl implements SqlService, Consumer<Packet> {
         try {
             constructor = clazz.getConstructor(
                 NodeEngine.class,
-                ExternalCatalog.class,
                 JetSqlBackend.class
             );
         } catch (ReflectiveOperationException e) {
@@ -343,16 +323,21 @@ public class SqlServiceImpl implements SqlService, Consumer<Packet> {
 
         // 4. Finally, get the instance.
         try {
-            return constructor.newInstance(nodeEngine, catalog, jetSqlBackend);
+            return constructor.newInstance(nodeEngine, jetSqlBackend);
         } catch (ReflectiveOperationException e) {
             throw new HazelcastException("Failed to instantiate the optimizer class " + className + ": " + e.getMessage(), e);
         }
     }
 
-    private static List<TableResolver> createTableResolvers(ExternalCatalog catalog, NodeEngine nodeEngine) {
+    private static List<TableResolver> createTableResolvers(
+        NodeEngine nodeEngine,
+        @Nullable JetSqlBackend jetSqlBackend
+    ) {
         List<TableResolver> res = new ArrayList<>(3);
 
-        res.add(catalog);
+        if (jetSqlBackend != null) {
+            res.add((TableResolver) jetSqlBackend.tableResolver());
+        }
         res.add(new PartitionedMapTableResolver(nodeEngine));
         res.add(new ReplicatedMapTableResolver(nodeEngine));
 
