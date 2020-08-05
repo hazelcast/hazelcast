@@ -58,7 +58,9 @@
     </module>
 
     <!-- Enable suppression of file contents using //CHECKSTYLE:[ON|OFF] comments -->
+    <!--
     <module name="SuppressionCommentFilter"/>
+    -->
 
     <!-- Enable the suppression annotation @SuppressWarnings("checkstyle:lowercasecheckname"} -->
     <module name="SuppressWarningsFilter"/>
@@ -103,10 +105,11 @@
         <property name="fileExtensions" value="java"/>
     </module>
 
-    <module name="TreeWalker">
-        <!-- Activate comment suppression filters -->
-        <module name="FileContentsHolder"/>
+    <module name="LineLength">
+        <property name="max" value="130"/>
+    </module>
 
+    <module name="TreeWalker">
         <!-- Needed for SuppressWarningsFilter to work -->
         <module name="SuppressWarningsHolder"/>
 
@@ -158,9 +161,6 @@
 
         <!-- Checks for Size Violations.                    -->
         <!-- See http://checkstyle.sf.net/config_sizes.html -->
-        <module name="LineLength">
-            <property name="max" value="130"/>
-        </module>
         <module name="MethodLength">
             <property name="tokens" value="METHOD_DEF"/>
             <property name="max" value="60"/>
@@ -224,7 +224,6 @@
 
         <!-- Checks for common coding problems               -->
         <!-- See http://checkstyle.sf.net/config_coding.html -->
-        <module name="ArrayTrailingComma"/>
         <module name="CovariantEquals"/>
         <module name="DeclarationOrder"/>
         <module name="ExplicitInitialization"/>
@@ -250,6 +249,7 @@
         <module name="InnerAssignment"/>
         <module name="ReturnCount">
             <property name="max" value="8"/>
+            <property name="maxForVoid" value="8"/>
         </module>
         <module name="NestedIfDepth">
             <property name="max" value="2"/>
@@ -297,7 +297,12 @@
             <property name="max" value="12"/>
         </module>
         <module name="NPathComplexity">
-            <property name="max" value="50"/>
+            <!-- TODO Agree on the value
+                 Checkstyle 7.7 improved the NPath algorithm further that leads to higher NPath counts.
+                 7.6 passes with max 50, 7.7 needs it to be set to at least 216
+                 the default threshold is 200
+            -->
+            <property name="max" value="250"/>
         </module>
 
         <!-- Miscellaneous other checks.                   -->
