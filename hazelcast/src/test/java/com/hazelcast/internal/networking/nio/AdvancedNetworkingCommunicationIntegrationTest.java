@@ -36,6 +36,7 @@ import java.net.InetSocketAddress;
 import java.net.SocketException;
 import java.util.Collections;
 
+import static com.hazelcast.test.MemcacheTestUtil.shutdownQuietly;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
@@ -82,9 +83,7 @@ public class AdvancedNetworkingCommunicationIntegrationTest extends AbstractAdva
             client = getMemcachedClient(hz, MEMCACHE_PORT);
             client.get("whatever");
         } finally {
-            if (client != null) {
-                client.shutdown();
-            }
+            shutdownQuietly(client);
         }
 
         testMemcacheCallFailsOnPort(hz, MEMBER_PORT);
@@ -143,9 +142,7 @@ public class AdvancedNetworkingCommunicationIntegrationTest extends AbstractAdva
                 // expected
             }
         } finally {
-            if (client != null) {
-                client.shutdown();
-            }
+            shutdownQuietly(client);
         }
     }
 

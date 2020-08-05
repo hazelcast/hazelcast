@@ -48,6 +48,7 @@ import java.util.Map;
 import java.util.ConcurrentModificationException;
 
 import static com.hazelcast.instance.EndpointQualifier.MEMCACHE;
+import static com.hazelcast.test.MemcacheTestUtil.shutdownQuietly;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
@@ -78,9 +79,7 @@ public class MemcachedTest extends HazelcastTestSupport {
     @After
     public void tearDown() {
         try {
-            if (client != null) {
-                client.shutdown();
-            }
+            shutdownQuietly(client);
         } catch (ConcurrentModificationException e) {
             // See https://github.com/hazelcast/hazelcast/issues/14204
             // Due to a MemcachedClient bug, we swallow this exception
