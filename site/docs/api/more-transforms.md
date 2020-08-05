@@ -22,17 +22,18 @@ single Jet member receives all the data. In such a case you can apply
 the `rebalance` operator, which orders Jet to send the data out to other
 members where normally it wouldn't choose to.
 
-Rebalancing is best explained on the DAG level. Each pipeline stage
-corresponds to a vertex in the DAG, and the logic attached to the edge
-between them decides for each data item which processor to send it to.
-Some processors are on the same machine and others are on remote
-machines. By default, Jet considers only the processors on the local
-machine as candidates, using a round-robin scheme to decide on the
-target. When you apply rebalancing, Jet simply extends the candidate set
-to all the processors, including those on the other machines, but keeps
-using the same round-robin scheme. The order of the round-robin is such
-that the target cluster member changes every time, maximizing the
-fairness of the distribution across members.
+Rebalancing is best explained on the
+[DAG](/docs/concepts/dag#tasks-are-connected-into-a-dag) level. Each
+pipeline stage corresponds to a vertex in the DAG, and the logic
+attached to the edge between them decides for each data item which
+processor to send it to. Some processors are on the same machine and
+others are on remote machines. By default, Jet considers only the
+processors on the local machine as candidates, using a round-robin
+scheme to decide on the target. When you apply rebalancing, Jet simply
+extends the candidate set to all the processors, including those on the
+other machines, but keeps using the same round-robin scheme. The order
+of the round-robin is such that the target cluster member changes every
+time, maximizing the fairness of the distribution across members.
 
 Round-robin routing takes into account backpressure: if a given
 processor is overloaded and its input queue is full, Jet tries the next

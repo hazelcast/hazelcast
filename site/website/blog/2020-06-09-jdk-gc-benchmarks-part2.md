@@ -8,9 +8,11 @@ authorImageURL: https://i.imgur.com/xuavzce.jpg
 
 This post is a part of a series:
 
-- [Part 1](/blog/2020/06/09/jdk-gc-benchmarks-part1)
+- [Part 1 (Intro and high-throughput streaming
+  benchmark)](/blog/2020/06/09/jdk-gc-benchmarks-part1)
 - Part 2 (you are here)
-- [Part 3](/blog/2020/06/23/jdk-gc-benchmarks-rematch)
+- [Part 3 (low-latency benchmark)](/blog/2020/06/23/jdk-gc-benchmarks-rematch)
+- [Part 4 (concurrent GC with green threads)](/blog/2020/08/05/gc-tuning-for-jet)
 
 ## Batch Pipeline Benchmark
 
