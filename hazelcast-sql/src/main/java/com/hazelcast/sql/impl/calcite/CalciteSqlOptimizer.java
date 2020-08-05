@@ -101,8 +101,8 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
     private final SqlBackend jetSqlBackend;
 
     public CalciteSqlOptimizer(
-            NodeEngine nodeEngine,
-            @Nullable JetSqlService jetSqlService
+        NodeEngine nodeEngine,
+        @Nullable JetSqlService jetSqlService
     ) {
         this.nodeEngine = nodeEngine;
 
