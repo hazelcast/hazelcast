@@ -17,8 +17,8 @@
 package com.hazelcast.sql.impl.calcite.parse;
 
 import com.hazelcast.sql.SqlErrorCode;
-import com.hazelcast.sql.impl.JetSqlBackend;
 import com.hazelcast.sql.impl.QueryException;
+import com.hazelcast.sql.impl.calcite.JetSqlBackend;
 import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlConformance;
 import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlValidator;
 import org.apache.calcite.prepare.Prepare.CatalogReader;
@@ -91,17 +91,16 @@ public class QueryParser {
                 validator);
     }
 
-    @SuppressWarnings("unchecked")
     private QueryParseResult parseJet(String sql) throws SqlParseException {
         assert jetSqlBackend != null;
 
-        Config config = createConfig((SqlParserImplFactory) jetSqlBackend.createParserFactory());
+        Config config = createConfig(jetSqlBackend.parserFactory());
         SqlParser parser = SqlParser.create(sql, config);
 
-        SqlValidator validator = (SqlValidator) jetSqlBackend.createValidator(catalogReader, typeFactory, conformance);
+        SqlValidator validator = jetSqlBackend.validator(catalogReader, typeFactory, conformance);
         SqlNode node = validator.validate(parser.parseStmt());
 
-        SqlVisitor<Void> visitor = (SqlVisitor<Void>) jetSqlBackend.createUnsupportedOperationVisitor(catalogReader);
+        SqlVisitor<Void> visitor = jetSqlBackend.unsupportedOperationVisitor(catalogReader);
         node.accept(visitor);
 
         return new QueryParseResult(

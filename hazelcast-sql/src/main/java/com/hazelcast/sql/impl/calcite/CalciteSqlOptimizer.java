@@ -18,7 +18,7 @@ package com.hazelcast.sql.impl.calcite;
 
 import com.hazelcast.cluster.memberselector.MemberSelectors;
 import com.hazelcast.spi.impl.NodeEngine;
-import com.hazelcast.sql.impl.JetSqlBackend;
+import com.hazelcast.sql.impl.JetSqlService;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.QueryUtils;
 import com.hazelcast.sql.impl.calcite.opt.HazelcastConventions;
@@ -42,6 +42,7 @@ import org.apache.calcite.plan.volcano.VolcanoPlanner;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.type.RelDataType;
 
+import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Map;
 
@@ -115,10 +116,10 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
 
     public CalciteSqlOptimizer(
         NodeEngine nodeEngine,
-        JetSqlBackend jetSqlBackend
+        @Nullable JetSqlService jetSqlService
     ) {
         this.nodeEngine = nodeEngine;
-        this.jetSqlBackend = jetSqlBackend;
+        this.jetSqlBackend = jetSqlService == null ? null : (JetSqlBackend) jetSqlService.sqlBackend();
     }
 
     @Override
@@ -150,7 +151,8 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
                 context
             );
         } else {
-            return (SqlPlan) jetSqlBackend.createPlan(
+            return jetSqlBackend.createPlan(
+                task,
                 parseResult,
                 context
             );

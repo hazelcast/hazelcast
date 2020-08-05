@@ -18,34 +18,20 @@ package com.hazelcast.sql.impl;
 
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.impl.optimizer.SqlPlan;
+import com.hazelcast.sql.impl.schema.TableResolver;
 
 import java.util.List;
 
-/**
- * A service to optimize a RelNode and execute the SqlPlan implemented by Jet.
- */
-public interface JetSqlBackend {
+public interface JetSqlService {
 
     String SERVICE_NAME = "hz:impl:jetSqlService";
 
-    Object tableResolver();
+    List<TableResolver> tableResolvers();
 
-    Object createParserFactory();
-
-    Object createValidator(Object catalogReader, Object typeFactory, Object conformance);
-
-    Object createUnsupportedOperationVisitor(Object catalogReader);
-
-    Object createConverter(
-        Object viewExpander,
-        Object validator,
-        Object catalogReader,
-        Object cluster,
-        Object convertletTable,
-        Object config
-    );
-
-    Object createPlan(Object parseResult, Object context);
+    /**
+     * @return com.hazelcast.sql.impl.calcite.JetSqlBackend
+     */
+    Object sqlBackend();
 
     /**
      * Execute the SqlPlan.
