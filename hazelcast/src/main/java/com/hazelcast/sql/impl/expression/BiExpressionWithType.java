@@ -36,8 +36,7 @@ public abstract class BiExpressionWithType<T> extends BiExpression<T> {
     }
 
     protected BiExpressionWithType(Expression<?> operand1, Expression<?> operand2, QueryDataType resultType) {
-        this.operand1 = operand1;
-        this.operand2 = operand2;
+        super(operand1, operand2);
         this.resultType = resultType;
     }
 
@@ -67,18 +66,13 @@ public abstract class BiExpressionWithType<T> extends BiExpression<T> {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-
-        if (o == null || getClass() != o.getClass()) {
+        if (!super.equals(o)) {
             return false;
         }
 
         BiExpressionWithType<?> that = (BiExpressionWithType<?>) o;
 
-        return Objects.equals(operand1, that.operand1) && Objects.equals(operand2, that.operand2) && Objects.equals(resultType,
-                that.resultType);
+        return Objects.equals(resultType, that.resultType);
     }
 
     @Override
