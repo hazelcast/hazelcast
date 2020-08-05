@@ -32,7 +32,7 @@ import org.apache.calcite.sql2rel.SqlRexConvertletTable;
 import org.apache.calcite.sql2rel.SqlToRelConverter;
 import org.apache.calcite.sql2rel.SqlToRelConverter.Config;
 
-public interface JetSqlBackend {
+public interface SqlBackend {
 
     SqlParserImplFactory parserFactory();
 

@@ -19,32 +19,16 @@ package com.hazelcast.sql.impl.calcite;
 import com.hazelcast.cluster.memberselector.MemberSelectors;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.JetSqlService;
-import com.hazelcast.sql.impl.QueryParameterMetadata;
-import com.hazelcast.sql.impl.QueryUtils;
 import com.hazelcast.sql.impl.calcite.opt.HazelcastConventions;
-import com.hazelcast.sql.impl.calcite.opt.OptUtils;
-import com.hazelcast.sql.impl.calcite.opt.logical.LogicalRules;
-import com.hazelcast.sql.impl.calcite.opt.logical.RootLogicalRel;
-import com.hazelcast.sql.impl.calcite.opt.physical.PhysicalRel;
-import com.hazelcast.sql.impl.calcite.opt.physical.PhysicalRules;
-import com.hazelcast.sql.impl.calcite.opt.physical.visitor.NodeIdVisitor;
-import com.hazelcast.sql.impl.calcite.opt.physical.visitor.PlanCreateVisitor;
-import com.hazelcast.sql.impl.calcite.parse.QueryConvertResult;
 import com.hazelcast.sql.impl.calcite.parse.QueryParseResult;
 import com.hazelcast.sql.impl.optimizer.OptimizationTask;
 import com.hazelcast.sql.impl.optimizer.SqlOptimizer;
 import com.hazelcast.sql.impl.optimizer.SqlPlan;
-import com.hazelcast.sql.impl.plan.cache.PlanCacheKey;
-import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.calcite.plan.Convention;
 import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.plan.volcano.VolcanoPlanner;
-import org.apache.calcite.rel.RelNode;
-import org.apache.calcite.rel.type.RelDataType;
 
 import javax.annotation.Nullable;
-import java.util.List;
-import java.util.Map;
 
 /**
  * SQL optimizer based on Apache Calcite.
@@ -112,14 +96,18 @@ import java.util.Map;
 public class CalciteSqlOptimizer implements SqlOptimizer {
 
     private final NodeEngine nodeEngine;
-    private final JetSqlBackend jetSqlBackend;
+
+    private final SqlBackend hazelcastSqlBackend;
+    private final SqlBackend jetSqlBackend;
 
     public CalciteSqlOptimizer(
-        NodeEngine nodeEngine,
-        @Nullable JetSqlService jetSqlService
+            NodeEngine nodeEngine,
+            @Nullable JetSqlService jetSqlService
     ) {
         this.nodeEngine = nodeEngine;
-        this.jetSqlBackend = jetSqlService == null ? null : (JetSqlBackend) jetSqlService.sqlBackend();
+
+        this.hazelcastSqlBackend = new HazelcastSqlBackend(nodeEngine);
+        this.jetSqlBackend = jetSqlService == null ? null : (SqlBackend) jetSqlService.sqlBackend();
     }
 
     @Override
@@ -128,112 +116,17 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         int memberCount = nodeEngine.getClusterService().getSize(MemberSelectors.DATA_MEMBER_SELECTOR);
 
         OptimizerContext context = OptimizerContext.create(
-            jetSqlBackend,
             task.getSchema(),
             task.getSearchPaths(),
-            memberCount
+            memberCount,
+            hazelcastSqlBackend,
+            jetSqlBackend
         );
 
         // 2. Parse SQL string and validate it.
         QueryParseResult parseResult = context.parse(task.getSql());
 
-        if (parseResult.isExclusivelyImdgStatement()) {
-            // 3. Convert parse tree to relational tree.
-            QueryConvertResult convertResult = context.convert(parseResult);
-
-            // 4. Create plan.
-            return createPlan(
-                task.getSearchPaths(),
-                task.getSql(),
-                parseResult.getParameterRowType(),
-                convertResult.getRel(),
-                convertResult.getFieldNames(),
-                context
-            );
-        } else {
-            return jetSqlBackend.createPlan(
-                task,
-                parseResult,
-                context
-            );
-        }
-    }
-
-    private SqlPlan createPlan(
-        List<List<String>> searchPaths,
-        String sql,
-        RelDataType parameterRowType,
-        RelNode rel,
-        List<String> fieldNames,
-        OptimizerContext context
-    ) {
-        QueryDataType[] mappedParameterRowType = SqlToQueryType.mapRowType(parameterRowType);
-        QueryParameterMetadata parameterMetadata = new QueryParameterMetadata(mappedParameterRowType);
-
-        PhysicalRel physicalRel = optimize(context, rel, parameterMetadata);
-
-        return createImdgPlan(
-                searchPaths,
-                sql,
-                parameterMetadata,
-                physicalRel,
-                fieldNames
-        );
-    }
-
-    private PhysicalRel optimize(
-        OptimizerContext context,
-        RelNode rel,
-        QueryParameterMetadata parameterMetadata
-    ) {
-        // Make parameter metadata available to planner.
-        context.setParameterMetadata(parameterMetadata);
-
-        // Logical part.
-        RelNode logicalRel = context.optimize(rel, LogicalRules.getRuleSet(), OptUtils.toLogicalConvention(rel.getTraitSet()));
-
-        RootLogicalRel logicalRootRel = new RootLogicalRel(logicalRel.getCluster(), logicalRel.getTraitSet(), logicalRel);
-
-        // Physical part.
-        RelTraitSet physicalTraitSet = OptUtils.toPhysicalConvention(
-            logicalRootRel.getTraitSet(),
-            OptUtils.getDistributionDef(logicalRootRel).getTraitRoot()
-        );
-
-        return (PhysicalRel) context.optimize(logicalRootRel, PhysicalRules.getRuleSet(), physicalTraitSet);
-    }
-
-    /**
-     * Create plan from physical rel.
-     *
-     * @param rel Rel.
-     * @return Plan.
-     */
-    private SqlPlan createImdgPlan(
-        List<List<String>> searchPaths,
-        String sql,
-        QueryParameterMetadata parameterMetadata,
-        PhysicalRel rel,
-        List<String> rootColumnNames
-    ) {
-        // Assign IDs to nodes.
-        NodeIdVisitor idVisitor = new NodeIdVisitor();
-        rel.visit(idVisitor);
-        Map<PhysicalRel, List<Integer>> relIdMap = idVisitor.getIdMap();
-
-        // Create the plan.
-        PlanCreateVisitor visitor = new PlanCreateVisitor(
-            nodeEngine.getLocalMember().getUuid(),
-            QueryUtils.createPartitionMap(nodeEngine),
-            relIdMap,
-            sql,
-            new PlanCacheKey(searchPaths, sql),
-            parameterMetadata,
-            rootColumnNames
-        );
-
-        rel.visit(visitor);
-
-        return visitor.getPlan();
+        // 3. Create plan.
+        return parseResult.getSqlBackend().createPlan(task, parseResult, context);
     }
 }

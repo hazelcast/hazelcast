@@ -16,8 +16,6 @@
 
 package com.hazelcast.sql.impl.calcite.parse;
 
-import com.hazelcast.sql.impl.calcite.HazelcastSqlToRelConverter;
-import com.hazelcast.sql.impl.calcite.JetSqlBackend;
 import org.apache.calcite.plan.Contexts;
 import org.apache.calcite.plan.HazelcastRelOptCluster;
 import org.apache.calcite.plan.RelOptCluster;
@@ -66,23 +64,25 @@ public class QueryConverter {
     private final CatalogReader catalogReader;
     private final RelOptCluster cluster;
 
-    private final JetSqlBackend jetSqlBackend;
-
     public QueryConverter(
         Prepare.CatalogReader catalogReader,
-        HazelcastRelOptCluster cluster,
-        @Nullable JetSqlBackend jetSqlBackend
+        HazelcastRelOptCluster cluster
     ) {
         this.catalogReader = catalogReader;
         this.cluster = cluster;
-
-        this.jetSqlBackend = jetSqlBackend;
     }
 
     public QueryConvertResult convert(QueryParseResult parseResult) {
         SqlNode node = parseResult.getNode();
 
-        SqlToRelConverter converter = createConverter(parseResult);
+        SqlToRelConverter converter = parseResult.getSqlBackend().converter(
+            null,
+            parseResult.getValidator(),
+            catalogReader,
+            cluster,
+            StandardConvertletTable.INSTANCE,
+            CONFIG
+        );
 
         // 1. Perform initial conversion.
         RelRoot root = converter.convertQuery(node, false, true);
@@ -101,30 +101,6 @@ public class QueryConverter {
 
         // 5. Collect original field names.
         return new QueryConvertResult(relTrimmed, Pair.right(root.fields));
-    }
-
-    private SqlToRelConverter createConverter(QueryParseResult parseResult) {
-        if (parseResult.isExclusivelyImdgStatement()) {
-            return new HazelcastSqlToRelConverter(
-                    null,
-                    parseResult.getValidator(),
-                    catalogReader,
-                    cluster,
-                    StandardConvertletTable.INSTANCE,
-                    CONFIG
-            );
-        } else {
-            assert jetSqlBackend != null;
-
-            return jetSqlBackend.converter(
-                    null,
-                    parseResult.getValidator(),
-                    catalogReader,
-                    cluster,
-                    StandardConvertletTable.INSTANCE,
-                    CONFIG
-            );
-        }
     }
 
     /**

@@ -22,6 +22,7 @@ import com.hazelcast.sql.SqlErrorCode;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.QueryUtils;
+import com.hazelcast.sql.impl.calcite.HazelcastSqlBackend;
 import com.hazelcast.sql.impl.calcite.OptimizerContext;
 import com.hazelcast.sql.impl.calcite.SqlToQueryType;
 import com.hazelcast.sql.impl.calcite.opt.physical.visitor.RexToExpressionVisitor;
@@ -1032,8 +1033,8 @@ public abstract class ExpressionTestBase {
                         null, emptyList(), PartitionedMapTable.DISTRIBUTION_FIELD_ORDINAL_NONE, false);
 
         HazelcastTable hazelcastTable = new HazelcastTable(table, new MapTableStatistic(100));
-        return OptimizerContext.create(null, new HazelcastSchema(singletonMap("t", hazelcastTable)),
-                QueryUtils.prepareSearchPaths(null, null), 1);
+        return OptimizerContext.create(new HazelcastSchema(singletonMap("t", hazelcastTable)),
+                QueryUtils.prepareSearchPaths(null, null), 1, new HazelcastSqlBackend(null), null);
     }
 
     private static RelDataType nodeType(SqlNode node, SqlValidator validator) {
