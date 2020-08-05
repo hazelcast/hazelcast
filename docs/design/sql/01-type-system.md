@@ -23,10 +23,15 @@ Types supported by the Hazelcast Mustang are listed in Table 1. Precision is the
 
 `OBJECT` is a Hazelcast-specific type representing an object which doesn't match any other type.
 
+`NULL` is a special type representing a type of a `NULL` literal to which a more
+specific type couldn't be assigned. Consider `SELECT NULL FROM t` query, the `NULL`
+literal would have `NULL` type assigned. 
+
 *Table 1: Hazelcast Mustang Data Types*
 
 | SQL Type | Precedence | Precision |
 |---|---|---|
+| `NULL` | 0 |  |
 | `VARCHAR` | 100 |  |
 | `BOOLEAN` | 200 | 1 |
 | `TINYINT` | 300 | 4 |
@@ -68,6 +73,7 @@ Table 2 establishes a strict one-to-one mapping between SQL and Java types.
 
 | SQL Type | Java Type |
 |---|---|
+| `NULL` | `java.lang.Void` |
 | `VARCHAR` | `java.lang.String` |
 | `BOOLEAN` | `java.lang.Boolean` |
 | `TINYINT` | `java.lang.Byte` |
@@ -93,6 +99,7 @@ Table 3 establishes a many-to-one mapping between Java and SQL types.
 
 | Java Type | SQL Type |
 |---|---|
+| `java.lang.Void` | `NULL` |
 | `java.lang.String` | `VARCHAR` |
 | `java.lang.Character` | `VARCHAR` |
 | `java.lang.Boolean` | `BOOLEAN` |
@@ -127,22 +134,23 @@ converted to the target type.
 
 *Table 4: Type conversions (I - implicit, E - explicit)*
 
-| From/To | VARCHAR | BOOLEAN | TINYINT | SMALLINT | INTEGER | BIGINT | DECIMAL | REAL | DOUBLE | DATE | TIME | TIMESTAMP | TIMESTAMP W/ TZ | OBJECT |
-|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| **VARCHAR** | `I` | `I` | `I` | `I` | `I` | `I` | `I` | `I` | `I` | `I` | `I` | `I` | `I` | `I` |
-| **BOOLEAN** | `E` | `I` |  |  |  |  |  |  |  |  |  |  |  | `I` |
-| **TINYINT** | `E` |  | `I` | `I` | `I` | `I` | `I` | `I` |`I`  |  |  |  |  | `I` |
-| **SMALLINT** | `E` |  | `E` | `I` | `I` | `I` | `I` | `I` | `I` |  |  |  |  | `I` |
-| **INTEGER** | `E` |  | `E` | `E` | `I` | `I` | `I` | `I` | `I` |  |  |  |  | `I` |
-| **BIGINT** | `E` |  | `E` | `E` | `E` | `I` | `I` | `I` | `I` |  |  |  |  | `I` |
-| **DECIMAL** | `E` |  | `E` | `E` | `E` | `E` | `I` | `I` | `I` |  |  |  |  | `I` |
-| **REAL** | `E` |  | `E` | `E` | `E` | `E` | `E` | `I` | `I` |  |  |  |  | `I` |
-| **DOUBLE** | `E` |  | `E` | `E` | `E` | `E` | `E` | `E` | `I` |  |  |  |  | `I` |
-| **TIME** | `E` |  |  |  |  |  |  |  |  |  | `I` | `I` | `I` | `I` |
-| **DATE** | `E` |  |  |  |  |  |  |  |  | `I` |  | `I` | `I` | `I` |
-| **TIMESTAMP** | `E` |  |  |  |  |  |  |  |  | `E` | `E` | `I` | `I` | `I` |
-| **TIMESTAMP W/ TZ** | `E` |  |  |  |  |  |  |  |  | `E` | `E` | `E`  | `I` | `I` |
-| **OBJECT** | `E` | `E` | `E` | `E` | `E` | `E` | `E` | `E` | `E` | `E` | `E` | `E` | `E` | `I` |
+| From/To | NULL | VARCHAR | BOOLEAN | TINYINT | SMALLINT | INTEGER | BIGINT | DECIMAL | REAL | DOUBLE | DATE | TIME | TIMESTAMP | TIMESTAMP W/ TZ | OBJECT |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| **NULL** | `I` | `I` | `I` | `I` | `I` | `I` | `I` | `I` | `I` | `I` | `I` | `I` | `I` | `I` | `I` |
+| **VARCHAR** |  | `I` | `I` | `I` | `I` | `I` | `I` | `I` | `I` | `I` | `I` | `I` | `I` | `I` | `I` |
+| **BOOLEAN** |  | `E` | `I` |  |  |  |  |  |  |  |  |  |  |  | `I` |
+| **TINYINT** |  | `E` |  | `I` | `I` | `I` | `I` | `I` | `I` |`I`  |  |  |  |  | `I` |
+| **SMALLINT** |  | `E` |  | `E` | `I` | `I` | `I` | `I` | `I` | `I` |  |  |  |  | `I` |
+| **INTEGER** |  | `E` |  | `E` | `E` | `I` | `I` | `I` | `I` | `I` |  |  |  |  | `I` |
+| **BIGINT** |  | `E` |  | `E` | `E` | `E` | `I` | `I` | `I` | `I` |  |  |  |  | `I` |
+| **DECIMAL** |  | `E` |  | `E` | `E` | `E` | `E` | `I` | `I` | `I` |  |  |  |  | `I` |
+| **REAL** |  | `E` |  | `E` | `E` | `E` | `E` | `E` | `I` | `I` |  |  |  |  | `I` |
+| **DOUBLE** |  | `E` |  | `E` | `E` | `E` | `E` | `E` | `E` | `I` |  |  |  |  | `I` |
+| **TIME** |  | `E` |  |  |  |  |  |  |  |  |  | `I` | `I` | `I` | `I` |
+| **DATE** |  | `E` |  |  |  |  |  |  |  |  | `I` |  | `I` | `I` | `I` |
+| **TIMESTAMP** |  | `E` |  |  |  |  |  |  |  |  | `E` | `E` | `I` | `I` | `I` |
+| **TIMESTAMP W/ TZ** |  | `E` |  |  |  |  |  |  |  |  | `E` | `E` | `E`  | `I` | `I` |
+| **OBJECT** |  | `E` | `E` | `E` | `E` | `E` | `E` | `E` | `E` | `E` | `E` | `E` | `E` | `E` | `I` |
 
 Conversions between VARCHAR and temporal types are performed using patterns defined in `java.time.format.DateTimeFormatter`
 class [[1]].
