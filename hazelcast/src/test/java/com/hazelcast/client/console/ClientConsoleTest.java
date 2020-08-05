@@ -31,10 +31,9 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
-import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.LinkedBlockingQueue;
 
 import org.junit.After;
 import org.junit.Rule;
@@ -91,17 +90,17 @@ public class ClientConsoleTest {
         propertyClientConfig.setOrClearProperty(cfgFile.getAbsolutePath());
         assertTrue(hz.getClientService().getConnectedClients().isEmpty());
 
-        ExecutorService tp = Executors.newFixedThreadPool(1);
+        ExecutorService tp = Executors.newFixedThreadPool(1, r -> new Thread(r, "consoleAppTestThread"));
         InputStream origIn = System.in;
         try {
-            BQInputStream bqIn = new BQInputStream();
+            LineEndingsInputStream bqIn = new LineEndingsInputStream();
             System.setIn(bqIn);
             tp.execute(() -> ClientConsoleApp.main(null));
             assertTrueEventually(() -> assertFalse(hz.getClientService().getConnectedClients().isEmpty()));
             HazelcastInstance client = HazelcastClient.getHazelcastClientByName("clientConsoleApp");
             assertNotNull(client);
             client.shutdown();
-            bqIn.addCommand("");
+            bqIn.unblock();
         } finally {
             System.setIn(origIn);
             HazelcastClient.shutdownAll();
@@ -109,26 +108,25 @@ public class ClientConsoleTest {
         }
     }
 
-    static class BQInputStream extends InputStream {
+    static class LineEndingsInputStream extends InputStream {
 
-        private final BlockingQueue<Byte> bq = new LinkedBlockingQueue<>();
+        private static final byte[] NEWLINE_BYTES = stringToBytes(LINE_SEPARATOR);
+        private final CountDownLatch latch = new CountDownLatch(1);
+        private volatile int pos = NEWLINE_BYTES.length - 1;
 
         @Override
         public int read() throws IOException {
             try {
-                return bq.take();
+                latch.await();
             } catch (InterruptedException e) {
-                throw new IOException(e);
+                e.printStackTrace();
             }
+            pos = (pos + 1) % NEWLINE_BYTES.length;
+            return NEWLINE_BYTES[pos];
         }
 
-       public void addCommand(String cmd) {
-           for (byte b: stringToBytes(cmd)) {
-               bq.offer(b);
-           }
-           for (byte b: stringToBytes(LINE_SEPARATOR)) {
-               bq.offer(b);
-           }
-       }
+        public void unblock() {
+            latch.countDown();
+        }
     }
 }
