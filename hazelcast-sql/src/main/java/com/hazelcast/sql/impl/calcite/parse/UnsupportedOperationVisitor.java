@@ -173,7 +173,7 @@ public final class UnsupportedOperationVisitor implements SqlVisitor<Void> {
 
     private final SqlValidatorCatalogReader catalogReader;
 
-    UnsupportedOperationVisitor(
+    public UnsupportedOperationVisitor(
             SqlValidatorCatalogReader catalogReader
     ) {
         this.catalogReader = catalogReader;

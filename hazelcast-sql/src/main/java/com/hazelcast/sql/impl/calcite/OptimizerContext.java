@@ -17,7 +17,6 @@
 package com.hazelcast.sql.impl.calcite;
 
 import com.google.common.collect.ImmutableList;
-import com.hazelcast.sql.impl.JetSqlBackend;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.calcite.opt.QueryPlanner;
 import com.hazelcast.sql.impl.calcite.opt.cost.CostFactory;
