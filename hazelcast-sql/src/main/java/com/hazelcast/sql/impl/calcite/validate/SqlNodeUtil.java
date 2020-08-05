@@ -32,6 +32,7 @@ import java.math.BigDecimal;
 import static org.apache.calcite.sql.type.SqlTypeName.APPROX_TYPES;
 import static org.apache.calcite.sql.type.SqlTypeName.CHAR_TYPES;
 import static org.apache.calcite.sql.type.SqlTypeName.DECIMAL;
+import static org.apache.calcite.sql.type.SqlTypeName.DOUBLE;
 import static org.apache.calcite.sql.type.SqlTypeName.EXACT_TYPES;
 import static org.apache.calcite.util.Static.RESOURCE;
 
@@ -84,23 +85,29 @@ public final class SqlNodeUtil {
         SqlTypeName typeName = literal.getTypeName();
 
         if (CHAR_TYPES.contains(typeName)) {
-            try {
-                String value = literal.getValueAs(String.class);
-                if (value == null) {
-                    return null;
-                }
+            String value = literal.getValueAs(String.class);
+            if (value == null) {
+                return null;
+            }
 
-                if (value.contains("e") || value.contains("E")) {
-                    // floating point approximate scientific notation
+            if (value.contains("e") || value.contains("E")) {
+                // floating point approximate scientific notation
+                try {
                     return StringConverter.INSTANCE.asDouble(value);
-                } else {
-                    // floating point exact doted notation or integer
-                    return StringConverter.INSTANCE.asDecimal(value);
+                } catch (QueryException e) {
+                    assert e.getCode() == SqlErrorCode.DATA_EXCEPTION;
+                    throw SqlUtil.newContextException(literal.getParserPosition(),
+                            RESOURCE.invalidLiteral(literal.toString(), DOUBLE.getName()));
                 }
-            } catch (QueryException e) {
-                assert e.getCode() == SqlErrorCode.DATA_EXCEPTION;
-                throw SqlUtil.newContextException(literal.getParserPosition(),
-                        RESOURCE.invalidLiteral(literal.toString(), DECIMAL.getName()));
+            } else {
+                // floating point exact doted notation or integer
+                try {
+                    return StringConverter.INSTANCE.asDecimal(value);
+                } catch (QueryException e) {
+                    assert e.getCode() == SqlErrorCode.DATA_EXCEPTION;
+                    throw SqlUtil.newContextException(literal.getParserPosition(),
+                            RESOURCE.invalidLiteral(literal.toString(), DECIMAL.getName()));
+                }
             }
         } else if (APPROX_TYPES.contains(typeName)) {
             return literal.getValueAs(Double.class);
