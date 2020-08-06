@@ -3,7 +3,7 @@ title: 007 - Extended gRPC Support
 description: Improved support for working with gRPC services
 ---
 
-*Target Release*: 4.1
+*Since*: 4.1
 
 ## Goal
 

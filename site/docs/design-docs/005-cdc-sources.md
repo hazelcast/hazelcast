@@ -3,7 +3,7 @@ title: 005 - Change Data Capture (CDC) Sources
 description: Change Data Capture (CDC) Sources
 ---
 
-*Target Release*: 4.2
+*Since*: 4.2
 
 ## Goal
 

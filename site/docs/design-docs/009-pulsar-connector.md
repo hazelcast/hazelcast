@@ -3,6 +3,8 @@ title: 009 - Apache Pulsar Connector
 description: Jet source and sink for Apache Pulsar.
 ---
 
+*Since*: Contrib Module
+
 ## Summary
 
 Apache Pulsar connector enables Jet to ingest data from Pulsar topics

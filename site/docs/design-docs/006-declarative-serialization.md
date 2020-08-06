@@ -3,7 +3,7 @@ title: 006 - Declarative Serialization
 description: Out of box support for additional serialization types such as Avro and Protobuf.
 ---
 
-*Target Release*: 4.1
+*Since*: 4.1
 
 ## Problem statement
 

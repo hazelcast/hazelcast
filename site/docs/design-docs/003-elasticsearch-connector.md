@@ -3,7 +3,7 @@ title: 003 - Elasticsearch Connector
 description: Elasticsearch Connector (source and sink)
 ---
 
-*Target Release*: 4.2
+*Since*: 4.2
 
 ## Background
 

@@ -3,6 +3,8 @@ title: 010 - Kubernetes Operators
 description: Helm based operator implementation for Hazelcast Jet.
 ---
 
+*Since*: 4.2
+
 ## Summary
 
 Kubernetes is a portable, extensible, open-source platform for managing
