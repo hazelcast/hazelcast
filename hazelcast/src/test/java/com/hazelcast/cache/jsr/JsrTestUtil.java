@@ -19,10 +19,13 @@ package com.hazelcast.cache.jsr;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.instance.impl.HazelcastInstanceFactory;
+import com.hazelcast.test.JmxLeakHelper;
 
 import javax.cache.Caching;
 import javax.cache.spi.CachingProvider;
+import javax.management.ObjectInstance;
 import java.lang.reflect.Field;
+import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -51,6 +54,7 @@ public final class JsrTestUtil {
     public static void setup() {
         assertThatIsNotMultithreadedTest();
         setSystemProperties("server");
+        assertNoMBeanLeftovers();
     }
 
     public static void cleanup() {
@@ -194,5 +198,15 @@ public final class JsrTestUtil {
 
         //noinspection unchecked
         return (Map<ClassLoader, Map<String, CachingProvider>>) providerMapField.get(providerRegistryInstance);
+    }
+
+    public static void assertNoMBeanLeftovers() {
+        Collection<ObjectInstance> leftovers = JmxLeakHelper.getActiveJmxBeansWithPrefix("javax.cache");
+
+        if (leftovers.isEmpty()) {
+            return;
+        }
+        fail("Leftover MBeans are still registered with the platform MBeanServer: "
+                + leftovers);
     }
 }
