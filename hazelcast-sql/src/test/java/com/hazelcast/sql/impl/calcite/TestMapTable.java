@@ -23,7 +23,6 @@ import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.schema.TableStatistics;
 import com.hazelcast.sql.impl.schema.map.AbstractMapTable;
 import com.hazelcast.sql.impl.type.QueryDataType;
-import com.sun.corba.se.spi.ior.ObjectId;
 
 import java.util.Arrays;
 import java.util.List;
