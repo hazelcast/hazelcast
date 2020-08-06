@@ -57,7 +57,6 @@ public final class HazelcastSchemaUtils {
      *
      * @return Top-level schema.
      */
-    @SuppressWarnings({"unchecked", "rawtypes"})
     public static HazelcastSchema createRootSchema(SqlCatalog catalog) {
         // Create schemas.
         Map<String, Schema> schemaMap = new HashMap<>();
@@ -65,7 +64,7 @@ public final class HazelcastSchemaUtils {
         for (Map.Entry<String, Map<String, Table>> currentSchemaEntry : catalog.getSchemas().entrySet()) {
             String schemaName = currentSchemaEntry.getKey();
 
-            Map schemaTables = new HashMap<>();
+            Map<String, org.apache.calcite.schema.Table> schemaTables = new HashMap<>();
 
             for (Map.Entry<String, Table> tableEntry : currentSchemaEntry.getValue().entrySet()) {
                 String tableName = tableEntry.getKey();
