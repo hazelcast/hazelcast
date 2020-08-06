@@ -192,4 +192,4 @@ the test with more threads given to Jet, 78, but that didn't make a
 difference.
 
 *If you enjoyed reading this post, feel free to join us on [Slack](https://slack.hazelcast.com)
-and give our [GitHub repository](https://github.com/hazelcast-jet) a star!*
+and give our [GitHub repository](https://github.com/hazelcast/hazelcast-jet) a star!*
