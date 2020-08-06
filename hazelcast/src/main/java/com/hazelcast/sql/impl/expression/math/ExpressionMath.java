@@ -56,7 +56,8 @@ public final class ExpressionMath {
      */
     public static long divideExact(long left, long right) {
         if (left == Long.MIN_VALUE && right == -1) {
-            throw QueryException.error(SqlErrorCode.DATA_EXCEPTION, "BIGINT overflow");
+            throw QueryException.error(SqlErrorCode.DATA_EXCEPTION,
+                    "BIGINT overflow in '/' operator (consider adding explicit CAST to DECIMAL)");
         }
         try {
             return left / right;

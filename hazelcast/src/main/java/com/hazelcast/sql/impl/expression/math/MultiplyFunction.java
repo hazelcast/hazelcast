@@ -91,7 +91,8 @@ public final class MultiplyFunction<T> extends BiExpressionWithType<T> implement
                 try {
                     return Math.multiplyExact(left.longValue(), right.longValue());
                 } catch (ArithmeticException e) {
-                    throw QueryException.error(SqlErrorCode.DATA_EXCEPTION, "BIGINT overflow");
+                    throw QueryException.error(SqlErrorCode.DATA_EXCEPTION,
+                            "BIGINT overflow in '*' operator (consider adding explicit CAST to DECIMAL)");
                 }
             case REAL:
                 return left.floatValue() * right.floatValue();

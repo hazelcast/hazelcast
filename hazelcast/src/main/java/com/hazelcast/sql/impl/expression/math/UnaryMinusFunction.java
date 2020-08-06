@@ -85,7 +85,8 @@ public final class UnaryMinusFunction<T> extends UniExpressionWithType<T> implem
                 try {
                     return Math.negateExact(number.longValue());
                 } catch (ArithmeticException e) {
-                    throw QueryException.error(SqlErrorCode.DATA_EXCEPTION, "BIGINT overflow");
+                    throw QueryException.error(SqlErrorCode.DATA_EXCEPTION,
+                            "BIGINT overflow in unary '-' operator (consider adding explicit CAST to DECIMAL)");
                 }
 
             case DECIMAL:

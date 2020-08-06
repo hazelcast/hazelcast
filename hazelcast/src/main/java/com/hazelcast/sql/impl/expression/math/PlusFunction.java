@@ -89,7 +89,8 @@ public final class PlusFunction<T> extends BiExpressionWithType<T> implements Id
                 try {
                     return Math.addExact(left.longValue(), right.longValue());
                 } catch (ArithmeticException e) {
-                    throw QueryException.error(SqlErrorCode.DATA_EXCEPTION, "BIGINT overflow");
+                    throw QueryException.error(SqlErrorCode.DATA_EXCEPTION,
+                            "BIGINT overflow in '+' operator (consider adding explicit CAST to DECIMAL)");
                 }
             case REAL:
                 return left.floatValue() + right.floatValue();
