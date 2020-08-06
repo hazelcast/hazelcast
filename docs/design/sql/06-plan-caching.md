@@ -78,7 +78,7 @@ Therefore, search paths must be part of the key.
 
 ### 2.2 Data Structure
 
-We use `ConcurrentHashMap` to store cache plans. `PlanKey` is a key, the plan is a value.
+We use `ConcurrentHashMap` to store cached plans. `PlanKey` is a key, the plan is a value.
  
 ### 2.3 Maximum Size and Plan Eviction
 
