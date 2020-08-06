@@ -36,7 +36,6 @@ import com.hazelcast.map.impl.MapService;
 class MapInfoCollector implements MetricsCollector {
 
     private static final int DISTRIBUTED_OBJECT_TYPE_COUNT = 13;
-    private final LatencyInfo info = new LatencyInfo(0, 0);
     private Collection<MapConfig> mapConfigs;
 
     @Override
@@ -123,53 +122,53 @@ class MapInfoCollector implements MetricsCollector {
     }
 
     static class LatencyInfo {
+
         private long totalLatency;
-        private long totalOperation;
+        private long operationCount;
 
-        LatencyInfo(long totalLatency, long totalOperation) {
+        LatencyInfo(long totalLatency, long operationCount) {
             this.totalLatency = totalLatency;
-            this.totalOperation = totalOperation;
+            this.operationCount = operationCount;
         }
 
-        LatencyInfo setLatency(long totalLatency, long totalOperation) {
+        void setLatency(long totalLatency, long totalOperation) {
             this.totalLatency = totalLatency;
-            this.totalOperation = totalOperation;
-            return this;
+            this.operationCount = totalOperation;
         }
 
-        LatencyInfo sum(LatencyInfo latencyInfo) {
-            return setLatency(this.totalLatency + latencyInfo.totalLatency,
-                    this.totalOperation + latencyInfo.totalOperation);
+        void add(long totalLatency, long operationCount) {
+            setLatency(this.totalLatency + totalLatency,
+                    this.operationCount + operationCount);
         }
 
-        Long calculateAverage(LatencyInfo latencyInfo) {
-            return latencyInfo.totalOperation == 0 ? -1 : (latencyInfo.totalLatency / latencyInfo.totalOperation);
+        Long calculateAverage() {
+            return this.operationCount == 0 ? -1 : (this.totalLatency / this.operationCount);
         }
     }
 
 
     private long mapPutLatency(Node node, Predicate<MapConfig> predicate) {
 
-        LatencyInfo latencyInfo = mapConfigs.stream()
+        LatencyInfo putLatencyInfo = new LatencyInfo(0L, 0L);
+        mapConfigs.stream()
                 .filter(predicate)
                 .map(mapConfig -> node.hazelcastInstance.getMap(mapConfig.getName()).getLocalMapStats())
                 .filter(mapStats -> mapStats.getPutOperationCount() != 0L)
-                .map(mapStats -> info.setLatency(mapStats.getTotalPutLatency(), mapStats.getPutOperationCount()))
-                .reduce(new LatencyInfo(0, 0), LatencyInfo::sum);
+                .forEach(mapStats -> putLatencyInfo.add(mapStats.getTotalPutLatency(), mapStats.getPutOperationCount()));
 
-        return info.calculateAverage(latencyInfo);
-
+        return putLatencyInfo.calculateAverage();
     }
 
     private long mapGetLatency(Node node, Predicate<MapConfig> predicate) {
 
-        LatencyInfo latencyInfo = mapConfigs.stream()
+        LatencyInfo getLatencyInfo = new LatencyInfo(0L, 0L);
+        mapConfigs.stream()
                 .filter(predicate)
                 .map(mapConfig -> node.hazelcastInstance.getMap(mapConfig.getName()).getLocalMapStats())
                 .filter(mapStats -> mapStats.getGetOperationCount() != 0L)
-                .map(mapStats -> info.setLatency(mapStats.getTotalGetLatency(), mapStats.getGetOperationCount()))
-                .reduce(new LatencyInfo(0, 0), LatencyInfo::sum);
+                .forEach(mapStats -> getLatencyInfo.add(mapStats.getTotalGetLatency(), mapStats.getGetOperationCount()));
 
-        return info.calculateAverage(latencyInfo);
+
+        return getLatencyInfo.calculateAverage();
     }
 }
