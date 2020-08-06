@@ -218,3 +218,7 @@ sufficiently short duration that the rest of the pipeline didn't get
 stalled. The pipeline has mechanisms that dampen out short hiccups and
 as long as the GC pauses are within acceptable limits (up to some 150
 ms), the effect of GC stays local.
+
+_If you enjoyed reading this post, feel free to join us on [Slack](https://slack.hazelcast.com)
+and give our [GitHub repository](https://github.com/hazelcast/hazelcast-jet)
+a star!_
