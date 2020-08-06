@@ -46,11 +46,14 @@ a.button {
   color: black;
   background-color:#eff3f6;
   border-radius: 6px;
-  padding: 14px;
+  padding-left: 10px;
+  padding-right: 10px;
+  padding-top: 4px;
+  padding-bottom: 4px;
   display: flex;
-  width: 180px;
-  height: 40px;
-  margin-left: 8px;
+  width: 155px;
+  height: 34px;
+  margin-left: 10px;
 }
 
 .nav-footer .sitemap .star-icon:visited {
@@ -59,11 +62,11 @@ a.button {
 
 .nav-footer .sitemap a.star-icon:hover, .nav-footer .sitemap a.star-icon:active {
   color: black;
-  background-color: #dce0e3;
+  background-color: #c6c9cc;
 }
 
 .star-icon img {
-  margin-right: 8px;
+  margin-right: 4px;
 }
 
 .projectTitle {
