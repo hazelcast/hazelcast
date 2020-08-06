@@ -1,0 +1,2 @@
+http\://www.hazelcast.com/schema/spring=com.hazelcast.spring.HazelcastNamespaceHandler
+https\://www.hazelcast.com/schema/spring=com.hazelcast.spring.HazelcastNamespaceHandler
