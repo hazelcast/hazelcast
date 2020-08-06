@@ -209,11 +209,18 @@ public final class HazelcastIntegerType extends BasicSqlType {
     }
 
     /**
-     * @return the bit width if the given long value.
+     * @return the bit width required to represent the given value.
      */
     public static int bitWidthOf(long value) {
+        // handle edge cases
         if (value == Long.MIN_VALUE) {
             return Long.SIZE - 1;
+        } else if (value == Integer.MIN_VALUE) {
+            return Integer.SIZE - 1;
+        } else if (value == Short.MIN_VALUE) {
+            return Short.SIZE - 1;
+        } else if (value == Byte.MIN_VALUE) {
+            return Byte.SIZE - 1;
         }
 
         value = Math.abs(value);

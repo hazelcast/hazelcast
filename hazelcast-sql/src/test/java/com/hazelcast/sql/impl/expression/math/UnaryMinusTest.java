@@ -44,7 +44,10 @@ import static org.apache.calcite.sql.type.SqlTypeName.BIGINT;
 import static org.apache.calcite.sql.type.SqlTypeName.BOOLEAN;
 import static org.apache.calcite.sql.type.SqlTypeName.DECIMAL;
 import static org.apache.calcite.sql.type.SqlTypeName.DOUBLE;
+import static org.apache.calcite.sql.type.SqlTypeName.INTEGER;
 import static org.apache.calcite.sql.type.SqlTypeName.NULL;
+import static org.apache.calcite.sql.type.SqlTypeName.SMALLINT;
+import static org.apache.calcite.sql.type.SqlTypeName.TINYINT;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -154,16 +157,25 @@ public class UnaryMinusTest extends ExpressionTestBase {
             return null;
         }
 
-        // XXX: Special case of SELECT -(9223372036854775808), Calcite interprets
+        // XXX: Special cases like SELECT -(9223372036854775808), Calcite interprets
         // this as a literal (Long.MIN_VALUE), but it's impossible to pass
         // abs(Long.MIN_VALUE) from Java side in a form of a long to negate it.
-        if (arg == INVALID_VALUE && operand.isLiteral() && typeName == BIGINT) {
+        if (arg == INVALID_VALUE && operand.isLiteral() && isInteger(type)) {
             BigDecimal numeric = (BigDecimal) operand.numericValue();
             assert numeric != null;
             if (numeric != INVALID_NUMERIC_VALUE) {
                 numeric = numeric.negate(DECIMAL_MATH_CONTEXT);
-                if (numeric.longValueExact() == Long.MIN_VALUE) {
+                if (typeName == BIGINT && numeric.longValueExact() == Long.MIN_VALUE) {
                     return Long.MIN_VALUE;
+                }
+                if (typeName == INTEGER && numeric.intValueExact() == Integer.MIN_VALUE) {
+                    return Integer.MIN_VALUE;
+                }
+                if (typeName == SMALLINT && numeric.shortValueExact() == Short.MIN_VALUE) {
+                    return Short.MIN_VALUE;
+                }
+                if (typeName == TINYINT && numeric.byteValueExact() == Byte.MIN_VALUE) {
+                    return Byte.MIN_VALUE;
                 }
             }
         }

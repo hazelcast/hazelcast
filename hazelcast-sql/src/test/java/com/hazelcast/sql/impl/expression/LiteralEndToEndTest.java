@@ -50,15 +50,19 @@ public class LiteralEndToEndTest extends ExpressionEndToEndTestBase {
         assertRow("001", EXPR0, TINYINT, (byte) 1);
         assertRow("100", EXPR0, TINYINT, (byte) 100);
         assertRow(Byte.toString(Byte.MAX_VALUE), EXPR0, TINYINT, Byte.MAX_VALUE);
+        assertRow(Byte.toString(Byte.MIN_VALUE), EXPR0, TINYINT, Byte.MIN_VALUE);
 
         assertRow(Short.toString((short) (Byte.MAX_VALUE + 1)), EXPR0, SMALLINT, (short) (Byte.MAX_VALUE + 1));
         assertRow(Short.toString(Short.MAX_VALUE), EXPR0, SMALLINT, Short.MAX_VALUE);
+        assertRow(Short.toString(Short.MIN_VALUE), EXPR0, SMALLINT, Short.MIN_VALUE);
 
         assertRow(Integer.toString(Short.MAX_VALUE + 1), EXPR0, INTEGER, Short.MAX_VALUE + 1);
         assertRow(Integer.toString(Integer.MAX_VALUE), EXPR0, INTEGER, Integer.MAX_VALUE);
+        assertRow(Integer.toString(Integer.MIN_VALUE), EXPR0, INTEGER, Integer.MIN_VALUE);
 
         assertRow(Long.toString(Integer.MAX_VALUE + 1L), EXPR0, BIGINT, Integer.MAX_VALUE + 1L);
         assertRow(Long.toString(Long.MAX_VALUE), EXPR0, BIGINT, Long.MAX_VALUE);
+        assertRow(Long.toString(Long.MIN_VALUE), EXPR0, BIGINT, Long.MIN_VALUE);
 
         assertRow("0.0", EXPR0, DECIMAL, new BigDecimal("0.0"));
         assertRow("1.0", EXPR0, DECIMAL, new BigDecimal("1.0"));
