@@ -26,8 +26,8 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
-import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.function.ToLongFunction;
 
 import static java.util.stream.Collectors.toList;
 
@@ -63,13 +63,13 @@ class MapInfoCollector implements MetricsCollector {
         mapInfo.put("mpevct", String.valueOf(countMapUsingEviction()));
         mapInfo.put("mpnmct", String.valueOf(countMapWithNativeInMemoryFormat()));
         mapInfo.put("mpptlams", String.valueOf(mapOperationLatency(hazelcastNode, IS_MAP_STORE_ENABLED,
-                mapStatsToPutLatency(), mapStatsToPutOperationCount())));
+                LocalMapStats::getTotalPutLatency, LocalMapStats::getPutOperationCount)));
         mapInfo.put("mpptla", String.valueOf(mapOperationLatency(hazelcastNode, IS_MAP_STORE_ENABLED.negate(),
-                mapStatsToPutLatency(), mapStatsToPutOperationCount())));
+                LocalMapStats::getTotalPutLatency, LocalMapStats::getPutOperationCount)));
         mapInfo.put("mpgtlams", String.valueOf(mapOperationLatency(hazelcastNode, IS_MAP_STORE_ENABLED,
-                mapStatsToGetLatency(), mapStatsToGetOperationCount())));
+                LocalMapStats::getTotalGetLatency, LocalMapStats::getGetOperationCount)));
         mapInfo.put("mpgtla", String.valueOf(mapOperationLatency(hazelcastNode, IS_MAP_STORE_ENABLED.negate(),
-                mapStatsToGetLatency(), mapStatsToGetOperationCount())));
+                LocalMapStats::getTotalGetLatency, LocalMapStats::getGetOperationCount)));
 
         return mapInfo;
     }
@@ -120,48 +120,33 @@ class MapInfoCollector implements MetricsCollector {
     }
 
     static class LatencyInfo {
-        private Long totalLatency;
-        private Long operationCount;
+        private long totalLatency;
+        private long operationCount;
 
-        LatencyInfo(Long totalLatency, Long operationCount) {
+        LatencyInfo(long totalLatency, long operationCount) {
             this.totalLatency = totalLatency;
             this.operationCount = operationCount;
         }
 
-        void add(Long totalLatency, Long operationCount) {
+        void add(long totalLatency, long operationCount) {
             this.totalLatency += totalLatency;
             this.operationCount += operationCount;
         }
 
-        Long calculateAverage() {
+        long calculateAverage() {
             return this.operationCount == 0 ? -1 : (this.totalLatency / this.operationCount);
         }
     }
 
-    Function<? super LocalMapStats, ? extends Long> mapStatsToGetLatency() {
-        return LocalMapStats::getTotalGetLatency;
-    }
-
-    Function<? super LocalMapStats, ? extends Long> mapStatsToGetOperationCount() {
-        return LocalMapStats::getGetOperationCount;
-    }
-
-    Function<? super LocalMapStats, ? extends Long> mapStatsToPutLatency() {
-        return LocalMapStats::getTotalPutLatency;
-    }
-
-    Function<? super LocalMapStats, ? extends Long> mapStatsToPutOperationCount() {
-        return LocalMapStats::getPutOperationCount;
-    }
-
     private long mapOperationLatency(Node node, Predicate<MapConfig> predicate,
-                                     Function<? super LocalMapStats, ? extends Long> latencyMap,
-                                     Function<? super LocalMapStats, ? extends Long> operationMap) {
+                                     ToLongFunction<LocalMapStats> totalLatencyProvider,
+                                     ToLongFunction<LocalMapStats> operationCountProvider) {
+
         LatencyInfo latencyInfo = new LatencyInfo(0L, 0L);
-        mapConfigs.stream()
-                .filter(predicate)
+        mapConfigs.stream().filter(predicate)
                 .map(mapConfig -> node.hazelcastInstance.getMap(mapConfig.getName()).getLocalMapStats())
-                .forEach(mapStats -> latencyInfo.add(latencyMap.apply(mapStats), operationMap.apply(mapStats)));
+                .forEach(mapStats -> latencyInfo.add(totalLatencyProvider.applyAsLong(mapStats),
+                        operationCountProvider.applyAsLong(mapStats)));
         return latencyInfo.calculateAverage();
     }
 }
