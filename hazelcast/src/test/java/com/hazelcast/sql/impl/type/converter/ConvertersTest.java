@@ -315,15 +315,31 @@ public class ConvertersTest {
         assertEquals(1, converter.asTinyint(val));
         checkDataException(() -> converter.asTinyint(bigValue));
         checkDataException(() -> converter.asTinyint(Byte.MAX_VALUE + 1.0f));
+        checkDataException(() -> converter.asTinyint(Float.POSITIVE_INFINITY));
+        checkDataException(() -> converter.asTinyint(Float.NEGATIVE_INFINITY));
+        checkDataException(() -> converter.asTinyint(Float.NaN));
+
         assertEquals(1, converter.asSmallint(val));
         checkDataException(() -> converter.asSmallint(bigValue));
         checkDataException(() -> converter.asSmallint(Short.MAX_VALUE + 1.0f));
+        checkDataException(() -> converter.asSmallint(Float.POSITIVE_INFINITY));
+        checkDataException(() -> converter.asSmallint(Float.NEGATIVE_INFINITY));
+        checkDataException(() -> converter.asSmallint(Float.NaN));
+
         assertEquals(1, converter.asInt(val));
         checkDataException(() -> converter.asInt(bigValue));
         checkDataException(() -> converter.asInt(Integer.MAX_VALUE + 1.0f));
+        checkDataException(() -> converter.asInt(Float.POSITIVE_INFINITY));
+        checkDataException(() -> converter.asInt(Float.NEGATIVE_INFINITY));
+        checkDataException(() -> converter.asInt(Float.NaN));
+
         assertEquals(1L, converter.asBigint(val));
         checkDataException(() -> converter.asBigint(bigValue));
         checkDataException(() -> converter.asBigint(Long.MAX_VALUE + Math.ulp((float) Long.MAX_VALUE)));
+        checkDataException(() -> converter.asBigint(Float.POSITIVE_INFINITY));
+        checkDataException(() -> converter.asBigint(Float.NEGATIVE_INFINITY));
+        checkDataException(() -> converter.asBigint(Float.NaN));
+
         assertEquals(new BigDecimal(val, ExpressionMath.DECIMAL_MATH_CONTEXT), converter.asDecimal(val));
 
         assertEquals(1.1f, converter.asReal(val), 0);
@@ -349,15 +365,31 @@ public class ConvertersTest {
         assertEquals(1, converter.asTinyint(val));
         checkDataException(() -> converter.asTinyint(bigValue));
         checkDataException(() -> converter.asTinyint(Byte.MAX_VALUE + 1.0d));
+        checkDataException(() -> converter.asTinyint(Double.POSITIVE_INFINITY));
+        checkDataException(() -> converter.asTinyint(Double.NEGATIVE_INFINITY));
+        checkDataException(() -> converter.asTinyint(Double.NaN));
+
         assertEquals(1, converter.asSmallint(val));
         checkDataException(() -> converter.asSmallint(bigValue));
         checkDataException(() -> converter.asSmallint(Short.MAX_VALUE + 1.0d));
+        checkDataException(() -> converter.asSmallint(Double.POSITIVE_INFINITY));
+        checkDataException(() -> converter.asSmallint(Double.NEGATIVE_INFINITY));
+        checkDataException(() -> converter.asSmallint(Double.NaN));
+
         assertEquals(1, converter.asInt(val));
         checkDataException(() -> converter.asInt(bigValue));
         checkDataException(() -> converter.asInt(Integer.MAX_VALUE + 1.0d));
+        checkDataException(() -> converter.asInt(Double.POSITIVE_INFINITY));
+        checkDataException(() -> converter.asInt(Double.NEGATIVE_INFINITY));
+        checkDataException(() -> converter.asInt(Double.NaN));
+
         assertEquals(1L, converter.asBigint(val));
         checkDataException(() -> converter.asBigint(bigValue));
         checkDataException(() -> converter.asBigint(Long.MAX_VALUE + Math.ulp((double) Long.MAX_VALUE)));
+        checkDataException(() -> converter.asBigint(Double.POSITIVE_INFINITY));
+        checkDataException(() -> converter.asBigint(Double.NEGATIVE_INFINITY));
+        checkDataException(() -> converter.asBigint(Double.NaN));
+
         assertEquals(new BigDecimal(val, ExpressionMath.DECIMAL_MATH_CONTEXT), converter.asDecimal(val));
 
         assertEquals(1.1f, converter.asReal(val), 0);

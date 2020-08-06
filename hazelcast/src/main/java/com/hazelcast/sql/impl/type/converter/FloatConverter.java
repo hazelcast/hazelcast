@@ -41,11 +41,15 @@ public final class FloatConverter extends Converter {
     @Override
     public byte asTinyint(Object val) {
         float casted = cast(val);
+        if (!Float.isFinite(casted)) {
+            throw cannotConvert(QueryDataTypeFamily.TINYINT, val);
+        }
+
         // here the overflow may happen: (byte) casted = (byte) (int) casted
         byte converted = (byte) casted;
 
         // casts from float to int are saturating
-        if (converted != (int) casted || !Float.isFinite(casted)) {
+        if (converted != (int) casted) {
             throw numericOverflow(QueryDataTypeFamily.TINYINT, val);
         }
 
@@ -55,11 +59,15 @@ public final class FloatConverter extends Converter {
     @Override
     public short asSmallint(Object val) {
         float casted = cast(val);
+        if (!Float.isFinite(casted)) {
+            throw cannotConvert(QueryDataTypeFamily.SMALLINT, val);
+        }
+
         // here the overflow may happen: (short) casted = (short) (int) casted
         short converted = (short) casted;
 
         // casts from float to int are saturating
-        if (converted != (int) casted || !Float.isFinite(casted)) {
+        if (converted != (int) casted) {
             throw numericOverflow(QueryDataTypeFamily.SMALLINT, val);
         }
 
@@ -69,11 +77,15 @@ public final class FloatConverter extends Converter {
     @Override
     public int asInt(Object val) {
         float casted = cast(val);
+        if (!Float.isFinite(casted)) {
+            throw cannotConvert(QueryDataTypeFamily.INT, val);
+        }
+
         // casts from float to int are saturating
         int converted = (int) casted;
 
         // casts from float to long are saturating
-        if (converted != (long) casted || !Float.isFinite(casted)) {
+        if (converted != (long) casted) {
             throw numericOverflow(QueryDataTypeFamily.INT, val);
         }
 
@@ -83,12 +95,14 @@ public final class FloatConverter extends Converter {
     @Override
     public long asBigint(Object val) {
         float casted = cast(val);
+        if (!Float.isFinite(casted)) {
+            throw cannotConvert(QueryDataTypeFamily.BIGINT, val);
+        }
+
         float truncated = (float) (casted > 0.0 ? Math.floor(casted) : Math.ceil(casted));
         // casts from float to long are saturating
         long converted = (long) truncated;
 
-        // No checks for NaNs and infinities are needed: NaNs are zeros and
-        // infinities are Long.MAX/MIN_VALUE when converted to long.
         if ((float) converted != truncated) {
             throw numericOverflow(QueryDataTypeFamily.BIGINT, val);
         }
