@@ -63,9 +63,9 @@ import java.util.Properties;
  *     is identical to using {@link Caching#getCachingProvider()}; choice between
  *     member- or client-side caching provider is performed via system property
  *     {@code hazelcast.jcache.provider.type} as described above.</li>
- *     <li>using {@value #SERVER_CACHING_PROVIDER} as
+ *     <li>using {@link #SERVER_CACHING_PROVIDER} as
  *     class name will return a member-side caching provider</li>
- *     <li>using {@value #CLIENT_CACHING_PROVIDER} as
+ *     <li>using {@link #CLIENT_CACHING_PROVIDER} as
  *     class name will return a client-side caching provider</li>
  * </ul>
  * <h3>Creating or reusing HazelcastInstances with CacheManagers</h3>
@@ -161,11 +161,12 @@ public final class HazelcastCachingProvider implements CachingProvider {
     /**
      * Class name of the member-side Caching Provider
      */
-    public static final String SERVER_CACHING_PROVIDER = "com.hazelcast.cache.impl.HazelcastServerCachingProvider";
+    public static final String SERVER_CACHING_PROVIDER = com.hazelcast.cache.HazelcastServerCachingProvider.class.getName();
     /**
      * Class name of the client-side Caching Provider
      */
-    public static final String CLIENT_CACHING_PROVIDER = "com.hazelcast.client.cache.impl.HazelcastClientCachingProvider";
+    public static final String CLIENT_CACHING_PROVIDER =
+            com.hazelcast.client.cache.HazelcastClientCachingProvider.class.getName();
 
     /**
      * Name of default {@link HazelcastInstance} which may be started when
