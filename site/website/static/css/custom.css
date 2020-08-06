@@ -39,6 +39,32 @@ a.button {
   background-color: #fffdfa;
 }
 
+.nav-footer .sitemap .star-icon {
+  align-items: center;
+  font-size: 14px;
+  font-weight: bold;
+  color: black;
+  background-color:#eff3f6;
+  border-radius: 6px;
+  padding: 14px;
+  display: flex;
+  width: 180px;
+  height: 40px;
+  margin-left: 8px;
+}
+
+.nav-footer .sitemap .star-icon:visited {
+  color: black;
+}
+
+.nav-footer .sitemap a.star-icon:hover, .nav-footer .sitemap a.star-icon:active {
+  color: black;
+  background-color: #dce0e3;
+}
+
+.star-icon img {
+  margin-right: 8px;
+}
 
 .projectTitle {
   font-weight: 800;
