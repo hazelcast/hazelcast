@@ -21,7 +21,7 @@ import com.hazelcast.sql.impl.optimizer.SqlPlan;
 /**
  * Plan that could be cached.
  */
-public interface CachedPlan extends SqlPlan {
+public interface CacheablePlan extends SqlPlan {
     PlanCacheKey getPlanKey();
     long getPlanLastUsed();
     void onPlanUsed();

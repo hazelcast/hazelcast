@@ -19,7 +19,7 @@ package com.hazelcast.sql.impl.plan;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.sql.SqlRowMetadata;
 import com.hazelcast.sql.impl.optimizer.SqlPlanType;
-import com.hazelcast.sql.impl.plan.cache.CachedPlan;
+import com.hazelcast.sql.impl.plan.cache.CacheablePlan;
 import com.hazelcast.sql.impl.plan.cache.PlanCacheKey;
 import com.hazelcast.sql.impl.plan.cache.PlanCheckContext;
 import com.hazelcast.sql.impl.plan.cache.PlanObjectId;
@@ -34,7 +34,7 @@ import java.util.UUID;
 /**
  * Query plan implementation.
  */
-public class Plan implements CachedPlan {
+public class Plan implements CacheablePlan {
     /** Time when the plan was used for the last time. */
     private volatile long planLastUsed;
 
