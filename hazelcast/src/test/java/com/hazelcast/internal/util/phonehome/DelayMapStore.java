@@ -29,7 +29,6 @@ public class DelayMapStore implements MapStore {
     @Override
     public void store(Object key, Object value) {
         store.put(key, value);
-
     }
 
     @Override
@@ -40,13 +39,11 @@ public class DelayMapStore implements MapStore {
     @Override
     public void delete(Object key) {
         store.remove(key);
-
     }
 
     @Override
     public void deleteAll(Collection keys) {
         store.clear();
-
     }
 
     @Override
@@ -58,7 +55,6 @@ public class DelayMapStore implements MapStore {
     @Override
     public Map loadAll(Collection keys) {
         return store;
-
     }
 
     @Override

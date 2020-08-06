@@ -111,7 +111,6 @@ public class PhoneHomeTest extends HazelcastTestSupport {
         assertEquals(parameters.get("jvmv"), System.getProperty("java.version"));
     }
 
-
     @Test
     public void testConvertToLetter() {
         assertEquals("A", MetricsCollector.convertToLetter(4));
@@ -130,10 +129,12 @@ public class PhoneHomeTest extends HazelcastTestSupport {
     public void testMapCount() {
         Map<String, String> parameters = phoneHome.phoneHome(true);
         assertEquals(parameters.get("mpct"), "0");
+
         Map<String, String> map1 = node.hazelcastInstance.getMap("hazelcast");
         Map<String, String> map2 = node.hazelcastInstance.getMap("phonehome");
         parameters = phoneHome.phoneHome(true);
         assertEquals(parameters.get("mpct"), "2");
+
         Map<String, String> map3 = node.hazelcastInstance.getMap("maps");
         parameters = phoneHome.phoneHome(true);
         assertEquals(parameters.get("mpct"), "3");
@@ -190,7 +191,6 @@ public class PhoneHomeTest extends HazelcastTestSupport {
         node.getConfig().getMapConfig("hazelcast").addQueryCacheConfig(cacheConfig);
         parameters = phoneHome.phoneHome(true);
         assertEquals(parameters.get("mpaoqcct"), "1");
-
     }
 
     @Test
@@ -212,7 +212,6 @@ public class PhoneHomeTest extends HazelcastTestSupport {
         node.getConfig().getMapConfig("hazelcast").getIndexConfigs().add(config);
         parameters = phoneHome.phoneHome(true);
         assertEquals(parameters.get("mpaoict"), "1");
-
     }
 
     @Test
@@ -228,7 +227,6 @@ public class PhoneHomeTest extends HazelcastTestSupport {
         node.getConfig().getMapConfig("hazelcast").getHotRestartConfig().setEnabled(true);
         parameters = phoneHome.phoneHome(true);
         assertEquals(parameters.get("mphect"), "1");
-
     }
 
     @Test
@@ -244,7 +242,6 @@ public class PhoneHomeTest extends HazelcastTestSupport {
         node.getConfig().getMapConfig("hazelcast").setWanReplicationRef(new WanReplicationRef());
         parameters = phoneHome.phoneHome(true);
         assertEquals(parameters.get("mpwact"), "1");
-
     }
 
     @Test
@@ -264,7 +261,6 @@ public class PhoneHomeTest extends HazelcastTestSupport {
         node.getConfig().getMapConfig("hazelcast").getAttributeConfigs().add(new AttributeConfig());
         parameters = phoneHome.phoneHome(true);
         assertEquals(parameters.get("mpaocct"), "1");
-
     }
 
     @Test
@@ -287,7 +283,6 @@ public class PhoneHomeTest extends HazelcastTestSupport {
         node.getConfig().getMapConfig("hazelcast").setEvictionConfig(config);
         parameters = phoneHome.phoneHome(true);
         assertEquals(parameters.get("mpevct"), "0");
-
     }
 
     @Test
@@ -303,7 +298,6 @@ public class PhoneHomeTest extends HazelcastTestSupport {
         node.getConfig().getMapConfig("hazelcast").setInMemoryFormat(InMemoryFormat.NATIVE);
         parameters = phoneHome.phoneHome(true);
         assertEquals(parameters.get("mpnmct"), "1");
-
     }
 
     @Test
@@ -398,12 +392,10 @@ public class PhoneHomeTest extends HazelcastTestSupport {
         CachingProvider cachingProvider = createServerCachingProvider(node.hazelcastInstance);
         CacheManager cacheManager = cachingProvider.getCacheManager();
         cacheManager.createCache("hazelcast", new CacheConfig<>("hazelcast"));
-
         parameters = phoneHome.phoneHome(true);
         assertEquals(parameters.get("cact"), "1");
 
         cacheManager.createCache("phonehome", new CacheConfig<>("phonehome"));
-
         parameters = phoneHome.phoneHome(true);
         assertEquals(parameters.get("cact"), "2");
     }
@@ -514,7 +506,6 @@ public class PhoneHomeTest extends HazelcastTestSupport {
 
         IMap<Object, Object> iMap = node.hazelcastInstance.getMap("hazelcast");
         LocalMapStatsImpl localMapStats = (LocalMapStatsImpl) iMap.getLocalMapStats();
-
         localMapStats.incrementPutLatencyNanos(2000000000L);
         parameters = phoneHome.phoneHome(true);
         assertEquals(parameters.get("mpptla"), String.valueOf(2000));
@@ -526,7 +517,6 @@ public class PhoneHomeTest extends HazelcastTestSupport {
         localMapStats.incrementPutLatencyNanos(2000000000L);
         parameters = phoneHome.phoneHome(true);
         assertEquals(parameters.get("mpptla"), String.valueOf(1666));
-
     }
 
     @Test
@@ -537,7 +527,6 @@ public class PhoneHomeTest extends HazelcastTestSupport {
 
         IMap<Object, Object> iMap = node.hazelcastInstance.getMap("hazelcast");
         LocalMapStatsImpl localMapStats = (LocalMapStatsImpl) iMap.getLocalMapStats();
-
         localMapStats.incrementGetLatencyNanos(2000000000L);
         parameters = phoneHome.phoneHome(true);
         assertEquals(parameters.get("mpgtla"), String.valueOf(2000));
@@ -573,7 +562,6 @@ public class PhoneHomeTest extends HazelcastTestSupport {
         parameters = phoneHome.phoneHome(true);
         assertGreaterOrEquals("mpptlams", Long.parseLong(parameters.get("mpptlams")), 200);
     }
-
 
     @Test
     public void testMapGetLatencyWithMapStore() {

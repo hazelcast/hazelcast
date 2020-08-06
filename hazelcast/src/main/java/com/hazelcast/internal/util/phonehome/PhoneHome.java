@@ -63,7 +63,6 @@ public class PhoneHome {
         basePhoneHomeUrl = baseurl;
     }
 
-
     public void check() {
         if (!hazelcastNode.getProperties().getBoolean(ClusterProperty.PHONE_HOME_ENABLED)) {
             return;
@@ -119,7 +118,6 @@ public class PhoneHome {
         return parameterCreator;
     }
 
-
     private void fetchWebService(String urlStr) {
         InputStream in = null;
         try {
@@ -135,5 +133,4 @@ public class PhoneHome {
             closeResource(in);
         }
     }
-
 }

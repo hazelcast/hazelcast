@@ -58,5 +58,4 @@ interface MetricsCollector {
         }
         return letter;
     }
-
 }
