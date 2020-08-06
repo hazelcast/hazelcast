@@ -22,7 +22,7 @@ import com.hazelcast.sql.impl.schema.TableField;
 import java.util.List;
 import java.util.Set;
 
-public class PartitionedMapPlanObjectId implements PlanObjectId {
+public class PartitionedMapPlanObjectKey implements PlanObjectKey {
 
     private final String schemaName;
     private final String name;
@@ -31,7 +31,7 @@ public class PartitionedMapPlanObjectId implements PlanObjectId {
     private final QueryTargetDescriptor valueDescriptor;
     private final Set<String> conflictingSchemas;
 
-    public PartitionedMapPlanObjectId(
+    public PartitionedMapPlanObjectKey(
         String schemaName,
         String name,
         List<TableField> fields,
@@ -57,7 +57,7 @@ public class PartitionedMapPlanObjectId implements PlanObjectId {
             return false;
         }
 
-        PartitionedMapPlanObjectId that = (PartitionedMapPlanObjectId) o;
+        PartitionedMapPlanObjectKey that = (PartitionedMapPlanObjectKey) o;
 
         return schemaName.equals(that.schemaName)
             && name.equals(that.name)

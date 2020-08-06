@@ -44,7 +44,7 @@ import static java.util.Collections.singletonList;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class MapPlanObjectIdTest extends SqlTestSupport {
+public class MapPlanObjectKeyTest extends SqlTestSupport {
     @Test
     public void test_partitioned() {
         String schema1 = "schema1";
@@ -65,16 +65,16 @@ public class MapPlanObjectIdTest extends SqlTestSupport {
         QueryTargetDescriptor valueDescriptor1 = GenericQueryTargetDescriptor.DEFAULT;
         QueryTargetDescriptor valueDescriptor2 = new TestTargetDescriptor();
 
-        PartitionedMapPlanObjectId objectId = new PartitionedMapPlanObjectId(schema1, name1, fields1, conflictingSchemas1, keyDescriptor1, valueDescriptor1);
+        PartitionedMapPlanObjectKey objectId = new PartitionedMapPlanObjectKey(schema1, name1, fields1, conflictingSchemas1, keyDescriptor1, valueDescriptor1);
 
-        checkEquals(objectId, new PartitionedMapPlanObjectId(schema1, name1, fields1, conflictingSchemas1, keyDescriptor1, valueDescriptor1), true);
+        checkEquals(objectId, new PartitionedMapPlanObjectKey(schema1, name1, fields1, conflictingSchemas1, keyDescriptor1, valueDescriptor1), true);
 
-        checkEquals(objectId, new PartitionedMapPlanObjectId(schema2, name1, fields1, conflictingSchemas1, keyDescriptor1, valueDescriptor1), false);
-        checkEquals(objectId, new PartitionedMapPlanObjectId(schema1, name2, fields1, conflictingSchemas1, keyDescriptor1, valueDescriptor1), false);
-        checkEquals(objectId, new PartitionedMapPlanObjectId(schema1, name1, fields2, conflictingSchemas1, keyDescriptor1, valueDescriptor1), false);
-        checkEquals(objectId, new PartitionedMapPlanObjectId(schema1, name1, fields1, conflictingSchemas2, keyDescriptor1, valueDescriptor1), false);
-        checkEquals(objectId, new PartitionedMapPlanObjectId(schema1, name1, fields1, conflictingSchemas1, keyDescriptor2, valueDescriptor1), false);
-        checkEquals(objectId, new PartitionedMapPlanObjectId(schema1, name1, fields1, conflictingSchemas1, keyDescriptor1, valueDescriptor2), false);
+        checkEquals(objectId, new PartitionedMapPlanObjectKey(schema2, name1, fields1, conflictingSchemas1, keyDescriptor1, valueDescriptor1), false);
+        checkEquals(objectId, new PartitionedMapPlanObjectKey(schema1, name2, fields1, conflictingSchemas1, keyDescriptor1, valueDescriptor1), false);
+        checkEquals(objectId, new PartitionedMapPlanObjectKey(schema1, name1, fields2, conflictingSchemas1, keyDescriptor1, valueDescriptor1), false);
+        checkEquals(objectId, new PartitionedMapPlanObjectKey(schema1, name1, fields1, conflictingSchemas2, keyDescriptor1, valueDescriptor1), false);
+        checkEquals(objectId, new PartitionedMapPlanObjectKey(schema1, name1, fields1, conflictingSchemas1, keyDescriptor2, valueDescriptor1), false);
+        checkEquals(objectId, new PartitionedMapPlanObjectKey(schema1, name1, fields1, conflictingSchemas1, keyDescriptor1, valueDescriptor2), false);
     }
 
     private static class TestTargetDescriptor implements QueryTargetDescriptor {

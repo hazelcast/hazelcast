@@ -48,11 +48,11 @@ public class PlanCacheChecker {
         // Collect object IDs
         SqlCatalog catalog = new SqlCatalog(tableResolvers);
 
-        Set<PlanObjectId> objectIds = new HashSet<>();
+        Set<PlanObjectKey> objectIds = new HashSet<>();
 
         for (Map<String, Table> tableMap : catalog.getSchemas().values()) {
             for (Table table : tableMap.values()) {
-                PlanObjectId objectId = table.getObjectId();
+                PlanObjectKey objectId = table.getObjectKey();
 
                 if (objectId != null) {
                     objectIds.add(objectId);

@@ -33,7 +33,7 @@ import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.plan.Plan;
 import com.hazelcast.sql.impl.plan.PlanFragmentMapping;
 import com.hazelcast.sql.impl.plan.cache.PlanCacheKey;
-import com.hazelcast.sql.impl.plan.cache.PlanObjectId;
+import com.hazelcast.sql.impl.plan.cache.PlanObjectKey;
 import com.hazelcast.sql.impl.plan.node.FilterPlanNode;
 import com.hazelcast.sql.impl.plan.node.MapScanPlanNode;
 import com.hazelcast.sql.impl.plan.node.PlanNode;
@@ -117,7 +117,7 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
     private SqlRowMetadata rowMetadata;
 
     /** Collected IDs of objects used in the plan. */
-    private final Set<PlanObjectId> objectIds = new HashSet<>();
+    private final Set<PlanObjectKey> objectIds = new HashSet<>();
 
     public PlanCreateVisitor(
         UUID localMemberId,
@@ -228,7 +228,7 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
 
         pushUpstream(scanNode);
 
-        objectIds.add(table.getObjectId());
+        objectIds.add(table.getObjectKey());
     }
 
     @Override

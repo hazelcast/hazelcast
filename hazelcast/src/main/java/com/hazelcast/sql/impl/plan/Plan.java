@@ -22,7 +22,7 @@ import com.hazelcast.sql.impl.optimizer.SqlPlanType;
 import com.hazelcast.sql.impl.plan.cache.CacheablePlan;
 import com.hazelcast.sql.impl.plan.cache.PlanCacheKey;
 import com.hazelcast.sql.impl.plan.cache.PlanCheckContext;
-import com.hazelcast.sql.impl.plan.cache.PlanObjectId;
+import com.hazelcast.sql.impl.plan.cache.PlanObjectKey;
 import com.hazelcast.sql.impl.plan.node.PlanNode;
 
 import java.util.Collection;
@@ -62,7 +62,7 @@ public class Plan implements CacheablePlan {
     private final SqlRowMetadata rowMetadata;
 
     /** IDs of objects used in the plan. */
-    private final Set<PlanObjectId> objectIds;
+    private final Set<PlanObjectKey> objectIds;
 
     @SuppressWarnings("checkstyle:ParameterNumber")
     public Plan(
@@ -74,7 +74,7 @@ public class Plan implements CacheablePlan {
         Map<Integer, Integer> inboundEdgeMemberCountMap,
         SqlRowMetadata rowMetadata,
         PlanCacheKey planKey,
-        Set<PlanObjectId> objectIds
+        Set<PlanObjectKey> objectIds
     ) {
         this.partMap = partMap;
         this.fragments = fragments;

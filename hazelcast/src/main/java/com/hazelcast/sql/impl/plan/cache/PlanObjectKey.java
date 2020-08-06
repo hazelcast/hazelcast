@@ -19,6 +19,6 @@ package com.hazelcast.sql.impl.plan.cache;
 /**
  * ID of an object used in the plan.
  */
-public interface PlanObjectId {
+public interface PlanObjectKey {
     // No-op.
 }
