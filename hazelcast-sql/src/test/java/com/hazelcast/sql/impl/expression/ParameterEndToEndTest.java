@@ -168,6 +168,7 @@ public class ParameterEndToEndTest extends ExpressionEndToEndTestBase {
 
     @Test
     public void testVarious() {
+        assertParsingError("?", "illegal use of dynamic parameter");
         assertParsingError("? + ?", "illegal use of dynamic parameter");
         assertRow("? + cast(? as tinyint)", EXPR0, BIGINT, 3L, 1, 2);
         assertRow("cast(? as tinyint) + cast(? as tinyint)", EXPR0, SMALLINT, (short) 3, 1, 2);
