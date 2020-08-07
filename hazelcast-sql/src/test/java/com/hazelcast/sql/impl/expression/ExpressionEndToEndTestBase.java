@@ -172,20 +172,25 @@ public abstract class ExpressionEndToEndTestBase extends SqlTestSupport {
         public long longMin = Long.MIN_VALUE;
 
         public float float1 = 1;
+        public float float2 = 2;
         public float floatMax = Float.MAX_VALUE;
         public float floatMin = Float.MIN_VALUE;
         public double double1 = 1;
+        public double double2 = 2;
         public double doubleMax = Double.MAX_VALUE;
         public double doubleMin = Double.MIN_VALUE;
 
         public BigDecimal decimal1 = BigDecimal.valueOf(1);
+        public BigDecimal decimal2 = BigDecimal.valueOf(2);
         public BigDecimal decimalBig = new BigDecimal(Long.MAX_VALUE + "0");
         public BigDecimal decimalBigNegative = new BigDecimal("-" + Long.MAX_VALUE + "0");
         public BigInteger bigInteger1 = BigInteger.valueOf(1);
+        public BigInteger bigInteger2 = BigInteger.valueOf(2);
         public BigInteger bigIntegerBig = new BigInteger(Long.MAX_VALUE + "0");
         public BigInteger bigIntegerBigNegative = new BigInteger("-" + Long.MAX_VALUE + "0");
 
         public String string1 = "1";
+        public String string2 = "2";
         public String stringBig = Long.MAX_VALUE + "0";
         public String stringBigNegative = "-" + Long.MAX_VALUE + "0";
         public String stringFoo = "foo";
@@ -248,6 +253,9 @@ public abstract class ExpressionEndToEndTestBase extends SqlTestSupport {
             if (Float.compare(record.float1, float1) != 0) {
                 return false;
             }
+            if (Float.compare(record.float2, float2) != 0) {
+                return false;
+            }
             if (Float.compare(record.floatMax, floatMax) != 0) {
                 return false;
             }
@@ -255,6 +263,9 @@ public abstract class ExpressionEndToEndTestBase extends SqlTestSupport {
                 return false;
             }
             if (Double.compare(record.double1, double1) != 0) {
+                return false;
+            }
+            if (Double.compare(record.double2, double2) != 0) {
                 return false;
             }
             if (Double.compare(record.doubleMax, doubleMax) != 0) {
@@ -272,6 +283,9 @@ public abstract class ExpressionEndToEndTestBase extends SqlTestSupport {
             if (!decimal1.equals(record.decimal1)) {
                 return false;
             }
+            if (!decimal2.equals(record.decimal2)) {
+                return false;
+            }
             if (!decimalBig.equals(record.decimalBig)) {
                 return false;
             }
@@ -281,6 +295,9 @@ public abstract class ExpressionEndToEndTestBase extends SqlTestSupport {
             if (!bigInteger1.equals(record.bigInteger1)) {
                 return false;
             }
+            if (!bigInteger2.equals(record.bigInteger2)) {
+                return false;
+            }
             if (!bigIntegerBig.equals(record.bigIntegerBig)) {
                 return false;
             }
@@ -288,6 +305,9 @@ public abstract class ExpressionEndToEndTestBase extends SqlTestSupport {
                 return false;
             }
             if (!string1.equals(record.string1)) {
+                return false;
+            }
+            if (!string2.equals(record.string2)) {
                 return false;
             }
             if (!stringBig.equals(record.stringBig)) {
@@ -323,21 +343,27 @@ public abstract class ExpressionEndToEndTestBase extends SqlTestSupport {
             result = 31 * result + (int) (longMax ^ (longMax >>> 32));
             result = 31 * result + (int) (longMin ^ (longMin >>> 32));
             result = 31 * result + (float1 != +0.0f ? Float.floatToIntBits(float1) : 0);
+            result = 31 * result + (float2 != +0.0f ? Float.floatToIntBits(float2) : 0);
             result = 31 * result + (floatMax != +0.0f ? Float.floatToIntBits(floatMax) : 0);
             result = 31 * result + (floatMin != +0.0f ? Float.floatToIntBits(floatMin) : 0);
             temp = Double.doubleToLongBits(double1);
+            result = 31 * result + (int) (temp ^ (temp >>> 32));
+            temp = Double.doubleToLongBits(double2);
             result = 31 * result + (int) (temp ^ (temp >>> 32));
             temp = Double.doubleToLongBits(doubleMax);
             result = 31 * result + (int) (temp ^ (temp >>> 32));
             temp = Double.doubleToLongBits(doubleMin);
             result = 31 * result + (int) (temp ^ (temp >>> 32));
             result = 31 * result + decimal1.hashCode();
+            result = 31 * result + decimal2.hashCode();
             result = 31 * result + decimalBig.hashCode();
             result = 31 * result + decimalBigNegative.hashCode();
             result = 31 * result + bigInteger1.hashCode();
+            result = 31 * result + bigInteger2.hashCode();
             result = 31 * result + bigIntegerBig.hashCode();
             result = 31 * result + bigIntegerBigNegative.hashCode();
             result = 31 * result + string1.hashCode();
+            result = 31 * result + string2.hashCode();
             result = 31 * result + stringBig.hashCode();
             result = 31 * result + stringBigNegative.hashCode();
             result = 31 * result + stringFoo.hashCode();

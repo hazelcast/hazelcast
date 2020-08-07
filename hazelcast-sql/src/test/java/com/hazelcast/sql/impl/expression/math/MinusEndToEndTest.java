@@ -240,12 +240,12 @@ public class MinusEndToEndTest extends ExpressionEndToEndTestBase {
         assertRow("double1 - doubleMin", EXPR0, DOUBLE, 1.0 - Double.MIN_VALUE);
 
         assertRow("double1 - decimal1", EXPR0, DOUBLE, 0.0);
-        assertRow("double1 - decimalBigNegative", EXPR0, DOUBLE, 1.0 - getRecord().decimalBigNegative.floatValue());
+        assertRow("double1 - decimalBigNegative", EXPR0, DOUBLE, 1.0 - getRecord().decimalBigNegative.doubleValue());
         assertRow("double1 - bigInteger1", EXPR0, DOUBLE, 0.0);
-        assertRow("double1 - bigIntegerBigNegative", EXPR0, DOUBLE, 1.0 - getRecord().bigIntegerBigNegative.floatValue());
+        assertRow("double1 - bigIntegerBigNegative", EXPR0, DOUBLE, 1.0 - getRecord().bigIntegerBigNegative.doubleValue());
 
         assertRow("double1 - string1", EXPR0, DOUBLE, 0.0);
-        assertRow("double1 - stringBigNegative", EXPR0, DOUBLE, 1.0 - Float.parseFloat(getRecord().stringBigNegative));
+        assertRow("double1 - stringBigNegative", EXPR0, DOUBLE, 1.0 - Double.parseDouble(getRecord().stringBigNegative));
         assertDataError("double1 - stringFoo", "Cannot convert VARCHAR to DOUBLE: foo");
         assertRow("double1 - char1", EXPR0, DOUBLE, 0.0);
         assertDataError("double1 - charF", "Cannot convert VARCHAR to DOUBLE: f");
@@ -312,7 +312,7 @@ public class MinusEndToEndTest extends ExpressionEndToEndTestBase {
                 BigDecimal.valueOf(1).subtract(getRecord().decimalBigNegative));
 
         assertRow("string1 - string1", EXPR0, DOUBLE, 0.0);
-        assertRow("string1 - stringBigNegative", EXPR0, DOUBLE, 1.0 - Float.parseFloat(getRecord().stringBigNegative));
+        assertRow("string1 - stringBigNegative", EXPR0, DOUBLE, 1.0 - Double.parseDouble(getRecord().stringBigNegative));
         assertDataError("string1 - stringFoo", "Cannot convert VARCHAR to DOUBLE: foo");
         assertRow("string1 - char1", EXPR0, DOUBLE, 0.0);
         assertDataError("string1 - charF", "Cannot convert VARCHAR to DOUBLE: f");

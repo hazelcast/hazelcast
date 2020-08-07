@@ -237,12 +237,12 @@ public class PlusEndToEndTest extends ExpressionEndToEndTestBase {
         assertRow("double1 + doubleMax", EXPR0, DOUBLE, Double.MAX_VALUE);
 
         assertRow("double1 + decimal1", EXPR0, DOUBLE, 2.0);
-        assertRow("double1 + decimalBig", EXPR0, DOUBLE, 1.0 + getRecord().decimalBig.floatValue());
+        assertRow("double1 + decimalBig", EXPR0, DOUBLE, 1.0 + getRecord().decimalBig.doubleValue());
         assertRow("double1 + bigInteger1", EXPR0, DOUBLE, 2.0);
-        assertRow("double1 + bigIntegerBig", EXPR0, DOUBLE, 1.0 + getRecord().bigIntegerBig.floatValue());
+        assertRow("double1 + bigIntegerBig", EXPR0, DOUBLE, 1.0 + getRecord().bigIntegerBig.doubleValue());
 
         assertRow("double1 + string1", EXPR0, DOUBLE, 2.0);
-        assertRow("double1 + stringBig", EXPR0, DOUBLE, 1.0 + Float.parseFloat(getRecord().stringBig));
+        assertRow("double1 + stringBig", EXPR0, DOUBLE, 1.0 + Double.parseDouble(getRecord().stringBig));
         assertDataError("double1 + stringFoo", "Cannot convert VARCHAR to DOUBLE: foo");
         assertRow("double1 + char1", EXPR0, DOUBLE, 2.0);
         assertDataError("double1 + charF", "Cannot convert VARCHAR to DOUBLE: f");
@@ -306,7 +306,7 @@ public class PlusEndToEndTest extends ExpressionEndToEndTestBase {
         assertRow("string1 + bigIntegerBig", EXPR0, DECIMAL, BigDecimal.valueOf(1).add(getRecord().decimalBig));
 
         assertRow("string1 + string1", EXPR0, DOUBLE, 2.0);
-        assertRow("string1 + stringBig", EXPR0, DOUBLE, 1.0 + Float.parseFloat(getRecord().stringBig));
+        assertRow("string1 + stringBig", EXPR0, DOUBLE, 1.0 + Double.parseDouble(getRecord().stringBig));
         assertDataError("string1 + stringFoo", "Cannot convert VARCHAR to DOUBLE: foo");
         assertRow("string1 + char1", EXPR0, DOUBLE, 2.0);
         assertDataError("string1 + charF", "Cannot convert VARCHAR to DOUBLE: f");
