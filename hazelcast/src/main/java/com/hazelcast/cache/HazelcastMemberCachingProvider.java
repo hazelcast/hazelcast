@@ -31,7 +31,7 @@ import java.util.Properties;
  *         Programmatically, using {@link javax.cache.Caching#getCachingProvider(String)}:
  * <pre>
  * {@code
- * CachingProvider memberSideCachingProvider = Caching.getCachingProvider("com.hazelcast.cache.HazelcastServerCachingProvider");
+ * CachingProvider memberSideCachingProvider = Caching.getCachingProvider("com.hazelcast.cache.HazelcastMemberCachingProvider");
  * }
  * </pre>
  *     </li>
@@ -41,19 +41,19 @@ import java.util.Properties;
  * <pre>
  * {@code
  * // alternatively, set the system property on the java command line:
- * // java -Djavax.cache.spi.CachingProvider=com.hazelcast.cache.HazelcastServerCachingProvider
- * System.setProperty("javax.cache.spi.CachingProvider", "com.hazelcast.cache.HazelcastServerCachingProvider");
+ * // java -Djavax.cache.spi.CachingProvider=com.hazelcast.cache.HazelcastMemberCachingProvider
+ * System.setProperty("javax.cache.spi.CachingProvider", "com.hazelcast.cache.HazelcastMemberCachingProvider");
  * CachingProvider memberSideCachingProvider = Caching.getCachingProvider();
  * }
  * </pre>
  *     </li>
  * </ul>
  */
-public class HazelcastServerCachingProvider implements CachingProvider {
+public class HazelcastMemberCachingProvider implements CachingProvider {
 
     private final CachingProvider delegate;
 
-    public HazelcastServerCachingProvider() {
+    public HazelcastMemberCachingProvider() {
         this.delegate = new com.hazelcast.cache.impl.HazelcastServerCachingProvider();
     }
 
