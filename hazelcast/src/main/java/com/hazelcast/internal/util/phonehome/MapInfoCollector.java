@@ -42,7 +42,7 @@ class MapInfoCollector implements MetricsCollector {
     private Collection<MapConfig> mapConfigs;
 
     @Override
-    public Map<String, String> computeMetrics(Node hazelcastNode) {
+    public Map<PhoneHomeMetrics, String> computeMetrics(Node hazelcastNode) {
 
         Collection<DistributedObject> distributedObjects = hazelcastNode.hazelcastInstance.getDistributedObjects();
         mapConfigs = distributedObjects.stream()
@@ -51,25 +51,29 @@ class MapInfoCollector implements MetricsCollector {
                 .filter(Objects::nonNull)
                 .collect(toList());
 
-        Map<String, String> mapInfo = new HashMap<>(DISTRIBUTED_OBJECT_TYPE_COUNT);
+        Map<PhoneHomeMetrics, String> mapInfo = new HashMap<>(DISTRIBUTED_OBJECT_TYPE_COUNT);
 
-        mapInfo.put("mpbrct", String.valueOf(countMapWithBackupReadEnabled()));
-        mapInfo.put("mpmsct", String.valueOf(countMapWithMapStoreEnabled()));
-        mapInfo.put("mpaoqcct", String.valueOf(countMapWithAtleastOneQueryCache()));
-        mapInfo.put("mpaoict", String.valueOf(countMapWithAtleastOneIndex()));
-        mapInfo.put("mphect", String.valueOf(countMapWithHotRestartEnabled()));
-        mapInfo.put("mpwact", String.valueOf(countMapWithWANReplication()));
-        mapInfo.put("mpaocct", String.valueOf(countMapWithAtleastOneAttribute()));
-        mapInfo.put("mpevct", String.valueOf(countMapUsingEviction()));
-        mapInfo.put("mpnmct", String.valueOf(countMapWithNativeInMemoryFormat()));
-        mapInfo.put("mpptlams", String.valueOf(mapOperationLatency(hazelcastNode, IS_MAP_STORE_ENABLED,
-                LocalMapStats::getTotalPutLatency, LocalMapStats::getPutOperationCount)));
-        mapInfo.put("mpptla", String.valueOf(mapOperationLatency(hazelcastNode, IS_MAP_STORE_ENABLED.negate(),
-                LocalMapStats::getTotalPutLatency, LocalMapStats::getPutOperationCount)));
-        mapInfo.put("mpgtlams", String.valueOf(mapOperationLatency(hazelcastNode, IS_MAP_STORE_ENABLED,
-                LocalMapStats::getTotalGetLatency, LocalMapStats::getGetOperationCount)));
-        mapInfo.put("mpgtla", String.valueOf(mapOperationLatency(hazelcastNode, IS_MAP_STORE_ENABLED.negate(),
-                LocalMapStats::getTotalGetLatency, LocalMapStats::getGetOperationCount)));
+        mapInfo.put(PhoneHomeMetrics.MAP_COUNT_WITH_READ_ENABLED, String.valueOf(countMapWithBackupReadEnabled()));
+        mapInfo.put(PhoneHomeMetrics.MAP_COUNT_WITH_MAP_STORE_ENABLED, String.valueOf(countMapWithMapStoreEnabled()));
+        mapInfo.put(PhoneHomeMetrics.MAP_COUNT_WITH_ATLEAST_ONE_QUERY_CACHE, String.valueOf(countMapWithAtleastOneQueryCache()));
+        mapInfo.put(PhoneHomeMetrics.MAP_COUNT_WITH_ATLEAST_ONE_INDEX, String.valueOf(countMapWithAtleastOneIndex()));
+        mapInfo.put(PhoneHomeMetrics.MAP_COUNT_WITH_HOT_RESTART_ENABLED, String.valueOf(countMapWithHotRestartEnabled()));
+        mapInfo.put(PhoneHomeMetrics.MAP_COUNT_WITH_WAN_REPLICATION, String.valueOf(countMapWithWANReplication()));
+        mapInfo.put(PhoneHomeMetrics.MAP_COUNT_WITH_ATLEAST_ONE_ATTRIBUTE, String.valueOf(countMapWithAtleastOneAttribute()));
+        mapInfo.put(PhoneHomeMetrics.MAP_COUNT_USING_EVICTION, String.valueOf(countMapUsingEviction()));
+        mapInfo.put(PhoneHomeMetrics.MAP_COUNT_USING_NATIVE_INMEMORY_FORMAT, String.valueOf(countMapWithNativeInMemoryFormat()));
+        mapInfo.put(PhoneHomeMetrics.AVERAGE_PUT_LATENCY_OF_MAPS_USING_MAPSTORE,
+                String.valueOf(mapOperationLatency(hazelcastNode, IS_MAP_STORE_ENABLED,
+                        LocalMapStats::getTotalPutLatency, LocalMapStats::getPutOperationCount)));
+        mapInfo.put(PhoneHomeMetrics.AVERAGE_PUT_LATENCY_OF_MAPS_WITHOUT_MAPSTORE,
+                String.valueOf(mapOperationLatency(hazelcastNode, IS_MAP_STORE_ENABLED.negate(),
+                        LocalMapStats::getTotalPutLatency, LocalMapStats::getPutOperationCount)));
+        mapInfo.put(PhoneHomeMetrics.AVERAGE_GET_LATENCY_OF_MAPS_USING_MAPSTORE,
+                String.valueOf(mapOperationLatency(hazelcastNode, IS_MAP_STORE_ENABLED,
+                        LocalMapStats::getTotalGetLatency, LocalMapStats::getGetOperationCount)));
+        mapInfo.put(PhoneHomeMetrics.AVERAGE_GET_LATENCY_OF_MAPS_WITHOUT_MAPSTORE,
+                String.valueOf(mapOperationLatency(hazelcastNode, IS_MAP_STORE_ENABLED.negate(),
+                        LocalMapStats::getTotalGetLatency, LocalMapStats::getGetOperationCount)));
 
         return mapInfo;
     }

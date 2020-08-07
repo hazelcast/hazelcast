@@ -27,18 +27,19 @@ class ClusterInfoCollector implements MetricsCollector {
 
 
     @Override
-    public Map<String, String> computeMetrics(Node hazelcastNode) {
-        Map<String, String> parameters = new HashMap<>();
+    public Map<PhoneHomeMetrics, String> computeMetrics(Node hazelcastNode) {
+        Map<PhoneHomeMetrics, String> parameters = new HashMap<>();
         ClusterServiceImpl clusterService = hazelcastNode.getClusterService();
         int clusterSize = clusterService.getMembers().size();
         long clusterUpTime = clusterService.getClusterClock().getClusterUpTime();
         RuntimeMXBean runtimeMxBean = ManagementFactory.getRuntimeMXBean();
-        parameters.put("m", hazelcastNode.getThisUuid().toString());
-        parameters.put("c", clusterService.getClusterId().toString());
-        parameters.put("crsz", MetricsCollector.convertToLetter(clusterSize));
-        parameters.put("cuptm", Long.toString(clusterUpTime));
-        parameters.put("nuptm", Long.toString(runtimeMxBean.getUptime()));
-        parameters.put("jvmn", runtimeMxBean.getVmName());
+
+        parameters.put(PhoneHomeMetrics.UUID_OF_CLUSTER, hazelcastNode.getThisUuid().toString());
+        parameters.put(PhoneHomeMetrics.CLUSTER_ID, clusterService.getClusterId().toString());
+        parameters.put(PhoneHomeMetrics.CLUSTER_SIZE, MetricsCollector.convertToLetter(clusterSize));
+        parameters.put(PhoneHomeMetrics.TIME_TAKEN_TO_CLUSTER_UP, Long.toString(clusterUpTime));
+        parameters.put(PhoneHomeMetrics.UPTIME_OF_RUNTIME_MXBEAN, Long.toString(runtimeMxBean.getUptime()));
+        parameters.put(PhoneHomeMetrics.RUNTIME_MXBEAN_VM_NAME, runtimeMxBean.getVmName());
 
         return parameters;
     }

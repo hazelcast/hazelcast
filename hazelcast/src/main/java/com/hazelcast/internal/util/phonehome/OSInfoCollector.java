@@ -25,20 +25,19 @@ import java.util.Map;
 class OSInfoCollector implements MetricsCollector {
 
     @Override
-    public Map<String, String> computeMetrics(Node hazelcastNode) {
+    public Map<PhoneHomeMetrics, String> computeMetrics(Node hazelcastNode) {
 
-        Map<String, String> osinfo = new HashMap<>();
+        Map<PhoneHomeMetrics, String> osinfo = new HashMap<>();
         OperatingSystemMXBean osMxBean = ManagementFactory.getOperatingSystemMXBean();
         try {
-            osinfo.put("osn", osMxBean.getName());
-            osinfo.put("osa", osMxBean.getArch());
-            osinfo.put("osv", osMxBean.getVersion());
+            osinfo.put(PhoneHomeMetrics.OPERATING_SYSTEM_NAME, osMxBean.getName());
+            osinfo.put(PhoneHomeMetrics.OPERATING_SYSTEM_ARCH, osMxBean.getArch());
+            osinfo.put(PhoneHomeMetrics.OPERATING_SYSTEM_VERSION, osMxBean.getVersion());
         } catch (SecurityException e) {
-            osinfo.put("osn", "N/A");
-            osinfo.put("osa", "N/A");
-            osinfo.put("osv", "N/A");
+            osinfo.put(PhoneHomeMetrics.OPERATING_SYSTEM_NAME, "N/A");
+            osinfo.put(PhoneHomeMetrics.OPERATING_SYSTEM_ARCH, "N/A");
+            osinfo.put(PhoneHomeMetrics.OPERATING_SYSTEM_VERSION, "N/A");
         }
-
         return osinfo;
     }
 }

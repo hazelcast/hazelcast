@@ -31,7 +31,7 @@ interface MetricsCollector {
     int H_INTERVAL = 300;
     int J_INTERVAL = 600;
 
-    Map<String, String> computeMetrics(Node hazelcastNode);
+    Map<PhoneHomeMetrics, String> computeMetrics(Node hazelcastNode);
 
     static String convertToLetter(int size) {
         String letter;

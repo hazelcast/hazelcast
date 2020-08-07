@@ -41,6 +41,24 @@ public class PhoneHomeParameterCreator {
         return parameters;
     }
 
+    public void addParam(PhoneHomeMetrics key, String value) {
+
+        if (parameters.containsKey(key.getRequestParameterName())) {
+            throw new IllegalArgumentException("Parameter " + key + " is already added");
+        }
+
+        if (hasParameterBefore) {
+            builder.append("&");
+        } else {
+            hasParameterBefore = true;
+        }
+        try {
+            builder.append(key.getRequestParameterName()).append("=").append(URLEncoder.encode(value, "UTF-8"));
+        } catch (UnsupportedEncodingException e) {
+            throw rethrow(e);
+        }
+        parameters.put(key.getRequestParameterName(), value);
+    }
     public void addParam(String key, String value) {
 
         if (parameters.containsKey(key)) {
@@ -64,9 +82,8 @@ public class PhoneHomeParameterCreator {
         return builder.toString();
     }
 
-    public void addMap(Map<String, String> map) {
+    public void addMap(Map<PhoneHomeMetrics, String> map) {
         map.forEach(this::addParam);
-
     }
 }
 

@@ -39,42 +39,39 @@ import static java.util.stream.Collectors.groupingBy;
 
 class DistributedObjectCounterCollector implements MetricsCollector {
 
-    private static final Map<String, String> SERVICE_NAME_TO_METRIC_NAME;
+    private static final Map<String, PhoneHomeMetrics> SERVICE_NAME_TO_METRIC_NAME;
     private static final int COUNT_OF_DISTRIBUTED_OBJECTS = 11;
-
 
     static {
         SERVICE_NAME_TO_METRIC_NAME = new HashMap<>();
-        SERVICE_NAME_TO_METRIC_NAME.put(MapService.SERVICE_NAME, "mpct");
-        SERVICE_NAME_TO_METRIC_NAME.put(SetService.SERVICE_NAME, "sect");
-        SERVICE_NAME_TO_METRIC_NAME.put(QueueService.SERVICE_NAME, "quct");
-        SERVICE_NAME_TO_METRIC_NAME.put(MultiMapService.SERVICE_NAME, "mmct");
-        SERVICE_NAME_TO_METRIC_NAME.put(ListService.SERVICE_NAME, "lict");
-        SERVICE_NAME_TO_METRIC_NAME.put(RingbufferService.SERVICE_NAME, "rbct");
-        SERVICE_NAME_TO_METRIC_NAME.put(CacheService.SERVICE_NAME, "cact");
-        SERVICE_NAME_TO_METRIC_NAME.put(TopicService.SERVICE_NAME, "tpct");
-        SERVICE_NAME_TO_METRIC_NAME.put(ReplicatedMapService.SERVICE_NAME, "rpct");
-        SERVICE_NAME_TO_METRIC_NAME.put(CardinalityEstimatorService.SERVICE_NAME, "cect");
-        SERVICE_NAME_TO_METRIC_NAME.put(PNCounterService.SERVICE_NAME, "pncct");
-        SERVICE_NAME_TO_METRIC_NAME.put(FlakeIdGeneratorService.SERVICE_NAME, "figct");
+        SERVICE_NAME_TO_METRIC_NAME.put(MapService.SERVICE_NAME, PhoneHomeMetrics.COUNT_OF_MAPS);
+        SERVICE_NAME_TO_METRIC_NAME.put(SetService.SERVICE_NAME, PhoneHomeMetrics.COUNT_OF_SETS);
+        SERVICE_NAME_TO_METRIC_NAME.put(QueueService.SERVICE_NAME, PhoneHomeMetrics.COUNT_OF_QUEUES);
+        SERVICE_NAME_TO_METRIC_NAME.put(MultiMapService.SERVICE_NAME, PhoneHomeMetrics.COUNT_OF_MULTIMAPS);
+        SERVICE_NAME_TO_METRIC_NAME.put(ListService.SERVICE_NAME, PhoneHomeMetrics.COUNT_OF_LISTS);
+        SERVICE_NAME_TO_METRIC_NAME.put(RingbufferService.SERVICE_NAME, PhoneHomeMetrics.COUNT_OF_RING_BUFFERS);
+        SERVICE_NAME_TO_METRIC_NAME.put(CacheService.SERVICE_NAME, PhoneHomeMetrics.COUNT_OF_CACHES);
+        SERVICE_NAME_TO_METRIC_NAME.put(TopicService.SERVICE_NAME, PhoneHomeMetrics.COUNT_OF_TOPICS);
+        SERVICE_NAME_TO_METRIC_NAME.put(ReplicatedMapService.SERVICE_NAME, PhoneHomeMetrics.COUNT_OF_REPLICATED_MAPS);
+        SERVICE_NAME_TO_METRIC_NAME.put(CardinalityEstimatorService.SERVICE_NAME,
+                PhoneHomeMetrics.COUNT_OF_CARDINALITY_ESTIMATORS);
+        SERVICE_NAME_TO_METRIC_NAME.put(PNCounterService.SERVICE_NAME, PhoneHomeMetrics.COUNT_OF_PN_COUNTERS);
+        SERVICE_NAME_TO_METRIC_NAME.put(FlakeIdGeneratorService.SERVICE_NAME, PhoneHomeMetrics.COUNT_OF_FLAKE_ID_GENERATORS);
     }
 
     @Override
-    public Map<String, String> computeMetrics(Node hazelcastNode) {
+    public Map<PhoneHomeMetrics, String> computeMetrics(Node hazelcastNode) {
 
         Collection<DistributedObject> distributedObjects = hazelcastNode.hazelcastInstance.getDistributedObjects();
-
         Map<String, Long> countDistributedObjects = new HashMap<>(distributedObjects.stream()
                 .filter(distributedObject -> SERVICE_NAME_TO_METRIC_NAME.containsKey(distributedObject.getServiceName()))
                 .collect(groupingBy(DistributedObject::getServiceName, Collectors.counting())));
 
-        Map<String, String> countInfo = new HashMap<>(COUNT_OF_DISTRIBUTED_OBJECTS);
-
+        Map<PhoneHomeMetrics, String> countInfo = new HashMap<>(COUNT_OF_DISTRIBUTED_OBJECTS);
         SERVICE_NAME_TO_METRIC_NAME.forEach((serviceName, metricName) -> countInfo
                 .put(metricName, String.valueOf(countDistributedObjects.getOrDefault(serviceName, 0L))));
 
         return countInfo;
     }
-
 }
 
