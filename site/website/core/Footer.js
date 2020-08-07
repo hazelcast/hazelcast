@@ -32,7 +32,7 @@ class Footer extends React.Component {
             )}
           </a>
           <a className="star-icon" href={this.props.config.repoUrl} target="_blank">
-              <img src="https://questdb.io/img/githubIcon.svg"></img>Give us a Star!
+              <img src="/img/github.svg"></img>Give us a Star!
             </a>
           </div>
           <div>
