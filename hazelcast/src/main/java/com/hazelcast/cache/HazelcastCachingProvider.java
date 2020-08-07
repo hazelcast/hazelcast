@@ -40,9 +40,9 @@ import java.util.Properties;
  * This provider implementation delegates to a {@code CachingProvider} backed
  * by either a member- or a client-side {@link HazelcastInstance}:
  * <ul>
- * <li>{@code com.hazelcast.cache.impl.HazelcastServerCachingProvider} is the
+ * <li>{@link com.hazelcast.cache.HazelcastServerCachingProvider} is the
  * member-side {@link CachingProvider} implementation</li>
- * <li>{@code com.hazelcast.client.cache.impl.HazelcastClientCachingProvider} is the
+ * <li>{@link com.hazelcast.client.cache.HazelcastClientCachingProvider} is the
  * client-side {@link CachingProvider} implementation</li>
  * </ul>
  * <h3>Provider Type Selection</h3>
