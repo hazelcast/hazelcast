@@ -315,6 +315,5 @@ make a full recovery.
 
 Go to [Part 2: the Batch Pipeline Benchmarks](/blog/2020/06/09/jdk-gc-benchmarks-part2).
 
-_If you enjoyed reading this post, feel free to join us on [Slack](https://slack.hazelcast.com)
-and give our [GitHub repository](https://github.com/hazelcast/hazelcast-jet)
-a star!_
+_If you enjoyed reading this post, feel free to give our [GitHub
+repository](https://github.com/hazelcast/hazelcast-jet) a star!_
