@@ -175,6 +175,7 @@ public class ParameterEndToEndTest extends ExpressionEndToEndTestBase {
         assertRow("? + cast(? as double)", EXPR0, DOUBLE, 3.0, 1, 2);
         assertDataError("? + 1", "unexpected parameter count");
         assertDataError("? and ? and ?", "unexpected parameter count", 0, 1);
+        assertDataError("? + 1", "Failed to convert parameter at position 0 from VARCHAR to BIGINT", "foo");
     }
 
 }
