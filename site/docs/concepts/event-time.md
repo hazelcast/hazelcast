@@ -36,6 +36,39 @@ The difference between these two ways to account for time comes up often
 in the design of distributed streaming systems and to some extent you'll
 have to deal with it directly.
 
+### Event Disorder
+
+In an ideal world, event time and processing time would be the same and
+events would be processed immediately. In reality this is far from true
+and there can be a significant difference between the two. The
+difference is also highly variable and is affected by factors like
+network congestion, shared resource limitations and many more. This
+results in what we call *event disorder*: observing the events out of
+their true order of occurrence.
+
+Here's what an ordered event stream looks like:
+
+![Ordered Events](assets/eventtime-order.svg)
+
+Notice that latency not only exists, but is variable. This has no major
+impact on stream processing.
+
+And here's what event disorder looks like:
+
+![Disordered Events](assets/eventtime-disorder.svg)
+
+Latency is all over the place now and it has disordered the events. Of
+the five events shown, the second one processed is already the latest.
+After processing it Jet has no idea how much longer to wait expecting
+events older than it. This is where you as the user are expected to
+provide the *maximum event lag*. Jet can't emit the result of a windowed
+aggregation until it has received all the events belonging to the
+window, but the longer it waits, the later you'll see the results. So
+you must strike a balance and choose how much to wait. Notice that by
+"wait" we mean event time, not processing time: when we get an event
+with timestamp `t_a`, we are no longer waiting for events with timestamp
+`t_b <= t_a - maxLag`.
+
 ## Time Windowing
 
 With unbounded streams you need a policy that selects bounded chunks
@@ -81,36 +114,3 @@ window adapts to the data itself. When two consecutive events are
 separated by more than the configured timeout, that gap marks the
 boundary between the two windows. If there is no data, there is no
 session window, either.
-
-## Event Disorder
-
-In an ideal world, event time and processing time would be the same and
-events would be processed immediately. In reality this is far from true
-and there can be a significant difference between the two. The
-difference is also highly variable and is affected by factors like
-network congestion, shared resource limitations and many more. This
-results in what we call *event disorder*: observing the events out of
-their true order of occurrence.
-
-Here's what an ordered event stream looks like:
-
-![Ordered Events](assets/eventtime-order.svg)
-
-Notice that latency not only exists, but is variable. This has no major
-impact on stream processing.
-
-And here's what event disorder looks like:
-
-![Disordered Events](assets/eventtime-disorder.svg)
-
-Latency is all over the place now and it has disordered the events. Of
-the five events shown, the second one processed is already the latest.
-After processing it Jet has no idea how much longer to wait expecting
-events older than it. This is where you as the user are expected to
-provide the *maximum event lag*. Jet can't emit the result of a windowed
-aggregation until it has received all the events belonging to the
-window, but the longer it waits, the later you'll see the results. So
-you must strike a balance and choose how much to wait. Notice that by
-"wait" we mean event time, not processing time: when we get an event
-with timestamp `t_a`, we are no longer waiting for events with timestamp
-`t_b <= t_a - maxLag`.
