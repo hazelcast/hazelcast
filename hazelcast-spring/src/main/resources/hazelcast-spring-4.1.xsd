@@ -3802,7 +3802,7 @@
     <xs:complexType name="native-memory">
         <xs:all>
             <xs:element name="size" type="memory-size" minOccurs="0" maxOccurs="1"/>
-            <xs:element name="persistent-memory" type="persistent-memory" maxOccurs="1"/>
+            <xs:element name="persistent-memory" type="persistent-memory" minOccurs="0" maxOccurs="1"/>
         </xs:all>
         <xs:attribute name="min-block-size" use="optional" type="xs:positiveInteger"/>
         <xs:attribute name="page-size" use="optional" type="xs:positiveInteger"/>

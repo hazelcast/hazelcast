@@ -1138,15 +1138,11 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         List<PersistentMemoryDirectoryConfig> directoryConfigs = nativeMemoryConfig.getPersistentMemoryConfig()
                                                                                    .getDirectoryConfigs();
 
-        assertEquals(3, directoryConfigs.size());
-        // set with <persistent-memory>
+        assertEquals(2, directoryConfigs.size());
         assertEquals("/mnt/pmem0", directoryConfigs.get(0).getDirectory());
         assertEquals(0, directoryConfigs.get(0).getNumaNode());
         assertEquals("/mnt/pmem1", directoryConfigs.get(1).getDirectory());
-        assertFalse(directoryConfigs.get(1).isNumaNodeSet());
-        // set with <persistent-memory-directory>
-        assertEquals("/mnt/optane", directoryConfigs.get(2).getDirectory());
-        assertFalse(directoryConfigs.get(2).isNumaNodeSet());
+        assertEquals(1, directoryConfigs.get(1).getNumaNode());
     }
 
     @Test

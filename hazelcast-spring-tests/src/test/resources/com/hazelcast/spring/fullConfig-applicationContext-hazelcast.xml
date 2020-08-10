@@ -609,13 +609,12 @@
 
             <hz:native-memory enabled="false" allocator-type="STANDARD" metadata-space-percentage="10.2"
                               min-block-size="10"
-                              page-size="20"
-                              persistent-memory-directory="/mnt/optane">
+                              page-size="20">
                 <hz:size unit="GIGABYTES" value="256"/>
                 <hz:persistent-memory>
                     <hz:directories>
                         <hz:directory numa-node="0">/mnt/pmem0</hz:directory>
-                        <hz:directory>/mnt/pmem1</hz:directory>
+                        <hz:directory numa-node="1">/mnt/pmem1</hz:directory>
                     </hz:directories>
                 </hz:persistent-memory>
             </hz:native-memory>
