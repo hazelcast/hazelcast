@@ -51,7 +51,7 @@ class WordCount {
          .flatMap(line -> traverseArray(line.toLowerCase().split("\\W+")))
          .filter(word -> !word.isEmpty())
          .groupingKey(word -> word)
-         .aggregate(AggregateOperations.counting())
+         .aggregate(counting())
          .writeTo(Sinks.logger());
 
         jet.newJob(p).join();
@@ -71,7 +71,7 @@ To deploy it to a Jet cluster you've set up beforehand, build a JAR
 containing the class and issue the `jet submit` command:
 
 ```bash
-$ cd /path/to/hazelcast/jet
+$ cd /path/to/hazelcast-jet
 $ bin/jet submit /path/to/word-count.jar
 ```
 
@@ -157,14 +157,16 @@ to treat disordered events as if they were arriving in order.
 
 ## How Do I Get Started?
 
-Follow the [Get Started](https://jet-start.sh/docs/get-started/intro) guide
-to start using Jet.
+Follow the [Get Started](https://jet-start.sh/docs/get-started/intro)
+guide to start using Jet.
 
 ## Download
 
-You can download Jet from [https://jet-start.sh](https://jet-start.sh/download).
+You can download Jet from
+[https://jet-start.sh](https://jet-start.sh/download).
 
-Alternatively, you can use the latest [docker image](https://jet-start.sh/docs/operations/docker):
+Alternatively, you can use the latest [docker
+image](https://jet-start.sh/docs/operations/docker):
 
 ```java
 docker run -p 5701:5701 hazelcast/hazelcast-jet
@@ -180,10 +182,11 @@ Use the following Maven coordinates to add Jet to your application:
 
 ## Tutorials
 
-See the [tutorials](https://jet-start.sh/docs/tutorials/kafka) for tutorials
-on using Jet. Some examples:
+See the [tutorials](https://jet-start.sh/docs/tutorials/kafka) for
+tutorials on using Jet. Some examples:
 
-* [Process Events from Apache Kafka](https://jet-start.sh/docs/tutorials/kafka)
+* [Process Events from Apache
+  Kafka](https://jet-start.sh/docs/tutorials/kafka)
 * [Windowed Aggregation](https://jet-start.sh/docs/tutorials/windowing)
 * [Apply a Python Function](https://jet-start.sh/docs/tutorials/python)
 
