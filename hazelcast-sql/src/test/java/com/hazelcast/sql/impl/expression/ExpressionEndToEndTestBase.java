@@ -158,44 +158,65 @@ public abstract class ExpressionEndToEndTestBase extends SqlTestSupport {
 
         public boolean booleanTrue = true;
 
+        public byte byte0 = 0;
         public byte byte1 = 1;
+        public byte byte2 = 2;
         public byte byteMax = Byte.MAX_VALUE;
         public byte byteMin = Byte.MIN_VALUE;
+
+        public short short0 = 0;
         public short short1 = 1;
+        public short short2 = 2;
         public short shortMax = Short.MAX_VALUE;
         public short shortMin = Short.MIN_VALUE;
+
+        public int int0 = 0;
         public int int1 = 1;
+        public int int2 = 2;
         public int intMax = Integer.MAX_VALUE;
         public int intMin = Integer.MIN_VALUE;
+
+        public long long0 = 0;
         public long long1 = 1;
+        public long long2 = 2;
         public long longMax = Long.MAX_VALUE;
         public long longMin = Long.MIN_VALUE;
 
+        public float float0 = 0;
         public float float1 = 1;
         public float float2 = 2;
         public float floatMax = Float.MAX_VALUE;
         public float floatMin = Float.MIN_VALUE;
+
+        public double double0 = 0;
         public double double1 = 1;
         public double double2 = 2;
         public double doubleMax = Double.MAX_VALUE;
         public double doubleMin = Double.MIN_VALUE;
 
+        public BigDecimal decimal0 = BigDecimal.valueOf(0);
         public BigDecimal decimal1 = BigDecimal.valueOf(1);
         public BigDecimal decimal2 = BigDecimal.valueOf(2);
         public BigDecimal decimalBig = new BigDecimal(Long.MAX_VALUE + "0");
         public BigDecimal decimalBigNegative = new BigDecimal("-" + Long.MAX_VALUE + "0");
+
+        public BigInteger bigInteger0 = BigInteger.valueOf(0);
         public BigInteger bigInteger1 = BigInteger.valueOf(1);
         public BigInteger bigInteger2 = BigInteger.valueOf(2);
         public BigInteger bigIntegerBig = new BigInteger(Long.MAX_VALUE + "0");
         public BigInteger bigIntegerBigNegative = new BigInteger("-" + Long.MAX_VALUE + "0");
 
+        public String string0 = "0";
         public String string1 = "1";
         public String string2 = "2";
+        public String stringLongMax = Long.toString(Long.MAX_VALUE);
         public String stringBig = Long.MAX_VALUE + "0";
         public String stringBigNegative = "-" + Long.MAX_VALUE + "0";
         public String stringFoo = "foo";
         public String stringFalse = "FaLsE";
+        public char char0 = '0';
         public char char1 = '1';
+        public char char2 = '2';
         public char charF = 'f';
 
         public Object object = new SerializableObject();
@@ -214,7 +235,13 @@ public abstract class ExpressionEndToEndTestBase extends SqlTestSupport {
             if (booleanTrue != record.booleanTrue) {
                 return false;
             }
+            if (byte0 != record.byte0) {
+                return false;
+            }
             if (byte1 != record.byte1) {
+                return false;
+            }
+            if (byte2 != record.byte2) {
                 return false;
             }
             if (byteMax != record.byteMax) {
@@ -223,7 +250,13 @@ public abstract class ExpressionEndToEndTestBase extends SqlTestSupport {
             if (byteMin != record.byteMin) {
                 return false;
             }
+            if (short0 != record.short0) {
+                return false;
+            }
             if (short1 != record.short1) {
+                return false;
+            }
+            if (short2 != record.short2) {
                 return false;
             }
             if (shortMax != record.shortMax) {
@@ -232,7 +265,13 @@ public abstract class ExpressionEndToEndTestBase extends SqlTestSupport {
             if (shortMin != record.shortMin) {
                 return false;
             }
+            if (int0 != record.int0) {
+                return false;
+            }
             if (int1 != record.int1) {
+                return false;
+            }
+            if (int2 != record.int2) {
                 return false;
             }
             if (intMax != record.intMax) {
@@ -241,13 +280,22 @@ public abstract class ExpressionEndToEndTestBase extends SqlTestSupport {
             if (intMin != record.intMin) {
                 return false;
             }
+            if (long0 != record.long0) {
+                return false;
+            }
             if (long1 != record.long1) {
+                return false;
+            }
+            if (long2 != record.long2) {
                 return false;
             }
             if (longMax != record.longMax) {
                 return false;
             }
             if (longMin != record.longMin) {
+                return false;
+            }
+            if (Float.compare(record.float0, float0) != 0) {
                 return false;
             }
             if (Float.compare(record.float1, float1) != 0) {
@@ -262,6 +310,9 @@ public abstract class ExpressionEndToEndTestBase extends SqlTestSupport {
             if (Float.compare(record.floatMin, floatMin) != 0) {
                 return false;
             }
+            if (Double.compare(record.double0, double0) != 0) {
+                return false;
+            }
             if (Double.compare(record.double1, double1) != 0) {
                 return false;
             }
@@ -274,10 +325,19 @@ public abstract class ExpressionEndToEndTestBase extends SqlTestSupport {
             if (Double.compare(record.doubleMin, doubleMin) != 0) {
                 return false;
             }
+            if (char0 != record.char0) {
+                return false;
+            }
             if (char1 != record.char1) {
                 return false;
             }
+            if (char2 != record.char2) {
+                return false;
+            }
             if (charF != record.charF) {
+                return false;
+            }
+            if (!decimal0.equals(record.decimal0)) {
                 return false;
             }
             if (!decimal1.equals(record.decimal1)) {
@@ -292,6 +352,9 @@ public abstract class ExpressionEndToEndTestBase extends SqlTestSupport {
             if (!decimalBigNegative.equals(record.decimalBigNegative)) {
                 return false;
             }
+            if (!bigInteger0.equals(record.bigInteger0)) {
+                return false;
+            }
             if (!bigInteger1.equals(record.bigInteger1)) {
                 return false;
             }
@@ -304,10 +367,16 @@ public abstract class ExpressionEndToEndTestBase extends SqlTestSupport {
             if (!bigIntegerBigNegative.equals(record.bigIntegerBigNegative)) {
                 return false;
             }
+            if (!string0.equals(record.string0)) {
+                return false;
+            }
             if (!string1.equals(record.string1)) {
                 return false;
             }
             if (!string2.equals(record.string2)) {
+                return false;
+            }
+            if (!stringLongMax.equals(record.stringLongMax)) {
                 return false;
             }
             if (!stringBig.equals(record.stringBig)) {
@@ -330,22 +399,33 @@ public abstract class ExpressionEndToEndTestBase extends SqlTestSupport {
             int result;
             long temp;
             result = (booleanTrue ? 1 : 0);
+            result = 31 * result + (int) byte0;
             result = 31 * result + (int) byte1;
+            result = 31 * result + (int) byte2;
             result = 31 * result + (int) byteMax;
             result = 31 * result + (int) byteMin;
+            result = 31 * result + (int) short0;
             result = 31 * result + (int) short1;
+            result = 31 * result + (int) short2;
             result = 31 * result + (int) shortMax;
             result = 31 * result + (int) shortMin;
+            result = 31 * result + int0;
             result = 31 * result + int1;
+            result = 31 * result + int2;
             result = 31 * result + intMax;
             result = 31 * result + intMin;
+            result = 31 * result + (int) (long0 ^ (long0 >>> 32));
             result = 31 * result + (int) (long1 ^ (long1 >>> 32));
+            result = 31 * result + (int) (long2 ^ (long2 >>> 32));
             result = 31 * result + (int) (longMax ^ (longMax >>> 32));
             result = 31 * result + (int) (longMin ^ (longMin >>> 32));
+            result = 31 * result + (float0 != +0.0f ? Float.floatToIntBits(float0) : 0);
             result = 31 * result + (float1 != +0.0f ? Float.floatToIntBits(float1) : 0);
             result = 31 * result + (float2 != +0.0f ? Float.floatToIntBits(float2) : 0);
             result = 31 * result + (floatMax != +0.0f ? Float.floatToIntBits(floatMax) : 0);
             result = 31 * result + (floatMin != +0.0f ? Float.floatToIntBits(floatMin) : 0);
+            temp = Double.doubleToLongBits(double0);
+            result = 31 * result + (int) (temp ^ (temp >>> 32));
             temp = Double.doubleToLongBits(double1);
             result = 31 * result + (int) (temp ^ (temp >>> 32));
             temp = Double.doubleToLongBits(double2);
@@ -354,21 +434,27 @@ public abstract class ExpressionEndToEndTestBase extends SqlTestSupport {
             result = 31 * result + (int) (temp ^ (temp >>> 32));
             temp = Double.doubleToLongBits(doubleMin);
             result = 31 * result + (int) (temp ^ (temp >>> 32));
+            result = 31 * result + decimal0.hashCode();
             result = 31 * result + decimal1.hashCode();
             result = 31 * result + decimal2.hashCode();
             result = 31 * result + decimalBig.hashCode();
             result = 31 * result + decimalBigNegative.hashCode();
+            result = 31 * result + bigInteger0.hashCode();
             result = 31 * result + bigInteger1.hashCode();
             result = 31 * result + bigInteger2.hashCode();
             result = 31 * result + bigIntegerBig.hashCode();
             result = 31 * result + bigIntegerBigNegative.hashCode();
+            result = 31 * result + string0.hashCode();
             result = 31 * result + string1.hashCode();
             result = 31 * result + string2.hashCode();
+            result = 31 * result + stringLongMax.hashCode();
             result = 31 * result + stringBig.hashCode();
             result = 31 * result + stringBigNegative.hashCode();
             result = 31 * result + stringFoo.hashCode();
             result = 31 * result + stringFalse.hashCode();
+            result = 31 * result + (int) char0;
             result = 31 * result + (int) char1;
+            result = 31 * result + (int) char2;
             result = 31 * result + (int) charF;
             result = 31 * result + object.hashCode();
             return result;
