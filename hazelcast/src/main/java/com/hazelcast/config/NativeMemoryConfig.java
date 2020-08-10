@@ -27,6 +27,7 @@ import java.util.Objects;
 
 import static com.hazelcast.internal.util.Preconditions.checkPositive;
 import static com.hazelcast.internal.util.Preconditions.isNotNull;
+import static java.util.Objects.requireNonNull;
 
 /**
  * Configures native memory region.
@@ -239,7 +240,7 @@ public class NativeMemoryConfig {
      * @param persistentMemoryConfig The persistent memory configuration to use
      */
     public void setPersistentMemoryConfig(PersistentMemoryConfig persistentMemoryConfig) {
-        this.persistentMemoryConfig = persistentMemoryConfig;
+        this.persistentMemoryConfig = requireNonNull(persistentMemoryConfig);
     }
 
     /**
