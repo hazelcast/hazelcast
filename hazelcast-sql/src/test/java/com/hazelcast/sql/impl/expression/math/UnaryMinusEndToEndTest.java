@@ -96,6 +96,12 @@ public class UnaryMinusEndToEndTest extends ExpressionEndToEndTestBase {
         assertRow("-decimal1", EXPR0, DECIMAL, BigDecimal.valueOf(-1));
         assertRow("-decimalBig", EXPR0, DECIMAL, getRecord().decimalBig.negate());
         assertRow("-decimalBigNegative", EXPR0, DECIMAL, getRecord().decimalBigNegative.negate());
+
+        assertRow("-bigInteger0", EXPR0, DECIMAL, BigDecimal.valueOf(0));
+        assertRow("-bigInteger1", EXPR0, DECIMAL, BigDecimal.valueOf(-1));
+        assertRow("-bigIntegerBig", EXPR0, DECIMAL, getRecord().decimalBig.negate());
+        assertRow("-bigIntegerBigNegative", EXPR0, DECIMAL, getRecord().decimalBigNegative.negate());
+
     }
 
     @Test

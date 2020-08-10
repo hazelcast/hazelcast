@@ -97,6 +97,11 @@ public class UnaryPlusEndToEndTest extends ExpressionEndToEndTestBase {
         assertRow("+decimal1", EXPR0, DECIMAL, BigDecimal.valueOf(1));
         assertRow("+decimalBig", EXPR0, DECIMAL, getRecord().decimalBig);
         assertRow("+decimalBigNegative", EXPR0, DECIMAL, getRecord().decimalBigNegative);
+
+        assertRow("+bigInteger0", EXPR0, DECIMAL, BigDecimal.valueOf(0));
+        assertRow("+bigInteger1", EXPR0, DECIMAL, BigDecimal.valueOf(1));
+        assertRow("+bigIntegerBig", EXPR0, DECIMAL, getRecord().decimalBig);
+        assertRow("+bigIntegerBigNegative", EXPR0, DECIMAL, getRecord().decimalBigNegative);
     }
 
     @Test
