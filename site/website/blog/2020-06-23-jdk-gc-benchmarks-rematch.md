@@ -281,5 +281,6 @@ failure.
 The wider chart also gives better insight into the stability of G1,
 keeping itself below 20 ms all the way up to 20 M items per second.
 
-_If you enjoyed reading this post, feel free to give our [GitHub
-repository](https://github.com/hazelcast/hazelcast-jet) a star!_
+_If you enjoyed reading this post, check out Jet at
+[GitHub](https://github.com/hazelcast/hazelcast-jet) and give us a
+star!_

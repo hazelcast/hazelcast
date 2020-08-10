@@ -191,5 +191,6 @@ pipeline running at full speed just couldn't max out the G1! We repeated
 the test with more threads given to Jet, 78, but that didn't make a
 difference.
 
-_If you enjoyed reading this post, feel free to give our [GitHub
-repository](https://github.com/hazelcast/hazelcast-jet) a star!_
+_If you enjoyed reading this post, check out Jet at
+[GitHub](https://github.com/hazelcast/hazelcast-jet) and give us a
+star!_
