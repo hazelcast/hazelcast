@@ -55,7 +55,7 @@ and then deploy the application to the cluster:
 bin/jet submit word-count.jar
 ```
 
-Another application which aggregates millions of sensor readings per
+Another application, aggregating millions of sensor readings per
 second with 10 millisecond resolution from Kafka looks like the
 following:
 
