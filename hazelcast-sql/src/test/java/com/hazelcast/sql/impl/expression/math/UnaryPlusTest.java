@@ -16,7 +16,6 @@
 
 package com.hazelcast.sql.impl.expression.math;
 
-import com.hazelcast.sql.SqlService;
 import com.hazelcast.sql.impl.expression.ExpressionTestBase;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -41,15 +40,6 @@ import static org.junit.Assert.assertEquals;
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class UnaryPlusTest extends ExpressionTestBase {
-
-    @Test
-    public void testEndToEnd() {
-        SqlService sql = createEndToEndRecords();
-        assertRows(query(sql, "select __key from records where +int1 > 0"), keyRange(0, 1000));
-        assertRows(query(sql, "select __key, +__key from records"), keyRange(0, 1000, 5000, 6000), k -> k);
-        assertQueryThrows(sql, "select +cast(? as bigint) + 10 from records", "cannot convert",
-                "10000000000000000000000000000000");
-    }
 
     @Test
     public void verify() {
