@@ -48,6 +48,7 @@ public class GenericRecordTest extends AbstractGenericRecordTest {
     @Override
     protected HazelcastInstance createAccessorInstance(SerializationConfig serializationConfig) {
         Config config = new Config();
+        config.setLiteMember(true);
         config.setSerializationConfig(serializationConfig);
         return factory.newHazelcastInstance(config);
     }
