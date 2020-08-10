@@ -13,81 +13,77 @@
 
 # What is Hazelcast Jet?
 
-[Hazelcast Jet](https://jet-start.sh/) is an open-source in-memory,
-distributed data processing engine. You can use it to process both live
-streams in [event time](docs/concepts/event-time) and batches of
-potentially huge, static datasets.
+[Hazelcast Jet](https://jet-start.sh/) is an open-source, in-memory,
+distributed data processing engine. You can use it to process both large
+volumes of real-time events and batches of potentially huge, static
+datasets.
 
-The Java API you use to program a data processing pipeline follows the
-[dataflow programming paradigm](https://jet-start.sh/docs/concepts/dag),
-akin to the Java Streams API. To run the program, set up a cluster of
-Hazelcast Jet instances and deploy it there. Jet builds an execution
-plan that automatically uses all the computational resources of the
-cluster.
+It provides a Java API to build stream and batch processing applications
+through the use of a [dataflow programming
+model](https://jet-start.sh/docs/concepts/dag). After you deploy your
+application to a Jet cluster, Jet will automatically use all the
+computational resources on the cluster to run your application.
 
 If you add more nodes to the cluster while your application is running,
-Jet automatically rescales the execution plan to use the new nodes as
-well. If you remove a node or it fails, Jet scales it down seamlessly
-without losing any computational state, thus delivering the
-[exactly-once processing
-guarantee](https://jet-start.sh/docs/concepts/processing-guarantees).
+Jet automatically scales up your application to run on the new nodes. If
+you remove nodes from the cluster, it scales it down seamlessly without
+losing the current computational state, providing [exactly-once
+processing](https://jet-start.sh/docs/architecture/fault-tolerance)
+guarantees.
 
-This is a self-contained Java class that implements a common example
-program, called the "Word Count", computing the word frequency histogram
-of a body of text:
+For example, you can represent the classical word count problem that
+reads some local files and outputs the frequency of each word to console
+using the following API:
 
 ```java
-import com.hazelcast.jet.*;
-import com.hazelcast.jet.pipeline.*;
-import static com.hazelcast.jet.Traversers.traverseArray;
-import static com.hazelcast.jet.aggregate.AggregateOperations.counting;
+JetInstance jet = Jet.bootstrappedInstance();
 
-class WordCount {
-    public static void main(String[] args) {
-        JetInstance jet = Jet.bootstrappedInstance();
+Pipeline p = Pipeline.create();
+p.readFrom(Sources.files("/path/to/text-files"))
+    .flatMap(line -> traverseArray(line.toLowerCase().split("\\W+")))
+    .filter(word -> !word.isEmpty())
+    .groupingKey(word -> word)
+    .aggregate(counting())
+    .writeTo(Sinks.logger());
 
-        Pipeline p = Pipeline.create();
-        p.readFrom(Sources.files("/path/to/text-files"))
-         .flatMap(line -> traverseArray(line.toLowerCase().split("\\W+")))
-         .filter(word -> !word.isEmpty())
-         .groupingKey(word -> word)
-         .aggregate(counting())
-         .writeTo(Sinks.logger());
-
-        jet.newJob(p).join();
-    }
-}
+jet.newJob(p).join();
 ```
 
-The code expects to find a set of text files in the folder you name as
-the source, and outputs its results to the console (the default logging
-destination).
-
-To run it directly, you need the single Hazelcast Jet JAR
-on the classpath. In this case it automatically creates an isolated
-instance of Hazelcast Jet into which it deploys the code.
-
-To deploy it to a Jet cluster you've set up beforehand, build a JAR
-containing the class and issue the `jet submit` command:
+and then deploy the application to the cluster:
 
 ```bash
-$ cd /path/to/hazelcast-jet
-$ bin/jet submit /path/to/word-count.jar
+bin/jet submit word-count.jar
 ```
 
-Using files on the local filesystem is just a toy example; Jet comes
-with out-of-the-box support for many kinds of [data sources and
-sinks](https://jet-start.sh/docs/api/sources-sinks), including:
+Another application which aggregates millions of sensor readings per
+second with 10 millisecond resolution from Kafka looks like the
+following:
+
+```java
+Pipeline p = Pipeline.create();
+
+p.readFrom(KafkaSources.<String, Reading>kafka(kafkaProperties, "sensors"))
+    .withTimestamps(event -> event.getValue().timestamp(), 10) // use event timestamp, allowed lag in ms
+    .groupingKey(reading -> reading.sensorId())
+    .window(sliding(1_000, 10)) // sliding window of 1s by 10ms
+    .aggregate(averagingDouble(reading -> reading.temperature()))
+    .writeTo(Sinks.logger());
+
+jet.newJob(p).join();
+```
+
+Jet comes with out-of-the-box support for many kinds of [data sources
+and sinks](https://jet-start.sh/docs/api/sources-sinks), including:
 
 * Apache Kafka
+* Local Files (Text, Avro, JSON)
+* Apache Hadoop (Azure Data Lake, S3, GCS)
 * Apache Pulsar
 * Debezium
 * Elasticsearch
 * JDBC
 * JMS
 * InfluxDB
-* Local Files (Text, Avro, JSON)
-* Apache Hadoop
 * Hazelcast
 * Redis
 * MongoDB
@@ -214,7 +210,9 @@ interested in community discussions
 ## How Can I Contribute?
 
 Thanks for your interest in contributing! The easiest way is to just
-send a pull request.
+send a pull request. Have a look at the issues marked as [good first
+issue](https://github.com/hazelcast/hazelcast-jet/issues?q=is%3Aopen+is%3Aissue+label%3A%22good+first+issue%22)
+for some guidance.
 
 ### Building From Source
 
