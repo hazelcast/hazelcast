@@ -16,6 +16,7 @@
 
 package com.hazelcast.map;
 
+import com.hazelcast.core.ReadOnly;
 import com.hazelcast.internal.serialization.BinaryInterface;
 
 import javax.annotation.Nullable;
@@ -143,6 +144,9 @@ public interface EntryProcessor<K, V, R> extends Serializable {
      * @return the backup entry processor
      */
     default @Nullable EntryProcessor<K, V, R> getBackupProcessor() {
+        if (this instanceof ReadOnly) {
+            return null;
+        }
         return this;
     }
 }
