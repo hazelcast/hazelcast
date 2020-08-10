@@ -16,7 +16,6 @@
 
 package com.hazelcast.sql.impl.expression.math;
 
-import com.hazelcast.sql.SqlService;
 import com.hazelcast.sql.impl.SqlDataSerializerHook;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastReturnTypes;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
@@ -54,14 +53,6 @@ import static org.junit.Assert.assertTrue;
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class UnaryMinusTest extends ExpressionTestBase {
-
-    @Test
-    public void testEndToEnd() {
-        SqlService sql = createEndToEndRecords();
-        assertRows(query(sql, "select __key from records where -int1 > 0"), keys(5000, 6000));
-        assertRows(query(sql, "select __key, -__key from records"), keyRange(0, 1000, 5000, 6000), k -> -(long) k);
-        assertQueryThrows(sql, "select -cast(? as bigint) from records", "bigint overflow", Long.MIN_VALUE);
-    }
 
     @Test
     public void verify() {
