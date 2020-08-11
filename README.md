@@ -40,11 +40,11 @@ JetInstance jet = Jet.bootstrappedInstance();
 
 Pipeline p = Pipeline.create();
 p.readFrom(Sources.files("/path/to/text-files"))
-    .flatMap(line -> traverseArray(line.toLowerCase().split("\\W+")))
-    .filter(word -> !word.isEmpty())
-    .groupingKey(word -> word)
-    .aggregate(counting())
-    .writeTo(Sinks.logger());
+ .flatMap(line -> traverseArray(line.toLowerCase().split("\\W+")))
+ .filter(word -> !word.isEmpty())
+ .groupingKey(word -> word)
+ .aggregate(counting()) 
+ .writeTo(Sinks.logger());
 
 jet.newJob(p).join();
 ```
@@ -63,11 +63,11 @@ following:
 Pipeline p = Pipeline.create();
 
 p.readFrom(KafkaSources.<String, Reading>kafka(kafkaProperties, "sensors"))
-    .withTimestamps(event -> event.getValue().timestamp(), 10) // use event timestamp, allowed lag in ms
-    .groupingKey(reading -> reading.sensorId())
-    .window(sliding(1_000, 10)) // sliding window of 1s by 10ms
-    .aggregate(averagingDouble(reading -> reading.temperature()))
-    .writeTo(Sinks.logger());
+ .withTimestamps(event -> event.getValue().timestamp(), 10) // use event timestamp, allowed lag in ms
+ .groupingKey(reading -> reading.sensorId())
+ .window(sliding(1_000, 10)) // sliding window of 1s by 10ms
+ .aggregate(averagingDouble(reading -> reading.temperature()))
+ .writeTo(Sinks.logger());
 
 jet.newJob(p).join();
 ```
