@@ -45,6 +45,7 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.SlowTest;
 import com.hazelcast.test.bounce.BounceMemberRule;
+import com.hazelcast.test.bounce.BounceTestConfiguration;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -63,6 +64,7 @@ public class DynamicConfigBouncingTest extends HazelcastTestSupport {
             .clusterSize(4)
             .driverCount(1)
             .useTerminate(true)
+            .driverType(BounceTestConfiguration.DriverType.MEMBER)
             .build();
 
     public Config getConfig() {
