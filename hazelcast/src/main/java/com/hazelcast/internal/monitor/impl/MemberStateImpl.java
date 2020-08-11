@@ -67,6 +67,8 @@ public class MemberStateImpl implements MemberState {
     private Set<String> reliableTopicsWithStats = emptySet();
     private Set<String> pnCountersWithStats = emptySet();
     private Set<String> executorsWithStats = emptySet();
+    private Set<String> scheduledExecutorsWithStats = emptySet();
+    private Set<String> durableExecutorsWithStats = emptySet();
     private Set<String> cachesWithStats = emptySet();
     private Set<String> flakeIdGeneratorsWithStats = emptySet();
     private Collection<ClientEndPointDTO> clients = emptySet();
@@ -189,6 +191,14 @@ public class MemberStateImpl implements MemberState {
         this.executorsWithStats = executorsWithStats;
     }
 
+    public void setScheduledExecutorsWithStats(Set<String> scheduledExecutorsWithStats) {
+        this.scheduledExecutorsWithStats = scheduledExecutorsWithStats;
+    }
+
+    public void setDurableExecutorsWithStats(Set<String> durableExecutorsWithStats) {
+        this.durableExecutorsWithStats = durableExecutorsWithStats;
+    }
+
     public Set<String> getCachesWithStats() {
         return cachesWithStats;
     }
@@ -302,6 +312,8 @@ public class MemberStateImpl implements MemberState {
         serializeAsMap(root, "reliableTopicStats", reliableTopicsWithStats);
         serializeAsMap(root, "pnCounterStats", pnCountersWithStats);
         serializeAsMap(root, "executorStats", executorsWithStats);
+        serializeAsMap(root, "scheduledExecutorsWithStats", scheduledExecutorsWithStats);
+        serializeAsMap(root, "durableExecutorsWithStats", durableExecutorsWithStats);
         serializeAsMap(root, "cacheStats", cachesWithStats);
         serializeAsMap(root, "flakeIdStats", flakeIdGeneratorsWithStats);
         serializeMap(root, "wanStats", wanStats);
@@ -431,6 +443,14 @@ public class MemberStateImpl implements MemberState {
         for (JsonObject.Member next : getObject(json, "executorStats")) {
             executorsWithStats.add(next.getName());
         }
+        scheduledExecutorsWithStats = new HashSet<>();
+        for (JsonObject.Member next : getObject(json, "scheduledExecutorsWithStats")) {
+            scheduledExecutorsWithStats.add(next.getName());
+        }
+        durableExecutorsWithStats = new HashSet<>();
+        for (JsonObject.Member next : getObject(json, "durableExecutorsWithStats")) {
+            durableExecutorsWithStats.add(next.getName());
+        }
         cachesWithStats = new HashSet<>();
         for (JsonObject.Member next : getObject(json, "cacheStats")) {
             cachesWithStats.add(next.getName());
@@ -495,6 +515,8 @@ public class MemberStateImpl implements MemberState {
                 + ", reliableTopicsWithStats=" + reliableTopicsWithStats
                 + ", pnCountersWithStats=" + pnCountersWithStats
                 + ", executorsWithStats=" + executorsWithStats
+                + ", scheduledExecutorsWithStats=" + scheduledExecutorsWithStats
+                + ", durableExecutorsWithStats=" + durableExecutorsWithStats
                 + ", cachesWithStats=" + cachesWithStats
                 + ", flakeIdGeneratorsWithStats=" + flakeIdGeneratorsWithStats
                 + ", wanStats=" + wanStats

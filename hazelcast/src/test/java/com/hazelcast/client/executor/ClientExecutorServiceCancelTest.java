@@ -25,12 +25,13 @@ import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IExecutorService;
 import com.hazelcast.executor.ExecutorServiceTestSupport;
+import com.hazelcast.executor.LocalExecutorStats;
 import com.hazelcast.executor.impl.DistributedExecutorService;
 import com.hazelcast.instance.impl.TestUtil;
+import com.hazelcast.internal.monitor.impl.LocalExecutorStatsImpl;
 import com.hazelcast.internal.partition.MigrationInfo;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.internal.partition.impl.MigrationInterceptor;
-import com.hazelcast.executor.LocalExecutorStats;
 import com.hazelcast.spi.impl.servicemanager.ServiceManager;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -246,7 +247,7 @@ import static org.junit.Assert.assertTrue;
         awaitTaskStartAtMember(server1, 1);
 
         final InternalPartitionServiceImpl internalPartitionService = (InternalPartitionServiceImpl) TestUtil.getNode(server1)
-                                                                                                             .getPartitionService();
+                .getPartitionService();
         final int partitionId = internalPartitionService.getPartitionId(key);
         // Simulate partition thread blockage as if the partition is migrating
         internalPartitionService.getPartitionStateManager().trySetMigratingFlag(partitionId);
@@ -281,7 +282,7 @@ import static org.junit.Assert.assertTrue;
         awaitTaskStartAtMember(server1, 1);
 
         InternalPartitionServiceImpl internalPartitionService = (InternalPartitionServiceImpl) TestUtil.getNode(server1)
-                                                                                                       .getPartitionService();
+                .getPartitionService();
         final int partitionId = internalPartitionService.getPartitionId(key);
         // Simulate partition thread blockage as if the partition is migrating
         internalPartitionService.setMigrationInterceptor(new MigrationInterceptor() {
@@ -322,13 +323,13 @@ import static org.junit.Assert.assertTrue;
         });
     }
 
-    protected LocalExecutorStats getMemberLocalExecutorStats(HazelcastInstance member) {
+    protected LocalExecutorStatsImpl getMemberLocalExecutorStats(HazelcastInstance member) {
         final ServiceManager serviceManager = TestUtil.getNode(member).getNodeEngine().getServiceManager();
         final DistributedExecutorService distributedExecutorService = serviceManager
                 .getService(DistributedExecutorService.SERVICE_NAME);
 
-        final Map<String, LocalExecutorStats> allStats = distributedExecutorService.getStats();
-        Iterator<LocalExecutorStats> statsIterator = allStats.values().iterator();
+        final Map<String, LocalExecutorStatsImpl> allStats = distributedExecutorService.getStats();
+        Iterator<LocalExecutorStatsImpl> statsIterator = allStats.values().iterator();
         assertTrue(statsIterator.hasNext());
         return statsIterator.next();
     }

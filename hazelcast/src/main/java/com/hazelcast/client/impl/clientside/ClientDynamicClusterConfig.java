@@ -288,6 +288,7 @@ public class ClientDynamicClusterConfig extends Config {
         return this;
     }
 
+    // TODO stats
     @Override
     public Config addDurableExecutorConfig(DurableExecutorConfig durableExecutorConfig) {
         ClientMessage request = DynamicConfigAddDurableExecutorConfigCodec.encodeRequest(
@@ -298,6 +299,7 @@ public class ClientDynamicClusterConfig extends Config {
         return this;
     }
 
+    // TODO scheduledExecutorConfig.stats
     @Override
     public Config addScheduledExecutorConfig(ScheduledExecutorConfig scheduledExecutorConfig) {
         ClientMessage request = DynamicConfigAddScheduledExecutorConfigCodec.encodeRequest(

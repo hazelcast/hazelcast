@@ -22,6 +22,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.io.IOException;
+import java.util.Objects;
 
 /**
  * Contains the configuration for an {@link com.hazelcast.core.IExecutorService}.
@@ -231,8 +232,7 @@ public class ExecutorConfig implements IdentifiedDataSerializable, NamedConfig {
         if (statisticsEnabled != that.statisticsEnabled) {
             return false;
         }
-        if (splitBrainProtectionName != null ? !splitBrainProtectionName.equals(that.splitBrainProtectionName)
-                : that.splitBrainProtectionName != null) {
+        if (!Objects.equals(splitBrainProtectionName, that.splitBrainProtectionName)) {
             return false;
         }
         return name.equals(that.name);

@@ -23,6 +23,7 @@ import com.hazelcast.internal.cluster.ClusterStateListener;
 import com.hazelcast.internal.metrics.DynamicMetricsProvider;
 import com.hazelcast.internal.metrics.MetricDescriptor;
 import com.hazelcast.internal.metrics.MetricsCollectionContext;
+import com.hazelcast.internal.monitor.impl.LocalExecutorStatsImpl;
 import com.hazelcast.internal.partition.FragmentedMigrationAwareService;
 import com.hazelcast.internal.partition.IPartitionLostEvent;
 import com.hazelcast.internal.partition.PartitionAwareService;
@@ -68,6 +69,7 @@ import java.util.UUID;
 import static com.hazelcast.core.EntryEventType.INVALIDATION;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MAP_DISCRIMINATOR_NAME;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MAP_PREFIX;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MAP_PREFIX_ENTRY_PROCESSOR_OFFLOADABLE_EXECUTOR;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MAP_PREFIX_INDEX;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MAP_PREFIX_NEARCACHE;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MAP_TAG_INDEX;
@@ -90,11 +92,11 @@ import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MAP_TAG_I
  */
 @SuppressWarnings({"checkstyle:ClassFanOutComplexity", "checkstyle:MethodCount"})
 public class MapService implements ManagedService, FragmentedMigrationAwareService, TransactionalService, RemoteService,
-                                   EventPublishingService<Object, ListenerAdapter>, PostJoinAwareService,
-                                   SplitBrainHandlerService, WanSupportingService, StatisticsAwareService<LocalMapStats>,
-                                   PartitionAwareService, ClientAwareService, SplitBrainProtectionAwareService,
-                                   NotifiableEventListener, ClusterStateListener, LockInterceptorService<Data>,
-                                   DynamicMetricsProvider {
+        EventPublishingService<Object, ListenerAdapter>, PostJoinAwareService,
+        SplitBrainHandlerService, WanSupportingService, StatisticsAwareService<LocalMapStats>,
+        PartitionAwareService, ClientAwareService, SplitBrainProtectionAwareService,
+        NotifiableEventListener, ClusterStateListener, LockInterceptorService<Data>,
+        DynamicMetricsProvider {
 
     public static final String SERVICE_NAME = "hz:impl:mapService";
 
@@ -157,7 +159,7 @@ public class MapService implements ManagedService, FragmentedMigrationAwareServi
 
     @Override
     public Operation prepareReplicationOperation(PartitionReplicationEvent event,
-            Collection<ServiceNamespace> namespaces) {
+                                                 Collection<ServiceNamespace> namespaces) {
         return migrationAwareService.prepareReplicationOperation(event, namespaces);
     }
 
@@ -320,6 +322,19 @@ public class MapService implements ManagedService, FragmentedMigrationAwareServi
                         .withPrefix(MAP_PREFIX_NEARCACHE)
                         .withDiscriminator(MAP_DISCRIMINATOR_NAME, mapName);
                 context.collect(nearCacheDescriptor, nearCacheStats);
+            }
+
+        }
+        // stats of offloaded-entry-processor's executor
+        ExecutorStats executorStats = mapServiceContext.getOffloadedEntryProcessorExecutorStats();
+        if (executorStats.hasStats()) {
+            Iterable<? extends Map.Entry<String, LocalExecutorStatsImpl>> entries = executorStats.entrySet();
+            for (Map.Entry<String, LocalExecutorStatsImpl> entry : entries) {
+                MetricDescriptor nearCacheDescriptor = descriptor
+                        .copy()
+                        .withPrefix(MAP_PREFIX_ENTRY_PROCESSOR_OFFLOADABLE_EXECUTOR)
+                        .withDiscriminator(MAP_DISCRIMINATOR_NAME, entry.getKey());
+                context.collect(nearCacheDescriptor, entry.getValue());
             }
         }
     }

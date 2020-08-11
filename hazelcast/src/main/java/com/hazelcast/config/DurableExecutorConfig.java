@@ -17,12 +17,15 @@
 package com.hazelcast.config;
 
 import com.hazelcast.durableexecutor.DurableExecutorService;
+import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.config.ConfigDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.nio.serialization.impl.Versioned;
 
 import java.io.IOException;
+import java.util.Objects;
 
 import static com.hazelcast.internal.util.Preconditions.checkNotNegative;
 import static com.hazelcast.internal.util.Preconditions.checkPositive;
@@ -30,7 +33,7 @@ import static com.hazelcast.internal.util.Preconditions.checkPositive;
 /**
  * Contains the configuration for an {@link DurableExecutorService}.
  */
-public class DurableExecutorConfig implements IdentifiedDataSerializable, NamedConfig {
+public class DurableExecutorConfig implements IdentifiedDataSerializable, NamedConfig, Versioned {
 
     /**
      * The number of executor threads per Member for the Executor based on this configuration.
@@ -56,6 +59,8 @@ public class DurableExecutorConfig implements IdentifiedDataSerializable, NamedC
     private int capacity = DEFAULT_RING_BUFFER_CAPACITY;
 
     private String splitBrainProtectionName;
+
+    private boolean statisticsEnabled = true;
 
     public DurableExecutorConfig() {
     }
@@ -182,6 +187,28 @@ public class DurableExecutorConfig implements IdentifiedDataSerializable, NamedC
         return this;
     }
 
+    /**
+     * Gets if statistics gathering is enabled
+     * or disabled on the executor task.
+     *
+     * @return {@code true} if statistics gathering is enabled
+     * on the executor task (default), {@code false} otherwise
+     */
+    public boolean isStatisticsEnabled() {
+        return statisticsEnabled;
+    }
+
+    /**
+     * Enables or disables statistics gathering on the executor task.
+     *
+     * @param statisticsEnabled {@code true} if statistics
+     *                          gathering is enabled on the executor task, {@code
+     *                          false} otherwise @return this executor config instance
+     */
+    public DurableExecutorConfig setStatisticsEnabled(boolean statisticsEnabled) {
+        this.statisticsEnabled = statisticsEnabled;
+        return this;
+    }
 
     @Override
     public String toString() {
@@ -189,6 +216,7 @@ public class DurableExecutorConfig implements IdentifiedDataSerializable, NamedC
                 + "name='" + name + '\''
                 + ", poolSize=" + poolSize
                 + ", capacity=" + capacity
+                + ", statisticsEnabled=" + statisticsEnabled
                 + ", splitBrainProtectionName=" + splitBrainProtectionName
                 + '}';
     }
@@ -210,6 +238,11 @@ public class DurableExecutorConfig implements IdentifiedDataSerializable, NamedC
         out.writeInt(durability);
         out.writeInt(capacity);
         out.writeUTF(splitBrainProtectionName);
+
+        // RU_COMPAT_4_0
+        if (out.getVersion().isGreaterOrEqual(Versions.V4_1)) {
+            out.writeBoolean(statisticsEnabled);
+        }
     }
 
     @Override
@@ -219,6 +252,11 @@ public class DurableExecutorConfig implements IdentifiedDataSerializable, NamedC
         durability = in.readInt();
         capacity = in.readInt();
         splitBrainProtectionName = in.readUTF();
+
+        // RU_COMPAT_4_0
+        if (in.getVersion().isGreaterOrEqual(Versions.V4_1)) {
+            statisticsEnabled = in.readBoolean();
+        }
     }
 
     @Override
@@ -241,8 +279,10 @@ public class DurableExecutorConfig implements IdentifiedDataSerializable, NamedC
         if (capacity != that.capacity) {
             return false;
         }
-        if (splitBrainProtectionName != null ? !splitBrainProtectionName.equals(that.splitBrainProtectionName)
-                : that.splitBrainProtectionName != null) {
+        if (statisticsEnabled != that.statisticsEnabled) {
+            return false;
+        }
+        if (!Objects.equals(splitBrainProtectionName, that.splitBrainProtectionName)) {
             return false;
         }
         return name.equals(that.name);
@@ -254,6 +294,7 @@ public class DurableExecutorConfig implements IdentifiedDataSerializable, NamedC
         result = 31 * result + poolSize;
         result = 31 * result + durability;
         result = 31 * result + capacity;
+        result = 31 * result + (statisticsEnabled ? 1 : 0);
         result = 31 * result + (splitBrainProtectionName != null ? splitBrainProtectionName.hashCode() : 0);
         return result;
     }

@@ -23,6 +23,7 @@ import com.hazelcast.config.PartitioningStrategyConfig;
 import com.hazelcast.internal.eviction.ExpirationManager;
 import com.hazelcast.internal.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.internal.partition.IPartitionService;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.DataType;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.SerializationService;
@@ -73,7 +74,6 @@ import com.hazelcast.map.impl.querycache.QueryCacheContext;
 import com.hazelcast.map.impl.recordstore.DefaultRecordStore;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.map.listener.MapPartitionLostListener;
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.partition.PartitioningStrategy;
 import com.hazelcast.query.impl.DefaultIndexProvider;
 import com.hazelcast.query.impl.IndexCopyBehavior;
@@ -147,6 +147,7 @@ class MapServiceContextImpl implements MapServiceContext {
     private final ContextMutexFactory contextMutexFactory = new ContextMutexFactory();
     private final AtomicReference<PartitionIdSet> ownedPartitions = new AtomicReference<>();
     private final ConcurrentMap<String, MapContainer> mapContainers = new ConcurrentHashMap<>();
+    private final ExecutorStats offloadedExecutorStats = new ExecutorStats();
 
     private MapService mapService;
 
@@ -173,6 +174,10 @@ class MapServiceContextImpl implements MapServiceContext {
         this.partitioningStrategyFactory = new PartitioningStrategyFactory(nodeEngine.getConfigClassLoader());
         this.nodeWideUsedCapacityCounter = new NodeWideUsedCapacityCounter(nodeEngine.getProperties());
         this.logger = nodeEngine.getLogger(getClass());
+    }
+
+    public ExecutorStats getOffloadedEntryProcessorExecutorStats() {
+        return offloadedExecutorStats;
     }
 
     private ConstructorFunction<String, MapContainer> createMapConstructor() {
@@ -440,6 +445,7 @@ class MapServiceContextImpl implements MapServiceContext {
     public void reset() {
         removeAllRecordStoresOfAllMaps(false, false);
         mapNearCacheManager.reset();
+        offloadedExecutorStats.clear();
     }
 
     @Override
@@ -448,6 +454,7 @@ class MapServiceContextImpl implements MapServiceContext {
         mapNearCacheManager.shutdown();
         mapContainers.clear();
         expirationManager.onShutdown();
+        offloadedExecutorStats.clear();
     }
 
     @Override
@@ -707,7 +714,7 @@ class MapServiceContextImpl implements MapServiceContext {
         ListenerAdapter listenerAdapter = new InternalMapPartitionLostListenerAdapter(listener);
         EventFilter filter = new MapPartitionLostEventFilter();
         return eventService.registerListenerAsync(SERVICE_NAME, mapName, filter, listenerAdapter)
-                           .thenApplyAsync(EventRegistration::getId, CALLER_RUNS);
+                .thenApplyAsync(EventRegistration::getId, CALLER_RUNS);
     }
 
     private EventRegistration addListenerInternal(Object listener, EventFilter filter, String mapName, boolean local) {
@@ -725,7 +732,7 @@ class MapServiceContextImpl implements MapServiceContext {
         ListenerAdapter listenerAdaptor = createListenerAdapter(listener);
         filter = adoptEventFilter(filter, listenerAdaptor);
         return eventService.registerListenerAsync(SERVICE_NAME, mapName, filter, listenerAdaptor)
-                           .thenApplyAsync(EventRegistration::getId, CALLER_RUNS);
+                .thenApplyAsync(EventRegistration::getId, CALLER_RUNS);
     }
 
     private EventFilter adoptEventFilter(EventFilter filter, ListenerAdapter listenerAdaptor) {
@@ -841,8 +848,8 @@ class MapServiceContextImpl implements MapServiceContext {
     public CompletableFuture<UUID> addListenerAdapterAsync(ListenerAdapter listenerAdaptor, EventFilter eventFilter,
                                                            String mapName) {
         return getNodeEngine().getEventService()
-                              .registerListenerAsync(MapService.SERVICE_NAME, mapName, eventFilter, listenerAdaptor)
-                              .thenApplyAsync(EventRegistration::getId, CALLER_RUNS);
+                .registerListenerAsync(MapService.SERVICE_NAME, mapName, eventFilter, listenerAdaptor)
+                .thenApplyAsync(EventRegistration::getId, CALLER_RUNS);
     }
 
     @Override
