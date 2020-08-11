@@ -39,36 +39,6 @@ a.button {
   background-color: #fffdfa;
 }
 
-.nav-footer .sitemap .star-icon {
-  align-items: center;
-  font-size: 14px;
-  font-weight: bold;
-  color: black;
-  background-color:#eff3f6;
-  border-radius: 6px;
-  padding-left: 10px;
-  padding-right: 10px;
-  padding-top: 4px;
-  padding-bottom: 4px;
-  display: flex;
-  width: 155px;
-  height: 34px;
-  margin-left: 10px;
-}
-
-.nav-footer .sitemap .star-icon:visited {
-  color: black;
-}
-
-.nav-footer .sitemap a.star-icon:hover, .nav-footer .sitemap a.star-icon:active {
-  color: black;
-  background-color: #c6c9cc;
-}
-
-.star-icon img {
-  margin-right: 4px;
-}
-
 .projectTitle {
   font-weight: 800;
   max-width: 800px;
