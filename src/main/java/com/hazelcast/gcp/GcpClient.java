@@ -31,7 +31,7 @@ import static java.util.Collections.singletonList;
 class GcpClient {
     private static final ILogger LOGGER = Logger.getLogger(GcpDiscoveryStrategy.class);
 
-    private static final int RETRIES = 10;
+    private static final int RETRIES = 3;
     private static final List<String> NON_RETRYABLE_KEYWORDS = asList("Private key json file not found",
             "Request had insufficient authentication scopes", "Required 'compute.instances.list' permission");
 
