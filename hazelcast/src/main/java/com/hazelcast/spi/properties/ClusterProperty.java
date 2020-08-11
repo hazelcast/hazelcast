@@ -1037,8 +1037,6 @@ public final class ClusterProperty {
     public static final HazelcastProperty CLIENT_PROTOCOL_UNVERIFIED_MESSAGE_BYTES =
             new HazelcastProperty("hazelcast.client.protocol.max.message.bytes", 4096);
 
-    public static final HazelcastProperty AUDIT_LOG_ENABLED = new HazelcastProperty("hazelcast.auditlog.enabled", false);
-
     /**
      * The interval at which network stats (bytes sent and received) are re-calculated and published.
      * Used only when Advanced Networking is enabled.

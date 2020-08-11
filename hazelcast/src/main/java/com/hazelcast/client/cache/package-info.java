@@ -14,11 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.auditlog;
-
 /**
- * Event importance levels.
+ * Public API of client-side CachingProvider
  */
-public enum Level {
-    DEBUG, INFO, WARN, ERROR;
-}
+package com.hazelcast.client.cache;

@@ -24,6 +24,7 @@ import com.hazelcast.collection.ISet;
 import com.hazelcast.collection.QueueStore;
 import com.hazelcast.collection.QueueStoreFactory;
 import com.hazelcast.config.AttributeConfig;
+import com.hazelcast.config.AuditlogConfig;
 import com.hazelcast.config.AwsConfig;
 import com.hazelcast.config.AzureConfig;
 import com.hazelcast.config.CRDTReplicationConfig;
@@ -1426,6 +1427,15 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertNotNull(lockConfig2);
         assertEquals(1, lockConfig1.getLockAcquireLimit());
         assertEquals(2, lockConfig2.getLockAcquireLimit());
+    }
+
+    @Test
+    public void testAuditlogConfig() {
+        AuditlogConfig auditlogConfig = config.getAuditlogConfig();
+        assertFalse(auditlogConfig.isEnabled());
+        assertEquals("com.acme.AuditlogToSyslogFactory", auditlogConfig.getFactoryClassName());
+        assertEquals("syslogserver.acme.com", auditlogConfig.getProperty("host"));
+        assertEquals("514", auditlogConfig.getProperty("port"));
     }
 
     @Test

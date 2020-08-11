@@ -19,6 +19,7 @@ package com.hazelcast.spring;
 import com.hazelcast.config.AdvancedNetworkConfig;
 import com.hazelcast.config.AliasedDiscoveryConfig;
 import com.hazelcast.config.AttributeConfig;
+import com.hazelcast.config.AuditlogConfig;
 import com.hazelcast.config.CRDTReplicationConfig;
 import com.hazelcast.config.CachePartitionLostListenerConfig;
 import com.hazelcast.config.CacheSimpleConfig;
@@ -339,6 +340,8 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                         handleInstanceTracking(node);
                     } else if ("sql".equals(nodeName)) {
                         handleSql(node);
+                    } else if ("auditlog".equals(nodeName)) {
+                        handleAuditlog(node);
                     }
                 }
             }
@@ -2124,6 +2127,18 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             }
 
             configBuilder.addPropertyValue("sqlConfig", sqlConfigBuilder.getBeanDefinition());
+        }
+
+        private void handleAuditlog(Node node) {
+            BeanDefinitionBuilder builder = createBeanBuilder(AuditlogConfig.class);
+            fillValues(node, builder);
+            for (Node child : childElements(node)) {
+                String nodeName = cleanNodeName(child);
+                if ("properties".equals(nodeName)) {
+                    handleProperties(child, builder);
+                }
+            }
+            configBuilder.addPropertyValue("auditlogConfig", builder.getBeanDefinition());
         }
     }
 }

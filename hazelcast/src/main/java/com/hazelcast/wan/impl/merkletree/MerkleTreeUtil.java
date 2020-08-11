@@ -45,7 +45,7 @@ public final class MerkleTreeUtil {
      * @param level The level
      * @return the breadth-first order of the leaf for the given {@code hash}
      */
-    static int getLeafOrderForHash(int hash, int level) {
+    public static int getLeafOrderForHash(int hash, int level) {
         long hashStepForLevel = getNodeHashRangeOnLevel(level);
         long hashDistanceFromMin = ((long) hash) - Integer.MIN_VALUE;
         int steps = (int) (hashDistanceFromMin / hashStepForLevel);

@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.server.tcp;
 
+import com.hazelcast.auditlog.AuditlogTypeIds;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.networking.Channel;
@@ -226,6 +227,14 @@ public class TcpServerConnection implements ServerConnection {
 
         this.closeCause = cause;
         this.closeReason = reason;
+
+        serverContext.getAuditLogService()
+            .eventBuilder(AuditlogTypeIds.NETWORK_DISCONNECT)
+            .message("Closing server connection.")
+            .addParameter("reason", reason)
+            .addParameter("cause", cause)
+            .addParameter("remoteAddress", remoteAddress)
+            .log();
 
         logClose();
 

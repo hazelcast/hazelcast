@@ -32,6 +32,12 @@ if NOT "%MAX_HEAP_SIZE%" == "" (
 	set JAVA_OPTS=%JAVA_OPTS% -Xmx%MAX_HEAP_SIZE%
 )
 
+FOR /F "tokens=* USEBACKQ" %%F IN (`CALL "%RUN_JAVA%" -cp "%~dp0..\lib\hazelcast-all-${project.version}.jar" com.hazelcast.internal.util.JavaVersion`) DO SET JAVA_VERSION=%%F
+
+IF NOT "%JAVA_VERSION%" == "8" (
+	set JAVA_OPTS=%JAVA_OPTS% --add-modules java.se --add-exports java.base/jdk.internal.ref=ALL-UNNAMED --add-opens java.base/java.lang=ALL-UNNAMED --add-opens java.base/java.nio=ALL-UNNAMED --add-opens java.base/sun.nio.ch=ALL-UNNAMED --add-opens java.management/sun.management=ALL-UNNAMED --add-opens jdk.management/com.sun.management.internal=ALL-UNNAMED
+)
+
 set "CLASSPATH=%~dp0..\lib\hazelcast-all-${project.version}.jar;%~dp0..\user-lib;%~dp0..\user-lib\*"
 
 ECHO ########################################
@@ -40,6 +46,6 @@ ECHO # JAVA_OPTS=%JAVA_OPTS%
 ECHO # starting now...."
 ECHO ########################################
 
-start "hazelcast-imdg" "%RUN_JAVA%" %JAVA_OPTS% -cp "%CLASSPATH%" "com.hazelcast.core.server.HazelcastMemberStarter"
+"%RUN_JAVA%" %JAVA_OPTS% -cp "%CLASSPATH%" "com.hazelcast.core.server.HazelcastMemberStarter"
 
 ENDLOCAL

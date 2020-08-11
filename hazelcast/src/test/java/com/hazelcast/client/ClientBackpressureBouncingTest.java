@@ -31,6 +31,7 @@ import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.SlowTest;
 import com.hazelcast.test.bounce.BounceMemberRule;
+import com.hazelcast.test.bounce.BounceTestConfiguration;
 import org.junit.After;
 import org.junit.Rule;
 import org.junit.Test;
@@ -87,6 +88,7 @@ public class ClientBackpressureBouncingTest extends HazelcastTestSupport {
         this.backoff = backoffTimeoutMillis;
         this.bounceMemberRule = BounceMemberRule
                 .with(new Config())
+                .driverType(BounceTestConfiguration.DriverType.CLIENT)
                 .driverFactory(new MultiSocketClientDriverFactory(
                         new ClientConfig()
                                 .setProperty(MAX_CONCURRENT_INVOCATIONS.getName(), valueOf(MAX_CONCURRENT_INVOCATION_CONFIG))

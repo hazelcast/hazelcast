@@ -70,6 +70,7 @@
                 <xs:element name="pn-counter" type="pn-counter" minOccurs="0" maxOccurs="unbounded"/>
                 <xs:element name="advanced-network" type="advanced-network" minOccurs="0" maxOccurs="1"/>
                 <xs:element name="cp-subsystem" type="cp-subsystem" minOccurs="0" maxOccurs="1"/>
+                <xs:element name="auditlog" type="factory-class-with-properties" minOccurs="0" maxOccurs="1"/>
                 <xs:element name="metrics" type="metrics" minOccurs="0" maxOccurs="1"/>
                 <xs:element name="instance-tracking" type="instance-tracking" minOccurs="0" maxOccurs="1"/>
                 <xs:element name="sql" type="sql" minOccurs="0" maxOccurs="1"/>
@@ -1285,7 +1286,13 @@
             </xs:element>
             <xs:element name="join" type="join" minOccurs="0" maxOccurs="1"/>
             <xs:element name="interfaces" type="interfaces" minOccurs="0" maxOccurs="1"/>
-            <xs:element name="ssl" type="ssl" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="ssl" type="factory-class-with-properties" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                        SSL configuration with com.hazelcast.nio.ssl.SSLContextFactory used as the factory type.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
             <xs:element name="socket-interceptor" type="socket-interceptor" minOccurs="0" maxOccurs="1"/>
             <xs:element name="symmetric-encryption" type="symmetric-encryption" minOccurs="0" maxOccurs="1">
                 <xs:annotation>
@@ -2421,12 +2428,12 @@
             </xs:element>
         </xs:all>
     </xs:complexType>
-    <xs:complexType name="ssl">
+    <xs:complexType name="factory-class-with-properties">
         <xs:all>
             <xs:element name="factory-class-name" type="xs:string" minOccurs="0" maxOccurs="1">
                 <xs:annotation>
                     <xs:documentation>
-                        The name of the com.hazelcast.nio.ssl.SSLContextFactory implementation class.
+                        Full factory classname.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
@@ -2435,26 +2442,7 @@
         <xs:attribute name="enabled" default="false" type="xs:boolean">
             <xs:annotation>
                 <xs:documentation>
-                    True to enable this ssl configuration, false to disable.
-                </xs:documentation>
-            </xs:annotation>
-        </xs:attribute>
-    </xs:complexType>
-    <xs:complexType name="mutual-auth">
-        <xs:all>
-            <xs:element name="factory-class-name" type="xs:string" minOccurs="0" maxOccurs="1">
-                <xs:annotation>
-                    <xs:documentation>
-                        The name of the com.hazelcast.nio.ssl.SSLContextFactory implementation class.
-                    </xs:documentation>
-                </xs:annotation>
-            </xs:element>
-            <xs:element name="properties" type="properties" minOccurs="0" maxOccurs="1"/>
-        </xs:all>
-        <xs:attribute name="enabled" default="false" type="xs:boolean">
-            <xs:annotation>
-                <xs:documentation>
-                    True to enable this mutual-auth configuration, false to disable.
+                    True to enable this configuration element, false to disable.
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
@@ -3597,7 +3585,7 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
-            <xs:element name="ssl" type="ssl" minOccurs="0" maxOccurs="1">
+            <xs:element name="ssl" type="factory-class-with-properties" minOccurs="0" maxOccurs="1">
                 <xs:annotation>
                     <xs:documentation>
                         SSL/TLS configuration for HTTPS connections.
@@ -4214,7 +4202,7 @@
                 </xs:annotation>
             </xs:element>
             <xs:element name="interfaces" type="interfaces" minOccurs="0"/>
-            <xs:element name="ssl" type="ssl" minOccurs="0"/>
+            <xs:element name="ssl" type="factory-class-with-properties" minOccurs="0"/>
             <xs:element name="socket-interceptor" type="socket-interceptor" minOccurs="0"/>
             <xs:element name="symmetric-encryption" type="symmetric-encryption" minOccurs="0"/>
             <xs:element name="socket-options" type="socket-options" minOccurs="0"/>
@@ -4283,7 +4271,7 @@
                 </xs:annotation>
             </xs:element>
             <xs:element name="interfaces" type="interfaces" minOccurs="0"/>
-            <xs:element name="ssl" type="ssl" minOccurs="0"/>
+            <xs:element name="ssl" type="factory-class-with-properties" minOccurs="0"/>
             <xs:element name="socket-interceptor" type="socket-interceptor" minOccurs="0"/>
             <xs:element name="symmetric-encryption" type="symmetric-encryption" minOccurs="0"/>
             <xs:element name="socket-options" type="socket-options" minOccurs="0"/>
@@ -4369,7 +4357,7 @@
                 </xs:annotation>
             </xs:element>
             <xs:element name="interfaces" type="interfaces" minOccurs="0"/>
-            <xs:element name="ssl" type="ssl" minOccurs="0"/>
+            <xs:element name="ssl" type="factory-class-with-properties" minOccurs="0"/>
             <xs:element name="socket-interceptor" type="socket-interceptor" minOccurs="0"/>
             <xs:element name="symmetric-encryption" type="symmetric-encryption" minOccurs="0"/>
             <xs:element name="socket-options" type="socket-options" minOccurs="0"/>

@@ -99,7 +99,10 @@ public abstract class AbstractHazelcastBeanDefinitionParser extends AbstractBean
                 }
 
                 if (parserContext.isNested()) {
-                    builder.setScope(parserContext.getContainingBeanDefinition().getScope());
+                    BeanDefinition containingBeanDefinition = parserContext.getContainingBeanDefinition();
+                    if (containingBeanDefinition != null) {
+                        builder.setScope(containingBeanDefinition.getScope());
+                    }
                 } else {
                     Node scopeNode = attributes.getNamedItem("scope");
                     if (scopeNode != null) {

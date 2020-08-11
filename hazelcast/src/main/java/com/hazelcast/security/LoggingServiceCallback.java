@@ -14,12 +14,24 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.auditlog.impl;
+package com.hazelcast.security;
 
-public final class AuditlogTypeIds {
+import javax.security.auth.callback.Callback;
 
-    public static final String CONNECTION_ASKS_PROTOCOL = "HZ-1001";
+import com.hazelcast.logging.LoggingService;
 
-    private AuditlogTypeIds() {
+/**
+ * This JAAS {@link Callback} is used to retrieve a {@link LoggingService} from the current member.
+ */
+public class LoggingServiceCallback implements Callback {
+
+    private LoggingService loggingService;
+
+    public LoggingService getLoggingService() {
+        return loggingService;
+    }
+
+    public void setLoggingService(LoggingService loggingService) {
+        this.loggingService = loggingService;
     }
 }
