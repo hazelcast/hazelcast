@@ -44,6 +44,7 @@ public class BounceMemberRuleStalenessTest extends HazelcastTestSupport {
             .clusterSize(2)
             .maximumStalenessSeconds(MAXIMUM_STALENESS_SECONDS)
             .bouncingIntervalSeconds(BOUNCING_INTERVAL_SECONDS)
+            .driverType(BounceTestConfiguration.DriverType.MEMBER)
             .build();
 
     @Test

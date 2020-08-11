@@ -22,6 +22,7 @@ import com.hazelcast.internal.journal.EventJournalInitialSubscriberState;
 import com.hazelcast.internal.journal.EventJournalReader;
 import com.hazelcast.ringbuffer.ReadResultSet;
 import com.hazelcast.test.bounce.BounceMemberRule;
+import com.hazelcast.test.bounce.BounceTestConfiguration;
 import com.hazelcast.test.jitter.JitterRule;
 import org.junit.Before;
 import org.junit.Rule;
@@ -29,11 +30,11 @@ import org.junit.Test;
 
 import java.util.LinkedList;
 
+import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.spi.properties.ClusterProperty.EVENT_THREAD_COUNT;
 import static com.hazelcast.spi.properties.ClusterProperty.GENERIC_OPERATION_THREAD_COUNT;
 import static com.hazelcast.spi.properties.ClusterProperty.PARTITION_COUNT;
 import static com.hazelcast.spi.properties.ClusterProperty.PARTITION_OPERATION_THREAD_COUNT;
-import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static org.junit.Assert.assertEquals;
 
@@ -50,8 +51,10 @@ public abstract class AbstractEventJournalBounceTest {
 
     @Rule
     public BounceMemberRule bounceMemberRule = BounceMemberRule.with(getConfig())
-                                                               .clusterSize(4)
-                                                               .driverCount(4).build();
+            .clusterSize(4)
+            .driverCount(4)
+            .driverType(BounceTestConfiguration.DriverType.MEMBER)
+            .build();
 
     @Rule
     public JitterRule jitterRule = new JitterRule();
