@@ -32,7 +32,6 @@ import com.hazelcast.sql.impl.expression.math.MultiplyFunction;
 import com.hazelcast.sql.impl.expression.math.PlusFunction;
 import com.hazelcast.sql.impl.expression.math.UnaryMinusFunction;
 import com.hazelcast.sql.impl.expression.predicate.AndPredicate;
-import com.hazelcast.sql.impl.expression.predicate.CaseExpression;
 import com.hazelcast.sql.impl.expression.predicate.ComparisonPredicate;
 import com.hazelcast.sql.impl.expression.predicate.IsFalsePredicate;
 import com.hazelcast.sql.impl.expression.predicate.IsNotFalsePredicate;
@@ -118,12 +117,11 @@ public class SqlDataSerializerHook implements DataSerializerHook {
     public static final int EXPRESSION_OR = 33;
     public static final int EXPRESSION_NOT = 34;
     public static final int EXPRESSION_COMPARISON = 35;
-    public static final int EXPRESSION_CASE = 36;
-    public static final int EXPRESSION_IS_TRUE = 37;
-    public static final int EXPRESSION_IS_NOT_TRUE = 38;
-    public static final int EXPRESSION_IS_FALSE = 39;
-    public static final int EXPRESSION_IS_NOT_FALSE = 40;
-    public static final int EXPRESSION_IS_NOT_NULL = 41;
+    public static final int EXPRESSION_IS_TRUE = 36;
+    public static final int EXPRESSION_IS_NOT_TRUE = 37;
+    public static final int EXPRESSION_IS_FALSE = 38;
+    public static final int EXPRESSION_IS_NOT_FALSE = 39;
+    public static final int EXPRESSION_IS_NOT_NULL = 40;
 
     public static final int LEN = EXPRESSION_IS_NOT_NULL + 1;
 
@@ -181,7 +179,6 @@ public class SqlDataSerializerHook implements DataSerializerHook {
         constructors[EXPRESSION_OR] = arg -> new OrPredicate();
         constructors[EXPRESSION_NOT] = arg -> new NotPredicate();
         constructors[EXPRESSION_COMPARISON] = arg -> new ComparisonPredicate();
-        constructors[EXPRESSION_CASE] = arg -> new CaseExpression<>();
         constructors[EXPRESSION_IS_TRUE] = arg -> new IsTruePredicate();
         constructors[EXPRESSION_IS_NOT_TRUE] = arg -> new IsNotTruePredicate();
         constructors[EXPRESSION_IS_FALSE] = arg -> new IsFalsePredicate();

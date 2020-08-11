@@ -27,7 +27,6 @@ import com.hazelcast.sql.impl.expression.math.MultiplyFunction;
 import com.hazelcast.sql.impl.expression.math.PlusFunction;
 import com.hazelcast.sql.impl.expression.math.UnaryMinusFunction;
 import com.hazelcast.sql.impl.expression.predicate.AndPredicate;
-import com.hazelcast.sql.impl.expression.predicate.CaseExpression;
 import com.hazelcast.sql.impl.expression.predicate.ComparisonMode;
 import com.hazelcast.sql.impl.expression.predicate.ComparisonPredicate;
 import com.hazelcast.sql.impl.expression.predicate.IsFalsePredicate;
@@ -134,9 +133,6 @@ public final class RexToExpression {
                     return operands[0];
                 }
                 return CastExpression.create(operands[0], resultType);
-
-            case CASE:
-                return CaseExpression.create(operands, resultType);
 
             case AND:
                 return AndPredicate.create(operands);

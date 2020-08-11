@@ -91,7 +91,6 @@ public final class UnsupportedOperationVisitor implements SqlVisitor<Void> {
         // Miscellaneous
         SUPPORTED_KINDS.add(SqlKind.AS);
         SUPPORTED_KINDS.add(SqlKind.CAST);
-        SUPPORTED_KINDS.add(SqlKind.CASE);
     }
 
     private UnsupportedOperationVisitor() {
