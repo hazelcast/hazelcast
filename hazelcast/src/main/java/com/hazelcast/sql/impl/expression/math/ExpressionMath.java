@@ -77,12 +77,13 @@ public final class ExpressionMath {
      * @return a division result.
      * @throws QueryException if division by zero is detected.
      */
+    @SuppressWarnings("checkstyle:MagicNumber")
     public static double divideExact(double left, double right) {
-        double result = left / right;
-        if (Double.isInfinite(result)) {
+        if (right == +0.0 || right == -0.0) {
             throw QueryException.error(SqlErrorCode.DATA_EXCEPTION, "division by zero");
         }
-        return result;
+
+        return left / right;
     }
 
     /**
@@ -96,12 +97,13 @@ public final class ExpressionMath {
      * @return a division result.
      * @throws QueryException if division by zero is detected.
      */
+    @SuppressWarnings("checkstyle:MagicNumber")
     public static float divideExact(float left, float right) {
-        float result = left / right;
-        if (Float.isInfinite(result)) {
+        if (right == +0.0f || right == -0.0f) {
             throw QueryException.error(SqlErrorCode.DATA_EXCEPTION, "division by zero");
         }
-        return result;
+
+        return left / right;
     }
 
 }
