@@ -129,28 +129,28 @@ The following SQL types are mapped to several Java types:
 ## 3. Type Conversions
 Different types might be converted to each other either implicitly or explicitly. Implicit conversion is performed between
 compatible types without explicit user requests based on type compatibility matrix and **type precedence**. Explicit
-conversion is performed through `CAST` or `CONVERT` functions. Explicit conversion may fail if the source value cannot be
-converted to the target type.
+conversion is performed through `CAST` or `CONVERT` functions. Implicit and explicit conversions may fail if the source
+value cannot be converted to the target type.
 
 *Table 4: Type conversions (I - implicit, E - explicit)*
 
 | From/To | NULL | VARCHAR | BOOLEAN | TINYINT | SMALLINT | INTEGER | BIGINT | DECIMAL | REAL | DOUBLE | DATE | TIME | TIMESTAMP | TIMESTAMP W/ TZ | OBJECT |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| **NULL** | `I` | `I` | `I` | `I` | `I` | `I` | `I` | `I` | `I` | `I` | `I` | `I` | `I` | `I` | `I` |
-| **VARCHAR** |  | `I` | `I` | `I` | `I` | `I` | `I` | `I` | `I` | `I` | `I` | `I` | `I` | `I` | `I` |
-| **BOOLEAN** |  | `E` | `I` |  |  |  |  |  |  |  |  |  |  |  | `I` |
-| **TINYINT** |  | `E` |  | `I` | `I` | `I` | `I` | `I` | `I` |`I`  |  |  |  |  | `I` |
-| **SMALLINT** |  | `E` |  | `E` | `I` | `I` | `I` | `I` | `I` | `I` |  |  |  |  | `I` |
-| **INTEGER** |  | `E` |  | `E` | `E` | `I` | `I` | `I` | `I` | `I` |  |  |  |  | `I` |
-| **BIGINT** |  | `E` |  | `E` | `E` | `E` | `I` | `I` | `I` | `I` |  |  |  |  | `I` |
-| **DECIMAL** |  | `E` |  | `E` | `E` | `E` | `E` | `I` | `I` | `I` |  |  |  |  | `I` |
-| **REAL** |  | `E` |  | `E` | `E` | `E` | `E` | `E` | `I` | `I` |  |  |  |  | `I` |
-| **DOUBLE** |  | `E` |  | `E` | `E` | `E` | `E` | `E` | `E` | `I` |  |  |  |  | `I` |
-| **TIME** |  | `E` |  |  |  |  |  |  |  |  |  | `I` | `I` | `I` | `I` |
-| **DATE** |  | `E` |  |  |  |  |  |  |  |  | `I` |  | `I` | `I` | `I` |
-| **TIMESTAMP** |  | `E` |  |  |  |  |  |  |  |  | `E` | `E` | `I` | `I` | `I` |
-| **TIMESTAMP W/ TZ** |  | `E` |  |  |  |  |  |  |  |  | `E` | `E` | `E`  | `I` | `I` |
-| **OBJECT** |  | `E` | `E` | `E` | `E` | `E` | `E` | `E` | `E` | `E` | `E` | `E` | `E` | `E` | `I` |
+| **NULL** | `-` | `I` | `I` | `I` | `I` | `I` | `I` | `I` | `I` | `I` | `I` | `I` | `I` | `I` | `I` |
+| **VARCHAR** |  | `-` | `I` | `I` | `I` | `I` | `I` | `I` | `I` | `I` | `I` | `I` | `I` | `I` | `I` |
+| **BOOLEAN** |  | `E` | `-` |  |  |  |  |  |  |  |  |  |  |  | `I` |
+| **TINYINT** |  | `E` |  | `-` | `I` | `I` | `I` | `I` | `I` |`I`  |  |  |  |  | `I` |
+| **SMALLINT** |  | `E` |  | `E` | `-` | `I` | `I` | `I` | `I` | `I` |  |  |  |  | `I` |
+| **INTEGER** |  | `E` |  | `E` | `E` | `-` | `I` | `I` | `I` | `I` |  |  |  |  | `I` |
+| **BIGINT** |  | `E` |  | `E` | `E` | `E` | `-` | `I` | `I` | `I` |  |  |  |  | `I` |
+| **DECIMAL** |  | `E` |  | `E` | `E` | `E` | `E` | `-` | `I` | `I` |  |  |  |  | `I` |
+| **REAL** |  | `E` |  | `E` | `E` | `E` | `E` | `E` | `-` | `I` |  |  |  |  | `I` |
+| **DOUBLE** |  | `E` |  | `E` | `E` | `E` | `E` | `E` | `E` | `-` |  |  |  |  | `I` |
+| **DATE** |  | `E` |  |  |  |  |  |  |  |  | `-` |  | `I` | `I` | `I` |
+| **TIME** |  | `E` |  |  |  |  |  |  |  |  |  | `-` | `I` | `I` | `I` |
+| **TIMESTAMP** |  | `E` |  |  |  |  |  |  |  |  | `E` | `E` | `-` | `I` | `I` |
+| **TIMESTAMP W/ TZ** |  | `E` |  |  |  |  |  |  |  |  | `E` | `E` | `E`  | `-` | `I` |
+| **OBJECT** |  | `E` | `E` | `E` | `E` | `E` | `E` | `E` | `E` | `E` | `E` | `E` | `E` | `E` | `-` |
 
 Conversions between VARCHAR and temporal types are performed using patterns defined in `java.time.format.DateTimeFormatter`
 class [[1]].
