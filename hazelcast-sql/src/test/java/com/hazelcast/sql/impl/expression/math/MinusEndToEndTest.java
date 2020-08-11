@@ -83,10 +83,10 @@ public class MinusEndToEndTest extends ExpressionEndToEndTestBase {
                 BigDecimal.valueOf(1).subtract(getRecord().decimalBigNegative));
 
         assertRow("byte1 - string1", EXPR0, BIGINT, 0L);
-        assertDataError("byte1 - stringBigNegative", "Cannot convert VARCHAR to BIGINT: -92233720368547758070");
-        assertDataError("byte1 - stringFoo", "Cannot convert VARCHAR to BIGINT: foo");
+        assertDataError("byte1 - stringBigNegative", "Cannot convert VARCHAR to BIGINT");
+        assertDataError("byte1 - stringFoo", "Cannot convert VARCHAR to BIGINT");
         assertRow("byte1 - char1", EXPR0, BIGINT, 0L);
-        assertDataError("byte1 - charF", "Cannot convert VARCHAR to BIGINT: f");
+        assertDataError("byte1 - charF", "Cannot convert VARCHAR to BIGINT");
 
         assertParsingError("byte1 - object", "Cannot apply '-' to arguments of type '<TINYINT> - <OBJECT>'");
     }
@@ -116,10 +116,10 @@ public class MinusEndToEndTest extends ExpressionEndToEndTestBase {
                 BigDecimal.valueOf(1).subtract(getRecord().decimalBigNegative));
 
         assertRow("short1 - string1", EXPR0, BIGINT, 0L);
-        assertDataError("short1 - stringBigNegative", "Cannot convert VARCHAR to BIGINT: -92233720368547758070");
-        assertDataError("short1 - stringFoo", "Cannot convert VARCHAR to BIGINT: foo");
+        assertDataError("short1 - stringBigNegative", "Cannot convert VARCHAR to BIGINT");
+        assertDataError("short1 - stringFoo", "Cannot convert VARCHAR to BIGINT");
         assertRow("short1 - char1", EXPR0, BIGINT, 0L);
-        assertDataError("short1 - charF", "Cannot convert VARCHAR to BIGINT: f");
+        assertDataError("short1 - charF", "Cannot convert VARCHAR to BIGINT");
 
         assertParsingError("short1 - object", "Cannot apply '-' to arguments of type '<SMALLINT> - <OBJECT>'");
     }
@@ -148,10 +148,10 @@ public class MinusEndToEndTest extends ExpressionEndToEndTestBase {
         assertRow("int1 - bigIntegerBigNegative", EXPR0, DECIMAL, BigDecimal.valueOf(1).subtract(getRecord().decimalBigNegative));
 
         assertRow("int1 - string1", EXPR0, BIGINT, 0L);
-        assertDataError("int1 - stringBigNegative", "Cannot convert VARCHAR to BIGINT: -92233720368547758070");
-        assertDataError("int1 - stringFoo", "Cannot convert VARCHAR to BIGINT: foo");
+        assertDataError("int1 - stringBigNegative", "Cannot convert VARCHAR to BIGINT");
+        assertDataError("int1 - stringFoo", "Cannot convert VARCHAR to BIGINT");
         assertRow("int1 - char1", EXPR0, BIGINT, 0L);
-        assertDataError("int1 - charF", "Cannot convert VARCHAR to BIGINT: f");
+        assertDataError("int1 - charF", "Cannot convert VARCHAR to BIGINT");
 
         assertParsingError("int1 - object", "Cannot apply '-' to arguments of type '<INTEGER> - <OBJECT>'");
     }
@@ -181,10 +181,10 @@ public class MinusEndToEndTest extends ExpressionEndToEndTestBase {
                 BigDecimal.valueOf(1).subtract(getRecord().decimalBigNegative));
 
         assertRow("long1 - string1", EXPR0, BIGINT, 0L);
-        assertDataError("long1 - stringBigNegative", "Cannot convert VARCHAR to BIGINT: -92233720368547758070");
-        assertDataError("long1 - stringFoo", "Cannot convert VARCHAR to BIGINT: foo");
+        assertDataError("long1 - stringBigNegative", "Cannot convert VARCHAR to BIGINT");
+        assertDataError("long1 - stringFoo", "Cannot convert VARCHAR to BIGINT");
         assertRow("long1 - char1", EXPR0, BIGINT, 0L);
-        assertDataError("long1 - charF", "Cannot convert VARCHAR to BIGINT: f");
+        assertDataError("long1 - charF", "Cannot convert VARCHAR to BIGINT");
 
         assertParsingError("long1 - object", "Cannot apply '-' to arguments of type '<BIGINT> - <OBJECT>'");
     }
@@ -214,9 +214,9 @@ public class MinusEndToEndTest extends ExpressionEndToEndTestBase {
 
         assertRow("float1 - string1", EXPR0, REAL, 0.0f);
         assertRow("float1 - stringBigNegative", EXPR0, REAL, 1.0f - Float.parseFloat(getRecord().stringBigNegative));
-        assertDataError("float1 - stringFoo", "Cannot convert VARCHAR to REAL: foo");
+        assertDataError("float1 - stringFoo", "Cannot convert VARCHAR to REAL");
         assertRow("float1 - char1", EXPR0, REAL, 0.0f);
-        assertDataError("float1 - charF", "Cannot convert VARCHAR to REAL: f");
+        assertDataError("float1 - charF", "Cannot convert VARCHAR to REAL");
 
         assertParsingError("float1 - object", "Cannot apply '-' to arguments of type '<REAL> - <OBJECT>'");
     }
@@ -246,9 +246,9 @@ public class MinusEndToEndTest extends ExpressionEndToEndTestBase {
 
         assertRow("double1 - string1", EXPR0, DOUBLE, 0.0);
         assertRow("double1 - stringBigNegative", EXPR0, DOUBLE, 1.0 - Double.parseDouble(getRecord().stringBigNegative));
-        assertDataError("double1 - stringFoo", "Cannot convert VARCHAR to DOUBLE: foo");
+        assertDataError("double1 - stringFoo", "Cannot convert VARCHAR to DOUBLE");
         assertRow("double1 - char1", EXPR0, DOUBLE, 0.0);
-        assertDataError("double1 - charF", "Cannot convert VARCHAR to DOUBLE: f");
+        assertDataError("double1 - charF", "Cannot convert VARCHAR to DOUBLE");
 
         assertParsingError("double1 - object", "Cannot apply '-' to arguments of type '<DOUBLE> - <OBJECT>'");
     }
@@ -280,9 +280,9 @@ public class MinusEndToEndTest extends ExpressionEndToEndTestBase {
         assertRow("decimal1 - string1", EXPR0, DECIMAL, BigDecimal.valueOf(0));
         assertRow("decimal1 - stringBigNegative", EXPR0, DECIMAL,
                 getRecord().decimal1.subtract(new BigDecimal(getRecord().stringBigNegative)));
-        assertDataError("decimal1 - stringFoo", "Cannot convert VARCHAR to DECIMAL: foo");
+        assertDataError("decimal1 - stringFoo", "Cannot convert VARCHAR to DECIMAL");
         assertRow("decimal1 - char1", EXPR0, DECIMAL, BigDecimal.valueOf(0));
-        assertDataError("decimal1 - charF", "Cannot convert VARCHAR to DECIMAL: f");
+        assertDataError("decimal1 - charF", "Cannot convert VARCHAR to DECIMAL");
 
         assertParsingError("decimal1 - object", "Cannot apply '-' to arguments of type '<DECIMAL(38, 38)> - <OBJECT>'");
     }
@@ -313,9 +313,9 @@ public class MinusEndToEndTest extends ExpressionEndToEndTestBase {
 
         assertRow("string1 - string1", EXPR0, DOUBLE, 0.0);
         assertRow("string1 - stringBigNegative", EXPR0, DOUBLE, 1.0 - Double.parseDouble(getRecord().stringBigNegative));
-        assertDataError("string1 - stringFoo", "Cannot convert VARCHAR to DOUBLE: foo");
+        assertDataError("string1 - stringFoo", "Cannot convert VARCHAR to DOUBLE");
         assertRow("string1 - char1", EXPR0, DOUBLE, 0.0);
-        assertDataError("string1 - charF", "Cannot convert VARCHAR to DOUBLE: f");
+        assertDataError("string1 - charF", "Cannot convert VARCHAR to DOUBLE");
 
         assertParsingError("string1 - object", "Cannot apply '-' to arguments of type '<VARCHAR> - <OBJECT>'");
     }

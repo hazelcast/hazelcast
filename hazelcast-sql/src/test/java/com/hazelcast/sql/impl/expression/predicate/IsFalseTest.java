@@ -46,7 +46,7 @@ public class IsFalseTest extends ExpressionTestBase {
         assertRows(query(sql, "select __key from records where boolean1 is false and __key < 100"), keyRange(0, 100));
         assertRows(query(sql, "select __key, boolean1 is false from records"), keyRange(0, 1000, 5000, 6000),
                 k -> k >= 0 && k < 500);
-        assertQueryThrows(sql, "select __key, string1 is false from records", "cannot be converted");
+        assertQueryThrows(sql, "select __key, string1 is false from records", "Cannot convert VARCHAR to BOOLEAN");
     }
 
     @Test

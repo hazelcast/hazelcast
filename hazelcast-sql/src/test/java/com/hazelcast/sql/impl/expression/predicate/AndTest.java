@@ -48,7 +48,7 @@ public class AndTest extends ExpressionTestBase {
         assertRows(query(sql, "select __key from records where boolean1 and __key >= 600 and int1 >= 1700"), keyRange(700, 1000));
         assertRows(query(sql, "select __key from records where boolean1 is not false and __key >= 600"),
                 keyRange(600, 1000, 5000, 6000));
-        assertQueryThrows(sql, "select * from records where string1 and boolean1", "cannot be converted");
+        assertQueryThrows(sql, "select * from records where string1 and boolean1", "Cannot convert VARCHAR to BOOLEAN");
     }
 
     @Test

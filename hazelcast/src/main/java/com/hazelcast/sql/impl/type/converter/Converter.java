@@ -125,67 +125,67 @@ public abstract class Converter {
 
     @NotConvertible
     public boolean asBoolean(Object val) {
-        throw cannotConvert(QueryDataTypeFamily.BOOLEAN);
+        throw cannotConvert(QueryDataTypeFamily.BOOLEAN, val);
     }
 
     @NotConvertible
     public byte asTinyint(Object val) {
-        throw cannotConvert(QueryDataTypeFamily.TINYINT);
+        throw cannotConvert(QueryDataTypeFamily.TINYINT, val);
     }
 
     @NotConvertible
     public short asSmallint(Object val) {
-        throw cannotConvert(QueryDataTypeFamily.SMALLINT);
+        throw cannotConvert(QueryDataTypeFamily.SMALLINT, val);
     }
 
     @NotConvertible
     public int asInt(Object val) {
-        throw cannotConvert(QueryDataTypeFamily.INT);
+        throw cannotConvert(QueryDataTypeFamily.INT, val);
     }
 
     @NotConvertible
     public long asBigint(Object val) {
-        throw cannotConvert(QueryDataTypeFamily.BIGINT);
+        throw cannotConvert(QueryDataTypeFamily.BIGINT, val);
     }
 
     @NotConvertible
     public BigDecimal asDecimal(Object val) {
-        throw cannotConvert(QueryDataTypeFamily.DECIMAL);
+        throw cannotConvert(QueryDataTypeFamily.DECIMAL, val);
     }
 
     @NotConvertible
     public float asReal(Object val) {
-        throw cannotConvert(QueryDataTypeFamily.REAL);
+        throw cannotConvert(QueryDataTypeFamily.REAL, val);
     }
 
     @NotConvertible
     public double asDouble(Object val) {
-        throw cannotConvert(QueryDataTypeFamily.DOUBLE);
+        throw cannotConvert(QueryDataTypeFamily.DOUBLE, val);
     }
 
     @NotConvertible
     public String asVarchar(Object val) {
-        throw cannotConvert(QueryDataTypeFamily.VARCHAR);
+        throw cannotConvert(QueryDataTypeFamily.VARCHAR, val);
     }
 
     @NotConvertible
     public LocalDate asDate(Object val) {
-        throw cannotConvert(QueryDataTypeFamily.DATE);
+        throw cannotConvert(QueryDataTypeFamily.DATE, val);
     }
 
     @NotConvertible
     public LocalTime asTime(Object val) {
-        throw cannotConvert(QueryDataTypeFamily.TIME);
+        throw cannotConvert(QueryDataTypeFamily.TIME, val);
     }
 
     @NotConvertible
     public LocalDateTime asTimestamp(Object val) {
-        throw cannotConvert(QueryDataTypeFamily.TIMESTAMP);
+        throw cannotConvert(QueryDataTypeFamily.TIMESTAMP, val);
     }
 
     @NotConvertible
     public OffsetDateTime asTimestampWithTimezone(Object val) {
-        throw cannotConvert(QueryDataTypeFamily.TIMESTAMP_WITH_TIME_ZONE);
+        throw cannotConvert(QueryDataTypeFamily.TIMESTAMP_WITH_TIME_ZONE, val);
     }
 
     public Object asObject(Object val) {
@@ -300,10 +300,6 @@ public abstract class Converter {
 
     public abstract Object convertToSelf(Converter converter, Object val);
 
-    protected final QueryException cannotConvert(QueryDataTypeFamily target) {
-        return cannotConvert(target, null);
-    }
-
     protected final QueryException cannotConvert(QueryDataTypeFamily target, Object val) {
         return cannotConvert(typeFamily, target, val);
     }
@@ -311,8 +307,8 @@ public abstract class Converter {
     protected final QueryException cannotConvert(QueryDataTypeFamily source, QueryDataTypeFamily target, Object val) {
         String message = "Cannot convert " + source + " to " + target;
 
-        if (val != null) {
-            message += ": " + val;
+        if (source == QueryDataTypeFamily.OBJECT && val != null) {
+            message += ": " + val.getClass().getName();
         }
 
         return QueryException.error(SqlErrorCode.DATA_EXCEPTION, message);
@@ -325,8 +321,8 @@ public abstract class Converter {
     protected final QueryException numericOverflow(QueryDataTypeFamily source, QueryDataTypeFamily target, Object val) {
         String message = "Numeric overflow while converting " + source + " to " + target;
 
-        if (val != null) {
-            message += ": " + val;
+        if (source == QueryDataTypeFamily.OBJECT && val != null) {
+            message += ": " + val.getClass().getName();
         }
 
         return QueryException.error(SqlErrorCode.DATA_EXCEPTION, message);

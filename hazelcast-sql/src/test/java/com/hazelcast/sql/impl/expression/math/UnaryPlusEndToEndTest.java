@@ -110,11 +110,11 @@ public class UnaryPlusEndToEndTest extends ExpressionEndToEndTestBase {
         assertRow("+string1", EXPR0, DOUBLE, 1.0);
         assertRow("+stringBig", EXPR0, DOUBLE, Double.parseDouble(getRecord().stringBig));
         assertRow("+stringBigNegative", EXPR0, DOUBLE, Double.parseDouble(getRecord().stringBigNegative));
-        assertDataError("+stringFoo", "Cannot convert VARCHAR to DOUBLE: foo");
+        assertDataError("+stringFoo", "Cannot convert VARCHAR to DOUBLE");
 
         assertRow("+char0", EXPR0, DOUBLE, 0.0);
         assertRow("+char1", EXPR0, DOUBLE, 1.0);
-        assertDataError("+charF", "Cannot convert VARCHAR to DOUBLE: f");
+        assertDataError("+charF", "Cannot convert VARCHAR to DOUBLE");
     }
 
     @Test

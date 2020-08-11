@@ -219,6 +219,17 @@ public abstract class ExpressionEndToEndTestBase extends SqlTestSupport {
         public char char2 = '2';
         public char charF = 'f';
 
+        public Object objectBooleanTrue = true;
+        public Object objectByte1 = (byte) 1;
+        public Object objectShort1 = (short) 1;
+        public Object objectInt1 = 1;
+        public Object objectLong1 = 1L;
+        public Object objectFloat1 = 1.0f;
+        public Object objectDouble1 = 1.0;
+        public Object objectDecimal1 = BigDecimal.valueOf(1);
+        public Object objectBigInteger1 = BigInteger.valueOf(1);
+        public Object objectString1 = "1";
+        public Object objectChar1 = '1';
         public Object object = new SerializableObject();
 
         @Override
@@ -391,6 +402,39 @@ public abstract class ExpressionEndToEndTestBase extends SqlTestSupport {
             if (!stringFalse.equals(record.stringFalse)) {
                 return false;
             }
+            if (!objectBooleanTrue.equals(record.objectBooleanTrue)) {
+                return false;
+            }
+            if (!objectByte1.equals(record.objectByte1)) {
+                return false;
+            }
+            if (!objectShort1.equals(record.objectShort1)) {
+                return false;
+            }
+            if (!objectInt1.equals(record.objectInt1)) {
+                return false;
+            }
+            if (!objectLong1.equals(record.objectLong1)) {
+                return false;
+            }
+            if (!objectFloat1.equals(record.objectFloat1)) {
+                return false;
+            }
+            if (!objectDouble1.equals(record.objectDouble1)) {
+                return false;
+            }
+            if (!objectDecimal1.equals(record.objectDecimal1)) {
+                return false;
+            }
+            if (!objectBigInteger1.equals(record.objectBigInteger1)) {
+                return false;
+            }
+            if (!objectString1.equals(record.objectString1)) {
+                return false;
+            }
+            if (!objectChar1.equals(record.objectChar1)) {
+                return false;
+            }
             return object.equals(record.object);
         }
 
@@ -456,6 +500,17 @@ public abstract class ExpressionEndToEndTestBase extends SqlTestSupport {
             result = 31 * result + (int) char1;
             result = 31 * result + (int) char2;
             result = 31 * result + (int) charF;
+            result = 31 * result + objectBooleanTrue.hashCode();
+            result = 31 * result + objectByte1.hashCode();
+            result = 31 * result + objectShort1.hashCode();
+            result = 31 * result + objectInt1.hashCode();
+            result = 31 * result + objectLong1.hashCode();
+            result = 31 * result + objectFloat1.hashCode();
+            result = 31 * result + objectDouble1.hashCode();
+            result = 31 * result + objectDecimal1.hashCode();
+            result = 31 * result + objectBigInteger1.hashCode();
+            result = 31 * result + objectString1.hashCode();
+            result = 31 * result + objectChar1.hashCode();
             result = 31 * result + object.hashCode();
             return result;
         }

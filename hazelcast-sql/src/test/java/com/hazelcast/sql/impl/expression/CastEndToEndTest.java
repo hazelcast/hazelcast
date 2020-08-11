@@ -58,11 +58,23 @@ public class CastEndToEndTest extends ExpressionEndToEndTestBase {
         assertParsingError("cast(bigInteger1 as boolean)",
                 "Cast function cannot convert value of type DECIMAL(38, 38) to type BOOLEAN");
 
-        assertDataError("cast(string1 as boolean)", "VARCHAR value cannot be converted to BOOLEAN: 1");
+        assertDataError("cast(string1 as boolean)", "Cannot convert VARCHAR to BOOLEAN");
         assertRow("cast(stringFalse as boolean)", EXPR0, BOOLEAN, false);
-        assertDataError("cast(char1 as boolean)", "VARCHAR value cannot be converted to BOOLEAN: 1");
+        assertDataError("cast(char1 as boolean)", "Cannot convert VARCHAR to BOOLEAN");
 
-        assertDataError("cast(object as boolean)", "Cannot convert OBJECT to BOOLEAN");
+        assertRow("cast(objectBooleanTrue as boolean)", EXPR0, BOOLEAN, true);
+        assertDataError("cast(objectByte1 as boolean)", "Cannot convert TINYINT to BOOLEAN");
+        assertDataError("cast(objectShort1 as boolean)", "Cannot convert SMALLINT to BOOLEAN");
+        assertDataError("cast(objectInt1 as boolean)", "Cannot convert INT to BOOLEAN");
+        assertDataError("cast(objectLong1 as boolean)", "Cannot convert BIGINT to BOOLEAN");
+        assertDataError("cast(objectFloat1 as boolean)", "Cannot convert REAL to BOOLEAN");
+        assertDataError("cast(objectDouble1 as boolean)", "Cannot convert DOUBLE to BOOLEAN");
+        assertDataError("cast(objectDecimal1 as boolean)", "Cannot convert DECIMAL to BOOLEAN");
+        assertDataError("cast(objectBigInteger1 as boolean)", "Cannot convert DECIMAL to BOOLEAN");
+        assertDataError("cast(objectString1 as boolean)", "Cannot convert VARCHAR to BOOLEAN");
+        assertDataError("cast(objectChar1 as boolean)", "Cannot convert VARCHAR to BOOLEAN");
+        assertDataError("cast(object as boolean)", "Cannot convert OBJECT to BOOLEAN: com.hazelcast.sql.impl.expression"
+                + ".ExpressionEndToEndTestBase$SerializableObject");
     }
 
     @Test
@@ -72,32 +84,41 @@ public class CastEndToEndTest extends ExpressionEndToEndTestBase {
         assertRow("cast(byte1 as tinyint)", EXPR0, TINYINT, (byte) 1);
         assertRow("cast(byteMax as tinyint)", EXPR0, TINYINT, Byte.MAX_VALUE);
         assertRow("cast(short1 as tinyint)", EXPR0, TINYINT, (byte) 1);
-        assertDataError("cast(shortMax as tinyint)", "Numeric overflow while converting SMALLINT to TINYINT: 32767");
+        assertDataError("cast(shortMax as tinyint)", "Numeric overflow while converting SMALLINT to TINYINT");
         assertRow("cast(int1 as tinyint)", EXPR0, TINYINT, (byte) 1);
-        assertDataError("cast(intMax as tinyint)", "Numeric overflow while converting INT to TINYINT: 2147483647");
+        assertDataError("cast(intMax as tinyint)", "Numeric overflow while converting INT to TINYINT");
         assertRow("cast(long1 as tinyint)", EXPR0, TINYINT, (byte) 1);
-        assertDataError("cast(longMax as tinyint)", "Numeric overflow while converting BIGINT to TINYINT: 9223372036854775807");
+        assertDataError("cast(longMax as tinyint)", "Numeric overflow while converting BIGINT to TINYINT");
 
         assertRow("cast(float1 as tinyint)", EXPR0, TINYINT, (byte) 1);
-        assertDataError("cast(floatMax as tinyint)", "Numeric overflow while converting REAL to TINYINT: 3.4028235E38");
+        assertDataError("cast(floatMax as tinyint)", "Numeric overflow while converting REAL to TINYINT");
         assertRow("cast(double1 as tinyint)", EXPR0, TINYINT, (byte) 1);
-        assertDataError("cast(doubleMax as tinyint)",
-                "Numeric overflow while converting DOUBLE to TINYINT: 1.7976931348623157E308");
+        assertDataError("cast(doubleMax as tinyint)", "Numeric overflow while converting DOUBLE to TINYINT");
 
         assertRow("cast(decimal1 as tinyint)", EXPR0, TINYINT, (byte) 1);
-        assertDataError("cast(decimalBig as tinyint)",
-                "Numeric overflow while converting DECIMAL to TINYINT: 92233720368547758070");
+        assertDataError("cast(decimalBig as tinyint)", "Numeric overflow while converting DECIMAL to TINYINT");
         assertRow("cast(bigInteger1 as tinyint)", EXPR0, TINYINT, (byte) 1);
-        assertDataError("cast(bigIntegerBig as tinyint)",
-                "Numeric overflow while converting DECIMAL to TINYINT: 92233720368547758070");
+        assertDataError("cast(bigIntegerBig as tinyint)", "Numeric overflow while converting DECIMAL to TINYINT");
 
         assertRow("cast(string1 as tinyint)", EXPR0, TINYINT, (byte) 1);
-        assertDataError("cast(stringBig as tinyint)", "Cannot convert VARCHAR to TINYINT: 92233720368547758070");
-        assertDataError("cast(stringFoo as tinyint)", "Cannot convert VARCHAR to TINYINT: foo");
+        assertDataError("cast(stringBig as tinyint)", "Cannot convert VARCHAR to TINYINT");
+        assertDataError("cast(stringFoo as tinyint)", "Cannot convert VARCHAR to TINYINT");
         assertRow("cast(char1 as tinyint)", EXPR0, TINYINT, (byte) 1);
-        assertDataError("cast(charF as tinyint)", "Cannot convert VARCHAR to TINYINT: f");
+        assertDataError("cast(charF as tinyint)", "Cannot convert VARCHAR to TINYINT");
 
-        assertDataError("cast(object as tinyint)", "Cannot convert OBJECT to TINYINT");
+        assertDataError("cast(objectBooleanTrue as tinyint)", "Cannot convert BOOLEAN to TINYINT");
+        assertRow("cast(objectByte1 as tinyint)", EXPR0, TINYINT, (byte) 1);
+        assertRow("cast(objectShort1 as tinyint)", EXPR0, TINYINT, (byte) 1);
+        assertRow("cast(objectInt1 as tinyint)", EXPR0, TINYINT, (byte) 1);
+        assertRow("cast(objectLong1 as tinyint)", EXPR0, TINYINT, (byte) 1);
+        assertRow("cast(objectFloat1 as tinyint)", EXPR0, TINYINT, (byte) 1);
+        assertRow("cast(objectDouble1 as tinyint)", EXPR0, TINYINT, (byte) 1);
+        assertRow("cast(objectDecimal1 as tinyint)", EXPR0, TINYINT, (byte) 1);
+        assertRow("cast(objectBigInteger1 as tinyint)", EXPR0, TINYINT, (byte) 1);
+        assertRow("cast(objectString1 as tinyint)", EXPR0, TINYINT, (byte) 1);
+        assertRow("cast(objectChar1 as tinyint)", EXPR0, TINYINT, (byte) 1);
+        assertDataError("cast(object as tinyint)", "Cannot convert OBJECT to TINYINT: com.hazelcast.sql.impl.expression"
+                + ".ExpressionEndToEndTestBase$SerializableObject");
     }
 
     @Test
@@ -110,30 +131,39 @@ public class CastEndToEndTest extends ExpressionEndToEndTestBase {
         assertRow("cast(short1 as smallint)", EXPR0, SMALLINT, (short) 1);
         assertRow("cast(shortMax as smallint)", EXPR0, SMALLINT, Short.MAX_VALUE);
         assertRow("cast(int1 as smallint)", EXPR0, SMALLINT, (short) 1);
-        assertDataError("cast(intMax as smallint)", "Numeric overflow while converting INT to SMALLINT: 2147483647");
+        assertDataError("cast(intMax as smallint)", "Numeric overflow while converting INT to SMALLINT");
         assertRow("cast(long1 as smallint)", EXPR0, SMALLINT, (short) 1);
-        assertDataError("cast(longMax as smallint)", "Numeric overflow while converting BIGINT to SMALLINT: 9223372036854775807");
+        assertDataError("cast(longMax as smallint)", "Numeric overflow while converting BIGINT to SMALLINT");
 
         assertRow("cast(float1 as smallint)", EXPR0, SMALLINT, (short) 1);
-        assertDataError("cast(floatMax as smallint)", "Numeric overflow while converting REAL to SMALLINT: 3.4028235E38");
+        assertDataError("cast(floatMax as smallint)", "Numeric overflow while converting REAL to SMALLINT");
         assertRow("cast(double1 as smallint)", EXPR0, SMALLINT, (short) 1);
-        assertDataError("cast(doubleMax as smallint)",
-                "Numeric overflow while converting DOUBLE to SMALLINT: 1.7976931348623157E308");
+        assertDataError("cast(doubleMax as smallint)", "Numeric overflow while converting DOUBLE to SMALLINT");
 
         assertRow("cast(decimal1 as smallint)", EXPR0, SMALLINT, (short) 1);
-        assertDataError("cast(decimalBig as smallint)",
-                "Numeric overflow while converting DECIMAL to SMALLINT: 92233720368547758070");
+        assertDataError("cast(decimalBig as smallint)", "Numeric overflow while converting DECIMAL to SMALLINT");
         assertRow("cast(bigInteger1 as smallint)", EXPR0, SMALLINT, (short) 1);
-        assertDataError("cast(bigIntegerBig as smallint)",
-                "Numeric overflow while converting DECIMAL to SMALLINT: 92233720368547758070");
+        assertDataError("cast(bigIntegerBig as smallint)", "Numeric overflow while converting DECIMAL to SMALLINT");
 
         assertRow("cast(string1 as smallint)", EXPR0, SMALLINT, (short) 1);
-        assertDataError("cast(stringBig as smallint)", "Cannot convert VARCHAR to SMALLINT: 92233720368547758070");
-        assertDataError("cast(stringFoo as smallint)", "Cannot convert VARCHAR to SMALLINT: foo");
+        assertDataError("cast(stringBig as smallint)", "Cannot convert VARCHAR to SMALLINT");
+        assertDataError("cast(stringFoo as smallint)", "Cannot convert VARCHAR to SMALLINT");
         assertRow("cast(char1 as smallint)", EXPR0, SMALLINT, (short) 1);
-        assertDataError("cast(charF as smallint)", "Cannot convert VARCHAR to SMALLINT: f");
+        assertDataError("cast(charF as smallint)", "Cannot convert VARCHAR to SMALLINT");
 
-        assertDataError("cast(object as smallint)", "Cannot convert OBJECT to SMALLINT");
+        assertDataError("cast(objectBooleanTrue as smallint)", "Cannot convert BOOLEAN to SMALLINT");
+        assertRow("cast(objectByte1 as smallint)", EXPR0, SMALLINT, (short) 1);
+        assertRow("cast(objectShort1 as smallint)", EXPR0, SMALLINT, (short) 1);
+        assertRow("cast(objectInt1 as smallint)", EXPR0, SMALLINT, (short) 1);
+        assertRow("cast(objectLong1 as smallint)", EXPR0, SMALLINT, (short) 1);
+        assertRow("cast(objectFloat1 as smallint)", EXPR0, SMALLINT, (short) 1);
+        assertRow("cast(objectDouble1 as smallint)", EXPR0, SMALLINT, (short) 1);
+        assertRow("cast(objectDecimal1 as smallint)", EXPR0, SMALLINT, (short) 1);
+        assertRow("cast(objectBigInteger1 as smallint)", EXPR0, SMALLINT, (short) 1);
+        assertRow("cast(objectString1 as smallint)", EXPR0, SMALLINT, (short) 1);
+        assertRow("cast(objectChar1 as smallint)", EXPR0, SMALLINT, (short) 1);
+        assertDataError("cast(object as smallint)", "Cannot convert OBJECT to SMALLINT: com.hazelcast.sql.impl.expression"
+                + ".ExpressionEndToEndTestBase$SerializableObject");
     }
 
     @Test
@@ -147,26 +177,37 @@ public class CastEndToEndTest extends ExpressionEndToEndTestBase {
         assertRow("cast(int1 as integer)", EXPR0, INTEGER, 1);
         assertRow("cast(intMax as integer)", EXPR0, INTEGER, Integer.MAX_VALUE);
         assertRow("cast(long1 as integer)", EXPR0, INTEGER, 1);
-        assertDataError("cast(longMax as integer)", "Numeric overflow while converting BIGINT to INT: 9223372036854775807");
+        assertDataError("cast(longMax as integer)", "Numeric overflow while converting BIGINT to INT");
 
         assertRow("cast(float1 as integer)", EXPR0, INTEGER, 1);
-        assertDataError("cast(floatMax as integer)", "Numeric overflow while converting REAL to INT: 3.4028235E38");
+        assertDataError("cast(floatMax as integer)", "Numeric overflow while converting REAL to INT");
         assertRow("cast(double1 as integer)", EXPR0, INTEGER, 1);
-        assertDataError("cast(doubleMax as integer)", "Numeric overflow while converting DOUBLE to INT: 1.7976931348623157E308");
+        assertDataError("cast(doubleMax as integer)", "Numeric overflow while converting DOUBLE to INT");
 
         assertRow("cast(decimal1 as integer)", EXPR0, INTEGER, 1);
-        assertDataError("cast(decimalBig as integer)", "Numeric overflow while converting DECIMAL to INT: 92233720368547758070");
+        assertDataError("cast(decimalBig as integer)", "Numeric overflow while converting DECIMAL to INT");
         assertRow("cast(bigInteger1 as integer)", EXPR0, INTEGER, 1);
-        assertDataError("cast(bigIntegerBig as integer)",
-                "Numeric overflow while converting DECIMAL to INT: 92233720368547758070");
+        assertDataError("cast(bigIntegerBig as integer)", "Numeric overflow while converting DECIMAL to INT");
 
         assertRow("cast(string1 as integer)", EXPR0, INTEGER, 1);
-        assertDataError("cast(stringBig as integer)", "Cannot convert VARCHAR to INT: 92233720368547758070");
-        assertDataError("cast(stringFoo as integer)", "Cannot convert VARCHAR to INT: foo");
+        assertDataError("cast(stringBig as integer)", "Cannot convert VARCHAR to INT");
+        assertDataError("cast(stringFoo as integer)", "Cannot convert VARCHAR to INT");
         assertRow("cast(char1 as integer)", EXPR0, INTEGER, 1);
-        assertDataError("cast(charF as integer)", "Cannot convert VARCHAR to INT: f");
+        assertDataError("cast(charF as integer)", "Cannot convert VARCHAR to INT");
 
-        assertDataError("cast(object as integer)", "Cannot convert OBJECT to INT");
+        assertDataError("cast(objectBooleanTrue as integer)", "Cannot convert BOOLEAN to INT");
+        assertRow("cast(objectByte1 as integer)", EXPR0, INTEGER, 1);
+        assertRow("cast(objectShort1 as integer)", EXPR0, INTEGER, 1);
+        assertRow("cast(objectInt1 as integer)", EXPR0, INTEGER, 1);
+        assertRow("cast(objectLong1 as integer)", EXPR0, INTEGER, 1);
+        assertRow("cast(objectFloat1 as integer)", EXPR0, INTEGER, 1);
+        assertRow("cast(objectDouble1 as integer)", EXPR0, INTEGER, 1);
+        assertRow("cast(objectDecimal1 as integer)", EXPR0, INTEGER, 1);
+        assertRow("cast(objectBigInteger1 as integer)", EXPR0, INTEGER, 1);
+        assertRow("cast(objectString1 as integer)", EXPR0, INTEGER, 1);
+        assertRow("cast(objectChar1 as integer)", EXPR0, INTEGER, 1);
+        assertDataError("cast(object as integer)", "Cannot convert OBJECT to INT: com.hazelcast.sql.impl.expression"
+                + ".ExpressionEndToEndTestBase$SerializableObject");
     }
 
     @Test
@@ -183,25 +224,34 @@ public class CastEndToEndTest extends ExpressionEndToEndTestBase {
         assertRow("cast(longMax as bigint)", EXPR0, BIGINT, Long.MAX_VALUE);
 
         assertRow("cast(float1 as bigint)", EXPR0, BIGINT, 1L);
-        assertDataError("cast(floatMax as bigint)", "Numeric overflow while converting REAL to BIGINT: 3.4028235E38");
+        assertDataError("cast(floatMax as bigint)", "Numeric overflow while converting REAL to BIGINT");
         assertRow("cast(double1 as bigint)", EXPR0, BIGINT, 1L);
-        assertDataError("cast(doubleMax as bigint)",
-                "Numeric overflow while converting DOUBLE to BIGINT: 1.7976931348623157E308");
+        assertDataError("cast(doubleMax as bigint)", "Numeric overflow while converting DOUBLE to BIGINT");
 
         assertRow("cast(decimal1 as bigint)", EXPR0, BIGINT, 1L);
-        assertDataError("cast(decimalBig as bigint)",
-                "Numeric overflow while converting DECIMAL to BIGINT: 92233720368547758070");
+        assertDataError("cast(decimalBig as bigint)", "Numeric overflow while converting DECIMAL to BIGINT");
         assertRow("cast(bigInteger1 as bigint)", EXPR0, BIGINT, 1L);
-        assertDataError("cast(bigIntegerBig as bigint)",
-                "Numeric overflow while converting DECIMAL to BIGINT: 92233720368547758070");
+        assertDataError("cast(bigIntegerBig as bigint)", "Numeric overflow while converting DECIMAL to BIGINT");
 
         assertRow("cast(string1 as bigint)", EXPR0, BIGINT, 1L);
-        assertDataError("cast(stringBig as bigint)", "Cannot convert VARCHAR to BIGINT: 92233720368547758070");
-        assertDataError("cast(stringFoo as bigint)", "Cannot convert VARCHAR to BIGINT: foo");
+        assertDataError("cast(stringBig as bigint)", "Cannot convert VARCHAR to BIGINT");
+        assertDataError("cast(stringFoo as bigint)", "Cannot convert VARCHAR to BIGINT");
         assertRow("cast(char1 as bigint)", EXPR0, BIGINT, 1L);
-        assertDataError("cast(charF as bigint)", "Cannot convert VARCHAR to BIGINT: f");
+        assertDataError("cast(charF as bigint)", "Cannot convert VARCHAR to BIGINT");
 
-        assertDataError("cast(object as bigint)", "Cannot convert OBJECT to BIGINT");
+        assertDataError("cast(objectBooleanTrue as bigint)", "Cannot convert BOOLEAN to BIGINT");
+        assertRow("cast(objectByte1 as bigint)", EXPR0, BIGINT, 1L);
+        assertRow("cast(objectShort1 as bigint)", EXPR0, BIGINT, 1L);
+        assertRow("cast(objectInt1 as bigint)", EXPR0, BIGINT, 1L);
+        assertRow("cast(objectLong1 as bigint)", EXPR0, BIGINT, 1L);
+        assertRow("cast(objectFloat1 as bigint)", EXPR0, BIGINT, 1L);
+        assertRow("cast(objectDouble1 as bigint)", EXPR0, BIGINT, 1L);
+        assertRow("cast(objectDecimal1 as bigint)", EXPR0, BIGINT, 1L);
+        assertRow("cast(objectBigInteger1 as bigint)", EXPR0, BIGINT, 1L);
+        assertRow("cast(objectString1 as bigint)", EXPR0, BIGINT, 1L);
+        assertRow("cast(objectChar1 as bigint)", EXPR0, BIGINT, 1L);
+        assertDataError("cast(object as bigint)", "Cannot convert OBJECT to BIGINT: com.hazelcast.sql.impl.expression"
+                + ".ExpressionEndToEndTestBase$SerializableObject");
     }
 
     @Test
@@ -229,11 +279,23 @@ public class CastEndToEndTest extends ExpressionEndToEndTestBase {
 
         assertRow("cast(string1 as real)", EXPR0, REAL, 1.0f);
         assertRow("cast(stringBig as real)", EXPR0, REAL, Float.parseFloat(getRecord().stringBig));
-        assertDataError("cast(stringFoo as real)", "Cannot convert VARCHAR to REAL: foo");
+        assertDataError("cast(stringFoo as real)", "Cannot convert VARCHAR to REAL");
         assertRow("cast(char1 as real)", EXPR0, REAL, 1.0f);
-        assertDataError("cast(charF as real)", "Cannot convert VARCHAR to REAL: f");
+        assertDataError("cast(charF as real)", "Cannot convert VARCHAR to REAL");
 
-        assertDataError("cast(object as real)", "Cannot convert OBJECT to REAL");
+        assertDataError("cast(objectBooleanTrue as real)", "Cannot convert BOOLEAN to REAL");
+        assertRow("cast(objectByte1 as real)", EXPR0, REAL, 1.0f);
+        assertRow("cast(objectShort1 as real)", EXPR0, REAL, 1.0f);
+        assertRow("cast(objectInt1 as real)", EXPR0, REAL, 1.0f);
+        assertRow("cast(objectLong1 as real)", EXPR0, REAL, 1.0f);
+        assertRow("cast(objectFloat1 as real)", EXPR0, REAL, 1.0f);
+        assertRow("cast(objectDouble1 as real)", EXPR0, REAL, 1.0f);
+        assertRow("cast(objectDecimal1 as real)", EXPR0, REAL, 1.0f);
+        assertRow("cast(objectBigInteger1 as real)", EXPR0, REAL, 1.0f);
+        assertRow("cast(objectString1 as real)", EXPR0, REAL, 1.0f);
+        assertRow("cast(objectChar1 as real)", EXPR0, REAL, 1.0f);
+        assertDataError("cast(object as real)", "Cannot convert OBJECT to REAL: com.hazelcast.sql.impl.expression"
+                + ".ExpressionEndToEndTestBase$SerializableObject");
     }
 
     @Test
@@ -261,11 +323,23 @@ public class CastEndToEndTest extends ExpressionEndToEndTestBase {
 
         assertRow("cast(string1 as double)", EXPR0, DOUBLE, 1.0d);
         assertRow("cast(stringBig as double)", EXPR0, DOUBLE, Double.parseDouble(getRecord().stringBig));
-        assertDataError("cast(stringFoo as double)", "Cannot convert VARCHAR to DOUBLE: foo");
+        assertDataError("cast(stringFoo as double)", "Cannot convert VARCHAR to DOUBLE");
         assertRow("cast(char1 as double)", EXPR0, DOUBLE, 1.0d);
-        assertDataError("cast(charF as double)", "Cannot convert VARCHAR to DOUBLE: f");
+        assertDataError("cast(charF as double)", "Cannot convert VARCHAR to DOUBLE");
 
-        assertDataError("cast(object as double)", "Cannot convert OBJECT to DOUBLE");
+        assertDataError("cast(objectBooleanTrue as double)", "Cannot convert BOOLEAN to DOUBLE");
+        assertRow("cast(objectByte1 as double)", EXPR0, DOUBLE, 1.0);
+        assertRow("cast(objectShort1 as double)", EXPR0, DOUBLE, 1.0);
+        assertRow("cast(objectInt1 as double)", EXPR0, DOUBLE, 1.0);
+        assertRow("cast(objectLong1 as double)", EXPR0, DOUBLE, 1.0);
+        assertRow("cast(objectFloat1 as double)", EXPR0, DOUBLE, 1.0);
+        assertRow("cast(objectDouble1 as double)", EXPR0, DOUBLE, 1.0);
+        assertRow("cast(objectDecimal1 as double)", EXPR0, DOUBLE, 1.0);
+        assertRow("cast(objectBigInteger1 as double)", EXPR0, DOUBLE, 1.0);
+        assertRow("cast(objectString1 as double)", EXPR0, DOUBLE, 1.0);
+        assertRow("cast(objectChar1 as double)", EXPR0, DOUBLE, 1.0);
+        assertDataError("cast(object as double)", "Cannot convert OBJECT to DOUBLE: com.hazelcast.sql.impl.expression"
+                + ".ExpressionEndToEndTestBase$SerializableObject");
     }
 
     @Test
@@ -295,11 +369,23 @@ public class CastEndToEndTest extends ExpressionEndToEndTestBase {
 
         assertRow("cast(string1 as decimal)", EXPR0, DECIMAL, BigDecimal.valueOf(1));
         assertRow("cast(stringBig as decimal)", EXPR0, DECIMAL, new BigDecimal(getRecord().stringBig));
-        assertDataError("cast(stringFoo as decimal)", "Cannot convert VARCHAR to DECIMAL: foo");
+        assertDataError("cast(stringFoo as decimal)", "Cannot convert VARCHAR to DECIMAL");
         assertRow("cast(char1 as decimal)", EXPR0, DECIMAL, BigDecimal.valueOf(1));
-        assertDataError("cast(charF as decimal)", "Cannot convert VARCHAR to DECIMAL: f");
+        assertDataError("cast(charF as decimal)", "Cannot convert VARCHAR to DECIMAL");
 
-        assertDataError("cast(object as decimal)", "Cannot convert OBJECT to DECIMAL");
+        assertDataError("cast(objectBooleanTrue as decimal)", "Cannot convert BOOLEAN to DECIMAL");
+        assertRow("cast(objectByte1 as decimal)", EXPR0, DECIMAL, BigDecimal.valueOf(1));
+        assertRow("cast(objectShort1 as decimal)", EXPR0, DECIMAL, BigDecimal.valueOf(1));
+        assertRow("cast(objectInt1 as decimal)", EXPR0, DECIMAL, BigDecimal.valueOf(1));
+        assertRow("cast(objectLong1 as decimal)", EXPR0, DECIMAL, BigDecimal.valueOf(1));
+        assertRow("cast(objectFloat1 as decimal)", EXPR0, DECIMAL, BigDecimal.valueOf(1));
+        assertRow("cast(objectDouble1 as decimal)", EXPR0, DECIMAL, BigDecimal.valueOf(1));
+        assertRow("cast(objectDecimal1 as decimal)", EXPR0, DECIMAL, BigDecimal.valueOf(1));
+        assertRow("cast(objectBigInteger1 as decimal)", EXPR0, DECIMAL, BigDecimal.valueOf(1));
+        assertRow("cast(objectString1 as decimal)", EXPR0, DECIMAL, BigDecimal.valueOf(1));
+        assertRow("cast(objectChar1 as decimal)", EXPR0, DECIMAL, BigDecimal.valueOf(1));
+        assertDataError("cast(object as decimal)", "Cannot convert OBJECT to DECIMAL: com.hazelcast.sql.impl.expression"
+                + ".ExpressionEndToEndTestBase$SerializableObject");
     }
 
     @Test
@@ -331,6 +417,17 @@ public class CastEndToEndTest extends ExpressionEndToEndTestBase {
         assertRow("cast(char1 as varchar)", EXPR0, VARCHAR, "1");
         assertRow("cast(charF as varchar)", EXPR0, VARCHAR, Character.toString(getRecord().charF));
 
+        assertRow("cast(objectBooleanTrue as varchar)", EXPR0, VARCHAR, "true");
+        assertRow("cast(objectByte1 as varchar)", EXPR0, VARCHAR, "1");
+        assertRow("cast(objectShort1 as varchar)", EXPR0, VARCHAR, "1");
+        assertRow("cast(objectInt1 as varchar)", EXPR0, VARCHAR, "1");
+        assertRow("cast(objectLong1 as varchar)", EXPR0, VARCHAR, "1");
+        assertRow("cast(objectFloat1 as varchar)", EXPR0, VARCHAR, "1.0");
+        assertRow("cast(objectDouble1 as varchar)", EXPR0, VARCHAR, "1.0");
+        assertRow("cast(objectDecimal1 as varchar)", EXPR0, VARCHAR, "1");
+        assertRow("cast(objectBigInteger1 as varchar)", EXPR0, VARCHAR, "1");
+        assertRow("cast(objectString1 as varchar)", EXPR0, VARCHAR, "1");
+        assertRow("cast(objectChar1 as varchar)", EXPR0, VARCHAR, "1");
         assertRow("cast(object as varchar)", EXPR0, VARCHAR, getRecord().object.toString());
     }
 
@@ -363,6 +460,17 @@ public class CastEndToEndTest extends ExpressionEndToEndTestBase {
         assertRow("cast(char1 as object)", EXPR0, OBJECT, getRecord().string1);
         assertRow("cast(charF as object)", EXPR0, OBJECT, Character.toString(getRecord().charF));
 
+        assertRow("cast(objectBooleanTrue as object)", EXPR0, OBJECT, true);
+        assertRow("cast(objectByte1 as object)", EXPR0, OBJECT, (byte) 1);
+        assertRow("cast(objectShort1 as object)", EXPR0, OBJECT, (short) 1);
+        assertRow("cast(objectInt1 as object)", EXPR0, OBJECT, 1);
+        assertRow("cast(objectLong1 as object)", EXPR0, OBJECT, 1L);
+        assertRow("cast(objectFloat1 as object)", EXPR0, OBJECT, 1.0f);
+        assertRow("cast(objectDouble1 as object)", EXPR0, OBJECT, 1.0);
+        assertRow("cast(objectDecimal1 as object)", EXPR0, OBJECT, BigDecimal.valueOf(1));
+        assertRow("cast(objectBigInteger1 as object)", EXPR0, OBJECT, BigDecimal.valueOf(1));
+        assertRow("cast(objectString1 as object)", EXPR0, OBJECT, "1");
+        assertRow("cast(objectChar1 as object)", EXPR0, OBJECT, "1");
         assertRow("cast(object as object)", EXPR0, OBJECT, getRecord().object);
     }
 

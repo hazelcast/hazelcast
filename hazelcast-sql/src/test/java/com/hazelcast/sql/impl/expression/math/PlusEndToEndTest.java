@@ -82,10 +82,10 @@ public class PlusEndToEndTest extends ExpressionEndToEndTestBase {
         assertRow("byte1 + bigIntegerBig", EXPR0, DECIMAL, getRecord().decimalBig.add(BigDecimal.valueOf(1)));
 
         assertRow("byte1 + string1", EXPR0, BIGINT, 2L);
-        assertDataError("byte1 + stringBig", "Cannot convert VARCHAR to BIGINT: 92233720368547758070");
-        assertDataError("byte1 + stringFoo", "Cannot convert VARCHAR to BIGINT: foo");
+        assertDataError("byte1 + stringBig", "Cannot convert VARCHAR to BIGINT");
+        assertDataError("byte1 + stringFoo", "Cannot convert VARCHAR to BIGINT");
         assertRow("byte1 + char1", EXPR0, BIGINT, 2L);
-        assertDataError("byte1 + charF", "Cannot convert VARCHAR to BIGINT: f");
+        assertDataError("byte1 + charF", "Cannot convert VARCHAR to BIGINT");
 
         assertParsingError("byte1 + object", "Cannot apply '+' to arguments of type '<TINYINT> + <OBJECT>'");
     }
@@ -114,10 +114,10 @@ public class PlusEndToEndTest extends ExpressionEndToEndTestBase {
         assertRow("short1 + bigIntegerBig", EXPR0, DECIMAL, getRecord().decimalBig.add(BigDecimal.valueOf(1)));
 
         assertRow("short1 + string1", EXPR0, BIGINT, 2L);
-        assertDataError("short1 + stringBig", "Cannot convert VARCHAR to BIGINT: 92233720368547758070");
-        assertDataError("short1 + stringFoo", "Cannot convert VARCHAR to BIGINT: foo");
+        assertDataError("short1 + stringBig", "Cannot convert VARCHAR to BIGINT");
+        assertDataError("short1 + stringFoo", "Cannot convert VARCHAR to BIGINT");
         assertRow("short1 + char1", EXPR0, BIGINT, 2L);
-        assertDataError("short1 + charF", "Cannot convert VARCHAR to BIGINT: f");
+        assertDataError("short1 + charF", "Cannot convert VARCHAR to BIGINT");
 
         assertParsingError("short1 + object", "Cannot apply '+' to arguments of type '<SMALLINT> + <OBJECT>'");
     }
@@ -146,10 +146,10 @@ public class PlusEndToEndTest extends ExpressionEndToEndTestBase {
         assertRow("int1 + bigIntegerBig", EXPR0, DECIMAL, getRecord().decimalBig.add(BigDecimal.valueOf(1)));
 
         assertRow("int1 + string1", EXPR0, BIGINT, 2L);
-        assertDataError("int1 + stringBig", "Cannot convert VARCHAR to BIGINT: 92233720368547758070");
-        assertDataError("int1 + stringFoo", "Cannot convert VARCHAR to BIGINT: foo");
+        assertDataError("int1 + stringBig", "Cannot convert VARCHAR to BIGINT");
+        assertDataError("int1 + stringFoo", "Cannot convert VARCHAR to BIGINT");
         assertRow("int1 + char1", EXPR0, BIGINT, 2L);
-        assertDataError("int1 + charF", "Cannot convert VARCHAR to BIGINT: f");
+        assertDataError("int1 + charF", "Cannot convert VARCHAR to BIGINT");
 
         assertParsingError("int1 + object", "Cannot apply '+' to arguments of type '<INTEGER> + <OBJECT>'");
     }
@@ -178,10 +178,10 @@ public class PlusEndToEndTest extends ExpressionEndToEndTestBase {
         assertRow("long1 + bigIntegerBig", EXPR0, DECIMAL, getRecord().decimalBig.add(BigDecimal.valueOf(1)));
 
         assertRow("long1 + string1", EXPR0, BIGINT, 2L);
-        assertDataError("long1 + stringBig", "Cannot convert VARCHAR to BIGINT: 92233720368547758070");
-        assertDataError("long1 + stringFoo", "Cannot convert VARCHAR to BIGINT: foo");
+        assertDataError("long1 + stringBig", "Cannot convert VARCHAR to BIGINT");
+        assertDataError("long1 + stringFoo", "Cannot convert VARCHAR to BIGINT");
         assertRow("long1 + char1", EXPR0, BIGINT, 2L);
-        assertDataError("long1 + charF", "Cannot convert VARCHAR to BIGINT: f");
+        assertDataError("long1 + charF", "Cannot convert VARCHAR to BIGINT");
 
         assertParsingError("long1 + object", "Cannot apply '+' to arguments of type '<BIGINT> + <OBJECT>'");
     }
@@ -211,9 +211,9 @@ public class PlusEndToEndTest extends ExpressionEndToEndTestBase {
 
         assertRow("float1 + string1", EXPR0, REAL, 2.0f);
         assertRow("float1 + stringBig", EXPR0, REAL, 1.0f + Float.parseFloat(getRecord().stringBig));
-        assertDataError("float1 + stringFoo", "Cannot convert VARCHAR to REAL: foo");
+        assertDataError("float1 + stringFoo", "Cannot convert VARCHAR to REAL");
         assertRow("float1 + char1", EXPR0, REAL, 2.0f);
-        assertDataError("float1 + charF", "Cannot convert VARCHAR to REAL: f");
+        assertDataError("float1 + charF", "Cannot convert VARCHAR to REAL");
 
         assertParsingError("float1 + object", "Cannot apply '+' to arguments of type '<REAL> + <OBJECT>'");
     }
@@ -243,9 +243,9 @@ public class PlusEndToEndTest extends ExpressionEndToEndTestBase {
 
         assertRow("double1 + string1", EXPR0, DOUBLE, 2.0);
         assertRow("double1 + stringBig", EXPR0, DOUBLE, 1.0 + Double.parseDouble(getRecord().stringBig));
-        assertDataError("double1 + stringFoo", "Cannot convert VARCHAR to DOUBLE: foo");
+        assertDataError("double1 + stringFoo", "Cannot convert VARCHAR to DOUBLE");
         assertRow("double1 + char1", EXPR0, DOUBLE, 2.0);
-        assertDataError("double1 + charF", "Cannot convert VARCHAR to DOUBLE: f");
+        assertDataError("double1 + charF", "Cannot convert VARCHAR to DOUBLE");
 
         assertParsingError("double1 + object", "Cannot apply '+' to arguments of type '<DOUBLE> + <OBJECT>'");
     }
@@ -275,9 +275,9 @@ public class PlusEndToEndTest extends ExpressionEndToEndTestBase {
 
         assertRow("decimal1 + string1", EXPR0, DECIMAL, BigDecimal.valueOf(2));
         assertRow("decimal1 + stringBig", EXPR0, DECIMAL, getRecord().decimal1.add(new BigDecimal(getRecord().stringBig)));
-        assertDataError("decimal1 + stringFoo", "Cannot convert VARCHAR to DECIMAL: foo");
+        assertDataError("decimal1 + stringFoo", "Cannot convert VARCHAR to DECIMAL");
         assertRow("decimal1 + char1", EXPR0, DECIMAL, BigDecimal.valueOf(2));
-        assertDataError("decimal1 + charF", "Cannot convert VARCHAR to DECIMAL: f");
+        assertDataError("decimal1 + charF", "Cannot convert VARCHAR to DECIMAL");
 
         assertParsingError("decimal1 + object", "Cannot apply '+' to arguments of type '<DECIMAL(38, 38)> + <OBJECT>'");
     }
@@ -307,9 +307,9 @@ public class PlusEndToEndTest extends ExpressionEndToEndTestBase {
 
         assertRow("string1 + string1", EXPR0, DOUBLE, 2.0);
         assertRow("string1 + stringBig", EXPR0, DOUBLE, 1.0 + Double.parseDouble(getRecord().stringBig));
-        assertDataError("string1 + stringFoo", "Cannot convert VARCHAR to DOUBLE: foo");
+        assertDataError("string1 + stringFoo", "Cannot convert VARCHAR to DOUBLE");
         assertRow("string1 + char1", EXPR0, DOUBLE, 2.0);
-        assertDataError("string1 + charF", "Cannot convert VARCHAR to DOUBLE: f");
+        assertDataError("string1 + charF", "Cannot convert VARCHAR to DOUBLE");
 
         assertParsingError("string1 + object", "Cannot apply '+' to arguments of type '<VARCHAR> + <OBJECT>'");
     }

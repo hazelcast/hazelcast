@@ -1229,7 +1229,7 @@ public abstract class ExpressionTestBase extends SqlTestSupport {
         SqlException exception = assertThrows(SqlException.class, () -> query(sql, query, args).forEach(r -> {
             // do nothing, just drain all the rows
         }));
-        assertTrue(exception.getMessage(), exception.getMessage().toLowerCase().contains(message));
+        assertTrue(exception.getMessage(), exception.getMessage().toLowerCase().contains(message.toLowerCase()));
     }
 
 }

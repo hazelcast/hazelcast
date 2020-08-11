@@ -101,13 +101,13 @@ public class DivideEndToEndTest extends ExpressionEndToEndTestBase {
         assertRow("byte1 / string2", EXPR0, SMALLINT, (short) 0);
         assertRow("byteMax / string2", EXPR0, SMALLINT, (short) (Byte.MAX_VALUE / 2));
         assertDataError("byte1 / string0", "division by zero");
-        assertDataError("byte1 / stringBig", "Cannot convert VARCHAR to BIGINT: 92233720368547758070");
-        assertDataError("byte1 / stringFoo", "Cannot convert VARCHAR to BIGINT: foo");
+        assertDataError("byte1 / stringBig", "Cannot convert VARCHAR to BIGINT");
+        assertDataError("byte1 / stringFoo", "Cannot convert VARCHAR to BIGINT");
 
         assertRow("byte1 / char2", EXPR0, SMALLINT, (short) 0);
         assertRow("byteMax / char2", EXPR0, SMALLINT, (short) (Byte.MAX_VALUE / 2));
         assertDataError("byte1 / char0", "division by zero");
-        assertDataError("byte1 / charF", "Cannot convert VARCHAR to BIGINT: f");
+        assertDataError("byte1 / charF", "Cannot convert VARCHAR to BIGINT");
 
         assertParsingError("byte1 / object", "Cannot apply '/' to arguments of type '<TINYINT> / <OBJECT>'");
     }
@@ -155,13 +155,13 @@ public class DivideEndToEndTest extends ExpressionEndToEndTestBase {
         assertRow("short1 / string2", EXPR0, INTEGER, 0);
         assertRow("shortMax / string2", EXPR0, INTEGER, Short.MAX_VALUE / 2);
         assertDataError("short1 / string0", "division by zero");
-        assertDataError("short1 / stringBig", "Cannot convert VARCHAR to BIGINT: 92233720368547758070");
-        assertDataError("short1 / stringFoo", "Cannot convert VARCHAR to BIGINT: foo");
+        assertDataError("short1 / stringBig", "Cannot convert VARCHAR to BIGINT");
+        assertDataError("short1 / stringFoo", "Cannot convert VARCHAR to BIGINT");
 
         assertRow("short1 / char2", EXPR0, INTEGER, 0);
         assertRow("shortMax / char2", EXPR0, INTEGER, Short.MAX_VALUE / 2);
         assertDataError("short1 / char0", "division by zero");
-        assertDataError("short1 / charF", "Cannot convert VARCHAR to BIGINT: f");
+        assertDataError("short1 / charF", "Cannot convert VARCHAR to BIGINT");
 
         assertParsingError("short1 / object", "Cannot apply '/' to arguments of type '<SMALLINT> / <OBJECT>'");
     }
@@ -209,13 +209,13 @@ public class DivideEndToEndTest extends ExpressionEndToEndTestBase {
         assertRow("int1 / string2", EXPR0, BIGINT, 0L);
         assertRow("intMax / string2", EXPR0, BIGINT, Integer.MAX_VALUE / 2L);
         assertDataError("int1 / string0", "division by zero");
-        assertDataError("int1 / stringBig", "Cannot convert VARCHAR to BIGINT: 92233720368547758070");
-        assertDataError("int1 / stringFoo", "Cannot convert VARCHAR to BIGINT: foo");
+        assertDataError("int1 / stringBig", "Cannot convert VARCHAR to BIGINT");
+        assertDataError("int1 / stringFoo", "Cannot convert VARCHAR to BIGINT");
 
         assertRow("int1 / char2", EXPR0, BIGINT, 0L);
         assertRow("intMax / char2", EXPR0, BIGINT, Integer.MAX_VALUE / 2L);
         assertDataError("int1 / char0", "division by zero");
-        assertDataError("int1 / charF", "Cannot convert VARCHAR to BIGINT: f");
+        assertDataError("int1 / charF", "Cannot convert VARCHAR to BIGINT");
 
         assertParsingError("int1 / object", "Cannot apply '/' to arguments of type '<INTEGER> / <OBJECT>'");
     }
@@ -263,13 +263,13 @@ public class DivideEndToEndTest extends ExpressionEndToEndTestBase {
         assertRow("long1 / string2", EXPR0, BIGINT, 0L);
         assertRow("longMax / string2", EXPR0, BIGINT, Long.MAX_VALUE / 2L);
         assertDataError("long1 / string0", "division by zero");
-        assertDataError("long1 / stringBig", "Cannot convert VARCHAR to BIGINT: 92233720368547758070");
-        assertDataError("long1 / stringFoo", "Cannot convert VARCHAR to BIGINT: foo");
+        assertDataError("long1 / stringBig", "Cannot convert VARCHAR to BIGINT");
+        assertDataError("long1 / stringFoo", "Cannot convert VARCHAR to BIGINT");
 
         assertRow("long1 / char2", EXPR0, BIGINT, 0L);
         assertRow("longMax / char2", EXPR0, BIGINT, Long.MAX_VALUE / 2L);
         assertDataError("long1 / char0", "division by zero");
-        assertDataError("long1 / charF", "Cannot convert VARCHAR to BIGINT: f");
+        assertDataError("long1 / charF", "Cannot convert VARCHAR to BIGINT");
 
         assertParsingError("long1 / object", "Cannot apply '/' to arguments of type '<BIGINT> / <OBJECT>'");
     }
@@ -314,12 +314,12 @@ public class DivideEndToEndTest extends ExpressionEndToEndTestBase {
         assertRow("floatMax / string2", EXPR0, REAL, Float.MAX_VALUE / 2);
         assertDataError("float1 / string0", "division by zero");
         assertRow("float1 / stringBig", EXPR0, REAL, 1.0f / Float.parseFloat(getRecord().stringBig));
-        assertDataError("float1 / stringFoo", "Cannot convert VARCHAR to REAL: foo");
+        assertDataError("float1 / stringFoo", "Cannot convert VARCHAR to REAL");
 
         assertRow("float1 / char2", EXPR0, REAL, 0.5f);
         assertRow("floatMax / char2", EXPR0, REAL, Float.MAX_VALUE / 2);
         assertDataError("float1 / char0", "division by zero");
-        assertDataError("float1 / charF", "Cannot convert VARCHAR to REAL: f");
+        assertDataError("float1 / charF", "Cannot convert VARCHAR to REAL");
 
         assertParsingError("float1 / object", "Cannot apply '/' to arguments of type '<REAL> / <OBJECT>'");
     }
@@ -364,12 +364,12 @@ public class DivideEndToEndTest extends ExpressionEndToEndTestBase {
         assertRow("doubleMax / string2", EXPR0, DOUBLE, Double.MAX_VALUE / 2);
         assertDataError("double1 / string0", "division by zero");
         assertRow("double1 / stringBig", EXPR0, DOUBLE, 1.0 / Double.parseDouble(getRecord().stringBig));
-        assertDataError("double1 / stringFoo", "Cannot convert VARCHAR to DOUBLE: foo");
+        assertDataError("double1 / stringFoo", "Cannot convert VARCHAR to DOUBLE");
 
         assertRow("double1 / char2", EXPR0, DOUBLE, 0.5);
         assertRow("doubleMax / char2", EXPR0, DOUBLE, Double.MAX_VALUE / 2);
         assertDataError("double1 / char0", "division by zero");
-        assertDataError("double1 / charF", "Cannot convert VARCHAR to DOUBLE: f");
+        assertDataError("double1 / charF", "Cannot convert VARCHAR to DOUBLE");
 
         assertParsingError("double1 / object", "Cannot apply '/' to arguments of type '<DOUBLE> / <OBJECT>'");
     }
@@ -422,13 +422,13 @@ public class DivideEndToEndTest extends ExpressionEndToEndTestBase {
         assertDataError("decimal1 / string0", "division by zero");
         assertRow("decimal1 / stringBig", EXPR0, DECIMAL,
                 BigDecimal.valueOf(1).divide(new BigDecimal(getRecord().stringBig), ExpressionMath.DECIMAL_MATH_CONTEXT));
-        assertDataError("decimal1 / stringFoo", "Cannot convert VARCHAR to DECIMAL: foo");
+        assertDataError("decimal1 / stringFoo", "Cannot convert VARCHAR to DECIMAL");
 
         assertRow("decimal1 / char2", EXPR0, DECIMAL, BigDecimal.valueOf(0.5));
         assertRow("decimalBig / char2", EXPR0, DECIMAL,
                 getRecord().decimalBig.divide(BigDecimal.valueOf(2), ExpressionMath.DECIMAL_MATH_CONTEXT));
         assertDataError("decimal1 / char0", "division by zero");
-        assertDataError("decimal1 / charF", "Cannot convert VARCHAR to DECIMAL: f");
+        assertDataError("decimal1 / charF", "Cannot convert VARCHAR to DECIMAL");
 
         assertParsingError("decimal1 / object", "Cannot apply '/' to arguments of type '<DECIMAL(38, 38)> / <OBJECT>'");
     }
@@ -474,9 +474,9 @@ public class DivideEndToEndTest extends ExpressionEndToEndTestBase {
         assertRow("string1 / string1", EXPR0, DOUBLE, 1.0);
         assertRow("string1 / string2", EXPR0, DOUBLE, 0.5);
         assertRow("string1 / stringBig", EXPR0, DOUBLE, 1.0 / Double.parseDouble(getRecord().stringBig));
-        assertDataError("string1 / stringFoo", "Cannot convert VARCHAR to DOUBLE: foo");
+        assertDataError("string1 / stringFoo", "Cannot convert VARCHAR to DOUBLE");
         assertRow("string1 / char1", EXPR0, DOUBLE, 1.0);
-        assertDataError("string1 / charF", "Cannot convert VARCHAR to DOUBLE: f");
+        assertDataError("string1 / charF", "Cannot convert VARCHAR to DOUBLE");
 
         assertDataError("stringBig / int1", "Cannot convert VARCHAR to BIGINT");
 

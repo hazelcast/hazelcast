@@ -46,7 +46,7 @@ public class NotTest extends ExpressionTestBase {
         assertRows(query(sql, "select __key from records where not boolean1 and __key < 100"), keyRange(0, 100));
         assertRows(query(sql, "select __key, not boolean1 from records"), keyRange(0, 1000, 5000, 6000),
                 k -> k == 5000 || k == 6000 ? null : k >= 0 && k < 500);
-        assertQueryThrows(sql, "select __key, not string1 from records", "cannot be converted");
+        assertQueryThrows(sql, "select __key, not string1 from records", "Cannot convert VARCHAR to BOOLEAN");
     }
 
     @Test
