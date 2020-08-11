@@ -17,12 +17,13 @@
 package com.hazelcast.internal.monitor.impl;
 
 import com.hazelcast.cache.impl.CacheStatisticsImpl;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.hotrestart.BackupTaskState;
 import com.hazelcast.hotrestart.BackupTaskStatus;
-import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.instance.EndpointQualifier;
+import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.internal.management.TimedMemberState;
 import com.hazelcast.internal.management.TimedMemberStateFactory;
 import com.hazelcast.internal.management.dto.AdvancedNetworkStatsDTO;
@@ -30,16 +31,13 @@ import com.hazelcast.internal.management.dto.ClientEndPointDTO;
 import com.hazelcast.internal.management.dto.ClusterHotRestartStatusDTO;
 import com.hazelcast.internal.monitor.HotRestartState;
 import com.hazelcast.internal.monitor.NodeState;
-import com.hazelcast.internal.monitor.WanSyncState;
-import com.hazelcast.cluster.Address;
+import com.hazelcast.internal.util.Clock;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.internal.util.Clock;
 import com.hazelcast.version.MemberVersion;
 import com.hazelcast.version.Version;
-import com.hazelcast.wan.impl.WanSyncStatus;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -102,7 +100,6 @@ public class MemberStateImplTest extends HazelcastTestSupport {
         final BackupTaskStatus backupTaskStatus = new BackupTaskStatus(BackupTaskState.IN_PROGRESS, 5, 10);
         final String backupDirectory = "/hot/backup/dir";
         final HotRestartStateImpl hotRestartState = new HotRestartStateImpl(backupTaskStatus, true, backupDirectory);
-        final WanSyncState wanSyncState = new WanSyncStateImpl(WanSyncStatus.IN_PROGRESS, 86, "atob", "B");
 
         Map<UUID, String> clientStats = new HashMap<>();
         clientStats.put(clientUuid, "someStats");
@@ -142,7 +139,6 @@ public class MemberStateImplTest extends HazelcastTestSupport {
         memberState.setClients(clients);
         memberState.setNodeState(state);
         memberState.setHotRestartState(hotRestartState);
-        memberState.setWanSyncState(wanSyncState);
         memberState.setClientStats(clientStats);
         memberState.setInboundNetworkStats(inboundNetworkStats);
         memberState.setOutboundNetworkStats(outboundNetworkStats);
@@ -195,12 +191,6 @@ public class MemberStateImplTest extends HazelcastTestSupport {
         assertTrue(deserializedHotRestartState.isHotBackupEnabled());
         assertEquals(backupTaskStatus, deserializedHotRestartState.getBackupTaskStatus());
         assertEquals(backupDirectory, deserializedHotRestartState.getBackupDirectory());
-
-        final WanSyncState deserializedWanSyncState = deserialized.getWanSyncState();
-        assertEquals(WanSyncStatus.IN_PROGRESS, deserializedWanSyncState.getStatus());
-        assertEquals(86, deserializedWanSyncState.getSyncedPartitionCount());
-        assertEquals("atob", deserializedWanSyncState.getActiveWanConfigName());
-        assertEquals("B", deserializedWanSyncState.getActivePublisherName());
 
         ClusterHotRestartStatusDTO clusterHotRestartStatus = deserialized.getClusterHotRestartStatus();
         assertEquals(FULL_RECOVERY_ONLY, clusterHotRestartStatus.getDataRecoveryPolicy());
