@@ -16,13 +16,9 @@
 
 package com.hazelcast.sql.impl.calcite.validate;
 
-import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastSqlCase;
 import org.apache.calcite.sql.SqlBasicCall;
 import org.apache.calcite.sql.SqlCall;
-import org.apache.calcite.sql.SqlNode;
-import org.apache.calcite.sql.SqlNodeList;
 import org.apache.calcite.sql.SqlOperator;
-import org.apache.calcite.sql.fun.SqlCase;
 import org.apache.calcite.sql.fun.SqlStdOperatorTable;
 import org.apache.calcite.sql.util.SqlBasicVisitor;
 import org.apache.calcite.sql.validate.SqlNameMatcher;
@@ -61,23 +57,7 @@ public final class HazelcastOperatorTableVisitor extends SqlBasicVisitor<Void> {
         return super.visit(call);
     }
 
-    @Override
-    public Void visit(SqlNodeList nodeList) {
-        rewriteNodeList(nodeList);
-        return super.visit(nodeList);
-    }
-
     private static void rewriteCall(SqlCall call) {
-        List<SqlNode> operands = call.getOperandList();
-        for (int i = 0; i < operands.size(); ++i) {
-            SqlNode operand = operands.get(i);
-
-            SqlNode rewrittenCase = tryRewriteCase(operand);
-            if (rewrittenCase != null) {
-                call.setOperand(i, rewrittenCase);
-            }
-        }
-
         if (call instanceof SqlBasicCall) {
             SqlBasicCall basicCall = (SqlBasicCall) call;
             SqlOperator operator = basicCall.getOperator();
@@ -91,26 +71,6 @@ public final class HazelcastOperatorTableVisitor extends SqlBasicVisitor<Void> {
                 basicCall.setOperator(resolvedOperators.get(0));
             }
         }
-    }
-
-    private static void rewriteNodeList(SqlNodeList nodeList) {
-        for (int i = 0; i < nodeList.size(); ++i) {
-            SqlNode node = nodeList.get(i);
-
-            SqlNode rewrittenCase = tryRewriteCase(node);
-            if (rewrittenCase != null) {
-                nodeList.set(i, rewrittenCase);
-            }
-        }
-    }
-
-    private static SqlNode tryRewriteCase(SqlNode node) {
-        if (node instanceof SqlCase && !(node instanceof HazelcastSqlCase)) {
-            SqlCase sqlCase = (SqlCase) node;
-            return new HazelcastSqlCase(sqlCase.getParserPosition(), sqlCase.getValueOperand(), sqlCase.getWhenOperands(),
-                    sqlCase.getThenOperands(), sqlCase.getElseOperand());
-        }
-        return null;
     }
 
 }

@@ -17,7 +17,6 @@
 package com.hazelcast.sql.impl.calcite.validate;
 
 import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastSqlBinaryOperator;
-import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastSqlCaseOperator;
 import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastSqlCastFunction;
 import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastSqlMonotonicBinaryOperator;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastInferTypes;
@@ -26,7 +25,6 @@ import com.hazelcast.sql.impl.calcite.validate.types.HazelcastReturnTypes;
 import org.apache.calcite.sql.SqlBinaryOperator;
 import org.apache.calcite.sql.SqlFunction;
 import org.apache.calcite.sql.SqlKind;
-import org.apache.calcite.sql.SqlOperator;
 import org.apache.calcite.sql.SqlPostfixOperator;
 import org.apache.calcite.sql.SqlPrefixOperator;
 import org.apache.calcite.sql.fun.SqlStdOperatorTable;
@@ -47,8 +45,6 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
     //@formatter:off
 
     public static final SqlFunction CAST = new HazelcastSqlCastFunction();
-
-    public static final SqlOperator CASE = new HazelcastSqlCaseOperator();
 
     //#region Predicates.
 

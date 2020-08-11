@@ -24,16 +24,13 @@ import org.apache.calcite.sql.SqlCallBinding;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlLiteral;
 import org.apache.calcite.sql.SqlNode;
-import org.apache.calcite.sql.SqlNodeList;
 import org.apache.calcite.sql.SqlUtil;
-import org.apache.calcite.sql.fun.SqlCase;
 import org.apache.calcite.sql.parser.SqlParserPos;
 import org.apache.calcite.sql.type.SqlTypeFamily;
 import org.apache.calcite.sql.type.SqlTypeUtil;
 import org.apache.calcite.sql.validate.SqlValidatorScope;
 import org.apache.calcite.sql.validate.implicit.TypeCoercionImpl;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import static com.hazelcast.sql.impl.calcite.validate.SqlNodeUtil.isLiteral;
@@ -135,35 +132,6 @@ public final class HazelcastTypeCoercion extends TypeCoercionImpl {
     }
 
     @Override
-    public boolean caseWhenCoercion(SqlCallBinding binding) {
-        // Infer types.
-
-        SqlCase call = (SqlCase) binding.getCall();
-        SqlNodeList thenOperands = call.getThenOperands();
-
-        List<SqlNode> operands = new ArrayList<>(thenOperands.size() + 1);
-        operands.addAll(thenOperands.getList());
-        operands.add(call.getElseOperand());
-
-        RelDataType[] types = inferTypes(binding.getScope(), operands, false);
-        if (types == null) {
-            return false;
-        }
-
-        // Do the coercion.
-
-        boolean coerced = false;
-        for (int i = 0; i < operands.size() - 1; ++i) {
-            coerced |= coerceElementType(binding.getScope(), thenOperands, i, types[i]);
-        }
-        coerced |= coerceOperandType(binding.getScope(), call, 3, types[operands.size() - 1]);
-
-        updateInferredType(call, types[types.length - 1]);
-
-        return coerced;
-    }
-
-    @Override
     public RelDataType implicitCast(RelDataType in, SqlTypeFamily expected) {
         // enables implicit conversion from CHAR to BOOLEAN
         if (CHAR_TYPES.contains(typeName(in)) && expected == SqlTypeFamily.BOOLEAN) {
@@ -227,22 +195,6 @@ public final class HazelcastTypeCoercion extends TypeCoercionImpl {
         }
 
         return super.needToCast(scope, node, to);
-    }
-
-    private boolean coerceElementType(SqlValidatorScope scope, SqlNodeList list, int index, RelDataType to) {
-        SqlNode element = list.get(index);
-
-        // just update the inferred type if casting is not needed
-        if (!needToCast(scope, element, to)) {
-            updateInferredType(element, to);
-            return false;
-        }
-
-        SqlNode cast = makeCast(element, to);
-        list.set(index, cast);
-        // derive the type of the newly created CAST immediately
-        validator.deriveType(scope, cast);
-        return true;
     }
 
     private static SqlNode makeCast(SqlNode node, RelDataType type) {
