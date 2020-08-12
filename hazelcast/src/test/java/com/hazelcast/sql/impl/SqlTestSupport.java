@@ -22,6 +22,9 @@ import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.sql.SqlQuery;
+import com.hazelcast.sql.SqlResult;
+import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.impl.exec.CreateExecPlanNodeVisitorHook;
 import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.operation.QueryOperationHandlerImpl;
@@ -35,6 +38,7 @@ import com.hazelcast.sql.impl.worker.QueryFragmentContext;
 import com.hazelcast.test.HazelcastTestSupport;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -73,9 +77,13 @@ public class SqlTestSupport extends HazelcastTestSupport {
         return getSerializationService().toObject(ss.toData(original));
     }
 
-    public static <T> T serializeAndCheck(IdentifiedDataSerializable original, int expectedClassId) {
-        assertEquals(SqlDataSerializerHook.F_ID, original.getFactoryId());
-        assertEquals(expectedClassId, original.getClassId());
+    public static <T> T serializeAndCheck(Object original, int expectedClassId) {
+        assertTrue(original instanceof IdentifiedDataSerializable);
+
+        IdentifiedDataSerializable original0 = (IdentifiedDataSerializable) original;
+
+        assertEquals(SqlDataSerializerHook.F_ID, original0.getFactoryId());
+        assertEquals(expectedClassId, original0.getClassId());
 
         return serialize(original);
     }
@@ -175,5 +183,23 @@ public class SqlTestSupport extends HazelcastTestSupport {
 
     public static SqlInternalService sqlInternalService(HazelcastInstance instance) {
         return nodeEngine(instance).getSqlService().getInternalService();
+    }
+
+    public static List<SqlRow> execute(HazelcastInstance member, String sql, Object... params) {
+        SqlQuery query = new SqlQuery(sql);
+
+        if (params != null) {
+            query.setParameters(Arrays.asList(params));
+        }
+
+        List<SqlRow> rows = new ArrayList<>();
+
+        try (SqlResult result = member.getSql().query(query)) {
+            for (SqlRow row : result) {
+                rows.add(row);
+            }
+        }
+
+        return rows;
     }
 }

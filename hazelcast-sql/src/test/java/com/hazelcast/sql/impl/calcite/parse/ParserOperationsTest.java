@@ -148,7 +148,7 @@ public class ParserOperationsTest {
 
     @Test
     public void testUnsupportedFunction() {
-        checkFailure("select sin(0) from t", "SIN is not supported");
+        checkFailure("select atan2(0, 0) from t", "ATAN2 is not supported");
     }
 
     private static void checkSuccess(String sql) {

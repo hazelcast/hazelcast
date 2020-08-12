@@ -19,6 +19,7 @@ package com.hazelcast.sql.impl.calcite.validate.types;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.sql.type.InferTypes;
 import org.apache.calcite.sql.type.SqlOperandTypeInference;
+import org.apache.calcite.sql.type.SqlTypeName;
 
 import java.util.Arrays;
 
@@ -79,7 +80,36 @@ public final class HazelcastInferTypes {
         }
     };
 
+    public static final SqlOperandTypeInference DECIMAL_IF_UNKNOWN = (callBinding, returnType, operandTypes) -> {
+        RelDataType unknownType = callBinding.getTypeFactory().createUnknownType();
+
+        for (int i = 0; i < operandTypes.length; i++) {
+            RelDataType operandType = operandTypes[i];
+
+            if (operandType == unknownType) {
+                operandTypes[i] = callBinding.getTypeFactory().createSqlType(SqlTypeName.DECIMAL);
+            }
+        }
+    };
+
+    public static final SqlOperandTypeInference ROUND = (callBinding, returnType, operandTypes) -> {
+        RelDataType unknownType = callBinding.getTypeFactory().createUnknownType();
+
+        for (int i = 0; i < operandTypes.length; i++) {
+            RelDataType operandType = operandTypes[i];
+
+            if (operandType == unknownType) {
+                if (i == 0) {
+                    operandTypes[i] = callBinding.getTypeFactory().createSqlType(SqlTypeName.DECIMAL);
+                } else {
+                    assert i == 1;
+
+                    operandTypes[i] = callBinding.getTypeFactory().createSqlType(SqlTypeName.INTEGER);
+                }
+            }
+        }
+    };
+
     private HazelcastInferTypes() {
     }
-
 }
