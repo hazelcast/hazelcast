@@ -370,6 +370,10 @@ public class DataSerializableConventionsTest {
             // these can't be accessed through the meta class since they are private
             whiteList.add(Class.forName("com.hazelcast.query.impl.predicates.CompositeIndexVisitor$Output"));
             whiteList.add(Class.forName("com.hazelcast.query.impl.predicates.RangeVisitor$Ranges"));
+
+            // these can't be accessed directly because the corresponding Maven module is not imported
+            whiteList.add(Class.forName("com.hazelcast.sql.impl.calcite.validate.types.HazelcastIntegerType"));
+            whiteList.add(Class.forName("com.hazelcast.sql.impl.calcite.validate.types.HazelcastObjectType"));
         } catch (ClassNotFoundException e) {
             throw new RuntimeException(e);
         }
