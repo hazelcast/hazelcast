@@ -27,7 +27,9 @@ import com.hazelcast.sql.impl.schema.TableResolver;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.apache.calcite.sql.SqlCall;
 import org.apache.calcite.sql.SqlIdentifier;
+import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlNodeList;
 import org.apache.calcite.sql.SqlSelect;
 import org.junit.Test;
@@ -64,20 +66,23 @@ public class ParserNameResolutionTest {
     private static final String FIELD_2 = "myField2";
     private static final String BAD_FIELD = "badField";
 
+    private static final String TABLE_1_FQN = SqlIdentifier.getString(Arrays.asList(CATALOG, SCHEMA_1, TABLE_1));
+    private static final String TABLE_2_FQN = SqlIdentifier.getString(Arrays.asList(CATALOG, SCHEMA_2, TABLE_2));
+
     @Test
     public void testNameResolution() {
         // Lookup for table without default path.
         checkFailure(errorObjectNotFound(TABLE_1), FIELD_1, TABLE_1);
-        checkSuccess(FIELD_1, SCHEMA_1, TABLE_1);
-        checkSuccess(FIELD_1, CATALOG, SCHEMA_1, TABLE_1);
+        checkSuccess(FIELD_1, TABLE_1_FQN, SCHEMA_1, TABLE_1);
+        checkSuccess(FIELD_1, TABLE_1_FQN, CATALOG, SCHEMA_1, TABLE_1);
 
         // Lookup for table with default path.
-        checkSuccess(FIELD_2, TABLE_2);
-        checkSuccess(FIELD_2, SCHEMA_2, TABLE_2);
-        checkSuccess(FIELD_2, CATALOG, SCHEMA_2, TABLE_2);
+        checkSuccess(FIELD_2, TABLE_2_FQN, TABLE_2);
+        checkSuccess(FIELD_2, TABLE_2_FQN, SCHEMA_2, TABLE_2);
+        checkSuccess(FIELD_2, TABLE_2_FQN, CATALOG, SCHEMA_2, TABLE_2);
 
         // Test overridden search path.
-        checkSuccess(createContext(SCHEMA_1), FIELD_1, TABLE_1);
+        checkSuccess(createContext(SCHEMA_1), FIELD_1, TABLE_1_FQN, TABLE_1);
 
         // Wrong field
         checkFailure(errorColumnNotFound(BAD_FIELD), BAD_FIELD, SCHEMA_1, TABLE_1);
@@ -101,11 +106,11 @@ public class ParserNameResolutionTest {
         checkFailure(errorObjectNotFound(BAD_CATALOG), BAD_FIELD, BAD_CATALOG, BAD_SCHEMA, BAD_TABLE);
     }
 
-    private static void checkSuccess(String fieldName, String... tableComponents) {
-        checkSuccess(createContext(), fieldName, tableComponents);
+    private static void checkSuccess(String fieldName, String tableFqn, String... tableComponents) {
+        checkSuccess(createContext(), fieldName, tableFqn, tableComponents);
     }
 
-    private static void checkSuccess(OptimizerContext context, String fieldName, String... tableComponents) {
+    private static void checkSuccess(OptimizerContext context, String fieldName, String tableFqn, String... tableComponents) {
         QueryParseResult res = context.parse(composeSelect(fieldName, tableComponents));
 
         SqlSelect select = (SqlSelect) res.getNode();
@@ -114,10 +119,12 @@ public class ParserNameResolutionTest {
         assertEquals(1, selectList.size());
 
         SqlIdentifier fieldIdentifier = (SqlIdentifier) selectList.get(0);
-        assertEquals(fieldName, fieldIdentifier.toString());
+        assertEquals(SqlIdentifier.getString(Arrays.asList(last(tableComponents), fieldName)), fieldIdentifier.toString());
 
-        SqlIdentifier from = (SqlIdentifier) select.getFrom();
-        assertEquals(SqlIdentifier.getString(Arrays.asList(tableComponents)), from.toString());
+        SqlCall from = (SqlCall) select.getFrom();
+        assertEquals(from.getKind(), SqlKind.AS);
+        assertEquals(tableFqn, from.operand(0).toString());
+        assertEquals(last(tableComponents), from.operand(1).toString());
     }
 
     private static void checkFailure(String errorMessage, String fieldName, String... tableComponents) {
@@ -193,4 +200,9 @@ public class ParserNameResolutionTest {
             1
         );
     }
+
+    private static <E> E last(E[] array) {
+        return array[array.length - 1];
+    }
+
 }

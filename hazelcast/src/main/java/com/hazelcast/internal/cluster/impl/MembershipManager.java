@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.cluster.impl;
 
+import com.hazelcast.auditlog.AuditlogTypeIds;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.cluster.Member;
@@ -660,7 +661,8 @@ public class MembershipManager {
     private boolean addSuspectedMember(MemberImpl suspectedMember, String reason,
             boolean shouldCloseConn) {
 
-        if (getMember(suspectedMember.getAddress(), suspectedMember.getUuid()) == null) {
+        Address address = suspectedMember.getAddress();
+        if (getMember(address, suspectedMember.getUuid()) == null) {
             if (logger.isFineEnabled()) {
                 logger.fine("Cannot suspect " + suspectedMember + ", since it's not a member.");
             }
@@ -674,10 +676,15 @@ public class MembershipManager {
             } else {
                 logger.warning(suspectedMember + " is suspected to be dead");
             }
+            node.getNodeExtension().getAuditlogService().eventBuilder(AuditlogTypeIds.CLUSTER_MEMBER_SUSPECTED)
+                .message("Member is suspected")
+                .addParameter("address", address)
+                .addParameter("reason", reason)
+                .log();
         }
 
         if (shouldCloseConn) {
-            closeConnection(suspectedMember.getAddress(), reason);
+            closeConnection(address, reason);
         }
         return true;
     }
@@ -692,12 +699,13 @@ public class MembershipManager {
                 return;
             }
 
+            Address address = member.getAddress();
             if (shouldCloseConn) {
-                closeConnection(member.getAddress(), reason);
+                closeConnection(address, reason);
             }
 
             MemberMap currentMembers = memberMapRef.get();
-            if (currentMembers.getMember(member.getAddress(), member.getUuid()) == null) {
+            if (currentMembers.getMember(address, member.getUuid()) == null) {
                 if (logger.isFineEnabled()) {
                     logger.fine("No need to remove " + member + ", not a member.");
                 }
@@ -706,12 +714,18 @@ public class MembershipManager {
             }
 
             logger.info("Removing " + member);
-            clusterService.getClusterJoinManager().removeJoin(member.getAddress());
+            clusterService.getClusterJoinManager().removeJoin(address);
             clusterService.getClusterHeartbeatManager().removeMember(member);
             partialDisconnectionHandler.removeMember(member);
 
             MemberMap newMembers = MemberMap.cloneExcluding(currentMembers, member);
             setMembers(newMembers);
+
+            node.getNodeExtension().getAuditlogService().eventBuilder(AuditlogTypeIds.CLUSTER_MEMBER_SUSPECTED)
+                .message("Member is removed")
+                .addParameter("address", address)
+                .addParameter("reason", reason)
+                .log();
 
             if (logger.isFineEnabled()) {
                 logger.fine(member + " is removed. Publishing new member list.");
@@ -789,6 +803,11 @@ public class MembershipManager {
 
     private void sendMembershipEventNotifications(MemberImpl member, Set<Member> members, final boolean added) {
         int eventType = added ? MembershipEvent.MEMBER_ADDED : MembershipEvent.MEMBER_REMOVED;
+        node.getNodeExtension().getAuditlogService()
+                .eventBuilder(added ? AuditlogTypeIds.CLUSTER_MEMBER_ADDED : AuditlogTypeIds.CLUSTER_MEMBER_REMOVED)
+                .message("Membership changed")
+                .addParameter("memberAddress", member.getAddress())
+                .log();
         MembershipEvent membershipEvent = new MembershipEvent(clusterService, member, eventType, members);
         Collection<MembershipAwareService> membershipAwareServices = nodeEngine.getServices(MembershipAwareService.class);
         if (membershipAwareServices != null && !membershipAwareServices.isEmpty()) {

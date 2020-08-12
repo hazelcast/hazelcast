@@ -16,12 +16,12 @@
 
 package com.hazelcast.internal.server.tcp;
 
+import com.hazelcast.auditlog.AuditlogTypeIds;
+import com.hazelcast.auditlog.Level;
 import com.hazelcast.client.impl.protocol.util.ClientMessageDecoder;
 import com.hazelcast.config.MemcacheProtocolConfig;
 import com.hazelcast.config.RestApiConfig;
 import com.hazelcast.instance.EndpointQualifier;
-import com.hazelcast.internal.auditlog.Level;
-import com.hazelcast.internal.auditlog.impl.AuditlogTypeIds;
 import com.hazelcast.internal.networking.ChannelOptions;
 import com.hazelcast.internal.networking.HandlerStatus;
 import com.hazelcast.internal.networking.InboundHandler;
@@ -91,7 +91,7 @@ public class UnifiedProtocolDecoder
             String protocol = loadProtocol();
 
             serverContext.getAuditLogService()
-                .eventBuilder(AuditlogTypeIds.CONNECTION_ASKS_PROTOCOL)
+                .eventBuilder(AuditlogTypeIds.NETWORK_SELECT_PROTOCOL)
                 .message("Protocol bytes received for a connection")
                 .level(Level.DEBUG)
                 .addParameter("protocol", protocol)

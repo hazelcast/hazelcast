@@ -18,6 +18,7 @@ package com.hazelcast.sql.impl.operation;
 
 import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.sql.impl.QueryId;
+import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.plan.Plan;
 import com.hazelcast.sql.impl.plan.PlanFragmentMapping;
 import com.hazelcast.sql.impl.plan.node.MockPlanNode;
@@ -74,6 +75,7 @@ public class QueryExecuteOperationFactoryTest {
             inboundEdgeMap,
             inboundEdgeMemberCountMap,
             null,
+            QueryParameterMetadata.EMPTY,
             null,
             Collections.emptySet()
         );

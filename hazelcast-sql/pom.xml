@@ -91,6 +91,7 @@
                                     <include>org.codehaus.janino:commons-compiler</include>
                                     <include>org.codehaus.janino:janino</include>
                                     <include>org.slf4j:slf4j-api</include>
+                                    <include>commons-codec:commons-codec</include>
                                 </includes>
                             </artifactSet>
                             <relocations>
@@ -181,10 +182,6 @@
             <version>${calcite.version}</version>
             <exclusions>
                 <!-- Exclusions for Calcite. -->
-                <exclusion>
-                    <groupId>commons-codec</groupId>
-                    <artifactId>commons-codec</artifactId>
-                </exclusion>
                 <exclusion>
                     <groupId>commons-io</groupId>
                     <artifactId>commons-io</artifactId>

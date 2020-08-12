@@ -23,6 +23,7 @@ import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.exec.AbstractExec;
 import com.hazelcast.sql.impl.exec.IterationResult;
 import com.hazelcast.sql.impl.expression.Expression;
+import com.hazelcast.sql.impl.expression.predicate.TernaryLogic;
 import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.extract.QueryTargetDescriptor;
 import com.hazelcast.sql.impl.row.EmptyRow;
@@ -171,12 +172,8 @@ public abstract class AbstractMapScanExec extends AbstractExec {
         row.setKeyValue(rawKey, rawValue);
 
         // Filter.
-        if (filter != null) {
-            Boolean filterRes = filter.eval(row, ctx);
-
-            if (filterRes == null || !filterRes) {
-                return null;
-            }
+        if (filter != null && TernaryLogic.isNotTrue(filter.eval(row, ctx))) {
+            return null;
         }
 
         // Project.

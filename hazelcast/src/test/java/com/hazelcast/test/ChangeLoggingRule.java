@@ -16,23 +16,14 @@
 
 package com.hazelcast.test;
 
-import com.hazelcast.logging.Logger;
-import com.hazelcast.logging.LoggerFactory;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.core.LoggerContext;
 import org.junit.rules.TestRule;
 import org.junit.runner.Description;
 import org.junit.runners.model.Statement;
 
 /**
- * Test rule that allows to change logging setting on-the-fly for a single test.
- * Example of usage, add this to your test class:
- *
- * <pre>
- * @ClassRule
- * public static ChangeLoggingRule changeLoggingRule = new ChangeLoggingRule("log4j2-debug.xml");
- * </pre>
- *
- * See log4j2-debug.xml in test resources for example.
- *
+ * Alternative rule for changing Log4j2 configuration on the fly.
  */
 public class ChangeLoggingRule implements TestRule {
 
@@ -47,20 +38,12 @@ public class ChangeLoggingRule implements TestRule {
         return new Statement() {
             @Override
             public void evaluate() throws Throwable {
-                LoggerFactory loggerFactory = Logger.newLoggerFactory(null);
-                if (loggerFactory instanceof TestLoggerFactory) {
-                    TestLoggerFactory testLoggerFactory = (TestLoggerFactory) loggerFactory;
-                    testLoggerFactory.changeConfigFile(configFile); //setting the desired configuration
-                    try {
-                        base.evaluate();
-                    } finally {
-                        testLoggerFactory.changeConfigFile(null); //resetting to default behavior
-                    }
-                } else {
-                    System.out.printf("ChangeLoggingRule: could not change config file to '%s' because "
-                            + "logger factory is instance of '%s' instead of expected TestLoggerFactory.\n",
-                            configFile, loggerFactory.getClass());
+                LoggerContext context = (org.apache.logging.log4j.core.LoggerContext) LogManager.getContext(false);
+                context.setConfigLocation(getClass().getClassLoader().getResource(configFile).toURI());
+                try {
                     base.evaluate();
+                } finally {
+                    context.setConfigLocation(null);
                 }
             }
         };

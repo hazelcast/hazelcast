@@ -41,20 +41,20 @@ import static org.junit.Assert.assertEquals;
 public class SqlMetadataTest extends SqlTestSupport {
     @Test
     public void testColumnMetadata() {
-        SqlColumnMetadata column = new SqlColumnMetadata("a", SqlColumnType.INT);
+        SqlColumnMetadata column = new SqlColumnMetadata("a", SqlColumnType.INTEGER);
 
         assertEquals("a", column.getName());
-        assertEquals(SqlColumnType.INT, column.getType());
-        assertEquals("a INT", column.toString());
+        assertEquals(SqlColumnType.INTEGER, column.getType());
+        assertEquals("a INTEGER", column.toString());
 
-        checkEquals(column, new SqlColumnMetadata("a", SqlColumnType.INT), true);
-        checkEquals(column, new SqlColumnMetadata("b", SqlColumnType.INT), false);
+        checkEquals(column, new SqlColumnMetadata("a", SqlColumnType.INTEGER), true);
+        checkEquals(column, new SqlColumnMetadata("b", SqlColumnType.INTEGER), false);
         checkEquals(column, new SqlColumnMetadata("a", SqlColumnType.BIGINT), false);
     }
 
     @Test
     public void testRow() {
-        SqlColumnMetadata column0Metadata = new SqlColumnMetadata("a", SqlColumnType.INT);
+        SqlColumnMetadata column0Metadata = new SqlColumnMetadata("a", SqlColumnType.INTEGER);
         SqlColumnMetadata column1Metadata = new SqlColumnMetadata("b", SqlColumnType.VARCHAR);
 
         SqlRow row = new SqlRowImpl(
@@ -62,18 +62,18 @@ public class SqlMetadataTest extends SqlTestSupport {
             HeapRow.of(1, "2")
         );
 
-        assertEquals("[a INT=1, b VARCHAR=2]", row.toString());
+        assertEquals("[a INTEGER=1, b VARCHAR=2]", row.toString());
     }
 
     @Test
     public void testRowMetadata() {
-        SqlColumnMetadata column0 = new SqlColumnMetadata("a", SqlColumnType.INT);
+        SqlColumnMetadata column0 = new SqlColumnMetadata("a", SqlColumnType.INTEGER);
         SqlColumnMetadata column1 = new SqlColumnMetadata("b", SqlColumnType.BIGINT);
         SqlColumnMetadata column2 = new SqlColumnMetadata("c", SqlColumnType.VARCHAR);
 
         SqlRowMetadata row = new SqlRowMetadata(Arrays.asList(column0, column1));
 
-        assertEquals("[a INT, b BIGINT]", row.toString());
+        assertEquals("[a INTEGER, b BIGINT]", row.toString());
 
         assertEquals(2, row.getColumnCount());
         assertEquals(column0, row.getColumn(0));
@@ -99,7 +99,7 @@ public class SqlMetadataTest extends SqlTestSupport {
         assertEquals(column(name, SqlColumnType.BOOLEAN), getColumnMetadata(name, QueryDataType.BOOLEAN));
         assertEquals(column(name, SqlColumnType.TINYINT), getColumnMetadata(name, QueryDataType.TINYINT));
         assertEquals(column(name, SqlColumnType.SMALLINT), getColumnMetadata(name, QueryDataType.SMALLINT));
-        assertEquals(column(name, SqlColumnType.INT), getColumnMetadata(name, QueryDataType.INT));
+        assertEquals(column(name, SqlColumnType.INTEGER), getColumnMetadata(name, QueryDataType.INT));
         assertEquals(column(name, SqlColumnType.BIGINT), getColumnMetadata(name, QueryDataType.BIGINT));
         assertEquals(column(name, SqlColumnType.DECIMAL), getColumnMetadata(name, QueryDataType.DECIMAL));
         assertEquals(column(name, SqlColumnType.DECIMAL), getColumnMetadata(name, QueryDataType.DECIMAL_BIG_INTEGER));

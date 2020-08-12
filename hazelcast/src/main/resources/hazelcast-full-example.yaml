@@ -3337,6 +3337,14 @@ hazelcast:
       enabled: false
     collection-frequency-seconds: 10
 
+  auditlog:
+    enabled: false
+    factory-class-name: com.acme.AuditlogToSyslogFactory
+    properties:
+      host: syslogserver.acme.com
+      port: 514
+      type: tcp
+
   #
   # ===== HAZELCAST INSTANCE TRACKING CONFIGURATION =====
   #

@@ -19,6 +19,7 @@ package com.hazelcast.sql.impl.calcite;
 import com.hazelcast.cluster.memberselector.MemberSelectors;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.QueryUtils;
+import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.calcite.opt.HazelcastConventions;
 import com.hazelcast.sql.impl.calcite.opt.OptUtils;
 import com.hazelcast.sql.impl.calcite.opt.logical.LogicalRules;
@@ -33,6 +34,10 @@ import com.hazelcast.sql.impl.optimizer.OptimizationTask;
 import com.hazelcast.sql.impl.optimizer.SqlOptimizer;
 import com.hazelcast.sql.impl.optimizer.SqlPlan;
 import com.hazelcast.sql.impl.plan.cache.PlanCacheKey;
+import com.hazelcast.sql.impl.plan.Plan;
+import com.hazelcast.sql.impl.schema.TableResolver;
+import com.hazelcast.sql.impl.schema.map.PartitionedMapTableResolver;
+import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.calcite.plan.Convention;
 import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.plan.volcano.VolcanoPlanner;
@@ -172,6 +177,10 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         rel.visit(idVisitor);
         Map<PhysicalRel, List<Integer>> relIdMap = idVisitor.getIdMap();
 
+        // Prepare parameter metadata.
+        QueryDataType[] mappedParameterRowType = SqlToQueryType.mapRowType(parameterRowType);
+        QueryParameterMetadata parameterMetadata = new QueryParameterMetadata(mappedParameterRowType);
+
         // Create the plan.
         PlanCreateVisitor visitor = new PlanCreateVisitor(
             nodeEngine.getLocalMember().getUuid(),
@@ -179,7 +188,8 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
             relIdMap,
             sql,
             new PlanCacheKey(searchPaths, sql),
-            rootColumnNames
+            rootColumnNames,
+            parameterMetadata
         );
 
         rel.visit(visitor);

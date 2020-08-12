@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.config;
 
+import com.hazelcast.config.AbstractFactoryWithPropertiesConfig;
 import com.hazelcast.config.ClassFilter;
 import com.hazelcast.config.GlobalSerializerConfig;
 import com.hazelcast.config.InstanceTrackingConfig;
@@ -227,21 +228,24 @@ public abstract class AbstractDomConfigProcessor implements DomConfigProcessor {
     }
 
     protected SSLConfig parseSslConfig(Node node) {
-        SSLConfig sslConfig = new SSLConfig();
+        return fillFactoryWithPropertiesConfig(node, new SSLConfig());
+    }
+
+    protected <T extends AbstractFactoryWithPropertiesConfig<?>> T fillFactoryWithPropertiesConfig(Node node, T factoryConfig) {
         NamedNodeMap atts = node.getAttributes();
         Node enabledNode = atts.getNamedItem("enabled");
         boolean enabled = enabledNode != null && getBooleanValue(getTextContent(enabledNode));
-        sslConfig.setEnabled(enabled);
+        factoryConfig.setEnabled(enabled);
 
         for (Node n : childElements(node)) {
             String nodeName = cleanNodeName(n);
             if ("factory-class-name".equals(nodeName)) {
-                sslConfig.setFactoryClassName(getTextContent(n));
+                factoryConfig.setFactoryClassName(getTextContent(n));
             } else if ("properties".equals(nodeName)) {
-                fillProperties(n, sslConfig.getProperties());
+                fillProperties(n, factoryConfig.getProperties());
             }
         }
-        return sslConfig;
+        return factoryConfig;
     }
 
     protected void fillNativeMemoryConfig(Node node, NativeMemoryConfig nativeMemoryConfig) {

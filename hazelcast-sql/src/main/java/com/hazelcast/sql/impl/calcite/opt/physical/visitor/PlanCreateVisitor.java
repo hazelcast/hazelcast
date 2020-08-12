@@ -19,6 +19,7 @@ package com.hazelcast.sql.impl.calcite.opt.physical.visitor;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.sql.SqlColumnMetadata;
 import com.hazelcast.sql.SqlRowMetadata;
+import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.QueryUtils;
 import com.hazelcast.sql.impl.calcite.opt.physical.FilterPhysicalRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.MapScanPhysicalRel;
@@ -92,6 +93,8 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
     /** Names of the returned columns from the original query. */
     private final List<String> rootColumnNames;
 
+    private final QueryParameterMetadata parameterMetadata;
+
     /** Prepared fragments. */
     private final List<PlanNode> fragments = new ArrayList<>();
 
@@ -125,7 +128,8 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
         Map<PhysicalRel, List<Integer>> relIdMap,
         String sql,
         PlanCacheKey planKey,
-        List<String> rootColumnNames
+        List<String> rootColumnNames,
+        QueryParameterMetadata parameterMetadata
     ) {
         this.localMemberId = localMemberId;
         this.partMap = partMap;
@@ -133,6 +137,7 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
         this.sql = sql;
         this.planKey = planKey;
         this.rootColumnNames = rootColumnNames;
+        this.parameterMetadata = parameterMetadata;
 
         memberIds = new HashSet<>(partMap.keySet());
     }
@@ -173,6 +178,7 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
             inboundEdgeMap,
             inboundEdgeMemberCountMap,
             rowMetadata,
+            parameterMetadata,
             planKey,
             objectIds
         );
@@ -360,7 +366,7 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
             return null;
         }
 
-        RexToExpressionVisitor converter = new RexToExpressionVisitor(fieldTypeProvider);
+        RexToExpressionVisitor converter = new RexToExpressionVisitor(fieldTypeProvider, parameterMetadata);
 
         return expression.accept(converter);
     }

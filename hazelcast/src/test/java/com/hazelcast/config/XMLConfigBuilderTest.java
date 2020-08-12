@@ -3497,6 +3497,23 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    protected Config buildAuditlogConfig() {
+        String xml = HAZELCAST_START_TAG
+                + "    <auditlog enabled='true'>\n"
+                + "        <factory-class-name>\n"
+                + "            com.acme.auditlog.AuditlogToSyslogFactory\n"
+                + "        </factory-class-name>\n"
+                + "        <properties>\n"
+                + "            <property name='host'>syslogserver.acme.com</property>\n"
+                + "            <property name='port'>514</property>\n"
+                + "            <property name='type'>tcp</property>\n"
+                + "        </properties>\n"
+                + "    </auditlog>"
+                + HAZELCAST_END_TAG;
+        return new InMemoryXmlConfig(xml);
+    }
+
+    @Override
     @Test
     public void testSqlConfig() {
         String xml = HAZELCAST_START_TAG

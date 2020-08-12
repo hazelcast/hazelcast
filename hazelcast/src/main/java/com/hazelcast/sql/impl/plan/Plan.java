@@ -18,6 +18,8 @@ package com.hazelcast.sql.impl.plan;
 
 import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.sql.SqlRowMetadata;
+import com.hazelcast.sql.impl.QueryParameterMetadata;
+import com.hazelcast.sql.impl.optimizer.SqlPlan;
 import com.hazelcast.sql.impl.optimizer.SqlPlanType;
 import com.hazelcast.sql.impl.plan.cache.CacheablePlan;
 import com.hazelcast.sql.impl.plan.cache.PlanCacheKey;
@@ -61,6 +63,8 @@ public class Plan implements CacheablePlan {
 
     private final SqlRowMetadata rowMetadata;
 
+    private final QueryParameterMetadata parameterMetadata;
+
     /** IDs of objects used in the plan. */
     private final Set<PlanObjectKey> objectIds;
 
@@ -73,6 +77,7 @@ public class Plan implements CacheablePlan {
         Map<Integer, Integer> inboundEdgeMap,
         Map<Integer, Integer> inboundEdgeMemberCountMap,
         SqlRowMetadata rowMetadata,
+        QueryParameterMetadata parameterMetadata,
         PlanCacheKey planKey,
         Set<PlanObjectKey> objectIds
     ) {
@@ -83,6 +88,7 @@ public class Plan implements CacheablePlan {
         this.inboundEdgeMap = inboundEdgeMap;
         this.inboundEdgeMemberCountMap = inboundEdgeMemberCountMap;
         this.rowMetadata = rowMetadata;
+        this.parameterMetadata = parameterMetadata;
         this.planKey = planKey;
         this.objectIds = objectIds;
     }
@@ -147,4 +153,9 @@ public class Plan implements CacheablePlan {
     public SqlRowMetadata getRowMetadata() {
         return rowMetadata;
     }
+
+    public QueryParameterMetadata getParameterMetadata() {
+        return parameterMetadata;
+    }
+
 }

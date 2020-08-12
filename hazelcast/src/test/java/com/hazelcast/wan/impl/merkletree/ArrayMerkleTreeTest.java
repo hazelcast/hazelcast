@@ -23,15 +23,8 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.util.HashSet;
-import java.util.Set;
-import java.util.function.Consumer;
-
-import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -67,11 +60,11 @@ public class ArrayMerkleTreeTest {
             merkleTree2.updateAdd(i, i);
         }
 
-        assertTrue(merkleTree2.footprint() > merkleTree1.footprint());
+        assertEquals(merkleTree2.footprint(), merkleTree1.footprint());
     }
 
     @Test
-    public void testFootprintChanges() {
+    public void testFootprintDoesNotChange() {
         MerkleTree merkleTree = new ArrayMerkleTree(3);
 
         long footprintBeforeAdd = merkleTree.footprint();
@@ -80,7 +73,7 @@ public class ArrayMerkleTreeTest {
         }
         long footprintAfterAdd = merkleTree.footprint();
 
-        assertTrue(footprintAfterAdd > footprintBeforeAdd);
+        assertEquals(footprintAfterAdd, footprintBeforeAdd);
     }
 
     @Test
@@ -247,52 +240,6 @@ public class ArrayMerkleTreeTest {
     }
 
     @Test
-    public void forEachKeyOfLeaf() {
-        MerkleTree merkleTree = new ArrayMerkleTree(3);
-
-        merkleTree.updateAdd(0x80000000, 1); // leaf 3
-        merkleTree.updateAdd(0xC0000000, 2); // leaf 4
-        merkleTree.updateAdd(0x00000000, 3); // leaf 5
-        merkleTree.updateAdd(0x40000000, 4); // leaf 6
-
-        // level 0
-        verifyKeysUnderNode(merkleTree, 0, 0x80000000, 0xC0000000, 0x00000000, 0x40000000);
-
-        // level 1
-        verifyKeysUnderNode(merkleTree, 1, 0x80000000, 0xC0000000);
-        verifyKeysUnderNode(merkleTree, 2, 0x00000000, 0x40000000);
-
-        // level 2 (leaves)
-        verifyKeysUnderNode(merkleTree, 3, 0x80000000);
-        verifyKeysUnderNode(merkleTree, 4, 0xC0000000);
-        verifyKeysUnderNode(merkleTree, 5, 0x00000000);
-        verifyKeysUnderNode(merkleTree, 6, 0x40000000);
-    }
-
-    @Test
-    public void getNodeKeyCount() {
-        MerkleTree merkleTree = new ArrayMerkleTree(3);
-
-        merkleTree.updateAdd(0x80000000, 1); // leaf 3
-        merkleTree.updateAdd(0xC0000000, 2); // leaf 4
-        merkleTree.updateAdd(0x00000000, 3); // leaf 5
-        merkleTree.updateAdd(0x40000000, 4); // leaf 6
-
-        // level 0
-        assertEquals(4, merkleTree.getNodeKeyCount(0));
-
-        // level 1
-        assertEquals(2, merkleTree.getNodeKeyCount(1));
-        assertEquals(2, merkleTree.getNodeKeyCount(2));
-
-        // level 2 (leaves)
-        assertEquals(1, merkleTree.getNodeKeyCount(3));
-        assertEquals(1, merkleTree.getNodeKeyCount(4));
-        assertEquals(1, merkleTree.getNodeKeyCount(5));
-        assertEquals(1, merkleTree.getNodeKeyCount(6));
-    }
-
-    @Test
     public void testTreeDepthsDontImpactNodeHashes() {
         MerkleTree merkleTreeShallow = new ArrayMerkleTree(2);
         MerkleTree merkleTreeDeep = new ArrayMerkleTree(4);
@@ -348,13 +295,6 @@ public class ArrayMerkleTreeTest {
         for (int nodeOrder = 0; nodeOrder < MerkleTreeUtil.getNumberOfNodes(merkleTree.depth()); nodeOrder++) {
             assertEquals(0, merkleTree.getNodeHash(nodeOrder));
         }
-
-        merkleTree.forEachKeyOfNode(0, new Consumer<Object>() {
-            @Override
-            public void accept(Object o) {
-                fail("Consumer is not expected to be invoked. Leaf keys should be empty.");
-            }
-        });
     }
 
     private void verifyTreesAreSameOnCommonLevels(MerkleTree merkleTreeShallow, MerkleTree merkleTreeDeep) {
@@ -362,21 +302,4 @@ public class ArrayMerkleTreeTest {
             assertEquals(merkleTreeShallow.getNodeHash(i), merkleTreeDeep.getNodeHash(i));
         }
     }
-
-    private void verifyKeysUnderNode(MerkleTree merkleTree, int nodeOrder, Integer... expectedKeys) {
-        KeyCatcherConsumer consumerNode = new KeyCatcherConsumer();
-        merkleTree.forEachKeyOfNode(nodeOrder, consumerNode);
-        assertEquals(expectedKeys.length, consumerNode.keys.size());
-        assertTrue(consumerNode.keys.containsAll(asList(expectedKeys)));
-    }
-
-    private static class KeyCatcherConsumer implements Consumer<Object> {
-        private Set<Object> keys = new HashSet<Object>();
-
-        @Override
-        public void accept(Object key) {
-            keys.add(key);
-        }
-    }
-
 }

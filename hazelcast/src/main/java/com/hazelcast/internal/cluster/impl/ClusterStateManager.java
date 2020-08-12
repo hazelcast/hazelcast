@@ -16,27 +16,27 @@
 
 package com.hazelcast.internal.cluster.impl;
 
+import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.cluster.Member;
-import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.cluster.impl.MemberImpl;
+import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.cluster.impl.operations.LockClusterStateOp;
 import com.hazelcast.internal.partition.InternalPartitionService;
+import com.hazelcast.internal.util.ExceptionUtil;
+import com.hazelcast.internal.util.FutureUtil;
 import com.hazelcast.internal.util.LockGuard;
+import com.hazelcast.internal.util.Preconditions;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.cluster.Address;
-import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionOptions;
 import com.hazelcast.transaction.TransactionOptions.TransactionType;
 import com.hazelcast.transaction.impl.Transaction;
 import com.hazelcast.transaction.impl.TransactionManagerServiceImpl;
-import com.hazelcast.internal.util.ExceptionUtil;
-import com.hazelcast.internal.util.FutureUtil;
-import com.hazelcast.internal.util.Preconditions;
 import com.hazelcast.version.Version;
 
 import javax.annotation.Nonnull;
@@ -239,7 +239,7 @@ public class ClusterStateManager {
     }
 
     private void lockOrExtendClusterState(Address initiator, UUID txnId, long leaseTime) {
-        Preconditions.checkPositive(leaseTime, "Lease time should be positive!");
+        Preconditions.checkPositive("leaseTime", leaseTime);
 
         LockGuard currentLock = getStateLock();
         if (!currentLock.allowsLock(txnId)) {

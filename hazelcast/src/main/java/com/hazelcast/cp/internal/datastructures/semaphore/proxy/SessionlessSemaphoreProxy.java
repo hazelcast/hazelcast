@@ -101,7 +101,7 @@ public class SessionlessSemaphoreProxy extends SessionAwareProxy implements ISem
 
     @Override
     public boolean tryAcquire(int permits, long timeout, TimeUnit unit) {
-        checkPositive(permits, "Permits must be positive!");
+        checkPositive("permits", permits);
         long clusterWideThreadId = getOrCreateUniqueThreadId();
         long timeoutMs = max(0, unit.toMillis(timeout));
         RaftOp op = new AcquirePermitsOp(objectName, NO_SESSION_ID, clusterWideThreadId, newUnsecureUUID(), permits, timeoutMs);

@@ -314,7 +314,7 @@ public class MultiMapProxyImpl<K, V>
     public void lock(@Nonnull K key, long leaseTime, @Nonnull TimeUnit timeUnit) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         checkNotNull(timeUnit, "Null timeUnit is not allowed!");
-        checkPositive(leaseTime, "leaseTime should be positive");
+        checkPositive("leaseTime", leaseTime);
 
         NodeEngine nodeEngine = getNodeEngine();
         Data dataKey = nodeEngine.toData(key);

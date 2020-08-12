@@ -15,6 +15,7 @@
  */
 package com.hazelcast.test;
 
+import com.hazelcast.auditlog.AuditlogService;
 import com.hazelcast.client.impl.ClientEngineImpl;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.collection.ISet;
@@ -95,6 +96,10 @@ public class Accessors {
 
     public static MetricsRegistry getMetricsRegistry(HazelcastInstance hz) {
         return getNodeEngineImpl(hz).getMetricsRegistry();
+    }
+
+    public static AuditlogService getAuditlogService(HazelcastInstance hz) {
+        return getNode(hz).getNodeExtension().getAuditlogService();
     }
 
     public static Address getAddress(HazelcastInstance hz) {

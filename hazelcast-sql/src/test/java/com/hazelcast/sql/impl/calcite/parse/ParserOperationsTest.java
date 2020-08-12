@@ -144,6 +144,16 @@ public class ParserOperationsTest {
         );
     }
 
+    @Test
+    public void testMalformedExpression() {
+        checkFailure("select 1 + from t", "Was expecting one of");
+    }
+
+    @Test
+    public void testUnsupportedFunction() {
+        checkFailure("select sin(0) from t", "SIN is not supported");
+    }
+
     private static void checkSuccess(String sql) {
         createContext().parse(sql);
     }
@@ -156,7 +166,7 @@ public class ParserOperationsTest {
         } catch (QueryException e) {
             assertEquals(SqlErrorCode.PARSING, e.getCode());
 
-            assertTrue(e.getCause().getMessage(), e.getCause().getMessage().endsWith(message));
+            assertTrue(e.getCause().getMessage(), e.getCause().getMessage().contains(message));
         }
     }
 

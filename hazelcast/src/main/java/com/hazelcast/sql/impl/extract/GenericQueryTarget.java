@@ -96,7 +96,7 @@ public class GenericQueryTarget implements QueryTarget, GenericTargetAccessor {
         Object result = serializationService.toObject(rawTarget0);
 
         // Check if the deserialized result could be useful for subsequent field access
-        boolean cacheDeserialized = target == null && !rawTarget0.isPortable();
+        boolean cacheDeserialized = target == null && !rawTarget0.isPortable() && !rawTarget0.isJson();
 
         if (cacheDeserialized) {
             target = result;

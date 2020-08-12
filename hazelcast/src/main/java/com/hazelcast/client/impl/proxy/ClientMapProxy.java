@@ -691,7 +691,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
     @Override
     public void lock(@Nonnull K key, long leaseTime, @Nullable TimeUnit timeUnit) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
-        checkPositive(leaseTime, "leaseTime should be positive");
+        checkPositive("leaseTime", leaseTime);
         lockInternal(key, timeInMsOrTimeIfNullUnit(leaseTime, timeUnit));
     }
 

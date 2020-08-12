@@ -43,7 +43,8 @@ public class BounceMemberRuleTest {
     private String mapName = randomMapName();
 
     @Rule
-    public BounceMemberRule bounceMemberRule = BounceMemberRule.with(new Config()).clusterSize(3).build();
+    public BounceMemberRule bounceMemberRule = BounceMemberRule.with(new Config()).clusterSize(3)
+            .driverType(BounceTestConfiguration.DriverType.MEMBER).build();
 
     @Before
     public void setup() {

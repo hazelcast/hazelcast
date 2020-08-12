@@ -22,6 +22,7 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.SlowTest;
 import com.hazelcast.test.bounce.BounceMemberRule;
+import com.hazelcast.test.bounce.BounceTestConfiguration;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -46,6 +47,7 @@ public class MapPutAllWithBouncingMemberTest extends HazelcastTestSupport {
     @Rule
     public BounceMemberRule bounceMemberRule =
             BounceMemberRule.with(getConfig())
+                    .driverType(BounceTestConfiguration.DriverType.MEMBER)
                     .clusterSize(2)
                     .build();
 

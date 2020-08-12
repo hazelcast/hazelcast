@@ -42,7 +42,10 @@ public enum JavaVersion implements JavaMajorVersion {
     JAVA_11(11),
     JAVA_12(12),
     JAVA_13(13),
-    JAVA_14(14);
+    JAVA_14(14),
+    JAVA_15(15),
+    JAVA_16(16)
+    ;
 
     private static final JavaMajorVersion CURRENT_VERSION = detectCurrentVersion();
 
@@ -151,6 +154,10 @@ public enum JavaVersion implements JavaMajorVersion {
         public int getMajorVersion() {
             return majorVersion;
         }
+    }
+
+    public static void main(String[] args) {
+        System.out.println(CURRENT_VERSION.getMajorVersion());
     }
 }
 

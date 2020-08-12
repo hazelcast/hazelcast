@@ -26,6 +26,7 @@ import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.SlowTest;
 import com.hazelcast.test.bounce.BounceMemberRule;
+import com.hazelcast.test.bounce.BounceTestConfiguration;
 import com.hazelcast.test.jitter.JitterRule;
 import org.junit.After;
 import org.junit.Before;
@@ -52,7 +53,8 @@ public class ClientPutAllRemoveBounceTest extends HazelcastTestSupport {
     private static final int CONCURRENCY = 1;
 
     @Rule
-    public BounceMemberRule bounceMemberRule = BounceMemberRule.with(getConfig()).clusterSize(4).driverCount(4).build();
+    public BounceMemberRule bounceMemberRule = BounceMemberRule.with(getConfig()).clusterSize(4).driverCount(4)
+            .driverType(BounceTestConfiguration.DriverType.CLIENT).build();
 
     @Rule
     public JitterRule jitterRule = new JitterRule();

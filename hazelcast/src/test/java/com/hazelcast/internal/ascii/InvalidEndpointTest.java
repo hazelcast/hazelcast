@@ -46,6 +46,7 @@ import java.util.concurrent.ExecutionException;
 import static com.hazelcast.instance.EndpointQualifier.MEMCACHE;
 import static com.hazelcast.instance.EndpointQualifier.REST;
 import static com.hazelcast.test.HazelcastTestSupport.ignore;
+import static com.hazelcast.test.MemcacheTestUtil.shutdownQuietly;
 import static org.junit.Assert.fail;
 
 @RunWith(HazelcastSerialClassRunner.class)
@@ -114,7 +115,7 @@ public class InvalidEndpointTest {
             ignore(e);
         }
 
-        client.shutdown();
+        shutdownQuietly(client);
     }
 
     protected Config createRestEndpointConfig() {

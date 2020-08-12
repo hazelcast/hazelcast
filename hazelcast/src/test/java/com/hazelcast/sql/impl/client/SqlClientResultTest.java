@@ -20,6 +20,8 @@ import com.hazelcast.internal.json.TestUtil.RunnableEx;
 import com.hazelcast.sql.SqlColumnMetadata;
 import com.hazelcast.sql.SqlColumnType;
 import com.hazelcast.sql.SqlRowMetadata;
+import com.hazelcast.sql.impl.QueryId;
+import com.hazelcast.sql.impl.state.QueryState;
 import org.junit.Test;
 
 import static com.hazelcast.test.HazelcastTestSupport.assertInstanceOf;

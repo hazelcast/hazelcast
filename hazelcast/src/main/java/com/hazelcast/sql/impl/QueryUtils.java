@@ -110,7 +110,7 @@ public final class QueryUtils {
                 break;
 
             case INT:
-                type = SqlColumnType.INT;
+                type = SqlColumnType.INTEGER;
 
                 break;
 
@@ -152,6 +152,10 @@ public final class QueryUtils {
             case TIMESTAMP_WITH_TIME_ZONE:
                 type = SqlColumnType.TIMESTAMP_WITH_TIME_ZONE;
 
+                break;
+
+            case NULL:
+                type = SqlColumnType.NULL;
                 break;
 
             default:

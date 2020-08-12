@@ -16,11 +16,15 @@
 
 package com.hazelcast.sql.impl.calcite.schema;
 
+import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeSystem;
 import org.apache.calcite.config.CalciteConnectionConfig;
 import org.apache.calcite.jdbc.CalciteSchema;
 import org.apache.calcite.prepare.CalciteCatalogReader;
 import org.apache.calcite.prepare.Prepare;
+import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeFactory;
+import org.apache.calcite.sql.SqlIdentifier;
+import org.apache.calcite.sql.type.SqlTypeName;
 import org.apache.calcite.sql.validate.SqlNameMatchers;
 
 import java.util.List;
@@ -61,4 +65,14 @@ public class HazelcastCalciteCatalogReader extends CalciteCatalogReader {
         // Wrap it into our own table.
         return new HazelcastRelOptTable(table);
     }
+
+    @Override
+    public RelDataType getNamedType(SqlIdentifier typeName) {
+        if (HazelcastTypeSystem.isObject(typeName)) {
+            return typeFactory.createSqlType(SqlTypeName.ANY);
+        }
+
+        return super.getNamedType(typeName);
+    }
+
 }

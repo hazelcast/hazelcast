@@ -37,27 +37,27 @@ import java.time.OffsetDateTime;
  */
 @SuppressWarnings("checkstyle:MethodCount")
 public abstract class Converter {
-    protected static final int ID_LATE = 0;
-    protected static final int ID_BOOLEAN = 1;
-    protected static final int ID_BYTE = 2;
-    protected static final int ID_SHORT = 3;
-    protected static final int ID_INTEGER = 4;
-    protected static final int ID_LONG = 5;
-    protected static final int ID_BIG_INTEGER = 6;
-    protected static final int ID_BIG_DECIMAL = 7;
-    protected static final int ID_FLOAT = 8;
-    protected static final int ID_DOUBLE = 9;
-    protected static final int ID_CHARACTER = 10;
-    protected static final int ID_STRING = 11;
-    protected static final int ID_DATE = 12;
-    protected static final int ID_CALENDAR = 13;
-    protected static final int ID_LOCAL_DATE = 14;
-    protected static final int ID_LOCAL_TIME = 15;
-    protected static final int ID_LOCAL_DATE_TIME = 16;
-    protected static final int ID_INSTANT = 17;
-    protected static final int ID_OFFSET_DATE_TIME = 18;
-    protected static final int ID_ZONED_DATE_TIME = 19;
-    protected static final int ID_OBJECT = 20;
+    protected static final int ID_BOOLEAN = 0;
+    protected static final int ID_BYTE = 1;
+    protected static final int ID_SHORT = 2;
+    protected static final int ID_INTEGER = 3;
+    protected static final int ID_LONG = 4;
+    protected static final int ID_BIG_INTEGER = 5;
+    protected static final int ID_BIG_DECIMAL = 6;
+    protected static final int ID_FLOAT = 7;
+    protected static final int ID_DOUBLE = 8;
+    protected static final int ID_CHARACTER = 9;
+    protected static final int ID_STRING = 10;
+    protected static final int ID_DATE = 11;
+    protected static final int ID_CALENDAR = 12;
+    protected static final int ID_LOCAL_DATE = 13;
+    protected static final int ID_LOCAL_TIME = 14;
+    protected static final int ID_LOCAL_DATE_TIME = 15;
+    protected static final int ID_INSTANT = 16;
+    protected static final int ID_OFFSET_DATE_TIME = 17;
+    protected static final int ID_ZONED_DATE_TIME = 18;
+    protected static final int ID_OBJECT = 19;
+    protected static final int ID_NULL = 20;
 
     private final int id;
     private final QueryDataTypeFamily typeFamily;
@@ -125,67 +125,67 @@ public abstract class Converter {
 
     @NotConvertible
     public boolean asBoolean(Object val) {
-        throw cannotConvert(QueryDataTypeFamily.BOOLEAN);
+        throw cannotConvert(QueryDataTypeFamily.BOOLEAN, val);
     }
 
     @NotConvertible
     public byte asTinyint(Object val) {
-        throw cannotConvert(QueryDataTypeFamily.TINYINT);
+        throw cannotConvert(QueryDataTypeFamily.TINYINT, val);
     }
 
     @NotConvertible
     public short asSmallint(Object val) {
-        throw cannotConvert(QueryDataTypeFamily.SMALLINT);
+        throw cannotConvert(QueryDataTypeFamily.SMALLINT, val);
     }
 
     @NotConvertible
     public int asInt(Object val) {
-        throw cannotConvert(QueryDataTypeFamily.INT);
+        throw cannotConvert(QueryDataTypeFamily.INT, val);
     }
 
     @NotConvertible
     public long asBigint(Object val) {
-        throw cannotConvert(QueryDataTypeFamily.BIGINT);
+        throw cannotConvert(QueryDataTypeFamily.BIGINT, val);
     }
 
     @NotConvertible
     public BigDecimal asDecimal(Object val) {
-        throw cannotConvert(QueryDataTypeFamily.DECIMAL);
+        throw cannotConvert(QueryDataTypeFamily.DECIMAL, val);
     }
 
     @NotConvertible
     public float asReal(Object val) {
-        throw cannotConvert(QueryDataTypeFamily.REAL);
+        throw cannotConvert(QueryDataTypeFamily.REAL, val);
     }
 
     @NotConvertible
     public double asDouble(Object val) {
-        throw cannotConvert(QueryDataTypeFamily.DOUBLE);
+        throw cannotConvert(QueryDataTypeFamily.DOUBLE, val);
     }
 
     @NotConvertible
     public String asVarchar(Object val) {
-        throw cannotConvert(QueryDataTypeFamily.VARCHAR);
+        throw cannotConvert(QueryDataTypeFamily.VARCHAR, val);
     }
 
     @NotConvertible
     public LocalDate asDate(Object val) {
-        throw cannotConvert(QueryDataTypeFamily.DATE);
+        throw cannotConvert(QueryDataTypeFamily.DATE, val);
     }
 
     @NotConvertible
     public LocalTime asTime(Object val) {
-        throw cannotConvert(QueryDataTypeFamily.TIME);
+        throw cannotConvert(QueryDataTypeFamily.TIME, val);
     }
 
     @NotConvertible
     public LocalDateTime asTimestamp(Object val) {
-        throw cannotConvert(QueryDataTypeFamily.TIMESTAMP);
+        throw cannotConvert(QueryDataTypeFamily.TIMESTAMP, val);
     }
 
     @NotConvertible
     public OffsetDateTime asTimestampWithTimezone(Object val) {
-        throw cannotConvert(QueryDataTypeFamily.TIMESTAMP_WITH_TIME_ZONE);
+        throw cannotConvert(QueryDataTypeFamily.TIMESTAMP_WITH_TIME_ZONE, val);
     }
 
     public Object asObject(Object val) {
@@ -300,10 +300,6 @@ public abstract class Converter {
 
     public abstract Object convertToSelf(Converter converter, Object val);
 
-    protected final QueryException cannotConvert(QueryDataTypeFamily target) {
-        return cannotConvert(target, null);
-    }
-
     protected final QueryException cannotConvert(QueryDataTypeFamily target, Object val) {
         return cannotConvert(typeFamily, target, val);
     }
@@ -311,8 +307,22 @@ public abstract class Converter {
     protected final QueryException cannotConvert(QueryDataTypeFamily source, QueryDataTypeFamily target, Object val) {
         String message = "Cannot convert " + source + " to " + target;
 
-        if (val != null) {
-            message += ": " + val;
+        if (source == QueryDataTypeFamily.OBJECT && val != null) {
+            message += ": " + val.getClass().getName();
+        }
+
+        return QueryException.error(SqlErrorCode.DATA_EXCEPTION, message);
+    }
+
+    protected final QueryException numericOverflow(QueryDataTypeFamily target, Object val) {
+        return numericOverflow(typeFamily, target, val);
+    }
+
+    protected final QueryException numericOverflow(QueryDataTypeFamily source, QueryDataTypeFamily target, Object val) {
+        String message = "Numeric overflow while converting " + source + " to " + target;
+
+        if (source == QueryDataTypeFamily.OBJECT && val != null) {
+            message += ": " + val.getClass().getName();
         }
 
         return QueryException.error(SqlErrorCode.DATA_EXCEPTION, message);

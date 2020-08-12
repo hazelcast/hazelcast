@@ -18,9 +18,12 @@ package com.hazelcast.sql.impl.calcite;
 
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
+import org.apache.calcite.rel.type.RelDataType;
+import org.apache.calcite.rel.type.RelDataTypeField;
 import org.apache.calcite.sql.type.SqlTypeName;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -69,6 +72,9 @@ public final class SqlToQueryType {
 
         HZ_TO_CALCITE.put(QueryDataTypeFamily.OBJECT, SqlTypeName.ANY);
         CALCITE_TO_HZ.put(SqlTypeName.ANY, QueryDataType.OBJECT);
+
+        HZ_TO_CALCITE.put(QueryDataTypeFamily.NULL, SqlTypeName.NULL);
+        CALCITE_TO_HZ.put(SqlTypeName.NULL, QueryDataType.NULL);
     }
 
     private SqlToQueryType() {
@@ -85,5 +91,15 @@ public final class SqlToQueryType {
             throw new IllegalArgumentException("unexpected SQL type: " + sqlTypeName);
         }
         return queryDataType;
+    }
+
+     public static QueryDataType[] mapRowType(RelDataType rowType) {
+        List<RelDataTypeField> fields = rowType.getFieldList();
+
+        QueryDataType[] mappedRowType = new QueryDataType[fields.size()];
+        for (int i = 0; i < fields.size(); ++i) {
+            mappedRowType[i] = SqlToQueryType.map(fields.get(i).getType().getSqlTypeName());
+        }
+        return mappedRowType;
     }
 }

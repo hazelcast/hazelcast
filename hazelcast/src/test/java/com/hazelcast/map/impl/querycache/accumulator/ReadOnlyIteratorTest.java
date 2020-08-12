@@ -42,6 +42,7 @@ public class ReadOnlyIteratorTest {
     @Before
     public void setUp() {
         CyclicBuffer<Sequenced> buffer = new DefaultCyclicBuffer<Sequenced>(1);
+        sequenced.setSequence(1);
         buffer.add(sequenced);
 
         iterator = new ReadOnlyIterator<Sequenced>(buffer);
