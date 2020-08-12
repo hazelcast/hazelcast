@@ -293,7 +293,7 @@ public class SqlServiceImpl implements SqlService, Consumer<Packet> {
     }
 
     private static List<TableResolver> createTableResolvers(NodeEngine nodeEngine) {
-        List<TableResolver> res = new ArrayList<>(3);
+        List<TableResolver> res = new ArrayList<>();
 
         res.add(new PartitionedMapTableResolver(nodeEngine));
 
