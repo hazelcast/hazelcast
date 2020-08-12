@@ -20,8 +20,29 @@ package com.hazelcast.sql.impl.exec.scan;
  * Iterator over key/value pairs.
  */
 public interface KeyValueIterator {
+    /**
+     * Advances the iterator to the next available record.
+     * <p>
+     * If the method has returned {@code true}, the key and the value could be accessed through
+     * {@link #getKey()} and {@link #getValue()} respectively.
+     *
+     * @return {@code} t
+     */
     boolean tryAdvance();
+
+    /**
+     *
+     * @return {@code true} if there are no more entries
+     */
     boolean done();
+
+    /**
+     * @return current key
+     */
     Object getKey();
+
+    /**
+     * @return current value
+     */
     Object getValue();
 }
