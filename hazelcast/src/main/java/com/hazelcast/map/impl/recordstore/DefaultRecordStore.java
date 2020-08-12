@@ -834,8 +834,8 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             newValue = persistenceEnabledFor(provenance)
                     ? mapDataStore.add(key, newValue, record.getExpirationTime(), now, null) : newValue;
             onStore(record);
-            mutationObserver.onUpdateRecord(key, record, oldValue, newValue, false);
             storage.updateRecordValue(key, record, newValue);
+            mutationObserver.onUpdateRecord(key, record, oldValue, newValue, false);
         }
 
         return newValue != null;
@@ -1270,10 +1270,10 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
 
     @Override
     public void reset() {
+        mutationObserver.onReset();
         mapDataStore.reset();
         storage.clear(false);
         stats.reset();
-        mutationObserver.onReset();
     }
 
     @Override
@@ -1327,8 +1327,8 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     }
 
     private void clearStorage(boolean isDuringShutdown) {
-        storage.clear(isDuringShutdown);
         mutationObserver.onClear();
+        storage.clear(isDuringShutdown);
     }
 
     private void clearLockStore() {

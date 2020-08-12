@@ -24,6 +24,7 @@ import java.util.Collection;
 import java.util.LinkedList;
 
 import static com.hazelcast.internal.util.CollectionUtil.isEmpty;
+import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 
 class CompositeMutationObserver<R extends Record> implements MutationObserver<R> {
 
@@ -81,8 +82,20 @@ class CompositeMutationObserver<R extends Record> implements MutationObserver<R>
             return;
         }
 
+        Throwable exception = null;
+
         for (MutationObserver<R> mutationObserver : mutationObservers) {
-            mutationObserver.onUpdateRecord(key, record, oldValue, newValue, backup);
+            try {
+                mutationObserver.onUpdateRecord(key, record, oldValue, newValue, backup);
+            } catch (Throwable t) {
+                if (exception == null) {
+                    exception = t;
+                }
+            }
+        }
+
+        if (exception != null) {
+            rethrow(exception);
         }
     }
 

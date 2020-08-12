@@ -40,6 +40,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static com.hazelcast.config.InMemoryFormat.NATIVE;
+import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 /**
@@ -272,8 +273,19 @@ public class Indexes {
      */
     public void putEntry(QueryableEntry queryableEntry, Object oldValue, Index.OperationSource operationSource) {
         InternalIndex[] indexes = getIndexes();
+        Throwable exception = null;
         for (InternalIndex index : indexes) {
-            index.putEntry(queryableEntry, oldValue, operationSource);
+            try {
+                index.putEntry(queryableEntry, oldValue, operationSource);
+            } catch (Throwable t) {
+                if (exception == null) {
+                    exception = t;
+                }
+            }
+        }
+
+        if (exception != null) {
+            rethrow(exception);
         }
     }
 
