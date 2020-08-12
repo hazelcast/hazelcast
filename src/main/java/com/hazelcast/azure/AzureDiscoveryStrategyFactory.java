@@ -69,7 +69,8 @@ public class AzureDiscoveryStrategyFactory implements DiscoveryStrategyFactory {
      * address http://169.254.169.254/metadata/instance.
      *
      * @return true if running on Azure Instance
-     * @see https://docs.microsoft.com/en-us/azure/virtual-machines/linux/instance-metadata-service#metadata-apis
+     * @see <a href=https://docs.microsoft.com/en-us/azure/virtual-machines/linux/instance-metadata-service#metadata-apis>Azure
+     * Instance Metadata API</a>
      */
     @Override
     public boolean isAutoDetectionApplicable() {
