@@ -18,9 +18,6 @@ package com.hazelcast.sql.impl;
 
 import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.sql.impl.plan.cache.CachedPlanInvalidationCallback;
-import com.hazelcast.sql.impl.plan.cache.PlanCacheChecker;
-import com.hazelcast.sql.impl.state.QueryClientStateRegistry;
 import com.hazelcast.sql.SqlErrorCode;
 import com.hazelcast.sql.impl.exec.io.flowcontrol.FlowControlFactory;
 import com.hazelcast.sql.impl.exec.io.flowcontrol.simple.SimpleFlowControlFactory;
@@ -29,6 +26,8 @@ import com.hazelcast.sql.impl.operation.QueryExecuteOperation;
 import com.hazelcast.sql.impl.operation.QueryExecuteOperationFactory;
 import com.hazelcast.sql.impl.operation.QueryOperationHandlerImpl;
 import com.hazelcast.sql.impl.plan.Plan;
+import com.hazelcast.sql.impl.plan.cache.CachedPlanInvalidationCallback;
+import com.hazelcast.sql.impl.plan.cache.PlanCacheChecker;
 import com.hazelcast.sql.impl.state.QueryClientStateRegistry;
 import com.hazelcast.sql.impl.state.QueryState;
 import com.hazelcast.sql.impl.state.QueryStateRegistry;

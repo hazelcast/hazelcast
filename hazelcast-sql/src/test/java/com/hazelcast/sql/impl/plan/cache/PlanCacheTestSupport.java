@@ -18,6 +18,7 @@ package com.hazelcast.sql.impl.plan.cache;
 
 import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
+import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.SqlTestSupport;
 import com.hazelcast.sql.impl.plan.Plan;
 
@@ -69,6 +70,7 @@ public class PlanCacheTestSupport extends SqlTestSupport {
             null,
             null,
             null,
+            QueryParameterMetadata.EMPTY,
             key,
             objectIds0
         );

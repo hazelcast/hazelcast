@@ -20,8 +20,6 @@ import com.hazelcast.internal.json.TestUtil.RunnableEx;
 import com.hazelcast.sql.SqlColumnMetadata;
 import com.hazelcast.sql.SqlColumnType;
 import com.hazelcast.sql.SqlRowMetadata;
-import com.hazelcast.sql.impl.QueryId;
-import com.hazelcast.sql.impl.state.QueryState;
 import org.junit.Test;
 
 import static com.hazelcast.test.HazelcastTestSupport.assertInstanceOf;
@@ -35,7 +33,7 @@ import static org.junit.Assert.fail;
 public class SqlClientResultTest {
     @Test
     public void test_rowsResult() {
-        SqlRowMetadata metadata = new SqlRowMetadata(singletonList(new SqlColumnMetadata("n", SqlColumnType.INT)));
+        SqlRowMetadata metadata = new SqlRowMetadata(singletonList(new SqlColumnMetadata("n", SqlColumnType.INTEGER)));
 
         SqlClientResult r = new SqlClientResult(false, null, null, null, metadata, emptyList(), true, 10, 0);
 

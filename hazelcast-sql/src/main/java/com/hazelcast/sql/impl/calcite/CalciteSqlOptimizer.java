@@ -18,8 +18,8 @@ package com.hazelcast.sql.impl.calcite;
 
 import com.hazelcast.cluster.memberselector.MemberSelectors;
 import com.hazelcast.spi.impl.NodeEngine;
-import com.hazelcast.sql.impl.QueryUtils;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
+import com.hazelcast.sql.impl.QueryUtils;
 import com.hazelcast.sql.impl.calcite.opt.HazelcastConventions;
 import com.hazelcast.sql.impl.calcite.opt.OptUtils;
 import com.hazelcast.sql.impl.calcite.opt.logical.LogicalRules;
@@ -34,14 +34,12 @@ import com.hazelcast.sql.impl.optimizer.OptimizationTask;
 import com.hazelcast.sql.impl.optimizer.SqlOptimizer;
 import com.hazelcast.sql.impl.optimizer.SqlPlan;
 import com.hazelcast.sql.impl.plan.cache.PlanCacheKey;
-import com.hazelcast.sql.impl.plan.Plan;
-import com.hazelcast.sql.impl.schema.TableResolver;
-import com.hazelcast.sql.impl.schema.map.PartitionedMapTableResolver;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.calcite.plan.Convention;
 import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.plan.volcano.VolcanoPlanner;
 import org.apache.calcite.rel.RelNode;
+import org.apache.calcite.rel.type.RelDataType;
 
 import java.util.List;
 import java.util.Map;
@@ -140,6 +138,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         return createImdgPlan(
             task.getSearchPaths(),
             task.getSql(),
+            parseResult.getParameterRowType(),
             physicalRel,
             convertResult.getFieldNames()
         );
@@ -169,6 +168,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
     private SqlPlan createImdgPlan(
         List<List<String>> searchPaths,
         String sql,
+        RelDataType parameterRowType,
         PhysicalRel rel,
         List<String> rootColumnNames
     ) {
