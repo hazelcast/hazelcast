@@ -15,7 +15,6 @@
 
 package com.hazelcast.azure;
 
-import com.hazelcast.core.HazelcastException;
 import com.hazelcast.internal.json.Json;
 
 /**
@@ -47,7 +46,7 @@ class AzureAuthenticator {
             String accessTokenJson = callService(urlFor(tenantId), body(clientId, clientSecret));
             return extractAccessToken(accessTokenJson);
         } catch (Exception e) {
-            throw new HazelcastException("Error while fetching access token from Azure API", e);
+            throw new NoCredentialsException("Error while fetching access token from Azure API using client-secret", e);
         }
     }
 

@@ -31,6 +31,7 @@ class AzureMetadataApi {
     static final String API_VERSION = "2018-02-01";
     static final String RESOURCE = "https://management.azure.com";
     private static final String METADATA_ENDPOINT = "http://169.254.169.254";
+    private static final int HTTP_BAD_REQUEST = 400;
 
     private final String endpoint;
     private final Map<String, String> metadata;
@@ -91,11 +92,16 @@ class AzureMetadataApi {
     }
 
     String accessToken() {
-        String urlString = String.format("%s/metadata/identity/oauth2/token?api-version=%s&resource=%s", endpoint,
-                API_VERSION, RESOURCE);
-        String accessTokenResponse = callGet(urlString);
-        return extractAccessToken(accessTokenResponse);
+        try {
+            String urlString = String.format("%s/metadata/identity/oauth2/token?api-version=%s&resource=%s", endpoint,
+                    API_VERSION, RESOURCE);
+            String accessTokenResponse = callGet(urlString);
+            return extractAccessToken(accessTokenResponse);
+        } catch (Exception e) {
+                throw new NoCredentialsException("Error while fetching access token from Azure API using managed identity.", e);
+        }
     }
+
 
     private String callGet(String urlString) {
         return RestClient.create(urlString)

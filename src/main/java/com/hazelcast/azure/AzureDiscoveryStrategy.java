@@ -51,9 +51,13 @@ public class AzureDiscoveryStrategy extends AbstractDiscoveryStrategy {
 
     private static final ILogger LOGGER = Logger.getLogger(AzureDiscoveryStrategy.class);
 
+    private static final int HTTP_FORBIDDEN = 403;
+
     private final AzureClient azureClient;
     private final PortRange portRange;
     private final Map<String, String> memberMetadata = new HashMap<String, String>();
+
+    private boolean isKnownExceptionAlreadyLogged;
 
     AzureDiscoveryStrategy(Map<String, Comparable> properties) {
         super(LOGGER, properties);
@@ -147,10 +151,29 @@ public class AzureDiscoveryStrategy extends AbstractDiscoveryStrategy {
                 }
             }
             return result;
-        } catch (Exception e) {
-            LOGGER.warning("Cannot discover nodes, returning empty list", e);
-            return Collections.emptyList();
+        } catch (NoCredentialsException e) {
+            if (!isKnownExceptionAlreadyLogged) {
+                LOGGER.warning("No Azure credentials found! Starting standalone. To use Hazelcast Azure discovery, configure"
+                        + " properties (client-id, tenant-id, client-secret) or assign a managed identity to the Azure Compute"
+                        + " instance");
+                LOGGER.finest(e);
+                isKnownExceptionAlreadyLogged = true;
+            }
+        } catch (RestClientException e) {
+            if (e.getHttpErrorCode() == HTTP_FORBIDDEN) {
+                if (!isKnownExceptionAlreadyLogged) {
+                    LOGGER.warning("Required role is not assigned to service principal! To use Hazelcast Azure discovery assign"
+                           + " a role to service principal with correct 'Read' permissions. Starting standalone.");
+                    isKnownExceptionAlreadyLogged = true;
+                }
+                LOGGER.finest(e);
+            } else {
+                LOGGER.warning("Cannot discover nodes. Starting standalone.", e);
+            }
+        }  catch (Exception e) {
+            LOGGER.warning("Cannot discover nodes. Starting standalone.", e);
         }
+        return Collections.emptyList();
     }
 
     private static void logAzureAddresses(Collection<AzureAddress> azureAddresses) {

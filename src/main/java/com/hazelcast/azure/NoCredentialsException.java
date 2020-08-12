@@ -16,21 +16,11 @@
 package com.hazelcast.azure;
 
 /**
- * Exception to indicate any issues while executing a REST call.
+ * Exception to indicate that no credentials are possible to retrieve.
  */
-class RestClientException extends RuntimeException {
-    private int httpErrorCode;
-
-    RestClientException(String message, int httpErrorCode) {
-        super(String.format("%s. HTTP Error Code: %s", message, httpErrorCode));
-        this.httpErrorCode = httpErrorCode;
-    }
-
-    RestClientException(String message, Throwable cause) {
+class NoCredentialsException extends RuntimeException {
+    NoCredentialsException(String message, Throwable cause) {
         super(message, cause);
     }
 
-    int getHttpErrorCode() {
-        return httpErrorCode;
-    }
 }
