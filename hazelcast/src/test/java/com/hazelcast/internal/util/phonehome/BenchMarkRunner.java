@@ -26,13 +26,12 @@ public class BenchMarkRunner {
     public static void main(String[] args) throws RunnerException {
 
         Options opt = new OptionsBuilder()
-                .include(PhoneHomeBenchMark.class.getSimpleName())
+                .include(PhoneHomeBenchmark.class.getName())
                 .warmupIterations(5)
                 .measurementIterations(5)
                 .timeUnit(TimeUnit.MILLISECONDS)
                 .forks(1)
                 .build();
         new Runner(opt).run();
-
     }
 }

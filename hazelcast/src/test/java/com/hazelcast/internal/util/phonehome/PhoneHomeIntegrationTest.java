@@ -78,7 +78,7 @@ public class PhoneHomeIntegrationTest extends HazelcastTestSupport {
         IMap<String, String> map1 = node.hazelcastInstance.getMap("hazelcast");
         IMap<String, String> map2 = node.hazelcastInstance.getMap("phonehome");
         node.getConfig().getMapConfig("hazelcast").setReadBackupData(true);
-        node.getConfig().getMapConfig("phonehome").getMapStoreConfig().setClassName(getClass().getName()).setEnabled(true);
+        node.getConfig().getMapConfig("phonehome").getMapStoreConfig().setClassName(DelayMapStore.class.getName()).setEnabled(true);
         node.getConfig().getMapConfig("hazelcast").addQueryCacheConfig(new QueryCacheConfig("queryconfig"));
         node.getConfig().getMapConfig("hazelcast").getHotRestartConfig().setEnabled(true);
         node.getConfig().getMapConfig("hazelcast").getIndexConfigs().add(new IndexConfig().setName("index"));

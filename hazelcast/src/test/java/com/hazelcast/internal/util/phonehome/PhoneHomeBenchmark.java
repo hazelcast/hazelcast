@@ -44,7 +44,7 @@ import static com.hazelcast.cache.CacheTestSupport.createServerCachingProvider;
 import static com.hazelcast.test.Accessors.getNode;
 
 @State(Scope.Benchmark)
-public class PhoneHomeBenchMark extends HazelcastTestSupport {
+public class PhoneHomeBenchmark extends HazelcastTestSupport {
 
     private PhoneHome phoneHome;
     private Node node;
@@ -57,8 +57,7 @@ public class PhoneHomeBenchMark extends HazelcastTestSupport {
         CachingProvider cachingProvider = createServerCachingProvider(hz);
         CacheManager cacheManager = cachingProvider.getCacheManager();
 
-        for (int i = 1; i <= 10000; i++) {
-            hz.getMap("maps" + i);
+        for (int i = 1; i <= 5000; i++) {
             hz.getSet("set" + i);
             hz.getQueue("queue" + i);
             hz.getMultiMap("multimap" + i);
@@ -72,35 +71,36 @@ public class PhoneHomeBenchMark extends HazelcastTestSupport {
             cacheManager.createCache("cache" + i, new CacheConfig<>("cache" + i));
         }
 
-        for (int i = 1; i <= 100000; i++) {
+        for (int i = 1; i <= 10000; i++) {
             IMap<Object, Object> iMap = hz.getMap("map" + i);
             MapConfig config = node.getConfig().getMapConfig("map" + i);
 
             if (i % 10 == 0) {
-                config.getMapStoreConfig().setClassName(getClass().getName()).setEnabled(true);
+                iMap.put(i, "hazelcast");
+                config.getMapStoreConfig().setClassName(DelayMapStore.class.getName()).setEnabled(true);
             }
             if (i % 101 == 0) {
                 config.setReadBackupData(true);
             }
-            if (i % 191 == 0) {
+            if (i % 19 == 0) {
                 config.addQueryCacheConfig(new QueryCacheConfig("queryCache" + i));
             }
             if (i % 291 == 0) {
                 config.addIndexConfig(new IndexConfig().setName("indexConfig" + i));
             }
-            if (i % 593 == 0) {
+            if (i % 59 == 0) {
                 config.setWanReplicationRef(new WanReplicationRef().setName("wan" + i));
             }
             if (i % 101 == 0) {
                 config.setHotRestartConfig(new HotRestartConfig().setEnabled(true));
             }
-            if (i % 891 == 0) {
+            if (i % 89 == 0) {
                 config.setEvictionConfig(new EvictionConfig().setEvictionPolicy(EvictionPolicy.LRU));
             }
-            if (i % 991 == 0) {
+            if (i % 91 == 0) {
                 config.setInMemoryFormat(InMemoryFormat.NATIVE);
             }
-            if (i % 569 == 0) {
+            if (i % 69 == 0) {
                 config.getAttributeConfigs().add(new AttributeConfig("attribute" + i, AttributeExtractor.class.getName()));
             }
         }
