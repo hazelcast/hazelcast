@@ -241,7 +241,6 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
         for (Node queueNode : childElements(node)) {
             QueueConfig queueConfig = new QueueConfig();
             queueConfig.setName(queueNode.getNodeName());
-            handlePriorityQueueConfig(queueNode, queueConfig);
             handleQueueNode(queueNode, queueConfig);
         }
     }

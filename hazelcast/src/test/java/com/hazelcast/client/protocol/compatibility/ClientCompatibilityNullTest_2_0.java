@@ -5751,7 +5751,7 @@ public class ClientCompatibilityNullTest_2_0 {
     @Test
     public void test_DynamicConfigAddQueueConfigCodec_encodeRequest() {
         int fileClientMessageIndex = 727;
-        ClientMessage encoded = DynamicConfigAddQueueConfigCodec.encodeRequest(aString, aString, null, aBoolean, null, anInt, anInt, anInt, anInt, aBoolean, null, null, aString, anInt);
+        ClientMessage encoded = DynamicConfigAddQueueConfigCodec.encodeRequest(aString, null, null, anInt, anInt, anInt, anInt, aBoolean, null, null, aString, anInt);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }

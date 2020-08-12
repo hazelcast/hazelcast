@@ -179,8 +179,8 @@ public class ClientDynamicClusterConfig extends Config {
         QueueStoreConfigHolder queueStoreConfigHolder = QueueStoreConfigHolder.of(queueConfig.getQueueStoreConfig(),
                 serializationService);
         ClientMessage request = DynamicConfigAddQueueConfigCodec.encodeRequest(queueConfig.getName(),
-                queueConfig.getQueueType().name(), queueConfig.getComparatorClassName(),
-                queueConfig.isDuplicateAllowed(), listenerConfigs, queueConfig.getBackupCount(),
+                queueConfig.getPriorityComparatorClassName(),
+                listenerConfigs, queueConfig.getBackupCount(),
                 queueConfig.getAsyncBackupCount(), queueConfig.getMaxSize(), queueConfig.getEmptyQueueTtl(),
                 queueConfig.isStatisticsEnabled(), queueConfig.getSplitBrainProtectionName(),
                 queueStoreConfigHolder, queueConfig.getMergePolicyConfig().getPolicy(),

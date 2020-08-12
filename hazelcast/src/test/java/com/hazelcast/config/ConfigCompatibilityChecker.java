@@ -416,8 +416,7 @@ public class ConfigCompatibilityChecker {
                     && ConfigCompatibilityChecker.isCompatible(c1.getMergePolicyConfig(), c2.getMergePolicyConfig())
                     && nullSafeEqual(c1.isStatisticsEnabled(), c2.isStatisticsEnabled())
                     && nullSafeEqual(c1.getSplitBrainProtectionName(), c2.getSplitBrainProtectionName())
-                    && nullSafeEqual(c1.getComparatorClassName(), c2.getComparatorClassName())
-                    && nullSafeEqual(c1.isDuplicateAllowed(), c2.isDuplicateAllowed());
+                    && nullSafeEqual(c1.getPriorityComparatorClassName(), c2.getPriorityComparatorClassName());
         }
 
         private static boolean isCompatible(QueueStoreConfig c1, QueueStoreConfig c2) {

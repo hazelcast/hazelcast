@@ -38,14 +38,13 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * If a queue configuration with the given {@code name} already exists, then
  * the new configuration is ignored and the existing one is preserved.
  */
-@Generated("8647810a98abfeac26b25969c1ff1cf5")
+@Generated("5303f474c2074688797c45f3de9ce0ad")
 public final class DynamicConfigAddQueueConfigCodec {
     //hex: 0x1B0B00
     public static final int REQUEST_MESSAGE_TYPE = 1772288;
     //hex: 0x1B0B01
     public static final int RESPONSE_MESSAGE_TYPE = 1772289;
-    private static final int REQUEST_DUPLICATE_ALLOWED_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int REQUEST_BACKUP_COUNT_FIELD_OFFSET = REQUEST_DUPLICATE_ALLOWED_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
+    private static final int REQUEST_BACKUP_COUNT_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_ASYNC_BACKUP_COUNT_FIELD_OFFSET = REQUEST_BACKUP_COUNT_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_MAX_SIZE_FIELD_OFFSET = REQUEST_ASYNC_BACKUP_COUNT_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_EMPTY_QUEUE_TTL_FIELD_OFFSET = REQUEST_MAX_SIZE_FIELD_OFFSET + INT_SIZE_IN_BYTES;
@@ -66,19 +65,9 @@ public final class DynamicConfigAddQueueConfigCodec {
         public java.lang.String name;
 
         /**
-         * data type used to store entries. Valid values are {@code LINKED_LIST} and {@code PRIORITY_QUEUE}.
-         */
-        public java.lang.String queueType;
-
-        /**
          * Class name of the configured {@link java.util.Comparator} implementation.
          */
-        public @Nullable java.lang.String comparatorClassName;
-
-        /**
-         * {@code true} if duplicate items are allowed in this queue, otherwise {@code false}
-         */
-        public boolean duplicateAllowed;
+        public @Nullable java.lang.String priorityComparatorClassName;
 
         /**
          * item listeners configuration
@@ -133,14 +122,13 @@ public final class DynamicConfigAddQueueConfigCodec {
         public int mergeBatchSize;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String name, java.lang.String queueType, @Nullable java.lang.String comparatorClassName, boolean duplicateAllowed, @Nullable java.util.Collection<com.hazelcast.client.impl.protocol.task.dynamicconfig.ListenerConfigHolder> listenerConfigs, int backupCount, int asyncBackupCount, int maxSize, int emptyQueueTtl, boolean statisticsEnabled, @Nullable java.lang.String splitBrainProtectionName, @Nullable com.hazelcast.client.impl.protocol.task.dynamicconfig.QueueStoreConfigHolder queueStoreConfig, java.lang.String mergePolicy, int mergeBatchSize) {
+    public static ClientMessage encodeRequest(java.lang.String name, @Nullable java.lang.String priorityComparatorClassName, @Nullable java.util.Collection<com.hazelcast.client.impl.protocol.task.dynamicconfig.ListenerConfigHolder> listenerConfigs, int backupCount, int asyncBackupCount, int maxSize, int emptyQueueTtl, boolean statisticsEnabled, @Nullable java.lang.String splitBrainProtectionName, @Nullable com.hazelcast.client.impl.protocol.task.dynamicconfig.QueueStoreConfigHolder queueStoreConfig, java.lang.String mergePolicy, int mergeBatchSize) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
         clientMessage.setOperationName("DynamicConfig.AddQueueConfig");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
         encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
-        encodeBoolean(initialFrame.content, REQUEST_DUPLICATE_ALLOWED_FIELD_OFFSET, duplicateAllowed);
         encodeInt(initialFrame.content, REQUEST_BACKUP_COUNT_FIELD_OFFSET, backupCount);
         encodeInt(initialFrame.content, REQUEST_ASYNC_BACKUP_COUNT_FIELD_OFFSET, asyncBackupCount);
         encodeInt(initialFrame.content, REQUEST_MAX_SIZE_FIELD_OFFSET, maxSize);
@@ -149,8 +137,7 @@ public final class DynamicConfigAddQueueConfigCodec {
         encodeInt(initialFrame.content, REQUEST_MERGE_BATCH_SIZE_FIELD_OFFSET, mergeBatchSize);
         clientMessage.add(initialFrame);
         StringCodec.encode(clientMessage, name);
-        StringCodec.encode(clientMessage, queueType);
-        CodecUtil.encodeNullable(clientMessage, comparatorClassName, StringCodec::encode);
+        CodecUtil.encodeNullable(clientMessage, priorityComparatorClassName, StringCodec::encode);
         ListMultiFrameCodec.encodeNullable(clientMessage, listenerConfigs, ListenerConfigHolderCodec::encode);
         CodecUtil.encodeNullable(clientMessage, splitBrainProtectionName, StringCodec::encode);
         CodecUtil.encodeNullable(clientMessage, queueStoreConfig, QueueStoreConfigHolderCodec::encode);
@@ -162,7 +149,6 @@ public final class DynamicConfigAddQueueConfigCodec {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         RequestParameters request = new RequestParameters();
         ClientMessage.Frame initialFrame = iterator.next();
-        request.duplicateAllowed = decodeBoolean(initialFrame.content, REQUEST_DUPLICATE_ALLOWED_FIELD_OFFSET);
         request.backupCount = decodeInt(initialFrame.content, REQUEST_BACKUP_COUNT_FIELD_OFFSET);
         request.asyncBackupCount = decodeInt(initialFrame.content, REQUEST_ASYNC_BACKUP_COUNT_FIELD_OFFSET);
         request.maxSize = decodeInt(initialFrame.content, REQUEST_MAX_SIZE_FIELD_OFFSET);
@@ -170,8 +156,7 @@ public final class DynamicConfigAddQueueConfigCodec {
         request.statisticsEnabled = decodeBoolean(initialFrame.content, REQUEST_STATISTICS_ENABLED_FIELD_OFFSET);
         request.mergeBatchSize = decodeInt(initialFrame.content, REQUEST_MERGE_BATCH_SIZE_FIELD_OFFSET);
         request.name = StringCodec.decode(iterator);
-        request.queueType = StringCodec.decode(iterator);
-        request.comparatorClassName = CodecUtil.decodeNullable(iterator, StringCodec::decode);
+        request.priorityComparatorClassName = CodecUtil.decodeNullable(iterator, StringCodec::decode);
         request.listenerConfigs = ListMultiFrameCodec.decodeNullable(iterator, ListenerConfigHolderCodec::decode);
         request.splitBrainProtectionName = CodecUtil.decodeNullable(iterator, StringCodec::decode);
         request.queueStoreConfig = CodecUtil.decodeNullable(iterator, QueueStoreConfigHolderCodec::decode);

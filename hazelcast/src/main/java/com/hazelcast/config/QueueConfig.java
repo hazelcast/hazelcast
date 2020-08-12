@@ -22,17 +22,17 @@ import static com.hazelcast.internal.util.Preconditions.checkAsyncBackupCount;
 import static com.hazelcast.internal.util.Preconditions.checkBackupCount;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
-import com.hazelcast.collection.IQueue;
-import com.hazelcast.collection.impl.queue.QueueType;
-import com.hazelcast.internal.config.ConfigDataSerializerHook;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
+
+import com.hazelcast.collection.IQueue;
+import com.hazelcast.internal.config.ConfigDataSerializerHook;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 /**
  * Contains the configuration for an {@link IQueue}.
@@ -70,9 +70,7 @@ public class QueueConfig implements IdentifiedDataSerializable, NamedConfig {
     private boolean statisticsEnabled = true;
     private String splitBrainProtectionName;
     private MergePolicyConfig mergePolicyConfig = new MergePolicyConfig();
-    private String comparatorClassName;
-    private boolean duplicateAllowed = true;
-    private QueueType queueType = QueueType.LINKED_LIST;
+    private String priorityComparatorClassName;
 
     public QueueConfig() {
     }
@@ -93,9 +91,7 @@ public class QueueConfig implements IdentifiedDataSerializable, NamedConfig {
         this.mergePolicyConfig = config.mergePolicyConfig;
         this.queueStoreConfig = config.queueStoreConfig != null ? new QueueStoreConfig(config.queueStoreConfig) : null;
         this.listenerConfigs = new ArrayList<>(config.getItemListenerConfigs());
-        this.comparatorClassName = config.comparatorClassName;
-        this.duplicateAllowed = config.duplicateAllowed;
-        this.queueType = config.getQueueType();
+        this.priorityComparatorClassName = config.priorityComparatorClassName;
     }
 
     /**
@@ -336,7 +332,7 @@ public class QueueConfig implements IdentifiedDataSerializable, NamedConfig {
      * @return {@code true} if priority queue has been configured, {@code false} otherwise
      */
     public boolean isPriorityQueue() {
-        return getQueueType().isPriorityQueue();
+        return priorityComparatorClassName != null && priorityComparatorClassName.length() > 0;
     }
 
     /**
@@ -344,59 +340,18 @@ public class QueueConfig implements IdentifiedDataSerializable, NamedConfig {
      *
      * @return the class name of the configured {@link Comparator} implementation
      */
-    public String getComparatorClassName() {
-        return comparatorClassName;
+    public String getPriorityComparatorClassName() {
+        return priorityComparatorClassName;
     }
 
     /**
      * Sets the class name of the configured {@link Comparator} implementation.
      *
-     * @param comparatorClassName the class name of the configured {@link Comparator} implementation
+     * @param priorityComparatorClassName the class name of the configured {@link Comparator} implementation
      * @return this QueueConfig instance
      */
-    public QueueConfig setComparatorClassName(String comparatorClassName) {
-        this.comparatorClassName = comparatorClassName;
-        return this;
-    }
-
-    /**
-     * Check if duplicates are allowed for this queue.
-     *
-     * @return {@code true} if duplicates are allowed, {@code false} otherwise
-     */
-    public boolean isDuplicateAllowed() {
-        return duplicateAllowed;
-    }
-
-    /**
-     * Allows or forbids duplicates for this queue.
-     *
-     * @param duplicateAllowed {@code true} to allow duplicates for this queue, {@code false} to forbid
-     * @return the updated QueueConfig
-     */
-    public QueueConfig setDuplicateAllowed(boolean duplicateAllowed) {
-        this.duplicateAllowed = duplicateAllowed;
-        return this;
-    }
-
-    /**
-     * Get concrete queue implementation type.
-     */
-    public QueueType getQueueType() {
-        if (comparatorClassName != null || !duplicateAllowed) {
-            return QueueType.PRIORITY_QUEUE;
-        }
-        return queueType;
-    }
-
-    /**
-     * Set concrete queue implementation type.
-     *
-     * @param queueType concrete queue implementation type
-     * @return the updated QueueConfig
-     */
-    public QueueConfig setQueueType(QueueType queueType) {
-        this.queueType = queueType;
+    public QueueConfig setPriorityComparatorClassName(String priorityComparatorClassName) {
+        this.priorityComparatorClassName = priorityComparatorClassName;
         return this;
     }
 
@@ -412,9 +367,7 @@ public class QueueConfig implements IdentifiedDataSerializable, NamedConfig {
                 + ", queueStoreConfig=" + queueStoreConfig
                 + ", statisticsEnabled=" + statisticsEnabled
                 + ", mergePolicyConfig=" + mergePolicyConfig
-                + ", queueType=" + getQueueType()
-                + ", comparatorClassName=" + comparatorClassName
-                + ", duplicateAllowed=" + duplicateAllowed
+                + ", priorityComparatorClassName=" + priorityComparatorClassName
                 + '}';
     }
 
@@ -440,9 +393,7 @@ public class QueueConfig implements IdentifiedDataSerializable, NamedConfig {
         out.writeBoolean(statisticsEnabled);
         out.writeUTF(splitBrainProtectionName);
         out.writeObject(mergePolicyConfig);
-        out.writeObject(getQueueType());
-        out.writeUTF(comparatorClassName);
-        out.writeBoolean(duplicateAllowed);
+        out.writeUTF(priorityComparatorClassName);
     }
 
     @Override
@@ -457,9 +408,7 @@ public class QueueConfig implements IdentifiedDataSerializable, NamedConfig {
         statisticsEnabled = in.readBoolean();
         splitBrainProtectionName = in.readUTF();
         mergePolicyConfig = in.readObject();
-        queueType = in.readObject();
-        comparatorClassName = in.readUTF();
-        duplicateAllowed = in.readBoolean();
+        priorityComparatorClassName = in.readUTF();
     }
 
     @Override
@@ -503,19 +452,13 @@ public class QueueConfig implements IdentifiedDataSerializable, NamedConfig {
         if (!Objects.equals(mergePolicyConfig, that.mergePolicyConfig)) {
             return false;
         }
-        if (!Objects.equals(getQueueType(), that.getQueueType())) {
-            return false;
-        }
-        if (!Objects.equals(comparatorClassName, that.comparatorClassName)) {
-            return false;
-        }
-        return Objects.equals(duplicateAllowed, that.duplicateAllowed);
+        return Objects.equals(priorityComparatorClassName, that.priorityComparatorClassName);
     }
 
     @Override
     public final int hashCode() {
         return Objects.hash(name, getItemListenerConfigs(), backupCount, asyncBackupCount, getMaxSize(), emptyQueueTtl,
-                queueStoreConfig, statisticsEnabled, splitBrainProtectionName, mergePolicyConfig, getQueueType(),
-                comparatorClassName, duplicateAllowed);
+                queueStoreConfig, statisticsEnabled, splitBrainProtectionName, mergePolicyConfig,
+                priorityComparatorClassName);
     }
 }

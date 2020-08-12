@@ -1279,8 +1279,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
 
         QueueConfig expectedConfig = new QueueConfig()
                 .setName("testQueue")
-                .setComparatorClassName("com.hazelcast.config.QueueTestComparator")
-                .setDuplicateAllowed(false)
+                .setPriorityComparatorClassName("com.hazelcast.config.QueueTestComparator")
                 .setMaxSize(10)
                 .setStatisticsEnabled(true)
                 .setBackupCount(2)

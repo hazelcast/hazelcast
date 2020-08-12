@@ -89,7 +89,6 @@ public class TestBeansApplicationContext extends HazelcastTestSupport {
         assertFalse(config.getMapConfig("map1").isStatisticsEnabled());
         assertEquals(64, config.getNativeMemoryConfig().getSize().getValue());
         QueueConfig testQueue = config.getQueueConfig("testQueue");
-        assertNotNull("Comparator may have not been null", testQueue.getComparatorClassName());
-        assertEquals(false, testQueue.isDuplicateAllowed());
+        assertNotNull("Comparator may have not been null", testQueue.getPriorityComparatorClassName());
     }
 }

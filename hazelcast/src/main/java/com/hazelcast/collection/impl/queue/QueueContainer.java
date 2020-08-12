@@ -949,10 +949,7 @@ public class QueueContainer implements IdentifiedDataSerializable {
             Comparator comparator = getPriorityQueueComparator(config, config.getClass().getClassLoader());
             ForwardingQueueItemComparator<?> forwardingQueueItemComparator = new ForwardingQueueItemComparator<>(comparator,
                     nodeEngine.getSerializationService());
-            if (config.isDuplicateAllowed()) {
-                return new PriorityQueue<>(forwardingQueueItemComparator);
-            }
-            return new NoDuplicatePriorityQueue(forwardingQueueItemComparator);
+            return new PriorityQueue<>(forwardingQueueItemComparator);
         }
     }
 
@@ -967,7 +964,7 @@ public class QueueContainer implements IdentifiedDataSerializable {
      */
     private static Comparator getPriorityQueueComparator(QueueConfig queueConfig,
             ClassLoader classLoader) {
-        String priorityQueueComparatorClassName = queueConfig.getComparatorClassName();
+        String priorityQueueComparatorClassName = queueConfig.getPriorityComparatorClassName();
         if (!isNullOrEmpty(priorityQueueComparatorClassName)) {
             try {
                 return ClassLoaderUtil.newInstance(classLoader, priorityQueueComparatorClassName);
