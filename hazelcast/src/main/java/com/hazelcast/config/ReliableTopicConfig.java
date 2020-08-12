@@ -31,10 +31,10 @@ import java.util.concurrent.Executor;
 
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.readNullableList;
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.writeNullableList;
-import static com.hazelcast.topic.TopicOverloadPolicy.BLOCK;
 import static com.hazelcast.internal.util.Preconditions.checkHasText;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.Preconditions.checkPositive;
+import static com.hazelcast.topic.TopicOverloadPolicy.BLOCK;
 
 /**
  * Configuration for a reliable {@link ITopic}.
@@ -229,7 +229,7 @@ public class ReliableTopicConfig implements IdentifiedDataSerializable, NamedCon
      * @throws IllegalArgumentException if the {@code readBatchSize} is smaller than 1
      */
     public ReliableTopicConfig setReadBatchSize(int readBatchSize) {
-        this.readBatchSize = checkPositive(readBatchSize, "readBatchSize should be positive");
+        this.readBatchSize = checkPositive("readBatchSize", readBatchSize);
         return this;
     }
 

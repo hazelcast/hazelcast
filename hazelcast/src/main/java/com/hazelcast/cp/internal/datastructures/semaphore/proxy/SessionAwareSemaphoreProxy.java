@@ -33,9 +33,9 @@ import com.hazelcast.cp.internal.datastructures.spi.operation.DestroyRaftObjectO
 import com.hazelcast.cp.internal.session.ProxySessionManagerService;
 import com.hazelcast.cp.internal.session.SessionAwareProxy;
 import com.hazelcast.cp.internal.session.SessionExpiredException;
+import com.hazelcast.internal.util.Clock;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.NodeEngine;
-import com.hazelcast.internal.util.Clock;
 
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
@@ -89,7 +89,7 @@ public class SessionAwareSemaphoreProxy extends SessionAwareProxy implements ISe
         checkPositive(permits, "Permits must be positive!");
         long threadId = getThreadId();
         UUID invocationUid = newUnsecureUUID();
-        for (;;) {
+        for (; ; ) {
             long sessionId = acquireSession(permits);
             RaftOp op = new AcquirePermitsOp(objectName, sessionId, threadId, invocationUid, permits, -1L);
             try {
@@ -122,12 +122,12 @@ public class SessionAwareSemaphoreProxy extends SessionAwareProxy implements ISe
 
     @Override
     public boolean tryAcquire(int permits, long timeout, TimeUnit unit) {
-        checkPositive(permits, "Permits must be positive!");
+        checkPositive("permits", permits);
         long timeoutMs = max(0, unit.toMillis(timeout));
         long threadId = getThreadId();
         UUID invocationUid = newUnsecureUUID();
         long start;
-        for (;;) {
+        for (; ; ) {
             start = Clock.currentTimeMillis();
             long sessionId = acquireSession(permits);
             RaftOp op = new AcquirePermitsOp(objectName, sessionId, threadId, invocationUid, permits, timeoutMs);
@@ -186,7 +186,7 @@ public class SessionAwareSemaphoreProxy extends SessionAwareProxy implements ISe
     public int drainPermits() {
         long threadId = getThreadId();
         UUID invocationUid = newUnsecureUUID();
-        for (;;) {
+        for (; ; ) {
             long sessionId = acquireSession(DRAIN_SESSION_ACQ_COUNT);
             RaftOp op = new DrainPermitsOp(objectName, sessionId, threadId, invocationUid);
             try {

@@ -16,6 +16,8 @@
 
 package com.hazelcast.map.impl.querycache.accumulator;
 
+import com.hazelcast.internal.partition.IPartition;
+import com.hazelcast.internal.partition.IPartitionService;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.querycache.QueryCacheContext;
@@ -31,8 +33,6 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.PartitionAwareOperation;
-import com.hazelcast.internal.partition.IPartition;
-import com.hazelcast.internal.partition.IPartitionService;
 
 import java.util.Queue;
 import java.util.concurrent.TimeUnit;
@@ -53,7 +53,7 @@ public class ConsumeAccumulatorOperation extends Operation
     }
 
     public ConsumeAccumulatorOperation(Queue<Accumulator> accumulators, int maxProcessableAccumulatorCount) {
-        checkPositive(maxProcessableAccumulatorCount, "maxProcessableAccumulatorCount");
+        checkPositive("maxProcessableAccumulatorCount", maxProcessableAccumulatorCount);
 
         this.accumulators = accumulators;
         this.maxProcessableAccumulatorCount = maxProcessableAccumulatorCount;

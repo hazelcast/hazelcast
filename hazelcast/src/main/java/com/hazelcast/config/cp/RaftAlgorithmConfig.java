@@ -157,8 +157,7 @@ public class RaftAlgorithmConfig {
     }
 
     public RaftAlgorithmConfig setLeaderElectionTimeoutInMillis(long leaderElectionTimeoutInMillis) {
-        checkPositive(leaderElectionTimeoutInMillis, "leader election timeout in millis: "
-                + leaderElectionTimeoutInMillis + " must be positive!");
+        checkPositive("leaderElectionTimeoutInMillis", leaderElectionTimeoutInMillis);
         this.leaderElectionTimeoutInMillis = leaderElectionTimeoutInMillis;
         return this;
     }
@@ -168,8 +167,7 @@ public class RaftAlgorithmConfig {
     }
 
     public RaftAlgorithmConfig setLeaderHeartbeatPeriodInMillis(long leaderHeartbeatPeriodInMillis) {
-        checkPositive(leaderHeartbeatPeriodInMillis, "leader heartbeat period in millis: "
-                + leaderHeartbeatPeriodInMillis + " must be positive!");
+        checkPositive("leaderHeartbeatPeriodInMillis", leaderHeartbeatPeriodInMillis);
         this.leaderHeartbeatPeriodInMillis = leaderHeartbeatPeriodInMillis;
         return this;
     }
@@ -222,7 +220,7 @@ public class RaftAlgorithmConfig {
     }
 
     public RaftAlgorithmConfig setAppendRequestBackoffTimeoutInMillis(long appendRequestBackoffTimeoutInMillis) {
-        checkPositive(appendRequestBackoffTimeoutInMillis, "append request backoff timeout must be positive!");
+        checkPositive("appendRequestBackoffTimeoutInMillis", appendRequestBackoffTimeoutInMillis);
         this.appendRequestBackoffTimeoutInMillis = appendRequestBackoffTimeoutInMillis;
         return this;
     }

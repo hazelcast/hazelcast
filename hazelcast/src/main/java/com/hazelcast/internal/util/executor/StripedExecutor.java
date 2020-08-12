@@ -70,8 +70,8 @@ public final class StripedExecutor implements Executor {
                            int threadCount,
                            int queueCapacity,
                            boolean lazyThreads) {
-        checkPositive(threadCount, "threadCount should be positive but found " + threadCount);
-        checkPositive(queueCapacity, "queueCapacity should be positive but found " + queueCapacity);
+        checkPositive("threadCount", threadCount);
+        checkPositive("queueCapacity", queueCapacity);
 
         this.logger = logger;
         this.size = threadCount;

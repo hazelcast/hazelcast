@@ -16,18 +16,18 @@
 
 package com.hazelcast.internal.cluster.impl;
 
+import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Cluster;
 import com.hazelcast.cluster.ClusterState;
-import com.hazelcast.internal.util.UUIDSerializationUtil;
 import com.hazelcast.internal.cluster.impl.operations.CommitClusterStateOp;
 import com.hazelcast.internal.cluster.impl.operations.LockClusterStateOp;
 import com.hazelcast.internal.cluster.impl.operations.RollbackClusterStateOp;
-import com.hazelcast.cluster.Address;
+import com.hazelcast.internal.util.Preconditions;
+import com.hazelcast.internal.util.UUIDSerializationUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.transaction.impl.TargetAwareTransactionLogRecord;
-import com.hazelcast.internal.util.Preconditions;
 
 import java.io.IOException;
 import java.util.UUID;
@@ -60,7 +60,7 @@ public class ClusterStateTransactionLogRecord implements TargetAwareTransactionL
         Preconditions.checkNotNull(initiator);
         Preconditions.checkNotNull(target);
         Preconditions.checkNotNull(txnId);
-        Preconditions.checkPositive(leaseTime, "Lease time should be positive!");
+        Preconditions.checkPositive("leaseTime", leaseTime);
 
         this.stateChange = stateChange;
         this.initiator = initiator;

@@ -416,7 +416,7 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
     public void lock(@Nonnull K key, long leaseTime, @Nonnull TimeUnit timeUnit) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         checkNotNull(timeUnit, "Null timeUnit is not allowed!");
-        checkPositive(leaseTime, "leaseTime should be positive");
+        checkPositive("leaseTime", leaseTime);
 
         final Data keyData = toData(key);
         ClientMessage request = MultiMapLockCodec
