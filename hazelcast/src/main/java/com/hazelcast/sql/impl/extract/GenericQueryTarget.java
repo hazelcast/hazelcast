@@ -53,7 +53,7 @@ public class GenericQueryTarget implements QueryTarget, GenericTargetAccessor {
     }
 
     @Override
-    public Object getTarget() {
+    public Object getTargetForFieldAccess() {
         if (target == null) {
             // General rule: Portable must be Data, other objects must be deserialized.
             if (rawTarget instanceof Data) {
@@ -76,6 +76,34 @@ public class GenericQueryTarget implements QueryTarget, GenericTargetAccessor {
         }
 
         return target;
+    }
+
+    @Override
+    public Object getTargetDeserialized() {
+        if (!(rawTarget instanceof Data)) {
+            // Raw target is already deserialized, use it
+            return rawTarget;
+        }
+
+        // Try using field target if possible
+        if (target != null && !(target instanceof Data)) {
+            return target;
+        }
+
+        // Raw target is Data, field target is not initialized, deserialize
+        Data rawTarget0 = (Data) rawTarget;
+
+        Object result = serializationService.toObject(rawTarget0);
+
+        // Check if the deserialized result could be useful for subsequent field access
+        boolean cacheDeserialized = target == null && !rawTarget0.isPortable() && !rawTarget0.isJson();
+
+        if (cacheDeserialized) {
+            target = result;
+        }
+
+        // Done
+        return result;
     }
 
     public boolean isKey() {

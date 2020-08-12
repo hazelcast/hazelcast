@@ -17,29 +17,36 @@
 package com.hazelcast.sql.impl.expression;
 
 import com.hazelcast.sql.impl.SqlDataSerializerHook;
-import com.hazelcast.sql.impl.SqlTestSupport;
 import com.hazelcast.sql.impl.row.HeapRow;
-import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.apache.calcite.rel.type.RelDataType;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import static groovy.util.GroovyTestCase.assertEquals;
+import static com.hazelcast.sql.impl.type.QueryDataType.BIGINT;
+import static com.hazelcast.sql.impl.type.QueryDataType.INT;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertSame;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class ColumnExpressionTest extends SqlTestSupport {
+public class ColumnTest extends ExpressionTestBase {
+
     @Test
-    public void testColumnExpression() {
+    public void verify() {
+        verify(IDENTITY, ColumnTest::expectedTypes, ColumnTest::expectedValues, "%s", COLUMNS);
+    }
+
+    @Test
+    public void testCreationAndEval() {
         int index = 1;
 
-        ColumnExpression<?> expression = ColumnExpression.create(index, QueryDataType.INT);
+        ColumnExpression<?> expression = ColumnExpression.create(index, INT);
 
-        assertEquals(QueryDataType.INT, expression.getType());
+        assertEquals(INT, expression.getType());
 
         HeapRow row = HeapRow.of(new Object(), new Object(), new Object());
         assertSame(row.get(index), expression.eval(row, SimpleExpressionEvalContext.create()));
@@ -47,16 +54,28 @@ public class ColumnExpressionTest extends SqlTestSupport {
 
     @Test
     public void testEquality() {
-        checkEquals(ColumnExpression.create(1, QueryDataType.INT), ColumnExpression.create(1, QueryDataType.INT), true);
-        checkEquals(ColumnExpression.create(1, QueryDataType.INT), ColumnExpression.create(1, QueryDataType.BIGINT), false);
-        checkEquals(ColumnExpression.create(1, QueryDataType.INT), ColumnExpression.create(2, QueryDataType.INT), false);
+        checkEquals(ColumnExpression.create(1, INT), ColumnExpression.create(1, INT), true);
+        checkEquals(ColumnExpression.create(1, INT), ColumnExpression.create(1, BIGINT), false);
+        checkEquals(ColumnExpression.create(1, INT), ColumnExpression.create(2, INT), false);
     }
 
     @Test
     public void testSerialization() {
-        ColumnExpression<?> original = ColumnExpression.create(1, QueryDataType.INT);
+        ColumnExpression<?> original = ColumnExpression.create(1, INT);
         ColumnExpression<?> restored = serializeAndCheck(original, SqlDataSerializerHook.EXPRESSION_COLUMN);
 
         checkEquals(original, restored, true);
     }
+
+    private static RelDataType[] expectedTypes(Operand[] operands) {
+        Operand operand = operands[0];
+        RelDataType type = operand.type;
+
+        return new RelDataType[]{type, type};
+    }
+
+    private static Object expectedValues(Operand[] operands, RelDataType[] types, Object[] args) {
+        return args[0];
+    }
+
 }

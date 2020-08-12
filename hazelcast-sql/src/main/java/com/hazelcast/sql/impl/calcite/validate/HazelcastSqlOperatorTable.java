@@ -16,12 +16,254 @@
 
 package com.hazelcast.sql.impl.calcite.validate;
 
+import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastSqlBinaryOperator;
+import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastSqlCastFunction;
+import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastSqlMonotonicBinaryOperator;
+import com.hazelcast.sql.impl.calcite.validate.types.HazelcastInferTypes;
+import com.hazelcast.sql.impl.calcite.validate.types.HazelcastOperandTypes;
+import com.hazelcast.sql.impl.calcite.validate.types.HazelcastReturnTypes;
+import org.apache.calcite.sql.SqlBinaryOperator;
+import org.apache.calcite.sql.SqlFunction;
+import org.apache.calcite.sql.SqlKind;
+import org.apache.calcite.sql.SqlPostfixOperator;
+import org.apache.calcite.sql.SqlPrefixOperator;
+import org.apache.calcite.sql.fun.SqlStdOperatorTable;
+import org.apache.calcite.sql.type.InferTypes;
+import org.apache.calcite.sql.type.OperandTypes;
+import org.apache.calcite.sql.type.ReturnTypes;
 import org.apache.calcite.sql.util.ReflectiveSqlOperatorTable;
 
+import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastInferTypes.NULLABLE_OBJECT;
+import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastOperandTypes.notAllNull;
+import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastOperandTypes.notAny;
+
 /**
- * An additional functions that are resolved during query parsing/validation.
+ * Custom functions and operators.
  */
 public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable {
+
+    //@formatter:off
+
+    public static final SqlFunction CAST = new HazelcastSqlCastFunction();
+
+    //#region Predicates.
+
+    public static final SqlBinaryOperator AND = new HazelcastSqlBinaryOperator(
+        "AND",
+        SqlKind.AND,
+        SqlStdOperatorTable.AND.getLeftPrec(),
+        true,
+        ReturnTypes.BOOLEAN_NULLABLE,
+        InferTypes.BOOLEAN,
+        notAny(OperandTypes.BOOLEAN_BOOLEAN)
+    );
+
+    public static final SqlBinaryOperator OR = new HazelcastSqlBinaryOperator(
+        "OR",
+        SqlKind.OR,
+        SqlStdOperatorTable.OR.getLeftPrec(),
+        true,
+        ReturnTypes.BOOLEAN_NULLABLE,
+        InferTypes.BOOLEAN,
+        notAny(OperandTypes.BOOLEAN_BOOLEAN)
+    );
+
+    public static final SqlPrefixOperator NOT = new SqlPrefixOperator(
+        "NOT",
+        SqlKind.NOT,
+        SqlStdOperatorTable.NOT.getLeftPrec(),
+        ReturnTypes.ARG0,
+        InferTypes.BOOLEAN,
+        notAny(OperandTypes.BOOLEAN)
+    );
+
+    //#endregion
+
+    //#region Comparison operators.
+
+    public static final SqlBinaryOperator EQUALS = new SqlBinaryOperator(
+        "=",
+        SqlKind.EQUALS,
+        SqlStdOperatorTable.EQUALS.getLeftPrec(),
+        true,
+        ReturnTypes.BOOLEAN_NULLABLE,
+        HazelcastInferTypes.FIRST_KNOWN,
+        notAny(OperandTypes.COMPARABLE_UNORDERED_COMPARABLE_UNORDERED)
+    );
+
+    public static final SqlBinaryOperator NOT_EQUALS = new SqlBinaryOperator(
+        "<>",
+        SqlKind.NOT_EQUALS,
+        SqlStdOperatorTable.NOT_EQUALS.getLeftPrec(),
+        true,
+        ReturnTypes.BOOLEAN_NULLABLE,
+        HazelcastInferTypes.FIRST_KNOWN,
+        notAny(OperandTypes.COMPARABLE_UNORDERED_COMPARABLE_UNORDERED)
+    );
+
+    public static final SqlBinaryOperator GREATER_THAN = new SqlBinaryOperator(
+        ">",
+        SqlKind.GREATER_THAN,
+        SqlStdOperatorTable.GREATER_THAN.getLeftPrec(),
+        true,
+        ReturnTypes.BOOLEAN_NULLABLE,
+        HazelcastInferTypes.FIRST_KNOWN,
+        notAny(HazelcastOperandTypes.COMPARABLE_ORDERED_COMPARABLE_ORDERED)
+    );
+
+    public static final SqlBinaryOperator GREATER_THAN_OR_EQUAL = new SqlBinaryOperator(
+        ">=",
+        SqlKind.GREATER_THAN_OR_EQUAL,
+        SqlStdOperatorTable.GREATER_THAN_OR_EQUAL.getLeftPrec(),
+        true,
+        ReturnTypes.BOOLEAN_NULLABLE,
+        HazelcastInferTypes.FIRST_KNOWN,
+        notAny(HazelcastOperandTypes.COMPARABLE_ORDERED_COMPARABLE_ORDERED)
+    );
+
+    public static final SqlBinaryOperator LESS_THAN = new SqlBinaryOperator(
+        "<",
+        SqlKind.LESS_THAN,
+        SqlStdOperatorTable.LESS_THAN.getLeftPrec(),
+        true,
+        ReturnTypes.BOOLEAN_NULLABLE,
+        HazelcastInferTypes.FIRST_KNOWN,
+        notAny(HazelcastOperandTypes.COMPARABLE_ORDERED_COMPARABLE_ORDERED)
+    );
+
+    public static final SqlBinaryOperator LESS_THAN_OR_EQUAL = new SqlBinaryOperator(
+        "<=",
+        SqlKind.LESS_THAN_OR_EQUAL,
+        SqlStdOperatorTable.LESS_THAN_OR_EQUAL.getLeftPrec(),
+        true,
+        ReturnTypes.BOOLEAN_NULLABLE,
+        HazelcastInferTypes.FIRST_KNOWN,
+        notAny(HazelcastOperandTypes.COMPARABLE_ORDERED_COMPARABLE_ORDERED)
+    );
+
+    //#endregion
+
+    //#region Arithmetic operators.
+
+    public static final SqlBinaryOperator PLUS = new HazelcastSqlMonotonicBinaryOperator(
+        "+",
+        SqlKind.PLUS,
+        SqlStdOperatorTable.PLUS.getLeftPrec(),
+        true,
+        HazelcastReturnTypes.PLUS,
+        HazelcastInferTypes.FIRST_KNOWN,
+        notAllNull(notAny(OperandTypes.PLUS_OPERATOR))
+    );
+
+    public static final SqlBinaryOperator MINUS = new HazelcastSqlMonotonicBinaryOperator(
+        "-",
+        SqlKind.MINUS,
+        SqlStdOperatorTable.MINUS.getLeftPrec(),
+        true,
+        HazelcastReturnTypes.MINUS,
+        HazelcastInferTypes.FIRST_KNOWN,
+        notAllNull(notAny(OperandTypes.MINUS_OPERATOR))
+    );
+
+    public static final SqlBinaryOperator MULTIPLY = new HazelcastSqlMonotonicBinaryOperator(
+        "*",
+        SqlKind.TIMES,
+        SqlStdOperatorTable.MULTIPLY.getLeftPrec(),
+        true,
+        HazelcastReturnTypes.MULTIPLY,
+        HazelcastInferTypes.FIRST_KNOWN,
+        notAllNull(notAny(OperandTypes.MULTIPLY_OPERATOR))
+    );
+
+    public static final SqlBinaryOperator DIVIDE = new HazelcastSqlBinaryOperator(
+        "/",
+        SqlKind.DIVIDE,
+        SqlStdOperatorTable.DIVIDE.getLeftPrec(),
+        true,
+        HazelcastReturnTypes.DIVIDE,
+        HazelcastInferTypes.FIRST_KNOWN,
+        notAllNull(notAny(OperandTypes.DIVISION_OPERATOR))
+    );
+
+    public static final SqlPrefixOperator UNARY_PLUS = new SqlPrefixOperator(
+        "+",
+        SqlKind.PLUS_PREFIX,
+        SqlStdOperatorTable.UNARY_PLUS.getLeftPrec(),
+        ReturnTypes.ARG0,
+        InferTypes.RETURN_TYPE,
+        notAllNull(notAny(OperandTypes.NUMERIC_OR_INTERVAL))
+    );
+
+    public static final SqlPrefixOperator UNARY_MINUS = new SqlPrefixOperator(
+        "-",
+        SqlKind.MINUS_PREFIX,
+        SqlStdOperatorTable.UNARY_MINUS.getLeftPrec(),
+        HazelcastReturnTypes.UNARY_MINUS,
+        InferTypes.RETURN_TYPE,
+        notAllNull(notAny(OperandTypes.NUMERIC_OR_INTERVAL))
+    );
+
+    //#endregion
+
+    //#region "IS" family of predicates.
+
+    public static final SqlPostfixOperator IS_TRUE = new SqlPostfixOperator(
+        "IS TRUE",
+        SqlKind.IS_TRUE,
+        SqlStdOperatorTable.IS_TRUE.getLeftPrec(),
+        ReturnTypes.BOOLEAN_NOT_NULL,
+        InferTypes.BOOLEAN,
+        notAny(OperandTypes.BOOLEAN)
+    );
+
+    public static final SqlPostfixOperator IS_NOT_TRUE = new SqlPostfixOperator(
+        "IS NOT TRUE",
+        SqlKind.IS_NOT_TRUE,
+        SqlStdOperatorTable.IS_NOT_TRUE.getLeftPrec(),
+        ReturnTypes.BOOLEAN_NOT_NULL,
+        InferTypes.BOOLEAN,
+        notAny(OperandTypes.BOOLEAN)
+    );
+
+    public static final SqlPostfixOperator IS_FALSE = new SqlPostfixOperator(
+        "IS FALSE",
+        SqlKind.IS_FALSE,
+        SqlStdOperatorTable.IS_FALSE.getLeftPrec(),
+        ReturnTypes.BOOLEAN_NOT_NULL,
+        InferTypes.BOOLEAN,
+        notAny(OperandTypes.BOOLEAN)
+    );
+
+    public static final SqlPostfixOperator IS_NOT_FALSE = new SqlPostfixOperator(
+        "IS NOT FALSE",
+        SqlKind.IS_NOT_FALSE,
+        SqlStdOperatorTable.IS_NOT_FALSE.getLeftPrec(),
+        ReturnTypes.BOOLEAN_NOT_NULL,
+        InferTypes.BOOLEAN,
+        notAny(OperandTypes.BOOLEAN)
+    );
+
+    public static final SqlPostfixOperator IS_NULL = new SqlPostfixOperator(
+        "IS NULL",
+        SqlKind.IS_NULL,
+        SqlStdOperatorTable.IS_NULL.getLeftPrec(),
+        ReturnTypes.BOOLEAN_NOT_NULL,
+        NULLABLE_OBJECT,
+        OperandTypes.ANY
+    );
+
+    public static final SqlPostfixOperator IS_NOT_NULL = new SqlPostfixOperator(
+        "IS NOT NULL",
+        SqlKind.IS_NOT_NULL,
+        SqlStdOperatorTable.IS_NOT_NULL.getLeftPrec(),
+        ReturnTypes.BOOLEAN_NOT_NULL,
+        NULLABLE_OBJECT,
+        OperandTypes.ANY
+    );
+
+    //#endregion
+
+    //@formatter:on
 
     private static final HazelcastSqlOperatorTable INSTANCE = new HazelcastSqlOperatorTable();
 
@@ -37,5 +279,4 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
         return INSTANCE;
     }
 
-    // Empty at the moment, will be extended in the future.
 }

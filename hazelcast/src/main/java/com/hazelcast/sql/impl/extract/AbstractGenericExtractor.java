@@ -25,7 +25,7 @@ public abstract class AbstractGenericExtractor implements QueryExtractor {
 
     protected final boolean key;
     protected final QueryDataType type;
-    private final GenericTargetAccessor targetAccessor;
+    protected final GenericTargetAccessor targetAccessor;
 
     protected AbstractGenericExtractor(boolean key, GenericTargetAccessor targetAccessor, QueryDataType type) {
         this.key = key;
@@ -33,7 +33,4 @@ public abstract class AbstractGenericExtractor implements QueryExtractor {
         this.type = type;
     }
 
-    protected Object getTarget() {
-        return targetAccessor.getTarget();
-    }
 }

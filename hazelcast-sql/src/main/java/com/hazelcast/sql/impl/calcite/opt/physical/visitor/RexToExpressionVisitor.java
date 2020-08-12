@@ -16,8 +16,10 @@
 
 package com.hazelcast.sql.impl.calcite.opt.physical.visitor;
 
+import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.expression.ColumnExpression;
 import com.hazelcast.sql.impl.expression.Expression;
+import com.hazelcast.sql.impl.expression.ParameterExpression;
 import com.hazelcast.sql.impl.plan.node.PlanNodeFieldTypeProvider;
 import org.apache.calcite.rex.RexCall;
 import org.apache.calcite.rex.RexCorrelVariable;
@@ -44,9 +46,11 @@ public final class RexToExpressionVisitor implements RexVisitor<Expression<?>> {
     private static final Expression<?>[] EMPTY_EXPRESSION_OPERANDS = new Expression[0];
 
     private final PlanNodeFieldTypeProvider fieldTypeProvider;
+    private final QueryParameterMetadata parameterMetadata;
 
-    public RexToExpressionVisitor(PlanNodeFieldTypeProvider fieldTypeProvider) {
+    public RexToExpressionVisitor(PlanNodeFieldTypeProvider fieldTypeProvider, QueryParameterMetadata parameterMetadata) {
         this.fieldTypeProvider = fieldTypeProvider;
+        this.parameterMetadata = parameterMetadata;
     }
 
     @Override
@@ -62,7 +66,7 @@ public final class RexToExpressionVisitor implements RexVisitor<Expression<?>> {
 
     @Override
     public Expression<?> visitLiteral(RexLiteral literal) {
-        throw new UnsupportedOperationException();
+        return RexToExpression.convertLiteral(literal);
     }
 
     @Override
@@ -97,7 +101,8 @@ public final class RexToExpressionVisitor implements RexVisitor<Expression<?>> {
 
     @Override
     public Expression<?> visitDynamicParam(RexDynamicParam dynamicParam) {
-        throw new UnsupportedOperationException();
+        int index = dynamicParam.getIndex();
+        return ParameterExpression.create(index, parameterMetadata.getParameterType(index));
     }
 
     @Override

@@ -39,7 +39,7 @@ public class SqlColumnTypeTest {
         checkType(SqlColumnType.BOOLEAN, Boolean.class);
         checkType(SqlColumnType.TINYINT, Byte.class);
         checkType(SqlColumnType.SMALLINT, Short.class);
-        checkType(SqlColumnType.INT, Integer.class);
+        checkType(SqlColumnType.INTEGER, Integer.class);
         checkType(SqlColumnType.BIGINT, Long.class);
         checkType(SqlColumnType.REAL, Float.class);
         checkType(SqlColumnType.DOUBLE, Double.class);

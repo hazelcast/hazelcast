@@ -20,6 +20,8 @@ import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 
 import java.math.BigDecimal;
 
+import static com.hazelcast.sql.impl.expression.math.ExpressionMath.DECIMAL_MATH_CONTEXT;
+
 /**
  * Converter for {@link java.lang.Double} type.
  */
@@ -38,27 +40,79 @@ public final class DoubleConverter extends Converter {
 
     @Override
     public byte asTinyint(Object val) {
-        return (byte) cast(val);
+        double casted = cast(val);
+        if (!Double.isFinite(casted)) {
+            throw cannotConvert(QueryDataTypeFamily.TINYINT, val);
+        }
+
+        // here the overflow may happen: (byte) casted = (byte) (int) casted
+        byte converted = (byte) casted;
+
+        // casts from double to int are saturating
+        if (converted != (int) casted) {
+            throw numericOverflow(QueryDataTypeFamily.TINYINT, val);
+        }
+
+        return converted;
     }
 
     @Override
     public short asSmallint(Object val) {
-        return (short) cast(val);
+        double casted = cast(val);
+        if (!Double.isFinite(casted)) {
+            throw cannotConvert(QueryDataTypeFamily.SMALLINT, val);
+        }
+
+        // here the overflow may happen: (short) casted = (short) (int) casted
+        short converted = (short) casted;
+
+        // casts from double to int are saturating
+        if (converted != (int) casted) {
+            throw numericOverflow(QueryDataTypeFamily.SMALLINT, val);
+        }
+
+        return converted;
     }
 
     @Override
     public int asInt(Object val) {
-        return (int) cast(val);
+        double casted = cast(val);
+        if (!Double.isFinite(casted)) {
+            throw cannotConvert(QueryDataTypeFamily.INT, val);
+        }
+
+        int converted = (int) casted;
+
+        // casts from double to long are saturating
+        if (converted != (long) casted) {
+            throw numericOverflow(QueryDataTypeFamily.INT, val);
+        }
+
+        return converted;
     }
 
     @Override
     public long asBigint(Object val) {
-        return (long) cast(val);
+        double casted = cast(val);
+        if (!Double.isFinite(casted)) {
+            throw cannotConvert(QueryDataTypeFamily.BIGINT, val);
+        }
+
+        double truncated = casted > 0.0 ? Math.floor(casted) : Math.ceil(casted);
+        // casts from double to long are saturating
+        long converted = (long) truncated;
+
+        if ((double) converted != truncated) {
+            throw numericOverflow(QueryDataTypeFamily.BIGINT, val);
+        }
+
+        return converted;
     }
 
+    @SuppressWarnings("UnpredictableBigDecimalConstructorCall")
     @Override
     public BigDecimal asDecimal(Object val) {
-        return BigDecimal.valueOf(cast(val));
+        return new BigDecimal(cast(val), DECIMAL_MATH_CONTEXT);
     }
 
     @Override
@@ -84,4 +138,5 @@ public final class DoubleConverter extends Converter {
     private double cast(Object val) {
         return (double) val;
     }
+
 }
