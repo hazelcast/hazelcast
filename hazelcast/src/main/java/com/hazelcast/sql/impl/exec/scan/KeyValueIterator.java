@@ -26,7 +26,7 @@ public interface KeyValueIterator {
      * If the method has returned {@code true}, the key and the value could be accessed through
      * {@link #getKey()} and {@link #getValue()} respectively.
      *
-     * @return {@code} t
+     * @return {@code true} if the next record is available, {@code false} if no more records are available
      */
     boolean tryAdvance();
 
