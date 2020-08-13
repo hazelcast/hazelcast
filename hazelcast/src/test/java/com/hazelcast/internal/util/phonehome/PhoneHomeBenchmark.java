@@ -36,9 +36,15 @@ import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.TearDown;
+import org.openjdk.jmh.runner.Runner;
+import org.openjdk.jmh.runner.RunnerException;
+import org.openjdk.jmh.runner.options.Options;
+import org.openjdk.jmh.runner.options.OptionsBuilder;
 
 import javax.cache.CacheManager;
 import javax.cache.spi.CachingProvider;
+
+import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.cache.CacheTestSupport.createServerCachingProvider;
 import static com.hazelcast.test.Accessors.getNode;
@@ -115,6 +121,17 @@ public class PhoneHomeBenchmark extends HazelcastTestSupport {
     @TearDown
     public void tear() {
         node.shutdown(true);
+    }
+
+    public static void main(String[] args) throws RunnerException {
+        Options opt = new OptionsBuilder()
+                .include(PhoneHomeBenchmark.class.getName())
+                .warmupIterations(5)
+                .measurementIterations(5)
+                .timeUnit(TimeUnit.MILLISECONDS)
+                .forks(1)
+                .build();
+        new Runner(opt).run();
     }
 }
 
