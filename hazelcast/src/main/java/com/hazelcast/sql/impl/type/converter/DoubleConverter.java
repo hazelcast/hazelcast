@@ -41,10 +41,16 @@ public final class DoubleConverter extends Converter {
     @Override
     public byte asTinyint(Object val) {
         double casted = cast(val);
+        if (!Double.isFinite(casted)) {
+            throw cannotConvert(QueryDataTypeFamily.TINYINT, val);
+        }
+
+        // here the overflow may happen: (byte) casted = (byte) (int) casted
         byte converted = (byte) casted;
 
-        if (converted != (int) casted || !Double.isFinite(casted)) {
-            throw cannotConvert(QueryDataTypeFamily.TINYINT, val);
+        // casts from double to int are saturating
+        if (converted != (int) casted) {
+            throw numericOverflow(QueryDataTypeFamily.TINYINT, val);
         }
 
         return converted;
@@ -53,10 +59,16 @@ public final class DoubleConverter extends Converter {
     @Override
     public short asSmallint(Object val) {
         double casted = cast(val);
+        if (!Double.isFinite(casted)) {
+            throw cannotConvert(QueryDataTypeFamily.SMALLINT, val);
+        }
+
+        // here the overflow may happen: (short) casted = (short) (int) casted
         short converted = (short) casted;
 
-        if (converted != (int) casted || !Double.isFinite(casted)) {
-            throw cannotConvert(QueryDataTypeFamily.SMALLINT, val);
+        // casts from double to int are saturating
+        if (converted != (int) casted) {
+            throw numericOverflow(QueryDataTypeFamily.SMALLINT, val);
         }
 
         return converted;
@@ -65,10 +77,15 @@ public final class DoubleConverter extends Converter {
     @Override
     public int asInt(Object val) {
         double casted = cast(val);
+        if (!Double.isFinite(casted)) {
+            throw cannotConvert(QueryDataTypeFamily.INT, val);
+        }
+
         int converted = (int) casted;
 
-        if (converted != (long) casted || !Double.isFinite(casted)) {
-            throw cannotConvert(QueryDataTypeFamily.INT, val);
+        // casts from double to long are saturating
+        if (converted != (long) casted) {
+            throw numericOverflow(QueryDataTypeFamily.INT, val);
         }
 
         return converted;
@@ -77,21 +94,25 @@ public final class DoubleConverter extends Converter {
     @Override
     public long asBigint(Object val) {
         double casted = cast(val);
+        if (!Double.isFinite(casted)) {
+            throw cannotConvert(QueryDataTypeFamily.BIGINT, val);
+        }
+
         double truncated = casted > 0.0 ? Math.floor(casted) : Math.ceil(casted);
+        // casts from double to long are saturating
         long converted = (long) truncated;
 
-        // No checks for NaNs and infinities are needed: NaNs are zeros and
-        // infinities are Long.MAX/MIN_VALUE when converted to long.
         if ((double) converted != truncated) {
-            throw cannotConvert(QueryDataTypeFamily.BIGINT, val);
+            throw numericOverflow(QueryDataTypeFamily.BIGINT, val);
         }
 
         return converted;
     }
 
+    @SuppressWarnings("UnpredictableBigDecimalConstructorCall")
     @Override
     public BigDecimal asDecimal(Object val) {
-        return new BigDecimal(Double.toString(cast(val)), DECIMAL_MATH_CONTEXT);
+        return new BigDecimal(cast(val), DECIMAL_MATH_CONTEXT);
     }
 
     @Override

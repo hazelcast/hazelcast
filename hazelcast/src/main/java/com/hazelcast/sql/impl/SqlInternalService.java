@@ -18,9 +18,7 @@ package com.hazelcast.sql.impl;
 
 import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.sql.impl.plan.cache.CachedPlanInvalidationCallback;
-import com.hazelcast.sql.impl.plan.cache.PlanCacheChecker;
-import com.hazelcast.sql.impl.state.QueryClientStateRegistry;
+import com.hazelcast.sql.SqlErrorCode;
 import com.hazelcast.sql.impl.exec.io.flowcontrol.FlowControlFactory;
 import com.hazelcast.sql.impl.exec.io.flowcontrol.simple.SimpleFlowControlFactory;
 import com.hazelcast.sql.impl.exec.root.BlockingRootResultConsumer;
@@ -30,6 +28,9 @@ import com.hazelcast.sql.impl.operation.QueryExecuteOperation;
 import com.hazelcast.sql.impl.operation.QueryExecuteOperationFactory;
 import com.hazelcast.sql.impl.operation.QueryOperationHandlerImpl;
 import com.hazelcast.sql.impl.plan.Plan;
+import com.hazelcast.sql.impl.plan.cache.CachedPlanInvalidationCallback;
+import com.hazelcast.sql.impl.plan.cache.PlanCacheChecker;
+import com.hazelcast.sql.impl.state.QueryClientStateRegistry;
 import com.hazelcast.sql.impl.state.QueryState;
 import com.hazelcast.sql.impl.state.QueryStateRegistry;
 import com.hazelcast.sql.impl.state.QueryStateRegistryUpdater;
@@ -148,8 +149,7 @@ public class SqlInternalService {
         int pageSize,
         CachedPlanInvalidationCallback planInvalidationCallback
     ) {
-        // Prepare parameters.
-        params = prepareParameters(plan, params);
+        prepareParameters(plan, params);
 
         // Get local member ID and check if it is still part of the plan.
         UUID localMemberId = nodeServiceProvider.getLocalMemberId();
@@ -211,14 +211,16 @@ public class SqlInternalService {
         operationHandler.onPacket(packet);
     }
 
-    private List<Object> prepareParameters(Plan plan, List<Object> params) {
+    private void prepareParameters(Plan plan, List<Object> params) {
         assert params != null;
         QueryParameterMetadata parameterMetadata = plan.getParameterMetadata();
+
         int parameterCount = parameterMetadata.getParameterCount();
         if (parameterCount != params.size()) {
-            throw QueryException.error(
-                "Unexpected parameter count: expected " + parameterCount + ", got " + params.size());
+            throw QueryException.error(SqlErrorCode.DATA_EXCEPTION,
+                    "Unexpected parameter count: expected " + parameterCount + ", got " + params.size());
         }
+
         for (int i = 0; i < params.size(); ++i) {
             Object value = params.get(i);
             if (value == null) {
@@ -227,11 +229,15 @@ public class SqlInternalService {
 
             Converter valueConverter = Converters.getConverter(value.getClass());
             Converter typeConverter = parameterMetadata.getParameterType(i).getConverter();
-            value = typeConverter.convertToSelf(valueConverter, value);
+            try {
+                value = typeConverter.convertToSelf(valueConverter, value);
+            } catch (RuntimeException e) {
+                throw QueryException.error(SqlErrorCode.DATA_EXCEPTION,
+                        String.format("Failed to convert parameter at position %s from %s to %s: %s", i,
+                                valueConverter.getTypeFamily(), typeConverter.getTypeFamily(), e.getMessage()));
+            }
             params.set(i, value);
         }
-
-        return params;
     }
 
     private Map<Integer, Long> createEdgeInitialMemoryMapForPlan(Plan plan) {

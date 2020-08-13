@@ -16,8 +16,13 @@
 
 package com.hazelcast.sql.impl.expression.predicate;
 
+import com.hazelcast.sql.SqlService;
+import com.hazelcast.sql.impl.SqlDataSerializerHook;
+import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.ExpressionTestBase;
-import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.sql.impl.expression.SimpleExpressionEvalContext;
+import com.hazelcast.sql.impl.type.QueryDataType;
+import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.apache.calcite.rel.type.RelDataType;
@@ -27,14 +32,50 @@ import org.junit.runner.RunWith;
 
 import static com.hazelcast.sql.impl.calcite.validate.HazelcastSqlOperatorTable.NOT;
 import static org.apache.calcite.sql.type.SqlTypeName.BOOLEAN;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
-@RunWith(HazelcastSerialClassRunner.class)
+@RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class NotTest extends ExpressionTestBase {
 
     @Test
+    public void testEndToEnd() {
+        SqlService sql = createEndToEndRecords();
+        assertRows(query(sql, "select __key from records where not boolean1"), keyRange(0, 500));
+        assertRows(query(sql, "select __key from records where not boolean1 and __key < 100"), keyRange(0, 100));
+        assertRows(query(sql, "select __key, not boolean1 from records"), keyRange(0, 1000, 5000, 6000),
+                k -> k == 5000 || k == 6000 ? null : k >= 0 && k < 500);
+        assertQueryThrows(sql, "select __key, not string1 from records", "Cannot convert VARCHAR to BOOLEAN");
+    }
+
+    @Test
     public void verify() {
         verify(NOT, NotTest::expectedTypes, NotTest::expectedValues, "NOT %s", ALL);
+    }
+
+    @Test
+    public void testCreationAndEval() {
+        assertFalse(not(true).eval(row("foo"), SimpleExpressionEvalContext.create()));
+        assertTrue(not(false).eval(row("foo"), SimpleExpressionEvalContext.create()));
+    }
+
+    @Test
+    public void testEquality() {
+        checkEquals(not(true), not(true), true);
+        checkEquals(not(true), not(false), false);
+    }
+
+    @Test
+    public void testSerialization() {
+        NotPredicate original = not(true);
+        NotPredicate restored = serializeAndCheck(original, SqlDataSerializerHook.EXPRESSION_NOT);
+
+        checkEquals(original, restored, true);
+    }
+
+    private static NotPredicate not(Boolean value) {
+        return NotPredicate.create(ConstantExpression.create(value, QueryDataType.BOOLEAN));
     }
 
     private static RelDataType[] expectedTypes(Operand[] operands) {

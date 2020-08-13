@@ -23,7 +23,11 @@ import org.apache.calcite.rel.type.RelDataTypeFactory;
 import org.apache.calcite.rex.RexBuilder;
 import org.apache.calcite.rex.RexNode;
 
+import java.math.BigDecimal;
+
 import static org.apache.calcite.sql.type.SqlTypeName.ANY;
+import static org.apache.calcite.sql.type.SqlTypeName.DECIMAL;
+import static org.apache.calcite.sql.type.SqlTypeName.DOUBLE;
 import static org.apache.calcite.sql.type.SqlTypeName.REAL;
 
 /**
@@ -43,8 +47,7 @@ public final class HazelcastRexBuilder extends RexBuilder {
     public RexNode makeLiteral(Object value, RelDataType type, boolean allowCast) {
         // XXX: Calcite evaluates casts like CAST(0 AS ANY) statically and
         // assigns imprecise types: BIGINT for any integer value and DOUBLE for
-        // any floating-point value (except BigDecimal). The code bellow fixes
-        // that.
+        // any floating-point value. The code below fixes that.
 
         if (type.getSqlTypeName() == ANY && value instanceof Number) {
             if (value instanceof Byte || value instanceof Short || value instanceof Integer || value instanceof Long) {
@@ -53,6 +56,10 @@ public final class HazelcastRexBuilder extends RexBuilder {
                 type = HazelcastIntegerType.of(bitWidth, false);
             } else if (value instanceof Float) {
                 type = HazelcastTypeFactory.INSTANCE.createSqlType(REAL);
+            } else if (value instanceof Double) {
+                type = HazelcastTypeFactory.INSTANCE.createSqlType(DOUBLE);
+            } else if (value instanceof BigDecimal) {
+                type = HazelcastTypeFactory.INSTANCE.createSqlType(DECIMAL);
             }
         }
 

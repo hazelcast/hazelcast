@@ -44,7 +44,7 @@ public final class IntegerConverter extends Converter {
         byte converted = (byte) casted;
 
         if (converted != casted) {
-            throw cannotConvert(QueryDataTypeFamily.TINYINT, val);
+            throw numericOverflow(QueryDataTypeFamily.TINYINT, val);
         }
 
         return converted;
@@ -56,7 +56,7 @@ public final class IntegerConverter extends Converter {
         short converted = (short) casted;
 
         if (converted != casted) {
-            throw cannotConvert(QueryDataTypeFamily.SMALLINT, val);
+            throw numericOverflow(QueryDataTypeFamily.SMALLINT, val);
         }
 
         return converted;

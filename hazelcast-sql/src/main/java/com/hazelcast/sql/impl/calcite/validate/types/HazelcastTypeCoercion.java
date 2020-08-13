@@ -33,14 +33,12 @@ import org.apache.calcite.sql.type.SqlTypeUtil;
 import org.apache.calcite.sql.validate.SqlValidatorScope;
 import org.apache.calcite.sql.validate.implicit.TypeCoercionImpl;
 
-import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
 import static com.hazelcast.sql.impl.calcite.validate.SqlNodeUtil.isLiteral;
 import static com.hazelcast.sql.impl.calcite.validate.SqlNodeUtil.isParameter;
 import static com.hazelcast.sql.impl.calcite.validate.SqlNodeUtil.numericValue;
-import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeSystem.canCast;
 import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeSystem.isChar;
 import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeSystem.isFloatingPoint;
 import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeSystem.isInteger;
@@ -49,7 +47,6 @@ import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeSystem.
 import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeSystem.narrowestTypeFor;
 import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeSystem.typeName;
 import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeSystem.withHigherPrecedence;
-import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeSystem.withHigherPrecedenceForLiterals;
 import static org.apache.calcite.sql.SqlKind.BETWEEN;
 import static org.apache.calcite.sql.SqlKind.BINARY_ARITHMETIC;
 import static org.apache.calcite.sql.SqlKind.BINARY_COMPARISON;
@@ -185,11 +182,9 @@ public final class HazelcastTypeCoercion extends TypeCoercionImpl {
     @Override
     protected boolean coerceOperandType(SqlValidatorScope scope, SqlCall call, int index, RelDataType to) {
         SqlNode operand = call.getOperandList().get(index);
-        RelDataType from = validator.deriveType(scope, operand);
 
-        // Just update the inferred type if casting is not needed. But if casting
-        // is not possible, still insert the cast to fail on its validation later.
-        if (!needToCast(scope, operand, to) && canCast(from, to)) {
+        // just update the inferred type if casting is not needed
+        if (!needToCast(scope, operand, to)) {
             updateInferredType(operand, to);
             return false;
         }
@@ -220,10 +215,6 @@ public final class HazelcastTypeCoercion extends TypeCoercionImpl {
             // all types can be implicitly interpreted as ANY
             return false;
         }
-        if (typeName(from) == ANY) {
-            // casting from ANY is always required
-            return true;
-        }
 
         if (isParameter(node)) {
             // never cast parameters, just assign types to them
@@ -240,11 +231,9 @@ public final class HazelcastTypeCoercion extends TypeCoercionImpl {
 
     private boolean coerceElementType(SqlValidatorScope scope, SqlNodeList list, int index, RelDataType to) {
         SqlNode element = list.get(index);
-        RelDataType from = validator.deriveType(scope, element);
 
-        // Just update the inferred type if casting is not needed. But if casting
-        // is not possible, still insert the cast to fail later on its validation.
-        if (!needToCast(scope, element, to) && canCast(from, to)) {
+        // just update the inferred type if casting is not needed
+        if (!needToCast(scope, element, to)) {
             updateInferredType(element, to);
             return false;
         }
@@ -295,11 +284,12 @@ public final class HazelcastTypeCoercion extends TypeCoercionImpl {
             if (literal.getValue() == null) {
                 operandType = TYPE_FACTORY.createSqlType(NULL);
             } else {
-                BigDecimal numeric = literal.getValueAs(BigDecimal.class);
+                Number numeric = numericValue(literal);
+                assert numeric != null;
                 operandType = narrowestTypeFor(numeric, commonType == null ? null : typeName(commonType));
             }
 
-            commonType = commonType == null ? operandType : withHigherPrecedenceForLiterals(operandType, commonType);
+            commonType = commonType == null ? operandType : withHigherPrecedence(operandType, commonType);
         }
 
         // Continue common type inference on non-numeric literals.
@@ -316,12 +306,12 @@ public final class HazelcastTypeCoercion extends TypeCoercionImpl {
             } else if (isChar(operandType) && (commonType != null && isNumeric(commonType) || assumeNumeric)) {
                 // Infer proper numeric type for char literals.
 
-                BigDecimal numeric = numericValue(operand);
+                Number numeric = numericValue(operand);
                 assert numeric != null;
                 operandType = narrowestTypeFor(numeric, commonType == null ? null : typeName(commonType));
             }
 
-            commonType = commonType == null ? operandType : withHigherPrecedenceForLiterals(operandType, commonType);
+            commonType = commonType == null ? operandType : withHigherPrecedence(operandType, commonType);
         }
 
         // seen only parameters
@@ -340,7 +330,6 @@ public final class HazelcastTypeCoercion extends TypeCoercionImpl {
             commonType = TYPE_FACTORY.createSqlType(DOUBLE);
         }
 
-        // TODO: This breaks index usage for parameters
         // widen integer common type: ? + 1 -> BIGINT instead of TINYINT
         if ((seenParameters || seenChar) && isInteger(commonType)) {
             commonType = TYPE_FACTORY.createSqlType(BIGINT);
@@ -371,7 +360,7 @@ public final class HazelcastTypeCoercion extends TypeCoercionImpl {
                     // Assign final numeric types to numeric and char literals.
 
                     RelDataType literalType;
-                    BigDecimal numeric = numericValue(operand);
+                    Number numeric = numericValue(operand);
                     assert numeric != null;
                     if (typeName(commonType) == DECIMAL) {
                         // always enforce DECIMAL interpretation if common type is DECIMAL
@@ -390,7 +379,7 @@ public final class HazelcastTypeCoercion extends TypeCoercionImpl {
 
                     types[i] = TYPE_FACTORY.createTypeWithNullability(commonType, false);
                 } else {
-                    // All other literal types.
+                    // All other literal types keep their original type.
 
                     types[i] = operandType;
                     nullable |= typeName(operandType) == NULL;
@@ -406,6 +395,7 @@ public final class HazelcastTypeCoercion extends TypeCoercionImpl {
                     // cast char to common type
                     type = commonType;
                 } else {
+                    // otherwise keep original type
                     type = operandType;
                 }
                 types[i] = TYPE_FACTORY.createTypeWithNullability(type, operandType.isNullable());

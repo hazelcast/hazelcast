@@ -49,7 +49,7 @@ public class SetReadCursorOperation
 
     public SetReadCursorOperation(String mapName, String cacheId, long sequence, int ignored) {
         super(checkHasText(mapName, "mapName"));
-        checkPositive(sequence, "sequence");
+        checkPositive("sequence", sequence);
 
         this.cacheId = checkHasText(cacheId, "cacheId");
         this.sequence = sequence;

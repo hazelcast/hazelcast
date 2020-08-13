@@ -16,8 +16,14 @@
 
 package com.hazelcast.sql.impl.expression.predicate;
 
+import com.hazelcast.sql.SqlService;
+import com.hazelcast.sql.impl.SqlDataSerializerHook;
+import com.hazelcast.sql.impl.expression.ConstantExpression;
+import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionTestBase;
-import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.sql.impl.expression.SimpleExpressionEvalContext;
+import com.hazelcast.sql.impl.type.QueryDataType;
+import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.apache.calcite.rel.type.RelDataType;
@@ -27,14 +33,56 @@ import org.junit.runner.RunWith;
 
 import static com.hazelcast.sql.impl.calcite.validate.HazelcastSqlOperatorTable.OR;
 import static org.apache.calcite.sql.type.SqlTypeName.BOOLEAN;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
-@RunWith(HazelcastSerialClassRunner.class)
+@RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class OrTest extends ExpressionTestBase {
 
     @Test
+    public void testEndToEnd() {
+        SqlService sql = createEndToEndRecords();
+        assertRows(query(sql, "select __key from records where boolean1 or __key >= 600"), keyRange(500, 1000, 5000, 6000));
+        assertRows(query(sql, "select __key from records where boolean1 or __key < 600 or boolean1 is null"),
+                keyRange(0, 1000, 5000, 6000));
+        assertQueryThrows(sql, "select * from records where string1 or boolean1", "Cannot convert VARCHAR to BOOLEAN");
+    }
+
+    @Test
     public void verify() {
         verify(OR, OrTest::expectedTypes, OrTest::expectedValues, ALL, ALL);
+    }
+
+    @Test
+    public void testCreationAndEval() {
+        assertTrue(or(true, false).eval(row("foo"), SimpleExpressionEvalContext.create()));
+        assertFalse(or(false, false).eval(row("foo"), SimpleExpressionEvalContext.create()));
+        assertNull(or(null, false).eval(row("foo"), SimpleExpressionEvalContext.create()));
+    }
+
+    @Test
+    public void testEquality() {
+        checkEquals(or(true, false), or(true, false), true);
+        checkEquals(or(true, false), or(true, true), false);
+        checkEquals(or(true, true), or(true, true, true), false);
+    }
+
+    @Test
+    public void testSerialization() {
+        OrPredicate original = or(true, false);
+        OrPredicate restored = serializeAndCheck(original, SqlDataSerializerHook.EXPRESSION_OR);
+
+        checkEquals(original, restored, true);
+    }
+
+    private static OrPredicate or(Boolean... values) {
+        Expression<?>[] operands = new Expression<?>[values.length];
+        for (int i = 0; i < values.length; ++i) {
+            operands[i] = ConstantExpression.create(values[i], QueryDataType.BOOLEAN);
+        }
+        return OrPredicate.create(operands);
     }
 
     private static RelDataType[] expectedTypes(Operand[] operands) {

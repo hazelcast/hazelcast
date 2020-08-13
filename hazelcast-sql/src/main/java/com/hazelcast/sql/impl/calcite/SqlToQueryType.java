@@ -26,9 +26,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static org.apache.calcite.sql.type.SqlTypeName.DAY_INTERVAL_TYPES;
-import static org.apache.calcite.sql.type.SqlTypeName.YEAR_INTERVAL_TYPES;
-
 /**
  * Provides utilities to map from Calcite's {@link SqlTypeName} to {@link
  * QueryDataType}.
@@ -68,16 +65,11 @@ public final class SqlToQueryType {
         HZ_TO_CALCITE.put(QueryDataTypeFamily.DATE, SqlTypeName.DATE);
         HZ_TO_CALCITE.put(QueryDataTypeFamily.TIMESTAMP, SqlTypeName.TIMESTAMP);
         HZ_TO_CALCITE.put(QueryDataTypeFamily.TIMESTAMP_WITH_TIME_ZONE, SqlTypeName.TIMESTAMP_WITH_LOCAL_TIME_ZONE);
-        HZ_TO_CALCITE.put(QueryDataTypeFamily.INTERVAL_YEAR_MONTH, SqlTypeName.INTERVAL_YEAR_MONTH);
-        HZ_TO_CALCITE.put(QueryDataTypeFamily.INTERVAL_DAY_SECOND, SqlTypeName.INTERVAL_DAY_SECOND);
         CALCITE_TO_HZ.put(SqlTypeName.TIME, QueryDataType.TIME);
         CALCITE_TO_HZ.put(SqlTypeName.DATE, QueryDataType.DATE);
         CALCITE_TO_HZ.put(SqlTypeName.TIMESTAMP, QueryDataType.TIMESTAMP);
         CALCITE_TO_HZ.put(SqlTypeName.TIMESTAMP_WITH_LOCAL_TIME_ZONE, QueryDataType.TIMESTAMP_WITH_TZ_OFFSET_DATE_TIME);
-        CALCITE_TO_HZ.put(SqlTypeName.INTERVAL_YEAR_MONTH, QueryDataType.INTERVAL_YEAR_MONTH);
-        CALCITE_TO_HZ.put(SqlTypeName.INTERVAL_DAY_SECOND, QueryDataType.INTERVAL_DAY_SECOND);
 
-        // TODO: VO: Object type should be very restrictive, but currently all check for it are skipped. Use "STRUCTURED"?
         HZ_TO_CALCITE.put(QueryDataTypeFamily.OBJECT, SqlTypeName.ANY);
         CALCITE_TO_HZ.put(SqlTypeName.ANY, QueryDataType.OBJECT);
 
@@ -94,12 +86,6 @@ public final class SqlToQueryType {
     }
 
     public static QueryDataType map(SqlTypeName sqlTypeName) {
-        if (YEAR_INTERVAL_TYPES.contains(sqlTypeName)) {
-            sqlTypeName = SqlTypeName.INTERVAL_YEAR_MONTH;
-        } else if (DAY_INTERVAL_TYPES.contains(sqlTypeName)) {
-            sqlTypeName = SqlTypeName.INTERVAL_DAY_SECOND;
-        }
-
         QueryDataType queryDataType = CALCITE_TO_HZ.get(sqlTypeName);
         if (queryDataType == null) {
             throw new IllegalArgumentException("unexpected SQL type: " + sqlTypeName);
@@ -107,7 +93,7 @@ public final class SqlToQueryType {
         return queryDataType;
     }
 
-    public static QueryDataType[] mapRowType(RelDataType rowType) {
+     public static QueryDataType[] mapRowType(RelDataType rowType) {
         List<RelDataTypeField> fields = rowType.getFieldList();
 
         QueryDataType[] mappedRowType = new QueryDataType[fields.size()];
@@ -116,5 +102,4 @@ public final class SqlToQueryType {
         }
         return mappedRowType;
     }
-
 }

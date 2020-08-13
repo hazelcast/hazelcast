@@ -24,12 +24,11 @@ import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
 import java.io.IOException;
-import java.util.Objects;
 
 /**
  * Dynamic parameter expression.
  */
-public class ParameterExpression<T> implements Expression<T>, IdentifiedDataSerializable {
+public final class ParameterExpression<T> implements Expression<T>, IdentifiedDataSerializable {
 
     private int index;
     private QueryDataType type;
@@ -82,7 +81,9 @@ public class ParameterExpression<T> implements Expression<T>, IdentifiedDataSeri
 
     @Override
     public int hashCode() {
-        return Objects.hash(index);
+        int result = index;
+        result = 31 * result + type.hashCode();
+        return result;
     }
 
     @Override

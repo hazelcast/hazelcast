@@ -48,7 +48,8 @@ import static org.apache.calcite.util.Static.RESOURCE;
 public final class HazelcastSqlCaseOperator extends SqlOperator {
 
     public HazelcastSqlCaseOperator() {
-        super(SqlCaseOperator.INSTANCE.getName(), SqlKind.CASE, MDX_PRECEDENCE, true, null, InferTypes.RETURN_TYPE, null);
+        super(SqlCaseOperator.INSTANCE.getName(), SqlKind.CASE, SqlCaseOperator.INSTANCE.getLeftPrec(), true, null,
+                InferTypes.RETURN_TYPE, null);
     }
 
     @Override

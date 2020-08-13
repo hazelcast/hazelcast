@@ -51,7 +51,7 @@ public final class CallIdSequenceWithBackpressure extends AbstractCallIdSequence
                                           ConcurrencyDetection concurrencyDetection) {
         super(maxConcurrentInvocations, concurrencyDetection);
 
-        checkPositive(backoffTimeoutMs, "backoffTimeoutMs should be a positive number. backoffTimeoutMs=" + backoffTimeoutMs);
+        checkPositive("backoffTimeoutMs", backoffTimeoutMs);
 
         this.backoffTimeoutNanos = MILLISECONDS.toNanos(backoffTimeoutMs);
     }

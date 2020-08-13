@@ -52,7 +52,7 @@ public class LockGuard {
     public LockGuard(Address lockOwner, UUID lockOwnerId, long leaseTime) {
         Preconditions.checkNotNull(lockOwner);
         Preconditions.checkNotNull(lockOwnerId);
-        Preconditions.checkPositive(leaseTime, "Lease time should be positive!");
+        Preconditions.checkPositive("leaseTime", leaseTime);
 
         this.lockOwner = lockOwner;
         this.lockOwnerId = lockOwnerId;

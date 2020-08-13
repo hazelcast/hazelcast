@@ -108,7 +108,7 @@ public class ParserOperationsTest {
         } catch (QueryException e) {
             assertEquals(SqlErrorCode.PARSING, e.getCode());
 
-            assertTrue(e.getCause().getMessage(), e.getCause().getMessage().endsWith(message));
+            assertTrue(e.getCause().getMessage(), e.getCause().getMessage().contains(message));
         }
     }
 

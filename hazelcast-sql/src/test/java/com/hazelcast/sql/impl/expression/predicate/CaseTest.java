@@ -143,8 +143,7 @@ public class CaseTest extends ExpressionTestBase {
                 if (operand.typeName() == NULL) {
                     type = TYPE_FACTORY.createTypeWithNullability(commonType, true);
                 } else if (isNumeric(type)) {
-                    BigDecimal numericValue = operand.numericValue();
-                    //noinspection NumberEquality
+                    Number numericValue = operand.numericValue();
                     assert numericValue != null && numericValue != INVALID_NUMERIC_VALUE;
                     if (!canRepresentLiteral(numericValue, type, commonType)) {
                         return null;

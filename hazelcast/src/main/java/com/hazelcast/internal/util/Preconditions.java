@@ -158,14 +158,14 @@ public final class Preconditions {
     /**
      * Tests if a {@code value} is positive, that is strictly larger than 0 (value &gt; 0).
      *
-     * @param value        the value tested to see if it is positive.
-     * @param errorMessage the message
+     * @param paramName the name of the checked parameter that will be in exception message
+     * @param value     the value tested to see if it is positive.
      * @return the value
      * @throws java.lang.IllegalArgumentException if the value is not positive.
      */
-    public static long checkPositive(long value, String errorMessage) {
+    public static long checkPositive(String paramName, long value) {
         if (value <= 0) {
-            throw new IllegalArgumentException(errorMessage);
+            throw new IllegalArgumentException(paramName + " is " + value + " but must be > 0");
         }
         return value;
     }
@@ -188,14 +188,14 @@ public final class Preconditions {
     /**
      * Tests if a {@code value} is positive, that is strictly larger than 0 (value &gt; 0).
      *
-     * @param value        the value tested to see if it is positive.
-     * @param errorMessage the message
+     * @param paramName the the name of the checked parameter that will be in exception message
+     * @param value     the value tested to see if it is positive.
      * @return the value
      * @throws java.lang.IllegalArgumentException if the value is not positive.
      */
-    public static int checkPositive(int value, String errorMessage) {
+    public static int checkPositive(String paramName, int value) {
         if (value <= 0) {
-            throw new IllegalArgumentException(errorMessage);
+            throw new IllegalArgumentException(paramName + " is " + value + " but must be > 0");
         }
         return value;
     }

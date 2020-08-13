@@ -17,11 +17,10 @@
 package com.hazelcast.sql.impl.expression;
 
 import com.hazelcast.sql.impl.SqlDataSerializerHook;
-import com.hazelcast.sql.impl.SqlTestSupport;
-import com.hazelcast.sql.impl.row.HeapRow;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.apache.calcite.rel.type.RelDataType;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -29,40 +28,44 @@ import org.junit.runner.RunWith;
 import static com.hazelcast.sql.impl.type.QueryDataType.BIGINT;
 import static com.hazelcast.sql.impl.type.QueryDataType.INT;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertSame;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class ColumnExpressionTest extends SqlTestSupport {
-
-    // NOTE: This test class verifies only basic functionality, look for more
-    // extensive tests in hazelcast-sql module.
+public class ParameterTest extends ExpressionTestBase {
 
     @Test
-    public void testColumnExpression() {
-        int index = 1;
+    public void verify() {
+        verify(IDENTITY, ParameterTest::expectedTypes, ParameterTest::expectedValues, "%s", PARAMETERS);
+    }
 
-        ColumnExpression<?> expression = ColumnExpression.create(index, INT);
-
+    @Test
+    public void testCreationAndEval() {
+        ParameterExpression<?> expression = ParameterExpression.create(1, INT);
         assertEquals(INT, expression.getType());
-
-        HeapRow row = HeapRow.of(new Object(), new Object(), new Object());
-        assertSame(row.get(index), expression.eval(row, SimpleExpressionEvalContext.create()));
+        assertEquals("baz", expression.eval(row("foo"), SimpleExpressionEvalContext.create("bar", "baz")));
     }
 
     @Test
     public void testEquality() {
-        checkEquals(ColumnExpression.create(1, INT), ColumnExpression.create(1, INT), true);
-        checkEquals(ColumnExpression.create(1, INT), ColumnExpression.create(1, BIGINT), false);
-        checkEquals(ColumnExpression.create(1, INT), ColumnExpression.create(2, INT), false);
+        checkEquals(ParameterExpression.create(1, INT), ParameterExpression.create(1, INT), true);
+        checkEquals(ParameterExpression.create(1, INT), ParameterExpression.create(1, BIGINT), false);
+        checkEquals(ParameterExpression.create(1, INT), ParameterExpression.create(2, INT), false);
     }
 
     @Test
     public void testSerialization() {
-        ColumnExpression<?> original = ColumnExpression.create(1, INT);
-        ColumnExpression<?> restored = serializeAndCheck(original, SqlDataSerializerHook.EXPRESSION_COLUMN);
+        ParameterExpression<?> original = ParameterExpression.create(1, INT);
+        ParameterExpression<?> restored = serializeAndCheck(original, SqlDataSerializerHook.EXPRESSION_PARAMETER);
 
         checkEquals(original, restored, true);
+    }
+
+    private static RelDataType[] expectedTypes(Operand[] operands) {
+        return null;
+    }
+
+    private static Object expectedValues(Operand[] operands, RelDataType[] types, Object[] args) {
+        return INVALID_VALUE;
     }
 
 }

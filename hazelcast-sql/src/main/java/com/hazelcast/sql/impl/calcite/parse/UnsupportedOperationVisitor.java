@@ -18,11 +18,13 @@ package com.hazelcast.sql.impl.calcite.parse;
 
 import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
 import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlOperatorTable;
+import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeSystem;
 import com.hazelcast.sql.impl.schema.Table;
 import com.hazelcast.sql.impl.schema.map.AbstractMapTable;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.apache.calcite.runtime.CalciteContextException;
 import org.apache.calcite.runtime.Resources;
+import org.apache.calcite.sql.SqlBasicTypeNameSpec;
 import org.apache.calcite.sql.SqlCall;
 import org.apache.calcite.sql.SqlDataTypeSpec;
 import org.apache.calcite.sql.SqlDynamicParam;
@@ -34,6 +36,7 @@ import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.SqlNodeList;
 import org.apache.calcite.sql.SqlOperator;
 import org.apache.calcite.sql.SqlSelect;
+import org.apache.calcite.sql.SqlUserDefinedTypeNameSpec;
 import org.apache.calcite.sql.SqlUtil;
 import org.apache.calcite.sql.fun.SqlStdOperatorTable;
 import org.apache.calcite.sql.type.SqlTypeName;
@@ -215,10 +218,38 @@ public final class UnsupportedOperationVisitor implements SqlVisitor<Void> {
         return null;
     }
 
+    @SuppressWarnings("checkstyle:CyclomaticComplexity")
     @Override
     public Void visit(SqlDataTypeSpec type) {
-        // TODO: proper validation for types - do we need second (in addition to DDL) validation ?
-        return null;
+        if (type.getTypeNameSpec() instanceof SqlUserDefinedTypeNameSpec && HazelcastTypeSystem.isObject(type.getTypeName())) {
+            return null;
+        }
+
+        if (!(type.getTypeNameSpec() instanceof SqlBasicTypeNameSpec)) {
+            throw error(type, RESOURCE.custom("Complex type specifications are not supported"));
+        }
+
+        SqlTypeName typeName = SqlTypeName.get(type.getTypeName().getSimple());
+        switch (typeName) {
+            case BOOLEAN:
+            case TINYINT:
+            case SMALLINT:
+            case INTEGER:
+            case BIGINT:
+            case DECIMAL:
+            case REAL:
+            case DOUBLE:
+            case VARCHAR:
+            case NULL:
+                return null;
+
+            case CHAR:
+                // char should be not accessible by users, we have only VARCHAR
+            case ANY:
+                // visible to users as OBJECT
+            default:
+                throw error(type, RESOURCE.notSupported(typeName.getName()));
+        }
     }
 
     @Override
@@ -239,10 +270,15 @@ public final class UnsupportedOperationVisitor implements SqlVisitor<Void> {
             case BIGINT:
             case DECIMAL:
             case REAL:
-            case FLOAT:
             case DOUBLE:
-            case CHAR:
             case VARCHAR:
+            // CHAR is present here to support string literals: Calcite expects
+            // string literals to be of CHAR type, not VARCHAR. Validated type
+            // of string literals is still VARCHAR in HazelcastSqlValidator.
+            case CHAR:
+            case ANY:
+            case NULL:
+
             case DATE:
             case TIME:
             case TIME_WITH_LOCAL_TIME_ZONE:
@@ -262,7 +298,6 @@ public final class UnsupportedOperationVisitor implements SqlVisitor<Void> {
             case INTERVAL_MINUTE_SECOND:
             case INTERVAL_SECOND:
             case SYMBOL:
-            case NULL:
                 return null;
 
             default:

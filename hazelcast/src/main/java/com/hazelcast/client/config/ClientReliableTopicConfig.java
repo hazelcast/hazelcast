@@ -17,15 +17,15 @@
 package com.hazelcast.client.config;
 
 import com.hazelcast.client.impl.proxy.ClientReliableTopicProxy;
-import com.hazelcast.spi.impl.executionservice.ExecutionService;
 import com.hazelcast.config.NamedConfig;
+import com.hazelcast.spi.impl.executionservice.ExecutionService;
 import com.hazelcast.topic.TopicOverloadPolicy;
 
 import java.util.concurrent.Executor;
 
-import static com.hazelcast.topic.TopicOverloadPolicy.BLOCK;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.Preconditions.checkPositive;
+import static com.hazelcast.topic.TopicOverloadPolicy.BLOCK;
 
 /**
  * Contains the ReliableTopic configuration for a client.
@@ -178,7 +178,7 @@ public class ClientReliableTopicConfig implements NamedConfig {
      * @throws IllegalArgumentException if readBatchSize is smaller than 1.
      */
     public ClientReliableTopicConfig setReadBatchSize(int readBatchSize) {
-        this.readBatchSize = checkPositive(readBatchSize, "readBatchSize should be positive");
+        this.readBatchSize = checkPositive("readBatchSize", readBatchSize);
         return this;
     }
 

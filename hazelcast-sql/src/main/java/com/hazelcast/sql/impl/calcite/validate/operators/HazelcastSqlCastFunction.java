@@ -27,7 +27,8 @@ import static org.apache.calcite.util.Static.RESOURCE;
 /**
  * Custom Hazelcast {@link SqlCastFunction} to override the default operand type
  * checking strategy to make sure the casting behaviour is exactly the same as
- * defined by {@link Converter}s.
+ * defined by {@linkplain Converter converters}. Specifically, disallowing
+ * conversions between BOOLEAN and numeric types both ways.
  */
 public final class HazelcastSqlCastFunction extends SqlCastFunction {
 

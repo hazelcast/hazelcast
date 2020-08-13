@@ -26,22 +26,13 @@ import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
-import com.hazelcast.sql.impl.type.SqlDaySecondInterval;
-import com.hazelcast.sql.impl.type.SqlYearMonthInterval;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
-import java.time.OffsetDateTime;
-
-import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.INTERVAL_DAY_SECOND;
-import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.INTERVAL_YEAR_MONTH;
 
 /**
  * Implements evaluation of SQL plus operator.
  */
-public class PlusFunction<T> extends BiExpressionWithType<T> implements IdentifiedDataSerializable {
+public final class PlusFunction<T> extends BiExpressionWithType<T> implements IdentifiedDataSerializable {
 
     public PlusFunction() {
         // No-op.
@@ -52,13 +43,6 @@ public class PlusFunction<T> extends BiExpressionWithType<T> implements Identifi
     }
 
     public static PlusFunction<?> create(Expression<?> operand1, Expression<?> operand2, QueryDataType resultType) {
-        if (operand1.getType().getTypeFamily() == INTERVAL_DAY_SECOND
-                || operand1.getType().getTypeFamily() == INTERVAL_YEAR_MONTH) {
-            Expression<?> intervalOperand = operand1;
-            operand1 = operand2;
-            operand2 = intervalOperand;
-        }
-
         return new PlusFunction<>(operand1, operand2, resultType);
     }
 
@@ -87,10 +71,10 @@ public class PlusFunction<T> extends BiExpressionWithType<T> implements Identifi
 
         QueryDataTypeFamily family = resultType.getTypeFamily();
         if (family.isTemporal()) {
-            return (T) evalTemporal(left, operand1.getType(), right, operand2.getType(), resultType);
-        } else {
-            return (T) evalNumeric((Number) left, (Number) right, family);
+            throw new UnsupportedOperationException("temporal types are unsupported currently");
         }
+
+        return (T) evalNumeric((Number) left, (Number) right, family);
     }
 
     private static Object evalNumeric(Number left, Number right, QueryDataTypeFamily family) {
@@ -105,7 +89,8 @@ public class PlusFunction<T> extends BiExpressionWithType<T> implements Identifi
                 try {
                     return Math.addExact(left.longValue(), right.longValue());
                 } catch (ArithmeticException e) {
-                    throw QueryException.error(SqlErrorCode.DATA_EXCEPTION, "BIGINT overflow");
+                    throw QueryException.error(SqlErrorCode.DATA_EXCEPTION,
+                            "BIGINT overflow in '+' operator (consider adding explicit CAST to DECIMAL)");
                 }
             case REAL:
                 return left.floatValue() + right.floatValue();
@@ -115,62 +100,6 @@ public class PlusFunction<T> extends BiExpressionWithType<T> implements Identifi
                 return ((BigDecimal) left).add((BigDecimal) right, ExpressionMath.DECIMAL_MATH_CONTEXT);
             default:
                 throw new IllegalArgumentException("unexpected result family: " + family);
-        }
-    }
-
-    @SuppressWarnings("checkstyle:AvoidNestedBlocks")
-    private static Object evalTemporal(Object temporalOperand, QueryDataType temporalOperandType, Object intervalOperand,
-                                       QueryDataType intervalOperandType, QueryDataType resType) {
-        switch (resType.getTypeFamily()) {
-            case DATE: {
-                LocalDate date = temporalOperandType.getConverter().asDate(temporalOperand);
-
-                if (intervalOperandType.getTypeFamily() == INTERVAL_YEAR_MONTH) {
-                    return date.plusDays(((SqlYearMonthInterval) intervalOperand).getMonths());
-                } else {
-                    SqlDaySecondInterval interval = (SqlDaySecondInterval) intervalOperand;
-
-                    return date.atStartOfDay().plusSeconds(interval.getSeconds()).plusNanos(interval.getNanos()).toLocalDate();
-                }
-            }
-
-            case TIME: {
-                LocalTime time = temporalOperandType.getConverter().asTime(temporalOperand);
-
-                if (intervalOperandType.getTypeFamily() == INTERVAL_YEAR_MONTH) {
-                    return time;
-                } else {
-                    SqlDaySecondInterval interval = (SqlDaySecondInterval) intervalOperand;
-
-                    return time.plusSeconds(interval.getSeconds()).plusNanos(interval.getNanos());
-                }
-            }
-
-            case TIMESTAMP: {
-                LocalDateTime ts = temporalOperandType.getConverter().asTimestamp(temporalOperand);
-
-                if (intervalOperandType.getTypeFamily() == INTERVAL_YEAR_MONTH) {
-                    return ts.plusDays(((SqlYearMonthInterval) intervalOperand).getMonths());
-                } else {
-                    SqlDaySecondInterval interval = (SqlDaySecondInterval) intervalOperand;
-
-                    return ts.plusSeconds(interval.getSeconds()).plusNanos(interval.getNanos());
-                }
-            }
-
-            case TIMESTAMP_WITH_TIME_ZONE: {
-                OffsetDateTime ts = temporalOperandType.getConverter().asTimestampWithTimezone(temporalOperand);
-
-                if (intervalOperandType.getTypeFamily() == INTERVAL_YEAR_MONTH) {
-                    return ts.plusDays(((SqlYearMonthInterval) intervalOperand).getMonths());
-                } else {
-                    SqlDaySecondInterval interval = (SqlDaySecondInterval) intervalOperand;
-
-                    return ts.plusSeconds(interval.getSeconds()).plusNanos(interval.getNanos());
-                }
-            }
-            default:
-                throw QueryException.error("Unsupported result type: " + resType);
         }
     }
 

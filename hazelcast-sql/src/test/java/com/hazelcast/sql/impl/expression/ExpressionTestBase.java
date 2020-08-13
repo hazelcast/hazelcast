@@ -16,12 +16,19 @@
 
 package com.hazelcast.sql.impl.expression;
 
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.util.BiTuple;
 import com.hazelcast.internal.util.RuntimeAvailableProcessors;
+import com.hazelcast.map.IMap;
 import com.hazelcast.sql.SqlErrorCode;
+import com.hazelcast.sql.SqlException;
+import com.hazelcast.sql.SqlResult;
+import com.hazelcast.sql.SqlRow;
+import com.hazelcast.sql.SqlService;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.QueryUtils;
+import com.hazelcast.sql.impl.SqlTestSupport;
 import com.hazelcast.sql.impl.calcite.OptimizerContext;
 import com.hazelcast.sql.impl.calcite.SqlToQueryType;
 import com.hazelcast.sql.impl.calcite.opt.physical.visitor.RexToExpressionVisitor;
@@ -37,11 +44,10 @@ import com.hazelcast.sql.impl.schema.ConstantTableStatistics;
 import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.schema.map.PartitionedMapTable;
 import com.hazelcast.sql.impl.type.QueryDataType;
-import com.hazelcast.sql.impl.type.SqlDaySecondInterval;
-import com.hazelcast.sql.impl.type.SqlYearMonthInterval;
 import com.hazelcast.sql.impl.type.converter.Converter;
 import com.hazelcast.sql.impl.type.converter.Converters;
 import com.hazelcast.sql.impl.type.converter.StringConverter;
+import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.TestStringUtils;
 import org.apache.calcite.avatica.util.TimeUnit;
 import org.apache.calcite.rel.RelNode;
@@ -65,12 +71,10 @@ import org.apache.calcite.sql.type.SqlOperandCountRanges;
 import org.apache.calcite.sql.type.SqlTypeName;
 import org.apache.calcite.sql.validate.SqlValidator;
 import org.apache.calcite.sql.validate.SqlValidatorScope;
-import org.apache.calcite.util.DateString;
-import org.apache.calcite.util.TimeString;
-import org.apache.calcite.util.TimestampString;
 import org.junit.After;
 
 import java.io.PrintWriter;
+import java.io.Serializable;
 import java.io.StringWriter;
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -79,9 +83,11 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -90,46 +96,40 @@ import java.util.concurrent.Future;
 import java.util.function.Function;
 
 import static com.hazelcast.sql.impl.QueryUtils.SCHEMA_NAME_REPLICATED;
+import static com.hazelcast.sql.impl.calcite.SqlToQueryType.map;
 import static com.hazelcast.sql.impl.calcite.SqlToQueryType.mapRowType;
 import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeSystem.narrowestTypeFor;
 import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeSystem.withHigherPrecedence;
-import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeSystem.withHigherPrecedenceForLiterals;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonMap;
 import static org.apache.calcite.sql.type.SqlTypeName.ANY;
 import static org.apache.calcite.sql.type.SqlTypeName.BIGINT;
 import static org.apache.calcite.sql.type.SqlTypeName.BOOLEAN;
 import static org.apache.calcite.sql.type.SqlTypeName.CHAR_TYPES;
-import static org.apache.calcite.sql.type.SqlTypeName.DATE;
 import static org.apache.calcite.sql.type.SqlTypeName.DECIMAL;
 import static org.apache.calcite.sql.type.SqlTypeName.DOUBLE;
 import static org.apache.calcite.sql.type.SqlTypeName.FRACTIONAL_TYPES;
 import static org.apache.calcite.sql.type.SqlTypeName.INTEGER;
-import static org.apache.calcite.sql.type.SqlTypeName.INTERVAL_DAY_SECOND;
-import static org.apache.calcite.sql.type.SqlTypeName.INTERVAL_YEAR_MONTH;
 import static org.apache.calcite.sql.type.SqlTypeName.INT_TYPES;
 import static org.apache.calcite.sql.type.SqlTypeName.NULL;
 import static org.apache.calcite.sql.type.SqlTypeName.NUMERIC_TYPES;
 import static org.apache.calcite.sql.type.SqlTypeName.REAL;
 import static org.apache.calcite.sql.type.SqlTypeName.SMALLINT;
-import static org.apache.calcite.sql.type.SqlTypeName.TIME;
-import static org.apache.calcite.sql.type.SqlTypeName.TIMESTAMP;
-import static org.apache.calcite.sql.type.SqlTypeName.TIMESTAMP_WITH_LOCAL_TIME_ZONE;
 import static org.apache.calcite.sql.type.SqlTypeName.TINYINT;
 import static org.apache.calcite.sql.type.SqlTypeName.VARCHAR;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-public abstract class ExpressionTestBase {
+public abstract class ExpressionTestBase extends SqlTestSupport {
 
     private static final boolean VERIFY_EVALUATION = true;
 
     private static final boolean TRACE = true;
-    private static final boolean LOG_ON_SUCCESS = true;
-
-    protected static final boolean TEMPORAL_TYPES_ENABLED = false;
+    private static final boolean LOG_ON_SUCCESS = false;
 
     protected static final RelDataType UNKNOWN_TYPE = null;
     protected static final SqlTypeName UNKNOWN_TYPE_NAME = null;
@@ -180,13 +180,7 @@ public abstract class ExpressionTestBase {
     private static final SqlTypeName[] TYPE_NAMES;
 
     static {
-        if (TEMPORAL_TYPES_ENABLED) {
-            TYPE_NAMES = new SqlTypeName[]{VARCHAR, BOOLEAN, TINYINT, SMALLINT, INTEGER, BIGINT, DECIMAL, REAL, DOUBLE,
-                    INTERVAL_YEAR_MONTH, INTERVAL_DAY_SECOND, TIME, DATE, TIMESTAMP, TIMESTAMP_WITH_LOCAL_TIME_ZONE, ANY, NULL};
-        } else {
-            TYPE_NAMES =
-                    new SqlTypeName[]{VARCHAR, BOOLEAN, TINYINT, SMALLINT, INTEGER, BIGINT, DECIMAL, REAL, DOUBLE, ANY, NULL};
-        }
+        TYPE_NAMES = new SqlTypeName[]{VARCHAR, BOOLEAN, TINYINT, SMALLINT, INTEGER, BIGINT, DECIMAL, REAL, DOUBLE, ANY, NULL};
     }
 
     private static final Map<String, QueryDataType> FIELDS;
@@ -198,6 +192,12 @@ public abstract class ExpressionTestBase {
         for (SqlTypeName type : TYPE_NAMES) {
             if (type == NULL) {
                 // null is synthetic internal type
+                continue;
+            }
+
+            if (type == ANY) {
+                fields.put("object1", SqlToQueryType.map(type));
+                fields.put("object2", SqlToQueryType.map(type));
                 continue;
             }
 
@@ -218,72 +218,76 @@ public abstract class ExpressionTestBase {
     static {
         // Literals.
 
-        LITERALS.add(numericLiteral(0));
-        LITERALS.add(numericLiteral(1));
-        LITERALS.add(numericLiteral(-1));
-        LITERALS.add(numericLiteral(10));
-        LITERALS.add(numericLiteral(-10));
+        LITERALS.add(exactLiteral(0));
+        LITERALS.add(exactLiteral(1));
+        LITERALS.add(exactLiteral(-1));
+        LITERALS.add(exactLiteral(10));
+        LITERALS.add(exactLiteral(-10));
 
         long byteMax = Byte.MAX_VALUE;
         long byteMin = Byte.MIN_VALUE;
-        LITERALS.add(numericLiteral(byteMax));
-        LITERALS.add(numericLiteral(byteMax - 1));
-        LITERALS.add(numericLiteral(byteMax + 1));
-        LITERALS.add(numericLiteral(byteMax - 2));
-        LITERALS.add(numericLiteral(byteMax + 2));
-        LITERALS.add(numericLiteral(byteMin));
-        LITERALS.add(numericLiteral(byteMin - 1));
-        LITERALS.add(numericLiteral(byteMin + 1));
-        LITERALS.add(numericLiteral(byteMin - 2));
-        LITERALS.add(numericLiteral(byteMin + 2));
+        LITERALS.add(exactLiteral(byteMax));
+        LITERALS.add(exactLiteral(byteMax - 1));
+        LITERALS.add(exactLiteral(byteMax + 1));
+        LITERALS.add(exactLiteral(byteMax - 2));
+        LITERALS.add(exactLiteral(byteMax + 2));
+        LITERALS.add(exactLiteral(byteMin));
+        LITERALS.add(exactLiteral(byteMin - 1));
+        LITERALS.add(exactLiteral(byteMin + 1));
+        LITERALS.add(exactLiteral(byteMin - 2));
+        LITERALS.add(exactLiteral(byteMin + 2));
 
         long shortMax = Short.MAX_VALUE;
         long shortMin = Short.MIN_VALUE;
-        LITERALS.add(numericLiteral(shortMax));
-        LITERALS.add(numericLiteral(shortMax - 1));
-        LITERALS.add(numericLiteral(shortMax + 1));
-        LITERALS.add(numericLiteral(shortMax - 2));
-        LITERALS.add(numericLiteral(shortMax + 2));
-        LITERALS.add(numericLiteral(shortMin));
-        LITERALS.add(numericLiteral(shortMin - 1));
-        LITERALS.add(numericLiteral(shortMin + 1));
-        LITERALS.add(numericLiteral(shortMin - 2));
-        LITERALS.add(numericLiteral(shortMin + 2));
+        LITERALS.add(exactLiteral(shortMax));
+        LITERALS.add(exactLiteral(shortMax - 1));
+        LITERALS.add(exactLiteral(shortMax + 1));
+        LITERALS.add(exactLiteral(shortMax - 2));
+        LITERALS.add(exactLiteral(shortMax + 2));
+        LITERALS.add(exactLiteral(shortMin));
+        LITERALS.add(exactLiteral(shortMin - 1));
+        LITERALS.add(exactLiteral(shortMin + 1));
+        LITERALS.add(exactLiteral(shortMin - 2));
+        LITERALS.add(exactLiteral(shortMin + 2));
 
         long intMax = Integer.MAX_VALUE;
         long intMin = Integer.MIN_VALUE;
-        LITERALS.add(numericLiteral(intMax));
-        LITERALS.add(numericLiteral(intMax - 1));
-        LITERALS.add(numericLiteral(intMax + 1));
-        LITERALS.add(numericLiteral(intMax - 2));
-        LITERALS.add(numericLiteral(intMax + 2));
-        LITERALS.add(numericLiteral(intMin));
-        LITERALS.add(numericLiteral(intMin - 1));
-        LITERALS.add(numericLiteral(intMin + 1));
-        LITERALS.add(numericLiteral(intMin - 2));
-        LITERALS.add(numericLiteral(intMin + 2));
+        LITERALS.add(exactLiteral(intMax));
+        LITERALS.add(exactLiteral(intMax - 1));
+        LITERALS.add(exactLiteral(intMax + 1));
+        LITERALS.add(exactLiteral(intMax - 2));
+        LITERALS.add(exactLiteral(intMax + 2));
+        LITERALS.add(exactLiteral(intMin));
+        LITERALS.add(exactLiteral(intMin - 1));
+        LITERALS.add(exactLiteral(intMin + 1));
+        LITERALS.add(exactLiteral(intMin - 2));
+        LITERALS.add(exactLiteral(intMin + 2));
 
         BigInteger longMax = BigInteger.valueOf(Long.MAX_VALUE);
         BigInteger longMin = BigInteger.valueOf(Long.MIN_VALUE);
-        LITERALS.add(numericLiteral(longMax));
-        LITERALS.add(numericLiteral(longMax.subtract(BigInteger.valueOf(1))));
-        LITERALS.add(numericLiteral(longMax.add(BigInteger.valueOf(1))));
-        LITERALS.add(numericLiteral(longMax.subtract(BigInteger.valueOf(2))));
-        LITERALS.add(numericLiteral(longMax.add(BigInteger.valueOf(2))));
-        LITERALS.add(numericLiteral(longMin));
-        LITERALS.add(numericLiteral(longMin.subtract(BigInteger.valueOf(1))));
-        LITERALS.add(numericLiteral(longMin.add(BigInteger.valueOf(1))));
-        LITERALS.add(numericLiteral(longMin.subtract(BigInteger.valueOf(2))));
-        LITERALS.add(numericLiteral(longMin.add(BigInteger.valueOf(2))));
+        LITERALS.add(exactLiteral(longMax));
+        LITERALS.add(exactLiteral(longMax.subtract(BigInteger.valueOf(1))));
+        LITERALS.add(exactLiteral(longMax.add(BigInteger.valueOf(1))));
+        LITERALS.add(exactLiteral(longMax.subtract(BigInteger.valueOf(2))));
+        LITERALS.add(exactLiteral(longMax.add(BigInteger.valueOf(2))));
+        LITERALS.add(exactLiteral(longMin));
+        LITERALS.add(exactLiteral(longMin.subtract(BigInteger.valueOf(1))));
+        LITERALS.add(exactLiteral(longMin.add(BigInteger.valueOf(1))));
+        LITERALS.add(exactLiteral(longMin.subtract(BigInteger.valueOf(2))));
+        LITERALS.add(exactLiteral(longMin.add(BigInteger.valueOf(2))));
 
-        LITERALS.add(numericLiteral("0.0"));
-        LITERALS.add(numericLiteral("1.0"));
-        LITERALS.add(numericLiteral("10.01"));
-        LITERALS.add(numericLiteral("-10.01"));
-        LITERALS.add(numericLiteral("9223372036854775808.01"));
+        LITERALS.add(exactLiteral("0.0"));
+        LITERALS.add(exactLiteral("1.0"));
+        LITERALS.add(exactLiteral("10.01"));
+        LITERALS.add(exactLiteral("-10.01"));
+        LITERALS.add(exactLiteral("9223372036854775808.01"));
 
-        LITERALS.add(numericLiteral("1" + TestStringUtils.repeat("0", HazelcastTypeSystem.MAX_DECIMAL_PRECISION)));
-        LITERALS.add(numericLiteral("1" + TestStringUtils.repeat("0", HazelcastTypeSystem.MAX_DECIMAL_PRECISION) + ".01"));
+        LITERALS.add(exactLiteral("1" + TestStringUtils.repeat("0", HazelcastTypeSystem.MAX_DECIMAL_PRECISION)));
+        LITERALS.add(exactLiteral("1" + TestStringUtils.repeat("0", HazelcastTypeSystem.MAX_DECIMAL_PRECISION) + ".01"));
+
+        LITERALS.add(approxLiteral("0e0"));
+        LITERALS.add(approxLiteral("1.1e0"));
+        LITERALS.add(approxLiteral("1.11e1"));
 
         LITERALS.add(new Operand(TYPE_FACTORY.createSqlType(BOOLEAN), false, "FALSE"));
         LITERALS.add(new Operand(TYPE_FACTORY.createSqlType(BOOLEAN), true, "TRUE"));
@@ -296,20 +300,6 @@ public abstract class ExpressionTestBase {
 
         LITERALS.add(new Operand(TYPE_FACTORY.createSqlType(NULL), null, "NULL"));
         LITERALS.add(stringLiteral("abc"));
-
-        if (TEMPORAL_TYPES_ENABLED) {
-            LITERALS.add(new Operand(TYPE_FACTORY.createSqlType(INTERVAL_YEAR_MONTH), new SqlYearMonthInterval(12 + 2),
-                    "INTERVAL '1-2' YEAR TO MONTH"));
-            LITERALS.add(new Operand(TYPE_FACTORY.createSqlType(INTERVAL_DAY_SECOND),
-                    new SqlDaySecondInterval(24 * 60 * 60 + 2 * 60 * 60 + 3 * 60 + 4, 0), "INTERVAL '1 2:3:4' DAY TO SECOND"));
-            LITERALS.add(
-                    new Operand(TYPE_FACTORY.createSqlType(TIME), new TimeString("01:23:45").toCalendar(), "TIME '01:23:45'"));
-            LITERALS.add(new Operand(TYPE_FACTORY.createSqlType(DATE), new DateString("1111-02-03").toCalendar(),
-                    "DATE '1111-02-03'"));
-            LITERALS.add(
-                    new Operand(TYPE_FACTORY.createSqlType(TIMESTAMP), new TimestampString("1111-02-03 01:23:45").toCalendar(),
-                            "TIMESTAMP '1111-02-03 01:23:45'"));
-        }
 
         // Columns and types as seen in CASTs.
 
@@ -337,8 +327,13 @@ public abstract class ExpressionTestBase {
             TYPES.add(new Operand(UNKNOWN_TYPE, type, unparse(type)));
 
             type = TYPE_FACTORY.createTypeWithNullability(type, true);
-            COLUMNS.add(new Operand(type, UNKNOWN_VALUE, typeName.getName().toLowerCase() + "1"));
-            COLUMNS.add(new Operand(type, UNKNOWN_VALUE, typeName.getName().toLowerCase() + "2"));
+            if (typeName == ANY) {
+                COLUMNS.add(new Operand(type, UNKNOWN_VALUE, "object1"));
+                COLUMNS.add(new Operand(type, UNKNOWN_VALUE, "object2"));
+            } else {
+                COLUMNS.add(new Operand(type, UNKNOWN_VALUE, typeName.getName().toLowerCase() + "1"));
+                COLUMNS.add(new Operand(type, UNKNOWN_VALUE, typeName.getName().toLowerCase() + "2"));
+            }
 
             if (typeName == BOOLEAN) {
                 BOOLEAN_COLUMN.add(new Operand(type, UNKNOWN_VALUE, typeName.getName().toLowerCase() + "1"));
@@ -519,9 +514,10 @@ public abstract class ExpressionTestBase {
                 continue;
             }
 
-            BigDecimal numeric = (BigDecimal) operand.value;
+            Number numeric = operand.numericValue();
+            assert numeric != null;
             RelDataType literalType = narrowestTypeFor(numeric, commonType == null ? null : typeName(commonType));
-            commonType = commonType == null ? literalType : withHigherPrecedenceForLiterals(literalType, commonType);
+            commonType = commonType == null ? literalType : withHigherPrecedence(literalType, commonType);
         }
 
         // Continue inference on non-numeric literals.
@@ -535,12 +531,12 @@ public abstract class ExpressionTestBase {
             if (isChar(operandType) && (commonType != null && isNumeric(commonType) || assumeNumeric)) {
                 // Infer proper numeric type for char literals.
 
-                BigDecimal numeric = operand.numericValue();
+                Number numeric = operand.numericValue();
                 assert numeric != null;
                 operandType = narrowestTypeFor(numeric, commonType == null ? null : typeName(commonType));
             }
 
-            commonType = commonType == null ? operandType : withHigherPrecedenceForLiterals(operandType, commonType);
+            commonType = commonType == null ? operandType : withHigherPrecedence(operandType, commonType);
         }
 
         // seen only parameters
@@ -582,7 +578,7 @@ public abstract class ExpressionTestBase {
                 } else if (isNumeric(operandType) || (isChar(operandType) && isNumeric(commonType))) {
                     // Assign final numeric types to numeric and char literals.
 
-                    BigDecimal numeric = operand.numericValue();
+                    Number numeric = operand.numericValue();
                     assert numeric != null;
                     RelDataType literalType;
                     if (typeName(commonType) == DECIMAL) {
@@ -710,7 +706,16 @@ public abstract class ExpressionTestBase {
 
             if (VERIFY_EVALUATION) {
                 RelNode relNode = optimizerContext.convert(parseResult).getRel();
-                Expression<?> expression = convertToExpression(relNode, validator.getParameterRowType(sqlNode));
+
+                Project project = (Project) relNode;
+                assert project.getProjects().size() == 1;
+                RexNode rexNode = project.getProjects().get(0);
+                assertEquals(expectedReturnType, rexNode.getType());
+
+                Expression<?> expression = convertToExpression(project, validator.getParameterRowType(sqlNode));
+                QueryDataType expectedReturnQueryType = map(expectedReturnType.getSqlTypeName());
+                QueryDataType actualReturnQueryType = expression.getType();
+                assertEquals(expectedReturnQueryType, actualReturnQueryType);
 
                 verifyEvaluation(expected, operands, expression, expectedValues, evaluationId);
             }
@@ -864,8 +869,8 @@ public abstract class ExpressionTestBase {
             return type != UNKNOWN_TYPE && value != UNKNOWN_VALUE;
         }
 
-        protected boolean isNumericLiteral() {
-            return isLiteral() && value instanceof BigDecimal;
+        public boolean isNumericLiteral() {
+            return isLiteral() && (value instanceof BigDecimal || value instanceof Double);
         }
 
         public boolean isParameter() {
@@ -884,19 +889,29 @@ public abstract class ExpressionTestBase {
             return ExpressionTestBase.typeName(type);
         }
 
-        public BigDecimal numericValue() {
+        public Number numericValue() {
             if (!isLiteral()) {
                 return null;
             }
 
             if (isChar(type)) {
                 try {
-                    return StringConverter.INSTANCE.asDecimal(value);
+                    if (((String) value).toLowerCase().contains("e")) {
+                        // floating point approximate scientific notation
+                        return StringConverter.INSTANCE.asDouble(value);
+                    } else {
+                        // floating point exact doted notation or integer
+                        return StringConverter.INSTANCE.asDecimal(value);
+                    }
                 } catch (QueryException e) {
                     return INVALID_NUMERIC_VALUE;
                 }
+            } else if (typeName() == DECIMAL) {
+                return (BigDecimal) value;
+            } else if (typeName() == DOUBLE) {
+                return (Double) value;
             } else {
-                return value instanceof BigDecimal ? (BigDecimal) value : null;
+                return null;
             }
         }
 
@@ -1040,16 +1055,20 @@ public abstract class ExpressionTestBase {
         return validator.getValidatedNodeType(node);
     }
 
-    private static Operand numericLiteral(long value) {
-        return numericLiteral(Long.toString(value));
+    private static Operand exactLiteral(long value) {
+        return exactLiteral(Long.toString(value));
     }
 
-    private static Operand numericLiteral(BigInteger value) {
-        return numericLiteral(value.toString());
+    private static Operand exactLiteral(BigInteger value) {
+        return exactLiteral(value.toString());
     }
 
-    private static Operand numericLiteral(String text) {
+    private static Operand exactLiteral(String text) {
         return new Operand(TYPE_FACTORY.createSqlType(DECIMAL), new BigDecimal(text), text);
+    }
+
+    private static Operand approxLiteral(String text) {
+        return new Operand(TYPE_FACTORY.createSqlType(DOUBLE), Double.parseDouble(text), text);
     }
 
     private static Operand stringLiteral(String string) {
@@ -1057,7 +1076,14 @@ public abstract class ExpressionTestBase {
     }
 
     private static String unparse(RelDataType type) {
-        return type.getSqlTypeName() == TIMESTAMP_WITH_LOCAL_TIME_ZONE ? "TIMESTAMP WITH LOCAL TIME ZONE" : type.toString();
+        switch (type.getSqlTypeName()) {
+            case ANY:
+                return "OBJECT";
+            case TIMESTAMP_WITH_LOCAL_TIME_ZONE:
+                return "TIMESTAMP WITH LOCAL TIME ZONE";
+            default:
+                return type.toString();
+        }
     }
 
     /**
@@ -1082,11 +1108,8 @@ public abstract class ExpressionTestBase {
         };
     }
 
-    private static Expression<?> convertToExpression(RelNode relNode, RelDataType parameterRowType) {
-        assert relNode instanceof Project;
-        Project project = (Project) relNode;
+    private static Expression<?> convertToExpression(Project project, RelDataType parameterRowType) {
         assert project.getProjects().size() == 1;
-
         RexNode rexNode = project.getProjects().get(0);
 
         QueryParameterMetadata parameterMetadata = new QueryParameterMetadata(mapRowType(parameterRowType));
@@ -1122,6 +1145,97 @@ public abstract class ExpressionTestBase {
             args[i] = operandTransform.apply(operands[i]);
         }
         return String.format(format, args);
+    }
+
+    protected SqlService createEndToEndRecords() {
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+        HazelcastInstance instance = factory.newHazelcastInstance(smallInstanceConfig());
+        IMap<Integer, Record> records = factory.newHazelcastInstance(smallInstanceConfig()).getMap("records");
+
+        for (int i = 0; i < 1000; ++i) {
+            records.put(i, new Record("str" + i, 1000 + i, 2000.1 + i, new BigDecimal((3000 + i) + ".5"), i >= 500));
+        }
+        records.put(5000, new Record(null, -100, -100500, new BigDecimal(9001), null));
+        records.put(6000, new Record(null, -200, -200500, null, null));
+
+        return instance.getSql();
+    }
+
+    protected SqlResult query(SqlService sql, String query, Object... args) {
+        return sql.query(query, args);
+    }
+
+    public static class Record implements Serializable {
+
+        public final String string1;
+        public final int int1;
+        public final double double1;
+        public final BigDecimal decimal1;
+        public final Boolean boolean1;
+        public final byte byte1;
+
+        public Record(String string1, int int1, double double1, BigDecimal decimal1, Boolean boolean1) {
+            this.string1 = string1;
+            this.int1 = int1;
+            this.double1 = double1;
+            this.decimal1 = decimal1;
+            this.boolean1 = boolean1;
+
+            this.byte1 = (byte) int1;
+        }
+
+    }
+
+    @FunctionalInterface
+    protected interface ExpectedColumnValues {
+
+        Object valueFor(int key);
+
+    }
+
+    protected static Set<Integer> keys(int... keys) {
+        Set<Integer> set = new HashSet<>();
+        for (int key : keys) {
+            set.add(key);
+        }
+        return set;
+    }
+
+    // end is exclusive
+    protected static Set<Integer> keyRange(int beginning, int end, int... others) {
+        Set<Integer> set = new HashSet<>();
+        for (int key = beginning; key < end; ++key) {
+            set.add(key);
+        }
+        for (int key : others) {
+            set.add(key);
+        }
+        return set;
+    }
+
+    protected static void assertRows(SqlResult result, Set<Integer> expectedKeys, ExpectedColumnValues... expectedColumnValues) {
+        assertEquals(expectedColumnValues.length, result.getRowMetadata().getColumnCount() - 1);
+
+        Map<Integer, SqlRow> rows = new HashMap<>();
+        for (SqlRow row : result) {
+            int key = row.getObject(0);
+
+            assertTrue(expectedKeys.contains(key));
+            assertNull(rows.put(key, row));
+
+            for (int i = 0; i < expectedColumnValues.length; i++) {
+                ExpectedColumnValues columnValues = expectedColumnValues[i];
+                assertEquals(columnValues.valueFor(key), row.getObject(i + 1));
+            }
+        }
+        assertEquals(expectedKeys.size(), rows.size());
+    }
+
+    protected void assertQueryThrows(SqlService sql, String query, String message, Object... args) {
+        SqlException exception = assertThrows(SqlException.class, () -> query(sql, query, args).forEach(r -> {
+            // do nothing, just drain all the rows
+        }));
+        assertTrue(exception.getMessage(), exception.getMessage().toLowerCase().contains(message.toLowerCase()));
     }
 
 }

@@ -22,13 +22,12 @@ import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.calcite.SqlToQueryType;
 import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlValidator;
 import com.hazelcast.sql.impl.type.QueryDataType;
-import com.hazelcast.sql.impl.type.SqlDaySecondInterval;
-import com.hazelcast.sql.impl.type.SqlYearMonthInterval;
 import com.hazelcast.sql.impl.type.converter.Converter;
 import com.hazelcast.sql.impl.type.converter.Converters;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeSystem;
 import org.apache.calcite.rel.type.RelDataTypeSystemImpl;
+import org.apache.calcite.sql.SqlIdentifier;
 import org.apache.calcite.sql.SqlLiteral;
 import org.apache.calcite.sql.type.SqlTypeName;
 
@@ -36,6 +35,7 @@ import java.math.BigDecimal;
 import java.util.Calendar;
 
 import static org.apache.calcite.sql.type.SqlTypeName.ANY;
+import static org.apache.calcite.sql.type.SqlTypeName.APPROX_TYPES;
 import static org.apache.calcite.sql.type.SqlTypeName.BIGINT;
 import static org.apache.calcite.sql.type.SqlTypeName.BOOLEAN;
 import static org.apache.calcite.sql.type.SqlTypeName.CHAR_TYPES;
@@ -57,7 +57,6 @@ import static org.apache.calcite.sql.type.SqlTypeName.SMALLINT;
 import static org.apache.calcite.sql.type.SqlTypeName.TIME;
 import static org.apache.calcite.sql.type.SqlTypeName.TIMESTAMP;
 import static org.apache.calcite.sql.type.SqlTypeName.TIMESTAMP_WITH_LOCAL_TIME_ZONE;
-import static org.apache.calcite.sql.type.SqlTypeName.TIME_WITH_LOCAL_TIME_ZONE;
 import static org.apache.calcite.sql.type.SqlTypeName.TINYINT;
 import static org.apache.calcite.sql.type.SqlTypeName.VARCHAR;
 import static org.apache.calcite.sql.type.SqlTypeName.YEAR_INTERVAL_TYPES;
@@ -86,8 +85,10 @@ public final class HazelcastTypeSystem extends RelDataTypeSystemImpl {
      */
     public static final int MAX_DECIMAL_SCALE = MAX_DECIMAL_PRECISION;
 
-    private static final int MILLISECONDS_PER_SECOND = 1_000;
-    private static final int NANOSECONDS_PER_MILLISECOND = 1_000_000;
+    /**
+     * The name of Hazelcast OBJECT type.
+     */
+    public static final String OBJECT_TYPE_NAME = "OBJECT";
 
     /**
      * Defines the set of supported types. Order is important for precedence
@@ -96,8 +97,8 @@ public final class HazelcastTypeSystem extends RelDataTypeSystemImpl {
      * {@link com.hazelcast.sql.impl.type.QueryDataTypeFamily}.
      */
     private static final SqlTypeName[] TYPE_NAMES =
-            {NULL, VARCHAR, BOOLEAN, TINYINT, SMALLINT, INTEGER, BIGINT, DECIMAL, REAL, DOUBLE, INTERVAL_YEAR_MONTH,
-                    INTERVAL_DAY_SECOND, TIME, DATE, TIMESTAMP, TIMESTAMP_WITH_LOCAL_TIME_ZONE, ANY};
+            {NULL, VARCHAR, BOOLEAN, TINYINT, SMALLINT, INTEGER, BIGINT, DECIMAL, REAL, DOUBLE, TIME, DATE, TIMESTAMP,
+                    TIMESTAMP_WITH_LOCAL_TIME_ZONE, ANY};
 
     private static final Object2LongHashMap<SqlTypeName> TYPE_TO_PRECEDENCE = new Object2LongHashMap<>(-1);
 
@@ -108,6 +109,14 @@ public final class HazelcastTypeSystem extends RelDataTypeSystemImpl {
     }
 
     private HazelcastTypeSystem() {
+    }
+
+    /**
+     * @return {@code true} if the given identifier specifies OBJECT type,
+     * {@code false} otherwise.
+     */
+    public static boolean isObject(SqlIdentifier identifier) {
+        return identifier.isSimple() && OBJECT_TYPE_NAME.equalsIgnoreCase(identifier.getSimple());
     }
 
     /**
@@ -205,41 +214,24 @@ public final class HazelcastTypeSystem extends RelDataTypeSystemImpl {
     }
 
     /**
-     * Selects a type having a higher precedence from the two given types
-     * assuming at least one of the given types is associated with a literal.
-     * <p>
-     * Literal type precedence is used to assign types to literals participating
-     * in expressions. For instance, consider the following expression: {@code
-     * 0.1 + decimalColumn}, the left-hand side receives DOUBLE type if
-     * interpreted as a standalone literal, so the expression as a whole
-     * receives DOUBLE type according to the general type precedence rules. This
-     * method fixes that by selecting DECIMAL type to assign to the literal.
-     *
-     * @param type1 the first type.
-     * @param type2 the second type.
-     * @return the type with the higher precedence.
-     */
-    public static RelDataType withHigherPrecedenceForLiterals(RelDataType type1, RelDataType type2) {
-        if (typeName(type1) == DECIMAL && isNumeric(type2)) {
-            return type1;
-        }
-        if (typeName(type2) == DECIMAL && isNumeric(type1)) {
-            return type2;
-        }
-
-        return withHigherPrecedence(type1, type2);
-    }
-
-    /**
      * Selects the narrowest possible numeric type for the given {@link
-     * BigDecimal} value with a potential fallback to the given other type if
+     * Number} value with a potential fallback to the given other type if
      * that given other type is a floating-point type.
      * <p>
-     * The narrowest integer type is selected if the value can be exactly
-     * represented as TINYINT, SMALLINT, INTEGER or BIGINT. Otherwise, the given
-     * fallback type is selected if it's a floating-point type. If the given
-     * fallback type is not a floating-point type, BIGINT is selected for
-     * integer values and DOUBLE is selected for floating-point values.
+     * The given {@link Number} value can be either {@link BigDecimal}, in this
+     * case the value is considered to be exact (see {@link
+     * SqlTypeName#EXACT_TYPES}), or {@link Double}, in this case the value is
+     * considered to be approximate (see {@link SqlTypeName#APPROX_TYPES}).
+     * <p>
+     * If the given value is exact, the narrowest integer type is selected if the
+     * value can be represented without losses as TINYINT, SMALLINT, INTEGER or
+     * BIGINT. Otherwise, the given fallback type is selected if it's a
+     * floating-point type. If the given fallback type is not a floating-point
+     * type, BIGINT is selected for integer values and DECIMAL is selected for
+     * floating-point values.
+     * <p>
+     * If the given value is approximate, the given fallback type is selected if
+     * the type is REAL; otherwise, DOUBLE is selected.
      * <p>
      * The method performs only the narrowest type selection and doesn't
      * validate the value itself.
@@ -248,18 +240,24 @@ public final class HazelcastTypeSystem extends RelDataTypeSystemImpl {
      * @param otherType the other fallback type.
      * @return the narrowest selected type.
      */
-    public static RelDataType narrowestTypeFor(BigDecimal value, SqlTypeName otherType) {
-        if (value.scale() <= 0) {
-            try {
-                long longValue = value.longValueExact();
+    public static RelDataType narrowestTypeFor(Number value, SqlTypeName otherType) {
+        if (value instanceof BigDecimal) {
+            BigDecimal decimalValue = (BigDecimal) value;
+            if (decimalValue.scale() <= 0) {
+                try {
+                    long longValue = decimalValue.longValueExact();
 
-                int bitWidth = HazelcastIntegerType.bitWidthOf(longValue);
-                return HazelcastIntegerType.of(bitWidth, false);
-            } catch (ArithmeticException e) {
-                return HazelcastTypeFactory.INSTANCE.createSqlType(FRACTIONAL_TYPES.contains(otherType) ? otherType : BIGINT);
+                    int bitWidth = HazelcastIntegerType.bitWidthOf(longValue);
+                    return HazelcastIntegerType.of(bitWidth, false);
+                } catch (ArithmeticException e) {
+                    return HazelcastTypeFactory.INSTANCE.createSqlType(FRACTIONAL_TYPES.contains(otherType) ? otherType : BIGINT);
+                }
+            } else {
+                return HazelcastTypeFactory.INSTANCE.createSqlType(APPROX_TYPES.contains(otherType) ? otherType : DECIMAL);
             }
         } else {
-            return HazelcastTypeFactory.INSTANCE.createSqlType(FRACTIONAL_TYPES.contains(otherType) ? otherType : DOUBLE);
+            assert value instanceof Double;
+            return HazelcastTypeFactory.INSTANCE.createSqlType(APPROX_TYPES.contains(otherType) ? otherType : DOUBLE);
         }
     }
 
@@ -365,7 +363,10 @@ public final class HazelcastTypeSystem extends RelDataTypeSystemImpl {
             case INTEGER:
                 return literal.getValueAs(Integer.class);
             case BIGINT:
-                return literal.getValueAs(Long.class);
+                // XXX: Calcite returns unscaled value of the internally stored
+                // BigDecimal if a long value is requested on the literal.
+                BigDecimal decimalValue = literal.getValueAs(BigDecimal.class);
+                return decimalValue == null ? null : decimalValue.longValue();
 
             case DECIMAL:
                 return literal.getValueAs(BigDecimal.class);
@@ -382,27 +383,6 @@ public final class HazelcastTypeSystem extends RelDataTypeSystemImpl {
             case TIMESTAMP_WITH_LOCAL_TIME_ZONE:
                 return literal.getValueAs(Calendar.class);
 
-            case INTERVAL_YEAR:
-            case INTERVAL_MONTH:
-            case INTERVAL_YEAR_MONTH:
-                long months = literal.getValueAs(Long.class);
-                return new SqlYearMonthInterval((int) months);
-
-            case INTERVAL_DAY:
-            case INTERVAL_DAY_HOUR:
-            case INTERVAL_DAY_MINUTE:
-            case INTERVAL_DAY_SECOND:
-            case INTERVAL_HOUR:
-            case INTERVAL_HOUR_MINUTE:
-            case INTERVAL_HOUR_SECOND:
-            case INTERVAL_MINUTE:
-            case INTERVAL_MINUTE_SECOND:
-            case INTERVAL_SECOND:
-                long milliseconds = literal.getValueAs(Long.class);
-                long seconds = milliseconds / MILLISECONDS_PER_SECOND;
-                int nanoseconds = (int) (milliseconds % MILLISECONDS_PER_SECOND) * NANOSECONDS_PER_MILLISECOND;
-                return new SqlDaySecondInterval(seconds, nanoseconds);
-
             case ANY:
                 return literal.getValueAs(Object.class);
 
@@ -415,17 +395,6 @@ public final class HazelcastTypeSystem extends RelDataTypeSystemImpl {
     }
 
     private static RelDataType literalType(SqlLiteral literal) {
-        if (YEAR_INTERVAL_TYPES.contains(literal.getTypeName())) {
-            return HazelcastTypeFactory.INSTANCE.createSqlType(INTERVAL_YEAR_MONTH);
-        }
-        if (DAY_INTERVAL_TYPES.contains(literal.getTypeName())) {
-            return HazelcastTypeFactory.INSTANCE.createSqlType(INTERVAL_DAY_SECOND);
-        }
-
-        if (literal.getTypeName() == TIME_WITH_LOCAL_TIME_ZONE) {
-            return HazelcastTypeFactory.INSTANCE.createSqlType(TIME);
-        }
-
         return HazelcastTypeFactory.INSTANCE.createSqlType(literal.getTypeName());
     }
 

@@ -16,7 +16,7 @@
 
 package com.hazelcast.sql.impl.expression;
 
-import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.apache.calcite.rel.type.RelDataType;
@@ -24,11 +24,9 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.math.BigDecimal;
-
 import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeSystem.narrowestTypeFor;
 
-@RunWith(HazelcastSerialClassRunner.class)
+@RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class IdentityTest extends ExpressionTestBase {
 
@@ -49,8 +47,7 @@ public class IdentityTest extends ExpressionTestBase {
         // Assign type to numeric literals.
 
         if (operand.isNumericLiteral()) {
-            BigDecimal numeric = operand.numericValue();
-            //noinspection NumberEquality
+            Number numeric = operand.numericValue();
             assert numeric != null && numeric != INVALID_NUMERIC_VALUE;
             type = narrowestTypeFor(numeric, null);
         }

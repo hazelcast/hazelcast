@@ -16,30 +16,48 @@
 
 package com.hazelcast.sql.impl.expression.predicate;
 
+import com.hazelcast.sql.SqlService;
 import com.hazelcast.sql.impl.SqlDataSerializerHook;
-import com.hazelcast.sql.impl.SqlTestSupport;
+import com.hazelcast.sql.impl.calcite.validate.types.HazelcastObjectType;
 import com.hazelcast.sql.impl.expression.ColumnExpression;
+import com.hazelcast.sql.impl.expression.ExpressionTestBase;
 import com.hazelcast.sql.impl.expression.SimpleExpressionEvalContext;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.apache.calcite.rel.type.RelDataType;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static com.hazelcast.sql.impl.calcite.validate.HazelcastSqlOperatorTable.IS_NULL;
+import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeSystem.narrowestTypeFor;
+import static org.apache.calcite.sql.type.SqlTypeName.BOOLEAN;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class IsNullPredicateTest extends SqlTestSupport {
-
-    // NOTE: This test class verifies only basic functionality, look for more
-    // extensive tests in hazelcast-sql module.
+public class IsNullTest extends ExpressionTestBase {
 
     @Test
-    public void testIsNullPredicate() {
+    public void testEndToEnd() {
+        SqlService sql = createEndToEndRecords();
+        assertRows(query(sql, "select __key from records where string1 is null"), keys(5000, 6000));
+        assertRows(query(sql, "select __key from records where (decimal1 + 1) is null"), keys(6000));
+        assertRows(query(sql, "select __key, string1 is null from records"), keyRange(0, 1000, 5000, 6000),
+                k -> k == 5000 || k == 6000);
+        assertQueryThrows(sql, "select __key, cast(string1 is null as int) from records", "cast function cannot convert");
+    }
+
+    @Test
+    public void verify() {
+        verify(IS_NULL, IsNullTest::expectedTypes, IsNullTest::expectedValues, "%s IS NULL", ALL);
+    }
+
+    @Test
+    public void testCreationAndEval() {
         IsNullPredicate predicate = IsNullPredicate.create(ColumnExpression.create(0, QueryDataType.VARCHAR));
 
         assertFalse(predicate.eval(row("test"), SimpleExpressionEvalContext.create()));
@@ -61,6 +79,41 @@ public class IsNullPredicateTest extends SqlTestSupport {
         IsNullPredicate restored = serializeAndCheck(original, SqlDataSerializerHook.EXPRESSION_IS_NULL);
 
         checkEquals(original, restored, true);
+    }
+
+    private static RelDataType[] expectedTypes(Operand[] operands) {
+        Operand operand = operands[0];
+        RelDataType type = operand.type;
+
+        if (operand.isParameter()) {
+            return new RelDataType[]{HazelcastObjectType.NULLABLE_INSTANCE, TYPE_FACTORY.createSqlType(BOOLEAN)};
+        }
+
+        // Assign type to numeric literals.
+
+        if (operand.isNumericLiteral()) {
+            Number numeric = operand.numericValue();
+            assert numeric != null && numeric != INVALID_NUMERIC_VALUE;
+            type = narrowestTypeFor(numeric, null);
+        }
+
+        // Validate literals.
+
+        if (operand.isLiteral() && !canRepresentLiteral(operand, type)) {
+            return null;
+        }
+
+        return new RelDataType[]{type, TYPE_FACTORY.createSqlType(BOOLEAN)};
+    }
+
+    private static Object expectedValues(Operand[] operands, RelDataType[] types, Object[] args) {
+        Object arg = args[0];
+
+        if (arg == INVALID_VALUE) {
+            return INVALID_VALUE;
+        }
+
+        return TernaryLogic.isNull(arg);
     }
 
 }

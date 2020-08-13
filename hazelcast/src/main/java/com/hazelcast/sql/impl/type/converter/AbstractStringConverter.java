@@ -16,8 +16,6 @@
 
 package com.hazelcast.sql.impl.type.converter;
 
-import com.hazelcast.sql.impl.QueryException;
-import com.hazelcast.sql.SqlErrorCode;
 import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 
 import java.math.BigDecimal;
@@ -52,7 +50,7 @@ public abstract class AbstractStringConverter extends Converter {
             return false;
         }
 
-        throw QueryException.error(SqlErrorCode.DATA_EXCEPTION, "VARCHAR value cannot be converted to BOOLEAN: " + val);
+        throw cannotConvert(QueryDataTypeFamily.BOOLEAN, val);
     }
 
     @Override

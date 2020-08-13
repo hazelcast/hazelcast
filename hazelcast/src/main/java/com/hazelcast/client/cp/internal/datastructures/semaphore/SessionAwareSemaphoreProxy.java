@@ -81,11 +81,11 @@ public class SessionAwareSemaphoreProxy extends ClientProxy implements ISemaphor
 
     @Override
     public void acquire(int permits) {
-        checkPositive(permits, "Permits must be positive!");
+        checkPositive("permits", permits);
         long threadId = getThreadId();
         UUID invocationUid = newUnsecureUUID();
 
-        for (;;) {
+        for (; ; ) {
             long sessionId = sessionManager.acquireSession(this.groupId, permits);
             try {
                 ClientMessage request = SemaphoreAcquireCodec.encodeRequest(groupId, objectName, sessionId, threadId,
@@ -125,7 +125,7 @@ public class SessionAwareSemaphoreProxy extends ClientProxy implements ISemaphor
         long threadId = getThreadId();
         UUID invocationUid = newUnsecureUUID();
         long start;
-        for (;;) {
+        for (; ; ) {
             start = Clock.currentTimeMillis();
             long sessionId = sessionManager.acquireSession(this.groupId, permits);
             try {
@@ -192,7 +192,7 @@ public class SessionAwareSemaphoreProxy extends ClientProxy implements ISemaphor
         long threadId = getThreadId();
         UUID invocationUid = newUnsecureUUID();
 
-        for (;;) {
+        for (; ; ) {
             long sessionId = sessionManager.acquireSession(this.groupId, DRAIN_SESSION_ACQ_COUNT);
             try {
                 ClientMessage request = SemaphoreDrainCodec.encodeRequest(groupId, objectName, sessionId, threadId,

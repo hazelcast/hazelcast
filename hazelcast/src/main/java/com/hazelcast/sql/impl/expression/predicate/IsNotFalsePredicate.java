@@ -16,15 +16,19 @@
 
 package com.hazelcast.sql.impl.expression.predicate;
 
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.sql.impl.SqlDataSerializerHook;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.expression.UniExpression;
-import com.hazelcast.sql.impl.expression.util.EnsureConvertible;
-import com.hazelcast.sql.impl.expression.util.Eval;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
-public class IsNotFalsePredicate extends UniExpression<Boolean> {
+/**
+ * Implements evaluation of SQL IS NOT FALSE predicate.
+ */
+public final class IsNotFalsePredicate extends UniExpression<Boolean> implements IdentifiedDataSerializable {
+
     public IsNotFalsePredicate() {
         // No-op.
     }
@@ -34,18 +38,27 @@ public class IsNotFalsePredicate extends UniExpression<Boolean> {
     }
 
     public static IsNotFalsePredicate create(Expression<?> operand) {
-        EnsureConvertible.toBoolean(operand);
-
         return new IsNotFalsePredicate(operand);
     }
 
     @Override
+    public int getFactoryId() {
+        return SqlDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getClassId() {
+        return SqlDataSerializerHook.EXPRESSION_IS_NOT_FALSE;
+    }
+
+    @Override
     public Boolean eval(Row row, ExpressionEvalContext context) {
-        return TernaryLogic.isNotFalse(Eval.asBoolean(operand, row, context));
+        return TernaryLogic.isNotFalse((Boolean) operand.eval(row, context));
     }
 
     @Override
     public QueryDataType getType() {
         return QueryDataType.BOOLEAN;
     }
+
 }

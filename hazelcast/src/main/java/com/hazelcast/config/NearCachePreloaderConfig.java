@@ -94,8 +94,8 @@ public class NearCachePreloaderConfig implements IdentifiedDataSerializable, Ser
     }
 
     public NearCachePreloaderConfig setStoreInitialDelaySeconds(int storeInitialDelaySeconds) {
-        this.storeInitialDelaySeconds = checkPositive(storeInitialDelaySeconds,
-                "storeInitialDelaySeconds must be a positive number!");
+        this.storeInitialDelaySeconds = checkPositive("storeInitialDelaySeconds",
+                storeInitialDelaySeconds);
         return this;
     }
 
@@ -104,8 +104,7 @@ public class NearCachePreloaderConfig implements IdentifiedDataSerializable, Ser
     }
 
     public NearCachePreloaderConfig setStoreIntervalSeconds(int storeIntervalSeconds) {
-        this.storeIntervalSeconds = checkPositive(storeIntervalSeconds,
-                "storeIntervalSeconds must be a positive number!");
+        this.storeIntervalSeconds = checkPositive("storeIntervalSeconds", storeIntervalSeconds);
         return this;
     }
 

@@ -38,7 +38,12 @@ import com.hazelcast.sql.impl.expression.math.UnaryMinusFunction;
 import com.hazelcast.sql.impl.expression.predicate.AndPredicate;
 import com.hazelcast.sql.impl.expression.predicate.CaseExpression;
 import com.hazelcast.sql.impl.expression.predicate.ComparisonPredicate;
+import com.hazelcast.sql.impl.expression.predicate.IsFalsePredicate;
+import com.hazelcast.sql.impl.expression.predicate.IsNotFalsePredicate;
+import com.hazelcast.sql.impl.expression.predicate.IsNotNullPredicate;
+import com.hazelcast.sql.impl.expression.predicate.IsNotTruePredicate;
 import com.hazelcast.sql.impl.expression.predicate.IsNullPredicate;
+import com.hazelcast.sql.impl.expression.predicate.IsTruePredicate;
 import com.hazelcast.sql.impl.expression.predicate.NotPredicate;
 import com.hazelcast.sql.impl.expression.predicate.OrPredicate;
 import com.hazelcast.sql.impl.extract.GenericQueryTargetDescriptor;
@@ -119,13 +124,18 @@ public class SqlDataSerializerHook implements DataSerializerHook {
     public static final int EXPRESSION_NOT = 34;
     public static final int EXPRESSION_COMPARISON = 35;
     public static final int EXPRESSION_CASE = 36;
+    public static final int EXPRESSION_IS_TRUE = 37;
+    public static final int EXPRESSION_IS_NOT_TRUE = 38;
+    public static final int EXPRESSION_IS_FALSE = 39;
+    public static final int EXPRESSION_IS_NOT_FALSE = 40;
+    public static final int EXPRESSION_IS_NOT_NULL = 41;
 
-    public static final int INDEX_FILTER_VALUE = 37;
-    public static final int INDEX_FILTER_EQUALS = 38;
-    public static final int INDEX_FILTER_RANGE = 39;
-    public static final int INDEX_FILTER_IN = 40;
+    public static final int INDEX_FILTER_VALUE = 42;
+    public static final int INDEX_FILTER_EQUALS = 43;
+    public static final int INDEX_FILTER_RANGE = 44;
+    public static final int INDEX_FILTER_IN = 45;
 
-    public static final int NODE_EMPTY = 41;
+    public static final int NODE_EMPTY = 46;
 
     public static final int LEN = NODE_EMPTY + 1;
 
@@ -184,6 +194,11 @@ public class SqlDataSerializerHook implements DataSerializerHook {
         constructors[EXPRESSION_NOT] = arg -> new NotPredicate();
         constructors[EXPRESSION_COMPARISON] = arg -> new ComparisonPredicate();
         constructors[EXPRESSION_CASE] = arg -> new CaseExpression<>();
+        constructors[EXPRESSION_IS_TRUE] = arg -> new IsTruePredicate();
+        constructors[EXPRESSION_IS_NOT_TRUE] = arg -> new IsNotTruePredicate();
+        constructors[EXPRESSION_IS_FALSE] = arg -> new IsFalsePredicate();
+        constructors[EXPRESSION_IS_NOT_FALSE] = arg -> new IsNotFalsePredicate();
+        constructors[EXPRESSION_IS_NOT_NULL] = arg -> new IsNotNullPredicate();
 
         constructors[INDEX_FILTER_VALUE] = arg -> new IndexFilterValue();
         constructors[INDEX_FILTER_EQUALS] = arg -> new IndexEqualsFilter();

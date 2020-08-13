@@ -21,6 +21,7 @@ import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.calcite.JetSqlBackend;
 import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlConformance;
 import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlValidator;
+import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeFactory;
 import org.apache.calcite.prepare.Prepare.CatalogReader;
 import org.apache.calcite.rel.type.RelDataTypeFactory;
 import org.apache.calcite.sql.SqlNode;
@@ -39,14 +40,14 @@ import javax.annotation.Nullable;
  */
 public class QueryParser {
 
-    private final RelDataTypeFactory typeFactory;
+    private final HazelcastTypeFactory typeFactory;
     private final CatalogReader catalogReader;
     private final SqlConformance conformance;
 
     private final JetSqlBackend jetSqlBackend;
 
     public QueryParser(
-            RelDataTypeFactory typeFactory,
+            HazelcastTypeFactory typeFactory,
             CatalogReader catalogReader,
             SqlConformance conformance,
             @Nullable JetSqlBackend jetSqlBackend

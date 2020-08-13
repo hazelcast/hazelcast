@@ -150,8 +150,18 @@ public class HazelcastIntegerTypeTest {
         assertEquals(2, HazelcastIntegerType.bitWidthOf(-2));
         assertEquals(10, HazelcastIntegerType.bitWidthOf(555));
         assertEquals(10, HazelcastIntegerType.bitWidthOf(-555));
+
         assertEquals(Long.SIZE - 1, HazelcastIntegerType.bitWidthOf(Long.MAX_VALUE));
         assertEquals(Long.SIZE - 1, HazelcastIntegerType.bitWidthOf(Long.MIN_VALUE));
+
+        assertEquals(Integer.SIZE - 1, HazelcastIntegerType.bitWidthOf(Integer.MAX_VALUE));
+        assertEquals(Integer.SIZE - 1, HazelcastIntegerType.bitWidthOf(Integer.MIN_VALUE));
+
+        assertEquals(Short.SIZE - 1, HazelcastIntegerType.bitWidthOf(Short.MAX_VALUE));
+        assertEquals(Short.SIZE - 1, HazelcastIntegerType.bitWidthOf(Short.MIN_VALUE));
+
+        assertEquals(Byte.SIZE - 1, HazelcastIntegerType.bitWidthOf(Byte.MAX_VALUE));
+        assertEquals(Byte.SIZE - 1, HazelcastIntegerType.bitWidthOf(Byte.MIN_VALUE));
     }
 
     @Test
