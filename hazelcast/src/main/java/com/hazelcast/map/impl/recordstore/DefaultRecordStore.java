@@ -1270,10 +1270,13 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
 
     @Override
     public void reset() {
-        mutationObserver.onReset();
-        mapDataStore.reset();
-        storage.clear(false);
-        stats.reset();
+        try {
+            mutationObserver.onReset();
+        } finally {
+            mapDataStore.reset();
+            storage.clear(false);
+            stats.reset();
+        }
     }
 
     @Override
@@ -1327,8 +1330,11 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     }
 
     private void clearStorage(boolean isDuringShutdown) {
-        mutationObserver.onClear();
-        storage.clear(isDuringShutdown);
+        try {
+            mutationObserver.onClear();
+        } finally {
+            storage.clear(isDuringShutdown);
+        }
     }
 
     private void clearLockStore() {
