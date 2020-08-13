@@ -52,7 +52,8 @@ public final class ElasticSources {
      */
     @Nonnull
     public static BatchSource<String> elastic() {
-        return elastic(ElasticClients::client);
+        SupplierEx<RestClientBuilder> client = ElasticClients::client;
+        return elastic(client);
     }
 
     /**

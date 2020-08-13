@@ -54,6 +54,23 @@ public final class ElasticClients {
     }
 
     /**
+     * Convenience method to create {@link RestClientBuilder} with given string, it must contain host, and optionally
+     * the scheme and a port.
+     *
+     * Valid examples:
+     * <pre>{@code elastic-host
+     * elastic-host:9200
+     * http://elastic-host:9200}</pre>
+     *
+     * @see HttpHost#create(String)
+     * @since 4.3
+     */
+    @Nonnull
+    public static RestClientBuilder client(@Nonnull String location) {
+        return RestClient.builder(HttpHost.create(location));
+    }
+
+    /**
      * Convenience method to create {@link RestClientBuilder} with given
      * hostname and port
      */
