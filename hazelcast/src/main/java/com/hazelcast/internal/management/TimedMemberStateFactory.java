@@ -48,7 +48,6 @@ import com.hazelcast.internal.monitor.LocalMemoryStats;
 import com.hazelcast.internal.monitor.LocalOperationStats;
 import com.hazelcast.internal.monitor.LocalPNCounterStats;
 import com.hazelcast.internal.monitor.LocalWanStats;
-import com.hazelcast.internal.monitor.WanSyncState;
 import com.hazelcast.internal.monitor.impl.HotRestartStateImpl;
 import com.hazelcast.internal.monitor.impl.LocalMemoryStatsImpl;
 import com.hazelcast.internal.monitor.impl.LocalOperationStatsImpl;
@@ -198,7 +197,6 @@ public class TimedMemberStateFactory {
         createNodeState(memberState);
         createHotRestartState(memberState);
         createClusterHotRestartStatus(memberState);
-        createWanSyncState(memberState);
 
         memberState.setClientStats(getClientAttributes(node.getClientEngine().getClientStatistics()));
 
@@ -243,14 +241,6 @@ public class TimedMemberStateFactory {
         NodeStateImpl nodeState = new NodeStateImpl(cluster.getClusterState(), node.getState(),
                 cluster.getClusterVersion(), node.getVersion());
         memberState.setNodeState(nodeState);
-    }
-
-    private void createWanSyncState(MemberStateImpl memberState) {
-        WanReplicationService wanReplicationService = instance.node.nodeEngine.getWanReplicationService();
-        WanSyncState wanSyncState = wanReplicationService.getWanSyncState();
-        if (wanSyncState != null) {
-            memberState.setWanSyncState(wanSyncState);
-        }
     }
 
     private void createMemState(MemberStateImpl memberState,
