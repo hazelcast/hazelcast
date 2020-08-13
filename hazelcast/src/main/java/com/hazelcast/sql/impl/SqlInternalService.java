@@ -26,6 +26,8 @@ import com.hazelcast.sql.impl.operation.QueryExecuteOperation;
 import com.hazelcast.sql.impl.operation.QueryExecuteOperationFactory;
 import com.hazelcast.sql.impl.operation.QueryOperationHandlerImpl;
 import com.hazelcast.sql.impl.plan.Plan;
+import com.hazelcast.sql.impl.plan.cache.CachedPlanInvalidationCallback;
+import com.hazelcast.sql.impl.plan.cache.PlanCacheChecker;
 import com.hazelcast.sql.impl.state.QueryClientStateRegistry;
 import com.hazelcast.sql.impl.state.QueryState;
 import com.hazelcast.sql.impl.state.QueryStateRegistry;
@@ -73,7 +75,8 @@ public class SqlInternalService {
         int operationThreadCount,
         int fragmentThreadCount,
         int outboxBatchSize,
-        long stateCheckFrequency
+        long stateCheckFrequency,
+        PlanCacheChecker planCacheChecker
     ) {
         this.nodeServiceProvider = nodeServiceProvider;
 
@@ -100,6 +103,7 @@ public class SqlInternalService {
             stateRegistry,
             clientStateRegistry,
             operationHandler,
+            planCacheChecker,
             stateCheckFrequency
         );
     }
@@ -125,7 +129,13 @@ public class SqlInternalService {
      *
      * @return Query state.
      */
-    public QueryState execute(Plan plan, List<Object> params, long timeout, int pageSize) {
+    public QueryState execute(
+        Plan plan,
+        List<Object> params,
+        long timeout,
+        int pageSize,
+        CachedPlanInvalidationCallback planInvalidationCallback
+    ) {
         prepareParameters(plan, params);
 
         // Get local member ID and check if it is still part of the plan.
@@ -149,6 +159,7 @@ public class SqlInternalService {
             localMemberId,
             timeout,
             plan,
+            planInvalidationCallback,
             plan.getRowMetadata(),
             consumer,
             operationHandler

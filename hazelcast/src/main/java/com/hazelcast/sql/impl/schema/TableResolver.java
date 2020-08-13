@@ -16,7 +16,7 @@
 
 package com.hazelcast.sql.impl.schema;
 
-import java.util.Collection;
+import javax.annotation.Nonnull;
 import java.util.List;
 
 /**
@@ -45,5 +45,6 @@ public interface TableResolver {
     /**
      * @return Collection of tables to be registered.
      */
-    Collection<Table> getTables();
+    @Nonnull
+    List<Table> getTables();
 }

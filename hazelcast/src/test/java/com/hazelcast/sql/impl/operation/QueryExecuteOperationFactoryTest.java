@@ -75,7 +75,9 @@ public class QueryExecuteOperationFactoryTest {
             inboundEdgeMap,
             inboundEdgeMemberCountMap,
             null,
-            QueryParameterMetadata.EMPTY
+            QueryParameterMetadata.EMPTY,
+            null,
+            Collections.emptySet()
         );
 
         QueryId queryId = QueryId.create(UUID.randomUUID());

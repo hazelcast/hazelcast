@@ -32,7 +32,7 @@ import java.util.Map;
  * Iterator over map partitions.
  */
 @SuppressWarnings("rawtypes")
-public class MapScanExecIterator {
+public class MapScanExecIterator implements KeyValueIterator {
 
     private final MapContainer map;
     private final Iterator<Integer> partsIterator;
@@ -53,8 +53,9 @@ public class MapScanExecIterator {
         advance0();
     }
 
+    @Override
     public boolean tryAdvance() {
-        if (hasNext()) {
+        if (!done()) {
             currentKey = nextKey;
             currentValue = nextValue;
 
@@ -66,8 +67,9 @@ public class MapScanExecIterator {
         }
     }
 
-    public boolean hasNext() {
-        return nextKey != null;
+    @Override
+    public boolean done() {
+        return nextKey == null;
     }
 
     /**
@@ -89,8 +91,10 @@ public class MapScanExecIterator {
                     boolean isOwned = map.getMapServiceContext().getOwnedPartitions().contains(nextPart);
 
                     if (!isOwned) {
-                        throw QueryException.error(SqlErrorCode.PARTITION_MIGRATED,
-                            "Partition is not owned by member: " + nextPart);
+                        throw QueryException.error(
+                            SqlErrorCode.PARTITION_NOT_OWNED,
+                            "Partition is not owned by member: " + nextPart
+                        ).withInvalidate();
                     }
 
                     currentRecordStore = map.getMapServiceContext().getRecordStore(nextPart, map.getName());
@@ -131,10 +135,12 @@ public class MapScanExecIterator {
         }
     }
 
+    @Override
     public Object getKey() {
         return currentKey;
     }
 
+    @Override
     public Object getValue() {
         return currentValue;
     }

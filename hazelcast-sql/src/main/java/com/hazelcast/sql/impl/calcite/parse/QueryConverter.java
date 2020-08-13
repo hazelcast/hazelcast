@@ -76,7 +76,7 @@ public class QueryConverter {
         RelRoot root = converter.convertQuery(node, false, true);
 
         // 2. Remove subquery expressions, converting them to Correlate nodes.
-        RelNode relNoSubqueries = rewriteSubqueries(root.rel);
+        RelNode relNoSubqueries = rewriteSubqueries(root.project());
 
         // 3. Perform decorrelation, i.e. rewrite a nested loop where the right side depends on the value of the left side,
         // to a variation of joins, semijoins and aggregations, which could be executed much more efficiently.

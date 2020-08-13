@@ -30,7 +30,7 @@ import java.io.IOException;
  */
 public class GenericQueryTargetDescriptor implements QueryTargetDescriptor, IdentifiedDataSerializable {
 
-    public static final GenericQueryTargetDescriptor INSTANCE = new GenericQueryTargetDescriptor();
+    public static final GenericQueryTargetDescriptor DEFAULT = new GenericQueryTargetDescriptor();
 
     public GenericQueryTargetDescriptor() {
         // No-op.

@@ -56,7 +56,9 @@ public class PlanTest extends SqlTestSupport {
             inboundEdgeMap,
             inboundEdgeMemberCountMap,
             null,
-            QueryParameterMetadata.EMPTY
+            QueryParameterMetadata.EMPTY,
+            null,
+            Collections.emptySet()
         );
 
         assertSame(partitionMap, plan.getPartitionMap());

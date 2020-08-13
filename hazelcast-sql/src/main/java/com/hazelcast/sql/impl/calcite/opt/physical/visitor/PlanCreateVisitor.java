@@ -33,6 +33,8 @@ import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.plan.Plan;
 import com.hazelcast.sql.impl.plan.PlanFragmentMapping;
+import com.hazelcast.sql.impl.plan.cache.PlanCacheKey;
+import com.hazelcast.sql.impl.plan.cache.PlanObjectKey;
 import com.hazelcast.sql.impl.plan.node.FilterPlanNode;
 import com.hazelcast.sql.impl.plan.node.MapScanPlanNode;
 import com.hazelcast.sql.impl.plan.node.PlanNode;
@@ -82,6 +84,12 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
     /** Rel ID map. */
     private final Map<PhysicalRel, List<Integer>> relIdMap;
 
+    /** Original SQL. */
+    private final String sql;
+
+    /** Key used for plan caching. */
+    private final PlanCacheKey planKey;
+
     /** Names of the returned columns from the original query. */
     private final List<String> rootColumnNames;
 
@@ -111,16 +119,23 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
     /** Row metadata. */
     private SqlRowMetadata rowMetadata;
 
+    /** Collected IDs of objects used in the plan. */
+    private final Set<PlanObjectKey> objectIds = new HashSet<>();
+
     public PlanCreateVisitor(
         UUID localMemberId,
         Map<UUID, PartitionIdSet> partMap,
         Map<PhysicalRel, List<Integer>> relIdMap,
+        String sql,
+        PlanCacheKey planKey,
         List<String> rootColumnNames,
         QueryParameterMetadata parameterMetadata
     ) {
         this.localMemberId = localMemberId;
         this.partMap = partMap;
         this.relIdMap = relIdMap;
+        this.sql = sql;
+        this.planKey = planKey;
         this.rootColumnNames = rootColumnNames;
         this.parameterMetadata = parameterMetadata;
 
@@ -163,7 +178,9 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
             inboundEdgeMap,
             inboundEdgeMemberCountMap,
             rowMetadata,
-            parameterMetadata
+            parameterMetadata,
+            planKey,
+            objectIds
         );
     }
 
@@ -216,6 +233,8 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
         );
 
         pushUpstream(scanNode);
+
+        objectIds.add(table.getObjectKey());
     }
 
     @Override

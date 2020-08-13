@@ -32,5 +32,4 @@ public abstract class AbstractGenericExtractor implements QueryExtractor {
         this.targetAccessor = targetAccessor;
         this.type = type;
     }
-
 }

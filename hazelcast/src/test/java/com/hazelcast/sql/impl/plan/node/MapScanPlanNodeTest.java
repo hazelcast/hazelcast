@@ -57,8 +57,8 @@ public class MapScanPlanNodeTest extends SqlTestSupport {
         MapScanPlanNode node = new MapScanPlanNode(
             id,
             mapName,
-            GenericQueryTargetDescriptor.INSTANCE,
-            GenericQueryTargetDescriptor.INSTANCE,
+            GenericQueryTargetDescriptor.DEFAULT,
+            GenericQueryTargetDescriptor.DEFAULT,
             fieldPaths,
             fieldTypes,
             projects,
@@ -67,8 +67,8 @@ public class MapScanPlanNodeTest extends SqlTestSupport {
 
         assertEquals(id, node.getId());
         assertEquals(mapName, node.getMapName());
-        assertEquals(GenericQueryTargetDescriptor.INSTANCE, node.getKeyDescriptor());
-        assertEquals(GenericQueryTargetDescriptor.INSTANCE, node.getValueDescriptor());
+        assertEquals(GenericQueryTargetDescriptor.DEFAULT, node.getKeyDescriptor());
+        assertEquals(GenericQueryTargetDescriptor.DEFAULT, node.getValueDescriptor());
         assertEquals(fieldPaths, node.getFieldPaths());
         assertEquals(fieldTypes, node.getFieldTypes());
         assertEquals(projects, node.getProjects());
@@ -98,8 +98,8 @@ public class MapScanPlanNodeTest extends SqlTestSupport {
         MapScanPlanNode node = new MapScanPlanNode(
             id1,
             mapName1,
-            GenericQueryTargetDescriptor.INSTANCE,
-            GenericQueryTargetDescriptor.INSTANCE,
+            GenericQueryTargetDescriptor.DEFAULT,
+            GenericQueryTargetDescriptor.DEFAULT,
             fieldPaths1,
             fieldTypes1,
             projects1,
@@ -111,8 +111,8 @@ public class MapScanPlanNodeTest extends SqlTestSupport {
             new MapScanPlanNode(
                 id1,
                 mapName1,
-                GenericQueryTargetDescriptor.INSTANCE,
-                GenericQueryTargetDescriptor.INSTANCE,
+                GenericQueryTargetDescriptor.DEFAULT,
+                GenericQueryTargetDescriptor.DEFAULT,
                 fieldPaths1,
                 fieldTypes1,
                 projects1,
@@ -126,8 +126,8 @@ public class MapScanPlanNodeTest extends SqlTestSupport {
             new MapScanPlanNode(
                 id2,
                 mapName1,
-                GenericQueryTargetDescriptor.INSTANCE,
-                GenericQueryTargetDescriptor.INSTANCE,
+                GenericQueryTargetDescriptor.DEFAULT,
+                GenericQueryTargetDescriptor.DEFAULT,
                 fieldPaths1,
                 fieldTypes1,
                 projects1,
@@ -141,8 +141,8 @@ public class MapScanPlanNodeTest extends SqlTestSupport {
             new MapScanPlanNode(
                 id1,
                 mapName2,
-                GenericQueryTargetDescriptor.INSTANCE,
-                GenericQueryTargetDescriptor.INSTANCE,
+                GenericQueryTargetDescriptor.DEFAULT,
+                GenericQueryTargetDescriptor.DEFAULT,
                 fieldPaths1,
                 fieldTypes1,
                 projects1,
@@ -157,7 +157,7 @@ public class MapScanPlanNodeTest extends SqlTestSupport {
                 id1,
                 mapName1,
                 new TestTargetDescriptor(),
-                GenericQueryTargetDescriptor.INSTANCE,
+                GenericQueryTargetDescriptor.DEFAULT,
                 fieldPaths1,
                 fieldTypes1,
                 projects1,
@@ -171,7 +171,7 @@ public class MapScanPlanNodeTest extends SqlTestSupport {
             new MapScanPlanNode(
                 id1,
                 mapName1,
-                GenericQueryTargetDescriptor.INSTANCE,
+                GenericQueryTargetDescriptor.DEFAULT,
                 new TestTargetDescriptor(),
                 fieldPaths1,
                 fieldTypes1,
@@ -186,8 +186,8 @@ public class MapScanPlanNodeTest extends SqlTestSupport {
             new MapScanPlanNode(
                 id1,
                 mapName1,
-                GenericQueryTargetDescriptor.INSTANCE,
-                GenericQueryTargetDescriptor.INSTANCE,
+                GenericQueryTargetDescriptor.DEFAULT,
+                GenericQueryTargetDescriptor.DEFAULT,
                 fieldPaths2,
                 fieldTypes1,
                 projects1,
@@ -201,8 +201,8 @@ public class MapScanPlanNodeTest extends SqlTestSupport {
             new MapScanPlanNode(
                 id1,
                 mapName1,
-                GenericQueryTargetDescriptor.INSTANCE,
-                GenericQueryTargetDescriptor.INSTANCE,
+                GenericQueryTargetDescriptor.DEFAULT,
+                GenericQueryTargetDescriptor.DEFAULT,
                 fieldPaths1,
                 fieldTypes2,
                 projects1,
@@ -216,8 +216,8 @@ public class MapScanPlanNodeTest extends SqlTestSupport {
             new MapScanPlanNode(
                 id1,
                 mapName1,
-                GenericQueryTargetDescriptor.INSTANCE,
-                GenericQueryTargetDescriptor.INSTANCE,
+                GenericQueryTargetDescriptor.DEFAULT,
+                GenericQueryTargetDescriptor.DEFAULT,
                 fieldPaths1,
                 fieldTypes2,
                 projects2,
@@ -231,8 +231,8 @@ public class MapScanPlanNodeTest extends SqlTestSupport {
             new MapScanPlanNode(
                 id1,
                 mapName1,
-                GenericQueryTargetDescriptor.INSTANCE,
-                GenericQueryTargetDescriptor.INSTANCE,
+                GenericQueryTargetDescriptor.DEFAULT,
+                GenericQueryTargetDescriptor.DEFAULT,
                 fieldPaths1,
                 fieldTypes2,
                 projects1,
@@ -247,8 +247,8 @@ public class MapScanPlanNodeTest extends SqlTestSupport {
         MapScanPlanNode original = new MapScanPlanNode(
             1,
             "map",
-            GenericQueryTargetDescriptor.INSTANCE,
-            GenericQueryTargetDescriptor.INSTANCE,
+            GenericQueryTargetDescriptor.DEFAULT,
+            GenericQueryTargetDescriptor.DEFAULT,
             Collections.singletonList(valuePath("field")),
             Collections.singletonList(QueryDataType.INT),
             Collections.singletonList(0),
