@@ -22,6 +22,7 @@ import com.hazelcast.cp.CPGroupId;
 import com.hazelcast.cp.internal.datastructures.spi.blocking.ResourceRegistry;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
+import java.util.Collection;
 import java.util.Map.Entry;
 import java.util.UUID;
 
@@ -101,6 +102,10 @@ class LockRegistry extends ResourceRegistry<LockInvocationKey, Lock> implements 
     LockOwnershipState getLockOwnershipState(String name) {
         Lock lock = getResourceOrNull(name);
         return lock != null ? lock.lockOwnershipState() : LockOwnershipState.NOT_LOCKED;
+    }
+
+    Collection<Lock> getAllLocks() {
+        return resources.values();
     }
 
     @Override

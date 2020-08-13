@@ -21,18 +21,26 @@ import com.hazelcast.cp.IAtomicReference;
 import com.hazelcast.cp.internal.RaftGroupId;
 import com.hazelcast.cp.internal.datastructures.atomicref.proxy.AtomicRefProxy;
 import com.hazelcast.cp.internal.datastructures.spi.atomic.RaftAtomicValueService;
+import com.hazelcast.internal.metrics.DynamicMetricsProvider;
+import com.hazelcast.internal.metrics.MetricDescriptor;
+import com.hazelcast.internal.metrics.MetricsCollectionContext;
+import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import java.util.Map;
+import java.util.Properties;
 import java.util.Set;
+
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CP_TAG_NAME;
 
 /**
  * Contains Raft-based atomic reference instances, implements snapshotting,
  * and creates proxies
  */
-public class AtomicRefService extends RaftAtomicValueService<Data, AtomicRef, AtomicRefSnapshot> {
+public class AtomicRefService extends RaftAtomicValueService<Data, AtomicRef, AtomicRefSnapshot>
+        implements DynamicMetricsProvider {
 
     /**
      * Name of the service
@@ -41,6 +49,13 @@ public class AtomicRefService extends RaftAtomicValueService<Data, AtomicRef, At
 
     public AtomicRefService(NodeEngine nodeEngine) {
         super(nodeEngine);
+    }
+
+    @Override
+    public void init(NodeEngine nodeEngine, Properties properties) {
+        super.init(nodeEngine, properties);
+        MetricsRegistry metricsRegistry = this.nodeEngine.getMetricsRegistry();
+        metricsRegistry.registerDynamicMetricsProvider(this);
     }
 
     @Override
@@ -57,5 +72,19 @@ public class AtomicRefService extends RaftAtomicValueService<Data, AtomicRef, At
     protected IAtomicReference newRaftAtomicProxy(NodeEngineImpl nodeEngine, RaftGroupId groupId, String proxyName,
             String objectNameForProxy) {
         return new AtomicRefProxy(nodeEngine, groupId, proxyName, objectNameForProxy);
+    }
+
+    @Override
+    public void provideDynamicMetrics(MetricDescriptor descriptor, MetricsCollectionContext context) {
+        MetricDescriptor root = descriptor.withPrefix("cp.atomicref");
+        for (AtomicRef value : atomicValues.values()) {
+            CPGroupId groupId = value.groupId();
+            MetricDescriptor desc = root.copy()
+                    .withDiscriminator("id", value.name() + "@" + groupId.getName())
+                    .withTag(CP_TAG_NAME, value.name())
+                    .withTag("group", groupId.getName())
+                    .withMetric("dummy");
+            context.collect(desc, 0);
+        }
     }
 }

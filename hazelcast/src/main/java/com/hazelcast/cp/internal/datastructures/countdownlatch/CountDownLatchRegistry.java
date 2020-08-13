@@ -87,6 +87,10 @@ public class CountDownLatchRegistry extends ResourceRegistry<AwaitInvocationKey,
         return getOrInitResource(name).getRound();
     }
 
+    Collection<CountDownLatch> getAllLatches() {
+        return resources.values();
+    }
+
     @Override
     public int getFactoryId() {
         return CountDownLatchDataSerializerHook.F_ID;

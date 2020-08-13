@@ -21,17 +21,25 @@ import com.hazelcast.cp.IAtomicLong;
 import com.hazelcast.cp.internal.RaftGroupId;
 import com.hazelcast.cp.internal.datastructures.atomiclong.proxy.AtomicLongProxy;
 import com.hazelcast.cp.internal.datastructures.spi.atomic.RaftAtomicValueService;
+import com.hazelcast.internal.metrics.DynamicMetricsProvider;
+import com.hazelcast.internal.metrics.MetricDescriptor;
+import com.hazelcast.internal.metrics.MetricsCollectionContext;
+import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import java.util.Map;
+import java.util.Properties;
 import java.util.Set;
+
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CP_TAG_NAME;
 
 /**
  * Contains Raft-based atomic long instances, implements snapshotting,
  * and creates proxies
  */
-public class AtomicLongService extends RaftAtomicValueService<Long, AtomicLong, AtomicLongSnapshot> {
+public class AtomicLongService extends RaftAtomicValueService<Long, AtomicLong, AtomicLongSnapshot>
+        implements DynamicMetricsProvider {
 
     /**
      * Name of the service
@@ -40,6 +48,13 @@ public class AtomicLongService extends RaftAtomicValueService<Long, AtomicLong, 
 
     public AtomicLongService(NodeEngine nodeEngine) {
         super(nodeEngine);
+    }
+
+    @Override
+    public void init(NodeEngine nodeEngine, Properties properties) {
+        super.init(nodeEngine, properties);
+        MetricsRegistry metricsRegistry = this.nodeEngine.getMetricsRegistry();
+        metricsRegistry.registerDynamicMetricsProvider(this);
     }
 
     @Override
@@ -56,5 +71,19 @@ public class AtomicLongService extends RaftAtomicValueService<Long, AtomicLong, 
     protected IAtomicLong newRaftAtomicProxy(NodeEngineImpl nodeEngine, RaftGroupId groupId, String proxyName,
             String objectNameForProxy) {
         return new AtomicLongProxy(nodeEngine, groupId, proxyName, objectNameForProxy);
+    }
+
+    @Override
+    public void provideDynamicMetrics(MetricDescriptor descriptor, MetricsCollectionContext context) {
+        MetricDescriptor root = descriptor.withPrefix("cp.atomiclong");
+        for (AtomicLong value : atomicValues.values()) {
+            CPGroupId groupId = value.groupId();
+            MetricDescriptor desc = root.copy()
+                    .withDiscriminator("id", value.name() + "@" + groupId.getName())
+                    .withTag(CP_TAG_NAME, value.name())
+                    .withTag("group", groupId.getName())
+                    .withMetric("value");
+            context.collect(desc, value.value());
+        }
     }
 }

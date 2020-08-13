@@ -24,18 +24,20 @@ import com.hazelcast.cp.internal.datastructures.spi.atomic.RaftAtomicValue;
  */
 public class AtomicLong extends RaftAtomicValue<Long> {
 
-    private long value;
+    private volatile long value;
 
     AtomicLong(CPGroupId groupId, String name, long value) {
         super(groupId, name);
         this.value = value;
     }
 
+    @SuppressWarnings("NonAtomicOperationOnVolatileField")
     public long addAndGet(long delta) {
         value += delta;
         return value;
     }
 
+    @SuppressWarnings("NonAtomicOperationOnVolatileField")
     public long getAndAdd(long delta) {
         long v = value;
         value += delta;
