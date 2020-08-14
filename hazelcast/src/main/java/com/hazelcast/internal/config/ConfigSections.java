@@ -84,7 +84,7 @@ public enum ConfigSections {
     }
 
     public boolean isEqual(String name) {
-        return this.name.equals(name);
+        return ConfigUtils.matches(this.name, name);
     }
 
     public String getName() {

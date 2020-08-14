@@ -30,6 +30,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.Map;
 
 import static com.hazelcast.config.properties.PropertyTypeConverter.STRING;
@@ -54,7 +55,7 @@ public class DiscoveryServicePropertiesUtilTest {
     @Test
     public void correctProperties() {
         // given
-        Map<String, Comparable> properties = singletonMap(PROPERTY_KEY_1, (Comparable) PROPERTY_VALUE_1);
+        Map<String, Comparable> properties = new HashMap<>(singletonMap(PROPERTY_KEY_1, (Comparable) PROPERTY_VALUE_1));
         Collection<PropertyDefinition> propertyDefinitions = singletonList(PROPERTY_DEFINITION_1);
 
         // when
@@ -62,6 +63,19 @@ public class DiscoveryServicePropertiesUtilTest {
 
         // then
         assertEquals(PROPERTY_VALUE_1, result.get(PROPERTY_KEY_1));
+    }
+
+    @Test
+    public void correctDashlessPropertyConversion() {
+        // given
+        Map<String, Comparable> properties = new HashMap<>(singletonMap("customproperty", PROPERTY_VALUE_1));
+        Collection<PropertyDefinition> propertyDefinitions = singletonList(new SimplePropertyDefinition("custom-property", STRING));
+
+        // when
+        Map<String, Comparable> result = prepareProperties(properties, propertyDefinitions);
+
+        // then
+        assertEquals(PROPERTY_VALUE_1, result.get("custom-property"));
     }
 
     @Test(expected = InvalidConfigurationException.class)
@@ -94,7 +108,7 @@ public class DiscoveryServicePropertiesUtilTest {
     @Test(expected = ValidationException.class)
     public void invalidProperty() {
         // given
-        Map<String, Comparable> properties = singletonMap(PROPERTY_KEY_1, (Comparable) PROPERTY_VALUE_1);
+        Map<String, Comparable> properties = new HashMap<>(singletonMap(PROPERTY_KEY_1, (Comparable) PROPERTY_VALUE_1));
 
         ValueValidator<String> valueValidator = mock(ValueValidator.class);
         willThrow(new ValidationException("Invalid property")).given(valueValidator).validate(PROPERTY_VALUE_1);
@@ -111,7 +125,7 @@ public class DiscoveryServicePropertiesUtilTest {
     @Test(expected = InvalidConfigurationException.class)
     public void unknownProperty() {
         // given
-        Map<String, Comparable> properties = singletonMap(PROPERTY_KEY_1, (Comparable) PROPERTY_VALUE_1);
+        Map<String, Comparable> properties = new HashMap<>(singletonMap(PROPERTY_KEY_1, (Comparable) PROPERTY_VALUE_1));
         Collection<PropertyDefinition> propertyDefinitions = emptyList();
 
         // when
@@ -124,7 +138,7 @@ public class DiscoveryServicePropertiesUtilTest {
     @Test
     public void nullProperty() {
         // given
-        Map<String, Comparable> properties = singletonMap(PROPERTY_KEY_1, null);
+        Map<String, Comparable> properties = new HashMap<>(singletonMap(PROPERTY_KEY_1, null));
         TypeConverter typeConverter = new TypeConverter() {
             @Override
             public Comparable convert(Comparable value) {

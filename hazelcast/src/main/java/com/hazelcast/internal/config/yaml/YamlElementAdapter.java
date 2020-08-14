@@ -41,10 +41,10 @@ import static com.hazelcast.internal.config.yaml.EmptyNodeList.emptyNodeList;
  * Used for processing YAML configuration.
  */
 @SuppressWarnings({"checkstyle:methodcount"})
-public class ElementAdapter implements Element {
+public class YamlElementAdapter implements Element {
     private final YamlNode yamlNode;
 
-    ElementAdapter(YamlNode yamlNode) {
+    YamlElementAdapter(YamlNode yamlNode) {
         this.yamlNode = yamlNode;
     }
 

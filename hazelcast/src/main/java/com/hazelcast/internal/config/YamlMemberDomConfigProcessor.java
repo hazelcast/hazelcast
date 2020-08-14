@@ -130,10 +130,10 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
         Iterable<Node> nodes = childElements(node);
         for (Node child : nodes) {
             String nodeName = cleanNodeName(child);
-            if ("on-join-operation".equals(nodeName)) {
+            if (ConfigUtils.matches("on-join-operation", nodeName)) {
                 continue;
             }
-            nodeName = "all".equals(nodeName) ? nodeName + "-permissions" : nodeName + "-permission";
+            nodeName = ConfigUtils.matches("all", nodeName) ? nodeName + "-permissions" : nodeName + "-permission";
             PermissionType type = PermissionConfig.PermissionType.getType(nodeName);
             if (type == null) {
                 throw new InvalidConfigurationException("Security permission type is not valid " + nodeName);
@@ -191,7 +191,7 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
 
     @Override
     protected void handleWanReplicationChild(WanReplicationConfig wanReplicationConfig, Node nodeTarget, String nodeName) {
-        if ("batch-publisher".equals(nodeName)) {
+        if (ConfigUtils.matches("batch-publisher", nodeName)) {
             for (Node publisherNode : childElements(nodeTarget)) {
                 WanBatchPublisherConfig publisherConfig = new WanBatchPublisherConfig();
                 String clusterNameOrPublisherId = publisherNode.getNodeName();
@@ -206,13 +206,13 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
 
                 handleBatchWanPublisherNode(wanReplicationConfig, publisherNode, publisherConfig);
             }
-        } else if ("custom-publisher".equals(nodeName)) {
+        } else if (ConfigUtils.matches("custom-publisher", nodeName)) {
             for (Node publisherNode : childElements(nodeTarget)) {
                 WanCustomPublisherConfig publisherConfig = new WanCustomPublisherConfig();
                 publisherConfig.setPublisherId(publisherNode.getNodeName());
                 handleCustomWanPublisherNode(wanReplicationConfig, publisherNode, publisherConfig);
             }
-        } else if ("consumer".equals(nodeName)) {
+        } else if (ConfigUtils.matches("consumer", nodeName)) {
             handleWanConsumerNode(wanReplicationConfig, nodeTarget);
         }
     }
@@ -225,12 +225,12 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
             Node att = attributes.item(a);
             String value = getTextContent(att).trim();
 
-            if ("port".equals(att.getNodeName())) {
+            if (ConfigUtils.matches("port", att.getNodeName())) {
                 int portCount = parseInt(value);
                 networkConfig.setPort(portCount);
-            } else if ("auto-increment".equals(att.getNodeName())) {
+            } else if (ConfigUtils.matches("auto-increment", att.getNodeName())) {
                 networkConfig.setPortAutoIncrement(getBooleanValue(value));
-            } else if ("port-count".equals(att.getNodeName())) {
+            } else if (ConfigUtils.matches("port-count", att.getNodeName())) {
                 int portCount = parseInt(value);
                 networkConfig.setPortCount(portCount);
             }
@@ -577,13 +577,13 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
     @Override
     protected void handleDiscoveryStrategiesChild(DiscoveryConfig discoveryConfig, Node child) {
         String name = cleanNodeName(child);
-        if ("discovery-strategies".equals(name)) {
+        if (ConfigUtils.matches("discovery-strategies", name)) {
             NodeList strategies = child.getChildNodes();
             for (int i = 0; i < strategies.getLength(); i++) {
                 Node strategy = strategies.item(i);
                 handleDiscoveryStrategy(strategy, discoveryConfig);
             }
-        } else if ("node-filter".equals(name)) {
+        } else if (ConfigUtils.matches("node-filter", name)) {
             handleDiscoveryNodeFilter(child, discoveryConfig);
         }
     }
@@ -593,15 +593,15 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
         SerializationConfig serializationConfig = new SerializationConfig();
         for (Node child : childElements(node)) {
             final String name = cleanNodeName(child);
-            if ("portable-version".equals(name)) {
+            if (ConfigUtils.matches("portable-version", name)) {
                 String value = getTextContent(child);
                 serializationConfig.setPortableVersion(getIntegerValue(name, value));
-            } else if ("check-class-def-errors".equals(name)) {
+            } else if (ConfigUtils.matches("check-class-def-errors", name)) {
                 String value = getTextContent(child);
                 serializationConfig.setCheckClassDefErrors(getBooleanValue(value));
-            } else if ("use-native-byte-order".equals(name)) {
+            } else if (ConfigUtils.matches("use-native-byte-order", name)) {
                 serializationConfig.setUseNativeByteOrder(getBooleanValue(getTextContent(child)));
-            } else if ("byte-order".equals(name)) {
+            } else if (ConfigUtils.matches("byte-order", name)) {
                 String value = getTextContent(child);
                 ByteOrder byteOrder = null;
                 if (ByteOrder.BIG_ENDIAN.toString().equals(value)) {
@@ -610,21 +610,21 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
                     byteOrder = ByteOrder.LITTLE_ENDIAN;
                 }
                 serializationConfig.setByteOrder(byteOrder != null ? byteOrder : ByteOrder.BIG_ENDIAN);
-            } else if ("enable-compression".equals(name)) {
+            } else if (ConfigUtils.matches("enable-compression", name)) {
                 serializationConfig.setEnableCompression(getBooleanValue(getTextContent(child)));
-            } else if ("enable-shared-object".equals(name)) {
+            } else if (ConfigUtils.matches("enable-shared-object", name)) {
                 serializationConfig.setEnableSharedObject(getBooleanValue(getTextContent(child)));
-            } else if ("allow-unsafe".equals(name)) {
+            } else if (ConfigUtils.matches("allow-unsafe", name)) {
                 serializationConfig.setAllowUnsafe(getBooleanValue(getTextContent(child)));
-            } else if ("data-serializable-factories".equals(name)) {
+            } else if (ConfigUtils.matches("data-serializable-factories", name)) {
                 fillDataSerializableFactories(child, serializationConfig);
-            } else if ("portable-factories".equals(name)) {
+            } else if (ConfigUtils.matches("portable-factories", name)) {
                 fillPortableFactories(child, serializationConfig);
-            } else if ("serializers".equals(name)) {
+            } else if (ConfigUtils.matches("serializers", name)) {
                 fillSerializers(child, serializationConfig);
-            } else if ("global-serializer".equals(name)) {
+            } else if (ConfigUtils.matches("global-serializer", name)) {
                 fillGlobalSerializer(child, serializationConfig);
-            } else if ("java-serialization-filter".equals(name)) {
+            } else if (ConfigUtils.matches("java-serialization-filter", name)) {
                 fillJavaSerializationFilter(child, serializationConfig);
             }
         }
@@ -697,15 +697,15 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
         ClassFilter list = new ClassFilter();
         for (Node typeNode : childElements(node)) {
             final String name = cleanNodeName(typeNode);
-            if ("class".equals(name)) {
+            if (ConfigUtils.matches("class", name)) {
                 for (Node classNode : childElements(typeNode)) {
                     list.addClasses(getTextContent(classNode));
                 }
-            } else if ("package".equals(name)) {
+            } else if (ConfigUtils.matches("package", name)) {
                 for (Node packageNode : childElements(typeNode)) {
                     list.addPackages(getTextContent(packageNode));
                 }
-            } else if ("prefix".equals(name)) {
+            } else if (ConfigUtils.matches("prefix", name)) {
                 for (Node prefixNode : childElements(typeNode)) {
                     list.addPrefixes(getTextContent(prefixNode));
                 }
@@ -743,7 +743,7 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
     @Override
     protected void handleInterfacesList(Node node, InterfacesConfig interfaces) {
         for (Node interfacesNode : childElements(node)) {
-            if ("interfaces".equals(lowerCaseInternal(cleanNodeName(interfacesNode)))) {
+            if (ConfigUtils.matches("interfaces", lowerCaseInternal(cleanNodeName(interfacesNode)))) {
                 for (Node interfaceNode : childElements(interfacesNode)) {
                     String value = getTextContent(interfaceNode).trim();
                     interfaces.addInterface(value);
@@ -774,7 +774,7 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
     protected void handleRestApiEndpointGroups(Node node) {
         for (Node child : childElements(node)) {
             String nodeName = cleanNodeName(child);
-            if ("endpoint-groups".equals(nodeName)) {
+            if (ConfigUtils.matches("endpoint-groups", nodeName)) {
                 for (Node groupNode : childElements(child)) {
                     String groupName = groupNode.getNodeName();
                     handleEndpointGroup(groupNode, groupName);
@@ -828,9 +828,9 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
             for (Node subChild : childElements(child)) {
                 String nodeName = cleanNodeName(subChild);
                 String value = getTextContent(subChild).trim();
-                if ("jdk-compatible".equals(nodeName)) {
+                if (ConfigUtils.matches("jdk-compatible", nodeName)) {
                     semaphoreConfig.setJDKCompatible(Boolean.parseBoolean(value));
-                } else if ("initial-permits".equals(nodeName)) {
+                } else if (ConfigUtils.matches("initial-permits", nodeName)) {
                     semaphoreConfig.setInitialPermits(Integer.parseInt(value));
                 }
             }
@@ -846,7 +846,7 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
             for (Node subChild : childElements(child)) {
                 String nodeName = cleanNodeName(subChild);
                 String value = getTextContent(subChild).trim();
-                if ("lock-acquire-limit".equals(nodeName)) {
+                if (ConfigUtils.matches("lock-acquire-limit", nodeName)) {
                     lockConfig.setLockAcquireLimit(Integer.parseInt(value));
                 }
             }
@@ -881,7 +881,7 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
     protected void handlePersistentMemoryConfig(PersistentMemoryConfig persistentMemoryConfig, Node n) {
         for (Node dirsNode : childElements(n)) {
             String nodeName = cleanNodeName(dirsNode);
-            if ("directories".equals(nodeName)) {
+            if (ConfigUtils.matches("directories", nodeName)) {
                 for (Node dirNode : childElements(dirsNode)) {
                     String directory = getTextContent(dirNode.getAttributes().getNamedItem("directory"));
                     String numaNodeIdStr = getTextContent(dirNode.getAttributes().getNamedItem("numa-node"));
