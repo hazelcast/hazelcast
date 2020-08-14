@@ -16,20 +16,13 @@
 
 package com.hazelcast.sql.impl.expression.math;
 
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.map.IMap;
 import com.hazelcast.sql.SqlColumnType;
 import com.hazelcast.sql.SqlErrorCode;
-import com.hazelcast.sql.SqlException;
-import com.hazelcast.sql.SqlRow;
-import com.hazelcast.sql.impl.SqlTestSupport;
+import com.hazelcast.sql.impl.expression.SqlExpressionIntegrationTestSupport;
 import com.hazelcast.sql.support.expressions.ExpressionValue;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
-import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -39,23 +32,11 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.List;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
-@SuppressWarnings({"unchecked", "rawtypes"})
 @RunWith(Parameterized.class)
 @Parameterized.UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class DoubleFunctionIntegrationTest extends SqlTestSupport {
-
-    private final TestHazelcastInstanceFactory factory = new TestHazelcastInstanceFactory(1);
-    private HazelcastInstance member;
-    private IMap map;
+public class DoubleFunctionIntegrationTest extends SqlExpressionIntegrationTestSupport {
 
     @Parameterized.Parameter
     public Mode mode;
@@ -78,18 +59,6 @@ public class DoubleFunctionIntegrationTest extends SqlTestSupport {
         });
     }
 
-    @Before
-    public void before() {
-        member = factory.newHazelcastInstance();
-
-        map = member.getMap("map");
-    }
-
-    @After
-    public void after() {
-        factory.shutdownAll();
-    }
-
     @Test
     public void testColumn() {
         checkColumn((byte) 1, 1d);
@@ -104,9 +73,8 @@ public class DoubleFunctionIntegrationTest extends SqlTestSupport {
         checkColumn("1", 1d);
         checkColumn('1', 1d);
 
-        map.clear();
-        map.put(0, new ExpressionValue.IntegerVal());
-        assertNull(execute("field1"));
+        put(new ExpressionValue.IntegerVal());
+        checkValue("field1", null);
 
         checkColumnFailure("bad", SqlErrorCode.DATA_EXCEPTION, "Cannot convert VARCHAR to DECIMAL");
         checkColumnFailure('b', SqlErrorCode.DATA_EXCEPTION, "Cannot convert VARCHAR to DECIMAL");
@@ -114,23 +82,20 @@ public class DoubleFunctionIntegrationTest extends SqlTestSupport {
     }
 
     private void checkColumn(Object value, double expectedArgument) {
-        map.clear();
-        map.put(0, value);
+        put(value);
 
-        double res = execute("this");
-        assertEquals(res, mode.process(expectedArgument), 0.0d);
+        checkValue("this", mode.process(expectedArgument));
     }
 
     private void checkColumnFailure(Object value, int expectedErrorCode, String expectedErrorMessage) {
-        map.clear();
-        map.put(0, value);
+        put(value);
 
         checkFailure("this", expectedErrorCode, expectedErrorMessage);
     }
 
     @Test
     public void testParameter() {
-        map.put(0, 0);
+        put(0);
 
         checkParameter((byte) 1, 1d);
         checkParameter((short) 1, 1d);
@@ -144,7 +109,7 @@ public class DoubleFunctionIntegrationTest extends SqlTestSupport {
         checkParameter("1.1", 1.1d);
         checkParameter('1', 1d);
 
-        assertNull(execute("?", new Object[] { null }));
+        checkValue("?", null, new Object[] { null });
 
         checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Failed to convert parameter at position 0 from VARCHAR to DECIMAL", "bad");
         checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Failed to convert parameter at position 0 from VARCHAR to DECIMAL", 'b');
@@ -152,13 +117,12 @@ public class DoubleFunctionIntegrationTest extends SqlTestSupport {
     }
 
     private void checkParameter(Object param, double expectedArgument) {
-        double res = execute("?", param);
-        assertEquals(res, mode.process(expectedArgument), 0.0d);
+        checkValue("?", mode.process(expectedArgument), param);
     }
 
     @Test
     public void testLiteral() {
-        map.put(0, 0);
+        put(0);
 
         checkLiteral(0, 0d);
         checkLiteral("1.1", 1.1d);
@@ -172,37 +136,19 @@ public class DoubleFunctionIntegrationTest extends SqlTestSupport {
     private void checkLiteral(Object literal, Double expectedArg) {
         String literalString = literal.toString();
 
-        Double res1 = execute(literalString);
-        assertEquals(res1, mode.process(expectedArg));
+        checkValue(literalString, mode.process(expectedArg));
     }
 
-    private Double execute(Object operand, Object... params) {
+    private void checkValue(Object operand, Object expectedValue, Object... params) {
         String sql = "SELECT " + mode.mode + "(" + operand + ") FROM map";
 
-        List<SqlRow> rows = execute(member, sql, params);
-        assertEquals(1, rows.size());
-
-        SqlRow row = rows.get(0);
-        assertEquals(1, row.getMetadata().getColumnCount());
-        assertEquals(SqlColumnType.DOUBLE, row.getMetadata().getColumn(0).getType());
-
-        return row.getObject(0);
+        checkValueInternal(sql, SqlColumnType.DOUBLE, expectedValue, params);
     }
 
     private void checkFailure(Object operand, int expectedErrorCode, String expectedErrorMessage, Object... params) {
         String sql = "SELECT " + mode.mode + "(" + operand + ") FROM map";
 
-        try {
-            execute(member, sql, params);
-
-            fail("Must fail");
-        } catch (SqlException e) {
-            assertTrue(expectedErrorMessage.length() != 0);
-            assertNotNull(e.getMessage());
-            assertTrue(e.getMessage(),  e.getMessage().contains(expectedErrorMessage));
-
-            assertEquals(expectedErrorCode, e.getCode());
-        }
+        checkFailureInternal(sql, expectedErrorCode, expectedErrorMessage, params);
     }
 
     private static final class Mode {

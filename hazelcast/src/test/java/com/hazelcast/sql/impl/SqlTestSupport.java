@@ -215,4 +215,8 @@ public class SqlTestSupport extends HazelcastTestSupport {
 
         return rows;
     }
+
+    public static void clearPlanCache(HazelcastInstance member) {
+        ((SqlServiceImpl) member.getSql()).getPlanCache().clear();
+    }
 }

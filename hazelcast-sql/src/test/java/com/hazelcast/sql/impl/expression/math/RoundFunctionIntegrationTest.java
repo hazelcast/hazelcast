@@ -16,13 +16,9 @@
 
 package com.hazelcast.sql.impl.expression.math;
 
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.map.IMap;
 import com.hazelcast.sql.SqlColumnType;
 import com.hazelcast.sql.SqlErrorCode;
-import com.hazelcast.sql.SqlException;
-import com.hazelcast.sql.SqlRow;
-import com.hazelcast.sql.impl.SqlTestSupport;
+import com.hazelcast.sql.impl.expression.SqlExpressionIntegrationTestSupport;
 import com.hazelcast.sql.support.expressions.ExpressionBiValue;
 import com.hazelcast.sql.support.expressions.ExpressionBiValue.ByteIntegerVal;
 import com.hazelcast.sql.support.expressions.ExpressionBiValue.IntegerIntegerVal;
@@ -35,18 +31,14 @@ import com.hazelcast.sql.support.expressions.ExpressionValue.IntegerVal;
 import com.hazelcast.sql.support.expressions.ExpressionValue.LongVal;
 import com.hazelcast.sql.support.expressions.ExpressionValue.ShortVal;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.util.List;
 
 import static com.hazelcast.sql.support.expressions.ExpressionBiValue.BigDecimalIntegerVal;
 import static com.hazelcast.sql.support.expressions.ExpressionBiValue.BigDecimalVal;
@@ -55,30 +47,10 @@ import static com.hazelcast.sql.support.expressions.ExpressionBiValue.DoubleInte
 import static com.hazelcast.sql.support.expressions.ExpressionBiValue.DoubleVal;
 import static com.hazelcast.sql.support.expressions.ExpressionBiValue.FloatIntegerVal;
 import static com.hazelcast.sql.support.expressions.ExpressionBiValue.FloatVal;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class RoundFunctionIntegrationTest extends SqlTestSupport {
-
-    private final TestHazelcastInstanceFactory factory = new TestHazelcastInstanceFactory(1);
-    private HazelcastInstance member;
-    private IMap<Integer, ExpressionValue> map;
-
-    @Before
-    public void before() {
-        member = factory.newHazelcastInstance();
-
-        map = member.getMap("map");
-    }
-
-    @After
-    public void after() {
-        factory.shutdownAll();
-    }
-
+public class RoundFunctionIntegrationTest extends SqlExpressionIntegrationTestSupport {
     @Test
     public void test_byte() {
         checkColumn_1(new ByteVal().field1((byte) 127), SqlColumnType.TINYINT, (byte) 127);
@@ -224,7 +196,7 @@ public class RoundFunctionIntegrationTest extends SqlTestSupport {
     @Test
     public void testParameters() {
         // One operand
-        putValue(new IntegerVal().field1(0));
+        put(new IntegerVal().field1(0));
         check_1("?", SqlColumnType.DECIMAL, new BigDecimal("10"), (byte) 10);
         check_1("?", SqlColumnType.DECIMAL, new BigDecimal("10"), (short) 10);
         check_1("?", SqlColumnType.DECIMAL, new BigDecimal("10"), 10);
@@ -265,7 +237,7 @@ public class RoundFunctionIntegrationTest extends SqlTestSupport {
     @Test
     public void testLiterals() {
         // Single operand
-        putValue(new IntegerVal().field1(0));
+        put(new IntegerVal().field1(0));
 
         check_1("null", SqlColumnType.DECIMAL, null);
 
@@ -280,7 +252,7 @@ public class RoundFunctionIntegrationTest extends SqlTestSupport {
         check_1("-15.5E0", SqlColumnType.DOUBLE, -16d);
 
         // First operand
-        putValue(new IntegerVal().field1(-1));
+        put(new IntegerVal().field1(-1));
         check_2("15", "field1", SqlColumnType.TINYINT, (byte) 20);
         check_2("'15'", "field1", SqlColumnType.DECIMAL, new BigDecimal("20"));
         check_2("15.1", "field1", SqlColumnType.DECIMAL, new BigDecimal("20"));
@@ -288,87 +260,50 @@ public class RoundFunctionIntegrationTest extends SqlTestSupport {
         checkFailure_2("'bad'", "field1", SqlErrorCode.PARSING, "Literal ''bad'' can not be parsed to type 'DECIMAL'");
 
         // Second operand
-        putValue(new IntegerVal().field1(15));
+        put(new IntegerVal().field1(15));
         check_2("field1", "-1", SqlColumnType.INTEGER, 20);
         check_2("field1", "'-1'", SqlColumnType.INTEGER, 20);
         checkFailure_2("field1", "'bad'", SqlErrorCode.PARSING, "Literal ''bad'' can not be parsed to type 'DECIMAL'");
     }
 
     private void checkColumn_1(ExpressionValue value, SqlColumnType expectedType, Object expectedValue) {
-        putValue(value);
+        put(value);
 
         check_1("field1", expectedType, expectedValue);
     }
 
     private void checkColumn_2(ExpressionBiValue value, SqlColumnType expectedType, Object expectedValue) {
-        putValue(value);
+        put(value);
 
         check_2("field1", "field2", expectedType, expectedValue);
     }
 
     private void checkColumnFailure_2(ExpressionBiValue value, int expectedErrorCode, String expectedErrorMessage) {
-        try {
-            checkColumn_2(value, null, null);
+        put(value);
 
-            fail("Must fail");
-        } catch (SqlException e) {
-            assertTrue(expectedErrorMessage != null && !expectedErrorMessage.isEmpty());
+        String sql = sql("field1", "field2");
 
-            assertTrue(e.getMessage(), e.getMessage().contains(expectedErrorMessage));
-            assertEquals(expectedErrorCode, e.getCode());
-        }
+        checkFailureInternal(sql, expectedErrorCode, expectedErrorMessage);
     }
 
     private void checkFailure_1(Object operand, int expectedErrorCode, String expectedErrorMessage, Object... params) {
-        try {
-            check_1(operand, null, null, params);
+        String sql = sql(operand);
 
-            fail("Must fail");
-        } catch (SqlException e) {
-            assertTrue(expectedErrorMessage != null && !expectedErrorMessage.isEmpty());
-
-            assertTrue(e.getMessage(), e.getMessage().contains(expectedErrorMessage));
-            assertEquals(expectedErrorCode, e.getCode());
-        }
+        checkFailureInternal(sql, expectedErrorCode, expectedErrorMessage, params);
     }
 
     private void checkFailure_2(Object operand1, Object operand2, int expectedErrorCode, String expectedErrorMessage, Object... params) {
-        try {
-            check_2(operand1, operand2, null, null, params);
+        String sql = sql(operand1, operand2);
 
-            fail("Must fail");
-        } catch (SqlException e) {
-            assertTrue(expectedErrorMessage != null && !expectedErrorMessage.isEmpty());
-
-            assertTrue(e.getMessage(), e.getMessage().contains(expectedErrorMessage));
-            assertEquals(expectedErrorCode, e.getCode());
-        }
-    }
-
-    private void putValue(ExpressionValue value) {
-        map.clear();
-        map.put(0, value);
+        checkFailureInternal(sql, expectedErrorCode, expectedErrorMessage, params);
     }
 
     private void check_1(Object operand, SqlColumnType expectedType, Object expectedValue, Object... params) {
-        check(sql(operand), expectedType, expectedValue, params);
+        checkValueInternal(sql(operand), expectedType, expectedValue, params);
     }
 
     private void check_2(Object operand1, Object operand2, SqlColumnType expectedType, Object expectedValue, Object... params) {
-        check(sql(operand1, operand2), expectedType, expectedValue, params);
-    }
-
-    private void check(String sql, SqlColumnType expectedType, Object expectedValue, Object... params) {
-        List<SqlRow> rows = execute(member, sql, params);
-        assertEquals(1, rows.size());
-
-        SqlRow row = rows.get(0);
-        assertEquals(1, row.getMetadata().getColumnCount());
-
-        if (expectedType != null) {
-            assertEquals(expectedType, row.getMetadata().getColumn(0).getType());
-            assertEquals(expectedValue, row.getObject(0));
-        }
+        checkValueInternal(sql(operand1, operand2), expectedType, expectedValue, params);
     }
 
     private static String sql(Object operand1, Object... operand2) {

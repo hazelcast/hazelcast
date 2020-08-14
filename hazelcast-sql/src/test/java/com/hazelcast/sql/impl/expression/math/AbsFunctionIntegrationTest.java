@@ -16,54 +16,23 @@
 
 package com.hazelcast.sql.impl.expression.math;
 
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.map.IMap;
 import com.hazelcast.sql.SqlColumnType;
 import com.hazelcast.sql.SqlErrorCode;
-import com.hazelcast.sql.SqlException;
-import com.hazelcast.sql.SqlRow;
-import com.hazelcast.sql.impl.SqlTestSupport;
+import com.hazelcast.sql.impl.expression.SqlExpressionIntegrationTestSupport;
 import com.hazelcast.sql.support.expressions.ExpressionValue;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.util.List;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
-@SuppressWarnings({"rawtypes", "unchecked"})
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class AbsFunctionIntegrationTest extends SqlTestSupport {
-
-    private final TestHazelcastInstanceFactory factory = new TestHazelcastInstanceFactory(1);
-    private HazelcastInstance member;
-    private IMap map;
-
-    @Before
-    public void before() {
-        member = factory.newHazelcastInstance();
-
-        map = member.getMap("map");
-    }
-
-    @After
-    public void after() {
-        factory.shutdownAll();
-    }
-
+public class AbsFunctionIntegrationTest extends SqlExpressionIntegrationTestSupport {
     @Test
     public void testColumn() {
         checkColumn((byte) 0, SqlColumnType.SMALLINT, (short) 0);
@@ -126,22 +95,20 @@ public class AbsFunctionIntegrationTest extends SqlTestSupport {
     }
 
     private void checkColumn(Object value, SqlColumnType expectedType, Object expectedResult) {
-        map.clear();
-        map.put(0, value);
+        put(value);
 
         check("this", expectedType, expectedResult);
     }
 
     private void checkColumnFailure(Object value, int expectedErrorCode, String expectedErrorMessage) {
-        map.clear();
-        map.put(0, value);
+        put(value);
 
         checkFailure("this", expectedErrorCode, expectedErrorMessage);
     }
 
     @Test
     public void testParameter() {
-        map.put(0, 0);
+        put(0);
 
         checkParameter((byte) 0, BigDecimal.ZERO);
         checkParameter((byte) 1, BigDecimal.ONE);
@@ -215,7 +182,7 @@ public class AbsFunctionIntegrationTest extends SqlTestSupport {
 
     @Test
     public void testLiteral() {
-        map.put(0, 0);
+        put(0);
 
         checkExactLiteral(1, SqlColumnType.TINYINT, (byte) 1);
         checkExactLiteral(0, SqlColumnType.TINYINT, (byte) 0);
@@ -268,28 +235,12 @@ public class AbsFunctionIntegrationTest extends SqlTestSupport {
     private void check(Object operand, SqlColumnType expectedType, Object expectedValue, Object... params) {
         String sql = "SELECT ABS(" + operand + ") FROM map";
 
-        List<SqlRow> rows = execute(member, sql, params);
-        assertEquals(1, rows.size());
-
-        SqlRow row = rows.get(0);
-        assertEquals(1, row.getMetadata().getColumnCount());
-        assertEquals(expectedType, row.getMetadata().getColumn(0).getType());
-        assertEquals(expectedValue, row.getObject(0));
+        checkValueInternal(sql, expectedType, expectedValue, params);
     }
 
     private void checkFailure(Object operand, int expectedErrorCode, String expectedErrorMessage, Object... params) {
         String sql = "SELECT ABS(" + operand + ") FROM map";
 
-        try {
-            execute(member, sql, params);
-
-            fail("Must fail");
-        } catch (SqlException e) {
-            assertTrue(expectedErrorMessage.length() != 0);
-            assertNotNull(e.getMessage());
-            assertTrue(e.getMessage(),  e.getMessage().contains(expectedErrorMessage));
-
-            assertEquals(expectedErrorCode, e.getCode());
-        }
+        checkFailureInternal(sql, expectedErrorCode, expectedErrorMessage, params);
     }
 }

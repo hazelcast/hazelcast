@@ -16,62 +16,32 @@
 
 package com.hazelcast.sql.impl.expression.math;
 
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.map.IMap;
 import com.hazelcast.sql.SqlColumnType;
 import com.hazelcast.sql.SqlErrorCode;
-import com.hazelcast.sql.SqlException;
-import com.hazelcast.sql.SqlRow;
-import com.hazelcast.sql.impl.SqlTestSupport;
+import com.hazelcast.sql.impl.expression.SqlExpressionIntegrationTestSupport;
 import com.hazelcast.sql.support.expressions.ExpressionValue;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.util.List;
 import java.util.Random;
 
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
-@SuppressWarnings({"unchecked", "rawtypes"})
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class RandFunctionIntegrationTest extends SqlTestSupport {
-
-    private final TestHazelcastInstanceFactory factory = new TestHazelcastInstanceFactory(1);
-    private HazelcastInstance member;
-    private IMap map;
-
-    @Before
-    public void before() {
-        member = factory.newHazelcastInstance();
-
-        map = member.getMap("map");
-    }
-
-    @After
-    public void after() {
-        factory.shutdownAll();
-    }
-
+public class RandFunctionIntegrationTest extends SqlExpressionIntegrationTestSupport {
     @Test
     public void testNoArg() {
-        map.put(0, 0);
+        put(0);
 
-        double res1 = execute("");
-        double res2 = execute("");
+        double res1 = checkValue("", SKIP_VALUE_CHECK);
+        double res2 = checkValue("", SKIP_VALUE_CHECK);
 
         assertNotEquals(res1, res2);
     }
@@ -90,10 +60,9 @@ public class RandFunctionIntegrationTest extends SqlTestSupport {
         checkColumn("1", 1L);
         checkColumn('1', 1L);
 
-        map.clear();
-        map.put(0, new ExpressionValue.IntegerVal());
-        double nullRes1 = execute("field1");
-        double nullRes2 = execute("field1");
+        put(new ExpressionValue.IntegerVal());
+        double nullRes1 = checkValue("field1", SKIP_VALUE_CHECK);
+        double nullRes2 = checkValue("field1", SKIP_VALUE_CHECK);
         assertNotEquals(nullRes1, nullRes2);
 
         checkColumnFailure("bad", SqlErrorCode.DATA_EXCEPTION, "Cannot convert VARCHAR to DECIMAL");
@@ -102,23 +71,20 @@ public class RandFunctionIntegrationTest extends SqlTestSupport {
     }
 
     private void checkColumn(Object value, long expectedSeed) {
-        map.clear();
-        map.put(0, value);
+        put(value);
 
-        double res1 = execute("this");
-        assertEquals(res1, new Random(expectedSeed).nextDouble(), 0.0d);
+        checkValue("this", new Random(expectedSeed).nextDouble());
     }
 
     private void checkColumnFailure(Object value, int expectedErrorCode, String expectedErrorMessage) {
-        map.clear();
-        map.put(0, value);
+        put(value);
 
         checkFailure("this", expectedErrorCode, expectedErrorMessage);
     }
 
     @Test
     public void testParameter() {
-        map.put(0, 0);
+        put(0);
 
         checkParameter((byte) 1, 1L);
         checkParameter((short) 1, 1L);
@@ -132,8 +98,8 @@ public class RandFunctionIntegrationTest extends SqlTestSupport {
         checkParameter("1", 1L);
         checkParameter('1', 1L);
 
-        double nullRes1 = execute("?", new Object[] { null });
-        double nullRes2 = execute("?", new Object[] { null });
+        double nullRes1 = checkValue("?", SKIP_VALUE_CHECK, new Object[] { null });
+        double nullRes2 = checkValue("?", SKIP_VALUE_CHECK, new Object[] { null });
         assertNotEquals(nullRes1, nullRes2);
 
         checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Failed to convert parameter at position 0 from VARCHAR to DECIMAL", "bad");
@@ -142,20 +108,19 @@ public class RandFunctionIntegrationTest extends SqlTestSupport {
     }
 
     private void checkParameter(Object param, long expectedSeed) {
-        double res = execute("?", param);
-        assertEquals(res, new Random(expectedSeed).nextDouble(), 0.0d);
+        checkValue("?", new Random(expectedSeed).nextDouble(), param);
     }
 
     @Test
     public void testLiteral() {
-        map.put(0, 0);
+        put(0);
 
         checkNumericLiteral(0, 0L);
         checkNumericLiteral(Long.MAX_VALUE, Long.MAX_VALUE);
         checkNumericLiteral("1.1", 1L);
 
-        double nullRes1 = execute("null");
-        double nullRes2 = execute("null");
+        double nullRes1 = checkValue("null", SKIP_VALUE_CHECK);
+        double nullRes2 = checkValue("null", SKIP_VALUE_CHECK);
         assertNotEquals(nullRes1, nullRes2);
 
         checkFailure("'bad'", SqlErrorCode.PARSING, "Literal ''bad'' can not be parsed to type 'DECIMAL'");
@@ -164,39 +129,19 @@ public class RandFunctionIntegrationTest extends SqlTestSupport {
     private void checkNumericLiteral(Object literal, long expectedSeed) {
         String literalString = literal.toString();
 
-        double res1 = execute(literalString);
-        assertEquals(res1, new Random(expectedSeed).nextDouble(), 0.0d);
-
-        double res2 = execute("'" +  literalString + "'");
-        assertEquals(res2, new Random(expectedSeed).nextDouble(), 0.0d);
+        checkValue(literalString, new Random(expectedSeed).nextDouble());
+        checkValue("'" +  literalString + "'", new Random(expectedSeed).nextDouble());
     }
 
-    private Double execute(Object operand, Object... params) {
+    private Double checkValue(Object operand, Object expectedValue, Object... params) {
         String sql = "SELECT RAND(" + operand + ") FROM map";
 
-        List<SqlRow> rows = execute(member, sql, params);
-        assertEquals(1, rows.size());
-
-        SqlRow row = rows.get(0);
-        assertEquals(1, row.getMetadata().getColumnCount());
-        assertEquals(SqlColumnType.DOUBLE, row.getMetadata().getColumn(0).getType());
-
-        return row.getObject(0);
+        return (Double) checkValueInternal(sql, SqlColumnType.DOUBLE, expectedValue, params);
     }
 
     private void checkFailure(Object operand, int expectedErrorCode, String expectedErrorMessage, Object... params) {
         String sql = "SELECT RAND(" + operand + ") FROM map";
 
-        try {
-            execute(member, sql, params);
-
-            fail("Must fail");
-        } catch (SqlException e) {
-            assertTrue(expectedErrorMessage.length() != 0);
-            assertNotNull(e.getMessage());
-            assertTrue(e.getMessage(),  e.getMessage().contains(expectedErrorMessage));
-
-            assertEquals(expectedErrorCode, e.getCode());
-        }
+        checkFailureInternal(sql, expectedErrorCode, expectedErrorMessage, params);
     }
 }
