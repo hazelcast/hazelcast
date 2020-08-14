@@ -72,7 +72,6 @@ public class AbsFunctionIntegrationTest extends SqlExpressionIntegrationTestSupp
         checkColumn(1.1f, SqlColumnType.REAL, 1.1f);
         checkColumn(-1.1f, SqlColumnType.REAL, 1.1f);
         checkColumn(Float.MAX_VALUE, SqlColumnType.REAL, Float.MAX_VALUE);
-        checkColumn(Float.MIN_VALUE, SqlColumnType.REAL, Math.abs(Float.MIN_VALUE));
         checkColumn(Float.POSITIVE_INFINITY, SqlColumnType.REAL, Float.POSITIVE_INFINITY);
         checkColumn(Float.NEGATIVE_INFINITY, SqlColumnType.REAL, Float.POSITIVE_INFINITY);
         checkColumn(Float.NaN, SqlColumnType.REAL, Float.NaN);
@@ -82,7 +81,6 @@ public class AbsFunctionIntegrationTest extends SqlExpressionIntegrationTestSupp
         checkColumn(1.1d, SqlColumnType.DOUBLE, 1.1d);
         checkColumn(-1.1d, SqlColumnType.DOUBLE, 1.1d);
         checkColumn(Double.MAX_VALUE, SqlColumnType.DOUBLE, Double.MAX_VALUE);
-        checkColumn(Double.MIN_VALUE, SqlColumnType.DOUBLE, Math.abs(Double.MIN_VALUE));
         checkColumn(Double.POSITIVE_INFINITY, SqlColumnType.DOUBLE, Double.POSITIVE_INFINITY);
         checkColumn(Double.NEGATIVE_INFINITY, SqlColumnType.DOUBLE, Double.POSITIVE_INFINITY);
         checkColumn(Double.NaN, SqlColumnType.DOUBLE, Double.NaN);
