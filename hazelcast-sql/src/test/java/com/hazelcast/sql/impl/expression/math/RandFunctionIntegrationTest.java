@@ -53,18 +53,21 @@ public class RandFunctionIntegrationTest extends SqlExpressionIntegrationTestSup
     }
 
     @Test
-    public void testSeveralRows() {
+    public void testMultipleCallsInSingleQuery() {
         putAll(0, 1, 2, 3);
 
-        List<SqlRow> rows = execute(member, "SELECT RAND() FROM map");
+        List<SqlRow> rows = execute(member, "SELECT RAND(), RAND() FROM map");
         assertEquals(4, rows.size());
 
         Set<Double> values = new HashSet<>();
 
         for (SqlRow row : rows) {
-            double value = row.getObject(0);
+            double value1 = row.getObject(0);
+            double value2 = row.getObject(1);
 
-            values.add(value);
+            assertNotEquals(value1, value2);
+
+            values.add(value1);
         }
 
         assertTrue(values.size() > 1);
