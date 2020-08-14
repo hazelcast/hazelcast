@@ -233,8 +233,7 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
             outboundEdgeMap,
             inboundEdgeMap,
             inboundEdgeMemberCountMap,
-            parameterMetadata,
-            rowMetadata,
+            rowMetadata, parameterMetadata,
             planKey,
             explain,
             objectIds

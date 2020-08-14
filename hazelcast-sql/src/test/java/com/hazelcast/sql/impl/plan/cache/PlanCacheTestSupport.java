@@ -68,8 +68,7 @@ public class PlanCacheTestSupport extends SqlTestSupport {
             null,
             null,
             null,
-            null,
-            null,
+            null, null,
             key,
             null,
             objectIds0

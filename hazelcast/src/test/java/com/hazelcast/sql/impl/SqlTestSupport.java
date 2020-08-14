@@ -164,8 +164,7 @@ public class SqlTestSupport extends HazelcastTestSupport {
             Collections.emptyMap(),
             Collections.emptyMap(),
             Collections.emptyMap(),
-            null,
-            null,
+            null, null,
             null,
             null,
             Collections.emptySet()

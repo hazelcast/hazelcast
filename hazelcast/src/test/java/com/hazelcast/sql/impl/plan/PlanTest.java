@@ -54,8 +54,7 @@ public class PlanTest extends SqlTestSupport {
             outboundEdgeMap,
             inboundEdgeMap,
             inboundEdgeMemberCountMap,
-            null,
-            null,
+            null, null,
             null,
             null,
             Collections.emptySet()

@@ -73,8 +73,7 @@ public class QueryExecuteOperationFactoryTest {
             outboundEdgeMap,
             inboundEdgeMap,
             inboundEdgeMemberCountMap,
-            null,
-            null,
+            null, null,
             null,
             null,
             Collections.emptySet()
