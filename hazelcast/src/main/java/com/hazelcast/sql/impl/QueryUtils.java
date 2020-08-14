@@ -16,12 +16,22 @@
 
 package com.hazelcast.sql.impl;
 
-import com.hazelcast.sql.SqlException;
+import com.hazelcast.internal.util.collection.PartitionIdSet;
+import com.hazelcast.partition.Partition;
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.SqlColumnMetadata;
 import com.hazelcast.sql.SqlColumnType;
 import com.hazelcast.sql.SqlErrorCode;
+import com.hazelcast.sql.SqlException;
+import com.hazelcast.sql.impl.schema.TableResolver;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -155,5 +165,51 @@ public final class QueryUtils {
         }
 
         return new SqlColumnMetadata(columnName, type);
+    }
+
+    public static Map<UUID, PartitionIdSet> createPartitionMap(NodeEngine nodeEngine) {
+        Collection<Partition> parts = nodeEngine.getHazelcastInstance().getPartitionService().getPartitions();
+
+        int partCnt = parts.size();
+
+        Map<UUID, PartitionIdSet> partMap = new LinkedHashMap<>();
+
+        for (Partition part : parts) {
+            UUID ownerId = part.getOwner().getUuid();
+            partMap.computeIfAbsent(ownerId, (key) -> new PartitionIdSet(partCnt)).add(part.getPartitionId());
+        }
+
+        return partMap;
+    }
+
+    public static List<List<String>> prepareSearchPaths(
+        List<List<String>> currentSearchPaths,
+        List<TableResolver> tableResolvers
+    ) {
+        // Current search paths have the highest priority.
+        List<List<String>> res = new ArrayList<>();
+
+        if (currentSearchPaths != null) {
+            res.addAll(currentSearchPaths);
+        }
+
+        // Then add paths from table resolvers.
+        if (tableResolvers != null) {
+            for (TableResolver tableResolver : tableResolvers) {
+                List<List<String>> tableResolverSearchPaths = tableResolver.getDefaultSearchPaths();
+
+                if (tableResolverSearchPaths != null) {
+                    res.addAll(tableResolverSearchPaths);
+                }
+            }
+        }
+
+        // Add catalog scope.
+        res.add(Collections.singletonList(QueryUtils.CATALOG));
+
+        // Add top-level scope.
+        res.add(Collections.emptyList());
+
+        return res;
     }
 }

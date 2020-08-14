@@ -20,6 +20,9 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.impl.HazelcastInstanceProxy;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
+import com.hazelcast.map.IMap;
+import com.hazelcast.map.impl.MapContainer;
+import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.sql.SqlQuery;
@@ -69,6 +72,14 @@ public class SqlTestSupport extends HazelcastTestSupport {
 
     public static InternalSerializationService getSerializationService() {
         return new DefaultSerializationServiceBuilder().build();
+    }
+
+    public static InternalSerializationService getSerializationService(HazelcastInstance instance) {
+        return (InternalSerializationService) nodeEngine(instance).getSerializationService();
+    }
+
+    public static MapContainer getMapContainer(IMap<?, ?> map) {
+        return ((MapProxyImpl<?, ?>) map).getService().getMapServiceContext().getMapContainer(map.getName());
     }
 
     public static <T> T serialize(Object original) {
@@ -147,7 +158,9 @@ public class SqlTestSupport extends HazelcastTestSupport {
             Collections.emptyMap(),
             Collections.emptyMap(),
             null,
-            QueryParameterMetadata.EMPTY
+            QueryParameterMetadata.EMPTY,
+            null,
+            Collections.emptySet()
         );
     }
 

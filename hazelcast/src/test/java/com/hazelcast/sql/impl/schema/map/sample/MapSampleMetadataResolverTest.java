@@ -432,7 +432,7 @@ public class MapSampleMetadataResolverTest extends MapSchemaTestSupport {
     private void checkJavaTypes(Object object, boolean key) {
         MapSampleMetadata metadata = MapSampleMetadataResolver.resolve(getSerializationService(), object, key);
 
-        assertEquals(GenericQueryTargetDescriptor.INSTANCE, metadata.getDescriptor());
+        assertEquals(GenericQueryTargetDescriptor.DEFAULT, metadata.getDescriptor());
 
         checkFields(
             metadata,

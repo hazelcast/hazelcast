@@ -16,7 +16,11 @@
 
 package com.hazelcast.sql.impl.schema;
 
+import com.hazelcast.sql.impl.plan.cache.PlanObjectKey;
+
+import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Generic table metadata.
@@ -28,10 +32,17 @@ public abstract class Table {
     private final List<TableField> fields;
     private final TableStatistics statistics;
 
-    protected Table(String schemaName, String name, List<TableField> fields, TableStatistics statistics) {
+    private Set<String> conflictingSchemas;
+
+    protected Table(
+        String schemaName,
+        String name,
+        List<TableField> fields,
+        TableStatistics statistics
+    ) {
         this.schemaName = schemaName;
         this.name = name;
-        this.fields = fields;
+        this.fields = Collections.unmodifiableList(fields);
         this.statistics = statistics;
     }
 
@@ -41,6 +52,10 @@ public abstract class Table {
 
     public String getName() {
         return name;
+    }
+
+    public List<TableField> getFields() {
+        return fields;
     }
 
     public int getFieldCount() {
@@ -54,5 +69,15 @@ public abstract class Table {
 
     public TableStatistics getStatistics() {
         return statistics;
+    }
+
+    public abstract PlanObjectKey getObjectKey();
+
+    public Set<String> getConflictingSchemas() {
+        return conflictingSchemas != null ? conflictingSchemas : Collections.emptySet();
+    }
+
+    public void setConflictingSchemas(Set<String> conflictingSchemas) {
+        this.conflictingSchemas = conflictingSchemas;
     }
 }

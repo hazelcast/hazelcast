@@ -18,6 +18,8 @@ package com.hazelcast.sql.impl.schema.map;
 
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.extract.QueryTargetDescriptor;
+import com.hazelcast.sql.impl.plan.cache.PartitionedMapPlanObjectKey;
+import com.hazelcast.sql.impl.plan.cache.PlanObjectKey;
 import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.schema.TableStatistics;
 
@@ -38,5 +40,21 @@ public class PartitionedMapTable extends AbstractMapTable {
 
     public PartitionedMapTable(String name, QueryException exception) {
         super(SCHEMA_NAME_PARTITIONED, name, exception);
+    }
+
+    @Override
+    public PlanObjectKey getObjectKey() {
+        if (!isValid()) {
+            return null;
+        }
+
+        return new PartitionedMapPlanObjectKey(
+            getSchemaName(),
+            getName(),
+            getFields(),
+            getConflictingSchemas(),
+            getKeyDescriptor(),
+            getValueDescriptor()
+        );
     }
 }

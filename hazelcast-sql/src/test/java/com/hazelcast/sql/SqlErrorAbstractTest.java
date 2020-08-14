@@ -144,7 +144,7 @@ public class SqlErrorAbstractTest extends SqlTestSupport {
 
         // Start query
         SqlException error = assertSqlException(useClient ? client : instance1, query());
-        assertEquals(SqlErrorCode.PARTITION_MIGRATED, error.getCode());
+        assertEquals(SqlErrorCode.PARTITION_NOT_OWNED, error.getCode());
     }
 
     protected void checkMapDestroy(boolean useClient, boolean firstMember) {

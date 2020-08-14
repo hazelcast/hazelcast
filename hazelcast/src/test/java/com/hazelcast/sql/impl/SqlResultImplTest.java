@@ -36,7 +36,7 @@ public class SqlResultImplTest {
     public void test_rowsResult() {
         QueryId queryId = new QueryId(1, 2, 3, 4);
         SqlRowMetadata metadata = new SqlRowMetadata(singletonList(new SqlColumnMetadata("n", SqlColumnType.INTEGER)));
-        QueryState queryState = QueryState.createInitiatorState(queryId, null, null, 0, null, metadata,
+        QueryState queryState = QueryState.createInitiatorState(queryId, null, null, 0, null, null, metadata,
                 null, System::currentTimeMillis);
         SqlResultImpl r = SqlResultImpl.createRowsResult(queryState);
 

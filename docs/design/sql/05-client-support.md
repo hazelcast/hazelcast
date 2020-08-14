@@ -1,5 +1,3 @@
-05-client-support.md
-
 # SQL Client Support
 
 ## Overview

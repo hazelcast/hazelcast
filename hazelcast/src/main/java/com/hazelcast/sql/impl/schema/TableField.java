@@ -45,4 +45,29 @@ public class TableField {
     public boolean isHidden() {
         return hidden;
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        TableField field = (TableField) o;
+
+        return name.equals(field.name) && type.equals(field.type) && hidden == field.hidden;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = name.hashCode();
+
+        result = 31 * result + type.hashCode();
+        result = 31 * result + (hidden ? 1 : 0);
+
+        return result;
+    }
 }

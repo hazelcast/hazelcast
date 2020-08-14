@@ -28,6 +28,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.Collections;
 import java.util.UUID;
 
 import static org.junit.Assert.assertEquals;
@@ -39,11 +40,11 @@ public class QueryInitiatorStateTest {
     @Test
     public void testInitiatorState() {
         QueryId queryId = QueryId.create(UUID.randomUUID());
-        Plan plan = new Plan(null, null, null, null, null, null, null, QueryParameterMetadata.EMPTY);
+        Plan plan = new Plan(null, null, null, null, null, null, null, QueryParameterMetadata.EMPTY, null, Collections.emptySet());
         QueryResultProducer resultProducer = new BlockingRootResultConsumer();
         long timeout = 1000L;
 
-        QueryInitiatorState state = new QueryInitiatorState(queryId, plan, null, resultProducer, timeout);
+        QueryInitiatorState state = new QueryInitiatorState(queryId, plan, null, null, resultProducer, timeout);
 
         assertEquals(queryId, state.getQueryId());
         assertSame(plan, state.getPlan());

@@ -19,6 +19,7 @@ package com.hazelcast.sql.impl;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.SqlRowMetadata;
+import com.hazelcast.sql.impl.plan.Plan;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.state.QueryInitiatorState;
 import com.hazelcast.sql.impl.state.QueryState;
@@ -120,6 +121,12 @@ public final class SqlResultImpl implements SqlResult {
     public QueryId getQueryId() {
         checkIsRowsResult();
         return getQueryInitiatorState().getQueryId();
+    }
+
+    public Plan getPlan() {
+        QueryInitiatorState initiatorState = getQueryInitiatorState();
+
+        return initiatorState != null ? initiatorState.getPlan() : null;
     }
 
     private QueryInitiatorState getQueryInitiatorState() {

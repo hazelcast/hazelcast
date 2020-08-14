@@ -176,7 +176,7 @@ public class SqlDataSerializerHook implements DataSerializerHook {
         constructors[EXPRESSION_COLUMN] = arg -> new ColumnExpression<>();
         constructors[EXPRESSION_IS_NULL] = arg -> new IsNullPredicate();
 
-        constructors[TARGET_DESCRIPTOR_GENERIC] = arg -> GenericQueryTargetDescriptor.INSTANCE;
+        constructors[TARGET_DESCRIPTOR_GENERIC] = arg -> GenericQueryTargetDescriptor.DEFAULT;
 
         constructors[QUERY_PATH] = arg -> new QueryPath();
 

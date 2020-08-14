@@ -80,7 +80,7 @@ public class PlanRow {
         }
 
         // Get node and signature
-        String nodeAndSignature = input.substring(0, input.indexOf(":")).trim();
+        String nodeAndSignature = input.substring(0, input.lastIndexOf(":")).trim();
 
         String node;
         String signature;
