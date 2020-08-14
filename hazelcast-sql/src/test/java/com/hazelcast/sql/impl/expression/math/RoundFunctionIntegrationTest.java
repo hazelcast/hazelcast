@@ -53,6 +53,12 @@ import static com.hazelcast.sql.support.expressions.ExpressionBiValue.FloatVal;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class RoundFunctionIntegrationTest extends SqlExpressionIntegrationTestSupport {
     @Test
+    public void testLengthOverflow() {
+        put(new ExpressionBiValue.IntegerLongVal().fields(1, Long.MAX_VALUE));
+        checkFailure_2("field1", "field2", SqlErrorCode.DATA_EXCEPTION, "Cannot convert the second operand of ROUND function to INT");
+    }
+
+    @Test
     public void test_byte() {
         checkColumn_1(new ByteVal().field1((byte) 127), SqlColumnType.TINYINT, (byte) 127);
         checkColumn_1(new ByteVal().field1((byte) -128), SqlColumnType.TINYINT, (byte) -128);

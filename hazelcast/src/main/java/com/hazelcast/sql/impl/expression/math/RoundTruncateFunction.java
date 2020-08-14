@@ -72,20 +72,14 @@ public class RoundTruncateFunction<T> extends BiExpressionWithType<T> implements
     @SuppressWarnings({"unchecked", "checkstyle:CyclomaticComplexity", "checkstyle:ReturnCount"})
     @Override
     public T eval(Row row, ExpressionEvalContext context) {
-        // Get base operand.
         Object operand1Value = operand1.eval(row, context);
 
-        // NULL always yields NULL
         if (operand1Value == null) {
             return null;
         }
 
-        // Get length.
-        Integer operand2Value = operand2 != null ? MathFunctionUtils.asInt(operand2, row, context) : null;
+        int len = getLength(row, context);
 
-        int len = operand2Value != null ? operand2Value : 0;
-
-        // Cast to expected type.
         switch (resultType.getTypeFamily()) {
             case TINYINT:
                 try {
@@ -137,7 +131,18 @@ public class RoundTruncateFunction<T> extends BiExpressionWithType<T> implements
                 return (T) (Double) execute(operand1Value, len).doubleValue();
 
             default:
-                throw QueryException.error("Unsupported result type for ROUND/TRUNCATE function: " + resultType);
+                throw QueryException.error("Unsupported result type for " + getFunctionName() + " function: " + resultType);
+        }
+    }
+
+    private int getLength(Row row, ExpressionEvalContext context) {
+        try {
+            Integer operand2Value = operand2 != null ? MathFunctionUtils.asInt(operand2, row, context) : null;
+
+            return operand2Value != null ? operand2Value : 0;
+        } catch (Exception e) {
+            throw QueryException.dataException("Cannot convert the second operand of " + getFunctionName() + " function to "
+                + QueryDataTypeFamily.INT + ": " + e.getMessage(), e);
         }
     }
 
@@ -158,8 +163,12 @@ public class RoundTruncateFunction<T> extends BiExpressionWithType<T> implements
         QueryDataTypeFamily proposedTypeFamily,
         ArithmeticException cause
     ) {
-        return QueryException.dataException(resultTypeFamily + " overflow in " + (truncate ? "TRUNCATE" : "ROUND")
+        return QueryException.dataException(resultTypeFamily + " overflow in " + getFunctionName()
             + " function (consider adding an explicit CAST to " + proposedTypeFamily + ")", cause);
+    }
+
+    private String getFunctionName() {
+        return truncate ? "TRUNCATE" : "ROUND";
     }
 
     @Override
