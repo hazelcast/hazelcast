@@ -30,8 +30,7 @@ import com.hazelcast.sql.impl.type.QueryDataType;
 import java.io.IOException;
 
 /**
- * Family of functions which accept a single double operand and return double result:
- *     COS, SIN, TAN, COT, ACOS, ASIN, ATAN, SQRT, EXP, LN, LOG10, DEGREES, RADIANS
+ * Family of functions which accept a single double operand and return double result.
  */
 public class DoubleFunction extends UniExpression<Double> implements IdentifiedDataSerializable {
 
