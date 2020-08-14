@@ -59,7 +59,9 @@ public class RoundTruncateFunction<T> extends BiExpressionWithType<T> implements
             QueryDataType operand1Type = operand1.getType();
 
             // No conversion is expected for non-fractional types when the length operand is not defined.
-            if (MathFunctionUtils.notFractional(operand1Type) && operand1Type == resultType) {
+            if (MathFunctionUtils.notFractional(operand1Type)) {
+                assert operand1Type == resultType;
+
                 return operand1;
             }
         }

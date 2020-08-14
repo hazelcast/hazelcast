@@ -77,15 +77,6 @@ public class RoundTruncateFunctionTest extends SqlTestSupport {
         checkNotSimplified(RoundTruncateFunction.create(ConstantExpression.create(null, REAL), null, REAL, true));
         checkNotSimplified(RoundTruncateFunction.create(ConstantExpression.create(null, DOUBLE), null, DOUBLE, true));
 
-        checkNotSimplified(RoundTruncateFunction.create(ConstantExpression.create(null, TINYINT), null, DECIMAL, true));
-        checkNotSimplified(RoundTruncateFunction.create(ConstantExpression.create(null, SMALLINT), null, DECIMAL, true));
-        checkNotSimplified(RoundTruncateFunction.create(ConstantExpression.create(null, INT), null, DECIMAL, true));
-        checkNotSimplified(RoundTruncateFunction.create(ConstantExpression.create(null, BIGINT), null, DECIMAL, true));
-        checkNotSimplified(RoundTruncateFunction.create(ConstantExpression.create(null, DECIMAL), null, DECIMAL, true));
-        checkNotSimplified(RoundTruncateFunction.create(ConstantExpression.create(null, REAL), null, DECIMAL, true));
-        checkNotSimplified(RoundTruncateFunction.create(ConstantExpression.create(null, DOUBLE), null, DECIMAL, true));
-        checkNotSimplified(RoundTruncateFunction.create(ConstantExpression.create(null, VARCHAR), null, DECIMAL, true));
-
         // With second operand
         ConstantExpression<?> len = ConstantExpression.create(1, INT);
 
