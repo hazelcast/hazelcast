@@ -16,8 +16,6 @@
 
 package com.hazelcast.collection.impl.queue;
 
-import com.hazelcast.internal.serialization.SerializationService;
-
 import javax.annotation.Nonnull;
 import java.util.Comparator;
 import java.util.Objects;
@@ -32,21 +30,16 @@ import java.util.Objects;
 public final class ForwardingQueueItemComparator<T> implements Comparator<QueueItem> {
 
     private final Comparator<T> customComparator;
-    private final SerializationService serializationService;
 
-    public ForwardingQueueItemComparator(
-            @Nonnull Comparator<T> customComparator,
-            @Nonnull SerializationService serializationService) {
+    public ForwardingQueueItemComparator(@Nonnull Comparator<T> customComparator) {
         Objects.requireNonNull(customComparator, "Custom comparator cannot be null.");
-        Objects.requireNonNull(serializationService, "SerializationService cannot be null.");
         this.customComparator = customComparator;
-        this.serializationService = serializationService;
     }
 
     @Override
     public int compare(QueueItem o1, QueueItem o2) {
-        T object1 = serializationService.toObject(o1.getData());
-        T object2 = serializationService.toObject(o2.getData());
+        T object1 = o1.getDeserializedObject();
+        T object2 = o2.getDeserializedObject();
 
         return this.customComparator.compare(object1, object2);
     }
