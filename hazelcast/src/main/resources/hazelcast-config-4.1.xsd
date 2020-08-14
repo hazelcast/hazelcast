@@ -556,11 +556,11 @@
 
     <xs:complexType name="queue">
         <xs:all>
-        	<xs:element name="priority-comparator-class-name" type="xs:string" minOccurs="0" maxOccurs="1" >
+        	<xs:element name="priority-comparator-class-name" type="non-space-string" minOccurs="0" maxOccurs="1" >
 	            <xs:annotation>
 	                <xs:documentation>
 	                    Fully-qualified comparator's class name to be used for the priority queue.
-	                    If nothing is provided, then queue behaves as a FiFo queue.
+	                    If nothing is provided, then queue behaves as a FIFO queue.
 	                </xs:documentation>
 	            </xs:annotation>
 	        </xs:element>

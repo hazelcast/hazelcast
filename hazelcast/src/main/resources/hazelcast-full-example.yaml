@@ -908,9 +908,6 @@ hazelcast:
   # * "name"
   # with which you can specify the name of your queue. Its default value is "default".
   # It has the following elements:
-  # * "priority-comparator-class-name":
-  # Full qualified name comparator's class name to be used for the priority queue.
-  # If nothing is provided, then the queue will behaves as a FiFo queue, using queue item id for comparison
   # * "statistics-enabled":
   # When you enable it, you can retrieve queue statistics. Its default value is true.
   # * "max-size":
@@ -951,6 +948,9 @@ hazelcast:
   # * "split-brain-protection-ref":
   #     Adds the Split Brain Protection for this data-structure which you configure using the "split-brain-protection" element. You should set
   #     the "split-brain-protection-ref"'s value as the "split-brain-protection"'s name.
+  # * "priority-comparator-class-name":
+  #     Fully-qualified comparator's class name to be used for the priority queue.
+  #     If nothing is provided, then queue behaves as a FIFO queue.
   #
   queue:
     default:
@@ -972,6 +972,7 @@ hazelcast:
       merge-policy:
         batch-size: 100
         class-name: PutIfAbsentMergePolicy
+      priority-comparator-class-name: com.hazelcast.config.QueueItemTestComparator
 
   #
   # ===== HAZELCAST MAP CONFIGURATION =====

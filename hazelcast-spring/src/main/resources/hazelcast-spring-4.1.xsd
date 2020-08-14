@@ -272,12 +272,12 @@
                                 </xs:sequence>
                                 <xs:attribute name="name" use="required" type="xs:string"/>
                                 <xs:attribute name="priority-comparator-class-name" type="xs:string">
-                                    <xs:annotation>
-                                        <xs:documentation>
-                                            Fully-qualified comparator's class name to be used for the priority queue.
-                                            If nothing is provided, then queue behaves as a FiFo queue.
-                                        </xs:documentation>
-                                    </xs:annotation>
+                                        <xs:annotation>
+                                            <xs:documentation>
+                                                Fully-qualified comparator's class name to be used for the priority queue.
+                                                If nothing is provided, then queue behaves as a FIFO queue.
+                                            </xs:documentation>
+                                        </xs:annotation>
                                 </xs:attribute>
                                 <xs:attribute name="max-size" use="optional" type="xs:string">
                                     <xs:annotation>

@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * If a queue configuration with the given {@code name} already exists, then
  * the new configuration is ignored and the existing one is preserved.
  */
-@Generated("5303f474c2074688797c45f3de9ce0ad")
+@Generated("faed08d78771f41333205db25009f47e")
 public final class DynamicConfigAddQueueConfigCodec {
     //hex: 0x1B0B00
     public static final int REQUEST_MESSAGE_TYPE = 1772288;
@@ -63,11 +63,6 @@ public final class DynamicConfigAddQueueConfigCodec {
          * queue name
          */
         public java.lang.String name;
-
-        /**
-         * Class name of the configured {@link java.util.Comparator} implementation.
-         */
-        public @Nullable java.lang.String priorityComparatorClassName;
 
         /**
          * item listeners configuration
@@ -120,9 +115,20 @@ public final class DynamicConfigAddQueueConfigCodec {
          * Number of entries to be sent in a merge operation.
          */
         public int mergeBatchSize;
+
+        /**
+         * Class name of the configured {@link java.util.Comparator} implementation.
+         */
+        public @Nullable java.lang.String priorityComparatorClassName;
+
+        /**
+         * True if the priorityComparatorClassName is received from the client, false otherwise.
+         * If this is false, priorityComparatorClassName has the default value for its type.
+        */
+        public boolean isPriorityComparatorClassNameExists;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String name, @Nullable java.lang.String priorityComparatorClassName, @Nullable java.util.Collection<com.hazelcast.client.impl.protocol.task.dynamicconfig.ListenerConfigHolder> listenerConfigs, int backupCount, int asyncBackupCount, int maxSize, int emptyQueueTtl, boolean statisticsEnabled, @Nullable java.lang.String splitBrainProtectionName, @Nullable com.hazelcast.client.impl.protocol.task.dynamicconfig.QueueStoreConfigHolder queueStoreConfig, java.lang.String mergePolicy, int mergeBatchSize) {
+    public static ClientMessage encodeRequest(java.lang.String name, @Nullable java.util.Collection<com.hazelcast.client.impl.protocol.task.dynamicconfig.ListenerConfigHolder> listenerConfigs, int backupCount, int asyncBackupCount, int maxSize, int emptyQueueTtl, boolean statisticsEnabled, @Nullable java.lang.String splitBrainProtectionName, @Nullable com.hazelcast.client.impl.protocol.task.dynamicconfig.QueueStoreConfigHolder queueStoreConfig, java.lang.String mergePolicy, int mergeBatchSize, @Nullable java.lang.String priorityComparatorClassName) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
         clientMessage.setOperationName("DynamicConfig.AddQueueConfig");
@@ -137,11 +143,11 @@ public final class DynamicConfigAddQueueConfigCodec {
         encodeInt(initialFrame.content, REQUEST_MERGE_BATCH_SIZE_FIELD_OFFSET, mergeBatchSize);
         clientMessage.add(initialFrame);
         StringCodec.encode(clientMessage, name);
-        CodecUtil.encodeNullable(clientMessage, priorityComparatorClassName, StringCodec::encode);
         ListMultiFrameCodec.encodeNullable(clientMessage, listenerConfigs, ListenerConfigHolderCodec::encode);
         CodecUtil.encodeNullable(clientMessage, splitBrainProtectionName, StringCodec::encode);
         CodecUtil.encodeNullable(clientMessage, queueStoreConfig, QueueStoreConfigHolderCodec::encode);
         StringCodec.encode(clientMessage, mergePolicy);
+        CodecUtil.encodeNullable(clientMessage, priorityComparatorClassName, StringCodec::encode);
         return clientMessage;
     }
 
@@ -156,11 +162,16 @@ public final class DynamicConfigAddQueueConfigCodec {
         request.statisticsEnabled = decodeBoolean(initialFrame.content, REQUEST_STATISTICS_ENABLED_FIELD_OFFSET);
         request.mergeBatchSize = decodeInt(initialFrame.content, REQUEST_MERGE_BATCH_SIZE_FIELD_OFFSET);
         request.name = StringCodec.decode(iterator);
-        request.priorityComparatorClassName = CodecUtil.decodeNullable(iterator, StringCodec::decode);
         request.listenerConfigs = ListMultiFrameCodec.decodeNullable(iterator, ListenerConfigHolderCodec::decode);
         request.splitBrainProtectionName = CodecUtil.decodeNullable(iterator, StringCodec::decode);
         request.queueStoreConfig = CodecUtil.decodeNullable(iterator, QueueStoreConfigHolderCodec::decode);
         request.mergePolicy = StringCodec.decode(iterator);
+        if (iterator.hasNext()) {
+            request.priorityComparatorClassName = CodecUtil.decodeNullable(iterator, StringCodec::decode);
+            request.isPriorityComparatorClassNameExists = true;
+        } else {
+            request.isPriorityComparatorClassNameExists = false;
+        }
         return request;
     }
 

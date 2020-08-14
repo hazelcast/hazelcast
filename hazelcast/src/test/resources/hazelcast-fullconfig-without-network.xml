@@ -201,6 +201,7 @@
 
         <split-brain-protection-ref>splitBrainProtectionRuleWithThreeMembers</split-brain-protection-ref>
         <merge-policy batch-size="100">PutIfAbsentMergePolicy</merge-policy>
+        <priority-comparator-class-name>com.hazelcast.config.QueueItemTestComparator</priority-comparator-class-name>
     </queue>
 
     <map name="default">

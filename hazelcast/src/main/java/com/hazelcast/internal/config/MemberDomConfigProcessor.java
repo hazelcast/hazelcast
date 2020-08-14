@@ -16,72 +16,6 @@
 
 package com.hazelcast.internal.config;
 
-import static com.hazelcast.config.ServerSocketEndpointConfig.DEFAULT_SOCKET_CONNECT_TIMEOUT_SECONDS;
-import static com.hazelcast.config.ServerSocketEndpointConfig.DEFAULT_SOCKET_LINGER_SECONDS;
-import static com.hazelcast.config.ServerSocketEndpointConfig.DEFAULT_SOCKET_RECEIVE_BUFFER_SIZE_KB;
-import static com.hazelcast.config.ServerSocketEndpointConfig.DEFAULT_SOCKET_SEND_BUFFER_SIZE_KB;
-import static com.hazelcast.config.security.LdapRoleMappingMode.getRoleMappingMode;
-import static com.hazelcast.config.security.LdapSearchScope.getSearchScope;
-import static com.hazelcast.internal.config.AliasedDiscoveryConfigUtils.getConfigByTag;
-import static com.hazelcast.internal.config.ConfigSections.ADVANCED_NETWORK;
-import static com.hazelcast.internal.config.ConfigSections.CACHE;
-import static com.hazelcast.internal.config.ConfigSections.CARDINALITY_ESTIMATOR;
-import static com.hazelcast.internal.config.ConfigSections.CLUSTER_NAME;
-import static com.hazelcast.internal.config.ConfigSections.CP_SUBSYSTEM;
-import static com.hazelcast.internal.config.ConfigSections.CRDT_REPLICATION;
-import static com.hazelcast.internal.config.ConfigSections.DURABLE_EXECUTOR_SERVICE;
-import static com.hazelcast.internal.config.ConfigSections.EXECUTOR_SERVICE;
-import static com.hazelcast.internal.config.ConfigSections.FLAKE_ID_GENERATOR;
-import static com.hazelcast.internal.config.ConfigSections.HOT_RESTART_PERSISTENCE;
-import static com.hazelcast.internal.config.ConfigSections.IMPORT;
-import static com.hazelcast.internal.config.ConfigSections.INSTANCE_NAME;
-import static com.hazelcast.internal.config.ConfigSections.LICENSE_KEY;
-import static com.hazelcast.internal.config.ConfigSections.LIST;
-import static com.hazelcast.internal.config.ConfigSections.LISTENERS;
-import static com.hazelcast.internal.config.ConfigSections.LITE_MEMBER;
-import static com.hazelcast.internal.config.ConfigSections.MANAGEMENT_CENTER;
-import static com.hazelcast.internal.config.ConfigSections.MAP;
-import static com.hazelcast.internal.config.ConfigSections.MEMBER_ATTRIBUTES;
-import static com.hazelcast.internal.config.ConfigSections.METRICS;
-import static com.hazelcast.internal.config.ConfigSections.MULTIMAP;
-import static com.hazelcast.internal.config.ConfigSections.NATIVE_MEMORY;
-import static com.hazelcast.internal.config.ConfigSections.NETWORK;
-import static com.hazelcast.internal.config.ConfigSections.PARTITION_GROUP;
-import static com.hazelcast.internal.config.ConfigSections.PN_COUNTER;
-import static com.hazelcast.internal.config.ConfigSections.PROPERTIES;
-import static com.hazelcast.internal.config.ConfigSections.QUEUE;
-import static com.hazelcast.internal.config.ConfigSections.RELIABLE_TOPIC;
-import static com.hazelcast.internal.config.ConfigSections.REPLICATED_MAP;
-import static com.hazelcast.internal.config.ConfigSections.RINGBUFFER;
-import static com.hazelcast.internal.config.ConfigSections.SCHEDULED_EXECUTOR_SERVICE;
-import static com.hazelcast.internal.config.ConfigSections.SECURITY;
-import static com.hazelcast.internal.config.ConfigSections.SERIALIZATION;
-import static com.hazelcast.internal.config.ConfigSections.SET;
-import static com.hazelcast.internal.config.ConfigSections.SPLIT_BRAIN_PROTECTION;
-import static com.hazelcast.internal.config.ConfigSections.SQL;
-import static com.hazelcast.internal.config.ConfigSections.TOPIC;
-import static com.hazelcast.internal.config.ConfigSections.USER_CODE_DEPLOYMENT;
-import static com.hazelcast.internal.config.ConfigSections.WAN_REPLICATION;
-import static com.hazelcast.internal.config.ConfigSections.canOccurMultipleTimes;
-import static com.hazelcast.internal.config.ConfigValidator.checkCacheConfig;
-import static com.hazelcast.internal.config.ConfigValidator.checkCacheEvictionConfig;
-import static com.hazelcast.internal.config.ConfigValidator.checkMapEvictionConfig;
-import static com.hazelcast.internal.config.ConfigValidator.checkNearCacheEvictionConfig;
-import static com.hazelcast.internal.config.DomConfigHelper.childElements;
-import static com.hazelcast.internal.config.DomConfigHelper.childElementsWithName;
-import static com.hazelcast.internal.config.DomConfigHelper.cleanNodeName;
-import static com.hazelcast.internal.config.DomConfigHelper.firstChildElement;
-import static com.hazelcast.internal.config.DomConfigHelper.getBooleanValue;
-import static com.hazelcast.internal.config.DomConfigHelper.getDoubleValue;
-import static com.hazelcast.internal.config.DomConfigHelper.getIntegerValue;
-import static com.hazelcast.internal.config.DomConfigHelper.getLongValue;
-import static com.hazelcast.internal.util.StringUtil.isNullOrEmpty;
-import static com.hazelcast.internal.util.StringUtil.lowerCaseInternal;
-import static com.hazelcast.internal.util.StringUtil.upperCaseInternal;
-import static java.lang.Boolean.parseBoolean;
-import static java.lang.Integer.parseInt;
-import static java.lang.Long.parseLong;
-
 import com.hazelcast.config.AliasedDiscoveryConfig;
 import com.hazelcast.config.AttributeConfig;
 import com.hazelcast.config.AuditlogConfig;
@@ -207,6 +141,10 @@ import com.hazelcast.query.impl.IndexUtils;
 import com.hazelcast.splitbrainprotection.SplitBrainProtectionOn;
 import com.hazelcast.topic.TopicOverloadPolicy;
 import com.hazelcast.wan.WanPublisherState;
+import org.w3c.dom.Element;
+import org.w3c.dom.NamedNodeMap;
+import org.w3c.dom.Node;
+
 import java.io.File;
 import java.lang.reflect.Method;
 import java.util.Arrays;
@@ -1607,12 +1545,9 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             } else if ("async-backup-count".equals(nodeName)) {
                 qConfig.setAsyncBackupCount(getIntegerValue("async-backup-count", value));
             } else if ("item-listeners".equals(nodeName)) {
-                handleItemListeners(n, new Function<ItemListenerConfig, Void>() {
-                    @Override
-                    public Void apply(ItemListenerConfig itemListenerConfig) {
-                        qConfig.addItemListenerConfig(itemListenerConfig);
-                        return null;
-                    }
+                handleItemListeners(n, itemListenerConfig -> {
+                    qConfig.addItemListenerConfig(itemListenerConfig);
+                    return null;
                 });
             } else if ("statistics-enabled".equals(nodeName)) {
                 qConfig.setStatisticsEnabled(getBooleanValue(value));
