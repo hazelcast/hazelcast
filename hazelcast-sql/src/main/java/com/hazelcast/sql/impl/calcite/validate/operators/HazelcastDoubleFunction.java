@@ -16,13 +16,16 @@
 
 package com.hazelcast.sql.impl.calcite.validate.operators;
 
-import com.hazelcast.sql.impl.calcite.validate.types.ReplaceUnknownOperandTypeInference;
+import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeFactory;
 import org.apache.calcite.sql.SqlFunction;
 import org.apache.calcite.sql.SqlFunctionCategory;
 import org.apache.calcite.sql.SqlKind;
+import org.apache.calcite.sql.type.InferTypes;
 import org.apache.calcite.sql.type.OperandTypes;
 import org.apache.calcite.sql.type.ReturnTypes;
 import org.apache.calcite.sql.type.SqlTypeName;
+
+import java.util.Collections;
 
 import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastOperandTypes.notAny;
 
@@ -35,7 +38,7 @@ public class HazelcastDoubleFunction extends SqlFunction {
             name,
             SqlKind.OTHER_FUNCTION,
             ReturnTypes.DOUBLE_NULLABLE,
-            new ReplaceUnknownOperandTypeInference(SqlTypeName.DOUBLE),
+            InferTypes.explicit(Collections.singletonList(HazelcastTypeFactory.INSTANCE.createSqlType(SqlTypeName.DOUBLE))),
             notAny(OperandTypes.NUMERIC),
             SqlFunctionCategory.NUMERIC
         );

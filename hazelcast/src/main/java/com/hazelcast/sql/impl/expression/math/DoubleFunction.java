@@ -73,7 +73,9 @@ public class DoubleFunction extends UniExpression<Double> implements IdentifiedD
             return null;
         }
 
-        double valueDouble = operand.getType().getConverter().asDouble(value);
+        assert value instanceof Number;
+
+        double valueDouble = ((Number) value).doubleValue();
 
         switch (type) {
             case COS:
