@@ -17,5 +17,5 @@
 package com.hazelcast.sql.impl.plan.cache;
 
 public interface CachedPlanInvalidationCallback {
-    void invalidate(CachedPlan plan);
+    void invalidate(CacheablePlan plan);
 }

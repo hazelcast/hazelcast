@@ -64,7 +64,7 @@ import com.hazelcast.sql.impl.partitioner.FieldsRowPartitioner;
 import com.hazelcast.sql.impl.plan.Plan;
 import com.hazelcast.sql.impl.plan.PlanFragmentMapping;
 import com.hazelcast.sql.impl.plan.cache.PlanCacheKey;
-import com.hazelcast.sql.impl.plan.cache.PlanObjectId;
+import com.hazelcast.sql.impl.plan.cache.PlanObjectKey;
 import com.hazelcast.sql.impl.plan.node.AggregatePlanNode;
 import com.hazelcast.sql.impl.plan.node.EmptyPlanNode;
 import com.hazelcast.sql.impl.plan.node.FetchOffsetPlanNodeFieldTypeProvider;
@@ -170,7 +170,7 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
     private SqlRowMetadata rowMetadata;
 
     /** Collected IDs of objects used in the plan. */
-    private final Set<PlanObjectId> objectIds = new HashSet<>();
+    private final Set<PlanObjectKey> objectIds = new HashSet<>();
 
     /**
      * @param rootColumnNames Root column names. They are null when called from

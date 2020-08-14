@@ -18,42 +18,32 @@ package com.hazelcast.sql.impl.plan.cache;
 
 import com.hazelcast.sql.impl.extract.QueryTargetDescriptor;
 import com.hazelcast.sql.impl.schema.TableField;
-import com.hazelcast.sql.impl.schema.map.MapTableIndex;
 
 import java.util.List;
 import java.util.Set;
 
-public class PartitionedMapPlanObjectId implements PlanObjectId {
+public class ReplicatedMapPlanObjectKey implements PlanObjectKey {
 
     private final String schemaName;
     private final String name;
     private final List<TableField> fields;
     private final QueryTargetDescriptor keyDescriptor;
     private final QueryTargetDescriptor valueDescriptor;
-    private final List<MapTableIndex> indexes;
-    private final int distributionFieldOrdinal;
-    private final boolean hd;
     private final Set<String> conflictingSchemas;
 
-    public PartitionedMapPlanObjectId(
+    public ReplicatedMapPlanObjectKey(
         String schemaName,
         String name,
         List<TableField> fields,
         Set<String> conflictingSchemas,
         QueryTargetDescriptor keyDescriptor,
-        QueryTargetDescriptor valueDescriptor,
-        List<MapTableIndex> indexes,
-        int distributionFieldOrdinal,
-        boolean hd
+        QueryTargetDescriptor valueDescriptor
     ) {
         this.schemaName = schemaName;
         this.name = name;
         this.fields = fields;
         this.keyDescriptor = keyDescriptor;
         this.valueDescriptor = valueDescriptor;
-        this.indexes = indexes;
-        this.distributionFieldOrdinal = distributionFieldOrdinal;
-        this.hd = hd;
         this.conflictingSchemas = conflictingSchemas;
     }
 
@@ -67,16 +57,13 @@ public class PartitionedMapPlanObjectId implements PlanObjectId {
             return false;
         }
 
-        PartitionedMapPlanObjectId that = (PartitionedMapPlanObjectId) o;
+        ReplicatedMapPlanObjectKey that = (ReplicatedMapPlanObjectKey) o;
 
-        return distributionFieldOrdinal == that.distributionFieldOrdinal
-            && hd == that.hd
-            && schemaName.equals(that.schemaName)
+        return schemaName.equals(that.schemaName)
             && name.equals(that.name)
             && fields.equals(that.fields)
             && keyDescriptor.equals(that.keyDescriptor)
             && valueDescriptor.equals(that.valueDescriptor)
-            && indexes.equals(that.indexes)
             && conflictingSchemas.equals(that.conflictingSchemas);
     }
 
@@ -87,9 +74,6 @@ public class PartitionedMapPlanObjectId implements PlanObjectId {
         result = 31 * result + fields.hashCode();
         result = 31 * result + keyDescriptor.hashCode();
         result = 31 * result + valueDescriptor.hashCode();
-        result = 31 * result + indexes.hashCode();
-        result = 31 * result + distributionFieldOrdinal;
-        result = 31 * result + (hd ? 1 : 0);
         result = 31 * result + conflictingSchemas.hashCode();
         return result;
     }

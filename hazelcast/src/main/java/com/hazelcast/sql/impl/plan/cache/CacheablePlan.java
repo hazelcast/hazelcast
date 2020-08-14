@@ -16,9 +16,14 @@
 
 package com.hazelcast.sql.impl.plan.cache;
 
+import com.hazelcast.sql.impl.optimizer.SqlPlan;
+
 /**
- * ID of an object used in the plan.
+ * Plan that could be cached.
  */
-public interface PlanObjectId {
-    // No-op.
+public interface CacheablePlan extends SqlPlan {
+    PlanCacheKey getPlanKey();
+    long getPlanLastUsed();
+    void onPlanUsed();
+    boolean isPlanValid(PlanCheckContext context);
 }

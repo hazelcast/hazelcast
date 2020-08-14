@@ -34,7 +34,7 @@ import com.hazelcast.sql.impl.optimizer.OptimizationTask;
 import com.hazelcast.sql.impl.optimizer.SqlOptimizer;
 import com.hazelcast.sql.impl.optimizer.SqlPlan;
 import com.hazelcast.sql.impl.plan.Plan;
-import com.hazelcast.sql.impl.plan.cache.CachedPlan;
+import com.hazelcast.sql.impl.plan.cache.CacheablePlan;
 import com.hazelcast.sql.impl.plan.cache.PlanCache;
 import com.hazelcast.sql.impl.plan.cache.PlanCacheChecker;
 import com.hazelcast.sql.impl.plan.cache.PlanCacheKey;
@@ -255,8 +255,8 @@ public class SqlServiceImpl implements SqlService, Consumer<Packet> {
 
             plan = optimizer.prepare(new OptimizationTask(sql, searchPaths, schema));
 
-            if (plan instanceof CachedPlan) {
-                CachedPlan plan0 = (CachedPlan) plan;
+            if (plan instanceof CacheablePlan) {
+                CacheablePlan plan0 = (CacheablePlan) plan;
 
                 planCache.put(planKey, plan0);
             }

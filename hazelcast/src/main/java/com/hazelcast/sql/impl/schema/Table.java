@@ -16,7 +16,7 @@
 
 package com.hazelcast.sql.impl.schema;
 
-import com.hazelcast.sql.impl.plan.cache.PlanObjectId;
+import com.hazelcast.sql.impl.plan.cache.PlanObjectKey;
 
 import java.util.Collections;
 import java.util.List;
@@ -71,7 +71,7 @@ public abstract class Table {
         return statistics;
     }
 
-    public abstract PlanObjectId getObjectId();
+    public abstract PlanObjectKey getObjectId();
 
     public Set<String> getConflictingSchemas() {
         return conflictingSchemas != null ? conflictingSchemas : Collections.emptySet();
