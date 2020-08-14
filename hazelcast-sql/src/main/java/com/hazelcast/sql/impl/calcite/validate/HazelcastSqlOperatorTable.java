@@ -24,6 +24,7 @@ import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastSqlMonotonicBi
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastInferTypes;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastOperandTypes;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastReturnTypes;
+import com.hazelcast.sql.impl.calcite.validate.types.ReplaceUnknownOperandTypeInference;
 import org.apache.calcite.sql.SqlBinaryOperator;
 import org.apache.calcite.sql.SqlFunction;
 import org.apache.calcite.sql.SqlFunctionCategory;
@@ -34,11 +35,15 @@ import org.apache.calcite.sql.fun.SqlStdOperatorTable;
 import org.apache.calcite.sql.type.InferTypes;
 import org.apache.calcite.sql.type.OperandTypes;
 import org.apache.calcite.sql.type.ReturnTypes;
+import org.apache.calcite.sql.type.SqlTypeName;
 import org.apache.calcite.sql.util.ReflectiveSqlOperatorTable;
 
 import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastInferTypes.NULLABLE_OBJECT;
 import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastOperandTypes.notAllNull;
 import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastOperandTypes.notAny;
+import static org.apache.calcite.sql.type.SqlTypeName.BIGINT;
+import static org.apache.calcite.sql.type.SqlTypeName.DECIMAL;
+import static org.apache.calcite.sql.type.SqlTypeName.INTEGER;
 
 /**
  * Custom functions and operators.
@@ -273,7 +278,7 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
         "ABS",
         SqlKind.OTHER_FUNCTION,
         HazelcastReturnTypes.UNARY_MINUS,
-        HazelcastInferTypes.DECIMAL_IF_UNKNOWN,
+        new ReplaceUnknownOperandTypeInference(DECIMAL),
         notAny(OperandTypes.NUMERIC_OR_INTERVAL),
         SqlFunctionCategory.NUMERIC
     );
@@ -282,7 +287,7 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
         "SIGN",
         SqlKind.OTHER_FUNCTION,
         ReturnTypes.ARG0,
-        HazelcastInferTypes.DECIMAL_IF_UNKNOWN,
+        new ReplaceUnknownOperandTypeInference(DECIMAL),
         notAny(OperandTypes.NUMERIC),
         SqlFunctionCategory.NUMERIC
     );
@@ -291,7 +296,7 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
         "RAND",
         SqlKind.OTHER_FUNCTION,
         ReturnTypes.DOUBLE,
-        HazelcastInferTypes.DECIMAL_IF_UNKNOWN,
+        new ReplaceUnknownOperandTypeInference(BIGINT),
         OperandTypes.or(OperandTypes.NILADIC, notAny(OperandTypes.NUMERIC)),
         SqlFunctionCategory.NUMERIC
     );
@@ -316,7 +321,7 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
         "ROUND",
         SqlKind.OTHER_FUNCTION,
         ReturnTypes.ARG0_NULLABLE,
-        HazelcastInferTypes.ROUND,
+        new ReplaceUnknownOperandTypeInference(new SqlTypeName[] { DECIMAL, INTEGER }),
         notAny(OperandTypes.NUMERIC_OPTIONAL_INTEGER),
         SqlFunctionCategory.NUMERIC
     );
@@ -325,7 +330,7 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
         "TRUNCATE",
         SqlKind.OTHER_FUNCTION,
         ReturnTypes.ARG0_NULLABLE,
-        HazelcastInferTypes.ROUND,
+        new ReplaceUnknownOperandTypeInference(new SqlTypeName[] { DECIMAL, INTEGER }),
         notAny(OperandTypes.NUMERIC_OPTIONAL_INTEGER),
         SqlFunctionCategory.NUMERIC
     );

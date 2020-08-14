@@ -126,9 +126,9 @@ public class RandFunctionIntegrationTest extends SqlExpressionIntegrationTestSup
         double nullRes2 = checkValue("?", SKIP_VALUE_CHECK, new Object[] { null });
         assertNotEquals(nullRes1, nullRes2);
 
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Failed to convert parameter at position 0 from VARCHAR to DECIMAL", "bad");
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Failed to convert parameter at position 0 from VARCHAR to DECIMAL", 'b');
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Failed to convert parameter at position 0 from OBJECT to DECIMAL", new ExpressionValue.ObjectVal());
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Failed to convert parameter at position 0 from VARCHAR to BIGINT", "bad");
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Failed to convert parameter at position 0 from VARCHAR to BIGINT", 'b');
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Failed to convert parameter at position 0 from OBJECT to BIGINT", new ExpressionValue.ObjectVal());
     }
 
     private void checkParameter(Object param, long expectedSeed) {
