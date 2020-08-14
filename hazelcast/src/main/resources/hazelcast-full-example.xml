@@ -988,7 +988,7 @@
         </queue-store>
         <split-brain-protection-ref>splitBrainProtectionRuleWithThreeNodes</split-brain-protection-ref>
         <merge-policy batch-size="100">PutIfAbsentMergePolicy</merge-policy>
-        <priority-comparator-class-name>com.hazelcast.config.QueueItemTestComparator</priority-comparator-class-name>
+        <priority-comparator-class-name>com.hazelcast.collection.impl.queue.QueueItemTestComparator</priority-comparator-class-name>
     </queue>
 
     <!--

@@ -558,7 +558,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "hazelcast:\n"
                 + "  queue:\n"
                 + "    custom:\n"
-                + "      priority-comparator-class-name: com.hazelcast.config.QueueItemTestComparator\n"
+                + "      priority-comparator-class-name: com.hazelcast.collection.impl.queue.QueueItemTestComparator\n"
                 + "      statistics-enabled: false\n"
                 + "      max-size: 100\n"
                 + "      backup-count: 2\n"
@@ -590,7 +590,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
         assertEquals(2, customQueueConfig.getBackupCount());
         assertEquals(1, customQueueConfig.getAsyncBackupCount());
         assertEquals(1, customQueueConfig.getEmptyQueueTtl());
-        assertEquals("com.hazelcast.config.QueueItemTestComparator", customQueueConfig.getPriorityComparatorClassName());
+        assertEquals("com.hazelcast.collection.impl.queue.QueueItemTestComparator", customQueueConfig.getPriorityComparatorClassName());
 
         MergePolicyConfig mergePolicyConfig = customQueueConfig.getMergePolicyConfig();
         assertEquals("CustomMergePolicy", mergePolicyConfig.getPolicy());

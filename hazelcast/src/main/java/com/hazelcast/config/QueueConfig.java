@@ -432,21 +432,21 @@ public class QueueConfig implements IdentifiedDataSerializable, NamedConfig, Ver
 
     @Override
     @SuppressWarnings({"checkstyle:cyclomaticcomplexity"})
-    public boolean equals(Object o) {
+    public final boolean equals(Object o) {
         if (this == o) {
             return true;
         }
-        if (o == null || getClass() != o.getClass()) {
+        if (!(o instanceof QueueConfig)) {
             return false;
         }
         QueueConfig that = (QueueConfig) o;
         return backupCount == that.backupCount
                 && asyncBackupCount == that.asyncBackupCount
-                && maxSize == that.maxSize
+                && getMaxSize() == that.getMaxSize()
                 && emptyQueueTtl == that.emptyQueueTtl
                 && statisticsEnabled == that.statisticsEnabled
                 && Objects.equals(name, that.name)
-                && Objects.equals(listenerConfigs, that.listenerConfigs)
+                && getItemListenerConfigs().equals(that.getItemListenerConfigs())
                 && Objects.equals(queueStoreConfig, that.queueStoreConfig)
                 && Objects.equals(splitBrainProtectionName, that.splitBrainProtectionName)
                 && Objects.equals(mergePolicyConfig, that.mergePolicyConfig)
@@ -455,8 +455,8 @@ public class QueueConfig implements IdentifiedDataSerializable, NamedConfig, Ver
 
     @Override
     public final int hashCode() {
-        return Objects.hash(name, getItemListenerConfigs(), backupCount, asyncBackupCount, maxSize,
-                emptyQueueTtl, queueStoreConfig, statisticsEnabled, splitBrainProtectionName,
-                mergePolicyConfig, priorityComparatorClassName);
+        return Objects.hash(name, getItemListenerConfigs(), backupCount, asyncBackupCount, getMaxSize(), emptyQueueTtl,
+                queueStoreConfig, statisticsEnabled, splitBrainProtectionName, mergePolicyConfig,
+                priorityComparatorClassName);
     }
 }

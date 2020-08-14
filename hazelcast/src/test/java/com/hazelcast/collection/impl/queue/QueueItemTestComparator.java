@@ -14,13 +14,11 @@
  * limitations under the License.
  */
 
-package com.hazelcast.config;
-
-import com.hazelcast.collection.impl.queue.QueueItem;
+package com.hazelcast.collection.impl.queue;
 
 import java.util.Comparator;
 
-class QueueItemTestComparator implements Comparator<QueueItem> {
+public class QueueItemTestComparator implements Comparator<QueueItem> {
     @Override
     public int compare(QueueItem o1, QueueItem o2) {
         return o1.compareTo(o2);

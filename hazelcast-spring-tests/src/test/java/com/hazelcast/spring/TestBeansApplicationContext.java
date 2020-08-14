@@ -35,7 +35,6 @@ import org.springframework.test.context.ContextConfiguration;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
@@ -89,6 +88,6 @@ public class TestBeansApplicationContext extends HazelcastTestSupport {
         assertFalse(config.getMapConfig("map1").isStatisticsEnabled());
         assertEquals(64, config.getNativeMemoryConfig().getSize().getValue());
         QueueConfig testQueue = config.getQueueConfig("testQueue");
-        assertNotNull("Comparator may have not been null", testQueue.getPriorityComparatorClassName());
+        assertEquals("com.hazelcast.config.QueueItemTestComparator", testQueue.getPriorityComparatorClassName());
     }
 }
