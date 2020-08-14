@@ -296,7 +296,7 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
         "RAND",
         SqlKind.OTHER_FUNCTION,
         ReturnTypes.DOUBLE,
-        new ReplaceUnknownOperandTypeInference(BIGINT),
+        HazelcastInferTypes.explicit(BIGINT),
         OperandTypes.or(OperandTypes.NILADIC, notAny(OperandTypes.NUMERIC)),
         SqlFunctionCategory.NUMERIC
     );
