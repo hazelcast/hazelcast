@@ -505,6 +505,8 @@ public class QueryOperationHandlerTest extends SqlTestSupport {
             null, null,
             null,
             null,
+            QueryParameterMetadata.EMPTY,
+            null,
             Collections.emptySet()
         );
 
@@ -512,7 +514,8 @@ public class QueryOperationHandlerTest extends SqlTestSupport {
             initiatorId,
             timeout,
             plan,
-            null, null,
+            null,
+            null,
             new BlockingRootResultConsumer(),
             initiatorService.getOperationHandler()
         ).getQueryId();

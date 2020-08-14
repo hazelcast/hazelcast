@@ -138,6 +138,7 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
     /** Original SQL. */
     private final String sql;
 
+    /** Key used for plan caching. */
     private final PlanCacheKey planKey;
 
     private final QueryParameterMetadata parameterMetadata;
@@ -182,16 +183,16 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
         Map<PhysicalRel, List<Integer>> relIdMap,
         String sql,
         PlanCacheKey planKey,
-        QueryParameterMetadata parameterMetadata,
-        @Nullable List<String> rootColumnNames
+        List<String> rootColumnNames,
+        QueryParameterMetadata parameterMetadata
     ) {
         this.localMemberId = localMemberId;
         this.partMap = partMap;
         this.relIdMap = relIdMap;
         this.sql = sql;
         this.planKey = planKey;
-        this.parameterMetadata = parameterMetadata;
         this.rootColumnNames = rootColumnNames;
+        this.parameterMetadata = parameterMetadata;
 
         memberIds = new HashSet<>(partMap.keySet());
     }
@@ -233,7 +234,8 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
             outboundEdgeMap,
             inboundEdgeMap,
             inboundEdgeMemberCountMap,
-            rowMetadata, parameterMetadata,
+            rowMetadata,
+            parameterMetadata,
             planKey,
             explain,
             objectIds

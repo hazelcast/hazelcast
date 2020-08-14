@@ -39,7 +39,7 @@ public class QueryInitiatorStateTest {
     @Test
     public void testInitiatorState() {
         QueryId queryId = QueryId.create(UUID.randomUUID());
-        Plan plan = new Plan(null, null, null, null, null, null, null, null, null, null, Collections.emptySet());
+        Plan plan = new Plan(null, null, null, null, null, null, null, QueryParameterMetadata.EMPTY, null, Collections.emptySet());
         QueryResultProducer resultProducer = new BlockingRootResultConsumer();
         long timeout = 1000L;
 

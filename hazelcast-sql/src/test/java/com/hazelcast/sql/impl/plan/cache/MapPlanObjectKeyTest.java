@@ -48,7 +48,6 @@ import static java.util.Collections.singletonList;
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class MapPlanObjectKeyTest extends SqlTestSupport {
-    @SuppressWarnings("ConstantConditions")
     @Test
     public void test_partitioned() {
         String schema1 = "schema1";

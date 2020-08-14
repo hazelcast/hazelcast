@@ -45,6 +45,10 @@ public class PlanCacheChecker {
     }
 
     public void check() {
+        if (planCache.size() == 0) {
+            return;
+        }
+
         // Collect object IDs
         SqlCatalog catalog = new SqlCatalog(tableResolvers);
 

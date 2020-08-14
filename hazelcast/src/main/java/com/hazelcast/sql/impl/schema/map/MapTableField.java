@@ -58,27 +58,24 @@ public class MapTableField extends TableField {
         if (this == o) {
             return true;
         }
-
         if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        if (!super.equals(o)) {
             return false;
         }
 
         MapTableField field = (MapTableField) o;
 
-        return name.equals(field.name)
-                && type.equals(field.type)
-                && path.equals(field.path)
-                && hidden == field.hidden
-                && requiresConversion == field.requiresConversion;
+        return path.equals(field.path) && requiresConversion == field.requiresConversion;
     }
 
     @Override
     public int hashCode() {
-        int result = name.hashCode();
+        int result = super.hashCode();
 
-        result = 31 * result + type.hashCode();
         result = 31 * result + path.hashCode();
-        result = 31 * result + Boolean.hashCode(hidden);
         result = 31 * result + Boolean.hashCode(requiresConversion);
 
         return result;

@@ -56,6 +56,7 @@ public class PlanTest extends SqlTestSupport {
             inboundEdgeMemberCountMap,
             null, null,
             null,
+            QueryParameterMetadata.EMPTY,
             null,
             Collections.emptySet()
         );

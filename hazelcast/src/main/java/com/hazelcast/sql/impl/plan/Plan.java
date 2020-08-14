@@ -20,6 +20,7 @@ import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.sql.SqlRowMetadata;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.explain.QueryExplain;
+import com.hazelcast.sql.impl.optimizer.SqlPlanType;
 import com.hazelcast.sql.impl.plan.cache.CacheablePlan;
 import com.hazelcast.sql.impl.plan.cache.PlanCacheKey;
 import com.hazelcast.sql.impl.plan.cache.PlanCheckContext;
@@ -39,6 +40,7 @@ public class Plan implements CacheablePlan {
     /** Time when the plan was used for the last time. */
     private volatile long planLastUsed;
 
+    /** Key used for plan cache. */
     private final PlanCacheKey planKey;
 
     /** Partition mapping. */
@@ -86,8 +88,8 @@ public class Plan implements CacheablePlan {
         this.outboundEdgeMap = outboundEdgeMap;
         this.inboundEdgeMap = inboundEdgeMap;
         this.inboundEdgeMemberCountMap = inboundEdgeMemberCountMap;
-        this.parameterMetadata = parameterMetadata;
         this.rowMetadata = rowMetadata;
+        this.parameterMetadata = parameterMetadata;
         this.planKey = planKey;
         this.explain = explain;
         this.objectIds = objectIds;
@@ -96,6 +98,26 @@ public class Plan implements CacheablePlan {
     @Override
     public QueryExplain getExplain() {
         return explain;
+    }
+
+    @Override
+    public PlanCacheKey getPlanKey() {
+        return planKey;
+    }
+
+    @Override
+    public long getPlanLastUsed() {
+        return planLastUsed;
+    }
+
+    @Override
+    public void onPlanUsed() {
+        planLastUsed = System.currentTimeMillis();
+    }
+
+    @Override
+    public boolean isPlanValid(PlanCheckContext context) {
+        return context.isValid(objectIds, partMap);
     }
 
     @Override

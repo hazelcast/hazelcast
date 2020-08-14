@@ -121,7 +121,9 @@ public final class SqlResultImpl extends AbstractSqlResult {
     }
 
     public Plan getPlan() {
-        return getQueryInitiatorState().getPlan();
+        QueryInitiatorState initiatorState = getQueryInitiatorState();
+
+        return initiatorState != null ? initiatorState.getPlan() : null;
     }
 
     private QueryInitiatorState getQueryInitiatorState() {

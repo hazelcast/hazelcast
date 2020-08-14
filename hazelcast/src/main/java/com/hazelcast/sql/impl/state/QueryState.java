@@ -146,6 +146,7 @@ public final class QueryState implements QueryStateCallback {
             null,
             null, null,
             null,
+            null,
             clockProvider
         );
     }

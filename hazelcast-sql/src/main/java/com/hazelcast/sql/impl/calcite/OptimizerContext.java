@@ -163,13 +163,13 @@ public final class OptimizerContext {
         RelDataTypeFactory typeFactory,
         CalciteConnectionConfig config,
         HazelcastSchema rootSchema,
-        List<List<String>> schemaPaths
+        List<List<String>> searchPaths
     ) {
-        assert schemaPaths != null;
+        assert searchPaths != null;
 
         return new HazelcastCalciteCatalogReader(
             new HazelcastRootCalciteSchema(rootSchema),
-            schemaPaths,
+            searchPaths,
             typeFactory,
             config
         );
