@@ -22,6 +22,7 @@ import com.hazelcast.sql.impl.expression.SqlExpressionIntegrationTestSupport;
 import com.hazelcast.sql.support.expressions.ExpressionBiValue;
 import com.hazelcast.sql.support.expressions.ExpressionBiValue.ByteIntegerVal;
 import com.hazelcast.sql.support.expressions.ExpressionBiValue.IntegerIntegerVal;
+import com.hazelcast.sql.support.expressions.ExpressionBiValue.IntegerObjectVal;
 import com.hazelcast.sql.support.expressions.ExpressionBiValue.LongIntegerVal;
 import com.hazelcast.sql.support.expressions.ExpressionBiValue.ShortIntegerVal;
 import com.hazelcast.sql.support.expressions.ExpressionValue;
@@ -229,6 +230,11 @@ public class TruncateFunctionIntegrationTest extends SqlExpressionIntegrationTes
     }
 
     @Test
+    public void test_object() {
+        checkColumnFailure_2(new IntegerObjectVal().fields(127, "bad"), SqlErrorCode.PARSING, "Cannot apply 'TRUNCATE' to arguments of type 'TRUNCATE(<INTEGER>, <OBJECT>)'");
+    }
+
+    @Test
     public void testLiterals() {
         // Single operand
         put(new IntegerVal().field1(0));
@@ -270,6 +276,14 @@ public class TruncateFunctionIntegrationTest extends SqlExpressionIntegrationTes
         put(value);
 
         check_2("field1", "field2", expectedType, expectedValue);
+    }
+
+    private void checkColumnFailure_2(ExpressionBiValue value, int expectedErrorCode, String expectedErrorMessage) {
+        put(value);
+
+        String sql = sql("field1", "field2");
+
+        checkFailureInternal(sql, expectedErrorCode, expectedErrorMessage);
     }
 
     private void checkFailure_1(Object operand, int expectedErrorCode, String expectedErrorMessage, Object... params) {

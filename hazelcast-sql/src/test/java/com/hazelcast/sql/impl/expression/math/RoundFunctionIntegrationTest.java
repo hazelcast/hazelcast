@@ -22,6 +22,7 @@ import com.hazelcast.sql.impl.expression.SqlExpressionIntegrationTestSupport;
 import com.hazelcast.sql.support.expressions.ExpressionBiValue;
 import com.hazelcast.sql.support.expressions.ExpressionBiValue.ByteIntegerVal;
 import com.hazelcast.sql.support.expressions.ExpressionBiValue.IntegerIntegerVal;
+import com.hazelcast.sql.support.expressions.ExpressionBiValue.IntegerObjectVal;
 import com.hazelcast.sql.support.expressions.ExpressionBiValue.LongIntegerVal;
 import com.hazelcast.sql.support.expressions.ExpressionBiValue.ShortIntegerVal;
 import com.hazelcast.sql.support.expressions.ExpressionValue;
@@ -191,6 +192,11 @@ public class RoundFunctionIntegrationTest extends SqlExpressionIntegrationTestSu
         checkColumn_2(new DoubleIntegerVal().fields(Double.POSITIVE_INFINITY, -1), SqlColumnType.DOUBLE, Double.POSITIVE_INFINITY);
         checkColumn_2(new DoubleIntegerVal().fields(Double.NEGATIVE_INFINITY, -1), SqlColumnType.DOUBLE, Double.NEGATIVE_INFINITY);
         checkColumn_2(new DoubleIntegerVal().fields(Double.NaN, -1), SqlColumnType.DOUBLE, Double.NaN);
+    }
+
+    @Test
+    public void test_object() {
+        checkColumnFailure_2(new IntegerObjectVal().fields(127, "bad"), SqlErrorCode.PARSING, "Cannot apply 'ROUND' to arguments of type 'ROUND(<INTEGER>, <OBJECT>)'");
     }
 
     @Test

@@ -317,7 +317,7 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
         SqlKind.OTHER_FUNCTION,
         ReturnTypes.ARG0_NULLABLE,
         HazelcastInferTypes.ROUND,
-        OperandTypes.NUMERIC_OPTIONAL_INTEGER,
+        notAny(OperandTypes.NUMERIC_OPTIONAL_INTEGER),
         SqlFunctionCategory.NUMERIC
     );
 
@@ -326,7 +326,7 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
         SqlKind.OTHER_FUNCTION,
         ReturnTypes.ARG0_NULLABLE,
         HazelcastInferTypes.ROUND,
-        OperandTypes.NUMERIC_OPTIONAL_INTEGER,
+        notAny(OperandTypes.NUMERIC_OPTIONAL_INTEGER),
         SqlFunctionCategory.NUMERIC
     );
 
