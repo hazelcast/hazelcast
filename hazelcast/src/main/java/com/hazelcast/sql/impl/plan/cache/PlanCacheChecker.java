@@ -52,7 +52,7 @@ public class PlanCacheChecker {
 
         for (Map<String, Table> tableMap : catalog.getSchemas().values()) {
             for (Table table : tableMap.values()) {
-                PlanObjectKey objectId = table.getObjectId();
+                PlanObjectKey objectId = table.getObjectKey();
 
                 if (objectId != null) {
                     objectIds.add(objectId);

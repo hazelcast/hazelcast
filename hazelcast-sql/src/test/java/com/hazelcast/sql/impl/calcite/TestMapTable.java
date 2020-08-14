@@ -45,7 +45,7 @@ public class TestMapTable extends AbstractMapTable {
     }
 
     @Override
-    public PlanObjectKey getObjectId() {
+    public PlanObjectKey getObjectKey() {
         if (!isValid()) {
             return null;
         }

@@ -71,7 +71,7 @@ public abstract class Table {
         return statistics;
     }
 
-    public abstract PlanObjectKey getObjectId();
+    public abstract PlanObjectKey getObjectKey();
 
     public Set<String> getConflictingSchemas() {
         return conflictingSchemas != null ? conflictingSchemas : Collections.emptySet();

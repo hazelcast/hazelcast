@@ -300,7 +300,7 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
 
         pushUpstream(scanNode);
 
-        objectIds.add(table.getObjectId());
+        objectIds.add(table.getObjectKey());
     }
 
     @Override
@@ -327,7 +327,7 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
 
         pushUpstream(scanNode);
 
-        objectIds.add(table.getObjectId());
+        objectIds.add(table.getObjectKey());
     }
 
     @Override
@@ -351,7 +351,7 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
 
         pushUpstream(scanNode);
 
-        objectIds.add(table.getObjectId());
+        objectIds.add(table.getObjectKey());
     }
 
     @Override
