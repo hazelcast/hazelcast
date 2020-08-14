@@ -105,6 +105,7 @@ public class QueryClientStateRegistry {
 
             page.add(convertedRow);
 
+            // TODO figure out how to return earlier: it's needed for latency in streaming jobs
             if (page.size() == cursorBufferSize) {
                 break;
             }
