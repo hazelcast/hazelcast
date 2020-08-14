@@ -110,6 +110,7 @@ public class CeilFunctionIntegrationTest extends SqlExpressionIntegrationTestSup
 
         checkLiteral("null", SqlColumnType.DECIMAL, null);
         checkLiteral("1.1", SqlColumnType.DECIMAL, new BigDecimal("2"));
+        checkLiteral("'1.1'", SqlColumnType.DECIMAL, new BigDecimal("2"));
         checkLiteral("1.1E0", SqlColumnType.DOUBLE, 2d);
 
         checkFailure("'bad'", SqlErrorCode.PARSING, "Literal ''bad'' can not be parsed to type 'DECIMAL'");

@@ -110,6 +110,7 @@ public class FloorFunctionIntegrationTest extends SqlExpressionIntegrationTestSu
 
         checkLiteral("null", SqlColumnType.DECIMAL, null);
         checkLiteral("1.1", SqlColumnType.DECIMAL, new BigDecimal("1"));
+        checkLiteral("'1.1'", SqlColumnType.DECIMAL, new BigDecimal("1"));
         checkLiteral("1.1E0", SqlColumnType.DOUBLE, 1d);
 
         checkFailure("'bad'", SqlErrorCode.PARSING, "Literal ''bad'' can not be parsed to type 'DECIMAL'");
