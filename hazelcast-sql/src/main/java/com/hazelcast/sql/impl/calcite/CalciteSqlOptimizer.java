@@ -173,11 +173,11 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         PhysicalRel physicalRel = optimize(context, rel, parameterMetadata);
 
         return createImdgPlan(
-                searchPaths,
-                sql,
-                parameterMetadata,
-                physicalRel,
-                fieldNames
+            searchPaths,
+            sql,
+            parameterMetadata,
+            physicalRel,
+            fieldNames
         );
     }
 
@@ -212,7 +212,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
     private SqlPlan createImdgPlan(
         List<List<String>> searchPaths,
         String sql,
-        RelDataType parameterRowType,
+        QueryParameterMetadata parameterMetadata,
         PhysicalRel rel,
         List<String> rootColumnNames
     ) {
@@ -221,10 +221,6 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         rel.visit(idVisitor);
         Map<PhysicalRel, List<Integer>> relIdMap = idVisitor.getIdMap();
 
-        // Prepare parameter metadata.
-        QueryDataType[] mappedParameterRowType = SqlToQueryType.mapRowType(parameterRowType);
-        QueryParameterMetadata parameterMetadata = new QueryParameterMetadata(mappedParameterRowType);
-
         // Create the plan.
         PlanCreateVisitor visitor = new PlanCreateVisitor(
             nodeEngine.getLocalMember().getUuid(),
@@ -232,8 +228,8 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
             relIdMap,
             sql,
             new PlanCacheKey(searchPaths, sql),
-            parameterMetadata,
-            rootColumnNames
+            rootColumnNames,
+            parameterMetadata
         );
 
         rel.visit(visitor);

@@ -20,7 +20,6 @@ import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.sql.SqlRowMetadata;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.explain.QueryExplain;
-import com.hazelcast.sql.impl.optimizer.SqlPlanType;
 import com.hazelcast.sql.impl.plan.cache.CacheablePlan;
 import com.hazelcast.sql.impl.plan.cache.PlanCacheKey;
 import com.hazelcast.sql.impl.plan.cache.PlanCheckContext;
@@ -98,26 +97,6 @@ public class Plan implements CacheablePlan {
     @Override
     public QueryExplain getExplain() {
         return explain;
-    }
-
-    @Override
-    public PlanCacheKey getPlanKey() {
-        return planKey;
-    }
-
-    @Override
-    public long getPlanLastUsed() {
-        return planLastUsed;
-    }
-
-    @Override
-    public void onPlanUsed() {
-        planLastUsed = System.currentTimeMillis();
-    }
-
-    @Override
-    public boolean isPlanValid(PlanCheckContext context) {
-        return context.isValid(objectIds, partMap);
     }
 
     @Override

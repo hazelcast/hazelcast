@@ -17,6 +17,7 @@
 package com.hazelcast.sql.impl.plan;
 
 import com.hazelcast.internal.util.collection.PartitionIdSet;
+import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.SqlTestSupport;
 import com.hazelcast.sql.impl.plan.node.MockPlanNode;
 import com.hazelcast.sql.impl.plan.node.PlanNode;
@@ -54,9 +55,9 @@ public class PlanTest extends SqlTestSupport {
             outboundEdgeMap,
             inboundEdgeMap,
             inboundEdgeMemberCountMap,
-            null, null,
             null,
             QueryParameterMetadata.EMPTY,
+            null,
             null,
             Collections.emptySet()
         );

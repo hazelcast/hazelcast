@@ -113,20 +113,4 @@ public class PartitionedMapTable extends AbstractMapTable {
     public boolean isHd() {
         return hd;
     }
-
-    @Override
-    public PlanObjectKey getObjectKey() {
-        if (!isValid()) {
-            return null;
-        }
-
-        return new PartitionedMapPlanObjectKey(
-            getSchemaName(),
-            getName(),
-            getFields(),
-            getConflictingSchemas(),
-            getKeyDescriptor(),
-            getValueDescriptor()
-        );
-    }
 }

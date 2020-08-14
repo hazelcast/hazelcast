@@ -23,7 +23,6 @@ import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlConformance;
 import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlValidator;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeFactory;
 import org.apache.calcite.prepare.Prepare.CatalogReader;
-import org.apache.calcite.rel.type.RelDataTypeFactory;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.parser.SqlParseException;
 import org.apache.calcite.sql.parser.SqlParser;

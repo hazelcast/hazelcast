@@ -83,10 +83,6 @@ public class SqlServiceImpl implements SqlService, Consumer<Packet> {
     private SqlOptimizer optimizer;
     private volatile SqlInternalService internalService;
 
-    private final List<TableResolver> tableResolvers;
-
-    private final PlanCache planCache = new PlanCache(PLAN_CACHE_SIZE);
-
     public SqlServiceImpl(NodeEngineImpl nodeEngine) {
         this.logger = nodeEngine.getLogger(getClass());
         this.nodeEngine = nodeEngine;
@@ -133,7 +129,7 @@ public class SqlServiceImpl implements SqlService, Consumer<Packet> {
         String instanceName = nodeEngine.getHazelcastInstance().getName();
         InternalSerializationService serializationService = (InternalSerializationService) nodeEngine.getSerializationService();
 
-        this.tableResolvers = createTableResolvers(nodeEngine);
+        this.tableResolvers = createTableResolvers(nodeEngine, jetSqlService);
 
         PlanCacheChecker planCacheChecker = new PlanCacheChecker(
             nodeEngine,
@@ -249,28 +245,6 @@ public class SqlServiceImpl implements SqlService, Consumer<Packet> {
 
             return execute(plan, params0, timeout, pageSize);
         }
-    }
-
-    private SqlPlan prepare(String sql) {
-        List<List<String>> searchPaths = QueryUtils.prepareSearchPaths(Collections.emptyList(), tableResolvers);
-
-        PlanCacheKey planKey = new PlanCacheKey(searchPaths, sql);
-
-        SqlPlan plan = planCache.get(planKey);
-
-        if (plan == null) {
-            SqlCatalog schema = new SqlCatalog(tableResolvers);
-
-            plan = optimizer.prepare(new OptimizationTask(sql, searchPaths, schema));
-
-            if (plan instanceof CacheablePlan) {
-                CacheablePlan plan0 = (CacheablePlan) plan;
-
-                planCache.put(planKey, plan0);
-            }
-        }
-
-        return plan;
     }
 
     private SqlPlan prepare(String sql) {

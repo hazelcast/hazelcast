@@ -51,7 +51,6 @@ import static com.hazelcast.sql.support.expressions.ExpressionTypes.DOUBLE;
 import static com.hazelcast.sql.support.expressions.ExpressionTypes.FLOAT;
 import static com.hazelcast.sql.support.expressions.ExpressionTypes.INTEGER;
 import static com.hazelcast.sql.support.expressions.ExpressionTypes.LONG;
-import static com.hazelcast.sql.support.expressions.ExpressionTypes.OBJECT;
 import static com.hazelcast.sql.support.expressions.ExpressionTypes.STRING;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
