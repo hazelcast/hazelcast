@@ -18,6 +18,7 @@ package com.hazelcast.sql.impl.expression.math;
 
 import com.hazelcast.sql.SqlColumnType;
 import com.hazelcast.sql.SqlErrorCode;
+import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.impl.expression.SqlExpressionIntegrationTestSupport;
 import com.hazelcast.sql.support.expressions.ExpressionValue;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -29,9 +30,14 @@ import org.junit.runner.RunWith;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Random;
+import java.util.Set;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -44,6 +50,24 @@ public class RandFunctionIntegrationTest extends SqlExpressionIntegrationTestSup
         double res2 = checkValue("", SKIP_VALUE_CHECK);
 
         assertNotEquals(res1, res2);
+    }
+
+    @Test
+    public void testSeveralRows() {
+        putAll(0, 1, 2, 3);
+
+        List<SqlRow> rows = execute(member, "SELECT RAND() FROM map");
+        assertEquals(4, rows.size());
+
+        Set<Double> values = new HashSet<>();
+
+        for (SqlRow row : rows) {
+            double value = row.getObject(0);
+
+            values.add(value);
+        }
+
+        assertTrue(values.size() > 1);
     }
 
     @Test

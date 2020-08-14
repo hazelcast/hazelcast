@@ -37,9 +37,9 @@ import static org.junit.Assert.fail;
 public abstract class SqlExpressionIntegrationTestSupport extends SqlTestSupport {
 
     protected static final Object SKIP_VALUE_CHECK = new Object();
+    protected HazelcastInstance member;
 
     private final TestHazelcastInstanceFactory factory = new TestHazelcastInstanceFactory(1);
-    private HazelcastInstance member;
     private IMap map;
 
     @Before
@@ -57,6 +57,20 @@ public abstract class SqlExpressionIntegrationTestSupport extends SqlTestSupport
     protected void put(Object value) {
         map.clear();
         map.put(0, value);
+
+        clearPlanCache(member);
+    }
+
+    protected void putAll(Object... values) {
+        map.clear();
+
+        if (values != null) {
+            int i = 0;
+
+            for (Object value : values) {
+                map.put(i++, value);
+            }
+        }
 
         clearPlanCache(member);
     }
