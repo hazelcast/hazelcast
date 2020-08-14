@@ -81,11 +81,11 @@ public final class HazelcastInferTypes {
         }
     };
 
-    public static SqlOperandTypeInference explicit(SqlTypeName typeName) {
-        return InferTypes.explicit(Collections.singletonList(HazelcastTypeFactory.INSTANCE.createSqlType(typeName)));
-    }
-
     private HazelcastInferTypes() {
         // No-op.
+    }
+
+    public static SqlOperandTypeInference explicit(SqlTypeName typeName) {
+        return InferTypes.explicit(Collections.singletonList(HazelcastTypeFactory.INSTANCE.createSqlType(typeName)));
     }
 }
