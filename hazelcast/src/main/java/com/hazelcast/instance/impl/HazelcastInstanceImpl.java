@@ -177,6 +177,7 @@ public class HazelcastInstanceImpl implements HazelcastInstance, SerializationSe
     @Override
     public <E> IQueue<E> getQueue(@Nonnull String name) {
         checkNotNull(name, "Retrieving a queue instance with a null name is not allowed!");
+        // RU_COMPAT_4_0
         if (node.getClusterService().getClusterVersion().isLessThan(Versions.V4_1)
                 && node.getConfig().getQueueConfig(name).isPriorityQueue()) {
             throw new UnsupportedOperationException("PriorityQueue support is not available before version 4.1!");

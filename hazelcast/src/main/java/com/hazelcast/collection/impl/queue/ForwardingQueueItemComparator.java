@@ -16,46 +16,37 @@
 
 package com.hazelcast.collection.impl.queue;
 
-import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.CacheLoader;
-import com.google.common.cache.LoadingCache;
 import com.hazelcast.internal.serialization.SerializationService;
+
+import javax.annotation.Nonnull;
 import java.util.Comparator;
 import java.util.Objects;
 
 /**
- * A comparator which forwards its {@link Comparator#compare(Object, Object)} to another supplied comparator.
+ * A comparator which forwards its {@link Comparator#compare(Object, Object)}
+ * to another supplied comparator.
  *
  * @param <T> the type of objects that may be compared by the delegated comparator
- *           as defined by the supplied comparator instance in {QueueConfig}
+ *            as defined by the supplied comparator instance in {QueueConfig}
  */
 public final class ForwardingQueueItemComparator<T> implements Comparator<QueueItem> {
 
-    private static final int DEFAULT_CACHE_SIZE = 1000000;
     private final Comparator<T> customComparator;
-    private final LoadingCache<QueueItem, T> deserializedDataCache;
     private final SerializationService serializationService;
-    private final CacheLoader<QueueItem, T> loader = new CacheLoader<QueueItem, T>() {
 
-        @Override
-        public T load(QueueItem queueItem) {
-            return serializationService.toObject(queueItem.getData());
-        }
-    };
-
-    public ForwardingQueueItemComparator(final Comparator<T> customComparator,
-            final SerializationService serializationService) {
+    public ForwardingQueueItemComparator(
+            @Nonnull Comparator<T> customComparator,
+            @Nonnull SerializationService serializationService) {
         Objects.requireNonNull(customComparator, "Custom comparator cannot be null.");
         Objects.requireNonNull(serializationService, "SerializationService cannot be null.");
         this.customComparator = customComparator;
         this.serializationService = serializationService;
-        this.deserializedDataCache = CacheBuilder.newBuilder().maximumSize(DEFAULT_CACHE_SIZE).build(loader);
     }
 
     @Override
     public int compare(QueueItem o1, QueueItem o2) {
-        T object1 = deserializedDataCache.getUnchecked(o1);
-        T object2 = deserializedDataCache.getUnchecked(o2);
+        T object1 = serializationService.toObject(o1.getData());
+        T object2 = serializationService.toObject(o2.getData());
 
         return this.customComparator.compare(object1, object2);
     }

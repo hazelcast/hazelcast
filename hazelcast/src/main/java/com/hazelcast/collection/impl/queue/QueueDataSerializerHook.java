@@ -16,9 +16,6 @@
 
 package com.hazelcast.collection.impl.queue;
 
-import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.QUEUE_DS_FACTORY;
-import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.QUEUE_DS_FACTORY_ID;
-
 import com.hazelcast.collection.impl.queue.operations.AddAllBackupOperation;
 import com.hazelcast.collection.impl.queue.operations.AddAllOperation;
 import com.hazelcast.collection.impl.queue.operations.CheckAndEvictOperation;
@@ -63,9 +60,12 @@ import com.hazelcast.collection.impl.txnqueue.operations.TxnRollbackOperation;
 import com.hazelcast.internal.serialization.DataSerializerHook;
 import com.hazelcast.internal.serialization.impl.ArrayDataSerializableFactory;
 import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
-import com.hazelcast.internal.util.ConstructorFunction;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.internal.util.ConstructorFunction;
+
+import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.QUEUE_DS_FACTORY;
+import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.QUEUE_DS_FACTORY_ID;
 
 /**
  * A {@link DataSerializerHook} for the queue operations and support structures.

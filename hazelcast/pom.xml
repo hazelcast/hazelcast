@@ -40,7 +40,6 @@
         <pax.exam.version>2.6.0</pax.exam.version>
         <pax.runner.version>1.8.6</pax.runner.version>
         <javax.inject.version>1</javax.inject.version>
-        <guava.version>24.1.1-jre</guava.version>
     </properties>
 
     <build>
@@ -327,8 +326,8 @@
         </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-simple</artifactId>
-            <version>1.5.8</version>
+            <artifactId>slf4j-api</artifactId>
+            <version>${slf4j.api.version}</version>
             <scope>provided</scope>
             <optional>true</optional>
         </dependency>
@@ -385,12 +384,6 @@
             <version>${log4j2.version}</version>
             <scope>provided</scope>
             <optional>true</optional>
-        </dependency>
-        <dependency>
-            <groupId>com.google.guava</groupId>
-            <artifactId>guava</artifactId>
-            <version>${guava.version}</version>
-            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>net.spy</groupId>
