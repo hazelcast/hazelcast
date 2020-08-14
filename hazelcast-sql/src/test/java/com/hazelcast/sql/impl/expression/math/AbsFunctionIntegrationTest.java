@@ -67,16 +67,18 @@ public class AbsFunctionIntegrationTest extends SqlExpressionIntegrationTestSupp
         checkColumn(BigDecimal.ONE, SqlColumnType.DECIMAL, BigDecimal.ONE);
         checkColumn(BigDecimal.ONE.negate(), SqlColumnType.DECIMAL, BigDecimal.ONE);
 
-        checkColumn((float) 0, SqlColumnType.REAL, (float) 0);
-        checkColumn((float) 1.1, SqlColumnType.REAL, (float) 1.1);
-        checkColumn((float) -1.1, SqlColumnType.REAL, (float) 1.1);
+        checkColumn(0.0f, SqlColumnType.REAL, 0.0f);
+        checkColumn(-0.0f, SqlColumnType.REAL, 0.0f);
+        checkColumn(1.1f, SqlColumnType.REAL, 1.1f);
+        checkColumn(-1.1f, SqlColumnType.REAL, 1.1f);
         checkColumn(Float.MAX_VALUE, SqlColumnType.REAL, Float.MAX_VALUE);
         checkColumn(Float.MIN_VALUE, SqlColumnType.REAL, Math.abs(Float.MIN_VALUE));
         checkColumn(Float.POSITIVE_INFINITY, SqlColumnType.REAL, Float.POSITIVE_INFINITY);
         checkColumn(Float.NEGATIVE_INFINITY, SqlColumnType.REAL, Float.POSITIVE_INFINITY);
         checkColumn(Float.NaN, SqlColumnType.REAL, Float.NaN);
 
-        checkColumn(0d, SqlColumnType.DOUBLE, 0d);
+        checkColumn(0.0d, SqlColumnType.DOUBLE, 0.0d);
+        checkColumn(-0.0d, SqlColumnType.DOUBLE, 0.0d);
         checkColumn(1.1d, SqlColumnType.DOUBLE, 1.1d);
         checkColumn(-1.1d, SqlColumnType.DOUBLE, 1.1d);
         checkColumn(Double.MAX_VALUE, SqlColumnType.DOUBLE, Double.MAX_VALUE);
@@ -154,14 +156,16 @@ public class AbsFunctionIntegrationTest extends SqlExpressionIntegrationTestSupp
         checkParameter("1.1", new BigDecimal("1.1"));
         checkParameter("-1.1", new BigDecimal("1.1"));
 
-        checkParameter(0f, BigDecimal.ZERO);
+        checkParameter(0.0f, BigDecimal.ZERO);
+        checkParameter(-0.0f, BigDecimal.ZERO);
         checkParameter(1f, BigDecimal.ONE);
         checkParameter(-1f, BigDecimal.ONE);
         checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot convert infinite REAL value to DECIMAL", Float.POSITIVE_INFINITY);
         checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot convert infinite REAL value to DECIMAL", Float.NEGATIVE_INFINITY);
         checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot convert NaN REAL value to DECIMAL", Float.NaN);
 
-        checkParameter(0d, BigDecimal.ZERO);
+        checkParameter(0.0d, BigDecimal.ZERO);
+        checkParameter(-0.0d, BigDecimal.ZERO);
         checkParameter(1d, BigDecimal.ONE);
         checkParameter(-1d, BigDecimal.ONE);
         checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot convert infinite DOUBLE value to DECIMAL", Double.POSITIVE_INFINITY);
@@ -208,8 +212,9 @@ public class AbsFunctionIntegrationTest extends SqlExpressionIntegrationTestSupp
         checkExactLiteral("0.0", SqlColumnType.DECIMAL, new BigDecimal("0.0"));
         checkExactLiteral("-1.1", SqlColumnType.DECIMAL, new BigDecimal("1.1"));
 
+        checkInexactLiteral("0.0E0", SqlColumnType.DOUBLE, 0.0d);
+        checkInexactLiteral("-0.0E0", SqlColumnType.DOUBLE, 0.0d);
         checkInexactLiteral("1.1E0", SqlColumnType.DOUBLE, 1.1d);
-        checkInexactLiteral("0.0E0", SqlColumnType.DOUBLE, 0d);
         checkInexactLiteral("-1.1E0", SqlColumnType.DOUBLE, 1.1d);
 
         checkFailure(Long.MIN_VALUE, SqlErrorCode.DATA_EXCEPTION, "BIGINT overflow in ABS function (consider adding an explicit CAST to DECIMAL)");
