@@ -76,13 +76,13 @@ public class AtomicRefIsolatedServersTest extends HazelcastRaftTestSupport {
         assertNotNull(result);
     }
 
-    private void startServers(int count, Config config) {
+    private void startServers(int count, Config config) throws Exception {
         spawn(() -> {
             FilteringClassLoader cl = new FilteringClassLoader(singletonList("classloading"), null);
             Thread.currentThread().setContextClassLoader(cl);
 
             config.setClassLoader(cl);
             factory.newInstances(config, count);
-        });
+        }).get();
     }
 }
