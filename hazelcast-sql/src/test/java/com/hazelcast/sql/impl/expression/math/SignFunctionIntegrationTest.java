@@ -154,26 +154,16 @@ public class SignFunctionIntegrationTest extends SqlExpressionIntegrationTestSup
         checkParameter("1.1", positive);
         checkParameter("-1.1", negative);
 
-        checkParameter(0f, zero);
-        checkParameter(1f, positive);
-        checkParameter(-1f, negative);
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot convert infinite REAL value to DECIMAL", Float.POSITIVE_INFINITY);
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot convert infinite REAL value to DECIMAL", Float.NEGATIVE_INFINITY);
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot convert NaN REAL value to DECIMAL", Float.NaN);
-
-        checkParameter(0d, zero);
-        checkParameter(1d, positive);
-        checkParameter(-1d, negative);
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot convert infinite DOUBLE value to DECIMAL", Double.POSITIVE_INFINITY);
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot convert infinite DOUBLE value to DECIMAL", Double.NEGATIVE_INFINITY);
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot convert NaN DOUBLE value to DECIMAL", Double.NaN);
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from REAL to DECIMAL", 0.0f);
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from DOUBLE to DECIMAL", 0.0d);
 
         checkParameter('0', zero);
         checkParameter('1', positive);
 
         checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Failed to convert parameter at position 0 from VARCHAR to DECIMAL", "bad");
         checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Failed to convert parameter at position 0 from VARCHAR to DECIMAL", 'b');
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Failed to convert parameter at position 0 from OBJECT to DECIMAL", new ExpressionValue.ObjectVal());
+
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from OBJECT to DECIMAL", new ExpressionValue.ObjectVal());
     }
 
     private void checkParameter(Object parameterValue, Object expectedValue) {

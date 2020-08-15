@@ -56,6 +56,7 @@ import com.hazelcast.sql.impl.operation.QueryCheckResponseOperation;
 import com.hazelcast.sql.impl.operation.QueryExecuteOperation;
 import com.hazelcast.sql.impl.operation.QueryExecuteOperationFragment;
 import com.hazelcast.sql.impl.operation.QueryFlowControlExchangeOperation;
+import com.hazelcast.sql.impl.plan.node.EmptyPlanNode;
 import com.hazelcast.sql.impl.plan.node.FilterPlanNode;
 import com.hazelcast.sql.impl.plan.node.MapScanPlanNode;
 import com.hazelcast.sql.impl.plan.node.ProjectPlanNode;
@@ -136,7 +137,9 @@ public class SqlDataSerializerHook implements DataSerializerHook {
     public static final int EXPRESSION_FLOOR_CEIL = 45;
     public static final int EXPRESSION_ROUND_TRUNCATE = 46;
 
-    public static final int LEN = EXPRESSION_ROUND_TRUNCATE + 1;
+    public static final int NODE_EMPTY = 47;
+
+    public static final int LEN = NODE_EMPTY + 1;
 
     @Override
     public int getFactoryId() {
@@ -204,6 +207,8 @@ public class SqlDataSerializerHook implements DataSerializerHook {
         constructors[EXPRESSION_DOUBLE] = arg -> new DoubleFunction();
         constructors[EXPRESSION_FLOOR_CEIL] = arg -> new FloorCeilFunction<>();
         constructors[EXPRESSION_ROUND_TRUNCATE] = arg -> new RoundTruncateFunction<>();
+
+        constructors[NODE_EMPTY] = arg -> new EmptyPlanNode();
 
         return new ArrayDataSerializableFactory(constructors);
     }

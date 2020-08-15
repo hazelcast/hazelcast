@@ -30,7 +30,7 @@ public final class IntegerConverter extends Converter {
     public static final IntegerConverter INSTANCE = new IntegerConverter();
 
     private IntegerConverter() {
-        super(ID_INTEGER, QueryDataTypeFamily.INT);
+        super(ID_INTEGER, QueryDataTypeFamily.INTEGER);
     }
 
     @Override

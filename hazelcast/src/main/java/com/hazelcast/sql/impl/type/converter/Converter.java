@@ -140,7 +140,7 @@ public abstract class Converter {
 
     @NotConvertible
     public int asInt(Object val) {
-        throw cannotConvert(QueryDataTypeFamily.INT, val);
+        throw cannotConvert(QueryDataTypeFamily.INTEGER, val);
     }
 
     @NotConvertible
@@ -260,7 +260,7 @@ public abstract class Converter {
             case SMALLINT:
                 return canConvertToSmallint();
 
-            case INT:
+            case INTEGER:
                 return canConvertToInt();
 
             case BIGINT:

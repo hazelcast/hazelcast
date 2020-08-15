@@ -204,8 +204,8 @@ public class TruncateFunctionIntegrationTest extends SqlExpressionIntegrationTes
         check_1("?", SqlColumnType.DECIMAL, new BigDecimal("10"), 10L);
         check_1("?", SqlColumnType.DECIMAL, new BigDecimal("10"), new BigInteger("10"));
         check_1("?", SqlColumnType.DECIMAL, new BigDecimal("10"), new BigDecimal("10.5"));
-        check_1("?", SqlColumnType.DECIMAL, new BigDecimal("10"), 10.5f);
-        check_1("?", SqlColumnType.DECIMAL, new BigDecimal("10"), 10.5d);
+        checkFailure_1("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from REAL to DECIMAL", 10.5f);
+        checkFailure_1("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from DOUBLE to DECIMAL", 10.5d);
         check_1("?", SqlColumnType.DECIMAL, new BigDecimal("10"), "10.5");
         checkFailure_1("?", SqlErrorCode.DATA_EXCEPTION, "Cannot convert VARCHAR to DECIMAL", "bad");
 
@@ -216,8 +216,8 @@ public class TruncateFunctionIntegrationTest extends SqlExpressionIntegrationTes
         check_2("?", "0", SqlColumnType.DECIMAL, new BigDecimal("10"), 10L);
         check_2("?", "0", SqlColumnType.DECIMAL, new BigDecimal("10"), new BigInteger("10"));
         check_2("?", "0", SqlColumnType.DECIMAL, new BigDecimal("10"), new BigDecimal("10.5"));
-        check_2("?", "0", SqlColumnType.DECIMAL, new BigDecimal("10"), 10.5f);
-        check_2("?", "0", SqlColumnType.DECIMAL, new BigDecimal("10"), 10.5d);
+        checkFailure_2("?", "0", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from REAL to DECIMAL", 10.5f);
+        checkFailure_2("?", "0", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from DOUBLE to DECIMAL", 10.5d);
         check_2("?", "0", SqlColumnType.DECIMAL, new BigDecimal("10"), "10.5");
         checkFailure_2("?", "0", SqlErrorCode.DATA_EXCEPTION, "Cannot convert VARCHAR to DECIMAL", "bad");
 
@@ -225,9 +225,9 @@ public class TruncateFunctionIntegrationTest extends SqlExpressionIntegrationTes
         check_2("15", "?", SqlColumnType.TINYINT, (byte) 10, (byte) -1);
         check_2("15", "?", SqlColumnType.TINYINT, (byte) 10, (short) -1);
         check_2("15", "?", SqlColumnType.TINYINT, (byte) 10, -1);
-        check_2("15", "?", SqlColumnType.TINYINT, (byte) 10, -1L);
-        check_2("15", "?", SqlColumnType.TINYINT, (byte) 10, new BigInteger("-1"));
-        check_2("15", "?", SqlColumnType.TINYINT, (byte) 10, new BigDecimal("-1"));
+        checkFailure_2("15", "?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from BIGINT to INTEGER", 1L);
+        checkFailure_2("15", "?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from DECIMAL to INTEGER", BigInteger.ONE.negate());
+        checkFailure_2("15", "?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from DECIMAL to INTEGER", BigDecimal.ONE.negate());
         check_2("15", "?", SqlColumnType.TINYINT, (byte) 10, "-1");
         checkFailure_2("15", "?", SqlErrorCode.DATA_EXCEPTION, "Cannot convert VARCHAR to INT", "bad");
 

@@ -16,40 +16,57 @@
 
 package com.hazelcast.sql.impl.type;
 
+import static com.hazelcast.sql.impl.type.QueryDataTypeUtils.PRECEDENCE_BIGINT;
+import static com.hazelcast.sql.impl.type.QueryDataTypeUtils.PRECEDENCE_BOOLEAN;
+import static com.hazelcast.sql.impl.type.QueryDataTypeUtils.PRECEDENCE_DATE;
+import static com.hazelcast.sql.impl.type.QueryDataTypeUtils.PRECEDENCE_DECIMAL;
+import static com.hazelcast.sql.impl.type.QueryDataTypeUtils.PRECEDENCE_DOUBLE;
+import static com.hazelcast.sql.impl.type.QueryDataTypeUtils.PRECEDENCE_INTEGER;
+import static com.hazelcast.sql.impl.type.QueryDataTypeUtils.PRECEDENCE_NULL;
+import static com.hazelcast.sql.impl.type.QueryDataTypeUtils.PRECEDENCE_OBJECT;
+import static com.hazelcast.sql.impl.type.QueryDataTypeUtils.PRECEDENCE_REAL;
+import static com.hazelcast.sql.impl.type.QueryDataTypeUtils.PRECEDENCE_SMALLINT;
+import static com.hazelcast.sql.impl.type.QueryDataTypeUtils.PRECEDENCE_TIME;
+import static com.hazelcast.sql.impl.type.QueryDataTypeUtils.PRECEDENCE_TIMESTAMP;
+import static com.hazelcast.sql.impl.type.QueryDataTypeUtils.PRECEDENCE_TIMESTAMP_WITH_TIME_ZONE;
+import static com.hazelcast.sql.impl.type.QueryDataTypeUtils.PRECEDENCE_TINYINT;
+import static com.hazelcast.sql.impl.type.QueryDataTypeUtils.PRECEDENCE_VARCHAR;
 import static com.hazelcast.sql.impl.type.QueryDataTypeUtils.TYPE_LEN_DATE;
 import static com.hazelcast.sql.impl.type.QueryDataTypeUtils.TYPE_LEN_NULL;
 import static com.hazelcast.sql.impl.type.QueryDataTypeUtils.TYPE_LEN_TIMESTAMP;
 import static com.hazelcast.sql.impl.type.QueryDataTypeUtils.TYPE_LEN_DECIMAL;
 import static com.hazelcast.sql.impl.type.QueryDataTypeUtils.TYPE_LEN_OBJECT;
 import static com.hazelcast.sql.impl.type.QueryDataTypeUtils.TYPE_LEN_TIME;
-import static com.hazelcast.sql.impl.type.QueryDataTypeUtils.TYPE_LEN_TIMESTAMP_WITH_OFFSET;
+import static com.hazelcast.sql.impl.type.QueryDataTypeUtils.TYPE_LEN_TIMESTAMP_WITH_TIME_ZONE;
 import static com.hazelcast.sql.impl.type.QueryDataTypeUtils.TYPE_LEN_VARCHAR;
 
 public enum QueryDataTypeFamily {
-    NULL(false, TYPE_LEN_NULL),
-    VARCHAR(false, TYPE_LEN_VARCHAR),
-    BOOLEAN(false, 1),
-    TINYINT(false, 1),
-    SMALLINT(false, 2),
-    INT(false, 4),
-    BIGINT(false, 8),
-    DECIMAL(false, TYPE_LEN_DECIMAL),
-    REAL(false, 4),
-    DOUBLE(false, 8),
-    TIME(true, TYPE_LEN_TIME),
-    DATE(true, TYPE_LEN_DATE),
-    TIMESTAMP(true, TYPE_LEN_TIMESTAMP),
-    TIMESTAMP_WITH_TIME_ZONE(true, TYPE_LEN_TIMESTAMP_WITH_OFFSET),
-    OBJECT(false, TYPE_LEN_OBJECT);
+    NULL(false, TYPE_LEN_NULL, PRECEDENCE_NULL),
+    VARCHAR(false, TYPE_LEN_VARCHAR, PRECEDENCE_VARCHAR),
+    BOOLEAN(false, 1, PRECEDENCE_BOOLEAN),
+    TINYINT(false, 1, PRECEDENCE_TINYINT),
+    SMALLINT(false, 2, PRECEDENCE_SMALLINT),
+    INTEGER(false, 4, PRECEDENCE_INTEGER),
+    BIGINT(false, 8, PRECEDENCE_BIGINT),
+    DECIMAL(false, TYPE_LEN_DECIMAL, PRECEDENCE_DECIMAL),
+    REAL(false, 4, PRECEDENCE_REAL),
+    DOUBLE(false, 8, PRECEDENCE_DOUBLE),
+    TIME(true, TYPE_LEN_TIME, PRECEDENCE_TIME),
+    DATE(true, TYPE_LEN_DATE, PRECEDENCE_DATE),
+    TIMESTAMP(true, TYPE_LEN_TIMESTAMP, PRECEDENCE_TIMESTAMP),
+    TIMESTAMP_WITH_TIME_ZONE(true, TYPE_LEN_TIMESTAMP_WITH_TIME_ZONE, PRECEDENCE_TIMESTAMP_WITH_TIME_ZONE),
+    OBJECT(false, TYPE_LEN_OBJECT, PRECEDENCE_OBJECT);
 
     private final boolean temporal;
     private final int estimatedSize;
+    private final int precedence;
 
-    QueryDataTypeFamily(boolean temporal, int estimatedSize) {
+    QueryDataTypeFamily(boolean temporal, int estimatedSize, int precedence) {
         assert estimatedSize > 0;
 
         this.temporal = temporal;
         this.estimatedSize = estimatedSize;
+        this.precedence = precedence;
     }
 
     public boolean isTemporal() {
@@ -58,5 +75,9 @@ public enum QueryDataTypeFamily {
 
     public int getEstimatedSize() {
         return estimatedSize;
+    }
+
+    public int getPrecedence() {
+        return precedence;
     }
 }

@@ -65,7 +65,7 @@ public class AbsFunction<T> extends UniExpressionWithType<T> implements Identifi
             case SMALLINT:
                 return (short) Math.abs(operandConverter.asSmallint(operand));
 
-            case INT:
+            case INTEGER:
                 return Math.abs(operandConverter.asInt(operand));
 
             case BIGINT:

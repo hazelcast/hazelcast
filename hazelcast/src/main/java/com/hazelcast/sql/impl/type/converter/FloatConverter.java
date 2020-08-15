@@ -81,7 +81,7 @@ public final class FloatConverter extends Converter {
     public int asInt(Object val) {
         float casted = cast(val);
         if (!Float.isFinite(casted)) {
-            throw cannotConvert(QueryDataTypeFamily.INT, val);
+            throw cannotConvert(QueryDataTypeFamily.INTEGER, val);
         }
 
         // casts from float to int are saturating
@@ -89,7 +89,7 @@ public final class FloatConverter extends Converter {
 
         // casts from float to long are saturating
         if (converted != (long) casted) {
-            throw numericOverflow(QueryDataTypeFamily.INT, val);
+            throw numericOverflow(QueryDataTypeFamily.INTEGER, val);
         }
 
         return converted;

@@ -30,7 +30,7 @@ public final class MathFunctionUtils {
         switch (type.getTypeFamily()) {
             case TINYINT:
             case SMALLINT:
-            case INT:
+            case INTEGER:
             case BIGINT:
                 return true;
 

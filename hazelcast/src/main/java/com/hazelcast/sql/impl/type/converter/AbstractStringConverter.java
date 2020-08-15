@@ -76,7 +76,7 @@ public abstract class AbstractStringConverter extends Converter {
         try {
             return Integer.parseInt(cast(val));
         } catch (NumberFormatException e) {
-            throw cannotConvert(QueryDataTypeFamily.INT, val);
+            throw cannotConvert(QueryDataTypeFamily.INTEGER, val);
         }
     }
 

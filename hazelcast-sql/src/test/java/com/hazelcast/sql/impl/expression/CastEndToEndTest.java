@@ -65,7 +65,7 @@ public class CastEndToEndTest extends ExpressionEndToEndTestBase {
         assertRow("cast(objectBooleanTrue as boolean)", EXPR0, BOOLEAN, true);
         assertDataError("cast(objectByte1 as boolean)", "Cannot convert TINYINT to BOOLEAN");
         assertDataError("cast(objectShort1 as boolean)", "Cannot convert SMALLINT to BOOLEAN");
-        assertDataError("cast(objectInt1 as boolean)", "Cannot convert INT to BOOLEAN");
+        assertDataError("cast(objectInt1 as boolean)", "Cannot convert INTEGER to BOOLEAN");
         assertDataError("cast(objectLong1 as boolean)", "Cannot convert BIGINT to BOOLEAN");
         assertDataError("cast(objectFloat1 as boolean)", "Cannot convert REAL to BOOLEAN");
         assertDataError("cast(objectDouble1 as boolean)", "Cannot convert DOUBLE to BOOLEAN");
@@ -86,7 +86,7 @@ public class CastEndToEndTest extends ExpressionEndToEndTestBase {
         assertRow("cast(short1 as tinyint)", EXPR0, TINYINT, (byte) 1);
         assertDataError("cast(shortMax as tinyint)", "Numeric overflow while converting SMALLINT to TINYINT");
         assertRow("cast(int1 as tinyint)", EXPR0, TINYINT, (byte) 1);
-        assertDataError("cast(intMax as tinyint)", "Numeric overflow while converting INT to TINYINT");
+        assertDataError("cast(intMax as tinyint)", "Numeric overflow while converting INTEGER to TINYINT");
         assertRow("cast(long1 as tinyint)", EXPR0, TINYINT, (byte) 1);
         assertDataError("cast(longMax as tinyint)", "Numeric overflow while converting BIGINT to TINYINT");
 
@@ -131,7 +131,7 @@ public class CastEndToEndTest extends ExpressionEndToEndTestBase {
         assertRow("cast(short1 as smallint)", EXPR0, SMALLINT, (short) 1);
         assertRow("cast(shortMax as smallint)", EXPR0, SMALLINT, Short.MAX_VALUE);
         assertRow("cast(int1 as smallint)", EXPR0, SMALLINT, (short) 1);
-        assertDataError("cast(intMax as smallint)", "Numeric overflow while converting INT to SMALLINT");
+        assertDataError("cast(intMax as smallint)", "Numeric overflow while converting INTEGER to SMALLINT");
         assertRow("cast(long1 as smallint)", EXPR0, SMALLINT, (short) 1);
         assertDataError("cast(longMax as smallint)", "Numeric overflow while converting BIGINT to SMALLINT");
 
@@ -206,7 +206,7 @@ public class CastEndToEndTest extends ExpressionEndToEndTestBase {
         assertRow("cast(objectBigInteger1 as integer)", EXPR0, INTEGER, 1);
         assertRow("cast(objectString1 as integer)", EXPR0, INTEGER, 1);
         assertRow("cast(objectChar1 as integer)", EXPR0, INTEGER, 1);
-        assertDataError("cast(object as integer)", "Cannot convert OBJECT to INT: com.hazelcast.sql.impl.expression"
+        assertDataError("cast(object as integer)", "Cannot convert OBJECT to INTEGER: com.hazelcast.sql.impl.expression"
                 + ".ExpressionEndToEndTestBase$SerializableObject");
     }
 

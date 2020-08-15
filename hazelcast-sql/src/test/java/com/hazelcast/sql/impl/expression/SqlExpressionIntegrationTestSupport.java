@@ -26,7 +26,9 @@ import com.hazelcast.test.TestHazelcastInstanceFactory;
 import org.junit.After;
 import org.junit.Before;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -55,22 +57,35 @@ public abstract class SqlExpressionIntegrationTestSupport extends SqlTestSupport
     }
 
     protected void put(Object value) {
+        put(0, value);
+    }
+
+    protected void put(int key, Object value) {
         map.clear();
-        map.put(0, value);
+        map.put(key, value);
 
         clearPlanCache(member);
     }
 
     protected void putAll(Object... values) {
-        map.clear();
-
-        if (values != null) {
-            int i = 0;
-
-            for (Object value : values) {
-                map.put(i++, value);
-            }
+        if (values == null || values.length == 0) {
+            return;
         }
+
+        Map<Integer, Object> entries = new HashMap<>();
+
+        int key = 0;
+
+        for (Object value : values) {
+            entries.put(key++, value);
+        }
+
+        putAll(entries);
+    }
+
+    protected void putAll(Map<Integer, Object> entries) {
+        map.clear();
+        map.putAll(entries);
 
         clearPlanCache(member);
     }
@@ -112,7 +127,7 @@ public abstract class SqlExpressionIntegrationTestSupport extends SqlTestSupport
             assertNotNull(e.getMessage());
             assertTrue(e.getMessage(),  e.getMessage().contains(expectedErrorMessage));
 
-            assertEquals(expectedErrorCode, e.getCode());
+            assertEquals(e.getCode() + ": " + e.getMessage(), expectedErrorCode, e.getCode());
         }
     }
 }

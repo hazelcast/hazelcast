@@ -83,10 +83,11 @@ public class FloorFunctionIntegrationTest extends SqlExpressionIntegrationTestSu
         checkParameter((short) 1, BigDecimal.ONE);
         checkParameter(1, BigDecimal.ONE);
         checkParameter(1L, BigDecimal.ONE);
-        checkParameter(1.1f, BigDecimal.ONE);
-        checkParameter(1.1d, BigDecimal.ONE);
         checkParameter(BigInteger.ONE, BigDecimal.ONE);
         checkParameter(new BigDecimal("1.1"), BigDecimal.ONE);
+
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from REAL to DECIMAL", 0.0f);
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from DOUBLE to DECIMAL", 0.0d);
 
         checkParameter("1.1", BigDecimal.ONE);
         checkParameter('1', BigDecimal.ONE);
@@ -95,7 +96,8 @@ public class FloorFunctionIntegrationTest extends SqlExpressionIntegrationTestSu
 
         checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Failed to convert parameter at position 0 from VARCHAR to DECIMAL", "bad");
         checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Failed to convert parameter at position 0 from VARCHAR to DECIMAL", 'b');
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Failed to convert parameter at position 0 from OBJECT to DECIMAL", new ExpressionValue.ObjectVal());
+
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from OBJECT to DECIMAL", new ExpressionValue.ObjectVal());
     }
 
     private void checkParameter(Object param, Object expectedResult) {

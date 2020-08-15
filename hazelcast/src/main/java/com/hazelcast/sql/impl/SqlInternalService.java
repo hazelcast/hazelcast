@@ -238,14 +238,22 @@ public class SqlInternalService {
                 continue;
             }
 
-            Converter valueConverter = Converters.getConverter(value.getClass());
-            Converter typeConverter = parameterMetadata.getParameterType(i).getConverter();
+            Converter fromConverter = Converters.getConverter(value.getClass());
+            Converter toConverter = parameterMetadata.getParameterType(i).getConverter();
+
+            if (fromConverter.getTypeFamily().getPrecedence() > toConverter.getTypeFamily().getPrecedence()) {
+                throw QueryException.error(SqlErrorCode.DATA_EXCEPTION,
+                    "Cannot implicitly convert parameter at position " + i + " from " + fromConverter.getTypeFamily()
+                        + " to " + toConverter.getTypeFamily() + " (consider adding an explicit CAST)"
+                );
+            }
+
             try {
-                value = typeConverter.convertToSelf(valueConverter, value);
+                value = toConverter.convertToSelf(fromConverter, value);
             } catch (RuntimeException e) {
                 throw QueryException.error(SqlErrorCode.DATA_EXCEPTION,
                         String.format("Failed to convert parameter at position %s from %s to %s: %s", i,
-                                valueConverter.getTypeFamily(), typeConverter.getTypeFamily(), e.getMessage()));
+                                fromConverter.getTypeFamily(), toConverter.getTypeFamily(), e.getMessage()));
             }
             params.set(i, value);
         }

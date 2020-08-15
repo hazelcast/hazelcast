@@ -16,7 +16,6 @@
 
 package com.hazelcast.sql.impl.calcite.validate.types;
 
-import com.hazelcast.internal.util.collection.Object2LongHashMap;
 import com.hazelcast.sql.SqlErrorCode;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.calcite.SqlToQueryType;
@@ -34,31 +33,19 @@ import org.apache.calcite.sql.type.SqlTypeName;
 import java.math.BigDecimal;
 import java.util.Calendar;
 
-import static org.apache.calcite.sql.type.SqlTypeName.ANY;
 import static org.apache.calcite.sql.type.SqlTypeName.APPROX_TYPES;
 import static org.apache.calcite.sql.type.SqlTypeName.BIGINT;
-import static org.apache.calcite.sql.type.SqlTypeName.BOOLEAN;
 import static org.apache.calcite.sql.type.SqlTypeName.CHAR_TYPES;
-import static org.apache.calcite.sql.type.SqlTypeName.DATE;
 import static org.apache.calcite.sql.type.SqlTypeName.DATETIME_TYPES;
 import static org.apache.calcite.sql.type.SqlTypeName.DAY_INTERVAL_TYPES;
 import static org.apache.calcite.sql.type.SqlTypeName.DECIMAL;
 import static org.apache.calcite.sql.type.SqlTypeName.DOUBLE;
 import static org.apache.calcite.sql.type.SqlTypeName.FRACTIONAL_TYPES;
-import static org.apache.calcite.sql.type.SqlTypeName.INTEGER;
 import static org.apache.calcite.sql.type.SqlTypeName.INTERVAL_DAY_SECOND;
 import static org.apache.calcite.sql.type.SqlTypeName.INTERVAL_TYPES;
 import static org.apache.calcite.sql.type.SqlTypeName.INTERVAL_YEAR_MONTH;
 import static org.apache.calcite.sql.type.SqlTypeName.INT_TYPES;
-import static org.apache.calcite.sql.type.SqlTypeName.NULL;
 import static org.apache.calcite.sql.type.SqlTypeName.NUMERIC_TYPES;
-import static org.apache.calcite.sql.type.SqlTypeName.REAL;
-import static org.apache.calcite.sql.type.SqlTypeName.SMALLINT;
-import static org.apache.calcite.sql.type.SqlTypeName.TIME;
-import static org.apache.calcite.sql.type.SqlTypeName.TIMESTAMP;
-import static org.apache.calcite.sql.type.SqlTypeName.TIMESTAMP_WITH_LOCAL_TIME_ZONE;
-import static org.apache.calcite.sql.type.SqlTypeName.TINYINT;
-import static org.apache.calcite.sql.type.SqlTypeName.VARCHAR;
 import static org.apache.calcite.sql.type.SqlTypeName.YEAR_INTERVAL_TYPES;
 
 /**
@@ -90,25 +77,8 @@ public final class HazelcastTypeSystem extends RelDataTypeSystemImpl {
      */
     public static final String OBJECT_TYPE_NAME = "OBJECT";
 
-    /**
-     * Defines the set of supported types. Order is important for precedence
-     * determination: types at the end of the array have higher precedence.
-     * Types in this array have one-to-one relation with the types defined by
-     * {@link com.hazelcast.sql.impl.type.QueryDataTypeFamily}.
-     */
-    private static final SqlTypeName[] TYPE_NAMES =
-            {NULL, VARCHAR, BOOLEAN, TINYINT, SMALLINT, INTEGER, BIGINT, DECIMAL, REAL, DOUBLE, TIME, DATE, TIMESTAMP,
-                    TIMESTAMP_WITH_LOCAL_TIME_ZONE, ANY};
-
-    private static final Object2LongHashMap<SqlTypeName> TYPE_TO_PRECEDENCE = new Object2LongHashMap<>(-1);
-
-    static {
-        for (int i = 0; i < TYPE_NAMES.length; ++i) {
-            TYPE_TO_PRECEDENCE.put(TYPE_NAMES[i], i);
-        }
-    }
-
     private HazelcastTypeSystem() {
+        // No-op
     }
 
     /**
@@ -339,11 +309,9 @@ public final class HazelcastTypeSystem extends RelDataTypeSystemImpl {
             typeName = INTERVAL_DAY_SECOND;
         }
 
-        long value = TYPE_TO_PRECEDENCE.getValue(typeName);
-        if (value == -1) {
-            throw new IllegalArgumentException("unexpected type name: " + typeName);
-        }
-        return (int) value;
+        QueryDataType hzType = SqlToQueryType.map(typeName);
+
+        return hzType.getTypeFamily().getPrecedence();
     }
 
     @SuppressWarnings({"checkstyle:CyclomaticComplexity", "checkstyle:ReturnCount"})

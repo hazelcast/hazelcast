@@ -35,6 +35,7 @@ public final class PhysicalRules {
             FilterPhysicalRule.INSTANCE,
             ProjectPhysicalRule.INSTANCE,
             MapScanPhysicalRule.INSTANCE,
+            ValuesPhysicalRule.INSTANCE,
 
             new AbstractConverter.ExpandConversionRule(RelFactories.LOGICAL_BUILDER)
         );

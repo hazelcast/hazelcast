@@ -92,14 +92,14 @@ public class RoundTruncateFunction<T> extends BiExpressionWithType<T> implements
                 try {
                     return (T) (Short) execute(operand1Value, len).shortValueExact();
                 } catch (ArithmeticException e) {
-                    throw overflow(QueryDataTypeFamily.SMALLINT, QueryDataTypeFamily.INT, e);
+                    throw overflow(QueryDataTypeFamily.SMALLINT, QueryDataTypeFamily.INTEGER, e);
                 }
 
-            case INT:
+            case INTEGER:
                 try {
                     return (T) (Integer) execute(operand1Value, len).intValueExact();
                 } catch (ArithmeticException e) {
-                    throw overflow(QueryDataTypeFamily.INT, QueryDataTypeFamily.BIGINT, e);
+                    throw overflow(QueryDataTypeFamily.INTEGER, QueryDataTypeFamily.BIGINT, e);
                 }
 
             case BIGINT:
@@ -142,7 +142,7 @@ public class RoundTruncateFunction<T> extends BiExpressionWithType<T> implements
             return operand2Value != null ? operand2Value : 0;
         } catch (Exception e) {
             throw QueryException.dataException("Cannot convert the second operand of " + getFunctionName() + " function to "
-                + QueryDataTypeFamily.INT + ": " + e.getMessage(), e);
+                + QueryDataTypeFamily.INTEGER + ": " + e.getMessage(), e);
         }
     }
 
