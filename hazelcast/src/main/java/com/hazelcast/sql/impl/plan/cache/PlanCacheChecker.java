@@ -65,7 +65,7 @@ public class PlanCacheChecker {
         }
 
         // Prepare partition distribution
-        Map<UUID, PartitionIdSet> partitions = QueryUtils.createPartitionMap(nodeEngine);
+        Map<UUID, PartitionIdSet> partitions = QueryUtils.createPartitionMap(nodeEngine, null);
 
         // Do check
         planCache.check(new PlanCheckContext(objectIds, partitions));

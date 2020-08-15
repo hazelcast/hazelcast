@@ -17,6 +17,7 @@
 package com.hazelcast.sql.impl.calcite;
 
 import com.hazelcast.cluster.memberselector.MemberSelectors;
+import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.QueryUtils;
@@ -43,6 +44,7 @@ import org.apache.calcite.rel.type.RelDataType;
 
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 /**
  * SQL optimizer based on Apache Calcite.
@@ -181,12 +183,14 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         QueryDataType[] mappedParameterRowType = SqlToQueryType.mapRowType(parameterRowType);
         QueryParameterMetadata parameterMetadata = new QueryParameterMetadata(mappedParameterRowType);
 
+        // Get partition mapping
+        Map<UUID, PartitionIdSet> partMap = QueryUtils.createPartitionMap(nodeEngine, nodeEngine.getLocalMember().getVersion());
+
         // Create the plan.
         PlanCreateVisitor visitor = new PlanCreateVisitor(
             nodeEngine.getLocalMember().getUuid(),
-            QueryUtils.createPartitionMap(nodeEngine),
+            partMap,
             relIdMap,
-            sql,
             new PlanCacheKey(searchPaths, sql),
             rootColumnNames,
             parameterMetadata
