@@ -1,6 +1,6 @@
 [
     {
-        "name": "Elasticsearch Source and Sink",
+        "name": "Elasticsearch 6 Source and Sink",
         "version": "4.2",
         "docs": "https://jet-start.sh/docs/api/sources-sinks#elasticsearch",
         "filename": "hazelcast-jet-elasticsearch-6-4.2.tar.gz",
