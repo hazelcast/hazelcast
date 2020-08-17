@@ -17,6 +17,10 @@
 package com.hazelcast.sql.impl;
 
 import com.hazelcast.sql.SqlResult;
+import com.hazelcast.sql.SqlRow;
+
+import javax.annotation.Nonnull;
+import java.util.Iterator;
 
 public abstract class AbstractSqlResult implements SqlResult {
 
@@ -24,8 +28,40 @@ public abstract class AbstractSqlResult implements SqlResult {
 
     public abstract void closeOnError(QueryException exception);
 
+    @Nonnull @Override
+    public abstract ResultIterator<SqlRow> iterator();
+
     @Override
     public void close() {
         closeOnError(QueryException.cancelledByUser());
+    }
+
+    public interface ResultIterator<T> extends Iterator<T> {
+
+        /**
+         * A result value from {@link #hasNextImmediately()} meaning that a next
+         * item is available immediately.
+         */
+        int YES = 2;
+
+        /**
+         * A result value from {@link #hasNextImmediately()} meaning that a next
+         * item is not available immediately, but might be available later. The
+         * caller should check again later.
+         */
+        int RETRY = 1;
+
+        /**
+         * A result value from {@link #hasNextImmediately()} meaning that the last
+         * item was already returned. A call to {@link #next()} will fail.
+         */
+        int DONE = 0;
+
+        /**
+         * Checks if a next item is available immediately.
+         *
+         * @return One of {@link #YES}, {@link #RETRY} or {@link #DONE}
+         */
+        int hasNextImmediately();
     }
 }

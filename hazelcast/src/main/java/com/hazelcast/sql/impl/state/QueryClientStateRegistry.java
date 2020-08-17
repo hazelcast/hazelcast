@@ -20,12 +20,12 @@ import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.impl.AbstractSqlResult;
+import com.hazelcast.sql.impl.AbstractSqlResult.ResultIterator;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.client.SqlPage;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -81,7 +81,7 @@ public class QueryClientStateRegistry {
         int cursorBufferSize,
         InternalSerializationService serializationService
     ) {
-        Iterator<SqlRow> iterator = clientCursor.getIterator();
+        ResultIterator<SqlRow> iterator = clientCursor.getIterator();
 
         List<List<Data>> page = new ArrayList<>(cursorBufferSize);
         boolean last = fetchPage(iterator, page, cursorBufferSize, serializationService);
@@ -94,24 +94,26 @@ public class QueryClientStateRegistry {
     }
 
     private static boolean fetchPage(
-        Iterator<SqlRow> iterator,
+        ResultIterator<SqlRow> iterator,
         List<List<Data>> page,
         int cursorBufferSize,
         InternalSerializationService serializationService
     ) {
-        while (iterator.hasNext()) {
+        assert cursorBufferSize > 0;
+
+        if (!iterator.hasNext()) {
+            return true;
+        }
+
+        int res;
+        do {
             SqlRow row = iterator.next();
             List<Data> convertedRow = convertRow(row, serializationService);
 
             page.add(convertedRow);
+        } while ((res = iterator.hasNextImmediately()) == ResultIterator.YES && page.size() < cursorBufferSize);
 
-            // TODO figure out how to return earlier: it's needed for latency in streaming jobs
-            if (page.size() == cursorBufferSize) {
-                break;
-            }
-        }
-
-        return !iterator.hasNext();
+        return res == ResultIterator.DONE;
     }
 
     private static List<Data> convertRow(SqlRow row, InternalSerializationService serializationService) {
