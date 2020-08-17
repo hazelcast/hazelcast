@@ -35,6 +35,7 @@ import org.apache.calcite.sql.SqlSelect;
 import org.apache.calcite.sql.SqlUserDefinedTypeNameSpec;
 import org.apache.calcite.sql.SqlUtil;
 import org.apache.calcite.sql.fun.SqlStdOperatorTable;
+import org.apache.calcite.sql.fun.SqlTrimFunction;
 import org.apache.calcite.sql.type.SqlTypeName;
 import org.apache.calcite.sql.util.SqlVisitor;
 import org.apache.calcite.sql.validate.SqlValidatorException;
@@ -100,6 +101,7 @@ public final class UnsupportedOperationVisitor implements SqlVisitor<Void> {
         SUPPORTED_KINDS.add(SqlKind.CEIL);
         SUPPORTED_KINDS.add(SqlKind.FLOOR);
         SUPPORTED_KINDS.add(SqlKind.LIKE);
+        SUPPORTED_KINDS.add(SqlKind.TRIM);
 
         // Supported operators
         SUPPORTED_OPERATORS = new HashSet<>();
@@ -230,6 +232,13 @@ public final class UnsupportedOperationVisitor implements SqlVisitor<Void> {
             case ANY:
             case NULL:
                 return null;
+
+            case SYMBOL:
+                Object symbolValue = literal.getValue();
+
+                if (symbolValue instanceof SqlTrimFunction.Flag) {
+                    return null;
+                }
 
             default:
                 throw error(literal, RESOURCE.custom(typeName + " literals are not supported"));

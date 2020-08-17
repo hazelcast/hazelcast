@@ -112,6 +112,9 @@ public final class RexToExpression {
                 assert literal.getValueAs(Object.class) == null;
                 return ConstantExpression.create(null, QueryDataType.OBJECT);
 
+            case SYMBOL:
+                return ConstantExpression.create(literal.getValue(), QueryDataType.OBJECT);
+
             default:
                 throw QueryException.error("Unsupported literal: " + literal);
         }
@@ -229,6 +232,9 @@ public final class RexToExpression {
                 Expression<?> escape = operands.length == 2 ? null : operands[2];
 
                 return LikeFunction.create(operands[0], operands[1], escape);
+
+            case TRIM:
+                throw new UnsupportedOperationException("Implement me!");
 
             case OTHER:
                 if (operator == HazelcastSqlOperatorTable.CONCAT) {

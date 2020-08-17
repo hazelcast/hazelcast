@@ -16,6 +16,7 @@
 
 package com.hazelcast.sql.impl.calcite.validate;
 
+import com.google.common.collect.ImmutableList;
 import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastDoubleFunction;
 import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastSqlBinaryOperator;
 import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastSqlCastFunction;
@@ -36,11 +37,17 @@ import org.apache.calcite.sql.SqlPostfixOperator;
 import org.apache.calcite.sql.SqlPrefixOperator;
 import org.apache.calcite.sql.SqlSpecialOperator;
 import org.apache.calcite.sql.fun.SqlStdOperatorTable;
+import org.apache.calcite.sql.fun.SqlTrimFunction;
 import org.apache.calcite.sql.type.InferTypes;
 import org.apache.calcite.sql.type.OperandTypes;
 import org.apache.calcite.sql.type.ReturnTypes;
+import org.apache.calcite.sql.type.SameOperandTypeChecker;
+import org.apache.calcite.sql.type.SqlTypeFamily;
 import org.apache.calcite.sql.type.SqlTypeName;
+import org.apache.calcite.sql.type.SqlTypeTransforms;
 import org.apache.calcite.sql.util.ReflectiveSqlOperatorTable;
+
+import java.util.List;
 
 import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastInferTypes.NULLABLE_OBJECT;
 import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastOperandTypes.notAllNull;
@@ -392,6 +399,20 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
 
     public static final SqlFunction SUBSTRING = new HazelcastSqlSubstringFunction();
 
+    public static final SqlFunction TRIM = new SqlTrimFunction(
+        "TRIM",
+        SqlKind.TRIM,
+        ReturnTypes.cascade(ReturnTypes.ARG2, SqlTypeTransforms.TO_NULLABLE, SqlTypeTransforms.TO_VARYING),
+        OperandTypes.and(
+            OperandTypes.family(SqlTypeFamily.ANY, SqlTypeFamily.STRING, SqlTypeFamily.STRING),
+            new SameOperandTypeChecker(3) {
+                @Override protected List<Integer> getOperandList(int operandCount) {
+                    return ImmutableList.of(1, 2);
+                }
+            }
+        )
+    );
+
     //#endregion
 
     //@formatter:on
@@ -409,5 +430,4 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
     public static HazelcastSqlOperatorTable instance() {
         return INSTANCE;
     }
-
 }

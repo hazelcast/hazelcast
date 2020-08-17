@@ -54,6 +54,7 @@ import com.hazelcast.sql.impl.expression.string.InitcapFunction;
 import com.hazelcast.sql.impl.expression.string.LikeFunction;
 import com.hazelcast.sql.impl.expression.string.LowerFunction;
 import com.hazelcast.sql.impl.expression.string.SubstringFunction;
+import com.hazelcast.sql.impl.expression.string.TrimFunction;
 import com.hazelcast.sql.impl.expression.string.UpperFunction;
 import com.hazelcast.sql.impl.extract.GenericQueryTargetDescriptor;
 import com.hazelcast.sql.impl.extract.QueryPath;
@@ -155,8 +156,9 @@ public class SqlDataSerializerHook implements DataSerializerHook {
     public static final int EXPRESSION_CONCAT = 53;
     public static final int EXPRESSION_LIKE = 54;
     public static final int EXPRESSION_SUBSTRING = 55;
+    public static final int EXPRESSION_TRIM = 56;
 
-    public static final int LEN = EXPRESSION_SUBSTRING + 1;
+    public static final int LEN = EXPRESSION_TRIM + 1;
 
     @Override
     public int getFactoryId() {
@@ -235,6 +237,7 @@ public class SqlDataSerializerHook implements DataSerializerHook {
         constructors[EXPRESSION_CONCAT] = arg -> new ConcatFunction();
         constructors[EXPRESSION_LIKE] = arg -> new LikeFunction();
         constructors[EXPRESSION_SUBSTRING] = arg -> new SubstringFunction();
+        constructors[EXPRESSION_TRIM] = arg -> new TrimFunction();
 
         return new ArrayDataSerializableFactory(constructors);
     }
