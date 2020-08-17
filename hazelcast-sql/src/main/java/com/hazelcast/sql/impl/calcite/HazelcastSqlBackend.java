@@ -40,7 +40,6 @@ import org.apache.calcite.plan.RelOptTable.ViewExpander;
 import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.prepare.Prepare.CatalogReader;
 import org.apache.calcite.rel.RelNode;
-import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.sql.parser.SqlParserImplFactory;
 import org.apache.calcite.sql.util.SqlVisitor;
 import org.apache.calcite.sql.validate.SqlConformance;
@@ -106,36 +105,31 @@ public class HazelcastSqlBackend implements SqlBackend {
     public SqlPlan createPlan(OptimizationTask task, QueryParseResult parseResult, OptimizerContext context) {
         QueryConvertResult convertResult = context.convert(parseResult);
 
-        return createPlan(
-                task.getSearchPaths(),
-                task.getSql(),
-                parseResult.getParameterRowType(),
-                convertResult.getRel(),
-                convertResult.getFieldNames(),
-                context
-        );
-    }
-
-    private SqlPlan createPlan(
-            List<List<String>> searchPaths,
-            String sql,
-            RelDataType parameterRowType,
-            RelNode rel,
-            List<String> fieldNames,
-            OptimizerContext context
-    ) {
-        QueryDataType[] mappedParameterRowType = SqlToQueryType.mapRowType(parameterRowType);
+        QueryDataType[] mappedParameterRowType = SqlToQueryType.mapRowType(parseResult.getParameterRowType());
         QueryParameterMetadata parameterMetadata = new QueryParameterMetadata(mappedParameterRowType);
 
-        PhysicalRel physicalRel = optimize(context, rel);
+        PhysicalRel physicalRel = optimize(context, convertResult.getRel());
 
-        return createImdgPlan(
-                searchPaths,
+        String sql = task.getSql();
+        // Assign IDs to nodes.
+        NodeIdVisitor idVisitor = new NodeIdVisitor();
+        physicalRel.visit(idVisitor);
+        Map<PhysicalRel, List<Integer>> relIdMap = idVisitor.getIdMap();
+
+        // Create the plan.
+        PlanCreateVisitor visitor = new PlanCreateVisitor(
+                nodeEngine.getLocalMember().getUuid(),
+                QueryUtils.createPartitionMap(nodeEngine),
+                relIdMap,
                 sql,
-                parameterMetadata,
-                physicalRel,
-                fieldNames
+                new PlanCacheKey(task.getSearchPaths(), sql),
+                convertResult.getFieldNames(),
+                parameterMetadata
         );
+
+        physicalRel.visit(visitor);
+
+        return visitor.getPlan();
     }
 
     private PhysicalRel optimize(
@@ -156,37 +150,4 @@ public class HazelcastSqlBackend implements SqlBackend {
         return (PhysicalRel) context.optimize(logicalRootRel, PhysicalRules.getRuleSet(), physicalTraitSet);
     }
 
-    /**
-     * Create plan from physical rel.
-     *
-     * @param rel Rel.
-     * @return Plan.
-     */
-    private SqlPlan createImdgPlan(
-            List<List<String>> searchPaths,
-            String sql,
-            QueryParameterMetadata parameterMetadata,
-            PhysicalRel rel,
-            List<String> rootColumnNames
-    ) {
-        // Assign IDs to nodes.
-        NodeIdVisitor idVisitor = new NodeIdVisitor();
-        rel.visit(idVisitor);
-        Map<PhysicalRel, List<Integer>> relIdMap = idVisitor.getIdMap();
-
-        // Create the plan.
-        PlanCreateVisitor visitor = new PlanCreateVisitor(
-                nodeEngine.getLocalMember().getUuid(),
-                QueryUtils.createPartitionMap(nodeEngine),
-                relIdMap,
-                sql,
-                new PlanCacheKey(searchPaths, sql),
-                rootColumnNames,
-                parameterMetadata
-        );
-
-        rel.visit(visitor);
-
-        return visitor.getPlan();
-    }
 }
