@@ -111,7 +111,8 @@ public class QueryClientStateRegistry {
             List<Data> convertedRow = convertRow(row, serializationService);
 
             page.add(convertedRow);
-        } while ((res = iterator.hasNextImmediately()) == ResultIterator.YES && page.size() < cursorBufferSize);
+            res = iterator.hasNextImmediately();
+        } while (res == ResultIterator.YES && page.size() < cursorBufferSize);
 
         return res == ResultIterator.DONE;
     }

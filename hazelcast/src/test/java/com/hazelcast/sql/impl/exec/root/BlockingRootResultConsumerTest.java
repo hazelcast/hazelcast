@@ -185,7 +185,7 @@ public class BlockingRootResultConsumerTest extends HazelcastTestSupport {
 
         BlockingRootResultConsumer consumer = new BlockingRootResultConsumer(true);
         ResultIterator<Row> iterator = consumer.iterator();
-        consumer.setup(() -> {});
+        consumer.setup(() -> { });
         consumer.consume(batch, false);
 
         assertEquals(ResultIterator.YES, iterator.hasNextImmediately());
