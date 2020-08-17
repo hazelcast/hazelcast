@@ -50,6 +50,7 @@ import com.hazelcast.sql.impl.expression.string.ConcatFunction;
 import com.hazelcast.sql.impl.expression.string.InitcapFunction;
 import com.hazelcast.sql.impl.expression.string.LikeFunction;
 import com.hazelcast.sql.impl.expression.string.LowerFunction;
+import com.hazelcast.sql.impl.expression.string.SubstringFunction;
 import com.hazelcast.sql.impl.expression.string.UpperFunction;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.calcite.rex.RexCall;
@@ -303,6 +304,12 @@ public final class RexToExpression {
                     return InitcapFunction.create(operands[0]);
                 } else if (function == HazelcastSqlOperatorTable.ASCII) {
                     return AsciiFunction.create(operands[0]);
+                } else if (function == HazelcastSqlOperatorTable.SUBSTRING) {
+                    Expression<?> input = operands[0];
+                    Expression<?> start = operands.length > 1 ? operands[1] : null;
+                    Expression<?> length = operands.length > 2 ? operands[2] : null;
+
+                    return SubstringFunction.create(input, start, length);
                 }
 
                 break;

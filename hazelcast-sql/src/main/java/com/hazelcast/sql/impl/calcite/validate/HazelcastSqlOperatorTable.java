@@ -23,6 +23,7 @@ import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastSqlFloorFuncti
 import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastSqlLikeOperator;
 import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastSqlMonotonicBinaryOperator;
 import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastSqlStringFunction;
+import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastSqlSubstringFunction;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastInferTypes;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastOperandTypes;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastReturnTypes;
@@ -388,6 +389,8 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
         "UPPER",
         ReturnTypes.ARG0_NULLABLE
     );
+
+    public static final SqlFunction SUBSTRING = new HazelcastSqlSubstringFunction();
 
     //#endregion
 

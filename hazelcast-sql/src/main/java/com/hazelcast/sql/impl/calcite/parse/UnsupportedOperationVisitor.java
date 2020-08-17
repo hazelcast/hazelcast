@@ -133,6 +133,7 @@ public final class UnsupportedOperationVisitor implements SqlVisitor<Void> {
         SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.LOWER);
         SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.UPPER);
         SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.CONCAT);
+        SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.SUBSTRING);
     }
 
     private UnsupportedOperationVisitor() {
