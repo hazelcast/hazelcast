@@ -17,6 +17,7 @@
 package com.hazelcast.sql.impl.calcite.validate.operators;
 
 import com.google.common.collect.ImmutableList;
+import com.hazelcast.sql.impl.calcite.validate.types.ReplaceUnknownOperandTypeInference;
 import org.apache.calcite.linq4j.Ord;
 import org.apache.calcite.sql.SqlCall;
 import org.apache.calcite.sql.SqlCallBinding;
@@ -39,13 +40,16 @@ import org.apache.calcite.sql.validate.SqlMonotonicity;
 import java.math.BigDecimal;
 import java.util.List;
 
+import static org.apache.calcite.sql.type.SqlTypeName.INTEGER;
+import static org.apache.calcite.sql.type.SqlTypeName.VARCHAR;
+
 public class HazelcastSqlSubstringFunction extends SqlFunction {
     public HazelcastSqlSubstringFunction() {
         super(
             "SUBSTRING",
             SqlKind.OTHER_FUNCTION,
             ReturnTypes.ARG0_NULLABLE_VARYING,
-            null,
+            new ReplaceUnknownOperandTypeInference(new SqlTypeName[] { VARCHAR, INTEGER, INTEGER }),
             null,
             SqlFunctionCategory.STRING
         );

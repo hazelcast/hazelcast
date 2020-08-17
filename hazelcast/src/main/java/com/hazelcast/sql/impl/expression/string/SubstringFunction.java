@@ -66,7 +66,7 @@ public class SubstringFunction extends TriExpression<String> implements Identifi
             // from the end, SQL Server starts from the beginning, and uses the value to calculate the
             // final length, etc.
             // These semantics are pretty complicated, so wi disallow it completely.
-            throw QueryException.dataException("SUBSTRING start operand must be positive");
+            throw QueryException.dataException("SUBSTRING \"start\" operand must be positive");
         }
 
         // In SQL start position is 1-based. Convert it to 0-based for Java.
@@ -84,7 +84,7 @@ public class SubstringFunction extends TriExpression<String> implements Identifi
             return adjustedStart > 0 ? input.substring(adjustedStart) : input;
         } else if (length < 0) {
             // Negative lengths are not allowed
-            throw QueryException.dataException("SUBSTRING length operand cannot be negative");
+            throw QueryException.dataException("SUBSTRING \"length\" operand cannot be negative");
         } else if (length == 0) {
             // Zero length always yields empty string
             return "";
