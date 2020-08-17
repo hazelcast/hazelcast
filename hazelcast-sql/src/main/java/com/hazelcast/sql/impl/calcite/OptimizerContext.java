@@ -96,20 +96,20 @@ public final class OptimizerContext {
         SqlCatalog schema,
         List<List<String>> searchPaths,
         int memberCount,
-        @Nonnull SqlBackend hazelcastSqlBackend,
+        @Nonnull SqlBackend sqlBackend,
         @Nullable SqlBackend jetSqlBackend
     ) {
         // Resolve tables.
         HazelcastSchema rootSchema = HazelcastSchemaUtils.createRootSchema(schema);
 
-        return create(rootSchema, searchPaths, memberCount, hazelcastSqlBackend, jetSqlBackend);
+        return create(rootSchema, searchPaths, memberCount, sqlBackend, jetSqlBackend);
     }
 
     public static OptimizerContext create(
         HazelcastSchema rootSchema,
         List<List<String>> schemaPaths,
         int memberCount,
-        @Nonnull SqlBackend hazelcastSqlBackend,
+        @Nonnull SqlBackend sqlBackend,
         @Nullable SqlBackend jetSqlBackend
     ) {
         DistributionTraitDef distributionTraitDef = new DistributionTraitDef(memberCount);
@@ -123,7 +123,7 @@ public final class OptimizerContext {
             typeFactory,
             catalogReader,
             HazelcastSqlConformance.INSTANCE,
-            hazelcastSqlBackend,
+            sqlBackend,
             jetSqlBackend
         );
         QueryConverter converter = new QueryConverter(catalogReader, cluster);
