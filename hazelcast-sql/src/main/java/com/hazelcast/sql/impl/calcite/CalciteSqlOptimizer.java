@@ -28,9 +28,7 @@ import org.apache.calcite.plan.Convention;
 import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.plan.volcano.VolcanoPlanner;
 
-import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.Objects;
 
 /**
  * SQL optimizer based on Apache Calcite.
@@ -102,12 +100,12 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
     private final SqlBackend jetSqlBackend;
 
     public CalciteSqlOptimizer(
-        @Nonnull NodeEngine nodeEngine,
+        NodeEngine nodeEngine,
         @Nullable JetSqlService jetSqlService
     ) {
         this.nodeEngine = nodeEngine;
 
-        this.sqlBackend = Objects.requireNonNull(new HazelcastSqlBackend(nodeEngine));
+        this.sqlBackend = new HazelcastSqlBackend(nodeEngine);
         this.jetSqlBackend = jetSqlService == null ? null : (SqlBackend) jetSqlService.sqlBackend();
     }
 
