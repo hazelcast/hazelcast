@@ -16,19 +16,14 @@
 
 package com.hazelcast.sql.impl.expression.string;
 
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.map.IMap;
 import com.hazelcast.sql.SqlColumnType;
 import com.hazelcast.sql.SqlErrorCode;
 import com.hazelcast.sql.SqlException;
 import com.hazelcast.sql.SqlRow;
-import com.hazelcast.sql.impl.SqlTestSupport;
+import com.hazelcast.sql.impl.expression.SqlExpressionIntegrationTestSupport;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -40,27 +35,9 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-@SuppressWarnings({"unchecked", "rawtypes"})
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class LikeFunctionIntegrationTest extends SqlTestSupport {
-
-    private final TestHazelcastInstanceFactory factory = new TestHazelcastInstanceFactory(1);
-    private HazelcastInstance member;
-    private IMap map;
-
-    @Before
-    public void before() {
-        member = factory.newHazelcastInstance();
-
-        map = member.getMap("map");
-    }
-
-    @After
-    public void after() {
-        factory.shutdownAll();
-    }
-
+public class LikeFunctionIntegrationTest extends SqlExpressionIntegrationTestSupport {
     @Test
     public void test_wildcards() {
         put("abcde");
@@ -165,11 +142,6 @@ public class LikeFunctionIntegrationTest extends SqlTestSupport {
 
         check("null LIKE '2_'", null);
         check("20 LIKE null", null);
-    }
-
-    private void put(Object value) {
-        map.clear();
-        map.put(1, value);
     }
 
     private void check(String operands, Boolean expectedResult, Object... params) {

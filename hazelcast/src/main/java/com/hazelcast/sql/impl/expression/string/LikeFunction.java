@@ -24,6 +24,7 @@ import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.expression.TriExpression;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.QueryDataType;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.Objects;
 import java.util.regex.Matcher;
@@ -64,6 +65,7 @@ public class LikeFunction extends TriExpression<Boolean> implements IdentifiedDa
         return new LikeFunction(source, pattern, escape);
     }
 
+    @SuppressFBWarnings(value = "NP_BOOLEAN_RETURN_NULL", justification = "SQL has three-valued boolean logic")
     @Override
     public Boolean eval(Row row, ExpressionEvalContext context) {
         String source = asVarchar(operand1, row, context);
