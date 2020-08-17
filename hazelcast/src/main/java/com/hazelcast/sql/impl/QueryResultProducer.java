@@ -16,9 +16,8 @@
 
 package com.hazelcast.sql.impl;
 
+import com.hazelcast.sql.impl.AbstractSqlResult.ResultIterator;
 import com.hazelcast.sql.impl.row.Row;
-
-import java.util.Iterator;
 
 /**
  * Generic interface which produces iterator over results which are then delivered to users.
@@ -30,7 +29,7 @@ public interface QueryResultProducer {
      *
      * @return Iterator.
      */
-    Iterator<Row> iterator();
+    ResultIterator<Row> iterator();
 
     /**
      * Notify the producer about an error.

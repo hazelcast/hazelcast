@@ -16,10 +16,10 @@
 
 package com.hazelcast.sql.impl.exec.root;
 
+import com.hazelcast.sql.impl.AbstractSqlResult.ResultIterator;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.row.Row;
 
-import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
 
@@ -91,11 +91,13 @@ public class BlockingRootResultConsumer implements RootResultConsumer {
     }
 
     /**
-     * Poll the next batch from the upstream, waiting if needed.
+     * Poll the next batch from the upstream.
      *
-     * @return The batch or {@code null} if end of stream is reached.
+     * @param shouldWait whether it should wait if a batch is not yet available.
+     * @return The next batch or {@code null} if end of stream is reached or no waiting
+     *      was requested.
      */
-    private List<Row> awaitNextBatch() {
+    private List<Row> getNextBatch(boolean shouldWait) {
         synchronized (mux) {
             while (true) {
                 // Consume the batch if it is available.
@@ -113,6 +115,10 @@ public class BlockingRootResultConsumer implements RootResultConsumer {
                         throw doneError;
                     }
 
+                    return null;
+                }
+
+                if (!shouldWait) {
                     return null;
                 }
 
@@ -146,14 +152,14 @@ public class BlockingRootResultConsumer implements RootResultConsumer {
     }
 
     @Override
-    public Iterator<Row> iterator() {
+    public ResultIterator<Row> iterator() {
         return iterator;
     }
 
     /**
      * Iterator over results.
      */
-    private class InternalIterator implements Iterator<Row> {
+    private class InternalIterator implements ResultIterator<Row> {
 
         private List<Row> batch;
         private int position;
@@ -161,7 +167,7 @@ public class BlockingRootResultConsumer implements RootResultConsumer {
         @Override
         public boolean hasNext() {
             if (batch == null) {
-                batch = awaitNextBatch();
+                batch = getNextBatch(true);
 
                 if (batch == null) {
                     assert done;
@@ -171,6 +177,19 @@ public class BlockingRootResultConsumer implements RootResultConsumer {
             }
 
             return true;
+        }
+
+        @Override
+        public int hasNextImmediately() {
+            if (batch == null) {
+                batch = getNextBatch(false);
+
+                if (batch == null) {
+                    return done ? DONE :  RETRY;
+                }
+            }
+
+            return YES;
         }
 
         @Override

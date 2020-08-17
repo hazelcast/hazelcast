@@ -22,6 +22,7 @@ import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuil
 import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.sql.impl.AbstractSqlResult.ResultIterator;
 import com.hazelcast.sql.impl.LoggingQueryOperationHandler;
 import com.hazelcast.sql.impl.NodeServiceProviderImpl;
 import com.hazelcast.sql.impl.QueryException;
@@ -68,7 +69,6 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -590,7 +590,7 @@ public class CreateExecPlanNodeVisitorTest extends SqlTestSupport {
         }
 
         @Override
-        public Iterator<Row> iterator() {
+        public ResultIterator<Row> iterator() {
             return null;
         }
 
