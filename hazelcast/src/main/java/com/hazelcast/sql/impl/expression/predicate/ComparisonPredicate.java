@@ -35,7 +35,7 @@ import java.util.Objects;
  *
  * @see ComparisonMode
  */
-public class ComparisonPredicate extends BiExpression<Boolean> implements IdentifiedDataSerializable {
+public final class ComparisonPredicate extends BiExpression<Boolean> implements IdentifiedDataSerializable {
 
     private ComparisonMode mode;
 
@@ -49,7 +49,7 @@ public class ComparisonPredicate extends BiExpression<Boolean> implements Identi
     }
 
     public static ComparisonPredicate create(Expression<?> left, Expression<?> right, ComparisonMode comparisonMode) {
-        assert left.getType().getTypeFamily().equals(right.getType().getTypeFamily());
+        assert left.getType().equals(right.getType());
         return new ComparisonPredicate(left, right, comparisonMode);
     }
 

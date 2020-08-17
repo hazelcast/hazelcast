@@ -19,7 +19,6 @@ package com.hazelcast.wan.impl.merkletree;
 import com.hazelcast.internal.util.collection.OAHashSet;
 
 import java.util.Arrays;
-import java.util.function.Consumer;
 
 import static com.hazelcast.internal.nio.Bits.INT_SIZE_IN_BYTES;
 import static com.hazelcast.internal.nio.Bits.LONG_SIZE_IN_BYTES;
@@ -81,32 +80,27 @@ import static com.hazelcast.internal.util.JVMUtil.REFERENCE_COST_IN_BYTES;
  * {@link MerkleTreeUtil#sumHash(int, int)}
  */
 public class ArrayMerkleTree extends AbstractMerkleTreeView implements MerkleTree {
-    private final OAHashSet<Object>[] leafKeys;
     private final int leafLevel;
 
     /**
-     * Footprint holds the total memory footprint of the Merkle tree and
-     * the leaf data blocks.
-     * <p>
-     * Note that this field leverages a single-writer and a non-atomic
-     * operation is executed on the field. See {@link #adjustFootprintWithLeafKeySetChange}
+     * Footprint holds the total memory footprint of the Merkle tree.
      */
-    private volatile long footprint;
+    private final long footprint;
 
-    @SuppressWarnings("unchecked")
     public ArrayMerkleTree(int depth) {
         super(depth);
-
         this.leafLevel = depth - 1;
-
-        final int leaves = MerkleTreeUtil.getNodesOnLevel(leafLevel);
-
-        leafKeys = new OAHashSet[leaves];
-        for (int i = 0; i < leaves; i++) {
-            leafKeys[i] = new OAHashSet<Object>(1);
-        }
-
-        initializeFootprint();
+        this.footprint = INT_SIZE_IN_BYTES * tree.length
+                // reference to the tree
+                + REFERENCE_COST_IN_BYTES
+                // depth
+                + INT_SIZE_IN_BYTES
+                // leafLevelOrder
+                + INT_SIZE_IN_BYTES
+                // leafLevel
+                + INT_SIZE_IN_BYTES
+                // footprint;
+                + LONG_SIZE_IN_BYTES;
     }
 
     @Override
@@ -119,7 +113,6 @@ public class ArrayMerkleTree extends AbstractMerkleTreeView implements MerkleTre
         int leafNewHash = MerkleTreeUtil.addHash(leafCurrentHash, valueHash);
 
         setNodeHash(leafOrder, leafNewHash);
-        addKeyToLeaf(leafOrder, keyHash, key);
         updateBranch(leafOrder);
     }
 
@@ -148,68 +141,12 @@ public class ArrayMerkleTree extends AbstractMerkleTreeView implements MerkleTre
         int leafNewHash = MerkleTreeUtil.removeHash(leafCurrentHash, removedValueHash);
 
         setNodeHash(leafOrder, leafNewHash);
-        removeKeyFromLeaf(leafOrder, keyHash, key);
         updateBranch(leafOrder);
     }
 
     @Override
     public int getNodeHash(int nodeOrder) {
         return tree[nodeOrder];
-    }
-
-    @Override
-    public void forEachKeyOfNode(int nodeOrder, Consumer<Object> consumer) {
-        if (MerkleTreeUtil.isLeaf(nodeOrder, depth)) {
-            forEachKeyOfLeaf(nodeOrder, consumer);
-        } else {
-            forEachKeyOfNonLeaf(nodeOrder, consumer);
-        }
-    }
-
-    private void forEachKeyOfLeaf(int nodeOrder, Consumer<Object> consumer) {
-        int relativeLeafOrder = nodeOrder - leafLevelOrder;
-        for (Object key : leafKeys[relativeLeafOrder]) {
-            consumer.accept(key);
-        }
-    }
-
-    private void forEachKeyOfNonLeaf(int nodeOrder, Consumer<Object> consumer) {
-        final int leftMostLeaf = MerkleTreeUtil.getLeftMostLeafUnderNode(nodeOrder, depth);
-        final int rightMostLeaf = MerkleTreeUtil.getRightMostLeafUnderNode(nodeOrder, depth);
-
-        for (int leafOrder = leftMostLeaf; leafOrder <= rightMostLeaf; leafOrder++) {
-            int relativeLeafOrder = leafOrder - leafLevelOrder;
-            for (Object key : leafKeys[relativeLeafOrder]) {
-                consumer.accept(key);
-            }
-        }
-    }
-
-    @Override
-    public int getNodeKeyCount(int nodeOrder) {
-        if (MerkleTreeUtil.isLeaf(nodeOrder, depth)) {
-            return getLeafKeyCount(nodeOrder);
-        } else {
-            return getNonLeafKeyCount(nodeOrder);
-        }
-    }
-
-    private int getLeafKeyCount(int nodeOrder) {
-        int relativeLeafOrder = nodeOrder - leafLevelOrder;
-        return leafKeys[relativeLeafOrder].size();
-    }
-
-    private int getNonLeafKeyCount(int nodeOrder) {
-        final int leftMostLeaf = MerkleTreeUtil.getLeftMostLeafUnderNode(nodeOrder, depth);
-        final int rightMostLeaf = MerkleTreeUtil.getRightMostLeafUnderNode(nodeOrder, depth);
-
-        int count = 0;
-        for (int leafOrder = leftMostLeaf; leafOrder <= rightMostLeaf; leafOrder++) {
-            int relativeLeafOrder = leafOrder - leafLevelOrder;
-            count += leafKeys[relativeLeafOrder].size();
-        }
-
-        return count;
     }
 
     @Override
@@ -220,9 +157,6 @@ public class ArrayMerkleTree extends AbstractMerkleTreeView implements MerkleTre
     @Override
     public void clear() {
         Arrays.fill(tree, 0);
-        for (OAHashSet<Object> leafKeysSet : this.leafKeys) {
-            leafKeysSet.clear();
-        }
     }
 
     /**
@@ -247,50 +181,4 @@ public class ArrayMerkleTree extends AbstractMerkleTreeView implements MerkleTre
             nodeOrder = MerkleTreeUtil.getParentOrder(nodeOrder);
         }
     }
-
-    private void addKeyToLeaf(int leafOrder, int keyHash, Object key) {
-        int relativeLeafOrder = leafOrder - leafLevelOrder;
-        OAHashSet<Object> leafKeySet = leafKeys[relativeLeafOrder];
-        long leafKeysFootprintBefore = leafKeySet.footprint();
-        leafKeySet.add(key, keyHash);
-
-        adjustFootprintWithLeafKeySetChange(leafKeySet.footprint(), leafKeysFootprintBefore);
-    }
-
-    private void removeKeyFromLeaf(int leafOrder, int keyHash, Object key) {
-        int relativeLeafOrder = leafOrder - leafLevelOrder;
-        OAHashSet<Object> leafKeySet = leafKeys[relativeLeafOrder];
-        long leafKeysFootprintBefore = leafKeySet.footprint();
-        leafKeySet.remove(key, keyHash);
-
-        adjustFootprintWithLeafKeySetChange(leafKeySet.footprint(), leafKeysFootprintBefore);
-    }
-
-    private void adjustFootprintWithLeafKeySetChange(long currentFootprint, long footprintBeforeUpdate) {
-        long footprintDelta = currentFootprint - footprintBeforeUpdate;
-
-        if (footprintDelta != 0) {
-            //noinspection NonAtomicOperationOnVolatileField
-            footprint += footprintDelta;
-        }
-    }
-
-    @SuppressWarnings("checkstyle:trailingcomment")
-    private void initializeFootprint() {
-        long leafKeysSetsFootprint = 0;
-        for (OAHashSet leafKeysSet : leafKeys) {
-            leafKeysSetsFootprint += leafKeysSet.footprint();
-        }
-
-        footprint = leafKeysSetsFootprint
-                + INT_SIZE_IN_BYTES * tree.length
-                + REFERENCE_COST_IN_BYTES * leafKeys.length
-                + REFERENCE_COST_IN_BYTES // reference to the tree
-                + REFERENCE_COST_IN_BYTES // reference to leafKeys array
-                + INT_SIZE_IN_BYTES // depth
-                + INT_SIZE_IN_BYTES // leafLevelOrder
-                + INT_SIZE_IN_BYTES // leafLevel
-                + LONG_SIZE_IN_BYTES; // footprint
-    }
-
 }

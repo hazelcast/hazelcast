@@ -210,7 +210,7 @@ public class QueryCacheConfig implements IdentifiedDataSerializable {
      * @return this {@code QueryCacheConfig} instance
      */
     public QueryCacheConfig setBatchSize(int batchSize) {
-        this.batchSize = checkPositive(batchSize, "batchSize");
+        this.batchSize = checkPositive("batchSize", batchSize);
         return this;
     }
 
@@ -230,7 +230,7 @@ public class QueryCacheConfig implements IdentifiedDataSerializable {
      * @return this {@code QueryCacheConfig} instance
      */
     public QueryCacheConfig setBufferSize(int bufferSize) {
-        this.bufferSize = checkPositive(bufferSize, "bufferSize");
+        this.bufferSize = checkPositive("bufferSize", bufferSize);
         return this;
     }
 

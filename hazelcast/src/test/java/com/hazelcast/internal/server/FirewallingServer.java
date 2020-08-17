@@ -160,8 +160,8 @@ public class FirewallingServer
         final long maxDelayMs;
 
         private PacketDelayProps(long minDelayMs, long maxDelayMs) {
-            checkPositive(minDelayMs, "minDelayMs must be positive, but was " + minDelayMs);
-            checkPositive(maxDelayMs, "maxDelayMs must be positive, but was " + maxDelayMs);
+            checkPositive("minDelayMs", minDelayMs);
+            checkPositive("maxDelayMs", maxDelayMs);
             checkState(maxDelayMs >= minDelayMs, "maxDelayMs must not be smaller than minDelayMs (maxDelayMs: " + maxDelayMs
                     + ", minDelayMs: " + minDelayMs + ")");
 

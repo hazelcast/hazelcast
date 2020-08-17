@@ -26,6 +26,7 @@ import com.hazelcast.core.EntryView;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.HazelcastJsonValue;
+import com.hazelcast.core.ReadOnly;
 import com.hazelcast.internal.json.Json;
 import com.hazelcast.internal.json.JsonValue;
 import com.hazelcast.internal.serialization.Data;
@@ -63,6 +64,7 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.After;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -87,6 +89,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 import static com.hazelcast.config.InMemoryFormat.BINARY;
 import static com.hazelcast.config.InMemoryFormat.NATIVE;
@@ -118,6 +121,11 @@ public class EntryProcessorTest extends HazelcastTestSupport {
                 {BINARY},
                 {OBJECT},
         });
+    }
+
+    @After
+    public void cleanup() {
+        ExecutionCountingEP.EXECUTION_COUNTER.set(0);
     }
 
     @Override
@@ -1702,6 +1710,17 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         testEntryProcessorWithPredicate_updatesLastAccessTime(true);
     }
 
+    @Test
+    public void testReadOnlyEntryProcessorDoesNotCreateBackup() {
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
+        HazelcastInstance i1 = nodeFactory.newHazelcastInstance();
+        HazelcastInstance i2 = nodeFactory.newHazelcastInstance();
+
+        IMap<Integer, Integer> map = i1.getMap(randomName());
+        map.executeOnKey(42, new ExecutionCountingEP<>());
+        assertEquals(1, ExecutionCountingEP.EXECUTION_COUNTER.get());
+    }
+
     private void testEntryProcessorWithPredicate_updatesLastAccessTime(boolean accessExpected) {
         Config config = withoutNetworkJoin(smallInstanceConfig());
         config.getMapConfig(MAP_NAME)
@@ -1957,6 +1976,16 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         @Override
         public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
             this.hz = hazelcastInstance;
+        }
+    }
+
+    private static final class ExecutionCountingEP<K, V, O> implements EntryProcessor<K, V, O>, ReadOnly {
+        private static final AtomicLong EXECUTION_COUNTER = new AtomicLong();
+
+        @Override
+        public O process(Entry<K, V> entry) {
+            EXECUTION_COUNTER.incrementAndGet();
+            return null;
         }
     }
 

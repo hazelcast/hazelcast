@@ -25,7 +25,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class PlanCache implements CachedPlanInvalidationCallback {
 
     private final int maxSize;
-    private final ConcurrentHashMap<PlanCacheKey, CachedPlan> plans = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<PlanCacheKey, CacheablePlan> plans = new ConcurrentHashMap<>();
 
     public PlanCache(int maxSize) {
         assert maxSize > 0;
@@ -33,8 +33,8 @@ public class PlanCache implements CachedPlanInvalidationCallback {
         this.maxSize = maxSize;
     }
 
-    public CachedPlan get(PlanCacheKey key) {
-        CachedPlan plan = plans.get(key);
+    public CacheablePlan get(PlanCacheKey key) {
+        CacheablePlan plan = plans.get(key);
 
         if (plan != null) {
             plan.onPlanUsed();
@@ -45,7 +45,7 @@ public class PlanCache implements CachedPlanInvalidationCallback {
         }
     }
 
-    public void put(PlanCacheKey key, CachedPlan plan) {
+    public void put(PlanCacheKey key, CacheablePlan plan) {
         plans.put(key, plan);
 
         plan.onPlanUsed();
@@ -53,7 +53,7 @@ public class PlanCache implements CachedPlanInvalidationCallback {
         shrinkIfNeeded();
     }
 
-    public void invalidate(CachedPlan plan) {
+    public void invalidate(CacheablePlan plan) {
         remove(plan);
     }
 
@@ -77,14 +77,14 @@ public class PlanCache implements CachedPlanInvalidationCallback {
         }
 
         // Sort plans according to their last used timestamps
-        TreeMap<Long, CachedPlan> sorted = new TreeMap<>();
+        TreeMap<Long, CacheablePlan> sorted = new TreeMap<>();
 
-        for (CachedPlan plan : plans.values()) {
+        for (CacheablePlan plan : plans.values()) {
             sorted.put(plan.getPlanLastUsed(), plan);
         }
 
         // Remove oldest plans
-        for (CachedPlan plan : sorted.values()) {
+        for (CacheablePlan plan : sorted.values()) {
             boolean removed = remove(plan);
 
             if (removed) {
@@ -100,7 +100,7 @@ public class PlanCache implements CachedPlanInvalidationCallback {
      *
      * @param plan Plan.
      */
-    private boolean remove(CachedPlan plan) {
+    private boolean remove(CacheablePlan plan) {
         return plans.remove(plan.getPlanKey(), plan);
     }
 }

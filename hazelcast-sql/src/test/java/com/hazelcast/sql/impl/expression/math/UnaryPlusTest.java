@@ -17,7 +17,7 @@
 package com.hazelcast.sql.impl.expression.math;
 
 import com.hazelcast.sql.impl.expression.ExpressionTestBase;
-import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -37,7 +37,7 @@ import static org.apache.calcite.sql.type.SqlTypeName.DOUBLE;
 import static org.apache.calcite.sql.type.SqlTypeName.NULL;
 import static org.junit.Assert.assertEquals;
 
-@RunWith(HazelcastSerialClassRunner.class)
+@RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class UnaryPlusTest extends ExpressionTestBase {
 
@@ -67,8 +67,7 @@ public class UnaryPlusTest extends ExpressionTestBase {
 
         RelDataType type = operand.type;
 
-        BigDecimal numeric = operand.numericValue();
-        //noinspection NumberEquality
+        Number numeric = operand.numericValue();
         if (numeric == INVALID_NUMERIC_VALUE) {
             return null;
         }

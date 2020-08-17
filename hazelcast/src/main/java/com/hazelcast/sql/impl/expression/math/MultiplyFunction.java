@@ -26,20 +26,15 @@ import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
-import com.hazelcast.sql.impl.type.SqlDaySecondInterval;
-import com.hazelcast.sql.impl.type.SqlYearMonthInterval;
 
 import java.math.BigDecimal;
 
-import static com.hazelcast.sql.impl.expression.datetime.DateTimeExpressionUtils.NANO_IN_SECONDS;
 import static com.hazelcast.sql.impl.expression.math.ExpressionMath.DECIMAL_MATH_CONTEXT;
-import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.INTERVAL_DAY_SECOND;
-import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.INTERVAL_YEAR_MONTH;
 
 /**
  * Implements evaluation of SQL multiply operator.
  */
-public class MultiplyFunction<T> extends BiExpressionWithType<T> implements IdentifiedDataSerializable {
+public final class MultiplyFunction<T> extends BiExpressionWithType<T> implements IdentifiedDataSerializable {
 
     public MultiplyFunction() {
         // No-op.
@@ -50,13 +45,6 @@ public class MultiplyFunction<T> extends BiExpressionWithType<T> implements Iden
     }
 
     public static MultiplyFunction<?> create(Expression<?> operand1, Expression<?> operand2, QueryDataType resultType) {
-        if (operand2.getType().getTypeFamily() == INTERVAL_DAY_SECOND
-                || operand2.getType().getTypeFamily() == INTERVAL_YEAR_MONTH) {
-            Expression<?> intervalOperand = operand2;
-            operand2 = operand1;
-            operand1 = intervalOperand;
-        }
-
         return new MultiplyFunction<>(operand1, operand2, resultType);
     }
 
@@ -85,10 +73,10 @@ public class MultiplyFunction<T> extends BiExpressionWithType<T> implements Iden
 
         QueryDataTypeFamily family = resultType.getTypeFamily();
         if (family.isTemporal()) {
-            return (T) evalTemporal(operand1, operand2, operand2.getType(), resultType);
-        } else {
-            return (T) evalNumeric((Number) left, (Number) right, family);
+            throw new UnsupportedOperationException("temporal types are unsupported currently");
         }
+
+        return (T) evalNumeric((Number) left, (Number) right, family);
     }
 
     private static Object evalNumeric(Number left, Number right, QueryDataTypeFamily family) {
@@ -103,7 +91,8 @@ public class MultiplyFunction<T> extends BiExpressionWithType<T> implements Iden
                 try {
                     return Math.multiplyExact(left.longValue(), right.longValue());
                 } catch (ArithmeticException e) {
-                    throw QueryException.error(SqlErrorCode.DATA_EXCEPTION, "BIGINT overflow");
+                    throw QueryException.error(SqlErrorCode.DATA_EXCEPTION,
+                            "BIGINT overflow in '*' operator (consider adding explicit CAST to DECIMAL)");
                 }
             case REAL:
                 return left.floatValue() * right.floatValue();
@@ -113,39 +102,6 @@ public class MultiplyFunction<T> extends BiExpressionWithType<T> implements Iden
                 return ((BigDecimal) left).multiply((BigDecimal) right, DECIMAL_MATH_CONTEXT);
             default:
                 throw new IllegalArgumentException("unexpected result family: " + family);
-        }
-    }
-
-    @SuppressWarnings("checkstyle:AvoidNestedBlocks")
-    private static Object evalTemporal(Object intervalOperand, Object numericOperand, QueryDataType numericOperandType,
-                                       QueryDataType resultType) {
-        switch (resultType.getTypeFamily()) {
-            case INTERVAL_YEAR_MONTH: {
-                SqlYearMonthInterval interval = (SqlYearMonthInterval) intervalOperand;
-                int multiplier = numericOperandType.getConverter().asInt(numericOperand);
-
-                return new SqlYearMonthInterval(interval.getMonths() * multiplier);
-            }
-
-            case INTERVAL_DAY_SECOND: {
-                SqlDaySecondInterval interval = (SqlDaySecondInterval) intervalOperand;
-                long multiplier = numericOperandType.getConverter().asBigint(numericOperand);
-
-                if (interval.getNanos() == 0) {
-                    return new SqlDaySecondInterval(interval.getSeconds() * multiplier, 0);
-                } else {
-                    long valueMultiplied = interval.getSeconds() * multiplier;
-                    long nanosMultiplied = interval.getNanos() * multiplier;
-
-                    long newValue = valueMultiplied + nanosMultiplied / NANO_IN_SECONDS;
-                    int newNanos = (int) (nanosMultiplied % NANO_IN_SECONDS);
-
-                    return new SqlDaySecondInterval(newValue, newNanos);
-                }
-            }
-
-            default:
-                throw QueryException.error("Invalid type: " + resultType);
         }
     }
 

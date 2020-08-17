@@ -17,6 +17,7 @@
 package com.hazelcast.sql.impl.state;
 
 import com.hazelcast.sql.impl.QueryId;
+import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.QueryResultProducer;
 import com.hazelcast.sql.impl.exec.root.BlockingRootResultConsumer;
 import com.hazelcast.sql.impl.plan.Plan;
@@ -39,7 +40,7 @@ public class QueryInitiatorStateTest {
     @Test
     public void testInitiatorState() {
         QueryId queryId = QueryId.create(UUID.randomUUID());
-        Plan plan = new Plan(null, null, null, null, null, null, null, null, null, null, Collections.emptySet());
+        Plan plan = new Plan(null, null, null, null, null, null, null, QueryParameterMetadata.EMPTY, null, null, Collections.emptySet());
         QueryResultProducer resultProducer = new BlockingRootResultConsumer();
         long timeout = 1000L;
 

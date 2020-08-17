@@ -34,7 +34,7 @@ import java.util.Objects;
  *
  * @param <T> Return type.
  */
-public class ConstantExpression<T> implements Expression<T>, IdentifiedDataSerializable {
+public final class ConstantExpression<T> implements Expression<T>, IdentifiedDataSerializable {
 
     private QueryDataType type;
     private T value;
@@ -49,14 +49,10 @@ public class ConstantExpression<T> implements Expression<T>, IdentifiedDataSeria
     }
 
     public static ConstantExpression<?> create(Object value, QueryDataType type) {
-        if (type.getTypeFamily() == QueryDataTypeFamily.NULL) {
-            assert value == null;
-            return new ConstantExpression<>(null, QueryDataType.NULL);
-        }
-
         if (value == null) {
             return new ConstantExpression<>(null, type);
         }
+        assert type.getTypeFamily() != QueryDataTypeFamily.NULL;
 
         Converter valueConverter = Converters.getConverter(value.getClass());
         Converter typeConverter = type.getConverter();
@@ -103,7 +99,9 @@ public class ConstantExpression<T> implements Expression<T>, IdentifiedDataSeria
 
     @Override
     public int hashCode() {
-        return Objects.hash(type, value);
+        int result = type.hashCode();
+        result = 31 * result + (value != null ? value.hashCode() : 0);
+        return result;
     }
 
     @Override

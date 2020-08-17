@@ -27,7 +27,7 @@ import com.hazelcast.sql.impl.type.QueryDataType;
 /**
  * Implements evaluation of SQL AND predicate.
  */
-public class AndPredicate extends VariExpression<Boolean> implements IdentifiedDataSerializable {
+public final class AndPredicate extends VariExpression<Boolean> implements IdentifiedDataSerializable {
 
     public AndPredicate() {
         // No-op.

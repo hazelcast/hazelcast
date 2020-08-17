@@ -97,7 +97,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
 
     private final NodeEngine nodeEngine;
 
-    private final SqlBackend hazelcastSqlBackend;
+    private final SqlBackend sqlBackend;
     private final SqlBackend jetSqlBackend;
 
     public CalciteSqlOptimizer(
@@ -106,7 +106,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
     ) {
         this.nodeEngine = nodeEngine;
 
-        this.hazelcastSqlBackend = new HazelcastSqlBackend(nodeEngine);
+        this.sqlBackend = new HazelcastSqlBackend(nodeEngine);
         this.jetSqlBackend = jetSqlService == null ? null : (SqlBackend) jetSqlService.sqlBackend();
     }
 
@@ -119,7 +119,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
             task.getSchema(),
             task.getSearchPaths(),
             memberCount,
-            hazelcastSqlBackend,
+            sqlBackend,
             jetSqlBackend
         );
 

@@ -27,7 +27,7 @@ import com.hazelcast.sql.impl.type.QueryDataType;
 /**
  * Implements evaluation of SQL NOT predicate.
  */
-public class NotPredicate extends UniExpression<Boolean> implements IdentifiedDataSerializable {
+public final class NotPredicate extends UniExpression<Boolean> implements IdentifiedDataSerializable {
 
     public NotPredicate() {
         // No-op.

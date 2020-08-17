@@ -18,6 +18,7 @@ package com.hazelcast.sql.impl.plan.cache;
 
 import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
+import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.SqlTestSupport;
 import com.hazelcast.sql.impl.plan.Plan;
 
@@ -53,7 +54,7 @@ public class PlanCacheTestSupport extends SqlTestSupport {
     }
 
     public static Plan createPlan(PlanCacheKey key, Map<UUID, PartitionIdSet> partMap, int... objectIds) {
-        Set<PlanObjectId> objectIds0 = new HashSet<>();
+        Set<PlanObjectKey> objectIds0 = new HashSet<>();
 
         if (objectIds != null) {
             for (int objectId : objectIds) {
@@ -69,7 +70,7 @@ public class PlanCacheTestSupport extends SqlTestSupport {
             null,
             null,
             null,
-            null,
+            QueryParameterMetadata.EMPTY,
             key,
             null,
             objectIds0
@@ -81,8 +82,8 @@ public class PlanCacheTestSupport extends SqlTestSupport {
         return plan;
     }
 
-    public static PlanObjectId createObjectId(int value) {
-        return new TestPlanObjectId(value);
+    public static PlanObjectKey createObjectId(int value) {
+        return new TestPlanObjectKey(value);
     }
 
     @SuppressWarnings("BusyWait")
@@ -101,11 +102,11 @@ public class PlanCacheTestSupport extends SqlTestSupport {
         }
     }
 
-    public static class TestPlanObjectId implements PlanObjectId {
+    public static class TestPlanObjectKey implements PlanObjectKey {
 
         private final int id;
 
-        public TestPlanObjectId(int id) {
+        public TestPlanObjectKey(int id) {
             this.id = id;
         }
 
@@ -119,7 +120,7 @@ public class PlanCacheTestSupport extends SqlTestSupport {
                 return false;
             }
 
-            TestPlanObjectId that = (TestPlanObjectId) o;
+            TestPlanObjectKey that = (TestPlanObjectKey) o;
 
             return id == that.id;
         }

@@ -26,18 +26,15 @@ import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
-import com.hazelcast.sql.impl.type.SqlDaySecondInterval;
-import com.hazelcast.sql.impl.type.SqlYearMonthInterval;
 
 import java.math.BigDecimal;
 
-import static com.hazelcast.sql.impl.expression.datetime.DateTimeExpressionUtils.NANO_IN_SECONDS;
 import static com.hazelcast.sql.impl.expression.math.ExpressionMath.DECIMAL_MATH_CONTEXT;
 
 /**
  * Implements evaluation of SQL divide operator.
  */
-public class DivideFunction<T> extends BiExpressionWithType<T> implements IdentifiedDataSerializable {
+public final class DivideFunction<T> extends BiExpressionWithType<T> implements IdentifiedDataSerializable {
 
     public DivideFunction() {
         // No-op.
@@ -76,10 +73,10 @@ public class DivideFunction<T> extends BiExpressionWithType<T> implements Identi
 
         QueryDataTypeFamily family = resultType.getTypeFamily();
         if (family.isTemporal()) {
-            return (T) evalTemporal(operand1, operand2, operand2.getType(), resultType);
-        } else {
-            return (T) evalNumeric((Number) left, (Number) right, family);
+            throw new UnsupportedOperationException("temporal types are unsupported currently");
         }
+
+        return (T) evalNumeric((Number) left, (Number) right, family);
     }
 
     private static Object evalNumeric(Number left, Number right, QueryDataTypeFamily family) {
@@ -104,33 +101,6 @@ public class DivideFunction<T> extends BiExpressionWithType<T> implements Identi
             }
         } catch (ArithmeticException e) {
             throw QueryException.error(SqlErrorCode.DATA_EXCEPTION, "division by zero");
-        }
-    }
-
-    @SuppressWarnings("checkstyle:AvoidNestedBlocks")
-    private static Object evalTemporal(Object operand1, Object operand2, QueryDataType operand2Type, QueryDataType resultType) {
-        switch (resultType.getTypeFamily()) {
-            case INTERVAL_YEAR_MONTH: {
-                SqlYearMonthInterval interval = (SqlYearMonthInterval) operand1;
-                int divisor = operand2Type.getConverter().asInt(operand2);
-
-                return new SqlYearMonthInterval(interval.getMonths() / divisor);
-            }
-
-            case INTERVAL_DAY_SECOND: {
-                SqlDaySecondInterval interval = (SqlDaySecondInterval) operand1;
-                long divisor = operand2Type.getConverter().asBigint(operand2);
-
-                long totalNanos = (interval.getSeconds() * NANO_IN_SECONDS + interval.getNanos()) / divisor;
-
-                long newValue = totalNanos / NANO_IN_SECONDS;
-                int newNanos = (int) (totalNanos % NANO_IN_SECONDS);
-
-                return new SqlDaySecondInterval(newValue, newNanos);
-            }
-
-            default:
-                throw QueryException.error("Invalid type: " + resultType);
         }
     }
 

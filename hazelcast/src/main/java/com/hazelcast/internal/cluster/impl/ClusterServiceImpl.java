@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.cluster.impl;
 
+import com.hazelcast.auditlog.AuditlogTypeIds;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.cluster.InitialMembershipEvent;
@@ -400,7 +401,12 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
             membershipManager.updateMembers(membersView);
             clusterHeartbeatManager.heartbeat();
             setJoined(true);
-
+            node.getNodeExtension().getAuditlogService()
+                .eventBuilder(AuditlogTypeIds.CLUSTER_MEMBER_ADDED)
+                .message("Member joined")
+                .addParameter("membersView", membersView)
+                .addParameter("address", node.getThisAddress())
+                .log();
             return true;
         } finally {
             lock.unlock();
@@ -876,6 +882,9 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
             changeClusterState(ClusterState.PASSIVE, options, true);
         }
 
+        node.getNodeExtension().getAuditlogService().eventBuilder(AuditlogTypeIds.CLUSTER_SHUTDOWN)
+            .message("Shutting down the cluster")
+            .log();
         long timeoutNanos = node.getProperties().getNanos(ClusterProperty.CLUSTER_SHUTDOWN_TIMEOUT_SECONDS);
         long startNanos = Timer.nanos();
         node.getNodeExtension().getInternalHotRestartService()
@@ -990,7 +999,13 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
             }
 
             MemberImpl localMemberInMemberList = membershipManager.getMember(member.getAddress());
-            if (localMemberInMemberList.isLiteMember()) {
+            boolean result = localMemberInMemberList.isLiteMember();
+            node.getNodeExtension().getAuditlogService().eventBuilder(AuditlogTypeIds.CLUSTER_PROMOTE_MEMBER)
+                .message("Promotion of the lite member")
+                .addParameter("success", result)
+                .addParameter("address", node.getThisAddress())
+                .log();
+            if (result) {
                 throw new IllegalStateException("Cannot promote to data member! Previous master was: " + master.getAddress()
                         + ", Current master is: " + getMasterAddress());
             }

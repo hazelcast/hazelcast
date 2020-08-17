@@ -24,6 +24,7 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.sql.SqlErrorCode;
 import com.hazelcast.sql.impl.NodeServiceProviderImpl;
 import com.hazelcast.sql.impl.QueryId;
+import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.SqlInternalService;
 import com.hazelcast.sql.impl.SqlServiceImpl;
 import com.hazelcast.sql.impl.SqlTestSupport;
@@ -503,7 +504,7 @@ public class QueryOperationHandlerTest extends SqlTestSupport {
             Collections.emptyMap(),
             Collections.emptyMap(),
             null,
-            null,
+            QueryParameterMetadata.EMPTY,
             null,
             null,
             Collections.emptySet()
@@ -513,7 +514,8 @@ public class QueryOperationHandlerTest extends SqlTestSupport {
             initiatorId,
             timeout,
             plan,
-            null, null,
+            null,
+            null,
             new BlockingRootResultConsumer(),
             initiatorService.getOperationHandler()
         ).getQueryId();

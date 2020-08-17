@@ -25,7 +25,7 @@ import com.hazelcast.sql.impl.type.converter.Converter;
 /**
  * Implements evaluation of SQL CAST operator.
  */
-public class CastExpression<T> extends UniExpressionWithType<T> implements IdentifiedDataSerializable {
+public final class CastExpression<T> extends UniExpressionWithType<T> implements IdentifiedDataSerializable {
 
     public CastExpression() {
         // No-op.

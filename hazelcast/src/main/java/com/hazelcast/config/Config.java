@@ -178,6 +178,8 @@ public class Config {
 
     private SqlConfig sqlConfig = new SqlConfig();
 
+    private AuditlogConfig auditlogConfig = new AuditlogConfig();
+
     private MetricsConfig metricsConfig = new MetricsConfig();
 
     private InstanceTrackingConfig instanceTrackingConfig = new InstanceTrackingConfig();
@@ -2633,6 +2635,17 @@ public class Config {
         return this;
     }
 
+    @Nonnull
+    public AuditlogConfig getAuditlogConfig() {
+        return auditlogConfig;
+    }
+
+    @Nonnull
+    public Config setAuditlogConfig(@Nonnull AuditlogConfig auditlogConfig) {
+        this.auditlogConfig = checkNotNull(auditlogConfig, "auditlogConfig");
+        return this;
+    }
+
     /**
      * @return Return SQL config.
      */
@@ -2727,6 +2740,7 @@ public class Config {
                 + ", cpSubsystemConfig=" + cpSubsystemConfig
                 + ", sqlConfig=" + sqlConfig
                 + ", metricsConfig=" + metricsConfig
+                + ", auditlogConfig=" + auditlogConfig
                 + '}';
     }
 }

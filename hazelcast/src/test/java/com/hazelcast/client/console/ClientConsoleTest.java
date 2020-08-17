@@ -16,6 +16,8 @@
 
 package com.hazelcast.client.console;
 
+import static com.hazelcast.internal.util.StringUtil.LINE_SEPARATOR;
+import static com.hazelcast.internal.util.StringUtil.stringToBytes;
 import static com.hazelcast.test.AbstractHazelcastClassRunner.getTestMethodName;
 import static com.hazelcast.test.Accessors.getAddress;
 import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
@@ -27,7 +29,9 @@ import static org.junit.Assert.assertTrue;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Files;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -86,16 +90,43 @@ public class ClientConsoleTest {
         propertyClientConfig.setOrClearProperty(cfgFile.getAbsolutePath());
         assertTrue(hz.getClientService().getConnectedClients().isEmpty());
 
-        ExecutorService tp = Executors.newFixedThreadPool(1);
+        ExecutorService tp = Executors.newFixedThreadPool(1, r -> new Thread(r, "consoleAppTestThread"));
+        InputStream origIn = System.in;
         try {
+            LineEndingsInputStream bqIn = new LineEndingsInputStream();
+            System.setIn(bqIn);
             tp.execute(() -> ClientConsoleApp.main(null));
             assertTrueEventually(() -> assertFalse(hz.getClientService().getConnectedClients().isEmpty()));
             HazelcastInstance client = HazelcastClient.getHazelcastClientByName("clientConsoleApp");
             assertNotNull(client);
             client.shutdown();
+            bqIn.unblock();
         } finally {
+            System.setIn(origIn);
             HazelcastClient.shutdownAll();
             tp.shutdown();
+        }
+    }
+
+    static class LineEndingsInputStream extends InputStream {
+
+        private static final byte[] NEWLINE_BYTES = stringToBytes(LINE_SEPARATOR);
+        private final CountDownLatch latch = new CountDownLatch(1);
+        private volatile int pos = NEWLINE_BYTES.length - 1;
+
+        @Override
+        public int read() throws IOException {
+            try {
+                latch.await();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            pos = (pos + 1) % NEWLINE_BYTES.length;
+            return NEWLINE_BYTES[pos];
+        }
+
+        public void unblock() {
+            latch.countDown();
         }
     }
 }

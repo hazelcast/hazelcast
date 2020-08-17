@@ -18,9 +18,12 @@ package com.hazelcast.sql.impl.expression.math;
 
 import com.hazelcast.sql.SqlErrorCode;
 import com.hazelcast.sql.impl.QueryException;
+import com.hazelcast.sql.impl.SqlDataSerializerHook;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastReturnTypes;
+import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.ExpressionTestBase;
-import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.sql.impl.expression.SimpleExpressionEvalContext;
+import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.apache.calcite.rel.type.RelDataType;
@@ -34,16 +37,48 @@ import java.math.BigDecimal;
 import static com.hazelcast.sql.impl.calcite.validate.HazelcastSqlOperatorTable.DIVIDE;
 import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastIntegerType.canOverflow;
 import static com.hazelcast.sql.impl.expression.math.ExpressionMath.DECIMAL_MATH_CONTEXT;
+import static com.hazelcast.sql.impl.type.QueryDataType.BIGINT;
+import static com.hazelcast.sql.impl.type.QueryDataType.INT;
 import static org.apache.calcite.sql.type.SqlTypeName.NULL;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-@RunWith(HazelcastSerialClassRunner.class)
+@RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class DivideTest extends ExpressionTestBase {
 
     @Test
     public void verify() {
         verify(DIVIDE, DivideTest::expectedTypes, DivideTest::expectedValues, ALL, ALL);
+    }
+
+    @Test
+    public void testCreationAndEval() {
+        DivideFunction<?> expression =
+                DivideFunction.create(ConstantExpression.create(3, INT), ConstantExpression.create(2, INT), INT);
+        assertEquals(INT, expression.getType());
+        assertEquals(1, expression.eval(row("foo"), SimpleExpressionEvalContext.create()));
+    }
+
+    @Test
+    public void testEquality() {
+        checkEquals(DivideFunction.create(ConstantExpression.create(3, INT), ConstantExpression.create(2, INT), INT),
+                DivideFunction.create(ConstantExpression.create(3, INT), ConstantExpression.create(2, INT), INT), true);
+
+        checkEquals(DivideFunction.create(ConstantExpression.create(3, INT), ConstantExpression.create(2, INT), INT),
+                DivideFunction.create(ConstantExpression.create(3, INT), ConstantExpression.create(2, INT), BIGINT), false);
+
+        checkEquals(DivideFunction.create(ConstantExpression.create(3, INT), ConstantExpression.create(2, INT), INT),
+                DivideFunction.create(ConstantExpression.create(3, INT), ConstantExpression.create(100, INT), INT), false);
+    }
+
+    @Test
+    public void testSerialization() {
+        DivideFunction<?> original =
+                DivideFunction.create(ConstantExpression.create(3, INT), ConstantExpression.create(2, INT), INT);
+        DivideFunction<?> restored = serializeAndCheck(original, SqlDataSerializerHook.EXPRESSION_DIVIDE);
+
+        checkEquals(original, restored, true);
     }
 
     private static RelDataType[] expectedTypes(Operand[] operands) {

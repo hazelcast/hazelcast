@@ -1360,6 +1360,7 @@
                         <xs:element name="metrics" type="metrics" minOccurs="0" maxOccurs="1"/>
                         <xs:element name="instance-tracking" type="instance-tracking" minOccurs="0" maxOccurs="1"/>
                         <xs:element name="sql" type="sql" minOccurs="0" maxOccurs="1"/>
+                        <xs:element name="auditlog" type="auditlog" minOccurs="0" maxOccurs="1"/>
                     </xs:choice>
                 </xs:extension>
             </xs:complexContent>
@@ -5180,4 +5181,11 @@
         <xs:attributeGroup ref="class-or-bean-name"/>
     </xs:complexType>
 
+    <xs:complexType name="auditlog">
+        <xs:sequence>
+            <xs:element name="properties" type="properties" minOccurs="0" maxOccurs="1"/>
+        </xs:sequence>
+        <xs:attribute name="enabled" default="false" type="xs:string"/>
+        <xs:attribute name="factory-class-name" type="xs:string" use="optional"/>
+    </xs:complexType>
 </xs:schema>

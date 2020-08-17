@@ -25,12 +25,15 @@ import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlLiteral;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.SqlUtil;
+import org.apache.calcite.sql.type.SqlTypeName;
 
 import java.math.BigDecimal;
 
+import static org.apache.calcite.sql.type.SqlTypeName.APPROX_TYPES;
 import static org.apache.calcite.sql.type.SqlTypeName.CHAR_TYPES;
 import static org.apache.calcite.sql.type.SqlTypeName.DECIMAL;
-import static org.apache.calcite.sql.type.SqlTypeName.NUMERIC_TYPES;
+import static org.apache.calcite.sql.type.SqlTypeName.DOUBLE;
+import static org.apache.calcite.sql.type.SqlTypeName.EXACT_TYPES;
 import static org.apache.calcite.util.Static.RESOURCE;
 
 /**
@@ -42,7 +45,7 @@ public final class SqlNodeUtil {
     }
 
     /**
-     * @return {@code true} if the given node is a {@link SqlDynamicParam
+     * @return {@code true} if the given node is a {@linkplain SqlDynamicParam
      * dynamic parameter}, {@code false} otherwise.
      */
     public static boolean isParameter(SqlNode node) {
@@ -50,7 +53,7 @@ public final class SqlNodeUtil {
     }
 
     /**
-     * @return {@code true} if the given node is a {@link SqlLiteral literal},
+     * @return {@code true} if the given node is a {@linkplain SqlLiteral literal},
      * {@code false} otherwise.
      */
     public static boolean isLiteral(SqlNode node) {
@@ -59,8 +62,12 @@ public final class SqlNodeUtil {
 
     /**
      * Obtains a numeric value of the given node if it's a numeric or string
-     * {@link SqlLiteral literal}.
+     * {@linkplain SqlLiteral literal}.
      * <p>
+     * If the literal represents an exact value (see {@link
+     * SqlTypeName#EXACT_TYPES}), the obtained numeric value is {@link BigDecimal}.
+     * Otherwise, if the literal represents an approximate value (see {@link
+     * SqlTypeName#APPROX_TYPES}), the obtained numeric value is {@link Double}.
      *
      * @param node the node to obtain the numeric value of.
      * @return the obtained numeric value or {@code null} if the given node is
@@ -69,23 +76,43 @@ public final class SqlNodeUtil {
      *                                 that doesn't have a valid numeric
      *                                 representation.
      */
-    public static BigDecimal numericValue(SqlNode node) {
+    public static Number numericValue(SqlNode node) {
         if (node.getKind() != SqlKind.LITERAL) {
             return null;
         }
 
         SqlLiteral literal = (SqlLiteral) node;
+        SqlTypeName typeName = literal.getTypeName();
 
-        if (CHAR_TYPES.contains(literal.getTypeName())) {
-            try {
-                return StringConverter.INSTANCE.asDecimal(literal.getValueAs(String.class));
-            } catch (QueryException e) {
-                assert e.getCode() == SqlErrorCode.DATA_EXCEPTION;
-                throw SqlUtil.newContextException(literal.getParserPosition(),
-                        RESOURCE.invalidLiteral(literal.toString(), DECIMAL.getName()));
+        if (CHAR_TYPES.contains(typeName)) {
+            String value = literal.getValueAs(String.class);
+            if (value == null) {
+                return null;
             }
+
+            if (value.contains("e") || value.contains("E")) {
+                // floating point approximate scientific notation
+                try {
+                    return StringConverter.INSTANCE.asDouble(value);
+                } catch (QueryException e) {
+                    assert e.getCode() == SqlErrorCode.DATA_EXCEPTION;
+                    throw SqlUtil.newContextException(literal.getParserPosition(),
+                            RESOURCE.invalidLiteral(literal.toString(), DOUBLE.getName()));
+                }
+            } else {
+                // floating point exact doted notation or integer
+                try {
+                    return StringConverter.INSTANCE.asDecimal(value);
+                } catch (QueryException e) {
+                    assert e.getCode() == SqlErrorCode.DATA_EXCEPTION;
+                    throw SqlUtil.newContextException(literal.getParserPosition(),
+                            RESOURCE.invalidLiteral(literal.toString(), DECIMAL.getName()));
+                }
+            }
+        } else if (APPROX_TYPES.contains(typeName)) {
+            return literal.getValueAs(Double.class);
         } else {
-            return NUMERIC_TYPES.contains(literal.getTypeName()) ? literal.getValueAs(BigDecimal.class) : null;
+            return EXACT_TYPES.contains(typeName) ? literal.getValueAs(BigDecimal.class) : null;
         }
     }
 

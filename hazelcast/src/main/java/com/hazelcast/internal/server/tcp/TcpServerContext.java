@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.server.tcp;
 
+import com.hazelcast.auditlog.AuditlogService;
 import com.hazelcast.client.impl.ClientEngine;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.config.AdvancedNetworkConfig;
@@ -31,7 +32,6 @@ import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.instance.impl.NodeState;
 import com.hazelcast.internal.ascii.TextCommandService;
-import com.hazelcast.internal.auditlog.AuditlogService;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.networking.InboundHandler;

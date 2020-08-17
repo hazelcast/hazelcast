@@ -82,7 +82,7 @@ import java.math.BigDecimal;
 import java.util.Calendar;
 
 /**
- * Provides utility methods for REX to expression conversion.
+ * Utility methods for REX to Hazelcast expression conversion.
  */
 public final class RexToExpression {
 
@@ -94,20 +94,122 @@ public final class RexToExpression {
     }
 
     /**
+     * Converts the given REX literal to runtime {@link ConstantExpression
+     * constant expression}.
+     *
+     * @param literal the literal to convert.
+     * @return the resulting constant expression.
+     */
+    @SuppressWarnings({"checkstyle:CyclomaticComplexity", "checkstyle:ReturnCount"})
+    public static Expression<?> convertLiteral(RexLiteral literal) {
+        SqlTypeName type = literal.getType().getSqlTypeName();
+
+        switch (type) {
+            case BOOLEAN:
+                return convertBooleanLiteral(literal, type);
+
+            case TINYINT:
+            case SMALLINT:
+            case INTEGER:
+            case BIGINT:
+            case DECIMAL:
+            case REAL:
+            case FLOAT:
+            case DOUBLE:
+                return convertNumericLiteral(literal, type);
+
+            case CHAR:
+            case VARCHAR:
+                return convertStringLiteral(literal, type);
+
+            case NULL:
+                return ConstantExpression.create(null, QueryDataType.NULL);
+
+            case ANY:
+                // currently, the only possible literal of ANY type is NULL
+                assert literal.getValueAs(Object.class) == null;
+                return ConstantExpression.create(null, QueryDataType.OBJECT);
+
+            case DATE:
+            case TIME:
+            case TIME_WITH_LOCAL_TIME_ZONE:
+            case TIMESTAMP:
+            case TIMESTAMP_WITH_LOCAL_TIME_ZONE:
+                return convertTemporalLiteral(literal, type);
+
+            case INTERVAL_YEAR:
+            case INTERVAL_MONTH:
+            case INTERVAL_YEAR_MONTH:
+                return convertIntervalYearMonthLiteral(literal, type);
+
+            case INTERVAL_DAY:
+            case INTERVAL_DAY_HOUR:
+            case INTERVAL_DAY_MINUTE:
+            case INTERVAL_DAY_SECOND:
+            case INTERVAL_HOUR:
+            case INTERVAL_HOUR_MINUTE:
+            case INTERVAL_HOUR_SECOND:
+            case INTERVAL_MINUTE:
+            case INTERVAL_MINUTE_SECOND:
+            case INTERVAL_SECOND:
+                return convertIntervalDaySecondLiteral(literal, type);
+
+            case SYMBOL:
+                return convertSymbolLiteral(literal);
+
+            default:
+                throw QueryException.error("Unsupported literal: " + literal);
+        }
+    }
+
+    /**
      * Converts a {@link RexCall} to {@link Expression}.
      *
      * @param call the call to convert.
      * @return the resulting expression.
      * @throws QueryException if the given {@link RexCall} can't be
-     *                               converted.
+     *                        converted.
      */
-    @SuppressWarnings({"checkstyle:CyclomaticComplexity", "checkstyle:MethodLength", "checkstyle:ReturnCount",
-            "checkstyle:NPathComplexity"})
+    @SuppressWarnings({"checkstyle:CyclomaticComplexity", "checkstyle:MethodLength", "checkstyle:NPathComplexity",
+            "checkstyle:ReturnCount"})
     public static Expression<?> convertCall(RexCall call, Expression<?>[] operands) {
         SqlOperator operator = call.getOperator();
         QueryDataType resultType = SqlToQueryType.map(call.getType().getSqlTypeName());
 
         switch (operator.getKind()) {
+            case CAST:
+                if (operands[0].getType().equals(resultType)) {
+                    // It might happen that two types Calcite considers different
+                    // are mapped to the same Hazelcast type. For instance, to
+                    // preserve the row signature, Calcite may insert synthetic
+                    // casts from a non-nullable type to the same nullable type.
+                    // Technically, such casts are not 100% valid SQL construct
+                    // since casts can't change the nullability of the operand
+                    // being casted, but they are valid on the RexNode level.
+                    //
+                    // Consider nullableBooleanColumn OR TRUE, the type of this
+                    // expression is nullable BOOLEAN. When Calcite simplifies it
+                    // to TRUE, the type changes to non-nullable BOOLEAN since
+                    // literals are non-nullable (except NULL literal itself).
+                    // That changes the row signature, to preserve it Calcite
+                    // synthetically casts TRUE to a nullable BOOLEAN.
+                    //
+                    // Currently, all Hazelcast types are nullable, therefore
+                    // there is no distinction between non-nullable types and
+                    // nullable ones after the conversion.
+                    return operands[0];
+                }
+                return CastExpression.create(operands[0], resultType);
+
+            case AND:
+                return AndPredicate.create(operands);
+
+            case OR:
+                return OrPredicate.create(operands);
+
+            case NOT:
+                return NotPredicate.create(operands[0]);
+
             case PLUS:
                 return PlusFunction.create(operands[0], operands[1], resultType);
 
@@ -120,11 +222,53 @@ public final class RexToExpression {
             case DIVIDE:
                 return DivideFunction.create(operands[0], operands[1], resultType);
 
+            case MINUS_PREFIX:
+                return UnaryMinusFunction.create(operands[0], resultType);
+
+            case PLUS_PREFIX:
+                return operands[0];
+
+            case EQUALS:
+                return ComparisonPredicate.create(operands[0], operands[1], ComparisonMode.EQUALS);
+
+            case NOT_EQUALS:
+                return ComparisonPredicate.create(operands[0], operands[1], ComparisonMode.NOT_EQUALS);
+
+            case GREATER_THAN:
+                return ComparisonPredicate.create(operands[0], operands[1], ComparisonMode.GREATER_THAN);
+
+            case GREATER_THAN_OR_EQUAL:
+                return ComparisonPredicate.create(operands[0], operands[1], ComparisonMode.GREATER_THAN_OR_EQUAL);
+
+            case LESS_THAN:
+                return ComparisonPredicate.create(operands[0], operands[1], ComparisonMode.LESS_THAN);
+
+            case LESS_THAN_OR_EQUAL:
+                return ComparisonPredicate.create(operands[0], operands[1], ComparisonMode.LESS_THAN_OR_EQUAL);
+
+            case IS_TRUE:
+                return IsTruePredicate.create(operands[0]);
+
+            case IS_NOT_TRUE:
+                return IsNotTruePredicate.create(operands[0]);
+
+            case IS_FALSE:
+                return IsFalsePredicate.create(operands[0]);
+
+            case IS_NOT_FALSE:
+                return IsNotFalsePredicate.create(operands[0]);
+
+            case IS_NULL:
+                return IsNullPredicate.create(operands[0]);
+
+            case IS_NOT_NULL:
+                return IsNotNullPredicate.create(operands[0]);
+
             case MOD:
                 return RemainderFunction.create(operands[0], operands[1]);
 
-            case MINUS_PREFIX:
-                return UnaryMinusFunction.create(operands[0], resultType);
+            case CASE:
+                return CaseExpression.create(operands, resultType);
 
             case FLOOR:
                 return FloorCeilFunction.create(operands[0], false);
@@ -151,60 +295,9 @@ public final class RexToExpression {
                 // TODO
                 return null;
 
-            case IS_NULL:
-                return IsNullPredicate.create(operands[0]);
-
-            case IS_NOT_NULL:
-                return IsNotNullPredicate.create(operands[0]);
-
-            case IS_FALSE:
-                return IsFalsePredicate.create(operands[0]);
-
-            case IS_NOT_FALSE:
-                return IsNotFalsePredicate.create(operands[0]);
-
-            case IS_TRUE:
-                return IsTruePredicate.create(operands[0]);
-
-            case IS_NOT_TRUE:
-                return IsNotTruePredicate.create(operands[0]);
-
-            case AND:
-                return AndPredicate.create(operands);
-
-            case OR:
-                return OrPredicate.create(operands);
-
-            case NOT:
-                return NotPredicate.create(operands[0]);
-
-            case EQUALS:
-                return ComparisonPredicate.create(operands[0], operands[1], ComparisonMode.EQUALS);
-
-            case NOT_EQUALS:
-                return ComparisonPredicate.create(operands[0], operands[1], ComparisonMode.NOT_EQUALS);
-
-            case GREATER_THAN:
-                return ComparisonPredicate.create(operands[0], operands[1], ComparisonMode.GREATER_THAN);
-
-            case GREATER_THAN_OR_EQUAL:
-                return ComparisonPredicate.create(operands[0], operands[1], ComparisonMode.GREATER_THAN_OR_EQUAL);
-
-            case LESS_THAN:
-                return ComparisonPredicate.create(operands[0], operands[1], ComparisonMode.LESS_THAN);
-
-            case LESS_THAN_OR_EQUAL:
-                return ComparisonPredicate.create(operands[0], operands[1], ComparisonMode.LESS_THAN_OR_EQUAL);
-
-            case CASE:
-                return CaseExpression.create(operands, resultType);
-
             case LIKE:
                 Expression<?> escape = operands.length == 2 ? null : operands[2];
                 return LikeFunction.create(operands[0], operands[1], escape);
-
-            case CAST:
-                return CastExpression.create(operands[0], resultType);
 
             case OTHER_FUNCTION:
                 SqlFunction function = (SqlFunction) operator;
@@ -295,79 +388,15 @@ public final class RexToExpression {
         throw QueryException.error("Unsupported operator: " + operator);
     }
 
-    /**
-     * Convert literal to simple object.
-     *
-     * @param literal Literal.
-     * @return Object.
-     */
-    @SuppressWarnings("checkstyle:CyclomaticComplexity")
-    public static Expression<?> convertLiteral(RexLiteral literal) {
-        SqlTypeName type = literal.getType().getSqlTypeName();
-
-        switch (type) {
-            case BOOLEAN:
-            case TINYINT:
-            case SMALLINT:
-            case INTEGER:
-            case BIGINT:
-            case DECIMAL:
-            case REAL:
-            case FLOAT:
-            case DOUBLE:
-                return convertNumericLiteral(literal, type);
-
-            case CHAR:
-            case VARCHAR:
-                return convertStringLiteral(literal, type);
-
-            case DATE:
-            case TIME:
-            case TIME_WITH_LOCAL_TIME_ZONE:
-            case TIMESTAMP:
-            case TIMESTAMP_WITH_LOCAL_TIME_ZONE:
-                return convertTemporalLiteral(literal, type);
-
-            case INTERVAL_YEAR:
-            case INTERVAL_MONTH:
-            case INTERVAL_YEAR_MONTH:
-                return convertIntervalYearMonthLiteral(literal, type);
-
-            case INTERVAL_DAY:
-            case INTERVAL_DAY_HOUR:
-            case INTERVAL_DAY_MINUTE:
-            case INTERVAL_DAY_SECOND:
-            case INTERVAL_HOUR:
-            case INTERVAL_HOUR_MINUTE:
-            case INTERVAL_HOUR_SECOND:
-            case INTERVAL_MINUTE:
-            case INTERVAL_MINUTE_SECOND:
-            case INTERVAL_SECOND:
-                return convertIntervalDaySecondLiteral(literal, type);
-
-            case SYMBOL:
-                return convertSymbolLiteral(literal);
-
-            case NULL:
-                return ConstantExpression.create(null, QueryDataType.NULL);
-
-            case ANY:
-                // currently, the only possible literal of ANY type is NULL
-                assert literal.getValueAs(Object.class) == null;
-                return ConstantExpression.create(null, QueryDataType.OBJECT);
-
-            default:
-                throw QueryException.error("Unsupported literal: " + literal);
-        }
+    private static Expression<?> convertBooleanLiteral(RexLiteral literal, SqlTypeName type) {
+        assert type == SqlTypeName.BOOLEAN;
+        Boolean value = literal.getValueAs(Boolean.class);
+        return ConstantExpression.create(value, SqlToQueryType.map(type));
     }
 
     private static Expression<?> convertNumericLiteral(RexLiteral literal, SqlTypeName type) {
         Object value;
         switch (type) {
-            case BOOLEAN:
-                value = literal.getValueAs(Boolean.class);
-                break;
-
             case TINYINT:
                 value = literal.getValueAs(Byte.class);
                 break;
@@ -381,7 +410,10 @@ public final class RexToExpression {
                 break;
 
             case BIGINT:
-                value = literal.getValueAs(Long.class);
+                // XXX: Calcite returns unscaled value of the internally stored
+                // BigDecimal if a long value is requested on the literal.
+                BigDecimal decimalValue = literal.getValueAs(BigDecimal.class);
+                value = decimalValue == null ? null : decimalValue.longValue();
                 break;
 
             case DECIMAL:
@@ -392,7 +424,6 @@ public final class RexToExpression {
                 value = literal.getValueAs(Float.class);
                 break;
 
-            case FLOAT:
             case DOUBLE:
                 value = literal.getValueAs(Double.class);
                 break;
@@ -521,4 +552,5 @@ public final class RexToExpression {
 
         throw QueryException.error("Unsupported literal symbol: " + literal);
     }
+
 }

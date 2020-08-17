@@ -45,7 +45,7 @@ public final class BigIntegerConverter extends AbstractDecimalConverter {
         try {
             return casted.byteValueExact();
         } catch (ArithmeticException e) {
-            throw cannotConvert(QueryDataTypeFamily.TINYINT, val);
+            throw numericOverflow(QueryDataTypeFamily.TINYINT, val);
         }
     }
 
@@ -55,7 +55,7 @@ public final class BigIntegerConverter extends AbstractDecimalConverter {
         try {
             return casted.shortValueExact();
         } catch (ArithmeticException e) {
-            throw cannotConvert(QueryDataTypeFamily.SMALLINT, val);
+            throw numericOverflow(QueryDataTypeFamily.SMALLINT, val);
         }
     }
 
@@ -65,7 +65,7 @@ public final class BigIntegerConverter extends AbstractDecimalConverter {
         try {
             return casted.intValueExact();
         } catch (ArithmeticException e) {
-            throw cannotConvert(QueryDataTypeFamily.INT, val);
+            throw numericOverflow(QueryDataTypeFamily.INT, val);
         }
     }
 
@@ -75,7 +75,7 @@ public final class BigIntegerConverter extends AbstractDecimalConverter {
         try {
             return casted.longValueExact();
         } catch (ArithmeticException e) {
-            throw cannotConvert(QueryDataTypeFamily.BIGINT, val);
+            throw numericOverflow(QueryDataTypeFamily.BIGINT, val);
         }
     }
 

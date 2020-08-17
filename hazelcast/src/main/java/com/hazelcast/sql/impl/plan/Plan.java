@@ -20,10 +20,10 @@ import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.sql.SqlRowMetadata;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.explain.QueryExplain;
-import com.hazelcast.sql.impl.plan.cache.CachedPlan;
+import com.hazelcast.sql.impl.plan.cache.CacheablePlan;
 import com.hazelcast.sql.impl.plan.cache.PlanCacheKey;
 import com.hazelcast.sql.impl.plan.cache.PlanCheckContext;
-import com.hazelcast.sql.impl.plan.cache.PlanObjectId;
+import com.hazelcast.sql.impl.plan.cache.PlanObjectKey;
 import com.hazelcast.sql.impl.plan.node.PlanNode;
 
 import java.util.Collection;
@@ -35,10 +35,11 @@ import java.util.UUID;
 /**
  * Query plan implementation.
  */
-public class Plan implements CachedPlan {
+public class Plan implements CacheablePlan {
     /** Time when the plan was used for the last time. */
     private volatile long planLastUsed;
 
+    /** Key used for plan cache. */
     private final PlanCacheKey planKey;
 
     /** Partition mapping. */
@@ -59,12 +60,12 @@ public class Plan implements CachedPlan {
     /** Map from inbound edge ID to number of members which will write into it. */
     private final Map<Integer, Integer> inboundEdgeMemberCountMap;
 
-    private final QueryParameterMetadata parameterMetadata;
     private final SqlRowMetadata rowMetadata;
+    private final QueryParameterMetadata parameterMetadata;
     private final QueryExplain explain;
 
     /** IDs of objects used in the plan. */
-    private final Set<PlanObjectId> objectIds;
+    private final Set<PlanObjectKey> objectIds;
 
     @SuppressWarnings("checkstyle:ParameterNumber")
     public Plan(
@@ -74,11 +75,11 @@ public class Plan implements CachedPlan {
         Map<Integer, Integer> outboundEdgeMap,
         Map<Integer, Integer> inboundEdgeMap,
         Map<Integer, Integer> inboundEdgeMemberCountMap,
-        QueryParameterMetadata parameterMetadata,
         SqlRowMetadata rowMetadata,
+        QueryParameterMetadata parameterMetadata,
         PlanCacheKey planKey,
         QueryExplain explain,
-        Set<PlanObjectId> objectIds
+        Set<PlanObjectKey> objectIds
     ) {
         this.partMap = partMap;
         this.fragments = fragments;
@@ -86,8 +87,8 @@ public class Plan implements CachedPlan {
         this.outboundEdgeMap = outboundEdgeMap;
         this.inboundEdgeMap = inboundEdgeMap;
         this.inboundEdgeMemberCountMap = inboundEdgeMemberCountMap;
-        this.parameterMetadata = parameterMetadata;
         this.rowMetadata = rowMetadata;
+        this.parameterMetadata = parameterMetadata;
         this.planKey = planKey;
         this.explain = explain;
         this.objectIds = objectIds;

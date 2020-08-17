@@ -16,10 +16,13 @@
 
 package com.hazelcast.instance.impl;
 
+import com.hazelcast.auditlog.AuditlogService;
+import com.hazelcast.auditlog.impl.NoOpAuditlogService;
 import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.client.impl.ClusterViewListenerService;
 import com.hazelcast.cluster.ClusterState;
+import com.hazelcast.config.AuditlogConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.HotRestartPersistenceConfig;
 import com.hazelcast.config.InstanceTrackingConfig;
@@ -39,8 +42,6 @@ import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.internal.ascii.TextCommandService;
 import com.hazelcast.internal.ascii.TextCommandServiceImpl;
-import com.hazelcast.internal.auditlog.AuditlogService;
-import com.hazelcast.internal.auditlog.impl.NoOpAuditlogService;
 import com.hazelcast.internal.cluster.ClusterStateListener;
 import com.hazelcast.internal.cluster.ClusterVersionListener;
 import com.hazelcast.internal.cluster.impl.JoinMessage;
@@ -174,6 +175,12 @@ public class DefaultNodeExtension implements NodeExtension {
         if (symmetricEncryptionConfig != null && symmetricEncryptionConfig.isEnabled()) {
             if (!BuildInfoProvider.getBuildInfo().isEnterprise()) {
                 throw new IllegalStateException("Symmetric Encryption requires Hazelcast Enterprise Edition");
+            }
+        }
+        AuditlogConfig auditlogConfig = node.getConfig().getAuditlogConfig();
+        if (auditlogConfig != null && auditlogConfig.isEnabled()) {
+            if (!BuildInfoProvider.getBuildInfo().isEnterprise()) {
+                throw new IllegalStateException("Auditlog requires Hazelcast Enterprise Edition");
             }
         }
     }

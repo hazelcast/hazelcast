@@ -40,7 +40,9 @@ public class HazelcastSqlBinaryOperator extends SqlBinaryOperator {
 
     @Override
     public SqlMonotonicity getMonotonicity(SqlOperatorBinding call) {
-        if (call.isOperandNull(0, true) || call.isOperandNull(1, true)) {
+        // XXX: super method does the same, but doesn't consider NULLs to be
+        // producing results with the constant monotonicity.
+        if (getName().equals("/") && (call.isOperandNull(0, true) || call.isOperandNull(1, true))) {
             return SqlMonotonicity.CONSTANT;
         }
 

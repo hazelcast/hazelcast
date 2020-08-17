@@ -27,7 +27,7 @@ import com.hazelcast.sql.impl.type.QueryDataType;
 /**
  * Implements evaluation of SQL OR predicate.
  */
-public class OrPredicate extends VariExpression<Boolean> implements IdentifiedDataSerializable {
+public final class OrPredicate extends VariExpression<Boolean> implements IdentifiedDataSerializable {
 
     public OrPredicate() {
         // No-op.

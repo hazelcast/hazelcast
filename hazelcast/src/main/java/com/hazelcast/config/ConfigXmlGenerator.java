@@ -169,6 +169,7 @@ public class ConfigXmlGenerator {
         metricsConfig(gen, config);
         instanceTrackingConfig(gen, config);
         sqlConfig(gen, config);
+        factoryWithPropertiesXmlGenerator(gen, "auditlog", config.getAuditlogConfig());
         userCodeDeploymentConfig(gen, config);
 
         xml.append("</hazelcast>");
@@ -1343,10 +1344,13 @@ public class ConfigXmlGenerator {
     }
 
     private void sslConfigXmlGenerator(XmlGenerator gen, SSLConfig ssl) {
-        gen.open("ssl", "enabled", ssl != null && ssl.isEnabled());
         if (ssl != null) {
-            Properties props = new Properties();
-            props.putAll(ssl.getProperties());
+            ssl = new SSLConfig(ssl);
+            String factoryClassName = classNameOrImplClass(ssl.getFactoryClassName(), ssl.getFactoryImplementation());
+            if (factoryClassName != null) {
+                ssl.setFactoryClassName(factoryClassName);
+            }
+            Properties props = ssl.getProperties();
 
             if (maskSensitiveFields && props.containsKey("trustStorePassword")) {
                 props.setProperty("trustStorePassword", MASK_FOR_SENSITIVE_DATA);
@@ -1355,10 +1359,17 @@ public class ConfigXmlGenerator {
             if (maskSensitiveFields && props.containsKey("keyStorePassword")) {
                 props.setProperty("keyStorePassword", MASK_FOR_SENSITIVE_DATA);
             }
+        }
 
-            gen.node("factory-class-name",
-                    classNameOrImplClass(ssl.getFactoryClassName(), ssl.getFactoryImplementation()))
-                    .appendProperties(props);
+        factoryWithPropertiesXmlGenerator(gen, "ssl", ssl);
+    }
+
+    protected void factoryWithPropertiesXmlGenerator(XmlGenerator gen, String elementName,
+            AbstractFactoryWithPropertiesConfig<?> factoryWithProps) {
+        gen.open(elementName, "enabled", factoryWithProps != null && factoryWithProps.isEnabled());
+        if (factoryWithProps != null) {
+            gen.node("factory-class-name", factoryWithProps.getFactoryClassName())
+                    .appendProperties(factoryWithProps.getProperties());
         }
         gen.close();
     }

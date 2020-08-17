@@ -20,7 +20,7 @@ then
     exit 1
 fi
 
-	echo "Path to Java : $RUN_JAVA"
+echo "Path to Java : $RUN_JAVA"
 
 #### you can enable following variables by uncommenting them
 
@@ -30,13 +30,17 @@ fi
 #### maximum heap size
 # MAX_HEAP_SIZE=1G
 
-
 if [ "x$MIN_HEAP_SIZE" != "x" ]; then
 	JAVA_OPTS="$JAVA_OPTS -Xms${MIN_HEAP_SIZE}"
 fi
 
 if [ "x$MAX_HEAP_SIZE" != "x" ]; then
 	JAVA_OPTS="$JAVA_OPTS -Xmx${MAX_HEAP_SIZE}"
+fi
+
+JAVA_VERSION=$("$RUN_JAVA" -cp "$HAZELCAST_HOME/lib/hazelcast-all-${project.version}.jar" com.hazelcast.internal.util.JavaVersion)
+if [ "$JAVA_VERSION" -gt "8" ]; then
+	JAVA_OPTS="$JAVA_OPTS --add-modules java.se --add-exports java.base/jdk.internal.ref=ALL-UNNAMED --add-opens java.base/java.lang=ALL-UNNAMED --add-opens java.base/java.nio=ALL-UNNAMED --add-opens java.base/sun.nio.ch=ALL-UNNAMED --add-opens java.management/sun.management=ALL-UNNAMED --add-opens jdk.management/com.sun.management.internal=ALL-UNNAMED"
 fi
 
 export CLASSPATH="$HAZELCAST_HOME/lib/hazelcast-all-${project.version}.jar:$HAZELCAST_HOME/user-lib:$HAZELCAST_HOME/user-lib/*"

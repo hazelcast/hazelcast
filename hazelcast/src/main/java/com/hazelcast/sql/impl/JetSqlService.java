@@ -37,4 +37,9 @@ public interface JetSqlService {
      * Execute the SqlPlan.
      */
     SqlResult execute(SqlPlan plan, List<Object> params, long timeout, int pageSize);
+
+    /**
+     * For tests: remove all the objects from the external catalog.
+     */
+    void clearCatalog();
 }

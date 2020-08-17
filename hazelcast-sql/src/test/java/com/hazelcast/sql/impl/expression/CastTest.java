@@ -18,11 +18,12 @@ package com.hazelcast.sql.impl.expression;
 
 import com.hazelcast.sql.SqlErrorCode;
 import com.hazelcast.sql.impl.QueryException;
+import com.hazelcast.sql.impl.SqlDataSerializerHook;
 import com.hazelcast.sql.impl.calcite.SqlToQueryType;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastIntegerType;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeSystem;
 import com.hazelcast.sql.impl.type.converter.Converter;
-import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.apache.calcite.rel.type.RelDataType;
@@ -30,18 +31,47 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.math.BigDecimal;
-
-import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeSystem.narrowestTypeFor;
 import static com.hazelcast.sql.impl.calcite.validate.HazelcastSqlOperatorTable.CAST;
+import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeSystem.narrowestTypeFor;
+import static com.hazelcast.sql.impl.type.QueryDataType.BIGINT;
+import static com.hazelcast.sql.impl.type.QueryDataType.DOUBLE;
+import static com.hazelcast.sql.impl.type.QueryDataType.INT;
+import static org.junit.Assert.assertEquals;
 
-@RunWith(HazelcastSerialClassRunner.class)
+@RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class CastTest extends ExpressionTestBase {
 
     @Test
     public void verify() {
         verify(CAST, CastTest::expectedTypes, CastTest::expectedValues, "CAST(%s AS %s)", ALL, TYPES);
+    }
+
+    @Test
+    public void testCreationAndEval() {
+        CastExpression<?> expression = CastExpression.create(ConstantExpression.create(1, INT), BIGINT);
+        assertEquals(BIGINT, expression.getType());
+        assertEquals(1L, expression.eval(row("foo"), SimpleExpressionEvalContext.create()));
+    }
+
+    @Test
+    public void testEquality() {
+        checkEquals(CastExpression.create(ConstantExpression.create(1, INT), BIGINT),
+                CastExpression.create(ConstantExpression.create(1, INT), BIGINT), true);
+
+        checkEquals(CastExpression.create(ConstantExpression.create(1, INT), BIGINT),
+                CastExpression.create(ConstantExpression.create(1, INT), DOUBLE), false);
+
+        checkEquals(CastExpression.create(ConstantExpression.create(1, INT), BIGINT),
+                CastExpression.create(ConstantExpression.create(2, INT), BIGINT), false);
+    }
+
+    @Test
+    public void testSerialization() {
+        CastExpression<?> original = CastExpression.create(ConstantExpression.create(1, INT), BIGINT);
+        CastExpression<?> restored = serializeAndCheck(original, SqlDataSerializerHook.EXPRESSION_CAST);
+
+        checkEquals(original, restored, true);
     }
 
     private static RelDataType[] expectedTypes(Operand[] operands) {
@@ -69,10 +99,9 @@ public class CastTest extends ExpressionTestBase {
 
         // Assign type to numeric literals.
 
-        BigDecimal numeric = operand.numericValue();
+        Number numeric = operand.numericValue();
 
         if (isNumeric(to) || isNumeric(from)) {
-            //noinspection NumberEquality
             if (numeric == INVALID_NUMERIC_VALUE) {
                 return null;
             }

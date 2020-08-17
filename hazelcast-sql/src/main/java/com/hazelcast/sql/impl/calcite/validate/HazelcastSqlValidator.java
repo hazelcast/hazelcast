@@ -21,7 +21,6 @@ import com.hazelcast.sql.impl.calcite.validate.types.HazelcastIntegerType;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeCoercion;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeFactory;
 import org.apache.calcite.rel.type.RelDataType;
-import org.apache.calcite.rel.type.RelDataTypeFactory;
 import org.apache.calcite.sql.SqlCall;
 import org.apache.calcite.sql.SqlIdentifier;
 import org.apache.calcite.sql.SqlKind;
@@ -42,9 +41,8 @@ import org.apache.calcite.sql.validate.SqlValidatorScope;
 import org.apache.calcite.sql.validate.SqlValidatorTable;
 import org.apache.calcite.util.Util;
 
-import java.math.BigDecimal;
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -59,7 +57,6 @@ import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeSystem.
 import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeSystem.typeName;
 import static org.apache.calcite.sql.type.SqlTypeName.CHAR;
 import static org.apache.calcite.sql.type.SqlTypeName.DECIMAL;
-import static org.apache.calcite.sql.type.SqlTypeName.DOUBLE;
 import static org.apache.calcite.sql.type.SqlTypeName.NULL;
 import static org.apache.calcite.sql.type.SqlTypeName.NUMERIC_TYPES;
 import static org.apache.calcite.sql.type.SqlTypeName.VARCHAR;
@@ -72,11 +69,20 @@ public class HazelcastSqlValidator extends SqlValidatorImpl {
 
     private static final Config CONFIG = Config.DEFAULT.withIdentifierExpansion(true);
 
-    private final Map<SqlNode, RelDataType> knownNodeTypes = new HashMap<>();
+    /**
+     * We manage an additional map of known node types on our own to workaround
+     * a bug in {@link SqlValidatorImpl#getValidatedNodeTypeIfKnown}: it's
+     * supposed to return {@code null} if a node type is unknown, but for
+     * rewritten expressions ({@code originalExprs}) it still invokes {@link
+     * SqlValidatorImpl#getValidatedNodeType} under the hood and that leads to
+     * exceptions for nodes with unknown types instead of the expected {@code
+     * null} result.
+     */
+    private final Map<SqlNode, RelDataType> knownNodeTypes = new IdentityHashMap<>();
 
     public HazelcastSqlValidator(
         SqlValidatorCatalogReader catalogReader,
-        RelDataTypeFactory typeFactory,
+        HazelcastTypeFactory typeFactory,
         SqlConformance conformance
     ) {
         this(null, catalogReader, typeFactory, conformance);
@@ -85,11 +91,10 @@ public class HazelcastSqlValidator extends SqlValidatorImpl {
     public HazelcastSqlValidator(
         SqlOperatorTable extensionOperatorTable,
         SqlValidatorCatalogReader catalogReader,
-        RelDataTypeFactory typeFactory,
+        HazelcastTypeFactory typeFactory,
         SqlConformance conformance
     ) {
         super(operatorTable(extensionOperatorTable), catalogReader, typeFactory, CONFIG.withSqlConformance(conformance));
-        assert typeFactory instanceof HazelcastTypeFactory;
         setTypeCoercion(new HazelcastTypeCoercion(this));
     }
 
@@ -107,7 +112,7 @@ public class HazelcastSqlValidator extends SqlValidatorImpl {
     }
 
     /**
-     * Sets a known type of the given node to the given type in this validator.
+     * Sets {@code type} as the known type for {@code node}.
      *
      * @param node the node to set the known type of.
      * @param type the type to set the know node type to.
@@ -202,7 +207,11 @@ public class HazelcastSqlValidator extends SqlValidatorImpl {
         SqlNode rewritten = super.performUnconditionalRewrites(node, underFrom);
 
         if (rewritten != null && rewritten.isA(SqlKind.TOP_LEVEL)) {
-            // rewrite operators to Hazelcast ones starting at every top node
+            // Rewrite operators to Hazelcast ones starting at every top node.
+            // For instance, SELECT a + b is rewritten to SELECT a + b, where
+            // the first '+' refers to the standard Calcite SqlStdOperatorTable.PLUS
+            // operator and the second '+' refers to HazelcastSqlOperatorTable.PLUS
+            // operator.
             rewritten.accept(HazelcastOperatorTableVisitor.INSTANCE);
         }
 
@@ -221,13 +230,6 @@ public class HazelcastSqlValidator extends SqlValidatorImpl {
             // Assign narrowest type to non-null integer literals.
 
             derived = HazelcastIntegerType.deriveLiteralType(literal);
-            setKnownAndValidatedNodeType(expression, derived);
-        } else if (typeName(derived) == DECIMAL) {
-            // Assign DOUBLE type to any standalone floating point literal: the
-            // exact type is inferred later from the context in which the literal
-            // appears.
-
-            derived = HazelcastTypeFactory.INSTANCE.createSqlType(DOUBLE);
             setKnownAndValidatedNodeType(expression, derived);
         }
 
@@ -267,7 +269,7 @@ public class HazelcastSqlValidator extends SqlValidatorImpl {
 
         // Assign type to numeric literals and validate them.
 
-        BigDecimal numeric = isNumeric(from) || isNumeric(to) ? numericValue(operand) : null;
+        Number numeric = isNumeric(from) || isNumeric(to) ? numericValue(operand) : null;
 
         if (numeric != null) {
             from = narrowestTypeFor(numeric, typeName(to));

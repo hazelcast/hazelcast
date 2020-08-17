@@ -27,17 +27,17 @@ import java.util.UUID;
  */
 public class PlanCheckContext {
     /** Unique IDs of resolved objects. */
-    private final Set<PlanObjectId> objectIds;
+    private final Set<PlanObjectKey> objectIds;
 
     /** Current distribution of partitions. */
     private final Map<UUID, PartitionIdSet> partitions;
 
-    public PlanCheckContext(Set<PlanObjectId> objectIds, Map<UUID, PartitionIdSet> partitions) {
+    public PlanCheckContext(Set<PlanObjectKey> objectIds, Map<UUID, PartitionIdSet> partitions) {
         this.objectIds = objectIds;
         this.partitions = partitions;
     }
 
-    public boolean isValid(Set<PlanObjectId> expectedObjectVersions, Map<UUID, PartitionIdSet> expectedPartitions) {
+    public boolean isValid(Set<PlanObjectKey> expectedObjectVersions, Map<UUID, PartitionIdSet> expectedPartitions) {
         // If some of objects used in the plan has changed, then the plan should be re-created.
         // Examples are index creation, map destroy, external object redefinition.
         if (!objectIds.containsAll(expectedObjectVersions)) {

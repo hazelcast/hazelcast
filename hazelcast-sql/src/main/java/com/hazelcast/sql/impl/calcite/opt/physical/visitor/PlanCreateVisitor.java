@@ -64,7 +64,7 @@ import com.hazelcast.sql.impl.partitioner.FieldsRowPartitioner;
 import com.hazelcast.sql.impl.plan.Plan;
 import com.hazelcast.sql.impl.plan.PlanFragmentMapping;
 import com.hazelcast.sql.impl.plan.cache.PlanCacheKey;
-import com.hazelcast.sql.impl.plan.cache.PlanObjectId;
+import com.hazelcast.sql.impl.plan.cache.PlanObjectKey;
 import com.hazelcast.sql.impl.plan.node.AggregatePlanNode;
 import com.hazelcast.sql.impl.plan.node.EmptyPlanNode;
 import com.hazelcast.sql.impl.plan.node.FetchOffsetPlanNodeFieldTypeProvider;
@@ -97,7 +97,6 @@ import org.apache.calcite.rel.core.AggregateCall;
 import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.sql.SqlAggFunction;
 
-import javax.annotation.Nullable;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -138,6 +137,7 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
     /** Original SQL. */
     private final String sql;
 
+    /** Key used for plan caching. */
     private final PlanCacheKey planKey;
 
     private final QueryParameterMetadata parameterMetadata;
@@ -170,7 +170,7 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
     private SqlRowMetadata rowMetadata;
 
     /** Collected IDs of objects used in the plan. */
-    private final Set<PlanObjectId> objectIds = new HashSet<>();
+    private final Set<PlanObjectKey> objectIds = new HashSet<>();
 
     /**
      * @param rootColumnNames Root column names. They are null when called from
@@ -182,16 +182,16 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
         Map<PhysicalRel, List<Integer>> relIdMap,
         String sql,
         PlanCacheKey planKey,
-        QueryParameterMetadata parameterMetadata,
-        @Nullable List<String> rootColumnNames
+        List<String> rootColumnNames,
+        QueryParameterMetadata parameterMetadata
     ) {
         this.localMemberId = localMemberId;
         this.partMap = partMap;
         this.relIdMap = relIdMap;
         this.sql = sql;
         this.planKey = planKey;
-        this.parameterMetadata = parameterMetadata;
         this.rootColumnNames = rootColumnNames;
+        this.parameterMetadata = parameterMetadata;
 
         memberIds = new HashSet<>(partMap.keySet());
     }
@@ -233,8 +233,8 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
             outboundEdgeMap,
             inboundEdgeMap,
             inboundEdgeMemberCountMap,
-            parameterMetadata,
             rowMetadata,
+            parameterMetadata,
             planKey,
             explain,
             objectIds
@@ -300,7 +300,7 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
 
         pushUpstream(scanNode);
 
-        objectIds.add(table.getObjectId());
+        objectIds.add(table.getObjectKey());
     }
 
     @Override
@@ -327,7 +327,7 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
 
         pushUpstream(scanNode);
 
-        objectIds.add(table.getObjectId());
+        objectIds.add(table.getObjectKey());
     }
 
     @Override
@@ -351,7 +351,7 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
 
         pushUpstream(scanNode);
 
-        objectIds.add(table.getObjectId());
+        objectIds.add(table.getObjectKey());
     }
 
     @Override

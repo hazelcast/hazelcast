@@ -33,8 +33,8 @@ import com.hazelcast.map.IMap;
 import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.map.QueryCache;
 import com.hazelcast.map.impl.ComputeEntryProcessor;
-import com.hazelcast.map.impl.ComputeIfPresentEntryProcessor;
 import com.hazelcast.map.impl.ComputeIfAbsentEntryProcessor;
+import com.hazelcast.map.impl.ComputeIfPresentEntryProcessor;
 import com.hazelcast.map.impl.KeyValueConsumingEntryProcessor;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.SimpleEntryView;
@@ -315,7 +315,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
     @Override
     public void lock(@Nonnull Object key, long leaseTime, @Nullable TimeUnit timeUnit) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
-        checkPositive(leaseTime, "leaseTime should be positive");
+        checkPositive("leaseTime", leaseTime);
 
         Data keyData = toDataWithStrategy(key);
         lockSupport.lock(getNodeEngine(), keyData, timeInMsOrTimeIfNullUnit(leaseTime, timeUnit));
@@ -967,7 +967,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
         final ManagedContext context = serializationService.getManagedContext();
         predicate = (java.util.function.Predicate<? super EventJournalMapEvent<K, V>>) context.initialize(predicate);
         projection = (java.util.function.Function<? super EventJournalMapEvent<K, V>, ? extends T>)
-            context.initialize(projection);
+                context.initialize(projection);
         final MapEventJournalReadOperation<K, V, T> op = new MapEventJournalReadOperation<>(
                 name, startSequence, minSize, maxSize, predicate, projection);
         op.setPartitionId(partitionId);
@@ -1140,7 +1140,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
     }
 
     private V computeLocally(K key,
-                                      BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
+                             BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
 
         while (true) {
             Data oldValueAsData = toData(getInternal(key));
@@ -1157,7 +1157,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
                 }
             } else {
                 if (newValue != null) {
-                    Data result =  putIfAbsentInternal(key, toData(newValue), UNSET, TimeUnit.MILLISECONDS, UNSET,
+                    Data result = putIfAbsentInternal(key, toData(newValue), UNSET, TimeUnit.MILLISECONDS, UNSET,
                             TimeUnit.MILLISECONDS);
                     if (result == null) {
                         return newValue;

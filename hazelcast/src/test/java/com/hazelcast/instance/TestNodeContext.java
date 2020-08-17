@@ -16,6 +16,7 @@
 
 package com.hazelcast.instance;
 
+import com.hazelcast.auditlog.impl.NoOpAuditlogService;
 import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.cp.internal.persistence.NopCPPersistenceService;
 import com.hazelcast.internal.cluster.Joiner;
@@ -79,6 +80,7 @@ public class TestNodeContext implements NodeContext {
         when(nodeExtension.createMemberUuid()).thenReturn(UuidUtil.newUnsecureUUID());
         when(nodeExtension.createDynamicConfigListener()).thenReturn(mock(DynamicConfigListener.class));
         when(nodeExtension.getCPPersistenceService()).thenReturn(new NopCPPersistenceService());
+        when(nodeExtension.getAuditlogService()).thenReturn(NoOpAuditlogService.INSTANCE);
         return nodeExtension;
     }
 

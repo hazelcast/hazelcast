@@ -16,14 +16,14 @@
 
 package com.hazelcast.internal.nearcache.impl.invalidation;
 
+import com.hazelcast.cluster.Member;
 import com.hazelcast.core.EntryEventType;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.util.UUIDSerializationUtil;
 import com.hazelcast.map.IMapEvent;
-import com.hazelcast.cluster.Member;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.io.IOException;
@@ -56,7 +56,7 @@ public abstract class Invalidation implements IMapEvent, IdentifiedDataSerializa
         // sourceUuid can be null.
         this.sourceUuid = sourceUuid;
         this.partitionUuid = checkNotNull(partitionUuid, "partitionUuid cannot be null");
-        this.sequence = checkPositive(sequence, "sequence should be positive");
+        this.sequence = checkPositive("sequence", sequence);
     }
 
     public final UUID getPartitionUuid() {

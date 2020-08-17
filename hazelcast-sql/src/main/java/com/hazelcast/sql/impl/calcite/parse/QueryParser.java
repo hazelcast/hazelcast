@@ -20,8 +20,8 @@ import com.hazelcast.sql.SqlErrorCode;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.calcite.SqlBackend;
 import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlConformance;
+import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeFactory;
 import org.apache.calcite.prepare.Prepare.CatalogReader;
-import org.apache.calcite.rel.type.RelDataTypeFactory;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.parser.SqlParseException;
 import org.apache.calcite.sql.parser.SqlParser;
@@ -38,32 +38,32 @@ import javax.annotation.Nullable;
  */
 public class QueryParser {
 
-    private final RelDataTypeFactory typeFactory;
+    private final HazelcastTypeFactory typeFactory;
     private final CatalogReader catalogReader;
     private final SqlConformance conformance;
 
-    private final SqlBackend hazelcastSqlBackend;
+    private final SqlBackend sqlBackend;
     private final SqlBackend jetSqlBackend;
 
     public QueryParser(
-        RelDataTypeFactory typeFactory,
-        CatalogReader catalogReader,
-        SqlConformance conformance,
-        SqlBackend hazelcastSqlBackend,
-        @Nullable SqlBackend jetSqlBackend
+            HazelcastTypeFactory typeFactory,
+            CatalogReader catalogReader,
+            SqlConformance conformance,
+            SqlBackend sqlBackend,
+            @Nullable SqlBackend jetSqlBackend
     ) {
         this.typeFactory = typeFactory;
         this.catalogReader = catalogReader;
         this.conformance = conformance;
 
-        this.hazelcastSqlBackend = hazelcastSqlBackend;
+        this.sqlBackend = sqlBackend;
         this.jetSqlBackend = jetSqlBackend;
     }
 
     public QueryParseResult parse(String sql) {
         try {
             try {
-                return parse(sql, hazelcastSqlBackend);
+                return parse(sql, sqlBackend);
             } catch (Exception e) {
                 if (jetSqlBackend != null) {
                     return parse(sql, jetSqlBackend);

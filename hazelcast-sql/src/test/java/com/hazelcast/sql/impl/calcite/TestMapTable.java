@@ -17,7 +17,7 @@
 package com.hazelcast.sql.impl.calcite;
 
 import com.hazelcast.sql.impl.extract.GenericQueryTargetDescriptor;
-import com.hazelcast.sql.impl.plan.cache.PlanObjectId;
+import com.hazelcast.sql.impl.plan.cache.PlanObjectKey;
 import com.hazelcast.sql.impl.schema.ConstantTableStatistics;
 import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.schema.TableStatistics;
@@ -45,12 +45,12 @@ public class TestMapTable extends AbstractMapTable {
     }
 
     @Override
-    public PlanObjectId getObjectId() {
+    public PlanObjectKey getObjectKey() {
         if (!isValid()) {
             return null;
         }
 
-        return new ObjectId(getSchemaName(), getName(), getFields());
+        return new ObjectKey(getSchemaName(), getName(), getFields());
     }
 
     public static TestMapTable create(String schemaName, String name, TableField... fields) {
@@ -79,13 +79,13 @@ public class TestMapTable extends AbstractMapTable {
         }
     }
 
-    private static class ObjectId implements PlanObjectId {
+    private static class ObjectKey implements PlanObjectKey {
 
         private final String schemaName;
         private final String name;
         private final List<TableField> fields;
 
-        private ObjectId(String schemaName, String name, List<TableField> fields) {
+        private ObjectKey(String schemaName, String name, List<TableField> fields) {
             this.schemaName = schemaName;
             this.name = name;
             this.fields = fields;
@@ -101,7 +101,7 @@ public class TestMapTable extends AbstractMapTable {
                 return false;
             }
 
-            ObjectId objectId = (ObjectId) o;
+            ObjectKey objectId = (ObjectKey) o;
 
             if (!schemaName.equals(objectId.schemaName)) {
                 return false;

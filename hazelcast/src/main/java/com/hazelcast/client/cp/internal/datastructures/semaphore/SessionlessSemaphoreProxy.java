@@ -77,7 +77,7 @@ public class SessionlessSemaphoreProxy extends ClientProxy implements ISemaphore
 
     @Override
     public void acquire(int permits) {
-        checkPositive(permits, "Permits must be positive!");
+        checkPositive("permits", permits);
 
         long clusterWideThreadId = sessionManager.getOrCreateUniqueThreadId(groupId);
         UUID invocationUid = newUnsecureUUID();

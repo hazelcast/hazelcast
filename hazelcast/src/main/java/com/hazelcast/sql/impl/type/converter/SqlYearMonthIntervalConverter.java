@@ -37,7 +37,7 @@ public final class SqlYearMonthIntervalConverter extends Converter {
 
     @NotConvertible
     public Object asObject(Object val) {
-        throw cannotConvert(QueryDataTypeFamily.OBJECT);
+        throw cannotConvert(QueryDataTypeFamily.OBJECT, val);
     }
 
     @Override

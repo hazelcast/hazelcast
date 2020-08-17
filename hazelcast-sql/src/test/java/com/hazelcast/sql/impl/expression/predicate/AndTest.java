@@ -16,8 +16,14 @@
 
 package com.hazelcast.sql.impl.expression.predicate;
 
+import com.hazelcast.sql.SqlService;
+import com.hazelcast.sql.impl.SqlDataSerializerHook;
+import com.hazelcast.sql.impl.expression.ConstantExpression;
+import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionTestBase;
-import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.sql.impl.expression.SimpleExpressionEvalContext;
+import com.hazelcast.sql.impl.type.QueryDataType;
+import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.apache.calcite.rel.type.RelDataType;
@@ -27,14 +33,57 @@ import org.junit.runner.RunWith;
 
 import static com.hazelcast.sql.impl.calcite.validate.HazelcastSqlOperatorTable.AND;
 import static org.apache.calcite.sql.type.SqlTypeName.BOOLEAN;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
-@RunWith(HazelcastSerialClassRunner.class)
+@RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class AndTest extends ExpressionTestBase {
 
     @Test
+    public void testEndToEnd() {
+        SqlService sql = createEndToEndRecords();
+        assertRows(query(sql, "select __key from records where boolean1 and __key >= 600"), keyRange(600, 1000));
+        assertRows(query(sql, "select __key from records where boolean1 and __key >= 600 and int1 >= 1700"), keyRange(700, 1000));
+        assertRows(query(sql, "select __key from records where boolean1 is not false and __key >= 600"),
+                keyRange(600, 1000, 5000, 6000));
+        assertQueryThrows(sql, "select * from records where string1 and boolean1", "Cannot convert VARCHAR to BOOLEAN");
+    }
+
+    @Test
     public void verify() {
         verify(AND, AndTest::expectedTypes, AndTest::expectedValues, ALL, ALL);
+    }
+
+    @Test
+    public void testCreationAndEval() {
+        assertFalse(and(true, false).eval(row("foo"), SimpleExpressionEvalContext.create()));
+        assertTrue(and(true, true).eval(row("foo"), SimpleExpressionEvalContext.create()));
+        assertNull(and(null, true).eval(row("foo"), SimpleExpressionEvalContext.create()));
+    }
+
+    @Test
+    public void testEquality() {
+        checkEquals(and(true, false), and(true, false), true);
+        checkEquals(and(true, false), and(true, true), false);
+        checkEquals(and(true, true), and(true, true, true), false);
+    }
+
+    @Test
+    public void testSerialization() {
+        AndPredicate original = and(true, false);
+        AndPredicate restored = serializeAndCheck(original, SqlDataSerializerHook.EXPRESSION_AND);
+
+        checkEquals(original, restored, true);
+    }
+
+    private static AndPredicate and(Boolean... values) {
+        Expression<?>[] operands = new Expression<?>[values.length];
+        for (int i = 0; i < values.length; ++i) {
+            operands[i] = ConstantExpression.create(values[i], QueryDataType.BOOLEAN);
+        }
+        return AndPredicate.create(operands);
     }
 
     private static RelDataType[] expectedTypes(Operand[] operands) {

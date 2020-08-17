@@ -16,9 +16,13 @@
 
 package com.hazelcast.sql.impl.expression.math;
 
+import com.hazelcast.sql.SqlService;
+import com.hazelcast.sql.impl.SqlDataSerializerHook;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastReturnTypes;
+import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.ExpressionTestBase;
-import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.sql.impl.expression.SimpleExpressionEvalContext;
+import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.apache.calcite.rel.type.RelDataType;
@@ -32,16 +36,57 @@ import java.math.BigDecimal;
 import static com.hazelcast.sql.impl.calcite.validate.HazelcastSqlOperatorTable.MULTIPLY;
 import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastIntegerType.canOverflow;
 import static com.hazelcast.sql.impl.expression.math.ExpressionMath.DECIMAL_MATH_CONTEXT;
+import static com.hazelcast.sql.impl.type.QueryDataType.BIGINT;
+import static com.hazelcast.sql.impl.type.QueryDataType.INT;
 import static org.apache.calcite.sql.type.SqlTypeName.NULL;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-@RunWith(HazelcastSerialClassRunner.class)
+@RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class MultiplyTest extends ExpressionTestBase {
 
     @Test
+    public void testEndToEnd() {
+        SqlService sql = createEndToEndRecords();
+        assertRows(query(sql, "select __key from records where int1 * 100 < 0"), keys(5000, 6000));
+        assertRows(query(sql, "select __key, decimal1 * 2.1 from records where __key < 1000"), keyRange(0, 1000),
+                k -> BigDecimal.valueOf(k).add(BigDecimal.valueOf(3000.5)).multiply(BigDecimal.valueOf(2.1)));
+        assertQueryThrows(sql, "select int1 * ? from records", "bigint overflow", Long.MAX_VALUE);
+    }
+
+    @Test
     public void verify() {
         verify(MULTIPLY, MultiplyTest::expectedTypes, MultiplyTest::expectedValues, ALL, ALL);
+    }
+
+    @Test
+    public void testCreationAndEval() {
+        MultiplyFunction<?> expression =
+                MultiplyFunction.create(ConstantExpression.create(3, INT), ConstantExpression.create(2, INT), INT);
+        assertEquals(INT, expression.getType());
+        assertEquals(6, expression.eval(row("foo"), SimpleExpressionEvalContext.create()));
+    }
+
+    @Test
+    public void testEquality() {
+        checkEquals(MultiplyFunction.create(ConstantExpression.create(3, INT), ConstantExpression.create(2, INT), INT),
+                MultiplyFunction.create(ConstantExpression.create(3, INT), ConstantExpression.create(2, INT), INT), true);
+
+        checkEquals(MultiplyFunction.create(ConstantExpression.create(3, INT), ConstantExpression.create(2, INT), INT),
+                MultiplyFunction.create(ConstantExpression.create(3, INT), ConstantExpression.create(2, INT), BIGINT), false);
+
+        checkEquals(MultiplyFunction.create(ConstantExpression.create(3, INT), ConstantExpression.create(2, INT), INT),
+                MultiplyFunction.create(ConstantExpression.create(3, INT), ConstantExpression.create(100, INT), INT), false);
+    }
+
+    @Test
+    public void testSerialization() {
+        MultiplyFunction<?> original =
+                MultiplyFunction.create(ConstantExpression.create(3, INT), ConstantExpression.create(2, INT), INT);
+        MultiplyFunction<?> restored = serializeAndCheck(original, SqlDataSerializerHook.EXPRESSION_MULTIPLY);
+
+        checkEquals(original, restored, true);
     }
 
     private static RelDataType[] expectedTypes(Operand[] operands) {

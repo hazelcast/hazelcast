@@ -16,9 +16,12 @@
 
 package com.hazelcast.sql.impl.expression.math;
 
+import com.hazelcast.sql.impl.SqlDataSerializerHook;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastReturnTypes;
+import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.ExpressionTestBase;
-import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.sql.impl.expression.SimpleExpressionEvalContext;
+import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.apache.calcite.rel.type.RelDataType;
@@ -32,16 +35,47 @@ import java.math.BigDecimal;
 import static com.hazelcast.sql.impl.calcite.validate.HazelcastSqlOperatorTable.PLUS;
 import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastIntegerType.canOverflow;
 import static com.hazelcast.sql.impl.expression.math.ExpressionMath.DECIMAL_MATH_CONTEXT;
+import static com.hazelcast.sql.impl.type.QueryDataType.BIGINT;
+import static com.hazelcast.sql.impl.type.QueryDataType.INT;
 import static org.apache.calcite.sql.type.SqlTypeName.NULL;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-@RunWith(HazelcastSerialClassRunner.class)
+@RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class PlusTest extends ExpressionTestBase {
 
     @Test
     public void verify() {
         verify(PLUS, PlusTest::expectedTypes, PlusTest::expectedValues, ALL, ALL);
+    }
+
+    @Test
+    public void testCreationAndEval() {
+        PlusFunction<?> expression =
+                PlusFunction.create(ConstantExpression.create(3, INT), ConstantExpression.create(2, INT), INT);
+        assertEquals(INT, expression.getType());
+        assertEquals(5, expression.eval(row("foo"), SimpleExpressionEvalContext.create()));
+    }
+
+    @Test
+    public void testEquality() {
+        checkEquals(PlusFunction.create(ConstantExpression.create(3, INT), ConstantExpression.create(2, INT), INT),
+                PlusFunction.create(ConstantExpression.create(3, INT), ConstantExpression.create(2, INT), INT), true);
+
+        checkEquals(PlusFunction.create(ConstantExpression.create(3, INT), ConstantExpression.create(2, INT), INT),
+                PlusFunction.create(ConstantExpression.create(3, INT), ConstantExpression.create(2, INT), BIGINT), false);
+
+        checkEquals(PlusFunction.create(ConstantExpression.create(3, INT), ConstantExpression.create(2, INT), INT),
+                PlusFunction.create(ConstantExpression.create(3, INT), ConstantExpression.create(100, INT), INT), false);
+    }
+
+    @Test
+    public void testSerialization() {
+        PlusFunction<?> original = PlusFunction.create(ConstantExpression.create(3, INT), ConstantExpression.create(2, INT), INT);
+        PlusFunction<?> restored = serializeAndCheck(original, SqlDataSerializerHook.EXPRESSION_PLUS);
+
+        checkEquals(original, restored, true);
     }
 
     private static RelDataType[] expectedTypes(Operand[] operands) {

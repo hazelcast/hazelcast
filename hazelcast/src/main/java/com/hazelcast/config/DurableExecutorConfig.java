@@ -117,7 +117,7 @@ public class DurableExecutorConfig implements IdentifiedDataSerializable, NamedC
      * @return this executor config instance
      */
     public DurableExecutorConfig setPoolSize(int poolSize) {
-        this.poolSize = checkPositive(poolSize, "Pool size should be greater than 0");
+        this.poolSize = checkPositive("poolSize", poolSize);
         return this;
     }
 
@@ -158,7 +158,7 @@ public class DurableExecutorConfig implements IdentifiedDataSerializable, NamedC
      * @return this executor config instance
      */
     public DurableExecutorConfig setCapacity(int capacity) {
-        this.capacity = checkPositive(capacity, "Capacity should be greater than 0");
+        this.capacity = checkPositive("capacity", capacity);
         return this;
     }
 

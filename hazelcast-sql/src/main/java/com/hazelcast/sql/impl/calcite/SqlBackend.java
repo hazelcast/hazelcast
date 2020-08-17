@@ -17,13 +17,13 @@
 package com.hazelcast.sql.impl.calcite;
 
 import com.hazelcast.sql.impl.calcite.parse.QueryParseResult;
+import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeFactory;
 import com.hazelcast.sql.impl.optimizer.OptimizationTask;
 import com.hazelcast.sql.impl.optimizer.SqlPlan;
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelOptTable;
 import org.apache.calcite.prepare.Prepare;
 import org.apache.calcite.prepare.Prepare.CatalogReader;
-import org.apache.calcite.rel.type.RelDataTypeFactory;
 import org.apache.calcite.sql.parser.SqlParserImplFactory;
 import org.apache.calcite.sql.util.SqlVisitor;
 import org.apache.calcite.sql.validate.SqlConformance;
@@ -38,7 +38,7 @@ public interface SqlBackend {
 
     SqlValidator validator(
             CatalogReader catalogReader,
-            RelDataTypeFactory typeFactory,
+            HazelcastTypeFactory typeFactory,
             SqlConformance conformance
     );
 

@@ -33,8 +33,12 @@ public final class ExpressionMath {
 
     /**
      * Math context used by expressions while doing math on BigDecimal values.
+     * <p>
+     * The context uses {@link RoundingMode#HALF_UP HALF_UP} rounding mode, with
+     * which most users should be familiar from school, and limits the precision
+     * to {@link QueryDataType#MAX_DECIMAL_PRECISION}.
      */
-    public static final MathContext DECIMAL_MATH_CONTEXT = new MathContext(MAX_DECIMAL_PRECISION, RoundingMode.HALF_DOWN);
+    public static final MathContext DECIMAL_MATH_CONTEXT = new MathContext(MAX_DECIMAL_PRECISION, RoundingMode.HALF_UP);
 
     private ExpressionMath() {
         // No-op.
@@ -53,7 +57,8 @@ public final class ExpressionMath {
      */
     public static long divideExact(long left, long right) {
         if (left == Long.MIN_VALUE && right == -1) {
-            throw QueryException.error(SqlErrorCode.DATA_EXCEPTION, "BIGINT overflow");
+            throw QueryException.error(SqlErrorCode.DATA_EXCEPTION,
+                    "BIGINT overflow in '/' operator (consider adding explicit CAST to DECIMAL)");
         }
         try {
             return left / right;
@@ -73,12 +78,13 @@ public final class ExpressionMath {
      * @return a division result.
      * @throws QueryException if division by zero is detected.
      */
+    @SuppressWarnings("checkstyle:MagicNumber")
     public static double divideExact(double left, double right) {
-        double result = left / right;
-        if (Double.isInfinite(result)) {
+        if (right == +0.0 || right == -0.0) {
             throw QueryException.error(SqlErrorCode.DATA_EXCEPTION, "division by zero");
         }
-        return result;
+
+        return left / right;
     }
 
     /**
@@ -92,12 +98,13 @@ public final class ExpressionMath {
      * @return a division result.
      * @throws QueryException if division by zero is detected.
      */
+    @SuppressWarnings("checkstyle:MagicNumber")
     public static float divideExact(float left, float right) {
-        float result = left / right;
-        if (Float.isInfinite(result)) {
+        if (right == +0.0f || right == -0.0f) {
             throw QueryException.error(SqlErrorCode.DATA_EXCEPTION, "division by zero");
         }
-        return result;
+
+        return left / right;
     }
 
     public static QueryDataType inferRemainderResultType(QueryDataType type1, QueryDataType type2) {

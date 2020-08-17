@@ -16,9 +16,13 @@
 
 package com.hazelcast.sql.impl.expression.math;
 
+import com.hazelcast.sql.impl.SqlDataSerializerHook;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastReturnTypes;
+import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.ExpressionTestBase;
-import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.sql.impl.expression.SimpleExpressionEvalContext;
+import com.hazelcast.sql.impl.type.QueryDataType;
+import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.apache.calcite.rel.type.RelDataType;
@@ -33,21 +37,53 @@ import static com.hazelcast.sql.impl.calcite.validate.HazelcastSqlOperatorTable.
 import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastIntegerType.canOverflow;
 import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeSystem.narrowestTypeFor;
 import static com.hazelcast.sql.impl.expression.math.ExpressionMath.DECIMAL_MATH_CONTEXT;
+import static com.hazelcast.sql.impl.type.QueryDataType.INT;
 import static org.apache.calcite.sql.type.SqlTypeName.ANY;
 import static org.apache.calcite.sql.type.SqlTypeName.BIGINT;
 import static org.apache.calcite.sql.type.SqlTypeName.BOOLEAN;
 import static org.apache.calcite.sql.type.SqlTypeName.DECIMAL;
 import static org.apache.calcite.sql.type.SqlTypeName.DOUBLE;
+import static org.apache.calcite.sql.type.SqlTypeName.INTEGER;
 import static org.apache.calcite.sql.type.SqlTypeName.NULL;
+import static org.apache.calcite.sql.type.SqlTypeName.SMALLINT;
+import static org.apache.calcite.sql.type.SqlTypeName.TINYINT;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-@RunWith(HazelcastSerialClassRunner.class)
+@RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class UnaryMinusTest extends ExpressionTestBase {
 
     @Test
     public void verify() {
         verify(UNARY_MINUS, UnaryMinusTest::expectedTypes, UnaryMinusTest::expectedValues, ALL);
+    }
+
+    @Test
+    public void testCreationAndEval() {
+        UnaryMinusFunction<?> expression = UnaryMinusFunction.create(ConstantExpression.create(1, INT), INT);
+        assertEquals(INT, expression.getType());
+        assertEquals(-1, expression.eval(row("foo"), SimpleExpressionEvalContext.create()));
+    }
+
+    @Test
+    public void testEquality() {
+        checkEquals(UnaryMinusFunction.create(ConstantExpression.create(1, INT), INT),
+                UnaryMinusFunction.create(ConstantExpression.create(1, INT), INT), true);
+
+        checkEquals(UnaryMinusFunction.create(ConstantExpression.create(1, INT), INT),
+                UnaryMinusFunction.create(ConstantExpression.create(1, INT), QueryDataType.BIGINT), false);
+
+        checkEquals(UnaryMinusFunction.create(ConstantExpression.create(1, INT), INT),
+                UnaryMinusFunction.create(ConstantExpression.create(2, INT), QueryDataType.BIGINT), false);
+    }
+
+    @Test
+    public void testSerialization() {
+        UnaryMinusFunction<?> original = UnaryMinusFunction.create(ConstantExpression.create(1, INT), INT);
+        UnaryMinusFunction<?> restored = serializeAndCheck(original, SqlDataSerializerHook.EXPRESSION_UNARY_MINUS);
+
+        checkEquals(original, restored, true);
     }
 
     private static RelDataType[] expectedTypes(Operand[] operands) {
@@ -72,15 +108,14 @@ public class UnaryMinusTest extends ExpressionTestBase {
         RelDataType type = operand.type;
         boolean isChar = isChar(type);
 
-        BigDecimal numeric = operand.numericValue();
-        //noinspection NumberEquality
+        Number numeric = operand.numericValue();
         if (numeric == INVALID_NUMERIC_VALUE) {
             return null;
         }
 
         if (numeric != null) {
             if (!isChar) {
-                numeric = numeric.negate();
+                numeric = numeric instanceof BigDecimal ? ((BigDecimal) numeric).negate() : -((Double) numeric);
             }
             type = narrowestTypeFor(numeric, null);
             if (!canRepresentLiteral(numeric, TYPE_FACTORY.createSqlType(DECIMAL), type)) {
@@ -113,17 +148,25 @@ public class UnaryMinusTest extends ExpressionTestBase {
             return null;
         }
 
-        // XXX: Special case of SELECT -(9223372036854775808), Calcite interprets
+        // XXX: Special cases like SELECT -(9223372036854775808), Calcite interprets
         // this as a literal (Long.MIN_VALUE), but it's impossible to pass
         // abs(Long.MIN_VALUE) from Java side in a form of a long to negate it.
-        if (arg == INVALID_VALUE && operand.isLiteral() && typeName == BIGINT) {
-            BigDecimal numeric = operand.numericValue();
+        if (arg == INVALID_VALUE && operand.isLiteral() && isInteger(type)) {
+            BigDecimal numeric = (BigDecimal) operand.numericValue();
             assert numeric != null;
-            //noinspection NumberEquality
             if (numeric != INVALID_NUMERIC_VALUE) {
                 numeric = numeric.negate(DECIMAL_MATH_CONTEXT);
-                if (numeric.longValueExact() == Long.MIN_VALUE) {
+                if (typeName == BIGINT && numeric.longValueExact() == Long.MIN_VALUE) {
                     return Long.MIN_VALUE;
+                }
+                if (typeName == INTEGER && numeric.intValueExact() == Integer.MIN_VALUE) {
+                    return Integer.MIN_VALUE;
+                }
+                if (typeName == SMALLINT && numeric.shortValueExact() == Short.MIN_VALUE) {
+                    return Short.MIN_VALUE;
+                }
+                if (typeName == TINYINT && numeric.byteValueExact() == Byte.MIN_VALUE) {
+                    return Byte.MIN_VALUE;
                 }
             }
         }
@@ -167,7 +210,12 @@ public class UnaryMinusTest extends ExpressionTestBase {
                 }
                 return doubleResult;
             case DECIMAL:
-                return ((BigDecimal) arg).negate(DECIMAL_MATH_CONTEXT);
+                if (operand.isLiteral()) {
+                    // literals are preserved exactly as entered to avoid precision losses
+                    return ((BigDecimal) arg).negate();
+                } else {
+                    return ((BigDecimal) arg).negate(DECIMAL_MATH_CONTEXT);
+                }
             default:
                 throw new IllegalArgumentException("unexpected type name: " + returnTypeName);
         }

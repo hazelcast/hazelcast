@@ -33,6 +33,12 @@ import java.util.List;
 
 /**
  * Rewrites operators in SqlNode tree from Calcite ones to Hazelcast ones.
+ * <p>
+ * {@link HazelcastSqlOperatorTable} provides operators with customized type
+ * inference and validation, while Calcite parser always uses {@link
+ * SqlStdOperatorTable} to resolve operators. This visitor workarounds that by
+ * rewriting the standard Calcite operator implementations with the customized
+ * ones.
  *
  * @see SqlStdOperatorTable
  * @see HazelcastSqlOperatorTable
@@ -65,15 +71,11 @@ public final class HazelcastOperatorTableVisitor extends SqlBasicVisitor<Void> {
         List<SqlNode> operands = call.getOperandList();
         for (int i = 0; i < operands.size(); ++i) {
             SqlNode operand = operands.get(i);
-            if (!(operand instanceof SqlCase) || operand instanceof HazelcastSqlCase) {
-                continue;
-            }
 
-            SqlCase sqlCase = (SqlCase) operand;
-            HazelcastSqlCase hazelcastSqlCase =
-                    new HazelcastSqlCase(sqlCase.getParserPosition(), sqlCase.getValueOperand(), sqlCase.getWhenOperands(),
-                            sqlCase.getThenOperands(), sqlCase.getElseOperand());
-            call.setOperand(i, hazelcastSqlCase);
+            SqlNode rewrittenCase = tryRewriteCase(operand);
+            if (rewrittenCase != null) {
+                call.setOperand(i, rewrittenCase);
+            }
         }
 
         if (call instanceof SqlBasicCall) {
@@ -83,9 +85,9 @@ public final class HazelcastOperatorTableVisitor extends SqlBasicVisitor<Void> {
             List<SqlOperator> resolvedOperators = new ArrayList<>();
             HazelcastSqlOperatorTable.instance().lookupOperatorOverloads(operator.getNameAsId(), null, operator.getSyntax(),
                     resolvedOperators, NAME_MATCHER);
-            assert resolvedOperators.isEmpty() || resolvedOperators.size() == 1;
 
             if (!resolvedOperators.isEmpty()) {
+                assert resolvedOperators.size() == 1;
                 basicCall.setOperator(resolvedOperators.get(0));
             }
         }
@@ -94,16 +96,21 @@ public final class HazelcastOperatorTableVisitor extends SqlBasicVisitor<Void> {
     private static void rewriteNodeList(SqlNodeList nodeList) {
         for (int i = 0; i < nodeList.size(); ++i) {
             SqlNode node = nodeList.get(i);
-            if (!(node instanceof SqlCase) || node instanceof HazelcastSqlCase) {
-                continue;
-            }
 
-            SqlCase sqlCase = (SqlCase) node;
-            HazelcastSqlCase hazelcastSqlCase =
-                    new HazelcastSqlCase(sqlCase.getParserPosition(), sqlCase.getValueOperand(), sqlCase.getWhenOperands(),
-                            sqlCase.getThenOperands(), sqlCase.getElseOperand());
-            nodeList.set(i, hazelcastSqlCase);
+            SqlNode rewrittenCase = tryRewriteCase(node);
+            if (rewrittenCase != null) {
+                nodeList.set(i, rewrittenCase);
+            }
         }
+    }
+
+    private static SqlNode tryRewriteCase(SqlNode node) {
+        if (node instanceof SqlCase && !(node instanceof HazelcastSqlCase)) {
+            SqlCase sqlCase = (SqlCase) node;
+            return new HazelcastSqlCase(sqlCase.getParserPosition(), sqlCase.getValueOperand(), sqlCase.getWhenOperands(),
+                    sqlCase.getThenOperands(), sqlCase.getElseOperand());
+        }
+        return null;
     }
 
 }

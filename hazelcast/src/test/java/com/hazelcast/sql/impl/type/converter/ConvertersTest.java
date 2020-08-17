@@ -19,9 +19,8 @@ package com.hazelcast.sql.impl.type.converter;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.SqlErrorCode;
 import com.hazelcast.sql.impl.SqlCustomClass;
+import com.hazelcast.sql.impl.expression.math.ExpressionMath;
 import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
-import com.hazelcast.sql.impl.type.SqlDaySecondInterval;
-import com.hazelcast.sql.impl.type.SqlYearMonthInterval;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -52,8 +51,6 @@ import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.DATE;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.DECIMAL;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.DOUBLE;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.INT;
-import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.INTERVAL_DAY_SECOND;
-import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.INTERVAL_YEAR_MONTH;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.NULL;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.OBJECT;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.REAL;
@@ -96,9 +93,6 @@ public class ConvertersTest {
         checkGetById(OffsetDateTimeConverter.INSTANCE);
         checkGetById(ZonedDateTimeConverter.INSTANCE);
 
-        checkGetById(SqlYearMonthIntervalConverter.INSTANCE);
-        checkGetById(SqlDaySecondIntervalConverter.INSTANCE);
-
         checkGetById(ObjectConverter.INSTANCE);
 
         checkGetById(NullConverter.INSTANCE);
@@ -127,9 +121,6 @@ public class ConvertersTest {
         checkGetByClass(InstantConverter.INSTANCE, Instant.class);
         checkGetByClass(OffsetDateTimeConverter.INSTANCE, OffsetDateTime.class);
         checkGetByClass(ZonedDateTimeConverter.INSTANCE, ZonedDateTime.class);
-
-        checkGetByClass(SqlYearMonthIntervalConverter.INSTANCE, SqlYearMonthInterval.class);
-        checkGetByClass(SqlDaySecondIntervalConverter.INSTANCE, SqlDaySecondInterval.class);
 
         checkGetByClass(ObjectConverter.INSTANCE, Object.class, SqlCustomClass.class);
 
@@ -323,13 +314,33 @@ public class ConvertersTest {
 
         assertEquals(1, converter.asTinyint(val));
         checkDataException(() -> converter.asTinyint(bigValue));
+        checkDataException(() -> converter.asTinyint(Byte.MAX_VALUE + 1.0f));
+        checkDataException(() -> converter.asTinyint(Float.POSITIVE_INFINITY));
+        checkDataException(() -> converter.asTinyint(Float.NEGATIVE_INFINITY));
+        checkDataException(() -> converter.asTinyint(Float.NaN));
+
         assertEquals(1, converter.asSmallint(val));
         checkDataException(() -> converter.asSmallint(bigValue));
+        checkDataException(() -> converter.asSmallint(Short.MAX_VALUE + 1.0f));
+        checkDataException(() -> converter.asSmallint(Float.POSITIVE_INFINITY));
+        checkDataException(() -> converter.asSmallint(Float.NEGATIVE_INFINITY));
+        checkDataException(() -> converter.asSmallint(Float.NaN));
+
         assertEquals(1, converter.asInt(val));
         checkDataException(() -> converter.asInt(bigValue));
+        checkDataException(() -> converter.asInt(Integer.MAX_VALUE + 1.0f));
+        checkDataException(() -> converter.asInt(Float.POSITIVE_INFINITY));
+        checkDataException(() -> converter.asInt(Float.NEGATIVE_INFINITY));
+        checkDataException(() -> converter.asInt(Float.NaN));
+
         assertEquals(1L, converter.asBigint(val));
         checkDataException(() -> converter.asBigint(bigValue));
-        assertEquals(new BigDecimal(Float.toString(val)), converter.asDecimal(val));
+        checkDataException(() -> converter.asBigint(Long.MAX_VALUE + Math.ulp((float) Long.MAX_VALUE)));
+        checkDataException(() -> converter.asBigint(Float.POSITIVE_INFINITY));
+        checkDataException(() -> converter.asBigint(Float.NEGATIVE_INFINITY));
+        checkDataException(() -> converter.asBigint(Float.NaN));
+
+        assertEquals(new BigDecimal(val, ExpressionMath.DECIMAL_MATH_CONTEXT), converter.asDecimal(val));
 
         assertEquals(1.1f, converter.asReal(val), 0);
         assertEquals(1.1f, converter.asDouble(val), 0);
@@ -353,13 +364,33 @@ public class ConvertersTest {
 
         assertEquals(1, converter.asTinyint(val));
         checkDataException(() -> converter.asTinyint(bigValue));
+        checkDataException(() -> converter.asTinyint(Byte.MAX_VALUE + 1.0d));
+        checkDataException(() -> converter.asTinyint(Double.POSITIVE_INFINITY));
+        checkDataException(() -> converter.asTinyint(Double.NEGATIVE_INFINITY));
+        checkDataException(() -> converter.asTinyint(Double.NaN));
+
         assertEquals(1, converter.asSmallint(val));
         checkDataException(() -> converter.asSmallint(bigValue));
+        checkDataException(() -> converter.asSmallint(Short.MAX_VALUE + 1.0d));
+        checkDataException(() -> converter.asSmallint(Double.POSITIVE_INFINITY));
+        checkDataException(() -> converter.asSmallint(Double.NEGATIVE_INFINITY));
+        checkDataException(() -> converter.asSmallint(Double.NaN));
+
         assertEquals(1, converter.asInt(val));
         checkDataException(() -> converter.asInt(bigValue));
+        checkDataException(() -> converter.asInt(Integer.MAX_VALUE + 1.0d));
+        checkDataException(() -> converter.asInt(Double.POSITIVE_INFINITY));
+        checkDataException(() -> converter.asInt(Double.NEGATIVE_INFINITY));
+        checkDataException(() -> converter.asInt(Double.NaN));
+
         assertEquals(1L, converter.asBigint(val));
         checkDataException(() -> converter.asBigint(bigValue));
-        assertEquals(BigDecimal.valueOf(val), converter.asDecimal(val));
+        checkDataException(() -> converter.asBigint(Long.MAX_VALUE + Math.ulp((double) Long.MAX_VALUE)));
+        checkDataException(() -> converter.asBigint(Double.POSITIVE_INFINITY));
+        checkDataException(() -> converter.asBigint(Double.NEGATIVE_INFINITY));
+        checkDataException(() -> converter.asBigint(Double.NaN));
+
+        assertEquals(new BigDecimal(val, ExpressionMath.DECIMAL_MATH_CONTEXT), converter.asDecimal(val));
 
         assertEquals(1.1f, converter.asReal(val), 0);
         assertEquals(1.1d, converter.asDouble(val), 0);
@@ -498,30 +529,6 @@ public class ConvertersTest {
         checkTimestampWithTimezone(converter, val, val.toOffsetDateTime());
 
         checkConverterSelf(converter);
-    }
-
-    @Test
-    public void testIntervalDaySecondConverter() {
-        SqlDaySecondIntervalConverter converter = SqlDaySecondIntervalConverter.INSTANCE;
-
-        checkConverter(converter, Converter.ID_INTERVAL_DAY_SECOND, INTERVAL_DAY_SECOND, SqlDaySecondInterval.class);
-        checkConverterConversions(converter);
-
-        SqlDaySecondInterval interval = new SqlDaySecondInterval(1, 1);
-
-        assertSame(interval, converter.convertToSelf(converter, interval));
-    }
-
-    @Test
-    public void testIntervalYearMonthConverter() {
-        SqlYearMonthIntervalConverter converter = SqlYearMonthIntervalConverter.INSTANCE;
-
-        checkConverter(converter, Converter.ID_INTERVAL_YEAR_MONTH, INTERVAL_YEAR_MONTH, SqlYearMonthInterval.class);
-        checkConverterConversions(converter);
-
-        SqlYearMonthInterval interval = new SqlYearMonthInterval(10);
-
-        assertSame(interval, converter.convertToSelf(converter, interval));
     }
 
     @Test

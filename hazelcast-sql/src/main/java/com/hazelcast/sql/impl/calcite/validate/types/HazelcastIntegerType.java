@@ -42,6 +42,12 @@ import static org.apache.calcite.sql.type.SqlTypeName.TINYINT;
  * digits. For instance, -1 and 1 require a single binary digit, 14 requires 4
  * binary digits.
  * <p>
+ * There are 4 edge case values: {@link Byte#MIN_VALUE}, {@link Short#MIN_VALUE},
+ * {@link Integer#MIN_VALUE} and {@link Long#MIN_VALUE} which, due to their
+ * hardware representation, require one less bit comparing to their positive
+ * counterparts. For instance, -128 ({@link Byte#MIN_VALUE}) requires 7 bits
+ * while 128 requires 8.
+ * <p>
  * In general, for an N-bit integer type the valid range of bit widths is from 0
  * to N: zero bit width corresponds to 0 integer value, bit widths from 1 to
  * N - 1 correspond to regular integer values, bit width of N bits has a special
@@ -209,11 +215,18 @@ public final class HazelcastIntegerType extends BasicSqlType {
     }
 
     /**
-     * @return the bit width if the given long value.
+     * @return the bit width required to represent the given value.
      */
     public static int bitWidthOf(long value) {
+        // handle edge cases
         if (value == Long.MIN_VALUE) {
             return Long.SIZE - 1;
+        } else if (value == Integer.MIN_VALUE) {
+            return Integer.SIZE - 1;
+        } else if (value == Short.MIN_VALUE) {
+            return Short.SIZE - 1;
+        } else if (value == Byte.MIN_VALUE) {
+            return Byte.SIZE - 1;
         }
 
         value = Math.abs(value);

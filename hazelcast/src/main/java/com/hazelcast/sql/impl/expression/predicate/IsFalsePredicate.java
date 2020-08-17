@@ -16,15 +16,19 @@
 
 package com.hazelcast.sql.impl.expression.predicate;
 
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.sql.impl.SqlDataSerializerHook;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.expression.UniExpression;
-import com.hazelcast.sql.impl.expression.util.EnsureConvertible;
-import com.hazelcast.sql.impl.expression.util.Eval;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
-public class IsFalsePredicate extends UniExpression<Boolean> {
+/**
+ * Implements evaluation of SQL IS FALSE predicate.
+ */
+public final class IsFalsePredicate extends UniExpression<Boolean> implements IdentifiedDataSerializable {
+
     public IsFalsePredicate() {
         // No-op.
     }
@@ -34,18 +38,27 @@ public class IsFalsePredicate extends UniExpression<Boolean> {
     }
 
     public static IsFalsePredicate create(Expression<?> operand) {
-        EnsureConvertible.toBoolean(operand);
-
         return new IsFalsePredicate(operand);
     }
 
     @Override
+    public int getFactoryId() {
+        return SqlDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getClassId() {
+        return SqlDataSerializerHook.EXPRESSION_IS_FALSE;
+    }
+
+    @Override
     public Boolean eval(Row row, ExpressionEvalContext context) {
-        return TernaryLogic.isFalse(Eval.asBoolean(operand, row, context));
+        return TernaryLogic.isFalse((Boolean) operand.eval(row, context));
     }
 
     @Override
     public QueryDataType getType() {
         return QueryDataType.BOOLEAN;
     }
+
 }

@@ -27,17 +27,23 @@ import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 import static com.hazelcast.test.Accessors.getSerializationService;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 
+import org.junit.Rule;
+
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class SecurityWithoutEnterpriseTest extends HazelcastTestSupport {
 
-    @Test(expected = IllegalStateException.class)
+    @Rule
+    public ExpectedException expected = ExpectedException.none();
+
+    @Test
     public void test() {
         SecurityConfig securityConfig = new SecurityConfig()
                 .setEnabled(true);
@@ -45,15 +51,25 @@ public class SecurityWithoutEnterpriseTest extends HazelcastTestSupport {
         Config config = new Config()
                 .setSecurityConfig(securityConfig);
 
+        expected.expect(IllegalStateException.class);
         createHazelcastInstance(config);
     }
 
-    @Test(expected = IllegalStateException.class)
+    @Test
     public void testSymmetricEncryption() {
         SymmetricEncryptionConfig symmetricEncryptionConfig = new SymmetricEncryptionConfig()
                 .setEnabled(true);
         Config config = new Config();
         config.getNetworkConfig().setSymmetricEncryptionConfig(symmetricEncryptionConfig);
+        expected.expect(IllegalStateException.class);
+        createHazelcastInstance(config);
+    }
+
+    @Test
+    public void testAuditlog() {
+        Config config = new Config();
+        config.getAuditlogConfig().setEnabled(true);
+        expected.expect(IllegalStateException.class);
         createHazelcastInstance(config);
     }
 

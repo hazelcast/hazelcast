@@ -40,9 +40,9 @@ import java.util.Properties;
  * This provider implementation delegates to a {@code CachingProvider} backed
  * by either a member- or a client-side {@link HazelcastInstance}:
  * <ul>
- * <li>{@code com.hazelcast.cache.impl.HazelcastServerCachingProvider} is the
+ * <li>{@link com.hazelcast.cache.HazelcastMemberCachingProvider} is the
  * member-side {@link CachingProvider} implementation</li>
- * <li>{@code com.hazelcast.client.cache.impl.HazelcastClientCachingProvider} is the
+ * <li>{@link com.hazelcast.client.cache.HazelcastClientCachingProvider} is the
  * client-side {@link CachingProvider} implementation</li>
  * </ul>
  * <h3>Provider Type Selection</h3>
@@ -52,9 +52,11 @@ import java.util.Properties;
  * {@code hazelcast.jcache.provider.type}:
  * <ul>
  *     <li>If no value was set, then the client-side caching provider is selected</li>
- *     <li>If a value was set, then value {@code server} selects the member-side caching
- *     provider, while value {@code client} selects the client-side provider. Other values
- *     result in a {@link CacheException} being thrown.</li>
+ *     <li>If a value was set, then value {@code member} selects the member-side caching
+ *     provider, while value {@code client} selects the client-side provider. Legacy value
+ *     {@code server} is also accepted as an alias for {@code member} for backwards compatibility,
+ *     however its usage is discouraged and will be removed in a future version.
+ *     Other values result in a {@link CacheException} being thrown.</li>
  * </ul>
  * <p>When using one of {@code Caching#getCachingProvider} variants with an explicit
  * class name argument, then:
@@ -63,9 +65,9 @@ import java.util.Properties;
  *     is identical to using {@link Caching#getCachingProvider()}; choice between
  *     member- or client-side caching provider is performed via system property
  *     {@code hazelcast.jcache.provider.type} as described above.</li>
- *     <li>using {@value #SERVER_CACHING_PROVIDER} as
+ *     <li>using {@link #MEMBER_CACHING_PROVIDER} as
  *     class name will return a member-side caching provider</li>
- *     <li>using {@value #CLIENT_CACHING_PROVIDER} as
+ *     <li>using {@link #CLIENT_CACHING_PROVIDER} as
  *     class name will return a client-side caching provider</li>
  * </ul>
  * <h3>Creating or reusing HazelcastInstances with CacheManagers</h3>
@@ -106,7 +108,7 @@ import java.util.Properties;
  * <h3>Examples</h3>
  * <p><b>Obtain a member-side caching provider backed by an existing HazelcastInstance.</b>
  * In this example the member-side caching provider is selected by setting the value of
- * system property {@code hazelcast.jcache.provider.type} to value "{@code server}". An existing
+ * system property {@code hazelcast.jcache.provider.type} to value "{@code member}". An existing
  * {@code HazelcastInstance} is referenced by instance name in the {@code Properties} provided as
  * argument to {@link CachingProvider#getCacheManager(URI, ClassLoader, Properties)}.
  * <blockquote><pre>
@@ -114,7 +116,7 @@ import java.util.Properties;
  * config.setInstanceName("hz-jcache");
  * HazelcastInstance member = Hazelcast.newHazelcastInstance(config);
  *
- * System.setProperty("hazelcast.jcache.provider.type", "server");
+ * System.setProperty("hazelcast.jcache.provider.type", "member");
  * CachingProvider provider = Caching.getCachingProvider();
  * CacheManager manager = provider.getCacheManager(null, null, HazelcastCachingProvider.propertiesByInstanceName("hz-jcache"));
  * Cache cache = manager.createCache("sessions", new MutableConfiguration());
@@ -161,11 +163,20 @@ public final class HazelcastCachingProvider implements CachingProvider {
     /**
      * Class name of the member-side Caching Provider
      */
-    public static final String SERVER_CACHING_PROVIDER = "com.hazelcast.cache.impl.HazelcastServerCachingProvider";
+    public static final String MEMBER_CACHING_PROVIDER = HazelcastMemberCachingProvider.class.getName();
+
+    /**
+     * Same value as {@link #MEMBER_CACHING_PROVIDER}. This field is maintained for backwards compatibility.
+     * Its use is discouraged and will be removed in a future version.
+     */
+    @Deprecated
+    public static final String SERVER_CACHING_PROVIDER = HazelcastMemberCachingProvider.class.getName();
+
     /**
      * Class name of the client-side Caching Provider
      */
-    public static final String CLIENT_CACHING_PROVIDER = "com.hazelcast.client.cache.impl.HazelcastClientCachingProvider";
+    public static final String CLIENT_CACHING_PROVIDER =
+            com.hazelcast.client.cache.HazelcastClientCachingProvider.class.getName();
 
     /**
      * Name of default {@link HazelcastInstance} which may be started when
@@ -174,7 +185,8 @@ public final class HazelcastCachingProvider implements CachingProvider {
     public static final String SHARED_JCACHE_INSTANCE_NAME = "_hzinstance_jcache_shared";
 
     private static final String PROVIDER_TYPE_CLIENT = "client";
-    private static final String PROVIDER_TYPE_SERVER = "server";
+    private static final String PROVIDER_TYPE_MEMBER = "member";
+    private static final String LEGACY_PROVIDER_TYPE_MEMBER = "server";
 
     private final CachingProvider delegate;
 
@@ -184,11 +196,12 @@ public final class HazelcastCachingProvider implements CachingProvider {
         if (providerType != null) {
             if (PROVIDER_TYPE_CLIENT.equals(providerType)) {
                 cp = new HazelcastClientCachingProvider();
-            } else if (PROVIDER_TYPE_SERVER.equals(providerType)) {
+            } else if (PROVIDER_TYPE_MEMBER.equals(providerType)
+                    || LEGACY_PROVIDER_TYPE_MEMBER.equals(providerType)) {
                 cp = new HazelcastServerCachingProvider();
             } else {
                 throw new CacheException("Unknown CachingProvider type \"" + providerType + "\". Use "
-                        + "\"client\" or \"server\" as provider type.");
+                        + "\"client\" or \"member\" as provider type.");
             }
         } else {
             cp = new HazelcastClientCachingProvider();
