@@ -49,7 +49,7 @@ public class QueryStateRegistryTest extends SqlTestSupport {
         UUID localMemberId = UUID.randomUUID();
         long timeout = 100L;
         Plan initiatorPlan = opaquePlan();
-        QueryResultProducer resultProducer = new BlockingRootResultConsumer();
+        QueryResultProducer resultProducer = new BlockingRootResultConsumer(false);
         QueryStateCompletionCallback completionCallback = new TestQueryStateCompletionCallback();
 
         QueryState state = registry.onInitiatorQueryStarted(

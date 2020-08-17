@@ -33,6 +33,9 @@ public class BlockingRootResultConsumer implements RootResultConsumer {
     /** Iterator over produced rows. */
     private final InternalIterator iterator = new InternalIterator();
 
+    /** Enables {@link ResultIterator#RETRY} result from {@link ResultIterator#hasNextImmediately()} */
+    private final boolean useMinimumLatency;
+
     /** Query context to schedule root execution when the next batch is needed. */
     private volatile ScheduleCallback scheduleCallback;
 
@@ -44,6 +47,15 @@ public class BlockingRootResultConsumer implements RootResultConsumer {
 
     /** Error which occurred during query execution. */
     private QueryException doneError;
+
+    /**
+     * @param useMinimumLatency Enables {@link ResultIterator#RETRY} result
+     *      from {@link ResultIterator#hasNextImmediately()}
+     */
+    // useMinimumLatency=true is used from Jet
+    public BlockingRootResultConsumer(boolean useMinimumLatency) {
+        this.useMinimumLatency = useMinimumLatency;
+    }
 
     @Override
     public void setup(ScheduleCallback scheduleCallback) {
@@ -182,7 +194,7 @@ public class BlockingRootResultConsumer implements RootResultConsumer {
         @Override
         public int hasNextImmediately() {
             if (batch == null) {
-                batch = getNextBatch(false);
+                batch = getNextBatch(!useMinimumLatency);
 
                 if (batch == null) {
                     return done ? DONE :  RETRY;
