@@ -44,6 +44,13 @@ import com.hazelcast.sql.impl.expression.predicate.IsNullPredicate;
 import com.hazelcast.sql.impl.expression.predicate.IsTruePredicate;
 import com.hazelcast.sql.impl.expression.predicate.NotPredicate;
 import com.hazelcast.sql.impl.expression.predicate.OrPredicate;
+import com.hazelcast.sql.impl.expression.string.AsciiFunction;
+import com.hazelcast.sql.impl.expression.string.CharLengthFunction;
+import com.hazelcast.sql.impl.expression.string.ConcatFunction;
+import com.hazelcast.sql.impl.expression.string.InitcapFunction;
+import com.hazelcast.sql.impl.expression.string.LikeFunction;
+import com.hazelcast.sql.impl.expression.string.LowerFunction;
+import com.hazelcast.sql.impl.expression.string.UpperFunction;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.calcite.rex.RexCall;
 import org.apache.calcite.rex.RexLiteral;
@@ -53,6 +60,10 @@ import org.apache.calcite.sql.fun.SqlStdOperatorTable;
 import org.apache.calcite.sql.type.SqlTypeName;
 
 import java.math.BigDecimal;
+
+import static com.hazelcast.sql.impl.calcite.validate.HazelcastSqlOperatorTable.CHARACTER_LENGTH;
+import static com.hazelcast.sql.impl.calcite.validate.HazelcastSqlOperatorTable.CHAR_LENGTH;
+import static com.hazelcast.sql.impl.calcite.validate.HazelcastSqlOperatorTable.LENGTH;
 
 /**
  * Utility methods for REX to Hazelcast expression conversion.
@@ -213,6 +224,20 @@ public final class RexToExpression {
             case IS_NOT_NULL:
                 return IsNotNullPredicate.create(operands[0]);
 
+            case LIKE:
+                Expression<?> escape = operands.length == 2 ? null : operands[2];
+
+                return LikeFunction.create(operands[0], operands[1], escape);
+
+            case OTHER:
+                if (operator == HazelcastSqlOperatorTable.CONCAT) {
+                    assert operands.length == 2;
+
+                    return ConcatFunction.create(operands[0], operands[1]);
+                }
+
+                break;
+
             case OTHER_FUNCTION:
                 SqlFunction function = (SqlFunction) operator;
 
@@ -264,6 +289,20 @@ public final class RexToExpression {
                         resultType,
                         true
                     );
+                }
+
+                // Strings.
+
+                if (function == CHAR_LENGTH || function == CHARACTER_LENGTH || function == LENGTH) {
+                    return CharLengthFunction.create(operands[0]);
+                } else if (function == HazelcastSqlOperatorTable.UPPER) {
+                    return UpperFunction.create(operands[0]);
+                } else if (function == HazelcastSqlOperatorTable.LOWER) {
+                    return LowerFunction.create(operands[0]);
+                } else if (function == HazelcastSqlOperatorTable.INITCAP) {
+                    return InitcapFunction.create(operands[0]);
+                } else if (function == HazelcastSqlOperatorTable.ASCII) {
+                    return AsciiFunction.create(operands[0]);
                 }
 
                 break;

@@ -81,6 +81,18 @@ public final class HazelcastInferTypes {
         }
     };
 
+    public static final SqlOperandTypeInference VARCHAR_IF_UNKNOWN = (callBinding, returnType, operandTypes) -> {
+        RelDataType unknownType = callBinding.getTypeFactory().createUnknownType();
+
+        for (int i = 0; i < operandTypes.length; i++) {
+            RelDataType operandType = operandTypes[i];
+
+            if (operandType == unknownType) {
+                operandTypes[i] = callBinding.getTypeFactory().createSqlType(SqlTypeName.VARCHAR);
+            }
+        }
+    };
+
     private HazelcastInferTypes() {
         // No-op.
     }

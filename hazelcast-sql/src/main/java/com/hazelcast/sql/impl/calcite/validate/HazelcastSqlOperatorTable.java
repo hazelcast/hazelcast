@@ -20,7 +20,9 @@ import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastDoubleFunction
 import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastSqlBinaryOperator;
 import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastSqlCastFunction;
 import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastSqlFloorFunction;
+import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastSqlLikeOperator;
 import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastSqlMonotonicBinaryOperator;
+import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastSqlStringFunction;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastInferTypes;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastOperandTypes;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastReturnTypes;
@@ -31,6 +33,7 @@ import org.apache.calcite.sql.SqlFunctionCategory;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlPostfixOperator;
 import org.apache.calcite.sql.SqlPrefixOperator;
+import org.apache.calcite.sql.SqlSpecialOperator;
 import org.apache.calcite.sql.fun.SqlStdOperatorTable;
 import org.apache.calcite.sql.type.InferTypes;
 import org.apache.calcite.sql.type.OperandTypes;
@@ -333,6 +336,57 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
         new ReplaceUnknownOperandTypeInference(new SqlTypeName[] { DECIMAL, INTEGER }),
         notAny(OperandTypes.NUMERIC_OPTIONAL_INTEGER),
         SqlFunctionCategory.NUMERIC
+    );
+
+    //#endregion
+
+    //#region String functions
+
+    public static final SqlBinaryOperator CONCAT = new SqlBinaryOperator(
+        "||",
+        SqlKind.OTHER,
+        60,
+        true,
+        ReturnTypes.DYADIC_STRING_SUM_PRECISION_NULLABLE,
+        HazelcastInferTypes.VARCHAR_IF_UNKNOWN,
+        OperandTypes.STRING_SAME_SAME
+    );
+
+    public static final SqlSpecialOperator LIKE = new HazelcastSqlLikeOperator();
+
+    public static final SqlFunction ASCII = new HazelcastSqlStringFunction(
+        "ASCII",
+        ReturnTypes.INTEGER_NULLABLE
+    );
+
+    public static final SqlFunction INITCAP = new HazelcastSqlStringFunction(
+        "INITCAP",
+        ReturnTypes.ARG0_NULLABLE
+    );
+
+    public static final SqlFunction CHAR_LENGTH = new HazelcastSqlStringFunction(
+        "CHAR_LENGTH",
+        ReturnTypes.INTEGER_NULLABLE
+    );
+
+    public static final SqlFunction CHARACTER_LENGTH = new HazelcastSqlStringFunction(
+        "CHARACTER_LENGTH",
+        ReturnTypes.INTEGER_NULLABLE
+    );
+
+    public static final SqlFunction LENGTH = new HazelcastSqlStringFunction(
+        "LENGTH",
+        ReturnTypes.INTEGER_NULLABLE
+    );
+
+    public static final SqlFunction LOWER = new HazelcastSqlStringFunction(
+        "LOWER",
+        ReturnTypes.ARG0_NULLABLE
+    );
+
+    public static final SqlFunction UPPER = new HazelcastSqlStringFunction(
+        "UPPER",
+        ReturnTypes.ARG0_NULLABLE
     );
 
     //#endregion
