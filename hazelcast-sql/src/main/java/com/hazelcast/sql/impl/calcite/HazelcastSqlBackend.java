@@ -30,6 +30,7 @@ import com.hazelcast.sql.impl.calcite.parse.QueryConvertResult;
 import com.hazelcast.sql.impl.calcite.parse.QueryParseResult;
 import com.hazelcast.sql.impl.calcite.parse.UnsupportedOperationVisitor;
 import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlValidator;
+import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeFactory;
 import com.hazelcast.sql.impl.optimizer.OptimizationTask;
 import com.hazelcast.sql.impl.optimizer.SqlPlan;
 import com.hazelcast.sql.impl.plan.cache.PlanCacheKey;
@@ -40,7 +41,6 @@ import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.prepare.Prepare.CatalogReader;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.type.RelDataType;
-import org.apache.calcite.rel.type.RelDataTypeFactory;
 import org.apache.calcite.sql.parser.SqlParserImplFactory;
 import org.apache.calcite.sql.util.SqlVisitor;
 import org.apache.calcite.sql.validate.SqlConformance;
@@ -69,7 +69,7 @@ public class HazelcastSqlBackend implements SqlBackend {
     @Override
     public SqlValidator validator(
             CatalogReader catalogReader,
-            RelDataTypeFactory typeFactory,
+            HazelcastTypeFactory typeFactory,
             SqlConformance conformance
     ) {
         return new HazelcastSqlValidator(catalogReader, typeFactory, conformance);
@@ -182,8 +182,8 @@ public class HazelcastSqlBackend implements SqlBackend {
                 relIdMap,
                 sql,
                 new PlanCacheKey(searchPaths, sql),
-                parameterMetadata,
-                rootColumnNames
+                rootColumnNames,
+                parameterMetadata
         );
 
         rel.visit(visitor);
