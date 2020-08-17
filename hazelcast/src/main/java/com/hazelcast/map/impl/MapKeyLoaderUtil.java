@@ -20,15 +20,16 @@ import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MaxSizePolicy;
 import com.hazelcast.internal.partition.IPartitionService;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.util.CollectionUtil;
 import com.hazelcast.internal.util.UnmodifiableIterator;
-import com.hazelcast.internal.serialization.Data;
 
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.NoSuchElementException;
+import java.util.concurrent.Semaphore;
 import java.util.function.Function;
 
 import static com.hazelcast.config.MaxSizePolicy.PER_NODE;
@@ -88,7 +89,7 @@ public final class MapKeyLoaderUtil {
      * @return an iterator with entry batches
      */
     static Iterator<Map<Integer, List<Data>>> toBatches(final Iterator<Entry<Integer, Data>> entries,
-                                                        final int maxBatch) {
+                                                        final int maxBatch, Semaphore limit) {
         return new UnmodifiableIterator<Map<Integer, List<Data>>>() {
             @Override
             public boolean hasNext() {
@@ -100,7 +101,7 @@ public final class MapKeyLoaderUtil {
                 if (!entries.hasNext()) {
                     throw new NoSuchElementException();
                 }
-                return nextBatch(entries, maxBatch);
+                return nextBatch(entries, maxBatch, limit);
             }
         };
     }
@@ -114,9 +115,14 @@ public final class MapKeyLoaderUtil {
      * @param maxBatch the maximum size of a group
      * @return the grouped entries by entry key
      */
-    private static Map<Integer, List<Data>> nextBatch(Iterator<Entry<Integer, Data>> entries, int maxBatch) {
+    private static Map<Integer, List<Data>> nextBatch(Iterator<Entry<Integer, Data>> entries,
+                                                      int maxBatch, Semaphore limit) {
         Map<Integer, List<Data>> batch = createHashMap(maxBatch);
         while (entries.hasNext()) {
+            if (!limit.tryAcquire()) {
+                break;
+            }
+
             Entry<Integer, Data> e = entries.next();
             List<Data> partitionKeys = CollectionUtil.addToValueList(batch, e.getKey(), e.getValue());
 

@@ -96,6 +96,7 @@ import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Predicate;
@@ -103,6 +104,7 @@ import java.util.function.Predicate;
 import static com.hazelcast.internal.util.ConcurrencyUtil.CALLER_RUNS;
 import static com.hazelcast.internal.util.SetUtil.immutablePartitionIdSet;
 import static com.hazelcast.map.impl.ListenerAdapters.createListenerAdapter;
+import static com.hazelcast.map.impl.MapKeyLoader.LOADED_KEY_LIMITER;
 import static com.hazelcast.map.impl.MapListenerFlagOperator.setAndGetListenerFlags;
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 import static com.hazelcast.query.impl.predicates.QueryOptimizerFactory.newOptimizer;
@@ -148,6 +150,7 @@ class MapServiceContextImpl implements MapServiceContext {
     private final AtomicReference<PartitionIdSet> ownedPartitions = new AtomicReference<>();
     private final ConcurrentMap<String, MapContainer> mapContainers = new ConcurrentHashMap<>();
     private final ExecutorStats offloadedExecutorStats = new ExecutorStats();
+    private final Semaphore loadedKeyLimiter;
 
     private MapService mapService;
 
@@ -173,6 +176,7 @@ class MapServiceContextImpl implements MapServiceContext {
         this.operationProviders = createOperationProviders();
         this.partitioningStrategyFactory = new PartitioningStrategyFactory(nodeEngine.getConfigClassLoader());
         this.nodeWideUsedCapacityCounter = new NodeWideUsedCapacityCounter(nodeEngine.getProperties());
+        this.loadedKeyLimiter = new Semaphore(nodeEngine.getProperties().getInteger(LOADED_KEY_LIMITER));
         this.logger = nodeEngine.getLogger(getClass());
     }
 
@@ -884,6 +888,11 @@ class MapServiceContextImpl implements MapServiceContext {
     @Override
     public ValueComparator getValueComparatorOf(InMemoryFormat inMemoryFormat) {
         return ValueComparatorUtil.getValueComparatorOf(inMemoryFormat);
+    }
+
+    @Override
+    public Semaphore getLoadedKeyLimiter() {
+        return loadedKeyLimiter;
     }
 
     public NodeWideUsedCapacityCounter getNodeWideUsedCapacityCounter() {

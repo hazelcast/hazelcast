@@ -20,6 +20,9 @@ import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.config.MaxSizePolicy;
 import com.hazelcast.internal.cluster.ClusterService;
+import com.hazelcast.internal.partition.IPartition;
+import com.hazelcast.internal.partition.IPartitionService;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.util.FutureUtil;
 import com.hazelcast.internal.util.StateMachine;
 import com.hazelcast.internal.util.scheduler.CoalescingDelayedTrigger;
@@ -31,14 +34,12 @@ import com.hazelcast.map.impl.operation.KeyLoadStatusOperationFactory;
 import com.hazelcast.map.impl.operation.MapOperation;
 import com.hazelcast.map.impl.operation.MapOperationProvider;
 import com.hazelcast.map.impl.operation.TriggerLoadIfNeededOperation;
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.executionservice.ExecutionService;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationService;
-import com.hazelcast.internal.partition.IPartition;
-import com.hazelcast.internal.partition.IPartitionService;
 import com.hazelcast.spi.properties.ClusterProperty;
+import com.hazelcast.spi.properties.HazelcastProperty;
 
 import java.io.Closeable;
 import java.util.ArrayList;
@@ -48,6 +49,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.Future;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
@@ -64,22 +66,29 @@ import static com.hazelcast.spi.impl.executionservice.ExecutionService.MAP_LOAD_
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
- * Loads keys from a {@link MapLoader} and sends them to all partitions for loading
+ * One instance of this class is created per {@link
+ * com.hazelcast.map.impl.recordstore.RecordStore}.
+ *
+ * It loads keys via {@link MapLoader#loadAllKeys} and sends
+ * them to all map partitions. Matching values of these keys are
+ * loaded in partition owner nodes via {@link MapLoader#loadAll}.
  */
 public class MapKeyLoader {
+
+    public static final String PROP_LOADED_KEY_LIMITER = "hazelcast.map.max.loaded.key";
+    public static final int DEFAULT_LOADED_KEY_LIMIT = 50000;
+    public static final HazelcastProperty LOADED_KEY_LIMITER
+            = new HazelcastProperty(PROP_LOADED_KEY_LIMITER, DEFAULT_LOADED_KEY_LIMIT);
 
     private static final long LOADING_TRIGGER_DELAY = SECONDS.toMillis(5);
 
     private ILogger logger;
-
     private String mapName;
     private OperationService opService;
     private IPartitionService partitionService;
-    private final ClusterService clusterService;
     private Function<Object, Data> toData;
     private ExecutionService execService;
     private CoalescingDelayedTrigger delayedTrigger;
-
     /**
      * The configured maximum entry count per node or {@code -1} if the
      * default is used or the max size policy is not
@@ -96,7 +105,6 @@ public class MapKeyLoader {
     private int mapNamePartition;
     private int partitionId;
     private boolean hasBackup;
-
     /**
      * The future representing pending completion of the key loading task
      * on the {@link Role#SENDER} partition. The result of this future
@@ -159,8 +167,12 @@ public class MapKeyLoader {
             .withTransition(State.LOADING, State.LOADED, State.NOT_LOADED)
             .withTransition(State.LOADED, State.LOADING);
 
+    private final Semaphore loadedKeyLimiter;
+    private final ClusterService clusterService;
+
     public MapKeyLoader(String mapName, OperationService opService, IPartitionService ps,
-                        ClusterService clusterService, ExecutionService execService, Function<Object, Data> serialize) {
+                        ClusterService clusterService, ExecutionService execService,
+                        Function<Object, Data> serialize, Semaphore loadedKeyLimiter) {
         this.mapName = mapName;
         this.opService = opService;
         this.partitionService = ps;
@@ -168,6 +180,7 @@ public class MapKeyLoader {
         this.toData = serialize;
         this.execService = execService;
         this.logger = getLogger(MapKeyLoader.class);
+        this.loadedKeyLimiter = loadedKeyLimiter;
     }
 
     /**
@@ -423,12 +436,12 @@ public class MapKeyLoader {
             }
 
             Iterator<Entry<Integer, Data>> partitionsAndKeys = map(dataKeys, toPartition(partitionService));
-            Iterator<Map<Integer, List<Data>>> batches = toBatches(partitionsAndKeys, maxBatch);
+            Iterator<Map<Integer, List<Data>>> batches = toBatches(partitionsAndKeys, maxBatch, loadedKeyLimiter);
 
             List<Future> futures = new ArrayList<>();
             while (batches.hasNext()) {
                 Map<Integer, List<Data>> batch = batches.next();
-                futures.addAll(sendBatch(batch, replaceExistingValues));
+                futures.addAll(sendBatch(batch, replaceExistingValues, loadedKeyLimiter));
             }
 
             // This acts as a barrier to prevent re-ordering of key distribution operations (LoadAllOperation)
@@ -459,20 +472,30 @@ public class MapKeyLoader {
      *
      * @param batch                 a map from partition ID to a batch of keys for that partition
      * @param replaceExistingValues if the existing entries for the loaded keys should be replaced
+     * @param limit                 limiter
      * @return a list of futures representing pending completion of the value offloading task
      */
-    private List<Future> sendBatch(Map<Integer, List<Data>> batch, boolean replaceExistingValues) {
+    private List<Future> sendBatch(Map<Integer, List<Data>> batch, boolean replaceExistingValues,
+                                   Semaphore limit) {
         Set<Entry<Integer, List<Data>>> entries = batch.entrySet();
+
         List<Future> futures = new ArrayList<>(entries.size());
-        for (Entry<Integer, List<Data>> e : entries) {
+
+        Iterator<Entry<Integer, List<Data>>> iterator = entries.iterator();
+        while (iterator.hasNext()) {
+            Entry<Integer, List<Data>> e = iterator.next();
             int partitionId = e.getKey();
             List<Data> keys = e.getValue();
 
             MapOperation op = operationProvider.createLoadAllOperation(mapName, keys, replaceExistingValues);
+            limit.release(keys.size());
 
             InternalCompletableFuture<Object> future = opService.invokeOnPartition(SERVICE_NAME, op, partitionId);
             futures.add(future);
+
+            iterator.remove();
         }
+
         return futures;
     }
 
