@@ -19,6 +19,7 @@ package com.hazelcast.sql.impl.calcite.parse;
 import com.hazelcast.sql.SqlErrorCode;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.QueryUtils;
+import com.hazelcast.sql.impl.calcite.HazelcastSqlBackend;
 import com.hazelcast.sql.impl.calcite.OptimizerContext;
 import com.hazelcast.sql.impl.calcite.TestMapTable;
 import com.hazelcast.sql.impl.calcite.TestTableResolver;
@@ -126,10 +127,11 @@ public class ParserOperationsTest {
         );
 
         return OptimizerContext.create(
-            null,
             new SqlCatalog(tableResolvers),
             searchPaths,
-            1
+            1,
+            new HazelcastSqlBackend(null),
+            null
         );
     }
 }

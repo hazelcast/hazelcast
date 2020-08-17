@@ -18,9 +18,8 @@ package com.hazelcast.sql.impl.calcite.parse;
 
 import com.hazelcast.sql.SqlErrorCode;
 import com.hazelcast.sql.impl.QueryException;
-import com.hazelcast.sql.impl.calcite.JetSqlBackend;
+import com.hazelcast.sql.impl.calcite.SqlBackend;
 import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlConformance;
-import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlValidator;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeFactory;
 import org.apache.calcite.prepare.Prepare.CatalogReader;
 import org.apache.calcite.sql.SqlNode;
@@ -35,7 +34,7 @@ import org.apache.calcite.sql.validate.SqlValidator;
 import javax.annotation.Nullable;
 
 /**
- * Performs syntactic and semantic validation of the query, and converts the parse tree into a relational tree.
+ * Performs syntactic and semantic validation of the query.
  */
 public class QueryParser {
 
@@ -43,28 +42,31 @@ public class QueryParser {
     private final CatalogReader catalogReader;
     private final SqlConformance conformance;
 
-    private final JetSqlBackend jetSqlBackend;
+    private final SqlBackend sqlBackend;
+    private final SqlBackend jetSqlBackend;
 
     public QueryParser(
             HazelcastTypeFactory typeFactory,
             CatalogReader catalogReader,
             SqlConformance conformance,
-            @Nullable JetSqlBackend jetSqlBackend
+            SqlBackend sqlBackend,
+            @Nullable SqlBackend jetSqlBackend
     ) {
         this.typeFactory = typeFactory;
         this.catalogReader = catalogReader;
         this.conformance = conformance;
 
+        this.sqlBackend = sqlBackend;
         this.jetSqlBackend = jetSqlBackend;
     }
 
     public QueryParseResult parse(String sql) {
         try {
             try {
-                return parseImdg(sql);
+                return parse(sql, sqlBackend);
             } catch (Exception e) {
                 if (jetSqlBackend != null) {
-                    return parseJet(sql);
+                    return parse(sql, jetSqlBackend);
                 } else {
                     throw e;
                 }
@@ -74,40 +76,24 @@ public class QueryParser {
         }
     }
 
-    private QueryParseResult parseImdg(String sql) throws SqlParseException {
-        Config config = createConfig(null);
+    private QueryParseResult parse(String sql, SqlBackend sqlBackend) throws SqlParseException {
+        assert sqlBackend != null;
+
+        Config config = createConfig(sqlBackend.parserFactory());
         SqlParser parser = SqlParser.create(sql, config);
 
-        SqlValidator validator = new HazelcastSqlValidator(catalogReader, typeFactory, conformance);
+        SqlValidator validator = sqlBackend.validator(catalogReader, typeFactory, conformance);
         SqlNode node = validator.validate(parser.parseStmt());
 
-        SqlVisitor<Void> visitor = new UnsupportedOperationVisitor(catalogReader);
+        SqlVisitor<Void> visitor = sqlBackend.unsupportedOperationVisitor(catalogReader);
         node.accept(visitor);
 
         return new QueryParseResult(
-                node,
-                validator.getParameterRowType(node),
-                true,
-                validator);
-    }
-
-    private QueryParseResult parseJet(String sql) throws SqlParseException {
-        assert jetSqlBackend != null;
-
-        Config config = createConfig(jetSqlBackend.parserFactory());
-        SqlParser parser = SqlParser.create(sql, config);
-
-        SqlValidator validator = jetSqlBackend.validator(catalogReader, typeFactory, conformance);
-        SqlNode node = validator.validate(parser.parseStmt());
-
-        SqlVisitor<Void> visitor = jetSqlBackend.unsupportedOperationVisitor(catalogReader);
-        node.accept(visitor);
-
-        return new QueryParseResult(
-                node,
-                validator.getParameterRowType(node),
-                false,
-                validator);
+            node,
+            validator.getParameterRowType(node),
+            validator,
+            sqlBackend
+        );
     }
 
     private static Config createConfig(SqlParserImplFactory parserImplFactory) {

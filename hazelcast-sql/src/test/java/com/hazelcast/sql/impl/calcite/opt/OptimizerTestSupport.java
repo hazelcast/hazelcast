@@ -19,6 +19,7 @@ package com.hazelcast.sql.impl.calcite.opt;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.QueryUtils;
 import com.hazelcast.sql.impl.SqlTestSupport;
+import com.hazelcast.sql.impl.calcite.HazelcastSqlBackend;
 import com.hazelcast.sql.impl.calcite.OptimizerContext;
 import com.hazelcast.sql.impl.calcite.TestMapTable;
 import com.hazelcast.sql.impl.calcite.opt.cost.Cost;
@@ -105,10 +106,11 @@ public abstract class OptimizerTestSupport extends SqlTestSupport {
         QueryParameterMetadata parameterMetadata
     ) {
         OptimizerContext context = OptimizerContext.create(
-            null,
             HazelcastSchemaUtils.createCatalog(schema),
             QueryUtils.prepareSearchPaths(null, null),
-            nodeCount
+            nodeCount,
+            new HazelcastSqlBackend(null),
+            null
         );
 
         return optimize(sql, context, physical, parameterMetadata);

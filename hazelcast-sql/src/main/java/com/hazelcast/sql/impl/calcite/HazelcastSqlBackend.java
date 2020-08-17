@@ -1,0 +1,193 @@
+/*
+ * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.hazelcast.sql.impl.calcite;
+
+import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.sql.impl.QueryParameterMetadata;
+import com.hazelcast.sql.impl.QueryUtils;
+import com.hazelcast.sql.impl.calcite.opt.OptUtils;
+import com.hazelcast.sql.impl.calcite.opt.logical.LogicalRules;
+import com.hazelcast.sql.impl.calcite.opt.logical.RootLogicalRel;
+import com.hazelcast.sql.impl.calcite.opt.physical.PhysicalRel;
+import com.hazelcast.sql.impl.calcite.opt.physical.PhysicalRules;
+import com.hazelcast.sql.impl.calcite.opt.physical.visitor.NodeIdVisitor;
+import com.hazelcast.sql.impl.calcite.opt.physical.visitor.PlanCreateVisitor;
+import com.hazelcast.sql.impl.calcite.parse.QueryConvertResult;
+import com.hazelcast.sql.impl.calcite.parse.QueryParseResult;
+import com.hazelcast.sql.impl.calcite.parse.UnsupportedOperationVisitor;
+import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlValidator;
+import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeFactory;
+import com.hazelcast.sql.impl.optimizer.OptimizationTask;
+import com.hazelcast.sql.impl.optimizer.SqlPlan;
+import com.hazelcast.sql.impl.plan.cache.PlanCacheKey;
+import com.hazelcast.sql.impl.type.QueryDataType;
+import org.apache.calcite.plan.RelOptCluster;
+import org.apache.calcite.plan.RelOptTable.ViewExpander;
+import org.apache.calcite.plan.RelTraitSet;
+import org.apache.calcite.prepare.Prepare.CatalogReader;
+import org.apache.calcite.rel.RelNode;
+import org.apache.calcite.rel.type.RelDataType;
+import org.apache.calcite.sql.parser.SqlParserImplFactory;
+import org.apache.calcite.sql.util.SqlVisitor;
+import org.apache.calcite.sql.validate.SqlConformance;
+import org.apache.calcite.sql.validate.SqlValidator;
+import org.apache.calcite.sql2rel.SqlRexConvertletTable;
+import org.apache.calcite.sql2rel.SqlToRelConverter;
+import org.apache.calcite.sql2rel.SqlToRelConverter.Config;
+import org.apache.calcite.sql2rel.StandardConvertletTable;
+
+import java.util.List;
+import java.util.Map;
+
+public class HazelcastSqlBackend implements SqlBackend {
+
+    private final NodeEngine nodeEngine;
+
+    public HazelcastSqlBackend(NodeEngine nodeEngine) {
+        this.nodeEngine = nodeEngine;
+    }
+
+    @Override
+    public SqlParserImplFactory parserFactory() {
+        return null;
+    }
+
+    @Override
+    public SqlValidator validator(
+            CatalogReader catalogReader,
+            HazelcastTypeFactory typeFactory,
+            SqlConformance conformance
+    ) {
+        return new HazelcastSqlValidator(catalogReader, typeFactory, conformance);
+    }
+
+    @Override
+    public SqlVisitor<Void> unsupportedOperationVisitor(CatalogReader catalogReader) {
+        return new UnsupportedOperationVisitor(catalogReader);
+    }
+
+    @Override
+    public SqlToRelConverter converter(
+            ViewExpander viewExpander,
+            SqlValidator validator,
+            CatalogReader catalogReader,
+            RelOptCluster cluster,
+            SqlRexConvertletTable convertletTable,
+            Config config
+    ) {
+        return new HazelcastSqlToRelConverter(
+                null,
+                validator,
+                catalogReader,
+                cluster,
+                StandardConvertletTable.INSTANCE,
+                config
+        );
+    }
+
+    @Override
+    public SqlPlan createPlan(OptimizationTask task, QueryParseResult parseResult, OptimizerContext context) {
+        QueryConvertResult convertResult = context.convert(parseResult);
+
+        return createPlan(
+                task.getSearchPaths(),
+                task.getSql(),
+                parseResult.getParameterRowType(),
+                convertResult.getRel(),
+                convertResult.getFieldNames(),
+                context
+        );
+    }
+
+    private SqlPlan createPlan(
+            List<List<String>> searchPaths,
+            String sql,
+            RelDataType parameterRowType,
+            RelNode rel,
+            List<String> fieldNames,
+            OptimizerContext context
+    ) {
+        QueryDataType[] mappedParameterRowType = SqlToQueryType.mapRowType(parameterRowType);
+        QueryParameterMetadata parameterMetadata = new QueryParameterMetadata(mappedParameterRowType);
+
+        PhysicalRel physicalRel = optimize(context, rel, parameterMetadata);
+
+        return createImdgPlan(
+                searchPaths,
+                sql,
+                parameterMetadata,
+                physicalRel,
+                fieldNames
+        );
+    }
+
+    private PhysicalRel optimize(
+            OptimizerContext context,
+            RelNode rel,
+            QueryParameterMetadata parameterMetadata
+    ) {
+        // Make parameter metadata available to planner.
+        context.setParameterMetadata(parameterMetadata);
+
+        // Logical part.
+        RelNode logicalRel = context.optimize(rel, LogicalRules.getRuleSet(), OptUtils.toLogicalConvention(rel.getTraitSet()));
+
+        RootLogicalRel logicalRootRel = new RootLogicalRel(logicalRel.getCluster(), logicalRel.getTraitSet(), logicalRel);
+
+        // Physical part.
+        RelTraitSet physicalTraitSet = OptUtils.toPhysicalConvention(
+                logicalRootRel.getTraitSet(),
+                OptUtils.getDistributionDef(logicalRootRel).getTraitRoot()
+        );
+
+        return (PhysicalRel) context.optimize(logicalRootRel, PhysicalRules.getRuleSet(), physicalTraitSet);
+    }
+
+    /**
+     * Create plan from physical rel.
+     *
+     * @param rel Rel.
+     * @return Plan.
+     */
+    private SqlPlan createImdgPlan(
+            List<List<String>> searchPaths,
+            String sql,
+            QueryParameterMetadata parameterMetadata,
+            PhysicalRel rel,
+            List<String> rootColumnNames
+    ) {
+        // Assign IDs to nodes.
+        NodeIdVisitor idVisitor = new NodeIdVisitor();
+        rel.visit(idVisitor);
+        Map<PhysicalRel, List<Integer>> relIdMap = idVisitor.getIdMap();
+
+        // Create the plan.
+        PlanCreateVisitor visitor = new PlanCreateVisitor(
+                nodeEngine.getLocalMember().getUuid(),
+                QueryUtils.createPartitionMap(nodeEngine),
+                relIdMap,
+                sql,
+                new PlanCacheKey(searchPaths, sql),
+                rootColumnNames,
+                parameterMetadata
+        );
+
+        rel.visit(visitor);
+
+        return visitor.getPlan();
+    }
+}
