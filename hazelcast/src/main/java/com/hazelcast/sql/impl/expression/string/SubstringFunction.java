@@ -39,6 +39,7 @@ public class SubstringFunction extends TriExpression<String> implements Identifi
         return new SubstringFunction(input, start, length);
     }
 
+    @SuppressWarnings({"checkstyle:CyclomaticComplexity", "checkstyle:NPathComplexity"})
     @Override
     public String eval(Row row, ExpressionEvalContext context) {
         // Get input

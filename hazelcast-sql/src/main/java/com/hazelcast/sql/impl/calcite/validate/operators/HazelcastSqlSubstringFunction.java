@@ -26,7 +26,6 @@ import org.apache.calcite.sql.SqlFunctionCategory;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.SqlOperandCountRange;
-import org.apache.calcite.sql.SqlOperatorBinding;
 import org.apache.calcite.sql.SqlUtil;
 import org.apache.calcite.sql.SqlWriter;
 import org.apache.calcite.sql.type.FamilyOperandTypeChecker;
@@ -35,9 +34,7 @@ import org.apache.calcite.sql.type.ReturnTypes;
 import org.apache.calcite.sql.type.SqlOperandCountRanges;
 import org.apache.calcite.sql.type.SqlTypeFamily;
 import org.apache.calcite.sql.type.SqlTypeName;
-import org.apache.calcite.sql.validate.SqlMonotonicity;
 
-import java.math.BigDecimal;
 import java.util.List;
 
 import static org.apache.calcite.sql.type.SqlTypeName.INTEGER;
@@ -122,23 +119,5 @@ public class HazelcastSqlSubstringFunction extends SqlFunction {
         }
 
         writer.endFunCall(frame);
-    }
-
-    @Override
-    public SqlMonotonicity getMonotonicity(SqlOperatorBinding call) {
-        // SUBSTRING(x FROM 0 FOR constant) has same monotonicity as x
-        if (call.getOperandCount() == 3) {
-            SqlMonotonicity mono0 = call.getOperandMonotonicity(0);
-
-            if (mono0 != SqlMonotonicity.NOT_MONOTONIC
-                && call.getOperandMonotonicity(1) == SqlMonotonicity.CONSTANT
-                && call.getOperandLiteralValue(1, BigDecimal.class).equals(BigDecimal.ZERO)
-                && call.getOperandMonotonicity(2) == SqlMonotonicity.CONSTANT
-            ) {
-                return mono0.unstrict();
-            }
-        }
-
-        return super.getMonotonicity(call);
     }
 }

@@ -30,6 +30,7 @@ import org.junit.runner.RunWith;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 
+@SuppressWarnings("SpellCheckingInspection")
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class SubstringFunctionIntegrationTest extends SqlExpressionIntegrationTestSupport {
@@ -37,14 +38,7 @@ public class SubstringFunctionIntegrationTest extends SqlExpressionIntegrationTe
     public void test_input() {
         // String column
         put("abcde");
-        checkValueInternal("SELECT SUBSTRING(this FROM null) FROM map", SqlColumnType.VARCHAR, "abcde");put("abcde");
         checkValueInternal("SELECT SUBSTRING(this FROM 1) FROM map", SqlColumnType.VARCHAR, "abcde");
-        checkValueInternal("SELECT SUBSTRING(this FROM 2) FROM map", SqlColumnType.VARCHAR, "bcde");
-        checkValueInternal("SELECT SUBSTRING(this FROM 5) FROM map", SqlColumnType.VARCHAR, "e");
-        checkValueInternal("SELECT SUBSTRING(this FROM 6) FROM map", SqlColumnType.VARCHAR, "");
-        checkFailureInternal("SELECT SUBSTRING(this FROM 0) FROM map", SqlErrorCode.DATA_EXCEPTION, "SUBSTRING \"start\" operand must be positive");
-        checkFailureInternal("SELECT SUBSTRING(this FROM -1) FROM map", SqlErrorCode.DATA_EXCEPTION, "SUBSTRING \"start\" operand must be positive");
-        checkValueInternal("SELECT SUBSTRING(this FROM 1 FOR 0) FROM map", SqlColumnType.VARCHAR, "");
         checkValueInternal("SELECT SUBSTRING(this FROM 1 FOR 1) FROM map", SqlColumnType.VARCHAR, "a");
         checkValueInternal("SELECT SUBSTRING(this FROM 1 FOR 2) FROM map", SqlColumnType.VARCHAR, "ab");
         checkValueInternal("SELECT SUBSTRING(this FROM 1 FOR 5) FROM map", SqlColumnType.VARCHAR, "abcde");
@@ -113,16 +107,128 @@ public class SubstringFunctionIntegrationTest extends SqlExpressionIntegrationTe
 
     @Test
     public void test_start() {
-        // TODO: Literals
+        // Different values
+        put("abcde");
+        checkValueInternal("SELECT SUBSTRING(this FROM null) FROM map", SqlColumnType.VARCHAR, "abcde");
+        checkValueInternal("SELECT SUBSTRING(this FROM 1) FROM map", SqlColumnType.VARCHAR, "abcde");
+        checkValueInternal("SELECT SUBSTRING(this FROM 2) FROM map", SqlColumnType.VARCHAR, "bcde");
+        checkValueInternal("SELECT SUBSTRING(this FROM 5) FROM map", SqlColumnType.VARCHAR, "e");
+        checkValueInternal("SELECT SUBSTRING(this FROM 6) FROM map", SqlColumnType.VARCHAR, "");
+        checkValueInternal("SELECT SUBSTRING(this FROM 10) FROM map", SqlColumnType.VARCHAR, "");
+        checkFailureInternal("SELECT SUBSTRING(this FROM 0) FROM map", SqlErrorCode.DATA_EXCEPTION, "SUBSTRING \"start\" operand must be positive");
+        checkFailureInternal("SELECT SUBSTRING(this FROM -1) FROM map", SqlErrorCode.DATA_EXCEPTION, "SUBSTRING \"start\" operand must be positive");
+
+        // Columns
+        put(new ExpressionValue.IntegerVal());
+        checkValueInternal("SELECT SUBSTRING('abcde' FROM field1) FROM map", SqlColumnType.VARCHAR, "abcde");
+
+        put(true);
+        checkFailureInternal("SELECT SUBSTRING('abcde' FROM this) FROM map", SqlErrorCode.PARSING, "Cannot apply 'SUBSTRING' to arguments of type 'SUBSTRING(<VARCHAR> FROM <BOOLEAN>)'");
+
+        put((byte) 2);
+        checkValueInternal("SELECT SUBSTRING('abcde' FROM this) FROM map", SqlColumnType.VARCHAR, "bcde");
+
+        put((short) 2);
+        checkValueInternal("SELECT SUBSTRING('abcde' FROM this) FROM map", SqlColumnType.VARCHAR, "bcde");
+
+        put(2);
+        checkValueInternal("SELECT SUBSTRING('abcde' FROM this) FROM map", SqlColumnType.VARCHAR, "bcde");
+
+        put(2L);
+        checkValueInternal("SELECT SUBSTRING('abcde' FROM this) FROM map", SqlColumnType.VARCHAR, "bcde");
+
+        put("2");
+        checkValueInternal("SELECT SUBSTRING('abcde' FROM this) FROM map", SqlColumnType.VARCHAR, "bcde");
+
+        put('2');
+        checkValueInternal("SELECT SUBSTRING('abcde' FROM this) FROM map", SqlColumnType.VARCHAR, "bcde");
+
+        // Parameters
+        put("abcde");
+        checkValueInternal("SELECT SUBSTRING(this FROM ?) FROM map", SqlColumnType.VARCHAR, "abcde", new Object[] { null});
+        checkValueInternal("SELECT SUBSTRING(this FROM ?) FROM map", SqlColumnType.VARCHAR, "bcde", (byte) 2);
+        checkValueInternal("SELECT SUBSTRING(this FROM ?) FROM map", SqlColumnType.VARCHAR, "bcde", (short) 2);
+        checkValueInternal("SELECT SUBSTRING(this FROM ?) FROM map", SqlColumnType.VARCHAR, "bcde", 2);
+        checkValueInternal("SELECT SUBSTRING(this FROM ?) FROM map", SqlColumnType.VARCHAR, "bcde", "2");
+        checkValueInternal("SELECT SUBSTRING(this FROM ?) FROM map", SqlColumnType.VARCHAR, "bcde", '2');
+
+        checkFailureInternal("SELECT SUBSTRING(this FROM ?) FROM map", SqlErrorCode.DATA_EXCEPTION, "Failed to convert parameter at position 0 from VARCHAR to INTEGER", "bad");
+        checkFailureInternal("SELECT SUBSTRING(this FROM ?) FROM map", SqlErrorCode.DATA_EXCEPTION, "Failed to convert parameter at position 0 from VARCHAR to INTEGER", 'b');
+
+        checkFailureInternal("SELECT SUBSTRING(this FROM ?) FROM map", SqlErrorCode.DATA_EXCEPTION, "Failed to convert parameter at position 0 from BOOLEAN to INTEGER", true);
+        checkFailureInternal("SELECT SUBSTRING(this FROM ?) FROM map", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from BIGINT to INTEGER", 2L);
+        checkFailureInternal("SELECT SUBSTRING(this FROM ?) FROM map", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from DECIMAL to INTEGER", BigInteger.ONE);
+        checkFailureInternal("SELECT SUBSTRING(this FROM ?) FROM map", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from DECIMAL to INTEGER", BigDecimal.ONE);
+        checkFailureInternal("SELECT SUBSTRING(this FROM ?) FROM map", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from REAL to INTEGER", 2f);
+        checkFailureInternal("SELECT SUBSTRING(this FROM ?) FROM map", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from DOUBLE to INTEGER", 2d);
+
+        // Literals
+        put("abcde");
+        checkValueInternal("SELECT SUBSTRING(this FROM 2) FROM map", SqlColumnType.VARCHAR, "bcde");
+        checkValueInternal("SELECT SUBSTRING(this FROM '2') FROM map", SqlColumnType.VARCHAR, "bcde");
+        checkValueInternal("SELECT SUBSTRING(this FROM null) FROM map", SqlColumnType.VARCHAR, "abcde");
+        checkFailureInternal("SELECT SUBSTRING(this FROM true) FROM map", SqlErrorCode.PARSING, "Cannot apply 'SUBSTRING' to arguments of type 'SUBSTRING(<VARCHAR> FROM <BOOLEAN>)'");
     }
 
     @Test
     public void test_length() {
-        // TODO: Literals
+        // Different values
+        put(1);
+        checkValueInternal("SELECT SUBSTRING('abcde' FROM 2 FOR 0) FROM map", SqlColumnType.VARCHAR, "");
+        checkValueInternal("SELECT SUBSTRING('abcde' FROM 2 FOR 2) FROM map", SqlColumnType.VARCHAR, "bc");
+        checkValueInternal("SELECT SUBSTRING('abcde' FROM 2 FOR 10) FROM map", SqlColumnType.VARCHAR, "bcde");
+        checkFailureInternal("SELECT SUBSTRING('abcde' FROM 2 FOR -1) FROM map", SqlErrorCode.DATA_EXCEPTION, "SUBSTRING \"length\" operand cannot be negative");
+
+        // Columns
+        put(new ExpressionValue.IntegerVal());
+        checkValueInternal("SELECT SUBSTRING('abcde' FROM 2 FOR field1) FROM map", SqlColumnType.VARCHAR, "bcde");
+
+        put(true);
+        checkFailureInternal("SELECT SUBSTRING('abcde' FROM 2 FOR this) FROM map", SqlErrorCode.PARSING, "Cannot apply 'SUBSTRING' to arguments of type 'SUBSTRING(<VARCHAR> FROM <TINYINT> FOR <BOOLEAN>)'");
+
+        put((byte) 2);
+        checkValueInternal("SELECT SUBSTRING('abcde' FROM 2 FOR this) FROM map", SqlColumnType.VARCHAR, "bc");
+
+        put((short) 2);
+        checkValueInternal("SELECT SUBSTRING('abcde' FROM 2 FOR this) FROM map", SqlColumnType.VARCHAR, "bc");
+
+        put(2);
+        checkValueInternal("SELECT SUBSTRING('abcde' FROM 2 FOR this) FROM map", SqlColumnType.VARCHAR, "bc");
+
+        put(2L);
+        checkValueInternal("SELECT SUBSTRING('abcde' FROM 2 FOR this) FROM map", SqlColumnType.VARCHAR, "bc");
+
+        // Parameters
+        put(1);
+        checkValueInternal("SELECT SUBSTRING('abcde' FROM 2 FOR ?) FROM map", SqlColumnType.VARCHAR, "bcde", new Object[] { null });
+        checkValueInternal("SELECT SUBSTRING('abcde' FROM 2 FOR ?) FROM map", SqlColumnType.VARCHAR, "bc", (byte) 2);
+        checkValueInternal("SELECT SUBSTRING('abcde' FROM 2 FOR ?) FROM map", SqlColumnType.VARCHAR, "bc", (short) 2);
+        checkValueInternal("SELECT SUBSTRING('abcde' FROM 2 FOR ?) FROM map", SqlColumnType.VARCHAR, "bc", 2);
+        checkValueInternal("SELECT SUBSTRING('abcde' FROM 2 FOR ?) FROM map", SqlColumnType.VARCHAR, "bc", "2");
+        checkValueInternal("SELECT SUBSTRING('abcde' FROM 2 FOR ?) FROM map", SqlColumnType.VARCHAR, "bc", '2');
+
+        checkFailureInternal("SELECT SUBSTRING('abcde' FROM 2 FOR ?) FROM map", SqlErrorCode.DATA_EXCEPTION, "Failed to convert parameter at position 0 from VARCHAR to INTEGER", "bad");
+        checkFailureInternal("SELECT SUBSTRING('abcde' FROM 2 FOR ?) FROM map", SqlErrorCode.DATA_EXCEPTION, "Failed to convert parameter at position 0 from VARCHAR to INTEGER", 'b');
+
+        checkFailureInternal("SELECT SUBSTRING('abcde' FROM 2 FOR ?) FROM map", SqlErrorCode.DATA_EXCEPTION, "Failed to convert parameter at position 0 from BOOLEAN to INTEGER", true);
+        checkFailureInternal("SELECT SUBSTRING('abcde' FROM 2 FOR ?) FROM map", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from BIGINT to INTEGER", 2L);
+        checkFailureInternal("SELECT SUBSTRING('abcde' FROM 2 FOR ?) FROM map", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from DECIMAL to INTEGER", new BigInteger("2"));
+        checkFailureInternal("SELECT SUBSTRING('abcde' FROM 2 FOR ?) FROM map", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from DECIMAL to INTEGER", new BigDecimal("2"));
+        checkFailureInternal("SELECT SUBSTRING('abcde' FROM 2 FOR ?) FROM map", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from REAL to INTEGER", 2f);
+        checkFailureInternal("SELECT SUBSTRING('abcde' FROM 2 FOR ?) FROM map", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from DOUBLE to INTEGER", 2d);
+
+        // Literals
+        put(1);
+        checkValueInternal("SELECT SUBSTRING('abcde' FROM 2 FOR 2) FROM map", SqlColumnType.VARCHAR, "bc");
+        checkValueInternal("SELECT SUBSTRING('abcde' FROM 2 FOR '2') FROM map", SqlColumnType.VARCHAR, "bc");
+        checkValueInternal("SELECT SUBSTRING('abcde' FROM 2 FOR null) FROM map", SqlColumnType.VARCHAR, "bcde");
+        checkFailureInternal("SELECT SUBSTRING('abcde' FROM 2 FOR true) FROM map", SqlErrorCode.PARSING, "Cannot apply 'SUBSTRING' to arguments of type 'SUBSTRING(<VARCHAR> FROM <TINYINT> FOR <BOOLEAN>)'");
     }
 
     @Test
-    public void test_parameters() {
-        // TODO: Literals
+    public void test_parameters_only() {
+        put(1);
+        checkValueInternal("SELECT SUBSTRING(? FROM ?) FROM map", SqlColumnType.VARCHAR, "bcde", "abcde", 2);
+        checkValueInternal("SELECT SUBSTRING(? FROM ? FOR ?) FROM map", SqlColumnType.VARCHAR, "bc", "abcde", 2, 2);
     }
 }
