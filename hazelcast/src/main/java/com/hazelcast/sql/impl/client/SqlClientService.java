@@ -122,17 +122,21 @@ public class SqlClientService implements SqlService {
      * @param queryId Query ID.
      * @return Pair: fetched rows + last page flag.
      */
-    public SqlPage fetch(Connection connection, QueryId queryId, int cursorBufferSize) {
+    public ClientInvocationFuture startFetchNextPage(Connection connection, QueryId queryId, int cursorBufferSize) {
+        ClientMessage requestMessage = SqlFetchCodec.encodeRequest(queryId, cursorBufferSize);
+        return invokeAsync(requestMessage, connection);
+    }
+
+    public SqlPage getNextPage(ClientInvocationFuture requestFetchFuture) {
         try {
-            ClientMessage requestMessage = SqlFetchCodec.encodeRequest(queryId, cursorBufferSize);
-            ClientMessage responseMessage = invoke(requestMessage, connection);
+            ClientMessage responseMessage = requestFetchFuture.get();
             SqlFetchCodec.ResponseParameters responseParameters = SqlFetchCodec.decodeResponse(responseMessage);
 
             handleResponseError(responseParameters.error);
 
             return new SqlPage(responseParameters.rowPage, responseParameters.rowPageLast);
         } catch (Exception e) {
-            throw rethrow(e, connection);
+            throw rethrow(e, requestFetchFuture.getInvocation().getSendConnection());
         }
     }
 
@@ -153,7 +157,7 @@ public class SqlClientService implements SqlService {
     }
 
     /**
-     * Invokes a method that do not have an associated handler on the server side.
+     * Invokes a method that does not have an associated handler on the server side.
      * For testing purposes only.
      */
     public void missing() {
@@ -209,11 +213,13 @@ public class SqlClientService implements SqlService {
     }
 
     private ClientMessage invoke(ClientMessage request, Connection connection) throws Exception {
+        return invokeAsync(request, connection).get();
+    }
+
+    private ClientInvocationFuture invokeAsync(ClientMessage request, Connection connection) {
         ClientInvocation invocation = new ClientInvocation(client, request, null, connection);
 
-        ClientInvocationFuture fut = invocation.invoke();
-
-        return fut.get();
+        return invocation.invoke();
     }
 
     private static void handleResponseError(SqlError error) {
