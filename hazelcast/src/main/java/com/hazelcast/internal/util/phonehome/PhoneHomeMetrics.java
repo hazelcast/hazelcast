@@ -74,7 +74,11 @@ public enum PhoneHomeMetrics {
     COUNT_OF_REPLICATED_MAPS("rpct"),
     COUNT_OF_CARDINALITY_ESTIMATORS("cect"),
     COUNT_OF_PN_COUNTERS("pncct"),
-    COUNT_OF_FLAKE_ID_GENERATORS("figct");
+    COUNT_OF_FLAKE_ID_GENERATORS("figct"),
+
+    //CLOUD METRICS
+    CLOUD("cld"),
+    DOCKER("dck");
 
     private final String query;
 

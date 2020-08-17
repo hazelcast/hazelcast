@@ -70,7 +70,28 @@ public class PhoneHomeIntegrationTest extends HazelcastTestSupport {
     public void initialise() {
         HazelcastInstance hz = createHazelcastInstance();
         node = getNode(hz);
-        phoneHome = new PhoneHome(node, "http://localhost:8080/ping");
+        phoneHome = new PhoneHome(node,
+                "http://localhost:8080/ping",
+                "http://localhost:8080/latest/meta-data",
+                "http://localhost:8080/metadata/instance/compute?api-version=2018-02-01",
+                "http://localhost:8080/metadata.google.internal");
+    }
+
+    public void stubUrls(int phoneHomeStatus, int awsStatus, int azureStatus, int gcpStatus) {
+
+        stubFor(get(urlPathEqualTo("/ping"))
+                .willReturn(aResponse()
+                        .withStatus(phoneHomeStatus)));
+        stubFor(get(urlPathEqualTo("/latest/meta-data"))
+                .willReturn(aResponse()
+                        .withStatus(awsStatus)));
+        stubFor(get(urlPathEqualTo("/metadata/instance/compute"))
+                .withQueryParam("api-version", equalTo("2018-02-01"))
+                .willReturn(aResponse()
+                        .withStatus(azureStatus)));
+        stubFor(get(urlPathEqualTo("/metadata.google.internal"))
+                .willReturn(aResponse()
+                        .withStatus(gcpStatus)));
     }
 
     @Test()
@@ -87,10 +108,7 @@ public class PhoneHomeIntegrationTest extends HazelcastTestSupport {
         node.getConfig().getMapConfig("hazelcast").getEvictionConfig().setEvictionPolicy(EvictionPolicy.LRU);
         node.getConfig().getMapConfig("hazelcast").setInMemoryFormat(InMemoryFormat.NATIVE);
 
-        stubFor(get(urlPathEqualTo("/ping"))
-                .willReturn(aResponse()
-                        .withStatus(200)));
-
+        stubUrls(200, 400, 400, 400);
         phoneHome.phoneHome(false);
 
         verify(1, getRequestedFor(urlPathEqualTo("/ping"))
@@ -120,10 +138,7 @@ public class PhoneHomeIntegrationTest extends HazelcastTestSupport {
         PNCounter pnCounter = node.hazelcastInstance.getPNCounter("hazelcast");
         FlakeIdGenerator flakeIdGenerator = node.hazelcastInstance.getFlakeIdGenerator("hazelcast");
 
-        stubFor(get(urlPathEqualTo("/ping"))
-                .willReturn(aResponse()
-                        .withStatus(200)));
-
+        stubUrls(200, 400, 400, 400);
         phoneHome.phoneHome(false);
 
         verify(1, getRequestedFor(urlPathEqualTo("/ping"))
@@ -150,10 +165,7 @@ public class PhoneHomeIntegrationTest extends HazelcastTestSupport {
         cacheManager.createCache("hazelcast", new CacheConfig<>("hazelcast"));
         node.getConfig().addCacheConfig(cacheSimpleConfig);
 
-        stubFor(get(urlPathEqualTo("/ping"))
-                .willReturn(aResponse()
-                        .withStatus(200)));
-
+        stubUrls(200, 400, 400, 400);
         phoneHome.phoneHome(false);
         verify(1, getRequestedFor(urlPathEqualTo("/ping"))
                 .withQueryParam("cact", equalTo("1"))
@@ -176,10 +188,7 @@ public class PhoneHomeIntegrationTest extends HazelcastTestSupport {
         long totalGetOperationCount = mapStats.getGetOperationCount();
         long totalPutOperationCount = mapStats.getPutOperationCount();
 
-        stubFor(get(urlPathEqualTo("/ping"))
-                .willReturn(aResponse()
-                        .withStatus(200)));
-
+        stubUrls(200, 400, 400, 400);
         phoneHome.phoneHome(false);
 
         verify(1, getRequestedFor(urlPathEqualTo("/ping"))
@@ -202,14 +211,32 @@ public class PhoneHomeIntegrationTest extends HazelcastTestSupport {
         localMapStats1.incrementGetLatencyNanos(1000000000L);
         localMapStats2.incrementGetLatencyNanos(1000000000L);
 
-        stubFor(get(urlPathEqualTo("/ping"))
-                .willReturn(aResponse()
-                        .withStatus(200)));
-
+        stubUrls(200, 400, 400, 400);
         phoneHome.phoneHome(false);
         verify(1, getRequestedFor(urlPathEqualTo("/ping"))
                 .withQueryParam("mpptla", equalTo("1666"))
                 .withQueryParam("mpgtla", equalTo("1000")));
+    }
+
+    @Test
+    public void testForCloud() {
+        stubUrls(200, 200, 400, 400);
+        phoneHome.phoneHome(false);
+
+        verify(1, getRequestedFor(urlPathEqualTo("/ping"))
+                .withQueryParam("cld", equalTo("A")));
+
+        stubUrls(200, 400, 200, 400);
+        phoneHome.phoneHome(false);
+
+        verify(1, getRequestedFor(urlPathEqualTo("/ping"))
+                .withQueryParam("cld", equalTo("Z")));
+
+        stubUrls(200, 400, 400, 200);
+        phoneHome.phoneHome(false);
+
+        verify(1, getRequestedFor(urlPathEqualTo("/ping"))
+                .withQueryParam("cld", equalTo("G")));
     }
 }
 

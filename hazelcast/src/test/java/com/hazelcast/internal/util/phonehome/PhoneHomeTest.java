@@ -46,8 +46,10 @@ import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.topic.ITopic;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 
 import javax.cache.CacheManager;
@@ -71,6 +73,9 @@ public class PhoneHomeTest extends HazelcastTestSupport {
 
     private Node node;
     private PhoneHome phoneHome;
+
+    @Rule
+    public TemporaryFolder folder = new TemporaryFolder();
 
     @Before
     public void initialise() {
@@ -586,4 +591,3 @@ public class PhoneHomeTest extends HazelcastTestSupport {
                 Long.parseLong(parameters.get(PhoneHomeMetrics.AVERAGE_GET_LATENCY_OF_MAPS_USING_MAPSTORE.getRequestParameterName())), 200);
     }
 }
-
