@@ -14,10 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.optimizer;
+package com.hazelcast.sql.impl.exec.root;
 
-/**
- * Abstraction over execution plan that allows for specialization for an execution backend.
- */
-public interface SqlPlan {
+public interface ScheduleCallback extends Runnable {
 }

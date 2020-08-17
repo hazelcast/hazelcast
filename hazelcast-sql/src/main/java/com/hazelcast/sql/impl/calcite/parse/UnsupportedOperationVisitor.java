@@ -16,7 +16,10 @@
 
 package com.hazelcast.sql.impl.calcite.parse;
 
+import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeSystem;
+import com.hazelcast.sql.impl.schema.Table;
+import com.hazelcast.sql.impl.schema.map.AbstractMapTable;
 import org.apache.calcite.runtime.CalciteContextException;
 import org.apache.calcite.runtime.Resources;
 import org.apache.calcite.sql.SqlBasicTypeNameSpec;
@@ -34,7 +37,9 @@ import org.apache.calcite.sql.SqlUserDefinedTypeNameSpec;
 import org.apache.calcite.sql.SqlUtil;
 import org.apache.calcite.sql.type.SqlTypeName;
 import org.apache.calcite.sql.util.SqlVisitor;
+import org.apache.calcite.sql.validate.SqlValidatorCatalogReader;
 import org.apache.calcite.sql.validate.SqlValidatorException;
+import org.apache.calcite.sql.validate.SqlValidatorTable;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -44,8 +49,6 @@ import java.util.Set;
  */
 @SuppressWarnings("checkstyle:ExecutableStatementCount")
 public final class UnsupportedOperationVisitor implements SqlVisitor<Void> {
-
-    public static final UnsupportedOperationVisitor INSTANCE = new UnsupportedOperationVisitor();
 
     /** Error messages. */
     private static final Resource RESOURCE = Resources.create(Resource.class);
@@ -93,8 +96,12 @@ public final class UnsupportedOperationVisitor implements SqlVisitor<Void> {
         SUPPORTED_KINDS.add(SqlKind.CAST);
     }
 
-    private UnsupportedOperationVisitor() {
-        // No-op.
+    private final SqlValidatorCatalogReader catalogReader;
+
+    public UnsupportedOperationVisitor(
+            SqlValidatorCatalogReader catalogReader
+    ) {
+        this.catalogReader = catalogReader;
     }
 
     @Override
@@ -123,6 +130,16 @@ public final class UnsupportedOperationVisitor implements SqlVisitor<Void> {
 
     @Override
     public Void visit(SqlIdentifier id) {
+        SqlValidatorTable table = catalogReader.getTable(id.names);
+        if (table != null) {
+            HazelcastTable hzTable = table.unwrap(HazelcastTable.class);
+            if (hzTable != null) {
+                Table target = hzTable.getTarget();
+                if (target != null && !(target instanceof AbstractMapTable)) {
+                    throw error(id, RESOURCE.custom(target.getClass().getSimpleName() + " is not supported"));
+                }
+            }
+        }
         return null;
     }
 

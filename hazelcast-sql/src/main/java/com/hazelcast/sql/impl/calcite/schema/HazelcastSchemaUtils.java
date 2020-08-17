@@ -17,11 +17,17 @@
 package com.hazelcast.sql.impl.calcite.schema;
 
 import com.hazelcast.sql.impl.QueryUtils;
+import com.hazelcast.sql.impl.calcite.SqlToQueryType;
 import com.hazelcast.sql.impl.schema.SqlCatalog;
 import com.hazelcast.sql.impl.schema.Table;
-import com.hazelcast.sql.impl.schema.map.AbstractMapTable;
+import com.hazelcast.sql.impl.schema.TableField;
+import com.hazelcast.sql.impl.type.QueryDataType;
+import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
+import org.apache.calcite.rel.type.RelDataType;
+import org.apache.calcite.rel.type.RelDataTypeFactory;
 import org.apache.calcite.schema.Schema;
 import org.apache.calcite.schema.Statistic;
+import org.apache.calcite.sql.type.SqlTypeName;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -98,10 +104,23 @@ public final class HazelcastSchemaUtils {
      * @return Statistics for the table.
      */
     private static Statistic createTableStatistic(Table table) {
-        if (table instanceof AbstractMapTable) {
-            return new MapTableStatistic(table.getStatistics().getRowCount());
+        return new HazelcastTableStatistic(table.getStatistics().getRowCount());
+    }
+
+    /**
+     * Converts a {@link TableField} to {@link RelDataType}.
+     */
+    public static RelDataType convert(TableField field, RelDataTypeFactory typeFactory) {
+        QueryDataType fieldType = field.getType();
+        QueryDataTypeFamily fieldTypeFamily = fieldType.getTypeFamily();
+
+        SqlTypeName sqlTypeName = SqlToQueryType.map(fieldTypeFamily);
+
+        if (sqlTypeName == null) {
+            throw new IllegalStateException("Unexpected type family: " + fieldTypeFamily);
         }
 
-        throw new UnsupportedOperationException("Unsupported table type: " + table.getClass().getName());
+        RelDataType relType = typeFactory.createSqlType(sqlTypeName);
+        return typeFactory.createTypeWithNullability(relType, true);
     }
 }

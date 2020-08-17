@@ -18,7 +18,6 @@ package com.hazelcast.sql.impl.exec.root;
 
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.row.Row;
-import com.hazelcast.sql.impl.worker.QueryFragmentContext;
 
 import java.util.Iterator;
 import java.util.List;
@@ -34,27 +33,32 @@ public class BlockingRootResultConsumer implements RootResultConsumer {
     /** Iterator over produced rows. */
     private final InternalIterator iterator = new InternalIterator();
 
-    /** Query context to schedule root execution when the next batch is needed. */
-    private volatile QueryFragmentContext context;
+    /** A callback to schedule root execution when the next batch is needed. */
+    private volatile ScheduleCallback scheduleCallback;
 
     /** The batch that is currently being consumed. */
     private List<Row> currentBatch;
 
-    /** When "true" no more batches are expected. */
+    /** When "true", no more batches are expected. */
     private boolean done;
 
     /** Error which occurred during query execution. */
     private QueryException doneError;
 
     @Override
-    public void setup(QueryFragmentContext context) {
-        this.context = context;
+    public void setup(ScheduleCallback scheduleCallback) {
+        this.scheduleCallback = scheduleCallback;
     }
 
     @Override
     public boolean consume(List<Row> batch, boolean last) {
         synchronized (mux) {
-            assert !done;
+            if (done) {
+                // this is possible if the query was concurrently cancelled
+                // see https://github.com/hazelcast/hazelcast/issues/17160
+                assert doneError != null;
+                throw new RuntimeException(doneError);
+            }
 
             if (currentBatch == null) {
                 if (!batch.isEmpty()) {
@@ -135,10 +139,10 @@ public class BlockingRootResultConsumer implements RootResultConsumer {
         }
 
         // We may reach this place only if some rows are already produced, and this is possible only after the setup,
-        // so the context should be initialized.
-        assert context != null;
+        // so the callback should be initialized.
+        assert scheduleCallback != null;
 
-        context.schedule();
+        scheduleCallback.run();
     }
 
     @Override

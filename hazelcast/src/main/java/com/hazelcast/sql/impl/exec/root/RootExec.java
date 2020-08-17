@@ -47,7 +47,7 @@ public class RootExec extends AbstractUpstreamAwareExec {
 
     @Override
     protected void setup1(QueryFragmentContext ctx) {
-        consumer.setup(ctx);
+        consumer.setup(ctx::schedule);
     }
 
     @Override

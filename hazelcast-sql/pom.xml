@@ -71,6 +71,73 @@
                 <version>${maven.shade.plugin.version}</version>
                 <executions>
                     <execution>
+                        <id>fat-jar</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>shade</goal>
+                        </goals>
+                        <configuration>
+                            <shadedArtifactAttached>true</shadedArtifactAttached>
+                            <shadedClassifierName>jar-with-dependencies</shadedClassifierName>
+                            <createSourcesJar>true</createSourcesJar>
+                            <artifactSet>
+                                <includes>
+                                    <include>com.fasterxml.jackson.core:jackson-core</include>
+                                    <include>com.google.guava:guava</include>
+                                    <include>com.jayway.jsonpath:json-path</include>
+                                    <include>org.apache.calcite.avatica:avatica-core</include>
+                                    <include>org.apache.calcite:calcite-core</include>
+                                    <include>org.apache.calcite:calcite-linq4j</include>
+                                    <include>org.codehaus.janino:commons-compiler</include>
+                                    <include>org.codehaus.janino:janino</include>
+                                    <include>org.slf4j:slf4j-api</include>
+                                    <include>commons-codec:commons-codec</include>
+                                </includes>
+                            </artifactSet>
+                            <transformers>
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.DontIncludeResourceTransformer">
+                                    <resource>com.hazelcast.org.codehaus.commons.compiler.properties</resource>
+                                </transformer>
+                            </transformers>
+                            <filters>
+                                <filter>
+                                    <artifact>*:*</artifact>
+                                    <excludes>
+                                        <!-- Exclude signatures -->
+                                        <exclude>META-INF/*.SF</exclude>
+                                        <exclude>META-INF/*.DSA</exclude>
+                                        <exclude>META-INF/*.RSA</exclude>
+                                    </excludes>
+                                </filter>
+                                <filter>
+                                    <artifact>org.apache.calcite:*</artifact>
+                                    <excludes>
+                                        <!-- Avoid automatic discovery of Calcite JDBC. -->
+                                        <exclude>META-INF/services/java.sql.Driver</exclude>
+                                    </excludes>
+                                </filter>
+                                <filter>
+                                    <artifact>org.apache.calcite.avatica:*</artifact>
+                                    <excludes>
+                                        <!-- Avoid automatic discovery of Avatica JDBC. -->
+                                        <exclude>META-INF/services/java.sql.Driver</exclude>
+                                        <!-- Exclude Avatica ProtoBuf definitions, since Avatica is not used. -->
+                                        <exclude>*.proto</exclude>
+                                    </excludes>
+                                </filter>
+                                <filter>
+                                    <artifact>com.fasterxml.jackson.core:jackson-core</artifact>
+                                    <excludes>
+                                        <!-- Jackson Core is already included in hazelcast.jar. -->
+                                        <exclude>**</exclude>
+                                    </excludes>
+                                </filter>
+                            </filters>
+                        </configuration>
+                    </execution>
+
+                    <execution>
+                        <id>fat-shaded-jar</id>
                         <phase>package</phase>
                         <goals>
                             <goal>shade</goal>

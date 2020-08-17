@@ -21,6 +21,7 @@ import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.SqlErrorCode;
 import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 
+import java.io.Serializable;
 import java.lang.reflect.Method;
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -36,7 +37,7 @@ import java.time.OffsetDateTime;
  * is already performed by the time the converter is called.
  */
 @SuppressWarnings("checkstyle:MethodCount")
-public abstract class Converter {
+public abstract class Converter implements Serializable {
     protected static final int ID_BOOLEAN = 0;
     protected static final int ID_BYTE = 1;
     protected static final int ID_SHORT = 2;
