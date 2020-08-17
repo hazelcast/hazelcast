@@ -98,8 +98,7 @@ public class JetCommandLine implements Runnable {
 
     @Option(names = {"-f", "--config"},
             description = "Optional path to a client config XML/YAML file." +
-                    " The default is to use config/hazelcast-client.yaml." +
-                    " If you set this option, Jet will ignore the --targets option.",
+                    " The default is to use config/hazelcast-client.yaml.",
             order = 0
     )
     private File config;
@@ -465,33 +464,37 @@ public class JetCommandLine implements Runnable {
     }
 
     private ClientConfig getClientConfig() throws IOException {
+        ClientConfig config;
         if (isYaml()) {
-            return new YamlClientConfigBuilder(config).build();
+            config = new YamlClientConfigBuilder(this.config).build();
+        } else if (isConfigFileNotNull()) {
+            config = new XmlClientConfigBuilder(this.config).build();
+        } else if (addresses != null) {
+            // Whole default configuration is ignored if addresses is provided.
+            // This doesn't make much sense, but but addresses is deprecated, so will leave as is until it can be
+            // removed in next major version
+            ClientConfig c = new ClientConfig();
+            c.getNetworkConfig().addAddress(addresses.toArray(new String[0]));
+            c.setClusterName(clusterName);
+            return c;
+        } else {
+            config = ConfigProvider.locateAndGetClientConfig();
         }
-        if (isConfigNotNull()) {
-            return new XmlClientConfigBuilder(config).build();
-        }
-        if (addresses != null) {
-            ClientConfig config = new ClientConfig();
-            config.getNetworkConfig().addAddress(addresses.toArray(new String[0]));
-            config.setClusterName(clusterName);
-            return config;
-        }
+
         if (targetsMixin.getTargets() != null) {
-            ClientConfig config = new ClientConfig();
             config.getNetworkConfig().setAddresses(targetsMixin.getAddresses());
             config.setClusterName(targetsMixin.getClusterName());
-            return config;
         }
-        return ConfigProvider.locateAndGetClientConfig();
+
+        return config;
     }
 
     private boolean isYaml() {
-        return isConfigNotNull() &&
+        return isConfigFileNotNull() &&
                 (config.getPath().endsWith(".yaml") || config.getPath().endsWith(".yml"));
     }
 
-    private boolean isConfigNotNull() {
+    private boolean isConfigFileNotNull() {
         return config != null;
     }
 

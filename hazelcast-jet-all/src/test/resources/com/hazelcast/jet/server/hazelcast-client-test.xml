@@ -24,4 +24,7 @@
             <address>${member}</address>
         </cluster-members>
     </network>
+    <client-labels>
+        <label>xml-label</label>
+    </client-labels>
 </hazelcast-client>

@@ -13,11 +13,11 @@
 # limitations under the License.
 
 hazelcast-client:
-  cluster-name: ${group}
+  cluster-name: jet-test
 
   network:
     cluster-members:
-      - ${member}
+      - jet-test-member:5701
 
   client-labels:
     - yaml-label

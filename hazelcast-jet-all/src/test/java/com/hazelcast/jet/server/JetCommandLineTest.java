@@ -31,7 +31,6 @@ import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.Sources;
 import com.hazelcast.map.IMap;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import java.util.concurrent.atomic.AtomicReference;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -47,12 +46,16 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.Arrays;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.stream.IntStream;
 
 import static com.hazelcast.jet.pipeline.JournalInitialPosition.START_FROM_OLDEST;
 import static com.hazelcast.jet.server.JetCommandLine.runCommandLine;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
@@ -544,7 +547,7 @@ public class JetCommandLineTest extends JetTestSupport {
         testTargetsCommandCluster("foobar", args);
     }
 
-    private void testTargetsCommandCluster(String expectedClusterName, String... args) {
+    private ClientConfig testTargetsCommandCluster(String expectedClusterName, String... args) {
         AtomicReference<ClientConfig> atomicConfig = new AtomicReference<>();
         Function<ClientConfig, JetInstance> fnRunCommand = (config) -> {
             atomicConfig.set(config);
@@ -560,6 +563,8 @@ public class JetCommandLineTest extends JetTestSupport {
         ClientConfig config = atomicConfig.get();
         assertEquals(expectedClusterName, config.getClusterName());
         assertEquals("[127.0.0.1:5701, 127.0.0.1:5702]", config.getNetworkConfig().getAddresses().toString());
+
+        return config;
     }
 
     @Test
@@ -570,6 +575,59 @@ public class JetCommandLineTest extends JetTestSupport {
     @Test
     public void test_xml_configuration() {
         test_custom_configuration(xmlConfiguration.toString());
+    }
+
+    @Test
+    public void when_targets_and_configuration_together_then_targets_is_applied() {
+        ClientConfig config = testTargetsCommandCluster("jet",
+                "--targets", "jet@127.0.0.1:5701,127.0.0.1:5702",
+                "-f", yamlConfiguration.toString(),
+                "list-jobs");
+
+        assertThat(config.getLabels()).contains("yaml-label");
+    }
+
+    @Test
+    public void test_targets_and_xml_configuration_together() {
+        ClientConfig config = testTargetsCommandCluster("jet",
+                "--targets", "jet@127.0.0.1:5701,127.0.0.1:5702",
+                "-f", xmlConfiguration.toString(),
+                "list-jobs");
+
+        assertThat(config.getLabels()).contains("xml-label");
+    }
+
+    @Test
+    public void test_targets_after_command_and_configuration_together() {
+        ClientConfig config = testTargetsCommandCluster("jet",
+                "-f", yamlConfiguration.toString(),
+                "list-jobs",
+                "--targets", "jet@127.0.0.1:5701,127.0.0.1:5702"
+        );
+
+        assertThat(config.getLabels()).contains("yaml-label");
+    }
+
+    @Test
+    public void test_targets_after_command_and_configuration_from_default_config_together() throws IOException {
+        Path sourceLocation = Paths.get("src/test/resources/com/hazelcast/jet/server/hazelcast-client-template.yaml");
+        Path cpConfigLocation = Paths.get("target/test-classes/hazelcast-client.yaml");
+
+        try {
+            Files.copy(
+                    sourceLocation,
+                    cpConfigLocation,
+                    StandardCopyOption.REPLACE_EXISTING);
+
+            ClientConfig config = testTargetsCommandCluster("jet",
+                    "list-jobs",
+                    "--targets", "jet@127.0.0.1:5701,127.0.0.1:5702"
+            );
+
+            assertThat(config.getLabels()).contains("yaml-label");
+        } finally {
+            Files.delete(cpConfigLocation);
+        }
     }
 
     private void test_custom_configuration(String configFile) {
