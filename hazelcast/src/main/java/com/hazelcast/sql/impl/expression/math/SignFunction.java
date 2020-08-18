@@ -66,7 +66,7 @@ public class SignFunction<T> extends UniExpressionWithType<T> implements Identif
             case SMALLINT:
                 return (short) Integer.signum(operandConverter.asInt(operandValue));
 
-            case INT:
+            case INTEGER:
                 return Integer.signum(operandConverter.asInt(operandValue));
 
             case BIGINT:

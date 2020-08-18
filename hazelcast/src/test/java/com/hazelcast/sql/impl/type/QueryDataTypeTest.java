@@ -132,7 +132,7 @@ public class QueryDataTypeTest extends SqlTestSupport {
         checkResolvedTypeForTypeFamily(QueryDataType.BOOLEAN, QueryDataTypeFamily.BOOLEAN);
         checkResolvedTypeForTypeFamily(QueryDataType.TINYINT, QueryDataTypeFamily.TINYINT);
         checkResolvedTypeForTypeFamily(QueryDataType.SMALLINT, QueryDataTypeFamily.SMALLINT);
-        checkResolvedTypeForTypeFamily(QueryDataType.INT, QueryDataTypeFamily.INT);
+        checkResolvedTypeForTypeFamily(QueryDataType.INT, QueryDataTypeFamily.INTEGER);
         checkResolvedTypeForTypeFamily(QueryDataType.BIGINT, QueryDataTypeFamily.BIGINT);
         checkResolvedTypeForTypeFamily(QueryDataType.DECIMAL, QueryDataTypeFamily.DECIMAL);
         checkResolvedTypeForTypeFamily(QueryDataType.REAL, QueryDataTypeFamily.REAL);

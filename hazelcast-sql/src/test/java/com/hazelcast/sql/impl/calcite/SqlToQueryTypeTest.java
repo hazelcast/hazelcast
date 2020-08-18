@@ -42,7 +42,7 @@ public class SqlToQueryTypeTest {
 
         assertSame(SqlTypeName.TINYINT, SqlToQueryType.map(QueryDataTypeFamily.TINYINT));
         assertSame(SqlTypeName.SMALLINT, SqlToQueryType.map(QueryDataTypeFamily.SMALLINT));
-        assertSame(SqlTypeName.INTEGER, SqlToQueryType.map(QueryDataTypeFamily.INT));
+        assertSame(SqlTypeName.INTEGER, SqlToQueryType.map(QueryDataTypeFamily.INTEGER));
         assertSame(SqlTypeName.BIGINT, SqlToQueryType.map(QueryDataTypeFamily.BIGINT));
 
         assertSame(SqlTypeName.DECIMAL, SqlToQueryType.map(QueryDataTypeFamily.DECIMAL));

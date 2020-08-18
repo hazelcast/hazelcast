@@ -48,6 +48,14 @@ public abstract class ExpressionBiValue extends ExpressionValue {
 
     public static <T extends ExpressionBiValue> T createBiValue(
         Class<? extends ExpressionBiValue> clazz,
+        Object field1,
+        Object field2
+    ) {
+        return createBiValue(clazz, 0, field1, field2);
+    }
+
+    public static <T extends ExpressionBiValue> T createBiValue(
+        Class<? extends ExpressionBiValue> clazz,
         int key,
         Object field1,
         Object field2

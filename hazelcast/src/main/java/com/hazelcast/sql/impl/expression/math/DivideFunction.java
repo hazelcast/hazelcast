@@ -86,7 +86,7 @@ public final class DivideFunction<T> extends BiExpressionWithType<T> implements 
                     return (byte) (left.byteValue() / right.longValue());
                 case SMALLINT:
                     return (short) (left.shortValue() / right.longValue());
-                case INT:
+                case INTEGER:
                     return (int) (left.intValue() / right.longValue());
                 case BIGINT:
                     return ExpressionMath.divideExact(left.longValue(), right.longValue());

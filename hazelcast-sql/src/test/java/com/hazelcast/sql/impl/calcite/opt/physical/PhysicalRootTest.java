@@ -129,4 +129,34 @@ public class PhysicalRootTest extends OptimizerTestSupport {
             )
         );
     }
+
+    @Test
+    public void test_filter_always_false() {
+        Cost valuesCost = cost(1d, 1d, 0d);
+        Cost rootCost = cost(1d, 1d, 0d).plus(valuesCost);
+
+        assertPlan(
+            optimizePhysical("SELECT f0 FROM p WHERE TRUE IS FALSE", 2),
+            plan(
+                planRow(0, RootPhysicalRel.class, "", 1d, rootCost),
+                planRow(1, ValuesPhysicalRel.class, "tuples=[[]]", 1d, valuesCost)
+            )
+        );
+    }
+
+    @Test
+    public void test_filter_always_true() {
+        Cost scanCost = cost(0d, 0d, 0d);
+        Cost rootExchangeCost = cost(1d, 1d, 4d).plus(scanCost);
+        Cost rootCost = cost(1d, 1d, 0d).plus(rootExchangeCost);
+
+        assertPlan(
+            optimizePhysical("SELECT f0 FROM e WHERE TRUE IS TRUE", 2),
+            plan(
+                planRow(0, RootPhysicalRel.class, "", 1d, rootCost),
+                planRow(1, RootExchangePhysicalRel.class, "", 1d, rootExchangeCost),
+                planRow(2, MapScanPhysicalRel.class, "table=[[hazelcast, e[projects=[0]]]]", 1d, scanCost)
+            )
+        );
+    }
 }

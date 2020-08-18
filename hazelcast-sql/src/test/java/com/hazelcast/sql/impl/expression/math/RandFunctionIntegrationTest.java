@@ -117,10 +117,11 @@ public class RandFunctionIntegrationTest extends SqlExpressionIntegrationTestSup
         checkParameter((short) 1, 1L);
         checkParameter(1, 1L);
         checkParameter(1L, 1L);
-        checkParameter(1f, 1L);
-        checkParameter(1d, 1L);
-        checkParameter(BigInteger.ONE, 1L);
-        checkParameter(BigDecimal.ONE, 1L);
+
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from DECIMAL to BIGINT", BigInteger.ONE);
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from DECIMAL to BIGINT", BigDecimal.ONE);
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from REAL to BIGINT", 0.0f);
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from DOUBLE to BIGINT", 0.0d);
 
         checkParameter("1", 1L);
         checkParameter('1', 1L);
@@ -131,7 +132,7 @@ public class RandFunctionIntegrationTest extends SqlExpressionIntegrationTestSup
 
         checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Failed to convert parameter at position 0 from VARCHAR to BIGINT", "bad");
         checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Failed to convert parameter at position 0 from VARCHAR to BIGINT", 'b');
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Failed to convert parameter at position 0 from OBJECT to BIGINT", new ExpressionValue.ObjectVal());
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from OBJECT to BIGINT", new ExpressionValue.ObjectVal());
     }
 
     private void checkParameter(Object param, long expectedSeed) {

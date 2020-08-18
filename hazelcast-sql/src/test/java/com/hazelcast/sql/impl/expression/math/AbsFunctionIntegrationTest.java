@@ -154,28 +154,16 @@ public class AbsFunctionIntegrationTest extends SqlExpressionIntegrationTestSupp
         checkParameter("1.1", new BigDecimal("1.1"));
         checkParameter("-1.1", new BigDecimal("1.1"));
 
-        checkParameter(0.0f, BigDecimal.ZERO);
-        checkParameter(-0.0f, BigDecimal.ZERO);
-        checkParameter(1f, BigDecimal.ONE);
-        checkParameter(-1f, BigDecimal.ONE);
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot convert infinite REAL value to DECIMAL", Float.POSITIVE_INFINITY);
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot convert infinite REAL value to DECIMAL", Float.NEGATIVE_INFINITY);
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot convert NaN REAL value to DECIMAL", Float.NaN);
-
-        checkParameter(0.0d, BigDecimal.ZERO);
-        checkParameter(-0.0d, BigDecimal.ZERO);
-        checkParameter(1d, BigDecimal.ONE);
-        checkParameter(-1d, BigDecimal.ONE);
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot convert infinite DOUBLE value to DECIMAL", Double.POSITIVE_INFINITY);
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot convert infinite DOUBLE value to DECIMAL", Double.NEGATIVE_INFINITY);
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot convert NaN DOUBLE value to DECIMAL", Double.NaN);
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from REAL to DECIMAL", 0.0f);
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from DOUBLE to DECIMAL", 0.0d);
 
         checkParameter('0', BigDecimal.ZERO);
         checkParameter('1', BigDecimal.ONE);
 
         checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Failed to convert parameter at position 0 from VARCHAR to DECIMAL", "bad");
         checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Failed to convert parameter at position 0 from VARCHAR to DECIMAL", 'b');
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Failed to convert parameter at position 0 from OBJECT to DECIMAL", new ExpressionValue.ObjectVal());
+
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from OBJECT to DECIMAL", new ExpressionValue.ObjectVal());
     }
 
     private void checkParameter(Object parameterValue, Object expectedValue) {

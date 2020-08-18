@@ -57,7 +57,7 @@ public final class ObjectConverter extends Converter {
 
     @Override
     public int asInt(Object val) {
-        return resolveConverter(val, QueryDataTypeFamily.INT).asInt(val);
+        return resolveConverter(val, QueryDataTypeFamily.INTEGER).asInt(val);
     }
 
     @Override
