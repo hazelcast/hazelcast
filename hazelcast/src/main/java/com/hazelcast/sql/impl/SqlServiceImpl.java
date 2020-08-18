@@ -63,7 +63,7 @@ public class SqlServiceImpl implements SqlService, Consumer<Packet> {
 
     private static final int PLAN_CACHE_SIZE = 10_000;
 
-    private static final String OPTIMIZER_CLASS_PROPERTY_NAME = "hazelcast.sql.optimizerClass";
+    static final String OPTIMIZER_CLASS_PROPERTY_NAME = "hazelcast.sql.optimizerClass";
     private static final String SQL_MODULE_OPTIMIZER_CLASS = "com.hazelcast.sql.impl.calcite.CalciteSqlOptimizer";
 
     private final ILogger logger;
