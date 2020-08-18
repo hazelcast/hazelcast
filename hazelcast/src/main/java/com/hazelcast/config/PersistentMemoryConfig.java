@@ -16,10 +16,13 @@
 
 package com.hazelcast.config;
 
+import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
+
+import static java.util.Objects.requireNonNull;
 
 /**
  * Configuration class for persistent memory devices (e.g. Intel Optane).
@@ -38,9 +41,10 @@ public class PersistentMemoryConfig {
      * {@link PersistentMemoryConfig}.
      *
      * @param persistentMemoryConfig The configuration to copy
+     * @throws NullPointerException if {@code persistentMemoryConfig} is {@code null}
      */
-    public PersistentMemoryConfig(PersistentMemoryConfig persistentMemoryConfig) {
-        persistentMemoryConfig.directoryConfigs
+    public PersistentMemoryConfig(@Nonnull PersistentMemoryConfig persistentMemoryConfig) {
+        requireNonNull(persistentMemoryConfig).directoryConfigs
                 .forEach(directoryConfig -> addDirectoryConfig(new PersistentMemoryDirectoryConfig(directoryConfig)));
     }
 
@@ -50,7 +54,10 @@ public class PersistentMemoryConfig {
      * <p>
      * By default there are no configuration is set indicating that
      * volatile RAM is being used.
+     *
+     * @return the list of the persistent memory directory configurations
      */
+    @Nonnull
     public List<PersistentMemoryDirectoryConfig> getDirectoryConfigs() {
         return directoryConfigs;
     }
@@ -70,9 +77,10 @@ public class PersistentMemoryConfig {
      * @throws InvalidConfigurationException If the configured directories
      *                                       violate consistency or
      *                                       uniqueness checks.
+     * @throws NullPointerException if {@code directoryConfigs} is {@code null}
      */
-    public PersistentMemoryConfig setDirectoryConfigs(List<PersistentMemoryDirectoryConfig> directoryConfigs) {
-        ArrayList<PersistentMemoryDirectoryConfig> checkedConfigs = new ArrayList<>(directoryConfigs.size());
+    public PersistentMemoryConfig setDirectoryConfigs(@Nonnull List<PersistentMemoryDirectoryConfig> directoryConfigs) {
+        ArrayList<PersistentMemoryDirectoryConfig> checkedConfigs = new ArrayList<>(requireNonNull(directoryConfigs).size());
         for (PersistentMemoryDirectoryConfig configToCheck : directoryConfigs) {
             for (PersistentMemoryDirectoryConfig checkedConfig : checkedConfigs) {
                 validateDirectoryConfig(configToCheck, checkedConfig);
@@ -99,8 +107,10 @@ public class PersistentMemoryConfig {
      * @throws InvalidConfigurationException If the configured directories
      *                                       violate consistency or
      *                                       uniqueness checks.
+     * @throws NullPointerException if {@code directoryConfigs} is {@code null}
      */
-    public PersistentMemoryConfig addDirectoryConfig(PersistentMemoryDirectoryConfig directoryConfig) {
+    public PersistentMemoryConfig addDirectoryConfig(@Nonnull PersistentMemoryDirectoryConfig directoryConfig) {
+        requireNonNull(directoryConfig);
         for (PersistentMemoryDirectoryConfig existingConfig : this.directoryConfigs) {
             validateDirectoryConfig(directoryConfig, existingConfig);
         }
@@ -130,7 +140,8 @@ public class PersistentMemoryConfig {
         }
     }
 
-    void setDirectoryConfig(PersistentMemoryDirectoryConfig directoryConfig) {
+    void setDirectoryConfig(@Nonnull PersistentMemoryDirectoryConfig directoryConfig) {
+        requireNonNull(directoryConfig);
         // method to support 4.0 API of NativeMemoryConfig
         this.directoryConfigs.clear();
         this.directoryConfigs.add(directoryConfig);

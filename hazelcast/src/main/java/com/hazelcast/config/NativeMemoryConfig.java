@@ -22,6 +22,8 @@ import com.hazelcast.memory.MemorySize;
 import com.hazelcast.memory.MemoryUnit;
 import com.hazelcast.memory.NativeOutOfMemoryError;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Objects;
 
@@ -229,6 +231,7 @@ public class NativeMemoryConfig {
      *
      * @return the persistent memory configuration
      */
+    @Nonnull
     public PersistentMemoryConfig getPersistentMemoryConfig() {
         return persistentMemoryConfig;
     }
@@ -239,7 +242,7 @@ public class NativeMemoryConfig {
      *
      * @param persistentMemoryConfig The persistent memory configuration to use
      */
-    public void setPersistentMemoryConfig(PersistentMemoryConfig persistentMemoryConfig) {
+    public void setPersistentMemoryConfig(@Nonnull PersistentMemoryConfig persistentMemoryConfig) {
         this.persistentMemoryConfig = requireNonNull(persistentMemoryConfig);
     }
 
@@ -256,6 +259,7 @@ public class NativeMemoryConfig {
      * instead.
      */
     @Deprecated
+    @Nullable
     public String getPersistentMemoryDirectory() {
         List<PersistentMemoryDirectoryConfig> directoryConfigs = persistentMemoryConfig.getDirectoryConfigs();
         int directoriesDefined = directoryConfigs.size();
@@ -277,9 +281,19 @@ public class NativeMemoryConfig {
      * @return this {@link NativeMemoryConfig} instance
      * @see #getPersistentMemoryConfig()
      * @see PersistentMemoryConfig#addDirectoryConfig(PersistentMemoryDirectoryConfig)
+     * @deprecated Since 4.1 multiple persistent memory directories are
+     * supported. Please use {@link #setPersistentMemoryConfig(PersistentMemoryConfig)}
+     * or {@link PersistentMemoryConfig#addDirectoryConfig(PersistentMemoryDirectoryConfig)}
+     * instead.
      */
-    public NativeMemoryConfig setPersistentMemoryDirectory(String directory) {
-        this.persistentMemoryConfig.setDirectoryConfig(new PersistentMemoryDirectoryConfig(directory));
+    @Nonnull
+    @Deprecated
+    public NativeMemoryConfig setPersistentMemoryDirectory(@Nullable String directory) {
+        if (directory != null) {
+            this.persistentMemoryConfig.setDirectoryConfig(new PersistentMemoryDirectoryConfig(directory));
+        } else {
+            this.persistentMemoryConfig.getDirectoryConfigs().clear();
+        }
         return this;
     }
 

@@ -3162,6 +3162,12 @@
                     <xs:documentation>
                         List of directories where the persistent memory
                         is mounted to.
+
+                        If the specified directories are not unique either in the directories
+                        themselves or in the NUMA nodes specified for them,
+                        the configuration is treated as invalid. Setting the NUMA
+                        node on the subset of the configured directories while leaving
+                        not set on others also makes the configuration invalid.
                     </xs:documentation>
                 </xs:annotation>
                 <xs:complexType>
@@ -3177,6 +3183,12 @@
         <xs:annotation>
             <xs:documentation>
                 The directory where persistent memory is mounted to.
+
+                If the specified directory id not unique either in the
+                directory itself or in the NUMA node specified, the
+                configuration will be treated as invalid. Setting the NUMA
+                node on the subset of the configured directories while leaving
+                not set on others also results in invalid configuration.
             </xs:documentation>
         </xs:annotation>
         <xs:simpleContent>
@@ -3186,6 +3198,13 @@
                         <xs:documentation>
                             The NUMA node that the persistent memory mounted
                             to the given directory is attached to.
+
+                            NUMA nodes have to be unique across the entire
+                            persistent memory configuration, otherwise the
+                            configuration will be treated as invalid. Similarly,
+                            setting the NUMA node on the subset of the configured
+                            directories while leaving not set on others also
+                            results in invalid configuration.
                         </xs:documentation>
                     </xs:annotation>
                 </xs:attribute>

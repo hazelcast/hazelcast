@@ -16,7 +16,10 @@
 
 package com.hazelcast.config;
 
+import javax.annotation.Nonnull;
 import java.util.Objects;
+
+import static java.util.Objects.requireNonNull;
 
 /**
  * Configuration class for directories that persistent memories are mounted at.
@@ -32,21 +35,27 @@ public class PersistentMemoryDirectoryConfig {
      *
      * @param directory The directory where the persistent memory is
      *                  mounted at
+     * @throws NullPointerException if {@code directory} is {@code null}
      */
-    public PersistentMemoryDirectoryConfig(String directory) {
-        this.directory = directory;
+    public PersistentMemoryDirectoryConfig(@Nonnull String directory) {
+        this.directory = requireNonNull(directory);
     }
 
     /**
      * Creates an instance with the {@code directory} and NUMA node specified.
+     * <p/>
+     * Note that setting {@code numaNode} to -1 on any of the configured
+     * {@link PersistentMemoryDirectoryConfig} instances disables
+     * NUMA-aware persistent memory allocation.
      *
      * @param directory The directory where the persistent memory is
      *                  mounted at
      * @param numaNode  The NUMA node that the persistent memory mounted
-     *                  to the given directory is attached to
+     *                  to the given directory is attached to.
+     * @throws NullPointerException if {@code directory} is {@code null}
      */
-    public PersistentMemoryDirectoryConfig(String directory, int numaNode) {
-        this.directory = directory;
+    public PersistentMemoryDirectoryConfig(@Nonnull String directory, int numaNode) {
+        this.directory = requireNonNull(directory);
         this.numaNode = numaNode;
     }
 
@@ -54,9 +63,10 @@ public class PersistentMemoryDirectoryConfig {
      * Constructs an instance by copying the provided {@link PersistentMemoryDirectoryConfig}.
      *
      * @param directoryConfig The configuration to copy
+     * @throws NullPointerException if {@code directoryConfig} is {@code null}
      */
-    public PersistentMemoryDirectoryConfig(PersistentMemoryDirectoryConfig directoryConfig) {
-        this.directory = directoryConfig.directory;
+    public PersistentMemoryDirectoryConfig(@Nonnull PersistentMemoryDirectoryConfig directoryConfig) {
+        this.directory = requireNonNull(directoryConfig).directory;
         this.numaNode = directoryConfig.numaNode;
     }
 
@@ -65,6 +75,7 @@ public class PersistentMemoryDirectoryConfig {
      *
      * @return the directory
      */
+    @Nonnull
     public String getDirectory() {
         return directory;
     }
@@ -73,9 +84,10 @@ public class PersistentMemoryDirectoryConfig {
      * Returns the {@code directory} of this {@link PersistentMemoryDirectoryConfig}.
      *
      * @param directory the directory to set
+     * @throws NullPointerException if {@code directory} is {@code null}
      */
-    public void setDirectory(String directory) {
-        this.directory = directory;
+    public void setDirectory(@Nonnull String directory) {
+        this.directory = requireNonNull(directory);
     }
 
     /**
@@ -91,6 +103,10 @@ public class PersistentMemoryDirectoryConfig {
     /**
      * Sets the NUMA node the persistent memory mounted to the given
      * directory is attached to.
+     * <p/>
+     * Note that setting {@code numaNode} to -1 on any of the configured
+     * {@link PersistentMemoryDirectoryConfig} instances disables
+     * NUMA-aware persistent memory allocation.
      *
      * @param numaNode the NUMA node to set
      */
