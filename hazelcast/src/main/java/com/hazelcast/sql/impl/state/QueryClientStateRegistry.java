@@ -32,7 +32,8 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
-import static com.hazelcast.sql.impl.ResultIterator.HasNextImmediatelyResult.*;
+import static com.hazelcast.sql.impl.ResultIterator.HasNextImmediatelyResult.DONE;
+import static com.hazelcast.sql.impl.ResultIterator.HasNextImmediatelyResult.YES;
 
 /**
  * Registry of active client cursors.
