@@ -9,6 +9,8 @@ This document lists the new features, enhancements, fixed issues and, removed or
 
 * Fixed a race issue when creating a cache (JCache) using multiple
 methods with the same cache name but having different keys. [#17284]
+* Fixed a performance issue when using paging predicates with
+JDK 8.[#17213]
 * Fixed an issue where `ReliableTopicMessageListener` was
 firing a warning when the client is shutting down. [#17070]
 * Fixed an issue where the client-side `HazelcastInstance`
