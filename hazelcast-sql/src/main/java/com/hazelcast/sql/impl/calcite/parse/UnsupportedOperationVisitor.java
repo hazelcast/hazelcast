@@ -16,6 +16,7 @@
 
 package com.hazelcast.sql.impl.calcite.parse;
 
+import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlOperatorTable;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeSystem;
 import org.apache.calcite.runtime.CalciteContextException;
 import org.apache.calcite.runtime.Resources;
@@ -29,9 +30,11 @@ import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlLiteral;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.SqlNodeList;
+import org.apache.calcite.sql.SqlOperator;
 import org.apache.calcite.sql.SqlSelect;
 import org.apache.calcite.sql.SqlUserDefinedTypeNameSpec;
 import org.apache.calcite.sql.SqlUtil;
+import org.apache.calcite.sql.fun.SqlStdOperatorTable;
 import org.apache.calcite.sql.type.SqlTypeName;
 import org.apache.calcite.sql.util.SqlVisitor;
 import org.apache.calcite.sql.validate.SqlValidatorException;
@@ -52,6 +55,9 @@ public final class UnsupportedOperationVisitor implements SqlVisitor<Void> {
 
     /** A set of {@link SqlKind} values that are supported without any additional validation. */
     private static final Set<SqlKind> SUPPORTED_KINDS;
+
+    /* A set of supported operators for functions. */
+    private static final Set<SqlOperator> SUPPORTED_OPERATORS;
 
     static {
         // We define all supported features explicitly instead of getting them from predefined sets of SqlKind class.
@@ -91,6 +97,31 @@ public final class UnsupportedOperationVisitor implements SqlVisitor<Void> {
         // Miscellaneous
         SUPPORTED_KINDS.add(SqlKind.AS);
         SUPPORTED_KINDS.add(SqlKind.CAST);
+        SUPPORTED_KINDS.add(SqlKind.CEIL);
+        SUPPORTED_KINDS.add(SqlKind.FLOOR);
+
+        // Supported operators
+        SUPPORTED_OPERATORS = new HashSet<>();
+
+        // Math
+        SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.COS);
+        SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.SIN);
+        SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.TAN);
+        SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.COT);
+        SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.ACOS);
+        SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.ASIN);
+        SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.ATAN);
+        SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.EXP);
+        SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.LN);
+        SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.LOG10);
+        SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.RAND);
+        SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.ABS);
+        SUPPORTED_OPERATORS.add(SqlStdOperatorTable.PI);
+        SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.SIGN);
+        SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.DEGREES);
+        SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.RADIANS);
+        SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.ROUND);
+        SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.TRUNCATE);
     }
 
     private UnsupportedOperationVisitor() {
@@ -211,6 +242,11 @@ public final class UnsupportedOperationVisitor implements SqlVisitor<Void> {
 
                 return;
 
+            case OTHER:
+            case OTHER_FUNCTION:
+                processOther(call);
+                break;
+
             default:
                 throw unsupported(call);
         }
@@ -232,6 +268,16 @@ public final class UnsupportedOperationVisitor implements SqlVisitor<Void> {
         if (select.getOffset() != null) {
             throw unsupported(select.getOffset(), "OFFSET");
         }
+    }
+
+    private void processOther(SqlCall call) {
+        SqlOperator operator = call.getOperator();
+
+        if (SUPPORTED_OPERATORS.contains(operator)) {
+            return;
+        }
+
+        throw unsupported(call, operator.getName());
     }
 
     private CalciteContextException unsupported(SqlCall call) {

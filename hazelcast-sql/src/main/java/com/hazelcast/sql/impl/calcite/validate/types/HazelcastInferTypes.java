@@ -19,8 +19,10 @@ package com.hazelcast.sql.impl.calcite.validate.types;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.sql.type.InferTypes;
 import org.apache.calcite.sql.type.SqlOperandTypeInference;
+import org.apache.calcite.sql.type.SqlTypeName;
 
 import java.util.Arrays;
+import java.util.Collections;
 
 import static com.hazelcast.sql.impl.calcite.validate.SqlNodeUtil.isParameter;
 import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeSystem.typeName;
@@ -80,6 +82,10 @@ public final class HazelcastInferTypes {
     };
 
     private HazelcastInferTypes() {
+        // No-op.
     }
 
+    public static SqlOperandTypeInference explicit(SqlTypeName typeName) {
+        return InferTypes.explicit(Collections.singletonList(HazelcastTypeFactory.INSTANCE.createSqlType(typeName)));
+    }
 }
