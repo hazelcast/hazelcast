@@ -180,7 +180,7 @@ public final class ClassDefinitionBuilder {
             throw new IllegalArgumentException("Portable class ID cannot be zero!");
         }
         fieldDefinitions.add(new FieldDefinitionImpl(index++, fieldName,
-                FieldType.PORTABLE, def.getFactoryId(), def.getClassId(), def.getVersion()));
+                FieldType.PORTABLE, def.getFactoryId(), def.getClassId(), def.getVersion(), def));
         return this;
     }
 
@@ -190,7 +190,7 @@ public final class ClassDefinitionBuilder {
             throw new IllegalArgumentException("Portable class ID cannot be zero!");
         }
         fieldDefinitions.add(new FieldDefinitionImpl(index++, fieldName,
-                FieldType.PORTABLE_ARRAY, def.getFactoryId(), def.getClassId(), def.getVersion()));
+                FieldType.PORTABLE_ARRAY, def.getFactoryId(), def.getClassId(), def.getVersion(), def));
         return this;
     }
 
