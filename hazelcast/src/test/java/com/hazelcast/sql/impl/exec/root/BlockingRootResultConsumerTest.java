@@ -51,7 +51,7 @@ import static org.junit.Assert.assertTrue;
 public class BlockingRootResultConsumerTest extends HazelcastTestSupport {
     @Test
     public void testConsumeAtMostOneBatch() {
-        BlockingRootResultConsumer consumer = new BlockingRootResultConsumer(false);
+        BlockingRootResultConsumer consumer = new BlockingRootResultConsumer(true);
 
         List<Row> batch = singletonList(HeapRow.of(1));
 
@@ -61,7 +61,7 @@ public class BlockingRootResultConsumerTest extends HazelcastTestSupport {
 
     @Test
     public void testIterator() {
-        BlockingRootResultConsumer consumer = new BlockingRootResultConsumer(false);
+        BlockingRootResultConsumer consumer = new BlockingRootResultConsumer(true);
 
         Iterator<Row> iterator = consumer.iterator();
         assertSame(iterator, consumer.iterator());
@@ -101,7 +101,7 @@ public class BlockingRootResultConsumerTest extends HazelcastTestSupport {
         }
 
         // Prepare consumer
-        BlockingRootResultConsumer consumer = new BlockingRootResultConsumer(false);
+        BlockingRootResultConsumer consumer = new BlockingRootResultConsumer(true);
         AtomicInteger scheduleInvocationCount = new AtomicInteger();
 
         QueryFragmentScheduleCallback scheduleCallback = (force) -> {
@@ -147,7 +147,7 @@ public class BlockingRootResultConsumerTest extends HazelcastTestSupport {
         batch.add(HeapRow.of(1));
 
         // Prepare consumer.
-        BlockingRootResultConsumer consumer = new BlockingRootResultConsumer(false);
+        BlockingRootResultConsumer consumer = new BlockingRootResultConsumer(true);
         AtomicInteger scheduleInvocationCount = new AtomicInteger();
         QueryException error = QueryException.error("Test");
 
@@ -184,7 +184,7 @@ public class BlockingRootResultConsumerTest extends HazelcastTestSupport {
     public void testHasNextImmediately() {
         List<Row> batch = singletonList(HeapRow.of(0));
 
-        BlockingRootResultConsumer consumer = new BlockingRootResultConsumer(true);
+        BlockingRootResultConsumer consumer = new BlockingRootResultConsumer(false);
         ResultIterator<Row> iterator = consumer.iterator();
         consumer.setup(() -> { });
         consumer.consume(batch, false);

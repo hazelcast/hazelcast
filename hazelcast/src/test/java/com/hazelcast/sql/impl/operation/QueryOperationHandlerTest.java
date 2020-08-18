@@ -516,7 +516,7 @@ public class QueryOperationHandlerTest extends SqlTestSupport {
             plan,
             null,
             null,
-            new BlockingRootResultConsumer(false),
+            new BlockingRootResultConsumer(true),
             initiatorService.getOperationHandler()
         ).getQueryId();
 
