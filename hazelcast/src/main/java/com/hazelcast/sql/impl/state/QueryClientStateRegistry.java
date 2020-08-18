@@ -32,6 +32,8 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
+import static com.hazelcast.sql.impl.ResultIterator.HasNextImmediatelyResult.*;
+
 /**
  * Registry of active client cursors.
  */
@@ -106,16 +108,16 @@ public class QueryClientStateRegistry {
             return true;
         }
 
-        HasNextImmediatelyResult res;
+        HasNextImmediatelyResult hasNextResult;
         do {
             SqlRow row = iterator.next();
             List<Data> convertedRow = convertRow(row, serializationService);
 
             page.add(convertedRow);
-            res = iterator.hasNextImmediately();
-        } while (res == HasNextImmediatelyResult.YES && page.size() < cursorBufferSize);
+            hasNextResult = iterator.hasNextImmediately();
+        } while (hasNextResult == YES && page.size() < cursorBufferSize);
 
-        return res == HasNextImmediatelyResult.DONE;
+        return hasNextResult == DONE;
     }
 
     private static List<Data> convertRow(SqlRow row, InternalSerializationService serializationService) {

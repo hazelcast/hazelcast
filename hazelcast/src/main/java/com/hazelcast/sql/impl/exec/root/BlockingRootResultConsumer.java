@@ -38,7 +38,11 @@ public class BlockingRootResultConsumer implements RootResultConsumer {
     /** Iterator over produced rows. */
     private final InternalIterator iterator = new InternalIterator();
 
-    /** Enables {@link HasNextImmediatelyResult#RETRY} result from {@link ResultIterator#hasNextImmediately()} */
+    /**
+     * {@link HasNextImmediatelyResult#RETRY} result from {@link
+     * ResultIterator#hasNextImmediately()} is not allowed, the method will
+     * block instead.
+     */
     private final boolean waitForFullBatch;
 
     /** Query context to schedule root execution when the next batch is needed. */
@@ -54,7 +58,7 @@ public class BlockingRootResultConsumer implements RootResultConsumer {
     private QueryException doneError;
 
     /**
-     * @param waitForFullBatch Enables {@link HasNextImmediatelyResult#RETRY} result
+     * @param waitForFullBatch Disables {@link HasNextImmediatelyResult#RETRY} result
      *      from {@link ResultIterator#hasNextImmediately()}
      */
     // useMinimumLatency=true is used from Jet
@@ -108,11 +112,14 @@ public class BlockingRootResultConsumer implements RootResultConsumer {
     }
 
     /**
-     * Poll the next batch from the upstream.
+     * Poll the next batch from the upstream. If {@code shouldWait} is true, it
+     * will block until a next batch is available or the end is reached. If
+     * {@code shouldWait} is false, it will return a batch only if it's
+     * immediately available, otherwise it will return {@code null}.
      *
-     * @param shouldWait whether it should wait if a batch is not yet available.
-     * @return The next batch or {@code null} if end of stream is reached or no waiting
-     *      was requested.
+     * @param shouldWait Enables blocking while waiting for the next batch.
+     * @return The next batch or {@code null} if end of stream is reached or no
+     *     batch is immediately available
      */
     private List<Row> getNextBatch(boolean shouldWait) {
         synchronized (mux) {

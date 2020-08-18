@@ -18,6 +18,10 @@ package com.hazelcast.sql.impl;
 
 import java.util.Iterator;
 
+/**
+ * Java standard {@link Iterator} enhanced with {@link
+ * #hasNextImmediately()} to allow for non-blocking iteration.
+ */
 public interface ResultIterator<T> extends Iterator<T> {
 
     /**
@@ -29,21 +33,20 @@ public interface ResultIterator<T> extends Iterator<T> {
 
     enum HasNextImmediatelyResult {
         /**
-         * A result value from {@link #hasNextImmediately()} meaning that a next
-         * item is available immediately.
+         * The next item is available immediately. Subsequent {@link #next()} call
+         * is guaranteed to not block.
          */
         YES,
 
         /**
-         * A result value from {@link #hasNextImmediately()} meaning that a next
-         * item is not available immediately, but might be available later. The
-         * caller should check again later.
+         * Another item is not available immediately, but might be available later.
+         * The caller should check again later. Also there might not be a next
+         * item.
          */
         RETRY,
 
         /**
-         * A result value from {@link #hasNextImmediately()} meaning that the last
-         * item was already returned. A call to {@link #next()} will fail.
+         * The last item was already returned. A call to {@link #next()} will fail.
          */
         DONE
     }

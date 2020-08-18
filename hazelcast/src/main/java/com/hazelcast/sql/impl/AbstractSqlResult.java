@@ -34,5 +34,4 @@ public abstract class AbstractSqlResult implements SqlResult {
     public void close() {
         closeOnError(QueryException.cancelledByUser());
     }
-
 }
