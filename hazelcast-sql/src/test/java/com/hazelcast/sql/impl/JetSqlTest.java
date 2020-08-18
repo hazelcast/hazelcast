@@ -130,6 +130,7 @@ public class JetSqlTest extends SqlTestSupport {
 
     private static class TestSqlOptimizer implements SqlOptimizer {
 
+        @SuppressWarnings("checkstyle:RedundantModifier")
         public TestSqlOptimizer(
                 @SuppressWarnings("unused") NodeEngine nodeEngine,
                 JetSqlService jetSqlService
