@@ -36,6 +36,7 @@ import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static java.util.Collections.singletonList;
@@ -193,13 +194,16 @@ public class BlockingRootResultConsumerTest extends HazelcastTestSupport {
         assertTrue(iterator.hasNext());
         assertEquals(batch.get(0), iterator.next());
         assertEquals(ResultIterator.RETRY, iterator.hasNextImmediately());
+        Semaphore semaphore = new Semaphore(0);
         spawn(() -> {
-            sleepMillis(100);
+            semaphore.acquire();
             return consumer.consume(batch, true);
         });
+        assertEquals(ResultIterator.RETRY, iterator.hasNextImmediately());
+        semaphore.release();
         // this call should block until the `consume` on previous line completes
-        assertEquals(ResultIterator.YES, iterator.hasNextImmediately());
         assertTrue(iterator.hasNext());
+        assertEquals(ResultIterator.YES, iterator.hasNextImmediately());
         assertEquals(batch.get(0), iterator.next());
         assertEquals(ResultIterator.DONE, iterator.hasNextImmediately());
         assertFalse(iterator.hasNext());
