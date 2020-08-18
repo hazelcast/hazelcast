@@ -385,11 +385,12 @@ public class ClusterJoinManager {
                 throw new SecurityException(format("Authentication has failed for %s @%s, cause: %s",
                         String.valueOf(credentials), endpoint, e.getMessage()));
             } finally {
+                Address remoteAddr = connection == null ? null : connection.getRemoteAddress();
                 nodeEngine.getNode().getNodeExtension().getAuditlogService()
                     .eventBuilder(AuditlogTypeIds.AUTHENTICATION_MEMBER)
                     .message("Member connection authentication.")
                     .addParameter("credentials", credentials)
-                    .addParameter("connection", connection)
+                    .addParameter("remoteAddress", remoteAddr)
                     .addParameter("endpoint", endpoint)
                     .addParameter("passed", passed)
                     .log();

@@ -69,7 +69,7 @@ public class WanEventContainerReplicationOperation extends Operation implements 
         int partitionId = getPartitionId();
 
         for (WanReplicationConfig wanReplicationConfig : wanReplicationConfigs) {
-            service.appendWanReplicationConfig(wanReplicationConfig);
+            service.addWanReplicationConfigLocally(wanReplicationConfig);
         }
 
         // first ensure all publishers have configuration
