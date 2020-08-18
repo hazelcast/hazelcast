@@ -130,7 +130,7 @@ public class JetSqlTest extends SqlTestSupport {
 
     private static class TestSqlOptimizer implements SqlOptimizer {
 
-        private TestSqlOptimizer(
+        public TestSqlOptimizer(
                 @SuppressWarnings("unused") NodeEngine nodeEngine,
                 JetSqlService jetSqlService
         ) {
