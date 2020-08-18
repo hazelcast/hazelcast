@@ -43,4 +43,8 @@ public interface JetSqlService {
      * Execute Jet specific {@link SqlPlan}s.
      */
     SqlResult execute(SqlPlan plan, List<Object> params, long timeout, int pageSize);
+
+    void reset();
+
+    void shutdown(boolean terminate);
 }
