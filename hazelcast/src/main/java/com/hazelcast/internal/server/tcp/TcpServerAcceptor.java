@@ -293,7 +293,7 @@ public class TcpServerAcceptor implements DynamicMetricsProvider {
                 .eventBuilder(AuditlogTypeIds.NETWORK_CONNECT)
                 .message("New connection accepted.")
                 .addParameter("qualifier", qualifier)
-                .addParameter("socket", socketChannel.socket())
+                .addParameter("remoteAddress", socketChannel.getRemoteAddress())
                 .log();
             if (serverContext.isSocketInterceptorEnabled(qualifier)) {
                 serverContext.executeAsync(() -> newConnection0(connectionManager, channel));
