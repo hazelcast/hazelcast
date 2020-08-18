@@ -16,7 +16,6 @@
 
 package com.hazelcast.sql.impl.client;
 
-import com.hazelcast.client.impl.spi.impl.ClientInvocationFuture;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.sql.SqlResult;
@@ -50,7 +49,6 @@ public class SqlClientResult implements SqlResult {
 
     private boolean closed;
     private boolean iteratorAccessed;
-    private ClientInvocationFuture pendingPageFuture;
 
     public SqlClientResult(
         boolean isUpdateCount,
@@ -127,10 +125,6 @@ public class SqlClientResult implements SqlResult {
                     return;
                 }
 
-                if (pendingPageFuture != null) {
-                    pendingPageFuture.cancel(false);
-                }
-
                 service.close(connection, queryId);
             }
         } finally {
@@ -150,15 +144,9 @@ public class SqlClientResult implements SqlResult {
         this.cursorBufferSize = cursorBufferSize;
     }
 
-    private void requestNextPage() {
-        assert pendingPageFuture == null;
-        pendingPageFuture = service.startFetchNextPage(connection, queryId, cursorBufferSize);
-    }
+    private void fetchNextPage(ClientIterator iterator) {
+        SqlPage page = service.fetch(connection, queryId, cursorBufferSize);
 
-    private void getNextPage(ClientIterator iterator) {
-        assert pendingPageFuture != null;
-        SqlPage page = service.getNextPage(pendingPageFuture);
-        pendingPageFuture = null;
         iterator.onNextPage(page.getRows(), page.isLast());
     }
 
@@ -194,10 +182,9 @@ public class SqlClientResult implements SqlResult {
             }
 
             while (currentPosition == currentRows.size()) {
-                // Reached the end of the page.
+                // Reached end of the page. Try fetching the next one if possible.
                 if (!last) {
-                    // Block until the next page is available.
-                    getNextPage(this);
+                    fetchNextPage(this);
                 } else {
                     // No more pages expected, so return false.
                     return false;
@@ -223,9 +210,6 @@ public class SqlClientResult implements SqlResult {
             currentPosition = 0;
 
             this.last = rowPageLast;
-            if (!last) {
-                requestNextPage();
-            }
         }
     }
 }
