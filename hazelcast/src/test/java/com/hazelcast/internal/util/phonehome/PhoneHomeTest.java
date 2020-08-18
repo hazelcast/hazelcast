@@ -46,14 +46,15 @@ import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.topic.ITopic;
 import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
+import org.powermock.api.mockito.PowerMockito;
+import org.powermock.core.classloader.annotations.PrepareForTest;
 
 import javax.cache.CacheManager;
 import javax.cache.spi.CachingProvider;
+import java.io.File;
 import java.lang.management.ManagementFactory;
 import java.lang.management.OperatingSystemMXBean;
 import java.lang.management.RuntimeMXBean;
@@ -67,15 +68,14 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNull;
 
+
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
+@PrepareForTest({File.class, MetricsCollector.class, CloudInfoCollector.class})
 public class PhoneHomeTest extends HazelcastTestSupport {
 
     private Node node;
     private PhoneHome phoneHome;
-
-    @Rule
-    public TemporaryFolder folder = new TemporaryFolder();
 
     @Before
     public void initialise() {
@@ -589,5 +589,15 @@ public class PhoneHomeTest extends HazelcastTestSupport {
         parameters = phoneHome.phoneHome(true);
         assertGreaterOrEquals(PhoneHomeMetrics.AVERAGE_GET_LATENCY_OF_MAPS_USING_MAPSTORE.getRequestParameterName(),
                 Long.parseLong(parameters.get(PhoneHomeMetrics.AVERAGE_GET_LATENCY_OF_MAPS_USING_MAPSTORE.getRequestParameterName())), 200);
+    }
+    @Test
+    public void file() throws Exception {
+        Map<String, String> parameters = phoneHome.phoneHome(true);
+        assertEquals(parameters.get(PhoneHomeMetrics.DOCKER.getRequestParameterName()),"N");
+
+        File f= PowerMockito.mock(File.class);
+        PowerMockito.whenNew(File.class).withAnyArguments().thenReturn(f);
+        PowerMockito.when(f.exists()).thenReturn(true);
+        assertEquals(parameters.get(PhoneHomeMetrics.DOCKER.getRequestParameterName()),"D");
     }
 }

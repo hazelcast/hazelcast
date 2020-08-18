@@ -20,6 +20,8 @@ import com.hazelcast.instance.impl.Node;
 import java.io.File;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -29,8 +31,8 @@ public class CloudInfoCollector implements MetricsCollector {
     private static final int TIMEOUT = 1000;
     private static final int RESPONSE_OK = 200;
 
-    private static final String KUBERNETES_TOKEN_PATH = "../var/run/secrets/kubernetes.io/serviceaccount/token";
-    private static final String DOCKER_FILE_PATH = "../.dockerenv";
+    private static final Path KUBERNETES_TOKEN_PATH = Paths.get("/var/run/secrets/kubernetes.io/serviceaccount/token");
+    private static final Path DOCKER_FILE_PATH = Paths.get("/.dockerenv");
     private String awsEndPoint;
     private String azureEndPoint;
     private String gcpEndPoint;
@@ -61,9 +63,10 @@ public class CloudInfoCollector implements MetricsCollector {
             environmentInfo.put(PhoneHomeMetrics.CLOUD, "-1");
         }
 
-        File dockerFile = new File(DOCKER_FILE_PATH);
-        if (dockerFile.exists() && !dockerFile.isDirectory()) {
-            File kubernetesToken = new File(KUBERNETES_TOKEN_PATH);
+
+        File dockerFile =DOCKER_FILE_PATH.toFile();
+        if (dockerFile.exists()) {
+            File kubernetesToken = KUBERNETES_TOKEN_PATH.toFile();
             if (kubernetesToken.exists() && !kubernetesToken.isDirectory()) {
                 environmentInfo.put(PhoneHomeMetrics.DOCKER, "K");
             } else {
