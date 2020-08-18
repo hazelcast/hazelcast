@@ -18,7 +18,7 @@ package com.hazelcast.sql.impl.state;
 
 import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.impl.AbstractSqlResult;
-import com.hazelcast.sql.impl.AbstractSqlResult.ResultIterator;
+import com.hazelcast.sql.impl.ResultIterator;
 import com.hazelcast.sql.impl.QueryId;
 
 import java.util.UUID;

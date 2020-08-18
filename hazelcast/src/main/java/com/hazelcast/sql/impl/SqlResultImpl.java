@@ -147,7 +147,7 @@ public final class SqlResultImpl extends AbstractSqlResult {
         }
 
         @Override
-        public int hasNextImmediately() {
+        public HasNextImmediatelyResult hasNextImmediately() {
             try {
                 return delegate.hasNextImmediately();
             } catch (Exception e) {

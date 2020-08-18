@@ -16,12 +16,17 @@
 
 package com.hazelcast.sql.impl.exec.root;
 
-import com.hazelcast.sql.impl.AbstractSqlResult.ResultIterator;
+import com.hazelcast.sql.impl.ResultIterator;
 import com.hazelcast.sql.impl.QueryException;
+import com.hazelcast.sql.impl.ResultIterator.HasNextImmediatelyResult;
 import com.hazelcast.sql.impl.row.Row;
 
 import java.util.List;
 import java.util.NoSuchElementException;
+
+import static com.hazelcast.sql.impl.ResultIterator.HasNextImmediatelyResult.DONE;
+import static com.hazelcast.sql.impl.ResultIterator.HasNextImmediatelyResult.RETRY;
+import static com.hazelcast.sql.impl.ResultIterator.HasNextImmediatelyResult.YES;
 
 /**
  * Blocking array-based result consumer which delivers the results to API caller.
@@ -33,7 +38,7 @@ public class BlockingRootResultConsumer implements RootResultConsumer {
     /** Iterator over produced rows. */
     private final InternalIterator iterator = new InternalIterator();
 
-    /** Enables {@link ResultIterator#RETRY} result from {@link ResultIterator#hasNextImmediately()} */
+    /** Enables {@link HasNextImmediatelyResult#RETRY} result from {@link ResultIterator#hasNextImmediately()} */
     private final boolean waitForFullBatch;
 
     /** Query context to schedule root execution when the next batch is needed. */
@@ -49,7 +54,7 @@ public class BlockingRootResultConsumer implements RootResultConsumer {
     private QueryException doneError;
 
     /**
-     * @param waitForFullBatch Enables {@link ResultIterator#RETRY} result
+     * @param waitForFullBatch Enables {@link HasNextImmediatelyResult#RETRY} result
      *      from {@link ResultIterator#hasNextImmediately()}
      */
     // useMinimumLatency=true is used from Jet
@@ -192,7 +197,7 @@ public class BlockingRootResultConsumer implements RootResultConsumer {
         }
 
         @Override
-        public int hasNextImmediately() {
+        public HasNextImmediatelyResult hasNextImmediately() {
             if (batch == null) {
                 batch = getNextBatch(waitForFullBatch);
 

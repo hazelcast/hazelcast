@@ -16,7 +16,6 @@
 
 package com.hazelcast.sql.impl;
 
-import com.hazelcast.sql.impl.AbstractSqlResult.ResultIterator;
 import com.hazelcast.sql.impl.row.Row;
 
 /**

@@ -20,9 +20,10 @@ import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.impl.AbstractSqlResult;
-import com.hazelcast.sql.impl.AbstractSqlResult.ResultIterator;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.QueryId;
+import com.hazelcast.sql.impl.ResultIterator;
+import com.hazelcast.sql.impl.ResultIterator.HasNextImmediatelyResult;
 import com.hazelcast.sql.impl.client.SqlPage;
 
 import java.util.ArrayList;
@@ -105,16 +106,16 @@ public class QueryClientStateRegistry {
             return true;
         }
 
-        int res;
+        HasNextImmediatelyResult res;
         do {
             SqlRow row = iterator.next();
             List<Data> convertedRow = convertRow(row, serializationService);
 
             page.add(convertedRow);
             res = iterator.hasNextImmediately();
-        } while (res == ResultIterator.YES && page.size() < cursorBufferSize);
+        } while (res == HasNextImmediatelyResult.YES && page.size() < cursorBufferSize);
 
-        return res == ResultIterator.DONE;
+        return res == HasNextImmediatelyResult.DONE;
     }
 
     private static List<Data> convertRow(SqlRow row, InternalSerializationService serializationService) {

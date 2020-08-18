@@ -16,8 +16,8 @@
 
 package com.hazelcast.sql.impl.exec.root;
 
-import com.hazelcast.sql.impl.AbstractSqlResult.ResultIterator;
 import com.hazelcast.sql.impl.QueryException;
+import com.hazelcast.sql.impl.ResultIterator;
 import com.hazelcast.sql.impl.row.HeapRow;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.worker.QueryFragmentScheduleCallback;
@@ -39,6 +39,9 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static com.hazelcast.sql.impl.ResultIterator.HasNextImmediatelyResult.DONE;
+import static com.hazelcast.sql.impl.ResultIterator.HasNextImmediatelyResult.RETRY;
+import static com.hazelcast.sql.impl.ResultIterator.HasNextImmediatelyResult.YES;
 import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -189,23 +192,23 @@ public class BlockingRootResultConsumerTest extends HazelcastTestSupport {
         consumer.setup(() -> { });
         consumer.consume(batch, false);
 
-        assertEquals(ResultIterator.YES, iterator.hasNextImmediately());
-        assertEquals(ResultIterator.YES, iterator.hasNextImmediately());
+        assertEquals(YES, iterator.hasNextImmediately());
+        assertEquals(YES, iterator.hasNextImmediately());
         assertTrue(iterator.hasNext());
         assertEquals(batch.get(0), iterator.next());
-        assertEquals(ResultIterator.RETRY, iterator.hasNextImmediately());
+        assertEquals(RETRY, iterator.hasNextImmediately());
         Semaphore semaphore = new Semaphore(0);
         spawn(() -> {
             semaphore.acquire();
             return consumer.consume(batch, true);
         });
-        assertEquals(ResultIterator.RETRY, iterator.hasNextImmediately());
+        assertEquals(RETRY, iterator.hasNextImmediately());
         semaphore.release();
         // this call should block until the `consume` on previous line completes
         assertTrue(iterator.hasNext());
-        assertEquals(ResultIterator.YES, iterator.hasNextImmediately());
+        assertEquals(YES, iterator.hasNextImmediately());
         assertEquals(batch.get(0), iterator.next());
-        assertEquals(ResultIterator.DONE, iterator.hasNextImmediately());
+        assertEquals(DONE, iterator.hasNextImmediately());
         assertFalse(iterator.hasNext());
     }
 
