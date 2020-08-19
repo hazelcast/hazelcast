@@ -188,9 +188,6 @@ public class DurableExecutorConfig implements IdentifiedDataSerializable, NamedC
     }
 
     /**
-     * Gets if statistics gathering is enabled
-     * or disabled on the executor task.
-     *
      * @return {@code true} if statistics gathering is enabled
      * on the executor task (default), {@code false} otherwise
      */

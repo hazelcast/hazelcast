@@ -23,6 +23,11 @@ import com.hazelcast.internal.util.ConstructorFunction;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+
+/**
+ * Shared functionality to collect stats of various executors' tasks.
+ * One instance of this class is created per executor service.
+ */
 public final class ExecutorStats {
 
     private final ConcurrentHashMap<String, LocalExecutorStatsImpl> statsMap = new ConcurrentHashMap<>();

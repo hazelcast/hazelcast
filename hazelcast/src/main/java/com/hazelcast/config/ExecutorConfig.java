@@ -133,9 +133,8 @@ public class ExecutorConfig implements IdentifiedDataSerializable, NamedConfig {
     }
 
     /**
-     * Gets if statistics gathering is enabled or disabled on the executor task.
-     *
-     * @return {@code true} if statistics gathering is enabled on the executor task (default), {@code false} otherwise
+     * @return {@code true} if statistics gathering is enabled
+     * on the executor task (default), {@code false} otherwise
      */
     public boolean isStatisticsEnabled() {
         return statisticsEnabled;
