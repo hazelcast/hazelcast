@@ -17,33 +17,21 @@ package com.hazelcast.internal.util.phonehome;
 
 import com.hazelcast.instance.impl.Node;
 
-import java.io.File;
-import java.net.HttpURLConnection;
-import java.net.URL;
+import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
 
-import static com.hazelcast.internal.util.EmptyStatement.ignore;
-
 public class CloudInfoCollector implements MetricsCollector {
-    private static final int TIMEOUT = 1000;
-    private static final int RESPONSE_OK = 200;
+    private final Path KUBERNETES_TOKEN_PATH = Paths.get("/var/run/secrets/kubernetes.io/serviceaccount/token");
+    private final Path DOCKER_FILE_PATH = Paths.get("/.dockerenv");
 
-    private static final Path KUBERNETES_TOKEN_PATH = Paths.get("/var/run/secrets/kubernetes.io/serviceaccount/token");
-    private static final Path DOCKER_FILE_PATH = Paths.get("/.dockerenv");
-    private String awsEndPoint;
-    private String azureEndPoint;
-    private String gcpEndPoint;
+    private final String awsEndPoint;
+    private final String azureEndPoint;
+    private final String gcpEndPoint;
 
     public CloudInfoCollector(String awsEndpoint, String azureEndpoint, String gcpEndpoint) {
-        awsEndPoint = awsEndpoint;
-        azureEndPoint = azureEndpoint;
-        gcpEndPoint = gcpEndpoint;
-    }
-
-    public void modifyEndPoints(String awsEndpoint, String azureEndpoint, String gcpEndpoint) {
         awsEndPoint = awsEndpoint;
         azureEndPoint = azureEndpoint;
         gcpEndPoint = gcpEndpoint;
@@ -53,49 +41,27 @@ public class CloudInfoCollector implements MetricsCollector {
 
         Map<PhoneHomeMetrics, String> environmentInfo = new HashMap<>();
 
-        if (check(awsEndPoint)) {
+        if (MetricsCollector.fetchWebService(awsEndPoint)) {
             environmentInfo.put(PhoneHomeMetrics.CLOUD, "A");
-        } else if (check(azureEndPoint)) {
+        } else if (MetricsCollector.fetchWebService(azureEndPoint)) {
             environmentInfo.put(PhoneHomeMetrics.CLOUD, "Z");
-        } else if (check(gcpEndPoint)) {
+        } else if (MetricsCollector.fetchWebService(gcpEndPoint)) {
             environmentInfo.put(PhoneHomeMetrics.CLOUD, "G");
         } else {
             environmentInfo.put(PhoneHomeMetrics.CLOUD, "-1");
         }
-
-
-        File dockerFile =DOCKER_FILE_PATH.toFile();
-        if (dockerFile.exists()) {
-            File kubernetesToken = KUBERNETES_TOKEN_PATH.toFile();
-            if (kubernetesToken.exists() && !kubernetesToken.isDirectory()) {
+        try {
+            DOCKER_FILE_PATH.toRealPath();
+            try {
+                KUBERNETES_TOKEN_PATH.toRealPath();
                 environmentInfo.put(PhoneHomeMetrics.DOCKER, "K");
-            } else {
+            } catch (IOException e) {
                 environmentInfo.put(PhoneHomeMetrics.DOCKER, "D");
             }
-        } else {
+        } catch (IOException e) {
+            e.printStackTrace();
             environmentInfo.put(PhoneHomeMetrics.DOCKER, "N");
         }
         return environmentInfo;
-    }
-
-    private boolean check(String urlStr) {
-        HttpURLConnection conn = null;
-        boolean response;
-        try {
-            URL url = new URL(urlStr);
-            conn = (HttpURLConnection) url.openConnection();
-            conn.setConnectTimeout(TIMEOUT * 2);
-            conn.setReadTimeout(TIMEOUT * 2);
-            conn.connect();
-            response = conn.getResponseCode() == RESPONSE_OK;
-        } catch (Exception ignored) {
-            ignore(ignored);
-            return false;
-        } finally {
-            if (conn != null) {
-                conn.disconnect();
-            }
-        }
-        return response;
     }
 }

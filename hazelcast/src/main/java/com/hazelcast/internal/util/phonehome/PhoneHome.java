@@ -19,10 +19,7 @@ import com.hazelcast.instance.impl.Node;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.properties.ClusterProperty;
 
-import java.io.BufferedInputStream;
-import java.io.InputStream;
-import java.net.URL;
-import java.net.URLConnection;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -30,8 +27,6 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.internal.nio.IOUtil.closeResource;
-import static com.hazelcast.internal.util.EmptyStatement.ignore;
 import static java.lang.System.getenv;
 
 /**
@@ -52,10 +47,9 @@ public class PhoneHome {
     private final String basePhoneHomeUrl;
 
     private final Node hazelcastNode;
-    private final CloudInfoCollector cloudInfoCollector = new CloudInfoCollector(AWS_ENDPOINT, AZURE_ENDPOINT, GCP_ENDPOINT);
-    private final List<MetricsCollector> metricsCollectorList = Arrays.asList(new BuildInfoCollector(),
-            new ClusterInfoCollector(), new ClientInfoCollector(), new MapInfoCollector(),
-            new OSInfoCollector(), new DistributedObjectCounterCollector(), new CacheInfoCollector(), cloudInfoCollector);
+    private final List<MetricsCollector> metricsCollectorList = new ArrayList<>(Arrays.asList(new BuildInfoCollector(),
+            new ClusterInfoCollector(), new ClientInfoCollector(), new MapInfoCollector(), new OSInfoCollector(),
+            new DistributedObjectCounterCollector(), new CacheInfoCollector()));
 
     public PhoneHome(Node node) {
         this(node, DEFAULT_BASE_PHONE_HOME_URL, AWS_ENDPOINT, AZURE_ENDPOINT, GCP_ENDPOINT);
@@ -65,7 +59,8 @@ public class PhoneHome {
         hazelcastNode = node;
         logger = hazelcastNode.getLogger(com.hazelcast.internal.util.phonehome.PhoneHome.class);
         basePhoneHomeUrl = baseUrl;
-        cloudInfoCollector.modifyEndPoints(awsEndPoint, azureEndPoint, gcpEndPoint);
+        CloudInfoCollector cloudInfoCollector = new CloudInfoCollector(awsEndPoint, azureEndPoint, gcpEndPoint);
+        metricsCollectorList.add(cloudInfoCollector);
     }
 
     public void check() {
@@ -104,7 +99,7 @@ public class PhoneHome {
 
         if (!pretend) {
             String urlStr = basePhoneHomeUrl + parameterCreator.build();
-            fetchWebService(urlStr);
+            MetricsCollector.fetchWebService(urlStr);
         }
 
         return parameterCreator.getParameters();
@@ -121,21 +116,5 @@ public class PhoneHome {
             }
         }
         return parameterCreator;
-    }
-
-    private void fetchWebService(String urlStr) {
-        InputStream in = null;
-        try {
-            URL url = new URL(urlStr);
-            URLConnection conn = url.openConnection();
-            conn.setRequestProperty("User-Agent", "Mozilla/5.0");
-            conn.setConnectTimeout(TIMEOUT * 2);
-            conn.setReadTimeout(TIMEOUT * 2);
-            in = new BufferedInputStream(conn.getInputStream());
-        } catch (Exception ignored) {
-            ignore(ignored);
-        } finally {
-            closeResource(in);
-        }
     }
 }

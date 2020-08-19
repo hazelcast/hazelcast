@@ -54,10 +54,11 @@ import org.powermock.core.classloader.annotations.PrepareForTest;
 
 import javax.cache.CacheManager;
 import javax.cache.spi.CachingProvider;
-import java.io.File;
 import java.lang.management.ManagementFactory;
 import java.lang.management.OperatingSystemMXBean;
 import java.lang.management.RuntimeMXBean;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Map;
 import java.util.UUID;
 
@@ -67,11 +68,14 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNull;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-@PrepareForTest({File.class, MetricsCollector.class, CloudInfoCollector.class})
+@PrepareForTest({Path.class, MetricsCollector.class, CloudInfoCollector.class})
 public class PhoneHomeTest extends HazelcastTestSupport {
 
     private Node node;
@@ -590,14 +594,17 @@ public class PhoneHomeTest extends HazelcastTestSupport {
         assertGreaterOrEquals(PhoneHomeMetrics.AVERAGE_GET_LATENCY_OF_MAPS_USING_MAPSTORE.getRequestParameterName(),
                 Long.parseLong(parameters.get(PhoneHomeMetrics.AVERAGE_GET_LATENCY_OF_MAPS_USING_MAPSTORE.getRequestParameterName())), 200);
     }
+
     @Test
     public void file() throws Exception {
-        Map<String, String> parameters = phoneHome.phoneHome(true);
-        assertEquals(parameters.get(PhoneHomeMetrics.DOCKER.getRequestParameterName()),"N");
+        Path fake = Paths.get(System.getProperty("user.dir"));
+        Path p = mock(Path.class);
+        PowerMockito.mockStatic(Paths.class);
 
-        File f= PowerMockito.mock(File.class);
-        PowerMockito.whenNew(File.class).withAnyArguments().thenReturn(f);
-        PowerMockito.when(f.exists()).thenReturn(true);
-        assertEquals(parameters.get(PhoneHomeMetrics.DOCKER.getRequestParameterName()),"D");
+        PowerMockito.when(Paths.get(anyString())).thenReturn(p).thenReturn(p);
+        when(p.toRealPath()).thenReturn(fake).thenReturn(fake);
+
+        Map<String, String> parameters = phoneHome.phoneHome(true);
+        assertEquals(parameters.get(PhoneHomeMetrics.DOCKER.getRequestParameterName()), "K");
     }
 }
