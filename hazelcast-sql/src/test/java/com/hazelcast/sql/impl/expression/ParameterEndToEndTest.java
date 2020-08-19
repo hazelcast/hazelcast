@@ -17,7 +17,6 @@
 package com.hazelcast.sql.impl.expression;
 
 import com.hazelcast.sql.SqlErrorCode;
-import com.hazelcast.sql.impl.expression.math.ExpressionMath;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -33,7 +32,6 @@ import static com.hazelcast.sql.SqlColumnType.BOOLEAN;
 import static com.hazelcast.sql.SqlColumnType.DECIMAL;
 import static com.hazelcast.sql.SqlColumnType.DOUBLE;
 import static com.hazelcast.sql.SqlColumnType.REAL;
-import static com.hazelcast.sql.SqlColumnType.SMALLINT;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -47,15 +45,15 @@ public class ParameterEndToEndTest extends ExpressionEndToEndTestBase {
         assertRow("booleanTrue and ? and ?", EXPR0, BOOLEAN, false, "tRuE", false);
         assertRow("? and ? and ?", EXPR0, BOOLEAN, true, "tRuE", true, "true");
         assertDataError("booleanTrue and ?", "failed to convert parameter", "foo");
-        assertDataError("booleanTrue and ?", "failed to convert parameter", 1);
+        assertDataError("booleanTrue and ?", "Cannot implicitly convert parameter at position 0 from INTEGER to BOOLEAN", 1);
     }
 
     @Test
     public void testByte() {
         assertRow("byte1 + ?", EXPR0, BIGINT, 1L, 0);
-        assertRow("byte1 + ?", EXPR0, BIGINT, 2L, 1.0d);
-        assertRow("byte1 + ?", EXPR0, BIGINT, 2L, 1.1d);
         assertRow("byte1 + ?", EXPR0, BIGINT, 2L, "1");
+
+        assertDataError("byte1 + ?", "Cannot implicitly convert parameter at position 0 from DOUBLE to BIGINT", 1d);
         assertDataError("byte1 + ?", "failed to convert parameter", "1.1");
         assertDataError("byte1 + ?", "failed to convert parameter", "foo");
     }
@@ -63,9 +61,9 @@ public class ParameterEndToEndTest extends ExpressionEndToEndTestBase {
     @Test
     public void testShort() {
         assertRow("short1 + ?", EXPR0, BIGINT, 1L, 0);
-        assertRow("short1 + ?", EXPR0, BIGINT, 2L, 1.0d);
-        assertRow("short1 + ?", EXPR0, BIGINT, 2L, 1.1d);
         assertRow("short1 + ?", EXPR0, BIGINT, 2L, "1");
+
+        assertDataError("byte1 + ?", "Cannot implicitly convert parameter at position 0 from DOUBLE to BIGINT", 1d);
         assertDataError("short1 + ?", "failed to convert parameter", "1.1");
         assertDataError("short1 + ?", "failed to convert parameter", "foo");
     }
@@ -73,9 +71,9 @@ public class ParameterEndToEndTest extends ExpressionEndToEndTestBase {
     @Test
     public void testInt() {
         assertRow("int1 + ?", EXPR0, BIGINT, 1L, 0);
-        assertRow("int1 + ?", EXPR0, BIGINT, 2L, 1.0d);
-        assertRow("int1 + ?", EXPR0, BIGINT, 2L, 1.1d);
         assertRow("int1 + ?", EXPR0, BIGINT, 2L, "1");
+
+        assertDataError("int1 + ?", "Cannot implicitly convert parameter at position 0 from DOUBLE to BIGINT", 1d);
         assertDataError("int1 + ?", "failed to convert parameter", "1.1");
         assertDataError("int1 + ?", "failed to convert parameter", "foo");
     }
@@ -83,9 +81,9 @@ public class ParameterEndToEndTest extends ExpressionEndToEndTestBase {
     @Test
     public void testLong() {
         assertRow("long1 + ?", EXPR0, BIGINT, 1L, 0);
-        assertRow("long1 + ?", EXPR0, BIGINT, 2L, 1.0d);
-        assertRow("long1 + ?", EXPR0, BIGINT, 2L, 1.1d);
         assertRow("long1 + ?", EXPR0, BIGINT, 2L, "1");
+
+        assertDataError("long1 + ?", "Cannot implicitly convert parameter at position 0 from DOUBLE to BIGINT", 1d);
         assertDataError("long1 + ?", "failed to convert parameter", "1.1");
         assertDataError("long1 + ?", "failed to convert parameter", "foo");
     }
@@ -93,10 +91,10 @@ public class ParameterEndToEndTest extends ExpressionEndToEndTestBase {
     @Test
     public void testFloat() {
         assertRow("float1 + ?", EXPR0, REAL, 1.0f, 0);
-        assertRow("float1 + ?", EXPR0, REAL, 2.0f, 1d);
-        assertRow("float1 + ?", EXPR0, REAL, 2.1f, 1.1d);
         assertRow("float1 + ?", EXPR0, REAL, 2.0f, "1");
         assertRow("float1 + ?", EXPR0, REAL, 2.1f, "1.1");
+
+        assertDataError("float1 + ?", "Cannot implicitly convert parameter at position 0 from DOUBLE to REAL", 1d);
         assertDataError("float1 + ?", "failed to convert parameter", "foo");
     }
 
@@ -110,30 +108,26 @@ public class ParameterEndToEndTest extends ExpressionEndToEndTestBase {
         assertDataError("double1 + ?", "failed to convert parameter", "foo");
     }
 
-    @SuppressWarnings("UnpredictableBigDecimalConstructorCall")
     @Test
     public void testDecimal() {
         assertRow("decimal1 + ?", EXPR0, DECIMAL, BigDecimal.valueOf(1), 0);
-        assertRow("decimal1 + ?", EXPR0, DECIMAL, BigDecimal.valueOf(2), 1d);
-        assertRow("decimal1 + ?", EXPR0, DECIMAL, new BigDecimal(1, ExpressionMath.DECIMAL_MATH_CONTEXT).add(
-                new BigDecimal(1.1, ExpressionMath.DECIMAL_MATH_CONTEXT)), 1.1d);
         assertRow("decimal1 + ?", EXPR0, DECIMAL, BigDecimal.valueOf(2), "1");
         assertRow("decimal1 + ?", EXPR0, DECIMAL, BigDecimal.valueOf(2.1), "1.1");
         assertRow("decimal1 + ?", EXPR0, DECIMAL, BigDecimal.valueOf(2.1), BigDecimal.valueOf(1.1));
+
+        assertDataError("decimal1 + ?", "Cannot implicitly convert parameter at position 0 from DOUBLE to DECIMAL", 1d);
         assertDataError("decimal1 + ?", "failed to convert parameter", "foo");
     }
 
-    @SuppressWarnings("UnpredictableBigDecimalConstructorCall")
     @Test
     public void testBigInteger() {
         assertRow("bigInteger1 + ?", EXPR0, DECIMAL, BigDecimal.valueOf(1), 0);
-        assertRow("bigInteger1 + ?", EXPR0, DECIMAL, BigDecimal.valueOf(2), 1d);
-        assertRow("bigInteger1 + ?", EXPR0, DECIMAL, new BigDecimal(1, ExpressionMath.DECIMAL_MATH_CONTEXT).add(
-                new BigDecimal(1.1, ExpressionMath.DECIMAL_MATH_CONTEXT)), 1.1d);
         assertRow("bigInteger1 + ?", EXPR0, DECIMAL, BigDecimal.valueOf(2), "1");
         assertRow("bigInteger1 + ?", EXPR0, DECIMAL, BigDecimal.valueOf(2.1), "1.1");
         assertRow("bigInteger1 + ?", EXPR0, DECIMAL, BigDecimal.valueOf(2.1), BigDecimal.valueOf(1.1));
         assertRow("bigInteger1 + ?", EXPR0, DECIMAL, BigDecimal.valueOf(3), BigInteger.valueOf(2));
+
+        assertDataError("bigInteger1 + ?", "Cannot implicitly convert parameter at position 0 from DOUBLE to DECIMAL", 1d);
         assertDataError("bigInteger1 + ?", "failed to convert parameter", "foo");
     }
 
@@ -170,12 +164,10 @@ public class ParameterEndToEndTest extends ExpressionEndToEndTestBase {
     public void testVarious() {
         assertParsingError("?", "illegal use of dynamic parameter");
         assertParsingError("? + ?", "illegal use of dynamic parameter");
-        assertRow("? + cast(? as tinyint)", EXPR0, BIGINT, 3L, 1, 2);
-        assertRow("cast(? as tinyint) + cast(? as tinyint)", EXPR0, SMALLINT, (short) 3, 1, 2);
         assertRow("? + cast(? as double)", EXPR0, DOUBLE, 3.0, 1, 2);
+
         assertDataError("? + 1", "unexpected parameter count");
         assertDataError("? and ? and ?", "unexpected parameter count", 0, 1);
         assertDataError("? + 1", "Failed to convert parameter at position 0 from VARCHAR to BIGINT", "foo");
     }
-
 }

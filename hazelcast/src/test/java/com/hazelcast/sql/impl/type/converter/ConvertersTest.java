@@ -50,7 +50,7 @@ import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.BOOLEAN;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.DATE;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.DECIMAL;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.DOUBLE;
-import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.INT;
+import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.INTEGER;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.NULL;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.OBJECT;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.REAL;
@@ -148,7 +148,7 @@ public class ConvertersTest {
         ByteConverter converter = ByteConverter.INSTANCE;
 
         checkConverter(converter, Converter.ID_BYTE, TINYINT, Byte.class);
-        checkConverterConversions(converter, VARCHAR, SMALLINT, INT, BIGINT, DECIMAL, REAL, DOUBLE, OBJECT);
+        checkConverterConversions(converter, VARCHAR, SMALLINT, INTEGER, BIGINT, DECIMAL, REAL, DOUBLE, OBJECT);
 
         assertEquals("1", converter.asVarchar((byte) 1));
 
@@ -171,7 +171,7 @@ public class ConvertersTest {
         ShortConverter converter = ShortConverter.INSTANCE;
 
         checkConverter(converter, Converter.ID_SHORT, SMALLINT, Short.class);
-        checkConverterConversions(converter, VARCHAR, TINYINT, INT, BIGINT, DECIMAL, REAL, DOUBLE, OBJECT);
+        checkConverterConversions(converter, VARCHAR, TINYINT, INTEGER, BIGINT, DECIMAL, REAL, DOUBLE, OBJECT);
 
         assertEquals("1", converter.asVarchar((short) 1));
 
@@ -194,7 +194,7 @@ public class ConvertersTest {
     public void testIntConverter() {
         IntegerConverter converter = IntegerConverter.INSTANCE;
 
-        checkConverter(converter, Converter.ID_INTEGER, INT, Integer.class);
+        checkConverter(converter, Converter.ID_INTEGER, INTEGER, Integer.class);
         checkConverterConversions(converter, VARCHAR, TINYINT, SMALLINT, BIGINT, DECIMAL, REAL, DOUBLE, OBJECT);
 
         assertEquals("1", converter.asVarchar(1));
@@ -220,7 +220,7 @@ public class ConvertersTest {
         LongConverter converter = LongConverter.INSTANCE;
 
         checkConverter(converter, Converter.ID_LONG, BIGINT, Long.class);
-        checkConverterConversions(converter, VARCHAR, TINYINT, SMALLINT, INT, DECIMAL, REAL, DOUBLE, OBJECT);
+        checkConverterConversions(converter, VARCHAR, TINYINT, SMALLINT, INTEGER, DECIMAL, REAL, DOUBLE, OBJECT);
 
         assertEquals("1", converter.asVarchar(1L));
 
@@ -246,7 +246,7 @@ public class ConvertersTest {
         BigIntegerConverter converter = BigIntegerConverter.INSTANCE;
 
         checkConverter(converter, Converter.ID_BIG_INTEGER, DECIMAL, BigInteger.class);
-        checkConverterConversions(converter, VARCHAR, TINYINT, SMALLINT, INT, BIGINT, REAL, DOUBLE, OBJECT);
+        checkConverterConversions(converter, VARCHAR, TINYINT, SMALLINT, INTEGER, BIGINT, REAL, DOUBLE, OBJECT);
 
         BigInteger bigValue = BigInteger.valueOf(Long.MAX_VALUE).add(BigInteger.ONE);
 
@@ -275,7 +275,7 @@ public class ConvertersTest {
         BigDecimalConverter converter = BigDecimalConverter.INSTANCE;
 
         checkConverter(converter, Converter.ID_BIG_DECIMAL, DECIMAL, BigDecimal.class);
-        checkConverterConversions(converter, VARCHAR, TINYINT, SMALLINT, INT, BIGINT, REAL, DOUBLE, OBJECT);
+        checkConverterConversions(converter, VARCHAR, TINYINT, SMALLINT, INTEGER, BIGINT, REAL, DOUBLE, OBJECT);
 
         BigDecimal val = BigDecimal.valueOf(11, 1);
         BigDecimal bigValue = BigDecimal.valueOf(Long.MAX_VALUE).add(new BigDecimal("1.1"));
@@ -305,7 +305,7 @@ public class ConvertersTest {
         FloatConverter converter = FloatConverter.INSTANCE;
 
         checkConverter(converter, Converter.ID_FLOAT, REAL, Float.class);
-        checkConverterConversions(converter, VARCHAR, TINYINT, SMALLINT, INT, BIGINT, DECIMAL, DOUBLE, OBJECT);
+        checkConverterConversions(converter, VARCHAR, TINYINT, SMALLINT, INTEGER, BIGINT, DECIMAL, DOUBLE, OBJECT);
 
         float val = 1.1f;
         float bigValue = Long.MAX_VALUE * 2.5f;
@@ -355,7 +355,7 @@ public class ConvertersTest {
         DoubleConverter converter = DoubleConverter.INSTANCE;
 
         checkConverter(converter, Converter.ID_DOUBLE, DOUBLE, Double.class);
-        checkConverterConversions(converter, VARCHAR, TINYINT, SMALLINT, INT, BIGINT, DECIMAL, REAL, OBJECT);
+        checkConverterConversions(converter, VARCHAR, TINYINT, SMALLINT, INTEGER, BIGINT, DECIMAL, REAL, OBJECT);
 
         double val = 1.1d;
         double bigValue = Long.MAX_VALUE * 2.5d;
@@ -541,7 +541,7 @@ public class ConvertersTest {
             BOOLEAN,
             TINYINT,
             SMALLINT,
-            INT,
+            INTEGER,
             BIGINT,
             DECIMAL,
             REAL,
@@ -640,7 +640,7 @@ public class ConvertersTest {
             BOOLEAN,
             TINYINT,
             SMALLINT,
-            INT,
+            INTEGER,
             BIGINT,
             DECIMAL,
             REAL,
@@ -690,7 +690,7 @@ public class ConvertersTest {
             BOOLEAN,
             TINYINT,
             SMALLINT,
-            INT,
+            INTEGER,
             BIGINT,
             DECIMAL,
             REAL,
@@ -711,7 +711,7 @@ public class ConvertersTest {
     public void testNullConverter() {
         NullConverter c = NullConverter.INSTANCE;
         checkConverter(c, Converter.ID_NULL, NULL, Void.class);
-        checkConverterConversions(c, BOOLEAN, TINYINT, SMALLINT, INT, BIGINT, DECIMAL, REAL, DOUBLE, TIME, DATE, TIMESTAMP,
+        checkConverterConversions(c, BOOLEAN, TINYINT, SMALLINT, INTEGER, BIGINT, DECIMAL, REAL, DOUBLE, TIME, DATE, TIMESTAMP,
                 TIMESTAMP_WITH_TIME_ZONE, VARCHAR, OBJECT);
 
         checkUnsupportedException(() -> c.asBoolean(null));
@@ -905,7 +905,7 @@ public class ConvertersTest {
 
                 break;
 
-            case INT:
+            case INTEGER:
                 assertEquals(expected, converter.canConvertToInt());
 
                 break;
@@ -986,7 +986,7 @@ public class ConvertersTest {
 
                     break;
 
-                case INT:
+                case INTEGER:
                     converter.asInt(val);
 
                     break;
@@ -1091,7 +1091,7 @@ public class ConvertersTest {
 
         @Override
         public int asInt(Object val) {
-            invoked = INT;
+            invoked = INTEGER;
 
             return 0;
         }

@@ -62,7 +62,7 @@ public final class BigDecimalConverter extends AbstractDecimalConverter {
         try {
             return casted.setScale(0, BigDecimal.ROUND_DOWN).intValueExact();
         } catch (ArithmeticException e) {
-            throw numericOverflow(QueryDataTypeFamily.INT, val);
+            throw numericOverflow(QueryDataTypeFamily.INTEGER, val);
         }
     }
 

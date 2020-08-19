@@ -81,14 +81,14 @@ public final class DoubleConverter extends Converter {
     public int asInt(Object val) {
         double casted = cast(val);
         if (!Double.isFinite(casted)) {
-            throw cannotConvert(QueryDataTypeFamily.INT, val);
+            throw cannotConvert(QueryDataTypeFamily.INTEGER, val);
         }
 
         int converted = (int) casted;
 
         // casts from double to long are saturating
         if (converted != (long) casted) {
-            throw numericOverflow(QueryDataTypeFamily.INT, val);
+            throw numericOverflow(QueryDataTypeFamily.INTEGER, val);
         }
 
         return converted;

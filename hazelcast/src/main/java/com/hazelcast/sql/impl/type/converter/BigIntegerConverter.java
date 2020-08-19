@@ -65,7 +65,7 @@ public final class BigIntegerConverter extends AbstractDecimalConverter {
         try {
             return casted.intValueExact();
         } catch (ArithmeticException e) {
-            throw numericOverflow(QueryDataTypeFamily.INT, val);
+            throw numericOverflow(QueryDataTypeFamily.INTEGER, val);
         }
     }
 

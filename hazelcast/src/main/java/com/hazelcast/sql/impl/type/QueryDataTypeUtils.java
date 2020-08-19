@@ -70,7 +70,7 @@ public final class QueryDataTypeUtils {
     public static final int TYPE_LEN_TIMESTAMP = 12 + 20 + TYPE_LEN_TIME + TYPE_LEN_DATE;
 
     /** 12 (hdr) + 20 (fields + padding) + timestamp + 12 (offset hdr) + 12 (offset fields). */
-    public static final int TYPE_LEN_TIMESTAMP_WITH_OFFSET = 12 + 20 + TYPE_LEN_TIMESTAMP + 12 + 12;
+    public static final int TYPE_LEN_TIMESTAMP_WITH_TIME_ZONE = 12 + 20 + TYPE_LEN_TIMESTAMP + 12 + 12;
 
     /** 12 (hdr) + 36 (arbitrary content). */
     public static final int TYPE_LEN_OBJECT = 12 + 36;
@@ -79,6 +79,22 @@ public final class QueryDataTypeUtils {
     // still costs a single reference now, but reference cost is not taken into
     // account as of now.
     public static final int TYPE_LEN_NULL = 1;
+
+    public static final int PRECEDENCE_NULL = 0;
+    public static final int PRECEDENCE_VARCHAR = 100;
+    public static final int PRECEDENCE_BOOLEAN = 200;
+    public static final int PRECEDENCE_TINYINT = 300;
+    public static final int PRECEDENCE_SMALLINT = 400;
+    public static final int PRECEDENCE_INTEGER = 500;
+    public static final int PRECEDENCE_BIGINT = 600;
+    public static final int PRECEDENCE_DECIMAL = 700;
+    public static final int PRECEDENCE_REAL = 800;
+    public static final int PRECEDENCE_DOUBLE = 900;
+    public static final int PRECEDENCE_TIME = 1000;
+    public static final int PRECEDENCE_DATE = 1100;
+    public static final int PRECEDENCE_TIMESTAMP = 1200;
+    public static final int PRECEDENCE_TIMESTAMP_WITH_TIME_ZONE = 1300;
+    public static final int PRECEDENCE_OBJECT = 1400;
 
     private QueryDataTypeUtils() {
         // No-op.
@@ -109,7 +125,7 @@ public final class QueryDataTypeUtils {
             case SMALLINT:
                 return SMALLINT;
 
-            case INT:
+            case INTEGER:
                 return INT;
 
             case BIGINT:
@@ -180,7 +196,7 @@ public final class QueryDataTypeUtils {
             case SMALLINT:
                 return SMALLINT;
 
-            case INT:
+            case INTEGER:
                 return INT;
 
             case BIGINT:

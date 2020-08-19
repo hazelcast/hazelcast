@@ -36,6 +36,7 @@ public interface PlanNodeVisitor {
     void onRootSendNode(RootSendPlanNode node);
     void onProjectNode(ProjectPlanNode node);
     void onFilterNode(FilterPlanNode node);
+    void onEmptyNode(EmptyPlanNode node);
     void onMapScanNode(MapScanPlanNode node);
 
     /**

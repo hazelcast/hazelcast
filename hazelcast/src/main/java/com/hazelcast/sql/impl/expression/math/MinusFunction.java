@@ -85,7 +85,7 @@ public final class MinusFunction<T> extends BiExpressionWithType<T> implements I
                 return (byte) (left.byteValue() - right.byteValue());
             case SMALLINT:
                 return (short) (left.shortValue() - right.shortValue());
-            case INT:
+            case INTEGER:
                 return left.intValue() - right.intValue();
             case BIGINT:
                 try {

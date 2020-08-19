@@ -85,14 +85,14 @@ public class RoundFunctionIntegrationTest extends SqlExpressionIntegrationTestSu
 
         checkColumn_2(new ShortIntegerVal().fields((short) 32767, 1), SqlColumnType.SMALLINT, (short) 32767);
         checkColumn_2(new ShortIntegerVal().fields((short) 32767, 0), SqlColumnType.SMALLINT, (short) 32767);
-        checkColumnFailure_2(new ShortIntegerVal().fields((short) 32767, -1), SqlErrorCode.DATA_EXCEPTION, "SMALLINT overflow in ROUND function (consider adding an explicit CAST to INT)");
+        checkColumnFailure_2(new ShortIntegerVal().fields((short) 32767, -1), SqlErrorCode.DATA_EXCEPTION, "SMALLINT overflow in ROUND function (consider adding an explicit CAST to INTEGER)");
         checkColumn_2(new ShortIntegerVal().fields((short) 32767, -4), SqlColumnType.SMALLINT, (short) 30000);
         checkColumn_2(new ShortIntegerVal().fields((short) 32767, -5), SqlColumnType.SMALLINT, (short) 0);
         checkColumn_2(new ShortIntegerVal().fields((short) 32767, -6), SqlColumnType.SMALLINT, (short) 0);
 
         checkColumn_2(new ShortIntegerVal().fields((short) -32768, 1), SqlColumnType.SMALLINT, (short) -32768);
         checkColumn_2(new ShortIntegerVal().fields((short) -32768, 0), SqlColumnType.SMALLINT, (short) -32768);
-        checkColumnFailure_2(new ShortIntegerVal().fields((short) -32768, -1), SqlErrorCode.DATA_EXCEPTION, "SMALLINT overflow in ROUND function (consider adding an explicit CAST to INT)");
+        checkColumnFailure_2(new ShortIntegerVal().fields((short) -32768, -1), SqlErrorCode.DATA_EXCEPTION, "SMALLINT overflow in ROUND function (consider adding an explicit CAST to INTEGER)");
         checkColumn_2(new ShortIntegerVal().fields((short) -32768, -4), SqlColumnType.SMALLINT, (short) -30000);
         checkColumn_2(new ShortIntegerVal().fields((short) -32768, -5), SqlColumnType.SMALLINT, (short) 0);
         checkColumn_2(new ShortIntegerVal().fields((short) -32768, -6), SqlColumnType.SMALLINT, (short) 0);
@@ -105,14 +105,14 @@ public class RoundFunctionIntegrationTest extends SqlExpressionIntegrationTestSu
 
         checkColumn_2(new IntegerIntegerVal().fields(2_147_483_647, 1), SqlColumnType.INTEGER, 2_147_483_647);
         checkColumn_2(new IntegerIntegerVal().fields(2_147_483_647, 0), SqlColumnType.INTEGER, 2_147_483_647);
-        checkColumnFailure_2(new IntegerIntegerVal().fields(2_147_483_647, -1), SqlErrorCode.DATA_EXCEPTION, "INT overflow in ROUND function (consider adding an explicit CAST to BIGINT)");
+        checkColumnFailure_2(new IntegerIntegerVal().fields(2_147_483_647, -1), SqlErrorCode.DATA_EXCEPTION, "INTEGER overflow in ROUND function (consider adding an explicit CAST to BIGINT)");
         checkColumn_2(new IntegerIntegerVal().fields(2_147_483_647, -2), SqlColumnType.INTEGER, 2_147_483_600);
         checkColumn_2(new IntegerIntegerVal().fields(2_147_483_647, -10), SqlColumnType.INTEGER, 0);
         checkColumn_2(new IntegerIntegerVal().fields(2_147_483_647, -11), SqlColumnType.INTEGER, 0);
 
         checkColumn_2(new IntegerIntegerVal().fields(-2_147_483_648, 1), SqlColumnType.INTEGER, -2_147_483_648);
         checkColumn_2(new IntegerIntegerVal().fields(-2_147_483_648, 0), SqlColumnType.INTEGER, -2_147_483_648);
-        checkColumnFailure_2(new IntegerIntegerVal().fields(-2_147_483_648, -1), SqlErrorCode.DATA_EXCEPTION, "INT overflow in ROUND function (consider adding an explicit CAST to BIGINT)");
+        checkColumnFailure_2(new IntegerIntegerVal().fields(-2_147_483_648, -1), SqlErrorCode.DATA_EXCEPTION, "INTEGER overflow in ROUND function (consider adding an explicit CAST to BIGINT)");
         checkColumn_2(new IntegerIntegerVal().fields(-2_147_483_648, -2), SqlColumnType.INTEGER, -2_147_483_600);
         checkColumn_2(new IntegerIntegerVal().fields(2_147_483_647, -10), SqlColumnType.INTEGER, 0);
         checkColumn_2(new IntegerIntegerVal().fields(2_147_483_647, -11), SqlColumnType.INTEGER, 0);
@@ -215,8 +215,8 @@ public class RoundFunctionIntegrationTest extends SqlExpressionIntegrationTestSu
         check_1("?", SqlColumnType.DECIMAL, new BigDecimal("10"), 10L);
         check_1("?", SqlColumnType.DECIMAL, new BigDecimal("10"), new BigInteger("10"));
         check_1("?", SqlColumnType.DECIMAL, new BigDecimal("10"), new BigDecimal("9.5"));
-        check_1("?", SqlColumnType.DECIMAL, new BigDecimal("10"), 9.5f);
-        check_1("?", SqlColumnType.DECIMAL, new BigDecimal("10"), 9.5d);
+        checkFailure_1("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from REAL to DECIMAL", 9.5f);
+        checkFailure_1("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from DOUBLE to DECIMAL", 9.5d);
         check_1("?", SqlColumnType.DECIMAL, new BigDecimal("10"), "9.5");
         checkFailure_1("?", SqlErrorCode.DATA_EXCEPTION, "Cannot convert VARCHAR to DECIMAL", "bad");
 
@@ -227,8 +227,8 @@ public class RoundFunctionIntegrationTest extends SqlExpressionIntegrationTestSu
         check_2("?", "0", SqlColumnType.DECIMAL, new BigDecimal("10"), 10L);
         check_2("?", "0", SqlColumnType.DECIMAL, new BigDecimal("10"), new BigInteger("10"));
         check_2("?", "0", SqlColumnType.DECIMAL, new BigDecimal("10"), new BigDecimal("9.5"));
-        check_2("?", "0", SqlColumnType.DECIMAL, new BigDecimal("10"), 9.5f);
-        check_2("?", "0", SqlColumnType.DECIMAL, new BigDecimal("10"), 9.5d);
+        checkFailure_2("?", "0", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from REAL to DECIMAL", 9.5f);
+        checkFailure_2("?", "0", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from DOUBLE to DECIMAL", 9.5d);
         check_2("?", "0", SqlColumnType.DECIMAL, new BigDecimal("10"), "9.5");
         checkFailure_2("?", "0", SqlErrorCode.DATA_EXCEPTION, "Cannot convert VARCHAR to DECIMAL", "bad");
 
@@ -236,9 +236,9 @@ public class RoundFunctionIntegrationTest extends SqlExpressionIntegrationTestSu
         check_2("15", "?", SqlColumnType.TINYINT, (byte) 20, (byte) -1);
         check_2("15", "?", SqlColumnType.TINYINT, (byte) 20, (short) -1);
         check_2("15", "?", SqlColumnType.TINYINT, (byte) 20, -1);
-        check_2("15", "?", SqlColumnType.TINYINT, (byte) 20, -1L);
-        check_2("15", "?", SqlColumnType.TINYINT, (byte) 20, new BigInteger("-1"));
-        check_2("15", "?", SqlColumnType.TINYINT, (byte) 20, new BigDecimal("-1"));
+        checkFailure_2("15", "?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from BIGINT to INTEGER", -1L);
+        checkFailure_2("15", "?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from DECIMAL to INTEGER", BigInteger.ONE.negate());
+        checkFailure_2("15", "?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from DECIMAL to INTEGER", BigDecimal.ONE.negate());
         check_2("15", "?", SqlColumnType.TINYINT, (byte) 20, "-1");
         checkFailure_2("15", "?", SqlErrorCode.DATA_EXCEPTION, "Cannot convert VARCHAR to INT", "bad");
 
