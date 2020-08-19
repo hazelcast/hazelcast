@@ -53,12 +53,7 @@ public class BlockingRootResultConsumer implements RootResultConsumer {
     @Override
     public boolean consume(List<Row> batch, boolean last) {
         synchronized (mux) {
-            if (done) {
-                // this is possible if the query was concurrently cancelled
-                // see https://github.com/hazelcast/hazelcast/issues/17160
-                assert doneError != null;
-                throw new RuntimeException(doneError);
-            }
+            assert !done;
 
             if (currentBatch == null) {
                 if (!batch.isEmpty()) {
