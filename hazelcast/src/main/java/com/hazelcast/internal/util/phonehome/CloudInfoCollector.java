@@ -16,6 +16,7 @@
 package com.hazelcast.internal.util.phonehome;
 
 import com.hazelcast.instance.impl.Node;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -23,43 +24,55 @@ import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
 
+@SuppressFBWarnings
 public class CloudInfoCollector implements MetricsCollector {
-    private final Path KUBERNETES_TOKEN_PATH = Paths.get("/var/run/secrets/kubernetes.io/serviceaccount/token");
-    private final Path DOCKER_FILE_PATH = Paths.get("/.dockerenv");
 
-    private final String awsEndPoint;
-    private final String azureEndPoint;
-    private final String gcpEndPoint;
+    private static final String AWS_ENDPOINT = "http://169.254.169.254/latest/meta-data";
+    private static final String AZURE_ENDPOINT = " http://169.254.169.254/metadata/instance/compute?api-version=2018-02-01";
+    private static final String GCP_ENDPOINT = " http://metadata.google.internal";
+    private static final Path KUBERNETES_TOKEN_PATH = Paths.get("/var/run/secrets/kubernetes.io/serviceaccount/token");
+    private static final Path DOCKER_FILE_PATH = Paths.get("/.dockerenv");
 
-    public CloudInfoCollector(String awsEndpoint, String azureEndpoint, String gcpEndpoint) {
-        awsEndPoint = awsEndpoint;
-        azureEndPoint = azureEndpoint;
-        gcpEndPoint = gcpEndpoint;
+    private final String awsEndpoint;
+    private final String azureEndpoint;
+    private final String gcpEndpoint;
+    private final Path kubernetesTokenPath;
+    private final Path dockerFilePath;
+
+    public CloudInfoCollector() {
+        this(AWS_ENDPOINT, AZURE_ENDPOINT, GCP_ENDPOINT, KUBERNETES_TOKEN_PATH, DOCKER_FILE_PATH);
+    }
+
+    public CloudInfoCollector(String awsEndPoint, String azureEndPoint, String gcpEndPoint, Path kubernetesTokenpath,
+                              Path dockerFilepath) {
+        awsEndpoint = awsEndPoint;
+        azureEndpoint = azureEndPoint;
+        gcpEndpoint = gcpEndPoint;
+        kubernetesTokenPath = kubernetesTokenpath;
+        dockerFilePath = dockerFilepath;
     }
 
     public Map<PhoneHomeMetrics, String> computeMetrics(Node hazelcastNode) {
 
         Map<PhoneHomeMetrics, String> environmentInfo = new HashMap<>();
-
-        if (MetricsCollector.fetchWebService(awsEndPoint)) {
+        if (MetricsCollector.fetchWebService(awsEndpoint)) {
             environmentInfo.put(PhoneHomeMetrics.CLOUD, "A");
-        } else if (MetricsCollector.fetchWebService(azureEndPoint)) {
+        } else if (MetricsCollector.fetchWebService(azureEndpoint)) {
             environmentInfo.put(PhoneHomeMetrics.CLOUD, "Z");
-        } else if (MetricsCollector.fetchWebService(gcpEndPoint)) {
+        } else if (MetricsCollector.fetchWebService(gcpEndpoint)) {
             environmentInfo.put(PhoneHomeMetrics.CLOUD, "G");
         } else {
             environmentInfo.put(PhoneHomeMetrics.CLOUD, "-1");
         }
         try {
-            DOCKER_FILE_PATH.toRealPath();
+            dockerFilePath.toRealPath();
             try {
-                KUBERNETES_TOKEN_PATH.toRealPath();
+                kubernetesTokenPath.toRealPath();
                 environmentInfo.put(PhoneHomeMetrics.DOCKER, "K");
             } catch (IOException e) {
                 environmentInfo.put(PhoneHomeMetrics.DOCKER, "D");
             }
         } catch (IOException e) {
-            e.printStackTrace();
             environmentInfo.put(PhoneHomeMetrics.DOCKER, "N");
         }
         return environmentInfo;

@@ -38,9 +38,7 @@ public class PhoneHome {
 
     private static final String FALSE = "false";
     private static final String DEFAULT_BASE_PHONE_HOME_URL = "http://phonehome.hazelcast.com/ping";
-    private static final String AWS_ENDPOINT = "http://169.254.169.254/latest/meta-data";
-    private static final String AZURE_ENDPOINT = " http://169.254.169.254/metadata/instance/compute?api-version=2018-02-01";
-    private static final String GCP_ENDPOINT = " http://metadata.google.internal";
+    private static final MetricsCollector CLOUD_INFO_COLLECTOR = new CloudInfoCollector();
 
     volatile ScheduledFuture<?> phoneHomeFuture;
     private final ILogger logger;
@@ -52,15 +50,14 @@ public class PhoneHome {
             new DistributedObjectCounterCollector(), new CacheInfoCollector()));
 
     public PhoneHome(Node node) {
-        this(node, DEFAULT_BASE_PHONE_HOME_URL, AWS_ENDPOINT, AZURE_ENDPOINT, GCP_ENDPOINT);
+        this(node, DEFAULT_BASE_PHONE_HOME_URL, CLOUD_INFO_COLLECTOR);
     }
 
-    PhoneHome(Node node, String baseUrl, String awsEndPoint, String azureEndPoint, String gcpEndPoint) {
+    PhoneHome(Node node, String baseUrl, MetricsCollector additionalCollectors) {
         hazelcastNode = node;
         logger = hazelcastNode.getLogger(com.hazelcast.internal.util.phonehome.PhoneHome.class);
         basePhoneHomeUrl = baseUrl;
-        CloudInfoCollector cloudInfoCollector = new CloudInfoCollector(awsEndPoint, azureEndPoint, gcpEndPoint);
-        metricsCollectorList.add(cloudInfoCollector);
+        metricsCollectorList.add(additionalCollectors);
     }
 
     public void check() {
