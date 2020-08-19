@@ -120,7 +120,7 @@ public class OrderedIndexStore extends BaseSingleValueIndexStore {
         Iterator<QueryableEntry> iterator = new IndexEntryCompositeIterator(recordMap.values().iterator());
         Iterator<QueryableEntry> nullIterator = recordsWithNullValue.values().iterator();
 
-        return new FlatCompositeIterator<>(Arrays.asList(iterator, nullIterator).iterator());
+        return new FlatCompositeIterator<>(Arrays.asList(nullIterator, iterator).iterator());
     }
 
     @Override
