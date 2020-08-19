@@ -29,13 +29,14 @@ import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.QueryUtils;
 import com.hazelcast.sql.impl.SqlTestSupport;
+import com.hazelcast.sql.impl.calcite.HazelcastSqlBackend;
 import com.hazelcast.sql.impl.calcite.OptimizerContext;
 import com.hazelcast.sql.impl.calcite.SqlToQueryType;
 import com.hazelcast.sql.impl.calcite.opt.physical.visitor.RexToExpressionVisitor;
 import com.hazelcast.sql.impl.calcite.parse.QueryParseResult;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastSchema;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
-import com.hazelcast.sql.impl.calcite.schema.MapTableStatistic;
+import com.hazelcast.sql.impl.calcite.schema.HazelcastTableStatistic;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeFactory;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeSystem;
 import com.hazelcast.sql.impl.plan.node.PlanNodeSchema;
@@ -632,7 +633,6 @@ public abstract class ExpressionTestBase extends SqlTestSupport {
     private void verify(SqlOperator operator, ExpectedTypes expectedTypes, ExpectedValues expectedValues, StringBuilder trace,
                         int evaluationId, String format, Operand... operands) {
         OptimizerContext optimizerContext = makeContext();
-        SqlValidator validator = optimizerContext.getValidator();
 
         String query = "SELECT ";
         query += format(format, o -> o.text, operands);
@@ -643,7 +643,10 @@ public abstract class ExpressionTestBase extends SqlTestSupport {
         }
 
         try {
-            SqlNode sqlNode = optimizerContext.parse(query).getNode();
+            QueryParseResult parseResult = optimizerContext.parse(query);
+
+            SqlNode sqlNode = parseResult.getNode();
+            SqlValidator validator = parseResult.getValidator();
             assert sqlNode instanceof SqlSelect;
             if (trace != null) {
                 trace.append("parsed: ").append(sqlNode).append('\n');
@@ -701,7 +704,7 @@ public abstract class ExpressionTestBase extends SqlTestSupport {
             assertArrayEquals(expected, actual);
 
             if (VERIFY_EVALUATION) {
-                RelNode relNode = optimizerContext.convert(sqlNode).getRel();
+                RelNode relNode = optimizerContext.convert(parseResult).getRel();
 
                 Project project = (Project) relNode;
                 assert project.getProjects().size() == 1;
@@ -1040,9 +1043,9 @@ public abstract class ExpressionTestBase extends SqlTestSupport {
 
         PartitionedMapTable table = new PartitionedMapTable("t", fields, new ConstantTableStatistics(100), null, null);
 
-        HazelcastTable hazelcastTable = new HazelcastTable(table, new MapTableStatistic(100));
+        HazelcastTable hazelcastTable = new HazelcastTable(table, new HazelcastTableStatistic(100));
         return OptimizerContext.create(new HazelcastSchema(singletonMap("t", hazelcastTable)),
-                QueryUtils.prepareSearchPaths(null, null), 1);
+                QueryUtils.prepareSearchPaths(null, null), 1, new HazelcastSqlBackend(null), null);
     }
 
     private static RelDataType nodeType(SqlNode node, SqlValidator validator) {
@@ -1091,7 +1094,7 @@ public abstract class ExpressionTestBase extends SqlTestSupport {
         QueryParseResult parseResult = context.parse("select " + expression + " from t");
 
         SqlSelect select = (SqlSelect) parseResult.getNode();
-        SqlValidator validator = context.getValidator();
+        SqlValidator validator = parseResult.getValidator();
         SqlValidatorScope scope = validator.getSelectScope(select);
 
         return new SqlCallBinding(validator, scope, (SqlCall) select.getSelectList().get(0)) {

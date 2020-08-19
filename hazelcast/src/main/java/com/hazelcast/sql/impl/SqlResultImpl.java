@@ -16,7 +16,6 @@
 
 package com.hazelcast.sql.impl;
 
-import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.SqlRowMetadata;
 import com.hazelcast.sql.impl.plan.Plan;
@@ -32,7 +31,7 @@ import java.util.NoSuchElementException;
 /**
  * Cursor implementation.
  */
-public final class SqlResultImpl implements SqlResult {
+public final class SqlResultImpl extends AbstractSqlResult {
 
     private final boolean isUpdateCount;
     private final QueryState state;
@@ -70,11 +69,9 @@ public final class SqlResultImpl implements SqlResult {
         checkIsRowsResult();
 
         if (iterator == null) {
-            Iterator<SqlRow> iterator0 = new RowToSqlRowIterator(getQueryInitiatorState().getResultProducer().iterator());
+            iterator = new RowToSqlRowIterator(getQueryInitiatorState().getResultProducer().iterator());
 
-            iterator = iterator0;
-
-            return iterator0;
+            return iterator;
         } else {
             throw new IllegalStateException("Iterator can be requested only once.");
         }
@@ -91,11 +88,6 @@ public final class SqlResultImpl implements SqlResult {
     @Override
     public boolean isUpdateCount() {
         return isUpdateCount;
-    }
-
-    @Override
-    public void close() {
-        closeOnError(QueryException.cancelledByUser());
     }
 
     private void checkIsRowsResult() {
