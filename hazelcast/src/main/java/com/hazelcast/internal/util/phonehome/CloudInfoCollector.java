@@ -25,7 +25,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 @SuppressFBWarnings
-public class CloudInfoCollector implements MetricsCollector {
+class CloudInfoCollector implements MetricsCollector {
 
     private static final String AWS_ENDPOINT = "http://169.254.169.254/latest/meta-data";
     private static final String AZURE_ENDPOINT = " http://169.254.169.254/metadata/instance/compute?api-version=2018-02-01";
