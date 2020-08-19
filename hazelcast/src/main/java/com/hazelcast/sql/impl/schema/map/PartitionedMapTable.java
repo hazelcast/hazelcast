@@ -18,6 +18,7 @@ package com.hazelcast.sql.impl.schema.map;
 
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.extract.QueryTargetDescriptor;
+import com.hazelcast.sql.impl.inject.UpsertTargetDescriptor;
 import com.hazelcast.sql.impl.plan.cache.PartitionedMapPlanObjectKey;
 import com.hazelcast.sql.impl.plan.cache.PlanObjectKey;
 import com.hazelcast.sql.impl.schema.TableField;
@@ -28,14 +29,27 @@ import java.util.List;
 import static com.hazelcast.sql.impl.QueryUtils.SCHEMA_NAME_PARTITIONED;
 
 public class PartitionedMapTable extends AbstractMapTable {
+
     public PartitionedMapTable(
+        String schemaName,
         String name,
         List<TableField> fields,
         TableStatistics statistics,
-        QueryTargetDescriptor keyDescriptor,
-        QueryTargetDescriptor valueDescriptor
+        QueryTargetDescriptor keyQueryDescriptor,
+        QueryTargetDescriptor valueQueryDescriptor,
+        UpsertTargetDescriptor keyUpsertDescriptor,
+        UpsertTargetDescriptor valueUpsertDescriptor
     ) {
-        super(SCHEMA_NAME_PARTITIONED, name, fields, statistics, keyDescriptor, valueDescriptor);
+        super(
+            schemaName,
+            name,
+            fields,
+            statistics,
+            keyQueryDescriptor,
+            valueQueryDescriptor,
+            keyUpsertDescriptor,
+            valueUpsertDescriptor
+        );
     }
 
     public PartitionedMapTable(String name, QueryException exception) {
@@ -52,9 +66,11 @@ public class PartitionedMapTable extends AbstractMapTable {
             getSchemaName(),
             getName(),
             getFields(),
-            getConflictingSchemas(),
-            getKeyDescriptor(),
-            getValueDescriptor()
+            getKeyQueryDescriptor(),
+            getValueQueryDescriptor(),
+            getKeyUpsertDescriptor(),
+            getValueUpsertDescriptor(),
+            getConflictingSchemas()
         );
     }
 }

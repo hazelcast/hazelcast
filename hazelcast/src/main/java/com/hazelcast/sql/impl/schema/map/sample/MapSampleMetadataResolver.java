@@ -25,6 +25,10 @@ import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.extract.GenericQueryTargetDescriptor;
 import com.hazelcast.sql.impl.extract.QueryPath;
+import com.hazelcast.sql.impl.inject.PojoUpsertTargetDescriptor;
+import com.hazelcast.sql.impl.inject.PortableUpsertTargetDescriptor;
+import com.hazelcast.sql.impl.inject.PrimitiveUpsertTargetDescriptor;
+import com.hazelcast.sql.impl.inject.UpsertTargetDescriptor;
 import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.schema.map.MapTableField;
 import com.hazelcast.sql.impl.type.QueryDataType;
@@ -33,7 +37,9 @@ import com.hazelcast.sql.impl.type.QueryDataTypeUtils;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.TreeMap;
 
 /**
@@ -96,7 +102,7 @@ public final class MapSampleMetadataResolver {
      * @return Metadata.
      */
     private static MapSampleMetadata resolvePortable(ClassDefinition clazz, boolean isKey) {
-        TreeMap<String, TableField> fields = new TreeMap<>();
+        Map<String, TableField> fields = new TreeMap<>();
 
         // Add regular fields.
         for (String name : clazz.getFieldNames()) {
@@ -112,7 +118,11 @@ public final class MapSampleMetadataResolver {
         QueryPath topPath = isKey ? QueryPath.KEY_PATH : QueryPath.VALUE_PATH;
         fields.put(topName, new MapTableField(topName, QueryDataType.OBJECT, !fields.isEmpty(), topPath));
 
-        return new MapSampleMetadata(GenericQueryTargetDescriptor.DEFAULT, new LinkedHashMap<>(fields));
+        return new MapSampleMetadata(
+                GenericQueryTargetDescriptor.DEFAULT,
+                new PortableUpsertTargetDescriptor(clazz.getFactoryId(), clazz.getClassId(), clazz.getVersion()),
+                new LinkedHashMap<>(fields)
+        );
     }
 
     @SuppressWarnings("checkstyle:ReturnCount")
@@ -151,12 +161,16 @@ public final class MapSampleMetadataResolver {
     }
 
     private static MapSampleMetadata resolveClass(Class<?> clazz, boolean isKey) {
-        TreeMap<String, TableField> fields = new TreeMap<>();
+        Map<String, TableField> fields = new TreeMap<>();
 
         // Extract fields from non-primitive type.
         QueryDataType topType = QueryDataTypeUtils.resolveTypeForClass(clazz);
 
+        UpsertTargetDescriptor upsertTargetDescriptor;
+
         if (topType == QueryDataType.OBJECT) {
+            Map<String, String> typeNamesByPaths = new HashMap<>();
+
             // Add public getters.
             for (Method method : clazz.getMethods()) {
                 String methodName = extractAttributeNameFromMethod(clazz, method);
@@ -171,6 +185,7 @@ public final class MapSampleMetadataResolver {
                     methodName,
                     new MapTableField(methodName, methodType, false, new QueryPath(methodName, isKey))
                 );
+                typeNamesByPaths.putIfAbsent(methodName, method.getReturnType().getName());
             }
 
             // Add public fields.
@@ -189,10 +204,15 @@ public final class MapSampleMetadataResolver {
                         fieldName,
                         new MapTableField(fieldName, fieldType, false, new QueryPath(fieldName, isKey))
                     );
+                    typeNamesByPaths.putIfAbsent(fieldName, field.getType().getName());
                 }
 
                 currentClass = currentClass.getSuperclass();
             }
+
+            upsertTargetDescriptor = new PojoUpsertTargetDescriptor(clazz.getName(), typeNamesByPaths);
+        } else {
+            upsertTargetDescriptor = PrimitiveUpsertTargetDescriptor.INSTANCE;
         }
 
         // Add top-level object.
@@ -200,7 +220,11 @@ public final class MapSampleMetadataResolver {
         QueryPath topPath = isKey ? QueryPath.KEY_PATH : QueryPath.VALUE_PATH;
         fields.put(topName, new MapTableField(topName, topType, !fields.isEmpty(), topPath));
 
-        return new MapSampleMetadata(GenericQueryTargetDescriptor.DEFAULT, new LinkedHashMap<>(fields));
+        return new MapSampleMetadata(
+            GenericQueryTargetDescriptor.DEFAULT,
+            upsertTargetDescriptor,
+            new LinkedHashMap<>(fields)
+        );
     }
 
     private static String extractAttributeNameFromMethod(Class<?> clazz, Method method) {

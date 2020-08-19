@@ -317,8 +317,10 @@ public class PartitionedMapTableResolverTest extends MapSchemaTestSupport {
                 assertEquals(QueryUtils.SCHEMA_NAME_PARTITIONED, table.getSchemaName());
 
                 if (table0.getException() == null) {
-                    assertNotNull(table0.getKeyDescriptor());
-                    assertNotNull(table0.getValueDescriptor());
+                    assertNotNull(table0.getKeyQueryDescriptor());
+                    assertNotNull(table0.getValueQueryDescriptor());
+                    assertNotNull(table0.getKeyUpsertDescriptor());
+                    assertNotNull(table0.getValueUpsertDescriptor());
                 }
 
                 return table;

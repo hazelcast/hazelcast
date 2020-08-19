@@ -17,6 +17,7 @@
 package com.hazelcast.sql.impl.plan.cache;
 
 import com.hazelcast.sql.impl.extract.QueryTargetDescriptor;
+import com.hazelcast.sql.impl.inject.UpsertTargetDescriptor;
 import com.hazelcast.sql.impl.schema.TableField;
 
 import java.util.List;
@@ -27,23 +28,29 @@ public class PartitionedMapPlanObjectKey implements PlanObjectKey {
     private final String schemaName;
     private final String name;
     private final List<TableField> fields;
-    private final QueryTargetDescriptor keyDescriptor;
-    private final QueryTargetDescriptor valueDescriptor;
+    private final QueryTargetDescriptor keyQueryDescriptor;
+    private final QueryTargetDescriptor valueQueryDescriptor;
+    private final UpsertTargetDescriptor keyUpsertDescriptor;
+    private final UpsertTargetDescriptor valueUpsertDescriptor;
     private final Set<String> conflictingSchemas;
 
     public PartitionedMapPlanObjectKey(
         String schemaName,
         String name,
         List<TableField> fields,
-        Set<String> conflictingSchemas,
-        QueryTargetDescriptor keyDescriptor,
-        QueryTargetDescriptor valueDescriptor
+        QueryTargetDescriptor keyQueryDescriptor,
+        QueryTargetDescriptor valueQueryDescriptor,
+        UpsertTargetDescriptor keyUpsertDescriptor,
+        UpsertTargetDescriptor valueUpsertDescriptor,
+        Set<String> conflictingSchemas
     ) {
         this.schemaName = schemaName;
         this.name = name;
         this.fields = fields;
-        this.keyDescriptor = keyDescriptor;
-        this.valueDescriptor = valueDescriptor;
+        this.keyQueryDescriptor = keyQueryDescriptor;
+        this.valueQueryDescriptor = valueQueryDescriptor;
+        this.keyUpsertDescriptor = keyUpsertDescriptor;
+        this.valueUpsertDescriptor = valueUpsertDescriptor;
         this.conflictingSchemas = conflictingSchemas;
     }
 
@@ -60,11 +67,13 @@ public class PartitionedMapPlanObjectKey implements PlanObjectKey {
         PartitionedMapPlanObjectKey that = (PartitionedMapPlanObjectKey) o;
 
         return schemaName.equals(that.schemaName)
-            && name.equals(that.name)
-            && fields.equals(that.fields)
-            && keyDescriptor.equals(that.keyDescriptor)
-            && valueDescriptor.equals(that.valueDescriptor)
-            && conflictingSchemas.equals(that.conflictingSchemas);
+                && name.equals(that.name)
+                && fields.equals(that.fields)
+                && keyQueryDescriptor.equals(that.keyQueryDescriptor)
+                && valueQueryDescriptor.equals(that.valueQueryDescriptor)
+                && keyUpsertDescriptor.equals(that.keyUpsertDescriptor)
+                && valueUpsertDescriptor.equals(that.valueUpsertDescriptor)
+                && conflictingSchemas.equals(that.conflictingSchemas);
     }
 
     @Override
@@ -72,8 +81,10 @@ public class PartitionedMapPlanObjectKey implements PlanObjectKey {
         int result = schemaName.hashCode();
         result = 31 * result + name.hashCode();
         result = 31 * result + fields.hashCode();
-        result = 31 * result + keyDescriptor.hashCode();
-        result = 31 * result + valueDescriptor.hashCode();
+        result = 31 * result + keyQueryDescriptor.hashCode();
+        result = 31 * result + valueQueryDescriptor.hashCode();
+        result = 31 * result + keyUpsertDescriptor.hashCode();
+        result = 31 * result + valueUpsertDescriptor.hashCode();
         result = 31 * result + conflictingSchemas.hashCode();
         return result;
     }

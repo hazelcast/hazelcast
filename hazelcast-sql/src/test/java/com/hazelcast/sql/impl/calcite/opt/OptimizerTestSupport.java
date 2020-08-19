@@ -56,6 +56,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static com.hazelcast.sql.impl.QueryUtils.SCHEMA_NAME_PARTITIONED;
 import static com.hazelcast.sql.impl.type.QueryDataType.INT;
 import static junit.framework.TestCase.assertEquals;
 
@@ -148,9 +149,12 @@ public abstract class OptimizerTestSupport extends SqlTestSupport {
         long rowCount
     ) {
         PartitionedMapTable table = new PartitionedMapTable(
+            SCHEMA_NAME_PARTITIONED,
             name,
             fields,
             new ConstantTableStatistics(rowCount),
+            null,
+            null,
             null,
             null
         );

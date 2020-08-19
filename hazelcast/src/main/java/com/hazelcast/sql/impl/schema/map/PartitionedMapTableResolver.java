@@ -150,11 +150,14 @@ public class PartitionedMapTableResolver extends AbstractMapTableResolver {
 
                 // Done.
                 return new PartitionedMapTable(
+                    SCHEMA_NAME_PARTITIONED,
                     name,
                     fields,
                     new ConstantTableStatistics(estimatedRowCount),
-                    keyMetadata.getDescriptor(),
-                    valueMetadata.getDescriptor()
+                    keyMetadata.getQueryDescriptor(),
+                    valueMetadata.getQueryDescriptor(),
+                    keyMetadata.getUpsertDescriptor(),
+                    valueMetadata.getUpsertDescriptor()
                 );
             }
 
