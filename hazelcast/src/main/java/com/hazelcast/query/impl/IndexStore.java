@@ -21,12 +21,14 @@ import com.hazelcast.internal.monitor.impl.IndexOperationStats;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.query.Predicate;
 
+import java.util.Iterator;
 import java.util.Set;
 
 /**
  * Defines a contract for index stores, so different index stores may be used
  * interchangeably with the same {@link Index} implementation.
  */
+@SuppressWarnings("rawtypes")
 public interface IndexStore {
 
     /**
@@ -124,6 +126,14 @@ public interface IndexStore {
      */
     Set<QueryableEntry> evaluate(Predicate predicate, TypeConverter converter);
 
+    Iterator<QueryableEntry> getRecordIterator();
+
+    Iterator<QueryableEntry> getRecordIterator(Comparable value);
+
+    Iterator<QueryableEntry> getRecordIterator(Comparison comparison, Comparable value);
+
+    Iterator<QueryableEntry> getRecordIterator(Comparable from, boolean fromInclusive, Comparable to, boolean toInclusive);
+
     /**
      * Obtains entries that have indexed attribute value equal to the given
      * value.
@@ -169,5 +179,4 @@ public interface IndexStore {
      * @see Index#getRecords(Comparable, boolean, Comparable, boolean)
      */
     Set<QueryableEntry> getRecords(Comparable from, boolean fromInclusive, Comparable to, boolean toInclusive);
-
 }

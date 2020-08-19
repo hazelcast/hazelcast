@@ -47,6 +47,7 @@ public class LogicalSelectStarTest extends OptimizerTestSupport {
                 TestMapTable.field("r_f0", false),
                 TestMapTable.field("r_f1", true)
             ),
+            null,
             100
         ));
 

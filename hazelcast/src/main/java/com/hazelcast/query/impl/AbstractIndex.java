@@ -32,16 +32,19 @@ import com.hazelcast.query.impl.getters.MultiResult;
 import com.hazelcast.query.impl.predicates.PredicateDataSerializerHook;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
+import java.util.Iterator;
 import java.util.Set;
 
 import static com.hazelcast.internal.util.SetUtil.createHashSet;
 import static com.hazelcast.query.impl.CompositeValue.NEGATIVE_INFINITY;
 import static com.hazelcast.query.impl.TypeConverters.NULL_CONVERTER;
+import static java.util.Collections.emptyIterator;
 import static java.util.Collections.emptySet;
 
 /**
  * Provides an abstract base for indexes.
  */
+@SuppressWarnings("rawtypes")
 public abstract class AbstractIndex implements InternalIndex {
 
     /**
@@ -171,6 +174,47 @@ public abstract class AbstractIndex implements InternalIndex {
     public Set<QueryableEntry> evaluate(Predicate predicate) {
         assert converter != null;
         return indexStore.evaluate(predicate, converter);
+    }
+
+    @Override
+    public Iterator<QueryableEntry> getRecordIterator() {
+        if (converter == null) {
+            return emptyIterator();
+        }
+
+        return indexStore.getRecordIterator();
+    }
+
+    @Override
+    public Iterator<QueryableEntry> getRecordIterator(Comparable value) {
+        if (converter == null) {
+            return emptyIterator();
+        }
+
+        return indexStore.getRecordIterator(convert(value));
+    }
+
+    @Override
+    public Iterator<QueryableEntry> getRecordIterator(Comparison comparison, Comparable value) {
+        if (converter == null) {
+            return emptyIterator();
+        }
+
+        return indexStore.getRecordIterator(comparison, convert(value));
+    }
+
+    @Override
+    public Iterator<QueryableEntry> getRecordIterator(
+        Comparable from,
+        boolean fromInclusive,
+        Comparable to,
+        boolean toInclusive
+    ) {
+        if (converter == null) {
+            return emptyIterator();
+        }
+
+        return indexStore.getRecordIterator(convert(from), fromInclusive, convert(to), toInclusive);
     }
 
     @Override

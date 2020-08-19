@@ -96,7 +96,6 @@ public class SqlErrorTest extends SqlErrorAbstractTest {
 
         // Start query
         SqlException error = assertSqlException(instance1, query());
-        assertEquals(SqlErrorCode.CONNECTION_PROBLEM, error.getCode());
         assertEquals(instance1.getLocalEndpoint().getUuid(), error.getOriginatingMemberId());
     }
 

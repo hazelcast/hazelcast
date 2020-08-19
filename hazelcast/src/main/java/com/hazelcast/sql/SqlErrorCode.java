@@ -44,6 +44,9 @@ public final class SqlErrorCode {
     /** Generic parsing error. */
     public static final int PARSING = 1008;
 
+    /** An error caused by a concurrent destroy of an index. */
+    public static final int MAP_INDEX_NOT_EXISTS = 1009;
+
     /** An error with data conversion or transformation. */
     public static final int DATA_EXCEPTION = 2000;
 

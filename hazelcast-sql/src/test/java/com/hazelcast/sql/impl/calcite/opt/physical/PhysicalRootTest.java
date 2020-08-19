@@ -52,6 +52,7 @@ public class PhysicalRootTest extends OptimizerTestSupport {
                 TestMapTable.field("f3"),
                 TestMapTable.field("f4")
             ),
+            null,
             100
         ));
 
@@ -64,6 +65,7 @@ public class PhysicalRootTest extends OptimizerTestSupport {
                 TestMapTable.field("f3"),
                 TestMapTable.field("f4")
             ),
+            null,
             0
         ));
 

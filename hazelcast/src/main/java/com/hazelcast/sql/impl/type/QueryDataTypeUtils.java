@@ -234,4 +234,23 @@ public final class QueryDataTypeUtils {
         }
     }
 
+    public static boolean isNumeric(QueryDataType type) {
+        return isNumeric(type.getTypeFamily());
+    }
+
+    public static boolean isNumeric(QueryDataTypeFamily typeFamily) {
+        switch (typeFamily) {
+            case TINYINT:
+            case SMALLINT:
+            case INTEGER:
+            case BIGINT:
+            case DECIMAL:
+            case REAL:
+            case DOUBLE:
+                return true;
+
+            default:
+                return false;
+        }
+    }
 }

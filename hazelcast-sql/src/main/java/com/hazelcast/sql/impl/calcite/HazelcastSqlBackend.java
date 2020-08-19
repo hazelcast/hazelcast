@@ -108,7 +108,7 @@ public class HazelcastSqlBackend implements SqlBackend {
         QueryDataType[] mappedParameterRowType = SqlToQueryType.mapRowType(parseResult.getParameterRowType());
         QueryParameterMetadata parameterMetadata = new QueryParameterMetadata(mappedParameterRowType);
 
-        PhysicalRel physicalRel = optimize(context, convertResult.getRel());
+        PhysicalRel physicalRel = optimize(context, convertResult.getRel(), parameterMetadata);
 
         String sql = task.getSql();
         // Assign IDs to nodes.
@@ -133,9 +133,13 @@ public class HazelcastSqlBackend implements SqlBackend {
     }
 
     private PhysicalRel optimize(
-            OptimizerContext context,
-            RelNode rel
+        OptimizerContext context,
+        RelNode rel,
+        QueryParameterMetadata parameterMetadata
     ) {
+        // Make metadata available to planner
+        context.setParameterMetadata(parameterMetadata);
+
         // Logical part.
         RelNode logicalRel = context.optimize(rel, LogicalRules.getRuleSet(), OptUtils.toLogicalConvention(rel.getTraitSet()));
 

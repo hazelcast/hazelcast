@@ -109,11 +109,6 @@ public class PartitionedMapTableResolver extends AbstractMapTableResolver {
 
             MapConfig config = mapContainer.getMapConfig();
 
-            // HD maps are not supported at the moment.
-            if (config.getInMemoryFormat() == InMemoryFormat.NATIVE) {
-                throw QueryException.error("IMap with InMemoryFormat.NATIVE is not supported: " + name);
-            }
-
             for (PartitionContainer partitionContainer : context.getPartitionContainers()) {
                 // Resolve sample.
                 RecordStore<?> recordStore = partitionContainer.getExistingRecordStore(name);
@@ -148,13 +143,18 @@ public class PartitionedMapTableResolver extends AbstractMapTableResolver {
 
                 long estimatedRowCount = MapTableUtils.estimatePartitionedMapRowCount(nodeEngine, context, name);
 
+                // Resolve indexes.
+                List<MapTableIndex> indexes = MapTableUtils.getPartitionedMapIndexes(mapContainer, fields);
+
                 // Done.
                 return new PartitionedMapTable(
                     name,
                     fields,
                     new ConstantTableStatistics(estimatedRowCount),
                     keyMetadata.getDescriptor(),
-                    valueMetadata.getDescriptor()
+                    valueMetadata.getDescriptor(),
+                    indexes,
+                    config.getInMemoryFormat() == InMemoryFormat.NATIVE
                 );
             }
 

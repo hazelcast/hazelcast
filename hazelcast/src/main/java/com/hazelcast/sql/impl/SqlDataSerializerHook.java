@@ -22,6 +22,10 @@ import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
 import com.hazelcast.internal.util.ConstructorFunction;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.sql.impl.exec.scan.index.IndexEqualsFilter;
+import com.hazelcast.sql.impl.exec.scan.index.IndexFilterValue;
+import com.hazelcast.sql.impl.exec.scan.index.IndexInFilter;
+import com.hazelcast.sql.impl.exec.scan.index.IndexRangeFilter;
 import com.hazelcast.sql.impl.expression.CastExpression;
 import com.hazelcast.sql.impl.expression.ColumnExpression;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
@@ -139,7 +143,12 @@ public class SqlDataSerializerHook implements DataSerializerHook {
 
     public static final int NODE_EMPTY = 47;
 
-    public static final int LEN = NODE_EMPTY + 1;
+    public static final int INDEX_FILTER_VALUE = 48;
+    public static final int INDEX_FILTER_EQUALS = 49;
+    public static final int INDEX_FILTER_RANGE = 50;
+    public static final int INDEX_FILTER_IN = 51;
+
+    public static final int LEN = INDEX_FILTER_IN + 1;
 
     @Override
     public int getFactoryId() {
@@ -209,6 +218,11 @@ public class SqlDataSerializerHook implements DataSerializerHook {
         constructors[EXPRESSION_ROUND_TRUNCATE] = arg -> new RoundTruncateFunction<>();
 
         constructors[NODE_EMPTY] = arg -> new EmptyPlanNode();
+
+        constructors[INDEX_FILTER_VALUE] = arg -> new IndexFilterValue();
+        constructors[INDEX_FILTER_EQUALS] = arg -> new IndexEqualsFilter();
+        constructors[INDEX_FILTER_RANGE] = arg -> new IndexRangeFilter();
+        constructors[INDEX_FILTER_IN] = arg -> new IndexInFilter();
 
         return new ArrayDataSerializableFactory(constructors);
     }

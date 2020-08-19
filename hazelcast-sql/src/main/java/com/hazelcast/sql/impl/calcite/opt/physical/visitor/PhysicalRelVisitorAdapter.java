@@ -17,6 +17,7 @@
 package com.hazelcast.sql.impl.calcite.opt.physical.visitor;
 
 import com.hazelcast.sql.impl.calcite.opt.physical.FilterPhysicalRel;
+import com.hazelcast.sql.impl.calcite.opt.physical.MapIndexScanPhysicalRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.MapScanPhysicalRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.PhysicalRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.ProjectPhysicalRel;
@@ -35,6 +36,11 @@ public abstract class PhysicalRelVisitorAdapter implements PhysicalRelVisitor {
 
     @Override
     public void onMapScan(MapScanPhysicalRel rel) {
+        onNode(rel);
+    }
+
+    @Override
+    public void onMapIndexScan(MapIndexScanPhysicalRel rel) {
         onNode(rel);
     }
 

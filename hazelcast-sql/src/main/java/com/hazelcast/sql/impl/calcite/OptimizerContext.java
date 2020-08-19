@@ -17,6 +17,7 @@
 package com.hazelcast.sql.impl.calcite;
 
 import com.google.common.collect.ImmutableList;
+import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.calcite.opt.QueryPlanner;
 import com.hazelcast.sql.impl.calcite.opt.cost.CostFactory;
 import com.hazelcast.sql.impl.calcite.opt.distribution.DistributionTraitDef;
@@ -65,15 +66,18 @@ public final class OptimizerContext {
 
     private static final CalciteConnectionConfig CONNECTION_CONFIG = CasingConfiguration.DEFAULT.toConnectionConfig();
 
+    private final HazelcastRelOptCluster cluster;
     private final QueryParser parser;
     private final QueryConverter converter;
     private final QueryPlanner planner;
 
     private OptimizerContext(
+        HazelcastRelOptCluster cluster,
         QueryParser parser,
         QueryConverter converter,
         QueryPlanner planner
     ) {
+        this.cluster = cluster;
         this.parser = parser;
         this.converter = converter;
         this.planner = planner;
@@ -118,7 +122,7 @@ public final class OptimizerContext {
         QueryConverter converter = new QueryConverter(catalogReader, cluster);
         QueryPlanner planner = new QueryPlanner(volcanoPlanner);
 
-        return new OptimizerContext(parser, converter, planner);
+        return new OptimizerContext(cluster, parser, converter, planner);
     }
 
     /**
@@ -139,6 +143,10 @@ public final class OptimizerContext {
      */
     public QueryConvertResult convert(QueryParseResult parseResult) {
         return converter.convert(parseResult);
+    }
+
+    public void setParameterMetadata(QueryParameterMetadata parameterMetadata) {
+        cluster.setParameterMetadata(parameterMetadata);
     }
 
     /**
