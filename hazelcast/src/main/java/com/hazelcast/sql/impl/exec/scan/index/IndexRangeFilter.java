@@ -44,6 +44,8 @@ public class IndexRangeFilter implements IndexFilter, IdentifiedDataSerializable
     }
 
     public IndexRangeFilter(IndexFilterValue from, boolean fromInclusive, IndexFilterValue to, boolean toInclusive) {
+        assert from != null || to != null;
+
         this.from = from;
         this.fromInclusive = fromInclusive;
         this.to = to;
@@ -53,18 +55,37 @@ public class IndexRangeFilter implements IndexFilter, IdentifiedDataSerializable
     @SuppressWarnings("checkstyle:CyclomaticComplexity")
     @Override
     public Iterator<QueryableEntry> getEntries(InternalIndex index, ExpressionEvalContext evalContext) {
-        if (from != null && to == null) {
-            // Left bound only
-            Comparable fromValue = from.getValue(evalContext);
-            Comparison fromComparison = fromInclusive ? Comparison.GREATER_OR_EQUAL : Comparison.GREATER;
+        if (from != null) {
+            if (to != null) {
+                // Lower and upper bounds
+                Comparable fromValue = from.getValue(evalContext);
 
-            if (fromValue == null || fromValue == AbstractIndex.NULL) {
-                return Collections.emptyIterator();
+                if (fromValue == null || fromValue == AbstractIndex.NULL) {
+                    return Collections.emptyIterator();
+                }
+
+                Comparable toValue = to.getValue(evalContext);
+
+                if (toValue == null || toValue == AbstractIndex.NULL) {
+                    return Collections.emptyIterator();
+                }
+
+                return index.getSqlRecordIterator(fromValue, fromInclusive, toValue, toInclusive);
+            } else {
+                // Lower bound only
+                Comparable fromValue = from.getValue(evalContext);
+                Comparison fromComparison = fromInclusive ? Comparison.GREATER_OR_EQUAL : Comparison.GREATER;
+
+                if (fromValue == null || fromValue == AbstractIndex.NULL) {
+                    return Collections.emptyIterator();
+                }
+
+                return index.getSqlRecordIterator(fromComparison, fromValue);
             }
+        } else {
+            assert to != null;
 
-            return index.getSqlRecordIterator(fromComparison, fromValue);
-        } else if (from == null && to != null) {
-            // Right bound only
+            // Upper bound only
             Comparable toValue = to.getValue(evalContext);
             Comparison toComparison = toInclusive ? Comparison.LESS_OR_EQUAL : Comparison.LESS;
 
@@ -73,22 +94,6 @@ public class IndexRangeFilter implements IndexFilter, IdentifiedDataSerializable
             }
 
             return index.getSqlRecordIterator(toComparison, toValue);
-        } else {
-            assert from != null;
-
-            Comparable fromValue = from.getValue(evalContext);
-
-            if (fromValue == null || fromValue == AbstractIndex.NULL) {
-                return Collections.emptyIterator();
-            }
-
-            Comparable toValue = to.getValue(evalContext);
-
-            if (toValue == null || toValue == AbstractIndex.NULL) {
-                return Collections.emptyIterator();
-            }
-
-            return index.getSqlRecordIterator(fromValue, fromInclusive, toValue, toInclusive);
         }
     }
 
