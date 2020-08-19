@@ -177,34 +177,34 @@ public abstract class AbstractIndex implements InternalIndex {
     }
 
     @Override
-    public Iterator<QueryableEntry> getRecordIterator() {
+    public Iterator<QueryableEntry> getSqlRecordIterator() {
         if (converter == null) {
             return emptyIterator();
         }
 
-        return indexStore.getRecordIterator();
+        return indexStore.getSqlRecordIterator();
     }
 
     @Override
-    public Iterator<QueryableEntry> getRecordIterator(Comparable value) {
+    public Iterator<QueryableEntry> getSqlRecordIterator(Comparable value) {
         if (converter == null) {
             return emptyIterator();
         }
 
-        return indexStore.getRecordIterator(convert(value));
+        return indexStore.getSqlRecordIterator(convert(value));
     }
 
     @Override
-    public Iterator<QueryableEntry> getRecordIterator(Comparison comparison, Comparable value) {
+    public Iterator<QueryableEntry> getSqlRecordIterator(Comparison comparison, Comparable value) {
         if (converter == null) {
             return emptyIterator();
         }
 
-        return indexStore.getRecordIterator(comparison, convert(value));
+        return indexStore.getSqlRecordIterator(comparison, convert(value));
     }
 
     @Override
-    public Iterator<QueryableEntry> getRecordIterator(
+    public Iterator<QueryableEntry> getSqlRecordIterator(
         Comparable from,
         boolean fromInclusive,
         Comparable to,
@@ -214,7 +214,7 @@ public abstract class AbstractIndex implements InternalIndex {
             return emptyIterator();
         }
 
-        return indexStore.getRecordIterator(convert(from), fromInclusive, convert(to), toInclusive);
+        return indexStore.getSqlRecordIterator(convert(from), fromInclusive, convert(to), toInclusive);
     }
 
     @Override

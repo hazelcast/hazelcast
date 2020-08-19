@@ -146,34 +146,34 @@ public class GlobalQueryContextWithStats extends QueryContext {
         }
 
         @Override
-        public Iterator<QueryableEntry> getRecordIterator() {
-            Iterator<QueryableEntry> result = delegate.getRecordIterator();
+        public Iterator<QueryableEntry> getSqlRecordIterator() {
+            Iterator<QueryableEntry> result = delegate.getSqlRecordIterator();
             hasQueries = true;
             return result;
         }
 
         @Override
-        public Iterator<QueryableEntry> getRecordIterator(Comparable value) {
-            Iterator<QueryableEntry> result = delegate.getRecordIterator(value);
+        public Iterator<QueryableEntry> getSqlRecordIterator(Comparable value) {
+            Iterator<QueryableEntry> result = delegate.getSqlRecordIterator(value);
             hasQueries = true;
             return result;
         }
 
         @Override
-        public Iterator<QueryableEntry> getRecordIterator(Comparison comparison, Comparable value) {
-            Iterator<QueryableEntry> result = delegate.getRecordIterator(comparison, value);
+        public Iterator<QueryableEntry> getSqlRecordIterator(Comparison comparison, Comparable value) {
+            Iterator<QueryableEntry> result = delegate.getSqlRecordIterator(comparison, value);
             hasQueries = true;
             return result;
         }
 
         @Override
-        public Iterator<QueryableEntry> getRecordIterator(
+        public Iterator<QueryableEntry> getSqlRecordIterator(
             Comparable from,
             boolean fromInclusive,
             Comparable to,
             boolean toInclusive
         ) {
-            Iterator<QueryableEntry> result = delegate.getRecordIterator(from, fromInclusive, to, toInclusive);
+            Iterator<QueryableEntry> result = delegate.getSqlRecordIterator(from, fromInclusive, to, toInclusive);
             hasQueries = true;
             return result;
         }

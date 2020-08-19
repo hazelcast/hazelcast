@@ -111,13 +111,32 @@ public interface Index {
      */
     Set<QueryableEntry> evaluate(Predicate predicate);
 
-    Iterator<QueryableEntry> getRecordIterator();
+    /**
+     * @return iterator over all index entries
+     */
+    Iterator<QueryableEntry> getSqlRecordIterator();
 
-    Iterator<QueryableEntry> getRecordIterator(Comparable value);
+    /**
+     * @param value value
+     * @return iterator over index entries that are equal to the given value
+     */
+    Iterator<QueryableEntry> getSqlRecordIterator(Comparable value);
 
-    Iterator<QueryableEntry> getRecordIterator(Comparison comparison, Comparable value);
+    /**
+     * @param comparison comparison type
+     * @param value value
+     * @return iterator over index entries that are matching the given comparions type and value
+     */
+    Iterator<QueryableEntry> getSqlRecordIterator(Comparison comparison, Comparable value);
 
-    Iterator<QueryableEntry> getRecordIterator(Comparable from, boolean fromInclusive, Comparable to, boolean toInclusive);
+    /**
+     * @param from lower bound
+     * @param fromInclusive lower bound inclusive flag
+     * @param to upper bound
+     * @param toInclusive upper bound inclusive flag
+     * @return iterator over index entries matching the given range
+     */
+    Iterator<QueryableEntry> getSqlRecordIterator(Comparable from, boolean fromInclusive, Comparable to, boolean toInclusive);
 
     /**
      * Produces a result set containing entries whose attribute values are equal

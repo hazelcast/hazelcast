@@ -238,39 +238,39 @@ public class AttributeIndexRegistry {
         }
 
         @Override
-        public Iterator<QueryableEntry> getRecordIterator() {
-            return delegate.getRecordIterator();
+        public Iterator<QueryableEntry> getSqlRecordIterator() {
+            return delegate.getSqlRecordIterator();
         }
 
         @Override
-        public Iterator<QueryableEntry> getRecordIterator(Comparable value) {
+        public Iterator<QueryableEntry> getSqlRecordIterator(Comparable value) {
             Comparable from = new CompositeValue(width, value, NEGATIVE_INFINITY);
             Comparable to = new CompositeValue(width, value, POSITIVE_INFINITY);
-            return delegate.getRecordIterator(from, false, to, false);
+            return delegate.getSqlRecordIterator(from, false, to, false);
         }
 
         @Override
-        public Iterator<QueryableEntry> getRecordIterator(Comparison comparison, Comparable value) {
+        public Iterator<QueryableEntry> getSqlRecordIterator(Comparison comparison, Comparable value) {
             switch (comparison) {
                 case LESS:
                     CompositeValue lessFrom = new CompositeValue(width, NULL, POSITIVE_INFINITY);
                     CompositeValue lessTo = new CompositeValue(width, value, NEGATIVE_INFINITY);
-                    return delegate.getRecordIterator(lessFrom, false, lessTo, false);
+                    return delegate.getSqlRecordIterator(lessFrom, false, lessTo, false);
                 case GREATER:
-                    return delegate.getRecordIterator(GREATER, new CompositeValue(width, value, POSITIVE_INFINITY));
+                    return delegate.getSqlRecordIterator(GREATER, new CompositeValue(width, value, POSITIVE_INFINITY));
                 case LESS_OR_EQUAL:
                     CompositeValue greaterOrEqualFrom = new CompositeValue(width, NULL, POSITIVE_INFINITY);
                     CompositeValue greaterOrEqualTo = new CompositeValue(width, value, POSITIVE_INFINITY);
-                    return delegate.getRecordIterator(greaterOrEqualFrom, false, greaterOrEqualTo, false);
+                    return delegate.getSqlRecordIterator(greaterOrEqualFrom, false, greaterOrEqualTo, false);
                 case GREATER_OR_EQUAL:
-                    return delegate.getRecordIterator(GREATER_OR_EQUAL, new CompositeValue(width, value, NEGATIVE_INFINITY));
+                    return delegate.getSqlRecordIterator(GREATER_OR_EQUAL, new CompositeValue(width, value, NEGATIVE_INFINITY));
                 default:
                     throw new IllegalStateException("unexpected comparison: " + comparison);
             }
         }
 
         @Override
-        public Iterator<QueryableEntry> getRecordIterator(
+        public Iterator<QueryableEntry> getSqlRecordIterator(
             Comparable from,
             boolean fromInclusive,
             Comparable to,
@@ -278,7 +278,7 @@ public class AttributeIndexRegistry {
         ) {
             Comparable compositeFrom = new CompositeValue(width, from, fromInclusive ? NEGATIVE_INFINITY : POSITIVE_INFINITY);
             Comparable compositeTo = new CompositeValue(width, to, toInclusive ? POSITIVE_INFINITY : NEGATIVE_INFINITY);
-            return delegate.getRecordIterator(compositeFrom, false, compositeTo, false);
+            return delegate.getSqlRecordIterator(compositeFrom, false, compositeTo, false);
         }
 
         @Override

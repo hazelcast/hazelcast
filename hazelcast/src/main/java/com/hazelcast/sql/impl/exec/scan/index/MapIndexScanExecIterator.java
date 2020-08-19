@@ -132,7 +132,7 @@ public class MapIndexScanExecIterator implements KeyValueIterator {
 
         if (indexFilter == null) {
             // No filter => this is a full scan (e.g. for HD)
-            return index.getRecordIterator();
+            return index.getSqlRecordIterator();
         }
 
         int actualComponentCount = index.getComponents().length;

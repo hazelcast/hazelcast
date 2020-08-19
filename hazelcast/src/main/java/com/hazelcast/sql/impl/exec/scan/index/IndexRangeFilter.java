@@ -62,7 +62,7 @@ public class IndexRangeFilter implements IndexFilter, IdentifiedDataSerializable
                 return Collections.emptyIterator();
             }
 
-            return index.getRecordIterator(fromComparison, fromValue);
+            return index.getSqlRecordIterator(fromComparison, fromValue);
         } else if (from == null && to != null) {
             // Right bound only
             Comparable toValue = to.getValue(evalContext);
@@ -72,7 +72,7 @@ public class IndexRangeFilter implements IndexFilter, IdentifiedDataSerializable
                 return Collections.emptyIterator();
             }
 
-            return index.getRecordIterator(toComparison, toValue);
+            return index.getSqlRecordIterator(toComparison, toValue);
         } else {
             assert from != null;
 
@@ -88,7 +88,7 @@ public class IndexRangeFilter implements IndexFilter, IdentifiedDataSerializable
                 return Collections.emptyIterator();
             }
 
-            return index.getRecordIterator(fromValue, fromInclusive, toValue, toInclusive);
+            return index.getSqlRecordIterator(fromValue, fromInclusive, toValue, toInclusive);
         }
     }
 

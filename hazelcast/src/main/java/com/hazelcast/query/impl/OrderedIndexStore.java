@@ -116,7 +116,7 @@ public class OrderedIndexStore extends BaseSingleValueIndexStore {
     }
 
     @Override
-    public Iterator<QueryableEntry> getRecordIterator() {
+    public Iterator<QueryableEntry> getSqlRecordIterator() {
         Iterator<QueryableEntry> iterator = new IndexEntryCompositeIterator(recordMap.values().iterator());
         Iterator<QueryableEntry> nullIterator = recordsWithNullValue.values().iterator();
 
@@ -124,7 +124,7 @@ public class OrderedIndexStore extends BaseSingleValueIndexStore {
     }
 
     @Override
-    public Iterator<QueryableEntry> getRecordIterator(Comparable value) {
+    public Iterator<QueryableEntry> getSqlRecordIterator(Comparable value) {
         if (value == NULL) {
             return recordsWithNullValue.values().iterator();
         } else {
@@ -139,7 +139,7 @@ public class OrderedIndexStore extends BaseSingleValueIndexStore {
     }
 
     @Override
-    public Iterator<QueryableEntry> getRecordIterator(Comparison comparison, Comparable searchedValue) {
+    public Iterator<QueryableEntry> getSqlRecordIterator(Comparison comparison, Comparable searchedValue) {
         Iterator<Map<Data, QueryableEntry>> iterator;
 
         switch (comparison) {
@@ -163,7 +163,7 @@ public class OrderedIndexStore extends BaseSingleValueIndexStore {
     }
 
     @Override
-    public Iterator<QueryableEntry> getRecordIterator(
+    public Iterator<QueryableEntry> getSqlRecordIterator(
         Comparable from,
         boolean fromInclusive,
         Comparable to,

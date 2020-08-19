@@ -53,7 +53,7 @@ public class IndexEqualsFilter implements IndexFilter, IdentifiedDataSerializabl
             return Collections.emptyIterator();
         }
 
-        return index.getRecordIterator(value);
+        return index.getSqlRecordIterator(value);
     }
 
     @Override
