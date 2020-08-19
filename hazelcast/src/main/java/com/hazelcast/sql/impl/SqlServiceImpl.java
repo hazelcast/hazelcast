@@ -144,13 +144,17 @@ public class SqlServiceImpl implements SqlService, Consumer<Packet> {
 
     public void reset() {
         planCache.clear();
-        jetSqlService.reset();
+        if (jetSqlService != null) {
+            jetSqlService.reset();
+        }
         internalService.reset();
     }
 
     public void shutdown() {
         planCache.clear();
-        jetSqlService.shutdown(true);
+        if (jetSqlService != null) {
+            jetSqlService.shutdown(true);
+        }
         internalService.shutdown();
     }
 
