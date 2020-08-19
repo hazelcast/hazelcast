@@ -34,7 +34,7 @@ public class WildcardConfigPatternMatcher implements ConfigPatternMatcher {
         for (String pattern : configPatterns) {
             if (matches(pattern, itemName)) {
                 if (candidate != null) {
-                    throw ConfigUtils.createAmbigiousConfigrationException(itemName, candidate, pattern);
+                    throw ConfigUtils.createAmbiguousConfigurationException(itemName, candidate, pattern);
                 }
                 candidate = pattern;
             }
