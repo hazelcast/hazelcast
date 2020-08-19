@@ -147,14 +147,14 @@ public class SqlDataSerializerHook implements DataSerializerHook {
 
     public static final int NODE_EMPTY = 47;
 
-    public static final int EXPRESSION_ASCII = 48;
-    public static final int EXPRESSION_CHAR_LENGTH = 49;
-    public static final int EXPRESSION_INITCAP = 50;
-    public static final int EXPRESSION_LOWER = 51;
-    public static final int EXPRESSION_UPPER = 52;
-    public static final int EXPRESSION_CONCAT = 53;
-    public static final int EXPRESSION_LIKE = 54;
-    public static final int EXPRESSION_SUBSTRING = 55;
+    public static final int EXPRESSION_ASCII = 52;
+    public static final int EXPRESSION_CHAR_LENGTH = 53;
+    public static final int EXPRESSION_INITCAP = 54;
+    public static final int EXPRESSION_LOWER = 55;
+    public static final int EXPRESSION_UPPER = 56;
+    public static final int EXPRESSION_CONCAT = 57;
+    public static final int EXPRESSION_LIKE = 58;
+    public static final int EXPRESSION_SUBSTRING = 59;
 
     public static final int LEN = EXPRESSION_SUBSTRING + 1;
 
