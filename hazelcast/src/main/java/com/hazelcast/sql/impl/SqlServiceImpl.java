@@ -147,7 +147,9 @@ public class SqlServiceImpl implements SqlService, Consumer<Packet> {
         if (jetSqlService != null) {
             jetSqlService.reset();
         }
-        internalService.reset();
+        if (internalService != null) {
+            internalService.reset();
+        }
     }
 
     public void shutdown() {
@@ -155,7 +157,9 @@ public class SqlServiceImpl implements SqlService, Consumer<Packet> {
         if (jetSqlService != null) {
             jetSqlService.shutdown(true);
         }
-        internalService.shutdown();
+        if (internalService != null) {
+            internalService.shutdown();
+        }
     }
 
     public SqlInternalService getInternalService() {
