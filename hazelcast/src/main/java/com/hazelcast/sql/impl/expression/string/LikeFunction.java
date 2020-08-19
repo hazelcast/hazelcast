@@ -36,6 +36,9 @@ import static com.hazelcast.sql.impl.expression.string.StringExpressionUtils.asV
  * LIKE string function.
  */
 public class LikeFunction extends TriExpression<Boolean> implements IdentifiedDataSerializable {
+
+    private static final long serialVersionUID = 4157617157954663651L;
+
     /** Single-symbol wildcard in SQL. */
     private static final char ONE_SQL = '_';
 
