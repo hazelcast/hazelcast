@@ -62,6 +62,7 @@ import com.hazelcast.sql.impl.operation.QueryExecuteOperationFragment;
 import com.hazelcast.sql.impl.operation.QueryFlowControlExchangeOperation;
 import com.hazelcast.sql.impl.plan.node.EmptyPlanNode;
 import com.hazelcast.sql.impl.plan.node.FilterPlanNode;
+import com.hazelcast.sql.impl.plan.node.MapIndexScanPlanNode;
 import com.hazelcast.sql.impl.plan.node.MapScanPlanNode;
 import com.hazelcast.sql.impl.plan.node.ProjectPlanNode;
 import com.hazelcast.sql.impl.plan.node.RootPlanNode;
@@ -148,7 +149,9 @@ public class SqlDataSerializerHook implements DataSerializerHook {
     public static final int INDEX_FILTER_RANGE = 50;
     public static final int INDEX_FILTER_IN = 51;
 
-    public static final int LEN = INDEX_FILTER_IN + 1;
+    public static final int NODE_MAP_INDEX_SCAN = 52;
+
+    public static final int LEN = NODE_MAP_INDEX_SCAN + 1;
 
     @Override
     public int getFactoryId() {
@@ -223,6 +226,8 @@ public class SqlDataSerializerHook implements DataSerializerHook {
         constructors[INDEX_FILTER_EQUALS] = arg -> new IndexEqualsFilter();
         constructors[INDEX_FILTER_RANGE] = arg -> new IndexRangeFilter();
         constructors[INDEX_FILTER_IN] = arg -> new IndexInFilter();
+
+        constructors[NODE_MAP_INDEX_SCAN] = arg -> new MapIndexScanPlanNode();
 
         return new ArrayDataSerializableFactory(constructors);
     }

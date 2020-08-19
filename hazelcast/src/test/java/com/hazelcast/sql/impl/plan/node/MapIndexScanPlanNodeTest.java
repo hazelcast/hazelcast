@@ -22,6 +22,9 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.sql.impl.SqlDataSerializerHook;
 import com.hazelcast.sql.impl.SqlTestSupport;
+import com.hazelcast.sql.impl.exec.scan.index.IndexFilter;
+import com.hazelcast.sql.impl.exec.scan.index.IndexInFilter;
+import com.hazelcast.sql.impl.exec.scan.index.IndexRangeFilter;
 import com.hazelcast.sql.impl.expression.ConstantPredicateExpression;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.extract.GenericQueryTargetDescriptor;
@@ -44,7 +47,7 @@ import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class MapScanPlanNodeTest extends SqlTestSupport {
+public class MapIndexScanPlanNodeTest extends SqlTestSupport {
     @Test
     public void testState() {
         int id = 1;
@@ -52,9 +55,13 @@ public class MapScanPlanNodeTest extends SqlTestSupport {
         List<QueryPath> fieldPaths = Collections.singletonList(valuePath("field"));
         List<QueryDataType> fieldTypes = Collections.singletonList(QueryDataType.INT);
         List<Integer> projects = Collections.singletonList(0);
-        Expression<Boolean> filter = new ConstantPredicateExpression(true);
+        String indexName = "index";
+        int indexComponentCount = 1;
+        IndexFilter indexFilter = new IndexRangeFilter();
+        List<QueryDataType> converterTypes = Collections.singletonList(QueryDataType.INT);
+        Expression<Boolean> remainderFilter = new ConstantPredicateExpression(true);
 
-        MapScanPlanNode node = new MapScanPlanNode(
+        MapIndexScanPlanNode node = new MapIndexScanPlanNode(
             id,
             mapName,
             GenericQueryTargetDescriptor.DEFAULT,
@@ -62,7 +69,11 @@ public class MapScanPlanNodeTest extends SqlTestSupport {
             fieldPaths,
             fieldTypes,
             projects,
-            filter
+            indexName,
+            indexComponentCount,
+            indexFilter,
+            converterTypes,
+            remainderFilter
         );
 
         assertEquals(id, node.getId());
@@ -72,7 +83,11 @@ public class MapScanPlanNodeTest extends SqlTestSupport {
         assertEquals(fieldPaths, node.getFieldPaths());
         assertEquals(fieldTypes, node.getFieldTypes());
         assertEquals(projects, node.getProjects());
-        assertEquals(filter, node.getFilter());
+        assertEquals(indexName, node.getIndexName());
+        assertEquals(indexComponentCount, node.getIndexComponentCount());
+        assertEquals(indexFilter, node.getIndexFilter());
+        assertEquals(converterTypes, node.getConverterTypes());
+        assertEquals(remainderFilter, node.getFilter());
     }
 
     @Test
@@ -92,10 +107,22 @@ public class MapScanPlanNodeTest extends SqlTestSupport {
         List<Integer> projects1 = Collections.singletonList(0);
         List<Integer> projects2 = Collections.singletonList(1);
 
-        Expression<Boolean> filter1 = new ConstantPredicateExpression(true);
-        Expression<Boolean> filter2 = new ConstantPredicateExpression(false);
+        String indexName1 = "index1";
+        String indexName2 = "index2";
 
-        MapScanPlanNode node = new MapScanPlanNode(
+        int indexComponentCount1 = 1;
+        int indexComponentCount2 = 2;
+
+        IndexFilter indexFilter1 = new IndexRangeFilter();
+        IndexFilter indexFilter2 = new IndexInFilter();
+
+        List<QueryDataType> converterTypes1 = Collections.singletonList(QueryDataType.INT);
+        List<QueryDataType> converterTypes2 = Collections.singletonList(QueryDataType.BIGINT);
+
+        Expression<Boolean> remainderFilter1 = new ConstantPredicateExpression(true);
+        Expression<Boolean> remainderFilter2 = new ConstantPredicateExpression(false);
+
+        MapIndexScanPlanNode node = new MapIndexScanPlanNode(
             id1,
             mapName1,
             GenericQueryTargetDescriptor.DEFAULT,
@@ -103,12 +130,16 @@ public class MapScanPlanNodeTest extends SqlTestSupport {
             fieldPaths1,
             fieldTypes1,
             projects1,
-            filter1
+            indexName1,
+            indexComponentCount1,
+            indexFilter1,
+            converterTypes1,
+            remainderFilter1
         );
 
         checkEquals(
             node,
-            new MapScanPlanNode(
+            new MapIndexScanPlanNode(
                 id1,
                 mapName1,
                 GenericQueryTargetDescriptor.DEFAULT,
@@ -116,14 +147,18 @@ public class MapScanPlanNodeTest extends SqlTestSupport {
                 fieldPaths1,
                 fieldTypes1,
                 projects1,
-                filter1
+                indexName1,
+                indexComponentCount1,
+                indexFilter1,
+                converterTypes1,
+                remainderFilter1
             ),
             true
         );
 
         checkEquals(
             node,
-            new MapScanPlanNode(
+            new MapIndexScanPlanNode(
                 id2,
                 mapName1,
                 GenericQueryTargetDescriptor.DEFAULT,
@@ -131,14 +166,18 @@ public class MapScanPlanNodeTest extends SqlTestSupport {
                 fieldPaths1,
                 fieldTypes1,
                 projects1,
-                filter1
+                indexName1,
+                indexComponentCount1,
+                indexFilter1,
+                converterTypes1,
+                remainderFilter1
             ),
             false
         );
 
         checkEquals(
             node,
-            new MapScanPlanNode(
+            new MapIndexScanPlanNode(
                 id1,
                 mapName2,
                 GenericQueryTargetDescriptor.DEFAULT,
@@ -146,14 +185,18 @@ public class MapScanPlanNodeTest extends SqlTestSupport {
                 fieldPaths1,
                 fieldTypes1,
                 projects1,
-                filter1
+                indexName1,
+                indexComponentCount1,
+                indexFilter1,
+                converterTypes1,
+                remainderFilter1
             ),
             false
         );
 
         checkEquals(
             node,
-            new MapScanPlanNode(
+            new MapIndexScanPlanNode(
                 id1,
                 mapName1,
                 new TestTargetDescriptor(),
@@ -161,14 +204,18 @@ public class MapScanPlanNodeTest extends SqlTestSupport {
                 fieldPaths1,
                 fieldTypes1,
                 projects1,
-                filter1
+                indexName1,
+                indexComponentCount1,
+                indexFilter1,
+                converterTypes1,
+                remainderFilter1
             ),
             false
         );
 
         checkEquals(
             node,
-            new MapScanPlanNode(
+            new MapIndexScanPlanNode(
                 id1,
                 mapName1,
                 GenericQueryTargetDescriptor.DEFAULT,
@@ -176,14 +223,18 @@ public class MapScanPlanNodeTest extends SqlTestSupport {
                 fieldPaths1,
                 fieldTypes1,
                 projects1,
-                filter1
+                indexName1,
+                indexComponentCount1,
+                indexFilter1,
+                converterTypes1,
+                remainderFilter1
             ),
             false
         );
 
         checkEquals(
             node,
-            new MapScanPlanNode(
+            new MapIndexScanPlanNode(
                 id1,
                 mapName1,
                 GenericQueryTargetDescriptor.DEFAULT,
@@ -191,14 +242,18 @@ public class MapScanPlanNodeTest extends SqlTestSupport {
                 fieldPaths2,
                 fieldTypes1,
                 projects1,
-                filter1
+                indexName1,
+                indexComponentCount1,
+                indexFilter1,
+                converterTypes1,
+                remainderFilter1
             ),
             false
         );
 
         checkEquals(
             node,
-            new MapScanPlanNode(
+            new MapIndexScanPlanNode(
                 id1,
                 mapName1,
                 GenericQueryTargetDescriptor.DEFAULT,
@@ -206,37 +261,125 @@ public class MapScanPlanNodeTest extends SqlTestSupport {
                 fieldPaths1,
                 fieldTypes2,
                 projects1,
-                filter1
+                indexName1,
+                indexComponentCount1,
+                indexFilter1,
+                converterTypes1,
+                remainderFilter1
             ),
             false
         );
 
         checkEquals(
             node,
-            new MapScanPlanNode(
+            new MapIndexScanPlanNode(
                 id1,
                 mapName1,
                 GenericQueryTargetDescriptor.DEFAULT,
                 GenericQueryTargetDescriptor.DEFAULT,
                 fieldPaths1,
-                fieldTypes2,
+                fieldTypes1,
                 projects2,
-                filter1
+                indexName1,
+                indexComponentCount1,
+                indexFilter1,
+                converterTypes1,
+                remainderFilter1
             ),
             false
         );
 
         checkEquals(
             node,
-            new MapScanPlanNode(
+            new MapIndexScanPlanNode(
                 id1,
                 mapName1,
                 GenericQueryTargetDescriptor.DEFAULT,
                 GenericQueryTargetDescriptor.DEFAULT,
                 fieldPaths1,
-                fieldTypes2,
+                fieldTypes1,
                 projects1,
-                filter2
+                indexName2,
+                indexComponentCount1,
+                indexFilter1,
+                converterTypes1,
+                remainderFilter1
+            ),
+            false
+        );
+
+        checkEquals(
+            node,
+            new MapIndexScanPlanNode(
+                id1,
+                mapName1,
+                GenericQueryTargetDescriptor.DEFAULT,
+                GenericQueryTargetDescriptor.DEFAULT,
+                fieldPaths1,
+                fieldTypes1,
+                projects1,
+                indexName1,
+                indexComponentCount2,
+                indexFilter1,
+                converterTypes1,
+                remainderFilter1
+            ),
+            false
+        );
+
+        checkEquals(
+            node,
+            new MapIndexScanPlanNode(
+                id1,
+                mapName1,
+                GenericQueryTargetDescriptor.DEFAULT,
+                GenericQueryTargetDescriptor.DEFAULT,
+                fieldPaths1,
+                fieldTypes1,
+                projects1,
+                indexName1,
+                indexComponentCount1,
+                indexFilter2,
+                converterTypes1,
+                remainderFilter1
+            ),
+            false
+        );
+
+        checkEquals(
+            node,
+            new MapIndexScanPlanNode(
+                id1,
+                mapName1,
+                GenericQueryTargetDescriptor.DEFAULT,
+                GenericQueryTargetDescriptor.DEFAULT,
+                fieldPaths1,
+                fieldTypes1,
+                projects1,
+                indexName1,
+                indexComponentCount1,
+                indexFilter1,
+                converterTypes2,
+                remainderFilter1
+            ),
+            false
+        );
+
+        checkEquals(
+            node,
+            new MapIndexScanPlanNode(
+                id1,
+                mapName1,
+                GenericQueryTargetDescriptor.DEFAULT,
+                GenericQueryTargetDescriptor.DEFAULT,
+                fieldPaths1,
+                fieldTypes1,
+                projects1,
+                indexName1,
+                indexComponentCount1,
+                indexFilter1,
+                converterTypes1,
+                remainderFilter2
             ),
             false
         );
@@ -244,7 +387,7 @@ public class MapScanPlanNodeTest extends SqlTestSupport {
 
     @Test
     public void testSerialization() {
-        MapScanPlanNode original = new MapScanPlanNode(
+        MapIndexScanPlanNode original = new MapIndexScanPlanNode(
             1,
             "map",
             GenericQueryTargetDescriptor.DEFAULT,
@@ -252,10 +395,14 @@ public class MapScanPlanNodeTest extends SqlTestSupport {
             Collections.singletonList(valuePath("field")),
             Collections.singletonList(QueryDataType.INT),
             Collections.singletonList(0),
+            "index",
+            1,
+            new IndexRangeFilter(),
+            Collections.singletonList(QueryDataType.INT),
             new ConstantPredicateExpression(true)
         );
 
-        MapScanPlanNode restored = serializeAndCheck(original, SqlDataSerializerHook.NODE_MAP_SCAN);
+        MapIndexScanPlanNode restored = serializeAndCheck(original, SqlDataSerializerHook.NODE_MAP_INDEX_SCAN);
 
         checkEquals(original, restored, true);
     }

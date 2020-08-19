@@ -19,6 +19,8 @@ package com.hazelcast.sql.impl.plan.node;
 import com.hazelcast.internal.serialization.impl.SerializationUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.sql.impl.SqlDataSerializerHook;
 import com.hazelcast.sql.impl.exec.scan.index.IndexFilter;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.extract.QueryPath;
@@ -32,7 +34,7 @@ import java.util.Objects;
 /**
  * Node to scan a partitioned map.
  */
-public class MapIndexScanPlanNode extends AbstractMapScanPlanNode {
+public class MapIndexScanPlanNode extends AbstractMapScanPlanNode implements IdentifiedDataSerializable {
 
     private String indexName;
     private int indexComponentCount;
@@ -88,6 +90,16 @@ public class MapIndexScanPlanNode extends AbstractMapScanPlanNode {
     }
 
     @Override
+    public int getFactoryId() {
+        return SqlDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getClassId() {
+        return SqlDataSerializerHook.NODE_MAP_INDEX_SCAN;
+    }
+
+    @Override
     protected void writeData0(ObjectDataOutput out) throws IOException {
         super.writeData0(out);
 
@@ -108,11 +120,6 @@ public class MapIndexScanPlanNode extends AbstractMapScanPlanNode {
     }
 
     @Override
-    public int hashCode() {
-        return Objects.hash(id, mapName, fieldPaths, projects, indexName, indexFilter, converterTypes, filter);
-    }
-
-    @Override
     public boolean equals(Object o) {
         if (this == o) {
             return true;
@@ -122,16 +129,27 @@ public class MapIndexScanPlanNode extends AbstractMapScanPlanNode {
             return false;
         }
 
+        if (!super.equals(o)) {
+            return false;
+        }
+
         MapIndexScanPlanNode that = (MapIndexScanPlanNode) o;
 
-        return id == that.id
-            && mapName.equals(that.mapName)
-            && fieldPaths.equals(that.fieldPaths)
-            && projects.equals(that.projects)
+        return indexComponentCount == that.indexComponentCount
             && indexName.equals(that.indexName)
             && Objects.equals(indexFilter, that.indexFilter)
-            && Objects.equals(converterTypes, that.converterTypes)
-            && Objects.equals(filter, that.filter);
+            && Objects.equals(converterTypes, that.converterTypes);
+    }
+
+    @Override
+    public int hashCode() {
+        int result = super.hashCode();
+
+        result = 31 * result + indexName.hashCode();
+        result = 31 * result + indexComponentCount;
+        result = 31 * result + (indexFilter != null ? indexFilter.hashCode() : 0);
+        result = 31 * result + (converterTypes != null ? converterTypes.hashCode() : 0);
+        return result;
     }
 
     @Override
