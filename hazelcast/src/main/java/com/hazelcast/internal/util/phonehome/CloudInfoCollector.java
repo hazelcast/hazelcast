@@ -39,6 +39,8 @@ public class CloudInfoCollector implements MetricsCollector {
     private final Path kubernetesTokenPath;
     private final Path dockerFilePath;
 
+    private final Map<PhoneHomeMetrics, String> environmentInfo = new HashMap<>();
+
     public CloudInfoCollector() {
         this(AWS_ENDPOINT, AZURE_ENDPOINT, GCP_ENDPOINT, KUBERNETES_TOKEN_PATH, DOCKER_FILE_PATH);
     }
@@ -54,7 +56,9 @@ public class CloudInfoCollector implements MetricsCollector {
 
     public Map<PhoneHomeMetrics, String> computeMetrics(Node hazelcastNode) {
 
-        Map<PhoneHomeMetrics, String> environmentInfo = new HashMap<>();
+        if (environmentInfo.containsKey(PhoneHomeMetrics.CLOUD) && environmentInfo.containsKey(PhoneHomeMetrics.DOCKER)) {
+            return environmentInfo;
+        }
         if (MetricsCollector.fetchWebService(awsEndpoint)) {
             environmentInfo.put(PhoneHomeMetrics.CLOUD, "A");
         } else if (MetricsCollector.fetchWebService(azureEndpoint)) {
@@ -62,7 +66,7 @@ public class CloudInfoCollector implements MetricsCollector {
         } else if (MetricsCollector.fetchWebService(gcpEndpoint)) {
             environmentInfo.put(PhoneHomeMetrics.CLOUD, "G");
         } else {
-            environmentInfo.put(PhoneHomeMetrics.CLOUD, "-1");
+            environmentInfo.put(PhoneHomeMetrics.CLOUD, "N");
         }
         try {
             dockerFilePath.toRealPath();
