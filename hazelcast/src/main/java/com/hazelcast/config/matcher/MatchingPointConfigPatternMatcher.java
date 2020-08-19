@@ -47,7 +47,7 @@ public class MatchingPointConfigPatternMatcher implements ConfigPatternMatcher {
             }
         }
         if (duplicate != null) {
-            throw ConfigUtils.createAmbigiousConfigrationException(itemName, candidate, duplicate);
+            throw ConfigUtils.createAmbiguousConfigurationException(itemName, candidate, duplicate);
         }
         return candidate;
     }

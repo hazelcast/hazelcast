@@ -30,8 +30,6 @@ import com.hazelcast.sql.impl.calcite.schema.HazelcastCalciteCatalogReader;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastSchema;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastSchemaUtils;
 import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlConformance;
-import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlOperatorTable;
-import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlValidator;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeFactory;
 import com.hazelcast.sql.impl.schema.SqlCatalog;
 import org.apache.calcite.config.CalciteConnectionConfig;
@@ -47,13 +45,10 @@ import org.apache.calcite.rel.metadata.ChainedRelMetadataProvider;
 import org.apache.calcite.rel.metadata.DefaultRelMetadataProvider;
 import org.apache.calcite.rel.metadata.JaninoRelMetadataProvider;
 import org.apache.calcite.rel.metadata.RelMetadataProvider;
-import org.apache.calcite.sql.SqlNode;
-import org.apache.calcite.sql.SqlOperatorTable;
-import org.apache.calcite.sql.fun.SqlStdOperatorTable;
-import org.apache.calcite.sql.util.ChainedSqlOperatorTable;
-import org.apache.calcite.sql.validate.SqlValidator;
 import org.apache.calcite.tools.RuleSet;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.List;
 
 /**
@@ -73,23 +68,15 @@ public final class OptimizerContext {
     private final QueryParser parser;
     private final QueryConverter converter;
     private final QueryPlanner planner;
-    private final SqlValidator validator;
 
     private OptimizerContext(
         QueryParser parser,
         QueryConverter converter,
-        QueryPlanner planner,
-        SqlValidator validator
+        QueryPlanner planner
     ) {
         this.parser = parser;
         this.converter = converter;
         this.planner = planner;
-        this.validator = validator;
-    }
-
-    // for testing purposes only
-    public SqlValidator getValidator() {
-        return validator;
     }
 
     /**
@@ -102,32 +89,36 @@ public final class OptimizerContext {
     public static OptimizerContext create(
         SqlCatalog schema,
         List<List<String>> searchPaths,
-        int memberCount
+        int memberCount,
+        @Nonnull SqlBackend sqlBackend,
+        @Nullable SqlBackend jetSqlBackend
     ) {
         // Resolve tables.
         HazelcastSchema rootSchema = HazelcastSchemaUtils.createRootSchema(schema);
 
-        return create(rootSchema, searchPaths, memberCount);
+        return create(rootSchema, searchPaths, memberCount, sqlBackend, jetSqlBackend);
     }
 
     public static OptimizerContext create(
         HazelcastSchema rootSchema,
         List<List<String>> schemaPaths,
-        int memberCount
+        int memberCount,
+        @Nonnull SqlBackend sqlBackend,
+        @Nullable SqlBackend jetSqlBackend
     ) {
         DistributionTraitDef distributionTraitDef = new DistributionTraitDef(memberCount);
 
+        HazelcastSqlConformance conformance = HazelcastSqlConformance.INSTANCE;
         HazelcastTypeFactory typeFactory = HazelcastTypeFactory.INSTANCE;
         Prepare.CatalogReader catalogReader = createCatalogReader(typeFactory, CONNECTION_CONFIG, rootSchema, schemaPaths);
-        SqlValidator validator = createValidator(typeFactory, catalogReader);
         VolcanoPlanner volcanoPlanner = createPlanner(CONNECTION_CONFIG, distributionTraitDef);
         HazelcastRelOptCluster cluster = createCluster(volcanoPlanner, typeFactory, distributionTraitDef);
 
-        QueryParser parser = new QueryParser(validator);
-        QueryConverter converter = new QueryConverter(catalogReader, validator, cluster);
+        QueryParser parser = new QueryParser(typeFactory, catalogReader, conformance, sqlBackend, jetSqlBackend);
+        QueryConverter converter = new QueryConverter(catalogReader, cluster);
         QueryPlanner planner = new QueryPlanner(volcanoPlanner);
 
-        return new OptimizerContext(parser, converter, planner, validator);
+        return new OptimizerContext(parser, converter, planner);
     }
 
     /**
@@ -143,11 +134,11 @@ public final class OptimizerContext {
     /**
      * Perform initial conversion of an SQL tree to a relational tree.
      *
-     * @param node SQL tree.
+     * @param parseResult Query parse result.
      * @return Relational tree.
      */
-    public QueryConvertResult convert(SqlNode node) {
-        return converter.convert(node);
+    public QueryConvertResult convert(QueryParseResult parseResult) {
+        return converter.convert(parseResult);
     }
 
     /**
@@ -175,20 +166,6 @@ public final class OptimizerContext {
             searchPaths,
             typeFactory,
             config
-        );
-    }
-
-    private static SqlValidator createValidator(HazelcastTypeFactory typeFactory, Prepare.CatalogReader catalogReader) {
-        SqlOperatorTable opTab = ChainedSqlOperatorTable.of(
-            HazelcastSqlOperatorTable.instance(),
-            SqlStdOperatorTable.instance()
-        );
-
-        return new HazelcastSqlValidator(
-            opTab,
-            catalogReader,
-            typeFactory,
-            HazelcastSqlConformance.INSTANCE
         );
     }
 

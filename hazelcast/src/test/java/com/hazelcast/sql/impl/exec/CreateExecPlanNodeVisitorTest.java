@@ -35,6 +35,7 @@ import com.hazelcast.sql.impl.exec.io.flowcontrol.simple.SimpleFlowControl;
 import com.hazelcast.sql.impl.exec.io.flowcontrol.simple.SimpleFlowControlFactory;
 import com.hazelcast.sql.impl.exec.root.RootExec;
 import com.hazelcast.sql.impl.exec.root.RootResultConsumer;
+import com.hazelcast.sql.impl.exec.root.ScheduleCallback;
 import com.hazelcast.sql.impl.exec.scan.MapScanExec;
 import com.hazelcast.sql.impl.expression.ConstantPredicateExpression;
 import com.hazelcast.sql.impl.extract.GenericQueryTargetDescriptor;
@@ -53,7 +54,6 @@ import com.hazelcast.sql.impl.plan.node.io.RootSendPlanNode;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.row.RowBatch;
 import com.hazelcast.sql.impl.type.QueryDataType;
-import com.hazelcast.sql.impl.worker.QueryFragmentContext;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -580,7 +580,7 @@ public class CreateExecPlanNodeVisitorTest extends SqlTestSupport {
 
     private static class TestRootResultConsumer implements RootResultConsumer {
         @Override
-        public void setup(QueryFragmentContext context) {
+        public void setup(ScheduleCallback scheduleCallback) {
             // No-op.
         }
 

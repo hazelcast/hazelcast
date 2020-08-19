@@ -28,7 +28,9 @@ import org.apache.calcite.sql.SqlLiteral;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.SqlOperatorTable;
 import org.apache.calcite.sql.SqlUtil;
+import org.apache.calcite.sql.fun.SqlStdOperatorTable;
 import org.apache.calcite.sql.type.SqlTypeName;
+import org.apache.calcite.sql.util.ChainedSqlOperatorTable;
 import org.apache.calcite.sql.validate.SelectScope;
 import org.apache.calcite.sql.validate.SqlConformance;
 import org.apache.calcite.sql.validate.SqlQualified;
@@ -38,6 +40,7 @@ import org.apache.calcite.sql.validate.SqlValidatorScope;
 import org.apache.calcite.sql.validate.SqlValidatorTable;
 import org.apache.calcite.util.Util;
 
+import java.util.ArrayList;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
@@ -76,10 +79,35 @@ public class HazelcastSqlValidator extends SqlValidatorImpl {
      */
     private final Map<SqlNode, RelDataType> knownNodeTypes = new IdentityHashMap<>();
 
-    public HazelcastSqlValidator(SqlOperatorTable opTab, SqlValidatorCatalogReader catalogReader,
-                                 HazelcastTypeFactory typeFactory, SqlConformance conformance) {
-        super(opTab, catalogReader, typeFactory, CONFIG.withSqlConformance(conformance));
+    public HazelcastSqlValidator(
+        SqlValidatorCatalogReader catalogReader,
+        HazelcastTypeFactory typeFactory,
+        SqlConformance conformance
+    ) {
+        this(null, catalogReader, typeFactory, conformance);
+    }
+
+    public HazelcastSqlValidator(
+        SqlOperatorTable extensionOperatorTable,
+        SqlValidatorCatalogReader catalogReader,
+        HazelcastTypeFactory typeFactory,
+        SqlConformance conformance
+    ) {
+        super(operatorTable(extensionOperatorTable), catalogReader, typeFactory, CONFIG.withSqlConformance(conformance));
         setTypeCoercion(new HazelcastTypeCoercion(this));
+    }
+
+    private static SqlOperatorTable operatorTable(SqlOperatorTable extensionOperatorTable) {
+        List<SqlOperatorTable> operatorTables = new ArrayList<>();
+
+        if (extensionOperatorTable != null) {
+            operatorTables.add(extensionOperatorTable);
+        }
+
+        operatorTables.add(HazelcastSqlOperatorTable.instance());
+        operatorTables.add(SqlStdOperatorTable.instance());
+
+        return new ChainedSqlOperatorTable(operatorTables);
     }
 
     /**

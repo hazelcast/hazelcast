@@ -25,17 +25,12 @@ public class WanSyncStateImpl implements WanSyncState {
 
     private long creationTime;
     private WanSyncStatus status = WanSyncStatus.READY;
-    private int syncedPartitionCount;
     private String activeWanConfigName;
     private String activePublisherName;
 
-    public WanSyncStateImpl() { }
-
-    public WanSyncStateImpl(WanSyncStatus status, int syncedPartitionCount,
-                            String activeWanConfigName, String activePublisherName) {
+    public WanSyncStateImpl(WanSyncStatus status, String activeWanConfigName, String activePublisherName) {
         creationTime = Clock.currentTimeMillis();
         this.status = status;
-        this.syncedPartitionCount = syncedPartitionCount;
         this.activeWanConfigName = activeWanConfigName;
         this.activePublisherName = activePublisherName;
     }
@@ -51,11 +46,6 @@ public class WanSyncStateImpl implements WanSyncState {
     }
 
     @Override
-    public int getSyncedPartitionCount() {
-        return syncedPartitionCount;
-    }
-
-    @Override
     public String getActiveWanConfigName() {
         return activeWanConfigName;
     }
@@ -68,7 +58,6 @@ public class WanSyncStateImpl implements WanSyncState {
     @Override
     public String toString() {
         return "WanSyncStateImpl{wanSyncStatus=" + status
-                + ", syncedPartitionCount=" + syncedPartitionCount
                 + ", activeWanConfigName=" + activeWanConfigName
                 + ", activePublisherName=" + activePublisherName
                 + '}';

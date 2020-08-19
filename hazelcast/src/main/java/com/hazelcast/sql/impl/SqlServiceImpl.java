@@ -22,6 +22,7 @@ import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.util.Preconditions;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.spi.exception.ServiceNotFoundException;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.sql.SqlQuery;
@@ -42,6 +43,7 @@ import com.hazelcast.sql.impl.schema.map.PartitionedMapTableResolver;
 import com.hazelcast.sql.impl.state.QueryState;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.lang.reflect.Constructor;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -53,6 +55,10 @@ import java.util.logging.Level;
  * Base SQL service implementation that bridges optimizer implementation, public and private APIs.
  */
 public class SqlServiceImpl implements SqlService, Consumer<Packet> {
+
+    static final String OPTIMIZER_CLASS_PROPERTY_NAME = "hazelcast.sql.optimizerClass";
+    private static final String SQL_MODULE_OPTIMIZER_CLASS = "com.hazelcast.sql.impl.calcite.CalciteSqlOptimizer";
+
     /** Outbox batch size in bytes. */
     private static final int OUTBOX_BATCH_SIZE = 512 * 1024;
 
@@ -61,25 +67,24 @@ public class SqlServiceImpl implements SqlService, Consumer<Packet> {
 
     private static final int PLAN_CACHE_SIZE = 10_000;
 
-    private static final String OPTIMIZER_CLASS_PROPERTY_NAME = "hazelcast.sql.optimizerClass";
-    private static final String SQL_MODULE_OPTIMIZER_CLASS = "com.hazelcast.sql.impl.calcite.CalciteSqlOptimizer";
-
-    private SqlOptimizer optimizer;
     private final ILogger logger;
     private final NodeEngineImpl nodeEngine;
-    private final long queryTimeout;
-
     private final NodeServiceProviderImpl nodeServiceProvider;
-
-    private volatile SqlInternalService internalService;
-
-    private final List<TableResolver> tableResolvers;
-
     private final PlanCache planCache = new PlanCache(PLAN_CACHE_SIZE);
 
+    private final int executorPoolSize;
+    private final int operationPoolSize;
+    private final long queryTimeout;
+
+    private JetSqlService jetSqlService;
+    private List<TableResolver> tableResolvers;
+    private SqlOptimizer optimizer;
+    private volatile SqlInternalService internalService;
+
     public SqlServiceImpl(NodeEngineImpl nodeEngine) {
+        this.logger = nodeEngine.getLogger(getClass());
         this.nodeEngine = nodeEngine;
-        logger = nodeEngine.getLogger(getClass());
+        this.nodeServiceProvider = new NodeServiceProviderImpl(nodeEngine);
 
         SqlConfig config = nodeEngine.getConfig().getSqlConfig();
 
@@ -99,21 +104,31 @@ public class SqlServiceImpl implements SqlService, Consumer<Packet> {
         assert operationPoolSize > 0;
         assert queryTimeout >= 0L;
 
+        this.executorPoolSize = executorPoolSize;
+        this.operationPoolSize = operationPoolSize;
         this.queryTimeout = queryTimeout;
+    }
 
-        nodeServiceProvider = new NodeServiceProviderImpl(nodeEngine);
+    public void start() {
+        try {
+            jetSqlService = nodeEngine.getService(JetSqlService.SERVICE_NAME);
+        } catch (HazelcastException e) {
+            if (!(e.getCause() instanceof ServiceNotFoundException)) {
+                throw e;
+            }
+        }
+
+        tableResolvers = createTableResolvers(nodeEngine, jetSqlService);
+
+        optimizer = createOptimizer(nodeEngine, jetSqlService);
 
         String instanceName = nodeEngine.getHazelcastInstance().getName();
         InternalSerializationService serializationService = (InternalSerializationService) nodeEngine.getSerializationService();
-
-        this.tableResolvers = createTableResolvers(nodeEngine);
-
         PlanCacheChecker planCacheChecker = new PlanCacheChecker(
             nodeEngine,
             planCache,
             tableResolvers
         );
-
         internalService = new SqlInternalService(
             instanceName,
             nodeServiceProvider,
@@ -124,22 +139,27 @@ public class SqlServiceImpl implements SqlService, Consumer<Packet> {
             STATE_CHECK_FREQUENCY,
             planCacheChecker
         );
-    }
-
-    public void start() {
-        optimizer = createOptimizer(nodeEngine);
-
         internalService.start();
     }
 
     public void reset() {
         planCache.clear();
-        internalService.reset();
+        if (jetSqlService != null) {
+            jetSqlService.reset();
+        }
+        if (internalService != null) {
+            internalService.reset();
+        }
     }
 
     public void shutdown() {
         planCache.clear();
-        internalService.shutdown();
+        if (jetSqlService != null) {
+            jetSqlService.shutdown(true);
+        }
+        if (internalService != null) {
+            internalService.shutdown();
+        }
     }
 
     public SqlInternalService getInternalService() {
@@ -233,11 +253,10 @@ public class SqlServiceImpl implements SqlService, Consumer<Packet> {
     }
 
     private SqlResult execute(SqlPlan plan, List<Object> params, long timeout, int pageSize) {
-        switch (plan.getType()) {
-            case IMDG:
-                return executeImdg((Plan) plan, params, timeout, pageSize);
-            default:
-                throw new IllegalArgumentException("Unknown plan type - " + plan.getType());
+        if (plan instanceof Plan) {
+            return executeImdg((Plan) plan, params, timeout, pageSize);
+        } else {
+            return executeJet(plan, params, timeout, pageSize);
         }
     }
 
@@ -247,6 +266,10 @@ public class SqlServiceImpl implements SqlService, Consumer<Packet> {
         return SqlResultImpl.createRowsResult(state);
     }
 
+    private SqlResult executeJet(SqlPlan plan, List<Object> params, long timeout, int pageSize) {
+        return jetSqlService.execute(plan, params, timeout, pageSize);
+    }
+
     /**
      * Create either normal or not-implemented optimizer instance.
      *
@@ -254,7 +277,7 @@ public class SqlServiceImpl implements SqlService, Consumer<Packet> {
      * @return Optimizer.
      */
     @SuppressWarnings({"unchecked", "rawtypes"})
-    private SqlOptimizer createOptimizer(NodeEngine nodeEngine) {
+    private SqlOptimizer createOptimizer(NodeEngine nodeEngine, JetSqlService jetSqlService) {
         // 1. Resolve class name.
         String className = System.getProperty(OPTIMIZER_CLASS_PROPERTY_NAME, SQL_MODULE_OPTIMIZER_CLASS);
 
@@ -277,7 +300,8 @@ public class SqlServiceImpl implements SqlService, Consumer<Packet> {
 
         try {
             constructor = clazz.getConstructor(
-                NodeEngine.class
+                NodeEngine.class,
+                JetSqlService.class
             );
         } catch (ReflectiveOperationException e) {
             throw new HazelcastException("Failed to get the constructor for the optimizer class "
@@ -286,15 +310,21 @@ public class SqlServiceImpl implements SqlService, Consumer<Packet> {
 
         // 4. Finally, get the instance.
         try {
-            return constructor.newInstance(nodeEngine);
+            return constructor.newInstance(nodeEngine, jetSqlService);
         } catch (ReflectiveOperationException e) {
             throw new HazelcastException("Failed to instantiate the optimizer class " + className + ": " + e.getMessage(), e);
         }
     }
 
-    private static List<TableResolver> createTableResolvers(NodeEngine nodeEngine) {
+    private static List<TableResolver> createTableResolvers(
+        NodeEngine nodeEngine,
+        @Nullable JetSqlService jetSqlService
+    ) {
         List<TableResolver> res = new ArrayList<>();
 
+        if (jetSqlService != null) {
+            res.addAll(jetSqlService.tableResolvers());
+        }
         res.add(new PartitionedMapTableResolver(nodeEngine));
 
         return res;

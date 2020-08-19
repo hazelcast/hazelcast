@@ -16,14 +16,11 @@
 
 package com.hazelcast.sql.impl.calcite.schema;
 
-import com.hazelcast.sql.impl.calcite.SqlToQueryType;
 import com.hazelcast.sql.impl.calcite.opt.cost.CostUtils;
 import com.hazelcast.sql.impl.calcite.opt.logical.FilterIntoScanLogicalRule;
 import com.hazelcast.sql.impl.calcite.opt.logical.ProjectIntoScanLogicalRule;
 import com.hazelcast.sql.impl.schema.Table;
 import com.hazelcast.sql.impl.schema.TableField;
-import com.hazelcast.sql.impl.type.QueryDataType;
-import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 import org.apache.calcite.rel.RelCollation;
 import org.apache.calcite.rel.RelDistribution;
 import org.apache.calcite.rel.RelReferentialConstraint;
@@ -37,7 +34,6 @@ import org.apache.calcite.rel.type.StructKind;
 import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.schema.Statistic;
 import org.apache.calcite.schema.impl.AbstractTable;
-import org.apache.calcite.sql.type.SqlTypeName;
 import org.apache.calcite.util.ImmutableBitSet;
 
 import javax.annotation.Nonnull;
@@ -154,19 +150,10 @@ public class HazelcastTable extends AbstractTable {
             TableField field = target.getField(project);
 
             String fieldName = field.getName();
-            QueryDataType fieldType = field.getType();
-            QueryDataTypeFamily fieldTypeFamily = fieldType.getTypeFamily();
 
-            SqlTypeName sqlTypeName = SqlToQueryType.map(fieldTypeFamily);
+            RelDataType relType = HazelcastSchemaUtils.convert(field, typeFactory);
 
-            if (sqlTypeName == null) {
-                throw new IllegalStateException("Unexpected type family: " + fieldTypeFamily);
-            }
-
-            RelDataType relDataType = typeFactory.createSqlType(sqlTypeName);
-            RelDataType nullableRelDataType = typeFactory.createTypeWithNullability(relDataType, true);
-
-            RelDataTypeField convertedField = new RelDataTypeFieldImpl(fieldName, convertedFields.size(), nullableRelDataType);
+            RelDataTypeField convertedField = new RelDataTypeFieldImpl(fieldName, convertedFields.size(), relType);
             convertedFields.add(convertedField);
 
             if (field.isHidden()) {
