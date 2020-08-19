@@ -45,7 +45,7 @@ public class RegexConfigPatternMatcher implements ConfigPatternMatcher {
         for (String pattern : configPatterns) {
             if (Pattern.compile(pattern, flags).matcher(itemName).find()) {
                 if (candidate != null) {
-                    throw ConfigUtils.createAmbigiousConfigrationException(itemName, candidate, pattern);
+                    throw ConfigUtils.createAmbiguousConfigurationException(itemName, candidate, pattern);
                 }
                 candidate = pattern;
             }
