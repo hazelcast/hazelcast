@@ -1675,14 +1675,31 @@ public class ConfigXmlGenerator {
         gen.open("native-memory",
                 "enabled", nativeMemoryConfig.isEnabled(),
                 "allocator-type", nativeMemoryConfig.getAllocatorType())
-                .node("size", null,
-                        "unit", nativeMemoryConfig.getSize().getUnit(),
-                        "value", nativeMemoryConfig.getSize().getValue())
-                .node("min-block-size", nativeMemoryConfig.getMinBlockSize())
-                .node("page-size", nativeMemoryConfig.getPageSize())
-                .node("metadata-space-percentage", nativeMemoryConfig.getMetadataSpacePercentage())
-                .node("persistent-memory-directory", nativeMemoryConfig.getPersistentMemoryDirectory())
-                .close();
+           .node("size", null,
+                   "unit", nativeMemoryConfig.getSize().getUnit(),
+                   "value", nativeMemoryConfig.getSize().getValue())
+           .node("min-block-size", nativeMemoryConfig.getMinBlockSize())
+           .node("page-size", nativeMemoryConfig.getPageSize())
+           .node("metadata-space-percentage", nativeMemoryConfig.getMetadataSpacePercentage());
+
+        List<PersistentMemoryDirectoryConfig> directoryConfigs = nativeMemoryConfig.getPersistentMemoryConfig()
+                                                                                   .getDirectoryConfigs();
+        if (!directoryConfigs.isEmpty()) {
+            gen.open("persistent-memory")
+               .open("directories");
+            for (PersistentMemoryDirectoryConfig dirConfig : directoryConfigs) {
+                if (dirConfig.isNumaNodeSet()) {
+                    gen.node("directory", dirConfig.getDirectory(),
+                            "numa-node", dirConfig.getNumaNode());
+                } else {
+                    gen.node("directory", dirConfig.getDirectory());
+                }
+            }
+            gen.close()
+               .close();
+        }
+
+        gen.close();
     }
 
     private static void liteMemberXmlGenerator(XmlGenerator gen, Config config) {
