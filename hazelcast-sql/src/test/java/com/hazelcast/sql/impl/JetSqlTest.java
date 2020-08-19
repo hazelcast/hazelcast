@@ -17,7 +17,6 @@
 package com.hazelcast.sql.impl;
 
 import com.google.common.collect.ImmutableMap;
-import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.impl.DefaultNodeExtension;
@@ -34,6 +33,7 @@ import com.hazelcast.sql.impl.plan.cache.PlanObjectKey;
 import com.hazelcast.sql.impl.schema.ConstantTableStatistics;
 import com.hazelcast.sql.impl.schema.Table;
 import com.hazelcast.sql.impl.schema.TableResolver;
+import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.test.mocknetwork.MockNodeContext;
@@ -63,7 +63,7 @@ import static org.mockito.Mockito.mock;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class JetSqlTest extends SqlTestSupport {
 
-    private static final TestHazelcastFactory FACTORY = new TestHazelcastFactory(1);
+    private static final TestHazelcastInstanceFactory FACTORY = new TestHazelcastInstanceFactory(1);
 
     private static final String JET_NAMESPACE = "jet-namespace";
     private static final String JET_TABLE = "jet-table";
