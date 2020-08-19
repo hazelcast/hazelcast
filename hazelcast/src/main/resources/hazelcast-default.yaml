@@ -108,6 +108,12 @@ hazelcast:
       # Queue capacity. 0 means Integer.MAX_VALUE.
       queue-capacity: 0
 
+  scheduled-executor-service:
+    default:
+      capacity: 100
+      durability: 1
+      pool-size: 16
+
   security:
     client-block-unmapped-actions: true
 
@@ -279,12 +285,6 @@ hazelcast:
       merge-policy:
         batch-size: 100
         class-name: HyperLogLogMergePolicy
-
-  scheduled-executor-service:
-    default:
-      capacity: 100
-      durability: 1
-      pool-size: 16
 
   crdt-replication:
     replication-period-millis: 1000
