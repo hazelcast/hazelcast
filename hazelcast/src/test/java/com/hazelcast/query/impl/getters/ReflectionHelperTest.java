@@ -25,6 +25,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -36,7 +37,7 @@ public class ReflectionHelperTest {
             throws Exception {
         OuterObject object = new OuterObject();
         try {
-            ReflectionHelper.extractValue(object, "emptyInterface.doesNotExist");
+            ReflectionHelper.extractValue(object, "emptyInterface.doesNotExist", true);
             fail("Non-existing field has been ignored");
         } catch (QueryException e) {
             // createGetter() method is catching everything throwable and wraps it in QueryException
@@ -45,6 +46,14 @@ public class ReflectionHelperTest {
             // IllegalArgumentException as expected exception.
             assertEquals(IllegalArgumentException.class, e.getCause().getClass());
         }
+    }
+
+    @Test
+    public void extractValue_whenIntermediateFieldIsInterfaceAndDoesNotContainField_returnsNull()
+            throws Exception {
+        OuterObject object = new OuterObject();
+
+        assertNull(ReflectionHelper.extractValue(object, "emptyInterface.doesNotExist", false));
     }
 
     @SuppressWarnings("unused")

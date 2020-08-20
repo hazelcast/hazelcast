@@ -23,6 +23,8 @@ import com.hazelcast.config.InstanceTrackingConfig;
 import com.hazelcast.config.JavaSerializationFilterConfig;
 import com.hazelcast.config.LoginModuleConfig;
 import com.hazelcast.config.NativeMemoryConfig;
+import com.hazelcast.config.PersistentMemoryConfig;
+import com.hazelcast.config.PersistentMemoryDirectoryConfig;
 import com.hazelcast.config.SSLConfig;
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.config.SerializerConfig;
@@ -55,7 +57,7 @@ public abstract class AbstractDomConfigProcessor implements DomConfigProcessor {
      * Set collecting already seen elements. Used to detect duplicates in
      * the configurations.
      */
-    protected final Set<String> occurrenceSet = new HashSet<String>();
+    protected final Set<String> occurrenceSet = new HashSet<>();
 
     /**
      * Tells whether the traversed DOM is a level 3 one
@@ -279,7 +281,29 @@ public abstract class AbstractDomConfigProcessor implements DomConfigProcessor {
                 String value = getTextContent(n);
                 nativeMemoryConfig.setMetadataSpacePercentage(Float.parseFloat(value));
             } else if ("persistent-memory-directory".equals(nodeName)) {
-                nativeMemoryConfig.setPersistentMemoryDirectory(getTextContent(n).trim());
+                nativeMemoryConfig.getPersistentMemoryConfig()
+                                  .addDirectoryConfig(new PersistentMemoryDirectoryConfig(getTextContent(n).trim()));
+            } else if ("persistent-memory".equals(nodeName)) {
+                handlePersistentMemoryConfig(nativeMemoryConfig.getPersistentMemoryConfig(), n);
+            }
+        }
+    }
+
+    protected void handlePersistentMemoryConfig(PersistentMemoryConfig persistentMemoryConfig, Node node) {
+        for (Node parent : childElements(node)) {
+            final String nodeName = cleanNodeName(parent);
+            if ("directories".equals(nodeName)) {
+                for (Node dirNode : childElements(parent)) {
+                    final String childNodeName = cleanNodeName(dirNode);
+                    if ("directory".equals(childNodeName)) {
+                        Node numaNodeIdNode = dirNode.getAttributes().getNamedItem("numa-node");
+                        int numaNodeId = numaNodeIdNode != null
+                                ? getIntegerValue("numa-node", getTextContent(numaNodeIdNode))
+                                : -1;
+                        String directory = getTextContent(dirNode).trim();
+                        persistentMemoryConfig.addDirectoryConfig(new PersistentMemoryDirectoryConfig(directory, numaNodeId));
+                    }
+                }
             }
         }
     }

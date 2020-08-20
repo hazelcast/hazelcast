@@ -17,7 +17,6 @@
 <beans xmlns="http://www.springframework.org/schema/beans"
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
        xmlns:p="http://www.springframework.org/schema/p"
-       xmlns:s="http://www.hazelcast.com/schema/sample"
        xmlns:hz="http://www.hazelcast.com/schema/spring"
        xsi:schemaLocation="http://www.springframework.org/schema/beans
         http://www.springframework.org/schema/beans/spring-beans.xsd
@@ -608,11 +607,16 @@
                 </hz:java-serialization-filter>
             </hz:serialization>
 
-            <hz:native-memory enabled="false" allocator-type="POOLED" metadata-space-percentage="10.2"
+            <hz:native-memory enabled="false" allocator-type="STANDARD" metadata-space-percentage="10.2"
                               min-block-size="10"
-                              page-size="20"
-                              persistent-memory-directory="/mnt/optane">
-                <hz:size unit="MEGABYTES" value="256"/>
+                              page-size="20">
+                <hz:size unit="GIGABYTES" value="256"/>
+                <hz:persistent-memory>
+                    <hz:directories>
+                        <hz:directory numa-node="0">/mnt/pmem0</hz:directory>
+                        <hz:directory numa-node="1">/mnt/pmem1</hz:directory>
+                    </hz:directories>
+                </hz:persistent-memory>
             </hz:native-memory>
             <hz:security>
                 <hz:realms>
