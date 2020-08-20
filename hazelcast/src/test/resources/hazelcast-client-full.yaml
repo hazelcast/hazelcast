@@ -212,6 +212,12 @@ hazelcast-client:
     min-block-size: 1
     page-size: 1
     metadata-space-percentage: 40.5
+    persistent-memory:
+      directories:
+        - directory: /mnt/pmem0
+          numa-node: 0
+        - directory: /mnt/pmem1
+          numa-node: 1
 
   proxy-factories:
     - class-name: com.hazelcast.examples.ProxyXYZ1

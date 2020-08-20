@@ -68,9 +68,13 @@ public final class Extractors {
     }
 
     public Object extract(Object target, String attributeName, Object metadata) {
+        return extract(target, attributeName, metadata, true);
+    }
+
+    public Object extract(Object target, String attributeName, Object metadata, boolean failOnMissingReflectiveAttribute) {
         Object targetObject = getTargetObject(target);
         if (targetObject != null) {
-            Getter getter = getGetter(targetObject, attributeName);
+            Getter getter = getGetter(targetObject, attributeName, failOnMissingReflectiveAttribute);
             try {
                 return getter.getValue(targetObject, attributeName, metadata);
             } catch (Exception ex) {
@@ -112,10 +116,10 @@ public final class Extractors {
         return target;
     }
 
-    Getter getGetter(Object targetObject, String attributeName) {
+    Getter getGetter(Object targetObject, String attributeName, boolean failOnMissingReflectiveAttribute) {
         Getter getter = getterCache.getGetter(targetObject.getClass(), attributeName);
         if (getter == null) {
-            getter = instantiateGetter(targetObject, attributeName);
+            getter = instantiateGetter(targetObject, attributeName, failOnMissingReflectiveAttribute);
             if (getter.isCacheable()) {
                 getterCache.putGetter(targetObject.getClass(), attributeName, getter);
             }
@@ -123,7 +127,7 @@ public final class Extractors {
         return getter;
     }
 
-    private Getter instantiateGetter(Object targetObject, String attributeName) {
+    private Getter instantiateGetter(Object targetObject, String attributeName, boolean failOnMissingReflectiveAttribute) {
         String attributeNameWithoutArguments = extractAttributeNameNameWithoutArguments(attributeName);
         ValueExtractor valueExtractor = extractors.get(attributeNameWithoutArguments);
         if (valueExtractor != null) {
@@ -149,7 +153,7 @@ public final class Extractors {
             } else if (targetObject instanceof HazelcastJsonValue) {
                 return JsonGetter.INSTANCE;
             } else {
-                return ReflectionHelper.createGetter(targetObject, attributeName);
+                return ReflectionHelper.createGetter(targetObject, attributeName, failOnMissingReflectiveAttribute);
             }
         }
     }

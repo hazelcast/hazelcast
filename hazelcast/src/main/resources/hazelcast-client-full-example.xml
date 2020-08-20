@@ -547,6 +547,15 @@
         <min-block-size>1</min-block-size>
         <page-size>1</page-size>
         <metadata-space-percentage>40.5</metadata-space-percentage>
+        <!-- Simple configuration for single-socket machines with non-volatile memory -->
+        <!-- <persistent-memory-directory>/mnt/optane</persistent-memory-directory> -->
+        <!-- Advanced configuration for non-volatile memory -->
+        <persistent-memory>
+            <directories>
+                <directory numa-node="0">/mnt/pmem0</directory>
+                <directory numa-node="1">/mnt/pmem1</directory>
+            </directories>
+        </persistent-memory>
     </native-memory>
     <!--
         ===== HAZELCAST PROXY FACTORY CONFIGURATION =====

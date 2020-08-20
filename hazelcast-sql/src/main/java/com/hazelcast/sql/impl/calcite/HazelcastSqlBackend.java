@@ -16,6 +16,7 @@
 
 package com.hazelcast.sql.impl.calcite;
 
+import com.hazelcast.cluster.Member;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.QueryUtils;
@@ -117,14 +118,15 @@ public class HazelcastSqlBackend implements SqlBackend {
         Map<PhysicalRel, List<Integer>> relIdMap = idVisitor.getIdMap();
 
         // Create the plan.
+        Member localMember = nodeEngine.getLocalMember();
+
         PlanCreateVisitor visitor = new PlanCreateVisitor(
-                nodeEngine.getLocalMember().getUuid(),
-                QueryUtils.createPartitionMap(nodeEngine),
-                relIdMap,
-                sql,
-                new PlanCacheKey(task.getSearchPaths(), sql),
-                convertResult.getFieldNames(),
-                parameterMetadata
+            localMember.getUuid(),
+            QueryUtils.createPartitionMap(nodeEngine, localMember.getVersion()),
+            relIdMap,
+            new PlanCacheKey(task.getSearchPaths(), sql),
+            convertResult.getFieldNames(),
+            parameterMetadata
         );
 
         physicalRel.visit(visitor);

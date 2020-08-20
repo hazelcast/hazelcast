@@ -196,6 +196,8 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
                     handleMetrics(node);
                 } else if ("instance-tracking".equals(nodeName)) {
                     handleInstanceTracking(node);
+                } else if ("native-memory".equals(nodeName)) {
+                    handleNativeMemory(node);
                 }
             }
             return configBuilder.getBeanDefinition();

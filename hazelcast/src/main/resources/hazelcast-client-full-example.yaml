@@ -493,6 +493,16 @@ hazelcast-client:
     min-block-size: 1
     page-size: 1
     metadata-space-percentage: 40.5
+    # Simple configuration for single-socket machines with non-volatile memory
+    # persistent-memory-directory: /mnt/optane
+    # Advanced configuration for non-volatile memory
+    persistent-memory:
+      directories:
+        - directory: /mnt/pmem0
+          numa-node: 0
+        - directory: /mnt/pmem1
+          numa-node: 1
+
   #
   # ===== HAZELCAST PROXY FACTORY CONFIGURATION =====
   #
