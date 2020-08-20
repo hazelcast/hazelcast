@@ -25,7 +25,6 @@ import com.hazelcast.sql.impl.state.QueryState;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.Iterator;
 import java.util.NoSuchElementException;
 
 /**
@@ -36,7 +35,7 @@ public final class SqlResultImpl extends AbstractSqlResult {
     private final boolean isUpdateCount;
     private final QueryState state;
     private final SqlRowMetadata rowMetadata;
-    private Iterator<SqlRow> iterator;
+    private ResultIterator<SqlRow> iterator;
     private final long updatedCount;
 
     private SqlResultImpl(boolean isUpdateCount, QueryState state, long updatedCount) {
@@ -65,7 +64,7 @@ public final class SqlResultImpl extends AbstractSqlResult {
 
     @Nonnull
     @Override
-    public Iterator<SqlRow> iterator() {
+    public ResultIterator<SqlRow> iterator() {
         checkIsRowsResult();
 
         if (iterator == null) {
@@ -125,11 +124,11 @@ public final class SqlResultImpl extends AbstractSqlResult {
         return state.getInitiatorState();
     }
 
-    private final class RowToSqlRowIterator implements Iterator<SqlRow> {
+    private final class RowToSqlRowIterator implements ResultIterator<SqlRow> {
 
-        private final Iterator<Row> delegate;
+        private final ResultIterator<Row> delegate;
 
-        private RowToSqlRowIterator(Iterator<Row> delegate) {
+        private RowToSqlRowIterator(ResultIterator<Row> delegate) {
             this.delegate = delegate;
         }
 
@@ -137,6 +136,15 @@ public final class SqlResultImpl extends AbstractSqlResult {
         public boolean hasNext() {
             try {
                 return delegate.hasNext();
+            } catch (Exception e) {
+                throw QueryUtils.toPublicException(e, state.getLocalMemberId());
+            }
+        }
+
+        @Override
+        public HasNextImmediatelyResult hasNextImmediately() {
+            try {
+                return delegate.hasNextImmediately();
             } catch (Exception e) {
                 throw QueryUtils.toPublicException(e, state.getLocalMemberId());
             }

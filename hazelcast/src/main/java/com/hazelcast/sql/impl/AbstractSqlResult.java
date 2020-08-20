@@ -17,12 +17,18 @@
 package com.hazelcast.sql.impl;
 
 import com.hazelcast.sql.SqlResult;
+import com.hazelcast.sql.SqlRow;
+
+import javax.annotation.Nonnull;
 
 public abstract class AbstractSqlResult implements SqlResult {
 
     public abstract QueryId getQueryId();
 
     public abstract void closeOnError(QueryException exception);
+
+    @Nonnull @Override
+    public abstract ResultIterator<SqlRow> iterator();
 
     @Override
     public void close() {

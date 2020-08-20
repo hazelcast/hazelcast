@@ -30,7 +30,6 @@ import org.junit.runner.RunWith;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -38,6 +37,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -51,7 +51,7 @@ public class BlockingRootResultConsumerTest extends HazelcastTestSupport {
     public void testConsumeAtMostOneBatch() {
         BlockingRootResultConsumer consumer = new BlockingRootResultConsumer();
 
-        List<Row> batch = Collections.singletonList(HeapRow.of(1));
+        List<Row> batch = singletonList(HeapRow.of(1));
 
         assertTrue(consumer.consume(batch, false));
         assertFalse(consumer.consume(batch, false));
@@ -64,7 +64,7 @@ public class BlockingRootResultConsumerTest extends HazelcastTestSupport {
         Iterator<Row> iterator = consumer.iterator();
         assertSame(iterator, consumer.iterator());
 
-        consumer.consume(Collections.singletonList(HeapRow.of(1)), true);
+        consumer.consume(singletonList(HeapRow.of(1)), true);
 
         assertTrue(iterator.hasNext());
         assertEquals(1, (int) iterator.next().get(0));

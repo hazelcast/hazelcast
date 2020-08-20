@@ -146,10 +146,6 @@ public final class UnsupportedOperationVisitor implements SqlVisitor<Void> {
 
     @Override
     public Void visit(SqlNodeList nodeList) {
-        if (nodeList.size() == 0) {
-            return null;
-        }
-
         for (int i = 0; i < nodeList.size(); i++) {
             SqlNode node = nodeList.get(i);
 
