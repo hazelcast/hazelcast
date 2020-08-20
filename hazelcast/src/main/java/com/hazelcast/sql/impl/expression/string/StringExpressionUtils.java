@@ -77,7 +77,7 @@ public final class StringExpressionUtils {
 
                 capitalizeNext = false;
             } else {
-                res.append(c);
+                res.append(Character.toLowerCase(c));
             }
         }
 
