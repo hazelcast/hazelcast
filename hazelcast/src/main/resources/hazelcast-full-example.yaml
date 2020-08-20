@@ -3418,7 +3418,7 @@ hazelcast:
   #     * "operation-pool-size":
   #         Defines the number of threads responsible for network operations processing.
   #
-  #     * "query-timeout":
+  #     * "timeout-millis":
   #         Defines the timeout in milliseconds that is applied to queries without an explicit timeout.
   #
   sql:
