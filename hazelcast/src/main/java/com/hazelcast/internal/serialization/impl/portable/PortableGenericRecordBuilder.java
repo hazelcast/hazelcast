@@ -35,6 +35,11 @@ public class PortableGenericRecordBuilder implements GenericRecordBuilder {
         this.objects = new Object[classDefinition.getFieldCount()];
     }
 
+    PortableGenericRecordBuilder(ClassDefinition classDefinition, Object[] objects) {
+        this.classDefinition = classDefinition;
+        this.objects = objects;
+    }
+
     @Override
     public GenericRecord build() {
         return new PortableGenericRecord(classDefinition, objects);

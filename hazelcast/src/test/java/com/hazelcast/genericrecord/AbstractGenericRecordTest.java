@@ -214,16 +214,41 @@ public abstract class AbstractGenericRecordTest extends HazelcastTestSupport {
 
             entry.setValue(modifiedGenericRecord);
 
-            try {
-                return genericRecord.readInt("myint");
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
+            return genericRecord.readInt("myint");
         });
         assertEquals(expected.myint, returnValue);
 
         NamedPortable actualPortable = (NamedPortable) map.get(key);
         assertEquals("bar", actualPortable.name);
+        assertEquals(4, actualPortable.myint);
+    }
+
+    @Test
+    public void testCloneWithGenericBuilderOnEntryProcessor() throws IOException {
+
+        HazelcastInstance[] instances = createCluster();
+
+        HazelcastInstance instance = createAccessorInstance(serializationConfig);
+        IMap<Object, Object> map = instance.getMap("test");
+        NamedPortable expected = new NamedPortable("foo", 900);
+
+        String key = generateKeyOwnedBy(instances[0]);
+        map.put(key, expected);
+        Object returnValue = map.executeOnKey(key, (EntryProcessor<Object, Object, Object>) entry -> {
+            Object value = entry.getValue();
+            GenericRecord genericRecord = (GenericRecord) value;
+
+            GenericRecord modifiedGenericRecord = genericRecord.cloneWithGenericRecordBuilder()
+                    .writeInt("myint", 4).build();
+
+            entry.setValue(modifiedGenericRecord);
+
+            return genericRecord.readInt("myint");
+        });
+        assertEquals(expected.myint, returnValue);
+
+        NamedPortable actualPortable = (NamedPortable) map.get(key);
+        assertEquals("foo", actualPortable.name);
         assertEquals(4, actualPortable.myint);
     }
 

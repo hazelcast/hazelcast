@@ -18,8 +18,6 @@ package com.hazelcast.internal.serialization.impl;
 
 import com.hazelcast.nio.serialization.GenericRecord;
 
-import java.io.IOException;
-
 /**
  * Additionally to GenericRecord, this one has more methods to be used in Query.
  *
@@ -31,31 +29,31 @@ import java.io.IOException;
  */
 public interface InternalGenericRecord extends GenericRecord {
 
-    GenericRecord[] readGenericRecordArray(String fieldName) throws IOException;
+    GenericRecord[] readGenericRecordArray(String fieldName);
 
-    Byte readByteFromArray(String fieldName, int index) throws IOException;
+    Byte readByteFromArray(String fieldName, int index);
 
-    Boolean readBooleanFromArray(String fieldName, int index) throws IOException;
+    Boolean readBooleanFromArray(String fieldName, int index);
 
-    Character readCharFromArray(String fieldName, int index) throws IOException;
+    Character readCharFromArray(String fieldName, int index);
 
-    Integer readIntFromArray(String fieldName, int index) throws IOException;
+    Integer readIntFromArray(String fieldName, int index);
 
-    Long readLongFromArray(String fieldName, int index) throws IOException;
+    Long readLongFromArray(String fieldName, int index);
 
-    Double readDoubleFromArray(String fieldName, int index) throws IOException;
+    Double readDoubleFromArray(String fieldName, int index);
 
-    Float readFloatFromArray(String fieldName, int index) throws IOException;
+    Float readFloatFromArray(String fieldName, int index);
 
-    Short readShortFromArray(String fieldName, int index) throws IOException;
+    Short readShortFromArray(String fieldName, int index);
 
-    String readUTFFromArray(String fieldName, int index) throws IOException;
+    String readUTFFromArray(String fieldName, int index);
 
-    GenericRecord readGenericRecordFromArray(String fieldName, int index) throws IOException;
+    GenericRecord readGenericRecordFromArray(String fieldName, int index);
 
-    Object readObjectFromArray(String fieldName, int index) throws IOException;
+    Object readObjectFromArray(String fieldName, int index);
 
-    Object[] readObjectArray(String fieldName) throws IOException;
+    Object[] readObjectArray(String fieldName);
 
-    Object readObject(String fieldName) throws IOException;
+    Object readObject(String fieldName);
 }

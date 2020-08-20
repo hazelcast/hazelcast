@@ -18,35 +18,21 @@ package com.hazelcast.internal.serialization.impl.portable;
 
 import com.hazelcast.internal.nio.Bits;
 import com.hazelcast.internal.nio.BufferObjectDataInput;
-import com.hazelcast.internal.serialization.impl.InternalGenericRecord;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.FieldDefinition;
 import com.hazelcast.nio.serialization.FieldType;
-import com.hazelcast.nio.serialization.GenericRecord;
-import com.hazelcast.nio.serialization.GenericRecordBuilder;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
 import java.util.Set;
-import java.util.function.Function;
-
-import static com.hazelcast.internal.nio.Bits.BOOLEAN_SIZE_IN_BYTES;
-import static com.hazelcast.internal.nio.Bits.BYTE_SIZE_IN_BYTES;
-import static com.hazelcast.internal.nio.Bits.CHAR_SIZE_IN_BYTES;
-import static com.hazelcast.internal.nio.Bits.DOUBLE_SIZE_IN_BYTES;
-import static com.hazelcast.internal.nio.Bits.FLOAT_SIZE_IN_BYTES;
-import static com.hazelcast.internal.nio.Bits.INT_SIZE_IN_BYTES;
-import static com.hazelcast.internal.nio.Bits.LONG_SIZE_IN_BYTES;
-import static com.hazelcast.internal.nio.Bits.SHORT_SIZE_IN_BYTES;
 
 /**
  * Can't be accessed concurrently.
  */
-public class DefaultPortableReader implements PortableReader, InternalGenericRecord {
+public class DefaultPortableReader implements PortableReader {
 
     protected final ClassDefinition cd;
     protected final PortableSerializer serializer;
@@ -176,7 +162,32 @@ public class DefaultPortableReader implements PortableReader, InternalGenericRec
     @Override
     @SuppressWarnings("unchecked")
     public Portable readPortable(String fieldName) throws IOException {
-        return readNested(fieldName, true);
+        int currentPos = in.position();
+        try {
+            FieldDefinition fd = cd.getField(fieldName);
+            if (fd == null) {
+                throw throwUnknownFieldException(fieldName);
+            }
+            if (fd.getType() != FieldType.PORTABLE) {
+                throw new HazelcastSerializationException("Not a Portable field: " + fieldName);
+            }
+
+            int pos = readPosition(fd);
+            in.position(pos);
+
+            boolean isNull = in.readBoolean();
+            int factoryId = in.readInt();
+            int classId = in.readInt();
+
+            checkFactoryAndClass(fd, factoryId, classId);
+
+            if (!isNull) {
+                return serializer.readAndInitialize(in, factoryId, classId, true, readGenericLazy);
+            }
+            return null;
+        } finally {
+            in.position(currentPos);
+        }
     }
 
     private boolean isNullOrEmpty(int pos) {
@@ -321,7 +332,44 @@ public class DefaultPortableReader implements PortableReader, InternalGenericRec
 
     @Override
     public Portable[] readPortableArray(String fieldName) throws IOException {
-        return readNestedArray(fieldName, Portable[]::new, true);
+        int currentPos = in.position();
+        try {
+            FieldDefinition fd = cd.getField(fieldName);
+            if (fd == null) {
+                throw throwUnknownFieldException(fieldName);
+            }
+            if (fd.getType() != FieldType.PORTABLE_ARRAY) {
+                throw new HazelcastSerializationException("Not a Portable array field: " + fieldName);
+            }
+
+            int position = readPosition(fd);
+            if (isNullOrEmpty(position)) {
+                return null;
+            }
+            in.position(position);
+            int len = in.readInt();
+            int factoryId = in.readInt();
+            int classId = in.readInt();
+
+            if (len == Bits.NULL_ARRAY_LENGTH) {
+                return null;
+            }
+
+            checkFactoryAndClass(fd, factoryId, classId);
+
+            Portable[] portables = new Portable[len];
+            if (len > 0) {
+                int offset = in.position();
+                for (int i = 0; i < len; i++) {
+                    int start = in.readInt(offset + i * Bits.INT_SIZE_IN_BYTES);
+                    in.position(start);
+                    portables[i] = serializer.readAndInitialize(in, factoryId, classId, true, readGenericLazy);
+                }
+            }
+            return portables;
+        } finally {
+            in.position(currentPos);
+        }
     }
 
     private void checkFactoryAndClass(FieldDefinition fd, int factoryId, int classId) {
@@ -360,250 +408,6 @@ public class DefaultPortableReader implements PortableReader, InternalGenericRec
         short len = in.readShort(pos);
         // name + len + type
         return pos + Bits.SHORT_SIZE_IN_BYTES + len + 1;
-    }
-
-    //Generic Record Methods
-
-    @Override
-    public GenericRecordBuilder createGenericRecordBuilder() {
-        return GenericRecordBuilder.portable(cd);
-    }
-
-    @Override
-    public GenericRecord[] readGenericRecordArray(String fieldName) throws IOException {
-        return readNestedArray(fieldName, GenericRecord[]::new, false);
-    }
-
-    private <T> T[] readNestedArray(String fieldName, Function<Integer, T[]> constructor, boolean asPortable) throws IOException {
-        int currentPos = in.position();
-        try {
-            FieldDefinition fd = cd.getField(fieldName);
-            if (fd == null) {
-                throw throwUnknownFieldException(fieldName);
-            }
-            if (fd.getType() != FieldType.PORTABLE_ARRAY) {
-                throw new HazelcastSerializationException("Not a Portable array field: " + fieldName);
-            }
-
-            int position = readPosition(fd);
-            if (isNullOrEmpty(position)) {
-                return null;
-            }
-            in.position(position);
-            int len = in.readInt();
-            int factoryId = in.readInt();
-            int classId = in.readInt();
-
-            if (len == Bits.NULL_ARRAY_LENGTH) {
-                return null;
-            }
-
-            checkFactoryAndClass(fd, factoryId, classId);
-
-            T[] portables = constructor.apply(len);
-            if (len > 0) {
-                int offset = in.position();
-                for (int i = 0; i < len; i++) {
-                    int start = in.readInt(offset + i * Bits.INT_SIZE_IN_BYTES);
-                    in.position(start);
-                    portables[i] = serializer.readAndInitialize(in, factoryId, classId, asPortable, readGenericLazy);
-                }
-            }
-            return portables;
-        } finally {
-            in.position(currentPos);
-        }
-    }
-
-    @Override
-    public GenericRecord readGenericRecord(String fieldName) throws IOException {
-        return readNested(fieldName, false);
-    }
-
-    private <T> T readNested(String fieldName, boolean asPortable) throws IOException {
-        int currentPos = in.position();
-        try {
-            FieldDefinition fd = cd.getField(fieldName);
-            if (fd == null) {
-                throw throwUnknownFieldException(fieldName);
-            }
-            if (fd.getType() != FieldType.PORTABLE) {
-                throw new HazelcastSerializationException("Not a Portable field: " + fieldName);
-            }
-
-            int pos = readPosition(fd);
-            in.position(pos);
-
-            boolean isNull = in.readBoolean();
-            int factoryId = in.readInt();
-            int classId = in.readInt();
-
-            checkFactoryAndClass(fd, factoryId, classId);
-
-            if (!isNull) {
-                return serializer.readAndInitialize(in, factoryId, classId, asPortable, readGenericLazy);
-            }
-            return null;
-        } finally {
-            in.position(currentPos);
-        }
-    }
-
-    private boolean doesNotHaveIndex(int beginPosition, int index) throws IOException {
-        int numberOfItems = in.readInt(beginPosition);
-        return numberOfItems <= index;
-    }
-
-    @Override
-    public Byte readByteFromArray(String fieldName, int index) throws IOException {
-        int position = readPosition(fieldName, FieldType.BYTE_ARRAY);
-        if (isNullOrEmpty(position) || doesNotHaveIndex(position, index)) {
-            return null;
-        }
-        return in.readByte(INT_SIZE_IN_BYTES + position + (index * BYTE_SIZE_IN_BYTES));
-    }
-
-    @SuppressFBWarnings({"NP_BOOLEAN_RETURN_NULL"})
-    @Override
-    public Boolean readBooleanFromArray(String fieldName, int index) throws IOException {
-        int position = readPosition(fieldName, FieldType.BOOLEAN_ARRAY);
-        if (isNullOrEmpty(position) || doesNotHaveIndex(position, index)) {
-            return null;
-        }
-        return in.readBoolean(INT_SIZE_IN_BYTES + position + (index * BOOLEAN_SIZE_IN_BYTES));
-    }
-
-    @Override
-    public Character readCharFromArray(String fieldName, int index) throws IOException {
-        int position = readPosition(fieldName, FieldType.CHAR_ARRAY);
-        if (isNullOrEmpty(position) || doesNotHaveIndex(position, index)) {
-            return null;
-        }
-        return in.readChar(INT_SIZE_IN_BYTES + position + (index * CHAR_SIZE_IN_BYTES));
-    }
-
-    @Override
-    public Integer readIntFromArray(String fieldName, int index) throws IOException {
-        int position = readPosition(fieldName, FieldType.INT_ARRAY);
-        if (isNullOrEmpty(position) || doesNotHaveIndex(position, index)) {
-            return null;
-        }
-        return in.readInt(INT_SIZE_IN_BYTES + position + (index * INT_SIZE_IN_BYTES));
-    }
-
-    @Override
-    public Long readLongFromArray(String fieldName, int index) throws IOException {
-        int position = readPosition(fieldName, FieldType.LONG_ARRAY);
-        if (isNullOrEmpty(position) || doesNotHaveIndex(position, index)) {
-            return null;
-        }
-        return in.readLong(INT_SIZE_IN_BYTES + position + (index * LONG_SIZE_IN_BYTES));
-    }
-
-    @Override
-    public Double readDoubleFromArray(String fieldName, int index) throws IOException {
-        int position = readPosition(fieldName, FieldType.DOUBLE_ARRAY);
-        if (isNullOrEmpty(position) || doesNotHaveIndex(position, index)) {
-            return null;
-        }
-        return in.readDouble(INT_SIZE_IN_BYTES + position + (index * DOUBLE_SIZE_IN_BYTES));
-    }
-
-    @Override
-    public Float readFloatFromArray(String fieldName, int index) throws IOException {
-        int position = readPosition(fieldName, FieldType.FLOAT_ARRAY);
-        if (isNullOrEmpty(position) || doesNotHaveIndex(position, index)) {
-            return null;
-        }
-        return in.readFloat(INT_SIZE_IN_BYTES + position + (index * FLOAT_SIZE_IN_BYTES));
-    }
-
-    @Override
-    public Short readShortFromArray(String fieldName, int index) throws IOException {
-        int position = readPosition(fieldName, FieldType.SHORT_ARRAY);
-        if (isNullOrEmpty(position) || doesNotHaveIndex(position, index)) {
-            return null;
-        }
-        return in.readShort(INT_SIZE_IN_BYTES + position + (index * SHORT_SIZE_IN_BYTES));
-    }
-
-    @Override
-    public String readUTFFromArray(String fieldName, int index) throws IOException {
-        int currentPos = in.position();
-        try {
-            int pos = readPosition(fieldName, FieldType.UTF_ARRAY);
-            in.position(pos);
-            int length = in.readInt();
-            if (length <= index) {
-                return null;
-            }
-            if (isNullOrEmpty(pos)) {
-                return null;
-            }
-            for (int i = 0; i < index; i++) {
-                int itemLength = in.readInt();
-                if (itemLength > 0) {
-                    in.position(in.position() + itemLength);
-                }
-            }
-            return in.readUTF();
-        } finally {
-            in.position(currentPos);
-        }
-    }
-
-    @Override
-    public GenericRecord readGenericRecordFromArray(String fieldName, int index) throws IOException {
-        return readNestedFromArray(fieldName, index, false);
-    }
-
-    @Override
-    public Object readObjectFromArray(String fieldName, int index) throws IOException {
-        return readNestedFromArray(fieldName, index, true);
-    }
-
-    private <T> T readNestedFromArray(String fieldName, int index, boolean asPortable) throws IOException {
-        int currentPos = in.position();
-        try {
-            FieldDefinition fd = cd.getField(fieldName);
-            if (fd == null) {
-                throw throwUnknownFieldException(fieldName);
-            }
-            if (fd.getType() != FieldType.PORTABLE_ARRAY) {
-                throw new HazelcastSerializationException("Not a Portable array field: " + fieldName);
-            }
-
-            int position = readPosition(fd);
-            if (isNullOrEmpty(position)) {
-                return null;
-            }
-            in.position(position);
-            int len = in.readInt();
-            if (len == Bits.NULL_ARRAY_LENGTH || len == 0 || len <= index) {
-                return null;
-            }
-            int factoryId = in.readInt();
-            int classId = in.readInt();
-
-            checkFactoryAndClass(fd, factoryId, classId);
-
-            int offset = in.position();
-            int start = in.readInt(offset + index * Bits.INT_SIZE_IN_BYTES);
-            in.position(start);
-            return serializer.readAndInitialize(in, factoryId, classId, asPortable, readGenericLazy);
-        } finally {
-            in.position(currentPos);
-        }
-    }
-
-    @Override
-    public Object[] readObjectArray(String fieldName) throws IOException {
-        return readPortableArray(fieldName);
-    }
-
-    @Override
-    public Object readObject(String fieldName) throws IOException {
-        return readPortable(fieldName);
     }
 
 }

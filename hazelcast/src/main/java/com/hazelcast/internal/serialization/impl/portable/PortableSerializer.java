@@ -145,7 +145,7 @@ public final class PortableSerializer implements StreamSerializer<Object> {
 
         BufferObjectDataInput input = (BufferObjectDataInput) in;
         ClassDefinition cd = setupPositionAndDefinition(input, factoryId, classId, version);
-        InternalGenericRecord genericRecord = new DefaultPortableReader(this, input, cd, true);
+        InternalGenericRecord genericRecord = new PortableValueReader(this, input, cd, true);
         return new GenericRecordQueryReader(genericRecord);
     }
 
@@ -318,7 +318,7 @@ public final class PortableSerializer implements StreamSerializer<Object> {
     private <T> T readPortableGenericRecord(BufferObjectDataInput in, int factoryId, int classId) throws IOException {
         int version = in.readInt();
         ClassDefinition cd = setupPositionAndDefinition(in, factoryId, classId, version);
-        DefaultPortableReader reader = new DefaultPortableReader(this, in, cd, false);
+        GenericRecord reader = new PortableValueReader(this, in, cd, false);
         GenericRecordBuilder genericRecordBuilder = GenericRecordBuilder.portable(cd);
         Set<String> fieldNames = cd.getFieldNames();
         for (String fieldName : fieldNames) {

@@ -48,6 +48,11 @@ public class PortableGenericRecord implements GenericRecord {
     }
 
     @Override
+    public GenericRecordBuilder cloneWithGenericRecordBuilder() {
+        return  new PortableGenericRecordBuilder(classDefinition, Arrays.copyOf(objects, objects.length));
+    }
+
+    @Override
     public GenericRecord[] readGenericRecordArray(String fieldName) {
         return read(fieldName, FieldType.PORTABLE_ARRAY);
     }

@@ -16,8 +16,6 @@
 
 package com.hazelcast.nio.serialization;
 
-import java.io.IOException;
-
 /**
  * A generic object interface that is returned when the domain class can not be created.
  * Currently this is valid for {@link Portable} objects.
@@ -25,52 +23,60 @@ import java.io.IOException;
 public interface GenericRecord {
 
     /**
-     * @return Creates a generic record builder with same class definition as this one
+     * @return an empty generic record builder with same class definition as this one
      */
     GenericRecordBuilder createGenericRecordBuilder();
 
+    /**
+     * Returned GenericRecordBuilder can be used to have exact copy and also just to update a couple of fields. By default,
+     * it will copy all the fields.
+     *
+     * @return a generic record builder with same class definition as this one and populated with same values.
+     */
+    GenericRecordBuilder cloneWithGenericRecordBuilder();
+
     FieldType getFieldType(String fieldName);
 
-    GenericRecord[] readGenericRecordArray(String fieldName) throws IOException;
+    GenericRecord[] readGenericRecordArray(String fieldName);
 
-    GenericRecord readGenericRecord(String fieldName) throws IOException;
+    GenericRecord readGenericRecord(String fieldName);
 
     boolean hasField(String fieldName);
 
-    int readInt(String fieldName) throws IOException;
+    int readInt(String fieldName);
 
-    long readLong(String fieldName) throws IOException;
+    long readLong(String fieldName);
 
-    String readUTF(String fieldName) throws IOException;
+    String readUTF(String fieldName);
 
-    boolean readBoolean(String fieldName) throws IOException;
+    boolean readBoolean(String fieldName);
 
-    byte readByte(String fieldName) throws IOException;
+    byte readByte(String fieldName);
 
-    char readChar(String fieldName) throws IOException;
+    char readChar(String fieldName);
 
-    double readDouble(String fieldName) throws IOException;
+    double readDouble(String fieldName);
 
-    float readFloat(String fieldName) throws IOException;
+    float readFloat(String fieldName);
 
-    short readShort(String fieldName) throws IOException;
+    short readShort(String fieldName);
 
-    byte[] readByteArray(String fieldName) throws IOException;
+    byte[] readByteArray(String fieldName);
 
-    boolean[] readBooleanArray(String fieldName) throws IOException;
+    boolean[] readBooleanArray(String fieldName);
 
-    char[] readCharArray(String fieldName) throws IOException;
+    char[] readCharArray(String fieldName);
 
-    int[] readIntArray(String fieldName) throws IOException;
+    int[] readIntArray(String fieldName);
 
-    long[] readLongArray(String fieldName) throws IOException;
+    long[] readLongArray(String fieldName);
 
-    double[] readDoubleArray(String fieldName) throws IOException;
+    double[] readDoubleArray(String fieldName);
 
-    float[] readFloatArray(String fieldName) throws IOException;
+    float[] readFloatArray(String fieldName);
 
-    short[] readShortArray(String fieldName) throws IOException;
+    short[] readShortArray(String fieldName);
 
-    String[] readUTFArray(String fieldName) throws IOException;
+    String[] readUTFArray(String fieldName);
 
 }
