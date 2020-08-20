@@ -16,12 +16,15 @@
 
 package com.hazelcast.sql.impl.calcite.validate.operators;
 
-import com.hazelcast.sql.impl.calcite.validate.types.HazelcastInferTypes;
+import com.hazelcast.sql.impl.calcite.validate.types.ReplaceUnknownOperandTypeInference;
 import org.apache.calcite.sql.SqlFunction;
 import org.apache.calcite.sql.SqlFunctionCategory;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.type.OperandTypes;
 import org.apache.calcite.sql.type.SqlReturnTypeInference;
+
+import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastOperandTypes.notAny;
+import static org.apache.calcite.sql.type.SqlTypeName.VARCHAR;
 
 public class HazelcastSqlStringFunction extends SqlFunction {
     public HazelcastSqlStringFunction(String name, SqlReturnTypeInference returnTypeInference) {
@@ -29,9 +32,9 @@ public class HazelcastSqlStringFunction extends SqlFunction {
             name,
             SqlKind.OTHER_FUNCTION,
             returnTypeInference,
-            HazelcastInferTypes.VARCHAR_IF_UNKNOWN,
-            OperandTypes.CHARACTER,
-            SqlFunctionCategory.NUMERIC
+            new ReplaceUnknownOperandTypeInference(VARCHAR),
+            notAny(OperandTypes.CHARACTER),
+            SqlFunctionCategory.STRING
         );
     }
 }

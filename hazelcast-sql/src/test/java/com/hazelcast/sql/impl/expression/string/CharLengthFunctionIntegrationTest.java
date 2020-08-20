@@ -73,8 +73,8 @@ public class CharLengthFunctionIntegrationTest extends SqlExpressionIntegrationT
         checkColumn(new ExpressionValue.FloatVal().field1(100.5f), Float.toString(100.5f).length());
         checkColumn(new ExpressionValue.DoubleVal().field1(100.5d), Double.toString(100.5d).length());
 
-        ObjectVal object = new ObjectVal();
-        checkColumn(new ObjectVal().field1(object), object.toString().length());
+        put(new ObjectVal());
+        checkFailure("field1", SqlErrorCode.PARSING, "Cannot apply '" + name + "' to arguments of type '" + name + "(<OBJECT>)'");
     }
 
     private void checkColumn(ExpressionValue value, Integer expectedResult) {

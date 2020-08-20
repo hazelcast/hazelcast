@@ -56,8 +56,8 @@ public class LowerFunctionIntegrationTest extends SqlExpressionIntegrationTestSu
         checkColumn(new ExpressionValue.FloatVal().field1(100.5f), Float.toString(100.5f).toLowerCase());
         checkColumn(new ExpressionValue.DoubleVal().field1(100.5d), Double.toString(100.5d).toLowerCase());
 
-        ObjectVal object = new ObjectVal();
-        checkColumn(new ObjectVal().field1(object), object.toString().toLowerCase());
+        put(new ObjectVal());
+        checkFailure("field1", SqlErrorCode.PARSING, "Cannot apply 'LOWER' to arguments of type 'LOWER(<OBJECT>)'");
     }
 
     private void checkColumn(ExpressionValue value, String expectedResult) {

@@ -56,8 +56,8 @@ public class AsciiFunctionIntegrationTest extends SqlExpressionIntegrationTestSu
         checkColumn(new ExpressionValue.FloatVal().field1(100.5f), codePoint('1'));
         checkColumn(new ExpressionValue.DoubleVal().field1(100.5d), codePoint('1'));
 
-        ObjectVal object = new ObjectVal();
-        checkColumn(new ObjectVal().field1(object), codePoint(object.toString().charAt(0)));
+        put(new ObjectVal());
+        checkFailure("field1", SqlErrorCode.PARSING, "Cannot apply 'ASCII' to arguments of type 'ASCII(<OBJECT>)'");
     }
 
     private void checkColumn(ExpressionValue value, Integer expectedResult) {

@@ -120,12 +120,6 @@ public class ConcatFunctionIntegrationTest extends SqlExpressionIntegrationTestS
         check("field1 || field2", expectedResult);
     }
 
-    private void checkColumnFailure(ExpressionBiValue value, String expectedErrorMessage) {
-        put(value);
-
-        checkFailure("field1 || field2", SqlErrorCode.PARSING, expectedErrorMessage);
-    }
-
     /**
      * Make sure that the function produces proper result when there are more than two arguments.
      * We need this to track possible regression in case function's signature is changed in the future

@@ -25,21 +25,23 @@ import org.apache.calcite.sql.type.OperandTypes;
 import org.apache.calcite.sql.type.ReturnTypes;
 import org.apache.calcite.sql.type.SqlOperandCountRanges;
 import org.apache.calcite.sql.type.SqlSingleOperandTypeChecker;
-import org.apache.calcite.sql.type.SqlTypeName;
 import org.apache.calcite.sql.type.SqlTypeUtil;
+
+import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastOperandTypes.notAny;
+import static org.apache.calcite.sql.type.SqlTypeName.VARCHAR;
 
 public class HazelcastSqlLikeOperator extends SqlSpecialOperator {
 
-    private static final int PRECISION = 32;
+    private static final int PRECEDENCE = 32;
 
     public HazelcastSqlLikeOperator() {
         super(
             "LIKE",
             SqlKind.LIKE,
-            PRECISION,
+            PRECEDENCE,
             false,
             ReturnTypes.BOOLEAN_NULLABLE,
-            new ReplaceUnknownOperandTypeInference(SqlTypeName.VARCHAR),
+            new ReplaceUnknownOperandTypeInference(VARCHAR),
             null
         );
     }
@@ -57,6 +59,8 @@ public class HazelcastSqlLikeOperator extends SqlSpecialOperator {
 
         SqlSingleOperandTypeChecker operandTypeChecker = operandCount == 2
             ? OperandTypes.STRING_SAME_SAME : OperandTypes.STRING_SAME_SAME_SAME;
+
+        operandTypeChecker = notAny(operandTypeChecker);
 
         if (!operandTypeChecker.checkOperandTypes(callBinding, throwOnFailure)) {
             return false;
