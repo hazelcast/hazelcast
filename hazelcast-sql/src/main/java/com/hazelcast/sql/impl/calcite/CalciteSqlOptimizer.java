@@ -17,7 +17,6 @@
 package com.hazelcast.sql.impl.calcite;
 
 import com.hazelcast.cluster.memberselector.MemberSelectors;
-import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.JetSqlService;
 import com.hazelcast.sql.impl.calcite.opt.HazelcastConventions;
@@ -29,9 +28,6 @@ import org.apache.calcite.plan.Convention;
 import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.plan.volcano.VolcanoPlanner;
 
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
 import javax.annotation.Nullable;
 
 /**
