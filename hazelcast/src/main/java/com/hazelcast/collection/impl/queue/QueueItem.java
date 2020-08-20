@@ -59,6 +59,10 @@ public class QueueItem implements IdentifiedDataSerializable, Comparable<QueueIt
         this.serializedObject = serializedObject;
     }
 
+    public void setContainer(QueueContainer container) {
+        this.container = container;
+    }
+
     @SuppressWarnings("unchecked")
     public <T> T getDeserializedObject() {
         if (deserializedObject == null) {

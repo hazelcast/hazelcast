@@ -899,7 +899,7 @@ public class QueueContainer implements IdentifiedDataSerializable {
      */
     public Queue<QueueItem> getItemQueue() {
         if (itemQueue == null) {
-            itemQueue = createQueue();
+            itemQueue = config.isPriorityQueue() ? createPriorityQueue() : createLinkedList();
             if (!txMap.isEmpty()) {
                 long maxItemId = Long.MIN_VALUE;
                 for (TxQueueItem item : txMap.values()) {
@@ -907,15 +907,6 @@ public class QueueContainer implements IdentifiedDataSerializable {
                 }
                 setId(maxItemId + ID_PROMOTION_OFFSET);
             }
-        }
-        return itemQueue;
-    }
-
-    public Queue<QueueItem> createQueue() {
-        if (config.isPriorityQueue()) {
-            itemQueue = createPriorityQueue();
-        } else {
-            itemQueue = createLinkedList();
         }
         return itemQueue;
     }
@@ -937,7 +928,7 @@ public class QueueContainer implements IdentifiedDataSerializable {
     }
 
     private Queue<QueueItem> createPriorityQueue() {
-        itemQueue = createPriorityQueue(config);
+        Queue<QueueItem> priorityQueue = createPriorityQueue(config);
         if (backupMap != null && !backupMap.isEmpty()) {
             itemQueue.addAll(backupMap.values());
             QueueItem[] values = itemQueue.toArray(new QueueItem[0]);
@@ -949,7 +940,7 @@ public class QueueContainer implements IdentifiedDataSerializable {
             backupMap.clear();
             backupMap = null;
         }
-        return itemQueue;
+        return priorityQueue;
     }
 
     /**
@@ -1012,18 +1003,16 @@ public class QueueContainer implements IdentifiedDataSerializable {
         SerializationService serializationService = nodeEngine.getSerializationService();
         ClassLoader classLoader = nodeEngine.getConfigClassLoader();
 
-        // recreate the priority underlying priority queue with supplied priorityQueue configuration
-        if (itemQueue != null) {
-            itemQueue = copyQueueItems(itemQueue);
+        // in case we need to create a priority queue
+        // we recreate the queue using the items that are currently a LinkedList
+        // otherwise, no change is needed
+        if (itemQueue != null && config.isPriorityQueue()) {
+            Queue<QueueItem> copy = createPriorityQueue();
+            copy.addAll(itemQueue);
+            itemQueue = copy;
         }
 
         this.store = QueueStoreWrapper.create(name, storeConfig, serializationService, classLoader);
-    }
-
-    private Queue<QueueItem> copyQueueItems(Queue<QueueItem> itemQueue) {
-        Queue<QueueItem> copy = createQueue();
-        copy.addAll(itemQueue);
-        return copy;
     }
 
     /**
@@ -1143,6 +1132,7 @@ public class QueueContainer implements IdentifiedDataSerializable {
         itemQueue = new LinkedList<>();
         for (int j = 0; j < size; j++) {
             QueueItem item = in.readObject();
+            item.setContainer(this);
             getItemQueue().offer(item);
             setId(item.getItemId());
         }

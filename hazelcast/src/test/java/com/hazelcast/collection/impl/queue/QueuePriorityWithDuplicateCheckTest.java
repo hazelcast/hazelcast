@@ -16,14 +16,21 @@
 
 package com.hazelcast.collection.impl.queue;
 
-import com.hazelcast.collection.impl.queue.duplicate.PriorityElementTaskQueue;
-import com.hazelcast.collection.impl.queue.duplicate.PriorityElementTaskQueueImpl;
+import com.hazelcast.collection.IQueue;
 import com.hazelcast.collection.impl.queue.model.PriorityElement;
+import com.hazelcast.config.Config;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.map.IMap;
+import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.ExecutorService;
@@ -36,19 +43,28 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
+@RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class QueuePriorityWithDuplicateCheckTest {
+public class QueuePriorityWithDuplicateCheckTest  extends HazelcastTestSupport  {
 
-    private static PriorityElementTaskQueue queue;
+    private static final Logger LOG = LoggerFactory.getLogger(QueuePriorityWithDuplicateCheckTest.class);
+    private PriorityElementTaskQueueImpl queue;
 
     @Before
     public void before() {
-        queue = new PriorityElementTaskQueueImpl();
+        Config config = smallInstanceConfig();
+        String queueName = randomName();
+        String mapName = randomName();
+
+        config.getQueueConfig(queueName)
+              .setPriorityComparatorClassName("com.hazelcast.collection.impl.queue.model.PriorityElementComparator");
+        HazelcastInstance hz = createHazelcastInstance(config);
+        queue = new PriorityElementTaskQueueImpl(hz.getQueue(queueName), hz.getMap(mapName));
     }
 
     @Test
     public void queue() {
-        final PriorityElement element = new PriorityElement(false, 1);
+        PriorityElement element = new PriorityElement(false, 1);
         queue.enqueue(element);
         assertEquals(element, queue.dequeue());
         assertNull(queue.dequeue());
@@ -56,7 +72,7 @@ public class QueuePriorityWithDuplicateCheckTest {
 
     @Test
     public void queueDouble() {
-        final PriorityElement element = new PriorityElement(false, 1);
+        PriorityElement element = new PriorityElement(false, 1);
         queue.enqueue(element);
         queue.enqueue(element);
         queue.enqueue(element);
@@ -65,11 +81,8 @@ public class QueuePriorityWithDuplicateCheckTest {
     }
 
     @Test
-    public void queuePriorizing() {
-        testWithSize(800);
-    }
-
-    private void testWithSize(final int size) {
+    public void queuePrioritizing() {
+        int size = 100;
         int count = 0;
         for (int i = 0; i < size; i++) {
             queue.enqueue(new PriorityElement(false, count));
@@ -77,44 +90,14 @@ public class QueuePriorityWithDuplicateCheckTest {
             count++;
         }
         for (int i = 0; i < size; i++) {
-            final PriorityElement dequeue = queue.dequeue();
-            assertTrue("Highpriority first", dequeue.isHighPriority());
+            PriorityElement dequeue = queue.dequeue();
+            assertTrue("High priority first", dequeue.isHighPriority());
         }
         for (int i = 0; i < size; i++) {
-            final PriorityElement dequeue = queue.dequeue();
-            assertFalse("Lowpriority afterwards", dequeue.isHighPriority());
+            PriorityElement dequeue = queue.dequeue();
+            assertFalse("Low priority afterwards", dequeue.isHighPriority());
         }
         assertNull(queue.dequeue());
-    }
-
-    @Test
-    public void size02000() {
-        testWithSize(2000);
-    }
-
-    @Test
-    public void size04000() {
-        testWithSize(4000);
-    }
-
-    @Test
-    public void size08000() {
-        testWithSize(8000);
-    }
-
-    @Test
-    public void size16000() {
-        testWithSize(16000);
-    }
-
-    @Test
-    public void size32000() {
-        testWithSize(32000);
-    }
-
-    @Test
-    public void size64000() {
-        testWithSize(64000);
     }
 
     @Test
@@ -125,20 +108,16 @@ public class QueuePriorityWithDuplicateCheckTest {
             queue.enqueue(new PriorityElement(true, count));
             count++;
         }
-        final ExecutorService threadPool = Executors.newCachedThreadPool();
-        final ConcurrentSkipListSet<PriorityElement> tasks = new ConcurrentSkipListSet<>();
-        final Semaphore sem = new Semaphore(-99);
+        ExecutorService threadPool = Executors.newCachedThreadPool();
+        ConcurrentSkipListSet<PriorityElement> tasks = new ConcurrentSkipListSet<>();
+        Semaphore sem = new Semaphore(-99);
         for (int i = 0; i < 100; i++) {
-            threadPool.execute(new Runnable() {
-
-                @Override
-                public void run() {
-                    PriorityElement task;
-                    while ((task = queue.dequeue()) != null) {
-                        tasks.add(task);
-                    }
-                    sem.release();
+            threadPool.execute(() -> {
+                PriorityElement task;
+                while ((task = queue.dequeue()) != null) {
+                    tasks.add(task);
                 }
+                sem.release();
             });
         }
         sem.acquire();
@@ -147,37 +126,29 @@ public class QueuePriorityWithDuplicateCheckTest {
 
     @Test
     public void queueParallel() throws InterruptedException {
-        final AtomicInteger enqueued = new AtomicInteger();
-        final AtomicInteger dequeued = new AtomicInteger();
-        final ExecutorService threadPool = Executors.newCachedThreadPool();
-        final Semaphore sem = new Semaphore(-200);
-        final int size = 1000;
+        AtomicInteger enqueued = new AtomicInteger();
+        AtomicInteger dequeued = new AtomicInteger();
+        ExecutorService threadPool = Executors.newCachedThreadPool();
+        Semaphore sem = new Semaphore(-200);
+        int size = 1000;
         for (int i = 0; i <= 100; i++) {
-            threadPool.execute(new Runnable() {
-
-                @Override
-                public void run() {
-                    while (enqueued.get() < size) {
-                        final int j = enqueued.incrementAndGet();
-                        final boolean prioriy = j % 2 == 0;
-                        final PriorityElement task = new PriorityElement(prioriy, j);
-                        queue.enqueue(task);
-                    }
-                    sem.release();
+            threadPool.execute(() -> {
+                while (enqueued.get() < size) {
+                    int j = enqueued.incrementAndGet();
+                    boolean priority = j % 2 == 0;
+                    PriorityElement task = new PriorityElement(priority, j);
+                    queue.enqueue(task);
                 }
+                sem.release();
             });
-            threadPool.execute(new Runnable() {
-
-                @Override
-                public void run() {
-                    while (enqueued.get() > dequeued.get() || enqueued.get() < size) {
-                        final PriorityElement dequeue = queue.dequeue();
-                        if (dequeue != null) {
-                            dequeued.incrementAndGet();
-                        }
+            threadPool.execute(() -> {
+                while (enqueued.get() > dequeued.get() || enqueued.get() < size) {
+                    PriorityElement dequeue = queue.dequeue();
+                    if (dequeue != null) {
+                        dequeued.incrementAndGet();
                     }
-                    sem.release();
                 }
+                sem.release();
             });
         }
         sem.acquire();
@@ -188,12 +159,65 @@ public class QueuePriorityWithDuplicateCheckTest {
     @Test
     public void offer_poll_and_offer_poll_again() {
         PriorityElement task = new PriorityElement(false, 1);
+        assertNull(queue.dequeue());
+        assertTrue(queue.enqueue(task));
+        assertEquals(task, queue.dequeue());
+        assertNull(queue.dequeue());
+        assertTrue(queue.enqueue(task));
+        assertEquals(task, queue.dequeue());
+    }
 
-        assertEquals(null, queue.dequeue());
-        assertTrue(queue.enqueue(task));
-        assertEquals(task, queue.dequeue());
-        assertEquals(null, queue.dequeue());
-        assertTrue(queue.enqueue(task));
-        assertEquals(task, queue.dequeue());
+
+    static class PriorityElementTaskQueueImpl {
+        private final IQueue<PriorityElement> queue;
+        private final IMap<PriorityElement, PriorityElement> map;
+
+        public PriorityElementTaskQueueImpl(IQueue<PriorityElement> queue,
+                                            IMap<PriorityElement, PriorityElement> map) {
+            this.queue = queue;
+            this.map = map;
+        }
+
+        public boolean enqueue(PriorityElement task) {
+            try {
+                PriorityElement previousValue = map.get(task);
+
+                if (previousValue != null) {
+                    return false;
+                }
+
+                boolean added = queue.offer(task);
+                if (added) {
+                    map.put(task, task);
+                }
+                return added;
+            } catch (Exception e) {
+                LOG.warn("Unable to write to priorityQueue: " + e);
+                return false;
+            }
+
+        }
+
+        public PriorityElement dequeue() {
+            try {
+                PriorityElement element = queue.poll();
+                if (element != null) {
+                    map.remove(element);
+                }
+                return element;
+            } catch (Exception e) {
+                LOG.warn("Unable to read from priorityQueue: " + e);
+                return null;
+            }
+        }
+
+        public void clear() {
+            try {
+                queue.clear();
+                map.clear();
+            } catch (Exception e) {
+                LOG.warn("Unable to clear priorityQueue", e);
+            }
+        }
     }
 }
