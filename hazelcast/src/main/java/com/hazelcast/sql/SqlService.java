@@ -33,16 +33,16 @@ import java.util.List;
  * <ul>
  *     <li>IMap
  * </ul>
- * When a query is submitted to a member, it is parsed and optimized by the {@code hazelcast-sql} module, that is based on
- * <a href="https://calcite.apache.org">Apache Calcite</a>. The {@code hazelcast-sql} must be in the classpath, otherwise
+ * When an SQL statement is submitted to a member, it is parsed and optimized by the {@code hazelcast-sql} module, that is based
+ * on <a href="https://calcite.apache.org">Apache Calcite</a>. The {@code hazelcast-sql} must be in the classpath, otherwise
  * an exception will be thrown.
  * <p>
- * During optimization a query is converted into a directed acyclic graph (DAG) that is sent to cluster members for execution.
- * Query results are sent back to the originating member asynchronously and returned to the user via {@link SqlResult}.
+ * During optimization a statement is converted into a directed acyclic graph (DAG) that is sent to cluster members for execution.
+ * Results are sent back to the originating member asynchronously and returned to the user via {@link SqlResult}.
  *
  * <h1>Querying an IMap</h1>
  * Every IMap instance is exposed as a table with the same name in the {@code partitioned} schema. The {@code partitioned}
- * schema is included into a default search path, therefore an IMap could be referenced in an SQL query with or without the
+ * schema is included into a default search path, therefore an IMap could be referenced in an SQL statement with or without the
  * schema name.
  * <h2>Column resolution</h2>
  * Every table backed by an IMap has a set of columns that are resolved automatically. Column resolution uses IMap entries
@@ -125,27 +125,27 @@ public interface SqlService {
      */
     @Nonnull
     default SqlResult execute(@Nonnull String sql, Object... params) {
-        SqlStatement query = new SqlStatement(sql);
+        SqlStatement statement = new SqlStatement(sql);
 
         if (params != null) {
             for (Object param : params) {
-                query.addParameter(param);
+                statement.addParameter(param);
             }
         }
 
-        return execute(query);
+        return execute(statement);
     }
 
     /**
-     * Executes a distributed query.
+     * Executes an SQL statement.
      *
-     * @param query query to be executed
+     * @param statement statement to be executed
      * @return result
-     * @throws NullPointerException if the query is null
+     * @throws NullPointerException if the statement is null
      * @throws HazelcastSqlException in case of execution error
      *
      * @see SqlService
      */
     @Nonnull
-    SqlResult execute(@Nonnull SqlStatement query);
+    SqlResult execute(@Nonnull SqlStatement statement);
 }

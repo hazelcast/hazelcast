@@ -3424,4 +3424,4 @@ hazelcast:
   sql:
     executor-pool-size: 8
     operation-pool-size: 8
-    query-timeout-millis: 0
+    timeout-millis: 0

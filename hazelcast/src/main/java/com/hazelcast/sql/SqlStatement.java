@@ -25,10 +25,10 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * Definition of a SQL query.
+ * Definition of an SQL statement.
  * <p>
  * This object is mutable. Properties are read once before the execution is started.
- * Changes to properties do not affect the behavior of already running queries.
+ * Changes to properties do not affect the behavior of already running statements.
  */
 public final class SqlStatement {
     /** Value for the timeout that is not set. */
@@ -63,9 +63,9 @@ public final class SqlStatement {
     }
 
     /**
-     * Gets the SQL query to be executed.
+     * Gets the SQL string to be executed.
      *
-     * @return SQL query
+     * @return SQL string
      */
     @Nonnull
     public String getSql() {
@@ -73,14 +73,14 @@ public final class SqlStatement {
     }
 
     /**
-     * Sets the SQL query to be executed.
+     * Sets the SQL string to be executed.
      * <p>
-     * The SQL query cannot be null or empty.
+     * The SQL string cannot be null or empty.
      *
-     * @param sql SQL query
+     * @param sql SQL string
      * @return this instance for chaining
-     * @throws NullPointerException if passed SQL query is null
-     * @throws IllegalArgumentException if passed SQL query is empty
+     * @throws NullPointerException if passed SQL string is null
+     * @throws IllegalArgumentException if passed SQL string is empty
      */
     @Nonnull
     public SqlStatement setSql(@Nonnull String sql) {
@@ -96,9 +96,9 @@ public final class SqlStatement {
     }
 
     /**
-     * Gets the query parameters.
+     * Gets the statement parameters.
      *
-     * @return query parameters
+     * @return statement parameters
      */
     @Nonnull
     public List<Object> getParameters() {
@@ -106,15 +106,15 @@ public final class SqlStatement {
     }
 
     /**
-     * Sets the query parameters.
+     * Sets the statement parameters.
      * <p>
-     * You may define parameter placeholders in the query with the {@code "?"} character. For every placeholder, a parameter
+     * You may define parameter placeholders in the statement with the {@code "?"} character. For every placeholder, a parameter
      * value must be provided.
      * <p>
      * When the method is called, the content of the parameters list is copied. Subsequent changes to the original list don't
-     * change the query parameters.
+     * change the statement parameters.
      *
-     * @param parameters query parameters
+     * @param parameters statement parameters
      * @return this instance for chaining
      *
      * @see #addParameter(Object)
@@ -148,7 +148,7 @@ public final class SqlStatement {
     }
 
     /**
-     * Clears query parameters.
+     * Clears statement parameters.
      *
      * @return this instance for chaining
      *
@@ -163,28 +163,28 @@ public final class SqlStatement {
     }
 
     /**
-     * Gets the query timeout in milliseconds.
+     * Gets the execution timeout in milliseconds.
      *
-     * @return query timeout in milliseconds
+     * @return execution timeout in milliseconds
      */
     public long getTimeoutMillis() {
         return timeout;
     }
 
     /**
-     * Sets the query timeout in milliseconds.
+     * Sets the execution timeout in milliseconds.
      * <p>
-     * If the timeout is reached for a running query, it will be cancelled forcefully.
+     * If the timeout is reached for a running statement, it will be cancelled forcefully.
      * <p>
      * Zero value means no timeout. {@value #TIMEOUT_NOT_SET} means that the value from
-     * {@link SqlConfig#getQueryTimeoutMillis()} will be used. Other negative values are prohibited.
+     * {@link SqlConfig#getTimeoutMillis()} will be used. Other negative values are prohibited.
      * <p>
      * Defaults to {@value #TIMEOUT_NOT_SET}.
      *
-     * @param timeout query timeout in milliseconds, {@code 0} for no timeout, {@code -1} to user member's default timeout
+     * @param timeout execution timeout in milliseconds, {@code 0} for no timeout, {@code -1} to user member's default timeout
      * @return this instance for chaining
      *
-     * @see SqlConfig#getQueryTimeoutMillis()
+     * @see SqlConfig#getTimeoutMillis()
      */
     @Nonnull
     public SqlStatement setTimeoutMillis(long timeout) {
@@ -209,9 +209,9 @@ public final class SqlStatement {
     /**
      * Sets the cursor buffer size (measured in the number of rows).
      * <p>
-     * When a query is submitted for execution, a {@link SqlResult} is returned as a result. When rows are ready to be
+     * When a statement is submitted for execution, a {@link SqlResult} is returned as a result. When rows are ready to be
      * consumed, they are put into an internal buffer of the cursor. This parameter defines the maximum number of rows in
-     * that buffer. When the threshold is reached, the backpressure mechanism will slow down the query execution, possibly to a
+     * that buffer. When the threshold is reached, the backpressure mechanism will slow down the execution, possibly to a
      * complete halt, to prevent out-of-memory.
      * <p>
      * Only positive values are allowed.
@@ -258,12 +258,12 @@ public final class SqlStatement {
             return false;
         }
 
-        SqlStatement sqlQuery = (SqlStatement) o;
+        SqlStatement sqlStatement = (SqlStatement) o;
 
-        return Objects.equals(sql, sqlQuery.sql)
-            && Objects.equals(parameters, sqlQuery.parameters)
-            && timeout == sqlQuery.timeout
-            && cursorBufferSize == sqlQuery.cursorBufferSize;
+        return Objects.equals(sql, sqlStatement.sql)
+            && Objects.equals(parameters, sqlStatement.parameters)
+            && timeout == sqlStatement.timeout
+            && cursorBufferSize == sqlStatement.cursorBufferSize;
     }
 
     @Override
@@ -279,7 +279,7 @@ public final class SqlStatement {
 
     @Override
     public String toString() {
-        return "SqlQuery{"
+        return "SqlStatement{"
             + "sql=" + sql
             + ", parameters=" + parameters
             + ", timeout=" + timeout

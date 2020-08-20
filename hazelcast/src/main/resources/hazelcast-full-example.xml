@@ -3538,7 +3538,7 @@
     <sql>
         <executor-pool-size>8</executor-pool-size>
         <operation-pool-size>8</operation-pool-size>
-        <query-timeout-millis>0</query-timeout-millis>
+        <timeout-millis>0</timeout-millis>
     </sql>
 
 </hazelcast>

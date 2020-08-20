@@ -90,7 +90,7 @@ public class SqlServiceImpl implements SqlService, Consumer<Packet> {
 
         int executorPoolSize = config.getExecutorPoolSize();
         int operationPoolSize = config.getOperationPoolSize();
-        long queryTimeout = config.getQueryTimeoutMillis();
+        long queryTimeout = config.getTimeoutMillis();
 
         if (executorPoolSize == SqlConfig.DEFAULT_EXECUTOR_POOL_SIZE) {
             executorPoolSize = Runtime.getRuntime().availableProcessors();
@@ -183,21 +183,21 @@ public class SqlServiceImpl implements SqlService, Consumer<Packet> {
 
     @Nonnull
     @Override
-    public SqlResult execute(@Nonnull SqlStatement query) {
-        Preconditions.checkNotNull(query, "Query cannot be null");
+    public SqlResult execute(@Nonnull SqlStatement statement) {
+        Preconditions.checkNotNull(statement, "Query cannot be null");
 
         try {
             if (nodeEngine.getLocalMember().isLiteMember()) {
                 throw QueryException.error("SQL queries cannot be executed on lite members");
             }
 
-            long timeout = query.getTimeoutMillis();
+            long timeout = statement.getTimeoutMillis();
 
             if (timeout == SqlStatement.TIMEOUT_NOT_SET) {
                 timeout = queryTimeout;
             }
 
-            return query0(query.getSql(), query.getParameters(), timeout, query.getCursorBufferSize());
+            return query0(statement.getSql(), statement.getParameters(), timeout, statement.getCursorBufferSize());
         } catch (Exception e) {
             throw QueryUtils.toPublicException(e, nodeServiceProvider.getLocalMemberId());
         }

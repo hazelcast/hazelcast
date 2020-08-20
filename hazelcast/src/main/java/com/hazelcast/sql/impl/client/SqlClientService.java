@@ -67,7 +67,7 @@ public class SqlClientService implements SqlService {
 
     @Nonnull
     @Override
-    public SqlResult execute(@Nonnull SqlStatement query) {
+    public SqlResult execute(@Nonnull SqlStatement statement) {
         Connection connection = client.getConnectionManager().getRandomConnection(true);
 
         if (connection == null) {
@@ -78,7 +78,7 @@ public class SqlClientService implements SqlService {
         }
 
         try {
-            List<Object> params = query.getParameters();
+            List<Object> params = statement.getParameters();
 
             List<Data> params0 = new ArrayList<>(params.size());
 
@@ -87,10 +87,10 @@ public class SqlClientService implements SqlService {
             }
 
             ClientMessage requestMessage = SqlExecuteCodec.encodeRequest(
-                query.getSql(),
+                statement.getSql(),
                 params0,
-                query.getTimeoutMillis(),
-                query.getCursorBufferSize()
+                statement.getTimeoutMillis(),
+                statement.getCursorBufferSize()
             );
 
             ClientMessage responseMessage = invoke(requestMessage, connection);
@@ -107,7 +107,7 @@ public class SqlClientService implements SqlService {
                 response.rowMetadata != null ? new SqlRowMetadata(response.rowMetadata) : null,
                 response.rowPage,
                 response.rowPageLast,
-                query.getCursorBufferSize(),
+                statement.getCursorBufferSize(),
                 response.updatedCount
             );
         } catch (Exception e) {
