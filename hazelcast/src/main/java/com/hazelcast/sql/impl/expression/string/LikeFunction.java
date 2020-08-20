@@ -83,7 +83,17 @@ public class LikeFunction extends TriExpression<Boolean> implements IdentifiedDa
             return null;
         }
 
-        String escape = operand3 != null ? asVarchar(operand3, row, context) : null;
+        String escape;
+
+        if (operand3 != null) {
+            escape = asVarchar(operand3, row, context);
+
+            if (escape == null) {
+                return null;
+            }
+        } else {
+            escape = null;
+        }
 
         if (state == null) {
             state = new State();

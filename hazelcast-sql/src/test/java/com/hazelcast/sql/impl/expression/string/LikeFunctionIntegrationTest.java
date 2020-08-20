@@ -90,6 +90,7 @@ public class LikeFunctionIntegrationTest extends SqlExpressionIntegrationTestSup
         // Normal escape
         put("te_t");
         check("this LIKE 'te!_t' ESCAPE '!'", true);
+        check("this LIKE 'te!_t' ESCAPE null", null);
 
         put("te%t");
         check("this LIKE 'te!%t' ESCAPE '!'", true);
