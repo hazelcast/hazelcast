@@ -31,7 +31,7 @@ public final class StringExpressionUtils {
     }
 
     public static String concat(String first, String second) {
-        return first != null && second != null ? first + "" + second : null;
+        return first != null && second != null ? first + second : null;
     }
 
     public static Integer charLength(String value) {
