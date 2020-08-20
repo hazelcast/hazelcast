@@ -24,7 +24,7 @@ import org.apache.calcite.rex.RexNode;
  * <p>
  * Consider the query {@code SELECT * FROM person WHERE name=? AND age=?}. After analysis two candidates would be
  * created: one for the {@code name=?} expression, and another for the {@code age=?} expression. If there is an index
- * on any of thos columns, the engine will attempt to apply the candidate to the index to form an {@link IndexComponentFilter}.
+ * on any of those columns, the engine will attempt to apply the candidate to the index to form an {@link IndexComponentFilter}.
  */
 public class IndexComponentCandidate {
     /** Original Calcite expression that formed this candidate. */
