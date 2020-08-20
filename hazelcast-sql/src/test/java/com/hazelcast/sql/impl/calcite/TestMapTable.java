@@ -17,7 +17,7 @@
 package com.hazelcast.sql.impl.calcite;
 
 import com.hazelcast.sql.impl.extract.GenericQueryTargetDescriptor;
-import com.hazelcast.sql.impl.inject.PrimitiveUpsertTargetDescriptor;
+import com.hazelcast.sql.impl.inject.PortableUpsertTargetDescriptor;
 import com.hazelcast.sql.impl.plan.cache.PlanObjectKey;
 import com.hazelcast.sql.impl.schema.ConstantTableStatistics;
 import com.hazelcast.sql.impl.schema.TableField;
@@ -40,8 +40,8 @@ public class TestMapTable extends AbstractMapTable {
             statistics,
             GenericQueryTargetDescriptor.DEFAULT,
             GenericQueryTargetDescriptor.DEFAULT,
-            PrimitiveUpsertTargetDescriptor.INSTANCE,
-            PrimitiveUpsertTargetDescriptor.INSTANCE
+            new PortableUpsertTargetDescriptor(1, 2, 3),
+            new PortableUpsertTargetDescriptor(1, 2, 3)
         );
     }
 

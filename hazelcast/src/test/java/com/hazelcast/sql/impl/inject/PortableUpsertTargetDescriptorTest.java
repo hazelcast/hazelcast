@@ -22,6 +22,7 @@ import com.hazelcast.nio.serialization.ClassDefinitionBuilder;
 import org.junit.Test;
 
 import static com.hazelcast.test.HazelcastTestSupport.assertInstanceOf;
+import static org.junit.Assert.assertEquals;
 
 public class PortableUpsertTargetDescriptorTest {
 
@@ -35,14 +36,25 @@ public class PortableUpsertTargetDescriptorTest {
         serializationService.getPortableContext()
                             .registerClassDefinition(new ClassDefinitionBuilder(factoryId, classId, versionId).build());
 
-        UpsertTargetDescriptor descriptor = serializationService.toObject(
-                serializationService.toData(
-                        new PortableUpsertTargetDescriptor(factoryId, classId, versionId)
-                )
-        );
+        UpsertTargetDescriptor descriptor = new PortableUpsertTargetDescriptor(factoryId, classId, versionId);
 
         UpsertTarget upsertTarget = descriptor.create(serializationService);
 
         assertInstanceOf(PortableUpsertTarget.class, upsertTarget);
+    }
+
+    @Test
+    public void testSerialization() {
+        int factoryId = 1;
+        int classId = 2;
+        int versionId = 3;
+
+        InternalSerializationService serializationService = new DefaultSerializationServiceBuilder().build();
+        serializationService.getPortableContext()
+                            .registerClassDefinition(new ClassDefinitionBuilder(factoryId, classId, versionId).build());
+
+        UpsertTargetDescriptor descriptor = new PortableUpsertTargetDescriptor(factoryId, classId, versionId);
+
+        assertEquals(descriptor, serializationService.toObject(serializationService.toData(descriptor)));
     }
 }

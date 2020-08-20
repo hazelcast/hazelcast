@@ -25,8 +25,8 @@ import com.hazelcast.sql.impl.extract.GenericQueryTargetDescriptor;
 import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.extract.QueryTarget;
 import com.hazelcast.sql.impl.extract.QueryTargetDescriptor;
+import com.hazelcast.sql.impl.inject.JavaUpsertTargetDescriptor;
 import com.hazelcast.sql.impl.inject.PortableUpsertTargetDescriptor;
-import com.hazelcast.sql.impl.inject.PrimitiveUpsertTargetDescriptor;
 import com.hazelcast.sql.impl.inject.UpsertTargetDescriptor;
 import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.schema.map.MapTableField;
@@ -42,6 +42,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
+import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonList;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -63,12 +64,12 @@ public class MapPlanObjectKeyTest extends SqlTestSupport {
 
         QueryTargetDescriptor keyQueryDescriptor1 = GenericQueryTargetDescriptor.DEFAULT;
         QueryTargetDescriptor keyQueryDescriptor2 = new TestTargetDescriptor();
-        UpsertTargetDescriptor keyUpsertDescriptor1 = PrimitiveUpsertTargetDescriptor.INSTANCE;
+        UpsertTargetDescriptor keyUpsertDescriptor1 = new JavaUpsertTargetDescriptor(String.class.getName(), emptyMap());
         UpsertTargetDescriptor keyUpsertDescriptor2 = new PortableUpsertTargetDescriptor(1, 1, 1);
 
         QueryTargetDescriptor valueQueryDescriptor1 = GenericQueryTargetDescriptor.DEFAULT;
         QueryTargetDescriptor valueQueryDescriptor2 = new TestTargetDescriptor();
-        UpsertTargetDescriptor valueUpsertDescriptor1 = PrimitiveUpsertTargetDescriptor.INSTANCE;
+        UpsertTargetDescriptor valueUpsertDescriptor1 = new JavaUpsertTargetDescriptor(String.class.getName(), emptyMap());
         UpsertTargetDescriptor valueUpsertDescriptor2 = new PortableUpsertTargetDescriptor(1, 1, 1);
 
         PartitionedMapPlanObjectKey objectId = new PartitionedMapPlanObjectKey(schema1, name1, fields1, keyQueryDescriptor1, valueQueryDescriptor1, keyUpsertDescriptor1, valueUpsertDescriptor1, conflictingSchemas1);

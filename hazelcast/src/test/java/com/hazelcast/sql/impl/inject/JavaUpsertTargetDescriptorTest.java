@@ -16,28 +16,34 @@
 
 package com.hazelcast.sql.impl.inject;
 
+import com.google.common.collect.ImmutableMap;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import org.junit.Test;
 
 import static com.hazelcast.test.HazelcastTestSupport.assertInstanceOf;
-import static java.util.Collections.emptyMap;
+import static org.junit.Assert.assertEquals;
 
-public class PojoUpsertTargetDescriptorTest {
+public class JavaUpsertTargetDescriptorTest {
 
     private static final InternalSerializationService SERIALIZATION_SERVICE =
             new DefaultSerializationServiceBuilder().build();
 
     @Test
     public void testCreate() {
-        UpsertTargetDescriptor descriptor = SERIALIZATION_SERVICE.toObject(
-                SERIALIZATION_SERVICE.toData(
-                        new PojoUpsertTargetDescriptor(getClass().getName(), emptyMap())
-                )
-        );
+        UpsertTargetDescriptor descriptor =
+                new JavaUpsertTargetDescriptor(getClass().getName(), ImmutableMap.of("field", String.class.getName()));
 
         UpsertTarget upsertTarget = descriptor.create(SERIALIZATION_SERVICE);
 
-        assertInstanceOf(PojoUpsertTarget.class, upsertTarget);
+        assertInstanceOf(JavaUpsertTarget.class, upsertTarget);
+    }
+
+    @Test
+    public void testSerialization() {
+        UpsertTargetDescriptor descriptor =
+                new JavaUpsertTargetDescriptor(getClass().getName(), ImmutableMap.of("field", String.class.getName()));
+
+        assertEquals(descriptor, SERIALIZATION_SERVICE.toObject(SERIALIZATION_SERVICE.toData(descriptor)));
     }
 }

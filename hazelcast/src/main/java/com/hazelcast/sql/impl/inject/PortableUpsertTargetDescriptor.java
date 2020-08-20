@@ -21,6 +21,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 
 import java.io.IOException;
+import java.util.Objects;
 
 public class PortableUpsertTargetDescriptor implements UpsertTargetDescriptor {
 
@@ -55,5 +56,24 @@ public class PortableUpsertTargetDescriptor implements UpsertTargetDescriptor {
         factoryId = in.readInt();
         classId = in.readInt();
         classVersion = in.readInt();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        PortableUpsertTargetDescriptor that = (PortableUpsertTargetDescriptor) o;
+        return factoryId == that.factoryId &&
+                classId == that.classId &&
+                classVersion == that.classVersion;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(factoryId, classId, classVersion);
     }
 }

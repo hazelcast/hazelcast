@@ -25,11 +25,27 @@ import static java.util.Collections.emptyMap;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
-public class PojoUpsertTargetTest {
+public class JavaUpsertTargetTest {
 
     @Test
-    public void testInject() {
-        UpsertTarget target = new PojoUpsertTarget(Pojo.class.getName(), ImmutableMap.of("field1", int.class.getName()));
+    public void testInjectPrimitive() {
+        UpsertTarget target = new JavaUpsertTarget(String.class.getName(), emptyMap());
+        UpsertInjector injector = target.createInjector(null);
+
+        target.init();
+        injector.set("value1");
+        Object value1 = target.conclude();
+        assertEquals("value1", value1);
+
+        target.init();
+        injector.set("value2");
+        Object value2 = target.conclude();
+        assertEquals("value2", value2);
+    }
+
+    @Test
+    public void testInjectPojo() {
+        UpsertTarget target = new JavaUpsertTarget(Pojo.class.getName(), ImmutableMap.of("field1", int.class.getName()));
 
         UpsertInjector field1Injector = target.createInjector("field1");
         UpsertInjector field2Injector = target.createInjector("field2");
@@ -48,8 +64,8 @@ public class PojoUpsertTargetTest {
     }
 
     @Test
-    public void testInjectNullIntoNonExistingField() {
-        UpsertTarget target = new PojoUpsertTarget(Object.class.getName(), emptyMap());
+    public void testInjectNullIntoNonExistingPojoField() {
+        UpsertTarget target = new JavaUpsertTarget(Pojo.class.getName(), emptyMap());
 
         UpsertInjector injector = target.createInjector("nonExistingField");
 

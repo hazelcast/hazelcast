@@ -17,6 +17,8 @@
 package com.hazelcast.sql.impl.inject;
 
 import com.hazelcast.sql.impl.QueryException;
+import com.hazelcast.sql.impl.type.QueryDataType;
+import com.hazelcast.sql.impl.type.QueryDataTypeUtils;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
@@ -29,32 +31,53 @@ import static com.hazelcast.sql.impl.inject.Util.extractSetter;
 import static com.hazelcast.sql.impl.inject.Util.loadClass;
 import static java.util.stream.Collectors.toMap;
 
-class PojoUpsertTarget implements UpsertTarget {
+class JavaUpsertTarget implements UpsertTarget {
 
     private final Class<?> clazz;
     private final Map<String, Class<?>> typesByPaths;
 
-    private Object pojo;
+    private Object object;
 
-    PojoUpsertTarget(String className, Map<String, String> typeNamesByPaths) {
-        this.clazz = loadClass(className);
+    JavaUpsertTarget(String className, Map<String, String> typeNamesByPaths) {
+        Class<?> clazz = loadClass(className);
+        QueryDataType type = QueryDataTypeUtils.resolveTypeForClass(clazz);
+
+        this.clazz = type == QueryDataType.OBJECT ? clazz : null;
         this.typesByPaths = typeNamesByPaths.entrySet().stream()
                                             .collect(toMap(Entry::getKey, entry -> loadClass(entry.getValue())));
     }
 
     @Override
     public UpsertInjector createInjector(String path) {
-        Method method = extractSetter(clazz, path, typesByPaths.get(path));
-        if (method != null) {
-            return createMethodInjector(method, path);
+        if (path == null) {
+            assert clazz == null;
+
+            return createObjectInjector();
         } else {
-            Field field = extractField(clazz, path);
-            return createFieldInjector(field, path);
+            assert clazz != null;
+
+            Method method = extractSetter(clazz, path, typesByPaths.get(path));
+            if (method != null) {
+                return createMethodInjector(method, path);
+            } else {
+                Field field = extractField(clazz, path);
+                return createFieldInjector(field, path);
+            }
         }
+    }
+
+    private UpsertInjector createObjectInjector() {
+        return value -> {
+            assert object == null;
+
+            object = value;
+        };
     }
 
     private UpsertInjector createMethodInjector(Method method, String path) {
         return value -> {
+            assert object != null;
+
             if (value != null) {
                 if (method == null) {
                     throw QueryException.dataException(
@@ -63,7 +86,7 @@ class PojoUpsertTarget implements UpsertTarget {
                 }
 
                 try {
-                    method.invoke(pojo, value);
+                    method.invoke(object, value);
                 } catch (IllegalAccessException | InvocationTargetException e) {
                     throw QueryException.dataException(
                             "Cannot inject field \"" + path + "\" into " + clazz.getName() + " : " + e.getMessage(), e
@@ -75,6 +98,8 @@ class PojoUpsertTarget implements UpsertTarget {
 
     private UpsertInjector createFieldInjector(Field field, String path) {
         return value -> {
+            assert object != null;
+
             if (value != null) {
                 if (field == null) {
                     throw QueryException.dataException(
@@ -83,7 +108,7 @@ class PojoUpsertTarget implements UpsertTarget {
                 }
 
                 try {
-                    field.set(pojo, value);
+                    field.set(object, value);
                 } catch (IllegalAccessException e) {
                     throw QueryException.dataException(
                             "Cannot inject field \"" + path + "\" into " + clazz.getName() + " : " + e.getMessage(), e
@@ -95,19 +120,21 @@ class PojoUpsertTarget implements UpsertTarget {
 
     @Override
     public void init() {
-        try {
-            pojo = clazz.newInstance();
-        } catch (Exception e) {
-            throw QueryException.dataException(
-                    "Unable to instantiate class \"" + clazz.getName() + "\" : " + e.getMessage(), e
-            );
+        if (clazz != null) {
+            try {
+                object = clazz.newInstance();
+            } catch (Exception e) {
+                throw QueryException.dataException(
+                        "Unable to instantiate class \"" + clazz.getName() + "\" : " + e.getMessage(), e
+                );
+            }
         }
     }
 
     @Override
     public Object conclude() {
-        Object pojo = this.pojo;
-        this.pojo = null;
-        return pojo;
+        Object object = this.object;
+        this.object = null;
+        return object;
     }
 }
