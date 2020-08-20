@@ -16,13 +16,11 @@
 
 package com.hazelcast.sql.impl.inject;
 
-import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 
 import java.io.IOException;
 import java.util.Map;
-import java.util.Objects;
 
 public class JavaUpsertTargetDescriptor implements UpsertTargetDescriptor {
 
@@ -38,9 +36,12 @@ public class JavaUpsertTargetDescriptor implements UpsertTargetDescriptor {
         this.typeNamesByPaths = typeNamesByPaths;
     }
 
-    @Override
-    public UpsertTarget create(InternalSerializationService serializationService) {
-        return new JavaUpsertTarget(className, typeNamesByPaths);
+    public String getClassName() {
+        return className;
+    }
+
+    public Map<String, String> getTypeNamesByPaths() {
+        return typeNamesByPaths;
     }
 
     @Override
@@ -53,23 +54,5 @@ public class JavaUpsertTargetDescriptor implements UpsertTargetDescriptor {
     public void readData(ObjectDataInput in) throws IOException {
         className = in.readUTF();
         typeNamesByPaths = in.readObject();
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
-        JavaUpsertTargetDescriptor that = (JavaUpsertTargetDescriptor) o;
-        return Objects.equals(className, that.className) &&
-                Objects.equals(typeNamesByPaths, that.typeNamesByPaths);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(className, typeNamesByPaths);
     }
 }

@@ -16,10 +16,7 @@
 
 package com.hazelcast.sql.impl.inject;
 
-import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.nio.serialization.DataSerializable;
 
 public interface UpsertTargetDescriptor extends DataSerializable {
-
-    UpsertTarget create(InternalSerializationService serializationService);
 }

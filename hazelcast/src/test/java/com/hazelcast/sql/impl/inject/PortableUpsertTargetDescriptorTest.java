@@ -18,43 +18,24 @@ package com.hazelcast.sql.impl.inject;
 
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
-import com.hazelcast.nio.serialization.ClassDefinitionBuilder;
 import org.junit.Test;
 
-import static com.hazelcast.test.HazelcastTestSupport.assertInstanceOf;
 import static org.junit.Assert.assertEquals;
 
 public class PortableUpsertTargetDescriptorTest {
 
     @Test
-    public void testCreate() {
-        int factoryId = 1;
-        int classId = 1;
-        int versionId = 1;
-
-        InternalSerializationService serializationService = new DefaultSerializationServiceBuilder().build();
-        serializationService.getPortableContext()
-                            .registerClassDefinition(new ClassDefinitionBuilder(factoryId, classId, versionId).build());
-
-        UpsertTargetDescriptor descriptor = new PortableUpsertTargetDescriptor(factoryId, classId, versionId);
-
-        UpsertTarget upsertTarget = descriptor.create(serializationService);
-
-        assertInstanceOf(PortableUpsertTarget.class, upsertTarget);
-    }
-
-    @Test
     public void testSerialization() {
-        int factoryId = 1;
-        int classId = 2;
-        int versionId = 3;
-
         InternalSerializationService serializationService = new DefaultSerializationServiceBuilder().build();
-        serializationService.getPortableContext()
-                            .registerClassDefinition(new ClassDefinitionBuilder(factoryId, classId, versionId).build());
 
-        UpsertTargetDescriptor descriptor = new PortableUpsertTargetDescriptor(factoryId, classId, versionId);
+        PortableUpsertTargetDescriptor descriptor = serializationService.toObject(
+                serializationService.toData(
+                        new PortableUpsertTargetDescriptor(1, 2, 3)
+                )
+        );
 
-        assertEquals(descriptor, serializationService.toObject(serializationService.toData(descriptor)));
+        assertEquals(descriptor.getFactoryId(), 1);
+        assertEquals(descriptor.getClassId(), 2);
+        assertEquals(descriptor.getClassVersion(), 3);
     }
 }

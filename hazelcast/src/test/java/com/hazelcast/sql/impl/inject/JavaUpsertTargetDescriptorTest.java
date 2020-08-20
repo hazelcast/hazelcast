@@ -21,29 +21,21 @@ import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import org.junit.Test;
 
-import static com.hazelcast.test.HazelcastTestSupport.assertInstanceOf;
 import static org.junit.Assert.assertEquals;
 
 public class JavaUpsertTargetDescriptorTest {
 
-    private static final InternalSerializationService SERIALIZATION_SERVICE =
-            new DefaultSerializationServiceBuilder().build();
-
-    @Test
-    public void testCreate() {
-        UpsertTargetDescriptor descriptor =
-                new JavaUpsertTargetDescriptor(getClass().getName(), ImmutableMap.of("field", String.class.getName()));
-
-        UpsertTarget upsertTarget = descriptor.create(SERIALIZATION_SERVICE);
-
-        assertInstanceOf(JavaUpsertTarget.class, upsertTarget);
-    }
-
     @Test
     public void testSerialization() {
-        UpsertTargetDescriptor descriptor =
-                new JavaUpsertTargetDescriptor(getClass().getName(), ImmutableMap.of("field", String.class.getName()));
+        InternalSerializationService serializationService = new DefaultSerializationServiceBuilder().build();
 
-        assertEquals(descriptor, SERIALIZATION_SERVICE.toObject(SERIALIZATION_SERVICE.toData(descriptor)));
+        JavaUpsertTargetDescriptor descriptor = serializationService.toObject(
+                serializationService.toData(
+                        new JavaUpsertTargetDescriptor(getClass().getName(), ImmutableMap.of("field", String.class.getName()))
+                )
+        );
+
+        assertEquals(descriptor.getClassName(), getClass().getName());
+        assertEquals(descriptor.getTypeNamesByPaths(), ImmutableMap.of("field", String.class.getName()));
     }
 }
