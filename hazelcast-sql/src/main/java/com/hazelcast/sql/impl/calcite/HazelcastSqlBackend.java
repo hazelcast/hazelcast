@@ -129,6 +129,8 @@ public class HazelcastSqlBackend implements SqlBackend {
             parameterMetadata
         );
 
+        physicalRel.visit(visitor);
+
         return visitor.getPlan();
     }
 
