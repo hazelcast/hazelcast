@@ -139,7 +139,7 @@ public class LikeFunction extends TriExpression<Boolean> implements IdentifiedDa
         }
 
         private Pattern convertToJavaPattern(String pattern, String escape) {
-            if (lastJavaPattern != null && Objects.equals(pattern, lastPattern) && Objects.equals(escape, lastEscape)) {
+            if (Objects.equals(pattern, lastPattern) && Objects.equals(escape, lastEscape)) {
                 return lastJavaPattern;
             }
 
