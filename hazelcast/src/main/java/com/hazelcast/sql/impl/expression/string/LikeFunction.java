@@ -30,7 +30,7 @@ import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static com.hazelcast.sql.impl.expression.string.StringExpressionUtils.asVarchar;
+import static com.hazelcast.sql.impl.expression.string.StringFunctionUtils.asVarchar;
 
 /**
  * LIKE string function.

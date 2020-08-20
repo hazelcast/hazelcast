@@ -39,9 +39,9 @@ public class LowerFunction extends UniExpression<String> implements IdentifiedDa
 
     @Override
     public String eval(Row row, ExpressionEvalContext context) {
-        String value = StringExpressionUtils.asVarchar(operand, row, context);
+        String value = StringFunctionUtils.asVarchar(operand, row, context);
 
-        return StringExpressionUtils.lower(value);
+        return StringFunctionUtils.lower(value);
     }
 
     @Override

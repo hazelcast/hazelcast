@@ -25,8 +25,8 @@ import java.util.Locale;
 /**
  * Utility methods for string functions.
  */
-public final class StringExpressionUtils {
-    private StringExpressionUtils() {
+public final class StringFunctionUtils {
+    private StringFunctionUtils() {
         // No-op.
     }
 

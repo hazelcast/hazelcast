@@ -39,9 +39,9 @@ public class InitcapFunction extends UniExpression<String> implements Identified
 
     @Override
     public String eval(Row row, ExpressionEvalContext context) {
-        String value = StringExpressionUtils.asVarchar(operand, row, context);
+        String value = StringFunctionUtils.asVarchar(operand, row, context);
 
-        return StringExpressionUtils.initcap(value);
+        return StringFunctionUtils.initcap(value);
     }
 
     @Override
