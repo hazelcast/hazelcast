@@ -52,7 +52,7 @@ public class LikeFunction extends TriExpression<Boolean> implements IdentifiedDa
     private static final String MANY_JAVA = ".*";
 
     /** Special characters which require escaping in Java. */
-    private static final String ESCAPE_CHARACTERS_JAVA = "[]()|^-+*?{}$\\.";
+    private static final String ESCAPE_CHARACTERS_JAVA = "[]()|^+*?{}$\\.";
 
     private transient State state;
 

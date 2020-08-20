@@ -157,6 +157,13 @@ public class LikeFunctionIntegrationTest extends SqlExpressionIntegrationTestSup
         check("this LIKE '%'", true);
     }
 
+    @Test
+    public void test_special_char_escaping() {
+        put("[({|^+*?-$\\.abc})]");
+        check("this LIKE '[({|^+*?-$\\.___})]'", true);
+        check("this LIKE '[({|^+*?-$\\.%})]'", true);
+    }
+
     private void check(String operands, Boolean expectedResult, Object... params) {
         String sql = "SELECT " + operands + " FROM map";
 
