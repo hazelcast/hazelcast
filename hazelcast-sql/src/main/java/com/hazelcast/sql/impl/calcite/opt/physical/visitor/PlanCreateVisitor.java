@@ -17,6 +17,7 @@
 package com.hazelcast.sql.impl.calcite.opt.physical.visitor;
 
 import com.hazelcast.internal.util.collection.PartitionIdSet;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.sql.SqlColumnMetadata;
 import com.hazelcast.sql.SqlRowMetadata;
 import com.hazelcast.sql.impl.QueryException;
@@ -222,9 +223,11 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
         AbstractMapTable table = rel.getMap();
 
         if (((PartitionedMapTable) table).isHd()) {
-            throw QueryException.error("Cannot query IMap " + table.getName()
-                + " with InMemoryFormat.NATIVE because it does not have indexes "
-                + "(please add at least one index to query this IMap)");
+            throw QueryException.error("Cannot query the IMap \"" + table.getName()
+                + "\" with InMemoryFormat.NATIVE because it does not have global indexes "
+                + "(please make sure that the IMap has at least one index, "
+                + "and the property \"" + ClusterProperty.GLOBAL_HD_INDEX_ENABLED.getName()
+                + "\" is set to \"true\")");
         }
 
         HazelcastTable hazelcastTable = rel.getTableUnwrapped();
