@@ -30,7 +30,6 @@ import com.hazelcast.map.IMap;
 import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.ClassDefinitionBuilder;
 import com.hazelcast.nio.serialization.GenericRecord;
-import com.hazelcast.nio.serialization.GenericRecordBuilder;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.test.HazelcastTestSupport;
 import org.junit.Test;
@@ -99,14 +98,14 @@ public abstract class AbstractGenericRecordTest extends HazelcastTestSupport {
                         .addPortableField("p", innerPortableClassDefinition)
                         .build();
 
-        GenericRecord namedRecord = GenericRecordBuilder.portable(namedPortableClassDefinition)
+        GenericRecord namedRecord = GenericRecord.Builder.portable(namedPortableClassDefinition)
                 .writeUTF("name", nn[0].name)
                 .writeInt("myint", nn[0].myint).build();
         GenericRecord[] namedRecords = new GenericRecord[2];
         namedRecords[0] = namedRecord;
         namedRecords[1] = namedRecord;
 
-        GenericRecord innerRecord = GenericRecordBuilder.portable(innerPortableClassDefinition)
+        GenericRecord innerRecord = GenericRecord.Builder.portable(innerPortableClassDefinition)
                 .writeByteArray("b", inner.bb)
                 .writeCharArray("c", inner.cc)
                 .writeShortArray("s", inner.ss)
@@ -116,7 +115,7 @@ public abstract class AbstractGenericRecordTest extends HazelcastTestSupport {
                 .writeDoubleArray("d", inner.dd)
                 .writeGenericRecordArray("nn", namedRecords).build();
 
-        GenericRecord expected = GenericRecordBuilder.portable(mainPortableClassDefinition)
+        GenericRecord expected = GenericRecord.Builder.portable(mainPortableClassDefinition)
                 .writeByte("b", expectedMain.b)
                 .writeBoolean("bool", expectedMain.bool)
                 .writeChar("c", expectedMain.c)
@@ -298,12 +297,12 @@ public abstract class AbstractGenericRecordTest extends HazelcastTestSupport {
                         .addUTFField("WrongName").addIntField("myint").build();
 
 
-        GenericRecord namedRecord = GenericRecordBuilder.portable(namedPortableClassDefinition)
+        GenericRecord namedRecord = GenericRecord.Builder.portable(namedPortableClassDefinition)
                 .writeUTF("name", "foo")
                 .writeInt("myint", 123).build();
 
 
-        GenericRecord inConsistentNamedRecord = GenericRecordBuilder.portable(inConsistentNamedPortableClassDefinition)
+        GenericRecord inConsistentNamedRecord = GenericRecord.Builder.portable(inConsistentNamedPortableClassDefinition)
                 .writeUTF("WrongName", "foo")
                 .writeInt("myint", 123).build();
 

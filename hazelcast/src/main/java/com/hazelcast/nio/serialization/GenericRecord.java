@@ -16,6 +16,8 @@
 
 package com.hazelcast.nio.serialization;
 
+import com.hazelcast.internal.serialization.impl.portable.PortableGenericRecordBuilder;
+
 /**
  * A generic object interface that is returned when the domain class can not be created.
  * Currently this is valid for {@link Portable} objects.
@@ -25,7 +27,7 @@ public interface GenericRecord {
     /**
      * @return an empty generic record builder with same class definition as this one
      */
-    GenericRecordBuilder createGenericRecordBuilder();
+    Builder createGenericRecordBuilder();
 
     /**
      * Returned GenericRecordBuilder can be used to have exact copy and also just to update a couple of fields. By default,
@@ -33,7 +35,7 @@ public interface GenericRecord {
      *
      * @return a generic record builder with same class definition as this one and populated with same values.
      */
-    GenericRecordBuilder cloneWithGenericRecordBuilder();
+    Builder cloneWithGenericRecordBuilder();
 
     FieldType getFieldType(String fieldName);
 
@@ -79,4 +81,60 @@ public interface GenericRecord {
 
     String[] readUTFArray(String fieldName);
 
+    /**
+     * Interface for creating {@link GenericRecord} instances.
+     * Allows the usage of {@link Portable} without having a domain class.
+     */
+    interface Builder {
+
+        /**
+         * @param classDefinition of the portable that we will create
+         * @return GenericRecordBuilder for Portable format
+         */
+        static Builder portable(ClassDefinition classDefinition) {
+            return new PortableGenericRecordBuilder(classDefinition);
+        }
+
+        GenericRecord build();
+
+        Builder writeInt(String fieldName, int value);
+
+        Builder writeLong(String fieldName, long value);
+
+        Builder writeUTF(String fieldName, String value);
+
+        Builder writeBoolean(String fieldName, boolean value);
+
+        Builder writeByte(String fieldName, byte value);
+
+        Builder writeChar(String fieldName, char value);
+
+        Builder writeDouble(String fieldName, double value);
+
+        Builder writeFloat(String fieldName, float value);
+
+        Builder writeShort(String fieldName, short value);
+
+        Builder writeGenericRecord(String fieldName, GenericRecord value);
+
+        Builder writeGenericRecordArray(String fieldName, GenericRecord[] value);
+
+        Builder writeByteArray(String fieldName, byte[] value);
+
+        Builder writeBooleanArray(String fieldName, boolean[] value);
+
+        Builder writeCharArray(String fieldName, char[] value);
+
+        Builder writeIntArray(String fieldName, int[] value);
+
+        Builder writeLongArray(String fieldName, long[] value);
+
+        Builder writeDoubleArray(String fieldName, double[] value);
+
+        Builder writeFloatArray(String fieldName, float[] value);
+
+        Builder writeShortArray(String fieldName, short[] value);
+
+        Builder writeUTFArray(String fieldName, String[] value);
+    }
 }

@@ -20,7 +20,6 @@ import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.FieldDefinition;
 import com.hazelcast.nio.serialization.FieldType;
 import com.hazelcast.nio.serialization.GenericRecord;
-import com.hazelcast.nio.serialization.GenericRecordBuilder;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
@@ -43,12 +42,12 @@ public class PortableGenericRecord implements GenericRecord {
     }
 
     @Override
-    public GenericRecordBuilder createGenericRecordBuilder() {
-        return GenericRecordBuilder.portable(classDefinition);
+    public Builder createGenericRecordBuilder() {
+        return Builder.portable(classDefinition);
     }
 
     @Override
-    public GenericRecordBuilder cloneWithGenericRecordBuilder() {
+    public Builder cloneWithGenericRecordBuilder() {
         return  new PortableGenericRecordBuilder(classDefinition, Arrays.copyOf(objects, objects.length));
     }
 

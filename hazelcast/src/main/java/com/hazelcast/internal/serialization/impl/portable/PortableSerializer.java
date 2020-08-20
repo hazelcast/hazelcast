@@ -28,7 +28,6 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.GenericRecord;
-import com.hazelcast.nio.serialization.GenericRecordBuilder;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableFactory;
@@ -319,7 +318,7 @@ public final class PortableSerializer implements StreamSerializer<Object> {
         int version = in.readInt();
         ClassDefinition cd = setupPositionAndDefinition(in, factoryId, classId, version);
         GenericRecord reader = new PortableValueReader(this, in, cd, false);
-        GenericRecordBuilder genericRecordBuilder = GenericRecordBuilder.portable(cd);
+        GenericRecord.Builder genericRecordBuilder = GenericRecord.Builder.portable(cd);
         Set<String> fieldNames = cd.getFieldNames();
         for (String fieldName : fieldNames) {
             switch (cd.getFieldType(fieldName)) {
