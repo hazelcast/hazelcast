@@ -43,7 +43,6 @@ public class SubstringFunctionIntegrationTest extends SqlExpressionIntegrationTe
         checkValueInternal("SELECT SUBSTRING(this FROM 1 FOR 2) FROM map", SqlColumnType.VARCHAR, "ab");
         checkValueInternal("SELECT SUBSTRING(this FROM 1 FOR 5) FROM map", SqlColumnType.VARCHAR, "abcde");
         checkValueInternal("SELECT SUBSTRING(this FROM 1 FOR 6) FROM map", SqlColumnType.VARCHAR, "abcde");
-        checkValueInternal("SELECT SUBSTRING(this FROM 1 FOR null) FROM map", SqlColumnType.VARCHAR, "abcde");
         checkFailureInternal("SELECT SUBSTRING(this FROM 1 FOR -1) FROM map", SqlErrorCode.DATA_EXCEPTION, "SUBSTRING \"length\" operand cannot be negative");
 
         // Character column
@@ -109,7 +108,7 @@ public class SubstringFunctionIntegrationTest extends SqlExpressionIntegrationTe
     public void test_start() {
         // Different values
         put("abcde");
-        checkValueInternal("SELECT SUBSTRING(this FROM null) FROM map", SqlColumnType.VARCHAR, "abcde");
+        checkValueInternal("SELECT SUBSTRING(this FROM null) FROM map", SqlColumnType.VARCHAR, null);
         checkValueInternal("SELECT SUBSTRING(this FROM 1) FROM map", SqlColumnType.VARCHAR, "abcde");
         checkValueInternal("SELECT SUBSTRING(this FROM 2) FROM map", SqlColumnType.VARCHAR, "bcde");
         checkValueInternal("SELECT SUBSTRING(this FROM 5) FROM map", SqlColumnType.VARCHAR, "e");
@@ -120,7 +119,7 @@ public class SubstringFunctionIntegrationTest extends SqlExpressionIntegrationTe
 
         // Columns
         put(new ExpressionValue.IntegerVal());
-        checkValueInternal("SELECT SUBSTRING('abcde' FROM field1) FROM map", SqlColumnType.VARCHAR, "abcde");
+        checkValueInternal("SELECT SUBSTRING('abcde' FROM field1) FROM map", SqlColumnType.VARCHAR, null);
 
         put(true);
         checkFailureInternal("SELECT SUBSTRING('abcde' FROM this) FROM map", SqlErrorCode.PARSING, "Cannot apply 'SUBSTRING' to arguments of type 'SUBSTRING(<VARCHAR> FROM <BOOLEAN>)'");
@@ -145,7 +144,7 @@ public class SubstringFunctionIntegrationTest extends SqlExpressionIntegrationTe
 
         // Parameters
         put("abcde");
-        checkValueInternal("SELECT SUBSTRING(this FROM ?) FROM map", SqlColumnType.VARCHAR, "abcde", new Object[] { null});
+        checkValueInternal("SELECT SUBSTRING(this FROM ?) FROM map", SqlColumnType.VARCHAR, null, new Object[] { null});
         checkValueInternal("SELECT SUBSTRING(this FROM ?) FROM map", SqlColumnType.VARCHAR, "bcde", (byte) 2);
         checkValueInternal("SELECT SUBSTRING(this FROM ?) FROM map", SqlColumnType.VARCHAR, "bcde", (short) 2);
         checkValueInternal("SELECT SUBSTRING(this FROM ?) FROM map", SqlColumnType.VARCHAR, "bcde", 2);
@@ -166,7 +165,7 @@ public class SubstringFunctionIntegrationTest extends SqlExpressionIntegrationTe
         put("abcde");
         checkValueInternal("SELECT SUBSTRING(this FROM 2) FROM map", SqlColumnType.VARCHAR, "bcde");
         checkValueInternal("SELECT SUBSTRING(this FROM '2') FROM map", SqlColumnType.VARCHAR, "bcde");
-        checkValueInternal("SELECT SUBSTRING(this FROM null) FROM map", SqlColumnType.VARCHAR, "abcde");
+        checkValueInternal("SELECT SUBSTRING(this FROM null) FROM map", SqlColumnType.VARCHAR, null);
         checkFailureInternal("SELECT SUBSTRING(this FROM true) FROM map", SqlErrorCode.PARSING, "Cannot apply 'SUBSTRING' to arguments of type 'SUBSTRING(<VARCHAR> FROM <BOOLEAN>)'");
     }
 
@@ -177,11 +176,12 @@ public class SubstringFunctionIntegrationTest extends SqlExpressionIntegrationTe
         checkValueInternal("SELECT SUBSTRING('abcde' FROM 2 FOR 0) FROM map", SqlColumnType.VARCHAR, "");
         checkValueInternal("SELECT SUBSTRING('abcde' FROM 2 FOR 2) FROM map", SqlColumnType.VARCHAR, "bc");
         checkValueInternal("SELECT SUBSTRING('abcde' FROM 2 FOR 10) FROM map", SqlColumnType.VARCHAR, "bcde");
+        checkValueInternal("SELECT SUBSTRING('abcde' FROM 2 FOR null) FROM map", SqlColumnType.VARCHAR, null);
         checkFailureInternal("SELECT SUBSTRING('abcde' FROM 2 FOR -1) FROM map", SqlErrorCode.DATA_EXCEPTION, "SUBSTRING \"length\" operand cannot be negative");
 
         // Columns
         put(new ExpressionValue.IntegerVal());
-        checkValueInternal("SELECT SUBSTRING('abcde' FROM 2 FOR field1) FROM map", SqlColumnType.VARCHAR, "bcde");
+        checkValueInternal("SELECT SUBSTRING('abcde' FROM 2 FOR field1) FROM map", SqlColumnType.VARCHAR, null);
 
         put(true);
         checkFailureInternal("SELECT SUBSTRING('abcde' FROM 2 FOR this) FROM map", SqlErrorCode.PARSING, "Cannot apply 'SUBSTRING' to arguments of type 'SUBSTRING(<VARCHAR> FROM <TINYINT> FOR <BOOLEAN>)'");
@@ -200,7 +200,7 @@ public class SubstringFunctionIntegrationTest extends SqlExpressionIntegrationTe
 
         // Parameters
         put(1);
-        checkValueInternal("SELECT SUBSTRING('abcde' FROM 2 FOR ?) FROM map", SqlColumnType.VARCHAR, "bcde", new Object[] { null });
+        checkValueInternal("SELECT SUBSTRING('abcde' FROM 2 FOR ?) FROM map", SqlColumnType.VARCHAR, null, new Object[] { null });
         checkValueInternal("SELECT SUBSTRING('abcde' FROM 2 FOR ?) FROM map", SqlColumnType.VARCHAR, "bc", (byte) 2);
         checkValueInternal("SELECT SUBSTRING('abcde' FROM 2 FOR ?) FROM map", SqlColumnType.VARCHAR, "bc", (short) 2);
         checkValueInternal("SELECT SUBSTRING('abcde' FROM 2 FOR ?) FROM map", SqlColumnType.VARCHAR, "bc", 2);
@@ -221,7 +221,7 @@ public class SubstringFunctionIntegrationTest extends SqlExpressionIntegrationTe
         put(1);
         checkValueInternal("SELECT SUBSTRING('abcde' FROM 2 FOR 2) FROM map", SqlColumnType.VARCHAR, "bc");
         checkValueInternal("SELECT SUBSTRING('abcde' FROM 2 FOR '2') FROM map", SqlColumnType.VARCHAR, "bc");
-        checkValueInternal("SELECT SUBSTRING('abcde' FROM 2 FOR null) FROM map", SqlColumnType.VARCHAR, "bcde");
+        checkValueInternal("SELECT SUBSTRING('abcde' FROM 2 FOR null) FROM map", SqlColumnType.VARCHAR, null);
         checkFailureInternal("SELECT SUBSTRING('abcde' FROM 2 FOR true) FROM map", SqlErrorCode.PARSING, "Cannot apply 'SUBSTRING' to arguments of type 'SUBSTRING(<VARCHAR> FROM <TINYINT> FOR <BOOLEAN>)'");
     }
 

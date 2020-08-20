@@ -57,7 +57,17 @@ public class SubstringFunction extends TriExpression<String> implements Identifi
             return null;
         }
 
-        Integer start = operand2 != null ? MathFunctionUtils.asInt(operand2, row, context) : null;
+        Integer start;
+
+        if (operand2 != null) {
+            start = MathFunctionUtils.asInt(operand2, row, context);
+
+            if (start == null) {
+                return null;
+            }
+        } else {
+            start = null;
+        }
 
         if (start == null) {
             // Start position is not specific, start with the very first character
@@ -78,7 +88,17 @@ public class SubstringFunction extends TriExpression<String> implements Identifi
             return "";
         }
 
-        Integer length = operand3 != null ? MathFunctionUtils.asInt(operand3, row, context) : null;
+        Integer length;
+
+        if (operand3 != null) {
+            length = MathFunctionUtils.asInt(operand3, row, context);
+
+            if (length == null) {
+                return null;
+            }
+        } else {
+            length = null;
+        }
 
         if (length == null) {
             // Length is not specified, just cut from the start
