@@ -160,7 +160,7 @@ public class LikeFunction extends TriExpression<Boolean> implements IdentifiedDa
 
             if (escape != null) {
                 if (escape.length() != 1) {
-                    throw QueryException.error("Escape parameter should be a single character: " + escape);
+                    throw QueryException.error("ESCAPE parameter must be a single character: " + escape);
                 }
 
                 escapeChar = escape.charAt(0);
