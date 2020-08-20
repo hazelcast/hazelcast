@@ -68,7 +68,7 @@ public final class StringFunctionUtils {
         for (int i = 0; i < strLen; i++) {
             char c = value.charAt(i);
 
-            if (Character.isWhitespace(c)) {
+            if (!Character.isLetterOrDigit(c)) {
                 res.append(c);
 
                 capitalizeNext = true;

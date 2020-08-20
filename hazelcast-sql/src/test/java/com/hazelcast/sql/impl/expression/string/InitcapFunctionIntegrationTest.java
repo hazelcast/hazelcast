@@ -48,6 +48,7 @@ public class InitcapFunctionIntegrationTest extends SqlExpressionIntegrationTest
     @Test
     public void test_column() {
         checkColumn(new StringVal(), null);
+        checkColumn(new StringVal().field1("-first"), "-First");
         checkColumn(new StringVal().field1("fiRst"), "First");
         checkColumn(new StringVal().field1("fiRst seCond"), "First Second");
 
