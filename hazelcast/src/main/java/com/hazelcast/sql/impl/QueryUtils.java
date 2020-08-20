@@ -21,8 +21,7 @@ import com.hazelcast.partition.Partition;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.SqlColumnMetadata;
 import com.hazelcast.sql.SqlColumnType;
-import com.hazelcast.sql.SqlErrorCode;
-import com.hazelcast.sql.SqlException;
+import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.impl.schema.TableResolver;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
@@ -58,9 +57,9 @@ public final class QueryUtils {
         return instanceName + "-" + workerType + "-" + index;
     }
 
-    public static SqlException toPublicException(Exception e, UUID localMemberId) {
-        if (e instanceof SqlException) {
-            return (SqlException) e;
+    public static HazelcastSqlException toPublicException(Exception e, UUID localMemberId) {
+        if (e instanceof HazelcastSqlException) {
+            return (HazelcastSqlException) e;
         }
 
         if (e instanceof QueryException) {
@@ -72,9 +71,9 @@ public final class QueryUtils {
                 originatingMemberId = localMemberId;
             }
 
-            return new SqlException(originatingMemberId, e0.getCode(), e0.getMessage(), e);
+            return new HazelcastSqlException(originatingMemberId, e0.getCode(), e0.getMessage(), e);
         } else {
-            return new SqlException(localMemberId, SqlErrorCode.GENERIC, e.getMessage(), e);
+            return new HazelcastSqlException(localMemberId, SqlErrorCode.GENERIC, e.getMessage(), e);
         }
     }
 

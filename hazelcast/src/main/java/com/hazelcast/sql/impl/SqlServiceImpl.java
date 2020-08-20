@@ -25,7 +25,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.exception.ServiceNotFoundException;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.sql.SqlQuery;
+import com.hazelcast.sql.SqlStatement;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlService;
 import com.hazelcast.sql.impl.optimizer.DisabledSqlOptimizer;
@@ -183,7 +183,7 @@ public class SqlServiceImpl implements SqlService, Consumer<Packet> {
 
     @Nonnull
     @Override
-    public SqlResult query(@Nonnull SqlQuery query) {
+    public SqlResult execute(@Nonnull SqlStatement query) {
         Preconditions.checkNotNull(query, "Query cannot be null");
 
         try {
@@ -193,7 +193,7 @@ public class SqlServiceImpl implements SqlService, Consumer<Packet> {
 
             long timeout = query.getTimeoutMillis();
 
-            if (timeout == SqlQuery.TIMEOUT_NOT_SET) {
+            if (timeout == SqlStatement.TIMEOUT_NOT_SET) {
                 timeout = queryTimeout;
             }
 

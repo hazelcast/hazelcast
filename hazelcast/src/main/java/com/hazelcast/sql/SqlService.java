@@ -96,7 +96,7 @@ import java.util.List;
  * <pre>
  *     HazelcastInstance instance = ...;
  *
- *     try (SqlResult result = instance.sql().query("SELECT * FROM person")) {
+ *     try (SqlResult result = instance.sql().execute("SELECT * FROM person")) {
  *         for (SqlRow row : result) {
  *             long personId = row.getObject("personId");
  *             String name = row.getObject("name");
@@ -110,22 +110,22 @@ public interface SqlService {
     /**
      * Convenient method to execute a distributed query with the given parameters.
      * <p>
-     * Converts passed SQL string and parameters into an {@link SqlQuery} object and invokes {@link #query(SqlQuery)}.
+     * Converts passed SQL string and parameters into an {@link SqlStatement} object and invokes {@link #execute(SqlStatement)}.
      *
      * @param sql SQL string
-     * @param params query parameters that will be passed to {@link SqlQuery#setParameters(List)}
+     * @param params query parameters that will be passed to {@link SqlStatement#setParameters(List)}
      * @return result
      * @throws NullPointerException if the SQL string is null
      * @throws IllegalArgumentException if the SQL string is empty
-     * @throws SqlException in case of execution error
+     * @throws HazelcastSqlException in case of execution error
      *
      * @see SqlService
-     * @see SqlQuery
-     * @see #query(SqlQuery)
+     * @see SqlStatement
+     * @see #execute(SqlStatement)
      */
     @Nonnull
-    default SqlResult query(@Nonnull String sql, Object... params) {
-        SqlQuery query = new SqlQuery(sql);
+    default SqlResult execute(@Nonnull String sql, Object... params) {
+        SqlStatement query = new SqlStatement(sql);
 
         if (params != null) {
             for (Object param : params) {
@@ -133,7 +133,7 @@ public interface SqlService {
             }
         }
 
-        return query(query);
+        return execute(query);
     }
 
     /**
@@ -142,10 +142,10 @@ public interface SqlService {
      * @param query query to be executed
      * @return result
      * @throws NullPointerException if the query is null
-     * @throws SqlException in case of execution error
+     * @throws HazelcastSqlException in case of execution error
      *
      * @see SqlService
      */
     @Nonnull
-    SqlResult query(@Nonnull SqlQuery query);
+    SqlResult execute(@Nonnull SqlStatement query);
 }

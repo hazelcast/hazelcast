@@ -30,7 +30,7 @@ import java.util.Objects;
  * This object is mutable. Properties are read once before the execution is started.
  * Changes to properties do not affect the behavior of already running queries.
  */
-public final class SqlQuery {
+public final class SqlStatement {
     /** Value for the timeout that is not set. */
     public static final long TIMEOUT_NOT_SET = -1;
 
@@ -48,14 +48,14 @@ public final class SqlQuery {
     private long timeout = DEFAULT_TIMEOUT;
     private int cursorBufferSize = DEFAULT_CURSOR_BUFFER_SIZE;
 
-    public SqlQuery(@Nonnull String sql) {
+    public SqlStatement(@Nonnull String sql) {
         setSql(sql);
     }
 
     /**
      * Copying constructor.
      */
-    private SqlQuery(String sql, List<Object> parameters, long timeout, int cursorBufferSize) {
+    private SqlStatement(String sql, List<Object> parameters, long timeout, int cursorBufferSize) {
         this.sql = sql;
         this.parameters = parameters;
         this.timeout = timeout;
@@ -83,7 +83,7 @@ public final class SqlQuery {
      * @throws IllegalArgumentException if passed SQL query is empty
      */
     @Nonnull
-    public SqlQuery setSql(@Nonnull String sql) {
+    public SqlStatement setSql(@Nonnull String sql) {
         Preconditions.checkNotNull(sql, "SQL cannot be null");
 
         if (sql.length() == 0) {
@@ -121,7 +121,7 @@ public final class SqlQuery {
      * @see #clearParameters()
      */
     @Nonnull
-    public SqlQuery setParameters(List<Object> parameters) {
+    public SqlStatement setParameters(List<Object> parameters) {
         if (parameters == null || parameters.isEmpty()) {
             this.parameters = new ArrayList<>();
         } else {
@@ -141,7 +141,7 @@ public final class SqlQuery {
      * @see #clearParameters()
      */
     @Nonnull
-    public SqlQuery addParameter(Object parameter) {
+    public SqlStatement addParameter(Object parameter) {
         parameters.add(parameter);
 
         return this;
@@ -156,7 +156,7 @@ public final class SqlQuery {
      * @see #addParameter(Object)
      */
     @Nonnull
-    public SqlQuery clearParameters() {
+    public SqlStatement clearParameters() {
         this.parameters = new ArrayList<>();
 
         return this;
@@ -187,7 +187,7 @@ public final class SqlQuery {
      * @see SqlConfig#getQueryTimeoutMillis()
      */
     @Nonnull
-    public SqlQuery setTimeoutMillis(long timeout) {
+    public SqlStatement setTimeoutMillis(long timeout) {
         if (timeout < 0 && timeout != TIMEOUT_NOT_SET) {
             throw new IllegalArgumentException("Timeout should be non-negative or -1: " + timeout);
         }
@@ -224,11 +224,11 @@ public final class SqlQuery {
      * @param cursorBufferSize cursor buffer size (measured in the number of rows)
      * @return this instance for chaining
      *
-     * @see SqlService#query(SqlQuery)
+     * @see SqlService#execute(SqlStatement)
      * @see SqlResult
      */
     @Nonnull
-    public SqlQuery setCursorBufferSize(int cursorBufferSize) {
+    public SqlStatement setCursorBufferSize(int cursorBufferSize) {
         if (cursorBufferSize <= 0) {
             throw new IllegalArgumentException("Cursor buffer size should be positive: " + cursorBufferSize);
         }
@@ -244,8 +244,8 @@ public final class SqlQuery {
      * @return Copy of this instance
      */
     @Nonnull
-    public SqlQuery copy() {
-        return new SqlQuery(sql, new ArrayList<>(parameters), timeout, cursorBufferSize);
+    public SqlStatement copy() {
+        return new SqlStatement(sql, new ArrayList<>(parameters), timeout, cursorBufferSize);
     }
 
     @Override
@@ -258,7 +258,7 @@ public final class SqlQuery {
             return false;
         }
 
-        SqlQuery sqlQuery = (SqlQuery) o;
+        SqlStatement sqlQuery = (SqlStatement) o;
 
         return Objects.equals(sql, sqlQuery.sql)
             && Objects.equals(parameters, sqlQuery.parameters)

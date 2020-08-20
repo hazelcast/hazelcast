@@ -16,7 +16,7 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.sql.SqlQuery;
+import com.hazelcast.sql.SqlStatement;
 
 import static com.hazelcast.internal.util.Preconditions.checkNotNegative;
 import static com.hazelcast.internal.util.Preconditions.checkPositive;
@@ -131,14 +131,14 @@ public class SqlConfig {
     /**
      * Sets the timeout in milliseconds that is applied to queries without an explicit timeout.
      * <p>
-     * It is possible to set a query timeout through the {@link SqlQuery#setTimeoutMillis(long)} method. If the query timeout is
-     * not set, then the value of this parameter will be used.
+     * It is possible to set a query timeout through the {@link SqlStatement#setTimeoutMillis(long)} method. If the query
+     * timeout is not set, then the value of this parameter will be used.
      * <p>
      * Zero value means no timeout. Negative values are prohibited.
      * <p>
      * Defaults to {@link #DEFAULT_QUERY_TIMEOUT}.
      *
-     * @see SqlQuery#setTimeoutMillis(long)
+     * @see SqlStatement#setTimeoutMillis(long)
      * @param queryTimeout Timeout in milliseconds.
      * @return This instance for chaining.
      */
