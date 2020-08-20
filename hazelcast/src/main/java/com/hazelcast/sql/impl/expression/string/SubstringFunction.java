@@ -49,7 +49,9 @@ public class SubstringFunction extends TriExpression<String> implements Identifi
             input = StringExpressionUtils.asVarchar(operand1, row, context);
         } catch (Exception e) {
             // Conversion to String failed. E.g. NPE on UserClass.toString()
-            throw QueryException.dataException("Failed to get value of input operand of SUBSTRING function", e);
+            throw QueryException.dataException(
+                "Failed to get value of input operand of SUBSTRING function: " + e.getMessage(), e
+            );
         }
 
         if (input == null) {
