@@ -1,6 +1,6 @@
 # Hazelcast
 
-[![Gitter](https://img.shields.io/gitter/room/gitterHQ/gitter.svg)](https://gitter.im/hazelcast/hazelcast?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge) 
+[![Slack](https://img.shields.io/badge/slack-chat-green.svg)](https://slack.hazelcast.com/) 
 [![GitHub](https://img.shields.io/github/license/hazelcast/Hazelcast.svg)](https://github.com/hazelcast/Hazelcast/blob/master/LICENSE)
 [![javadoc](https://javadoc.io/badge2/com.hazelcast/hazelcast/4.0/javadoc.svg)](https://javadoc.io/doc/com.hazelcast/hazelcast/4.0)
 [![Docker pulls](https://img.shields.io/docker/pulls/hazelcast/hazelcast)](https://img.shields.io/docker/pulls/hazelcast/hazelcast)
@@ -116,7 +116,7 @@ including Hadoop, S3, Apache Kafka, Elasticsearch, JDBC and JMS.
 You can use the following channels for getting help with Hazelcast:
 
 * [Hazelcast mailing list](http://groups.google.com/group/hazelcast)
-* [Gitter](https://gitter.im/hazelcast/hazelcast) for chatting with the
+* [Slack](https://slack.hazelcast.com/) for chatting with the
   development team and other Hazelcast users.
 * [Stack Overflow](https://stackoverflow.com/tags/hazelcast)
 

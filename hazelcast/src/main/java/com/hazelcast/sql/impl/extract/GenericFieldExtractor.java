@@ -46,7 +46,7 @@ public class GenericFieldExtractor extends AbstractGenericExtractor {
     public Object get() {
         try {
             Object target = targetAccessor.getTargetForFieldAccess();
-            Object value = extractors.extract(target, path, null);
+            Object value = extractors.extract(target, path, null, false);
             return type.normalize(value);
         } catch (QueryDataTypeMismatchException e) {
             throw QueryException.dataException("Failed to extract map entry " + (key ? "key" : "value") + " field \""

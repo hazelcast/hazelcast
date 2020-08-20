@@ -46,6 +46,8 @@ import com.hazelcast.config.OnJoinPermissionOperationName;
 import com.hazelcast.config.PNCounterConfig;
 import com.hazelcast.config.PermissionConfig;
 import com.hazelcast.config.PermissionConfig.PermissionType;
+import com.hazelcast.config.PersistentMemoryConfig;
+import com.hazelcast.config.PersistentMemoryDirectoryConfig;
 import com.hazelcast.config.PredicateConfig;
 import com.hazelcast.config.QueryCacheConfig;
 import com.hazelcast.config.QueueConfig;
@@ -76,6 +78,7 @@ import com.hazelcast.config.security.RealmConfig;
 import com.hazelcast.config.security.TokenEncoding;
 import com.hazelcast.config.security.TokenIdentityConfig;
 import com.hazelcast.instance.ProtocolType;
+import com.hazelcast.internal.util.StringUtil;
 import com.hazelcast.internal.yaml.YamlMapping;
 import com.hazelcast.internal.yaml.YamlNode;
 import com.hazelcast.internal.yaml.YamlScalar;
@@ -102,9 +105,9 @@ import static com.hazelcast.internal.yaml.YamlUtil.asScalar;
 import static java.lang.Integer.parseInt;
 
 @SuppressWarnings({"checkstyle:methodcount",
-        "checkstyle:cyclomaticcomplexity",
-        "checkstyle:classfanoutcomplexity",
-        "checkstyle:classdataabstractioncoupling"})
+                   "checkstyle:cyclomaticcomplexity",
+                   "checkstyle:classfanoutcomplexity",
+                   "checkstyle:classdataabstractioncoupling"})
 public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
     public YamlMemberDomConfigProcessor(boolean domLevel3, Config config) {
         super(domLevel3, config);
@@ -465,7 +468,6 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
             queryCacheConfig.addIndexConfig(indexConfig);
         }
     }
-
 
     @Override
     protected void handleMemberGroup(Node node, Config config) {
@@ -873,5 +875,24 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
         TokenEncoding encoding = TokenEncoding.getTokenEncoding(getAttribute(node, "encoding"));
         TokenIdentityConfig tic = new TokenIdentityConfig(encoding, getAttribute(node, "value"));
         realmConfig.setTokenIdentityConfig(tic);
+    }
+
+    @Override
+    protected void handlePersistentMemoryConfig(PersistentMemoryConfig persistentMemoryConfig, Node n) {
+        for (Node dirsNode : childElements(n)) {
+            String nodeName = cleanNodeName(dirsNode);
+            if ("directories".equals(nodeName)) {
+                for (Node dirNode : childElements(dirsNode)) {
+                    String directory = getTextContent(dirNode.getAttributes().getNamedItem("directory"));
+                    String numaNodeIdStr = getTextContent(dirNode.getAttributes().getNamedItem("numa-node"));
+                    if (!StringUtil.isNullOrEmptyAfterTrim(numaNodeIdStr)) {
+                        int numaNodeId = getIntegerValue("numa-node", numaNodeIdStr);
+                        persistentMemoryConfig.addDirectoryConfig(new PersistentMemoryDirectoryConfig(directory, numaNodeId));
+                    } else {
+                        persistentMemoryConfig.addDirectoryConfig(new PersistentMemoryDirectoryConfig(directory));
+                    }
+                }
+            }
+        }
     }
 }

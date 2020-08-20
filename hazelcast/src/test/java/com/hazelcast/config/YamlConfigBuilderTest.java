@@ -43,7 +43,6 @@ import org.junit.runner.RunWith;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
 import java.io.Writer;
@@ -64,7 +63,6 @@ import static com.hazelcast.config.PermissionConfig.PermissionType.CACHE;
 import static com.hazelcast.config.PermissionConfig.PermissionType.CONFIG;
 import static com.hazelcast.config.WanQueueFullBehavior.DISCARD_AFTER_MUTATION;
 import static com.hazelcast.config.WanQueueFullBehavior.THROW_EXCEPTION;
-import static com.hazelcast.config.XmlYamlConfigBuilderEqualsTest.readResourceToString;
 import static java.io.File.createTempFile;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -3326,6 +3324,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testCPSubsystemConfig() {
         String yaml = ""
                 + "hazelcast:\n"
@@ -3395,6 +3394,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testSqlConfig() {
         String yaml = ""
             + "hazelcast:\n"
@@ -3410,6 +3410,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    @Test
     public void testWhitespaceInNonSpaceStrings() {
         String yaml = ""
                 + "hazelcast:\n"
@@ -3423,16 +3424,123 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
 
     @Override
     @Test
-    public void testPersistentMemoryDirectoryConfiguration() throws IOException {
-        String fullExampleYaml = readResourceToString("hazelcast-full-example.yaml");
+    public void testPersistentMemoryDirectoryConfiguration() {
+        String yaml = ""
+                + "hazelcast:\n"
+                + "  native-memory:\n"
+                + "    persistent-memory:\n"
+                + "      directories:\n"
+                + "        - directory: /mnt/pmem0\n"
+                + "          numa-node: 0\n"
+                + "        - directory: /mnt/pmem1\n"
+                + "          numa-node: 1\n";
 
-        fullExampleYaml = fullExampleYaml
-                .replace("\r", "")
-                .replace("import:\n    - your-configuration-YAML-file", "");
+        Config yamlConfig = new InMemoryYamlConfig(yaml);
 
+        List<PersistentMemoryDirectoryConfig> directoryConfigs = yamlConfig.getNativeMemoryConfig()
+                                                                           .getPersistentMemoryConfig()
+                                                                           .getDirectoryConfigs();
+        assertEquals(2, directoryConfigs.size());
+        PersistentMemoryDirectoryConfig dir0Config = directoryConfigs.get(0);
+        PersistentMemoryDirectoryConfig dir1Config = directoryConfigs.get(1);
+        assertEquals("/mnt/pmem0", dir0Config.getDirectory());
+        assertEquals(0, dir0Config.getNumaNode());
+        assertEquals("/mnt/pmem1", dir1Config.getDirectory());
+        assertEquals(1, dir1Config.getNumaNode());
+    }
 
-        Config yamlConfig = new InMemoryYamlConfig(fullExampleYaml);
-        assertEquals("/mnt/optane", yamlConfig.getNativeMemoryConfig().getPersistentMemoryDirectory());
+    @Override
+    @Test
+    public void testPersistentMemoryDirectoryConfigurationSimple() {
+        String yaml = ""
+                + "hazelcast:\n"
+                + "  native-memory:\n"
+                + "    persistent-memory-directory: /mnt/pmem0";
+
+        Config config = buildConfig(yaml);
+        List<PersistentMemoryDirectoryConfig> directoryConfigs = config.getNativeMemoryConfig()
+                                                                       .getPersistentMemoryConfig()
+                                                                       .getDirectoryConfigs();
+        assertEquals(1, directoryConfigs.size());
+        PersistentMemoryDirectoryConfig dir0Config = directoryConfigs.get(0);
+        assertEquals("/mnt/pmem0", dir0Config.getDirectory());
+        assertFalse(dir0Config.isNumaNodeSet());
+    }
+
+    @Override
+    @Test(expected = InvalidConfigurationException.class)
+    public void testPersistentMemoryDirectoryConfiguration_uniqueDirViolationThrows() {
+        String yaml = ""
+                + "hazelcast:\n"
+                + "  native-memory:\n"
+                + "    persistent-memory:\n"
+                + "      directories:\n"
+                + "        - directory: /mnt/pmem0\n"
+                + "          numa-node: 0\n"
+                + "        - directory: /mnt/pmem0\n"
+                + "          numa-node: 1\n";
+
+        buildConfig(yaml);
+    }
+
+    @Override
+    @Test(expected = InvalidConfigurationException.class)
+    public void testPersistentMemoryDirectoryConfiguration_uniqueNumaNodeViolationThrows() {
+        String yaml = ""
+                + "hazelcast:\n"
+                + "  native-memory:\n"
+                + "    persistent-memory:\n"
+                + "      directories:\n"
+                + "        - directory: /mnt/pmem0\n"
+                + "          numa-node: 0\n"
+                + "        - directory: /mnt/pmem1\n"
+                + "          numa-node: 0\n";
+
+        buildConfig(yaml);
+    }
+
+    @Override
+    @Test(expected = InvalidConfigurationException.class)
+    public void testPersistentMemoryDirectoryConfiguration_numaNodeConsistencyViolationThrows() {
+        String yaml = ""
+                + "hazelcast:\n"
+                + "  native-memory:\n"
+                + "    persistent-memory:\n"
+                + "      directories:\n"
+                + "        - directory: /mnt/pmem0\n"
+                + "          numa-node: 0\n"
+                + "        - directory: /mnt/pmem1\n";
+
+        buildConfig(yaml);
+    }
+
+    @Override
+    @Test
+    public void testPersistentMemoryDirectoryConfiguration_simpleAndAdvancedPasses() {
+        String yaml = ""
+                + "hazelcast:\n"
+                + "  native-memory:\n"
+                + "    persistent-memory-directory: /mnt/optane\n"
+                + "    persistent-memory:\n"
+                + "      directories:\n"
+                + "        - directory: /mnt/pmem0\n"
+                + "        - directory: /mnt/pmem1\n";
+
+        Config config = buildConfig(yaml);
+
+        List<PersistentMemoryDirectoryConfig> directoryConfigs = config.getNativeMemoryConfig()
+                                                                       .getPersistentMemoryConfig()
+                                                                       .getDirectoryConfigs();
+        assertEquals(3, directoryConfigs.size());
+        PersistentMemoryDirectoryConfig dir0Config = directoryConfigs.get(0);
+        PersistentMemoryDirectoryConfig dir1Config = directoryConfigs.get(1);
+        PersistentMemoryDirectoryConfig dir2Config = directoryConfigs.get(2);
+        assertEquals("/mnt/optane", dir0Config.getDirectory());
+        assertFalse(dir0Config.isNumaNodeSet());
+        assertEquals("/mnt/pmem0", dir1Config.getDirectory());
+        assertFalse(dir1Config.isNumaNodeSet());
+        assertEquals("/mnt/pmem1", dir2Config.getDirectory());
+        assertFalse(dir2Config.isNumaNodeSet());
     }
 
     @Override

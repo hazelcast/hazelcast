@@ -44,8 +44,10 @@ import com.hazelcast.config.IndexType;
 import com.hazelcast.config.InstanceTrackingConfig;
 import com.hazelcast.config.LoginModuleConfig;
 import com.hazelcast.config.MaxSizePolicy;
+import com.hazelcast.config.NativeMemoryConfig;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.config.NearCachePreloaderConfig;
+import com.hazelcast.config.PersistentMemoryDirectoryConfig;
 import com.hazelcast.config.QueryCacheConfig;
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.config.SerializerConfig;
@@ -58,6 +60,7 @@ import com.hazelcast.cp.IAtomicReference;
 import com.hazelcast.cp.ICountDownLatch;
 import com.hazelcast.cp.ISemaphore;
 import com.hazelcast.map.IMap;
+import com.hazelcast.memory.MemoryUnit;
 import com.hazelcast.multimap.MultiMap;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.test.annotation.QuickTest;
@@ -145,6 +148,9 @@ public class TestClientApplicationContext {
 
     @Resource(name = "client19-instance-tracking")
     private HazelcastClientProxy instanceTrackingClient;
+
+    @Resource(name = "client20-native-memory")
+    private HazelcastClientProxy nativeMemoryClient;
 
     @Resource(name = "instance")
     private HazelcastInstance instance;
@@ -533,5 +539,26 @@ public class TestClientApplicationContext {
         assertEquals("/dummy/file", trackingConfig.getFileName());
         assertEquals("dummy-pattern with $HZ_INSTANCE_TRACKING{placeholder} and $RND{placeholder}",
                 trackingConfig.getFormatPattern());
+    }
+
+    @Test
+    public void testNativeMemory() {
+        NativeMemoryConfig nativeMemoryConfig = nativeMemoryClient.getClientConfig().getNativeMemoryConfig();
+
+        assertFalse(nativeMemoryConfig.isEnabled());
+        assertEquals(MemoryUnit.GIGABYTES, nativeMemoryConfig.getSize().getUnit());
+        assertEquals(256, nativeMemoryConfig.getSize().getValue());
+        assertEquals(20, nativeMemoryConfig.getPageSize());
+        assertEquals(NativeMemoryConfig.MemoryAllocatorType.STANDARD, nativeMemoryConfig.getAllocatorType());
+        assertEquals(10.2, nativeMemoryConfig.getMetadataSpacePercentage(), 0.1);
+        assertEquals(10, nativeMemoryConfig.getMinBlockSize());
+        List<PersistentMemoryDirectoryConfig> directoryConfigs = nativeMemoryConfig.getPersistentMemoryConfig()
+                                                                                   .getDirectoryConfigs();
+
+        assertEquals(2, directoryConfigs.size());
+        assertEquals("/mnt/pmem0", directoryConfigs.get(0).getDirectory());
+        assertEquals(0, directoryConfigs.get(0).getNumaNode());
+        assertEquals("/mnt/pmem1", directoryConfigs.get(1).getDirectory());
+        assertEquals(1, directoryConfigs.get(1).getNumaNode());
     }
 }

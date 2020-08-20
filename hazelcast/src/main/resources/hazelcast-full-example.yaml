@@ -2080,10 +2080,19 @@ hazelcast:
   #     Percentage of the allocated native memory that is used for the metadata such as indexes, offsets, etc. It is
   #     used only by the POOLED memory allocator. Its default value is 12.5.
   # - "persistent-memory-directory":
-  #     Specifies the directory where the non-volatile memory (e.g. Intel Optane) is mounted. If this element is not defined,
-  #     the RAM is used as a native memory. This directory will be created automatically if it does not exist.
-  #     To avoid collisions, every member of the cluster will create its own subfolder to work with the non-volatile
-  #     memory.
+  #     Simple configuration option for a single directory where the non-volatile memory (e.g. Intel Optane) is mounted.
+  #     This should be used only on single-socket systems as only one directory can be defined. On multi-socket systems
+  #     use <persistent-memory> instead.
+  #     If neither this or <persistent-memory> elements are defined, the RAM is used as native memory. This directory
+  #     will be created automatically if it does not exist. To avoid collisions, every member of the cluster will create
+  #     its own subfolder to work with the non-volatile memory.
+  # - "persistent-memory":
+  #     Specifies the configuration for the non-volatile memory (e.g. Intel Optane) in the system. Under this configuration
+  #     section multiple directories can be listed with optionally specifying the NUMA node the non-volatile memory mounted
+  #     in the given directory is attached to for NUMA-aware allocations. If neither this or the
+  #     <persistent-memory-directory> elements are defined, the RAM is used as native memory. The directories defined under
+  #     this section will be created automatically if they do not exist. To avoid collisions, every member of the cluster
+  #     will create its own subfolder to work with the non-volatile memory.
   #
   native-memory:
     enabled: true
@@ -2094,7 +2103,15 @@ hazelcast:
     min-block-size: 32
     page-size: 4194304
     metadata-space-percentage: 12.5
-    persistent-memory-directory: /mnt/optane
+    # Simple configuration for single-socket machines with non-volatile memory
+    # persistent-memory-directory: /mnt/optane
+    # Advanced configuration for non-volatile memory
+    persistent-memory:
+      directories:
+        - directory: /mnt/pmem0
+          numa-node: 0
+        - directory: /mnt/pmem1
+          numa-node: 1
   #
   # ===== HAZELCAST SECURITY CONFIGURATION =====
   #

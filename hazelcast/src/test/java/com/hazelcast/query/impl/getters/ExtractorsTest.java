@@ -75,8 +75,8 @@ public class ExtractorsTest {
         Extractors extractors = createExtractors(null);
 
         // WHEN
-        Getter getterFirstInvocation = extractors.getGetter(bond, "car.power");
-        Getter getterSecondInvocation = extractors.getGetter(bond, "car.power");
+        Getter getterFirstInvocation = extractors.getGetter(bond, "car.power", true);
+        Getter getterSecondInvocation = extractors.getGetter(bond, "car.power", true);
 
         // THEN
         assertThat(getterFirstInvocation, sameInstance(getterSecondInvocation));
@@ -100,8 +100,8 @@ public class ExtractorsTest {
         Extractors extractors = createExtractors(config);
 
         // WHEN
-        Getter getterFirstInvocation = extractors.getGetter(bond, "gimmePower");
-        Getter getterSecondInvocation = extractors.getGetter(bond, "gimmePower");
+        Getter getterFirstInvocation = extractors.getGetter(bond, "gimmePower", true);
+        Getter getterSecondInvocation = extractors.getGetter(bond, "gimmePower", true);
 
         // THEN
         assertThat(getterFirstInvocation, sameInstance(getterSecondInvocation));

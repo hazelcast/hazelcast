@@ -44,7 +44,6 @@ import org.junit.runner.RunWith;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
 import java.io.Writer;
@@ -66,7 +65,6 @@ import static com.hazelcast.config.PermissionConfig.PermissionType.CONFIG;
 import static com.hazelcast.config.RestEndpointGroup.CLUSTER_READ;
 import static com.hazelcast.config.RestEndpointGroup.HEALTH_CHECK;
 import static com.hazelcast.config.WanQueueFullBehavior.THROW_EXCEPTION;
-import static com.hazelcast.config.XmlYamlConfigBuilderEqualsTest.readResourceToString;
 import static java.io.File.createTempFile;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -3308,17 +3306,133 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
 
     @Override
     @Test
-    public void testPersistentMemoryDirectoryConfiguration() throws IOException {
-        String fullExampleXml = readResourceToString("hazelcast-full-example.xml");
+    public void testPersistentMemoryDirectoryConfiguration() {
+        String xml = HAZELCAST_START_TAG
+                + "<native-memory>\n"
+                + "  <persistent-memory>\n"
+                + "    <directories>\n"
+                + "      <directory numa-node=\"0\">/mnt/pmem0</directory>\n"
+                + "      <directory numa-node=\"1\">/mnt/pmem1</directory>\n"
+                + "    </directories>\n"
+                + "  </persistent-memory>\n"
+                + "</native-memory>\n"
+                + HAZELCAST_END_TAG;
 
-        // remove imports to prevent the test from failing with importing non-existing files
-        fullExampleXml = fullExampleXml.replace("<import resource=\"your-configuration-XML-file\"/>", "");
+        Config xmlConfig = new InMemoryXmlConfig(xml);
 
-        Config xmlConfig = new InMemoryXmlConfig(fullExampleXml);
-
-        assertEquals("/mnt/optane", xmlConfig.getNativeMemoryConfig().getPersistentMemoryDirectory());
+        List<PersistentMemoryDirectoryConfig> directoryConfigs = xmlConfig.getNativeMemoryConfig()
+                                                                          .getPersistentMemoryConfig()
+                                                                          .getDirectoryConfigs();
+        assertEquals(2, directoryConfigs.size());
+        PersistentMemoryDirectoryConfig dir0Config = directoryConfigs.get(0);
+        PersistentMemoryDirectoryConfig dir1Config = directoryConfigs.get(1);
+        assertEquals("/mnt/pmem0", dir0Config.getDirectory());
+        assertEquals(0, dir0Config.getNumaNode());
+        assertEquals("/mnt/pmem1", dir1Config.getDirectory());
+        assertEquals(1, dir1Config.getNumaNode());
     }
 
+    @Override
+    @Test
+    public void testPersistentMemoryDirectoryConfigurationSimple() {
+        String xml = HAZELCAST_START_TAG
+                + "<native-memory>\n"
+                + "  <persistent-memory-directory>/mnt/pmem0</persistent-memory-directory>\n"
+                + "</native-memory>\n"
+                + HAZELCAST_END_TAG;
+
+        Config xmlConfig = new InMemoryXmlConfig(xml);
+
+        List<PersistentMemoryDirectoryConfig> directoryConfigs = xmlConfig.getNativeMemoryConfig()
+                                                                          .getPersistentMemoryConfig()
+                                                                          .getDirectoryConfigs();
+        assertEquals(1, directoryConfigs.size());
+        PersistentMemoryDirectoryConfig dir0Config = directoryConfigs.get(0);
+        assertEquals("/mnt/pmem0", dir0Config.getDirectory());
+        assertFalse(dir0Config.isNumaNodeSet());
+    }
+
+    @Override
+    @Test(expected = InvalidConfigurationException.class)
+    public void testPersistentMemoryDirectoryConfiguration_uniqueDirViolationThrows() {
+        String xml = HAZELCAST_START_TAG
+                + "<native-memory>\n"
+                + "  <persistent-memory>\n"
+                + "    <directories>\n"
+                + "      <directory numa-node=\"0\">/mnt/pmem0</directory>\n"
+                + "      <directory numa-node=\"1\">/mnt/pmem0</directory>\n"
+                + "    </directories>\n"
+                + "  </persistent-memory>\n"
+                + "</native-memory>\n"
+                + HAZELCAST_END_TAG;
+
+        buildConfig(xml);
+    }
+
+    @Override
+    @Test(expected = InvalidConfigurationException.class)
+    public void testPersistentMemoryDirectoryConfiguration_uniqueNumaNodeViolationThrows() {
+        String xml = HAZELCAST_START_TAG
+                + "<native-memory>\n"
+                + "  <persistent-memory>\n"
+                + "    <directories>\n"
+                + "      <directory numa-node=\"0\">/mnt/pmem0</directory>\n"
+                + "      <directory numa-node=\"0\">/mnt/pmem1</directory>\n"
+                + "    </directories>\n"
+                + "  </persistent-memory>\n"
+                + "</native-memory>\n"
+                + HAZELCAST_END_TAG;
+
+        buildConfig(xml);
+    }
+
+    @Override
+    @Test(expected = InvalidConfigurationException.class)
+    public void testPersistentMemoryDirectoryConfiguration_numaNodeConsistencyViolationThrows() {
+        String xml = HAZELCAST_START_TAG
+                + "<native-memory>\n"
+                + "  <persistent-memory>\n"
+                + "    <directories>\n"
+                + "      <directory numa-node=\"0\">/mnt/pmem0</directory>\n"
+                + "      <directory>/mnt/pmem1</directory>\n"
+                + "    </directories>\n"
+                + "  </persistent-memory>\n"
+                + "</native-memory>\n"
+                + HAZELCAST_END_TAG;
+
+        buildConfig(xml);
+    }
+
+    @Override
+    @Test
+    public void testPersistentMemoryDirectoryConfiguration_simpleAndAdvancedPasses() {
+        String xml = HAZELCAST_START_TAG
+                + "<native-memory>\n"
+                + "  <persistent-memory-directory>/mnt/optane</persistent-memory-directory>\n"
+                + "  <persistent-memory>\n"
+                + "    <directories>\n"
+                + "      <directory>/mnt/pmem0</directory>\n"
+                + "      <directory>/mnt/pmem1</directory>\n"
+                + "    </directories>\n"
+                + "  </persistent-memory>\n"
+                + "</native-memory>\n"
+                + HAZELCAST_END_TAG;
+
+        Config config = buildConfig(xml);
+        List<PersistentMemoryDirectoryConfig> directoryConfigs = config.getNativeMemoryConfig()
+                                                                       .getPersistentMemoryConfig()
+                                                                       .getDirectoryConfigs();
+        assertEquals(3, directoryConfigs.size());
+        PersistentMemoryDirectoryConfig dir0Config = directoryConfigs.get(0);
+        PersistentMemoryDirectoryConfig dir1Config = directoryConfigs.get(1);
+        PersistentMemoryDirectoryConfig dir2Config = directoryConfigs.get(2);
+        assertEquals("/mnt/optane", dir0Config.getDirectory());
+        assertFalse(dir0Config.isNumaNodeSet());
+        assertEquals("/mnt/pmem0", dir1Config.getDirectory());
+        assertFalse(dir1Config.isNumaNodeSet());
+        assertEquals("/mnt/pmem1", dir2Config.getDirectory());
+        assertFalse(dir2Config.isNumaNodeSet());
+    }
 
     @Override
     protected Config buildCompleteAdvancedNetworkConfig() {
