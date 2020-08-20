@@ -208,7 +208,7 @@ public class LikeFunction extends TriExpression<Boolean> implements IdentifiedDa
         }
 
         private static QueryException escapeWildcardsOnly() {
-            return QueryException.error("Only '_' or '%' pattern wildcards could be escaped");
+            return QueryException.error("Only '_', '%' and the escape character can be escaped");
         }
     }
 }

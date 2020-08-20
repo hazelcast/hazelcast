@@ -101,8 +101,8 @@ public class LikeFunctionIntegrationTest extends SqlExpressionIntegrationTestSup
         checkFailure("this LIKE 'te\\_t' ESCAPE '!!'", SqlErrorCode.GENERIC, "ESCAPE parameter must be a single character");
 
         // Apply escape to incorrect symbols in the pattern
-        checkFailure("this LIKE 'te_!t' ESCAPE '!'", SqlErrorCode.GENERIC, "Only '_' or '%' pattern wildcards could be escaped");
-        checkFailure("this LIKE 'te_t!' ESCAPE '!'", SqlErrorCode.GENERIC, "Only '_' or '%' pattern wildcards could be escaped");
+        checkFailure("this LIKE 'te_!t' ESCAPE '!'", SqlErrorCode.GENERIC, "Only '_', '%' and the escape character can be escaped");
+        checkFailure("this LIKE 'te_t!' ESCAPE '!'", SqlErrorCode.GENERIC, "Only '_', '%' and the escape character can be escaped");
     }
 
     @Test
