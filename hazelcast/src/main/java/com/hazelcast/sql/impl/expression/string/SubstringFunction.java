@@ -76,7 +76,7 @@ public class SubstringFunction extends TriExpression<String> implements Identifi
         // In SQL start position is 1-based. Convert it to 0-based for Java.
         int adjustedStart = start - 1;
 
-        if (adjustedStart > input.length()) {
+        if (adjustedStart >= input.length()) {
             // Start position is beyond the string length, e.g. SUBSTRING("abc", 4)
             return "";
         }
