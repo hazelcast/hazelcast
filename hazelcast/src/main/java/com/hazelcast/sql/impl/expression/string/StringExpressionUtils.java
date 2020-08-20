@@ -16,7 +16,6 @@
 
 package com.hazelcast.sql.impl.expression.string;
 
-import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.row.Row;
@@ -33,56 +32,6 @@ public final class StringExpressionUtils {
 
     public static String concat(String first, String second) {
         return (first != null ? first : "") + (second != null ? second : "");
-    }
-
-    public static Integer position(String seek, String source, int position) {
-        if (seek == null) {
-            return null;
-        }
-
-        if (source == null) {
-            return null;
-        }
-
-        if (position == 0) {
-            return source.indexOf(seek) + 1;
-        } else {
-            int position0 = position - 1;
-
-            if (position0 < 0 || position0 > source.length()) {
-                return 0;
-            }
-
-            return source.indexOf(seek, position0) + 1;
-        }
-    }
-
-    public static String substring(String source, Integer startPos, Integer length) {
-        // TODO: Validate the implementation against ANSI.
-        if (source == null || startPos == null || length == null) {
-            return null;
-        }
-
-        int sourceLength = source.length();
-
-        if (startPos < 0) {
-            startPos += sourceLength + 1;
-        }
-
-        int endPos = startPos + length;
-
-        if (endPos < startPos) {
-            throw QueryException.error("End position is less than start position.");
-        }
-
-        if (startPos > sourceLength || endPos < 1) {
-            return "";
-        }
-
-        int startPos0 = Math.max(startPos, 1);
-        int endPos0 = Math.min(endPos, sourceLength + 1);
-
-        return source.substring(startPos0 - 1, endPos0 - 1);
     }
 
     public static Integer charLength(String value) {
