@@ -14,9 +14,18 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.optimizer;
+package com.hazelcast.sql.impl;
 
-public enum SqlPlanType {
-    /** IMDG plan. */
-    IMDG
+import com.hazelcast.sql.SqlResult;
+
+public abstract class AbstractSqlResult implements SqlResult {
+
+    public abstract QueryId getQueryId();
+
+    public abstract void closeOnError(QueryException exception);
+
+    @Override
+    public void close() {
+        closeOnError(QueryException.cancelledByUser());
+    }
 }

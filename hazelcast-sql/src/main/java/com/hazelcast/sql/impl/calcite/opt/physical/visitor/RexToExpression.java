@@ -18,13 +18,20 @@ package com.hazelcast.sql.impl.calcite.opt.physical.visitor;
 
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.calcite.SqlToQueryType;
+import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlOperatorTable;
 import com.hazelcast.sql.impl.expression.CastExpression;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.Expression;
+import com.hazelcast.sql.impl.expression.math.AbsFunction;
 import com.hazelcast.sql.impl.expression.math.DivideFunction;
+import com.hazelcast.sql.impl.expression.math.DoubleFunction;
+import com.hazelcast.sql.impl.expression.math.FloorCeilFunction;
 import com.hazelcast.sql.impl.expression.math.MinusFunction;
 import com.hazelcast.sql.impl.expression.math.MultiplyFunction;
 import com.hazelcast.sql.impl.expression.math.PlusFunction;
+import com.hazelcast.sql.impl.expression.math.RandFunction;
+import com.hazelcast.sql.impl.expression.math.RoundTruncateFunction;
+import com.hazelcast.sql.impl.expression.math.SignFunction;
 import com.hazelcast.sql.impl.expression.math.UnaryMinusFunction;
 import com.hazelcast.sql.impl.expression.predicate.AndPredicate;
 import com.hazelcast.sql.impl.expression.predicate.ComparisonMode;
@@ -40,7 +47,9 @@ import com.hazelcast.sql.impl.expression.predicate.OrPredicate;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.calcite.rex.RexCall;
 import org.apache.calcite.rex.RexLiteral;
+import org.apache.calcite.sql.SqlFunction;
 import org.apache.calcite.sql.SqlOperator;
+import org.apache.calcite.sql.fun.SqlStdOperatorTable;
 import org.apache.calcite.sql.type.SqlTypeName;
 
 import java.math.BigDecimal;
@@ -104,7 +113,8 @@ public final class RexToExpression {
      * @throws QueryException if the given {@link RexCall} can't be
      *                        converted.
      */
-    @SuppressWarnings({"checkstyle:ReturnCount", "checkstyle:CyclomaticComplexity"})
+    @SuppressWarnings({"checkstyle:CyclomaticComplexity", "checkstyle:MethodLength", "checkstyle:ReturnCount",
+        "checkstyle:NPathComplexity"})
     public static Expression<?> convertCall(RexCall call, Expression<?>[] operands) {
         SqlOperator operator = call.getOperator();
         QueryDataType resultType = SqlToQueryType.map(call.getType().getSqlTypeName());
@@ -161,6 +171,12 @@ public final class RexToExpression {
             case PLUS_PREFIX:
                 return operands[0];
 
+            case FLOOR:
+                return FloorCeilFunction.create(operands[0], resultType, false);
+
+            case CEIL:
+                return FloorCeilFunction.create(operands[0], resultType, true);
+
             case EQUALS:
                 return ComparisonPredicate.create(operands[0], operands[1], ComparisonMode.EQUALS);
 
@@ -196,6 +212,61 @@ public final class RexToExpression {
 
             case IS_NOT_NULL:
                 return IsNotNullPredicate.create(operands[0]);
+
+            case OTHER_FUNCTION:
+                SqlFunction function = (SqlFunction) operator;
+
+                // Math.
+
+                if (function == HazelcastSqlOperatorTable.COS) {
+                    return DoubleFunction.create(operands[0], DoubleFunction.COS);
+                } else if (function == HazelcastSqlOperatorTable.SIN) {
+                    return DoubleFunction.create(operands[0], DoubleFunction.SIN);
+                } else if (function == HazelcastSqlOperatorTable.TAN) {
+                    return DoubleFunction.create(operands[0], DoubleFunction.TAN);
+                } else if (function == HazelcastSqlOperatorTable.COT) {
+                    return DoubleFunction.create(operands[0], DoubleFunction.COT);
+                } else if (function == HazelcastSqlOperatorTable.ACOS) {
+                    return DoubleFunction.create(operands[0], DoubleFunction.ACOS);
+                } else if (function == HazelcastSqlOperatorTable.ASIN) {
+                    return DoubleFunction.create(operands[0], DoubleFunction.ASIN);
+                } else if (function == HazelcastSqlOperatorTable.ATAN) {
+                    return DoubleFunction.create(operands[0], DoubleFunction.ATAN);
+                } else if (function == HazelcastSqlOperatorTable.EXP) {
+                    return DoubleFunction.create(operands[0], DoubleFunction.EXP);
+                } else if (function == HazelcastSqlOperatorTable.LN) {
+                    return DoubleFunction.create(operands[0], DoubleFunction.LN);
+                } else if (function == HazelcastSqlOperatorTable.LOG10) {
+                    return DoubleFunction.create(operands[0], DoubleFunction.LOG10);
+                } else if (function == HazelcastSqlOperatorTable.RAND) {
+                    return RandFunction.create(operands.length == 0 ? null : operands[0]);
+                } else if (function == HazelcastSqlOperatorTable.ABS) {
+                    return AbsFunction.create(operands[0], resultType);
+                } else if (function == SqlStdOperatorTable.PI) {
+                    return ConstantExpression.create(Math.PI, resultType);
+                } else if (function == HazelcastSqlOperatorTable.SIGN) {
+                    return SignFunction.create(operands[0], resultType);
+                } else if (function == HazelcastSqlOperatorTable.DEGREES) {
+                    return DoubleFunction.create(operands[0], DoubleFunction.DEGREES);
+                } else if (function == HazelcastSqlOperatorTable.RADIANS) {
+                    return DoubleFunction.create(operands[0], DoubleFunction.RADIANS);
+                } else if (function == HazelcastSqlOperatorTable.ROUND) {
+                    return RoundTruncateFunction.create(
+                        operands[0],
+                        operands.length == 1 ? null : operands[1],
+                        resultType,
+                        false
+                    );
+                } else if (function == HazelcastSqlOperatorTable.TRUNCATE) {
+                    return RoundTruncateFunction.create(
+                        operands[0],
+                        operands.length == 1 ? null : operands[1],
+                        resultType,
+                        true
+                    );
+                }
+
+                break;
 
             default:
                 break;

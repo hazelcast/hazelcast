@@ -92,7 +92,7 @@ public class MapScanExecIterator implements KeyValueIterator {
 
                     if (!isOwned) {
                         throw QueryException.error(
-                            SqlErrorCode.PARTITION_NOT_OWNED,
+                            SqlErrorCode.PARTITION_DISTRIBUTION_CHANGED,
                             "Partition is not owned by member: " + nextPart
                         ).withInvalidate();
                     }

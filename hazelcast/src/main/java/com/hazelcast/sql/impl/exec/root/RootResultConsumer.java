@@ -17,7 +17,6 @@
 package com.hazelcast.sql.impl.exec.root;
 
 import com.hazelcast.sql.impl.QueryResultProducer;
-import com.hazelcast.sql.impl.worker.QueryFragmentContext;
 import com.hazelcast.sql.impl.row.Row;
 
 import java.util.List;
@@ -29,9 +28,9 @@ public interface RootResultConsumer extends QueryResultProducer {
     /**
      * Perform one-time setup.
      *
-     * @param context Context.
+     * @param scheduleCallback A callback to ask for more rows to be consumed
      */
-    void setup(QueryFragmentContext context);
+    void setup(ScheduleCallback scheduleCallback);
 
     /**
      * Consume rows from the root operator. The implementation should either consume all rows, or none. If the rows are consumed,

@@ -16,11 +16,14 @@
 
 package com.hazelcast.sql.impl.type.converter;
 
+import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 
 import java.math.BigDecimal;
 
 import static com.hazelcast.sql.impl.expression.math.ExpressionMath.DECIMAL_MATH_CONTEXT;
+import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.DECIMAL;
+import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.REAL;
 
 /**
  * Converter for {@link java.lang.Float} type.
@@ -30,7 +33,7 @@ public final class FloatConverter extends Converter {
     public static final FloatConverter INSTANCE = new FloatConverter();
 
     private FloatConverter() {
-        super(ID_FLOAT, QueryDataTypeFamily.REAL);
+        super(ID_FLOAT, REAL);
     }
 
     @Override
@@ -78,7 +81,7 @@ public final class FloatConverter extends Converter {
     public int asInt(Object val) {
         float casted = cast(val);
         if (!Float.isFinite(casted)) {
-            throw cannotConvert(QueryDataTypeFamily.INT, val);
+            throw cannotConvert(QueryDataTypeFamily.INTEGER, val);
         }
 
         // casts from float to int are saturating
@@ -86,7 +89,7 @@ public final class FloatConverter extends Converter {
 
         // casts from float to long are saturating
         if (converted != (long) casted) {
-            throw numericOverflow(QueryDataTypeFamily.INT, val);
+            throw numericOverflow(QueryDataTypeFamily.INTEGER, val);
         }
 
         return converted;
@@ -110,10 +113,19 @@ public final class FloatConverter extends Converter {
         return converted;
     }
 
-    @SuppressWarnings("UnpredictableBigDecimalConstructorCall")
     @Override
     public BigDecimal asDecimal(Object val) {
-        return new BigDecimal(cast(val), DECIMAL_MATH_CONTEXT);
+        float val0 = cast(val);
+
+        if (Float.isInfinite(val0)) {
+            throw QueryException.dataException("Cannot convert infinite " + REAL + " value to " + DECIMAL);
+        }
+
+        if (Float.isNaN(val0)) {
+            throw QueryException.dataException("Cannot convert NaN " + REAL + " value to " + DECIMAL);
+        }
+
+        return new BigDecimal(val0, DECIMAL_MATH_CONTEXT);
     }
 
     @Override

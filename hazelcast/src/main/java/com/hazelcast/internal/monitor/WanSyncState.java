@@ -26,8 +26,6 @@ public interface WanSyncState extends LocalInstanceStats {
 
     WanSyncStatus getStatus();
 
-    int getSyncedPartitionCount();
-
     String getActiveWanConfigName();
 
     String getActivePublisherName();

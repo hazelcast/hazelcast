@@ -115,6 +115,10 @@ public final class ProjectPhysicalRule extends RelOptRule {
                 // Singleton remains singleton.
                 return physicalInputDist;
 
+            case REPLICATED:
+                // Replicated remains replicated.
+                return physicalInputDist;
+
             default:
                 assert type == PARTITIONED;
 

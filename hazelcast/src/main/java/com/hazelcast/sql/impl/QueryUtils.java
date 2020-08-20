@@ -112,7 +112,7 @@ public final class QueryUtils {
 
                 break;
 
-            case INT:
+            case INTEGER:
                 type = SqlColumnType.INTEGER;
 
                 break;

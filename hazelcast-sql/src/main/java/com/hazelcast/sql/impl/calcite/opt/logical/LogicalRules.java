@@ -22,6 +22,7 @@ import org.apache.calcite.rel.rules.ProjectFilterTransposeRule;
 import org.apache.calcite.rel.rules.ProjectJoinTransposeRule;
 import org.apache.calcite.rel.rules.ProjectMergeRule;
 import org.apache.calcite.rel.rules.ProjectRemoveRule;
+import org.apache.calcite.rel.rules.PruneEmptyRules;
 import org.apache.calcite.tools.RuleSet;
 import org.apache.calcite.tools.RuleSets;
 
@@ -47,10 +48,15 @@ public final class LogicalRules {
             ProjectJoinTransposeRule.INSTANCE,
             ProjectIntoScanLogicalRule.INSTANCE,
 
+            // Values rules
+            PruneEmptyRules.PROJECT_INSTANCE,
+            PruneEmptyRules.FILTER_INSTANCE,
+
             // Converter rules
             MapScanLogicalRule.INSTANCE,
             FilterLogicalRule.INSTANCE,
-            ProjectLogicalRule.INSTANCE
+            ProjectLogicalRule.INSTANCE,
+            ValuesLogicalRule.INSTANCE
         );
     }
 }

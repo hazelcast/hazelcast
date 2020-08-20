@@ -32,6 +32,12 @@ public enum DistributionType {
     PARTITIONED,
 
     /**
+     * The whole data set is located on all nodes. That is, if there are N nodes, there will be N copies of the
+     * data set.
+     */
+    REPLICATED,
+
+    /**
      * Data set is located on the root node.
      */
     ROOT

@@ -68,7 +68,7 @@ public final class LongConverter extends Converter {
         int converted = (int) casted;
 
         if (converted != casted) {
-            throw numericOverflow(QueryDataTypeFamily.INT, val);
+            throw numericOverflow(QueryDataTypeFamily.INTEGER, val);
         }
 
         return converted;

@@ -16,14 +16,18 @@
 
 package com.hazelcast.sql.impl.calcite.validate;
 
+import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastDoubleFunction;
 import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastSqlBinaryOperator;
 import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastSqlCastFunction;
+import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastSqlFloorFunction;
 import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastSqlMonotonicBinaryOperator;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastInferTypes;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastOperandTypes;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastReturnTypes;
+import com.hazelcast.sql.impl.calcite.validate.types.ReplaceUnknownOperandTypeInference;
 import org.apache.calcite.sql.SqlBinaryOperator;
 import org.apache.calcite.sql.SqlFunction;
+import org.apache.calcite.sql.SqlFunctionCategory;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlPostfixOperator;
 import org.apache.calcite.sql.SqlPrefixOperator;
@@ -31,15 +35,20 @@ import org.apache.calcite.sql.fun.SqlStdOperatorTable;
 import org.apache.calcite.sql.type.InferTypes;
 import org.apache.calcite.sql.type.OperandTypes;
 import org.apache.calcite.sql.type.ReturnTypes;
+import org.apache.calcite.sql.type.SqlTypeName;
 import org.apache.calcite.sql.util.ReflectiveSqlOperatorTable;
 
 import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastInferTypes.NULLABLE_OBJECT;
 import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastOperandTypes.notAllNull;
 import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastOperandTypes.notAny;
+import static org.apache.calcite.sql.type.SqlTypeName.BIGINT;
+import static org.apache.calcite.sql.type.SqlTypeName.DECIMAL;
+import static org.apache.calcite.sql.type.SqlTypeName.INTEGER;
 
 /**
  * Custom functions and operators.
  */
+@SuppressWarnings("unused")
 public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable {
 
     //@formatter:off
@@ -259,6 +268,71 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
         ReturnTypes.BOOLEAN_NOT_NULL,
         NULLABLE_OBJECT,
         OperandTypes.ANY
+    );
+
+    //#endregion
+
+    //#region Math functions.
+
+    public static final SqlFunction ABS = new SqlFunction(
+        "ABS",
+        SqlKind.OTHER_FUNCTION,
+        HazelcastReturnTypes.UNARY_MINUS,
+        new ReplaceUnknownOperandTypeInference(DECIMAL),
+        notAny(OperandTypes.NUMERIC_OR_INTERVAL),
+        SqlFunctionCategory.NUMERIC
+    );
+
+    public static final SqlFunction SIGN = new SqlFunction(
+        "SIGN",
+        SqlKind.OTHER_FUNCTION,
+        ReturnTypes.ARG0,
+        new ReplaceUnknownOperandTypeInference(DECIMAL),
+        notAny(OperandTypes.NUMERIC),
+        SqlFunctionCategory.NUMERIC
+    );
+
+    public static final SqlFunction RAND = new SqlFunction(
+        "RAND",
+        SqlKind.OTHER_FUNCTION,
+        ReturnTypes.DOUBLE,
+        HazelcastInferTypes.explicit(BIGINT),
+        OperandTypes.or(OperandTypes.NILADIC, notAny(OperandTypes.NUMERIC)),
+        SqlFunctionCategory.NUMERIC
+    );
+
+    public static final SqlFunction COS = new HazelcastDoubleFunction("COS");
+    public static final SqlFunction SIN = new HazelcastDoubleFunction("SIN");
+    public static final SqlFunction TAN = new HazelcastDoubleFunction("TAN");
+    public static final SqlFunction COT = new HazelcastDoubleFunction("COT");
+    public static final SqlFunction ACOS = new HazelcastDoubleFunction("ACOS");
+    public static final SqlFunction ASIN = new HazelcastDoubleFunction("ASIN");
+    public static final SqlFunction ATAN = new HazelcastDoubleFunction("ATAN");
+    public static final SqlFunction EXP = new HazelcastDoubleFunction("EXP");
+    public static final SqlFunction LN = new HazelcastDoubleFunction("LN");
+    public static final SqlFunction LOG10 = new HazelcastDoubleFunction("LOG10");
+    public static final SqlFunction DEGREES = new HazelcastDoubleFunction("DEGREES");
+    public static final SqlFunction RADIANS = new HazelcastDoubleFunction("RADIANS");
+
+    public static final SqlFunction FLOOR = new HazelcastSqlFloorFunction(SqlKind.FLOOR);
+    public static final SqlFunction CEIL = new HazelcastSqlFloorFunction(SqlKind.CEIL);
+
+    public static final SqlFunction ROUND = new SqlFunction(
+        "ROUND",
+        SqlKind.OTHER_FUNCTION,
+        ReturnTypes.ARG0_NULLABLE,
+        new ReplaceUnknownOperandTypeInference(new SqlTypeName[] { DECIMAL, INTEGER }),
+        notAny(OperandTypes.NUMERIC_OPTIONAL_INTEGER),
+        SqlFunctionCategory.NUMERIC
+    );
+
+    public static final SqlFunction TRUNCATE = new SqlFunction(
+        "TRUNCATE",
+        SqlKind.OTHER_FUNCTION,
+        ReturnTypes.ARG0_NULLABLE,
+        new ReplaceUnknownOperandTypeInference(new SqlTypeName[] { DECIMAL, INTEGER }),
+        notAny(OperandTypes.NUMERIC_OPTIONAL_INTEGER),
+        SqlFunctionCategory.NUMERIC
     );
 
     //#endregion

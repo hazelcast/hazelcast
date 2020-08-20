@@ -78,7 +78,7 @@ public final class UnaryMinusFunction<T> extends UniExpressionWithType<T> implem
             case SMALLINT:
                 return (short) -number.shortValue();
 
-            case INT:
+            case INTEGER:
                 return -number.intValue();
 
             case BIGINT:

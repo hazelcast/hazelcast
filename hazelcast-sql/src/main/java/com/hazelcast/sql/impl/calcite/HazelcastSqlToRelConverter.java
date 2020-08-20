@@ -56,7 +56,7 @@ import static org.apache.calcite.sql.type.SqlTypeName.VARCHAR;
  * the default Calcite sql-to-rel converter and to facilitate generation of
  * literals and casts with more precise types assigned during the validation.
  */
-public final class HazelcastSqlToRelConverter extends SqlToRelConverter {
+public class HazelcastSqlToRelConverter extends SqlToRelConverter {
 
     public HazelcastSqlToRelConverter(RelOptTable.ViewExpander viewExpander, SqlValidator validator,
                                       Prepare.CatalogReader catalogReader, RelOptCluster cluster,

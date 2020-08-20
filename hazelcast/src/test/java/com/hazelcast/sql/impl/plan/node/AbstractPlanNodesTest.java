@@ -174,6 +174,11 @@ public class AbstractPlanNodesTest {
         }
 
         @Override
+        public void onEmptyNode(EmptyPlanNode node) {
+            nodes.add(node);
+        }
+
+        @Override
         public void onOtherNode(PlanNode node) {
             nodes.add(node);
         }

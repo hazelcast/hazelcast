@@ -19,6 +19,7 @@ package com.hazelcast.sql.impl.calcite.parse;
 import com.hazelcast.sql.SqlErrorCode;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.QueryUtils;
+import com.hazelcast.sql.impl.calcite.HazelcastSqlBackend;
 import com.hazelcast.sql.impl.calcite.OptimizerContext;
 import com.hazelcast.sql.impl.calcite.TestMapTable;
 import com.hazelcast.sql.impl.calcite.TestTableResolver;
@@ -151,7 +152,7 @@ public class ParserOperationsTest {
 
     @Test
     public void testUnsupportedFunction() {
-        checkFailure("select sin(0) from t", "SIN is not supported");
+        checkFailure("select atan2(0, 0) from t", "ATAN2 is not supported");
     }
 
     private static void checkSuccess(String sql) {
@@ -186,7 +187,9 @@ public class ParserOperationsTest {
         return OptimizerContext.create(
             new SqlCatalog(tableResolvers),
             searchPaths,
-            1
+            1,
+            new HazelcastSqlBackend(null),
+            null
         );
     }
 }

@@ -130,7 +130,7 @@ public abstract class AbstractMapScanExec extends AbstractExec {
         // Check for concurrent migration
         if (!validateMigrationStamp(migrationStamp)) {
             throw QueryException.error(
-                SqlErrorCode.PARTITION_MIGRATED, "Map scan failed due to concurrent partition migration "
+                SqlErrorCode.PARTITION_DISTRIBUTION_CHANGED, "Map scan failed due to concurrent partition migration "
                 + "(result consistency cannot be guaranteed)"
             ).withInvalidate();
         }

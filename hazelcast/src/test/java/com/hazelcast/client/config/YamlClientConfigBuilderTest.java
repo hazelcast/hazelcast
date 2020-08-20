@@ -23,12 +23,15 @@ import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.InstanceTrackingConfig;
 import com.hazelcast.config.InvalidConfigurationException;
+import com.hazelcast.config.NativeMemoryConfig;
 import com.hazelcast.config.NearCacheConfig;
+import com.hazelcast.config.PersistentMemoryDirectoryConfig;
 import com.hazelcast.config.YamlConfigBuilderTest;
 import com.hazelcast.config.security.KerberosIdentityConfig;
 import com.hazelcast.config.security.TokenIdentityConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.internal.util.RootCauseMatcher;
+import com.hazelcast.memory.MemoryUnit;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.topic.TopicOverloadPolicy;
@@ -466,6 +469,149 @@ public class YamlClientConfigBuilderTest extends AbstractClientConfigBuilderTest
         ClientMetricsConfig metricsConfig = config.getMetricsConfig();
         assertTrue(metricsConfig.isEnabled());
         assertFalse(metricsConfig.getJmxConfig().isEnabled());
+    }
+
+    @Test
+    public void nativeMemory() {
+        String yaml = ""
+                + "hazelcast-client:\n"
+                + "  native-memory:\n"
+                + "    enabled: true\n"
+                + "    allocator-type: STANDARD\n"
+                + "    min-block-size: 42\n"
+                + "    page-size: 24\n"
+                + "    size:\n"
+                + "      unit: BYTES\n"
+                + "      value: 256\n"
+                + "    metadata-space-percentage: 70";
+
+        ClientConfig config = buildConfig(yaml);
+
+        NativeMemoryConfig nativeMemoryConfig = config.getNativeMemoryConfig();
+        assertTrue(nativeMemoryConfig.isEnabled());
+        assertEquals(NativeMemoryConfig.MemoryAllocatorType.STANDARD, nativeMemoryConfig.getAllocatorType());
+        assertEquals(42, nativeMemoryConfig.getMinBlockSize());
+        assertEquals(24, nativeMemoryConfig.getPageSize());
+        assertEquals(MemoryUnit.BYTES, nativeMemoryConfig.getSize().getUnit());
+        assertEquals(256, nativeMemoryConfig.getSize().getValue());
+        assertEquals(70, nativeMemoryConfig.getMetadataSpacePercentage(), 10E-6);
+    }
+
+    @Test
+    public void testPersistentMemoryDirectoryConfiguration() {
+        String yaml = ""
+                + "hazelcast-client:\n"
+                + "  native-memory:\n"
+                + "    persistent-memory:\n"
+                + "      directories:\n"
+                + "        - directory: /mnt/pmem0\n"
+                + "          numa-node: 0\n"
+                + "        - directory: /mnt/pmem1\n"
+                + "          numa-node: 1\n";
+
+        ClientConfig config = buildConfig(yaml);
+        List<PersistentMemoryDirectoryConfig> directoryConfigs = config.getNativeMemoryConfig()
+                                                                       .getPersistentMemoryConfig()
+                                                                       .getDirectoryConfigs();
+        assertEquals(2, directoryConfigs.size());
+        PersistentMemoryDirectoryConfig dir0Config = directoryConfigs.get(0);
+        PersistentMemoryDirectoryConfig dir1Config = directoryConfigs.get(1);
+        assertEquals("/mnt/pmem0", dir0Config.getDirectory());
+        assertEquals(0, dir0Config.getNumaNode());
+        assertEquals("/mnt/pmem1", dir1Config.getDirectory());
+        assertEquals(1, dir1Config.getNumaNode());
+    }
+
+    @Test
+    public void testPersistentMemoryDirectoryConfigurationSimple() {
+        String yaml = ""
+                + "hazelcast-client:\n"
+                + "  native-memory:\n"
+                + "    persistent-memory-directory: /mnt/pmem0";
+
+        ClientConfig config = buildConfig(yaml);
+        List<PersistentMemoryDirectoryConfig> directoryConfigs = config.getNativeMemoryConfig().getPersistentMemoryConfig()
+                                                                       .getDirectoryConfigs();
+        assertEquals(1, directoryConfigs.size());
+        PersistentMemoryDirectoryConfig dir0Config = directoryConfigs.get(0);
+        assertEquals("/mnt/pmem0", dir0Config.getDirectory());
+        assertFalse(dir0Config.isNumaNodeSet());
+    }
+
+    @Override
+    @Test(expected = InvalidConfigurationException.class)
+    public void testPersistentMemoryDirectoryConfiguration_uniqueDirViolationThrows() {
+        String yaml = ""
+                + "hazelcast-client:\n"
+                + "  native-memory:\n"
+                + "    persistent-memory:\n"
+                + "      directories:\n"
+                + "        - directory: /mnt/pmem0\n"
+                + "          numa-node: 0\n"
+                + "        - directory: /mnt/pmem0\n"
+                + "          numa-node: 1\n";
+
+        buildConfig(yaml);
+    }
+
+    @Override
+    @Test(expected = InvalidConfigurationException.class)
+    public void testPersistentMemoryDirectoryConfiguration_uniqueNumaNodeViolationThrows() {
+        String yaml = ""
+                + "hazelcast-client:\n"
+                + "  native-memory:\n"
+                + "    persistent-memory:\n"
+                + "      directories:\n"
+                + "        - directory: /mnt/pmem0\n"
+                + "          numa-node: 0\n"
+                + "        - directory: /mnt/pmem1\n"
+                + "          numa-node: 0\n";
+
+        buildConfig(yaml);
+    }
+
+    @Override
+    @Test(expected = InvalidConfigurationException.class)
+    public void testPersistentMemoryDirectoryConfiguration_numaNodeConsistencyViolationThrows() {
+        String yaml = ""
+                + "hazelcast-client:\n"
+                + "  native-memory:\n"
+                + "    persistent-memory:\n"
+                + "      directories:\n"
+                + "        - directory: /mnt/pmem0\n"
+                + "          numa-node: 0\n"
+                + "        - directory: /mnt/pmem1\n";
+
+        buildConfig(yaml);
+    }
+
+    @Override
+    @Test
+    public void testPersistentMemoryDirectoryConfiguration_simpleAndAdvancedPasses() {
+        String yaml = ""
+                + "hazelcast-client:\n"
+                + "  native-memory:\n"
+                + "    persistent-memory-directory: /mnt/optane\n"
+                + "    persistent-memory:\n"
+                + "      directories:\n"
+                + "        - directory: /mnt/pmem0\n"
+                + "        - directory: /mnt/pmem1\n";
+
+        ClientConfig config = buildConfig(yaml);
+
+        List<PersistentMemoryDirectoryConfig> directoryConfigs = config.getNativeMemoryConfig()
+                                                                       .getPersistentMemoryConfig()
+                                                                       .getDirectoryConfigs();
+        assertEquals(3, directoryConfigs.size());
+        PersistentMemoryDirectoryConfig dir0Config = directoryConfigs.get(0);
+        PersistentMemoryDirectoryConfig dir1Config = directoryConfigs.get(1);
+        PersistentMemoryDirectoryConfig dir2Config = directoryConfigs.get(2);
+        assertEquals("/mnt/optane", dir0Config.getDirectory());
+        assertFalse(dir0Config.isNumaNodeSet());
+        assertEquals("/mnt/pmem0", dir1Config.getDirectory());
+        assertFalse(dir1Config.isNumaNodeSet());
+        assertEquals("/mnt/pmem1", dir2Config.getDirectory());
+        assertFalse(dir2Config.isNumaNodeSet());
     }
 
     public static ClientConfig buildConfig(String yaml) {

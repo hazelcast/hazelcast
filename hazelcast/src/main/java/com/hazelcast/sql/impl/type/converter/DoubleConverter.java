@@ -16,11 +16,14 @@
 
 package com.hazelcast.sql.impl.type.converter;
 
+import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 
 import java.math.BigDecimal;
 
 import static com.hazelcast.sql.impl.expression.math.ExpressionMath.DECIMAL_MATH_CONTEXT;
+import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.DECIMAL;
+import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.DOUBLE;
 
 /**
  * Converter for {@link java.lang.Double} type.
@@ -78,14 +81,14 @@ public final class DoubleConverter extends Converter {
     public int asInt(Object val) {
         double casted = cast(val);
         if (!Double.isFinite(casted)) {
-            throw cannotConvert(QueryDataTypeFamily.INT, val);
+            throw cannotConvert(QueryDataTypeFamily.INTEGER, val);
         }
 
         int converted = (int) casted;
 
         // casts from double to long are saturating
         if (converted != (long) casted) {
-            throw numericOverflow(QueryDataTypeFamily.INT, val);
+            throw numericOverflow(QueryDataTypeFamily.INTEGER, val);
         }
 
         return converted;
@@ -109,10 +112,19 @@ public final class DoubleConverter extends Converter {
         return converted;
     }
 
-    @SuppressWarnings("UnpredictableBigDecimalConstructorCall")
     @Override
     public BigDecimal asDecimal(Object val) {
-        return new BigDecimal(cast(val), DECIMAL_MATH_CONTEXT);
+        double val0 = cast(val);
+
+        if (Double.isInfinite(val0)) {
+            throw QueryException.dataException("Cannot convert infinite " + DOUBLE + " value to " + DECIMAL);
+        }
+
+        if (Double.isNaN(val0)) {
+            throw QueryException.dataException("Cannot convert NaN " + DOUBLE + " value to " + DECIMAL);
+        }
+
+        return new BigDecimal(val0, DECIMAL_MATH_CONTEXT);
     }
 
     @Override

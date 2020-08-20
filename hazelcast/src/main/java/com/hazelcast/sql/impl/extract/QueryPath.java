@@ -38,8 +38,8 @@ public final class QueryPath implements IdentifiedDataSerializable {
     public static final QueryPath KEY_PATH = new QueryPath(null, true);
     public static final QueryPath VALUE_PATH = new QueryPath(null, false);
 
-    private static final String KEY_PREFIX = KEY + ".";
-    private static final String VALUE_PREFIX = VALUE + ".";
+    public static final String KEY_PREFIX = KEY + ".";
+    public static final String VALUE_PREFIX = VALUE + ".";
 
     private boolean key;
     private String path;

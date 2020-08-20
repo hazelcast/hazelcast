@@ -46,7 +46,7 @@ public final class SqlToQueryType {
 
         HZ_TO_CALCITE.put(QueryDataTypeFamily.TINYINT, SqlTypeName.TINYINT);
         HZ_TO_CALCITE.put(QueryDataTypeFamily.SMALLINT, SqlTypeName.SMALLINT);
-        HZ_TO_CALCITE.put(QueryDataTypeFamily.INT, SqlTypeName.INTEGER);
+        HZ_TO_CALCITE.put(QueryDataTypeFamily.INTEGER, SqlTypeName.INTEGER);
         HZ_TO_CALCITE.put(QueryDataTypeFamily.BIGINT, SqlTypeName.BIGINT);
         CALCITE_TO_HZ.put(SqlTypeName.TINYINT, QueryDataType.TINYINT);
         CALCITE_TO_HZ.put(SqlTypeName.SMALLINT, QueryDataType.SMALLINT);
