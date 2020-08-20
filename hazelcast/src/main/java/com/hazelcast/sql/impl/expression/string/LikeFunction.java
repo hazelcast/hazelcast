@@ -49,7 +49,7 @@ public class LikeFunction extends TriExpression<Boolean> implements IdentifiedDa
     private static final String ONE_JAVA = ".";
 
     /** Multi-symbol wildcard in Java. */
-    private static final String MANY_JAVA = "(?s:.*)";
+    private static final String MANY_JAVA = ".*";
 
     /** Special characters which require escaping in Java. */
     private static final String ESCAPE_CHARACTERS_JAVA = "[]()|^-+*?{}$\\.";
@@ -144,7 +144,7 @@ public class LikeFunction extends TriExpression<Boolean> implements IdentifiedDa
             }
 
             String javaPatternStr = constructJavaPatternString(pattern, escape);
-            Pattern javaPattern = Pattern.compile(javaPatternStr);
+            Pattern javaPattern = Pattern.compile(javaPatternStr, Pattern.DOTALL);
 
             lastPattern = pattern;
             lastEscape = escape;

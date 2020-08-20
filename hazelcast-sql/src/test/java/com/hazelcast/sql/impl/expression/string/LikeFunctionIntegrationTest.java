@@ -145,6 +145,18 @@ public class LikeFunctionIntegrationTest extends SqlExpressionIntegrationTestSup
         check("20 LIKE null", null);
     }
 
+    @Test
+    public void test_newline() {
+        put("\n");
+        check("this LIKE '_'", true);
+        check("this LIKE '%'", true);
+
+        put("\n\n");
+        check("this LIKE '_'", false);
+        check("this LIKE '__'", true);
+        check("this LIKE '%'", true);
+    }
+
     private void check(String operands, Boolean expectedResult, Object... params) {
         String sql = "SELECT " + operands + " FROM map";
 
