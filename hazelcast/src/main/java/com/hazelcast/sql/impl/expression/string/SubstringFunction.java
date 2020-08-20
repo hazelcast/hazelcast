@@ -59,22 +59,13 @@ public class SubstringFunction extends TriExpression<String> implements Identifi
             return null;
         }
 
-        Integer start;
-
-        if (operand2 != null) {
-            start = MathFunctionUtils.asInt(operand2, row, context);
-
-            if (start == null) {
-                return null;
-            }
-        } else {
-            start = null;
-        }
+        Integer start = MathFunctionUtils.asInt(operand2, row, context);
 
         if (start == null) {
-            // Start position is not specific, start with the very first character
-            start = 1;
-        } else if (start < 1) {
+            return null;
+        }
+
+        if (start < 1) {
             // Different databases provide different semantics on negative values. Oracle start counting
             // from the end, SQL Server starts from the beginning, and uses the value to calculate the
             // final length, etc.

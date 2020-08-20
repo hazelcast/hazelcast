@@ -306,7 +306,7 @@ public final class RexToExpression {
                     return AsciiFunction.create(operands[0]);
                 } else if (function == HazelcastSqlOperatorTable.SUBSTRING) {
                     Expression<?> input = operands[0];
-                    Expression<?> start = operands.length > 1 ? operands[1] : null;
+                    Expression<?> start = operands[1];
                     Expression<?> length = operands.length > 2 ? operands[2] : null;
 
                     return SubstringFunction.create(input, start, length);
