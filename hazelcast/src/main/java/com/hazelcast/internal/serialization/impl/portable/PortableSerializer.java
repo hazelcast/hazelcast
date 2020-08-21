@@ -183,7 +183,7 @@ public final class PortableSerializer implements StreamSerializer<Object> {
         ClassDefinition cd = setupPositionAndDefinition(in, factoryId, classId, version);
         DefaultPortableReader reader;
         if (portableVersion == cd.getVersion()) {
-            reader = new DefaultPortableReader(this, in, cd, true);
+            reader = new DefaultPortableReader(this, in, cd);
         } else {
             reader = new MorphingPortableReader(this, in, cd);
         }
@@ -289,27 +289,25 @@ public final class PortableSerializer implements StreamSerializer<Object> {
         writer.end();
     }
 
-    <T> T readAndInitialize(BufferObjectDataInput in, int factoryId, int classId,
-                            boolean asPortable, boolean readGenericLazy) throws IOException {
-        if (asPortable) {
-            Portable portable = createNewPortableInstance(factoryId, classId);
-            if (portable == null) {
-                throw new HazelcastSerializationException("Could not find PortableFactory for factory-id: " + factoryId
-                        + ", class-id:" + classId);
-            }
-            readPortable(in, factoryId, classId, portable);
-            final ManagedContext managedContext = context.getManagedContext();
-            return managedContext != null ? (T) managedContext.initialize(portable) : (T) portable;
+    <T> T readAsObject(BufferObjectDataInput in, int factoryId, int classId) throws IOException {
+        Portable portable = createNewPortableInstance(factoryId, classId);
+        if (portable == null) {
+            throw new HazelcastSerializationException("Could not find PortableFactory for factory-id: " + factoryId
+                    + ", class-id:" + classId);
         }
+        readPortable(in, factoryId, classId, portable);
+        final ManagedContext managedContext = context.getManagedContext();
+        return managedContext != null ? (T) managedContext.initialize(portable) : (T) portable;
+    }
 
+    <T> T readAndInitialize(BufferObjectDataInput in, int factoryId, int classId,
+                            boolean readGenericLazy) throws IOException {
         if (readGenericLazy) {
             int version = in.readInt();
             ClassDefinition cd = setupPositionAndDefinition(in, factoryId, classId, version);
-            DefaultPortableReader reader = new DefaultPortableReader(this, in, cd, true);
-            reader.end();
+            PortableValueReader reader = new PortableValueReader(this, in, cd, true);
             return (T) reader;
         }
-
         return readPortableGenericRecord(in, factoryId, classId);
     }
 
@@ -319,8 +317,7 @@ public final class PortableSerializer implements StreamSerializer<Object> {
         ClassDefinition cd = setupPositionAndDefinition(in, factoryId, classId, version);
         GenericRecord reader = new PortableValueReader(this, in, cd, false);
         GenericRecord.Builder genericRecordBuilder = GenericRecord.Builder.portable(cd);
-        Set<String> fieldNames = cd.getFieldNames();
-        for (String fieldName : fieldNames) {
+        for (String fieldName : cd.getFieldNames()) {
             switch (cd.getFieldType(fieldName)) {
                 case PORTABLE:
                     genericRecordBuilder.writeGenericRecord(fieldName, reader.readGenericRecord(fieldName));

@@ -40,15 +40,12 @@ public class DefaultPortableReader implements PortableReader {
     private final BufferObjectDataInput in;
     private final int finalPosition;
     private final int offset;
-    private final boolean readGenericLazy;
     private boolean raw;
 
-    DefaultPortableReader(PortableSerializer serializer, BufferObjectDataInput in, ClassDefinition cd, boolean readGenericLazy) {
+    DefaultPortableReader(PortableSerializer serializer, BufferObjectDataInput in, ClassDefinition cd) {
         this.in = in;
         this.serializer = serializer;
         this.cd = cd;
-        this.readGenericLazy = readGenericLazy;
-
         int fieldCount;
         try {
             // final position after portable is read
@@ -182,7 +179,7 @@ public class DefaultPortableReader implements PortableReader {
             checkFactoryAndClass(fd, factoryId, classId);
 
             if (!isNull) {
-                return serializer.readAndInitialize(in, factoryId, classId, true, readGenericLazy);
+                return serializer.readAsObject(in, factoryId, classId);
             }
             return null;
         } finally {
@@ -363,7 +360,7 @@ public class DefaultPortableReader implements PortableReader {
                 for (int i = 0; i < len; i++) {
                     int start = in.readInt(offset + i * Bits.INT_SIZE_IN_BYTES);
                     in.position(start);
-                    portables[i] = serializer.readAndInitialize(in, factoryId, classId, true, readGenericLazy);
+                    portables[i] = serializer.readAsObject(in, factoryId, classId);
                 }
             }
             return portables;

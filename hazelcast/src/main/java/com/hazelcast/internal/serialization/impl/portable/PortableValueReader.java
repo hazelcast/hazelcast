@@ -420,7 +420,11 @@ public class PortableValueReader implements InternalGenericRecord {
                 for (int i = 0; i < len; i++) {
                     int start = in.readInt(offset + i * Bits.INT_SIZE_IN_BYTES);
                     in.position(start);
-                    portables[i] = serializer.readAndInitialize(in, factoryId, classId, asPortable, readGenericLazy);
+                    if (asPortable) {
+                        portables[i] = serializer.readAsObject(in, factoryId, classId);
+                    } else {
+                        portables[i] = serializer.readAndInitialize(in, factoryId, classId, readGenericLazy);
+                    }
                 }
             }
             return portables;
@@ -457,7 +461,11 @@ public class PortableValueReader implements InternalGenericRecord {
             checkFactoryAndClass(fd, factoryId, classId);
 
             if (!isNull) {
-                return serializer.readAndInitialize(in, factoryId, classId, asPortable, readGenericLazy);
+                if (asPortable) {
+                    return serializer.readAsObject(in, factoryId, classId);
+                } else {
+                    return serializer.readAndInitialize(in, factoryId, classId, readGenericLazy);
+                }
             }
             return null;
         } catch (IOException e) {
@@ -647,7 +655,11 @@ public class PortableValueReader implements InternalGenericRecord {
             int offset = in.position();
             int start = in.readInt(offset + index * Bits.INT_SIZE_IN_BYTES);
             in.position(start);
-            return serializer.readAndInitialize(in, factoryId, classId, asPortable, readGenericLazy);
+            if (asPortable) {
+                return serializer.readAsObject(in, factoryId, classId);
+            } else {
+                return serializer.readAndInitialize(in, factoryId, classId, readGenericLazy);
+            }
         } catch (IOException e) {
             throw illegalStateException(e);
         } finally {
