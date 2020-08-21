@@ -28,6 +28,20 @@ import org.apache.calcite.rex.RexSubQuery;
 import org.apache.calcite.rex.RexTableInputRef;
 import org.apache.calcite.rex.RexVisitorImpl;
 
+/**
+ * Visitor that checks whether the given epression is valid for index filter creation.
+ * <p>
+ * Consider the expression {@code a > exp}. If there is an index on the column {@code [a]}, then
+ * it can be used only if the {@code exp} will produce the same result for all rows. That is, it
+ * cannot refer to any other columns.
+ * <p>
+ * We also filter out more complex constructs, where we are not 100% sure that they are context
+ * independent.
+ * <p>
+ * For example, for the original filter {@code a > ? + 1}, the expression {@code ? + 1} is valid for
+ * index lookup. To contrast, for the original filter {@code a > b + 1}, the expression {@code b + 1}
+ * is not valid.
+ */
 public final class IndexRexVisitor extends RexVisitorImpl<Void> {
 
     private boolean valid = true;
