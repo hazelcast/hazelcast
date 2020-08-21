@@ -2096,7 +2096,10 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                 } else if ("operation-pool-size".equals(nodeName)) {
                     sqlConfigBuilder.addPropertyValue("operationPoolSize", getIntegerValue("operation-pool-size", value));
                 } else if ("statement-execution-timeout-millis".equals(nodeName)) {
-                    sqlConfigBuilder.addPropertyValue("statementExecutionTimeoutMillis", getLongValue("statement-execution-timeout-millis", value));
+                    sqlConfigBuilder.addPropertyValue(
+                        "statementExecutionTimeoutMillis",
+                        getLongValue("statement-execution-timeout-millis", value)
+                    );
                 }
             }
 
