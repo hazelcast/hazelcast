@@ -5111,7 +5111,7 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
-            <xs:element name="timeout-millis" type="xs:unsignedLong" minOccurs="0" maxOccurs="1" default="0">
+            <xs:element name="statement-execution-timeout-millis" type="xs:unsignedLong" minOccurs="0" maxOccurs="1" default="0">
                 <xs:annotation>
                     <xs:documentation>
                         Sets the timeout in milliseconds that is applied to SQL statements without an explicit timeout.

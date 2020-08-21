@@ -90,7 +90,7 @@ public class SqlServiceImpl implements SqlService, Consumer<Packet> {
 
         int executorPoolSize = config.getExecutorPoolSize();
         int operationPoolSize = config.getOperationPoolSize();
-        long queryTimeout = config.getTimeoutMillis();
+        long queryTimeout = config.getStatementExecutionTimeoutMillis();
 
         if (executorPoolSize == SqlConfig.DEFAULT_EXECUTOR_POOL_SIZE) {
             executorPoolSize = Runtime.getRuntime().availableProcessors();

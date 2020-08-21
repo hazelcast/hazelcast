@@ -32,7 +32,7 @@ public class SqlConfig {
     public static final int DEFAULT_OPERATION_POOL_SIZE = -1;
 
     /** Default timeout in milliseconds that is applied to statements without explicit timeout. */
-    public static final int DEFAULT_TIMEOUT = 0;
+    public static final int DEFAULT_STATEMENT_EXECUTION_TIMEOUT = 0;
 
     /** Number of threads responsible for execution of SQL statements. */
     private int executorPoolSize = DEFAULT_EXECUTOR_POOL_SIZE;
@@ -41,7 +41,7 @@ public class SqlConfig {
     private int operationPoolSize = DEFAULT_OPERATION_POOL_SIZE;
 
     /** Timeout in milliseconds that is applied to statements without an explicit timeout. */
-    private long timeoutMillis = DEFAULT_TIMEOUT;
+    private long statementExecutionTimeoutMillis = DEFAULT_STATEMENT_EXECUTION_TIMEOUT;
 
     /**
      * Gets the number of threads responsible for execution of SQL statements.
@@ -124,8 +124,8 @@ public class SqlConfig {
      *
      * @return timeout in milliseconds
      */
-    public long getTimeoutMillis() {
-        return timeoutMillis;
+    public long getStatementExecutionTimeoutMillis() {
+        return statementExecutionTimeoutMillis;
     }
 
     /**
@@ -136,16 +136,16 @@ public class SqlConfig {
      * <p>
      * Zero value means no timeout. Negative values are prohibited.
      * <p>
-     * Defaults to {@link #DEFAULT_TIMEOUT}.
+     * Defaults to {@link #DEFAULT_STATEMENT_EXECUTION_TIMEOUT}.
      *
      * @see SqlStatement#setTimeoutMillis(long)
-     * @param timeoutMillis timeout in milliseconds
+     * @param statementExecutionTimeoutMillis timeout in milliseconds
      * @return this instance for chaining
      */
-    public SqlConfig setTimeoutMillis(long timeoutMillis) {
-        checkNotNegative(timeoutMillis, "Timeout cannot be negative");
+    public SqlConfig setStatementExecutionTimeoutMillis(long statementExecutionTimeoutMillis) {
+        checkNotNegative(statementExecutionTimeoutMillis, "Timeout cannot be negative");
 
-        this.timeoutMillis = timeoutMillis;
+        this.statementExecutionTimeoutMillis = statementExecutionTimeoutMillis;
 
         return this;
     }
@@ -155,7 +155,7 @@ public class SqlConfig {
         return "SqlConfig{"
             + "executorPoolSize=" + executorPoolSize
             + ", operationPoolSize=" + operationPoolSize
-            + ", timeoutMillis=" + timeoutMillis
+            + ", statementExecutionTimeoutMillis=" + statementExecutionTimeoutMillis
             + '}';
     }
 }

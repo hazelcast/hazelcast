@@ -329,6 +329,6 @@
     <sql>
         <executor-pool-size>-1</executor-pool-size>
         <operation-pool-size>-1</operation-pool-size>
-        <timeout-millis>0</timeout-millis>
+        <statement-execution-timeout-millis>0</statement-execution-timeout-millis>
     </sql>
 </hazelcast>

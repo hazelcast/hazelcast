@@ -1618,7 +1618,7 @@ public class ConfigXmlGenerator {
         gen.open("sql")
             .node("executor-pool-size", sqlConfig.getExecutorPoolSize())
             .node("operation-pool-size", sqlConfig.getOperationPoolSize())
-            .node("timeout-millis", sqlConfig.getTimeoutMillis())
+            .node("statement-execution-timeout-millis", sqlConfig.getStatementExecutionTimeoutMillis())
             .close();
     }
 

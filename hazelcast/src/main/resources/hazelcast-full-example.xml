@@ -3531,14 +3531,14 @@
         * <operation-pool-size>
             Defines the number of threads responsible for network operations processing.
 
-        * <timeout-millis>
+        * <statement-execution-timeout-millis>
             Defines the timeout in milliseconds that is applied to queries without an explicit timeout.
 
     -->
     <sql>
         <executor-pool-size>8</executor-pool-size>
         <operation-pool-size>8</operation-pool-size>
-        <timeout-millis>0</timeout-millis>
+        <statement-execution-timeout-millis>0</statement-execution-timeout-millis>
     </sql>
 
 </hazelcast>

@@ -3634,13 +3634,13 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
             + "<sql>\n"
             + "  <executor-pool-size>10</executor-pool-size>\n"
             + "  <operation-pool-size>20</operation-pool-size>\n"
-            + "  <timeout-millis>30</timeout-millis>\n"
+            + "  <statement-execution-timeout-millis>30</statement-execution-timeout-millis>\n"
             + "</sql>"
             + HAZELCAST_END_TAG;
         Config config = new InMemoryXmlConfig(xml);
         SqlConfig sqlConfig = config.getSqlConfig();
         assertEquals(10, sqlConfig.getExecutorPoolSize());
         assertEquals(20, sqlConfig.getOperationPoolSize());
-        assertEquals(30L, sqlConfig.getTimeoutMillis());
+        assertEquals(30L, sqlConfig.getStatementExecutionTimeoutMillis());
     }
 }
