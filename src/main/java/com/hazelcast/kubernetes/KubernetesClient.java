@@ -509,8 +509,8 @@ class KubernetesClient {
             }
         } else if (e.getHttpErrorCode() == 403) {
             if (!isKnownExceptionAlreadyLogged) {
-                LOGGER.warning("Kubernetes API access is forbidden! Starting standalone. To use Hazelcast Kubernetes discovery "
-                        + "configure the required RBAC. For 'default' service account in 'default' namespace execute: "
+                LOGGER.warning("Kubernetes API access is forbidden! Starting standalone. To use Hazelcast Kubernetes discovery,"
+                        + " configure the required RBAC. For 'default' service account in 'default' namespace execute: "
                         + "`kubectl apply -f https://raw.githubusercontent.com/hazelcast/hazelcast-kubernetes/master/rbac.yaml`");
                 isKnownExceptionAlreadyLogged = true;
             }
