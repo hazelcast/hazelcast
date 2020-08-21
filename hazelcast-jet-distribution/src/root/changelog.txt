@@ -9,7 +9,7 @@
   and extended Elasticsearch's client retry mechanism for reliable writing.
 * We improved JSON support through a new file source which can read JSON files
   directly and also added built-in Jet methods for parsing and mapping JSON strings.
-* We introduced .relabance() operator which can be used for distributing items
+* We introduced the .rebalance() operator which can be used for distributing items
   across the cluster.
 * We made some improvements to Jet startup scripts:
   - You can now use the PROMETHEUS_PORT to start Jet with prometheus metrics enabled.
