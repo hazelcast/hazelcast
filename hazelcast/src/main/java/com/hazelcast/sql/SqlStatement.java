@@ -177,14 +177,14 @@ public final class SqlStatement {
      * If the timeout is reached for a running statement, it will be cancelled forcefully.
      * <p>
      * Zero value means no timeout. {@value #TIMEOUT_NOT_SET} means that the value from
-     * {@link SqlConfig#getStatementExecutionTimeoutMillis()} will be used. Other negative values are prohibited.
+     * {@link SqlConfig#getStatementTimeoutMillis()} will be used. Other negative values are prohibited.
      * <p>
      * Defaults to {@value #TIMEOUT_NOT_SET}.
      *
      * @param timeout execution timeout in milliseconds, {@code 0} for no timeout, {@code -1} to user member's default timeout
      * @return this instance for chaining
      *
-     * @see SqlConfig#getStatementExecutionTimeoutMillis()
+     * @see SqlConfig#getStatementTimeoutMillis()
      */
     @Nonnull
     public SqlStatement setTimeoutMillis(long timeout) {
