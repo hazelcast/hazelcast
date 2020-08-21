@@ -17,11 +17,14 @@
 package com.hazelcast.sql.impl.exec.root;
 
 import com.hazelcast.sql.impl.QueryException;
+import com.hazelcast.sql.impl.ResultIterator;
 import com.hazelcast.sql.impl.row.Row;
 
-import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
+
+import static com.hazelcast.sql.impl.ResultIterator.HasNextImmediatelyResult.DONE;
+import static com.hazelcast.sql.impl.ResultIterator.HasNextImmediatelyResult.YES;
 
 /**
  * Blocking array-based result consumer which delivers the results to API caller.
@@ -53,7 +56,11 @@ public class BlockingRootResultConsumer implements RootResultConsumer {
     @Override
     public boolean consume(List<Row> batch, boolean last) {
         synchronized (mux) {
-            assert !done;
+            if (done) {
+                // An error happened after the exec was scheduled - reject consumption,
+                // the caller will not be scheduled again.
+                return false;
+            }
 
             if (currentBatch == null) {
                 if (!batch.isEmpty()) {
@@ -141,14 +148,14 @@ public class BlockingRootResultConsumer implements RootResultConsumer {
     }
 
     @Override
-    public Iterator<Row> iterator() {
+    public ResultIterator<Row> iterator() {
         return iterator;
     }
 
     /**
      * Iterator over results.
      */
-    private class InternalIterator implements Iterator<Row> {
+    private class InternalIterator implements ResultIterator<Row> {
 
         private List<Row> batch;
         private int position;
@@ -166,6 +173,12 @@ public class BlockingRootResultConsumer implements RootResultConsumer {
             }
 
             return true;
+        }
+
+        @Override
+        public HasNextImmediatelyResult hasNextImmediately() {
+            // We never return RETRY, but we block until next item is available or the end is reached.
+            return hasNext() ? YES : DONE;
         }
 
         @Override

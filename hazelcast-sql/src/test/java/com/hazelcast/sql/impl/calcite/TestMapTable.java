@@ -35,6 +35,7 @@ public class TestMapTable extends AbstractMapTable {
         super(
             schemaName,
             name,
+            name,
             fields,
             statistics,
             GenericQueryTargetDescriptor.DEFAULT,

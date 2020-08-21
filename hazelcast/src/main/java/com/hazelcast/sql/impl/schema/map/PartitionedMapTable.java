@@ -34,15 +34,25 @@ public class PartitionedMapTable extends AbstractMapTable {
     private final boolean hd;
 
     public PartitionedMapTable(
-        String name,
-        List<TableField> fields,
-        TableStatistics statistics,
-        QueryTargetDescriptor keyDescriptor,
-        QueryTargetDescriptor valueDescriptor,
-        List<MapTableIndex> indexes,
-        boolean hd
+            String schemaName,
+            String tableName,
+            String mapName,
+            List<TableField> fields,
+            TableStatistics statistics,
+            QueryTargetDescriptor keyDescriptor,
+            QueryTargetDescriptor valueDescriptor,
+            List<MapTableIndex> indexes,
+            boolean hd
     ) {
-        super(SCHEMA_NAME_PARTITIONED, name, fields, statistics, keyDescriptor, valueDescriptor);
+        super(
+            schemaName,
+            tableName,
+            mapName,
+            fields,
+            statistics,
+            keyDescriptor,
+            valueDescriptor
+        );
 
         this.indexes = indexes;
         this.hd = hd;

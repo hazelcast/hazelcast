@@ -148,6 +148,8 @@ public class PartitionedMapTableResolver extends AbstractMapTableResolver {
 
                 // Done.
                 return new PartitionedMapTable(
+                    SCHEMA_NAME_PARTITIONED,
+                    name,
                     name,
                     fields,
                     new ConstantTableStatistics(estimatedRowCount),

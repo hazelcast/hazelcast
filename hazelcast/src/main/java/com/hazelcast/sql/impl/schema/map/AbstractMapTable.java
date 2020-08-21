@@ -23,28 +23,38 @@ import com.hazelcast.sql.impl.schema.Table;
 import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.schema.TableStatistics;
 
+import javax.annotation.Nonnull;
 import java.util.Collections;
 import java.util.List;
+
+import static java.util.Objects.requireNonNull;
 
 /**
  * Table backed by IMap or ReplicatedMap.
  */
 public abstract class AbstractMapTable extends Table {
 
+    private final String mapName;
     private final QueryTargetDescriptor keyDescriptor;
     private final QueryTargetDescriptor valueDescriptor;
     private final QueryException exception;
 
+    /**
+     * @param tableName Name of the table as it appears in the SQL
+     * @param mapName Name of the underlying map
+     */
     protected AbstractMapTable(
         String schemaName,
-        String name,
+        String tableName,
+        String mapName,
         List<TableField> fields,
         TableStatistics statistics,
         QueryTargetDescriptor keyDescriptor,
         QueryTargetDescriptor valueDescriptor
     ) {
-        super(schemaName, name, fields, statistics);
+        super(schemaName, tableName, fields, statistics);
 
+        this.mapName = requireNonNull(mapName);
         this.keyDescriptor = keyDescriptor;
         this.valueDescriptor = valueDescriptor;
 
@@ -54,10 +64,19 @@ public abstract class AbstractMapTable extends Table {
     protected AbstractMapTable(String schemaName, String name, QueryException exception) {
         super(schemaName, name, Collections.emptyList(), new ConstantTableStatistics(0));
 
+        this.mapName = name;
         this.keyDescriptor = null;
         this.valueDescriptor = null;
 
         this.exception = exception;
+    }
+
+    /**
+     * The name of the underlying map.
+     */
+    @Nonnull
+    public String getMapName() {
+        return mapName;
     }
 
     @Override

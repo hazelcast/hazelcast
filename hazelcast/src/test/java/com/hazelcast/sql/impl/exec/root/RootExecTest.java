@@ -17,6 +17,7 @@
 package com.hazelcast.sql.impl.exec.root;
 
 import com.hazelcast.sql.impl.QueryException;
+import com.hazelcast.sql.impl.ResultIterator;
 import com.hazelcast.sql.impl.SqlTestSupport;
 import com.hazelcast.sql.impl.UpstreamExec;
 import com.hazelcast.sql.impl.exec.IterationResult;
@@ -33,7 +34,6 @@ import org.junit.runner.RunWith;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
@@ -112,7 +112,7 @@ public class RootExecTest extends SqlTestSupport {
         private boolean last;
 
         @Override
-        public Iterator<Row> iterator() {
+        public ResultIterator<Row> iterator() {
             return null;
         }
 
