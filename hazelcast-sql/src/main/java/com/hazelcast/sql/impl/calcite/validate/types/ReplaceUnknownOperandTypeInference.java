@@ -54,7 +54,7 @@ public class ReplaceUnknownOperandTypeInference implements SqlOperandTypeInferen
         for (int i = 0; i < operandTypes.length; i++) {
             RelDataType operandType = operandTypes[i];
 
-            if (operandType == unknownType) {
+            if (operandType.equals(unknownType)) {
                 RelDataType newOperandType = operandType(i, callBinding.getTypeFactory());
 
                 if (newOperandType != null) {

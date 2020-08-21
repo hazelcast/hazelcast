@@ -24,6 +24,8 @@ import java.io.Serializable;
 
 /**
  * Defines expression contract for SQL.
+ * <p>
+ * Java serialization is needed for Jet.
  *
  * @param <T> the return type of this expression.
  */

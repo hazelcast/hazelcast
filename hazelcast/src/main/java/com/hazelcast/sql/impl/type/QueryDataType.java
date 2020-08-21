@@ -49,6 +49,8 @@ import java.io.Serializable;
 
 /**
  * Data type represents a type of concrete expression which is based on some basic data type.
+ * <p>
+ * Java serialization is needed for Jet.
  */
 public class QueryDataType implements IdentifiedDataSerializable, Serializable {
 
