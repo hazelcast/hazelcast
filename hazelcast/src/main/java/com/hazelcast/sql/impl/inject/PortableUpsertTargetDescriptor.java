@@ -66,11 +66,11 @@ public class PortableUpsertTargetDescriptor implements UpsertTargetDescriptor {
 
     @Override
     public String toString() {
-        return "PortableUpsertTargetDescriptor{" +
-                "factoryId=" + factoryId +
-                ", classId=" + classId +
-                ", classVersion=" + classVersion +
-                '}';
+        return "PortableUpsertTargetDescriptor{"
+                + "factoryId=" + factoryId
+                + ", classId=" + classId
+                + ", classVersion=" + classVersion
+                + '}';
     }
 
     @Override
@@ -82,9 +82,9 @@ public class PortableUpsertTargetDescriptor implements UpsertTargetDescriptor {
             return false;
         }
         PortableUpsertTargetDescriptor that = (PortableUpsertTargetDescriptor) o;
-        return factoryId == that.factoryId &&
-                classId == that.classId &&
-                classVersion == that.classVersion;
+        return factoryId == that.factoryId
+                && classId == that.classId
+                && classVersion == that.classVersion;
     }
 
     @Override

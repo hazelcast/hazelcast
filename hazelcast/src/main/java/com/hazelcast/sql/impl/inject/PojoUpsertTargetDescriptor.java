@@ -59,10 +59,10 @@ public class PojoUpsertTargetDescriptor implements UpsertTargetDescriptor {
 
     @Override
     public String toString() {
-        return "PojoUpsertTargetDescriptor{" +
-                "className='" + className + '\'' +
-                ", typeNamesByPaths=" + typeNamesByPaths +
-                '}';
+        return "PojoUpsertTargetDescriptor{"
+                + "className='" + className + '\''
+                + ", typeNamesByPaths=" + typeNamesByPaths
+                + '}';
     }
 
     @Override
@@ -74,8 +74,8 @@ public class PojoUpsertTargetDescriptor implements UpsertTargetDescriptor {
             return false;
         }
         PojoUpsertTargetDescriptor that = (PojoUpsertTargetDescriptor) o;
-        return Objects.equals(className, that.className) &&
-                Objects.equals(typeNamesByPaths, that.typeNamesByPaths);
+        return Objects.equals(className, that.className)
+                && Objects.equals(typeNamesByPaths, that.typeNamesByPaths);
     }
 
     @Override
