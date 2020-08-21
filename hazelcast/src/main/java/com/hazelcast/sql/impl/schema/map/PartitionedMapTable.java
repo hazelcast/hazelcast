@@ -31,17 +31,20 @@ import static com.hazelcast.sql.impl.QueryUtils.SCHEMA_NAME_PARTITIONED;
 public class PartitionedMapTable extends AbstractMapTable {
 
     public PartitionedMapTable(
-        String name,
-        List<TableField> fields,
-        TableStatistics statistics,
-        QueryTargetDescriptor keyQueryDescriptor,
-        QueryTargetDescriptor valueQueryDescriptor,
-        UpsertTargetDescriptor keyUpsertDescriptor,
-        UpsertTargetDescriptor valueUpsertDescriptor
+            String schemaName,
+            String tableName,
+            String mapName,
+            List<TableField> fields,
+            TableStatistics statistics,
+            QueryTargetDescriptor keyQueryDescriptor,
+            QueryTargetDescriptor valueQueryDescriptor,
+            UpsertTargetDescriptor keyUpsertDescriptor,
+            UpsertTargetDescriptor valueUpsertDescriptor
     ) {
         super(
-            SCHEMA_NAME_PARTITIONED,
-            name,
+            schemaName,
+            tableName,
+            mapName,
             fields,
             statistics,
             keyQueryDescriptor,
