@@ -16,23 +16,27 @@
 
 package com.hazelcast.collection.impl.queue;
 
+import com.hazelcast.collection.IQueue;
+import com.hazelcast.collection.impl.queue.model.VersionedObject;
+import com.hazelcast.collection.impl.queue.model.VersionedObjectComparator;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.QueueConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.cp.IAtomicLong;
-import com.hazelcast.collection.IQueue;
 import com.hazelcast.test.HazelcastTestSupport;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runners.Parameterized;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.test.AbstractHazelcastClassRunner.getTestMethodName;
-import static java.util.Collections.emptyList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
@@ -41,16 +45,28 @@ import static org.junit.Assert.fail;
 
 public abstract class QueueAbstractTest extends HazelcastTestSupport {
 
+    @Parameterized.Parameters(name = "comparatorClassName: {0}")
+    public static Collection<Object> parameters() {
+        return Arrays.asList(new Object[]{null, VersionedObjectComparator.class.getName()});
+    }
+
+    @Parameterized.Parameter
+    public String comparatorClassName;
+
     protected HazelcastInstance[] instances;
     protected IAtomicLong atomicLong;
-    private IQueue<String> queue;
+    private IQueue<VersionedObject<String>> queue;
     private QueueConfig queueConfig;
 
     @Before
     public void setup() {
-        Config config = new Config();
-        config.addQueueConfig(new QueueConfig("testOffer_whenFull*").setMaxSize(100));
-        config.addQueueConfig(new QueueConfig("testOfferWithTimeout*").setMaxSize(100));
+        Config config = smallInstanceConfig();
+        config.getQueueConfig("default")
+              .setPriorityComparatorClassName(comparatorClassName);
+        config.getQueueConfig("testOffer_whenFull*")
+              .setMaxSize(100);
+        config.getQueueConfig("testOfferWithTimeout*")
+              .setMaxSize(100);
 
         instances = newInstances(config);
         HazelcastInstance local = instances[0];
@@ -66,10 +82,10 @@ public abstract class QueueAbstractTest extends HazelcastTestSupport {
     // ================ offer ==============================
 
     @Test
-    public void testOffer() throws Exception {
+    public void testOffer() {
         int count = 100;
         for (int i = 0; i < count; i++) {
-            queue.offer("item" + i);
+            queue.offer(new VersionedObject<>("item" + i, i));
         }
 
         assertEquals(100, queue.size());
@@ -78,10 +94,10 @@ public abstract class QueueAbstractTest extends HazelcastTestSupport {
     @Test
     public void testOffer_whenFull() {
         for (int i = 0; i < queueConfig.getMaxSize(); i++) {
-            queue.offer("item" + i);
+            queue.offer(new VersionedObject<>("item" + i, i));
         }
 
-        boolean accepted = queue.offer("rejected");
+        boolean accepted = queue.offer(new VersionedObject<>("rejected"));
         assertFalse(accepted);
         assertEquals(queueConfig.getMaxSize(), queue.size());
     }
@@ -103,14 +119,14 @@ public abstract class QueueAbstractTest extends HazelcastTestSupport {
     public void testOfferWithTimeout() {
         OfferThread offerThread = new OfferThread(queue);
         for (int i = 0; i < queueConfig.getMaxSize(); i++) {
-            queue.offer("item" + i);
+            queue.offer(new VersionedObject<>("item" + i, i));
         }
 
-        assertFalse(queue.offer("rejected"));
+        assertFalse(queue.offer(new VersionedObject<>("rejected")));
         offerThread.start();
         queue.poll();
         assertSizeEventually(queueConfig.getMaxSize(), queue);
-        assertContains(queue, "waiting");
+        assertContains(queue, new VersionedObject<>("waiting"));
     }
 
     // ================ poll ==============================
@@ -119,7 +135,7 @@ public abstract class QueueAbstractTest extends HazelcastTestSupport {
     public void testPoll() {
         int count = 100;
         for (int i = 0; i < count; i++) {
-            queue.offer("item" + i);
+            queue.offer(new VersionedObject<>("item" + i, i));
         }
 
         queue.poll();
@@ -138,14 +154,14 @@ public abstract class QueueAbstractTest extends HazelcastTestSupport {
 
 
     @Test
-    public void testPollWithTimeout() throws Exception {
+    public void testPollWithTimeout() {
         PollThread pollThread = new PollThread(queue);
         pollThread.start();
-        queue.offer("offer");
-        queue.offer("remain");
+        queue.offer(new VersionedObject<>("offer"));
+        queue.offer(new VersionedObject<>("remain"));
 
         assertSizeEventually(1, queue);
-        assertContains(queue, "remain");
+        assertContains(queue, new VersionedObject<>("remain"));
     }
 
     // ================ remove ==============================
@@ -153,31 +169,31 @@ public abstract class QueueAbstractTest extends HazelcastTestSupport {
     @Test
     public void testRemove() {
         for (int i = 0; i < 10; i++) {
-            queue.offer("item" + i);
+            queue.offer(new VersionedObject<>("item" + i, i));
         }
 
-        assertTrue(queue.remove("item4"));
+        assertTrue(queue.remove(new VersionedObject<>("item4", 4)));
         assertEquals(queue.size(), 9);
     }
 
     @Test
     public void testRemove_whenElementNotExists() {
         for (int i = 0; i < 10; i++) {
-            queue.offer("item" + i);
+            queue.offer(new VersionedObject<>("item" + i, i));
         }
 
-        assertFalse(queue.remove("item13"));
+        assertFalse(queue.remove(new VersionedObject<>("item13", 13)));
         assertEquals(10, queue.size());
     }
 
     @Test
     public void testRemove_whenQueueEmpty() {
-        assertFalse(queue.remove("not in Queue"));
+        assertFalse(queue.remove(new VersionedObject<>("not in Queue")));
     }
 
     @Test
     public void testRemove_whenArgNull() {
-        queue.add("foo");
+        queue.add(new VersionedObject<>("foo"));
 
         try {
             queue.remove(null);
@@ -194,20 +210,20 @@ public abstract class QueueAbstractTest extends HazelcastTestSupport {
     @Test
     public void testDrainTo() {
         for (int i = 0; i < 10; i++) {
-            queue.offer("item" + i);
+            queue.offer(new VersionedObject<>("item" + i, i));
         }
-        List<String> list = new ArrayList<String>(10);
+        List<VersionedObject<String>> list = new ArrayList<>(10);
 
         assertEquals(10, queue.drainTo(list));
         assertEquals(10, list.size());
-        assertEquals("item0", list.get(0));
-        assertEquals("item5", list.get(5));
+        assertEquals(new VersionedObject<>("item0", 0), list.get(0));
+        assertEquals(new VersionedObject<>("item5", 5), list.get(5));
         assertEquals(0, queue.size());
     }
 
     @Test
     public void testDrainTo_whenQueueEmpty() {
-        List<String> list = new ArrayList<String>();
+        List<VersionedObject<String>> list = new ArrayList<>();
 
         assertEquals(0, queue.drainTo(list));
     }
@@ -216,7 +232,7 @@ public abstract class QueueAbstractTest extends HazelcastTestSupport {
     @SuppressWarnings("ConstantConditions")
     public void testDrainTo_whenCollectionNull() {
         for (int i = 0; i < 10; i++) {
-            queue.offer("item" + i);
+            queue.offer(new VersionedObject<>("item" + i, i));
         }
 
         try {
@@ -231,13 +247,13 @@ public abstract class QueueAbstractTest extends HazelcastTestSupport {
     @Test
     public void testDrainToWithMaxElement() {
         for (int i = 0; i < 10; i++) {
-            queue.offer("item" + i);
+            queue.offer(new VersionedObject<>("item" + i, i));
         }
-        List<String> list = new ArrayList<String>(10);
+        List<VersionedObject<String>> list = new ArrayList<>(10);
 
         queue.drainTo(list, 4);
         assertEquals(4, list.size());
-        assertContains(list, "item3");
+        assertContains(list, new VersionedObject<>("item3", 3));
         assertEquals(6, queue.size());
     }
 
@@ -245,7 +261,7 @@ public abstract class QueueAbstractTest extends HazelcastTestSupport {
     @SuppressWarnings("ConstantConditions")
     public void testDrainToWithMaxElement_whenCollectionNull() {
         for (int i = 0; i < 10; i++) {
-            queue.offer("item" + i);
+            queue.offer(new VersionedObject<>("item" + i, i));
         }
 
         try {
@@ -261,9 +277,9 @@ public abstract class QueueAbstractTest extends HazelcastTestSupport {
     @Test
     public void testDrainToWithMaxElement_whenMaxArgNegative() {
         for (int i = 0; i < 10; i++) {
-            queue.offer("item" + i);
+            queue.offer(new VersionedObject<>("item" + i, i));
         }
-        List<String> list = new ArrayList<String>();
+        List<VersionedObject<String>> list = new ArrayList<>();
 
         assertEquals(10, queue.drainTo(list, -4));
         assertEquals(0, queue.size());
@@ -274,21 +290,21 @@ public abstract class QueueAbstractTest extends HazelcastTestSupport {
     @Test
     public void testContains_whenExists() {
         for (int i = 0; i < 10; i++) {
-            queue.offer("item" + i);
+            queue.offer(new VersionedObject<>("item" + i, i));
         }
 
-        assertContains(queue, "item4");
-        assertContains(queue, "item8");
+        assertContains(queue, new VersionedObject<>("item4", 4));
+        assertContains(queue, new VersionedObject<>("item8", 8));
     }
 
     @Test
     public void testContains_whenNotExists() {
         for (int i = 0; i < 10; i++) {
-            queue.offer("item" + i);
+            queue.offer(new VersionedObject<>("item" + i, i));
         }
 
-        assertNotContains(queue, "item10");
-        assertNotContains(queue, "item19");
+        assertNotContains(queue, new VersionedObject<>("item10", 10));
+        assertNotContains(queue, new VersionedObject<>("item19", 19));
     }
 
     // ================ containsAll ==============================
@@ -296,10 +312,10 @@ public abstract class QueueAbstractTest extends HazelcastTestSupport {
     @Test
     public void testAddAll_whenCollectionContainsNull() {
         for (int i = 0; i < 10; i++) {
-            queue.offer("item" + i);
+            queue.offer(new VersionedObject<>("item" + i, i));
         }
-        List<String> list = new ArrayList<String>();
-        list.add("item10");
+        List<VersionedObject<String>> list = new ArrayList<>();
+        list.add(new VersionedObject<>("item10"));
         list.add(null);
 
         try {
@@ -313,40 +329,40 @@ public abstract class QueueAbstractTest extends HazelcastTestSupport {
     @Test
     public void testContainsAll_whenExists() {
         for (int i = 0; i < 10; i++) {
-            queue.offer("item" + i);
+            queue.offer(new VersionedObject<>("item" + i, i));
         }
 
-        List<String> list = new ArrayList<String>();
-        list.add("item1");
-        list.add("item2");
-        list.add("item3");
+        List<VersionedObject<String>> list = new ArrayList<>();
+        list.add(new VersionedObject<>("item1", 1));
+        list.add(new VersionedObject<>("item2", 2));
+        list.add(new VersionedObject<>("item3", 3));
         assertContainsAll(queue, list);
     }
 
     @Test
     public void testContainsAll_whenNoneExists() {
         for (int i = 0; i < 10; i++) {
-            queue.offer("item" + i);
+            queue.offer(new VersionedObject<>("item" + i, i));
         }
 
-        List<String> list = new ArrayList<String>();
-        list.add("item10");
-        list.add("item11");
-        list.add("item12");
+        List<VersionedObject<String>> list = new ArrayList<>();
+        list.add(new VersionedObject<>("item10", 10));
+        list.add(new VersionedObject<>("item11", 11));
+        list.add(new VersionedObject<>("item12", 12));
         assertNotContainsAll(queue, list);
     }
 
     @Test
     public void testContainsAll_whenSomeExists() {
         for (int i = 0; i < 10; i++) {
-            queue.offer("item" + i);
+            queue.offer(new VersionedObject<>("item" + i, i));
         }
 
-        List<String> list = new ArrayList<String>();
-        list.add("item1");
-        list.add("item2");
-        list.add("item14");
-        list.add("item13");
+        List<VersionedObject<String>> list = new ArrayList<>();
+        list.add(new VersionedObject<>("item1", 1));
+        list.add(new VersionedObject<>("item2", 2));
+        list.add(new VersionedObject<>("item14", 14));
+        list.add(new VersionedObject<>("item13", 13));
         assertNotContainsAll(queue, list);
     }
 
@@ -360,9 +376,9 @@ public abstract class QueueAbstractTest extends HazelcastTestSupport {
 
     @Test
     public void testAddAll() {
-        List<String> list = new ArrayList<String>();
+        List<VersionedObject<String>> list = new ArrayList<>();
         for (int i = 0; i < 10; i++) {
-            list.add("item" + i);
+            list.add(new VersionedObject<>("item" + i, i));
         }
 
         assertTrue(queue.addAll(list));
@@ -385,22 +401,22 @@ public abstract class QueueAbstractTest extends HazelcastTestSupport {
     @Test
     public void testAddAll_whenEmptyCollection() {
         for (int i = 0; i < 10; i++) {
-            queue.offer("item" + i);
+            queue.offer(new VersionedObject<>("item" + i, i));
         }
         assertEquals(10, queue.size());
-        assertTrue(queue.addAll(Collections.<String>emptyList()));
+        assertTrue(queue.addAll(Collections.emptyList()));
         assertEquals(10, queue.size());
     }
 
     @Test
     public void testAddAll_whenDuplicateItems() {
         for (int i = 0; i < 10; i++) {
-            queue.offer("item" + i);
+            queue.offer(new VersionedObject<>("item" + i, i));
         }
-        List<String> list = new ArrayList<String>();
-        list.add("item3");
+        List<VersionedObject<String>> list = new ArrayList<>();
+        list.add(new VersionedObject<>("item3"));
 
-        assertContains(queue, "item3");
+        assertContains(queue, new VersionedObject<>("item3", 3));
         queue.addAll(list);
         assertEquals(11, queue.size());
     }
@@ -409,14 +425,14 @@ public abstract class QueueAbstractTest extends HazelcastTestSupport {
 
     @Test
     public void testRetainAll() {
-        queue.add("item3");
-        queue.add("item4");
-        queue.add("item5");
+        queue.add(new VersionedObject<>("item3"));
+        queue.add(new VersionedObject<>("item4"));
+        queue.add(new VersionedObject<>("item5"));
 
-        List<String> arrayList = new ArrayList<String>();
-        arrayList.add("item3");
-        arrayList.add("item4");
-        arrayList.add("item31");
+        List<VersionedObject<String>> arrayList = new ArrayList<>();
+        arrayList.add(new VersionedObject<>("item3"));
+        arrayList.add(new VersionedObject<>("item4"));
+        arrayList.add(new VersionedObject<>("item31"));
         assertTrue(queue.retainAll(arrayList));
         assertEquals(queue.size(), 2);
     }
@@ -424,9 +440,9 @@ public abstract class QueueAbstractTest extends HazelcastTestSupport {
     @Test
     @SuppressWarnings("ConstantConditions")
     public void testRetainAll_whenCollectionNull() {
-        queue.add("item3");
-        queue.add("item4");
-        queue.add("item5");
+        queue.add(new VersionedObject<>("item3"));
+        queue.add(new VersionedObject<>("item4"));
+        queue.add(new VersionedObject<>("item5"));
 
         try {
             queue.retainAll(null);
@@ -439,20 +455,20 @@ public abstract class QueueAbstractTest extends HazelcastTestSupport {
 
     @Test
     public void testRetainAll_whenCollectionEmpty() {
-        queue.add("item3");
-        queue.add("item4");
-        queue.add("item5");
+        queue.add(new VersionedObject<>("item3"));
+        queue.add(new VersionedObject<>("item4"));
+        queue.add(new VersionedObject<>("item5"));
 
-        assertTrue(queue.retainAll(emptyList()));
+        assertTrue(queue.retainAll(Collections.<VersionedObject<String>>emptyList()));
         assertEquals(0, queue.size());
     }
 
     @Test
     public void testRetainAll_whenCollectionContainsNull() {
-        queue.add("item3");
-        queue.add("item4");
-        queue.add("item5");
-        List<String> list = new ArrayList<String>();
+        queue.add(new VersionedObject<>("item3"));
+        queue.add(new VersionedObject<>("item4"));
+        queue.add(new VersionedObject<>("item5"));
+        List<VersionedObject<String>> list = new ArrayList<>();
         list.add(null);
 
         assertTrue(queue.retainAll(list));
@@ -463,14 +479,14 @@ public abstract class QueueAbstractTest extends HazelcastTestSupport {
 
     @Test
     public void testRemoveAll() {
-        queue.add("item3");
-        queue.add("item4");
-        queue.add("item5");
+        queue.add(new VersionedObject<>("item3"));
+        queue.add(new VersionedObject<>("item4"));
+        queue.add(new VersionedObject<>("item5"));
 
-        List<String> arrayList = new ArrayList<String>();
-        arrayList.add("item3");
-        arrayList.add("item4");
-        arrayList.add("item5");
+        List<VersionedObject<String>> arrayList = new ArrayList<>();
+        arrayList.add(new VersionedObject<>("item3"));
+        arrayList.add(new VersionedObject<>("item4"));
+        arrayList.add(new VersionedObject<>("item5"));
         assertTrue(queue.removeAll(arrayList));
         assertEquals(queue.size(), 0);
     }
@@ -483,11 +499,11 @@ public abstract class QueueAbstractTest extends HazelcastTestSupport {
 
     @Test
     public void testRemoveAll_whenCollectionEmpty() {
-        queue.add("item3");
-        queue.add("item4");
-        queue.add("item5");
+        queue.add(new VersionedObject<>("item3"));
+        queue.add(new VersionedObject<>("item4"));
+        queue.add(new VersionedObject<>("item5"));
 
-        assertFalse(queue.removeAll(Collections.<String>emptyList()));
+        assertFalse(queue.removeAll(Collections.<VersionedObject<String>>emptyList()));
         assertEquals(3, queue.size());
     }
 
@@ -496,43 +512,45 @@ public abstract class QueueAbstractTest extends HazelcastTestSupport {
     @Test
     public void testToArray() {
         for (int i = 0; i < 10; i++) {
-            queue.offer("item" + i);
+            queue.offer(new VersionedObject<>("item" + i, i));
         }
 
         Object[] array = queue.toArray();
         for (int i = 0; i < array.length; i++) {
             Object o = array[i];
-            assertEquals(o, "item" + i++);
+            int id = i++;
+            assertEquals(o, new VersionedObject<>("item" + id, id));
         }
-        String[] arr = new String[5];
-        arr = queue.toArray(arr);
+        @SuppressWarnings("unchecked")
+        VersionedObject<String>[] arr = queue.toArray(new VersionedObject[0]);
         assertEquals(arr.length, 10);
         for (int i = 0; i < arr.length; i++) {
             Object o = arr[i];
-            assertEquals(o, "item" + i++);
+            int id = i++;
+            assertEquals(o, new VersionedObject<>("item" + id, id));
         }
     }
 
     @Test(expected = UnsupportedOperationException.class)
     public void testQueueRemoveFromIterator() {
-        queue.add("one");
-        Iterator<String> iterator = queue.iterator();
+        queue.add(new VersionedObject<>("one"));
+        Iterator<VersionedObject<String>> iterator = queue.iterator();
         iterator.next();
         iterator.remove();
     }
 
     private static class OfferThread extends Thread {
 
-        IQueue<String> queue;
+        IQueue<VersionedObject<String>> queue;
 
-        OfferThread(IQueue<String> queue) {
+        OfferThread(IQueue<VersionedObject<String>> queue) {
             this.queue = queue;
         }
 
         @Override
         public void run() {
             try {
-                queue.offer("waiting", 1, TimeUnit.SECONDS);
+                queue.offer(new VersionedObject<>("waiting"), 1, TimeUnit.SECONDS);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
@@ -541,9 +559,9 @@ public abstract class QueueAbstractTest extends HazelcastTestSupport {
 
     private static class PollThread extends Thread {
 
-        IQueue queue;
+        IQueue<?> queue;
 
-        PollThread(IQueue queue) {
+        PollThread(IQueue<?> queue) {
             this.queue = queue;
         }
 

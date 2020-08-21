@@ -18,9 +18,9 @@ package com.hazelcast.collection.impl.queue;
 
 import com.hazelcast.collection.IQueue;
 import com.hazelcast.collection.impl.queue.model.PriorityElement;
+import com.hazelcast.collection.impl.queue.model.PriorityElementComparator;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -37,7 +37,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
@@ -47,7 +46,6 @@ import static org.junit.Assert.assertTrue;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class QueuePriorityTest extends HazelcastTestSupport {
     private IQueue<PriorityElement> queue;
-    private HazelcastInstance ownerMember;
 
     @Before
     public void before() {
@@ -56,8 +54,7 @@ public class QueuePriorityTest extends HazelcastTestSupport {
               .setPriorityComparatorClassName("com.hazelcast.collection.impl.queue.model.PriorityElementComparator");
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(3);
         HazelcastInstance[] instances = factory.newInstances(config);
-        ownerMember = instances[1];
-        queue = instances[0].getQueue(generateKeyOwnedBy(ownerMember));
+        queue = instances[0].getQueue(generateKeyOwnedBy(instances[1]));
     }
 
     @Test
@@ -155,7 +152,7 @@ public class QueuePriorityTest extends HazelcastTestSupport {
             count++;
         }
         ExecutorService threadPool = Executors.newCachedThreadPool();
-        ConcurrentSkipListSet<PriorityElement> tasks = new ConcurrentSkipListSet<>();
+        ConcurrentSkipListSet<PriorityElement> tasks = new ConcurrentSkipListSet<>(new PriorityElementComparator());
         Semaphore sem = new Semaphore(-99);
         for (int i = 0; i < 100; i++) {
             threadPool.execute(() -> {
@@ -201,19 +198,6 @@ public class QueuePriorityTest extends HazelcastTestSupport {
         sem.acquire();
         assertEquals(enqueued.get(), dequeued.get());
         assertNull(queue.poll());
-    }
-
-    @Test
-    public void testMigration() {
-        for (int i = 99; i >= 0; i--) {
-            queue.add(new PriorityElement(false, i));
-        }
-
-        ownerMember.shutdown();
-
-        for (int i = 0; i < 100; i++) {
-            assertEquals(i, queue.poll().getVersion());
-        }
     }
 
     @Test

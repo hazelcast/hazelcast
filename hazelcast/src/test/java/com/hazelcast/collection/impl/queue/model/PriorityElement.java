@@ -16,12 +16,10 @@
 
 package com.hazelcast.collection.impl.queue.model;
 
-import org.jetbrains.annotations.NotNull;
-
 import java.io.Serializable;
 import java.util.Objects;
 
-public class PriorityElement implements Serializable, Comparable<PriorityElement> {
+public class PriorityElement implements Serializable {
     private static final long serialVersionUID = 1L;
     private boolean highPriority;
     private int version;
@@ -48,17 +46,6 @@ public class PriorityElement implements Serializable, Comparable<PriorityElement
     }
 
     @Override
-    public int compareTo(@NotNull PriorityElement other) {
-        if (isHighPriority() && !other.isHighPriority()) {
-            return -1;
-        }
-        if (other.isHighPriority() && !isHighPriority()) {
-            return 1;
-        }
-        return Integer.compare(getVersion(), other.getVersion());
-    }
-
-    @Override
     public boolean equals(Object o) {
         if (this == o) {
             return true;
@@ -67,8 +54,8 @@ public class PriorityElement implements Serializable, Comparable<PriorityElement
             return false;
         }
         PriorityElement that = (PriorityElement) o;
-        return highPriority == that.highPriority &&
-                version == that.version;
+        return highPriority == that.highPriority
+                && version == that.version;
     }
 
     @Override

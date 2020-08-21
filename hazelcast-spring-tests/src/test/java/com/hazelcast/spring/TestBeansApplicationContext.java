@@ -88,6 +88,7 @@ public class TestBeansApplicationContext extends HazelcastTestSupport {
         assertFalse(config.getMapConfig("map1").isStatisticsEnabled());
         assertEquals(64, config.getNativeMemoryConfig().getSize().getValue());
         QueueConfig testQueue = config.getQueueConfig("testQueue");
-        assertEquals("com.hazelcast.collection.impl.queue.QueueItemTestComparator", testQueue.getPriorityComparatorClassName());
+        assertEquals("com.hazelcast.collection.impl.queue.model.PriorityElementComparator",
+                testQueue.getPriorityComparatorClassName());
     }
 }

@@ -109,20 +109,28 @@ public class QueueContainer implements IdentifiedDataSerializable {
     }
 
     /**
-     * Initializes the item queue with items from the queue store if the store is enabled and if item queue is not being
-     * initialized as a part of a backup operation. If the item queue is being initialized as a part of a backup operation then
-     * the operation is in charge of adding items to a queue and the items are not loaded from a queue store.
+     * Initializes the item queue with items from the queue store if the store
+     * is enabled and if item queue is not being initialized as a part of a
+     * backup operation. If the item queue is being initialized as a part of
+     * a backup operation then the operation is in charge of adding items to
+     * a queue and the items are not loaded from a queue store.
      *
-     * @param fromBackup indicates if this item queue is being initialized from a backup operation. If false, the
-     *                   item queue will initialize from the queue store. If true, it will not initialize
+     * @param fromBackup indicates if this item queue is being initialized from a backup operation.
+     *                   If {@code false}, the item queue will initialize from the queue store.
+     *                   If {@code true}, it will not initialize.
      */
     public void init(boolean fromBackup) {
         if (!fromBackup && store.isEnabled()) {
             Set<Long> keys = store.loadAllKeys();
+            // for the items to be properly ordered in the priority
+            // queue, we need to prefetch all values
+            Map<Long, Data> values = config.isPriorityQueue()
+                    ? store.loadAll(keys)
+                    : Collections.emptyMap();
             if (keys != null) {
                 long maxId = -1;
                 for (Long key : keys) {
-                    QueueItem item = new QueueItem(this, key, null);
+                    QueueItem item = new QueueItem(this, key, values.get(key));
                     getItemQueue().offer(item);
                     maxId = Math.max(maxId, key);
                 }
@@ -439,7 +447,8 @@ public class QueueContainer implements IdentifiedDataSerializable {
     // TX Methods Ends
 
     public long offer(Data data) {
-        QueueItem item = new QueueItem(this, nextId(), null);
+        Data itemData = shouldKeepItemData() ? data : null;
+        QueueItem item = new QueueItem(this, nextId(), itemData);
         if (store.isEnabled()) {
             try {
                 store.store(item.getItemId(), data);
@@ -447,13 +456,22 @@ public class QueueContainer implements IdentifiedDataSerializable {
                 throw new HazelcastException(e);
             }
         }
-        if (!store.isEnabled() || store.getMemoryLimit() > getItemQueue().size()) {
-            item.setSerializedObject(data);
-        }
         getItemQueue().offer(item);
         cancelEvictionIfExists();
         return item.getItemId();
     }
+
+    /**
+     * Returns {@code true} if we should keep queue item data in-memory. This is
+     * the case if the queue store is disabled, we have not yet hit the in-memory
+     * limit or we are using a priority queue which needs item values to sort the
+     * queue items.
+     */
+    private boolean shouldKeepItemData() {
+        return !store.isEnabled() || store.getMemoryLimit() > getItemQueue().size()
+                || config.isPriorityQueue();
+    }
+
 
     /**
      * Offers the item to the backup map. If the memory limit
@@ -464,10 +482,8 @@ public class QueueContainer implements IdentifiedDataSerializable {
      * @param itemId the item ID as determined by the primary replica
      */
     public void offerBackup(Data data, long itemId) {
-        QueueItem item = new QueueItem(this, itemId, null);
-        if (!store.isEnabled() || store.getMemoryLimit() > getItemQueue().size()) {
-            item.setSerializedObject(data);
-        }
+        Data itemData = shouldKeepItemData() ? data : null;
+        QueueItem item = new QueueItem(this, itemId, itemData);
         getBackupMap().put(itemId, item);
     }
 
@@ -483,10 +499,8 @@ public class QueueContainer implements IdentifiedDataSerializable {
         Map<Long, Data> map = createHashMap(dataList.size());
         List<QueueItem> list = new ArrayList<>(dataList.size());
         for (Data data : dataList) {
-            QueueItem item = new QueueItem(this, nextId(), null);
-            if (!store.isEnabled() || store.getMemoryLimit() > getItemQueue().size()) {
-                item.setSerializedObject(data);
-            }
+            Data itemData = shouldKeepItemData() ? data : null;
+            QueueItem item = new QueueItem(this, nextId(), itemData);
             map.put(item.getItemId(), data);
             list.add(item);
         }
@@ -514,10 +528,8 @@ public class QueueContainer implements IdentifiedDataSerializable {
      */
     public void addAllBackup(Map<Long, Data> dataMap) {
         for (Map.Entry<Long, Data> entry : dataMap.entrySet()) {
-            QueueItem item = new QueueItem(this, entry.getKey(), null);
-            if (!store.isEnabled() || store.getMemoryLimit() > getItemQueue().size()) {
-                item.setSerializedObject(entry.getValue());
-            }
+            Data itemData = shouldKeepItemData() ? entry.getValue() : null;
+            QueueItem item = new QueueItem(this, entry.getKey(), itemData);
             getBackupMap().put(item.getItemId(), item);
         }
     }
@@ -912,35 +924,33 @@ public class QueueContainer implements IdentifiedDataSerializable {
     }
 
     private Queue<QueueItem> createLinkedList() {
-        itemQueue = new LinkedList<>();
+        Queue<QueueItem> queue = new LinkedList<>();
         if (backupMap != null && !backupMap.isEmpty()) {
             List<QueueItem> values = new ArrayList<>(backupMap.values());
             Collections.sort(values);
-            itemQueue.addAll(values);
-            QueueItem lastItem = ((LinkedList<QueueItem>) itemQueue).peekLast();
+            queue.addAll(values);
+            QueueItem lastItem = ((LinkedList<QueueItem>) queue).peekLast();
             if (lastItem != null) {
                 setId(lastItem.itemId + ID_PROMOTION_OFFSET);
             }
             backupMap.clear();
             backupMap = null;
         }
-        return itemQueue;
+        return queue;
     }
 
     private Queue<QueueItem> createPriorityQueue() {
-        Queue<QueueItem> priorityQueue = createPriorityQueue(config);
+        Queue<QueueItem> queue = createPriorityQueue(config);
         if (backupMap != null && !backupMap.isEmpty()) {
-            itemQueue.addAll(backupMap.values());
-            QueueItem[] values = itemQueue.toArray(new QueueItem[0]);
-            Arrays.sort(values);
-            QueueItem lastItem = values[values.length - 1];
-            if (lastItem != null) {
-                setId(lastItem.itemId + ID_PROMOTION_OFFSET);
-            }
+            queue.addAll(backupMap.values());
+            long maxItemId = backupMap.values().stream()
+                                   .mapToLong(QueueItem::getItemId)
+                                   .max().orElse(0);
+            setId(maxItemId + ID_PROMOTION_OFFSET);
             backupMap.clear();
             backupMap = null;
         }
-        return priorityQueue;
+        return queue;
     }
 
     /**

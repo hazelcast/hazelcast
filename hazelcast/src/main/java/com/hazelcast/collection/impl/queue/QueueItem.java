@@ -23,6 +23,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
+import javax.annotation.Nullable;
 import java.io.IOException;
 import java.util.Objects;
 
@@ -41,7 +42,7 @@ public class QueueItem implements IdentifiedDataSerializable, Comparable<QueueIt
         this.creationTime = Clock.currentTimeMillis();
     }
 
-    public QueueItem(QueueContainer container, long itemId, Data data) {
+    public QueueItem(QueueContainer container, long itemId, @Nullable Data data) {
         this();
         this.container = container;
         this.itemId = itemId;

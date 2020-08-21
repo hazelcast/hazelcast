@@ -14,13 +14,14 @@
  * limitations under the License.
  */
 
-package com.hazelcast.collection.impl.queue;
+package com.hazelcast.collection.impl.queue.model;
 
 import java.util.Comparator;
 
-public class QueueItemTestComparator implements Comparator<QueueItem> {
+public class VersionedObjectComparator<T> implements Comparator<VersionedObject<T>> {
+
     @Override
-    public int compare(QueueItem o1, QueueItem o2) {
-        return o1.compareTo(o2);
+    public int compare(VersionedObject<T> o1, VersionedObject<T> o2) {
+        return Integer.compare(o1.getVersion(), o2.getVersion());
     }
 }

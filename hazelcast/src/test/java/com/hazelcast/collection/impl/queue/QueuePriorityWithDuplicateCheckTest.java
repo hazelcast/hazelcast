@@ -18,8 +18,11 @@ package com.hazelcast.collection.impl.queue;
 
 import com.hazelcast.collection.IQueue;
 import com.hazelcast.collection.impl.queue.model.PriorityElement;
+import com.hazelcast.collection.impl.queue.model.PriorityElementComparator;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 import com.hazelcast.map.IMap;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -29,8 +32,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.ExecutorService;
@@ -45,9 +46,9 @@ import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class QueuePriorityWithDuplicateCheckTest  extends HazelcastTestSupport  {
+public class QueuePriorityWithDuplicateCheckTest extends HazelcastTestSupport {
 
-    private static final Logger LOG = LoggerFactory.getLogger(QueuePriorityWithDuplicateCheckTest.class);
+    private static final ILogger LOG = Logger.getLogger(QueuePriorityWithDuplicateCheckTest.class);
     private PriorityElementTaskQueueImpl queue;
 
     @Before
@@ -109,7 +110,7 @@ public class QueuePriorityWithDuplicateCheckTest  extends HazelcastTestSupport  
             count++;
         }
         ExecutorService threadPool = Executors.newCachedThreadPool();
-        ConcurrentSkipListSet<PriorityElement> tasks = new ConcurrentSkipListSet<>();
+        ConcurrentSkipListSet<PriorityElement> tasks = new ConcurrentSkipListSet<>(new PriorityElementComparator());
         Semaphore sem = new Semaphore(-99);
         for (int i = 0; i < 100; i++) {
             threadPool.execute(() -> {
@@ -172,7 +173,7 @@ public class QueuePriorityWithDuplicateCheckTest  extends HazelcastTestSupport  
         private final IQueue<PriorityElement> queue;
         private final IMap<PriorityElement, PriorityElement> map;
 
-        public PriorityElementTaskQueueImpl(IQueue<PriorityElement> queue,
+        PriorityElementTaskQueueImpl(IQueue<PriorityElement> queue,
                                             IMap<PriorityElement, PriorityElement> map) {
             this.queue = queue;
             this.map = map;
@@ -192,7 +193,7 @@ public class QueuePriorityWithDuplicateCheckTest  extends HazelcastTestSupport  
                 }
                 return added;
             } catch (Exception e) {
-                LOG.warn("Unable to write to priorityQueue: " + e);
+                LOG.warning("Unable to write to priorityQueue: " + e);
                 return false;
             }
 
@@ -206,7 +207,7 @@ public class QueuePriorityWithDuplicateCheckTest  extends HazelcastTestSupport  
                 }
                 return element;
             } catch (Exception e) {
-                LOG.warn("Unable to read from priorityQueue: " + e);
+                LOG.warning("Unable to read from priorityQueue: " + e);
                 return null;
             }
         }
@@ -216,7 +217,7 @@ public class QueuePriorityWithDuplicateCheckTest  extends HazelcastTestSupport  
                 queue.clear();
                 map.clear();
             } catch (Exception e) {
-                LOG.warn("Unable to clear priorityQueue", e);
+                LOG.warning("Unable to clear priorityQueue", e);
             }
         }
     }
