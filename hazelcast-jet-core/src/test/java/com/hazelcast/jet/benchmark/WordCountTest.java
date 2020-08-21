@@ -35,10 +35,12 @@ import com.hazelcast.jet.core.processor.SourceProcessors;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.annotation.NightlyTest;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import javax.annotation.Nonnull;
@@ -68,6 +70,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
 @RunWith(HazelcastSerialClassRunner.class)
+@Category(NightlyTest.class)
 public class WordCountTest extends HazelcastTestSupport implements Serializable {
 
     private static final int NODE_COUNT = 1;

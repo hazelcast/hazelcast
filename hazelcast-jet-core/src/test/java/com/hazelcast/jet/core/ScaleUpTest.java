@@ -23,7 +23,9 @@ import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.TestProcessors.MockPS;
 import com.hazelcast.jet.core.TestProcessors.NoOutputSourceP;
 import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.annotation.NightlyTest;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.ArrayList;
@@ -33,6 +35,7 @@ import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
+@Category(NightlyTest.class)
 public class ScaleUpTest extends JetTestSupport {
 
     private static final int NODE_COUNT = 2;
