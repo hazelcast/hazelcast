@@ -47,6 +47,14 @@ import com.hazelcast.sql.impl.expression.predicate.IsNullPredicate;
 import com.hazelcast.sql.impl.expression.predicate.IsTruePredicate;
 import com.hazelcast.sql.impl.expression.predicate.NotPredicate;
 import com.hazelcast.sql.impl.expression.predicate.OrPredicate;
+import com.hazelcast.sql.impl.expression.string.AsciiFunction;
+import com.hazelcast.sql.impl.expression.string.CharLengthFunction;
+import com.hazelcast.sql.impl.expression.string.ConcatFunction;
+import com.hazelcast.sql.impl.expression.string.InitcapFunction;
+import com.hazelcast.sql.impl.expression.string.LikeFunction;
+import com.hazelcast.sql.impl.expression.string.LowerFunction;
+import com.hazelcast.sql.impl.expression.string.SubstringFunction;
+import com.hazelcast.sql.impl.expression.string.UpperFunction;
 import com.hazelcast.sql.impl.extract.GenericQueryTargetDescriptor;
 import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.operation.QueryBatchExchangeOperation;
@@ -139,7 +147,16 @@ public class SqlDataSerializerHook implements DataSerializerHook {
 
     public static final int NODE_EMPTY = 47;
 
-    public static final int LEN = NODE_EMPTY + 1;
+    public static final int EXPRESSION_ASCII = 53;
+    public static final int EXPRESSION_CHAR_LENGTH = 54;
+    public static final int EXPRESSION_INITCAP = 55;
+    public static final int EXPRESSION_LOWER = 56;
+    public static final int EXPRESSION_UPPER = 57;
+    public static final int EXPRESSION_CONCAT = 58;
+    public static final int EXPRESSION_LIKE = 59;
+    public static final int EXPRESSION_SUBSTRING = 60;
+
+    public static final int LEN = EXPRESSION_SUBSTRING + 1;
 
     @Override
     public int getFactoryId() {
@@ -209,6 +226,15 @@ public class SqlDataSerializerHook implements DataSerializerHook {
         constructors[EXPRESSION_ROUND_TRUNCATE] = arg -> new RoundTruncateFunction<>();
 
         constructors[NODE_EMPTY] = arg -> new EmptyPlanNode();
+
+        constructors[EXPRESSION_ASCII] = arg -> new AsciiFunction();
+        constructors[EXPRESSION_CHAR_LENGTH] = arg -> new CharLengthFunction();
+        constructors[EXPRESSION_INITCAP] = arg -> new InitcapFunction();
+        constructors[EXPRESSION_LOWER] = arg -> new LowerFunction();
+        constructors[EXPRESSION_UPPER] = arg -> new UpperFunction();
+        constructors[EXPRESSION_CONCAT] = arg -> new ConcatFunction();
+        constructors[EXPRESSION_LIKE] = arg -> new LikeFunction();
+        constructors[EXPRESSION_SUBSTRING] = arg -> new SubstringFunction();
 
         return new ArrayDataSerializableFactory(constructors);
     }
