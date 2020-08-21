@@ -72,9 +72,24 @@ public interface LocalExecutorStats extends LocalInstanceStats {
 On submit of each task, we start to collect these statistics and
 with metrics subsystem, we made these available to management center.
 `DynamicMetricsProvider` interface is implemented by `DistributedScheduledExecutorService`
- and `DistributedDurableExecutorService` for this purpose. Statistics are
- available by default, they can be disabled via `ScheduledExecutorConfig` or
- `DurableExecutorConfig`.
+and `DistributedDurableExecutorService` for this purpose. Statistics are
+available by default, they can be disabled via `ScheduledExecutorConfig` or
+`DurableExecutorConfig`.
+
+### Metrics Prefixes
+`scheduledExecutor` and `durableExecutor` prefixes are used for 
+scheduled and durable executor services respectively.
+
+### Example Output
+```
+[name=executorName,unit=ms,metric=scheduledExecutor.creationTime]=1598016899537
+[name=executorName,unit=count,metric=scheduledExecutor.pending]=0
+[name=executorName,unit=count,metric=scheduledExecutor.started]=1
+[name=executorName,unit=count,metric=scheduledExecutor.completed]=0
+[name=executorName,unit=count,metric=scheduledExecutor.cancelled]=0
+[name=executorName,unit=ms,metric=scheduledExecutor.totalStartLatency]=2
+[name=executorName,unit=ms,metric=scheduledExecutor.totalExecutionTime]=0
+```
  
 
  
