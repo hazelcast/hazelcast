@@ -15,28 +15,27 @@
 
 package com.hazelcast.gcp;
 
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.Logger;
-
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.Scanner;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Utility class for making REST calls.
  */
 final class RestClient {
-    private static final ILogger LOGGER = Logger.getLogger(RestClient.class);
+    private static final java.util.logging.Logger LOGGER = Logger.getLogger(RestClient.class.getSimpleName());
 
     private static final int HTTP_OK = 200;
 
     private final String url;
-    private final List<Header> headers = new ArrayList<Header>();
+    private final Map<String, String> headers = new LinkedHashMap<String, String>();
     private String body;
 
     private RestClient(String url) {
@@ -48,7 +47,7 @@ final class RestClient {
     }
 
     RestClient withHeader(String key, String value) {
-        headers.add(new Header(key, value));
+        headers.put(key, value);
         return this;
     }
 
@@ -72,7 +71,7 @@ final class RestClient {
             URL urlToConnect = new URL(url);
             connection = (HttpURLConnection) urlToConnect.openConnection();
             connection.setRequestMethod(method);
-            for (Header header : headers) {
+            for (Map.Entry<String, String> header : headers.entrySet()) {
                 connection.setRequestProperty(header.getKey(), header.getValue());
             }
             if (body != null) {
@@ -87,10 +86,7 @@ final class RestClient {
                 outputStream.flush();
             }
 
-            if (connection.getResponseCode() != HTTP_OK) {
-                throw new RestClientException(String.format("Failure executing: %s at: %s. Message: %s,", method, url,
-                        read(connection.getErrorStream())));
-            }
+            checkHttpOk(method, connection);
             return read(connection.getInputStream());
         } catch (RestClientException e) {
             throw e;
@@ -104,7 +100,7 @@ final class RestClient {
                 try {
                     outputStream.close();
                 } catch (IOException e) {
-                    LOGGER.finest("Error while closing HTTP output stream", e);
+                    LOGGER.log(Level.FINEST, "Error while closing HTTP output stream", e);
                 }
             }
         }
@@ -117,6 +113,22 @@ final class RestClient {
         Scanner scanner = new Scanner(stream, "UTF-8");
         scanner.useDelimiter("\\Z");
         return scanner.next();
+    }
+
+    private void checkHttpOk(String method, HttpURLConnection connection)
+            throws IOException {
+        if (connection.getResponseCode() != HTTP_OK) {
+            String errorMessage;
+            try {
+                errorMessage = read(connection.getErrorStream());
+            } catch (Exception e) {
+                throw new RestClientException(
+                        String.format("Failure executing: %s at: %s", method, url), connection.getResponseCode());
+            }
+            throw new RestClientException(String.format("Failure executing: %s at: %s. Message: %s", method, url, errorMessage),
+                    connection.getResponseCode());
+
+        }
     }
 
     private static final class Header {
@@ -136,5 +148,4 @@ final class RestClient {
             return value;
         }
     }
-
 }

@@ -18,7 +18,6 @@ package com.hazelcast.gcp;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-import com.hazelcast.internal.util.ExceptionUtil;
 
 import java.util.Collections;
 import java.util.List;
@@ -53,7 +52,7 @@ final class RetryUtils {
             } catch (Exception e) {
                 retryCount++;
                 if (retryCount > retries || containsAnyOf(e, nonRetryableKeywords)) {
-                    throw ExceptionUtil.rethrow(e);
+                    throw unchecked(e);
                 }
                 long waitIntervalMs = backoffIntervalForRetry(retryCount);
                 LOGGER.warning(String.format("Couldn't connect to the service, [%s] retrying in %s seconds...", retryCount,
@@ -100,4 +99,12 @@ final class RetryUtils {
             throw new HazelcastException(e);
         }
     }
+
+    private static RuntimeException unchecked(Exception e) {
+        if (e instanceof RuntimeException) {
+            return (RuntimeException) e;
+        }
+        return new HazelcastException(e);
+    }
+
 }

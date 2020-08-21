@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.concurrent.Callable;
 
 import static java.util.Arrays.asList;
+import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 
 /**
@@ -31,9 +32,14 @@ import static java.util.Collections.singletonList;
 class GcpClient {
     private static final ILogger LOGGER = Logger.getLogger(GcpDiscoveryStrategy.class);
 
+    private static final int HTTP_UNAUTHORIZED = 401;
+    private static final int HTTP_FORBIDDEN = 403;
+
     private static final int RETRIES = 3;
     private static final List<String> NON_RETRYABLE_KEYWORDS = asList("Private key json file not found",
             "Request had insufficient authentication scopes", "Required 'compute.instances.list' permission");
+
+    private boolean isKnownExceptionAlreadyLogged;
 
     private final GcpMetadataApi gcpMetadataApi;
     private final GcpComputeApi gcpComputeApi;
@@ -66,41 +72,51 @@ class GcpClient {
             public String call() {
                 return gcpMetadataApi.currentProject();
             }
-        }, RETRIES));
+        }, RETRIES, NON_RETRYABLE_KEYWORDS));
     }
 
     private List<String> zonesFromConfigOrComputeApi(final GcpConfig gcpConfig) {
-        if (gcpConfig.getRegion() != null) {
-            LOGGER.finest("Property 'region' configured, fetching GCP zones of the specified GCP region");
+        try {
+            if (gcpConfig.getRegion() != null) {
+                LOGGER.finest("Property 'region' configured, fetching GCP zones of the specified GCP region");
+                return RetryUtils.retry(new Callable<List<String>>() {
+                    @Override
+                    public List<String> call() {
+                        return fetchZones(gcpConfig.getRegion());
+                    }
+                }, RETRIES, NON_RETRYABLE_KEYWORDS);
+            }
+
+            if (!gcpConfig.getZones().isEmpty()) {
+                return gcpConfig.getZones();
+            }
+
+            LOGGER.finest("Property 'zones' not configured, fetching GCP zones of the current GCP region");
             return RetryUtils.retry(new Callable<List<String>>() {
                 @Override
                 public List<String> call() {
-                    return fetchZones(gcpConfig.getRegion());
+                    String region = gcpMetadataApi.currentRegion();
+                    return fetchZones(region);
                 }
-            }, RETRIES);
+            }, RETRIES, NON_RETRYABLE_KEYWORDS);
+        } catch (RestClientException e) {
+            handleKnownException(e);
+            return emptyList();
         }
-
-        if (!gcpConfig.getZones().isEmpty()) {
-            return gcpConfig.getZones();
-        }
-
-        LOGGER.finest("Property 'zones' not configured, fetching GCP zones of the current GCP region");
-        return RetryUtils.retry(new Callable<List<String>>() {
-            @Override
-            public List<String> call() {
-                String region = gcpMetadataApi.currentRegion();
-                return fetchZones(region);
-            }
-        }, RETRIES);
     }
 
     List<GcpAddress> getAddresses() {
-        return RetryUtils.retry(new Callable<List<GcpAddress>>() {
-            @Override
-            public List<GcpAddress> call() {
-                return fetchGcpAddresses();
-            }
-        }, RETRIES, NON_RETRYABLE_KEYWORDS);
+        try {
+            return RetryUtils.retry(new Callable<List<GcpAddress>>() {
+                @Override
+                public List<GcpAddress> call() {
+                    return fetchGcpAddresses();
+                }
+            }, RETRIES, NON_RETRYABLE_KEYWORDS);
+        } catch (RestClientException e) {
+            handleKnownException(e);
+            return emptyList();
+        }
     }
 
     private List<String> fetchZones(String region) {
@@ -138,5 +154,23 @@ class GcpClient {
 
     String getAvailabilityZone() {
         return gcpMetadataApi.currentZone();
+    }
+
+    private void handleKnownException(RestClientException e) {
+        if (e.getHttpErrorCode() == HTTP_UNAUTHORIZED) {
+            if (!isKnownExceptionAlreadyLogged) {
+                LOGGER.warning("Google Cloud API Authorization failed! Check your credentials. Starting standalone.");
+                isKnownExceptionAlreadyLogged = true;
+            }
+        } else if (e.getHttpErrorCode() == HTTP_FORBIDDEN) {
+            if (!isKnownExceptionAlreadyLogged) {
+                LOGGER.warning("Google Cloud API access is forbidden! Starting standalone. To use Hazelcast GCP discovery, "
+                        + "make sure that your service account has at minimum \"Read Only\" Access Scope to Compute Engine API.");
+                isKnownExceptionAlreadyLogged = true;
+            }
+        } else {
+            throw e;
+        }
+        LOGGER.finest(e);
     }
 }

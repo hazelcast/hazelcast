@@ -24,6 +24,7 @@ import org.mockito.runners.MockitoJUnitRunner;
 import java.util.List;
 
 import static java.util.Arrays.asList;
+import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static java.util.Collections.unmodifiableList;
 import static org.junit.Assert.assertEquals;
@@ -44,7 +45,8 @@ public class GcpClientTest {
     private static final String CURRENT_REGION = "us-east1";
     private static final String REGION = "us-east3";
     private static final List<String> CURRENT_REGION_ZONES = unmodifiableList(asList(CURRENT_ZONE, ZONE_1, ZONE_2));
-    private static final String ACCESS_TOKEN = "ya29.c.Elr6BVAeC2CeahNthgBf6Nn8j66IfIfZV6eb0LTkDeoAzELseUL5pFmfq0K_ViJN8BaeVB6b16NNCiPB0YbWPnoHRC2I1ghmnknUTzL36t-79b_OitEF_q_C1GM";
+    private static final String ACCESS_TOKEN =
+            "ya29.c.Elr6BVAeC2CeahNthgBf6Nn8j66IfIfZV6eb0LTkDeoAzELseUL5pFmfq0K_ViJN8BaeVB6b16NNCiPB0YbWPnoHRC2I1ghmnknUTzL36t-79b_OitEF_q_C1GM";
     private static final String PRIVATE_KEY_PATH = "/sample/filesystem/path";
 
     private static final GcpAddress ADDRESS_1 = new GcpAddress("10.240.0.2", "35.207.0.219");
@@ -111,10 +113,10 @@ public class GcpClientTest {
         given(gcpComputeApi.instances(PROJECT_2, ZONE_2, label, ACCESS_TOKEN)).willReturn(singletonList(ADDRESS_4));
 
         GcpConfig gcpConfig = GcpConfig.builder()
-                                       .setProjects(asList(PROJECT_1, PROJECT_2))
-                                       .setZones(asList(ZONE_1, ZONE_2))
-                                       .setLabel(label)
-                                       .build();
+                .setProjects(asList(PROJECT_1, PROJECT_2))
+                .setZones(asList(ZONE_1, ZONE_2))
+                .setLabel(label)
+                .build();
         GcpClient gcpClient = new GcpClient(gcpMetadataApi, gcpComputeApi, gcpAuthenticator, gcpConfig);
 
         // when
@@ -139,6 +141,59 @@ public class GcpClientTest {
 
         // then
         assertEquals(ADDRESSES, result);
+    }
+
+    @Test
+    public void getAddressesUnauthorized() {
+        // given
+        Label label = null;
+        String forbiddenMessage = "\"reason\":\"Request had insufficient authentication scopes\"";
+        RestClientException exception = new RestClientException(forbiddenMessage, 401);
+        given(gcpComputeApi.instances(CURRENT_PROJECT, CURRENT_ZONE, label, ACCESS_TOKEN)).willThrow(exception);
+
+        GcpConfig gcpConfig = GcpConfig.builder().setLabel(label).build();
+        GcpClient gcpClient = new GcpClient(gcpMetadataApi, gcpComputeApi, gcpAuthenticator, gcpConfig);
+
+        // when
+        List<GcpAddress> result = gcpClient.getAddresses();
+
+        // then
+        assertEquals(emptyList(), result);
+    }
+
+    @Test
+    public void getAddressesForbidden() {
+        // given
+        Label label = null;
+        String forbiddenMessage = "\"reason\":\"Request had insufficient authentication scopes\"";
+        RestClientException exception = new RestClientException(forbiddenMessage, 403);
+        given(gcpComputeApi.instances(CURRENT_PROJECT, CURRENT_ZONE, label, ACCESS_TOKEN)).willThrow(exception);
+
+        GcpConfig gcpConfig = GcpConfig.builder().setLabel(label).build();
+        GcpClient gcpClient = new GcpClient(gcpMetadataApi, gcpComputeApi, gcpAuthenticator, gcpConfig);
+
+        // when
+        List<GcpAddress> result = gcpClient.getAddresses();
+
+        // then
+        assertEquals(emptyList(), result);
+    }
+
+    @Test(expected = Exception.class)
+    public void getAddressesUnknownException() {
+        // given
+        Label label = null;
+        RestClientException exception = new RestClientException("unknown", 500);
+        given(gcpComputeApi.instances(CURRENT_PROJECT, CURRENT_ZONE, label, ACCESS_TOKEN)).willThrow(exception);
+
+        GcpConfig gcpConfig = GcpConfig.builder().setLabel(label).build();
+        GcpClient gcpClient = new GcpClient(gcpMetadataApi, gcpComputeApi, gcpAuthenticator, gcpConfig);
+
+        // when
+        gcpClient.getAddresses();
+
+        // then
+        // throws exception
     }
 
     @Test
@@ -224,5 +279,19 @@ public class GcpClientTest {
         // then
         verify(gcpComputeApi).zones(PROJECT_1, REGION, ACCESS_TOKEN);
         verify(gcpComputeApi).zones(PROJECT_2, REGION, ACCESS_TOKEN);
+    }
+
+    @Test(expected = Exception.class)
+    public void setZonesException() {
+        // given
+        GcpConfig gcpConfig = GcpConfig.builder().build();
+        RestClientException exception = new RestClientException("unknown", 500);
+        given(gcpComputeApi.zones(any(), any(), any())).willThrow(exception);
+
+        // when
+        new GcpClient(gcpMetadataApi, gcpComputeApi, gcpAuthenticator, gcpConfig);
+
+        // then
+        // throws exception
     }
 }
