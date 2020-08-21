@@ -438,22 +438,22 @@ public class MapSampleMetadataResolverTest extends MapSchemaTestSupport {
 
         // Key
         MapSampleMetadata metadata = MapSampleMetadataResolver.resolve(ss, value, true);
-        assertEquals(PrimitiveUpsertTargetDescriptor.INSTANCE, metadata.getUpsertDescriptor());
+        assertEquals(PrimitiveUpsertTargetDescriptor.DEFAULT, metadata.getUpsertDescriptor());
         checkFields(metadata, field(KEY, expectedType, true));
 
         // Serialized key
         metadata = MapSampleMetadataResolver.resolve(ss, ss.toData(value), true);
-        assertEquals(PrimitiveUpsertTargetDescriptor.INSTANCE, metadata.getUpsertDescriptor());
+        assertEquals(PrimitiveUpsertTargetDescriptor.DEFAULT, metadata.getUpsertDescriptor());
         checkFields(metadata, field(KEY, expectedType, true));
 
         // Value
         metadata = MapSampleMetadataResolver.resolve(ss, value, false);
-        assertEquals(PrimitiveUpsertTargetDescriptor.INSTANCE, metadata.getUpsertDescriptor());
+        assertEquals(PrimitiveUpsertTargetDescriptor.DEFAULT, metadata.getUpsertDescriptor());
         checkFields(metadata, field(VALUE, expectedType, false));
 
         // Serialized value
         metadata = MapSampleMetadataResolver.resolve(ss, ss.toData(value), false);
-        assertEquals(PrimitiveUpsertTargetDescriptor.INSTANCE, metadata.getUpsertDescriptor());
+        assertEquals(PrimitiveUpsertTargetDescriptor.DEFAULT, metadata.getUpsertDescriptor());
         checkFields(metadata, field(VALUE, expectedType, false));
     }
 

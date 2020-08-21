@@ -18,12 +18,24 @@ package com.hazelcast.sql.impl.inject;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.sql.impl.SqlDataSerializerHook;
 
-public class PrimitiveUpsertTargetDescriptor implements UpsertTargetDescriptor {
+public class PrimitiveUpsertTargetDescriptor implements UpsertTargetDescriptor, IdentifiedDataSerializable {
 
-    public static final PrimitiveUpsertTargetDescriptor INSTANCE = new PrimitiveUpsertTargetDescriptor();
+    public static final PrimitiveUpsertTargetDescriptor DEFAULT = new PrimitiveUpsertTargetDescriptor();
 
     PrimitiveUpsertTargetDescriptor() {
+    }
+
+    @Override
+    public int getFactoryId() {
+        return SqlDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getClassId() {
+        return SqlDataSerializerHook.TARGET_DESCRIPTOR_PRIMITIVE;
     }
 
     @Override
@@ -37,5 +49,15 @@ public class PrimitiveUpsertTargetDescriptor implements UpsertTargetDescriptor {
     @Override
     public String toString() {
         return "PrimitiveUpsertTargetDescriptor{}";
+    }
+
+    @Override
+    public int hashCode() {
+        return 0;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        return obj instanceof PrimitiveUpsertTargetDescriptor;
     }
 }

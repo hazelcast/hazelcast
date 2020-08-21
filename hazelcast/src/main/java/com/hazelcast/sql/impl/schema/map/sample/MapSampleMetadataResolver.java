@@ -211,7 +211,7 @@ public final class MapSampleMetadataResolver {
 
             upsertDescriptor = new PojoUpsertTargetDescriptor(clazz.getName(), typeNamesByPaths);
         } else {
-            upsertDescriptor = PrimitiveUpsertTargetDescriptor.INSTANCE;
+            upsertDescriptor = PrimitiveUpsertTargetDescriptor.DEFAULT;
         }
 
         // Add top-level object.

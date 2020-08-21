@@ -18,18 +18,20 @@ package com.hazelcast.sql.impl.inject;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.sql.impl.SqlDataSerializerHook;
 
 import java.io.IOException;
 import java.util.Map;
 import java.util.Objects;
 
-public class PojoUpsertTargetDescriptor implements UpsertTargetDescriptor {
+public class PojoUpsertTargetDescriptor implements UpsertTargetDescriptor, IdentifiedDataSerializable {
 
     private String className;
     private Map<String, String> typeNamesByPaths;
 
     @SuppressWarnings("unused")
-    PojoUpsertTargetDescriptor() {
+    public PojoUpsertTargetDescriptor() {
     }
 
     public PojoUpsertTargetDescriptor(String className, Map<String, String> typeNamesByPaths) {
@@ -43,6 +45,16 @@ public class PojoUpsertTargetDescriptor implements UpsertTargetDescriptor {
 
     public Map<String, String> getTypeNamesByPaths() {
         return typeNamesByPaths;
+    }
+
+    @Override
+    public int getFactoryId() {
+        return SqlDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getClassId() {
+        return SqlDataSerializerHook.TARGET_DESCRIPTOR_POJO;
     }
 
     @Override

@@ -34,8 +34,8 @@ public class PortableUpsertTargetDescriptorTest {
                 )
         );
 
-        assertEquals(descriptor.getFactoryId(), 1);
-        assertEquals(descriptor.getClassId(), 2);
-        assertEquals(descriptor.getClassVersion(), 3);
+        assertEquals(descriptor.getPortableFactoryId(), 1);
+        assertEquals(descriptor.getPortableClassId(), 2);
+        assertEquals(descriptor.getPortableClassVersion(), 3);
     }
 }

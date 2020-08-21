@@ -49,6 +49,9 @@ import com.hazelcast.sql.impl.expression.predicate.NotPredicate;
 import com.hazelcast.sql.impl.expression.predicate.OrPredicate;
 import com.hazelcast.sql.impl.extract.GenericQueryTargetDescriptor;
 import com.hazelcast.sql.impl.extract.QueryPath;
+import com.hazelcast.sql.impl.inject.PojoUpsertTargetDescriptor;
+import com.hazelcast.sql.impl.inject.PortableUpsertTargetDescriptor;
+import com.hazelcast.sql.impl.inject.PrimitiveUpsertTargetDescriptor;
 import com.hazelcast.sql.impl.operation.QueryBatchExchangeOperation;
 import com.hazelcast.sql.impl.operation.QueryCancelOperation;
 import com.hazelcast.sql.impl.operation.QueryCheckOperation;
@@ -139,7 +142,11 @@ public class SqlDataSerializerHook implements DataSerializerHook {
 
     public static final int NODE_EMPTY = 47;
 
-    public static final int LEN = NODE_EMPTY + 1;
+    public static final int TARGET_DESCRIPTOR_PRIMITIVE = 48;
+    public static final int TARGET_DESCRIPTOR_POJO = 49;
+    public static final int TARGET_DESCRIPTOR_PORTABLE = 50;
+
+    public static final int LEN = TARGET_DESCRIPTOR_PORTABLE + 1;
 
     @Override
     public int getFactoryId() {
@@ -209,6 +216,10 @@ public class SqlDataSerializerHook implements DataSerializerHook {
         constructors[EXPRESSION_ROUND_TRUNCATE] = arg -> new RoundTruncateFunction<>();
 
         constructors[NODE_EMPTY] = arg -> new EmptyPlanNode();
+
+        constructors[TARGET_DESCRIPTOR_PRIMITIVE] = arg -> PrimitiveUpsertTargetDescriptor.DEFAULT;
+        constructors[TARGET_DESCRIPTOR_POJO] = arg -> new PojoUpsertTargetDescriptor();
+        constructors[TARGET_DESCRIPTOR_PORTABLE] = arg -> new PortableUpsertTargetDescriptor();
 
         return new ArrayDataSerializableFactory(constructors);
     }

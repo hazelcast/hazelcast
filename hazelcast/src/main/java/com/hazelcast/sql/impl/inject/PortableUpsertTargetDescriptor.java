@@ -18,58 +18,70 @@ package com.hazelcast.sql.impl.inject;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.sql.impl.SqlDataSerializerHook;
 
 import java.io.IOException;
 import java.util.Objects;
 
-public class PortableUpsertTargetDescriptor implements UpsertTargetDescriptor {
+public class PortableUpsertTargetDescriptor implements UpsertTargetDescriptor, IdentifiedDataSerializable {
 
-    private int factoryId;
-    private int classId;
-    private int classVersion;
+    private int portableFactoryId;
+    private int portableClassId;
+    private int portableClassVersion;
 
     @SuppressWarnings("unused")
-    PortableUpsertTargetDescriptor() {
+    public PortableUpsertTargetDescriptor() {
     }
 
-    public PortableUpsertTargetDescriptor(int factoryId, int classId, int classVersion) {
-        this.factoryId = factoryId;
-        this.classId = classId;
-        this.classVersion = classVersion;
+    public PortableUpsertTargetDescriptor(int portableFactoryId, int portableClassId, int portableClassVersion) {
+        this.portableFactoryId = portableFactoryId;
+        this.portableClassId = portableClassId;
+        this.portableClassVersion = portableClassVersion;
     }
 
+    public int getPortableFactoryId() {
+        return portableFactoryId;
+    }
+
+    public int getPortableClassId() {
+        return portableClassId;
+    }
+
+    public int getPortableClassVersion() {
+        return portableClassVersion;
+    }
+
+    @Override
     public int getFactoryId() {
-        return factoryId;
+        return SqlDataSerializerHook.F_ID;
     }
 
+    @Override
     public int getClassId() {
-        return classId;
-    }
-
-    public int getClassVersion() {
-        return classVersion;
+        return SqlDataSerializerHook.TARGET_DESCRIPTOR_PORTABLE;
     }
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeInt(factoryId);
-        out.writeInt(classId);
-        out.writeInt(classVersion);
+        out.writeInt(portableFactoryId);
+        out.writeInt(portableClassId);
+        out.writeInt(portableClassVersion);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        factoryId = in.readInt();
-        classId = in.readInt();
-        classVersion = in.readInt();
+        portableFactoryId = in.readInt();
+        portableClassId = in.readInt();
+        portableClassVersion = in.readInt();
     }
 
     @Override
     public String toString() {
         return "PortableUpsertTargetDescriptor{"
-                + "factoryId=" + factoryId
-                + ", classId=" + classId
-                + ", classVersion=" + classVersion
+                + "portableFactoryId=" + portableFactoryId
+                + ", portableClassId=" + portableClassId
+                + ", portableClassVersion=" + portableClassVersion
                 + '}';
     }
 
@@ -82,13 +94,13 @@ public class PortableUpsertTargetDescriptor implements UpsertTargetDescriptor {
             return false;
         }
         PortableUpsertTargetDescriptor that = (PortableUpsertTargetDescriptor) o;
-        return factoryId == that.factoryId
-                && classId == that.classId
-                && classVersion == that.classVersion;
+        return portableFactoryId == that.portableFactoryId
+                && portableClassId == that.portableClassId
+                && portableClassVersion == that.portableClassVersion;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(factoryId, classId, classVersion);
+        return Objects.hash(portableFactoryId, portableClassId, portableClassVersion);
     }
 }
