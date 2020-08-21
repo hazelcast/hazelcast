@@ -23,6 +23,7 @@ import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.serialization.impl.CustomSerializationTest;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
+import com.hazelcast.internal.serialization.impl.GenericRecordQueryReader;
 import com.hazelcast.internal.serialization.impl.SampleIdentifiedDataSerializable;
 import com.hazelcast.internal.serialization.impl.TestSerializationConstants;
 import com.hazelcast.nio.serialization.ClassDefinition;
@@ -32,7 +33,6 @@ import com.hazelcast.nio.serialization.FieldDefinition;
 import com.hazelcast.nio.serialization.FieldType;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.internal.serialization.impl.InternalValueReader;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableFactory;
 import com.hazelcast.nio.serialization.PortableReader;
@@ -335,7 +335,7 @@ public class PortableTest {
         GrandParentPortableObject grandParent = new GrandParentPortableObject(timestamp3, parent);
 
         Data data = serializationService.toData(grandParent);
-        InternalValueReader reader = serializationService.createPortableReader(data);
+        GenericRecordQueryReader reader = new GenericRecordQueryReader(serializationService.readAsInternalGenericRecord(data));
 
         assertEquals(grandParent.timestamp, reader.read("timestamp"));
         assertEquals(parent.timestamp, reader.read("child.timestamp"));

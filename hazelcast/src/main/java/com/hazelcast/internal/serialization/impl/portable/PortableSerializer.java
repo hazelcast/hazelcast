@@ -19,9 +19,7 @@ package com.hazelcast.internal.serialization.impl.portable;
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.internal.nio.BufferObjectDataInput;
 import com.hazelcast.internal.nio.BufferObjectDataOutput;
-import com.hazelcast.internal.serialization.impl.GenericRecordQueryReader;
 import com.hazelcast.internal.serialization.impl.InternalGenericRecord;
-import com.hazelcast.internal.serialization.impl.InternalValueReader;
 import com.hazelcast.internal.serialization.impl.SerializationConstants;
 import com.hazelcast.internal.serialization.impl.SerializationUtil;
 import com.hazelcast.nio.ObjectDataInput;
@@ -137,15 +135,14 @@ public final class PortableSerializer implements StreamSerializer<Object> {
         return portableFactory.create(classId);
     }
 
-    public InternalValueReader createValueReader(ObjectDataInput in) throws IOException {
+    public InternalGenericRecord readAsInternalGenericRecord(ObjectDataInput in) throws IOException {
         int factoryId = in.readInt();
         int classId = in.readInt();
         int version = in.readInt();
 
         BufferObjectDataInput input = (BufferObjectDataInput) in;
         ClassDefinition cd = setupPositionAndDefinition(input, factoryId, classId, version);
-        InternalGenericRecord genericRecord = new PortableValueReader(this, input, cd, true);
-        return new GenericRecordQueryReader(genericRecord);
+        return new PortableInternalGenericRecord(this, input, cd, true);
     }
 
     DefaultPortableReader createMorphingReader(BufferObjectDataInput in) throws IOException {
@@ -305,7 +302,7 @@ public final class PortableSerializer implements StreamSerializer<Object> {
         if (readGenericLazy) {
             int version = in.readInt();
             ClassDefinition cd = setupPositionAndDefinition(in, factoryId, classId, version);
-            PortableValueReader reader = new PortableValueReader(this, in, cd, true);
+            PortableInternalGenericRecord reader = new PortableInternalGenericRecord(this, in, cd, true);
             return (T) reader;
         }
         return readPortableGenericRecord(in, factoryId, classId);
@@ -315,7 +312,7 @@ public final class PortableSerializer implements StreamSerializer<Object> {
     private <T> T readPortableGenericRecord(BufferObjectDataInput in, int factoryId, int classId) throws IOException {
         int version = in.readInt();
         ClassDefinition cd = setupPositionAndDefinition(in, factoryId, classId, version);
-        GenericRecord reader = new PortableValueReader(this, in, cd, false);
+        GenericRecord reader = new PortableInternalGenericRecord(this, in, cd, false);
         GenericRecord.Builder genericRecordBuilder = GenericRecord.Builder.portable(cd);
         for (String fieldName : cd.getFieldNames()) {
             switch (cd.getFieldType(fieldName)) {

@@ -207,7 +207,7 @@ public abstract class AbstractGenericRecordTest extends HazelcastTestSupport {
             Object value = entry.getValue();
             GenericRecord genericRecord = (GenericRecord) value;
 
-            GenericRecord modifiedGenericRecord = genericRecord.createGenericRecordBuilder()
+            GenericRecord modifiedGenericRecord = genericRecord.newBuilder()
                     .writeUTF("name", "bar")
                     .writeInt("myint", 4).build();
 
@@ -237,7 +237,7 @@ public abstract class AbstractGenericRecordTest extends HazelcastTestSupport {
             Object value = entry.getValue();
             GenericRecord genericRecord = (GenericRecord) value;
 
-            GenericRecord modifiedGenericRecord = genericRecord.cloneWithGenericRecordBuilder()
+            GenericRecord modifiedGenericRecord = genericRecord.cloneWithBuilder()
                     .writeInt("myint", 4).build();
 
             entry.setValue(modifiedGenericRecord);

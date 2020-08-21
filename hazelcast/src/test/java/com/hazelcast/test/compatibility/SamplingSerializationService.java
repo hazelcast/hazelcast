@@ -22,10 +22,10 @@ import com.hazelcast.internal.nio.BufferObjectDataOutput;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.DataType;
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.serialization.impl.InternalGenericRecord;
 import com.hazelcast.internal.serialization.impl.portable.PortableContext;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.internal.serialization.impl.InternalValueReader;
 import com.hazelcast.partition.PartitioningStrategy;
 import com.hazelcast.test.TestEnvironment;
 
@@ -164,8 +164,8 @@ public class SamplingSerializationService implements InternalSerializationServic
     }
 
     @Override
-    public InternalValueReader createPortableReader(Data data) throws IOException {
-        return delegate.createPortableReader(data);
+    public InternalGenericRecord readAsInternalGenericRecord(Data data) throws IOException {
+        return delegate.readAsInternalGenericRecord(data);
     }
 
     @Override

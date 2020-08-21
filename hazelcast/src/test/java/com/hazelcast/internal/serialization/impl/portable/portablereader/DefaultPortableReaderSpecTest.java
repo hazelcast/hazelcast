@@ -20,7 +20,7 @@ import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
-import com.hazelcast.internal.serialization.impl.InternalValueReader;
+import com.hazelcast.internal.serialization.impl.GenericRecordQueryReader;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.query.impl.getters.MultiResult;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -915,7 +915,7 @@ public class DefaultPortableReaderSpecTest extends HazelcastTestSupport {
     // Hazelcast init Utilities
     //
 
-    public InternalValueReader reader(Portable portable) throws IOException {
+    public GenericRecordQueryReader reader(Portable portable) throws IOException {
         SerializationConfig serializationConfig = new SerializationConfig();
         serializationConfig.addPortableFactory(TestPortableFactory.ID, new TestPortableFactory());
 
@@ -928,7 +928,7 @@ public class DefaultPortableReaderSpecTest extends HazelcastTestSupport {
         ss.toData(N_NON_EMPTY);
 
         Data data = ss.toData(portable);
-        return ss.createPortableReader(data);
+        return new GenericRecordQueryReader(ss.readAsInternalGenericRecord(data));
     }
 
 }

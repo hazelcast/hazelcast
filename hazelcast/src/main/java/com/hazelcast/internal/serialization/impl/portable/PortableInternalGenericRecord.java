@@ -39,7 +39,7 @@ import static com.hazelcast.internal.nio.Bits.INT_SIZE_IN_BYTES;
 import static com.hazelcast.internal.nio.Bits.LONG_SIZE_IN_BYTES;
 import static com.hazelcast.internal.nio.Bits.SHORT_SIZE_IN_BYTES;
 
-public class PortableValueReader implements InternalGenericRecord {
+public class PortableInternalGenericRecord implements InternalGenericRecord {
     protected final ClassDefinition cd;
     protected final PortableSerializer serializer;
 
@@ -47,7 +47,8 @@ public class PortableValueReader implements InternalGenericRecord {
     private final int offset;
     private final boolean readGenericLazy;
 
-    PortableValueReader(PortableSerializer serializer, BufferObjectDataInput in, ClassDefinition cd, boolean readGenericLazy) {
+    PortableInternalGenericRecord(PortableSerializer serializer, BufferObjectDataInput in,
+                                  ClassDefinition cd, boolean readGenericLazy) {
         this.in = in;
         this.serializer = serializer;
         this.cd = cd;
@@ -87,6 +88,15 @@ public class PortableValueReader implements InternalGenericRecord {
     }
 
     @Override
+    public boolean readBoolean(String fieldName) {
+        try {
+            return in.readBoolean(readPosition(fieldName, FieldType.BOOLEAN));
+        } catch (IOException e) {
+            throw illegalStateException(e);
+        }
+    }
+
+    @Override
     public byte readByte(String fieldName) {
         try {
             return in.readByte(readPosition(fieldName, FieldType.BYTE));
@@ -96,9 +106,27 @@ public class PortableValueReader implements InternalGenericRecord {
     }
 
     @Override
-    public short readShort(String fieldName) {
+    public char readChar(String fieldName) {
         try {
-            return in.readShort(readPosition(fieldName, FieldType.SHORT));
+            return in.readChar(readPosition(fieldName, FieldType.CHAR));
+        } catch (IOException e) {
+            throw illegalStateException(e);
+        }
+    }
+
+    @Override
+    public double readDouble(String fieldName) {
+        try {
+            return in.readDouble(readPosition(fieldName, FieldType.DOUBLE));
+        } catch (IOException e) {
+            throw illegalStateException(e);
+        }
+    }
+
+    @Override
+    public float readFloat(String fieldName) {
+        try {
+            return in.readFloat(readPosition(fieldName, FieldType.FLOAT));
         } catch (IOException e) {
             throw illegalStateException(e);
         }
@@ -123,36 +151,9 @@ public class PortableValueReader implements InternalGenericRecord {
     }
 
     @Override
-    public float readFloat(String fieldName) {
+    public short readShort(String fieldName) {
         try {
-            return in.readFloat(readPosition(fieldName, FieldType.FLOAT));
-        } catch (IOException e) {
-            throw illegalStateException(e);
-        }
-    }
-
-    @Override
-    public double readDouble(String fieldName) {
-        try {
-            return in.readDouble(readPosition(fieldName, FieldType.DOUBLE));
-        } catch (IOException e) {
-            throw illegalStateException(e);
-        }
-    }
-
-    @Override
-    public boolean readBoolean(String fieldName) {
-        try {
-            return in.readBoolean(readPosition(fieldName, FieldType.BOOLEAN));
-        } catch (IOException e) {
-            throw illegalStateException(e);
-        }
-    }
-
-    @Override
-    public char readChar(String fieldName) {
-        try {
-            return in.readChar(readPosition(fieldName, FieldType.CHAR));
+            return in.readShort(readPosition(fieldName, FieldType.SHORT));
         } catch (IOException e) {
             throw illegalStateException(e);
         }
@@ -177,6 +178,23 @@ public class PortableValueReader implements InternalGenericRecord {
     }
 
     @Override
+    public boolean[] readBooleanArray(String fieldName) {
+        int currentPos = in.position();
+        try {
+            int position = readPosition(fieldName, FieldType.BOOLEAN_ARRAY);
+            if (isNullOrEmpty(position)) {
+                return null;
+            }
+            in.position(position);
+            return in.readBooleanArray();
+        } catch (IOException e) {
+            throw illegalStateException(e);
+        } finally {
+            in.position(currentPos);
+        }
+    }
+
+    @Override
     public byte[] readByteArray(String fieldName) {
         int currentPos = in.position();
         try {
@@ -195,23 +213,6 @@ public class PortableValueReader implements InternalGenericRecord {
     }
 
     @Override
-    public boolean[] readBooleanArray(String fieldName) {
-        int currentPos = in.position();
-        try {
-            int position = readPosition(fieldName, FieldType.BOOLEAN_ARRAY);
-            if (isNullOrEmpty(position)) {
-                return null;
-            }
-            in.position(position);
-            return in.readBooleanArray();
-        } catch (IOException e) {
-            throw illegalStateException(e);
-        } finally {
-            in.position(currentPos);
-        }
-    }
-
-    @Override
     public char[] readCharArray(String fieldName) {
         int currentPos = in.position();
         try {
@@ -221,40 +222,6 @@ public class PortableValueReader implements InternalGenericRecord {
             }
             in.position(position);
             return in.readCharArray();
-        } catch (IOException e) {
-            throw illegalStateException(e);
-        } finally {
-            in.position(currentPos);
-        }
-    }
-
-    @Override
-    public int[] readIntArray(String fieldName) {
-        int currentPos = in.position();
-        try {
-            int position = readPosition(fieldName, FieldType.INT_ARRAY);
-            if (isNullOrEmpty(position)) {
-                return null;
-            }
-            in.position(position);
-            return in.readIntArray();
-        } catch (IOException e) {
-            throw illegalStateException(e);
-        } finally {
-            in.position(currentPos);
-        }
-    }
-
-    @Override
-    public long[] readLongArray(String fieldName) {
-        int currentPos = in.position();
-        try {
-            int position = readPosition(fieldName, FieldType.LONG_ARRAY);
-            if (isNullOrEmpty(position)) {
-                return null;
-            }
-            in.position(position);
-            return in.readLongArray();
         } catch (IOException e) {
             throw illegalStateException(e);
         } finally {
@@ -289,6 +256,40 @@ public class PortableValueReader implements InternalGenericRecord {
             }
             in.position(position);
             return in.readFloatArray();
+        } catch (IOException e) {
+            throw illegalStateException(e);
+        } finally {
+            in.position(currentPos);
+        }
+    }
+
+    @Override
+    public int[] readIntArray(String fieldName) {
+        int currentPos = in.position();
+        try {
+            int position = readPosition(fieldName, FieldType.INT_ARRAY);
+            if (isNullOrEmpty(position)) {
+                return null;
+            }
+            in.position(position);
+            return in.readIntArray();
+        } catch (IOException e) {
+            throw illegalStateException(e);
+        } finally {
+            in.position(currentPos);
+        }
+    }
+
+    @Override
+    public long[] readLongArray(String fieldName) {
+        int currentPos = in.position();
+        try {
+            int position = readPosition(fieldName, FieldType.LONG_ARRAY);
+            if (isNullOrEmpty(position)) {
+                return null;
+            }
+            in.position(position);
+            return in.readLongArray();
         } catch (IOException e) {
             throw illegalStateException(e);
         } finally {
@@ -374,12 +375,12 @@ public class PortableValueReader implements InternalGenericRecord {
     }
 
     @Override
-    public Builder createGenericRecordBuilder() {
+    public Builder newBuilder() {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public Builder cloneWithGenericRecordBuilder() {
+    public Builder cloneWithBuilder() {
         throw new UnsupportedOperationException();
     }
 
@@ -526,32 +527,6 @@ public class PortableValueReader implements InternalGenericRecord {
     }
 
     @Override
-    public Integer readIntFromArray(String fieldName, int index) {
-        int position = readPosition(fieldName, FieldType.INT_ARRAY);
-        if (isNullOrEmpty(position) || doesNotHaveIndex(position, index)) {
-            return null;
-        }
-        try {
-            return in.readInt(INT_SIZE_IN_BYTES + position + (index * INT_SIZE_IN_BYTES));
-        } catch (IOException e) {
-            throw illegalStateException(e);
-        }
-    }
-
-    @Override
-    public Long readLongFromArray(String fieldName, int index) {
-        int position = readPosition(fieldName, FieldType.LONG_ARRAY);
-        if (isNullOrEmpty(position) || doesNotHaveIndex(position, index)) {
-            return null;
-        }
-        try {
-            return in.readLong(INT_SIZE_IN_BYTES + position + (index * LONG_SIZE_IN_BYTES));
-        } catch (IOException e) {
-            throw illegalStateException(e);
-        }
-    }
-
-    @Override
     public Double readDoubleFromArray(String fieldName, int index) {
         int position = readPosition(fieldName, FieldType.DOUBLE_ARRAY);
         if (isNullOrEmpty(position) || doesNotHaveIndex(position, index)) {
@@ -572,6 +547,32 @@ public class PortableValueReader implements InternalGenericRecord {
         }
         try {
             return in.readFloat(INT_SIZE_IN_BYTES + position + (index * FLOAT_SIZE_IN_BYTES));
+        } catch (IOException e) {
+            throw illegalStateException(e);
+        }
+    }
+
+    @Override
+    public Integer readIntFromArray(String fieldName, int index) {
+        int position = readPosition(fieldName, FieldType.INT_ARRAY);
+        if (isNullOrEmpty(position) || doesNotHaveIndex(position, index)) {
+            return null;
+        }
+        try {
+            return in.readInt(INT_SIZE_IN_BYTES + position + (index * INT_SIZE_IN_BYTES));
+        } catch (IOException e) {
+            throw illegalStateException(e);
+        }
+    }
+
+    @Override
+    public Long readLongFromArray(String fieldName, int index) {
+        int position = readPosition(fieldName, FieldType.LONG_ARRAY);
+        if (isNullOrEmpty(position) || doesNotHaveIndex(position, index)) {
+            return null;
+        }
+        try {
+            return in.readLong(INT_SIZE_IN_BYTES + position + (index * LONG_SIZE_IN_BYTES));
         } catch (IOException e) {
             throw illegalStateException(e);
         }

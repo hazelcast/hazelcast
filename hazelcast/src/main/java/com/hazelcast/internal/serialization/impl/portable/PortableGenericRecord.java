@@ -42,13 +42,13 @@ public class PortableGenericRecord implements GenericRecord {
     }
 
     @Override
-    public Builder createGenericRecordBuilder() {
+    public Builder newBuilder() {
         return Builder.portable(classDefinition);
     }
 
     @Override
-    public Builder cloneWithGenericRecordBuilder() {
-        return  new PortableGenericRecordBuilder(classDefinition, Arrays.copyOf(objects, objects.length));
+    public Builder cloneWithBuilder() {
+        return new PortableGenericRecordBuilder(classDefinition, Arrays.copyOf(objects, objects.length));
     }
 
     @Override
@@ -69,21 +69,6 @@ public class PortableGenericRecord implements GenericRecord {
     @Override
     public FieldType getFieldType(String fieldName) {
         return classDefinition.getFieldType(fieldName);
-    }
-
-    @Override
-    public int readInt(String fieldName) {
-        return read(fieldName, FieldType.INT);
-    }
-
-    @Override
-    public long readLong(String fieldName) {
-        return read(fieldName, FieldType.LONG);
-    }
-
-    @Override
-    public String readUTF(String fieldName) {
-        return read(fieldName, FieldType.UTF);
     }
 
     @Override
@@ -112,13 +97,23 @@ public class PortableGenericRecord implements GenericRecord {
     }
 
     @Override
+    public int readInt(String fieldName) {
+        return read(fieldName, FieldType.INT);
+    }
+
+    @Override
+    public long readLong(String fieldName) {
+        return read(fieldName, FieldType.LONG);
+    }
+
+    @Override
     public short readShort(String fieldName) {
         return read(fieldName, FieldType.SHORT);
     }
 
     @Override
-    public byte[] readByteArray(String fieldName) {
-        return read(fieldName, FieldType.BYTE_ARRAY);
+    public String readUTF(String fieldName) {
+        return read(fieldName, FieldType.UTF);
     }
 
     @Override
@@ -127,18 +122,13 @@ public class PortableGenericRecord implements GenericRecord {
     }
 
     @Override
+    public byte[] readByteArray(String fieldName) {
+        return read(fieldName, FieldType.BYTE_ARRAY);
+    }
+
+    @Override
     public char[] readCharArray(String fieldName) {
         return read(fieldName, FieldType.CHAR_ARRAY);
-    }
-
-    @Override
-    public int[] readIntArray(String fieldName) {
-        return read(fieldName, FieldType.INT_ARRAY);
-    }
-
-    @Override
-    public long[] readLongArray(String fieldName) {
-        return read(fieldName, FieldType.LONG_ARRAY);
     }
 
     @Override
@@ -149,6 +139,16 @@ public class PortableGenericRecord implements GenericRecord {
     @Override
     public float[] readFloatArray(String fieldName) {
         return read(fieldName, FieldType.FLOAT_ARRAY);
+    }
+
+    @Override
+    public int[] readIntArray(String fieldName) {
+        return read(fieldName, FieldType.INT_ARRAY);
+    }
+
+    @Override
+    public long[] readLongArray(String fieldName) {
+        return read(fieldName, FieldType.LONG_ARRAY);
     }
 
     @Override

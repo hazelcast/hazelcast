@@ -18,8 +18,8 @@ package com.hazelcast.internal.serialization.impl.portable.portablereader;
 
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
+import com.hazelcast.internal.serialization.impl.GenericRecordQueryReader;
 import com.hazelcast.internal.serialization.impl.portable.portablereader.DefaultPortableReaderQuickTest.TestPortableFactory;
-import com.hazelcast.internal.serialization.impl.InternalValueReader;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.test.HazelcastTestSupport;
 import org.openjdk.jmh.annotations.Benchmark;
@@ -47,8 +47,8 @@ import static com.hazelcast.internal.serialization.impl.portable.portablereader.
 @Measurement(iterations = 5, time = 1)
 public class DefaultPortableReaderBenchmark extends HazelcastTestSupport {
 
-    private InternalValueReader reader;
-    private InternalValueReader primitiveReader;
+    private GenericRecordQueryReader reader;
+    private GenericRecordQueryReader primitiveReader;
     private InternalSerializationService ss;
 
     @Setup
@@ -62,9 +62,9 @@ public class DefaultPortableReaderBenchmark extends HazelcastTestSupport {
         reader = reader(PORSCHE);
     }
 
-    private InternalValueReader reader(Portable portable) throws Exception {
-        ss.createPortableReader(ss.toData(NON_EMPTY_PORSCHE));
-        return ss.createPortableReader(ss.toData(portable));
+    private GenericRecordQueryReader reader(Portable portable) throws Exception {
+        ss.readAsInternalGenericRecord(ss.toData(NON_EMPTY_PORSCHE));
+        return new GenericRecordQueryReader(ss.readAsInternalGenericRecord(ss.toData(portable)));
 
     }
 

@@ -22,28 +22,26 @@ import com.hazelcast.nio.serialization.GenericRecord;
  * Additionally to GenericRecord, this one has more methods to be used in Query.
  *
  * @see GenericRecordQueryReader
- *
+ * <p>
  * read*FromArray methods will return `null`
  * 1. if the array is null or empty
  * 2. there is no data at given index. In other words, the index is bigger than the length of the array
  */
 public interface InternalGenericRecord extends GenericRecord {
 
-    GenericRecord[] readGenericRecordArray(String fieldName);
+    Boolean readBooleanFromArray(String fieldName, int index);
 
     Byte readByteFromArray(String fieldName, int index);
 
-    Boolean readBooleanFromArray(String fieldName, int index);
-
     Character readCharFromArray(String fieldName, int index);
-
-    Integer readIntFromArray(String fieldName, int index);
-
-    Long readLongFromArray(String fieldName, int index);
 
     Double readDoubleFromArray(String fieldName, int index);
 
     Float readFloatFromArray(String fieldName, int index);
+
+    Integer readIntFromArray(String fieldName, int index);
+
+    Long readLongFromArray(String fieldName, int index);
 
     Short readShortFromArray(String fieldName, int index);
 
@@ -51,9 +49,31 @@ public interface InternalGenericRecord extends GenericRecord {
 
     GenericRecord readGenericRecordFromArray(String fieldName, int index);
 
+    /**
+     * Reads same value {@link InternalGenericRecord#readGenericRecord(String)} }, but in deserialized form.
+     * This is used in query system when the object is leaf of the query.
+     *
+     * @param fieldName
+     * @param index     array index to read from
+     * @return a nested field as a concrete deserialized object rather than generic record
+     */
     Object readObjectFromArray(String fieldName, int index);
 
+    /**
+     * Reads same value {@link GenericRecord#readGenericRecordArray(String)}, but in deserialized form.
+     * This is used in query system when the object is leaf of the query.
+     *
+     * @param fieldName
+     * @return a nested field as array of deserialized objects rather than array of the  generic records
+     */
     Object[] readObjectArray(String fieldName);
 
+    /**
+     * Reads same value {@link GenericRecord#readGenericRecord(String)} }, but in deserialized form.
+     * This is used in query system when the object is leaf of the query.
+     *
+     * @param fieldName
+     * @return a nested field as a concrete deserialized object rather than generic record
+     */
     Object readObject(String fieldName);
 }

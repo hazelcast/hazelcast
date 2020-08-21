@@ -19,8 +19,8 @@ package com.hazelcast.internal.serialization.impl.portable.portablereader;
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
+import com.hazelcast.internal.serialization.impl.GenericRecordQueryReader;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
-import com.hazelcast.internal.serialization.impl.InternalValueReader;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableFactory;
 import com.hazelcast.nio.serialization.PortableReader;
@@ -337,7 +337,7 @@ public class DefaultPortableReaderQuickTest extends HazelcastTestSupport {
 
     @Test
     public void reusingTheReader_multipleCalls_stateResetCorrectly() throws IOException {
-        InternalValueReader reader = reader(PORSCHE);
+        GenericRecordQueryReader reader = reader(PORSCHE);
         assertEquals("rear", reader.read("wheels[1].name"));
         assertEquals(300, reader.read("engine.power"));
         assertEquals(46, reader.read("wheels[0].serial[0]"));
@@ -356,14 +356,14 @@ public class DefaultPortableReaderQuickTest extends HazelcastTestSupport {
     //
     // Utilities
     //
-    public InternalValueReader reader(Portable portable) throws IOException {
+    public GenericRecordQueryReader reader(Portable portable) throws IOException {
         SerializationConfig serializationConfig = new SerializationConfig();
         serializationConfig.addPortableFactory(TestPortableFactory.ID, new TestPortableFactory());
 
         InternalSerializationService ss = new DefaultSerializationServiceBuilder().setConfig(serializationConfig).build();
 
         ss.toData(NON_EMPTY_PORSCHE);
-        return ss.createPortableReader(ss.toData(portable));
+        return new GenericRecordQueryReader(ss.readAsInternalGenericRecord(ss.toData(portable)));
     }
 
     static class CarPortable implements Portable {

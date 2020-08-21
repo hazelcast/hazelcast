@@ -180,12 +180,12 @@ public class SerializationServiceV1 extends AbstractSerializationService {
         return (B) data;
     }
 
-    public InternalValueReader createPortableReader(Data data) throws IOException {
+    public InternalGenericRecord readAsInternalGenericRecord(Data data) throws IOException {
         if (!data.isPortable()) {
             throw new IllegalArgumentException("Given data is not Portable! -> " + data.getType());
         }
         BufferObjectDataInput in = createObjectDataInput(data);
-        return portableSerializer.createValueReader(in);
+        return portableSerializer.readAsInternalGenericRecord(in);
     }
 
     public PortableContext getPortableContext() {

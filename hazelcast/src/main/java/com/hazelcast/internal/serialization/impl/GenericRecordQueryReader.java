@@ -16,11 +16,13 @@
 
 package com.hazelcast.internal.serialization.impl;
 
+import com.hazelcast.internal.serialization.impl.portable.PortableInternalGenericRecord;
 import com.hazelcast.internal.util.StringUtil;
 import com.hazelcast.nio.serialization.FieldType;
 import com.hazelcast.nio.serialization.GenericRecord;
 import com.hazelcast.query.extractor.ValueCallback;
 import com.hazelcast.query.extractor.ValueCollector;
+import com.hazelcast.query.extractor.ValueReader;
 import com.hazelcast.query.extractor.ValueReadingException;
 import com.hazelcast.query.impl.getters.ExtractorHelper;
 import com.hazelcast.query.impl.getters.MultiResult;
@@ -28,12 +30,31 @@ import com.hazelcast.query.impl.getters.MultiResult;
 import java.io.IOException;
 import java.util.LinkedList;
 import java.util.ListIterator;
+import java.util.function.Consumer;
 
 import static com.hazelcast.query.impl.getters.ExtractorHelper.extractArgumentsFromAttributeName;
 import static com.hazelcast.query.impl.getters.ExtractorHelper.extractAttributeNameNameWithoutArguments;
 
-
-public final class GenericRecordQueryReader implements InternalValueReader {
+/**
+ * Reads a field or array of fields from a `InternalGenericRecord` according to given query `path`
+ *
+ * @see InternalGenericRecord
+ * Any format that exposes an `InternalGenericRecord` will benefit from hazelcast query.
+ * @see PortableInternalGenericRecord for Portable InternalGenericRecord
+ * <p>
+ * Example queries
+ * "age"
+ * "engine.power"
+ * "child[0].age"
+ * "engine.wheel[0].pressure"
+ * "engine.wheel[any].pressure"
+ * "top500Companies[0].ceo"
+ * "company.employees[any]"
+ * "limbs[*].fingers"
+ * <p>
+ * It also implements ValueReader to support reading into `ValueCallback` and `ValueCollector`
+ */
+public final class GenericRecordQueryReader implements ValueReader {
 
     private final InternalGenericRecord rootRecord;
 
@@ -43,35 +64,24 @@ public final class GenericRecordQueryReader implements InternalValueReader {
 
     @SuppressWarnings("unchecked")
     public void read(String path, ValueCallback callback) {
-        try {
-            Object result = read(path);
-            if (result instanceof MultiResult) {
-                MultiResult multiResult = (MultiResult) result;
-                for (Object singleResult : multiResult.getResults()) {
-                    callback.onResult(singleResult);
-                }
-            } else {
-                callback.onResult(result);
-            }
-        } catch (IOException e) {
-            throw new ValueReadingException(e.getMessage(), e);
-        } catch (RuntimeException e) {
-            throw new ValueReadingException(e.getMessage(), e);
-        }
+        read(path, (ValueCollector) callback::onResult);
     }
-
 
     @SuppressWarnings("unchecked")
     public void read(String path, ValueCollector collector) {
+        read(path, (Consumer) collector::addObject);
+    }
+
+    private void read(String path, Consumer consumer) {
         try {
             Object result = read(path);
             if (result instanceof MultiResult) {
                 MultiResult multiResult = (MultiResult) result;
                 for (Object singleResult : multiResult.getResults()) {
-                    collector.addObject(singleResult);
+                    consumer.accept(singleResult);
                 }
             } else {
-                collector.addObject(result);
+                consumer.accept(result);
             }
         } catch (IOException e) {
             throw new ValueReadingException(e.getMessage(), e);

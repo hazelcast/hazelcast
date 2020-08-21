@@ -27,7 +27,7 @@ public interface GenericRecord {
     /**
      * @return an empty generic record builder with same class definition as this one
      */
-    Builder createGenericRecordBuilder();
+    Builder newBuilder();
 
     /**
      * Returned GenericRecordBuilder can be used to have exact copy and also just to update a couple of fields. By default,
@@ -35,21 +35,11 @@ public interface GenericRecord {
      *
      * @return a generic record builder with same class definition as this one and populated with same values.
      */
-    Builder cloneWithGenericRecordBuilder();
+    Builder cloneWithBuilder();
 
     FieldType getFieldType(String fieldName);
 
-    GenericRecord[] readGenericRecordArray(String fieldName);
-
-    GenericRecord readGenericRecord(String fieldName);
-
     boolean hasField(String fieldName);
-
-    int readInt(String fieldName);
-
-    long readLong(String fieldName);
-
-    String readUTF(String fieldName);
 
     boolean readBoolean(String fieldName);
 
@@ -61,25 +51,35 @@ public interface GenericRecord {
 
     float readFloat(String fieldName);
 
+    int readInt(String fieldName);
+
+    long readLong(String fieldName);
+
     short readShort(String fieldName);
 
-    byte[] readByteArray(String fieldName);
+    String readUTF(String fieldName);
+
+    GenericRecord readGenericRecord(String fieldName);
 
     boolean[] readBooleanArray(String fieldName);
 
+    byte[] readByteArray(String fieldName);
+
     char[] readCharArray(String fieldName);
-
-    int[] readIntArray(String fieldName);
-
-    long[] readLongArray(String fieldName);
 
     double[] readDoubleArray(String fieldName);
 
     float[] readFloatArray(String fieldName);
 
+    int[] readIntArray(String fieldName);
+
+    long[] readLongArray(String fieldName);
+
     short[] readShortArray(String fieldName);
 
     String[] readUTFArray(String fieldName);
+
+    GenericRecord[] readGenericRecordArray(String fieldName);
 
     /**
      * Interface for creating {@link GenericRecord} instances.
@@ -97,12 +97,6 @@ public interface GenericRecord {
 
         GenericRecord build();
 
-        Builder writeInt(String fieldName, int value);
-
-        Builder writeLong(String fieldName, long value);
-
-        Builder writeUTF(String fieldName, String value);
-
         Builder writeBoolean(String fieldName, boolean value);
 
         Builder writeByte(String fieldName, byte value);
@@ -113,28 +107,34 @@ public interface GenericRecord {
 
         Builder writeFloat(String fieldName, float value);
 
+        Builder writeInt(String fieldName, int value);
+
+        Builder writeLong(String fieldName, long value);
+
         Builder writeShort(String fieldName, short value);
+
+        Builder writeUTF(String fieldName, String value);
 
         Builder writeGenericRecord(String fieldName, GenericRecord value);
 
-        Builder writeGenericRecordArray(String fieldName, GenericRecord[] value);
+        Builder writeBooleanArray(String fieldName, boolean[] value);
 
         Builder writeByteArray(String fieldName, byte[] value);
 
-        Builder writeBooleanArray(String fieldName, boolean[] value);
-
         Builder writeCharArray(String fieldName, char[] value);
+
+        Builder writeFloatArray(String fieldName, float[] value);
 
         Builder writeIntArray(String fieldName, int[] value);
 
-        Builder writeLongArray(String fieldName, long[] value);
-
         Builder writeDoubleArray(String fieldName, double[] value);
 
-        Builder writeFloatArray(String fieldName, float[] value);
+        Builder writeLongArray(String fieldName, long[] value);
 
         Builder writeShortArray(String fieldName, short[] value);
 
         Builder writeUTFArray(String fieldName, String[] value);
+
+        Builder writeGenericRecordArray(String fieldName, GenericRecord[] value);
     }
 }
