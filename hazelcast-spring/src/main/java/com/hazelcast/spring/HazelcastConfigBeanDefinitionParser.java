@@ -2086,7 +2086,7 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
         private void handleSql(Node node) {
             BeanDefinitionBuilder sqlConfigBuilder = createBeanBuilder(SqlConfig.class);
 
-            fillValues(node, sqlConfigBuilder, "executorPoolSize", "operationPoolSize", "queryTimeoutMillis");
+            fillValues(node, sqlConfigBuilder, "executorPoolSize", "operationPoolSize", "timeoutMillis");
 
             for (Node child : childElements(node)) {
                 String nodeName = cleanNodeName(child);
@@ -2095,8 +2095,11 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                     sqlConfigBuilder.addPropertyValue("executorPoolSize", getIntegerValue("executor-pool-size", value));
                 } else if ("operation-pool-size".equals(nodeName)) {
                     sqlConfigBuilder.addPropertyValue("operationPoolSize", getIntegerValue("operation-pool-size", value));
-                } else if ("query-timeout-millis".equals(nodeName)) {
-                    sqlConfigBuilder.addPropertyValue("queryTimeoutMillis", getLongValue("query-timeout-millis", value));
+                } else if ("statement-timeout-millis".equals(nodeName)) {
+                    sqlConfigBuilder.addPropertyValue(
+                        "statementTimeoutMillis",
+                        getLongValue("statement-timeout-millis", value)
+                    );
                 }
             }
 

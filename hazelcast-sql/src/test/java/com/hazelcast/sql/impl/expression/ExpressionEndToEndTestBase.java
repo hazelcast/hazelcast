@@ -27,8 +27,8 @@ import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.sql.SqlColumnType;
-import com.hazelcast.sql.SqlErrorCode;
-import com.hazelcast.sql.SqlException;
+import com.hazelcast.sql.impl.SqlErrorCode;
+import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.SqlService;
 import com.hazelcast.sql.impl.SqlTestSupport;
@@ -114,7 +114,7 @@ public abstract class ExpressionEndToEndTestBase extends SqlTestSupport {
     protected void assertRow(String expression, String mapName, String expectedColumnName, SqlColumnType expectedType,
                              Object expectedValue, Object... args) {
         boolean done = false;
-        for (SqlRow row : sql.query("select " + expression + " from " + mapName, args)) {
+        for (SqlRow row : sql.execute("select " + expression + " from " + mapName, args)) {
             if (done) {
                 fail("one row expected");
             }
@@ -142,10 +142,10 @@ public abstract class ExpressionEndToEndTestBase extends SqlTestSupport {
     protected void assertError(String expression, String mapName, int errorCode, String message, Object... args) {
         try {
             //noinspection StatementWithEmptyBody
-            for (SqlRow ignore : sql.query("select " + expression + " from " + mapName, args)) {
+            for (SqlRow ignore : sql.execute("select " + expression + " from " + mapName, args)) {
                 // do nothing
             }
-        } catch (SqlException e) {
+        } catch (HazelcastSqlException e) {
             assertEquals(errorCode, e.getCode());
             assertTrue("expected message '" + message + "', got '" + e.getMessage() + "'",
                     e.getMessage().toLowerCase().contains(message.toLowerCase()));

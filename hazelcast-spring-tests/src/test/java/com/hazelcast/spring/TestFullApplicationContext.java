@@ -1470,6 +1470,6 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         SqlConfig sqlConfig = config.getSqlConfig();
         assertEquals(10, sqlConfig.getExecutorPoolSize());
         assertEquals(20, sqlConfig.getOperationPoolSize());
-        assertEquals(30L, sqlConfig.getQueryTimeoutMillis());
+        assertEquals(30L, sqlConfig.getStatementTimeoutMillis());
     }
 }

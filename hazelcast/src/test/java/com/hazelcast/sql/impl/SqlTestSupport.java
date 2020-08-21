@@ -25,7 +25,7 @@ import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.sql.SqlQuery;
+import com.hazelcast.sql.SqlStatement;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.impl.exec.CreateExecPlanNodeVisitorHook;
@@ -199,7 +199,7 @@ public class SqlTestSupport extends HazelcastTestSupport {
     }
 
     public static List<SqlRow> execute(HazelcastInstance member, String sql, Object... params) {
-        SqlQuery query = new SqlQuery(sql);
+        SqlStatement query = new SqlStatement(sql);
 
         if (params != null) {
             query.setParameters(Arrays.asList(params));
@@ -207,7 +207,7 @@ public class SqlTestSupport extends HazelcastTestSupport {
 
         List<SqlRow> rows = new ArrayList<>();
 
-        try (SqlResult result = member.getSql().query(query)) {
+        try (SqlResult result = member.getSql().execute(query)) {
             for (SqlRow row : result) {
                 rows.add(row);
             }

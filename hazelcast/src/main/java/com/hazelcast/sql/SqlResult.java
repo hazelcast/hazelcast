@@ -34,7 +34,7 @@ import java.util.Iterator;
  * <p>
  * Code example:
  * <pre>
- * try (SqlResult result = hazelcastInstance.getSql().query("SELECT ...")) {
+ * try (SqlResult result = hazelcastInstance.getSql().execute("SELECT ...")) {
  *     for (SqlRow row : result) {
  *         // Process the row.
  *     }
@@ -45,7 +45,7 @@ import java.util.Iterator;
  * <h4>Usage for update count</h4>
  *
  * <pre>
- *     long updated = hazelcastInstance.getSql().query("UPDATE ...").updateCount();
+ *     long updated = hazelcastInstance.getSql().execute("UPDATE ...").updateCount();
  * </pre>
  *
  * You don't need to call {@link #close()} in this case.
@@ -81,7 +81,7 @@ public interface SqlResult extends Iterable<SqlRow>, AutoCloseable {
      * @throws IllegalStateException if the method is invoked more than once or
      *    if this result doesn't have rows (i.e. when {@link #isUpdateCount()}
      *    returns {@code true})
-     * @throws SqlException in case of an SQL-related error condition
+     * @throws HazelcastSqlException in case of an SQL-related error condition
      */
     @Nonnull
     @Override

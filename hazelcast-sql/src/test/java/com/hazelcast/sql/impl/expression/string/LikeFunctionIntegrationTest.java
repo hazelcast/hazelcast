@@ -16,9 +16,9 @@
 
 package com.hazelcast.sql.impl.expression.string;
 
+import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlColumnType;
-import com.hazelcast.sql.SqlErrorCode;
-import com.hazelcast.sql.SqlException;
+import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.impl.expression.SqlExpressionIntegrationTestSupport;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -183,7 +183,7 @@ public class LikeFunctionIntegrationTest extends SqlExpressionIntegrationTestSup
             execute(member, sql, params);
 
             fail("Must fail");
-        } catch (SqlException e) {
+        } catch (HazelcastSqlException e) {
             assertEquals(expectedErrorCode + ": " + e.getMessage(), expectedErrorCode, e.getCode());
 
             assertFalse(expectedErrorMessage.isEmpty());

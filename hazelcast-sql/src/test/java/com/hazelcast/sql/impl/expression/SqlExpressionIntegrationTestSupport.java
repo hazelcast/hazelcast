@@ -19,7 +19,7 @@ package com.hazelcast.sql.impl.expression;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
 import com.hazelcast.sql.SqlColumnType;
-import com.hazelcast.sql.SqlException;
+import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.impl.SqlTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -122,7 +122,7 @@ public abstract class SqlExpressionIntegrationTestSupport extends SqlTestSupport
             execute(member, sql, params);
 
             fail("Must fail");
-        } catch (SqlException e) {
+        } catch (HazelcastSqlException e) {
             assertTrue(expectedErrorMessage.length() != 0);
             assertNotNull(e.getMessage());
             assertTrue(e.getMessage(),  e.getMessage().contains(expectedErrorMessage));

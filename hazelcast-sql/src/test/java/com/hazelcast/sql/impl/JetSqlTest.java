@@ -108,7 +108,7 @@ public class JetSqlTest extends SqlTestSupport {
         HazelcastInstance member = newHazelcastInstance(new Config(), randomName(), nodeContext(jetSqlService));
 
         // when
-        SqlResult result = member.getSql().query("SELECT * FROM t");
+        SqlResult result = member.getSql().execute("SELECT * FROM t");
 
         // then
         assertEquals(sqlResult, result);

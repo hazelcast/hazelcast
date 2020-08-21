@@ -17,8 +17,8 @@
 package com.hazelcast.sql.impl.expression.predicate;
 
 import com.hazelcast.sql.SqlColumnType;
-import com.hazelcast.sql.SqlErrorCode;
-import com.hazelcast.sql.SqlException;
+import com.hazelcast.sql.impl.SqlErrorCode;
+import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.impl.expression.SqlExpressionIntegrationTestSupport;
 import com.hazelcast.sql.support.expressions.ExpressionType;
@@ -152,7 +152,7 @@ public class NotPredicateIntegrationTest extends SqlExpressionIntegrationTestSup
             execute(member, sql, params);
 
             fail("Must fail!");
-        } catch (SqlException e) {
+        } catch (HazelcastSqlException e) {
             assertTrue(expectedErrorMessage != null && !expectedErrorMessage.isEmpty());
             assertTrue(e.getMessage(), e.getMessage().contains(expectedErrorMessage));
             assertEquals(expectedErrorCode, e.getCode());

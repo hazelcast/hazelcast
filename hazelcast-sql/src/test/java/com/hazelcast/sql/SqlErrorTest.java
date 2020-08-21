@@ -17,6 +17,7 @@
 package com.hazelcast.sql;
 
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.exec.BlockingExec;
 import com.hazelcast.sql.impl.exec.scan.MapScanExec;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -95,7 +96,7 @@ public class SqlErrorTest extends SqlErrorAbstractTest {
         }).start();
 
         // Start query
-        SqlException error = assertSqlException(instance1, query());
+        HazelcastSqlException error = assertSqlException(instance1, query());
         assertEquals(SqlErrorCode.CONNECTION_PROBLEM, error.getCode());
         assertEquals(instance1.getLocalEndpoint().getUuid(), error.getOriginatingMemberId());
     }
@@ -115,7 +116,7 @@ public class SqlErrorTest extends SqlErrorAbstractTest {
         populate(liteMember);
 
         // Try query from the lite member.
-        SqlException error = assertSqlException(liteMember, query());
+        HazelcastSqlException error = assertSqlException(liteMember, query());
         assertEquals(SqlErrorCode.GENERIC, error.getCode());
         assertEquals("SQL queries cannot be executed on lite members", error.getMessage());
     }
