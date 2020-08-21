@@ -142,7 +142,7 @@ public class UnorderedIndexStore extends BaseSingleValueIndexStore {
 
     @Override
     public Iterator<QueryableEntry> getSqlRecordIterator() {
-        Iterator<QueryableEntry> iterator = new IndexEntryCompositeIterator(recordMap.values().iterator());
+        Iterator<QueryableEntry> iterator = new IndexEntryFlatteningIterator(recordMap.values().iterator());
         Iterator<QueryableEntry> nullIterator = recordsWithNullValue.values().iterator();
 
         return new FlatCompositeIterator<>(Arrays.asList(iterator, nullIterator).iterator());

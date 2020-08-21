@@ -117,7 +117,7 @@ public class OrderedIndexStore extends BaseSingleValueIndexStore {
 
     @Override
     public Iterator<QueryableEntry> getSqlRecordIterator() {
-        Iterator<QueryableEntry> iterator = new IndexEntryCompositeIterator(recordMap.values().iterator());
+        Iterator<QueryableEntry> iterator = new IndexEntryFlatteningIterator(recordMap.values().iterator());
         Iterator<QueryableEntry> nullIterator = recordsWithNullValue.values().iterator();
 
         return new FlatCompositeIterator<>(Arrays.asList(nullIterator, iterator).iterator());
@@ -159,7 +159,7 @@ public class OrderedIndexStore extends BaseSingleValueIndexStore {
                 throw new IllegalArgumentException("Unrecognized comparison: " + comparison);
         }
 
-        return new IndexEntryCompositeIterator(iterator);
+        return new IndexEntryFlatteningIterator(iterator);
     }
 
     @Override
@@ -187,7 +187,7 @@ public class OrderedIndexStore extends BaseSingleValueIndexStore {
             return emptyIterator();
         }
 
-        return new IndexEntryCompositeIterator(recordMap.subMap(from, fromInclusive, to, toInclusive).values().iterator());
+        return new IndexEntryFlatteningIterator(recordMap.subMap(from, fromInclusive, to, toInclusive).values().iterator());
     }
 
     @Override

@@ -23,11 +23,11 @@ import java.util.Iterator;
 import java.util.Map;
 
 @SuppressWarnings("rawtypes")
-final class IndexEntryCompositeIterator extends AbstractCompositeIterator<QueryableEntry> {
+final class IndexEntryFlatteningIterator extends AbstractCompositeIterator<QueryableEntry> {
 
     private final Iterator<Map<Data, QueryableEntry>> iterator;
 
-    IndexEntryCompositeIterator(Iterator<Map<Data, QueryableEntry>> iterator) {
+    IndexEntryFlatteningIterator(Iterator<Map<Data, QueryableEntry>> iterator) {
         this.iterator = iterator;
     }
 
