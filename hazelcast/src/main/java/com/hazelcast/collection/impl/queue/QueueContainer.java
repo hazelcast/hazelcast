@@ -34,7 +34,6 @@ import com.hazelcast.transaction.TransactionException;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
@@ -944,8 +943,8 @@ public class QueueContainer implements IdentifiedDataSerializable {
         if (backupMap != null && !backupMap.isEmpty()) {
             queue.addAll(backupMap.values());
             long maxItemId = backupMap.values().stream()
-                                   .mapToLong(QueueItem::getItemId)
-                                   .max().orElse(0);
+                                      .mapToLong(QueueItem::getItemId)
+                                      .max().orElse(0);
             setId(maxItemId + ID_PROMOTION_OFFSET);
             backupMap.clear();
             backupMap = null;
