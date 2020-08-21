@@ -37,6 +37,7 @@ import org.apache.calcite.sql.type.SqlTypeUtil;
 import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastOperandTypes.notAny;
 import static org.apache.calcite.sql.type.SqlTypeName.VARCHAR;
 
+@SuppressWarnings("checkstyle:MagicNumber")
 public class HazelcastSqlLikeOperator extends SqlSpecialOperator {
 
     private static final int PRECEDENCE = 32;
