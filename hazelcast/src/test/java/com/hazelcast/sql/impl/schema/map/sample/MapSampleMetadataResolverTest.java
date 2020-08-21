@@ -16,15 +16,20 @@
 
 package com.hazelcast.sql.impl.schema.map.sample;
 
+import com.google.common.collect.ImmutableMap;
 import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
+import com.hazelcast.nio.serialization.VersionedPortable;
 import com.hazelcast.sql.SqlErrorCode;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.extract.GenericQueryTargetDescriptor;
+import com.hazelcast.sql.impl.inject.PojoUpsertTargetDescriptor;
+import com.hazelcast.sql.impl.inject.PortableUpsertTargetDescriptor;
+import com.hazelcast.sql.impl.inject.PrimitiveUpsertTargetDescriptor;
+import com.hazelcast.sql.impl.inject.UpsertTargetDescriptor;
 import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.schema.map.MapSchemaTestSupport;
 import com.hazelcast.sql.impl.schema.map.MapTableField;
@@ -51,10 +56,12 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.TreeMap;
 
 import static com.hazelcast.sql.impl.extract.QueryPath.KEY;
 import static com.hazelcast.sql.impl.extract.QueryPath.VALUE;
+import static java.util.Collections.emptyMap;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -104,27 +111,23 @@ public class MapSampleMetadataResolverTest extends MapSchemaTestSupport {
         checkPrimitive(OffsetDateTime.now(), QueryDataType.TIMESTAMP_WITH_TZ_OFFSET_DATE_TIME);
         checkPrimitive(ZonedDateTime.now(), QueryDataType.TIMESTAMP_WITH_TZ_ZONED_DATE_TIME);
 
-        checkPrimitive(new JavaWithoutFields(), QueryDataType.OBJECT);
-        checkPrimitive(new PortableWithoutFields(), QueryDataType.OBJECT);
+        Object object = new JavaWithoutFields();
+        checkPrimitive(object, upsertDescriptor(object, emptyMap()));
+
+        VersionedPortable portable = new PortableWithoutFields();
+        checkPrimitive(portable, upsertDescriptor(portable.getFactoryId(), portable.getClassId(), portable.getClassVersion()));
     }
 
     @Test
     public void testPortableObject() {
-        InternalSerializationService ss = new DefaultSerializationServiceBuilder()
-            .addPortableFactory(1, classId -> {
-                if (classId == 2) {
-                    return new PortableParent();
-                } else if (classId == 3) {
-                    return new PortableChild();
-                }
+        InternalSerializationService ss = getSerializationService();
 
-                throw new IllegalArgumentException("Invalid class ID: " + classId);
-            })
-            .build();
+        Portable portable = new PortableParent();
 
         // Test key.
-        MapSampleMetadata metadata = MapSampleMetadataResolver.resolve(ss, ss.toData(new PortableParent()), true);
+        MapSampleMetadata metadata = MapSampleMetadataResolver.resolve(ss, ss.toData(portable), true);
 
+        assertEquals(upsertDescriptor(portable.getFactoryId(), portable.getClassId(), 0), metadata.getUpsertDescriptor());
         checkFields(
             metadata,
             field("_boolean", QueryDataType.BOOLEAN, true),
@@ -141,8 +144,9 @@ public class MapSampleMetadataResolverTest extends MapSchemaTestSupport {
         );
 
         // Test value.
-        metadata = MapSampleMetadataResolver.resolve(ss, ss.toData(new PortableParent()), false);
+        metadata = MapSampleMetadataResolver.resolve(ss, ss.toData(portable), false);
 
+        assertEquals(upsertDescriptor(portable.getFactoryId(), portable.getClassId(), 0), metadata.getUpsertDescriptor());
         checkFields(
             metadata,
             field("_boolean", QueryDataType.BOOLEAN, false),
@@ -163,9 +167,12 @@ public class MapSampleMetadataResolverTest extends MapSchemaTestSupport {
     public void testPortableBinary() {
         InternalSerializationService ss = getSerializationService();
 
-        // Test key.
-        MapSampleMetadata metadata = MapSampleMetadataResolver.resolve(ss, ss.toData(new PortableParent()), true);
+        Portable portable = new PortableParent();
 
+        // Test key.
+        MapSampleMetadata metadata = MapSampleMetadataResolver.resolve(ss, ss.toData(portable), true);
+
+        assertEquals(upsertDescriptor(portable.getFactoryId(), portable.getClassId(), 0), metadata.getUpsertDescriptor());
         checkFields(
             metadata,
             field(PORTABLE_BOOLEAN, QueryDataType.BOOLEAN, true),
@@ -182,8 +189,9 @@ public class MapSampleMetadataResolverTest extends MapSchemaTestSupport {
         );
 
         // Test value.
-        metadata = MapSampleMetadataResolver.resolve(ss, ss.toData(new PortableParent()), false);
+        metadata = MapSampleMetadataResolver.resolve(ss, ss.toData(portable), false);
 
+        assertEquals(upsertDescriptor(portable.getFactoryId(), portable.getClassId(), 0), metadata.getUpsertDescriptor());
         checkFields(
             metadata,
             field(PORTABLE_BOOLEAN, QueryDataType.BOOLEAN, false),
@@ -211,6 +219,7 @@ public class MapSampleMetadataResolverTest extends MapSchemaTestSupport {
 
         MapSampleMetadata metadata = MapSampleMetadataResolver.resolve(ss, object, true);
 
+        assertEquals(upsertDescriptor(object, ImmutableMap.of("publicField", int.class.getName())), metadata.getUpsertDescriptor());
         checkFields(
             metadata,
             field("publicField", QueryDataType.INT, true),
@@ -219,6 +228,7 @@ public class MapSampleMetadataResolverTest extends MapSchemaTestSupport {
 
         metadata = MapSampleMetadataResolver.resolve(ss, ss.toData(object), true);
 
+        assertEquals(upsertDescriptor(object, ImmutableMap.of("publicField", int.class.getName())), metadata.getUpsertDescriptor());
         checkFields(
             metadata,
             field("publicField", QueryDataType.INT, true),
@@ -237,6 +247,10 @@ public class MapSampleMetadataResolverTest extends MapSchemaTestSupport {
 
         MapSampleMetadata metadata = MapSampleMetadataResolver.resolve(ss, object, true);
 
+        assertEquals(
+                upsertDescriptor(object, ImmutableMap.of("publicGetter", int.class.getName(), "booleanGetGetter", boolean.class.getName(), "booleanIsGetter", boolean.class.getName())),
+                metadata.getUpsertDescriptor()
+        );
         checkFields(
             metadata,
             field("publicGetter", QueryDataType.INT, true),
@@ -247,6 +261,10 @@ public class MapSampleMetadataResolverTest extends MapSchemaTestSupport {
 
         metadata = MapSampleMetadataResolver.resolve(ss, ss.toData(object), true);
 
+        assertEquals(
+                upsertDescriptor(object, ImmutableMap.of("publicGetter", int.class.getName(), "booleanGetGetter", boolean.class.getName(), "booleanIsGetter", boolean.class.getName())),
+                metadata.getUpsertDescriptor()
+        );
         checkFields(
             metadata,
             field("publicGetter", QueryDataType.INT, true),
@@ -265,10 +283,14 @@ public class MapSampleMetadataResolverTest extends MapSchemaTestSupport {
 
         JavaFieldClashChild object = new JavaFieldClashChild();
 
-        TableField field = MapSampleMetadataResolver.resolve(ss, object, true).getFields().get("field");
+        MapSampleMetadata metadata = MapSampleMetadataResolver.resolve(ss, object, true);
+        TableField field = metadata.getFields().get("field");
+        assertEquals(upsertDescriptor(object, ImmutableMap.of("field", long.class.getName())), metadata.getUpsertDescriptor());
         assertEquals(field("field", QueryDataType.BIGINT, true), field);
 
-        field = MapSampleMetadataResolver.resolve(ss, ss.toData(object), true).getFields().get("field");
+        metadata = MapSampleMetadataResolver.resolve(ss, ss.toData(object), true);
+        field = metadata.getFields().get("field");
+        assertEquals(upsertDescriptor(object, ImmutableMap.of("field", long.class.getName())), metadata.getUpsertDescriptor());
         assertEquals(field("field", QueryDataType.BIGINT, true), field);
     }
 
@@ -281,10 +303,14 @@ public class MapSampleMetadataResolverTest extends MapSchemaTestSupport {
 
         JavaFieldGetterClash object = new JavaFieldGetterClash();
 
-        TableField field = MapSampleMetadataResolver.resolve(ss, object, true).getFields().get("field");
+        MapSampleMetadata metadata = MapSampleMetadataResolver.resolve(ss, object, true);
+        TableField field = metadata.getFields().get("field");
+        assertEquals(upsertDescriptor(object, ImmutableMap.of("field", long.class.getName())), metadata.getUpsertDescriptor());
         assertEquals(field("field", QueryDataType.BIGINT, true), field);
 
-        field = MapSampleMetadataResolver.resolve(ss, ss.toData(object), true).getFields().get("field");
+        metadata = MapSampleMetadataResolver.resolve(ss, ss.toData(object), true);
+        field = metadata.getFields().get("field");
+        assertEquals(upsertDescriptor(object, ImmutableMap.of("field", long.class.getName())), metadata.getUpsertDescriptor());
         assertEquals(field("field", QueryDataType.BIGINT, true), field);
     }
 
@@ -298,17 +324,25 @@ public class MapSampleMetadataResolverTest extends MapSchemaTestSupport {
         JavaTopFieldClash object = new JavaTopFieldClash();
 
         // Key
-        TableField field = MapSampleMetadataResolver.resolve(ss, object, true).getFields().get(KEY);
+        MapSampleMetadata metadata = MapSampleMetadataResolver.resolve(ss, object, true);
+        TableField field = metadata.getFields().get(KEY);
+        assertEquals(upsertDescriptor(object, ImmutableMap.of(KEY, int.class.getName())), metadata.getUpsertDescriptor());
         assertEquals(hiddenField(KEY, QueryDataType.OBJECT, true), field);
 
-        field = MapSampleMetadataResolver.resolve(ss, ss.toData(object), true).getFields().get(KEY);
+        metadata = MapSampleMetadataResolver.resolve(ss, ss.toData(object), true);
+        field = metadata.getFields().get(KEY);
+        assertEquals(upsertDescriptor(object, ImmutableMap.of(KEY, int.class.getName())), metadata.getUpsertDescriptor());
         assertEquals(hiddenField(KEY, QueryDataType.OBJECT, true), field);
 
         // Value
-        field = MapSampleMetadataResolver.resolve(ss, object, false).getFields().get(VALUE);
+        metadata = MapSampleMetadataResolver.resolve(ss, object, false);
+        field = metadata.getFields().get(VALUE);
+        assertEquals(upsertDescriptor(object, ImmutableMap.of(KEY, int.class.getName())), metadata.getUpsertDescriptor());
         assertEquals(hiddenField(VALUE, QueryDataType.OBJECT, false), field);
 
-        field = MapSampleMetadataResolver.resolve(ss, ss.toData(object), false).getFields().get(VALUE);
+        metadata = MapSampleMetadataResolver.resolve(ss, ss.toData(object), false);
+        field = metadata.getFields().get(VALUE);
+        assertEquals(upsertDescriptor(object, ImmutableMap.of(KEY, int.class.getName())), metadata.getUpsertDescriptor());
         assertEquals(hiddenField(VALUE, QueryDataType.OBJECT, false), field);
     }
 
@@ -322,17 +356,31 @@ public class MapSampleMetadataResolverTest extends MapSchemaTestSupport {
         JavaTopGetterClash object = new JavaTopGetterClash();
 
         // Key
-        TableField field = MapSampleMetadataResolver.resolve(ss, object, true).getFields().get(KEY);
+        MapSampleMetadata metadata = MapSampleMetadataResolver.resolve(ss, object, true);
+        TableField field = metadata.getFields().get(KEY);
+        assertEquals(upsertDescriptor(object, ImmutableMap.of(KEY, int.class.getName(), VALUE, int.class.getName())), metadata.getUpsertDescriptor());
         assertEquals(hiddenField(KEY, QueryDataType.OBJECT, true), field);
 
-        field = MapSampleMetadataResolver.resolve(ss, ss.toData(object), true).getFields().get(KEY);
+        metadata = MapSampleMetadataResolver.resolve(ss, ss.toData(object), true);
+        field = metadata.getFields().get(KEY);
+        assertEquals(upsertDescriptor(object, ImmutableMap.of(KEY, int.class.getName(), VALUE, int.class.getName())), metadata.getUpsertDescriptor());
         assertEquals(hiddenField(KEY, QueryDataType.OBJECT, true), field);
 
         // Value
-        field = MapSampleMetadataResolver.resolve(ss, object, false).getFields().get(VALUE);
+        metadata = MapSampleMetadataResolver.resolve(ss, object, false);
+        field = metadata.getFields().get(VALUE);
+        assertEquals(
+                new PojoUpsertTargetDescriptor(object.getClass().getName(), ImmutableMap.of(KEY, int.class.getName(), VALUE, int.class.getName())),
+                metadata.getUpsertDescriptor()
+        );
         assertEquals(hiddenField(VALUE, QueryDataType.OBJECT, false), field);
 
-        field = MapSampleMetadataResolver.resolve(ss, ss.toData(object), false).getFields().get(VALUE);
+        metadata = MapSampleMetadataResolver.resolve(ss, ss.toData(object), false);
+        field = metadata.getFields().get(VALUE);
+        assertEquals(
+                new PojoUpsertTargetDescriptor(object.getClass().getName(), ImmutableMap.of(KEY, int.class.getName(), VALUE, int.class.getName())),
+                metadata.getUpsertDescriptor()
+        );
         assertEquals(hiddenField(VALUE, QueryDataType.OBJECT, false), field);
     }
 
@@ -350,9 +398,12 @@ public class MapSampleMetadataResolverTest extends MapSchemaTestSupport {
     public void testPortableClash() {
         InternalSerializationService ss = getSerializationService();
 
-        // Key clash
-        MapSampleMetadata metadata = MapSampleMetadataResolver.resolve(ss, ss.toData(new PortableClash()), true);
+        Portable portable = new PortableClash();
 
+        // Key clash
+        MapSampleMetadata metadata = MapSampleMetadataResolver.resolve(ss, ss.toData(portable), true);
+
+        assertEquals(upsertDescriptor(portable.getFactoryId(), portable.getClassId(), 0), metadata.getUpsertDescriptor());
         checkFields(
             metadata,
             hiddenField(KEY, QueryDataType.OBJECT, true),
@@ -360,8 +411,9 @@ public class MapSampleMetadataResolverTest extends MapSchemaTestSupport {
         );
 
         // Value clash
-        metadata = MapSampleMetadataResolver.resolve(ss, ss.toData(new PortableClash()), false);
+        metadata = MapSampleMetadataResolver.resolve(ss, ss.toData(portable), false);
 
+        assertEquals(upsertDescriptor(portable.getFactoryId(), portable.getClassId(), 0), metadata.getUpsertDescriptor());
         checkFields(
             metadata,
             field(KEY, QueryDataType.INT, false),
@@ -386,19 +438,47 @@ public class MapSampleMetadataResolverTest extends MapSchemaTestSupport {
 
         // Key
         MapSampleMetadata metadata = MapSampleMetadataResolver.resolve(ss, value, true);
+        assertEquals(PrimitiveUpsertTargetDescriptor.INSTANCE, metadata.getUpsertDescriptor());
         checkFields(metadata, field(KEY, expectedType, true));
 
         // Serialized key
         metadata = MapSampleMetadataResolver.resolve(ss, ss.toData(value), true);
+        assertEquals(PrimitiveUpsertTargetDescriptor.INSTANCE, metadata.getUpsertDescriptor());
         checkFields(metadata, field(KEY, expectedType, true));
 
         // Value
         metadata = MapSampleMetadataResolver.resolve(ss, value, false);
+        assertEquals(PrimitiveUpsertTargetDescriptor.INSTANCE, metadata.getUpsertDescriptor());
         checkFields(metadata, field(VALUE, expectedType, false));
 
         // Serialized value
         metadata = MapSampleMetadataResolver.resolve(ss, ss.toData(value), false);
+        assertEquals(PrimitiveUpsertTargetDescriptor.INSTANCE, metadata.getUpsertDescriptor());
         checkFields(metadata, field(VALUE, expectedType, false));
+    }
+
+    private void checkPrimitive(Object value, UpsertTargetDescriptor expectedDescriptor) {
+        InternalSerializationService ss = getSerializationService();
+
+        // Key
+        MapSampleMetadata metadata = MapSampleMetadataResolver.resolve(ss, value, true);
+        assertEquals(expectedDescriptor, metadata.getUpsertDescriptor());
+        checkFields(metadata, field(KEY, QueryDataType.OBJECT, true));
+
+        // Serialized key
+        metadata = MapSampleMetadataResolver.resolve(ss, ss.toData(value), true);
+        assertEquals(expectedDescriptor, metadata.getUpsertDescriptor());
+        checkFields(metadata, field(KEY, QueryDataType.OBJECT, true));
+
+        // Value
+        metadata = MapSampleMetadataResolver.resolve(ss, value, false);
+        assertEquals(expectedDescriptor, metadata.getUpsertDescriptor());
+        checkFields(metadata, field(VALUE, QueryDataType.OBJECT, false));
+
+        // Serialized value
+        metadata = MapSampleMetadataResolver.resolve(ss, ss.toData(value), false);
+        assertEquals(expectedDescriptor, metadata.getUpsertDescriptor());
+        checkFields(metadata, field(VALUE, QueryDataType.OBJECT, false));
     }
 
     private static void checkFields(MapSampleMetadata metadata, MapTableField... expectedFields) {
@@ -473,6 +553,13 @@ public class MapSampleMetadataResolverTest extends MapSchemaTestSupport {
         );
     }
 
+    private static UpsertTargetDescriptor upsertDescriptor(Object object, Map<String, String> typesByPath) {
+        return new PojoUpsertTargetDescriptor(object.getClass().getName(), typesByPath);
+    }
+
+    private static UpsertTargetDescriptor upsertDescriptor(int factoryId, int classId, int classVersionId) {
+        return new PortableUpsertTargetDescriptor(factoryId, classId, classVersionId);
+    }
 
     private static class JavaFields implements Serializable {
         public int publicField;
@@ -819,7 +906,7 @@ public class MapSampleMetadataResolverTest extends MapSchemaTestSupport {
         }
     }
 
-    private static class PortableWithoutFields implements Portable {
+    private static class PortableWithoutFields implements VersionedPortable {
         @Override
         public int getFactoryId() {
             return 1;
@@ -828,6 +915,11 @@ public class MapSampleMetadataResolverTest extends MapSchemaTestSupport {
         @Override
         public int getClassId() {
             return 5;
+        }
+
+        @Override
+        public int getClassVersion() {
+            return 13;
         }
 
         @Override

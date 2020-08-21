@@ -65,6 +65,15 @@ public class PortableUpsertTargetDescriptor implements UpsertTargetDescriptor {
     }
 
     @Override
+    public String toString() {
+        return "PortableUpsertTargetDescriptor{" +
+                "factoryId=" + factoryId +
+                ", classId=" + classId +
+                ", classVersion=" + classVersion +
+                '}';
+    }
+
+    @Override
     public boolean equals(Object o) {
         if (this == o) {
             return true;

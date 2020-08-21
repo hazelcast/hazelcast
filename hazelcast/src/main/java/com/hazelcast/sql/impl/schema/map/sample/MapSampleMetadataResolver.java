@@ -25,8 +25,10 @@ import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.extract.GenericQueryTargetDescriptor;
 import com.hazelcast.sql.impl.extract.QueryPath;
-import com.hazelcast.sql.impl.inject.JavaUpsertTargetDescriptor;
+import com.hazelcast.sql.impl.inject.PojoUpsertTargetDescriptor;
 import com.hazelcast.sql.impl.inject.PortableUpsertTargetDescriptor;
+import com.hazelcast.sql.impl.inject.PrimitiveUpsertTargetDescriptor;
+import com.hazelcast.sql.impl.inject.UpsertTargetDescriptor;
 import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.schema.map.MapTableField;
 import com.hazelcast.sql.impl.type.QueryDataType;
@@ -160,12 +162,14 @@ public final class MapSampleMetadataResolver {
 
     private static MapSampleMetadata resolveClass(Class<?> clazz, boolean isKey) {
         Map<String, TableField> fields = new TreeMap<>();
+        UpsertTargetDescriptor upsertDescriptor;
 
         // Extract fields from non-primitive type.
         QueryDataType topType = QueryDataTypeUtils.resolveTypeForClass(clazz);
 
-        Map<String, String> typeNamesByPaths = new HashMap<>();
         if (topType == QueryDataType.OBJECT) {
+            Map<String, String> typeNamesByPaths = new HashMap<>();
+
             // Add public getters.
             for (Method method : clazz.getMethods()) {
                 String methodName = extractAttributeNameFromMethod(clazz, method);
@@ -204,6 +208,10 @@ public final class MapSampleMetadataResolver {
 
                 currentClass = currentClass.getSuperclass();
             }
+
+            upsertDescriptor = new PojoUpsertTargetDescriptor(clazz.getName(), typeNamesByPaths);
+        } else {
+            upsertDescriptor = PrimitiveUpsertTargetDescriptor.INSTANCE;
         }
 
         // Add top-level object.
@@ -213,7 +221,7 @@ public final class MapSampleMetadataResolver {
 
         return new MapSampleMetadata(
             GenericQueryTargetDescriptor.DEFAULT,
-            new JavaUpsertTargetDescriptor(clazz.getName(), typeNamesByPaths),
+            upsertDescriptor,
             new LinkedHashMap<>(fields)
         );
     }

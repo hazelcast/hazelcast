@@ -31,7 +31,6 @@ import static com.hazelcast.sql.impl.QueryUtils.SCHEMA_NAME_PARTITIONED;
 public class PartitionedMapTable extends AbstractMapTable {
 
     public PartitionedMapTable(
-        String schemaName,
         String name,
         List<TableField> fields,
         TableStatistics statistics,
@@ -41,7 +40,7 @@ public class PartitionedMapTable extends AbstractMapTable {
         UpsertTargetDescriptor valueUpsertDescriptor
     ) {
         super(
-            schemaName,
+            SCHEMA_NAME_PARTITIONED,
             name,
             fields,
             statistics,

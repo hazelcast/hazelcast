@@ -149,7 +149,6 @@ public abstract class OptimizerTestSupport extends SqlTestSupport {
         long rowCount
     ) {
         PartitionedMapTable table = new PartitionedMapTable(
-            SCHEMA_NAME_PARTITIONED,
             name,
             fields,
             new ConstantTableStatistics(rowCount),

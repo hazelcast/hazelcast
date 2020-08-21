@@ -23,15 +23,15 @@ import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 
-public class JavaUpsertTargetDescriptorTest {
+public class PojoUpsertTargetDescriptorTest {
 
     @Test
     public void testSerialization() {
         InternalSerializationService serializationService = new DefaultSerializationServiceBuilder().build();
 
-        JavaUpsertTargetDescriptor descriptor = serializationService.toObject(
+        PojoUpsertTargetDescriptor descriptor = serializationService.toObject(
                 serializationService.toData(
-                        new JavaUpsertTargetDescriptor(getClass().getName(), ImmutableMap.of("field", String.class.getName()))
+                        new PojoUpsertTargetDescriptor(getClass().getName(), ImmutableMap.of("field", String.class.getName()))
                 )
         );
 

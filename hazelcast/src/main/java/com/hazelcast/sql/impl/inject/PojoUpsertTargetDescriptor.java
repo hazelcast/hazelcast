@@ -23,16 +23,16 @@ import java.io.IOException;
 import java.util.Map;
 import java.util.Objects;
 
-public class JavaUpsertTargetDescriptor implements UpsertTargetDescriptor {
+public class PojoUpsertTargetDescriptor implements UpsertTargetDescriptor {
 
     private String className;
     private Map<String, String> typeNamesByPaths;
 
     @SuppressWarnings("unused")
-    JavaUpsertTargetDescriptor() {
+    PojoUpsertTargetDescriptor() {
     }
 
-    public JavaUpsertTargetDescriptor(String className, Map<String, String> typeNamesByPaths) {
+    public PojoUpsertTargetDescriptor(String className, Map<String, String> typeNamesByPaths) {
         this.className = className;
         this.typeNamesByPaths = typeNamesByPaths;
     }
@@ -58,6 +58,14 @@ public class JavaUpsertTargetDescriptor implements UpsertTargetDescriptor {
     }
 
     @Override
+    public String toString() {
+        return "PojoUpsertTargetDescriptor{" +
+                "className='" + className + '\'' +
+                ", typeNamesByPaths=" + typeNamesByPaths +
+                '}';
+    }
+
+    @Override
     public boolean equals(Object o) {
         if (this == o) {
             return true;
@@ -65,7 +73,7 @@ public class JavaUpsertTargetDescriptor implements UpsertTargetDescriptor {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        JavaUpsertTargetDescriptor that = (JavaUpsertTargetDescriptor) o;
+        PojoUpsertTargetDescriptor that = (PojoUpsertTargetDescriptor) o;
         return Objects.equals(className, that.className) &&
                 Objects.equals(typeNamesByPaths, that.typeNamesByPaths);
     }
