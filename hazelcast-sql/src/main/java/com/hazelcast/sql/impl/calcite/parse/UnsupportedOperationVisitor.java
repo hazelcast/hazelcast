@@ -102,6 +102,7 @@ public final class UnsupportedOperationVisitor implements SqlVisitor<Void> {
         SUPPORTED_KINDS.add(SqlKind.CAST);
         SUPPORTED_KINDS.add(SqlKind.CEIL);
         SUPPORTED_KINDS.add(SqlKind.FLOOR);
+        SUPPORTED_KINDS.add(SqlKind.LIKE);
 
         // Supported operators
         SUPPORTED_OPERATORS = new HashSet<>();
@@ -125,6 +126,17 @@ public final class UnsupportedOperationVisitor implements SqlVisitor<Void> {
         SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.RADIANS);
         SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.ROUND);
         SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.TRUNCATE);
+
+        // Strings
+        SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.ASCII);
+        SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.INITCAP);
+        SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.CHAR_LENGTH);
+        SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.CHARACTER_LENGTH);
+        SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.LENGTH);
+        SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.LOWER);
+        SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.UPPER);
+        SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.CONCAT);
+        SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.SUBSTRING);
     }
 
     private final SqlValidatorCatalogReader catalogReader;
