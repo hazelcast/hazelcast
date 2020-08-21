@@ -23,7 +23,6 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
-import org.junit.Ignore;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
@@ -47,12 +46,5 @@ public class ClientDynamicClusterConfigTest extends DynamicConfigTest {
     @After
     public void tearDown() {
         factory.terminateAll();
-    }
-
-    // TODO enable this
-    @Ignore
-    @Override
-    public void testScheduledExecutorConfig() {
-        //
     }
 }

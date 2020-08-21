@@ -69,21 +69,23 @@ public class DurableExecutorConfig implements IdentifiedDataSerializable, NamedC
         this.name = name;
     }
 
-    public DurableExecutorConfig(String name, int poolSize, int durability, int capacity) {
-        this(name, poolSize, durability, capacity, null);
+    public DurableExecutorConfig(String name, int poolSize, int durability, int capacity, boolean statisticsEnabled) {
+        this(name, poolSize, durability, capacity, null, statisticsEnabled);
     }
 
-    public DurableExecutorConfig(String name, int poolSize, int durability, int capacity, String splitBrainProtectionName) {
+    public DurableExecutorConfig(String name, int poolSize, int durability, int capacity,
+                                 String splitBrainProtectionName, boolean statisticsEnabled) {
         this.name = name;
         this.poolSize = poolSize;
         this.durability = durability;
         this.capacity = capacity;
         this.splitBrainProtectionName = splitBrainProtectionName;
+        this.statisticsEnabled = statisticsEnabled;
     }
 
     public DurableExecutorConfig(DurableExecutorConfig config) {
         this(config.getName(), config.getPoolSize(), config.getDurability(), config.getCapacity(),
-                config.getSplitBrainProtectionName());
+                config.getSplitBrainProtectionName(), config.isStatisticsEnabled());
     }
 
     /**

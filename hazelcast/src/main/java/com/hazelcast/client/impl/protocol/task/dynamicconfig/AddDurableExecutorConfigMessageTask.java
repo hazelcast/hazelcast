@@ -44,7 +44,7 @@ public class AddDurableExecutorConfigMessageTask
     @Override
     protected IdentifiedDataSerializable getConfig() {
         DurableExecutorConfig config = new DurableExecutorConfig(parameters.name, parameters.poolSize,
-                parameters.durability, parameters.capacity);
+                parameters.durability, parameters.capacity, parameters.statisticsEnabled);
         return config;
     }
 

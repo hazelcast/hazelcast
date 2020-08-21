@@ -196,7 +196,7 @@ public class DynamicConfigTest extends HazelcastTestSupport {
 
     @Test
     public void testDurableExecutorConfig() {
-        DurableExecutorConfig config = new DurableExecutorConfig(name, 7, 3, 10);
+        DurableExecutorConfig config = new DurableExecutorConfig(name, 7, 3, 10, false);
 
         driver.getConfig().addDurableExecutorConfig(config);
 
