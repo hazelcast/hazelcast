@@ -32,6 +32,7 @@ import com.hazelcast.test.TestHazelcastInstanceFactory;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runners.Parameterized;
 
@@ -75,8 +76,8 @@ public abstract class SqlIndexAbstractTest extends SqlIndexTestSupport {
 
     private static final AtomicInteger MAP_NAME_GEN = new AtomicInteger();
     private static final String INDEX_NAME = "index";
-    private static final TestHazelcastInstanceFactory FACTORY = new TestHazelcastInstanceFactory(2);
 
+    private static TestHazelcastInstanceFactory factory;
     private static List<HazelcastInstance> members;
     private static HazelcastInstance member;
 
@@ -116,6 +117,11 @@ public abstract class SqlIndexAbstractTest extends SqlIndexTestSupport {
         return res;
     }
 
+    @BeforeClass
+    public static void beforeClass() {
+         factory = new TestHazelcastInstanceFactory(2);
+    }
+
     @Before
     public void before() {
         // Start members if needed
@@ -125,7 +131,7 @@ public abstract class SqlIndexAbstractTest extends SqlIndexTestSupport {
             assertTrue(getMemberCount() > 0);
 
             for (int i = 0; i < getMemberCount(); i++) {
-                HazelcastInstance newMember = FACTORY.newHazelcastInstance(getConfig());
+                HazelcastInstance newMember = factory.newHazelcastInstance(getConfig());
 
                 members.add(newMember);
 
@@ -156,7 +162,10 @@ public abstract class SqlIndexAbstractTest extends SqlIndexTestSupport {
         members = null;
         member = null;
 
-        FACTORY.shutdownAll();
+        if (factory != null) {
+            factory.shutdownAll();
+            factory = null;
+        }
     }
 
     private void fill() {
