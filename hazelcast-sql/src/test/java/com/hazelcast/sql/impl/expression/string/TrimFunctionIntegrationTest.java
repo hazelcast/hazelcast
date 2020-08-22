@@ -30,7 +30,21 @@ import org.junit.runner.RunWith;
 public class TrimFunctionIntegrationTest extends SqlExpressionIntegrationTestSupport {
     @Test
     public void test_input() {
-        put(" abcde ");
-        checkValueInternal("SELECT TRIM(this) FROM map", SqlColumnType.VARCHAR, "abcde");
+        put("abcde");
+        checkValueInternal("SELECT TRIM(LEADING 'abc' FROM this) FROM map", SqlColumnType.VARCHAR, "de");
+
+        // TODO
+//        checkValueInternal("SELECT TRIM(TRAILING 'abc' FROM this) FROM map", SqlColumnType.VARCHAR, "abcde");
+//        checkValueInternal("SELECT TRIM(BOTH 'abc' FROM this) FROM map", SqlColumnType.VARCHAR, "abcde");
+//
+//        checkValueInternal("SELECT TRIM(LEADING FROM this) FROM map", SqlColumnType.VARCHAR, "abcde");
+//        checkValueInternal("SELECT TRIM(TRAILING FROM this) FROM map", SqlColumnType.VARCHAR, "abcde");
+//        checkValueInternal("SELECT TRIM(BOTH FROM this) FROM map", SqlColumnType.VARCHAR, "abcde");
+//
+//        checkValueInternal("SELECT TRIM(this) FROM map", SqlColumnType.VARCHAR, "abcde");
+//
+//        checkValueInternal("SELECT LTRIM(this) FROM map", SqlColumnType.VARCHAR, "abcde");
+//        checkValueInternal("SELECT RTRIM(this) FROM map", SqlColumnType.VARCHAR, "abcde");
+//        checkValueInternal("SELECT BTRIM(this) FROM map", SqlColumnType.VARCHAR, "abcde");
     }
 }

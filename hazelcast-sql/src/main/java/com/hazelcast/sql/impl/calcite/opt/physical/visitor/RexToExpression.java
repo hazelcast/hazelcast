@@ -22,6 +22,7 @@ import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlOperatorTable;
 import com.hazelcast.sql.impl.expression.CastExpression;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.Expression;
+import com.hazelcast.sql.impl.expression.SymbolExpression;
 import com.hazelcast.sql.impl.expression.math.AbsFunction;
 import com.hazelcast.sql.impl.expression.math.DivideFunction;
 import com.hazelcast.sql.impl.expression.math.DoubleFunction;
@@ -51,6 +52,7 @@ import com.hazelcast.sql.impl.expression.string.InitcapFunction;
 import com.hazelcast.sql.impl.expression.string.LikeFunction;
 import com.hazelcast.sql.impl.expression.string.LowerFunction;
 import com.hazelcast.sql.impl.expression.string.SubstringFunction;
+import com.hazelcast.sql.impl.expression.string.TrimFunction;
 import com.hazelcast.sql.impl.expression.string.UpperFunction;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.calcite.rex.RexCall;
@@ -58,6 +60,7 @@ import org.apache.calcite.rex.RexLiteral;
 import org.apache.calcite.sql.SqlFunction;
 import org.apache.calcite.sql.SqlOperator;
 import org.apache.calcite.sql.fun.SqlStdOperatorTable;
+import org.apache.calcite.sql.fun.SqlTrimFunction;
 import org.apache.calcite.sql.type.SqlTypeName;
 
 import java.math.BigDecimal;
@@ -113,7 +116,7 @@ public final class RexToExpression {
                 return ConstantExpression.create(null, QueryDataType.OBJECT);
 
             case SYMBOL:
-                return ConstantExpression.create(literal.getValue(), QueryDataType.OBJECT);
+                return SymbolExpression.create(literal.getValue());
 
             default:
                 throw QueryException.error("Unsupported literal: " + literal);
@@ -233,8 +236,19 @@ public final class RexToExpression {
 
                 return LikeFunction.create(operands[0], operands[1], escape);
 
-            case TRIM:
-                throw new UnsupportedOperationException("Implement me!");
+            case TRIM: {
+                assert operands.length == 3;
+                assert operands[0] instanceof SymbolExpression;
+
+                SqlTrimFunction.Flag flag = ((SymbolExpression) operands[0]).getSymbol();
+
+                return TrimFunction.create(
+                    operands[2],
+                    operands[1],
+                    flag.getLeft() == 1,
+                    flag.getRight() == 1
+                );
+            }
 
             case OTHER:
                 if (operator == HazelcastSqlOperatorTable.CONCAT) {
@@ -388,5 +402,4 @@ public final class RexToExpression {
 
         return ConstantExpression.create(value, SqlToQueryType.map(type));
     }
-
 }

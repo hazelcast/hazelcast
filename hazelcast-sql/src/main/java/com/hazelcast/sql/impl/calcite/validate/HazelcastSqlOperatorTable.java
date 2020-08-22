@@ -45,7 +45,6 @@ import org.apache.calcite.sql.type.SameOperandTypeChecker;
 import org.apache.calcite.sql.type.SqlTypeFamily;
 import org.apache.calcite.sql.type.SqlTypeName;
 import org.apache.calcite.sql.type.SqlTypeTransforms;
-import org.apache.calcite.sql.type.SqlTypeName;
 import org.apache.calcite.sql.util.ReflectiveSqlOperatorTable;
 
 import java.util.List;
@@ -53,9 +52,7 @@ import java.util.List;
 import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastInferTypes.NULLABLE_OBJECT;
 import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastOperandTypes.notAllNull;
 import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastOperandTypes.notAny;
-import static org.apache.calcite.sql.type.SqlTypeName.BIGINT;
-import static org.apache.calcite.sql.type.SqlTypeName.DECIMAL;
-import static org.apache.calcite.sql.type.SqlTypeName.INTEGER;
+import static org.apache.calcite.sql.type.ReturnTypes.cascade;
 import static org.apache.calcite.sql.type.SqlTypeName.BIGINT;
 import static org.apache.calcite.sql.type.SqlTypeName.DECIMAL;
 import static org.apache.calcite.sql.type.SqlTypeName.INTEGER;
@@ -407,15 +404,15 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
     public static final SqlFunction TRIM = new SqlTrimFunction(
         "TRIM",
         SqlKind.TRIM,
-        ReturnTypes.cascade(ReturnTypes.ARG2, SqlTypeTransforms.TO_NULLABLE, SqlTypeTransforms.TO_VARYING),
-        OperandTypes.and(
+        cascade(ReturnTypes.ARG2, SqlTypeTransforms.TO_NULLABLE),
+        notAny(OperandTypes.and(
             OperandTypes.family(SqlTypeFamily.ANY, SqlTypeFamily.STRING, SqlTypeFamily.STRING),
             new SameOperandTypeChecker(3) {
                 @Override protected List<Integer> getOperandList(int operandCount) {
                     return ImmutableList.of(1, 2);
                 }
             }
-        )
+        ))
     );
 
     //#endregion

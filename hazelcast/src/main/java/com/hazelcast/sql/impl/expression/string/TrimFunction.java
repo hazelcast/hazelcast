@@ -21,6 +21,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.sql.impl.SqlDataSerializerHook;
 import com.hazelcast.sql.impl.expression.BiExpression;
+import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.row.Row;
@@ -30,7 +31,8 @@ import java.io.IOException;
 
 public class TrimFunction extends BiExpression<String> implements IdentifiedDataSerializable {
 
-    private static final CharacterTester SPACE_ONLY = new SingleCharacterTester(' ');
+    private static final String SPACE_ONLY = " ";
+    private static final CharacterTester SPACE_ONLY_TESTER = new SingleCharacterTester(' ');
 
     private boolean leading;
     private boolean trailing;
@@ -39,15 +41,24 @@ public class TrimFunction extends BiExpression<String> implements IdentifiedData
         // No-op.
     }
 
-    private TrimFunction(Expression<?> operand1, Expression<?> operand2, boolean leading, boolean trailing) {
-        super(operand1, operand2);
+    private TrimFunction(Expression<?> input, Expression<?> characters, boolean leading, boolean trailing) {
+        super(input, characters);
 
         this.leading = leading;
         this.trailing = trailing;
     }
 
-    public static TrimFunction create(Expression<?> operand1, Expression<?> operand2, boolean leading, boolean trailing) {
-        return new TrimFunction(operand1, operand2, leading, trailing);
+    public static TrimFunction create(Expression<?> input, Expression<?> characters, boolean leading, boolean trailing) {
+        // It is common for "characters" to be a constant with space character. Handle it as a special case.
+        if (characters instanceof ConstantExpression) {
+            ConstantExpression<?> characters0 = (ConstantExpression<?>) characters;
+
+            if (SPACE_ONLY.equals(characters0.getValue())) {
+                characters = null;
+            }
+        }
+
+        return new TrimFunction(input, characters, leading, trailing);
     }
 
     @Override
@@ -58,7 +69,17 @@ public class TrimFunction extends BiExpression<String> implements IdentifiedData
             return null;
         }
 
-        String characters = operand2 != null ? StringExpressionUtils.asVarchar(operand2, row, context) : null;
+        String characters;
+
+        if (operand2 != null) {
+            characters = StringExpressionUtils.asVarchar(operand2, row, context);
+
+            if (characters == null) {
+                return null;
+            }
+        } else {
+            characters = SPACE_ONLY;
+        }
 
         return trim(input, characters);
     }
@@ -68,7 +89,9 @@ public class TrimFunction extends BiExpression<String> implements IdentifiedData
             return "";
         }
 
-        CharacterTester tester = characters == null ? SPACE_ONLY : characters.length() == 1
+        assert characters != null;
+
+        CharacterTester tester = SPACE_ONLY.equals(characters) ? SPACE_ONLY_TESTER : characters.length() == 1
             ? new SingleCharacterTester(characters.charAt(0)) : new MultipleCharacterTester(characters.toCharArray());
 
         int from = 0;
