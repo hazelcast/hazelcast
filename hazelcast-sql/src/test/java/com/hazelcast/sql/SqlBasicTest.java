@@ -338,10 +338,10 @@ public class SqlBasicTest extends SqlTestSupport {
     private SqlResult query() {
         String sql = sql();
 
-        if (cursorBufferSize == SqlQuery.DEFAULT_CURSOR_BUFFER_SIZE) {
-            return getTarget().getSql().query(sql);
+        if (cursorBufferSize == SqlStatement.DEFAULT_CURSOR_BUFFER_SIZE) {
+            return getTarget().getSql().execute(sql);
         } else {
-            return getTarget().getSql().query(new SqlQuery(sql).setCursorBufferSize(cursorBufferSize));
+            return getTarget().getSql().execute(new SqlStatement(sql).setCursorBufferSize(cursorBufferSize));
         }
     }
 

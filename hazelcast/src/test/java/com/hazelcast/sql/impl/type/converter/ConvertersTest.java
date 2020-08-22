@@ -17,7 +17,7 @@
 package com.hazelcast.sql.impl.type.converter;
 
 import com.hazelcast.sql.impl.QueryException;
-import com.hazelcast.sql.SqlErrorCode;
+import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.SqlCustomClass;
 import com.hazelcast.sql.impl.expression.math.ExpressionMath;
 import com.hazelcast.sql.impl.type.QueryDataTypeFamily;

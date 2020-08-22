@@ -17,7 +17,7 @@
 package com.hazelcast.sql.impl.exec.io;
 
 import com.hazelcast.sql.impl.QueryException;
-import com.hazelcast.sql.SqlErrorCode;
+import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.FaultyQueryOperationHandler;
 import com.hazelcast.sql.impl.LoggingQueryOperationHandler;
 import com.hazelcast.sql.impl.QueryId;

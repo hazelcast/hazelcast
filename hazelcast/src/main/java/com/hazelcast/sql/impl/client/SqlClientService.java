@@ -27,9 +27,9 @@ import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.util.UuidUtil;
-import com.hazelcast.sql.SqlErrorCode;
-import com.hazelcast.sql.SqlException;
-import com.hazelcast.sql.SqlQuery;
+import com.hazelcast.sql.impl.SqlErrorCode;
+import com.hazelcast.sql.HazelcastSqlException;
+import com.hazelcast.sql.SqlStatement;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlRowMetadata;
 import com.hazelcast.sql.SqlService;
@@ -67,7 +67,7 @@ public class SqlClientService implements SqlService {
 
     @Nonnull
     @Override
-    public SqlResult query(@Nonnull SqlQuery query) {
+    public SqlResult execute(@Nonnull SqlStatement statement) {
         Connection connection = client.getConnectionManager().getRandomConnection(true);
 
         if (connection == null) {
@@ -78,7 +78,7 @@ public class SqlClientService implements SqlService {
         }
 
         try {
-            List<Object> params = query.getParameters();
+            List<Object> params = statement.getParameters();
 
             List<Data> params0 = new ArrayList<>(params.size());
 
@@ -87,10 +87,10 @@ public class SqlClientService implements SqlService {
             }
 
             ClientMessage requestMessage = SqlExecuteCodec.encodeRequest(
-                query.getSql(),
+                statement.getSql(),
                 params0,
-                query.getTimeoutMillis(),
-                query.getCursorBufferSize()
+                statement.getTimeoutMillis(),
+                statement.getCursorBufferSize()
             );
 
             ClientMessage responseMessage = invoke(requestMessage, connection);
@@ -107,7 +107,7 @@ public class SqlClientService implements SqlService {
                 response.rowMetadata != null ? new SqlRowMetadata(response.rowMetadata) : null,
                 response.rowPage,
                 response.rowPageLast,
-                query.getCursorBufferSize(),
+                statement.getCursorBufferSize(),
                 response.updatedCount
             );
         } catch (Exception e) {
@@ -218,7 +218,7 @@ public class SqlClientService implements SqlService {
 
     private static void handleResponseError(SqlError error) {
         if (error != null) {
-            throw new SqlException(error.getOriginatingMemberId(), error.getCode(), error.getMessage(), null);
+            throw new HazelcastSqlException(error.getOriginatingMemberId(), error.getCode(), error.getMessage(), null);
         }
     }
 

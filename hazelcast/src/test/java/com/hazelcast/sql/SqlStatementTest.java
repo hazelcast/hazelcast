@@ -31,28 +31,28 @@ import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class SqlQueryTest extends SqlTestSupport {
+public class SqlStatementTest extends SqlTestSupport {
 
     private static final String SQL = "sql";
 
     @Test
     public void testDefaults() {
-        SqlQuery query = create();
+        SqlStatement query = create();
 
         assertEquals(SQL, query.getSql());
         assertEquals(0, query.getParameters().size());
-        assertEquals(SqlQuery.DEFAULT_TIMEOUT, query.getTimeoutMillis());
-        assertEquals(SqlQuery.DEFAULT_CURSOR_BUFFER_SIZE, query.getCursorBufferSize());
+        assertEquals(SqlStatement.DEFAULT_TIMEOUT, query.getTimeoutMillis());
+        assertEquals(SqlStatement.DEFAULT_CURSOR_BUFFER_SIZE, query.getCursorBufferSize());
     }
 
     @Test(expected = NullPointerException.class)
     public void testSql_null() {
-        new SqlQuery(null);
+        new SqlStatement(null);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testSql_empty() {
-        new SqlQuery("");
+        new SqlStatement("");
     }
 
     @Test
@@ -61,7 +61,7 @@ public class SqlQueryTest extends SqlTestSupport {
         Object param1 = new Object();
         Object param2 = new Object();
 
-        SqlQuery query = create();
+        SqlStatement query = create();
         assertEquals(0, query.getParameters().size());
 
         query.setParameters(Arrays.asList(param0, param1));
@@ -85,14 +85,14 @@ public class SqlQueryTest extends SqlTestSupport {
 
     @Test
     public void testTimeout() {
-        SqlQuery query = create().setTimeoutMillis(1);
+        SqlStatement query = create().setTimeoutMillis(1);
         assertEquals(1, query.getTimeoutMillis());
 
         query.setTimeoutMillis(0);
         assertEquals(0, query.getTimeoutMillis());
 
-        query.setTimeoutMillis(SqlQuery.TIMEOUT_NOT_SET);
-        assertEquals(SqlQuery.TIMEOUT_NOT_SET, query.getTimeoutMillis());
+        query.setTimeoutMillis(SqlStatement.TIMEOUT_NOT_SET);
+        assertEquals(SqlStatement.TIMEOUT_NOT_SET, query.getTimeoutMillis());
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -102,7 +102,7 @@ public class SqlQueryTest extends SqlTestSupport {
 
     @Test
     public void testCursorBufferSize() {
-        SqlQuery query = create().setCursorBufferSize(1);
+        SqlStatement query = create().setCursorBufferSize(1);
         assertEquals(1, query.getCursorBufferSize());
     }
 
@@ -118,7 +118,7 @@ public class SqlQueryTest extends SqlTestSupport {
 
     @Test
     public void testCopy() {
-        SqlQuery original = create();
+        SqlStatement original = create();
         checkEquals(original, original.copy(), true);
 
         original.setParameters(Arrays.asList(1, 2)).setTimeoutMillis(3L).setCursorBufferSize(4);
@@ -127,8 +127,8 @@ public class SqlQueryTest extends SqlTestSupport {
 
     @Test
     public void testEquals() {
-        SqlQuery query = create();
-        SqlQuery another = create();
+        SqlStatement query = create();
+        SqlStatement another = create();
         checkEquals(query, another, true);
 
         query.setParameters(Arrays.asList(1, 2)).setTimeoutMillis(10L).setCursorBufferSize(20);
@@ -150,7 +150,7 @@ public class SqlQueryTest extends SqlTestSupport {
 
     @Test
     public void testToString() {
-        SqlQuery query = create().setParameters(Arrays.asList(1, 2)).setTimeoutMillis(3L).setCursorBufferSize(4);
+        SqlStatement query = create().setParameters(Arrays.asList(1, 2)).setTimeoutMillis(3L).setCursorBufferSize(4);
 
         String string = query.toString();
 
@@ -160,7 +160,7 @@ public class SqlQueryTest extends SqlTestSupport {
         assertTrue(string.contains("cursorBufferSize="));
     }
 
-    private static SqlQuery create() {
-        return new SqlQuery(SQL);
+    private static SqlStatement create() {
+        return new SqlStatement(SQL);
     }
 }

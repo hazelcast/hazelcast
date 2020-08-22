@@ -20,8 +20,8 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.util.BiTuple;
 import com.hazelcast.internal.util.RuntimeAvailableProcessors;
 import com.hazelcast.map.IMap;
-import com.hazelcast.sql.SqlErrorCode;
-import com.hazelcast.sql.SqlException;
+import com.hazelcast.sql.impl.SqlErrorCode;
+import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.SqlService;
@@ -1169,7 +1169,7 @@ public abstract class ExpressionTestBase extends SqlTestSupport {
     }
 
     protected SqlResult query(SqlService sql, String query, Object... args) {
-        return sql.query(query, args);
+        return sql.execute(query, args);
     }
 
     public static class Record implements Serializable {
@@ -1239,7 +1239,7 @@ public abstract class ExpressionTestBase extends SqlTestSupport {
     }
 
     protected void assertQueryThrows(SqlService sql, String query, String message, Object... args) {
-        SqlException exception = assertThrows(SqlException.class, () -> query(sql, query, args).forEach(r -> {
+        HazelcastSqlException exception = assertThrows(HazelcastSqlException.class, () -> query(sql, query, args).forEach(r -> {
             // do nothing, just drain all the rows
         }));
         assertTrue(exception.getMessage(), exception.getMessage().toLowerCase().contains(message.toLowerCase()));

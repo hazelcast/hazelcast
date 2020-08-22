@@ -16,6 +16,7 @@
 
 package com.hazelcast.sql;
 
+import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -29,7 +30,7 @@ import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class SqlExceptionTest {
+public class HazelcastSqlExceptionTest {
     @Test
     public void testFields() {
         UUID memberId = UUID.randomUUID();
@@ -37,7 +38,7 @@ public class SqlExceptionTest {
         String errorMessage = "error";
         Exception cause = new IllegalArgumentException();
 
-        SqlException exception = new SqlException(memberId, errorCode, errorMessage, cause);
+        HazelcastSqlException exception = new HazelcastSqlException(memberId, errorCode, errorMessage, cause);
 
         assertEquals(memberId, exception.getOriginatingMemberId());
         assertEquals(errorCode, exception.getCode());

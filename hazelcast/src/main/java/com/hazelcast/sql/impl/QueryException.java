@@ -18,7 +18,6 @@ package com.hazelcast.sql.impl;
 
 import com.hazelcast.cluster.Address;
 import com.hazelcast.core.HazelcastException;
-import com.hazelcast.sql.SqlErrorCode;
 
 import java.util.Collection;
 import java.util.UUID;

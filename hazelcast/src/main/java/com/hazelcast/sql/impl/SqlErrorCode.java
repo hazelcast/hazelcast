@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql;
+package com.hazelcast.sql.impl;
 
 /**
  * Error codes used in Hazelcast SQL.
