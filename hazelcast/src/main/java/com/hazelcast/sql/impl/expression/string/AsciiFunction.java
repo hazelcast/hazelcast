@@ -39,9 +39,9 @@ public class AsciiFunction extends UniExpression<Integer> implements IdentifiedD
 
     @Override
     public Integer eval(Row row, ExpressionEvalContext context) {
-        String value = StringExpressionUtils.asVarchar(operand, row, context);
+        String value = StringFunctionUtils.asVarchar(operand, row, context);
 
-        return StringExpressionUtils.ascii(value);
+        return StringFunctionUtils.ascii(value);
     }
 
     @Override

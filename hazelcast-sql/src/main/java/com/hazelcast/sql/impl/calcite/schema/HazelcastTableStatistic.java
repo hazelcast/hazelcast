@@ -27,13 +27,13 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * Simple table statistics for IMap and ReplicatedMap.
+ * Simple table statistics for Hazelcast tables.
  */
-public class MapTableStatistic implements Statistic {
+public class HazelcastTableStatistic implements Statistic {
     /** Row count that is fixed for the duration of query optimization process. */
     private final Long rowCount;
 
-    public MapTableStatistic(long rowCount) {
+    public HazelcastTableStatistic(long rowCount) {
         this.rowCount = rowCount;
     }
 

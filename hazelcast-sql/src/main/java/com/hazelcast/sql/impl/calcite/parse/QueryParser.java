@@ -16,51 +16,94 @@
 
 package com.hazelcast.sql.impl.calcite.parse;
 
-import com.hazelcast.sql.SqlErrorCode;
+import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.QueryException;
+import com.hazelcast.sql.impl.calcite.SqlBackend;
 import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlConformance;
-import org.apache.calcite.rel.type.RelDataType;
+import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeFactory;
+import org.apache.calcite.prepare.Prepare.CatalogReader;
 import org.apache.calcite.sql.SqlNode;
+import org.apache.calcite.sql.parser.SqlParseException;
 import org.apache.calcite.sql.parser.SqlParser;
+import org.apache.calcite.sql.parser.SqlParser.Config;
+import org.apache.calcite.sql.parser.SqlParserImplFactory;
+import org.apache.calcite.sql.util.SqlVisitor;
+import org.apache.calcite.sql.validate.SqlConformance;
 import org.apache.calcite.sql.validate.SqlValidator;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+
 /**
- * Performs syntactic and semantic validation of the query, and converts the parse tree into a relational tree.
+ * Performs syntactic and semantic validation of the query.
  */
 public class QueryParser {
 
-    private static final SqlParser.Config CONFIG;
-    private final SqlValidator validator;
+    private final HazelcastTypeFactory typeFactory;
+    private final CatalogReader catalogReader;
+    private final SqlConformance conformance;
 
-    static {
-        SqlParser.ConfigBuilder configBuilder = SqlParser.configBuilder();
+    private final SqlBackend sqlBackend;
+    private final SqlBackend jetSqlBackend;
 
-        CasingConfiguration.DEFAULT.toParserConfig(configBuilder);
-        configBuilder.setConformance(HazelcastSqlConformance.INSTANCE);
+    public QueryParser(
+            HazelcastTypeFactory typeFactory,
+            CatalogReader catalogReader,
+            SqlConformance conformance,
+            @Nonnull SqlBackend sqlBackend,
+            @Nullable SqlBackend jetSqlBackend
+    ) {
+        this.typeFactory = typeFactory;
+        this.catalogReader = catalogReader;
+        this.conformance = conformance;
 
-        CONFIG = configBuilder.build();
-    }
-
-    public QueryParser(SqlValidator validator) {
-        this.validator = validator;
+        this.sqlBackend = sqlBackend;
+        this.jetSqlBackend = jetSqlBackend;
     }
 
     public QueryParseResult parse(String sql) {
-        SqlNode node;
-        RelDataType parameterRowType;
-
         try {
-            SqlParser parser = SqlParser.create(sql, CONFIG);
-
-            node = validator.validate(parser.parseStmt());
-
-            node.accept(UnsupportedOperationVisitor.INSTANCE);
-
-            parameterRowType = validator.getParameterRowType(node);
+            try {
+                return parse(sql, sqlBackend);
+            } catch (Exception e) {
+                if (jetSqlBackend != null) {
+                    return parse(sql, jetSqlBackend);
+                } else {
+                    throw e;
+                }
+            }
         } catch (Exception e) {
             throw QueryException.error(SqlErrorCode.PARSING, e.getMessage(), e);
         }
+    }
 
-        return new QueryParseResult(node, parameterRowType);
+    private QueryParseResult parse(String sql, SqlBackend sqlBackend) throws SqlParseException {
+        assert sqlBackend != null;
+
+        Config config = createConfig(sqlBackend.parserFactory());
+        SqlParser parser = SqlParser.create(sql, config);
+
+        SqlValidator validator = sqlBackend.validator(catalogReader, typeFactory, conformance);
+        SqlNode node = validator.validate(parser.parseStmt());
+
+        SqlVisitor<Void> visitor = sqlBackend.unsupportedOperationVisitor(catalogReader);
+        node.accept(visitor);
+
+        return new QueryParseResult(
+            node,
+            validator.getParameterRowType(node),
+            validator,
+            sqlBackend
+        );
+    }
+
+    private static Config createConfig(SqlParserImplFactory parserImplFactory) {
+        SqlParser.ConfigBuilder configBuilder = SqlParser.configBuilder();
+        CasingConfiguration.DEFAULT.toParserConfig(configBuilder);
+        configBuilder.setConformance(HazelcastSqlConformance.INSTANCE);
+        if (parserImplFactory != null) {
+            configBuilder.setParserFactory(parserImplFactory);
+        }
+        return configBuilder.build();
     }
 }

@@ -16,9 +16,9 @@
 
 package com.hazelcast.sql.impl.expression.string;
 
+import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlColumnType;
-import com.hazelcast.sql.SqlErrorCode;
-import com.hazelcast.sql.SqlException;
+import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.impl.expression.SqlExpressionIntegrationTestSupport;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -90,18 +90,19 @@ public class LikeFunctionIntegrationTest extends SqlExpressionIntegrationTestSup
         // Normal escape
         put("te_t");
         check("this LIKE 'te!_t' ESCAPE '!'", true);
+        check("this LIKE 'te!_t' ESCAPE null", null);
 
         put("te%t");
         check("this LIKE 'te!%t' ESCAPE '!'", true);
 
         // Escape is not a single character
         put("te_t");
-        checkFailure("this LIKE 'te\\_t' ESCAPE ''", SqlErrorCode.GENERIC, "Escape parameter should be a single character");
-        checkFailure("this LIKE 'te\\_t' ESCAPE '!!'", SqlErrorCode.GENERIC, "Escape parameter should be a single character");
+        checkFailure("this LIKE 'te\\_t' ESCAPE ''", SqlErrorCode.GENERIC, "ESCAPE parameter must be a single character");
+        checkFailure("this LIKE 'te\\_t' ESCAPE '!!'", SqlErrorCode.GENERIC, "ESCAPE parameter must be a single character");
 
         // Apply escape to incorrect symbols in the pattern
-        checkFailure("this LIKE 'te_!t' ESCAPE '!'", SqlErrorCode.GENERIC, "Only '_' or '%' pattern wildcards could be escaped");
-        checkFailure("this LIKE 'te_t!' ESCAPE '!'", SqlErrorCode.GENERIC, "Only '_' or '%' pattern wildcards could be escaped");
+        checkFailure("this LIKE 'te_!t' ESCAPE '!'", SqlErrorCode.GENERIC, "Only '_', '%' and the escape character can be escaped");
+        checkFailure("this LIKE 'te_t!' ESCAPE '!'", SqlErrorCode.GENERIC, "Only '_', '%' and the escape character can be escaped");
     }
 
     @Test
@@ -144,6 +145,25 @@ public class LikeFunctionIntegrationTest extends SqlExpressionIntegrationTestSup
         check("20 LIKE null", null);
     }
 
+    @Test
+    public void test_newline() {
+        put("\n");
+        check("this LIKE '_'", true);
+        check("this LIKE '%'", true);
+
+        put("\n\n");
+        check("this LIKE '_'", false);
+        check("this LIKE '__'", true);
+        check("this LIKE '%'", true);
+    }
+
+    @Test
+    public void test_special_char_escaping() {
+        put("[({|^+*?-$\\.abc})]");
+        check("this LIKE '[({|^+*?-$\\.___})]'", true);
+        check("this LIKE '[({|^+*?-$\\.%})]'", true);
+    }
+
     private void check(String operands, Boolean expectedResult, Object... params) {
         String sql = "SELECT " + operands + " FROM map";
 
@@ -163,7 +183,7 @@ public class LikeFunctionIntegrationTest extends SqlExpressionIntegrationTestSup
             execute(member, sql, params);
 
             fail("Must fail");
-        } catch (SqlException e) {
+        } catch (HazelcastSqlException e) {
             assertEquals(expectedErrorCode + ": " + e.getMessage(), expectedErrorCode, e.getCode());
 
             assertFalse(expectedErrorMessage.isEmpty());

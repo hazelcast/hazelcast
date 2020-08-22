@@ -16,16 +16,18 @@
 
 package com.hazelcast.sql.impl;
 
+import com.hazelcast.cluster.Member;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.partition.Partition;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.SqlColumnMetadata;
 import com.hazelcast.sql.SqlColumnType;
-import com.hazelcast.sql.SqlErrorCode;
-import com.hazelcast.sql.SqlException;
+import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.impl.schema.TableResolver;
 import com.hazelcast.sql.impl.type.QueryDataType;
+import com.hazelcast.version.MemberVersion;
 
+import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -58,9 +60,9 @@ public final class QueryUtils {
         return instanceName + "-" + workerType + "-" + index;
     }
 
-    public static SqlException toPublicException(Exception e, UUID localMemberId) {
-        if (e instanceof SqlException) {
-            return (SqlException) e;
+    public static HazelcastSqlException toPublicException(Exception e, UUID localMemberId) {
+        if (e instanceof HazelcastSqlException) {
+            return (HazelcastSqlException) e;
         }
 
         if (e instanceof QueryException) {
@@ -72,9 +74,9 @@ public final class QueryUtils {
                 originatingMemberId = localMemberId;
             }
 
-            return new SqlException(originatingMemberId, e0.getCode(), e0.getMessage(), e);
+            return new HazelcastSqlException(originatingMemberId, e0.getCode(), e0.getMessage(), e);
         } else {
-            return new SqlException(localMemberId, SqlErrorCode.GENERIC, e.getMessage(), e);
+            return new HazelcastSqlException(localMemberId, SqlErrorCode.GENERIC, e.getMessage(), e);
         }
     }
 
@@ -167,7 +169,18 @@ public final class QueryUtils {
         return new SqlColumnMetadata(columnName, type);
     }
 
-    public static Map<UUID, PartitionIdSet> createPartitionMap(NodeEngine nodeEngine) {
+    /**
+     * Create map from member ID to owned partitions.
+     *
+     * @param nodeEngine node engine
+     * @param localMemberVersion version of the local member. If any of partition owners have a different version, an exception
+     *                           is thrown. The check is ignored if passed version is {@code null}
+     * @return partition mapping
+     */
+    public static Map<UUID, PartitionIdSet> createPartitionMap(
+        NodeEngine nodeEngine,
+        @Nullable MemberVersion localMemberVersion
+    ) {
         Collection<Partition> parts = nodeEngine.getHazelcastInstance().getPartitionService().getPartitions();
 
         int partCnt = parts.size();
@@ -175,8 +188,20 @@ public final class QueryUtils {
         Map<UUID, PartitionIdSet> partMap = new LinkedHashMap<>();
 
         for (Partition part : parts) {
-            UUID ownerId = part.getOwner().getUuid();
-            partMap.computeIfAbsent(ownerId, (key) -> new PartitionIdSet(partCnt)).add(part.getPartitionId());
+            Member owner = part.getOwner();
+
+            if (localMemberVersion != null) {
+                if (!localMemberVersion.equals(owner.getVersion())) {
+                    UUID localMemberId = nodeEngine.getLocalMember().getUuid();
+
+                    throw QueryException.error("Cannot execute SQL query when members have different versions "
+                        + "(make sure that all members have the same version) {localMemberId=" + localMemberId
+                        + ", localMemberVersion=" + localMemberVersion + ", remoteMemberId=" + owner.getUuid()
+                        + ", remoteMemberVersion=" + owner.getVersion() + "}");
+                }
+            }
+
+            partMap.computeIfAbsent(owner.getUuid(), (key) -> new PartitionIdSet(partCnt)).add(part.getPartitionId());
         }
 
         return partMap;

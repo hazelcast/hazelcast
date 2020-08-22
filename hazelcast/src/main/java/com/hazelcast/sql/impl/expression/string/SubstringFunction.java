@@ -46,10 +46,12 @@ public class SubstringFunction extends TriExpression<String> implements Identifi
         String input;
 
         try {
-            input = StringExpressionUtils.asVarchar(operand1, row, context);
+            input = StringFunctionUtils.asVarchar(operand1, row, context);
         } catch (Exception e) {
             // Conversion to String failed. E.g. NPE on UserClass.toString()
-            throw QueryException.dataException("Failed to get value of input operand of SUBSTRING function", e);
+            throw QueryException.dataException(
+                "Failed to get value of input operand of SUBSTRING function: " + e.getMessage(), e
+            );
         }
 
         if (input == null) {
@@ -57,12 +59,13 @@ public class SubstringFunction extends TriExpression<String> implements Identifi
             return null;
         }
 
-        Integer start = operand2 != null ? MathFunctionUtils.asInt(operand2, row, context) : null;
+        Integer start = MathFunctionUtils.asInt(operand2, row, context);
 
         if (start == null) {
-            // Start position is not specific, start with the very first character
-            start = 1;
-        } else if (start < 1) {
+            return null;
+        }
+
+        if (start < 1) {
             // Different databases provide different semantics on negative values. Oracle start counting
             // from the end, SQL Server starts from the beginning, and uses the value to calculate the
             // final length, etc.
@@ -73,12 +76,22 @@ public class SubstringFunction extends TriExpression<String> implements Identifi
         // In SQL start position is 1-based. Convert it to 0-based for Java.
         int adjustedStart = start - 1;
 
-        if (adjustedStart > input.length()) {
+        if (adjustedStart >= input.length()) {
             // Start position is beyond the string length, e.g. SUBSTRING("abc", 4)
             return "";
         }
 
-        Integer length = operand3 != null ? MathFunctionUtils.asInt(operand3, row, context) : null;
+        Integer length;
+
+        if (operand3 != null) {
+            length = MathFunctionUtils.asInt(operand3, row, context);
+
+            if (length == null) {
+                return null;
+            }
+        } else {
+            length = null;
+        }
 
         if (length == null) {
             // Length is not specified, just cut from the start

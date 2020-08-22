@@ -80,6 +80,7 @@ import java.util.Collection;
 import java.util.EventListener;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
@@ -1280,6 +1281,38 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testNativeMemoryWithPersistentMemory() {
+        NativeMemoryConfig expectedConfig = new NativeMemoryConfig();
+        expectedConfig.setEnabled(true);
+        expectedConfig.setAllocatorType(NativeMemoryConfig.MemoryAllocatorType.STANDARD);
+        expectedConfig.setMetadataSpacePercentage(12.5f);
+        expectedConfig.setMinBlockSize(50);
+        expectedConfig.setPageSize(100);
+        expectedConfig.setSize(new MemorySize(20, MemoryUnit.MEGABYTES));
+        expectedConfig.getPersistentMemoryConfig().addDirectoryConfig(new PersistentMemoryDirectoryConfig("/mnt/pmem0", 0));
+        expectedConfig.getPersistentMemoryConfig().addDirectoryConfig(new PersistentMemoryDirectoryConfig("/mnt/pmem1", 1));
+
+        Config config = new Config().setNativeMemoryConfig(expectedConfig);
+        Config xmlConfig = getNewConfigViaXMLGenerator(config);
+
+        NativeMemoryConfig actualConfig = xmlConfig.getNativeMemoryConfig();
+        assertTrue(actualConfig.isEnabled());
+        assertEquals(NativeMemoryConfig.MemoryAllocatorType.STANDARD, actualConfig.getAllocatorType());
+        assertEquals(12.5, actualConfig.getMetadataSpacePercentage(), 0.0001);
+        assertEquals(50, actualConfig.getMinBlockSize());
+        assertEquals(100, actualConfig.getPageSize());
+        assertEquals(new MemorySize(20, MemoryUnit.MEGABYTES).getUnit(), actualConfig.getSize().getUnit());
+        assertEquals(new MemorySize(20, MemoryUnit.MEGABYTES).getValue(), actualConfig.getSize().getValue());
+        List<PersistentMemoryDirectoryConfig> directoryConfigs = actualConfig.getPersistentMemoryConfig().getDirectoryConfigs();
+        assertEquals(2, directoryConfigs.size());
+        assertEquals("/mnt/pmem0", directoryConfigs.get(0).getDirectory());
+        assertEquals(0, directoryConfigs.get(0).getNumaNode());
+        assertEquals("/mnt/pmem1", directoryConfigs.get(1).getDirectory());
+        assertEquals(1, directoryConfigs.get(1).getNumaNode());
+        assertEquals(expectedConfig, actualConfig);
+    }
+
+    @Test
     public void testAttributesConfigWithStoreClass() {
         MapStoreConfig mapStoreConfig = new MapStoreConfig()
                 .setEnabled(true)
@@ -1825,13 +1858,13 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
 
         confiig.getSqlConfig().setExecutorPoolSize(10);
         confiig.getSqlConfig().setOperationPoolSize(20);
-        confiig.getSqlConfig().setQueryTimeoutMillis(30L);
+        confiig.getSqlConfig().setStatementTimeoutMillis(30L);
 
         SqlConfig generatedConfig = getNewConfigViaXMLGenerator(confiig).getSqlConfig();
 
         assertEquals(confiig.getSqlConfig().getExecutorPoolSize(), generatedConfig.getExecutorPoolSize());
         assertEquals(confiig.getSqlConfig().getOperationPoolSize(), generatedConfig.getOperationPoolSize());
-        assertEquals(confiig.getSqlConfig().getQueryTimeoutMillis(), generatedConfig.getQueryTimeoutMillis());
+        assertEquals(confiig.getSqlConfig().getStatementTimeoutMillis(), generatedConfig.getStatementTimeoutMillis());
     }
 
     @Test

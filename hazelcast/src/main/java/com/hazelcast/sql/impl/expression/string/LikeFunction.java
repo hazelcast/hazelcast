@@ -30,12 +30,15 @@ import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static com.hazelcast.sql.impl.expression.string.StringExpressionUtils.asVarchar;
+import static com.hazelcast.sql.impl.expression.string.StringFunctionUtils.asVarchar;
 
 /**
  * LIKE string function.
  */
 public class LikeFunction extends TriExpression<Boolean> implements IdentifiedDataSerializable {
+
+    private static final long serialVersionUID = 4157617157954663651L;
+
     /** Single-symbol wildcard in SQL. */
     private static final char ONE_SQL = '_';
 
@@ -46,10 +49,10 @@ public class LikeFunction extends TriExpression<Boolean> implements IdentifiedDa
     private static final String ONE_JAVA = ".";
 
     /** Multi-symbol wildcard in Java. */
-    private static final String MANY_JAVA = "(?s:.*)";
+    private static final String MANY_JAVA = ".*";
 
     /** Special characters which require escaping in Java. */
-    private static final String ESCAPE_CHARACTERS_JAVA = "[]()|^-+*?{}$\\.";
+    private static final String ESCAPE_CHARACTERS_JAVA = "[]()|^+*?{}$\\.";
 
     private transient State state;
 
@@ -80,7 +83,17 @@ public class LikeFunction extends TriExpression<Boolean> implements IdentifiedDa
             return null;
         }
 
-        String escape = operand3 != null ? asVarchar(operand3, row, context) : null;
+        String escape;
+
+        if (operand3 != null) {
+            escape = asVarchar(operand3, row, context);
+
+            if (escape == null) {
+                return null;
+            }
+        } else {
+            escape = null;
+        }
 
         if (state == null) {
             state = new State();
@@ -126,12 +139,12 @@ public class LikeFunction extends TriExpression<Boolean> implements IdentifiedDa
         }
 
         private Pattern convertToJavaPattern(String pattern, String escape) {
-            if (lastJavaPattern != null && Objects.equals(pattern, lastPattern) && Objects.equals(escape, lastEscape)) {
+            if (Objects.equals(pattern, lastPattern) && Objects.equals(escape, lastEscape)) {
                 return lastJavaPattern;
             }
 
             String javaPatternStr = constructJavaPatternString(pattern, escape);
-            Pattern javaPattern = Pattern.compile(javaPatternStr);
+            Pattern javaPattern = Pattern.compile(javaPatternStr, Pattern.DOTALL);
 
             lastPattern = pattern;
             lastEscape = escape;
@@ -147,7 +160,7 @@ public class LikeFunction extends TriExpression<Boolean> implements IdentifiedDa
 
             if (escape != null) {
                 if (escape.length() != 1) {
-                    throw QueryException.error("Escape parameter should be a single character: " + escape);
+                    throw QueryException.error("ESCAPE parameter must be a single character");
                 }
 
                 escapeChar = escape.charAt(0);
@@ -195,7 +208,7 @@ public class LikeFunction extends TriExpression<Boolean> implements IdentifiedDa
         }
 
         private static QueryException escapeWildcardsOnly() {
-            return QueryException.error("Only '_' or '%' pattern wildcards could be escaped");
+            return QueryException.error("Only '_', '%' and the escape character can be escaped");
         }
     }
 }

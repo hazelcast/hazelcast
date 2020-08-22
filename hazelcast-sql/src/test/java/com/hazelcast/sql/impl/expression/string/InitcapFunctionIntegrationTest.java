@@ -17,7 +17,7 @@
 package com.hazelcast.sql.impl.expression.string;
 
 import com.hazelcast.sql.SqlColumnType;
-import com.hazelcast.sql.SqlErrorCode;
+import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.expression.SqlExpressionIntegrationTestSupport;
 import com.hazelcast.sql.support.expressions.ExpressionValue;
 import com.hazelcast.sql.support.expressions.ExpressionValue.ByteVal;
@@ -48,8 +48,9 @@ public class InitcapFunctionIntegrationTest extends SqlExpressionIntegrationTest
     @Test
     public void test_column() {
         checkColumn(new StringVal(), null);
-        checkColumn(new StringVal().field1("first"), "First");
-        checkColumn(new StringVal().field1("first second"), "First Second");
+        checkColumn(new StringVal().field1("-first"), "-First");
+        checkColumn(new StringVal().field1("fiRst"), "First");
+        checkColumn(new StringVal().field1("fiRst seCond"), "First Second");
 
         checkColumn(new CharacterVal().field1('a'), "A");
 
@@ -79,9 +80,9 @@ public class InitcapFunctionIntegrationTest extends SqlExpressionIntegrationTest
 
         check("100", "100");
         check("'100'", "100");
-        check("'abcde'", "Abcde");
+        check("'abCde'", "Abcde");
 
-        check("'100E0'", "100E0");
+        check("'100E0'", "100e0");
     }
 
     @Test
@@ -91,8 +92,8 @@ public class InitcapFunctionIntegrationTest extends SqlExpressionIntegrationTest
         check("?", null, new Object[] { null });
 
         check("?", "", "");
-        check("?", "First", "first");
-        check("?", "First Second", "first second");
+        check("?", "First", "fiRst");
+        check("?", "First Second", "fiRst seCond");
 
         check("?", "A", 'a');
 

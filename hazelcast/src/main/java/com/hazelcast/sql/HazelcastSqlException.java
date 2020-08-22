@@ -25,13 +25,13 @@ import java.util.UUID;
 /**
  * An exception occurred during SQL query execution.
  */
-public class SqlException extends HazelcastException {
+public class HazelcastSqlException extends HazelcastException {
 
     private final UUID originatingMemberId;
     private final int code;
 
     @PrivateApi
-    public SqlException(@Nonnull UUID originatingMemberId, int code, String message, Throwable cause) {
+    public HazelcastSqlException(@Nonnull UUID originatingMemberId, int code, String message, Throwable cause) {
         super(message, cause);
 
         this.originatingMemberId = originatingMemberId;
@@ -49,14 +49,11 @@ public class SqlException extends HazelcastException {
     }
 
     /**
-     * Gets the error code associated with the exception.
-     * <p>
-     * The returned value is one of the constants defined in the {@link SqlErrorCode} class.
+     * Gets the internal error code associated with the exception.
      *
-     * @return the error code associated with the exception
-     *
-     * @see SqlErrorCode
+     * @return the internal error code associated with the exception
      */
+    @PrivateApi
     public int getCode() {
         return code;
     }

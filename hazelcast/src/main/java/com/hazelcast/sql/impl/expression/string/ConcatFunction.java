@@ -24,7 +24,7 @@ import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
-import static com.hazelcast.sql.impl.expression.string.StringExpressionUtils.asVarchar;
+import static com.hazelcast.sql.impl.expression.string.StringFunctionUtils.asVarchar;
 
 /**
  * A function which accepts a string, and return another string.
@@ -47,7 +47,7 @@ public class ConcatFunction extends BiExpression<String> implements IdentifiedDa
         String first = asVarchar(operand1, row, context);
         String second = asVarchar(operand2, row, context);
 
-        return StringExpressionUtils.concat(first, second);
+        return StringFunctionUtils.concat(first, second);
     }
 
     @Override

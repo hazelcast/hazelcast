@@ -19,17 +19,21 @@ package com.hazelcast.sql.impl.state;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.sql.SqlRow;
+import com.hazelcast.sql.impl.AbstractSqlResult;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.QueryId;
-import com.hazelcast.sql.impl.SqlResultImpl;
+import com.hazelcast.sql.impl.ResultIterator;
+import com.hazelcast.sql.impl.ResultIterator.HasNextImmediatelyResult;
 import com.hazelcast.sql.impl.client.SqlPage;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+
+import static com.hazelcast.sql.impl.ResultIterator.HasNextImmediatelyResult.DONE;
+import static com.hazelcast.sql.impl.ResultIterator.HasNextImmediatelyResult.YES;
 
 /**
  * Registry of active client cursors.
@@ -40,16 +44,16 @@ public class QueryClientStateRegistry {
 
     public SqlPage registerAndFetch(
         UUID clientId,
-        SqlResultImpl cursor,
+        AbstractSqlResult result,
         int cursorBufferSize,
         InternalSerializationService serializationService
     ) {
-        QueryClientState clientCursor = new QueryClientState(clientId, cursor);
+        QueryClientState clientCursor = new QueryClientState(clientId, result);
 
         SqlPage page = fetchInternal(clientCursor, cursorBufferSize, serializationService);
 
         if (!page.isLast()) {
-            clientCursors.put(cursor.getQueryId(), clientCursor);
+            clientCursors.put(result.getQueryId(), clientCursor);
         }
 
         return page;
@@ -81,7 +85,7 @@ public class QueryClientStateRegistry {
         int cursorBufferSize,
         InternalSerializationService serializationService
     ) {
-        Iterator<SqlRow> iterator = clientCursor.getIterator();
+        ResultIterator<SqlRow> iterator = clientCursor.getIterator();
 
         List<List<Data>> page = new ArrayList<>(cursorBufferSize);
         boolean last = fetchPage(iterator, page, cursorBufferSize, serializationService);
@@ -94,23 +98,27 @@ public class QueryClientStateRegistry {
     }
 
     private static boolean fetchPage(
-        Iterator<SqlRow> iterator,
+        ResultIterator<SqlRow> iterator,
         List<List<Data>> page,
         int cursorBufferSize,
         InternalSerializationService serializationService
     ) {
-        while (iterator.hasNext()) {
+        assert cursorBufferSize > 0;
+
+        if (!iterator.hasNext()) {
+            return true;
+        }
+
+        HasNextImmediatelyResult hasNextResult;
+        do {
             SqlRow row = iterator.next();
             List<Data> convertedRow = convertRow(row, serializationService);
 
             page.add(convertedRow);
+            hasNextResult = iterator.hasNextImmediately();
+        } while (hasNextResult == YES && page.size() < cursorBufferSize);
 
-            if (page.size() == cursorBufferSize) {
-                break;
-            }
-        }
-
-        return !iterator.hasNext();
+        return hasNextResult == DONE;
     }
 
     private static List<Data> convertRow(SqlRow row, InternalSerializationService serializationService) {

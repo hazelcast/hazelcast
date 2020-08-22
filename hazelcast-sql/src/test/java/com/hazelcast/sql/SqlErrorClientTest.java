@@ -21,6 +21,7 @@ import com.hazelcast.map.IMap;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.client.SqlClientService;
 import com.hazelcast.sql.impl.state.QueryClientStateRegistry;
 import com.hazelcast.sql.impl.exec.BlockingExec;
@@ -83,7 +84,7 @@ public class SqlErrorClientTest extends SqlErrorAbstractTest {
 
     @Test
     public void testTimeout_fetch() {
-        checkTimeout(true, SqlQuery.DEFAULT_CURSOR_BUFFER_SIZE * 4);
+        checkTimeout(true, SqlStatement.DEFAULT_CURSOR_BUFFER_SIZE * 4);
     }
 
     @Test
@@ -121,7 +122,7 @@ public class SqlErrorClientTest extends SqlErrorAbstractTest {
         factory.newHazelcastInstance(getConfig().setLiteMember(true));
         client = factory.newHazelcastClient();
 
-        SqlException error = assertSqlException(client, query());
+        HazelcastSqlException error = assertSqlException(client, query());
         assertEquals(SqlErrorCode.CONNECTION_PROBLEM, error.getCode());
         assertEquals("Client must be connected to at least one data member to execute SQL queries", error.getMessage());
     }
@@ -166,7 +167,7 @@ public class SqlErrorClientTest extends SqlErrorAbstractTest {
             }
         }).start();
 
-        SqlException error = assertSqlException(client, query());
+        HazelcastSqlException error = assertSqlException(client, query());
         assertEquals(SqlErrorCode.CONNECTION_PROBLEM, error.getCode());
     }
 
@@ -175,13 +176,13 @@ public class SqlErrorClientTest extends SqlErrorAbstractTest {
         instance1 = factory.newHazelcastInstance();
         client = newClient();
 
-        populate(instance1, SqlQuery.DEFAULT_CURSOR_BUFFER_SIZE + 1);
+        populate(instance1, SqlStatement.DEFAULT_CURSOR_BUFFER_SIZE + 1);
 
         // Get the first row.
         boolean shutdown = true;
 
         try {
-            for (SqlRow ignore : client.getSql().query(query())) {
+            for (SqlRow ignore : client.getSql().execute(query())) {
                 // Shutdown the member
                 if (shutdown) {
                     instance1.shutdown();
@@ -191,7 +192,7 @@ public class SqlErrorClientTest extends SqlErrorAbstractTest {
             }
 
             fail("Should fail");
-        } catch (SqlException e) {
+        } catch (HazelcastSqlException e) {
             assertEquals(SqlErrorCode.CONNECTION_PROBLEM, e.getCode());
         }
     }
@@ -201,17 +202,17 @@ public class SqlErrorClientTest extends SqlErrorAbstractTest {
         instance1 = factory.newHazelcastInstance();
         client = newClient();
 
-        populate(instance1, SqlQuery.DEFAULT_CURSOR_BUFFER_SIZE + 1);
+        populate(instance1, SqlStatement.DEFAULT_CURSOR_BUFFER_SIZE + 1);
 
         try {
-            SqlResult result = client.getSql().query(query());
+            SqlResult result = client.getSql().execute(query());
 
             instance1.shutdown();
 
             result.close();
 
             fail("Should fail");
-        } catch (SqlException e) {
+        } catch (HazelcastSqlException e) {
             assertEquals(SqlErrorCode.CONNECTION_PROBLEM, e.getCode());
         }
     }
@@ -227,7 +228,7 @@ public class SqlErrorClientTest extends SqlErrorAbstractTest {
         Map<Integer, Integer> localMap = new HashMap<>();
         Map<Integer, Integer> map = instance1.getMap(MAP_NAME);
 
-        for (int i = 0; i < SqlQuery.DEFAULT_CURSOR_BUFFER_SIZE + 1; i++) {
+        for (int i = 0; i < SqlStatement.DEFAULT_CURSOR_BUFFER_SIZE + 1; i++) {
             localMap.put(i, i);
         }
 
@@ -236,7 +237,7 @@ public class SqlErrorClientTest extends SqlErrorAbstractTest {
         QueryClientStateRegistry cursorRegistry = sqlInternalService(instance1).getClientStateRegistry();
 
         // Create dangling cursor
-        client.getSql().query("SELECT * FROM " + MAP_NAME);
+        client.getSql().execute("SELECT * FROM " + MAP_NAME);
         assertEquals(1, cursorRegistry.getCursorCount());
 
         // Ensure that the cursor is cleared on client shutdown
@@ -249,9 +250,9 @@ public class SqlErrorClientTest extends SqlErrorAbstractTest {
         instance1 = factory.newHazelcastInstance();
         client = newClient();
 
-        SqlQuery query = new SqlQuery("SELECT * FROM map").addParameter(new BadParameter(true, false));
+        SqlStatement query = new SqlStatement("SELECT * FROM map").addParameter(new BadParameter(true, false));
 
-        SqlException error = assertSqlException(client, query);
+        HazelcastSqlException error = assertSqlException(client, query);
         assertEquals(SqlErrorCode.GENERIC, error.getCode());
         assertTrue(error.getMessage().contains("Failed to serialize query parameter"));
     }
@@ -261,9 +262,9 @@ public class SqlErrorClientTest extends SqlErrorAbstractTest {
         instance1 = factory.newHazelcastInstance();
         client = newClient();
 
-        SqlQuery query = new SqlQuery("SELECT * FROM map").addParameter(new BadParameter(false, true));
+        SqlStatement query = new SqlStatement("SELECT * FROM map").addParameter(new BadParameter(false, true));
 
-        SqlException error = assertSqlException(client, query);
+        HazelcastSqlException error = assertSqlException(client, query);
         assertEquals(SqlErrorCode.GENERIC, error.getCode());
         assertTrue(error.getMessage().contains("Read error"));
     }
@@ -277,13 +278,13 @@ public class SqlErrorClientTest extends SqlErrorAbstractTest {
             Map<Integer, BadValue> localMap = new HashMap<>();
             IMap<Integer, BadValue> map = instance1.getMap(MAP_NAME);
 
-            for (int i = 0; i < SqlQuery.DEFAULT_CURSOR_BUFFER_SIZE + 1; i++) {
+            for (int i = 0; i < SqlStatement.DEFAULT_CURSOR_BUFFER_SIZE + 1; i++) {
                 localMap.put(i, new BadValue());
             }
 
             map.putAll(localMap);
 
-            try (SqlResult result = client.getSql().query("SELECT this FROM " + MAP_NAME)) {
+            try (SqlResult result = client.getSql().execute("SELECT this FROM " + MAP_NAME)) {
                 boolean first = true;
 
                 for (SqlRow ignore : result) {
@@ -295,7 +296,7 @@ public class SqlErrorClientTest extends SqlErrorAbstractTest {
                 }
 
                 fail("Should fail");
-            } catch (SqlException e) {
+            } catch (HazelcastSqlException e) {
                 assertEquals(SqlErrorCode.GENERIC, e.getCode());
                 assertEquals(client.getLocalEndpoint().getUuid(), e.getOriginatingMemberId());
                 assertTrue(e.getMessage().contains("Failed to deserialize query result value"));

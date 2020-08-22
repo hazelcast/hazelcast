@@ -16,13 +16,20 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.core.HazelcastException;
 import com.hazelcast.map.IMap;
 import com.hazelcast.memory.MemorySize;
 import com.hazelcast.memory.MemoryUnit;
 import com.hazelcast.memory.NativeOutOfMemoryError;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import java.util.List;
+import java.util.Objects;
+
 import static com.hazelcast.internal.util.Preconditions.checkPositive;
 import static com.hazelcast.internal.util.Preconditions.isNotNull;
+import static java.util.Objects.requireNonNull;
 
 /**
  * Configures native memory region.
@@ -66,11 +73,8 @@ public class NativeMemoryConfig {
     private int minBlockSize = DEFAULT_MIN_BLOCK_SIZE;
     private int pageSize = DEFAULT_PAGE_SIZE;
     private float metadataSpacePercentage = DEFAULT_METADATA_SPACE_PERCENTAGE;
-    /**
-     * Path to the non-volatile memory directory. {@code null} indicates the
-     * standard RAM is used.
-     */
-    private String persistentMemoryDirectory;
+
+    private PersistentMemoryConfig persistentMemoryConfig = new PersistentMemoryConfig();
 
     public NativeMemoryConfig() {
     }
@@ -82,7 +86,7 @@ public class NativeMemoryConfig {
         minBlockSize = nativeMemoryConfig.minBlockSize;
         pageSize = nativeMemoryConfig.pageSize;
         metadataSpacePercentage = nativeMemoryConfig.metadataSpacePercentage;
-        persistentMemoryDirectory = nativeMemoryConfig.persistentMemoryDirectory;
+        persistentMemoryConfig = new PersistentMemoryConfig(nativeMemoryConfig.persistentMemoryConfig);
     }
 
     /**
@@ -222,25 +226,74 @@ public class NativeMemoryConfig {
     }
 
     /**
-     * Returns the persistent memory directory (e.g. Intel Optane) to be used to store memory structures allocated by native
-     * memory manager.
-     * <p>
-     * Default value is {@code null}. It indicates that volatile RAM is being used.
-     * {@code null}
+     * Returns the persistent memory configuration this native memory
+     * configuration uses.
+     *
+     * @return the persistent memory configuration
      */
-    public String getPersistentMemoryDirectory() {
-        return persistentMemoryDirectory;
+    @Nonnull
+    public PersistentMemoryConfig getPersistentMemoryConfig() {
+        return persistentMemoryConfig;
     }
 
     /**
-     * Sets the persistent memory directory (e.g. Intel Optane) to be used to store memory structures allocated by native memory
-     * manager.
+     * Sets the persistent memory configuration this native memory
+     * configuration uses.
+     *
+     * @param persistentMemoryConfig The persistent memory configuration to use
+     */
+    public void setPersistentMemoryConfig(@Nonnull PersistentMemoryConfig persistentMemoryConfig) {
+        this.persistentMemoryConfig = requireNonNull(persistentMemoryConfig);
+    }
+
+    /**
+     * Returns the persistent memory directory (e.g. Intel Optane) to be
+     * used to store memory structures allocated by native memory manager.
+     * If there are multiple persistent memory directories are defined in
+     * {@link #persistentMemoryConfig}, an {@link IllegalStateException}
+     * is thrown.
+     *
+     * @see PersistentMemoryConfig#getDirectoryConfigs()
+     * @deprecated Since 4.1 multiple persistent memory directories are
+     * supported. Please use {@link PersistentMemoryConfig#getDirectoryConfigs()}
+     * instead.
+     */
+    @Deprecated
+    @Nullable
+    public String getPersistentMemoryDirectory() {
+        List<PersistentMemoryDirectoryConfig> directoryConfigs = persistentMemoryConfig.getDirectoryConfigs();
+        int directoriesDefined = directoryConfigs.size();
+        if (directoriesDefined > 1) {
+            throw new HazelcastException("There are multiple persistent memory directories configured. Please use "
+                    + "PersistentMemoryConfig.getDirectoryConfigs()!");
+        }
+
+        return directoriesDefined == 1 ? directoryConfigs.get(0).getDirectory() : null;
+    }
+
+    /**
+     * Sets the persistent memory directory (e.g. Intel Optane) to be used
+     * to store memory structures allocated by native memory manager. If
+     * the {@link #persistentMemoryConfig} already contains directory
+     * definition, it is overridden with the provided {@code directory}.
      *
      * @param directory the persistent memory directory
      * @return this {@link NativeMemoryConfig} instance
+     * @see #getPersistentMemoryConfig()
+     * @see PersistentMemoryConfig#addDirectoryConfig(PersistentMemoryDirectoryConfig)
+     * @deprecated Since 4.1 multiple persistent memory directories are
+     * supported. Please use {@link #setPersistentMemoryConfig(PersistentMemoryConfig)}
+     * or {@link PersistentMemoryConfig#addDirectoryConfig(PersistentMemoryDirectoryConfig)}
+     * instead.
      */
-    public NativeMemoryConfig setPersistentMemoryDirectory(String directory) {
-        this.persistentMemoryDirectory = directory;
+    @Nonnull
+    @Deprecated
+    public NativeMemoryConfig setPersistentMemoryDirectory(@Nullable String directory) {
+        if (directory != null) {
+            this.persistentMemoryConfig.setDirectoryConfig(new PersistentMemoryDirectoryConfig(directory));
+        } else {
+            this.persistentMemoryConfig.getDirectoryConfigs().clear();
+        }
         return this;
     }
 
@@ -287,11 +340,10 @@ public class NativeMemoryConfig {
         if (Float.compare(that.metadataSpacePercentage, metadataSpacePercentage) != 0) {
             return false;
         }
-        if (size != null ? !size.equals(that.size) : that.size != null) {
+        if (!Objects.equals(size, that.size)) {
             return false;
         }
-        if (persistentMemoryDirectory != null ? !persistentMemoryDirectory.equals(that.persistentMemoryDirectory)
-                : that.persistentMemoryDirectory != null) {
+        if (!persistentMemoryConfig.equals(that.persistentMemoryConfig)) {
             return false;
         }
         return allocatorType == that.allocatorType;
@@ -305,7 +357,7 @@ public class NativeMemoryConfig {
         result = 31 * result + minBlockSize;
         result = 31 * result + pageSize;
         result = 31 * result + (metadataSpacePercentage != +0.0f ? Float.floatToIntBits(metadataSpacePercentage) : 0);
-        result = 31 * result + (persistentMemoryDirectory != null ? persistentMemoryDirectory.hashCode() : 0);
+        result = 31 * result + (persistentMemoryConfig.hashCode());
         return result;
     }
 
@@ -318,7 +370,7 @@ public class NativeMemoryConfig {
                 + ", minBlockSize=" + minBlockSize
                 + ", pageSize=" + pageSize
                 + ", metadataSpacePercentage=" + metadataSpacePercentage
-                + ", persistentMemoryDirectory=" + persistentMemoryDirectory
+                + ", persistentMemoryConfig=" + persistentMemoryConfig
                 + '}';
     }
 }

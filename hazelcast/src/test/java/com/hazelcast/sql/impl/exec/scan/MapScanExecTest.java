@@ -32,7 +32,7 @@ import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.partition.Partition;
 import com.hazelcast.partition.PartitionService;
-import com.hazelcast.sql.SqlErrorCode;
+import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.SqlTestSupport;
 import com.hazelcast.sql.impl.exec.IterationResult;
@@ -423,7 +423,7 @@ public class MapScanExecTest extends SqlTestSupport {
         );
 
         QueryException exception = assertThrows(QueryException.class, () -> exec.setup(emptyFragmentContext()));
-        assertEquals(SqlErrorCode.PARTITION_NOT_OWNED, exception.getCode());
+        assertEquals(SqlErrorCode.PARTITION_DISTRIBUTION_CHANGED, exception.getCode());
         assertTrue(exception.isInvalidatePlan());
     }
 
@@ -502,7 +502,7 @@ public class MapScanExecTest extends SqlTestSupport {
 
             // Try advance, should fail.
             QueryException exception = assertThrows(QueryException.class, exec::advance);
-            assertEquals(SqlErrorCode.PARTITION_MIGRATED, exception.getCode());
+            assertEquals(SqlErrorCode.PARTITION_DISTRIBUTION_CHANGED, exception.getCode());
             assertTrue(exception.isInvalidatePlan());
         } finally {
             instance3.shutdown();

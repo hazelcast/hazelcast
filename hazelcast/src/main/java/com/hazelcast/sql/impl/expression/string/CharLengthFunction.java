@@ -39,9 +39,9 @@ public class CharLengthFunction extends UniExpression<Integer> implements Identi
 
     @Override
     public Integer eval(Row row, ExpressionEvalContext context) {
-        String value = StringExpressionUtils.asVarchar(operand, row, context);
+        String value = StringFunctionUtils.asVarchar(operand, row, context);
 
-        return StringExpressionUtils.charLength(value);
+        return StringFunctionUtils.charLength(value);
     }
 
     @Override

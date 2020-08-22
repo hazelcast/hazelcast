@@ -17,7 +17,7 @@
 package com.hazelcast.sql.impl.expression.string;
 
 import com.hazelcast.sql.SqlColumnType;
-import com.hazelcast.sql.SqlErrorCode;
+import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.expression.SqlExpressionIntegrationTestSupport;
 import com.hazelcast.sql.support.expressions.ExpressionValue;
 import com.hazelcast.sql.support.expressions.ExpressionValue.ByteVal;
@@ -56,8 +56,8 @@ public class UpperFunctionIntegrationTest extends SqlExpressionIntegrationTestSu
         checkColumn(new ExpressionValue.FloatVal().field1(100.5f), Float.toString(100.5f));
         checkColumn(new ExpressionValue.DoubleVal().field1(100.5d), Double.toString(100.5d));
 
-        ObjectVal object = new ObjectVal();
-        checkColumn(new ObjectVal().field1(object), object.toString().toUpperCase());
+        put(new ObjectVal());
+        checkFailure("field1", SqlErrorCode.PARSING, "Cannot apply 'UPPER' to arguments of type 'UPPER(<OBJECT>)'");
     }
 
     private void checkColumn(ExpressionValue value, String expectedResult) {

@@ -589,6 +589,12 @@ hazelcast:
     min-block-size: 123
     page-size: 123
     metadata-space-percentage: 12.5
+    persistent-memory:
+      directories:
+        - directory: /mnt/pmem0
+          numa-node: 0
+        - directory: /mnt/pmem1
+          numa-node: 1
 
   security:
     enabled: false
@@ -935,4 +941,4 @@ hazelcast:
   sql:
     executor-pool-size: 16
     operation-pool-size: 8
-    query-timeout-millis: 0
+    statement-timeout-millis: 0

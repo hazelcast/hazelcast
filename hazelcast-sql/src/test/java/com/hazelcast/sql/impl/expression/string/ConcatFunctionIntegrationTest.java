@@ -17,7 +17,7 @@
 package com.hazelcast.sql.impl.expression.string;
 
 import com.hazelcast.sql.SqlColumnType;
-import com.hazelcast.sql.SqlErrorCode;
+import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.expression.SqlExpressionIntegrationTestSupport;
 import com.hazelcast.sql.support.expressions.ExpressionBiValue;
 import com.hazelcast.sql.support.expressions.ExpressionType;
@@ -54,8 +54,8 @@ public class ConcatFunctionIntegrationTest extends SqlExpressionIntegrationTestS
 
         check("this || true", "1true");
 
-        check("this || null", "1");
-        check("null || null", "");
+        check("this || null", null);
+        check("null || null", null);
 
         check("1 || 2", "12");
         check("'1' || '2'", "12");
@@ -67,21 +67,21 @@ public class ConcatFunctionIntegrationTest extends SqlExpressionIntegrationTestS
 
         check("this || ?", "12", "2");
         check("this || ?", "12", '2');
-        check("this || ?", "1", new Object[] { null });
+        check("this || ?", null, new Object[] { null });
 
         check("? || this", "21", "2");
         check("? || this", "21", '2');
-        check("? || this", "1", new Object[] { null });
+        check("? || this", null, new Object[] { null });
 
         check("? || ?", "12", "1", "2");
-        check("? || ?", "1", "1", null);
-        check("? || ?", "2", null, "2");
-        check("? || ?", "", null, null);
+        check("? || ?", null, "1", null);
+        check("? || ?", null, null, "2");
+        check("? || ?", null, null, null);
 
-        check("? || null", "1", "1");
-        check("null || ?", "1", "1");
+        check("? || null", null, "1");
+        check("null || ?", null, "1");
 
-        checkFailure("this || ?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from INTEGER to VARCHAR " , 2);
+        checkFailure("this || ?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from INTEGER to VARCHAR ", 2);
     }
 
     @Test
@@ -98,17 +98,17 @@ public class ConcatFunctionIntegrationTest extends SqlExpressionIntegrationTestS
 
                 checkColumn(
                     ExpressionBiValue.createBiValue(clazz, 0, null, type2.valueFrom()),
-                    "" + type2.valueFrom()
+                    null
                 );
 
                 checkColumn(
                     ExpressionBiValue.createBiValue(clazz, 0, type1.valueFrom(), null),
-                    "" + type1.valueFrom()
+                    null
                 );
 
                 checkColumn(
                     ExpressionBiValue.createBiValue(clazz, 0, null, null),
-                    ""
+                    null
                 );
             }
         }
@@ -118,12 +118,6 @@ public class ConcatFunctionIntegrationTest extends SqlExpressionIntegrationTestS
         put(value);
 
         check("field1 || field2", expectedResult);
-    }
-
-    private void checkColumnFailure(ExpressionBiValue value, String expectedErrorMessage) {
-        put(value);
-
-        checkFailure("field1 || field2", SqlErrorCode.PARSING, expectedErrorMessage);
     }
 
     /**

@@ -17,12 +17,14 @@
 package com.hazelcast.sql.impl.exec.root;
 
 import com.hazelcast.sql.impl.QueryException;
+import com.hazelcast.sql.impl.ResultIterator;
 import com.hazelcast.sql.impl.row.Row;
-import com.hazelcast.sql.impl.worker.QueryFragmentContext;
 
-import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
+
+import static com.hazelcast.sql.impl.ResultIterator.HasNextImmediatelyResult.DONE;
+import static com.hazelcast.sql.impl.ResultIterator.HasNextImmediatelyResult.YES;
 
 /**
  * Blocking array-based result consumer which delivers the results to API caller.
@@ -34,27 +36,31 @@ public class BlockingRootResultConsumer implements RootResultConsumer {
     /** Iterator over produced rows. */
     private final InternalIterator iterator = new InternalIterator();
 
-    /** Query context to schedule root execution when the next batch is needed. */
-    private volatile QueryFragmentContext context;
+    /** A callback to schedule root execution when the next batch is needed. */
+    private volatile ScheduleCallback scheduleCallback;
 
     /** The batch that is currently being consumed. */
     private List<Row> currentBatch;
 
-    /** When "true" no more batches are expected. */
+    /** When "true", no more batches are expected. */
     private boolean done;
 
     /** Error which occurred during query execution. */
     private QueryException doneError;
 
     @Override
-    public void setup(QueryFragmentContext context) {
-        this.context = context;
+    public void setup(ScheduleCallback scheduleCallback) {
+        this.scheduleCallback = scheduleCallback;
     }
 
     @Override
     public boolean consume(List<Row> batch, boolean last) {
         synchronized (mux) {
-            assert !done;
+            if (done) {
+                // An error happened after the exec was scheduled - reject consumption,
+                // the caller will not be scheduled again.
+                return false;
+            }
 
             if (currentBatch == null) {
                 if (!batch.isEmpty()) {
@@ -135,21 +141,21 @@ public class BlockingRootResultConsumer implements RootResultConsumer {
         }
 
         // We may reach this place only if some rows are already produced, and this is possible only after the setup,
-        // so the context should be initialized.
-        assert context != null;
+        // so the callback should be initialized.
+        assert scheduleCallback != null;
 
-        context.schedule();
+        scheduleCallback.run();
     }
 
     @Override
-    public Iterator<Row> iterator() {
+    public ResultIterator<Row> iterator() {
         return iterator;
     }
 
     /**
      * Iterator over results.
      */
-    private class InternalIterator implements Iterator<Row> {
+    private class InternalIterator implements ResultIterator<Row> {
 
         private List<Row> batch;
         private int position;
@@ -167,6 +173,12 @@ public class BlockingRootResultConsumer implements RootResultConsumer {
             }
 
             return true;
+        }
+
+        @Override
+        public HasNextImmediatelyResult hasNextImmediately() {
+            // We never return RETRY, but we block until next item is available or the end is reached.
+            return hasNext() ? YES : DONE;
         }
 
         @Override

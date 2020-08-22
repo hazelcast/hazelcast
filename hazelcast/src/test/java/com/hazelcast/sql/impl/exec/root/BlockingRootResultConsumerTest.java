@@ -19,7 +19,6 @@ package com.hazelcast.sql.impl.exec.root;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.row.HeapRow;
 import com.hazelcast.sql.impl.row.Row;
-import com.hazelcast.sql.impl.worker.QueryFragmentContext;
 import com.hazelcast.sql.impl.worker.QueryFragmentScheduleCallback;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -31,7 +30,6 @@ import org.junit.runner.RunWith;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -39,6 +37,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -52,7 +51,7 @@ public class BlockingRootResultConsumerTest extends HazelcastTestSupport {
     public void testConsumeAtMostOneBatch() {
         BlockingRootResultConsumer consumer = new BlockingRootResultConsumer();
 
-        List<Row> batch = Collections.singletonList(HeapRow.of(1));
+        List<Row> batch = singletonList(HeapRow.of(1));
 
         assertTrue(consumer.consume(batch, false));
         assertFalse(consumer.consume(batch, false));
@@ -65,7 +64,7 @@ public class BlockingRootResultConsumerTest extends HazelcastTestSupport {
         Iterator<Row> iterator = consumer.iterator();
         assertSame(iterator, consumer.iterator());
 
-        consumer.consume(Collections.singletonList(HeapRow.of(1)), true);
+        consumer.consume(singletonList(HeapRow.of(1)), true);
 
         assertTrue(iterator.hasNext());
         assertEquals(1, (int) iterator.next().get(0));
@@ -84,13 +83,13 @@ public class BlockingRootResultConsumerTest extends HazelcastTestSupport {
         List<Row> allRows = new ArrayList<>();
         ArrayDeque<List<Row>> batches = new ArrayDeque<>();
 
-        int valueCouner = 0;
+        int valueCounter = 0;
 
         for (int i = 0; i < batchCount; i++) {
             List<Row> batch = new ArrayList<>();
 
             for (int j = 0; j < rowsPerBatch; j++) {
-                HeapRow row = HeapRow.of(valueCouner++);
+                HeapRow row = HeapRow.of(valueCounter++);
 
                 allRows.add(row);
                 batch.add(row);
@@ -116,7 +115,7 @@ public class BlockingRootResultConsumerTest extends HazelcastTestSupport {
             return true;
         };
 
-        consumer.setup(new QueryFragmentContext(Collections.emptyList(), scheduleCallback, null));
+        consumer.setup(() -> scheduleCallback.schedule(true));
 
         // Start consuming.
         IteratorRunnable runnable = startConsuming(consumer);
@@ -159,7 +158,7 @@ public class BlockingRootResultConsumerTest extends HazelcastTestSupport {
             return true;
         };
 
-        consumer.setup(new QueryFragmentContext(Collections.emptyList(), scheduleCallback, null));
+        consumer.setup(() -> scheduleCallback.schedule(true));
 
         // Start consuming.
         IteratorRunnable runnable = startConsuming(consumer);

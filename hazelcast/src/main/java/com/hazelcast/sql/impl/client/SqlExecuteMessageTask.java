@@ -22,9 +22,9 @@ import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.security.permission.SqlPermission;
-import com.hazelcast.sql.SqlQuery;
+import com.hazelcast.sql.SqlStatement;
+import com.hazelcast.sql.impl.AbstractSqlResult;
 import com.hazelcast.sql.impl.SqlInternalService;
-import com.hazelcast.sql.impl.SqlResultImpl;
 import com.hazelcast.sql.impl.SqlServiceImpl;
 
 import java.security.Permission;
@@ -42,7 +42,7 @@ public class SqlExecuteMessageTask extends SqlAbstractMessageTask<SqlExecuteCode
     @Override
     protected Object call() throws Exception {
         try {
-            SqlQuery query = new SqlQuery(parameters.sql);
+            SqlStatement query = new SqlStatement(parameters.sql);
 
             for (Data param : parameters.parameters) {
                 query.addParameter(serializationService.toObject(param));
@@ -53,7 +53,7 @@ public class SqlExecuteMessageTask extends SqlAbstractMessageTask<SqlExecuteCode
 
             SqlServiceImpl sqlService = nodeEngine.getSqlService();
 
-            SqlResultImpl result = (SqlResultImpl) sqlService.query(query);
+            AbstractSqlResult result = (AbstractSqlResult) sqlService.execute(query);
 
             if (result.isUpdateCount()) {
                 return SqlExecuteResponse.updateCountResponse(result.updateCount());

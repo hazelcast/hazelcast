@@ -18,6 +18,7 @@ package com.hazelcast.sql.impl.calcite.opt;
 
 import com.hazelcast.sql.impl.QueryUtils;
 import com.hazelcast.sql.impl.SqlTestSupport;
+import com.hazelcast.sql.impl.calcite.HazelcastSqlBackend;
 import com.hazelcast.sql.impl.calcite.OptimizerContext;
 import com.hazelcast.sql.impl.calcite.TestMapTable;
 import com.hazelcast.sql.impl.calcite.opt.cost.Cost;
@@ -27,10 +28,11 @@ import com.hazelcast.sql.impl.calcite.opt.logical.LogicalRules;
 import com.hazelcast.sql.impl.calcite.opt.logical.RootLogicalRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.PhysicalRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.PhysicalRules;
+import com.hazelcast.sql.impl.calcite.parse.QueryParseResult;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastSchema;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastSchemaUtils;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
-import com.hazelcast.sql.impl.calcite.schema.MapTableStatistic;
+import com.hazelcast.sql.impl.calcite.schema.HazelcastTableStatistic;
 import com.hazelcast.sql.impl.schema.ConstantTableStatistics;
 import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.schema.map.PartitionedMapTable;
@@ -54,6 +56,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static com.hazelcast.sql.impl.QueryUtils.SCHEMA_NAME_PARTITIONED;
 import static com.hazelcast.sql.impl.type.QueryDataType.INT;
 import static junit.framework.TestCase.assertEquals;
 
@@ -99,7 +102,9 @@ public abstract class OptimizerTestSupport extends SqlTestSupport {
         OptimizerContext context = OptimizerContext.create(
             HazelcastSchemaUtils.createCatalog(schema),
             QueryUtils.prepareSearchPaths(null, null),
-            nodeCount
+            nodeCount,
+            new HazelcastSqlBackend(null),
+            null
         );
 
         return optimize(sql, context, physical);
@@ -113,8 +118,10 @@ public abstract class OptimizerTestSupport extends SqlTestSupport {
      * @return Result.
      */
     private static Result optimize(String sql, OptimizerContext context, boolean physical) {
-        SqlNode node = context.parse(sql).getNode();
-        RelNode convertedRel = context.convert(node).getRel();
+        QueryParseResult parseResult = context.parse(sql);
+
+        SqlNode node = parseResult.getNode();
+        RelNode convertedRel = context.convert(parseResult).getRel();
         LogicalRel logicalRel = optimizeLogicalInternal(context, convertedRel);
         PhysicalRel physicalRel = physical ? optimizePhysicalInternal(context, logicalRel) : null;
 
@@ -142,6 +149,8 @@ public abstract class OptimizerTestSupport extends SqlTestSupport {
         long rowCount
     ) {
         PartitionedMapTable table = new PartitionedMapTable(
+            SCHEMA_NAME_PARTITIONED,
+            name,
             name,
             fields,
             new ConstantTableStatistics(rowCount),
@@ -149,7 +158,7 @@ public abstract class OptimizerTestSupport extends SqlTestSupport {
             null
         );
 
-        return new HazelcastTable(table, new MapTableStatistic(rowCount));
+        return new HazelcastTable(table, new HazelcastTableStatistic(rowCount));
     }
 
     /**

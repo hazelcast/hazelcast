@@ -16,7 +16,6 @@
 
 package com.hazelcast.sql.impl;
 
-import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.SqlRowMetadata;
 import com.hazelcast.sql.impl.plan.Plan;
@@ -26,18 +25,17 @@ import com.hazelcast.sql.impl.state.QueryState;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.Iterator;
 import java.util.NoSuchElementException;
 
 /**
  * Cursor implementation.
  */
-public final class SqlResultImpl implements SqlResult {
+public final class SqlResultImpl extends AbstractSqlResult {
 
     private final boolean isUpdateCount;
     private final QueryState state;
     private final SqlRowMetadata rowMetadata;
-    private Iterator<SqlRow> iterator;
+    private ResultIterator<SqlRow> iterator;
     private final long updatedCount;
 
     private SqlResultImpl(boolean isUpdateCount, QueryState state, long updatedCount) {
@@ -66,15 +64,13 @@ public final class SqlResultImpl implements SqlResult {
 
     @Nonnull
     @Override
-    public Iterator<SqlRow> iterator() {
+    public ResultIterator<SqlRow> iterator() {
         checkIsRowsResult();
 
         if (iterator == null) {
-            Iterator<SqlRow> iterator0 = new RowToSqlRowIterator(getQueryInitiatorState().getResultProducer().iterator());
+            iterator = new RowToSqlRowIterator(getQueryInitiatorState().getResultProducer().iterator());
 
-            iterator = iterator0;
-
-            return iterator0;
+            return iterator;
         } else {
             throw new IllegalStateException("Iterator can be requested only once.");
         }
@@ -91,11 +87,6 @@ public final class SqlResultImpl implements SqlResult {
     @Override
     public boolean isUpdateCount() {
         return isUpdateCount;
-    }
-
-    @Override
-    public void close() {
-        closeOnError(QueryException.cancelledByUser());
     }
 
     private void checkIsRowsResult() {
@@ -133,11 +124,11 @@ public final class SqlResultImpl implements SqlResult {
         return state.getInitiatorState();
     }
 
-    private final class RowToSqlRowIterator implements Iterator<SqlRow> {
+    private final class RowToSqlRowIterator implements ResultIterator<SqlRow> {
 
-        private final Iterator<Row> delegate;
+        private final ResultIterator<Row> delegate;
 
-        private RowToSqlRowIterator(Iterator<Row> delegate) {
+        private RowToSqlRowIterator(ResultIterator<Row> delegate) {
             this.delegate = delegate;
         }
 
@@ -145,6 +136,15 @@ public final class SqlResultImpl implements SqlResult {
         public boolean hasNext() {
             try {
                 return delegate.hasNext();
+            } catch (Exception e) {
+                throw QueryUtils.toPublicException(e, state.getLocalMemberId());
+            }
+        }
+
+        @Override
+        public HasNextImmediatelyResult hasNextImmediately() {
+            try {
+                return delegate.hasNextImmediately();
             } catch (Exception e) {
                 throw QueryUtils.toPublicException(e, state.getLocalMemberId());
             }

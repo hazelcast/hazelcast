@@ -20,8 +20,4 @@ package com.hazelcast.sql.impl.optimizer;
  * Abstraction over execution plan that allows for specialization for an execution backend.
  */
 public interface SqlPlan {
-    /**
-     * @return Type of the plan.
-     */
-    SqlPlanType getType();
 }

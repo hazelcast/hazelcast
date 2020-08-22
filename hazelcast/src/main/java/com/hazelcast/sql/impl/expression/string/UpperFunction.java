@@ -39,9 +39,9 @@ public class UpperFunction extends UniExpression<String> implements IdentifiedDa
 
     @Override
     public String eval(Row row, ExpressionEvalContext context) {
-        String value = StringExpressionUtils.asVarchar(operand, row, context);
+        String value = StringFunctionUtils.asVarchar(operand, row, context);
 
-        return StringExpressionUtils.upper(value);
+        return StringFunctionUtils.upper(value);
     }
 
     @Override

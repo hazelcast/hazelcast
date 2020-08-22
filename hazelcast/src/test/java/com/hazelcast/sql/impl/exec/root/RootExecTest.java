@@ -17,6 +17,7 @@
 package com.hazelcast.sql.impl.exec.root;
 
 import com.hazelcast.sql.impl.QueryException;
+import com.hazelcast.sql.impl.ResultIterator;
 import com.hazelcast.sql.impl.SqlTestSupport;
 import com.hazelcast.sql.impl.UpstreamExec;
 import com.hazelcast.sql.impl.exec.IterationResult;
@@ -33,12 +34,10 @@ import org.junit.runner.RunWith;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -56,7 +55,6 @@ public class RootExecTest extends SqlTestSupport {
 
         QueryFragmentContext context = emptyFragmentContext();
         exec.setup(context);
-        assertSame(context, consumer.getContext());
 
         assertEquals(IterationResult.WAIT, exec.advance());
         assertEquals(0, consumer.getRowCount());
@@ -110,13 +108,11 @@ public class RootExecTest extends SqlTestSupport {
 
     private static final class TestConsumer implements RootResultConsumer {
 
-        private QueryFragmentContext context;
-
         private List<Row> rows;
         private boolean last;
 
         @Override
-        public Iterator<Row> iterator() {
+        public ResultIterator<Row> iterator() {
             return null;
         }
 
@@ -126,8 +122,8 @@ public class RootExecTest extends SqlTestSupport {
         }
 
         @Override
-        public void setup(QueryFragmentContext context) {
-            this.context = context;
+        public void setup(ScheduleCallback scheduleCallback) {
+            // No-op.
         }
 
         @Override
@@ -140,10 +136,6 @@ public class RootExecTest extends SqlTestSupport {
 
                 return true;
             }
-        }
-
-        private QueryFragmentContext getContext() {
-            return context;
         }
 
         private int getRowCount() {

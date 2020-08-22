@@ -22,7 +22,7 @@ import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
-import com.hazelcast.sql.SqlErrorCode;
+import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.QueryException;
 
 import java.util.Iterator;
@@ -92,7 +92,7 @@ public class MapScanExecIterator implements KeyValueIterator {
 
                     if (!isOwned) {
                         throw QueryException.error(
-                            SqlErrorCode.PARTITION_NOT_OWNED,
+                            SqlErrorCode.PARTITION_DISTRIBUTION_CHANGED,
                             "Partition is not owned by member: " + nextPart
                         ).withInvalidate();
                     }

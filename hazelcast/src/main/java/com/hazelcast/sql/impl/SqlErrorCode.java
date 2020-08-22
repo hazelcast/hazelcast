@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql;
+package com.hazelcast.sql.impl;
 
 /**
  * Error codes used in Hazelcast SQL.
@@ -32,8 +32,8 @@ public final class SqlErrorCode {
     /** Query was cancelled due to timeout. */
     public static final int TIMEOUT = 1004;
 
-    /** An error caused by concurrent migration of partition to other member. */
-    public static final int PARTITION_MIGRATED = 1005;
+    /** Partition distribution has changed. */
+    public static final int PARTITION_DISTRIBUTION_CHANGED = 1005;
 
     /** An error caused by a concurrent destroy of a map. */
     public static final int MAP_DESTROYED = 1006;
@@ -43,9 +43,6 @@ public final class SqlErrorCode {
 
     /** Generic parsing error. */
     public static final int PARSING = 1008;
-
-    /** Partition is not owned by a member. */
-    public static final int PARTITION_NOT_OWNED = 1009;
 
     /** An error with data conversion or transformation. */
     public static final int DATA_EXCEPTION = 2000;

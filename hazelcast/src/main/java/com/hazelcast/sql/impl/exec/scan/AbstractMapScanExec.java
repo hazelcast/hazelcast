@@ -18,7 +18,7 @@ package com.hazelcast.sql.impl.exec.scan;
 
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.query.impl.getters.Extractors;
-import com.hazelcast.sql.SqlErrorCode;
+import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.exec.AbstractExec;
 import com.hazelcast.sql.impl.exec.IterationResult;
@@ -130,7 +130,7 @@ public abstract class AbstractMapScanExec extends AbstractExec {
         // Check for concurrent migration
         if (!validateMigrationStamp(migrationStamp)) {
             throw QueryException.error(
-                SqlErrorCode.PARTITION_MIGRATED, "Map scan failed due to concurrent partition migration "
+                SqlErrorCode.PARTITION_DISTRIBUTION_CHANGED, "Map scan failed due to concurrent partition migration "
                 + "(result consistency cannot be guaranteed)"
             ).withInvalidate();
         }

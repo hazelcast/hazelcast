@@ -23,7 +23,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.query.impl.getters.Extractors;
-import com.hazelcast.sql.SqlErrorCode;
+import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.SqlDataSerializerHook;
 import com.hazelcast.sql.impl.SqlTestSupport;
@@ -38,6 +38,7 @@ import org.junit.runner.RunWith;
 import java.io.IOException;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -55,7 +56,7 @@ public class GenericQueryTargetTest extends SqlTestSupport {
     }
 
     private void checkTarget(GenericQueryTarget target) {
-        TestObject object = new TestObject(1);
+        TestObject object = new TestObject(1, 2);
 
         checkTarget(target, object, object);
         checkTarget(target, object, toData(object));
@@ -69,6 +70,7 @@ public class GenericQueryTargetTest extends SqlTestSupport {
         QueryExtractor targetExtractor = target.createExtractor(null, QueryDataType.OBJECT);
         TestObject extractedObject = (TestObject) targetExtractor.get();
         assertEquals(originalObject.getField(), extractedObject.getField());
+        assertEquals(originalObject.getField2(), extractedObject.getField2());
 
         // Bad top-level extractor.
         QueryExtractor badTargetExtractor = target.createExtractor(null, QueryDataType.INT);
@@ -76,22 +78,20 @@ public class GenericQueryTargetTest extends SqlTestSupport {
         assertEquals(SqlErrorCode.DATA_EXCEPTION, error.getCode());
         assertTrue(error.getMessage().startsWith("Failed to extract map entry " + (target.isKey() ? "key" : "value")));
 
-        // Good field executor.
+        // Good field extractor.
         QueryExtractor fieldExtractor = target.createExtractor("field", QueryDataType.OBJECT);
         int extractedField = (Integer) fieldExtractor.get();
         assertEquals(originalObject.getField(), extractedField);
 
         // Bad field extractor (type).
-        QueryExtractor badFieldTypeExtractor = target.createExtractor("field", QueryDataType.DATE);
+        QueryExtractor badFieldTypeExtractor = target.createExtractor("field", QueryDataType.BIGINT);
         error = assertThrows(QueryException.class, badFieldTypeExtractor::get);
         assertEquals(SqlErrorCode.DATA_EXCEPTION, error.getCode());
         assertTrue(error.getMessage().startsWith("Failed to extract map entry " + (target.isKey() ? "key" : "value") + " field"));
 
         // Bad field extractor (name).
-        QueryExtractor badFieldNameExtractor = target.createExtractor("field2", QueryDataType.INT);
-        error = assertThrows(QueryException.class, badFieldNameExtractor::get);
-        assertEquals(SqlErrorCode.DATA_EXCEPTION, error.getCode());
-        assertTrue(error.getMessage().startsWith("Failed to extract map entry " + (target.isKey() ? "key" : "value") + " field"));
+        QueryExtractor badFieldNameExtractor = target.createExtractor("badField", QueryDataType.INT);
+        assertNull(badFieldNameExtractor.get());
     }
 
     private static Data toData(TestObject object) {
@@ -115,27 +115,35 @@ public class GenericQueryTargetTest extends SqlTestSupport {
     private static class TestObject implements DataSerializable {
 
         private int field;
+        private int field2;
 
         private TestObject() {
             // No-op.
         }
 
-        private TestObject(int field) {
+        private TestObject(int field, int field2) {
             this.field = field;
+            this.field2 = field2;
         }
 
         private int getField() {
             return field;
         }
 
+        public int getField2() {
+            return field2;
+        }
+
         @Override
         public void writeData(ObjectDataOutput out) throws IOException {
             out.writeInt(field);
+            out.writeInt(field2);
         }
 
         @Override
         public void readData(ObjectDataInput in) throws IOException {
             field = in.readInt();
+            field2 = in.readInt();
         }
     }
 }

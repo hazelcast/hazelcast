@@ -16,7 +16,7 @@
 
 package com.hazelcast.sql.impl.client;
 
-import com.hazelcast.sql.SqlException;
+import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.impl.QueryUtils;
 
 import java.util.UUID;
@@ -30,7 +30,7 @@ public final class SqlClientUtils {
     }
 
     public static SqlError exceptionToClientError(Exception exception, UUID localMemberId) {
-        SqlException sqlException = QueryUtils.toPublicException(exception, localMemberId);
+        HazelcastSqlException sqlException = QueryUtils.toPublicException(exception, localMemberId);
 
         return new SqlError(
             sqlException.getCode(),

@@ -45,6 +45,7 @@ import org.apache.calcite.sql.type.SameOperandTypeChecker;
 import org.apache.calcite.sql.type.SqlTypeFamily;
 import org.apache.calcite.sql.type.SqlTypeName;
 import org.apache.calcite.sql.type.SqlTypeTransforms;
+import org.apache.calcite.sql.type.SqlTypeName;
 import org.apache.calcite.sql.util.ReflectiveSqlOperatorTable;
 
 import java.util.List;
@@ -55,6 +56,10 @@ import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastOperandType
 import static org.apache.calcite.sql.type.SqlTypeName.BIGINT;
 import static org.apache.calcite.sql.type.SqlTypeName.DECIMAL;
 import static org.apache.calcite.sql.type.SqlTypeName.INTEGER;
+import static org.apache.calcite.sql.type.SqlTypeName.BIGINT;
+import static org.apache.calcite.sql.type.SqlTypeName.DECIMAL;
+import static org.apache.calcite.sql.type.SqlTypeName.INTEGER;
+import static org.apache.calcite.sql.type.SqlTypeName.VARCHAR;
 
 /**
  * Custom functions and operators.
@@ -356,8 +361,8 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
         60,
         true,
         ReturnTypes.DYADIC_STRING_SUM_PRECISION_NULLABLE,
-        HazelcastInferTypes.VARCHAR_IF_UNKNOWN,
-        OperandTypes.STRING_SAME_SAME
+        new ReplaceUnknownOperandTypeInference(VARCHAR),
+        notAny(OperandTypes.STRING_SAME_SAME)
     );
 
     public static final SqlSpecialOperator LIKE = new HazelcastSqlLikeOperator();
