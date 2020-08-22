@@ -330,6 +330,12 @@ public final class RexToExpression {
                     Expression<?> length = operands.length > 2 ? operands[2] : null;
 
                     return SubstringFunction.create(input, start, length);
+                } else if (function == HazelcastSqlOperatorTable.LTRIM) {
+                   return TrimFunction.create(operands[0], null, true, false);
+                } else if (function == HazelcastSqlOperatorTable.RTRIM) {
+                    return TrimFunction.create(operands[0], null, false, true);
+                } else if (function == HazelcastSqlOperatorTable.BTRIM) {
+                    return TrimFunction.create(operands[0], null, true, true);
                 }
 
                 break;

@@ -139,6 +139,9 @@ public final class UnsupportedOperationVisitor implements SqlVisitor<Void> {
         SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.UPPER);
         SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.CONCAT);
         SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.SUBSTRING);
+        SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.LTRIM);
+        SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.RTRIM);
+        SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.BTRIM);
     }
 
     private final SqlValidatorCatalogReader catalogReader;

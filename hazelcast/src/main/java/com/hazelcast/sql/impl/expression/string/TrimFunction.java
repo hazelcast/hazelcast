@@ -85,11 +85,17 @@ public class TrimFunction extends BiExpression<String> implements IdentifiedData
     }
 
     private String trim(String input, String characters) {
-        if (input.length() == 0) {
+        if (input.isEmpty()) {
+            // Trim on the empty string is no-op
             return "";
         }
 
         assert characters != null;
+
+        if (characters.isEmpty()) {
+            // Nothing to trim
+            return input;
+        }
 
         CharacterTester tester = SPACE_ONLY.equals(characters) ? SPACE_ONLY_TESTER : characters.length() == 1
             ? new SingleCharacterTester(characters.charAt(0)) : new MultipleCharacterTester(characters.toCharArray());
@@ -110,8 +116,10 @@ public class TrimFunction extends BiExpression<String> implements IdentifiedData
         }
 
         if (from == 0 && to == input.length()) {
+            // Nothing has been trimmed, return the original input
             return input;
         } else {
+            // Do trimming
             return input.substring(from, to);
         }
     }

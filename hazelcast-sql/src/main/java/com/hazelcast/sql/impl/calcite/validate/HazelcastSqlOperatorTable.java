@@ -415,6 +415,21 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
         ))
     );
 
+    public static final SqlFunction RTRIM = new HazelcastSqlStringFunction(
+        "RTRIM",
+        ReturnTypes.ARG0_NULLABLE
+    );
+
+    public static final SqlFunction LTRIM = new HazelcastSqlStringFunction(
+        "LTRIM",
+        ReturnTypes.ARG0_NULLABLE
+    );
+
+    public static final SqlFunction BTRIM = new HazelcastSqlStringFunction(
+        "BTRIM",
+        ReturnTypes.ARG0_NULLABLE
+    );
+
     //#endregion
 
     //@formatter:on
