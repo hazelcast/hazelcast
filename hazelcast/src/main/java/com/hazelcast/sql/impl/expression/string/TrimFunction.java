@@ -84,6 +84,7 @@ public class TrimFunction extends BiExpression<String> implements IdentifiedData
         return trim(input, characters);
     }
 
+    @SuppressWarnings({"checkstyle:CyclomaticComplexity", "checkstyle:NPathComplexity"})
     private String trim(String input, String characters) {
         if (input.isEmpty()) {
             // Trim on the empty string is no-op
@@ -127,6 +128,10 @@ public class TrimFunction extends BiExpression<String> implements IdentifiedData
     @Override
     public QueryDataType getType() {
         return QueryDataType.VARCHAR;
+    }
+
+    public Expression<?> getCharacters() {
+        return operand2;
     }
 
     @Override
@@ -186,7 +191,7 @@ public class TrimFunction extends BiExpression<String> implements IdentifiedData
         boolean test(char c);
     }
 
-    private static class SingleCharacterTester implements CharacterTester {
+    private static final class SingleCharacterTester implements CharacterTester {
 
         private final char expected;
 
@@ -200,7 +205,7 @@ public class TrimFunction extends BiExpression<String> implements IdentifiedData
         }
     }
 
-    private static class MultipleCharacterTester implements CharacterTester {
+    private static final class MultipleCharacterTester implements CharacterTester {
 
         private final char[] expected;
 

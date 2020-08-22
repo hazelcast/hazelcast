@@ -236,19 +236,18 @@ public final class RexToExpression {
 
                 return LikeFunction.create(operands[0], operands[1], escape);
 
-            case TRIM: {
+            case TRIM:
                 assert operands.length == 3;
                 assert operands[0] instanceof SymbolExpression;
 
-                SqlTrimFunction.Flag flag = ((SymbolExpression) operands[0]).getSymbol();
+                SqlTrimFunction.Flag trimFlag = ((SymbolExpression) operands[0]).getSymbol();
 
                 return TrimFunction.create(
                     operands[2],
                     operands[1],
-                    flag.getLeft() == 1,
-                    flag.getRight() == 1
+                    trimFlag.getLeft() == 1,
+                    trimFlag.getRight() == 1
                 );
-            }
 
             case OTHER:
                 if (operator == HazelcastSqlOperatorTable.CONCAT) {

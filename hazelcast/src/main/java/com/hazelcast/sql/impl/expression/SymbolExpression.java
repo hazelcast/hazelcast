@@ -30,7 +30,7 @@ import java.io.IOException;
  * <p>
  * It is not mean to be serialized or evaluated.
  */
-public class SymbolExpression implements Expression<Object> {
+public final class SymbolExpression implements Expression<Object> {
 
     private final Object symbol;
 

@@ -256,6 +256,8 @@ public final class UnsupportedOperationVisitor implements SqlVisitor<Void> {
                     return null;
                 }
 
+                throw error(literal, RESOURCE.custom(symbolValue + " literal is not supported"));
+
             default:
                 throw error(literal, RESOURCE.custom(typeName + " literals are not supported"));
         }
