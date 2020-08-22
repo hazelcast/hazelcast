@@ -17,7 +17,7 @@
 package com.hazelcast.sql.impl.exec.scan.index;
 
 import com.hazelcast.query.impl.AbstractIndex;
-import com.hazelcast.sql.SqlErrorCode;
+import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.SqlDataSerializerHook;
 import com.hazelcast.sql.impl.expression.Expression;

@@ -22,7 +22,7 @@ import com.hazelcast.config.IndexType;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.map.IMap;
-import com.hazelcast.sql.SqlErrorCode;
+import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.SqlTestSupport;
 import com.hazelcast.sql.impl.exec.IterationResult;

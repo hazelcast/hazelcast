@@ -276,7 +276,7 @@ public class SqlIndexResolutionTest extends SqlIndexTestSupport {
     }
 
     private void checkIndexUsage(String sql, Usage expectedUsage) {
-        try (SqlResult result = member.getSql().query(sql)) {
+        try (SqlResult result = member.getSql().execute(sql)) {
             MapIndexScanPlanNode indexNode = findFirstIndexNode(result);
 
             switch (expectedUsage) {

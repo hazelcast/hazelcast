@@ -22,8 +22,8 @@ import com.hazelcast.config.IndexType;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
-import com.hazelcast.sql.SqlErrorCode;
-import com.hazelcast.sql.SqlException;
+import com.hazelcast.sql.HazelcastSqlException;
+import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.impl.SqlTestSupport;
@@ -108,14 +108,14 @@ public class SqlIndexConverterMismatchTest extends SqlTestSupport {
         map.put(getLocalKey(member2, key -> key), value2);
 
         try {
-            try (SqlResult result = member1.getSql().query("SELECT key FROM " + MAP_NAME + " WHERE field1=1")) {
+            try (SqlResult result = member1.getSql().execute("SELECT key FROM " + MAP_NAME + " WHERE field1=1")) {
                 for (SqlRow ignore : result) {
                     // No-op.
                 }
             }
 
             fail("Must fail!");
-        } catch (SqlException e) {
+        } catch (HazelcastSqlException e) {
             assertEquals(SqlErrorCode.DATA_EXCEPTION, e.getCode());
             assertEquals("Index \"index\" has component \"field1\" of type VARCHAR, but INTEGER was expected", e.getMessage());
         }

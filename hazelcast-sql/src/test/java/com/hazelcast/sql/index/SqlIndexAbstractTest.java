@@ -21,9 +21,9 @@ import com.hazelcast.config.IndexType;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
-import com.hazelcast.sql.SqlQuery;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlRow;
+import com.hazelcast.sql.SqlStatement;
 import com.hazelcast.sql.impl.plan.node.MapIndexScanPlanNode;
 import com.hazelcast.sql.support.expressions.ExpressionBiValue;
 import com.hazelcast.sql.support.expressions.ExpressionType;
@@ -554,7 +554,7 @@ public abstract class SqlIndexAbstractTest extends SqlIndexTestSupport {
     }
 
     private Set<Integer> sqlKeys(boolean withIndex, String sql, List<Object> params) {
-        SqlQuery query = new SqlQuery(sql);
+        SqlStatement query = new SqlStatement(sql);
 
         if (!params.isEmpty()) {
             query.setParameters(params);
@@ -562,7 +562,7 @@ public abstract class SqlIndexAbstractTest extends SqlIndexTestSupport {
 
         Set<Integer> keys = new HashSet<>();
 
-        try (SqlResult result = member.getSql().query(query)) {
+        try (SqlResult result = member.getSql().execute(query)) {
             MapIndexScanPlanNode indexNode = findFirstIndexNode(result);
 
             if (withIndex) {
