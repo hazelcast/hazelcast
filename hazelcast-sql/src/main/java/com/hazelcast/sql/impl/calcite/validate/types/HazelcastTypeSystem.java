@@ -21,6 +21,7 @@ import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.calcite.SqlToQueryType;
 import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlValidator;
 import com.hazelcast.sql.impl.type.QueryDataType;
+import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 import com.hazelcast.sql.impl.type.converter.Converter;
 import com.hazelcast.sql.impl.type.converter.Converters;
 import org.apache.calcite.rel.type.RelDataType;
@@ -72,11 +73,6 @@ public final class HazelcastTypeSystem extends RelDataTypeSystemImpl {
      */
     public static final int MAX_DECIMAL_SCALE = MAX_DECIMAL_PRECISION;
 
-    /**
-     * The name of Hazelcast OBJECT type.
-     */
-    public static final String OBJECT_TYPE_NAME = "OBJECT";
-
     private HazelcastTypeSystem() {
         // No-op
     }
@@ -86,7 +82,12 @@ public final class HazelcastTypeSystem extends RelDataTypeSystemImpl {
      * {@code false} otherwise.
      */
     public static boolean isObject(SqlIdentifier identifier) {
-        return identifier.isSimple() && OBJECT_TYPE_NAME.equalsIgnoreCase(identifier.getSimple());
+        return identifier.isSimple() && QueryDataTypeFamily.OBJECT.name().equalsIgnoreCase(identifier.getSimple());
+    }
+
+    public static boolean isTimestampWithTimeZone(SqlIdentifier identifier) {
+        return identifier.isSimple()
+            && QueryDataTypeFamily.TIMESTAMP_WITH_TIME_ZONE.name().equalsIgnoreCase(identifier.getSimple());
     }
 
     /**

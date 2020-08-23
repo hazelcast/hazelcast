@@ -36,6 +36,7 @@ import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeSystem.
 import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeSystem.canConvert;
 import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeSystem.canRepresent;
 import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeSystem.isObject;
+import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeSystem.isTimestampWithTimeZone;
 import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeSystem.narrowestTypeFor;
 import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeSystem.withHigherPrecedence;
 import static com.hazelcast.sql.impl.expression.ExpressionTestBase.TYPE_FACTORY;
@@ -81,6 +82,13 @@ public class HazelcastTypeSystemTest {
         assertTrue(isObject(new SqlIdentifier("object", ZERO)));
         assertTrue(isObject(new SqlIdentifier("OBJECT", ZERO)));
         assertFalse(isObject(new SqlIdentifier("foo", ZERO)));
+    }
+
+    @Test
+    public void isTimestampWithTimeZoneTest() {
+        assertTrue(isTimestampWithTimeZone(new SqlIdentifier("timestamp_with_time_zone", ZERO)));
+        assertTrue(isTimestampWithTimeZone(new SqlIdentifier("TIMESTAMP_WITH_TIME_ZONE", ZERO)));
+        assertFalse(isTimestampWithTimeZone(new SqlIdentifier("foo", ZERO)));
     }
 
     @Test

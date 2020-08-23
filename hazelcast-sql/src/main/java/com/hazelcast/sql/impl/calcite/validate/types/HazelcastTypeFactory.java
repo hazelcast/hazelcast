@@ -21,6 +21,7 @@ import org.apache.calcite.sql.type.SqlTypeFactoryImpl;
 import org.apache.calcite.sql.type.SqlTypeName;
 import org.apache.calcite.util.ConversionUtil;
 
+import javax.annotation.Nullable;
 import java.nio.charset.Charset;
 import java.util.List;
 
@@ -30,6 +31,9 @@ import static org.apache.calcite.sql.type.SqlTypeName.ANY;
 import static org.apache.calcite.sql.type.SqlTypeName.DECIMAL;
 import static org.apache.calcite.sql.type.SqlTypeName.DOUBLE;
 import static org.apache.calcite.sql.type.SqlTypeName.REAL;
+import static org.apache.calcite.sql.type.SqlTypeName.TIME;
+import static org.apache.calcite.sql.type.SqlTypeName.TIMESTAMP;
+import static org.apache.calcite.sql.type.SqlTypeName.TIMESTAMP_WITH_LOCAL_TIME_ZONE;
 
 /**
  * Custom Hazelcast type factory.
@@ -78,47 +82,56 @@ public final class HazelcastTypeFactory extends SqlTypeFactoryImpl {
 
     @Override
     public RelDataType createSqlType(SqlTypeName typeName) {
-        if (typeName == DECIMAL) {
-            return createDecimal();
-        } else if (typeName == ANY) {
-            return HazelcastObjectType.INSTANCE;
+        RelDataType type = createType(typeName);
+
+        if (type == null) {
+            type = super.createSqlType(typeName);
         }
 
-        if (HazelcastIntegerType.supports(typeName)) {
-            return HazelcastIntegerType.of(typeName);
-        }
-
-        return super.createSqlType(typeName);
+        return type;
     }
 
     @Override
     public RelDataType createSqlType(SqlTypeName typeName, int precision) {
-        if (typeName == DECIMAL) {
-            return createDecimal();
-        } else if (typeName == ANY) {
-            return HazelcastObjectType.INSTANCE;
+        RelDataType type = createType(typeName);
+
+        if (type == null) {
+            type = super.createSqlType(typeName, precision);
         }
 
-        if (HazelcastIntegerType.supports(typeName)) {
-            return HazelcastIntegerType.of(typeName);
-        }
-
-        return super.createSqlType(typeName, precision);
+        return type;
     }
 
     @Override
     public RelDataType createSqlType(SqlTypeName typeName, int precision, int scale) {
+        RelDataType type = createType(typeName);
+
+        if (type == null) {
+            type = super.createSqlType(typeName, precision, scale);
+        }
+
+        return type;
+    }
+
+    @Nullable
+    private RelDataType createType(SqlTypeName typeName) {
         if (typeName == DECIMAL) {
             return createDecimal();
         } else if (typeName == ANY) {
             return HazelcastObjectType.INSTANCE;
+        } else if (typeName == TIME) {
+            return HazelcastTemporalType.TIME;
+        } else if (typeName == TIMESTAMP) {
+            return HazelcastTemporalType.TIMESTAMP;
+        } else if (typeName == TIMESTAMP_WITH_LOCAL_TIME_ZONE) {
+            return HazelcastTemporalType.TIMESTAMP_WITH_TIME_ZONE;
         }
 
         if (HazelcastIntegerType.supports(typeName)) {
             return HazelcastIntegerType.of(typeName);
         }
 
-        return super.createSqlType(typeName, precision, scale);
+        return null;
     }
 
     @Override
@@ -127,6 +140,13 @@ public final class HazelcastTypeFactory extends SqlTypeFactoryImpl {
             return HazelcastIntegerType.of(type, nullable);
         } else if (type.getSqlTypeName() == ANY) {
             return nullable ? HazelcastObjectType.NULLABLE_INSTANCE : HazelcastObjectType.INSTANCE;
+        } else if (type.getSqlTypeName() == TIME) {
+            return nullable ? HazelcastTemporalType.TIME_NULLABLE : HazelcastTemporalType.TIME;
+        } else if (type.getSqlTypeName() == TIMESTAMP) {
+            return nullable ? HazelcastTemporalType.TIMESTAMP_NULLABLE : HazelcastTemporalType.TIMESTAMP;
+        } else if (type.getSqlTypeName() == TIMESTAMP_WITH_LOCAL_TIME_ZONE) {
+            return nullable
+                ? HazelcastTemporalType.TIMESTAMP_WITH_TIME_ZONE_NULLABLE : HazelcastTemporalType.TIMESTAMP_WITH_TIME_ZONE;
         }
 
         return super.createTypeWithNullability(type, nullable);

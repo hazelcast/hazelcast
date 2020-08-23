@@ -66,7 +66,7 @@ public final class HazelcastOperandTypes {
         return new NotAllNull(base);
     }
 
-    private static abstract class DisallowedTypeOperandTypeChecker implements SqlSingleOperandTypeChecker {
+    private abstract static class DisallowedTypeOperandTypeChecker implements SqlSingleOperandTypeChecker {
 
         private final SqlOperandTypeChecker base;
 

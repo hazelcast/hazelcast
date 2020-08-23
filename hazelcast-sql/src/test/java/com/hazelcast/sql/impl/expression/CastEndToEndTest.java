@@ -25,6 +25,9 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 
 import static com.hazelcast.sql.SqlColumnType.BIGINT;
 import static com.hazelcast.sql.SqlColumnType.BOOLEAN;
@@ -35,6 +38,9 @@ import static com.hazelcast.sql.SqlColumnType.INTEGER;
 import static com.hazelcast.sql.SqlColumnType.OBJECT;
 import static com.hazelcast.sql.SqlColumnType.REAL;
 import static com.hazelcast.sql.SqlColumnType.SMALLINT;
+import static com.hazelcast.sql.SqlColumnType.TIME;
+import static com.hazelcast.sql.SqlColumnType.TIMESTAMP;
+import static com.hazelcast.sql.SqlColumnType.TIMESTAMP_WITH_TIME_ZONE;
 import static com.hazelcast.sql.SqlColumnType.TINYINT;
 import static com.hazelcast.sql.SqlColumnType.VARCHAR;
 
@@ -78,6 +84,9 @@ public class CastEndToEndTest extends ExpressionEndToEndTestBase {
                 + ".ExpressionEndToEndTestBase$SerializableObject");
 
         assertParsingError("cast(dateCol as boolean)", "Cast function cannot convert value of type DATE to type BOOLEAN");
+        assertParsingError("cast(timeCol as boolean)", "Cast function cannot convert value of type TIME to type BOOLEAN");
+        assertParsingError("cast(dateTimeCol as boolean)", "Cast function cannot convert value of type TIMESTAMP to type BOOLEAN");
+        assertParsingError("cast(offsetDateTimeCol as boolean)", "Cast function cannot convert value of type TIMESTAMP_WITH_TIME_ZONE to type BOOLEAN");
     }
 
     @Test
@@ -124,6 +133,9 @@ public class CastEndToEndTest extends ExpressionEndToEndTestBase {
                 + ".ExpressionEndToEndTestBase$SerializableObject");
 
         assertParsingError("cast(dateCol as tinyint)", "Cast function cannot convert value of type DATE to type TINYINT");
+        assertParsingError("cast(timeCol as tinyint)", "Cast function cannot convert value of type TIME to type TINYINT");
+        assertParsingError("cast(dateTimeCol as tinyint)", "Cast function cannot convert value of type TIMESTAMP to type TINYINT");
+        assertParsingError("cast(offsetDateTimeCol as tinyint)", "Cast function cannot convert value of type TIMESTAMP_WITH_TIME_ZONE to type TINYINT");
     }
 
     @Test
@@ -171,6 +183,9 @@ public class CastEndToEndTest extends ExpressionEndToEndTestBase {
                 + ".ExpressionEndToEndTestBase$SerializableObject");
 
         assertParsingError("cast(dateCol as smallint)", "Cast function cannot convert value of type DATE to type SMALLINT");
+        assertParsingError("cast(timeCol as smallint)", "Cast function cannot convert value of type TIME to type SMALLINT");
+        assertParsingError("cast(dateTimeCol as smallint)", "Cast function cannot convert value of type TIMESTAMP to type SMALLINT");
+        assertParsingError("cast(offsetDateTimeCol as smallint)", "Cast function cannot convert value of type TIMESTAMP_WITH_TIME_ZONE to type SMALLINT");
     }
 
     @Test
@@ -217,6 +232,9 @@ public class CastEndToEndTest extends ExpressionEndToEndTestBase {
                 + ".ExpressionEndToEndTestBase$SerializableObject");
 
         assertParsingError("cast(dateCol as integer)", "Cast function cannot convert value of type DATE to type INTEGER");
+        assertParsingError("cast(timeCol as integer)", "Cast function cannot convert value of type TIME to type INTEGER");
+        assertParsingError("cast(dateTimeCol as integer)", "Cast function cannot convert value of type TIMESTAMP to type INTEGER");
+        assertParsingError("cast(offsetDateTimeCol as integer)", "Cast function cannot convert value of type TIMESTAMP_WITH_TIME_ZONE to type INTEGER");
     }
 
     @Test
@@ -263,6 +281,9 @@ public class CastEndToEndTest extends ExpressionEndToEndTestBase {
                 + ".ExpressionEndToEndTestBase$SerializableObject");
 
         assertParsingError("cast(dateCol as bigint)", "Cast function cannot convert value of type DATE to type BIGINT");
+        assertParsingError("cast(timeCol as bigint)", "Cast function cannot convert value of type TIME to type BIGINT");
+        assertParsingError("cast(dateTimeCol as bigint)", "Cast function cannot convert value of type TIMESTAMP to type BIGINT");
+        assertParsingError("cast(offsetDateTimeCol as bigint)", "Cast function cannot convert value of type TIMESTAMP_WITH_TIME_ZONE to type BIGINT");
     }
 
     @Test
@@ -309,6 +330,9 @@ public class CastEndToEndTest extends ExpressionEndToEndTestBase {
                 + ".ExpressionEndToEndTestBase$SerializableObject");
 
         assertParsingError("cast(dateCol as real)", "Cast function cannot convert value of type DATE to type REAL");
+        assertParsingError("cast(timeCol as real)", "Cast function cannot convert value of type TIME to type REAL");
+        assertParsingError("cast(dateTimeCol as real)", "Cast function cannot convert value of type TIMESTAMP to type REAL");
+        assertParsingError("cast(offsetDateTimeCol as real)", "Cast function cannot convert value of type TIMESTAMP_WITH_TIME_ZONE to type REAL");
     }
 
     @Test
@@ -355,6 +379,9 @@ public class CastEndToEndTest extends ExpressionEndToEndTestBase {
                 + ".ExpressionEndToEndTestBase$SerializableObject");
 
         assertParsingError("cast(dateCol as double)", "Cast function cannot convert value of type DATE to type DOUBLE");
+        assertParsingError("cast(timeCol as double)", "Cast function cannot convert value of type TIME to type DOUBLE");
+        assertParsingError("cast(dateTimeCol as double)", "Cast function cannot convert value of type TIMESTAMP to type DOUBLE");
+        assertParsingError("cast(offsetDateTimeCol as double)", "Cast function cannot convert value of type TIMESTAMP_WITH_TIME_ZONE to type DOUBLE");
     }
 
     @Test
@@ -403,6 +430,9 @@ public class CastEndToEndTest extends ExpressionEndToEndTestBase {
                 + ".ExpressionEndToEndTestBase$SerializableObject");
 
         assertParsingError("cast(dateCol as decimal)", "Cast function cannot convert value of type DATE to type DECIMAL");
+        assertParsingError("cast(timeCol as decimal)", "Cast function cannot convert value of type TIME to type DECIMAL");
+        assertParsingError("cast(dateTimeCol as decimal)", "Cast function cannot convert value of type TIMESTAMP to type DECIMAL");
+        assertParsingError("cast(offsetDateTimeCol as decimal)", "Cast function cannot convert value of type TIMESTAMP_WITH_TIME_ZONE to type DECIMAL");
     }
 
     @Test
@@ -448,6 +478,9 @@ public class CastEndToEndTest extends ExpressionEndToEndTestBase {
         assertRow("cast(object as varchar)", EXPR0, VARCHAR, getRecord().object.toString());
 
         assertRow("cast(dateCol as varchar)", EXPR0, VARCHAR, getRecord().dateCol.toString());
+        assertRow("cast(timeCol as varchar)", EXPR0, VARCHAR, getRecord().timeCol.toString());
+        assertRow("cast(dateTimeCol as varchar)", EXPR0, VARCHAR, getRecord().dateTimeCol.toString());
+        assertRow("cast(offsetDateTimeCol as varchar)", EXPR0, VARCHAR, getRecord().offsetDateTimeCol.toString());
     }
 
     @Test
@@ -493,6 +526,9 @@ public class CastEndToEndTest extends ExpressionEndToEndTestBase {
         assertRow("cast(object as object)", EXPR0, OBJECT, getRecord().object);
 
         assertRow("cast(dateCol as object)", EXPR0, OBJECT, getRecord().dateCol);
+        assertRow("cast(timeCol as object)", EXPR0, OBJECT, getRecord().timeCol);
+        assertRow("cast(dateTimeCol as object)", EXPR0, OBJECT, getRecord().dateTimeCol);
+        assertRow("cast(offsetDateTimeCol as object)", EXPR0, OBJECT, getRecord().offsetDateTimeCol);
     }
 
     @Test
@@ -514,5 +550,111 @@ public class CastEndToEndTest extends ExpressionEndToEndTestBase {
 
         assertDataError("cast(objectInt1 as date)", "Cannot convert INTEGER to DATE");
         assertRow("cast(dateCol_object as date)", EXPR0, DATE, getRecord().dateCol);
+
+        assertRow("cast(dateCol as date)", EXPR0, DATE, getRecord().dateCol);
+        assertParsingError("cast(timeCol as date)", "Cast function cannot convert value of type TIME to type DATE");
+        assertRow("cast(dateTimeCol as date)", EXPR0, DATE, getRecord().dateCol);
+        assertRow("cast(offsetDateTimeCol as date)", EXPR0, DATE, getRecord().dateCol);
+    }
+
+    @Test
+    public void testTime() {
+        assertParsingError("cast(booleanTrue as time)", "Cast function cannot convert value of type BOOLEAN to type TIME");
+
+        assertParsingError("cast(byte1 as time)", "Cast function cannot convert value of type TINYINT to type TIME");
+        assertParsingError("cast(short1 as time)", "Cast function cannot convert value of type SMALLINT to type TIME");
+        assertParsingError("cast(int1 as time)", "Cast function cannot convert value of type INTEGER to type TIME");
+        assertParsingError("cast(long1 as time)", "Cast function cannot convert value of type BIGINT to type TIME");
+        assertParsingError("cast(bigInteger1 as time)", "Cast function cannot convert value of type DECIMAL(38, 38) to type TIME");
+        assertParsingError("cast(decimal1 as time)", "Cast function cannot convert value of type DECIMAL(38, 38) to type TIME");
+        assertParsingError("cast(float1 as time)", "Cast function cannot convert value of type REAL to type TIME");
+        assertParsingError("cast(double1 as time)", "Cast function cannot convert value of type DOUBLE to type TIME");
+
+        assertDataError("cast(string1 as time)", "Cannot convert VARCHAR to TIME");
+        assertDataError("cast(char1 as time)", "Cannot convert VARCHAR to TIME");
+        assertRow("cast(timeCol_string as time)", EXPR0, TIME, getRecord().timeCol);
+
+        assertDataError("cast(objectInt1 as time)", "Cannot convert INTEGER to TIME");
+        assertRow("cast(timeCol_object as time)", EXPR0, TIME, getRecord().timeCol);
+
+        assertParsingError("cast(dateCol as time)", "Cast function cannot convert value of type DATE to type TIME");
+        assertRow("cast(timeCol as time)", EXPR0, TIME, getRecord().timeCol);
+        assertRow("cast(dateTimeCol as time)", EXPR0, TIME, getRecord().timeCol);
+        assertRow("cast(offsetDateTimeCol as time)", EXPR0, TIME, getRecord().timeCol);
+    }
+
+    @Test
+    public void testTimestamp() {
+        assertParsingError("cast(booleanTrue as timestamp)", "Cast function cannot convert value of type BOOLEAN to type TIMESTAMP");
+
+        assertParsingError("cast(byte1 as timestamp)", "Cast function cannot convert value of type TINYINT to type TIMESTAMP");
+        assertParsingError("cast(short1 as timestamp)", "Cast function cannot convert value of type SMALLINT to type TIMESTAMP");
+        assertParsingError("cast(int1 as timestamp)", "Cast function cannot convert value of type INTEGER to type TIMESTAMP");
+        assertParsingError("cast(long1 as timestamp)", "Cast function cannot convert value of type BIGINT to type TIMESTAMP");
+        assertParsingError("cast(bigInteger1 as timestamp)", "Cast function cannot convert value of type DECIMAL(38, 38) to type TIMESTAMP");
+        assertParsingError("cast(decimal1 as timestamp)", "Cast function cannot convert value of type DECIMAL(38, 38) to type TIMESTAMP");
+        assertParsingError("cast(float1 as timestamp)", "Cast function cannot convert value of type REAL to type TIMESTAMP");
+        assertParsingError("cast(double1 as timestamp)", "Cast function cannot convert value of type DOUBLE to type TIMESTAMP");
+
+        assertDataError("cast(string1 as timestamp)", "Cannot convert VARCHAR to TIMESTAMP");
+        assertDataError("cast(char1 as timestamp)", "Cannot convert VARCHAR to TIMESTAMP");
+        assertRow("cast(dateTimeCol_string as timestamp)", EXPR0, TIMESTAMP, getRecord().dateTimeCol);
+
+        assertDataError("cast(objectInt1 as timestamp)", "Cannot convert INTEGER to TIME");
+        assertRow("cast(dateTimeCol_object as timestamp)", EXPR0, TIMESTAMP, getRecord().dateTimeCol);
+
+        assertRow("cast(dateCol as timestamp)", EXPR0, TIMESTAMP, getRecord().dateCol.atStartOfDay());
+        assertRow("cast(timeCol as timestamp)", EXPR0, TIMESTAMP, LocalDate.now().atTime(getRecord().timeCol));
+        assertRow("cast(dateTimeCol as timestamp)", EXPR0, TIMESTAMP, getRecord().dateTimeCol);
+        assertRow("cast(offsetDateTimeCol as timestamp)", EXPR0, TIMESTAMP, getRecord().dateTimeCol);
+    }
+
+    @Test
+    public void testTimestampWithTimezone() {
+        assertParsingError("cast(booleanTrue as timestamp_with_time_zone)", "Cast function cannot convert value of type BOOLEAN to type TIMESTAMP_WITH_TIME_ZONE");
+
+        assertParsingError("cast(byte1 as timestamp_with_time_zone)", "Cast function cannot convert value of type TINYINT to type TIMESTAMP_WITH_TIME_ZONE");
+        assertParsingError("cast(short1 as timestamp_with_time_zone)", "Cast function cannot convert value of type SMALLINT to type TIMESTAMP_WITH_TIME_ZONE");
+        assertParsingError("cast(int1 as timestamp_with_time_zone)", "Cast function cannot convert value of type INTEGER to type TIMESTAMP_WITH_TIME_ZONE");
+        assertParsingError("cast(long1 as timestamp_with_time_zone)", "Cast function cannot convert value of type BIGINT to type TIMESTAMP_WITH_TIME_ZONE");
+        assertParsingError("cast(bigInteger1 as timestamp_with_time_zone)", "Cast function cannot convert value of type DECIMAL(38, 38) to type TIMESTAMP_WITH_TIME_ZONE");
+        assertParsingError("cast(decimal1 as timestamp_with_time_zone)", "Cast function cannot convert value of type DECIMAL(38, 38) to type TIMESTAMP_WITH_TIME_ZONE");
+        assertParsingError("cast(float1 as timestamp_with_time_zone)", "Cast function cannot convert value of type REAL to type TIMESTAMP_WITH_TIME_ZONE");
+        assertParsingError("cast(double1 as timestamp_with_time_zone)", "Cast function cannot convert value of type DOUBLE to type TIMESTAMP_WITH_TIME_ZONE");
+
+        assertDataError("cast(string1 as timestamp_with_time_zone)", "Cannot convert VARCHAR to TIMESTAMP_WITH_TIME_ZONE");
+        assertDataError("cast(char1 as timestamp_with_time_zone)", "Cannot convert VARCHAR to TIMESTAMP_WITH_TIME_ZONE");
+        assertRow("cast(offsetDateTimeCol_string as timestamp_with_time_zone)", EXPR0, TIMESTAMP_WITH_TIME_ZONE, getRecord().offsetDateTimeCol);
+
+        assertDataError("cast(objectInt1 as timestamp_with_time_zone)", "Cannot convert INTEGER to TIMESTAMP_WITH_TIME_ZONE");
+        assertRow("cast(offsetDateTimeCol_object as timestamp_with_time_zone)", EXPR0, TIMESTAMP_WITH_TIME_ZONE, getRecord().offsetDateTimeCol);
+
+        assertRow(
+            "cast(dateCol as timestamp_with_time_zone)",
+            EXPR0,
+            TIMESTAMP_WITH_TIME_ZONE,
+            ZonedDateTime.of(getRecord().dateCol.atStartOfDay(), ZoneId.systemDefault()).toOffsetDateTime()
+        );
+
+        assertRow(
+            "cast(timeCol as timestamp_with_time_zone)",
+            EXPR0,
+            TIMESTAMP_WITH_TIME_ZONE,
+            ZonedDateTime.of(LocalDate.now().atTime(getRecord().timeCol), ZoneId.systemDefault()).toOffsetDateTime()
+        );
+
+        assertRow(
+            "cast(dateTimeCol as timestamp_with_time_zone)",
+            EXPR0,
+            TIMESTAMP_WITH_TIME_ZONE,
+            ZonedDateTime.of(getRecord().dateTimeCol, ZoneId.systemDefault()).toOffsetDateTime()
+        );
+
+        assertRow(
+            "cast(offsetDateTimeCol as timestamp_with_time_zone)",
+            EXPR0,
+            TIMESTAMP_WITH_TIME_ZONE,
+            getRecord().offsetDateTimeCol
+        );
     }
 }
