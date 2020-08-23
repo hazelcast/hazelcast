@@ -111,11 +111,7 @@ public final class HazelcastTypeCoercion extends TypeCoercionImpl {
             return false;
         }
 
-        // Do the coercion.
-
-        RelDataType commonType = types[types.length - 1];
-
-        boolean coerced = false;
+        // Disallow comparisons for temporal types
         for (int i = 0; i < types.length - 1; ++i) {
             RelDataType type = types[i];
 
@@ -124,7 +120,14 @@ public final class HazelcastTypeCoercion extends TypeCoercionImpl {
                     SqlErrorCode.PARSING, "Cannot apply comparison operation to " + type.getFullTypeString()
                 );
             }
+        }
 
+        // Do the coercion.
+        RelDataType commonType = types[types.length - 1];
+
+        boolean coerced = false;
+        for (int i = 0; i < types.length - 1; ++i) {
+            RelDataType type = types[i];
             type = TYPE_FACTORY.createTypeWithNullability(commonType, type.isNullable());
             boolean operandCoerced = coerceOperandType(binding.getScope(), binding.getCall(), i, type);
             coerced |= operandCoerced;
