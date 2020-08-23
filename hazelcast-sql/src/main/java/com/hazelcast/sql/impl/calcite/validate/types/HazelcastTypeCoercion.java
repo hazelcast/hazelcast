@@ -16,6 +16,8 @@
 
 package com.hazelcast.sql.impl.calcite.validate.types;
 
+import com.hazelcast.sql.impl.QueryException;
+import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlOperatorTable;
 import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlValidator;
 import org.apache.calcite.rel.type.RelDataType;
@@ -116,6 +118,13 @@ public final class HazelcastTypeCoercion extends TypeCoercionImpl {
         boolean coerced = false;
         for (int i = 0; i < types.length - 1; ++i) {
             RelDataType type = types[i];
+
+            if (HazelcastTypeSystem.isTemporal(type)) {
+                throw QueryException.error(
+                    SqlErrorCode.PARSING, "Cannot apply comparison operation to " + type.getFullTypeString()
+                );
+            }
+
             type = TYPE_FACTORY.createTypeWithNullability(commonType, type.isNullable());
             boolean operandCoerced = coerceOperandType(binding.getScope(), binding.getCall(), i, type);
             coerced |= operandCoerced;
@@ -186,6 +195,10 @@ public final class HazelcastTypeCoercion extends TypeCoercionImpl {
 
         if (isParameter(node)) {
             // never cast parameters, just assign types to them
+            return false;
+        }
+
+        if (isTemporal(from) ^ isTemporal(to)) {
             return false;
         }
 
