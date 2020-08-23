@@ -34,6 +34,7 @@ import java.util.Collection;
 
 import static com.hazelcast.sql.SqlColumnType.BIGINT;
 import static com.hazelcast.sql.SqlColumnType.BOOLEAN;
+import static com.hazelcast.sql.SqlColumnType.DATE;
 import static com.hazelcast.sql.SqlColumnType.DECIMAL;
 import static com.hazelcast.sql.SqlColumnType.DOUBLE;
 import static com.hazelcast.sql.SqlColumnType.INTEGER;
@@ -140,6 +141,15 @@ public class ColumnEndToEndTest extends ExpressionEndToEndTestBase {
     @Test
     public void testChar() {
         assertRow("char1", "char1", VARCHAR, "1");
+    }
+
+    @Test
+    public void testDate() {
+        if (getMapName().equals("portableRecords")) {
+            assertParsingError("dateCol", "Column 'dateCol' not found in any table");
+        } else {
+            assertRow("dateCol", "dateCol", DATE, getRecord().dateCol);
+        }
     }
 
     @Test

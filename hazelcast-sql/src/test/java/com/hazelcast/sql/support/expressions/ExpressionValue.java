@@ -19,6 +19,7 @@ package com.hazelcast.sql.support.expressions;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.time.LocalDate;
 
 @SuppressWarnings({"unused", "unchecked, checkstyle:MultipleVariableDeclarations"})
 public abstract class ExpressionValue implements Serializable {
@@ -99,5 +100,6 @@ public abstract class ExpressionValue implements Serializable {
     public static class DoubleVal extends ExpressionValue implements Serializable { public Double field1; }
     public static class StringVal extends ExpressionValue implements Serializable { public String field1; }
     public static class CharacterVal extends ExpressionValue implements Serializable { public Character field1; }
+    public static class LocalDateVal extends ExpressionValue implements Serializable { public LocalDate field1; }
     public static class ObjectVal extends ExpressionValue implements Serializable { public Object field1; }
 }

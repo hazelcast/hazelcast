@@ -26,9 +26,11 @@ import org.junit.runner.RunWith;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.time.LocalDate;
 
 import static com.hazelcast.sql.SqlColumnType.BIGINT;
 import static com.hazelcast.sql.SqlColumnType.BOOLEAN;
+import static com.hazelcast.sql.SqlColumnType.DATE;
 import static com.hazelcast.sql.SqlColumnType.DECIMAL;
 import static com.hazelcast.sql.SqlColumnType.DOUBLE;
 import static com.hazelcast.sql.SqlColumnType.REAL;
@@ -150,6 +152,11 @@ public class ParameterEndToEndTest extends ExpressionEndToEndTestBase {
         assertRow("char1 + ?", EXPR0, DOUBLE, 2.1d, "1.1");
         assertRow("char1 + ?", EXPR0, DOUBLE, 3.0d, '2');
         assertDataError("char1 + ?", "failed to convert parameter", "foo");
+    }
+
+    @Test
+    public void testDate() {
+        assertRow("cast(? as date)", EXPR0, DATE, LocalDate.parse("2020-01-01"), LocalDate.parse("2020-01-01"));
     }
 
     @Test

@@ -20,9 +20,14 @@ import com.hazelcast.sql.SqlColumnType;
 import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.expression.SqlExpressionIntegrationTestSupport;
 import com.hazelcast.sql.support.expressions.ExpressionValue;
+import com.hazelcast.sql.support.expressions.ExpressionValue.BigDecimalVal;
+import com.hazelcast.sql.support.expressions.ExpressionValue.BigIntegerVal;
 import com.hazelcast.sql.support.expressions.ExpressionValue.ByteVal;
 import com.hazelcast.sql.support.expressions.ExpressionValue.CharacterVal;
+import com.hazelcast.sql.support.expressions.ExpressionValue.DoubleVal;
+import com.hazelcast.sql.support.expressions.ExpressionValue.FloatVal;
 import com.hazelcast.sql.support.expressions.ExpressionValue.IntegerVal;
+import com.hazelcast.sql.support.expressions.ExpressionValue.LocalDateVal;
 import com.hazelcast.sql.support.expressions.ExpressionValue.LongVal;
 import com.hazelcast.sql.support.expressions.ExpressionValue.ObjectVal;
 import com.hazelcast.sql.support.expressions.ExpressionValue.ShortVal;
@@ -36,6 +41,7 @@ import org.junit.runner.RunWith;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.time.LocalDate;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -51,10 +57,11 @@ public class AsciiFunctionIntegrationTest extends SqlExpressionIntegrationTestSu
         checkColumn(new ShortVal().field1((short) 100), codePoint('1'));
         checkColumn(new IntegerVal().field1(100), codePoint('1'));
         checkColumn(new LongVal().field1((long) 100), codePoint('1'));
-        checkColumn(new ExpressionValue.BigIntegerVal().field1(new BigInteger("100")), codePoint('1'));
-        checkColumn(new ExpressionValue.BigDecimalVal().field1(new BigDecimal("100.5")), codePoint('1'));
-        checkColumn(new ExpressionValue.FloatVal().field1(100.5f), codePoint('1'));
-        checkColumn(new ExpressionValue.DoubleVal().field1(100.5d), codePoint('1'));
+        checkColumn(new BigIntegerVal().field1(new BigInteger("100")), codePoint('1'));
+        checkColumn(new BigDecimalVal().field1(new BigDecimal("100.5")), codePoint('1'));
+        checkColumn(new FloatVal().field1(100.5f), codePoint('1'));
+        checkColumn(new DoubleVal().field1(100.5d), codePoint('1'));
+        checkColumn(new LocalDateVal().field1(LocalDate.parse("2020-01-01")), codePoint('2'));
 
         put(new ObjectVal());
         checkFailure("field1", SqlErrorCode.PARSING, "Cannot apply 'ASCII' to arguments of type 'ASCII(<OBJECT>)'");
@@ -103,6 +110,7 @@ public class AsciiFunctionIntegrationTest extends SqlExpressionIntegrationTestSu
         checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from REAL to VARCHAR", 100f);
         checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from DOUBLE to VARCHAR", 100d);
         checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from OBJECT to VARCHAR", new ObjectVal());
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from DATE to VARCHAR", LocalDate.now());
     }
 
     private void check(Object operand, Integer expectedResult, Object... params) {
