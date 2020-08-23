@@ -198,10 +198,6 @@ public final class HazelcastTypeCoercion extends TypeCoercionImpl {
             return false;
         }
 
-        if (isTemporal(from) ^ isTemporal(to)) {
-            return false;
-        }
-
         if (isLiteral(node) && !(isTemporal(from) || isTemporal(to) || isChar(from) || isChar(to))) {
             // never cast literals, let Calcite decide on temporal and char ones
             return false;
