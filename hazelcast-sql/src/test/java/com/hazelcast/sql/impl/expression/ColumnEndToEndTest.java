@@ -41,6 +41,9 @@ import static com.hazelcast.sql.SqlColumnType.INTEGER;
 import static com.hazelcast.sql.SqlColumnType.OBJECT;
 import static com.hazelcast.sql.SqlColumnType.REAL;
 import static com.hazelcast.sql.SqlColumnType.SMALLINT;
+import static com.hazelcast.sql.SqlColumnType.TIME;
+import static com.hazelcast.sql.SqlColumnType.TIMESTAMP;
+import static com.hazelcast.sql.SqlColumnType.TIMESTAMP_WITH_TIME_ZONE;
 import static com.hazelcast.sql.SqlColumnType.TINYINT;
 import static com.hazelcast.sql.SqlColumnType.VARCHAR;
 import static java.util.Arrays.asList;
@@ -144,11 +147,38 @@ public class ColumnEndToEndTest extends ExpressionEndToEndTestBase {
     }
 
     @Test
-    public void testDate() {
+    public void testLocalDate() {
         if (getMapName().equals("portableRecords")) {
             assertParsingError("dateCol", "Column 'dateCol' not found in any table");
         } else {
             assertRow("dateCol", "dateCol", DATE, getRecord().dateCol);
+        }
+    }
+
+    @Test
+    public void testLocalTime() {
+        if (getMapName().equals("portableRecords")) {
+            assertParsingError("timeCol", "Column 'timeCol' not found in any table");
+        } else {
+            assertRow("timeCol", "timeCol", TIME, getRecord().timeCol);
+        }
+    }
+
+    @Test
+    public void testLocalDateTime() {
+        if (getMapName().equals("portableRecords")) {
+            assertParsingError("dateTimeCol", "Column 'dateTimeCol' not found in any table");
+        } else {
+            assertRow("dateTimeCol", "dateTimeCol", TIMESTAMP, getRecord().dateTimeCol);
+        }
+    }
+
+    @Test
+    public void testOffsetDateTime() {
+        if (getMapName().equals("portableRecords")) {
+            assertParsingError("offsetDateTimeCol", "Column 'offsetDateTimeCol' not found in any table");
+        } else {
+            assertRow("offsetDateTimeCol", "offsetDateTimeCol", TIMESTAMP_WITH_TIME_ZONE, getRecord().offsetDateTimeCol);
         }
     }
 
