@@ -33,7 +33,11 @@ import java.io.IOException;
  */
 public final class SymbolExpression implements Expression<Object>, IdentifiedDataSerializable {
 
-    private final Object symbol;
+    private Object symbol;
+
+    public SymbolExpression() {
+        // No-op
+    }
 
     private SymbolExpression(Object symbol) {
         this.symbol = symbol;
