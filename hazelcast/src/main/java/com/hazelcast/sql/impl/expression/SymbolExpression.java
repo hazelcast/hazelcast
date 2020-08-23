@@ -18,6 +18,7 @@ package com.hazelcast.sql.impl.expression;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
@@ -30,7 +31,7 @@ import java.io.IOException;
  * <p>
  * It is not mean to be serialized or evaluated.
  */
-public final class SymbolExpression implements Expression<Object> {
+public final class SymbolExpression implements Expression<Object>, IdentifiedDataSerializable {
 
     private final Object symbol;
 
@@ -54,6 +55,16 @@ public final class SymbolExpression implements Expression<Object> {
 
     @Override
     public QueryDataType getType() {
+        throw unsupported();
+    }
+
+    @Override
+    public int getFactoryId() {
+        throw unsupported();
+    }
+
+    @Override
+    public int getClassId() {
         throw unsupported();
     }
 
