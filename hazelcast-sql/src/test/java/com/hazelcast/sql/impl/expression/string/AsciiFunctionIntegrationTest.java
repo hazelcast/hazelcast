@@ -42,6 +42,9 @@ import org.junit.runner.RunWith;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.OffsetDateTime;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -62,6 +65,9 @@ public class AsciiFunctionIntegrationTest extends SqlExpressionIntegrationTestSu
         checkColumn(new FloatVal().field1(100.5f), codePoint('1'));
         checkColumn(new DoubleVal().field1(100.5d), codePoint('1'));
         checkColumn(new LocalDateVal().field1(LocalDate.parse("2020-01-01")), codePoint('2'));
+        checkColumn(new ExpressionValue.LocalTimeVal().field1(LocalTime.parse("00:00")), codePoint('0'));
+        checkColumn(new ExpressionValue.LocalDateTimeVal().field1(LocalDateTime.parse("2020-01-01T00:00")), codePoint('2'));
+        checkColumn(new ExpressionValue.OffsetDateTimeVal().field1(OffsetDateTime.parse("2020-01-01T00:00+00:00")), codePoint('2'));
 
         put(new ObjectVal());
         checkFailure("field1", SqlErrorCode.PARSING, "Cannot apply 'ASCII' to arguments of type 'ASCII(<OBJECT>)'");
@@ -111,6 +117,9 @@ public class AsciiFunctionIntegrationTest extends SqlExpressionIntegrationTestSu
         checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from DOUBLE to VARCHAR", 100d);
         checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from OBJECT to VARCHAR", new ObjectVal());
         checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from DATE to VARCHAR", LocalDate.now());
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from TIME to VARCHAR", LocalTime.now());
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from TIMESTAMP to VARCHAR", LocalDateTime.now());
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from TIMESTAMP_WITH_TIME_ZONE to VARCHAR", OffsetDateTime.now());
     }
 
     private void check(Object operand, Integer expectedResult, Object... params) {
