@@ -438,7 +438,7 @@ public class PlusEndToEndTest extends ExpressionEndToEndTestBase {
     }
 
     @Test
-    public void testTimestampWothTimeZone() {
+    public void testTimestampWithTimeZone() {
         assertParsingError("offsetDateTimeCol + booleanTrue", "Cannot apply '+' to arguments of type '<TIMESTAMP_WITH_TIME_ZONE> + <BOOLEAN>'");
 
         assertParsingError("offsetDateTimeCol + byte1", "Cannot apply '+' to arguments of type '<TIMESTAMP_WITH_TIME_ZONE> + <TINYINT>'");
