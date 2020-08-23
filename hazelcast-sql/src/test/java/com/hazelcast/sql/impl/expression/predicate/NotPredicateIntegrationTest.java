@@ -48,8 +48,12 @@ import static com.hazelcast.sql.support.expressions.ExpressionTypes.CHARACTER;
 import static com.hazelcast.sql.support.expressions.ExpressionTypes.DOUBLE;
 import static com.hazelcast.sql.support.expressions.ExpressionTypes.FLOAT;
 import static com.hazelcast.sql.support.expressions.ExpressionTypes.INTEGER;
+import static com.hazelcast.sql.support.expressions.ExpressionTypes.LOCAL_DATE;
+import static com.hazelcast.sql.support.expressions.ExpressionTypes.LOCAL_DATE_TIME;
+import static com.hazelcast.sql.support.expressions.ExpressionTypes.LOCAL_TIME;
 import static com.hazelcast.sql.support.expressions.ExpressionTypes.LONG;
 import static com.hazelcast.sql.support.expressions.ExpressionTypes.OBJECT;
+import static com.hazelcast.sql.support.expressions.ExpressionTypes.OFFSET_DATE_TIME;
 import static com.hazelcast.sql.support.expressions.ExpressionTypes.STRING;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -88,6 +92,11 @@ public class NotPredicateIntegrationTest extends SqlExpressionIntegrationTestSup
         checkColumnFailure(1f, SqlErrorCode.PARSING, "Cannot apply 'NOT' to arguments of type 'NOT<REAL>'");
         checkColumnFailure(1d, SqlErrorCode.PARSING, "Cannot apply 'NOT' to arguments of type 'NOT<DOUBLE>'");
 
+        checkColumnFailure(LOCAL_DATE_VAL, SqlErrorCode.PARSING, "Cannot apply 'NOT' to arguments of type 'NOT<DATE>'");
+        checkColumnFailure(LOCAL_TIME_VAL, SqlErrorCode.PARSING, "Cannot apply 'NOT' to arguments of type 'NOT<TIME>'");
+        checkColumnFailure(LOCAL_DATE_TIME_VAL, SqlErrorCode.PARSING, "Cannot apply 'NOT' to arguments of type 'NOT<TIMESTAMP>'");
+        checkColumnFailure(OFFSET_DATE_TIME_VAL, SqlErrorCode.PARSING, "Cannot apply 'NOT' to arguments of type 'NOT<TIMESTAMP_WITH_TIME_ZONE>'");
+
         put(new ExpressionValue.ObjectVal());
         checkFailure("field1", SqlErrorCode.PARSING, "Cannot apply 'NOT' to arguments of type 'NOT<OBJECT>'");
     }
@@ -114,6 +123,10 @@ public class NotPredicateIntegrationTest extends SqlExpressionIntegrationTestSup
         checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from DECIMAL to BOOLEAN", BigDecimal.ZERO);
         checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from REAL to BOOLEAN", 0f);
         checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from DOUBLE to BOOLEAN", 0d);
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from DATE to BOOLEAN", LOCAL_DATE_VAL);
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from TIME to BOOLEAN", LOCAL_TIME_VAL);
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from TIMESTAMP to BOOLEAN", LOCAL_DATE_TIME_VAL);
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from TIMESTAMP_WITH_TIME_ZONE to BOOLEAN", OFFSET_DATE_TIME_VAL);
         checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from OBJECT to BOOLEAN", new ExpressionValue.ObjectVal());
     }
 
@@ -361,6 +374,10 @@ public class NotPredicateIntegrationTest extends SqlExpressionIntegrationTestSup
         checkUnsupportedColumn(BIG_DECIMAL, "DECIMAL(38, 38)");
         checkUnsupportedColumn(FLOAT, "REAL");
         checkUnsupportedColumn(DOUBLE, "DOUBLE");
+        checkUnsupportedColumn(LOCAL_DATE, "DATE");
+        checkUnsupportedColumn(LOCAL_TIME, "TIME");
+        checkUnsupportedColumn(LOCAL_DATE_TIME, "TIMESTAMP");
+        checkUnsupportedColumn(OFFSET_DATE_TIME, "TIMESTAMP_WITH_TIME_ZONE");
         checkUnsupportedColumn(OBJECT, "OBJECT");
     }
 
