@@ -21,6 +21,10 @@ import com.hazelcast.sql.impl.type.QueryDataType;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.OffsetDateTime;
 import java.util.Arrays;
 import java.util.List;
 
@@ -345,6 +349,138 @@ public abstract class ExpressionType<T> {
         @Override
         public QueryDataType getFieldConverterType() {
             return QueryDataType.VARCHAR_CHARACTER;
+        }
+    }
+
+    public static class LocalTimeType extends ExpressionType<Object> {
+        @Override
+        public String typeName() {
+            return "LocalTime";
+        }
+
+        @Override
+        public List<Object> values() {
+            return Arrays.asList(
+                LocalTime.parse("01:00"),
+                LocalTime.parse("02:00"),
+                LocalTime.parse("03:00"),
+                LocalTime.parse("04:00"),
+                LocalTime.parse("05:00"),
+                null);
+        }
+
+        @Override
+        public Object valueFrom() {
+            return LocalTime.parse("02:00");
+        }
+
+        @Override
+        public Object valueTo() {
+            return LocalTime.parse("04:00");
+        }
+
+        @Override
+        public QueryDataType getFieldConverterType() {
+            return QueryDataType.TIMESTAMP;
+        }
+    }
+
+    public static class LocalDateType extends ExpressionType<Object> {
+        @Override
+        public String typeName() {
+            return "LocalDate";
+        }
+
+        @Override
+        public List<Object> values() {
+            return Arrays.asList(
+                LocalDate.parse("2020-01-01"),
+                LocalDate.parse("2020-01-02"),
+                LocalDate.parse("2020-01-03"),
+                LocalDate.parse("2020-01-04"),
+                LocalDate.parse("2020-01-05"),
+                null);
+        }
+
+        @Override
+        public Object valueFrom() {
+            return LocalDate.parse("2020-01-02");
+        }
+
+        @Override
+        public Object valueTo() {
+            return LocalDate.parse("2020-01-04");
+        }
+
+        @Override
+        public QueryDataType getFieldConverterType() {
+            return QueryDataType.DATE;
+        }
+    }
+
+    public static class LocalDateTimeType extends ExpressionType<Object> {
+        @Override
+        public String typeName() {
+            return "LocalDateTime";
+        }
+
+        @Override
+        public List<Object> values() {
+            return Arrays.asList(
+                LocalDateTime.parse("2020-01-01T00:00:00"),
+                LocalDateTime.parse("2020-01-02T00:00:00"),
+                LocalDateTime.parse("2020-01-03T00:00:00"),
+                LocalDateTime.parse("2020-01-04T00:00:00"),
+                LocalDateTime.parse("2020-01-05T00:00:00"),
+                null);
+        }
+
+        @Override
+        public Object valueFrom() {
+            return LocalDateTime.parse("2020-01-02T00:00:00");
+        }
+
+        @Override
+        public Object valueTo() {
+            return LocalDateTime.parse("2020-01-04T00:00:00");
+        }
+
+        @Override
+        public QueryDataType getFieldConverterType() {
+            return QueryDataType.TIMESTAMP;
+        }
+    }
+
+    public static class OffsetDateTimeType extends ExpressionType<Object> {
+        @Override
+        public String typeName() {
+            return "OffsetDateTime";
+        }
+
+        @Override
+        public List<Object> values() {
+            return Arrays.asList(
+                OffsetDateTime.parse("2020-01-01T00:00:00+00:00"),
+                OffsetDateTime.parse("2020-01-02T00:00:00+00:00"),
+                OffsetDateTime.parse("2020-01-03T00:00:00+00:00"),
+                OffsetDateTime.parse("2020-01-04T00:00:00+00:00"),
+                OffsetDateTime.parse("2020-01-05T00:00:00+00:00"),
+                null);
+        }
+
+        @Override
+        public Object valueFrom() {
+            return OffsetDateTime.parse("2020-01-02T00:00:00+00:00");
+        }
+
+        @Override
+        public Object valueTo() {
+            return OffsetDateTime.parse("2020-01-04T00:00:00+00:00");
+        }
+
+        @Override
+        public QueryDataType getFieldConverterType() {
+            return QueryDataType.TIMESTAMP_WITH_TZ_OFFSET_DATE_TIME;
         }
     }
 

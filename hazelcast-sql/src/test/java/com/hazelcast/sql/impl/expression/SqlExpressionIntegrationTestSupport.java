@@ -42,10 +42,10 @@ import static org.junit.Assert.fail;
 @SuppressWarnings({"unchecked", "rawtypes"})
 public abstract class SqlExpressionIntegrationTestSupport extends SqlTestSupport {
 
-    public static final LocalDate LOCAL_DATE = LocalDate.parse("2020-01-01");
-    public static final LocalTime LOCAL_TIME = LocalTime.parse("00:00");
-    public static final LocalDateTime LOCAL_DATE_TIME = LocalDateTime.parse("2020-01-01T00:00");
-    public static final OffsetDateTime OFFSET_DATE_TIME = OffsetDateTime.parse("2020-01-01T00:00+00:00");
+    public static final LocalDate LOCAL_DATE_VAL = LocalDate.parse("2020-01-01");
+    public static final LocalTime LOCAL_TIME_VAL = LocalTime.parse("00:00");
+    public static final LocalDateTime LOCAL_DATE_TIME_VAL = LocalDateTime.parse("2020-01-01T00:00");
+    public static final OffsetDateTime OFFSET_DATE_TIME_VAL = OffsetDateTime.parse("2020-01-01T00:00+00:00");
 
     protected static final Object SKIP_VALUE_CHECK = new Object();
     protected HazelcastInstance member;

@@ -63,10 +63,10 @@ public class AsciiFunctionIntegrationTest extends SqlExpressionIntegrationTestSu
         checkColumn(new BigDecimalVal().field1(new BigDecimal("100.5")), codePoint('1'));
         checkColumn(new FloatVal().field1(100.5f), codePoint('1'));
         checkColumn(new DoubleVal().field1(100.5d), codePoint('1'));
-        checkColumn(new LocalDateVal().field1(LOCAL_DATE), codePoint('2'));
-        checkColumn(new LocalTimeVal().field1(LOCAL_TIME), codePoint('0'));
-        checkColumn(new LocalDateTimeVal().field1(LOCAL_DATE_TIME), codePoint('2'));
-        checkColumn(new OffsetDateTimeVal().field1(OFFSET_DATE_TIME), codePoint('2'));
+        checkColumn(new LocalDateVal().field1(LOCAL_DATE_VAL), codePoint('2'));
+        checkColumn(new LocalTimeVal().field1(LOCAL_TIME_VAL), codePoint('0'));
+        checkColumn(new LocalDateTimeVal().field1(LOCAL_DATE_TIME_VAL), codePoint('2'));
+        checkColumn(new OffsetDateTimeVal().field1(OFFSET_DATE_TIME_VAL), codePoint('2'));
 
         put(new ObjectVal());
         checkFailure("field1", SqlErrorCode.PARSING, "Cannot apply 'ASCII' to arguments of type 'ASCII(<OBJECT>)'");
@@ -115,10 +115,10 @@ public class AsciiFunctionIntegrationTest extends SqlExpressionIntegrationTestSu
         checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from REAL to VARCHAR", 100f);
         checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from DOUBLE to VARCHAR", 100d);
         checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from OBJECT to VARCHAR", new ObjectVal());
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from DATE to VARCHAR", LOCAL_DATE);
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from TIME to VARCHAR", LOCAL_TIME);
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from TIMESTAMP to VARCHAR", LOCAL_DATE_TIME);
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from TIMESTAMP_WITH_TIME_ZONE to VARCHAR", OFFSET_DATE_TIME);
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from DATE to VARCHAR", LOCAL_DATE_VAL);
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from TIME to VARCHAR", LOCAL_TIME_VAL);
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from TIMESTAMP to VARCHAR", LOCAL_DATE_TIME_VAL);
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from TIMESTAMP_WITH_TIME_ZONE to VARCHAR", OFFSET_DATE_TIME_VAL);
     }
 
     private void check(Object operand, Integer expectedResult, Object... params) {
