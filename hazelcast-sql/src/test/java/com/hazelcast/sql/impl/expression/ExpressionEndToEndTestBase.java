@@ -40,6 +40,7 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.time.LocalDate;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -231,6 +232,10 @@ public abstract class ExpressionEndToEndTestBase extends SqlTestSupport {
         public Object objectString1 = "1";
         public Object objectChar1 = '1';
         public Object object = new SerializableObject();
+
+        public LocalDate dateCol = LocalDate.parse("2020-01-01");
+        public String dateCol_string = dateCol.toString();
+        public Object dateCol_object = dateCol;
 
         @Override
         public boolean equals(Object o) {

@@ -28,6 +28,7 @@ import java.math.BigDecimal;
 
 import static com.hazelcast.sql.SqlColumnType.BIGINT;
 import static com.hazelcast.sql.SqlColumnType.BOOLEAN;
+import static com.hazelcast.sql.SqlColumnType.DATE;
 import static com.hazelcast.sql.SqlColumnType.DECIMAL;
 import static com.hazelcast.sql.SqlColumnType.DOUBLE;
 import static com.hazelcast.sql.SqlColumnType.INTEGER;
@@ -75,6 +76,8 @@ public class CastEndToEndTest extends ExpressionEndToEndTestBase {
         assertDataError("cast(objectChar1 as boolean)", "Cannot convert VARCHAR to BOOLEAN");
         assertDataError("cast(object as boolean)", "Cannot convert OBJECT to BOOLEAN: com.hazelcast.sql.impl.expression"
                 + ".ExpressionEndToEndTestBase$SerializableObject");
+
+        assertParsingError("cast(dateCol as boolean)", "Cast function cannot convert value of type DATE to type BOOLEAN");
     }
 
     @Test
@@ -119,6 +122,8 @@ public class CastEndToEndTest extends ExpressionEndToEndTestBase {
         assertRow("cast(objectChar1 as tinyint)", EXPR0, TINYINT, (byte) 1);
         assertDataError("cast(object as tinyint)", "Cannot convert OBJECT to TINYINT: com.hazelcast.sql.impl.expression"
                 + ".ExpressionEndToEndTestBase$SerializableObject");
+
+        assertParsingError("cast(dateCol as tinyint)", "Cast function cannot convert value of type DATE to type TINYINT");
     }
 
     @Test
@@ -164,6 +169,8 @@ public class CastEndToEndTest extends ExpressionEndToEndTestBase {
         assertRow("cast(objectChar1 as smallint)", EXPR0, SMALLINT, (short) 1);
         assertDataError("cast(object as smallint)", "Cannot convert OBJECT to SMALLINT: com.hazelcast.sql.impl.expression"
                 + ".ExpressionEndToEndTestBase$SerializableObject");
+
+        assertParsingError("cast(dateCol as smallint)", "Cast function cannot convert value of type DATE to type SMALLINT");
     }
 
     @Test
@@ -208,6 +215,8 @@ public class CastEndToEndTest extends ExpressionEndToEndTestBase {
         assertRow("cast(objectChar1 as integer)", EXPR0, INTEGER, 1);
         assertDataError("cast(object as integer)", "Cannot convert OBJECT to INTEGER: com.hazelcast.sql.impl.expression"
                 + ".ExpressionEndToEndTestBase$SerializableObject");
+
+        assertParsingError("cast(dateCol as integer)", "Cast function cannot convert value of type DATE to type INTEGER");
     }
 
     @Test
@@ -252,6 +261,8 @@ public class CastEndToEndTest extends ExpressionEndToEndTestBase {
         assertRow("cast(objectChar1 as bigint)", EXPR0, BIGINT, 1L);
         assertDataError("cast(object as bigint)", "Cannot convert OBJECT to BIGINT: com.hazelcast.sql.impl.expression"
                 + ".ExpressionEndToEndTestBase$SerializableObject");
+
+        assertParsingError("cast(dateCol as bigint)", "Cast function cannot convert value of type DATE to type BIGINT");
     }
 
     @Test
@@ -296,6 +307,8 @@ public class CastEndToEndTest extends ExpressionEndToEndTestBase {
         assertRow("cast(objectChar1 as real)", EXPR0, REAL, 1.0f);
         assertDataError("cast(object as real)", "Cannot convert OBJECT to REAL: com.hazelcast.sql.impl.expression"
                 + ".ExpressionEndToEndTestBase$SerializableObject");
+
+        assertParsingError("cast(dateCol as real)", "Cast function cannot convert value of type DATE to type REAL");
     }
 
     @Test
@@ -340,6 +353,8 @@ public class CastEndToEndTest extends ExpressionEndToEndTestBase {
         assertRow("cast(objectChar1 as double)", EXPR0, DOUBLE, 1.0);
         assertDataError("cast(object as double)", "Cannot convert OBJECT to DOUBLE: com.hazelcast.sql.impl.expression"
                 + ".ExpressionEndToEndTestBase$SerializableObject");
+
+        assertParsingError("cast(dateCol as double)", "Cast function cannot convert value of type DATE to type DOUBLE");
     }
 
     @Test
@@ -386,6 +401,8 @@ public class CastEndToEndTest extends ExpressionEndToEndTestBase {
         assertRow("cast(objectChar1 as decimal)", EXPR0, DECIMAL, BigDecimal.valueOf(1));
         assertDataError("cast(object as decimal)", "Cannot convert OBJECT to DECIMAL: com.hazelcast.sql.impl.expression"
                 + ".ExpressionEndToEndTestBase$SerializableObject");
+
+        assertParsingError("cast(dateCol as decimal)", "Cast function cannot convert value of type DATE to type DECIMAL");
     }
 
     @Test
@@ -429,6 +446,8 @@ public class CastEndToEndTest extends ExpressionEndToEndTestBase {
         assertRow("cast(objectString1 as varchar)", EXPR0, VARCHAR, "1");
         assertRow("cast(objectChar1 as varchar)", EXPR0, VARCHAR, "1");
         assertRow("cast(object as varchar)", EXPR0, VARCHAR, getRecord().object.toString());
+
+        assertRow("cast(dateCol as varchar)", EXPR0, VARCHAR, getRecord().dateCol.toString());
     }
 
     @Test
@@ -472,6 +491,28 @@ public class CastEndToEndTest extends ExpressionEndToEndTestBase {
         assertRow("cast(objectString1 as object)", EXPR0, OBJECT, "1");
         assertRow("cast(objectChar1 as object)", EXPR0, OBJECT, "1");
         assertRow("cast(object as object)", EXPR0, OBJECT, getRecord().object);
+
+        assertRow("cast(dateCol as object)", EXPR0, OBJECT, getRecord().dateCol);
     }
 
+    @Test
+    public void testDate() {
+        assertParsingError("cast(booleanTrue as date)", "Cast function cannot convert value of type BOOLEAN to type DATE");
+
+        assertParsingError("cast(byte1 as date)", "Cast function cannot convert value of type TINYINT to type DATE");
+        assertParsingError("cast(short1 as date)", "Cast function cannot convert value of type SMALLINT to type DATE");
+        assertParsingError("cast(int1 as date)", "Cast function cannot convert value of type INTEGER to type DATE");
+        assertParsingError("cast(long1 as date)", "Cast function cannot convert value of type BIGINT to type DATE");
+        assertParsingError("cast(bigInteger1 as date)", "Cast function cannot convert value of type DECIMAL(38, 38) to type DATE");
+        assertParsingError("cast(decimal1 as date)", "Cast function cannot convert value of type DECIMAL(38, 38) to type DATE");
+        assertParsingError("cast(float1 as date)", "Cast function cannot convert value of type REAL to type DATE");
+        assertParsingError("cast(double1 as date)", "Cast function cannot convert value of type DOUBLE to type DATE");
+
+        assertDataError("cast(string1 as date)", "Cannot convert VARCHAR to DATE");
+        assertDataError("cast(char1 as date)", "Cannot convert VARCHAR to DATE");
+        assertRow("cast(dateCol_string as date)", EXPR0, DATE, getRecord().dateCol);
+
+        assertDataError("cast(objectInt1 as date)", "Cannot convert INTEGER to DATE");
+        assertRow("cast(dateCol_object as date)", EXPR0, DATE, getRecord().dateCol);
+    }
 }

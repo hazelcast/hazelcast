@@ -204,6 +204,7 @@ public final class UnsupportedOperationVisitor implements SqlVisitor<Void> {
             case REAL:
             case DOUBLE:
             case VARCHAR:
+            case DATE:
             case NULL:
                 return null;
 
