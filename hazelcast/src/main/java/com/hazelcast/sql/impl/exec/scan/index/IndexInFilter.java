@@ -42,7 +42,7 @@ import java.util.Map;
  * any other children filter.
  * <p>
  * Actual children filters could be either {@link IndexEqualsFilter} or {@link IndexRangeFilter} depending on the index
- * configiration and the filter.
+ * configuration and the filter.
  * <p>
  * Consider the expression {@code WHERE a=1 AND (b=2 OR b=3)}.
  * <ul>
