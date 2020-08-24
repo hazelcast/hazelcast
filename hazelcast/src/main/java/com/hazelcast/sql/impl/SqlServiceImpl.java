@@ -39,6 +39,7 @@ import com.hazelcast.sql.impl.plan.cache.PlanCacheChecker;
 import com.hazelcast.sql.impl.plan.cache.PlanCacheKey;
 import com.hazelcast.sql.impl.schema.SqlCatalog;
 import com.hazelcast.sql.impl.schema.TableResolver;
+import com.hazelcast.sql.impl.schema.map.MapEnhancer;
 import com.hazelcast.sql.impl.schema.map.PartitionedMapTableResolver;
 import com.hazelcast.sql.impl.state.QueryState;
 
@@ -322,10 +323,17 @@ public class SqlServiceImpl implements SqlService, Consumer<Packet> {
     ) {
         List<TableResolver> res = new ArrayList<>();
 
+        MapEnhancer mapEnhancer;
+
         if (jetSqlService != null) {
             res.addAll(jetSqlService.tableResolvers());
+
+            mapEnhancer = jetSqlService.mapEnhancer();
+        } else {
+            mapEnhancer = (object, key) -> null;
         }
-        res.add(new PartitionedMapTableResolver(nodeEngine));
+
+        res.add(new PartitionedMapTableResolver(nodeEngine, mapEnhancer));
 
         return res;
     }

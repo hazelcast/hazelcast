@@ -25,9 +25,6 @@ import com.hazelcast.sql.impl.extract.GenericQueryTargetDescriptor;
 import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.extract.QueryTarget;
 import com.hazelcast.sql.impl.extract.QueryTargetDescriptor;
-import com.hazelcast.sql.impl.inject.PojoUpsertTargetDescriptor;
-import com.hazelcast.sql.impl.inject.PortableUpsertTargetDescriptor;
-import com.hazelcast.sql.impl.inject.UpsertTargetDescriptor;
 import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.schema.map.MapTableField;
 import com.hazelcast.sql.impl.type.QueryDataType;
@@ -38,11 +35,11 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
-import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonList;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -62,28 +59,22 @@ public class MapPlanObjectKeyTest extends SqlTestSupport {
         Set<String> conflictingSchemas1 = Collections.singleton("schema1");
         Set<String> conflictingSchemas2 = Collections.singleton("schema2");
 
-        QueryTargetDescriptor keyQueryDescriptor1 = GenericQueryTargetDescriptor.DEFAULT;
-        QueryTargetDescriptor keyQueryDescriptor2 = new TestTargetDescriptor();
-        UpsertTargetDescriptor keyUpsertDescriptor1 = new PojoUpsertTargetDescriptor(String.class.getName(), emptyMap());
-        UpsertTargetDescriptor keyUpsertDescriptor2 = new PortableUpsertTargetDescriptor(1, 1, 1);
+        QueryTargetDescriptor keyDescriptor1 = GenericQueryTargetDescriptor.DEFAULT;
+        QueryTargetDescriptor keyDescriptor2 = new TestTargetDescriptor();
 
-        QueryTargetDescriptor valueQueryDescriptor1 = GenericQueryTargetDescriptor.DEFAULT;
-        QueryTargetDescriptor valueQueryDescriptor2 = new TestTargetDescriptor();
-        UpsertTargetDescriptor valueUpsertDescriptor1 = new PojoUpsertTargetDescriptor(String.class.getName(), emptyMap());
-        UpsertTargetDescriptor valueUpsertDescriptor2 = new PortableUpsertTargetDescriptor(1, 1, 1);
+        QueryTargetDescriptor valueDescriptor1 = GenericQueryTargetDescriptor.DEFAULT;
+        QueryTargetDescriptor valueDescriptor2 = new TestTargetDescriptor();
 
-        PartitionedMapPlanObjectKey objectId = new PartitionedMapPlanObjectKey(schema1, name1, fields1, keyQueryDescriptor1, valueQueryDescriptor1, keyUpsertDescriptor1, valueUpsertDescriptor1, conflictingSchemas1);
+        PartitionedMapPlanObjectKey objectId = new PartitionedMapPlanObjectKey(schema1, name1, fields1, conflictingSchemas1, keyDescriptor1, valueDescriptor1);
 
-        checkEquals(objectId, new PartitionedMapPlanObjectKey(schema1, name1, fields1, keyQueryDescriptor1, valueQueryDescriptor1, keyUpsertDescriptor1, valueUpsertDescriptor1, conflictingSchemas1), true);
+        checkEquals(objectId, new PartitionedMapPlanObjectKey(schema1, name1, fields1, conflictingSchemas1, keyDescriptor1, valueDescriptor1), true);
 
-        checkEquals(objectId, new PartitionedMapPlanObjectKey(schema2, name1, fields1, keyQueryDescriptor1, valueQueryDescriptor1, keyUpsertDescriptor1, valueUpsertDescriptor1, conflictingSchemas1), false);
-        checkEquals(objectId, new PartitionedMapPlanObjectKey(schema1, name2, fields1, keyQueryDescriptor1, valueQueryDescriptor1, keyUpsertDescriptor1, valueUpsertDescriptor1, conflictingSchemas1), false);
-        checkEquals(objectId, new PartitionedMapPlanObjectKey(schema1, name1, fields2, keyQueryDescriptor1, valueQueryDescriptor1, keyUpsertDescriptor1, valueUpsertDescriptor1, conflictingSchemas1), false);
-        checkEquals(objectId, new PartitionedMapPlanObjectKey(schema1, name1, fields1, keyQueryDescriptor2, valueQueryDescriptor1, keyUpsertDescriptor1, valueUpsertDescriptor1, conflictingSchemas1), false);
-        checkEquals(objectId, new PartitionedMapPlanObjectKey(schema1, name1, fields1, keyQueryDescriptor1, valueQueryDescriptor2, keyUpsertDescriptor1, valueUpsertDescriptor1, conflictingSchemas1), false);
-        checkEquals(objectId, new PartitionedMapPlanObjectKey(schema1, name1, fields1, keyQueryDescriptor1, valueQueryDescriptor1, keyUpsertDescriptor2, valueUpsertDescriptor1, conflictingSchemas1), false);
-        checkEquals(objectId, new PartitionedMapPlanObjectKey(schema1, name1, fields1, keyQueryDescriptor1, valueQueryDescriptor1, keyUpsertDescriptor1, valueUpsertDescriptor2, conflictingSchemas1), false);
-        checkEquals(objectId, new PartitionedMapPlanObjectKey(schema1, name1, fields1, keyQueryDescriptor1, valueQueryDescriptor1, keyUpsertDescriptor1, valueUpsertDescriptor1, conflictingSchemas2), false);
+        checkEquals(objectId, new PartitionedMapPlanObjectKey(schema2, name1, fields1, conflictingSchemas1, keyDescriptor1, valueDescriptor1), false);
+        checkEquals(objectId, new PartitionedMapPlanObjectKey(schema1, name2, fields1, conflictingSchemas1, keyDescriptor1, valueDescriptor1), false);
+        checkEquals(objectId, new PartitionedMapPlanObjectKey(schema1, name1, fields2, conflictingSchemas1, keyDescriptor1, valueDescriptor1), false);
+        checkEquals(objectId, new PartitionedMapPlanObjectKey(schema1, name1, fields1, conflictingSchemas2, keyDescriptor1, valueDescriptor1), false);
+        checkEquals(objectId, new PartitionedMapPlanObjectKey(schema1, name1, fields1, conflictingSchemas1, keyDescriptor2, valueDescriptor1), false);
+        checkEquals(objectId, new PartitionedMapPlanObjectKey(schema1, name1, fields1, conflictingSchemas1, keyDescriptor1, valueDescriptor2), false);
     }
 
     private static class TestTargetDescriptor implements QueryTargetDescriptor {
@@ -93,12 +84,12 @@ public class MapPlanObjectKeyTest extends SqlTestSupport {
         }
 
         @Override
-        public void writeData(ObjectDataOutput out) {
+        public void writeData(ObjectDataOutput out) throws IOException {
             // No-op.
         }
 
         @Override
-        public void readData(ObjectDataInput in) {
+        public void readData(ObjectDataInput in) throws IOException {
             // No-op.
         }
     }

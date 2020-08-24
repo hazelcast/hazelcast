@@ -31,10 +31,16 @@ import java.util.Map;
 public abstract class AbstractMapTableResolver implements TableResolver {
 
     protected final NodeEngine nodeEngine;
+    protected final MapEnhancer enhancer;
     private final List<List<String>> defaultSearchPaths;
 
-    protected AbstractMapTableResolver(NodeEngine nodeEngine, List<List<String>> defaultSearchPaths) {
+    protected AbstractMapTableResolver(
+        NodeEngine nodeEngine,
+        MapEnhancer enhancer,
+        List<List<String>> defaultSearchPaths
+    ) {
         this.nodeEngine = nodeEngine;
+        this.enhancer = enhancer;
         this.defaultSearchPaths = defaultSearchPaths;
     }
 

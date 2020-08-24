@@ -19,6 +19,7 @@ package com.hazelcast.sql.impl;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.impl.optimizer.SqlPlan;
 import com.hazelcast.sql.impl.schema.TableResolver;
+import com.hazelcast.sql.impl.schema.map.MapEnhancer;
 
 import java.util.List;
 
@@ -33,6 +34,11 @@ public interface JetSqlService {
      * Return Jet specific {@link TableResolver}s.
      */
     List<TableResolver> tableResolvers();
+
+    /**
+     * Return Jet specific {@link MapEnhancer}.
+     */
+    MapEnhancer mapEnhancer();
 
     /**
      * Return Jet specific <i>com.hazelcast.sql.impl.calcite.SqlBackend</i>.

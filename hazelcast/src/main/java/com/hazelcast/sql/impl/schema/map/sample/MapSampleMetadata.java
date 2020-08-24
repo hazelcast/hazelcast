@@ -17,7 +17,6 @@
 package com.hazelcast.sql.impl.schema.map.sample;
 
 import com.hazelcast.sql.impl.extract.QueryTargetDescriptor;
-import com.hazelcast.sql.impl.inject.UpsertTargetDescriptor;
 import com.hazelcast.sql.impl.schema.TableField;
 
 import java.util.LinkedHashMap;
@@ -27,26 +26,26 @@ import java.util.LinkedHashMap;
  */
 public class MapSampleMetadata {
 
-    private final QueryTargetDescriptor queryDescriptor;
-    private final UpsertTargetDescriptor upsertDescriptor;
+    private final QueryTargetDescriptor descriptor;
+    private final Object appendix;
     private final LinkedHashMap<String, TableField> fields;
 
     public MapSampleMetadata(
-            QueryTargetDescriptor queryDescriptor,
-            UpsertTargetDescriptor upsertDescriptor,
-            LinkedHashMap<String, TableField> fields
+        QueryTargetDescriptor descriptor,
+        Object appendix,
+        LinkedHashMap<String, TableField> fields
     ) {
-        this.queryDescriptor = queryDescriptor;
-        this.upsertDescriptor = upsertDescriptor;
+        this.descriptor = descriptor;
+        this.appendix = appendix;
         this.fields = fields;
     }
 
-    public QueryTargetDescriptor getQueryDescriptor() {
-        return queryDescriptor;
+    public QueryTargetDescriptor getDescriptor() {
+        return descriptor;
     }
 
-    public UpsertTargetDescriptor getUpsertDescriptor() {
-        return upsertDescriptor;
+    public Object getAppendix() {
+        return appendix;
     }
 
     @SuppressWarnings("checkstyle:IllegalType")

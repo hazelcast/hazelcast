@@ -52,8 +52,8 @@ public class PartitionedMapTableResolver extends AbstractMapTableResolver {
     private static final List<List<String>> SEARCH_PATHS =
         Collections.singletonList(Arrays.asList(QueryUtils.CATALOG, SCHEMA_NAME_PARTITIONED));
 
-    public PartitionedMapTableResolver(NodeEngine nodeEngine) {
-        super(nodeEngine, SEARCH_PATHS);
+    public PartitionedMapTableResolver(NodeEngine nodeEngine, MapEnhancer enhancer) {
+        super(nodeEngine, enhancer, SEARCH_PATHS);
     }
 
     @Override @Nonnull
@@ -94,7 +94,7 @@ public class PartitionedMapTableResolver extends AbstractMapTableResolver {
     }
 
     @SuppressWarnings({"rawtypes", "checkstyle:MethodLength", "checkstyle:CyclomaticComplexity", "checkstyle:NPathComplexity"})
-    public static PartitionedMapTable createTable(
+    private PartitionedMapTable createTable(
         NodeEngine nodeEngine,
         MapServiceContext context,
         String name
@@ -134,12 +134,14 @@ public class PartitionedMapTableResolver extends AbstractMapTableResolver {
 
                 MapSampleMetadata keyMetadata = MapSampleMetadataResolver.resolve(
                     ss,
+                    enhancer,
                     entry.getKey(),
                     true
                 );
 
                 MapSampleMetadata valueMetadata = MapSampleMetadataResolver.resolve(
                     ss,
+                    enhancer,
                     entry.getValue().getValue(),
                     false
                 );
@@ -155,10 +157,10 @@ public class PartitionedMapTableResolver extends AbstractMapTableResolver {
                     name,
                     fields,
                     new ConstantTableStatistics(estimatedRowCount),
-                    keyMetadata.getQueryDescriptor(),
-                    valueMetadata.getQueryDescriptor(),
-                    keyMetadata.getUpsertDescriptor(),
-                    valueMetadata.getUpsertDescriptor()
+                    keyMetadata.getDescriptor(),
+                    valueMetadata.getDescriptor(),
+                    keyMetadata.getAppendix(),
+                    valueMetadata.getAppendix()
                 );
             }
 

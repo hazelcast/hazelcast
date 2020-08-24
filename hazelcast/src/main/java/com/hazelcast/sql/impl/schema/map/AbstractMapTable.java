@@ -18,7 +18,6 @@ package com.hazelcast.sql.impl.schema.map;
 
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.extract.QueryTargetDescriptor;
-import com.hazelcast.sql.impl.inject.UpsertTargetDescriptor;
 import com.hazelcast.sql.impl.schema.ConstantTableStatistics;
 import com.hazelcast.sql.impl.schema.Table;
 import com.hazelcast.sql.impl.schema.TableField;
@@ -36,10 +35,10 @@ import static java.util.Objects.requireNonNull;
 public abstract class AbstractMapTable extends Table {
 
     private final String mapName;
-    private final QueryTargetDescriptor keyQueryDescriptor;
-    private final QueryTargetDescriptor valueQueryDescriptor;
-    private final UpsertTargetDescriptor keyUpsertDescriptor;
-    private final UpsertTargetDescriptor valueUpsertDescriptor;
+    private final QueryTargetDescriptor keyDescriptor;
+    private final QueryTargetDescriptor valueDescriptor;
+    private final Object keyAppendix;
+    private final Object valueAppendix;
     private final QueryException exception;
 
     /**
@@ -52,18 +51,18 @@ public abstract class AbstractMapTable extends Table {
         String mapName,
         List<TableField> fields,
         TableStatistics statistics,
-        QueryTargetDescriptor keyQueryDescriptor,
-        QueryTargetDescriptor valueQueryDescriptor,
-        UpsertTargetDescriptor keyUpsertDescriptor,
-        UpsertTargetDescriptor valueUpsertDescriptor
+        QueryTargetDescriptor keyDescriptor,
+        QueryTargetDescriptor valueDescriptor,
+        Object keyAppendix,
+        Object valueAppendix
     ) {
         super(schemaName, tableName, fields, statistics);
 
         this.mapName = requireNonNull(mapName);
-        this.keyQueryDescriptor = keyQueryDescriptor;
-        this.valueQueryDescriptor = valueQueryDescriptor;
-        this.keyUpsertDescriptor = keyUpsertDescriptor;
-        this.valueUpsertDescriptor = valueUpsertDescriptor;
+        this.keyDescriptor = keyDescriptor;
+        this.valueDescriptor = valueDescriptor;
+        this.keyAppendix = keyAppendix;
+        this.valueAppendix = valueAppendix;
 
         exception = null;
     }
@@ -72,10 +71,10 @@ public abstract class AbstractMapTable extends Table {
         super(schemaName, name, Collections.emptyList(), new ConstantTableStatistics(0));
 
         this.mapName = name;
-        this.keyQueryDescriptor = null;
-        this.valueQueryDescriptor = null;
-        this.keyUpsertDescriptor = null;
-        this.valueUpsertDescriptor = null;
+        this.keyDescriptor = null;
+        this.valueDescriptor = null;
+        this.keyAppendix = null;
+        this.valueAppendix = null;
 
         this.exception = exception;
     }
@@ -106,20 +105,20 @@ public abstract class AbstractMapTable extends Table {
         return exception == null;
     }
 
-    public QueryTargetDescriptor getKeyQueryDescriptor() {
-        return keyQueryDescriptor;
+    public QueryTargetDescriptor getKeyDescriptor() {
+        return keyDescriptor;
     }
 
-    public QueryTargetDescriptor getValueQueryDescriptor() {
-        return valueQueryDescriptor;
+    public QueryTargetDescriptor getValueDescriptor() {
+        return valueDescriptor;
     }
 
-    public UpsertTargetDescriptor getKeyUpsertDescriptor() {
-        return keyUpsertDescriptor;
+    public Object getKeyAppendix() {
+        return keyAppendix;
     }
 
-    public UpsertTargetDescriptor getValueUpsertDescriptor() {
-        return valueUpsertDescriptor;
+    public Object getValueAppendix() {
+        return valueAppendix;
     }
 
     public QueryException getException() {

@@ -25,11 +25,8 @@ import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.extract.GenericQueryTargetDescriptor;
 import com.hazelcast.sql.impl.extract.QueryPath;
-import com.hazelcast.sql.impl.inject.PojoUpsertTargetDescriptor;
-import com.hazelcast.sql.impl.inject.PortableUpsertTargetDescriptor;
-import com.hazelcast.sql.impl.inject.PrimitiveUpsertTargetDescriptor;
-import com.hazelcast.sql.impl.inject.UpsertTargetDescriptor;
 import com.hazelcast.sql.impl.schema.TableField;
+import com.hazelcast.sql.impl.schema.map.MapEnhancer;
 import com.hazelcast.sql.impl.schema.map.MapTableField;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.sql.impl.type.QueryDataTypeUtils;
@@ -37,7 +34,6 @@ import com.hazelcast.sql.impl.type.QueryDataTypeUtils;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.TreeMap;
@@ -67,6 +63,7 @@ public final class MapSampleMetadataResolver {
      */
     public static MapSampleMetadata resolve(
         InternalSerializationService ss,
+        MapEnhancer enhancer,
         Object target,
         boolean key
     ) {
@@ -80,14 +77,14 @@ public final class MapSampleMetadataResolver {
                 Data data = (Data) target;
 
                 if (data.isPortable()) {
-                    return resolvePortable(ss.getPortableContext().lookupClassDefinition(data), key);
+                    return resolvePortable(ss.getPortableContext().lookupClassDefinition(data), key, enhancer);
                 } else if (data.isJson()) {
                     throw new UnsupportedOperationException("JSON objects are not supported.");
                 } else {
-                    return resolveClass(ss.toObject(data).getClass(), key);
+                    return resolveClass(ss.toObject(data).getClass(), key, enhancer);
                 }
             } else {
-                return resolveClass(target.getClass(), key);
+                return resolveClass(target.getClass(), key, enhancer);
             }
         } catch (Exception e) {
             throw QueryException.error("Failed to resolve " + (key ? "key" : "value") + " metadata: " + e.getMessage(), e);
@@ -101,7 +98,7 @@ public final class MapSampleMetadataResolver {
      * @param isKey Whether this is a key.
      * @return Metadata.
      */
-    private static MapSampleMetadata resolvePortable(ClassDefinition clazz, boolean isKey) {
+    private static MapSampleMetadata resolvePortable(ClassDefinition clazz, boolean isKey, MapEnhancer enhancer) {
         Map<String, TableField> fields = new TreeMap<>();
 
         // Add regular fields.
@@ -120,7 +117,7 @@ public final class MapSampleMetadataResolver {
 
         return new MapSampleMetadata(
                 GenericQueryTargetDescriptor.DEFAULT,
-                new PortableUpsertTargetDescriptor(clazz.getFactoryId(), clazz.getClassId(), clazz.getVersion()),
+                enhancer.analyze(clazz, isKey),
                 new LinkedHashMap<>(fields)
         );
     }
@@ -160,16 +157,13 @@ public final class MapSampleMetadataResolver {
         }
     }
 
-    private static MapSampleMetadata resolveClass(Class<?> clazz, boolean isKey) {
+    private static MapSampleMetadata resolveClass(Class<?> clazz, boolean isKey, MapEnhancer enhancer) {
         Map<String, TableField> fields = new TreeMap<>();
-        UpsertTargetDescriptor upsertDescriptor;
 
         // Extract fields from non-primitive type.
         QueryDataType topType = QueryDataTypeUtils.resolveTypeForClass(clazz);
 
         if (topType == QueryDataType.OBJECT) {
-            Map<String, String> typeNamesByPaths = new HashMap<>();
-
             // Add public getters.
             for (Method method : clazz.getMethods()) {
                 String methodName = extractAttributeNameFromMethod(clazz, method);
@@ -184,7 +178,6 @@ public final class MapSampleMetadataResolver {
                     methodName,
                     new MapTableField(methodName, methodType, false, new QueryPath(methodName, isKey))
                 );
-                typeNamesByPaths.putIfAbsent(methodName, method.getReturnType().getName());
             }
 
             // Add public fields.
@@ -203,15 +196,10 @@ public final class MapSampleMetadataResolver {
                         fieldName,
                         new MapTableField(fieldName, fieldType, false, new QueryPath(fieldName, isKey))
                     );
-                    typeNamesByPaths.putIfAbsent(fieldName, field.getType().getName());
                 }
 
                 currentClass = currentClass.getSuperclass();
             }
-
-            upsertDescriptor = new PojoUpsertTargetDescriptor(clazz.getName(), typeNamesByPaths);
-        } else {
-            upsertDescriptor = PrimitiveUpsertTargetDescriptor.DEFAULT;
         }
 
         // Add top-level object.
@@ -221,7 +209,7 @@ public final class MapSampleMetadataResolver {
 
         return new MapSampleMetadata(
             GenericQueryTargetDescriptor.DEFAULT,
-            upsertDescriptor,
+            enhancer.analyze(clazz, isKey),
             new LinkedHashMap<>(fields)
         );
     }

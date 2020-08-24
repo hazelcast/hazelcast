@@ -57,9 +57,6 @@ import com.hazelcast.sql.impl.expression.string.SubstringFunction;
 import com.hazelcast.sql.impl.expression.string.UpperFunction;
 import com.hazelcast.sql.impl.extract.GenericQueryTargetDescriptor;
 import com.hazelcast.sql.impl.extract.QueryPath;
-import com.hazelcast.sql.impl.inject.PojoUpsertTargetDescriptor;
-import com.hazelcast.sql.impl.inject.PortableUpsertTargetDescriptor;
-import com.hazelcast.sql.impl.inject.PrimitiveUpsertTargetDescriptor;
 import com.hazelcast.sql.impl.operation.QueryBatchExchangeOperation;
 import com.hazelcast.sql.impl.operation.QueryCancelOperation;
 import com.hazelcast.sql.impl.operation.QueryCheckOperation;
@@ -159,11 +156,7 @@ public class SqlDataSerializerHook implements DataSerializerHook {
     public static final int EXPRESSION_LIKE = 59;
     public static final int EXPRESSION_SUBSTRING = 60;
 
-    public static final int TARGET_DESCRIPTOR_PRIMITIVE = 61;
-    public static final int TARGET_DESCRIPTOR_POJO = 62;
-    public static final int TARGET_DESCRIPTOR_PORTABLE = 63;
-
-    public static final int LEN = TARGET_DESCRIPTOR_PORTABLE + 1;
+    public static final int LEN = EXPRESSION_SUBSTRING + 1;
 
     @Override
     public int getFactoryId() {
@@ -242,10 +235,6 @@ public class SqlDataSerializerHook implements DataSerializerHook {
         constructors[EXPRESSION_CONCAT] = arg -> new ConcatFunction();
         constructors[EXPRESSION_LIKE] = arg -> new LikeFunction();
         constructors[EXPRESSION_SUBSTRING] = arg -> new SubstringFunction();
-
-        constructors[TARGET_DESCRIPTOR_PRIMITIVE] = arg -> PrimitiveUpsertTargetDescriptor.DEFAULT;
-        constructors[TARGET_DESCRIPTOR_POJO] = arg -> new PojoUpsertTargetDescriptor();
-        constructors[TARGET_DESCRIPTOR_PORTABLE] = arg -> new PortableUpsertTargetDescriptor();
 
         return new ArrayDataSerializableFactory(constructors);
     }

@@ -14,9 +14,22 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.inject;
+package com.hazelcast.sql.impl.schema.map;
 
-import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.map.IMap;
+import com.hazelcast.replicatedmap.ReplicatedMap;
 
-public interface UpsertTargetDescriptor extends DataSerializable {
+/**
+ * Plugin mechanism, allowing to perform additional analysis of
+ * {@link IMap}/{@link ReplicatedMap} keys & values on sample based schema resolution.
+ * <p/>
+ * Used by Jet.
+ */
+@FunctionalInterface
+public interface MapEnhancer {
+
+    /**
+     * Return an appendix that is attached to the resolved {@link AbstractMapTable}.
+     */
+    Object analyze(Object object, boolean key);
 }

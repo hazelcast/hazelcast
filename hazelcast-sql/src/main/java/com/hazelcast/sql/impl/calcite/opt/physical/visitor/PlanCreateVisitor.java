@@ -224,8 +224,8 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
         MapScanPlanNode scanNode = new MapScanPlanNode(
             pollId(rel),
             table.getName(),
-            table.getKeyQueryDescriptor(),
-            table.getValueQueryDescriptor(),
+            table.getKeyDescriptor(),
+            table.getValueDescriptor(),
             getScanFieldPaths(table),
             schemaBefore.getTypes(),
             hazelcastTable.getProjects(),

@@ -18,7 +18,6 @@ package com.hazelcast.sql.impl.schema.map;
 
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.extract.QueryTargetDescriptor;
-import com.hazelcast.sql.impl.inject.UpsertTargetDescriptor;
 import com.hazelcast.sql.impl.plan.cache.PartitionedMapPlanObjectKey;
 import com.hazelcast.sql.impl.plan.cache.PlanObjectKey;
 import com.hazelcast.sql.impl.schema.TableField;
@@ -31,15 +30,15 @@ import static com.hazelcast.sql.impl.QueryUtils.SCHEMA_NAME_PARTITIONED;
 public class PartitionedMapTable extends AbstractMapTable {
 
     public PartitionedMapTable(
-            String schemaName,
-            String tableName,
-            String mapName,
-            List<TableField> fields,
-            TableStatistics statistics,
-            QueryTargetDescriptor keyQueryDescriptor,
-            QueryTargetDescriptor valueQueryDescriptor,
-            UpsertTargetDescriptor keyUpsertDescriptor,
-            UpsertTargetDescriptor valueUpsertDescriptor
+        String schemaName,
+        String tableName,
+        String mapName,
+        List<TableField> fields,
+        TableStatistics statistics,
+        QueryTargetDescriptor keyDescriptor,
+        QueryTargetDescriptor valueDescriptor,
+        Object keyAppendix,
+        Object valueAppendix
     ) {
         super(
             schemaName,
@@ -47,10 +46,10 @@ public class PartitionedMapTable extends AbstractMapTable {
             mapName,
             fields,
             statistics,
-            keyQueryDescriptor,
-            valueQueryDescriptor,
-            keyUpsertDescriptor,
-            valueUpsertDescriptor
+            keyDescriptor,
+            valueDescriptor,
+            keyAppendix,
+            valueAppendix
         );
     }
 
@@ -68,11 +67,9 @@ public class PartitionedMapTable extends AbstractMapTable {
             getSchemaName(),
             getName(),
             getFields(),
-            getKeyQueryDescriptor(),
-            getValueQueryDescriptor(),
-            getKeyUpsertDescriptor(),
-            getValueUpsertDescriptor(),
-            getConflictingSchemas()
+            getConflictingSchemas(),
+            getKeyDescriptor(),
+            getValueDescriptor()
         );
     }
 }
