@@ -665,7 +665,7 @@ public final class IndexResolver {
         // Prepare traits
         RelTraitSet traitSet = OptUtils.toPhysicalConvention(scan.getTraitSet(), distribution);
 
-        // Create the index scan
+        // Prepare table
         HazelcastRelOptTable originalRelTable = (HazelcastRelOptTable) scan.getTable();
         HazelcastTable originalHazelcastTable = OptUtils.getHazelcastTable(scan);
 
@@ -675,12 +675,14 @@ public final class IndexResolver {
             scan.getCluster().getTypeFactory()
         );
 
+        // Try composing the final filter out of the isolated component filters if possible
         IndexFilter filter = composeFilter(filters, index.getType(), index.getComponentsCount());
 
         if (filter == null) {
             return null;
         }
 
+        // Construct the scan
         return new MapIndexScanPhysicalRel(
             scan.getCluster(),
             traitSet,
@@ -693,6 +695,14 @@ public final class IndexResolver {
         );
     }
 
+    /**
+     * Create an index scan without any filter. Used by HD maps only.
+     *
+     * @param scan the original scan operator
+     * @param distribution the original distribution
+     * @param indexes available indexes
+     * @return index scan or {@code null}
+     */
     public static RelNode createFullIndexScan(
         MapScanLogicalRel scan,
         DistributionTrait distribution,
@@ -819,14 +829,20 @@ public final class IndexResolver {
      * @return final filter or {@code null} if the filter could not be built for the given index type
      */
     private static IndexFilter composeFilter(List<IndexFilter> filters, IndexType indexType, int indexComponentsCount) {
+        assert !filters.isEmpty();
 
-        if (filters.size() == 1 && indexComponentsCount == 1) {
+        if (indexComponentsCount == 1) {
+            // Non-composite index. Just pick the first filter
+            assert filters.size() == 1;
+
             IndexFilter res = filters.get(0);
 
             assert !(res instanceof IndexRangeFilter) || indexType == IndexType.SORTED;
 
             return res;
         } else {
+            // At this point component filters has the form "1=EQUALS, 2=EQUALS, ..., N=EQUALS/RANGE/IN".
+            // Compose the final filter based on the type of the last resolved filter.
             IndexFilter lastFilter = filters.get(filters.size() - 1);
 
             if (lastFilter instanceof IndexEqualsFilter) {
@@ -853,6 +869,14 @@ public final class IndexResolver {
      * filter, with missing components filled with negative/positive infinities for the left and right bounds respectively.
      * <p>
      * If the range filter is required, and the target index type is not {@link IndexType#SORTED}, the result is {@code null}.
+     * <p>
+     * Examples:
+     * <ul>
+     *     <li>SORTED(a, b), {a=1, b=2} => EQUALS(1), EQUALS(2) </li>
+     *     <li>HASH(a, b), {a=1, b=2} => EQUALS(1), EQUALS(2) </li>
+     *     <li>SORTED(a, b), {a=1} => EQUALS(1), RANGE(INF) </li>
+     *     <li>HASH(a, b), {a=1} => null </li>
+     * </ul>
      *
      * @return composite filter or {@code null}
      */
