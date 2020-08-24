@@ -39,7 +39,7 @@ class CloudInfoCollector implements MetricsCollector {
     private final Path kubernetesTokenPath;
     private final Path dockerFilePath;
 
-    private Map<PhoneHomeMetrics, String> environmentInfo;
+    private volatile Map<PhoneHomeMetrics, String>  environmentInfo;
 
     CloudInfoCollector() {
         this(AWS_ENDPOINT, AZURE_ENDPOINT, GCP_ENDPOINT, KUBERNETES_TOKEN_PATH, DOCKER_FILE_PATH);
