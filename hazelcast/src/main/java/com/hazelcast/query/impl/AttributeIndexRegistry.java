@@ -239,34 +239,17 @@ public class AttributeIndexRegistry {
 
         @Override
         public Iterator<QueryableEntry> getSqlRecordIterator() {
-            return delegate.getSqlRecordIterator();
+            throw new UnsupportedOperationException("Should not be called");
         }
 
         @Override
         public Iterator<QueryableEntry> getSqlRecordIterator(Comparable value) {
-            Comparable from = new CompositeValue(width, value, NEGATIVE_INFINITY);
-            Comparable to = new CompositeValue(width, value, POSITIVE_INFINITY);
-            return delegate.getSqlRecordIterator(from, false, to, false);
+            throw new UnsupportedOperationException("Should not be called");
         }
 
         @Override
         public Iterator<QueryableEntry> getSqlRecordIterator(Comparison comparison, Comparable value) {
-            switch (comparison) {
-                case LESS:
-                    CompositeValue lessFrom = new CompositeValue(width, NULL, POSITIVE_INFINITY);
-                    CompositeValue lessTo = new CompositeValue(width, value, NEGATIVE_INFINITY);
-                    return delegate.getSqlRecordIterator(lessFrom, false, lessTo, false);
-                case GREATER:
-                    return delegate.getSqlRecordIterator(GREATER, new CompositeValue(width, value, POSITIVE_INFINITY));
-                case LESS_OR_EQUAL:
-                    CompositeValue greaterOrEqualFrom = new CompositeValue(width, NULL, POSITIVE_INFINITY);
-                    CompositeValue greaterOrEqualTo = new CompositeValue(width, value, POSITIVE_INFINITY);
-                    return delegate.getSqlRecordIterator(greaterOrEqualFrom, false, greaterOrEqualTo, false);
-                case GREATER_OR_EQUAL:
-                    return delegate.getSqlRecordIterator(GREATER_OR_EQUAL, new CompositeValue(width, value, NEGATIVE_INFINITY));
-                default:
-                    throw new IllegalStateException("unexpected comparison: " + comparison);
-            }
+            throw new UnsupportedOperationException("Should not be called");
         }
 
         @Override
@@ -276,9 +259,7 @@ public class AttributeIndexRegistry {
             Comparable to,
             boolean toInclusive
         ) {
-            Comparable compositeFrom = new CompositeValue(width, from, fromInclusive ? NEGATIVE_INFINITY : POSITIVE_INFINITY);
-            Comparable compositeTo = new CompositeValue(width, to, toInclusive ? POSITIVE_INFINITY : NEGATIVE_INFINITY);
-            return delegate.getSqlRecordIterator(compositeFrom, false, compositeTo, false);
+            throw new UnsupportedOperationException("Should not be called");
         }
 
         @Override
