@@ -290,7 +290,6 @@ public class ClientInvocationServiceImpl implements ClientInvocationService {
         @Override
         public void run() {
             for (ClientInvocation invocation : invocations.values()) {
-
                 ClientConnection connection = invocation.getSendConnection();
                 if (connection == null) {
                     continue;
@@ -301,7 +300,9 @@ public class ClientInvocationServiceImpl implements ClientInvocationService {
                     return;
                 }
 
-                invocation.detectAndHandleBackupTimeout(operationBackupTimeoutMillis);
+                if (isBackupAckToClientEnabled) {
+                    invocation.detectAndHandleBackupTimeout(operationBackupTimeoutMillis);
+                }
             }
         }
 
