@@ -26,7 +26,7 @@ import javax.annotation.Nullable;
  * <p>
  * On remote calls like distributed executor service or EntryProcessors, you may need to access to the domain object. In
  * case class of the domain object is not available on the cluster, GenericRecord allows to access, read and write the objects
- * back without the class of the domain object. Here is an read example with EntryProcessor:
+ * back without the class of the domain object on the classpath. Here is an read example with EntryProcessor:
  * <pre>
  * map.executeOnKey(key, (EntryProcessor<Object, Object, Object>) entry -> {
  *             Object value = entry.getValue();
@@ -41,8 +41,8 @@ import javax.annotation.Nullable;
  * GenericRecord also allows to read from a cluster without having the classes on the client side.
  * For {@link Portable}, when {@link PortableFactory} is not provided in the config at the start,
  * a {@link HazelcastSerializationException} was thrown stating that a factory could not be found. Starting from 4.1,
- * the objects will be returned as {@link GenericRecord}. This way, the clients s can be  read and write the objects back to
- * the cluster without having the class of the domain object
+ * the objects will be returned as {@link GenericRecord}. This way, the clients can be  read and write the objects back to
+ * the cluster without needing the classes of the domain objects on the classpath.
  * <p>
  * Currently this is valid for {@link Portable} objects.
  *
