@@ -106,7 +106,6 @@ public class PhysicalIndexExpressionTest extends IndexOptimizerTestSupport {
         checkIndexForCondition("f>1 AND f<=5", "AND(<=($1, 5), >($1, 1))");
         checkIndexForCondition("f>=1 AND f<5", "AND(<($1, 5), >=($1, 1))");
         checkIndexForCondition("f>=1 AND f<=5", "AND(<=($1, 5), >=($1, 1))");
-        checkIndexForCondition("f BETWEEN 1 AND 5", "AND(<=($1, 5), >=($1, 1))");
 
         checkIndexForCondition("f>?", ">(CAST($1):BIGINT(63), ?0)");
         checkIndexForCondition("f>=?", ">=(CAST($1):BIGINT(63), ?0)");
@@ -117,7 +116,6 @@ public class PhysicalIndexExpressionTest extends IndexOptimizerTestSupport {
         checkIndexForCondition("f>? AND f<=?", "AND(<=(CAST($1):BIGINT(63), ?1), >(CAST($1):BIGINT(63), ?0))");
         checkIndexForCondition("f>=? AND f<?", "AND(>=(CAST($1):BIGINT(63), ?0), <(CAST($1):BIGINT(63), ?1))");
         checkIndexForCondition("f>=? AND f<=?", "AND(<=(CAST($1):BIGINT(63), ?1), >=(CAST($1):BIGINT(63), ?0))");
-        checkIndexForCondition("f BETWEEN ? AND ?", "AND(<=($1, ?1), >=($1, ?0))");
     }
 
     @Test
@@ -154,9 +152,6 @@ public class PhysicalIndexExpressionTest extends IndexOptimizerTestSupport {
         checkIndexForCondition("f=1 OR f=2", "OR(=($1, 1), =($1, 2))");
         checkIndexForCondition("f=1 OR f=2 OR f=3", "OR(=($1, 1), =($1, 2), =($1, 3))");
         checkIndexForCondition("f=1 OR (f=2 OR f=3)", "OR(=($1, 1), =($1, 2), =($1, 3))");
-        checkIndexForCondition("f=1 OR f IN (2, 3)", "OR(=($1, 1), =($1, 2), =($1, 3))");
-        checkIndexForCondition("f=1 OR f=2 OR f IN (3, 4)", "OR(=($1, 1), =($1, 2), =($1, 3), =($1, 4))");
-        checkIndexForCondition("f IN (1, 2) OR f IN (3, 4)", "OR(=($1, 1), =($1, 2), =($1, 3), =($1, 4))");
 
         checkIndexForCondition("f=1 OR f=?", "OR(=($1, 1), =(CAST($1):BIGINT(63), ?0))");
         checkIndexForCondition("f=? OR f=?", "OR(=(CAST($1):BIGINT(63), ?0), =(CAST($1):BIGINT(63), ?1))");
