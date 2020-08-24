@@ -116,11 +116,18 @@
         <!--Queue capacity. 0 means Integer.MAX_VALUE.-->
         <queue-capacity>0</queue-capacity>
     </executor-service>
+    <durable-executor-service>
+        <capacity>100</capacity>
+        <durability>1</durability>
+        <pool-size>16</pool-size>
+        <statistics-enabled>true</statistics-enabled>
+    </durable-executor-service>
     <scheduled-executor-service name="default">
         <capacity>100</capacity>
         <durability>1</durability>
         <pool-size>16</pool-size>
         <merge-policy batch-size="100">com.hazelcast.spi.merge.PutIfAbsentMergePolicy</merge-policy>
+        <statistics-enabled>true</statistics-enabled>
     </scheduled-executor-service>
     <security>
         <client-block-unmapped-actions>true</client-block-unmapped-actions>

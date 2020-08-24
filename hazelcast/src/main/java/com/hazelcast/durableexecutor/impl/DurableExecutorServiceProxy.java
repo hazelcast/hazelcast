@@ -271,6 +271,7 @@ public class DurableExecutorServiceProxy extends AbstractDistributedObject<Distr
             InternalCompletableFuture<T> completedFuture = completedExceptionally(t.getCause());
             return new DurableExecutorServiceDelegateFuture<T>(completedFuture, serializationService, null, -1);
         } catch (CancellationException e) {
+            // TODO add cancellation stats?
             return new DurableExecutorServiceDelegateFuture<>(future, serializationService, null, -1);
         }
         Operation op = new RetrieveResultOperation(name, sequence).setPartitionId(partitionId);

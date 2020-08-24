@@ -18,7 +18,6 @@ package com.hazelcast.durableexecutor.impl;
 
 import com.hazelcast.durableexecutor.impl.operations.PutResultOperation;
 import com.hazelcast.internal.util.Clock;
-import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.ExecutorStats;
 import com.hazelcast.spi.impl.NodeEngineImpl;
@@ -68,7 +67,7 @@ public class DurableExecutorContainer {
             if (statisticsEnabled) {
                 executorStats.rejectExecution(name);
             }
-            throw ExceptionUtil.rethrow(e);
+            throw e;
         }
     }
 
@@ -90,7 +89,7 @@ public class DurableExecutorContainer {
             if (statisticsEnabled) {
                 executorStats.rejectExecution(name);
             }
-            throw ExceptionUtil.rethrow(e);
+            throw e;
         }
     }
 

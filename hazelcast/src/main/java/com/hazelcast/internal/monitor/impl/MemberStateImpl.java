@@ -312,8 +312,8 @@ public class MemberStateImpl implements MemberState {
         serializeAsMap(root, "reliableTopicStats", reliableTopicsWithStats);
         serializeAsMap(root, "pnCounterStats", pnCountersWithStats);
         serializeAsMap(root, "executorStats", executorsWithStats);
-        serializeAsMap(root, "scheduledExecutorsWithStats", scheduledExecutorsWithStats);
-        serializeAsMap(root, "durableExecutorsWithStats", durableExecutorsWithStats);
+        serializeAsMap(root, "scheduledExecutorStats", scheduledExecutorsWithStats);
+        serializeAsMap(root, "durableExecutorStats", durableExecutorsWithStats);
         serializeAsMap(root, "cacheStats", cachesWithStats);
         serializeAsMap(root, "flakeIdStats", flakeIdGeneratorsWithStats);
         serializeMap(root, "wanStats", wanStats);
@@ -444,11 +444,11 @@ public class MemberStateImpl implements MemberState {
             executorsWithStats.add(next.getName());
         }
         scheduledExecutorsWithStats = new HashSet<>();
-        for (JsonObject.Member next : getObject(json, "scheduledExecutorsWithStats")) {
+        for (JsonObject.Member next : getObject(json, "scheduledExecutorStats")) {
             scheduledExecutorsWithStats.add(next.getName());
         }
         durableExecutorsWithStats = new HashSet<>();
-        for (JsonObject.Member next : getObject(json, "durableExecutorsWithStats")) {
+        for (JsonObject.Member next : getObject(json, "durableExecutorStats")) {
             durableExecutorsWithStats.add(next.getName());
         }
         cachesWithStats = new HashSet<>();

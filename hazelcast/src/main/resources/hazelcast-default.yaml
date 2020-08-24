@@ -108,11 +108,19 @@ hazelcast:
       # Queue capacity. 0 means Integer.MAX_VALUE.
       queue-capacity: 0
 
+  durable-executor-service:
+    default:
+      capacity: 100
+      durability: 1
+      pool-size: 16
+      statistics-enabled: true
+
   scheduled-executor-service:
     default:
       capacity: 100
       durability: 1
       pool-size: 16
+      statistics-enabled: true
 
   security:
     client-block-unmapped-actions: true

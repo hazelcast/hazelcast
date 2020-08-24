@@ -17,7 +17,6 @@
 package com.hazelcast.scheduledexecutor.impl;
 
 import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.ExecutorStats;
 import com.hazelcast.scheduledexecutor.DuplicateTaskException;
@@ -131,7 +130,11 @@ public class ScheduledExecutorContainer {
     public boolean cancel(String taskName) {
         checkNotStaleTask(taskName);
         log(FINEST, taskName, "Canceling");
-        return tasks.get(taskName).cancel(true);
+        boolean cancelled = tasks.get(taskName).cancel(true);
+        if (statisticsEnabled && cancelled) {
+            executorStats.cancelExecution(name);
+        }
+        return cancelled;
     }
 
     public boolean has(String taskName) {
@@ -481,7 +484,7 @@ public class ScheduledExecutorContainer {
             if (statisticsEnabled) {
                 getExecutorStats().rejectExecution(name);
             }
-            throw ExceptionUtil.rethrow(e);
+            throw e;
         }
 
         descriptor.setScheduledFuture(future);
