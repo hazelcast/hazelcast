@@ -37,8 +37,8 @@ public abstract class AbstractMapTable extends Table {
     private final String mapName;
     private final QueryTargetDescriptor keyDescriptor;
     private final QueryTargetDescriptor valueDescriptor;
-    private final Object keyAppendix;
-    private final Object valueAppendix;
+    private final Object keyJetMetadata;
+    private final Object valueJetMetadata;
     private final QueryException exception;
 
     /**
@@ -53,16 +53,16 @@ public abstract class AbstractMapTable extends Table {
         TableStatistics statistics,
         QueryTargetDescriptor keyDescriptor,
         QueryTargetDescriptor valueDescriptor,
-        Object keyAppendix,
-        Object valueAppendix
+        Object keyJetMetadata,
+        Object valueJetMetadata
     ) {
         super(schemaName, tableName, fields, statistics);
 
         this.mapName = requireNonNull(mapName);
         this.keyDescriptor = keyDescriptor;
         this.valueDescriptor = valueDescriptor;
-        this.keyAppendix = keyAppendix;
-        this.valueAppendix = valueAppendix;
+        this.keyJetMetadata = keyJetMetadata;
+        this.valueJetMetadata = valueJetMetadata;
 
         exception = null;
     }
@@ -73,8 +73,8 @@ public abstract class AbstractMapTable extends Table {
         this.mapName = name;
         this.keyDescriptor = null;
         this.valueDescriptor = null;
-        this.keyAppendix = null;
-        this.valueAppendix = null;
+        this.keyJetMetadata = null;
+        this.valueJetMetadata = null;
 
         this.exception = exception;
     }
@@ -113,12 +113,12 @@ public abstract class AbstractMapTable extends Table {
         return valueDescriptor;
     }
 
-    public Object getKeyAppendix() {
-        return keyAppendix;
+    public Object getKeyJetMetadata() {
+        return keyJetMetadata;
     }
 
-    public Object getValueAppendix() {
-        return valueAppendix;
+    public Object getValueJetMetadata() {
+        return valueJetMetadata;
     }
 
     public QueryException getException() {

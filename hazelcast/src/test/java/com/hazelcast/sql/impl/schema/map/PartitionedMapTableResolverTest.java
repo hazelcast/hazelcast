@@ -29,9 +29,9 @@ import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.partition.Partition;
-import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.QueryUtils;
+import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.schema.Table;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -59,8 +59,6 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -78,7 +76,7 @@ public class PartitionedMapTableResolverTest extends MapSchemaTestSupport {
     private HazelcastInstance instance;
 
     @Mock
-    private MapResolverPlugin resolverPlugin;
+    private JetMapMetadataResolver jetMapMetadataResolver;
 
     @Before
     public void before() {
@@ -87,20 +85,20 @@ public class PartitionedMapTableResolverTest extends MapSchemaTestSupport {
         factory = createHazelcastInstanceFactory(2);
 
         Config config = new Config()
-            .addMapConfig(new MapConfig(MAP_SERIALIZABLE_OBJECT).setInMemoryFormat(InMemoryFormat.OBJECT))
-            .addMapConfig(new MapConfig(MAP_SERIALIZABLE_BINARY).setInMemoryFormat(InMemoryFormat.BINARY))
-            .addMapConfig(new MapConfig(MAP_PORTABLE_OBJECT).setInMemoryFormat(InMemoryFormat.OBJECT))
-            .addMapConfig(new MapConfig(MAP_PORTABLE_BINARY).setInMemoryFormat(InMemoryFormat.BINARY))
-            .addMapConfig(new MapConfig(MAP_WILDCARD))
-            .setSerializationConfig(new SerializationConfig().addPortableFactory(1, classId -> {
-                if (classId == 1) {
-                    return new PortableKey();
-                } else if (classId == 2) {
-                    return new PortableValue();
-                }
+                .addMapConfig(new MapConfig(MAP_SERIALIZABLE_OBJECT).setInMemoryFormat(InMemoryFormat.OBJECT))
+                .addMapConfig(new MapConfig(MAP_SERIALIZABLE_BINARY).setInMemoryFormat(InMemoryFormat.BINARY))
+                .addMapConfig(new MapConfig(MAP_PORTABLE_OBJECT).setInMemoryFormat(InMemoryFormat.OBJECT))
+                .addMapConfig(new MapConfig(MAP_PORTABLE_BINARY).setInMemoryFormat(InMemoryFormat.BINARY))
+                .addMapConfig(new MapConfig(MAP_WILDCARD))
+                .setSerializationConfig(new SerializationConfig().addPortableFactory(1, classId -> {
+                    if (classId == 1) {
+                        return new PortableKey();
+                    } else if (classId == 2) {
+                        return new PortableValue();
+                    }
 
-                throw new IllegalArgumentException("Unknown classId: " + classId);
-            }));
+                    throw new IllegalArgumentException("Unknown classId: " + classId);
+                }));
 
         instance = factory.newHazelcastInstance(config);
     }
@@ -221,12 +219,12 @@ public class PartitionedMapTableResolverTest extends MapSchemaTestSupport {
         assertEquals(5, tables.size());
 
         // Check serializable maps. They all should have the same schema.
-        MapTableField[] expectedFields = new MapTableField[] {
-            hiddenField(KEY, QueryDataType.OBJECT, true),
-            field("field1", QueryDataType.INT, true),
-            field("field2", QueryDataType.INT, true),
-            field("field3", QueryDataType.INT, false),
-            hiddenField(VALUE, QueryDataType.OBJECT, false)
+        MapTableField[] expectedFields = new MapTableField[]{
+                hiddenField(KEY, QueryDataType.OBJECT, true),
+                field("field1", QueryDataType.INT, true),
+                field("field2", QueryDataType.INT, true),
+                field("field3", QueryDataType.INT, false),
+                hiddenField(VALUE, QueryDataType.OBJECT, false)
         };
 
         checkFields(getExistingTable(tables, MAP_SERIALIZABLE_OBJECT), expectedFields);
@@ -235,22 +233,22 @@ public class PartitionedMapTableResolverTest extends MapSchemaTestSupport {
 
         // Check portable in the OBJECT mode.
         checkFields(
-            getExistingTable(tables, MAP_PORTABLE_OBJECT),
-            hiddenField(KEY, QueryDataType.OBJECT, true),
-            field("portableField1", QueryDataType.INT, true),
-            field("portableField2", QueryDataType.INT, true),
-            field("portableField3", QueryDataType.INT, false),
-            hiddenField(VALUE, QueryDataType.OBJECT, false)
+                getExistingTable(tables, MAP_PORTABLE_OBJECT),
+                hiddenField(KEY, QueryDataType.OBJECT, true),
+                field("portableField1", QueryDataType.INT, true),
+                field("portableField2", QueryDataType.INT, true),
+                field("portableField3", QueryDataType.INT, false),
+                hiddenField(VALUE, QueryDataType.OBJECT, false)
         );
 
         // Check portable in the BINARY mode.
         checkFields(
-            getExistingTable(tables, MAP_PORTABLE_BINARY),
-            hiddenField(KEY, QueryDataType.OBJECT, true),
-            field("portableField1", QueryDataType.INT, true),
-            field("portableField2", QueryDataType.INT, true),
-            field("portableField3", QueryDataType.INT, false),
-            hiddenField(VALUE, QueryDataType.OBJECT, false)
+                getExistingTable(tables, MAP_PORTABLE_BINARY),
+                hiddenField(KEY, QueryDataType.OBJECT, true),
+                field("portableField1", QueryDataType.INT, true),
+                field("portableField2", QueryDataType.INT, true),
+                field("portableField3", QueryDataType.INT, false),
+                hiddenField(VALUE, QueryDataType.OBJECT, false)
         );
 
         // Destroy a dynamic map and ensure that it is no longer shown.
@@ -295,26 +293,26 @@ public class PartitionedMapTableResolverTest extends MapSchemaTestSupport {
     }
 
     @Test
-    public void testAppendix() {
-        String name = "map-with-appendix";
+    public void testJetMetadata() {
+        String name = "map-with-jet-metadata";
 
         instance.getMap(name).put(1, "1");
 
-        Object keyAppendix = new Object();
-        Object valueAppendix = new Object();
+        Object keyJetMetadata = new Object();
+        Object valueJetMetadata = new Object();
 
-        given(resolverPlugin.resolve(any(), eq(true))).willReturn(keyAppendix);
-        given(resolverPlugin.resolve(any(), eq(false))).willReturn(valueAppendix);
+        given(jetMapMetadataResolver.resolveClass(Integer.class, true)).willReturn(keyJetMetadata);
+        given(jetMapMetadataResolver.resolveClass(String.class, false)).willReturn(valueJetMetadata);
 
         Collection<Table> tables = resolver().getTables();
         Table existingTable = getExistingTable(tables, name);
 
-        assertEquals(keyAppendix, ((AbstractMapTable) existingTable).getKeyAppendix());
-        assertEquals(valueAppendix, ((AbstractMapTable) existingTable).getValueAppendix());
+        assertEquals(keyJetMetadata, ((AbstractMapTable) existingTable).getKeyJetMetadata());
+        assertEquals(valueJetMetadata, ((AbstractMapTable) existingTable).getValueJetMetadata());
     }
 
     private PartitionedMapTableResolver resolver() {
-        return new PartitionedMapTableResolver(nodeEngine(instance), resolverPlugin);
+        return new PartitionedMapTableResolver(nodeEngine(instance), jetMapMetadataResolver);
     }
 
     private static void checkEmpty(Table table) {

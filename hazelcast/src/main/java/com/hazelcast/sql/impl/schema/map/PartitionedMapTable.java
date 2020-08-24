@@ -37,8 +37,8 @@ public class PartitionedMapTable extends AbstractMapTable {
         TableStatistics statistics,
         QueryTargetDescriptor keyDescriptor,
         QueryTargetDescriptor valueDescriptor,
-        Object keyAppendix,
-        Object valueAppendix
+        Object keyJetMetadata,
+        Object valueJetMetadata
     ) {
         super(
             schemaName,
@@ -48,8 +48,8 @@ public class PartitionedMapTable extends AbstractMapTable {
             statistics,
             keyDescriptor,
             valueDescriptor,
-            keyAppendix,
-            valueAppendix
+            keyJetMetadata,
+            valueJetMetadata
         );
     }
 

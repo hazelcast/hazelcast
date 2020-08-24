@@ -26,7 +26,7 @@ import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.extract.GenericQueryTargetDescriptor;
 import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.schema.TableField;
-import com.hazelcast.sql.impl.schema.map.MapResolverPlugin;
+import com.hazelcast.sql.impl.schema.map.JetMapMetadataResolver;
 import com.hazelcast.sql.impl.schema.map.MapTableField;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.sql.impl.type.QueryDataTypeUtils;
@@ -63,7 +63,7 @@ public final class MapSampleMetadataResolver {
      */
     public static MapSampleMetadata resolve(
         InternalSerializationService ss,
-        MapResolverPlugin resolverPlugin,
+        JetMapMetadataResolver jetMapMetadataResolver,
         Object target,
         boolean key
     ) {
@@ -77,14 +77,14 @@ public final class MapSampleMetadataResolver {
                 Data data = (Data) target;
 
                 if (data.isPortable()) {
-                    return resolvePortable(ss.getPortableContext().lookupClassDefinition(data), key, resolverPlugin);
+                    return resolvePortable(ss.getPortableContext().lookupClassDefinition(data), key, jetMapMetadataResolver);
                 } else if (data.isJson()) {
                     throw new UnsupportedOperationException("JSON objects are not supported.");
                 } else {
-                    return resolveClass(ss.toObject(data).getClass(), key, resolverPlugin);
+                    return resolveClass(ss.toObject(data).getClass(), key, jetMapMetadataResolver);
                 }
             } else {
-                return resolveClass(target.getClass(), key, resolverPlugin);
+                return resolveClass(target.getClass(), key, jetMapMetadataResolver);
             }
         } catch (Exception e) {
             throw QueryException.error("Failed to resolve " + (key ? "key" : "value") + " metadata: " + e.getMessage(), e);
@@ -98,7 +98,11 @@ public final class MapSampleMetadataResolver {
      * @param isKey Whether this is a key.
      * @return Metadata.
      */
-    private static MapSampleMetadata resolvePortable(ClassDefinition clazz, boolean isKey, MapResolverPlugin resolverPlugin) {
+    private static MapSampleMetadata resolvePortable(
+        ClassDefinition clazz,
+        boolean isKey,
+        JetMapMetadataResolver jetMapMetadataResolver
+    ) {
         Map<String, TableField> fields = new TreeMap<>();
 
         // Add regular fields.
@@ -117,7 +121,7 @@ public final class MapSampleMetadataResolver {
 
         return new MapSampleMetadata(
                 GenericQueryTargetDescriptor.DEFAULT,
-                resolverPlugin.resolve(clazz, isKey),
+                jetMapMetadataResolver.resolvePortable(clazz, isKey),
                 new LinkedHashMap<>(fields)
         );
     }
@@ -157,7 +161,11 @@ public final class MapSampleMetadataResolver {
         }
     }
 
-    private static MapSampleMetadata resolveClass(Class<?> clazz, boolean isKey, MapResolverPlugin resolverPlugin) {
+    private static MapSampleMetadata resolveClass(
+        Class<?> clazz,
+        boolean isKey,
+        JetMapMetadataResolver jetMapMetadataResolver
+    ) {
         Map<String, TableField> fields = new TreeMap<>();
 
         // Extract fields from non-primitive type.
@@ -209,7 +217,7 @@ public final class MapSampleMetadataResolver {
 
         return new MapSampleMetadata(
             GenericQueryTargetDescriptor.DEFAULT,
-            resolverPlugin.resolve(clazz, isKey),
+                jetMapMetadataResolver.resolveClass(clazz, isKey),
             new LinkedHashMap<>(fields)
         );
     }

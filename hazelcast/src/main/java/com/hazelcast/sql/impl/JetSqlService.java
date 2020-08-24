@@ -19,7 +19,7 @@ package com.hazelcast.sql.impl;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.impl.optimizer.SqlPlan;
 import com.hazelcast.sql.impl.schema.TableResolver;
-import com.hazelcast.sql.impl.schema.map.MapResolverPlugin;
+import com.hazelcast.sql.impl.schema.map.JetMapMetadataResolver;
 
 import java.util.List;
 
@@ -36,9 +36,9 @@ public interface JetSqlService {
     List<TableResolver> tableResolvers();
 
     /**
-     * Return Jet specific {@link MapResolverPlugin}.
+     * Return {@link JetMapMetadataResolver}.
      */
-    MapResolverPlugin mapResolverPlugin();
+    JetMapMetadataResolver mapMetadataResolver();
 
     /**
      * Return Jet specific <i>com.hazelcast.sql.impl.calcite.SqlBackend</i>.

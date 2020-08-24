@@ -17,19 +17,30 @@
 package com.hazelcast.sql.impl.schema.map;
 
 import com.hazelcast.map.IMap;
+import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.replicatedmap.ReplicatedMap;
 
 /**
  * Plugin mechanism, allowing to perform additional analysis of
- * {@link IMap}/{@link ReplicatedMap} keys & values on sample based schema resolution.
+ * {@link IMap}/{@link ReplicatedMap} keys & values during sample based schema resolution.
  * <p/>
- * Used by Jet.
+ * Resulting metadata is attached to the resolved {@link AbstractMapTable}.
  */
-@FunctionalInterface
-public interface MapResolverPlugin {
+public interface JetMapMetadataResolver {
 
-    /**
-     * Return an appendix that is attached to the resolved {@link AbstractMapTable}.
-     */
-    Object resolve(Object object, boolean key);
+    JetMapMetadataResolver NO_OP = new JetMapMetadataResolver() {
+        @Override
+        public Object resolveClass(Class<?> clazz, boolean key) {
+            return null;
+        }
+
+        @Override
+        public Object resolvePortable(ClassDefinition clazz, boolean key) {
+            return null;
+        }
+    };
+
+    Object resolveClass(Class<?> clazz, boolean key);
+
+    Object resolvePortable(ClassDefinition clazz, boolean key);
 }

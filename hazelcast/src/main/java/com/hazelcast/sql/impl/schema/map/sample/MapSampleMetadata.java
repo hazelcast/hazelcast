@@ -27,16 +27,16 @@ import java.util.LinkedHashMap;
 public class MapSampleMetadata {
 
     private final QueryTargetDescriptor descriptor;
-    private final Object appendix;
+    private final Object jetMetadata;
     private final LinkedHashMap<String, TableField> fields;
 
     public MapSampleMetadata(
         QueryTargetDescriptor descriptor,
-        Object appendix,
+        Object jetMetadata,
         LinkedHashMap<String, TableField> fields
     ) {
         this.descriptor = descriptor;
-        this.appendix = appendix;
+        this.jetMetadata = jetMetadata;
         this.fields = fields;
     }
 
@@ -44,8 +44,8 @@ public class MapSampleMetadata {
         return descriptor;
     }
 
-    public Object getAppendix() {
-        return appendix;
+    public Object getJetMetadata() {
+        return jetMetadata;
     }
 
     @SuppressWarnings("checkstyle:IllegalType")
