@@ -27,9 +27,9 @@ import java.io.IOException;
 /**
  * Surrogate expression that is used to pass literal symbols during conversion.
  * <p>
- * For example, for the expression {@code TRIM(LEADING FROM field)} the first operand is Calicite's symbol "LEADING".
+ * For example, for the expression {@code TRIM(LEADING FROM field)} the first operand is Calcite's symbol "LEADING".
  * <p>
- * It is not mean to be serialized or evaluated.
+ * It is not meant to be serialized or evaluated.
  */
 public final class SymbolExpression implements Expression<Object>, IdentifiedDataSerializable {
 

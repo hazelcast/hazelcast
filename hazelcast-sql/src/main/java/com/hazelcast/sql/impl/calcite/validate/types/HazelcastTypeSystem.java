@@ -103,7 +103,7 @@ public final class HazelcastTypeSystem extends RelDataTypeSystemImpl {
     }
 
     /**
-     * Determines is it possible to represent the given literal as a value of
+     * Determines if it is possible to represent the given literal as a value of
      * the given target type.
      *
      * @param literal the literal in question.
