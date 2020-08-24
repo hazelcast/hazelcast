@@ -120,9 +120,9 @@ public final class MapSampleMetadataResolver {
         fields.put(topName, new MapTableField(topName, QueryDataType.OBJECT, !fields.isEmpty(), topPath));
 
         return new MapSampleMetadata(
-                GenericQueryTargetDescriptor.DEFAULT,
-                jetMapMetadataResolver.resolvePortable(clazz, isKey),
-                new LinkedHashMap<>(fields)
+            GenericQueryTargetDescriptor.DEFAULT,
+            jetMapMetadataResolver.resolvePortable(clazz, isKey),
+            new LinkedHashMap<>(fields)
         );
     }
 
@@ -217,7 +217,7 @@ public final class MapSampleMetadataResolver {
 
         return new MapSampleMetadata(
             GenericQueryTargetDescriptor.DEFAULT,
-                jetMapMetadataResolver.resolveClass(clazz, isKey),
+            jetMapMetadataResolver.resolveClass(clazz, isKey),
             new LinkedHashMap<>(fields)
         );
     }
