@@ -46,6 +46,8 @@ public class TrimFunctionIntegrationTest extends SqlExpressionIntegrationTestSup
         checkValueInternal("SELECT TRIM(LEADING ' ' FROM '  abc  ') FROM map", SqlColumnType.VARCHAR, "abc  ");
         checkValueInternal("SELECT TRIM(TRAILING ' ' FROM '  abc  ') FROM map", SqlColumnType.VARCHAR, "  abc");
         checkValueInternal("SELECT TRIM(BOTH ' ' FROM '  abc  ') FROM map", SqlColumnType.VARCHAR, "abc");
+        checkValueInternal("SELECT TRIM(' ' FROM '  abc  ') FROM map", SqlColumnType.VARCHAR, "abc");
+        checkValueInternal("SELECT TRIM(' ' FROM null) FROM map", SqlColumnType.VARCHAR, null);
 
         // Empty operand should be no-op
         checkValueInternal("SELECT TRIM(LEADING '' FROM ' ab ') FROM map", SqlColumnType.VARCHAR, " ab ");
