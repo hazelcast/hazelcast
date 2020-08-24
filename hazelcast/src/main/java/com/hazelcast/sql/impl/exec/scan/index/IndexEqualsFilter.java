@@ -28,6 +28,9 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.Iterator;
 
+/**
+ * Equality filter that is used for "WHERE a = ?" and "WHERE a IS NULL" conditions.
+ */
 @SuppressWarnings("rawtypes")
 public class IndexEqualsFilter implements IndexFilter, IdentifiedDataSerializable {
 
@@ -50,6 +53,7 @@ public class IndexEqualsFilter implements IndexFilter, IdentifiedDataSerializabl
         Comparable value = getComparable(evalContext);
 
         if (value == null) {
+            // "WHERE a = NULL" always yields an empty result set.
             return Collections.emptyIterator();
         }
 

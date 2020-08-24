@@ -31,12 +31,21 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.Objects;
 
+/**
+ * Filter the is used for range requests. Could have either lower bound, upper bound or both.
+ */
 @SuppressWarnings("rawtypes")
 public class IndexRangeFilter implements IndexFilter, IdentifiedDataSerializable {
-
+    /** Lower bound, null if no bound. */
     private IndexFilterValue from;
+
+    /** Lower bound inclusiveness. */
     private boolean fromInclusive;
+
+    /** Upper bound, null if no bound. */
     private IndexFilterValue to;
+
+    /** Upper bound inclusiveness. */
     private boolean toInclusive;
 
     public IndexRangeFilter() {
@@ -60,13 +69,13 @@ public class IndexRangeFilter implements IndexFilter, IdentifiedDataSerializable
                 // Lower and upper bounds
                 Comparable fromValue = from.getValue(evalContext);
 
-                if (fromValue == null || fromValue == AbstractIndex.NULL) {
+                if (isNull(fromValue)) {
                     return Collections.emptyIterator();
                 }
 
                 Comparable toValue = to.getValue(evalContext);
 
-                if (toValue == null || toValue == AbstractIndex.NULL) {
+                if (isNull(toValue)) {
                     return Collections.emptyIterator();
                 }
 
@@ -76,7 +85,7 @@ public class IndexRangeFilter implements IndexFilter, IdentifiedDataSerializable
                 Comparable fromValue = from.getValue(evalContext);
                 Comparison fromComparison = fromInclusive ? Comparison.GREATER_OR_EQUAL : Comparison.GREATER;
 
-                if (fromValue == null || fromValue == AbstractIndex.NULL) {
+                if (isNull(fromValue)) {
                     return Collections.emptyIterator();
                 }
 
@@ -89,12 +98,22 @@ public class IndexRangeFilter implements IndexFilter, IdentifiedDataSerializable
             Comparable toValue = to.getValue(evalContext);
             Comparison toComparison = toInclusive ? Comparison.LESS_OR_EQUAL : Comparison.LESS;
 
-            if (toValue == null || toValue == AbstractIndex.NULL) {
+            if (isNull(toValue)) {
                 return Collections.emptyIterator();
             }
 
             return index.getSqlRecordIterator(toComparison, toValue);
         }
+    }
+
+    /**
+     * Check if the value is null, and hence its usage with any comparison operator cannot produce any row.
+     *
+     * @param value value
+     * @return {@code} true if the value is null
+     */
+    private static boolean isNull(Object value) {
+        return value == null || value == AbstractIndex.NULL;
     }
 
     @Override

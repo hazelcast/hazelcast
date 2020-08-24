@@ -36,6 +36,8 @@ public interface IndexFilter {
     Iterator<QueryableEntry> getEntries(InternalIndex index, ExpressionEvalContext evalContext);
 
     /**
+     * Gets the value to be queried. Used by upper filter to construct the final lookup request.
+     *
      * @return the value to be queried
      */
     Comparable getComparable(ExpressionEvalContext evalContext);
