@@ -67,14 +67,14 @@ public final class PortableSerializer implements StreamSerializer<Object> {
 
             out.writeInt(p.getFactoryId());
             out.writeInt(p.getClassId());
-            writeInternal((BufferObjectDataOutput) out, (Portable) o);
+            writeInternal((BufferObjectDataOutput) out, p);
             return;
         }
         if (o instanceof PortableGenericRecord) {
             writePortableGenericRecord(out, (PortableGenericRecord) o);
             return;
         }
-        throw new IllegalStateException("PortableSerializer can only write Portable and PortableGenericRecord");
+        throw new IllegalArgumentException("PortableSerializer can only write Portable and PortableGenericRecord");
     }
 
 
@@ -280,7 +280,7 @@ public final class PortableSerializer implements StreamSerializer<Object> {
                     writer.writeUTFArray(fieldName, record.readUTFArray(fieldName));
                     break;
                 default:
-                    throw new IllegalStateException("Unexpected value: " + cd.getFieldType(fieldName));
+                    throw new IllegalStateException("Unexpected field type: " + cd.getFieldType(fieldName));
             }
         }
         writer.end();

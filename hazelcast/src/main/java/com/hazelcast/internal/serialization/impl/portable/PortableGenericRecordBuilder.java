@@ -23,20 +23,27 @@ import com.hazelcast.nio.serialization.GenericRecord;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 public class PortableGenericRecordBuilder implements GenericRecord.Builder {
 
     private final ClassDefinition classDefinition;
     private final Object[] objects;
+    private final boolean[] isOverWritten;
+    private final boolean isClone;
 
     public PortableGenericRecordBuilder(ClassDefinition classDefinition) {
         this.classDefinition = classDefinition;
         this.objects = new Object[classDefinition.getFieldCount()];
+        this.isClone = false;
+        this.isOverWritten = null;
     }
 
     PortableGenericRecordBuilder(ClassDefinition classDefinition, Object[] objects) {
         this.classDefinition = classDefinition;
         this.objects = objects;
+        this.isClone = true;
+        this.isOverWritten = new boolean[objects.length];
     }
 
     @Override
@@ -90,7 +97,7 @@ public class PortableGenericRecordBuilder implements GenericRecord.Builder {
     }
 
     @Override
-    public GenericRecord.Builder writeGenericRecord(String fieldName, GenericRecord value) {
+    public GenericRecord.Builder writeGenericRecord(String fieldName, @Nullable GenericRecord value) {
         return write(fieldName, value, FieldType.PORTABLE);
     }
 
@@ -146,7 +153,18 @@ public class PortableGenericRecordBuilder implements GenericRecord.Builder {
 
     private GenericRecord.Builder write(String fieldName, Object value, FieldType fieldType) {
         FieldDefinition fd = check(fieldName, fieldType);
-        objects[fd.getIndex()] = value;
+        int index = fd.getIndex();
+        if (objects[index] != null) {
+            if (!isClone) {
+                throw new HazelcastSerializationException("It is illegal to the overwrite the field");
+            } else if (isOverWritten[index]) {
+                throw new HazelcastSerializationException("Field can only overwritten once with `cloneWithBuilder`");
+            }
+        }
+        objects[index] = value;
+        if (isClone) {
+            isOverWritten[index] = true;
+        }
         return this;
     }
 
