@@ -29,12 +29,12 @@ import java.util.List;
  * The service is in beta state. Behavior and API might change in future releases. Binary compatibility is not
  * guaranteed between minor or patch releases.
  * <p>
- * If this cluster is a Hazelcast Jet cluster, a statement can be executed by either the IMDG backend or by Hazelcast
- * Jet backend, as a Jet job. If some of the features used in a statement isn't supported by IMDG, the engine will
- * attempt to execute it using Jet. This class is the API to both IMDG and Hazelcast Jet.
+ * If this cluster is a Hazelcast Jet cluster, a statement can be executed by either the default SQL backend or by Hazelcast
+ * Jet backend, as a Jet job. If some of the features used in a statement isn't supported by the default backend, the engine will
+ * attempt to execute it using Jet. This class is the API to both backends.
  * <p>
- * The text below summarizes features supported by the IMDG SQL engine. For a summary of Hazelcast Jet SQL features
- * see {@code com.hazelcast.jet.sql} package javadoc in Hazelcast Jet.
+ * The text below summarizes features supported by the default SQL engine. For a summary of Hazelcast Jet SQL features
+ * see {@code com.hazelcast.jet.sql} package javadoc in Hazelcast Jet (once released).
  *
  * <h1>Overview</h1>
  * Hazelcast is able to execute distributed SQL queries over the following entities:
