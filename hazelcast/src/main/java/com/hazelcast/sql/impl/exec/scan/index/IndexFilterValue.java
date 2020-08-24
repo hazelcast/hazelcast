@@ -42,7 +42,7 @@ import java.util.List;
  * predicate.
  * <p>
  * For example, for the composite filter {a, b} and the condition "WHERE a=1 AND b=2", the filter would be
- * {1/false, 2/false}, while for the condition "WHERE"
+ * {1/false, 2/false}. While for the condition "WHERE a=1 AND b IS NULL", the filter would be {1/false, null/true}.
  */
 @SuppressWarnings("rawtypes")
 public class IndexFilterValue implements IdentifiedDataSerializable {
