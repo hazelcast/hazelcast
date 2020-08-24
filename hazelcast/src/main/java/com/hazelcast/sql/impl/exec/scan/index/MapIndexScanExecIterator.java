@@ -127,7 +127,7 @@ public class MapIndexScanExecIterator implements KeyValueIterator {
             ).withInvalidate();
         }
 
-        // Make sure that required partitions are indexes
+        // Make sure that required partitions are indexed
         validatePartitions(index, expectedPartitions);
 
         if (indexFilter == null) {
