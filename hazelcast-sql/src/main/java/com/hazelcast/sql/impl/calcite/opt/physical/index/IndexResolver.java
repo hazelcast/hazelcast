@@ -293,10 +293,14 @@ public final class IndexResolver {
      * Prepare a candidate for {@code IS (NOT) TRUE/FALSE} expression.
      * <p>
      * The fundamental observation is that boolean column may have only three values - TRUE/FALSE/NULL. Therefore, every
-     * such expression could be converted to equivalent equals or IN predicate.
+     * such expression could be converted to equivalent equals or IN predicate:
+     * - IS TRUE -> EQUALS(TRUE)
+     * - IS FALSE -> EQUALS(FALSE)
+     * - IS NOT TRUE -> IN(EQUALS(FALSE), EQUALS(NULL))
+     * - IS NOT FALSE -> IN(EQUALS(TRUE), EQUALS(NULL))
      *
-     * @param exp expression
-     * @param operand operand with CAST unwrapped
+     * @param exp original expression, e.g. {col IS TRUE}
+     * @param operand  operand, e.g. {col}; CAST must be unwrapped before the method is invoked
      * @param kind expression type
      * @return candidate or {@code null}
      */
@@ -306,11 +310,12 @@ public final class IndexResolver {
         SqlKind kind
     ) {
         if (operand.getKind() != SqlKind.INPUT_REF) {
+            // The operand is not a column, e.g. {'true' IS TRUE}, index cannot be used
             return null;
         }
 
         if (operand.getType().getSqlTypeName() != SqlTypeName.BOOLEAN) {
-            // Only boolean columns could be used with this optimization
+            // The column is not of BOOLEAN type. We should never hit this branch normally. Added here only for safety.
             return null;
         }
 
@@ -361,8 +366,18 @@ public final class IndexResolver {
         return new IndexComponentCandidate(exp, columnIndex, filter);
     }
 
+    /**
+     * Try creating a candidate filter for the "IS NULL" expression.
+     * <p>
+     * Returns the filter EQUALS(null) with "allowNulls-true".
+     *
+     * @param exp original expression, e.g. {col IS NULL}
+     * @param operand operand, e.g. {col}; CAST must be unwrapped before the method is invoked
+     * @return candidate or {@code null}
+     */
     private static IndexComponentCandidate prepareSingleColumnCandidateIsNull(RexNode exp, RexNode operand) {
         if (operand.getKind() != SqlKind.INPUT_REF) {
+            // The operand is not a column, e.g. {'literal' IS NULL}, index cannot be used
             return null;
         }
 
@@ -370,6 +385,7 @@ public final class IndexResolver {
 
         QueryDataType type = SqlToQueryType.map(operand.getType().getSqlTypeName());
 
+        // Create a value with "allowNulls=true"
         IndexFilterValue filterValue = new IndexFilterValue(
             singletonList(ConstantExpression.create(null, type)),
             singletonList(true)
@@ -384,6 +400,16 @@ public final class IndexResolver {
         );
     }
 
+    /**
+     * Try creating a candidate filter for comparison operator.
+     *
+     * @param exp the original expression
+     * @param kind expression kine (=, >, <, >=, <=)
+     * @param operand1 the first operand (CAST must be unwrapped before the method is invoked)
+     * @param operand2 the second operand (CAST must be unwrapped before the method is invoked)
+     * @param parameterMetadata parameter metadata for expressions like {a>?}
+     * @return candidate or {@code null}
+     */
     private static IndexComponentCandidate prepareSingleColumnCandidateComparison(
         RexNode exp,
         SqlKind kind,
@@ -391,7 +417,8 @@ public final class IndexResolver {
         RexNode operand2,
         QueryParameterMetadata parameterMetadata
     ) {
-        // Normalize operand positions, so that the column is always goes first
+        // Normalize operand positions, so that the column is always goes first.
+        // The condition (kind) is changed accordingly (e.g. ">" to "<").
         if (operand1.getKind() != SqlKind.INPUT_REF && operand2.getKind() == SqlKind.INPUT_REF) {
             kind = inverseIndexConditionKind(kind);
 
@@ -400,27 +427,32 @@ public final class IndexResolver {
             operand2 = tmp;
         }
 
-        // Exit if the first operand is not a column
         if (operand1.getKind() != SqlKind.INPUT_REF) {
+            // No columns in the expression, index cannot be used. E.g. {'a' > 'b'}
             return null;
         }
 
         int columnIndex = ((RexInputRef) operand1).getIndex();
 
         if (!IndexRexVisitor.isValid(operand2)) {
-            // The second operand cannot be used for index filter
+            // The second operand cannot be used for index filter because its value possibly row-dependent.
+            // E.g. {column_a > column_b}.
             return null;
         }
 
+        // Convert the second operand into Hazelcast expression. The expression will be evaluated once before index scan is
+        // initiated, to construct the proper filter for index lookup.
         Expression<?> filterValue = convertToExpression(operand2, parameterMetadata);
 
         if (filterValue == null) {
-            // Operand cannot be converted to expression. Do not throw an exception here, just do not use the faulty condition
-            // for index. The proper exception will be thrown on later stages when attempting to convert Calcite rel tree to
-            // Hazelcast plan.
+            // The second operand cannot be converted to expression. Do not throw an exception here, just do not use the faulty
+            // condition for index. The proper exception will be thrown on later stages when attempting to convert Calcite rel
+            // tree to Hazelcast plan.
             return null;
         }
 
+        // Create the value that will be passed to filters. Not that "allowNulls=false" here, because any NULL in the comparison
+        // operator never returns "TRUE" and hence always returns an empty result set.
         IndexFilterValue filterValue0 = new IndexFilterValue(
             singletonList(filterValue),
             singletonList(false)
