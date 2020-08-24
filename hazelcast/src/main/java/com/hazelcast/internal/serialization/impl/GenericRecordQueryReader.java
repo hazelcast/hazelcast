@@ -111,12 +111,12 @@ public final class GenericRecordQueryReader implements ValueReader {
         //handle the paths except leaf
         while (end != -1) {
             String path = fieldPath.substring(begin, end);
-            begin = end + 1;
-            end = StringUtil.indexOf(fieldPath, '.', begin);
-
             if (path.length() == 0) {
                 throw new IllegalArgumentException("The token's length cannot be zero: " + fieldPath);
             }
+
+            begin = end + 1;
+            end = StringUtil.indexOf(fieldPath, '.', begin);
 
             ListIterator<Object> iterator = results.listIterator();
             String fieldName = extractAttributeNameNameWithoutArguments(path);
@@ -237,83 +237,83 @@ public final class GenericRecordQueryReader implements ValueReader {
         return multiResult;
     }
 
-    private <T> T readIndexed(InternalGenericRecord record, String path, int index) throws IOException {
+    private Object readIndexed(InternalGenericRecord record, String path, int index) throws IOException {
         if (!record.hasField(path)) {
             return null;
         }
         FieldType type = record.getFieldType(path);
         switch (type) {
             case BYTE_ARRAY:
-                return (T) record.readByteFromArray(path, index);
+                return record.readByteFromArray(path, index);
             case SHORT_ARRAY:
-                return (T) record.readShortFromArray(path, index);
+                return record.readShortFromArray(path, index);
             case INT_ARRAY:
-                return (T) record.readIntFromArray(path, index);
+                return record.readIntFromArray(path, index);
             case LONG_ARRAY:
-                return (T) record.readLongFromArray(path, index);
+                return record.readLongFromArray(path, index);
             case FLOAT_ARRAY:
-                return (T) record.readFloatFromArray(path, index);
+                return record.readFloatFromArray(path, index);
             case DOUBLE_ARRAY:
-                return (T) record.readDoubleFromArray(path, index);
+                return record.readDoubleFromArray(path, index);
             case BOOLEAN_ARRAY:
-                return (T) record.readBooleanFromArray(path, index);
+                return record.readBooleanFromArray(path, index);
             case CHAR_ARRAY:
-                return (T) record.readCharFromArray(path, index);
+                return record.readCharFromArray(path, index);
             case UTF_ARRAY:
-                return (T) record.readUTFFromArray(path, index);
+                return record.readUTFFromArray(path, index);
             case PORTABLE_ARRAY:
-                return (T) record.readObjectFromArray(path, index);
+                return record.readObjectFromArray(path, index);
             default:
                 throw new IllegalArgumentException("Unsupported type " + type);
         }
     }
 
-    private <T> T readLeaf(InternalGenericRecord record, String path) throws IOException {
+    private Object readLeaf(InternalGenericRecord record, String path) throws IOException {
         if (!record.hasField(path)) {
             return null;
         }
         FieldType type = record.getFieldType(path);
         switch (type) {
             case BYTE:
-                return (T) Byte.valueOf(record.readByte(path));
+                return record.readByte(path);
             case BYTE_ARRAY:
-                return (T) record.readByteArray(path);
+                return record.readByteArray(path);
             case SHORT:
-                return (T) Short.valueOf(record.readShort(path));
+                return record.readShort(path);
             case SHORT_ARRAY:
-                return (T) record.readShortArray(path);
+                return record.readShortArray(path);
             case INT:
-                return (T) Integer.valueOf(record.readInt(path));
+                return record.readInt(path);
             case INT_ARRAY:
-                return (T) record.readIntArray(path);
+                return record.readIntArray(path);
             case LONG:
-                return (T) Long.valueOf(record.readLong(path));
+                return record.readLong(path);
             case LONG_ARRAY:
-                return (T) record.readLongArray(path);
+                return record.readLongArray(path);
             case FLOAT:
-                return (T) Float.valueOf(record.readFloat(path));
+                return record.readFloat(path);
             case FLOAT_ARRAY:
-                return (T) record.readFloatArray(path);
+                return record.readFloatArray(path);
             case DOUBLE:
-                return (T) Double.valueOf(record.readDouble(path));
+                return record.readDouble(path);
             case DOUBLE_ARRAY:
-                return (T) record.readDoubleArray(path);
+                return record.readDoubleArray(path);
             case BOOLEAN:
-                return (T) Boolean.valueOf(record.readBoolean(path));
+                return record.readBoolean(path);
             case BOOLEAN_ARRAY:
-                return (T) record.readBooleanArray(path);
+                return record.readBooleanArray(path);
             case CHAR:
-                return (T) Character.valueOf(record.readChar(path));
+                return record.readChar(path);
             case CHAR_ARRAY:
-                return (T) record.readCharArray(path);
+                return record.readCharArray(path);
             case UTF:
-                return (T) record.readUTF(path);
+                return record.readUTF(path);
             case UTF_ARRAY:
-                return (T) record.readUTFArray(path);
+                return record.readUTFArray(path);
             case PORTABLE:
-                return (T) record.readObject(path);
+                return record.readObject(path);
             case PORTABLE_ARRAY:
-                return (T) record.readObjectArray(path);
+                return record.readObjectArray(path);
             default:
                 throw new IllegalArgumentException("Unsupported type " + type);
         }

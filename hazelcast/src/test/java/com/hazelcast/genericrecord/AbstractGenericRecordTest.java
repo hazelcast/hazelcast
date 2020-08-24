@@ -269,7 +269,7 @@ public abstract class AbstractGenericRecordTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testRemoteLogicReturnsGenericRecord() throws Exception {
+    public void testGenericRecordIsReturnedInRemoteLogic() throws Exception {
 
         HazelcastInstance[] instances = createCluster();
 
