@@ -39,6 +39,8 @@ import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.plan.node.PlanNodeFieldTypeProvider;
 import com.hazelcast.sql.impl.schema.map.MapTableIndex;
 import com.hazelcast.sql.impl.type.QueryDataType;
+import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
+import com.hazelcast.sql.impl.type.QueryDataTypeUtils;
 import org.apache.calcite.plan.RelOptTable;
 import org.apache.calcite.plan.RelOptUtil;
 import org.apache.calcite.plan.RelTraitSet;
@@ -64,7 +66,6 @@ import java.util.Set;
 import static com.hazelcast.query.impl.CompositeValue.NEGATIVE_INFINITY;
 import static com.hazelcast.query.impl.CompositeValue.POSITIVE_INFINITY;
 import static java.util.Collections.singletonList;
-import static org.apache.calcite.sql.type.SqlTypeFamily.NUMERIC;
 
 /**
  * Helper class to resolve indexes.
@@ -225,7 +226,7 @@ public final class IndexResolver {
                 // {f_boolean IS NOT TRUE} -> IN(EQUALS(FALSE), EQUALS(NULL))
                 return prepareSingleColumnCandidateBooleanIsTrueFalse(
                     exp,
-                    removeCastIfPossible(((RexCall) exp).getOperands().get(0), false),
+                    removeCastIfPossible(((RexCall) exp).getOperands().get(0)),
                     kind
                 );
 
@@ -243,7 +244,7 @@ public final class IndexResolver {
                 // Equivalent to SELECT * FROM t WHERE f_boolean IS FALSE
                 return prepareSingleColumnCandidateBooleanIsTrueFalse(
                     exp,
-                    removeCastIfPossible(((RexCall) exp).getOperands().get(0), false),
+                    removeCastIfPossible(((RexCall) exp).getOperands().get(0)),
                     SqlKind.IS_FALSE
                 );
 
@@ -252,7 +253,7 @@ public final class IndexResolver {
                 // Internally it is converted into EQUALS(NULL) filter
                 return prepareSingleColumnCandidateIsNull(
                     exp,
-                    removeCastIfPossible(((RexCall) exp).getOperands().get(0), true)
+                    removeCastIfPossible(((RexCall) exp).getOperands().get(0))
                 );
 
             case GREATER_THAN:
@@ -1106,8 +1107,8 @@ public final class IndexResolver {
         RexNode operand1 = node0.getOperands().get(0);
         RexNode operand2 = node0.getOperands().get(1);
 
-        RexNode normalizedOperand1 = removeCastIfPossible(operand1, false);
-        RexNode normalizedOperand2 = removeCastIfPossible(operand2, false);
+        RexNode normalizedOperand1 = removeCastIfPossible(operand1);
+        RexNode normalizedOperand2 = removeCastIfPossible(operand2);
 
         return BiTuple.of(normalizedOperand1, normalizedOperand2);
     }
@@ -1123,11 +1124,10 @@ public final class IndexResolver {
      * downcast the other side of the comparison expression. See {@link TypeConverters}.
      *
      * @param node original node, possibly CAST
-     * @param force whether to remove CAST forcefully even for conversion that is otherwise invalid wrt the storage (used for
-     *              {@code IS NULL} operator)
      * @return original node if there is nothing to unwrap, or the operand of the CAST
      */
-    private static RexNode removeCastIfPossible(RexNode node, boolean force) {
+    @SuppressWarnings("checkstyle:NestedIfDepth")
+    private static RexNode removeCastIfPossible(RexNode node) {
         if (node.getKind() == SqlKind.CAST) {
             RexCall node0 = (RexCall) node;
 
@@ -1137,19 +1137,19 @@ public final class IndexResolver {
                 RelDataType fromType = from.getType();
                 RelDataType toType = node0.getType();
 
-                if (force) {
-                    // Forced unwrap for IS NULL expression
-                    return from;
-                }
-
                 if (fromType.equals(toType)) {
                     // Redundant conversion => unwrap
                     return from;
                 }
 
-                if (fromType.getSqlTypeName().getFamily() == NUMERIC && toType.getSqlTypeName().getFamily() == NUMERIC) {
-                    // Converting between numeric types => unwrap
-                    return from;
+                QueryDataTypeFamily fromFamily = SqlToQueryType.map(fromType.getSqlTypeName()).getTypeFamily();
+                QueryDataTypeFamily toFamily = SqlToQueryType.map(toType.getSqlTypeName()).getTypeFamily();
+
+                if (QueryDataTypeUtils.isNumeric(fromFamily) && QueryDataTypeUtils.isNumeric(toFamily)) {
+                    // Converting between numeric types
+                    if (toFamily.getPrecedence() > fromFamily.getPrecedence()) {
+                        return from;
+                    }
                 }
             }
         }

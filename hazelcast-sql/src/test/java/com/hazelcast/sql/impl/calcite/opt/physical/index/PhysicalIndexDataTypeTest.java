@@ -161,7 +161,7 @@ public class PhysicalIndexDataTypeTest extends IndexOptimizerTestSupport {
         checkIndexForCondition("CAST(f_tinyint AS REAL)=1", "index_tinyint", "=(CAST($2):REAL, 1E0)");
         checkIndexForCondition("CAST(f_tinyint AS DOUBLE)=1", "index_tinyint", "=(CAST($2):DOUBLE, 1E0)");
 
-        checkIndexForCondition("CAST(f_tinyint AS VARCHAR) IS NULL", "index_tinyint", "IS NULL(CAST($2):VARCHAR CHARACTER SET \"UTF-16LE\")");
+        checkNoIndexForCondition("CAST(f_tinyint AS VARCHAR) IS NULL");
         checkNoIndexForCondition("CAST(f_tinyint AS VARCHAR)='1'");
     }
 
@@ -169,14 +169,14 @@ public class PhysicalIndexDataTypeTest extends IndexOptimizerTestSupport {
     public void test_smallint() {
         checkNumericBasic("f_smallint", 3, "index_smallint", SMALLINT);
 
-        checkIndexForCondition("CAST(f_smallint AS TINYINT)=1", "index_smallint", "=(CAST($3):TINYINT(8), 1)");
+        checkNoIndexForCondition("CAST(f_smallint AS TINYINT)=1");
         checkIndexForCondition("CAST(f_smallint AS INT)=1", "index_smallint", "=(CAST($3):INTEGER(15), 1)");
         checkIndexForCondition("CAST(f_smallint AS BIGINT)=1", "index_smallint", "=(CAST($3):BIGINT(15), 1)");
         checkIndexForCondition("CAST(f_smallint AS DECIMAL)=1", "index_smallint", "=(CAST($3):DECIMAL(38, 38), 1)");
         checkIndexForCondition("CAST(f_smallint AS REAL)=1", "index_smallint", "=(CAST($3):REAL, 1E0)");
         checkIndexForCondition("CAST(f_smallint AS DOUBLE)=1", "index_smallint", "=(CAST($3):DOUBLE, 1E0)");
 
-        checkIndexForCondition("CAST(f_smallint AS VARCHAR) IS NULL", "index_smallint", "IS NULL(CAST($3):VARCHAR CHARACTER SET \"UTF-16LE\")");
+        checkNoIndexForCondition("CAST(f_smallint AS VARCHAR) IS NULL");
         checkNoIndexForCondition("CAST(f_smallint AS VARCHAR)='1'");
     }
 
@@ -184,14 +184,14 @@ public class PhysicalIndexDataTypeTest extends IndexOptimizerTestSupport {
     public void test_int() {
         checkNumericBasic("f_int", 4, "index_int", INT);
 
-        checkIndexForCondition("CAST(f_int AS TINYINT)=1", "index_int", "=(CAST($4):TINYINT(8), 1)");
-        checkIndexForCondition("CAST(f_int AS SMALLINT)=1", "index_int", "=(CAST($4):SMALLINT(16), 1)");
+        checkNoIndexForCondition("CAST(f_int AS TINYINT)=1");
+        checkNoIndexForCondition("CAST(f_int AS SMALLINT)=1");
         checkIndexForCondition("CAST(f_int AS BIGINT)=1", "index_int", "=(CAST($4):BIGINT(31), 1)");
         checkIndexForCondition("CAST(f_int AS DECIMAL)=1", "index_int", "=(CAST($4):DECIMAL(38, 38), 1)");
         checkIndexForCondition("CAST(f_int AS REAL)=1", "index_int", "=(CAST($4):REAL, 1E0)");
         checkIndexForCondition("CAST(f_int AS DOUBLE)=1", "index_int", "=(CAST($4):DOUBLE, 1E0)");
 
-        checkIndexForCondition("CAST(f_int AS VARCHAR) IS NULL", "index_int", "IS NULL(CAST($4):VARCHAR CHARACTER SET \"UTF-16LE\")");
+        checkNoIndexForCondition("CAST(f_int AS VARCHAR) IS NULL");
         checkNoIndexForCondition("CAST(f_int AS VARCHAR)='1'");
     }
 
@@ -199,14 +199,14 @@ public class PhysicalIndexDataTypeTest extends IndexOptimizerTestSupport {
     public void test_bigint() {
         checkNumericBasic("f_bigint", 5, "index_bigint", BIGINT);
 
-        checkIndexForCondition("CAST(f_bigint AS TINYINT)=1", "index_bigint", "=(CAST($5):TINYINT(8), 1)");
-        checkIndexForCondition("CAST(f_bigint AS SMALLINT)=1", "index_bigint", "=(CAST($5):SMALLINT(16), 1)");
-        checkIndexForCondition("CAST(f_bigint AS INT)=1", "index_bigint", "=(CAST($5):INTEGER(32), 1)");
+        checkNoIndexForCondition("CAST(f_bigint AS TINYINT)=1");
+        checkNoIndexForCondition("CAST(f_bigint AS SMALLINT)=1");
+        checkNoIndexForCondition("CAST(f_bigint AS INT)=1");
         checkIndexForCondition("CAST(f_bigint AS DECIMAL)=1", "index_bigint", "=(CAST($5):DECIMAL(38, 38), 1)");
         checkIndexForCondition("CAST(f_bigint AS REAL)=1", "index_bigint", "=(CAST($5):REAL, 1E0)");
         checkIndexForCondition("CAST(f_bigint AS DOUBLE)=1", "index_bigint", "=(CAST($5):DOUBLE, 1E0)");
 
-        checkIndexForCondition("CAST(f_bigint AS VARCHAR) IS NULL", "index_bigint", "IS NULL(CAST($5):VARCHAR CHARACTER SET \"UTF-16LE\")");
+        checkNoIndexForCondition("CAST(f_bigint AS VARCHAR) IS NULL");
         checkNoIndexForCondition("CAST(f_bigint AS VARCHAR)='1'");
     }
 
@@ -215,14 +215,14 @@ public class PhysicalIndexDataTypeTest extends IndexOptimizerTestSupport {
         checkNumericBasic("f_decimal", 6, "index_decimal", DECIMAL);
         checkNumericBasic("f_decimal_bigint", 7, "index_decimal_bigint", DECIMAL_BIG_INTEGER);
 
-        checkIndexForCondition("CAST(f_decimal AS TINYINT)=1", "index_decimal", "=(CAST($6):TINYINT(7), 1)");
-        checkIndexForCondition("CAST(f_decimal AS SMALLINT)=1", "index_decimal", "=(CAST($6):SMALLINT(15), 1)");
-        checkIndexForCondition("CAST(f_decimal AS INT)=1", "index_decimal", "=(CAST($6):INTEGER(31), 1)");
-        checkIndexForCondition("CAST(f_decimal AS BIGINT)=1", "index_decimal", "=(CAST($6):BIGINT(63), 1)");
+        checkNoIndexForCondition("CAST(f_decimal AS TINYINT)=1");
+        checkNoIndexForCondition("CAST(f_decimal AS SMALLINT)=1");
+        checkNoIndexForCondition("CAST(f_decimal AS INT)=1");
+        checkNoIndexForCondition("CAST(f_decimal AS BIGINT)=1");
         checkIndexForCondition("CAST(f_decimal AS REAL)=1", "index_decimal", "=(CAST($6):REAL, 1E0)");
         checkIndexForCondition("CAST(f_decimal AS DOUBLE)=1", "index_decimal", "=(CAST($6):DOUBLE, 1E0)");
 
-        checkIndexForCondition("CAST(f_decimal AS VARCHAR) IS NULL", "index_decimal", "IS NULL(CAST($6):VARCHAR CHARACTER SET \"UTF-16LE\")");
+        checkNoIndexForCondition("CAST(f_decimal AS VARCHAR) IS NULL");
         checkNoIndexForCondition("CAST(f_decimal AS VARCHAR)='1'");
     }
 
@@ -234,14 +234,14 @@ public class PhysicalIndexDataTypeTest extends IndexOptimizerTestSupport {
             checkIndexForCondition("f_real>1 AND f_real<3", "index_real", "AND(<($8, 3E0), >($8, 1E0))");
         }
 
-        checkIndexForCondition("CAST(f_real AS TINYINT)=1", "index_real", "=(CAST($8):TINYINT(7), 1)");
-        checkIndexForCondition("CAST(f_real AS SMALLINT)=1", "index_real", "=(CAST($8):SMALLINT(15), 1)");
-        checkIndexForCondition("CAST(f_real AS INT)=1", "index_real", "=(CAST($8):INTEGER(31), 1)");
-        checkIndexForCondition("CAST(f_real AS BIGINT)=1", "index_real", "=(CAST($8):BIGINT(63), 1)");
-        checkIndexForCondition("CAST(f_real AS DECIMAL)=1", "index_real", "=(CAST($8):DECIMAL(38, 38), 1)");
+        checkNoIndexForCondition("CAST(f_real AS TINYINT)=1");
+        checkNoIndexForCondition("CAST(f_real AS SMALLINT)=1");
+        checkNoIndexForCondition("CAST(f_real AS INT)=1");
+        checkNoIndexForCondition("CAST(f_real AS BIGINT)=1");
+        checkNoIndexForCondition("CAST(f_real AS DECIMAL)=1");
         checkIndexForCondition("CAST(f_real AS DOUBLE)=1", "index_real", "=(CAST($8):DOUBLE, 1E0)");
 
-        checkIndexForCondition("CAST(f_real AS VARCHAR) IS NULL", "index_real", "IS NULL(CAST($8):VARCHAR CHARACTER SET \"UTF-16LE\")");
+        checkNoIndexForCondition("CAST(f_real AS VARCHAR) IS NULL");
         checkNoIndexForCondition("CAST(f_real AS VARCHAR)='1'");
     }
 
@@ -253,14 +253,14 @@ public class PhysicalIndexDataTypeTest extends IndexOptimizerTestSupport {
             checkIndexForCondition("f_double>1 AND f_double<3", "index_double", "AND(<($9, 3E0), >($9, 1E0))");
         }
 
-        checkIndexForCondition("CAST(f_double AS TINYINT)=1", "index_double", "=(CAST($9):TINYINT(7), 1)");
-        checkIndexForCondition("CAST(f_double AS SMALLINT)=1", "index_double", "=(CAST($9):SMALLINT(15), 1)");
-        checkIndexForCondition("CAST(f_double AS INT)=1", "index_double", "=(CAST($9):INTEGER(31), 1)");
-        checkIndexForCondition("CAST(f_double AS BIGINT)=1", "index_double", "=(CAST($9):BIGINT(63), 1)");
-        checkIndexForCondition("CAST(f_double AS DECIMAL)=1", "index_double", "=(CAST($9):DECIMAL(38, 38), 1)");
-        checkIndexForCondition("CAST(f_double AS REAL)=1", "index_double", "=(CAST($9):REAL, 1E0)");
+        checkNoIndexForCondition("CAST(f_double AS TINYINT)=1");
+        checkNoIndexForCondition("CAST(f_double AS SMALLINT)=1");
+        checkNoIndexForCondition("CAST(f_double AS INT)=1");
+        checkNoIndexForCondition("CAST(f_double AS BIGINT)=1");
+        checkNoIndexForCondition("CAST(f_double AS DECIMAL)=1");
+        checkNoIndexForCondition("CAST(f_double AS REAL)=1");
 
-        checkIndexForCondition("CAST(f_double AS VARCHAR) IS NULL", "index_double", "IS NULL(CAST($9):VARCHAR CHARACTER SET \"UTF-16LE\")");
+        checkNoIndexForCondition("CAST(f_double AS VARCHAR) IS NULL");
         checkNoIndexForCondition("CAST(f_double AS VARCHAR)='1'");
     }
 
