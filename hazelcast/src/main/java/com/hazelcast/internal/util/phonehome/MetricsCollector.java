@@ -25,6 +25,9 @@ import static com.hazelcast.internal.util.EmptyStatement.ignore;
 
 interface MetricsCollector {
 
+    int TIMEOUT = 2000;
+    int RESPONSE_OK = 200;
+
     int A_INTERVAL = 5;
     int B_INTERVAL = 10;
     int C_INTERVAL = 20;
@@ -34,8 +37,6 @@ interface MetricsCollector {
     int G_INTERVAL = 150;
     int H_INTERVAL = 300;
     int J_INTERVAL = 600;
-    int TIMEOUT = 2000;
-    int RESPONSE_OK = 200;
 
     Map<PhoneHomeMetrics, String> computeMetrics(Node hazelcastNode);
 

@@ -32,10 +32,15 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.map.IMap;
+import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.annotation.ParallelJVMTest;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
@@ -56,6 +61,8 @@ import static com.hazelcast.cache.CacheTestSupport.createServerCachingProvider;
 import static com.hazelcast.test.Accessors.getNode;
 import static org.mockito.Mockito.when;
 
+@RunWith(HazelcastParallelClassRunner.class)
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class PhoneHomeIntegrationTest extends HazelcastTestSupport {
 
     @Rule
@@ -225,19 +232,25 @@ public class PhoneHomeIntegrationTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testForCloud() {
+    public void testForCloudIfAWS() {
         stubUrls("200", "200", "4XX", "4XX");
         phoneHome.phoneHome(false);
 
         verify(1, getRequestedFor(urlPathEqualTo("/ping"))
                 .withQueryParam("cld", equalTo("A")));
+    }
 
+    @Test
+    public void testForCloudIfAzure() {
         stubUrls("200", "4XX", "200", "4XX");
         phoneHome.phoneHome(false);
 
         verify(1, getRequestedFor(urlPathEqualTo("/ping"))
                 .withQueryParam("cld", equalTo("Z")));
+    }
 
+    @Test
+    public void testForCloudIfGCP() {
         stubUrls("200", "4XX", "4XX", "200");
         phoneHome.phoneHome(false);
 
@@ -245,17 +258,24 @@ public class PhoneHomeIntegrationTest extends HazelcastTestSupport {
                 .withQueryParam("cld", equalTo("G")));
     }
 
+
     @Test
-    public void testDockerState() throws IOException {
+    public void testDockerStateIfKuberNetes() {
         phoneHome.phoneHome(false);
         verify(1, getRequestedFor(urlPathEqualTo("/ping"))
                 .withQueryParam("dck", equalTo("K")));
+    }
 
+    @Test
+    public void testDockerStateIfOnlyDocker() throws IOException {
         when(kubernetesTokenPath.toRealPath()).thenThrow(new IOException());
         phoneHome.phoneHome(false);
         verify(1, getRequestedFor(urlPathEqualTo("/ping"))
                 .withQueryParam("dck", equalTo("D")));
+    }
 
+    @Test
+    public void testDockerStateIfNone() throws IOException {
         when(dockerPath.toRealPath()).thenThrow(new IOException());
         phoneHome.phoneHome(false);
         verify(1, getRequestedFor(urlPathEqualTo("/ping"))

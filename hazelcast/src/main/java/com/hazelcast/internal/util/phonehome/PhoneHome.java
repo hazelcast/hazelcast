@@ -34,8 +34,6 @@ import static java.lang.System.getenv;
  */
 public class PhoneHome {
 
-    private static final int TIMEOUT = 1000;
-
     private static final String FALSE = "false";
     private static final String DEFAULT_BASE_PHONE_HOME_URL = "http://phonehome.hazelcast.com/ping";
     private static final MetricsCollector CLOUD_INFO_COLLECTOR = new CloudInfoCollector();
@@ -82,7 +80,6 @@ public class PhoneHome {
         }
     }
 
-
     /**
      * Performs a phone request for {@code node} and returns the generated request
      * parameters. If {@code pretend} is {@code true}, only returns the parameters
@@ -98,12 +95,10 @@ public class PhoneHome {
             String urlStr = basePhoneHomeUrl + parameterCreator.build();
             MetricsCollector.fetchWebService(urlStr);
         }
-
         return parameterCreator.getParameters();
     }
 
     public PhoneHomeParameterCreator createParameters() {
-
         PhoneHomeParameterCreator parameterCreator = new PhoneHomeParameterCreator();
         for (MetricsCollector metricsCollector : metricsCollectorList) {
             try {

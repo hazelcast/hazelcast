@@ -25,6 +25,7 @@ class ClientInfoCollector implements MetricsCollector {
 
     @Override
     public Map<PhoneHomeMetrics, String> computeMetrics(Node hazelcastNode) {
+
         Map<PhoneHomeMetrics, String> clientInfo = new HashMap<>();
         Map<String, Integer> clusterClientStats = hazelcastNode.clientEngine.getConnectedClientStats();
 

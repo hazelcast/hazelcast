@@ -28,7 +28,9 @@ class ClusterInfoCollector implements MetricsCollector {
 
     @Override
     public Map<PhoneHomeMetrics, String> computeMetrics(Node hazelcastNode) {
+
         Map<PhoneHomeMetrics, String> parameters = new HashMap<>();
+
         ClusterServiceImpl clusterService = hazelcastNode.getClusterService();
         int clusterSize = clusterService.getMembers().size();
         long clusterUpTime = clusterService.getClusterClock().getClusterUpTime();

@@ -41,18 +41,17 @@ class CloudInfoCollector implements MetricsCollector {
 
     private Map<PhoneHomeMetrics, String> environmentInfo;
 
-    public CloudInfoCollector() {
+    CloudInfoCollector() {
         this(AWS_ENDPOINT, AZURE_ENDPOINT, GCP_ENDPOINT, KUBERNETES_TOKEN_PATH, DOCKER_FILE_PATH);
     }
 
-    public CloudInfoCollector(String awsEndPoint, String azureEndPoint, String gcpEndPoint, Path kubernetesTokenpath,
+    CloudInfoCollector(String awsEndPoint, String azureEndPoint, String gcpEndPoint, Path kubernetesTokenpath,
                               Path dockerFilepath) {
         awsEndpoint = awsEndPoint;
         azureEndpoint = azureEndPoint;
         gcpEndpoint = gcpEndPoint;
         kubernetesTokenPath = kubernetesTokenpath;
         dockerFilePath = dockerFilepath;
-        environmentInfo = null;
     }
 
     public Map<PhoneHomeMetrics, String> computeMetrics(Node hazelcastNode) {
@@ -60,27 +59,30 @@ class CloudInfoCollector implements MetricsCollector {
         if (environmentInfo != null) {
             return environmentInfo;
         }
-        environmentInfo = new HashMap<>();
+        Map<PhoneHomeMetrics, String> environmentInfoCollectorMap = new HashMap<>();
+
         if (MetricsCollector.fetchWebService(awsEndpoint)) {
-            environmentInfo.put(PhoneHomeMetrics.CLOUD, "A");
+            environmentInfoCollectorMap.put(PhoneHomeMetrics.CLOUD, "A");
         } else if (MetricsCollector.fetchWebService(azureEndpoint)) {
-            environmentInfo.put(PhoneHomeMetrics.CLOUD, "Z");
+            environmentInfoCollectorMap.put(PhoneHomeMetrics.CLOUD, "Z");
         } else if (MetricsCollector.fetchWebService(gcpEndpoint)) {
-            environmentInfo.put(PhoneHomeMetrics.CLOUD, "G");
+            environmentInfoCollectorMap.put(PhoneHomeMetrics.CLOUD, "G");
         } else {
-            environmentInfo.put(PhoneHomeMetrics.CLOUD, "N");
+            environmentInfoCollectorMap.put(PhoneHomeMetrics.CLOUD, "N");
         }
+
         try {
             dockerFilePath.toRealPath();
             try {
                 kubernetesTokenPath.toRealPath();
-                environmentInfo.put(PhoneHomeMetrics.DOCKER, "K");
+                environmentInfoCollectorMap.put(PhoneHomeMetrics.DOCKER, "K");
             } catch (IOException e) {
-                environmentInfo.put(PhoneHomeMetrics.DOCKER, "D");
+                environmentInfoCollectorMap.put(PhoneHomeMetrics.DOCKER, "D");
             }
         } catch (IOException e) {
-            environmentInfo.put(PhoneHomeMetrics.DOCKER, "N");
+            environmentInfoCollectorMap.put(PhoneHomeMetrics.DOCKER, "N");
         }
+        environmentInfo = new HashMap<>(environmentInfoCollectorMap);
         return environmentInfo;
     }
 }

@@ -31,6 +31,22 @@ import static com.hazelcast.internal.util.EmptyStatement.ignore;
 
 class BuildInfoCollector implements MetricsCollector {
 
+    @Override
+    public Map<PhoneHomeMetrics, String> computeMetrics(Node hazelcastNode) {
+
+        BuildInfo build = BuildInfoProvider.getBuildInfo();
+        Map<PhoneHomeMetrics, String> buildInfo = new HashMap<>();
+        JetBuildInfo jetBuildInfo = hazelcastNode.getBuildInfo().getJetBuildInfo();
+        buildInfo.put(PhoneHomeMetrics.HAZELCAST_DOWNLOAD_ID, getDownloadId());
+        buildInfo.put(PhoneHomeMetrics.CLIENT_ENDPOINT_COUNT,
+                MetricsCollector.convertToLetter(hazelcastNode.clientEngine.getClientEndpointCount()));
+        buildInfo.put(PhoneHomeMetrics.JAVA_VERSION_OF_SYSTEM, System.getProperty("java.version"));
+        buildInfo.put(PhoneHomeMetrics.BUILD_VERSION, build.getVersion());
+        buildInfo.put(PhoneHomeMetrics.JET_BUILD_VERSION, jetBuildInfo == null ? "" : jetBuildInfo.getVersion());
+
+        return buildInfo;
+    }
+
     private String getDownloadId() {
         String downloadId = "source";
         InputStream is = null;
@@ -47,21 +63,5 @@ class BuildInfoCollector implements MetricsCollector {
             closeResource(is);
         }
         return downloadId;
-    }
-
-    @Override
-    public Map<PhoneHomeMetrics, String> computeMetrics(Node hazelcastNode) {
-
-        BuildInfo build = BuildInfoProvider.getBuildInfo();
-        Map<PhoneHomeMetrics, String> buildInfo = new HashMap<>();
-        JetBuildInfo jetBuildInfo = hazelcastNode.getBuildInfo().getJetBuildInfo();
-        buildInfo.put(PhoneHomeMetrics.HAZELCAST_DOWNLOAD_ID, getDownloadId());
-        buildInfo.put(PhoneHomeMetrics.CLIENT_ENDPOINT_COUNT,
-                MetricsCollector.convertToLetter(hazelcastNode.clientEngine.getClientEndpointCount()));
-        buildInfo.put(PhoneHomeMetrics.JAVA_VERSION_OF_SYSTEM, System.getProperty("java.version"));
-        buildInfo.put(PhoneHomeMetrics.BUILD_VERSION, build.getVersion());
-        buildInfo.put(PhoneHomeMetrics.JET_BUILD_VERSION, jetBuildInfo == null ? "" : jetBuildInfo.getVersion());
-
-        return buildInfo;
     }
 }
