@@ -588,7 +588,7 @@ public final class TestSupport {
                 inboxOrdinal = input.get(inputPosition).ordinal;
                 for (int added = 0;
                         inputPosition < input.size()
-                                && added < testMode.inboxSize()
+                                && added < testMode.inboxLimit()
                                 && inboxOrdinal == input.get(inputPosition).ordinal
                                 && (added == 0 || !(input.get(inputPosition).item instanceof Watermark));
                         added++
@@ -983,7 +983,7 @@ public final class TestSupport {
         /**
          * Size limit of the inbox.
          */
-        public int inboxSize() {
+        public int inboxLimit() {
             return inboxLimit;
         }
 

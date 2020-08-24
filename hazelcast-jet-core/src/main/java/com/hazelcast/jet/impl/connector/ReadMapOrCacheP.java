@@ -113,6 +113,8 @@ public final class ReadMapOrCacheP<F extends CompletableFuture, B, R> extends Ab
     private int currentPartitionIndex = -1;
     private int numCompletedPartitions;
 
+    private Object pendingItem;
+
     private ReadMapOrCacheP(@Nonnull Reader<F, B, R> reader, @Nonnull int[] partitionIds) {
         this.reader = reader;
         this.partitionIds = partitionIds;
@@ -143,13 +145,19 @@ public final class ReadMapOrCacheP<F extends CompletableFuture, B, R> extends Ab
     }
 
     private boolean emitResultSet() {
-        for (; currentBatchPosition < currentBatch.size(); currentBatchPosition++) {
-            Object result = reader.toObject(currentBatch.get(currentBatchPosition));
-            if (result == null) {
+        if (pendingItem != null && !tryEmit(pendingItem)) {
+            return false;
+        }
+        pendingItem = null;
+
+        while (currentBatchPosition < currentBatch.size()) {
+            Object item = reader.toObject(currentBatch.get(currentBatchPosition++));
+            if (item == null) {
                 // element was filtered out by the predicate (?)
                 continue;
             }
-            if (!tryEmit(result)) {
+            if (!tryEmit(item)) {
+                pendingItem = item;
                 return false;
             }
         }

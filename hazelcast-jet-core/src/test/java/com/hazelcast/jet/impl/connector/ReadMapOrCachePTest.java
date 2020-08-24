@@ -94,6 +94,23 @@ public class ReadMapOrCachePTest extends SimpleTestInClusterSupport {
                 .expectOutput(expected);
     }
 
+    @Test
+    public void test_whenProjectedToObjectWithNoEquals() {
+        // test for https://github.com/hazelcast/hazelcast-jet/issues/2448
+        IMap<Integer, Object[]> map = instance().getMap(randomMapName());
+        // two values are enough: TestSupport always uses outbox limited to 1 item to drive the processors crazy
+        map.put(0, new Object[0]);
+        map.put(1, new Object[0]);
+
+        TestSupport
+                .verifyProcessor(adaptSupplier(SourceProcessors.readMapP(map.getName())))
+                .jetInstance(instance())
+                .disableSnapshots()
+                .disableProgressAssertion()
+                .outputChecker((expected, actual) -> 2 == actual.size())
+                .expectOutput(emptyList());
+    }
+
     private static <I, O> Projection<I, O> toProjection(FunctionEx<I, O> projectionFn) {
         return (Projection<I, O>) projectionFn::apply;
     }
