@@ -179,6 +179,24 @@ public class GcpClientTest {
         assertEquals(emptyList(), result);
     }
 
+    @Test
+    public void getAddressesNotFound() {
+        // given
+        Label label = null;
+        String forbiddenMessage = "Service account not enabled on this instance";
+        RestClientException exception = new RestClientException(forbiddenMessage, 404);
+        given(gcpComputeApi.instances(CURRENT_PROJECT, CURRENT_ZONE, label, ACCESS_TOKEN)).willThrow(exception);
+
+        GcpConfig gcpConfig = GcpConfig.builder().setLabel(label).build();
+        GcpClient gcpClient = new GcpClient(gcpMetadataApi, gcpComputeApi, gcpAuthenticator, gcpConfig);
+
+        // when
+        List<GcpAddress> result = gcpClient.getAddresses();
+
+        // then
+        assertEquals(emptyList(), result);
+    }
+
     @Test(expected = Exception.class)
     public void getAddressesUnknownException() {
         // given
@@ -282,7 +300,7 @@ public class GcpClientTest {
     }
 
     @Test(expected = Exception.class)
-    public void setZonesException() {
+    public void setZonesUnknownException() {
         // given
         GcpConfig gcpConfig = GcpConfig.builder().build();
         RestClientException exception = new RestClientException("unknown", 500);

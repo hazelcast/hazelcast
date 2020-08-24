@@ -34,10 +34,12 @@ class GcpClient {
 
     private static final int HTTP_UNAUTHORIZED = 401;
     private static final int HTTP_FORBIDDEN = 403;
+    private static final int HTTP_NOT_FOUND = 404;
 
     private static final int RETRIES = 3;
     private static final List<String> NON_RETRYABLE_KEYWORDS = asList("Private key json file not found",
-            "Request had insufficient authentication scopes", "Required 'compute.instances.list' permission");
+            "Request had insufficient authentication scopes", "Required 'compute.instances.list' permission",
+            "Service account not enabled on this instance");
 
     private boolean isKnownExceptionAlreadyLogged;
 
@@ -166,6 +168,12 @@ class GcpClient {
             if (!isKnownExceptionAlreadyLogged) {
                 LOGGER.warning("Google Cloud API access is forbidden! Starting standalone. To use Hazelcast GCP discovery, "
                         + "make sure that your service account has at minimum \"Read Only\" Access Scope to Compute Engine API.");
+                isKnownExceptionAlreadyLogged = true;
+            }
+        } else if (e.getHttpErrorCode() == HTTP_NOT_FOUND) {
+            if (!isKnownExceptionAlreadyLogged) {
+                LOGGER.warning("Google Cloud API Not Found! Starting standalone. Please check that you have a service account "
+                        + "assigned to your VM instance or `private-key-path` property defined.");
                 isKnownExceptionAlreadyLogged = true;
             }
         } else {
