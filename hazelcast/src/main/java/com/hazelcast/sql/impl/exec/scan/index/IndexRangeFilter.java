@@ -113,7 +113,13 @@ public class IndexRangeFilter implements IndexFilter, IdentifiedDataSerializable
      * @return {@code} true if the value is null
      */
     private static boolean isNull(Object value) {
-        return value == null || value == AbstractIndex.NULL;
+        // AbstractIndex.NULL is only returned for the "IS NULL" filter.
+        // For composite index the AbstractIndex.NULL is wrapped into a composite object.
+        // For non-composite index, we never produce the range filter for "IS NULL".
+        // Hence, AbstractIndex.NULL is not possible here.
+        assert value != AbstractIndex.NULL;
+
+        return value == null;
     }
 
     @Override
