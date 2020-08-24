@@ -43,16 +43,13 @@ class MapInfoCollector implements MetricsCollector {
 
     @Override
     public Map<PhoneHomeMetrics, String> computeMetrics(Node hazelcastNode) {
-
         Collection<DistributedObject> distributedObjects = hazelcastNode.hazelcastInstance.getDistributedObjects();
         mapConfigs = distributedObjects.stream()
                 .filter(distributedObject -> distributedObject.getServiceName().equals(MapService.SERVICE_NAME))
                 .map(distributedObject -> hazelcastNode.getConfig().getMapConfig(distributedObject.getName()))
                 .filter(Objects::nonNull)
                 .collect(toList());
-
         Map<PhoneHomeMetrics, String> mapInfo = new HashMap<>(DISTRIBUTED_OBJECT_TYPE_COUNT);
-
         mapInfo.put(PhoneHomeMetrics.MAP_COUNT_WITH_READ_ENABLED, String.valueOf(countMapWithBackupReadEnabled()));
         mapInfo.put(PhoneHomeMetrics.MAP_COUNT_WITH_MAP_STORE_ENABLED, String.valueOf(countMapWithMapStoreEnabled()));
         mapInfo.put(PhoneHomeMetrics.MAP_COUNT_WITH_ATLEAST_ONE_QUERY_CACHE, String.valueOf(countMapWithAtleastOneQueryCache()));
@@ -74,7 +71,6 @@ class MapInfoCollector implements MetricsCollector {
         mapInfo.put(PhoneHomeMetrics.AVERAGE_GET_LATENCY_OF_MAPS_WITHOUT_MAPSTORE,
                 String.valueOf(mapOperationLatency(hazelcastNode, IS_MAP_STORE_ENABLED.negate(),
                         LocalMapStats::getTotalGetLatency, LocalMapStats::getGetOperationCount)));
-
         return mapInfo;
     }
 
@@ -145,7 +141,6 @@ class MapInfoCollector implements MetricsCollector {
     private long mapOperationLatency(Node node, Predicate<MapConfig> predicate,
                                      ToLongFunction<LocalMapStats> totalLatencyProvider,
                                      ToLongFunction<LocalMapStats> operationCountProvider) {
-
         LatencyInfo latencyInfo = new LatencyInfo(0L, 0L);
         mapConfigs.stream().filter(predicate)
                 .map(mapConfig -> node.hazelcastInstance.getMap(mapConfig.getName()).getLocalMapStats())

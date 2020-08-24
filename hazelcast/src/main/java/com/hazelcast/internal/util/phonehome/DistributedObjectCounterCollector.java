@@ -61,16 +61,13 @@ class DistributedObjectCounterCollector implements MetricsCollector {
 
     @Override
     public Map<PhoneHomeMetrics, String> computeMetrics(Node hazelcastNode) {
-
         Collection<DistributedObject> distributedObjects = hazelcastNode.hazelcastInstance.getDistributedObjects();
         Map<String, Long> countDistributedObjects = new HashMap<>(distributedObjects.stream()
                 .filter(distributedObject -> SERVICE_NAME_TO_METRIC_NAME.containsKey(distributedObject.getServiceName()))
                 .collect(groupingBy(DistributedObject::getServiceName, Collectors.counting())));
-
         Map<PhoneHomeMetrics, String> countInfo = new HashMap<>(COUNT_OF_DISTRIBUTED_OBJECTS);
         SERVICE_NAME_TO_METRIC_NAME.forEach((serviceName, metricName) -> countInfo
                 .put(metricName, String.valueOf(countDistributedObjects.getOrDefault(serviceName, 0L))));
-
         return countInfo;
     }
 }

@@ -26,7 +26,6 @@ class OSInfoCollector implements MetricsCollector {
 
     @Override
     public Map<PhoneHomeMetrics, String> computeMetrics(Node hazelcastNode) {
-
         Map<PhoneHomeMetrics, String> osinfo = new HashMap<>();
         OperatingSystemMXBean osMxBean = ManagementFactory.getOperatingSystemMXBean();
         try {

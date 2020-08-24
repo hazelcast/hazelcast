@@ -27,17 +27,14 @@ class CacheInfoCollector implements MetricsCollector {
 
     @Override
     public Map<PhoneHomeMetrics, String> computeMetrics(Node hazelcastNode) {
-
         Map<PhoneHomeMetrics, String> cacheInfo = new HashMap<>(1);
         Collection<DistributedObject> distributedObjects = hazelcastNode.hazelcastInstance.getDistributedObjects();
-
         long countCacheWithWANReplication = distributedObjects.stream()
                 .filter(distributedObject -> distributedObject.getServiceName().equals(CacheService.SERVICE_NAME))
                 .map(distributedObject -> hazelcastNode.getConfig().findCacheConfigOrNull(distributedObject.getName()))
                 .filter(cacheConfig -> cacheConfig != null && cacheConfig.getWanReplicationRef() != null)
                 .count();
         cacheInfo.put(PhoneHomeMetrics.CACHE_COUNT_WITH_WAN_REPLICATION, String.valueOf(countCacheWithWANReplication));
-
         return cacheInfo;
     }
 }

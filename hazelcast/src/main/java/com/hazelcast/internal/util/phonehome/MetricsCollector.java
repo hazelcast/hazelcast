@@ -27,7 +27,6 @@ interface MetricsCollector {
 
     int TIMEOUT = 2000;
     int RESPONSE_OK = 200;
-
     int A_INTERVAL = 5;
     int B_INTERVAL = 10;
     int C_INTERVAL = 20;

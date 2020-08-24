@@ -33,7 +33,6 @@ class BuildInfoCollector implements MetricsCollector {
 
     @Override
     public Map<PhoneHomeMetrics, String> computeMetrics(Node hazelcastNode) {
-
         BuildInfo build = BuildInfoProvider.getBuildInfo();
         Map<PhoneHomeMetrics, String> buildInfo = new HashMap<>();
         JetBuildInfo jetBuildInfo = hazelcastNode.getBuildInfo().getJetBuildInfo();
@@ -43,7 +42,6 @@ class BuildInfoCollector implements MetricsCollector {
         buildInfo.put(PhoneHomeMetrics.JAVA_VERSION_OF_SYSTEM, System.getProperty("java.version"));
         buildInfo.put(PhoneHomeMetrics.BUILD_VERSION, build.getVersion());
         buildInfo.put(PhoneHomeMetrics.JET_BUILD_VERSION, jetBuildInfo == null ? "" : jetBuildInfo.getVersion());
-
         return buildInfo;
     }
 

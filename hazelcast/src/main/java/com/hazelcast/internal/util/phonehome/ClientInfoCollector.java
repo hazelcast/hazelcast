@@ -25,10 +25,8 @@ class ClientInfoCollector implements MetricsCollector {
 
     @Override
     public Map<PhoneHomeMetrics, String> computeMetrics(Node hazelcastNode) {
-
         Map<PhoneHomeMetrics, String> clientInfo = new HashMap<>();
         Map<String, Integer> clusterClientStats = hazelcastNode.clientEngine.getConnectedClientStats();
-
         clientInfo.put(PhoneHomeMetrics.CLIENTS_WITH_CPP_CONNECTION,
                 Integer.toString(clusterClientStats.getOrDefault(ConnectionType.CPP_CLIENT, 0)));
         clientInfo.put(PhoneHomeMetrics.CLIENTS_WITH_CSHARP_CONNECTION,
@@ -41,7 +39,6 @@ class ClientInfoCollector implements MetricsCollector {
                 Integer.toString(clusterClientStats.getOrDefault(ConnectionType.PYTHON_CLIENT, 0)));
         clientInfo.put(PhoneHomeMetrics.CLIENTS_WITH_GO_CONNECTION,
                 Integer.toString(clusterClientStats.getOrDefault(ConnectionType.GO_CLIENT, 0)));
-
         return clientInfo;
     }
 }

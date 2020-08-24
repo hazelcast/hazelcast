@@ -90,7 +90,6 @@ public class PhoneHome {
      */
     public Map<String, String> phoneHome(boolean pretend) {
         PhoneHomeParameterCreator parameterCreator = createParameters();
-
         if (!pretend) {
             String urlStr = basePhoneHomeUrl + parameterCreator.build();
             MetricsCollector.fetchWebService(urlStr);
