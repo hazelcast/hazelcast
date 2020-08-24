@@ -20,7 +20,7 @@ import com.hazelcast.cp.internal.session.AbstractProxySessionManager;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.io.IOException;
 import java.util.UUID;
@@ -35,7 +35,7 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNull;
  * or timeout. Future completions of such operations are represented with
  * implementations of this interface.
  */
-public abstract class WaitKey implements DataSerializable {
+public abstract class WaitKey implements IdentifiedDataSerializable {
 
     protected long commitIndex;
     protected UUID invocationUid;
