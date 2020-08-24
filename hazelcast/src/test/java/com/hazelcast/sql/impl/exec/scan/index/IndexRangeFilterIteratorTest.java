@@ -66,9 +66,7 @@ public class IndexRangeFilterIteratorTest extends IndexFilterIteratorTestSupport
 
         // Check null value.
         checkIterator(new IndexRangeFilter(intValue(null, false), true, null, false).getEntries(index, evalContext));
-        checkIterator(new IndexRangeFilter(intValue(null, true), true, null, false).getEntries(index, evalContext));
         checkIterator(new IndexRangeFilter(intValue(null, false), false, null, false).getEntries(index, evalContext));
-        checkIterator(new IndexRangeFilter(intValue(null, true), false, null, false).getEntries(index, evalContext));
     }
 
     @Test
@@ -104,9 +102,7 @@ public class IndexRangeFilterIteratorTest extends IndexFilterIteratorTestSupport
 
         // Check null value.
         checkIterator(new IndexRangeFilter(null, false, intValue(null, false), false).getEntries(index, evalContext));
-        checkIterator(new IndexRangeFilter(null, false, intValue(null, true), false).getEntries(index, evalContext));
         checkIterator(new IndexRangeFilter(null, false, intValue(null, false), true).getEntries(index, evalContext));
-        checkIterator(new IndexRangeFilter(null, false, intValue(null, true), true).getEntries(index, evalContext));
     }
 
     @Test
@@ -198,13 +194,8 @@ public class IndexRangeFilterIteratorTest extends IndexFilterIteratorTestSupport
 
         // Check null value.
         checkIterator(new IndexRangeFilter(intValue(null, false), false, intValue(5), false).getEntries(index, evalContext));
-        checkIterator(new IndexRangeFilter(intValue(null, true), false, intValue(5), false).getEntries(index, evalContext));
-
         checkIterator(new IndexRangeFilter(intValue(1), false, intValue(null, false), false).getEntries(index, evalContext));
-        checkIterator(new IndexRangeFilter(intValue(1), false, intValue(null, true), false).getEntries(index, evalContext));
-
         checkIterator(new IndexRangeFilter(intValue(null, false), false, intValue(null, false), false).getEntries(index, evalContext));
-        checkIterator(new IndexRangeFilter(intValue(null, true), false, intValue(null, true), false).getEntries(index, evalContext));
     }
 
     /**
