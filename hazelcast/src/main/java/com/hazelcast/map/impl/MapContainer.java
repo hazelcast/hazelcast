@@ -57,11 +57,7 @@ import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.wan.impl.DelegatingWanScheme;
 import com.hazelcast.wan.impl.WanReplicationService;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
@@ -433,20 +429,6 @@ public class MapContainer {
             }
         }
         return definitions;
-    }
-
-    public List<Index> getIndexList() {
-        List<Index> res = new ArrayList<>();
-
-        if (isGlobalIndexEnabled()) {
-            Collections.addAll(res, globalIndexes.getIndexes());
-        } else {
-            for (PartitionContainer container : mapServiceContext.getPartitionContainers()) {
-                res.addAll(Arrays.asList(container.getIndexes(name).getIndexes()));
-            }
-        }
-
-        return res;
     }
 
     public boolean isPersistWanReplicatedData() {

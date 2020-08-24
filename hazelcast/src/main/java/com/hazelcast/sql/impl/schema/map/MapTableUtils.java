@@ -27,6 +27,7 @@ import com.hazelcast.map.impl.PartitionContainer;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.query.impl.CompositeConverter;
 import com.hazelcast.query.impl.Index;
+import com.hazelcast.query.impl.InternalIndex;
 import com.hazelcast.query.impl.TypeConverters;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.extract.QueryPath;
@@ -89,13 +90,13 @@ public final class MapTableUtils {
 
         Map<QueryPath, Integer> pathToOrdinalMap = mapPathsToOrdinals(fields);
 
-        List<Index> indexes = mapContainer.getIndexList();
+        InternalIndex[] indexes = mapContainer.getIndexes().getIndexes();
 
-        if (indexes.isEmpty()) {
+        if (indexes == null || indexes.length == 0) {
             return Collections.emptyList();
         }
 
-        List<MapTableIndex> res = new ArrayList<>(indexes.size());
+        List<MapTableIndex> res = new ArrayList<>(indexes.length);
 
         for (Index index : indexes) {
             IndexConfig indexConfig = index.getConfig();
