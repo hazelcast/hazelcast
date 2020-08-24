@@ -4953,7 +4953,7 @@
             <xs:element name="executor-pool-size" type="xs:int" minOccurs="0" maxOccurs="1" default="-1">
                 <xs:annotation>
                     <xs:documentation>
-                        Sets the number of threads responsible for query execution.
+                        Sets the number of threads responsible for execution of SQL statements.
                         The default value -1 sets the pool size equal to the number of CPU cores, and should be good enough
                         for the most workloads.
                         Setting the value to less than the number of CPU cores will limit the degree of parallelism of the SQL
@@ -4968,10 +4968,10 @@
                 <xs:annotation>
                     <xs:documentation>
                         Sets the number of threads responsible for network operations processing.
-                        When Hazelcast members execute a query, they send commands to each other over the network to coordinate
-                        the execution. This includes requests to start or stop query execution, or a request to process a batch
-                        of data. These commands are processed in a separate operation thread pool, to avoid frequent interruption
-                        of running query fragments.
+                        When Hazelcast members execute a statement, they send commands to each other over the network to
+                        coordinate the execution. This includes requests to start or stop execution, or a request to process a
+                        batch of data. These commands are processed in a separate operation thread pool, to avoid frequent
+                        interruption of running SQL fragments.
                         The default value -1 sets the pool size equal to the number of CPU cores, and should be good enough
                         for the most workloads.
                         Setting the value to less than the number of CPU cores may improve the overall performance on machines
@@ -4981,11 +4981,11 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
-            <xs:element name="query-timeout-millis" type="xs:unsignedLong" minOccurs="0" maxOccurs="1" default="0">
+            <xs:element name="statement-timeout-millis" type="xs:unsignedLong" minOccurs="0" maxOccurs="1" default="0">
                 <xs:annotation>
                     <xs:documentation>
-                        Sets the timeout in milliseconds that is applied to queries without an explicit timeout.
-                        It is possible to set a query timeout through the SqlQuery.setTimeout(long) method. If the query
+                        Sets the timeout in milliseconds that is applied to SQL statements without an explicit timeout.
+                        It is possible to set a timeout through the SqlStatement.setTimeout(long) method. If the statement
                         timeout is not set, then the value of this parameter will be used.
                         Zero value means no timeout. Negative values are prohibited.
                     </xs:documentation>

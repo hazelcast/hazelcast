@@ -16,7 +16,7 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.sql.SqlQuery;
+import com.hazelcast.sql.SqlStatement;
 
 import static com.hazelcast.internal.util.Preconditions.checkNotNegative;
 import static com.hazelcast.internal.util.Preconditions.checkPositive;
@@ -25,35 +25,35 @@ import static com.hazelcast.internal.util.Preconditions.checkPositive;
  * SQL service configuration.
  */
 public class SqlConfig {
-    /** Default number of threads responsible for query execution. */
+    /** Default number of threads responsible for execution of SQL statements. */
     public static final int DEFAULT_EXECUTOR_POOL_SIZE = -1;
 
     /** Default number of threads responsible for network operations processing. */
     public static final int DEFAULT_OPERATION_POOL_SIZE = -1;
 
-    /** Default timeout in milliseconds that is applied to queries without explicit timeout. */
-    public static final int DEFAULT_QUERY_TIMEOUT = 0;
+    /** Default timeout in milliseconds that is applied to statements without explicit timeout. */
+    public static final int DEFAULT_STATEMENT_TIMEOUT_MILLIS = 0;
 
-    /** Number of threads responsible for query execution. */
+    /** Number of threads responsible for execution of SQL statements. */
     private int executorPoolSize = DEFAULT_EXECUTOR_POOL_SIZE;
 
     /** Number of threads responsible for network operations processing. */
     private int operationPoolSize = DEFAULT_OPERATION_POOL_SIZE;
 
-    /** Timeout in milliseconds that is applied to queries without an explicit timeout. */
-    private long queryTimeoutMillis = DEFAULT_QUERY_TIMEOUT;
+    /** Timeout in milliseconds that is applied to statements without an explicit timeout. */
+    private long statementTimeoutMillis = DEFAULT_STATEMENT_TIMEOUT_MILLIS;
 
     /**
-     * Gets the number of threads responsible for query execution.
+     * Gets the number of threads responsible for execution of SQL statements.
      *
-     * @return Number of threads responsible for query execution.
+     * @return number of threads responsible for execution of SQL statements
      */
     public int getExecutorPoolSize() {
         return executorPoolSize;
     }
 
     /**
-     * Sets the number of threads responsible for query execution.
+     * Sets the number of threads responsible for execution of SQL statements.
      * <p>
      * The default value {@code -1} sets the pool size equal to the number of CPU cores, and should be good enough
      * for the most workloads.
@@ -66,8 +66,8 @@ public class SqlConfig {
      * <p>
      * Defaults to {@code -1}.
      *
-     * @param executorPoolSize Number of threads responsible for query execution.
-     * @return This instance for chaining.
+     * @param executorPoolSize number of threads responsible for execution of SQL statements
+     * @return this instance for chaining
      */
     public SqlConfig setExecutorPoolSize(int executorPoolSize) {
         if (executorPoolSize < DEFAULT_EXECUTOR_POOL_SIZE || executorPoolSize == 0) {
@@ -82,7 +82,7 @@ public class SqlConfig {
     /**
      * Gets the number of threads responsible for network operations processing.
      *
-     * @return Number of threads responsible for network operations processing.
+     * @return number of threads responsible for network operations processing
      */
     public int getOperationPoolSize() {
         return operationPoolSize;
@@ -91,9 +91,9 @@ public class SqlConfig {
     /**
      * Sets the number of threads responsible for network operations processing.
      * <p>
-     * When Hazelcast members execute a query, they send commands to each other over the network to coordinate the execution.
-     * This includes requests to start or stop query execution, or a request to process a batch of data. These commands are
-     * processed in a separate operation thread pool, to avoid frequent interruption of running query fragments.
+     * When Hazelcast members execute an SQL statement, they send commands to each other over the network to coordinate the
+     * execution. This includes requests to start or stop execution, or a request to process a batch of data. These
+     * commands are processed in a separate operation thread pool, to avoid frequent interruption of running SQL fragments.
      * <p>
      * The default value {@code -1} sets the pool size equal to the number of CPU cores, and should be good enough
      * for the most workloads.
@@ -106,8 +106,8 @@ public class SqlConfig {
      * <p>
      * Defaults to {@code -1}.
      *
-     * @param operationPoolSize Number of threads responsible for network operations processing.
-     * @return This instance for chaining.
+     * @param operationPoolSize number of threads responsible for network operations processing
+     * @return this instance for chaining
      */
     public SqlConfig setOperationPoolSize(int operationPoolSize) {
         if (operationPoolSize < DEFAULT_OPERATION_POOL_SIZE || operationPoolSize == 0) {
@@ -120,32 +120,32 @@ public class SqlConfig {
     }
 
     /**
-     * Gets the timeout in milliseconds that is applied to queries without an explicit timeout.
+     * Gets the timeout in milliseconds that is applied to statements without an explicit timeout.
      *
-     * @return Timeout in milliseconds.
+     * @return timeout in milliseconds
      */
-    public long getQueryTimeoutMillis() {
-        return queryTimeoutMillis;
+    public long getStatementTimeoutMillis() {
+        return statementTimeoutMillis;
     }
 
     /**
-     * Sets the timeout in milliseconds that is applied to queries without an explicit timeout.
+     * Sets the timeout in milliseconds that is applied to statements without an explicit timeout.
      * <p>
-     * It is possible to set a query timeout through the {@link SqlQuery#setTimeoutMillis(long)} method. If the query timeout is
-     * not set, then the value of this parameter will be used.
+     * It is possible to set a timeout through the {@link SqlStatement#setTimeoutMillis(long)} method. If the statement
+     * timeout is not set, then the value of this parameter will be used.
      * <p>
      * Zero value means no timeout. Negative values are prohibited.
      * <p>
-     * Defaults to {@link #DEFAULT_QUERY_TIMEOUT}.
+     * Defaults to {@link #DEFAULT_STATEMENT_TIMEOUT_MILLIS}.
      *
-     * @see SqlQuery#setTimeoutMillis(long)
-     * @param queryTimeout Timeout in milliseconds.
-     * @return This instance for chaining.
+     * @see SqlStatement#setTimeoutMillis(long)
+     * @param statementTimeoutMillis timeout in milliseconds
+     * @return this instance for chaining
      */
-    public SqlConfig setQueryTimeoutMillis(long queryTimeout) {
-        checkNotNegative(queryTimeout, "Query timeout cannot be negative");
+    public SqlConfig setStatementTimeoutMillis(long statementTimeoutMillis) {
+        checkNotNegative(statementTimeoutMillis, "Timeout cannot be negative");
 
-        this.queryTimeoutMillis = queryTimeout;
+        this.statementTimeoutMillis = statementTimeoutMillis;
 
         return this;
     }
@@ -155,7 +155,7 @@ public class SqlConfig {
         return "SqlConfig{"
             + "executorPoolSize=" + executorPoolSize
             + ", operationPoolSize=" + operationPoolSize
-            + ", queryTimeoutMillis=" + queryTimeoutMillis
+            + ", statementTimeoutMillis=" + statementTimeoutMillis
             + '}';
     }
 }

@@ -2960,8 +2960,8 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
                 sqlConfig.setExecutorPoolSize(Integer.parseInt(value));
             } else if ("operation-pool-size".equals(nodeName)) {
                 sqlConfig.setOperationPoolSize(Integer.parseInt(value));
-            } else if ("query-timeout-millis".equals(nodeName)) {
-                sqlConfig.setQueryTimeoutMillis(Long.parseLong(value));
+            } else if ("statement-timeout-millis".equals(nodeName)) {
+                sqlConfig.setStatementTimeoutMillis(Long.parseLong(value));
             }
         }
     }
