@@ -127,51 +127,51 @@ public class MapSampleMetadataResolverTest extends MapSchemaTestSupport {
     @Test
     public void testPortableObject() {
         InternalSerializationService ss = new DefaultSerializationServiceBuilder()
-                .addPortableFactory(1, classId -> {
-                    if (classId == 2) {
-                        return new PortableParent();
-                    } else if (classId == 3) {
-                        return new PortableChild();
-                    }
+            .addPortableFactory(1, classId -> {
+                if (classId == 2) {
+                    return new PortableParent();
+                } else if (classId == 3) {
+                    return new PortableChild();
+                }
 
-                    throw new IllegalArgumentException("Invalid class ID: " + classId);
-                })
-                .build();
+                throw new IllegalArgumentException("Invalid class ID: " + classId);
+            })
+            .build();
 
         // Test key.
         MapSampleMetadata metadata = MapSampleMetadataResolver.resolve(ss, enhancer, ss.toData(new PortableParent()), true);
 
         checkFields(
-                metadata,
-                field("_boolean", QueryDataType.BOOLEAN, true),
-                field("_byte", QueryDataType.TINYINT, true),
-                field("_char", QueryDataType.VARCHAR_CHARACTER, true),
-                field("_short", QueryDataType.SMALLINT, true),
-                field("_int", QueryDataType.INT, true),
-                field("_long", QueryDataType.BIGINT, true),
-                field("_float", QueryDataType.REAL, true),
-                field("_double", QueryDataType.DOUBLE, true),
-                field("_string", QueryDataType.VARCHAR, true),
-                field("_object", QueryDataType.OBJECT, true),
-                hiddenField(KEY, QueryDataType.OBJECT, true)
+            metadata,
+            field("_boolean", QueryDataType.BOOLEAN, true),
+            field("_byte", QueryDataType.TINYINT, true),
+            field("_char", QueryDataType.VARCHAR_CHARACTER, true),
+            field("_short", QueryDataType.SMALLINT, true),
+            field("_int", QueryDataType.INT, true),
+            field("_long", QueryDataType.BIGINT, true),
+            field("_float", QueryDataType.REAL, true),
+            field("_double", QueryDataType.DOUBLE, true),
+            field("_string", QueryDataType.VARCHAR, true),
+            field("_object", QueryDataType.OBJECT, true),
+            hiddenField(KEY, QueryDataType.OBJECT, true)
         );
 
         // Test value.
         metadata = MapSampleMetadataResolver.resolve(ss, enhancer, ss.toData(new PortableParent()), false);
 
         checkFields(
-                metadata,
-                field("_boolean", QueryDataType.BOOLEAN, false),
-                field("_byte", QueryDataType.TINYINT, false),
-                field("_char", QueryDataType.VARCHAR_CHARACTER, false),
-                field("_short", QueryDataType.SMALLINT, false),
-                field("_int", QueryDataType.INT, false),
-                field("_long", QueryDataType.BIGINT, false),
-                field("_float", QueryDataType.REAL, false),
-                field("_double", QueryDataType.DOUBLE, false),
-                field("_string", QueryDataType.VARCHAR, false),
-                field("_object", QueryDataType.OBJECT, false),
-                hiddenField(VALUE, QueryDataType.OBJECT, false)
+            metadata,
+            field("_boolean", QueryDataType.BOOLEAN, false),
+            field("_byte", QueryDataType.TINYINT, false),
+            field("_char", QueryDataType.VARCHAR_CHARACTER, false),
+            field("_short", QueryDataType.SMALLINT, false),
+            field("_int", QueryDataType.INT, false),
+            field("_long", QueryDataType.BIGINT, false),
+            field("_float", QueryDataType.REAL, false),
+            field("_double", QueryDataType.DOUBLE, false),
+            field("_string", QueryDataType.VARCHAR, false),
+            field("_object", QueryDataType.OBJECT, false),
+            hiddenField(VALUE, QueryDataType.OBJECT, false)
         );
     }
 
@@ -183,36 +183,36 @@ public class MapSampleMetadataResolverTest extends MapSchemaTestSupport {
         MapSampleMetadata metadata = MapSampleMetadataResolver.resolve(ss, enhancer, ss.toData(new PortableParent()), true);
 
         checkFields(
-                metadata,
-                field(PORTABLE_BOOLEAN, QueryDataType.BOOLEAN, true),
-                field(PORTABLE_BYTE, QueryDataType.TINYINT, true),
-                field(PORTABLE_CHAR, QueryDataType.VARCHAR_CHARACTER, true),
-                field(PORTABLE_SHORT, QueryDataType.SMALLINT, true),
-                field(PORTABLE_INT, QueryDataType.INT, true),
-                field(PORTABLE_LONG, QueryDataType.BIGINT, true),
-                field(PORTABLE_FLOAT, QueryDataType.REAL, true),
-                field(PORTABLE_DOUBLE, QueryDataType.DOUBLE, true),
-                field(PORTABLE_STRING, QueryDataType.VARCHAR, true),
-                field(PORTABLE_OBJECT, QueryDataType.OBJECT, true),
-                hiddenField(KEY, QueryDataType.OBJECT, true)
+            metadata,
+            field(PORTABLE_BOOLEAN, QueryDataType.BOOLEAN, true),
+            field(PORTABLE_BYTE, QueryDataType.TINYINT, true),
+            field(PORTABLE_CHAR, QueryDataType.VARCHAR_CHARACTER, true),
+            field(PORTABLE_SHORT, QueryDataType.SMALLINT, true),
+            field(PORTABLE_INT, QueryDataType.INT, true),
+            field(PORTABLE_LONG, QueryDataType.BIGINT, true),
+            field(PORTABLE_FLOAT, QueryDataType.REAL, true),
+            field(PORTABLE_DOUBLE, QueryDataType.DOUBLE, true),
+            field(PORTABLE_STRING, QueryDataType.VARCHAR, true),
+            field(PORTABLE_OBJECT, QueryDataType.OBJECT, true),
+            hiddenField(KEY, QueryDataType.OBJECT, true)
         );
 
         // Test value.
         metadata = MapSampleMetadataResolver.resolve(ss, enhancer, ss.toData(new PortableParent()), false);
 
         checkFields(
-                metadata,
-                field(PORTABLE_BOOLEAN, QueryDataType.BOOLEAN, false),
-                field(PORTABLE_BYTE, QueryDataType.TINYINT, false),
-                field(PORTABLE_CHAR, QueryDataType.VARCHAR_CHARACTER, false),
-                field(PORTABLE_SHORT, QueryDataType.SMALLINT, false),
-                field(PORTABLE_INT, QueryDataType.INT, false),
-                field(PORTABLE_LONG, QueryDataType.BIGINT, false),
-                field(PORTABLE_FLOAT, QueryDataType.REAL, false),
-                field(PORTABLE_DOUBLE, QueryDataType.DOUBLE, false),
-                field(PORTABLE_STRING, QueryDataType.VARCHAR, false),
-                field(PORTABLE_OBJECT, QueryDataType.OBJECT, false),
-                hiddenField(VALUE, QueryDataType.OBJECT, false)
+            metadata,
+            field(PORTABLE_BOOLEAN, QueryDataType.BOOLEAN, false),
+            field(PORTABLE_BYTE, QueryDataType.TINYINT, false),
+            field(PORTABLE_CHAR, QueryDataType.VARCHAR_CHARACTER, false),
+            field(PORTABLE_SHORT, QueryDataType.SMALLINT, false),
+            field(PORTABLE_INT, QueryDataType.INT, false),
+            field(PORTABLE_LONG, QueryDataType.BIGINT, false),
+            field(PORTABLE_FLOAT, QueryDataType.REAL, false),
+            field(PORTABLE_DOUBLE, QueryDataType.DOUBLE, false),
+            field(PORTABLE_STRING, QueryDataType.VARCHAR, false),
+            field(PORTABLE_OBJECT, QueryDataType.OBJECT, false),
+            hiddenField(VALUE, QueryDataType.OBJECT, false)
         );
     }
 
@@ -228,17 +228,17 @@ public class MapSampleMetadataResolverTest extends MapSchemaTestSupport {
         MapSampleMetadata metadata = MapSampleMetadataResolver.resolve(ss, enhancer, object, true);
 
         checkFields(
-                metadata,
-                field("publicField", QueryDataType.INT, true),
-                hiddenField(KEY, QueryDataType.OBJECT, true)
+            metadata,
+            field("publicField", QueryDataType.INT, true),
+            hiddenField(KEY, QueryDataType.OBJECT, true)
         );
 
         metadata = MapSampleMetadataResolver.resolve(ss, enhancer, ss.toData(object), true);
 
         checkFields(
-                metadata,
-                field("publicField", QueryDataType.INT, true),
-                hiddenField(KEY, QueryDataType.OBJECT, true)
+            metadata,
+            field("publicField", QueryDataType.INT, true),
+            hiddenField(KEY, QueryDataType.OBJECT, true)
         );
     }
 
@@ -254,21 +254,21 @@ public class MapSampleMetadataResolverTest extends MapSchemaTestSupport {
         MapSampleMetadata metadata = MapSampleMetadataResolver.resolve(ss, enhancer, object, true);
 
         checkFields(
-                metadata,
-                field("publicGetter", QueryDataType.INT, true),
-                field("booleanGetGetter", QueryDataType.BOOLEAN, true),
-                field("booleanIsGetter", QueryDataType.BOOLEAN, true),
-                hiddenField(KEY, QueryDataType.OBJECT, true)
+            metadata,
+            field("publicGetter", QueryDataType.INT, true),
+            field("booleanGetGetter", QueryDataType.BOOLEAN, true),
+            field("booleanIsGetter", QueryDataType.BOOLEAN, true),
+            hiddenField(KEY, QueryDataType.OBJECT, true)
         );
 
         metadata = MapSampleMetadataResolver.resolve(ss, enhancer, ss.toData(object), true);
 
         checkFields(
-                metadata,
-                field("publicGetter", QueryDataType.INT, true),
-                field("booleanGetGetter", QueryDataType.BOOLEAN, true),
-                field("booleanIsGetter", QueryDataType.BOOLEAN, true),
-                hiddenField(KEY, QueryDataType.OBJECT, true)
+            metadata,
+            field("publicGetter", QueryDataType.INT, true),
+            field("booleanGetGetter", QueryDataType.BOOLEAN, true),
+            field("booleanIsGetter", QueryDataType.BOOLEAN, true),
+            hiddenField(KEY, QueryDataType.OBJECT, true)
         );
     }
 
@@ -370,18 +370,18 @@ public class MapSampleMetadataResolverTest extends MapSchemaTestSupport {
         MapSampleMetadata metadata = MapSampleMetadataResolver.resolve(ss, enhancer, ss.toData(new PortableClash()), true);
 
         checkFields(
-                metadata,
-                hiddenField(KEY, QueryDataType.OBJECT, true),
-                field(VALUE, QueryDataType.INT, true)
+            metadata,
+            hiddenField(KEY, QueryDataType.OBJECT, true),
+            field(VALUE, QueryDataType.INT, true)
         );
 
         // Value clash
         metadata = MapSampleMetadataResolver.resolve(ss, enhancer, ss.toData(new PortableClash()), false);
 
         checkFields(
-                metadata,
-                field(KEY, QueryDataType.INT, false),
-                hiddenField(VALUE, QueryDataType.OBJECT, false)
+            metadata,
+            field(KEY, QueryDataType.INT, false),
+            hiddenField(VALUE, QueryDataType.OBJECT, false)
         );
     }
 
@@ -497,41 +497,41 @@ public class MapSampleMetadataResolverTest extends MapSchemaTestSupport {
         assertEquals(GenericQueryTargetDescriptor.DEFAULT, metadata.getDescriptor());
 
         checkFields(
-                metadata,
+            metadata,
 
-                field("fBoolean", QueryDataType.BOOLEAN, key),
-                field("fBooleanBoxed", QueryDataType.BOOLEAN, key),
-                field("fByte", QueryDataType.TINYINT, key),
-                field("fByteBoxed", QueryDataType.TINYINT, key),
-                field("fShort", QueryDataType.SMALLINT, key),
-                field("fShortBoxed", QueryDataType.SMALLINT, key),
-                field("fInt", QueryDataType.INT, key),
-                field("fIntBoxed", QueryDataType.INT, key),
-                field("fLong", QueryDataType.BIGINT, key),
-                field("fLongBoxed", QueryDataType.BIGINT, key),
-                field("fFloat", QueryDataType.REAL, key),
-                field("fFloatBoxed", QueryDataType.REAL, key),
-                field("fDouble", QueryDataType.DOUBLE, key),
-                field("fDoubleBoxed", QueryDataType.DOUBLE, key),
+            field("fBoolean", QueryDataType.BOOLEAN, key),
+            field("fBooleanBoxed", QueryDataType.BOOLEAN, key),
+            field("fByte", QueryDataType.TINYINT, key),
+            field("fByteBoxed", QueryDataType.TINYINT, key),
+            field("fShort", QueryDataType.SMALLINT, key),
+            field("fShortBoxed", QueryDataType.SMALLINT, key),
+            field("fInt", QueryDataType.INT, key),
+            field("fIntBoxed", QueryDataType.INT, key),
+            field("fLong", QueryDataType.BIGINT, key),
+            field("fLongBoxed", QueryDataType.BIGINT, key),
+            field("fFloat", QueryDataType.REAL, key),
+            field("fFloatBoxed", QueryDataType.REAL, key),
+            field("fDouble", QueryDataType.DOUBLE, key),
+            field("fDoubleBoxed", QueryDataType.DOUBLE, key),
 
-                field("fChar", QueryDataType.VARCHAR_CHARACTER, key),
-                field("fCharBoxed", QueryDataType.VARCHAR_CHARACTER, key),
-                field("fString", QueryDataType.VARCHAR, key),
+            field("fChar", QueryDataType.VARCHAR_CHARACTER, key),
+            field("fCharBoxed", QueryDataType.VARCHAR_CHARACTER, key),
+            field("fString", QueryDataType.VARCHAR, key),
 
-                field("fBigInteger", QueryDataType.DECIMAL_BIG_INTEGER, key),
-                field("fBigDecimal", QueryDataType.DECIMAL, key),
+            field("fBigInteger", QueryDataType.DECIMAL_BIG_INTEGER, key),
+            field("fBigDecimal", QueryDataType.DECIMAL, key),
 
-                field("fLocalTime", QueryDataType.TIME, key),
-                field("fLocalDate", QueryDataType.DATE, key),
-                field("fLocalDateTime", QueryDataType.TIMESTAMP, key),
+            field("fLocalTime", QueryDataType.TIME, key),
+            field("fLocalDate", QueryDataType.DATE, key),
+            field("fLocalDateTime", QueryDataType.TIMESTAMP, key),
 
-                field("fDate", QueryDataType.TIMESTAMP_WITH_TZ_DATE, key),
-                field("fCalendar", QueryDataType.TIMESTAMP_WITH_TZ_CALENDAR, key),
-                field("fInstant", QueryDataType.TIMESTAMP_WITH_TZ_INSTANT, key),
-                field("fOffsetDateTime", QueryDataType.TIMESTAMP_WITH_TZ_OFFSET_DATE_TIME, key),
-                field("fZonedDateTime", QueryDataType.TIMESTAMP_WITH_TZ_ZONED_DATE_TIME, key),
+            field("fDate", QueryDataType.TIMESTAMP_WITH_TZ_DATE, key),
+            field("fCalendar", QueryDataType.TIMESTAMP_WITH_TZ_CALENDAR, key),
+            field("fInstant", QueryDataType.TIMESTAMP_WITH_TZ_INSTANT, key),
+            field("fOffsetDateTime", QueryDataType.TIMESTAMP_WITH_TZ_OFFSET_DATE_TIME, key),
+            field("fZonedDateTime", QueryDataType.TIMESTAMP_WITH_TZ_ZONED_DATE_TIME, key),
 
-                hiddenField(key ? KEY : VALUE, QueryDataType.OBJECT, key)
+            hiddenField(key ? KEY : VALUE, QueryDataType.OBJECT, key)
         );
     }
 

@@ -87,20 +87,20 @@ public class PartitionedMapTableResolverTest extends MapSchemaTestSupport {
         factory = createHazelcastInstanceFactory(2);
 
         Config config = new Config()
-                .addMapConfig(new MapConfig(MAP_SERIALIZABLE_OBJECT).setInMemoryFormat(InMemoryFormat.OBJECT))
-                .addMapConfig(new MapConfig(MAP_SERIALIZABLE_BINARY).setInMemoryFormat(InMemoryFormat.BINARY))
-                .addMapConfig(new MapConfig(MAP_PORTABLE_OBJECT).setInMemoryFormat(InMemoryFormat.OBJECT))
-                .addMapConfig(new MapConfig(MAP_PORTABLE_BINARY).setInMemoryFormat(InMemoryFormat.BINARY))
-                .addMapConfig(new MapConfig(MAP_WILDCARD))
-                .setSerializationConfig(new SerializationConfig().addPortableFactory(1, classId -> {
-                    if (classId == 1) {
-                        return new PortableKey();
-                    } else if (classId == 2) {
-                        return new PortableValue();
-                    }
+            .addMapConfig(new MapConfig(MAP_SERIALIZABLE_OBJECT).setInMemoryFormat(InMemoryFormat.OBJECT))
+            .addMapConfig(new MapConfig(MAP_SERIALIZABLE_BINARY).setInMemoryFormat(InMemoryFormat.BINARY))
+            .addMapConfig(new MapConfig(MAP_PORTABLE_OBJECT).setInMemoryFormat(InMemoryFormat.OBJECT))
+            .addMapConfig(new MapConfig(MAP_PORTABLE_BINARY).setInMemoryFormat(InMemoryFormat.BINARY))
+            .addMapConfig(new MapConfig(MAP_WILDCARD))
+            .setSerializationConfig(new SerializationConfig().addPortableFactory(1, classId -> {
+                if (classId == 1) {
+                    return new PortableKey();
+                } else if (classId == 2) {
+                    return new PortableValue();
+                }
 
-                    throw new IllegalArgumentException("Unknown classId: " + classId);
-                }));
+                throw new IllegalArgumentException("Unknown classId: " + classId);
+            }));
 
         instance = factory.newHazelcastInstance(config);
     }
@@ -221,12 +221,12 @@ public class PartitionedMapTableResolverTest extends MapSchemaTestSupport {
         assertEquals(5, tables.size());
 
         // Check serializable maps. They all should have the same schema.
-        MapTableField[] expectedFields = new MapTableField[]{
-                hiddenField(KEY, QueryDataType.OBJECT, true),
-                field("field1", QueryDataType.INT, true),
-                field("field2", QueryDataType.INT, true),
-                field("field3", QueryDataType.INT, false),
-                hiddenField(VALUE, QueryDataType.OBJECT, false)
+        MapTableField[] expectedFields = new MapTableField[] {
+            hiddenField(KEY, QueryDataType.OBJECT, true),
+            field("field1", QueryDataType.INT, true),
+            field("field2", QueryDataType.INT, true),
+            field("field3", QueryDataType.INT, false),
+            hiddenField(VALUE, QueryDataType.OBJECT, false)
         };
 
         checkFields(getExistingTable(tables, MAP_SERIALIZABLE_OBJECT), expectedFields);
@@ -235,22 +235,22 @@ public class PartitionedMapTableResolverTest extends MapSchemaTestSupport {
 
         // Check portable in the OBJECT mode.
         checkFields(
-                getExistingTable(tables, MAP_PORTABLE_OBJECT),
-                hiddenField(KEY, QueryDataType.OBJECT, true),
-                field("portableField1", QueryDataType.INT, true),
-                field("portableField2", QueryDataType.INT, true),
-                field("portableField3", QueryDataType.INT, false),
-                hiddenField(VALUE, QueryDataType.OBJECT, false)
+            getExistingTable(tables, MAP_PORTABLE_OBJECT),
+            hiddenField(KEY, QueryDataType.OBJECT, true),
+            field("portableField1", QueryDataType.INT, true),
+            field("portableField2", QueryDataType.INT, true),
+            field("portableField3", QueryDataType.INT, false),
+            hiddenField(VALUE, QueryDataType.OBJECT, false)
         );
 
         // Check portable in the BINARY mode.
         checkFields(
-                getExistingTable(tables, MAP_PORTABLE_BINARY),
-                hiddenField(KEY, QueryDataType.OBJECT, true),
-                field("portableField1", QueryDataType.INT, true),
-                field("portableField2", QueryDataType.INT, true),
-                field("portableField3", QueryDataType.INT, false),
-                hiddenField(VALUE, QueryDataType.OBJECT, false)
+            getExistingTable(tables, MAP_PORTABLE_BINARY),
+            hiddenField(KEY, QueryDataType.OBJECT, true),
+            field("portableField1", QueryDataType.INT, true),
+            field("portableField2", QueryDataType.INT, true),
+            field("portableField3", QueryDataType.INT, false),
+            hiddenField(VALUE, QueryDataType.OBJECT, false)
         );
 
         // Destroy a dynamic map and ensure that it is no longer shown.
