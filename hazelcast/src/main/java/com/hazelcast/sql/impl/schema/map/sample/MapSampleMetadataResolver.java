@@ -26,7 +26,7 @@ import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.extract.GenericQueryTargetDescriptor;
 import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.schema.TableField;
-import com.hazelcast.sql.impl.schema.map.MapEnhancer;
+import com.hazelcast.sql.impl.schema.map.MapResolverPlugin;
 import com.hazelcast.sql.impl.schema.map.MapTableField;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.sql.impl.type.QueryDataTypeUtils;
@@ -63,7 +63,7 @@ public final class MapSampleMetadataResolver {
      */
     public static MapSampleMetadata resolve(
         InternalSerializationService ss,
-        MapEnhancer enhancer,
+        MapResolverPlugin resolverPlugin,
         Object target,
         boolean key
     ) {
@@ -77,14 +77,14 @@ public final class MapSampleMetadataResolver {
                 Data data = (Data) target;
 
                 if (data.isPortable()) {
-                    return resolvePortable(ss.getPortableContext().lookupClassDefinition(data), key, enhancer);
+                    return resolvePortable(ss.getPortableContext().lookupClassDefinition(data), key, resolverPlugin);
                 } else if (data.isJson()) {
                     throw new UnsupportedOperationException("JSON objects are not supported.");
                 } else {
-                    return resolveClass(ss.toObject(data).getClass(), key, enhancer);
+                    return resolveClass(ss.toObject(data).getClass(), key, resolverPlugin);
                 }
             } else {
-                return resolveClass(target.getClass(), key, enhancer);
+                return resolveClass(target.getClass(), key, resolverPlugin);
             }
         } catch (Exception e) {
             throw QueryException.error("Failed to resolve " + (key ? "key" : "value") + " metadata: " + e.getMessage(), e);
@@ -98,7 +98,7 @@ public final class MapSampleMetadataResolver {
      * @param isKey Whether this is a key.
      * @return Metadata.
      */
-    private static MapSampleMetadata resolvePortable(ClassDefinition clazz, boolean isKey, MapEnhancer enhancer) {
+    private static MapSampleMetadata resolvePortable(ClassDefinition clazz, boolean isKey, MapResolverPlugin resolverPlugin) {
         Map<String, TableField> fields = new TreeMap<>();
 
         // Add regular fields.
@@ -117,7 +117,7 @@ public final class MapSampleMetadataResolver {
 
         return new MapSampleMetadata(
                 GenericQueryTargetDescriptor.DEFAULT,
-                enhancer.analyze(clazz, isKey),
+                resolverPlugin.resolve(clazz, isKey),
                 new LinkedHashMap<>(fields)
         );
     }
@@ -157,7 +157,7 @@ public final class MapSampleMetadataResolver {
         }
     }
 
-    private static MapSampleMetadata resolveClass(Class<?> clazz, boolean isKey, MapEnhancer enhancer) {
+    private static MapSampleMetadata resolveClass(Class<?> clazz, boolean isKey, MapResolverPlugin resolverPlugin) {
         Map<String, TableField> fields = new TreeMap<>();
 
         // Extract fields from non-primitive type.
@@ -209,7 +209,7 @@ public final class MapSampleMetadataResolver {
 
         return new MapSampleMetadata(
             GenericQueryTargetDescriptor.DEFAULT,
-            enhancer.analyze(clazz, isKey),
+            resolverPlugin.resolve(clazz, isKey),
             new LinkedHashMap<>(fields)
         );
     }

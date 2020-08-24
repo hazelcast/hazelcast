@@ -26,10 +26,10 @@ import com.hazelcast.replicatedmap.ReplicatedMap;
  * Used by Jet.
  */
 @FunctionalInterface
-public interface MapEnhancer {
+public interface MapResolverPlugin {
 
     /**
      * Return an appendix that is attached to the resolved {@link AbstractMapTable}.
      */
-    Object analyze(Object object, boolean key);
+    Object resolve(Object object, boolean key);
 }

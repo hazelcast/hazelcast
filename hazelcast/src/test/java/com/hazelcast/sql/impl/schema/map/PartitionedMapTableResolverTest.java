@@ -78,7 +78,7 @@ public class PartitionedMapTableResolverTest extends MapSchemaTestSupport {
     private HazelcastInstance instance;
 
     @Mock
-    private MapEnhancer enhancer;
+    private MapResolverPlugin resolverPlugin;
 
     @Before
     public void before() {
@@ -303,8 +303,8 @@ public class PartitionedMapTableResolverTest extends MapSchemaTestSupport {
         Object keyAppendix = new Object();
         Object valueAppendix = new Object();
 
-        given(enhancer.analyze(any(), eq(true))).willReturn(keyAppendix);
-        given(enhancer.analyze(any(), eq(false))).willReturn(valueAppendix);
+        given(resolverPlugin.resolve(any(), eq(true))).willReturn(keyAppendix);
+        given(resolverPlugin.resolve(any(), eq(false))).willReturn(valueAppendix);
 
         Collection<Table> tables = resolver().getTables();
         Table existingTable = getExistingTable(tables, name);
@@ -314,7 +314,7 @@ public class PartitionedMapTableResolverTest extends MapSchemaTestSupport {
     }
 
     private PartitionedMapTableResolver resolver() {
-        return new PartitionedMapTableResolver(nodeEngine(instance), enhancer);
+        return new PartitionedMapTableResolver(nodeEngine(instance), resolverPlugin);
     }
 
     private static void checkEmpty(Table table) {

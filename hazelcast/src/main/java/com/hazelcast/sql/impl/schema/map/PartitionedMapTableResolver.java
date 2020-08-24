@@ -52,8 +52,8 @@ public class PartitionedMapTableResolver extends AbstractMapTableResolver {
     private static final List<List<String>> SEARCH_PATHS =
         Collections.singletonList(Arrays.asList(QueryUtils.CATALOG, SCHEMA_NAME_PARTITIONED));
 
-    public PartitionedMapTableResolver(NodeEngine nodeEngine, MapEnhancer enhancer) {
-        super(nodeEngine, enhancer, SEARCH_PATHS);
+    public PartitionedMapTableResolver(NodeEngine nodeEngine, MapResolverPlugin resolverPlugin) {
+        super(nodeEngine, resolverPlugin, SEARCH_PATHS);
     }
 
     @Override @Nonnull
@@ -134,14 +134,14 @@ public class PartitionedMapTableResolver extends AbstractMapTableResolver {
 
                 MapSampleMetadata keyMetadata = MapSampleMetadataResolver.resolve(
                     ss,
-                    enhancer,
+                    resolverPlugin,
                     entry.getKey(),
                     true
                 );
 
                 MapSampleMetadata valueMetadata = MapSampleMetadataResolver.resolve(
                     ss,
-                    enhancer,
+                    resolverPlugin,
                     entry.getValue().getValue(),
                     false
                 );
