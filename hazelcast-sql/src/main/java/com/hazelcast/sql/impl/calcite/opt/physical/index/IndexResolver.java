@@ -135,10 +135,11 @@ public final class IndexResolver {
             return Collections.emptyList();
         }
 
-        // Create index relational operators based on candidates.
         List<RelNode> rels = new ArrayList<>(supportedIndexes.size());
 
         for (MapTableIndex index : supportedIndexes) {
+            // Create index scan based on candidates, if possible. Candidates could be merged into more complex
+            // filters whenever possible.
             RelNode rel = createIndexScan(scan, distribution, index, conjunctions, candidates);
 
             if (rel != null) {
@@ -150,7 +151,7 @@ public final class IndexResolver {
     }
 
     /**
-     * Creates an object for convenient access to part of the predicate in the CNF.
+     * Decompose the original scan filter into CNF components.
      */
     private static List<RexNode> createConjunctiveFilter(RexNode filter) {
         List<RexNode> conjunctions = new ArrayList<>(1);
@@ -505,6 +506,17 @@ public final class IndexResolver {
         }
     }
 
+    /**
+     * Prepare candidate for OR expression if possible.
+     * <p>
+     * We support only equality conditions on the same columns. Ranges and conditions on different columns (aka "index joins")
+     * are not supported.
+     *
+     * @param exp the OR expression
+     * @param nodes components of the OR expression
+     * @param parameterMetadata parameter metadata
+     * @return candidate or {code null}
+     */
     private static IndexComponentCandidate prepareSingleColumnCandidateOr(
         RexNode exp,
         List<RexNode> nodes,
@@ -518,11 +530,10 @@ public final class IndexResolver {
             IndexComponentCandidate candidate = prepareSingleColumnCandidate(node, parameterMetadata);
 
             if (candidate == null) {
-                // Cannot resolve further, stop
+                // The component of the OR expression cannot be used by any index implementation
                 return null;
             }
 
-            // Work only with "=" expressions.
             IndexFilter candidateFilter = candidate.getFilter();
 
             if (!(candidateFilter instanceof IndexEqualsFilter || candidateFilter instanceof IndexInFilter)) {
@@ -537,7 +548,7 @@ public final class IndexResolver {
                 return null;
             }
 
-            // Flatten
+            // Flatten. E.g. ((a=1 OR a=2) OR a=3) is parsed into IN(1, 2) and OR(3), that is then flatten into IN(1, 2, 3)
             if (candidateFilter instanceof IndexEqualsFilter) {
                 filters.add(candidateFilter);
             } else {
@@ -559,7 +570,12 @@ public final class IndexResolver {
     /**
      * Create index scan for the given index if possible.
      *
-     * @return Index scan or {@code null}.
+     * @param scan the original map scan
+     * @param distribution the original map distribution
+     * @param index index to be considered
+     * @param conjunctions CNF components of the original map filter
+     * @param candidates resolved candidates
+     * @return index scan or {@code null}.
      */
     public static RelNode createIndexScan(
         MapScanLogicalRel scan,
@@ -570,6 +586,7 @@ public final class IndexResolver {
     ) {
         List<IndexComponentFilter> filters = new ArrayList<>(index.getFieldOrdinals().size());
 
+        // Iterate over every index component from the beginning and try to form a filter to it
         for (int i = 0; i < index.getFieldOrdinals().size(); i++) {
             int fieldOrdinal = index.getFieldOrdinals().get(i);
             QueryDataType fieldConverterType = index.getFieldConverterTypes().get(i);
@@ -577,10 +594,16 @@ public final class IndexResolver {
             List<IndexComponentCandidate> fieldCandidates = candidates.get(fieldOrdinal);
 
             if (fieldCandidates == null) {
-                // No candidates available for the given column, stop.
+                // No candidates available for the given component, stop.
+                // Consider the index {a, b, c}. If there is a condition "WHERE a=1 AND c=3", only "a=1" could be
+                // used for index filter.
                 break;
             }
 
+            // Create the filter for the given index component if possible.
+            // Separate candidates are possible merged into a single complex filter at this stage.
+            // Consider the index {a}, and the condition "WHERE a>1 AND a<5". In this case two distinct range candidates
+            // {>1} and {<5} are combined into a single RANGE filter {>1 AND <5}
             IndexComponentFilter filter = selectComponentFilter(
                 index.getType(),
                 fieldCandidates,
@@ -595,8 +618,10 @@ public final class IndexResolver {
             filters.add(filter);
 
             if (!(filter.getFilter() instanceof IndexEqualsFilter)) {
-                // For composite indexes, non-equals condition must always be the last part of the request.
-                // If we found non-equals, then we must stop.
+                // For composite indexes, non-equals condition must always be the last part of the request, otherwise we stop.
+                // Consider an index SORTED{a,b} and the condition "WHERE a>1 AND b=1". We cannot use both {a>1} and {b=1}
+                // filters here, because there is no single index request that could return such entries. Therefore, we use only
+                // {a>1} filter.
                 break;
             }
         }
@@ -1148,6 +1173,8 @@ public final class IndexResolver {
                 if (QueryDataTypeUtils.isNumeric(fromFamily) && QueryDataTypeUtils.isNumeric(toFamily)) {
                     // Converting between numeric types
                     if (toFamily.getPrecedence() > fromFamily.getPrecedence()) {
+                        // Only conversion from smaller type to bigger type could be removed safely. Otherwise the
+                        // overflow error is possible, so we cannot remove the CAST.
                         return from;
                     }
                 }
