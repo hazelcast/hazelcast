@@ -155,6 +155,8 @@ public abstract class OptimizerTestSupport extends SqlTestSupport {
             fields,
             new ConstantTableStatistics(rowCount),
             null,
+            null,
+            null,
             null
         );
 

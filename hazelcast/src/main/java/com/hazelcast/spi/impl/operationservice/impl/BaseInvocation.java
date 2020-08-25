@@ -115,18 +115,20 @@ public abstract class BaseInvocation {
     public boolean detectAndHandleBackupTimeout(long timeoutMillis) {
         // if the backups have completed, we are done; this also filters out all non backup-aware operations
         // since the backupsAcksExpected will always be equal to the backupsAcksReceived
-        boolean backupsCompleted = backupsAcksExpected == backupsAcksReceived;
-        long responseReceivedMillis = pendingResponseReceivedMillis;
-
-        // if this has not yet expired (so has not been in the system for a too long period) we ignore it
-        long expirationTime = responseReceivedMillis + timeoutMillis;
-        boolean timeout = expirationTime > 0 && expirationTime < Clock.currentTimeMillis();
+        if (backupsAcksExpected == backupsAcksReceived) {
+            return false;
+        }
 
         // if no response has yet been received, we we are done; we are only going to re-invoke an operation
         // if the response of the primary has been received, but the backups have not replied
-        boolean responseReceived = pendingResponse != VOID;
+        if (pendingResponse == VOID) {
+            return false;
+        }
 
-        if (backupsCompleted || !responseReceived || !timeout) {
+        // if this has not yet expired (so has not been in the system for a too long period) we ignore it
+        long expirationTime = pendingResponseReceivedMillis + timeoutMillis;
+        boolean timeoutReached = expirationTime > 0 && expirationTime < Clock.currentTimeMillis();
+        if (!timeoutReached) {
             return false;
         }
 

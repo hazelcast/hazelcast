@@ -34,6 +34,10 @@ import com.hazelcast.cp.internal.util.PartitionSpecificRunnableAdaptor;
 import com.hazelcast.cp.session.CPSession;
 import com.hazelcast.cp.session.CPSession.CPSessionOwnerType;
 import com.hazelcast.cp.session.CPSessionManagementService;
+import com.hazelcast.internal.metrics.DynamicMetricsProvider;
+import com.hazelcast.internal.metrics.MetricDescriptor;
+import com.hazelcast.internal.metrics.MetricsCollectionContext;
+import com.hazelcast.internal.metrics.ProbeUnit;
 import com.hazelcast.internal.services.ManagedService;
 import com.hazelcast.internal.util.BiTuple;
 import com.hazelcast.internal.util.Clock;
@@ -86,7 +90,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 @SuppressWarnings({"checkstyle:methodcount"})
 public class RaftSessionService extends AbstractCPMigrationAwareService
         implements ManagedService, SnapshotAwareService<RaftSessionRegistry>, SessionAccessor,
-        TermChangeAwareService, RaftNodeLifecycleAwareService, CPSessionManagementService {
+        TermChangeAwareService, RaftNodeLifecycleAwareService, CPSessionManagementService, DynamicMetricsProvider {
 
     public static final String SERVICE_NAME = "hz:core:raftSession";
 
@@ -115,6 +119,8 @@ public class RaftSessionService extends AbstractCPMigrationAwareService
                 CHECK_EXPIRED_SESSIONS_TASK_PERIOD_IN_MILLIS, MILLISECONDS);
         executionService.scheduleWithRepetition(new CheckInactiveSessions(), CHECK_INACTIVE_SESSIONS_TASK_PERIOD_IN_MILLIS,
                 CHECK_INACTIVE_SESSIONS_TASK_PERIOD_IN_MILLIS, MILLISECONDS);
+
+        this.nodeEngine.getMetricsRegistry().registerDynamicMetricsProvider(this);
     }
 
     @Override
@@ -500,6 +506,29 @@ public class RaftSessionService extends AbstractCPMigrationAwareService
                 if (logger.isFineEnabled()) {
                     logger.fine("Could not close inactive sessions: " + sessions + " of " + groupId, e);
                 }
+            }
+        }
+    }
+
+    @Override
+    public void provideDynamicMetrics(MetricDescriptor descriptor, MetricsCollectionContext context) {
+        MetricDescriptor root = descriptor.withPrefix("cp.session");
+
+        for (RaftSessionRegistry registry : registries.values()) {
+            CPGroupId groupId = registry.groupId();
+            for (CPSession session : registry.getSessions()) {
+                MetricDescriptor desc = root.copy()
+                        .withDiscriminator("id", session.id() + "@" + groupId.getName())
+                        .withTag("sessionId", String.valueOf(session.id()))
+                        .withTag("group", groupId.getName());
+
+                context.collect(desc.copy().withTag("endpoint", session.endpoint().toString()).withMetric("endpoint"), 0);
+                context.collect(desc.copy().withTag("endpointType", session.endpointType().toString())
+                        .withMetric("endpointType"), 0);
+
+                context.collect(desc.copy().withMetric("version"), session.version());
+                context.collect(desc.copy().withUnit(ProbeUnit.MS).withMetric("creationTime"), session.creationTime());
+                context.collect(desc.copy().withUnit(ProbeUnit.MS).withMetric("expirationTime"), session.expirationTime());
             }
         }
     }

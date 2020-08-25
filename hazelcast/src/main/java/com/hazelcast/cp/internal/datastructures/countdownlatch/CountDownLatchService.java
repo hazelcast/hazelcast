@@ -16,12 +16,16 @@
 
 package com.hazelcast.cp.internal.datastructures.countdownlatch;
 
-import com.hazelcast.cp.ICountDownLatch;
 import com.hazelcast.cp.CPGroupId;
+import com.hazelcast.cp.ICountDownLatch;
 import com.hazelcast.cp.internal.RaftGroupId;
 import com.hazelcast.cp.internal.RaftService;
 import com.hazelcast.cp.internal.datastructures.countdownlatch.proxy.CountDownLatchProxy;
 import com.hazelcast.cp.internal.datastructures.spi.blocking.AbstractBlockingService;
+import com.hazelcast.internal.metrics.DynamicMetricsProvider;
+import com.hazelcast.internal.metrics.MetricDescriptor;
+import com.hazelcast.internal.metrics.MetricsCollectionContext;
+import com.hazelcast.internal.metrics.ProbeUnit;
 import com.hazelcast.internal.util.BiTuple;
 import com.hazelcast.spi.impl.NodeEngine;
 
@@ -30,13 +34,14 @@ import java.util.UUID;
 
 import static com.hazelcast.cp.internal.RaftService.getObjectNameForProxy;
 import static com.hazelcast.cp.internal.RaftService.withoutDefaultGroupName;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CP_TAG_NAME;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 
 /**
  * Contains Raft-based count down latch instances
  */
-public class CountDownLatchService
-        extends AbstractBlockingService<AwaitInvocationKey, CountDownLatch, CountDownLatchRegistry> {
+public class CountDownLatchService extends AbstractBlockingService<AwaitInvocationKey, CountDownLatch, CountDownLatchRegistry>
+        implements DynamicMetricsProvider {
 
     /**
      * Name of the service
@@ -45,6 +50,12 @@ public class CountDownLatchService
 
     public CountDownLatchService(NodeEngine nodeEngine) {
         super(nodeEngine);
+    }
+
+    @Override
+    protected void initImpl() {
+        super.initImpl();
+        nodeEngine.getMetricsRegistry().registerDynamicMetricsProvider(this);
     }
 
     public boolean trySetCount(CPGroupId groupId, String name, int count) {
@@ -103,4 +114,30 @@ public class CountDownLatchService
         }
     }
 
+    @Override
+    protected void onRegistryRestored(CountDownLatchRegistry registry) {
+        super.onRegistryRestored(registry);
+        for (CountDownLatch latch : registry.getAllLatches()) {
+            latch.updateRemainingCount();
+        }
+    }
+
+    @Override
+    public void provideDynamicMetrics(MetricDescriptor descriptor, MetricsCollectionContext context) {
+        MetricDescriptor root = descriptor.withPrefix("cp.countdownlatch");
+
+        for (CPGroupId groupId : getGroupIdSet()) {
+            CountDownLatchRegistry registry = getRegistryOrNull(groupId);
+            for (CountDownLatch latch : registry.getAllLatches()) {
+                MetricDescriptor desc = root.copy()
+                        .withDiscriminator("id", latch.getName() + "@" + groupId.getName())
+                        .withTag(CP_TAG_NAME, latch.getName())
+                        .withTag("group", groupId.getName());
+
+                context.collect(desc.copy().withMetric("round"), latch.getRound());
+                context.collect(desc.copy().withUnit(ProbeUnit.COUNT).withMetric("count"), latch.getCount());
+                context.collect(desc.copy().withUnit(ProbeUnit.COUNT).withMetric("remaining"), latch.getRemainingCount());
+            }
+        }
+    }
 }

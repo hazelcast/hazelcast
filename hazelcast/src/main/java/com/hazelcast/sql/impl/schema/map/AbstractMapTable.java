@@ -37,6 +37,8 @@ public abstract class AbstractMapTable extends Table {
     private final String mapName;
     private final QueryTargetDescriptor keyDescriptor;
     private final QueryTargetDescriptor valueDescriptor;
+    private final Object keyJetMetadata;
+    private final Object valueJetMetadata;
     private final QueryException exception;
 
     /**
@@ -50,13 +52,17 @@ public abstract class AbstractMapTable extends Table {
         List<TableField> fields,
         TableStatistics statistics,
         QueryTargetDescriptor keyDescriptor,
-        QueryTargetDescriptor valueDescriptor
+        QueryTargetDescriptor valueDescriptor,
+        Object keyJetMetadata,
+        Object valueJetMetadata
     ) {
         super(schemaName, tableName, fields, statistics);
 
         this.mapName = requireNonNull(mapName);
         this.keyDescriptor = keyDescriptor;
         this.valueDescriptor = valueDescriptor;
+        this.keyJetMetadata = keyJetMetadata;
+        this.valueJetMetadata = valueJetMetadata;
 
         exception = null;
     }
@@ -67,6 +73,8 @@ public abstract class AbstractMapTable extends Table {
         this.mapName = name;
         this.keyDescriptor = null;
         this.valueDescriptor = null;
+        this.keyJetMetadata = null;
+        this.valueJetMetadata = null;
 
         this.exception = exception;
     }
@@ -103,6 +111,14 @@ public abstract class AbstractMapTable extends Table {
 
     public QueryTargetDescriptor getValueDescriptor() {
         return valueDescriptor;
+    }
+
+    public Object getKeyJetMetadata() {
+        return keyJetMetadata;
+    }
+
+    public Object getValueJetMetadata() {
+        return valueJetMetadata;
     }
 
     public QueryException getException() {
