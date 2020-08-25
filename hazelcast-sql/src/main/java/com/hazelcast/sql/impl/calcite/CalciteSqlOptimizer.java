@@ -18,7 +18,7 @@ package com.hazelcast.sql.impl.calcite;
 
 import com.hazelcast.cluster.memberselector.MemberSelectors;
 import com.hazelcast.spi.impl.NodeEngine;
-import com.hazelcast.sql.impl.JetSqlService;
+import com.hazelcast.sql.impl.JetSqlCoreBackend;
 import com.hazelcast.sql.impl.calcite.opt.HazelcastConventions;
 import com.hazelcast.sql.impl.calcite.parse.QueryParseResult;
 import com.hazelcast.sql.impl.optimizer.OptimizationTask;
@@ -101,12 +101,12 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
 
     public CalciteSqlOptimizer(
         NodeEngine nodeEngine,
-        @Nullable JetSqlService jetSqlService
+        @Nullable JetSqlCoreBackend jetSqlCoreBackend
     ) {
         this.nodeEngine = nodeEngine;
 
         this.sqlBackend = new HazelcastSqlBackend(nodeEngine);
-        this.jetSqlBackend = jetSqlService == null ? null : (SqlBackend) jetSqlService.sqlBackend();
+        this.jetSqlBackend = jetSqlCoreBackend == null ? null : (SqlBackend) jetSqlCoreBackend.sqlBackend();
     }
 
     @Override

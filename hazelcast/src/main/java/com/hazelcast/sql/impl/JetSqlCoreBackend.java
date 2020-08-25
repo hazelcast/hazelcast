@@ -24,14 +24,16 @@ import com.hazelcast.sql.impl.schema.map.JetMapMetadataResolver;
 import java.util.List;
 
 /**
- * Provides execution support for Jet specific SQL statements.
+ * Provides execution support for running SQL statements on Jet. This is
+ * the part that's on core code, {@link #sqlBackend()} returns the part
+ * that's on the hazelcast-sql module.
  */
-public interface JetSqlService {
+public interface JetSqlCoreBackend {
 
-    String SERVICE_NAME = "hz:impl:jetSqlService";
+    String SERVICE_NAME = "hz:impl:jetSqlCoreBackend";
 
     /**
-     * Return Jet specific {@link TableResolver}s.
+     * Return Jet-specific {@link TableResolver}s.
      */
     List<TableResolver> tableResolvers();
 
@@ -41,7 +43,7 @@ public interface JetSqlService {
     JetMapMetadataResolver mapMetadataResolver();
 
     /**
-     * Return Jet specific <i>com.hazelcast.sql.impl.calcite.SqlBackend</i>.
+     * Return Jet-specific {@code com.hazelcast.sql.impl.calcite.SqlBackend}.
      */
     Object sqlBackend();
 
