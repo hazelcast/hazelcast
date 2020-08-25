@@ -36,6 +36,7 @@ import com.hazelcast.cp.internal.raft.impl.RaftIntegration;
 import com.hazelcast.cp.internal.raft.impl.RaftNode;
 import com.hazelcast.cp.internal.raft.impl.RaftNodeImpl;
 import com.hazelcast.cp.internal.raft.impl.RaftNodeStatus;
+import com.hazelcast.cp.internal.raft.impl.RaftRole;
 import com.hazelcast.cp.internal.raft.impl.dto.AppendFailureResponse;
 import com.hazelcast.cp.internal.raft.impl.dto.AppendRequest;
 import com.hazelcast.cp.internal.raft.impl.dto.AppendSuccessResponse;
@@ -773,11 +774,10 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
             RaftStateStore stateStore = persistenceService.createRaftStateStore((RaftGroupId) groupId, null);
             RaftNodeImpl node = newRaftNode(groupId, localCPMember, members, raftAlgorithmConfig, integration, stateStore);
 
-            registerNodeMetrics(groupId);
             if (nodes.putIfAbsent(groupId, node) == null) {
                 if (destroyedGroupIds.contains(groupId)) {
-                    deregisterNodeMetrics(groupId);
                     nodes.remove(groupId, node);
+                    removeNodeMetrics(groupId);
                     logger.warning("Not creating RaftNode[" + groupId + "] since the CP group is already destroyed.");
                     return;
                 }
@@ -803,7 +803,6 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
         RaftNodeImpl node = RaftNodeImpl.restoreRaftNode(groupId, restoredState, raftAlgorithmConfig, integration, stateStore);
 
         // no need to lock here...
-        registerNodeMetrics(groupId);
         RaftNode prev = nodes.putIfAbsent(groupId, node);
         checkState(prev == null, "Could not restore " + groupId + " because its Raft node already exists!");
 
@@ -813,24 +812,21 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
     }
 
     @Override
-    public void provideDynamicMetrics(MetricDescriptor descriptor,
-                                      MetricsCollectionContext context) {
+    public void provideDynamicMetrics(MetricDescriptor descriptor, MetricsCollectionContext context) {
         MetricDescriptor rootDescriptor = descriptor.withPrefix(CP_PREFIX_RAFT_GROUP);
         for (Entry<CPGroupId, RaftNodeMetrics> entry : nodeMetrics.entrySet()) {
             CPGroupId groupId = entry.getKey();
+            RaftRole role = entry.getValue().role;
             MetricDescriptor groupDescriptor = rootDescriptor
                     .copy()
                     .withDiscriminator(CP_DISCRIMINATOR_GROUPID, String.valueOf(groupId.getId()))
-                    .withTag(CP_TAG_NAME, groupId.getName());
+                    .withTag(CP_TAG_NAME, groupId.getName())
+                    .withTag("role", role != null ? role.toString() : "NONE");
             context.collect(groupDescriptor, entry.getValue());
         }
     }
 
-    private void registerNodeMetrics(CPGroupId groupId) {
-        nodeMetrics.putIfAbsent(groupId, new RaftNodeMetrics());
-    }
-
-    private void deregisterNodeMetrics(CPGroupId groupId) {
+    private void removeNodeMetrics(CPGroupId groupId) {
         nodeMetrics.remove(groupId);
     }
 
@@ -909,7 +905,7 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
         RaftGroupId groupId = (RaftGroupId) node.getGroupId();
         node.forceSetTerminatedStatus().whenCompleteAsync((v, t) -> {
             nodes.remove(groupId, node);
-            deregisterNodeMetrics(groupId);
+            removeNodeMetrics(groupId);
             CPPersistenceService persistenceService = getCPPersistenceService();
             try {
                 if (removeRaftStateStore && persistenceService.isEnabled()) {
@@ -1433,15 +1429,14 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
         public void run() {
             for (RaftNode node : nodes.values()) {
                 final RaftNodeImpl raftNode = (RaftNodeImpl) node;
-                final RaftNodeMetrics metrics = nodeMetrics.get(node.getGroupId());
-                assert metrics != null;
 
                 raftNode.execute(() -> {
                     RaftState state = raftNode.state();
                     RaftLog log = state.log();
-                    metrics.update(state.term(), state.commitIndex(), state.lastApplied(),
-                            log.lastLogOrSnapshotTerm(), log.snapshotIndex(),
+                    RaftNodeMetrics metrics = new RaftNodeMetrics(state.role(), state.memberCount(), state.term(),
+                            state.commitIndex(), state.lastApplied(), log.lastLogOrSnapshotTerm(), log.snapshotIndex(),
                             log.lastLogOrSnapshotIndex(), log.availableCapacity());
+                    nodeMetrics.put(node.getGroupId(), metrics);
                 });
             }
         }

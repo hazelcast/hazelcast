@@ -31,10 +31,16 @@ import java.util.Map;
 public abstract class AbstractMapTableResolver implements TableResolver {
 
     protected final NodeEngine nodeEngine;
+    protected final JetMapMetadataResolver jetMapMetadataResolver;
     private final List<List<String>> defaultSearchPaths;
 
-    protected AbstractMapTableResolver(NodeEngine nodeEngine, List<List<String>> defaultSearchPaths) {
+    protected AbstractMapTableResolver(
+        NodeEngine nodeEngine,
+        JetMapMetadataResolver jetMapMetadataResolver,
+        List<List<String>> defaultSearchPaths
+    ) {
         this.nodeEngine = nodeEngine;
+        this.jetMapMetadataResolver = jetMapMetadataResolver;
         this.defaultSearchPaths = defaultSearchPaths;
     }
 

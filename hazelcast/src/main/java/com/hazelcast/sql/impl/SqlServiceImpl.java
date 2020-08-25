@@ -25,9 +25,9 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.exception.ServiceNotFoundException;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.sql.SqlStatement;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlService;
+import com.hazelcast.sql.SqlStatement;
 import com.hazelcast.sql.impl.optimizer.DisabledSqlOptimizer;
 import com.hazelcast.sql.impl.optimizer.OptimizationTask;
 import com.hazelcast.sql.impl.optimizer.SqlOptimizer;
@@ -39,6 +39,7 @@ import com.hazelcast.sql.impl.plan.cache.PlanCacheChecker;
 import com.hazelcast.sql.impl.plan.cache.PlanCacheKey;
 import com.hazelcast.sql.impl.schema.SqlCatalog;
 import com.hazelcast.sql.impl.schema.TableResolver;
+import com.hazelcast.sql.impl.schema.map.JetMapMetadataResolver;
 import com.hazelcast.sql.impl.schema.map.PartitionedMapTableResolver;
 import com.hazelcast.sql.impl.state.QueryState;
 
@@ -322,10 +323,17 @@ public class SqlServiceImpl implements SqlService, Consumer<Packet> {
     ) {
         List<TableResolver> res = new ArrayList<>();
 
+        JetMapMetadataResolver jetMetadataResolver;
+
         if (jetSqlService != null) {
             res.addAll(jetSqlService.tableResolvers());
+
+            jetMetadataResolver = jetSqlService.mapMetadataResolver();
+        } else {
+            jetMetadataResolver = JetMapMetadataResolver.NO_OP;
         }
-        res.add(new PartitionedMapTableResolver(nodeEngine));
+
+        res.add(new PartitionedMapTableResolver(nodeEngine, jetMetadataResolver));
 
         return res;
     }
