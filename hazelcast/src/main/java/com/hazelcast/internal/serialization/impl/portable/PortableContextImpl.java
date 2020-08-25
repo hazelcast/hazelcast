@@ -45,12 +45,13 @@ public final class PortableContextImpl implements PortableContext {
 
     private final int version;
     private final ConcurrentHashMap<Integer, ClassDefinitionContext> classDefContextMap = new ConcurrentHashMap<>();
-
     private final InternalSerializationService serializationService;
+    private final boolean checkClassDefErrors;
 
-    public PortableContextImpl(InternalSerializationService serializationService, int version) {
+    public PortableContextImpl(InternalSerializationService serializationService, int version, boolean checkClassDefErrors) {
         this.serializationService = serializationService;
         this.version = version;
+        this.checkClassDefErrors = checkClassDefErrors;
     }
 
     @Override
@@ -222,6 +223,10 @@ public final class PortableContextImpl implements PortableContext {
     @Override
     public ByteOrder getByteOrder() {
         return serializationService.getByteOrder();
+    }
+
+    public boolean shouldCheckClassDefinitionErrors() {
+        return checkClassDefErrors;
     }
 
     private final class ClassDefinitionContext {

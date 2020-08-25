@@ -133,19 +133,17 @@ public class SerializationServiceV1 extends AbstractSerializationService {
 
     private final PortableContextImpl portableContext;
     private final PortableSerializer portableSerializer;
-    private final boolean checkClassDefErrors;
 
     SerializationServiceV1(AbstractBuilder<?> builder) {
         super(builder);
-        checkClassDefErrors = builder.checkClassDefErrors;
         PortableHookLoader loader = new PortableHookLoader(builder.portableFactories, builder.getClassLoader());
-        portableContext = new PortableContextImpl(this, builder.portableVersion);
+        portableContext = new PortableContextImpl(this, builder.portableVersion, builder.checkClassDefErrors);
         for (ClassDefinition cd : loader.getDefinitions()) {
             portableContext.registerClassDefinition(cd);
         }
         dataSerializerAdapter = createSerializerAdapter(
                 new DataSerializableSerializer(builder.dataSerializableFactories, builder.getClassLoader()));
-        portableSerializer = new PortableSerializer(portableContext, loader.getFactories(), checkClassDefErrors);
+        portableSerializer = new PortableSerializer(portableContext, loader.getFactories());
         portableSerializerAdapter = createSerializerAdapter(portableSerializer);
 
         javaSerializerAdapter = createSerializerAdapter(
@@ -292,7 +290,7 @@ public class SerializationServiceV1 extends AbstractSerializationService {
                         continue;
                     }
                 }
-                if (checkClassDefErrors) {
+                if (portableContext.shouldCheckClassDefinitionErrors()) {
                     throw new HazelcastSerializationException("Could not find registered ClassDefinition for factory-id : "
                             + factoryId + ", class-id " + classId);
                 }

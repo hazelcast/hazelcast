@@ -40,13 +40,10 @@ public final class PortableSerializer implements StreamSerializer<Object> {
 
     private final PortableContextImpl context;
     private final Map<Integer, PortableFactory> factories = new HashMap<>();
-    private final boolean checkClassDefErrors;
 
-    public PortableSerializer(PortableContextImpl context, Map<Integer, ? extends PortableFactory> portableFactories,
-                              boolean checkClassDefErrors) {
+    public PortableSerializer(PortableContextImpl context, Map<Integer, ? extends PortableFactory> portableFactories) {
         this.context = context;
         factories.putAll(portableFactories);
-        this.checkClassDefErrors = checkClassDefErrors;
     }
 
     @Override
@@ -196,7 +193,7 @@ public final class PortableSerializer implements StreamSerializer<Object> {
 
     private void writePortableGenericRecord(ObjectDataOutput out, PortableGenericRecord record) throws IOException {
         ClassDefinition cd = record.getClassDefinition();
-        if (checkClassDefErrors) {
+        if (context.shouldCheckClassDefinitionErrors()) {
             ClassDefinition existingCd = context.lookupClassDefinition(cd.getFactoryId(), cd.getClassId(), cd.getVersion());
             if (existingCd != null && !existingCd.equals(cd)) {
                 throw new HazelcastSerializationException("Inconsistent class definition found. New class definition : " + cd
