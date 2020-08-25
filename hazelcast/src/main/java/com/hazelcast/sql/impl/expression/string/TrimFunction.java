@@ -63,7 +63,7 @@ public class TrimFunction extends BiExpression<String> implements IdentifiedData
 
     @Override
     public String eval(Row row, ExpressionEvalContext context) {
-        String input = StringExpressionUtils.asVarchar(operand1, row, context);
+        String input = StringFunctionUtils.asVarchar(operand1, row, context);
 
         if (input == null) {
             return null;
@@ -72,7 +72,7 @@ public class TrimFunction extends BiExpression<String> implements IdentifiedData
         String characters;
 
         if (operand2 != null) {
-            characters = StringExpressionUtils.asVarchar(operand2, row, context);
+            characters = StringFunctionUtils.asVarchar(operand2, row, context);
 
             if (characters == null) {
                 return null;
