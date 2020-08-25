@@ -514,9 +514,9 @@ public class MemberStateImpl implements MemberState {
                 + ", topicsWithStats=" + topicsWithStats
                 + ", reliableTopicsWithStats=" + reliableTopicsWithStats
                 + ", pnCountersWithStats=" + pnCountersWithStats
-                + ", executorsWithStats=" + executorsWithStats
-                + ", scheduledExecutorsWithStats=" + scheduledExecutorsWithStats
-                + ", durableExecutorsWithStats=" + durableExecutorsWithStats
+                + ", executorStats=" + executorsWithStats
+                + ", scheduledExecutorStats=" + scheduledExecutorsWithStats
+                + ", durableExecutorStats=" + durableExecutorsWithStats
                 + ", cachesWithStats=" + cachesWithStats
                 + ", flakeIdGeneratorsWithStats=" + flakeIdGeneratorsWithStats
                 + ", wanStats=" + wanStats

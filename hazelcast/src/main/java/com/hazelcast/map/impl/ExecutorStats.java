@@ -31,6 +31,8 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public final class ExecutorStats {
 
+    private static final LocalExecutorStatsImpl EMPTY_LOCAL_EXECUTOR_STATS = new LocalExecutorStatsImpl();
+
     private final ConcurrentHashMap<String, LocalExecutorStatsImpl> statsMap = new ConcurrentHashMap<>();
     private final ConstructorFunction<String, LocalExecutorStatsImpl> executorStatsConstructor
             = key -> new LocalExecutorStatsImpl();
@@ -43,27 +45,31 @@ public final class ExecutorStats {
     }
 
     public void startExecution(String executorName, long elapsed) {
-        getLocalExecutorStats(executorName).startExecution(elapsed);
+        getLocalExecutorStats(executorName, true).startExecution(elapsed);
     }
 
     public void finishExecution(String executorName, long elapsed) {
-        getLocalExecutorStats(executorName).finishExecution(elapsed);
+        getLocalExecutorStats(executorName, true).finishExecution(elapsed);
     }
 
     public void startPending(String executorName) {
-        getLocalExecutorStats(executorName).startPending();
+        getLocalExecutorStats(executorName, true).startPending();
     }
 
     public void rejectExecution(String executorName) {
-        getLocalExecutorStats(executorName).rejectExecution();
+        getLocalExecutorStats(executorName, true).rejectExecution();
     }
 
     public void cancelExecution(String executorName) {
-        getLocalExecutorStats(executorName).cancelExecution();
+        getLocalExecutorStats(executorName, true).cancelExecution();
     }
 
-    public LocalExecutorStatsImpl getLocalExecutorStats(String executorName) {
-        return ConcurrencyUtil.getOrPutIfAbsent(statsMap, executorName, executorStatsConstructor);
+    public LocalExecutorStatsImpl getLocalExecutorStats(String executorName, boolean createIfAbsent) {
+        if (createIfAbsent) {
+            return ConcurrencyUtil.getOrPutIfAbsent(statsMap, executorName, executorStatsConstructor);
+        } else {
+            return EMPTY_LOCAL_EXECUTOR_STATS;
+        }
     }
 
     public void clear() {

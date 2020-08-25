@@ -226,7 +226,7 @@ public class DistributedExecutorService implements ManagedService, RemoteService
     }
 
     public LocalExecutorStats getLocalExecutorStats(String name) {
-        return executorStats.getLocalExecutorStats(name);
+        return executorStats.getLocalExecutorStats(name, false);
     }
 
     private final class Processor extends FutureTask implements Runnable {
