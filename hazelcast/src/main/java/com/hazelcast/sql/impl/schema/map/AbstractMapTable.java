@@ -23,7 +23,6 @@ import com.hazelcast.sql.impl.schema.Table;
 import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.schema.TableStatistics;
 
-import javax.annotation.Nonnull;
 import java.util.Collections;
 import java.util.List;
 
@@ -34,7 +33,6 @@ import static java.util.Objects.requireNonNull;
  */
 public abstract class AbstractMapTable extends Table {
 
-    private final String mapName;
     private final QueryTargetDescriptor keyDescriptor;
     private final QueryTargetDescriptor valueDescriptor;
     private final Object keyJetMetadata;
@@ -42,12 +40,12 @@ public abstract class AbstractMapTable extends Table {
     private final QueryException exception;
 
     /**
-     * @param tableName Name of the table as it appears in the SQL
+     * @param sqlName Name of the table as it appears in the SQL
      * @param mapName Name of the underlying map
      */
     protected AbstractMapTable(
         String schemaName,
-        String tableName,
+        String sqlName,
         String mapName,
         List<TableField> fields,
         TableStatistics statistics,
@@ -56,9 +54,8 @@ public abstract class AbstractMapTable extends Table {
         Object keyJetMetadata,
         Object valueJetMetadata
     ) {
-        super(schemaName, tableName, fields, statistics);
+        super(schemaName, requireNonNull(sqlName), requireNonNull(mapName), fields, statistics);
 
-        this.mapName = requireNonNull(mapName);
         this.keyDescriptor = keyDescriptor;
         this.valueDescriptor = valueDescriptor;
         this.keyJetMetadata = keyJetMetadata;
@@ -68,23 +65,14 @@ public abstract class AbstractMapTable extends Table {
     }
 
     protected AbstractMapTable(String schemaName, String name, QueryException exception) {
-        super(schemaName, name, Collections.emptyList(), new ConstantTableStatistics(0));
+        super(schemaName, name, name, Collections.emptyList(), new ConstantTableStatistics(0));
 
-        this.mapName = name;
         this.keyDescriptor = null;
         this.valueDescriptor = null;
         this.keyJetMetadata = null;
         this.valueJetMetadata = null;
 
         this.exception = exception;
-    }
-
-    /**
-     * The name of the underlying map.
-     */
-    @Nonnull
-    public String getMapName() {
-        return mapName;
     }
 
     @Override

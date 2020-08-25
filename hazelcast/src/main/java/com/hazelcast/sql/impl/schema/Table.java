@@ -28,7 +28,8 @@ import java.util.Set;
 public abstract class Table {
 
     private final String schemaName;
-    private final String name;
+    private final String sqlName;
+    private final String objectName;
     private final List<TableField> fields;
     private final TableStatistics statistics;
 
@@ -36,12 +37,14 @@ public abstract class Table {
 
     protected Table(
         String schemaName,
-        String name,
+        String sqlName,
+        String objectName,
         List<TableField> fields,
         TableStatistics statistics
     ) {
         this.schemaName = schemaName;
-        this.name = name;
+        this.sqlName = sqlName;
+        this.objectName = objectName;
         this.fields = Collections.unmodifiableList(fields);
         this.statistics = statistics;
     }
@@ -50,8 +53,18 @@ public abstract class Table {
         return schemaName;
     }
 
-    public String getName() {
-        return name;
+    /**
+     * Returns the name of the table in SQL.
+     */
+    public String getSqlName() {
+        return sqlName;
+    }
+
+    /**
+     * Returns the name of the underlying object (e.g. name of the IMap).
+     */
+    public String getObjectName() {
+        return objectName;
     }
 
     public List<TableField> getFields() {

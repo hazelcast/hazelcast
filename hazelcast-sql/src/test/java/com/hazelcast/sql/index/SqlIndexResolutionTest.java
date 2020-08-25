@@ -186,7 +186,7 @@ public class SqlIndexResolutionTest extends SqlIndexTestSupport {
         PartitionedMapTableResolver resolver = new PartitionedMapTableResolver(nodeEngine(member), JetMapMetadataResolver.NO_OP);
 
         for (Table table : resolver.getTables()) {
-            if (table.getName().equals(mapName)) {
+            if (table.getObjectName().equals(mapName)) {
                 PartitionedMapTable table0 = (PartitionedMapTable) table;
 
                 int field1Ordinal = findFieldOrdinal(table0, "field1");

@@ -51,7 +51,7 @@ public class TestMapTable extends AbstractMapTable {
             return null;
         }
 
-        return new ObjectKey(getSchemaName(), getName(), getFields());
+        return new ObjectKey(getSchemaName(), getSqlName(), getFields());
     }
 
     public static TestMapTable create(String schemaName, String name, TableField... fields) {

@@ -78,7 +78,7 @@ public class PartitionedMapTable extends AbstractMapTable {
 
         return new PartitionedMapPlanObjectKey(
             getSchemaName(),
-            getName(),
+            getObjectName(),
             getFields(),
             getConflictingSchemas(),
             getKeyDescriptor(),
