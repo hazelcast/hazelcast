@@ -20,13 +20,14 @@ import com.hazelcast.internal.monitor.impl.LocalExecutorStatsImpl;
 import com.hazelcast.internal.util.ConcurrencyUtil;
 import com.hazelcast.internal.util.ConstructorFunction;
 
-import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 
 /**
- * Shared functionality to collect stats of various executors' tasks.
- * One instance of this class is created per executor service.
+ * Shared functionality to collect stats of various
+ * executors' tasks. One instance of this class is created
+ * per executor service. Scheduled, durable and executor
+ * services' implementations use this class to collect stat.
  */
 public final class ExecutorStats {
 
@@ -57,6 +58,10 @@ public final class ExecutorStats {
         getLocalExecutorStats(executorName).rejectExecution();
     }
 
+    public void cancelExecution(String executorName) {
+        getLocalExecutorStats(executorName).cancelExecution();
+    }
+
     public LocalExecutorStatsImpl getLocalExecutorStats(String executorName) {
         return ConcurrencyUtil.getOrPutIfAbsent(statsMap, executorName, executorStatsConstructor);
     }
@@ -65,27 +70,7 @@ public final class ExecutorStats {
         statsMap.clear();
     }
 
-    public void cancelExecution(String executorName) {
-        getLocalExecutorStats(executorName).cancelExecution();
-    }
-
     public void removeStats(String executorName) {
         statsMap.remove(executorName);
-    }
-
-    public boolean hasNoStats() {
-        return statsMap.isEmpty();
-    }
-
-    public boolean hasStats() {
-        return !statsMap.isEmpty();
-    }
-
-    public int size() {
-        return statsMap.size();
-    }
-
-    public Iterable<? extends Map.Entry<String, LocalExecutorStatsImpl>> entrySet() {
-        return statsMap.entrySet();
     }
 }

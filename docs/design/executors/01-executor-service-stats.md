@@ -76,6 +76,8 @@ and `DistributedDurableExecutorService` for this purpose. Statistics are
 available by default, they can be disabled via `ScheduledExecutorConfig` or
 `DurableExecutorConfig`.
 
+**NOTE**: Durable executor service has no cancellation capability hence no stats available for it.
+
 ### Metrics Prefixes
 `scheduledExecutor` and `durableExecutor` prefixes are used for 
 scheduled and durable executor services respectively.

@@ -23,7 +23,6 @@ import com.hazelcast.internal.cluster.ClusterStateListener;
 import com.hazelcast.internal.metrics.DynamicMetricsProvider;
 import com.hazelcast.internal.metrics.MetricDescriptor;
 import com.hazelcast.internal.metrics.MetricsCollectionContext;
-import com.hazelcast.internal.monitor.impl.LocalExecutorStatsImpl;
 import com.hazelcast.internal.partition.FragmentedMigrationAwareService;
 import com.hazelcast.internal.partition.IPartitionLostEvent;
 import com.hazelcast.internal.partition.PartitionAwareService;
@@ -327,15 +326,12 @@ public class MapService implements ManagedService, FragmentedMigrationAwareServi
         }
         // stats of offloaded-entry-processor's executor
         ExecutorStats executorStats = mapServiceContext.getOffloadedEntryProcessorExecutorStats();
-        if (executorStats.hasStats()) {
-            Iterable<? extends Map.Entry<String, LocalExecutorStatsImpl>> entries = executorStats.entrySet();
-            for (Map.Entry<String, LocalExecutorStatsImpl> entry : entries) {
-                MetricDescriptor nearCacheDescriptor = descriptor
-                        .copy()
-                        .withPrefix(MAP_PREFIX_ENTRY_PROCESSOR_OFFLOADABLE_EXECUTOR)
-                        .withDiscriminator(MAP_DISCRIMINATOR_NAME, entry.getKey());
-                context.collect(nearCacheDescriptor, entry.getValue());
-            }
-        }
+        executorStats.getStatsMap().forEach((name, offloadedExecutorStats) -> {
+            MetricDescriptor nearCacheDescriptor = descriptor
+                    .copy()
+                    .withPrefix(MAP_PREFIX_ENTRY_PROCESSOR_OFFLOADABLE_EXECUTOR)
+                    .withDiscriminator(MAP_DISCRIMINATOR_NAME, name);
+            context.collect(nearCacheDescriptor, offloadedExecutorStats);
+        });
     }
 }

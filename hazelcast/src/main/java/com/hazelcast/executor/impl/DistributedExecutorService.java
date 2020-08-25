@@ -16,7 +16,6 @@
 
 package com.hazelcast.executor.impl;
 
-import com.hazelcast.config.Config;
 import com.hazelcast.config.ExecutorConfig;
 import com.hazelcast.executor.LocalExecutorStats;
 import com.hazelcast.internal.metrics.DynamicMetricsProvider;
@@ -30,7 +29,6 @@ import com.hazelcast.internal.services.StatisticsAwareService;
 import com.hazelcast.internal.util.Clock;
 import com.hazelcast.internal.util.ConstructorFunction;
 import com.hazelcast.internal.util.ContextMutexFactory;
-import com.hazelcast.internal.util.MapUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.ExecutorStats;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
@@ -192,19 +190,7 @@ public class DistributedExecutorService implements ManagedService, RemoteService
 
     @Override
     public Map<String, LocalExecutorStatsImpl> getStats() {
-        if (executorStats.hasNoStats()) {
-            return Collections.emptyMap();
-        }
-
-        Map<String, LocalExecutorStatsImpl> stats = MapUtil.createHashMap(executorStats.size());
-        Config config = nodeEngine.getConfig();
-        for (Map.Entry<String, LocalExecutorStatsImpl> executorStat : executorStats.entrySet()) {
-            String name = executorStat.getKey();
-            if (config.getExecutorConfig(name).isStatisticsEnabled()) {
-                stats.put(name, executorStat.getValue());
-            }
-        }
-        return stats;
+        return executorStats.getStatsMap();
     }
 
     /**
