@@ -51,11 +51,11 @@ public class PhoneHome {
         this(node, DEFAULT_BASE_PHONE_HOME_URL, CLOUD_INFO_COLLECTOR);
     }
 
-    PhoneHome(Node node, String baseUrl, MetricsCollector additionalCollectors) {
+    PhoneHome(Node node, String baseUrl, MetricsCollector... additionalCollectors) {
         hazelcastNode = node;
         logger = hazelcastNode.getLogger(com.hazelcast.internal.util.phonehome.PhoneHome.class);
         basePhoneHomeUrl = baseUrl;
-        metricsCollectorList.add(additionalCollectors);
+        metricsCollectorList.addAll(Arrays.asList(additionalCollectors));
     }
 
     public void check() {
