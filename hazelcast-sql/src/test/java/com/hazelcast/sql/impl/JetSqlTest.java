@@ -153,7 +153,7 @@ public class JetSqlTest extends SqlTestSupport {
     private static class TestTable extends Table {
 
         private TestTable() {
-            super(JET_NAMESPACE, JET_TABLE, JET_TABLE, emptyList(), new ConstantTableStatistics(0));
+            super(JET_NAMESPACE, JET_TABLE, emptyList(), new ConstantTableStatistics(0));
         }
 
         @Override

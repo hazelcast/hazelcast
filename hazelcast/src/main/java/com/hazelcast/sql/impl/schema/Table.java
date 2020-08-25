@@ -29,7 +29,6 @@ public abstract class Table {
 
     private final String schemaName;
     private final String sqlName;
-    private final String objectName;
     private final List<TableField> fields;
     private final TableStatistics statistics;
 
@@ -38,13 +37,11 @@ public abstract class Table {
     protected Table(
         String schemaName,
         String sqlName,
-        String objectName,
         List<TableField> fields,
         TableStatistics statistics
     ) {
         this.schemaName = schemaName;
         this.sqlName = sqlName;
-        this.objectName = objectName;
         this.fields = Collections.unmodifiableList(fields);
         this.statistics = statistics;
     }
@@ -58,13 +55,6 @@ public abstract class Table {
      */
     public String getSqlName() {
         return sqlName;
-    }
-
-    /**
-     * Returns the name of the underlying object (e.g. name of the IMap).
-     */
-    public String getObjectName() {
-        return objectName;
     }
 
     public List<TableField> getFields() {

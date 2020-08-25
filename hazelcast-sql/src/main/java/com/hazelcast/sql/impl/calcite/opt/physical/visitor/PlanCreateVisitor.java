@@ -223,7 +223,7 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
         AbstractMapTable table = rel.getMap();
 
         if (((PartitionedMapTable) table).isHd()) {
-            throw QueryException.error("Cannot query the IMap \"" + table.getObjectName()
+            throw QueryException.error("Cannot query the IMap \"" + table.getMapName()
                 + "\" with InMemoryFormat.NATIVE because it does not have global indexes "
                 + "(please make sure that the IMap has at least one index "
                 + "and the property \"" + ClusterProperty.GLOBAL_HD_INDEX_ENABLED.getName()
@@ -236,7 +236,7 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
 
         MapScanPlanNode scanNode = new MapScanPlanNode(
             pollId(rel),
-            table.getObjectName(),
+            table.getMapName(),
             table.getKeyDescriptor(),
             table.getValueDescriptor(),
             getScanFieldPaths(table),
@@ -259,7 +259,7 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
 
         MapIndexScanPlanNode scanNode = new MapIndexScanPlanNode(
             pollId(rel),
-            table.getObjectName(),
+            table.getMapName(),
             table.getKeyDescriptor(),
             table.getValueDescriptor(),
             getScanFieldPaths(table),
