@@ -42,12 +42,12 @@ public abstract class AbstractMapTable extends Table {
     private final QueryException exception;
 
     /**
-     * @param tableName Name of the table as it appears in the SQL
+     * @param sqlName Name of the table as it appears in the SQL
      * @param mapName Name of the underlying map
      */
     protected AbstractMapTable(
         String schemaName,
-        String tableName,
+        String sqlName,
         String mapName,
         List<TableField> fields,
         TableStatistics statistics,
@@ -56,7 +56,7 @@ public abstract class AbstractMapTable extends Table {
         Object keyJetMetadata,
         Object valueJetMetadata
     ) {
-        super(schemaName, tableName, fields, statistics);
+        super(schemaName, sqlName, fields, statistics);
 
         this.mapName = requireNonNull(mapName);
         this.keyDescriptor = keyDescriptor;

@@ -285,7 +285,7 @@ public class PartitionedMapTableResolverTest extends MapSchemaTestSupport {
         try {
             table.getFieldCount();
 
-            fail("Exception is not thrown: " + table.getName());
+            fail("Exception is not thrown: " + table.getSqlName());
         } catch (QueryException e) {
             assertEquals(SqlErrorCode.GENERIC, e.getCode());
             assertTrue(e.getMessage().contains("Failed to resolve value metadata"));
@@ -319,7 +319,7 @@ public class PartitionedMapTableResolverTest extends MapSchemaTestSupport {
         try {
             table.getFieldCount();
 
-            fail("Exception is not thrown: " + table.getName());
+            fail("Exception is not thrown: " + table.getSqlName());
         } catch (QueryException e) {
             assertEquals(SqlErrorCode.GENERIC, e.getCode());
             assertTrue(e.getMessage().contains("Cannot resolve IMap schema because it doesn't have entries on the local member"));
@@ -338,7 +338,7 @@ public class PartitionedMapTableResolverTest extends MapSchemaTestSupport {
 
     private static Table getTable(Collection<Table> tables, String name) {
         for (Table table : tables) {
-            if (table.getName().equals(name)) {
+            if (table.getSqlName().equals(name)) {
                 PartitionedMapTable table0 = (PartitionedMapTable) table;
 
                 assertEquals(QueryUtils.SCHEMA_NAME_PARTITIONED, table.getSchemaName());
