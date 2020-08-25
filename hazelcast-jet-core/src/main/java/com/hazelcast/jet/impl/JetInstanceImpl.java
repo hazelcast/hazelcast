@@ -18,6 +18,7 @@ package com.hazelcast.jet.impl;
 
 import com.hazelcast.cluster.Address;
 import com.hazelcast.instance.impl.HazelcastInstanceImpl;
+import com.hazelcast.internal.util.Preconditions;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
@@ -57,7 +58,7 @@ public class JetInstanceImpl extends AbstractJetInstance {
 
     @Nonnull @Override
     public List<Job> getJobs() {
-        Address masterAddress = nodeEngine.getMasterAddress();
+        Address masterAddress = getMasterAddress();
         Future<List<Long>> future = nodeEngine
                 .getOperationService()
                 .createInvocationBuilder(JetService.SERVICE_NAME, new GetJobIdsOperation(), masterAddress)
@@ -75,7 +76,7 @@ public class JetInstanceImpl extends AbstractJetInstance {
 
     @Override
     public List<Long> getJobIdsByName(String name) {
-        Address masterAddress = nodeEngine.getMasterAddress();
+        Address masterAddress = getMasterAddress();
         Future<List<Long>> future = nodeEngine
                 .getOperationService()
                 .createInvocationBuilder(JetService.SERVICE_NAME, new GetJobIdsByNameOperation(name), masterAddress)
@@ -86,6 +87,11 @@ public class JetInstanceImpl extends AbstractJetInstance {
         } catch (Throwable t) {
             throw rethrow(t);
         }
+    }
+
+    @Nonnull
+    private Address getMasterAddress() {
+        return Preconditions.checkNotNull(nodeEngine.getMasterAddress(), "Cluster has not elected a master");
     }
 
     @Override
