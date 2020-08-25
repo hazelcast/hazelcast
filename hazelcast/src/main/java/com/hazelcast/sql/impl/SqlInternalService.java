@@ -40,7 +40,7 @@ import java.util.Map;
 import java.util.UUID;
 
 /**
- * Proxy for SQL service. Backed by either Calcite-based or no-op implementation.
+ * Proxy for SQL service.
  */
 public class SqlInternalService {
 
