@@ -46,7 +46,7 @@ public class AddScheduledExecutorConfigMessageTask
     protected IdentifiedDataSerializable getConfig() {
         // This is to handle 4.0 client versions. Those
         // versions don't aware of `statisticsEnabled` parameter.
-        // The parameter was added at version 4.1.
+        // The parameter was added at version 4.1 and its default value is  true.
         boolean statsEnabled = !parameters.isStatisticsEnabledExists
                 || parameters.statisticsEnabled;
 
