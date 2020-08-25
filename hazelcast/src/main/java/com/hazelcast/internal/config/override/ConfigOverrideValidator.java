@@ -15,6 +15,7 @@
  */
 package com.hazelcast.internal.config.override;
 
+import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 
@@ -36,7 +37,7 @@ final class ConfigOverrideValidator {
         Set<String> sharedKeys = findDuplicateEntries(providers);
         if (!sharedKeys.isEmpty()) {
             LOGGER.severe("Discovered conflicting entries: " + String.join(",", sharedKeys));
-            throw new IllegalStateException("Discovered conflicting configuration entries");
+            throw new InvalidConfigurationException("Discovered conflicting configuration entries");
         }
     }
 

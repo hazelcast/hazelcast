@@ -15,8 +15,10 @@
  */
 package com.hazelcast.internal.config.override;
 
+import javax.annotation.Nonnull;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 
 /**
@@ -28,12 +30,12 @@ class ConfigNode {
     private final Map<String, ConfigNode> children = new LinkedHashMap<>();
     private String value;
 
-    ConfigNode(String name) {
-        this.name = name;
-        this.parent = null;
+    ConfigNode(@Nonnull String name) {
+        this(name, null);
     }
 
     ConfigNode(String name, ConfigNode parent) {
+        Objects.requireNonNull(name);
         this.name = name;
         this.parent = parent;
     }

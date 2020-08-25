@@ -227,38 +227,40 @@ public final class DomConfigHelper {
 
         @Override
         public Iterator<Node> iterator() {
-            return new Iterator<Node>() {
-                private int index;
-                private Node next;
+            return new IterableNodeListIterator();
+        }
 
-                public boolean hasNext() {
-                    next = null;
-                    for (; index < maximum; index++) {
-                        final Node item = wrapped.item(index);
-                        if ((nodeType == 0 || item.getNodeType() == nodeType)
-                                && (nodeName == null
-                          || nodeName.equals(cleanNodeName(item))
-                          || nodeName.equals(cleanNodeName(item).replace("-", "")))) {
-                            next = item;
-                            return true;
-                        }
+        private class IterableNodeListIterator implements Iterator<Node> {
+            private int index;
+            private Node next;
+
+            public boolean hasNext() {
+                next = null;
+                for (; index < maximum; index++) {
+                    final Node item = wrapped.item(index);
+                    if ((nodeType == 0 || item.getNodeType() == nodeType)
+                            && (nodeName == null
+                      || nodeName.equals(cleanNodeName(item))
+                      || nodeName.equals(cleanNodeName(item).replace("-", "")))) {
+                        next = item;
+                        return true;
                     }
-                    return false;
                 }
+                return false;
+            }
 
-                public Node next() {
-                    if (hasNext()) {
-                        index++;
-                        return next;
-                    }
-                    throw new NoSuchElementException();
+            public Node next() {
+                if (hasNext()) {
+                    index++;
+                    return next;
                 }
+                throw new NoSuchElementException();
+            }
 
-                @Override
-                public void remove() {
-                    throw new UnsupportedOperationException();
-                }
-            };
+            @Override
+            public void remove() {
+                throw new UnsupportedOperationException();
+            }
         }
     }
 }

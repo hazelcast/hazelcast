@@ -18,6 +18,7 @@ package com.hazelcast.internal.config.override;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.impl.YamlClientDomConfigProcessor;
 import com.hazelcast.config.Config;
+import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.internal.config.YamlMemberDomConfigProcessor;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
@@ -44,7 +45,7 @@ public class ExternalConfigurationOverride {
                   new YamlMemberDomConfigProcessor(true, c)
                     .buildConfig(new ConfigOverrideElementAdapter(propsToNode(provider.properties())));
               } catch (Exception e) {
-                  throw new RuntimeException(e);
+                  throw new InvalidConfigurationException("failed to overwrite configuration coming from " + provider.name(), e);
               }
           },
           new EnvConfigProvider(EnvVariablesConfigParser.member()),
@@ -57,7 +58,7 @@ public class ExternalConfigurationOverride {
                   new YamlClientDomConfigProcessor(true, c)
                     .buildConfig(new ConfigOverrideElementAdapter(propsToNode(provider.properties())));
               } catch (Exception e) {
-                  throw new RuntimeException(e);
+                  throw new InvalidConfigurationException("failed to overwrite configuration coming from " + provider.name());
               }
           },
           new EnvConfigProvider(EnvVariablesConfigParser.client()),

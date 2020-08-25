@@ -89,7 +89,7 @@ public abstract class AbstractDomConfigProcessor implements DomConfigProcessor {
 
     protected SocketInterceptorConfig parseSocketInterceptorConfig(final Node node) {
         SocketInterceptorConfig socketInterceptorConfig = new SocketInterceptorConfig();
-        final Node enabledNode = DomConfigHelper.getNamedItemNode(node,"enabled");
+        final Node enabledNode = DomConfigHelper.getNamedItemNode(node, "enabled");
         final boolean enabled = enabledNode != null && getBooleanValue(getTextContent(enabledNode).trim());
         socketInterceptorConfig.setEnabled(enabled);
 

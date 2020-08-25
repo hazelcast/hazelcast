@@ -16,6 +16,8 @@
 
 package com.hazelcast.internal.config.override;
 
+import com.hazelcast.config.InvalidConfigurationException;
+
 import java.util.AbstractMap;
 import java.util.Map;
 import java.util.Set;
@@ -38,16 +40,16 @@ final class PropertiesToNodeConverter {
 
     private static String findRootNode(Map<String, String> properties) {
         Set<String> rootNodeNames = properties.keySet().stream()
-          .map(key -> key.split("\\.")[0])
+          .map(key -> firstNodeOf(key))
           .collect(Collectors.toSet());
 
         if (rootNodeNames.size() > 1) {
-            throw new IllegalStateException("parsed config entries have conflicting root node names");
+            throw new InvalidConfigurationException("parsed config entries have conflicting root node names");
         }
 
         return rootNodeNames.stream()
           .findAny()
-          .orElseThrow(() -> new IllegalStateException("No parsed entries found"));
+          .orElseThrow(() -> new InvalidConfigurationException("No parsed entries found"));
     }
 
     private static void parseEntry(Map.Entry<String, String> entry, ConfigNode root) {
@@ -62,5 +64,10 @@ final class PropertiesToNodeConverter {
         }
 
         last.setValue(entry.getValue());
+    }
+
+    private static String firstNodeOf(String key) {
+        int dotIndex = key.indexOf(".");
+        return key.substring(0, dotIndex > 0 ? dotIndex : key.length());
     }
 }
