@@ -81,7 +81,7 @@ public class JmsSourceIntegration_NonSharedClusterTest extends JetTestSupport {
                 .setProcessingGuarantee(EXACTLY_ONCE)
                 .setSnapshotIntervalMillis(DAYS.toMillis(1)));
 
-        assertTrueEventually(() -> assertEquals("expected items not in sink", MESSAGE_COUNT, sinkList.size()), 5);
+        assertTrueEventually(() -> assertEquals("expected items not in sink", MESSAGE_COUNT, sinkList.size()), 20);
 
         // Now forcefully shut down the second member. The terminated member
         // will NOT roll back its transaction. We'll assert that the
@@ -91,7 +91,7 @@ public class JmsSourceIntegration_NonSharedClusterTest extends JetTestSupport {
         // transaction will be stalled and only emitted once, they will be
         // emitted after the default Artemis timeout of 5 minutes.
         instance2.getHazelcastInstance().getLifecycleService().terminate();
-        assertTrueEventually(() -> assertEquals("items should be emitted twice", MESSAGE_COUNT * 2, sinkList.size()), 20);
+        assertTrueEventually(() -> assertEquals("items should be emitted twice", MESSAGE_COUNT * 2, sinkList.size()), 30);
     }
 
     @Test
