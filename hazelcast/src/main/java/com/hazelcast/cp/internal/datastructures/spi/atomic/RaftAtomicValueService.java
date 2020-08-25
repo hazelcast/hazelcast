@@ -54,7 +54,7 @@ public abstract class RaftAtomicValueService<T, V extends RaftAtomicValue<T>, S 
         extends AbstractCPMigrationAwareService
         implements RaftManagedService, RaftRemoteService, RaftNodeLifecycleAwareService, SnapshotAwareService<S> {
 
-    private final Map<BiTuple<CPGroupId, String>, V> atomicValues = new ConcurrentHashMap<>();
+    protected final Map<BiTuple<CPGroupId, String>, V> atomicValues = new ConcurrentHashMap<>();
     private final Set<BiTuple<CPGroupId, String>> destroyedValues = newSetFromMap(new ConcurrentHashMap<>());
     private volatile RaftService raftService;
 

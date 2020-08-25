@@ -27,15 +27,25 @@ import java.util.LinkedHashMap;
 public class MapSampleMetadata {
 
     private final QueryTargetDescriptor descriptor;
+    private final Object jetMetadata;
     private final LinkedHashMap<String, TableField> fields;
 
-    public MapSampleMetadata(QueryTargetDescriptor descriptor, LinkedHashMap<String, TableField> fields) {
+    public MapSampleMetadata(
+        QueryTargetDescriptor descriptor,
+        Object jetMetadata,
+        LinkedHashMap<String, TableField> fields
+    ) {
         this.descriptor = descriptor;
+        this.jetMetadata = jetMetadata;
         this.fields = fields;
     }
 
     public QueryTargetDescriptor getDescriptor() {
         return descriptor;
+    }
+
+    public Object getJetMetadata() {
+        return jetMetadata;
     }
 
     @SuppressWarnings("checkstyle:IllegalType")

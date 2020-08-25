@@ -133,6 +133,10 @@ public class SemaphoreRegistry extends ResourceRegistry<AcquireInvocationKey, Se
         return result;
     }
 
+    Collection<Semaphore> getAllSemaphores() {
+        return resources.values();
+    }
+
     @Override
     public int getFactoryId() {
         return SemaphoreDataSerializerHook.F_ID;

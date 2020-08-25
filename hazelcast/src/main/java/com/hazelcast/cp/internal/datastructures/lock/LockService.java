@@ -22,6 +22,10 @@ import com.hazelcast.cp.internal.datastructures.exception.WaitKeyCancelledExcept
 import com.hazelcast.cp.internal.datastructures.lock.proxy.FencedLockProxy;
 import com.hazelcast.cp.internal.datastructures.spi.blocking.AbstractBlockingService;
 import com.hazelcast.cp.lock.FencedLock;
+import com.hazelcast.internal.metrics.DynamicMetricsProvider;
+import com.hazelcast.internal.metrics.MetricDescriptor;
+import com.hazelcast.internal.metrics.MetricsCollectionContext;
+import com.hazelcast.internal.metrics.ProbeUnit;
 import com.hazelcast.spi.impl.NodeEngine;
 
 import java.util.Collection;
@@ -34,13 +38,15 @@ import static com.hazelcast.cp.internal.RaftService.withoutDefaultGroupName;
 import static com.hazelcast.cp.internal.datastructures.lock.AcquireResult.AcquireStatus.FAILED;
 import static com.hazelcast.cp.internal.datastructures.lock.AcquireResult.AcquireStatus.SUCCESSFUL;
 import static com.hazelcast.cp.internal.datastructures.lock.AcquireResult.AcquireStatus.WAIT_KEY_ADDED;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CP_TAG_NAME;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 /**
  * Contains Raft-based lock instances
  */
-public class LockService extends AbstractBlockingService<LockInvocationKey, Lock, LockRegistry> {
+public class LockService extends AbstractBlockingService<LockInvocationKey, Lock, LockRegistry>
+        implements DynamicMetricsProvider {
 
     /**
      * Name of the service
@@ -56,6 +62,7 @@ public class LockService extends AbstractBlockingService<LockInvocationKey, Lock
     @Override
     protected void initImpl() {
         super.initImpl();
+        nodeEngine.getMetricsRegistry().registerDynamicMetricsProvider(this);
     }
 
     public AcquireResult acquire(CPGroupId groupId, String name, LockInvocationKey key, long timeoutMs) {
@@ -193,6 +200,36 @@ public class LockService extends AbstractBlockingService<LockInvocationKey, Lock
             return new FencedLockProxy(nodeEngine, groupId, proxyName, getObjectNameForProxy(proxyName));
         } catch (Exception e) {
             throw rethrow(e);
+        }
+    }
+
+    @Override
+    public void provideDynamicMetrics(MetricDescriptor descriptor, MetricsCollectionContext context) {
+        MetricDescriptor root = descriptor.withPrefix("cp.lock");
+
+        for (CPGroupId groupId : getGroupIdSet()) {
+            LockRegistry registry = getRegistryOrNull(groupId);
+            for (Lock lock : registry.getAllLocks()) {
+                MetricDescriptor desc = root.copy()
+                        .withDiscriminator("id", lock.getName() + "@" + groupId.getName())
+                        .withTag(CP_TAG_NAME, lock.getName())
+                        .withTag("group", groupId.getName());
+
+                context.collect(desc.copy().withUnit(ProbeUnit.COUNT).withMetric("acquireLimit"), lock.lockCountLimit());
+
+                LockInvocationKey owner = lock.owner();
+                int lockCount = lock.lockCount();
+
+                // We are reading two separate volatile fields but not atomically.
+                // We may observe a partial update.
+                if (owner != null && lockCount > 0) {
+                    context.collect(desc.copy().withUnit(ProbeUnit.COUNT).withMetric("lockCount"), lockCount);
+                    context.collect(desc.copy().withMetric("ownerSessionId"), owner.sessionId());
+                    context.collect(desc.copy().withTag("owner", owner.callerAddress().toString()).withMetric("owner"), 0);
+                } else {
+                    context.collect(desc.copy().withUnit(ProbeUnit.COUNT).withMetric("lockCount"), 0);
+                }
+            }
         }
     }
 

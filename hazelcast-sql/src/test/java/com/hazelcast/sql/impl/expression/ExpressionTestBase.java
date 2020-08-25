@@ -1050,6 +1050,8 @@ public abstract class ExpressionTestBase extends SqlTestSupport {
             new ConstantTableStatistics(100),
             null,
             null,
+            null,
+            null,
             emptyList(),
             false);
 

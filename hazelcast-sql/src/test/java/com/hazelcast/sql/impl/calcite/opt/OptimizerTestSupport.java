@@ -184,6 +184,8 @@ public abstract class OptimizerTestSupport extends SqlTestSupport {
             new ConstantTableStatistics(rowCount),
             null,
             null,
+            null,
+            null,
             indexes,
             nativeMemoryEnabled
         );

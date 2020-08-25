@@ -41,8 +41,8 @@ public class PartitionedMapTable extends AbstractMapTable {
             TableStatistics statistics,
             QueryTargetDescriptor keyDescriptor,
             QueryTargetDescriptor valueDescriptor,
-            List<MapTableIndex> indexes,
-            boolean hd
+            Object keyJetMetadata,
+            Object valueJetMetadata
     ) {
         super(
             schemaName,
@@ -51,7 +51,9 @@ public class PartitionedMapTable extends AbstractMapTable {
             fields,
             statistics,
             keyDescriptor,
-            valueDescriptor
+            valueDescriptor,
+            keyJetMetadata,
+            valueJetMetadata
         );
 
         this.indexes = indexes;

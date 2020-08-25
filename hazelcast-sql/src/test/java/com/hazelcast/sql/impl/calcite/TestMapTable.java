@@ -39,7 +39,9 @@ public class TestMapTable extends AbstractMapTable {
             fields,
             statistics,
             GenericQueryTargetDescriptor.DEFAULT,
-            GenericQueryTargetDescriptor.DEFAULT
+            GenericQueryTargetDescriptor.DEFAULT,
+            null,
+            null
         );
     }
 

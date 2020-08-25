@@ -22,6 +22,7 @@ import com.hazelcast.internal.util.BiTuple;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
 import java.util.Collection;
@@ -31,9 +32,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
+import static com.hazelcast.internal.util.Preconditions.checkTrue;
 import static com.hazelcast.internal.util.UUIDSerializationUtil.readUUID;
 import static com.hazelcast.internal.util.UUIDSerializationUtil.writeUUID;
-import static com.hazelcast.internal.util.Preconditions.checkTrue;
 import static java.lang.Math.max;
 
 /**
@@ -41,8 +42,9 @@ import static java.lang.Math.max;
  */
 public class CountDownLatch extends BlockingResource<AwaitInvocationKey> implements IdentifiedDataSerializable {
 
-    private int round;
-    private int countDownFrom;
+    private volatile int round;
+    private volatile int countDownFrom;
+    private transient volatile int remaining;
     private final Set<UUID> countDownUids = new HashSet<>();
 
     CountDownLatch() {
@@ -71,7 +73,7 @@ public class CountDownLatch extends BlockingResource<AwaitInvocationKey> impleme
         }
 
         countDownUids.add(invocationUuid);
-        int remaining = getRemainingCount();
+        int remaining = updateRemainingCount();
         if (remaining > 0) {
             Collection<AwaitInvocationKey> c = Collections.emptyList();
             return BiTuple.of(remaining, c);
@@ -83,6 +85,8 @@ public class CountDownLatch extends BlockingResource<AwaitInvocationKey> impleme
         return BiTuple.of(0, w);
     }
 
+    @SuppressFBWarnings(value = "VO_VOLATILE_INCREMENT", justification = "'round' field is updated only by a single thread.")
+    @SuppressWarnings("NonAtomicOperationOnVolatileField")
     boolean trySetCount(int count) {
         if (getRemainingCount() > 0) {
             return false;
@@ -93,6 +97,7 @@ public class CountDownLatch extends BlockingResource<AwaitInvocationKey> impleme
         countDownFrom = count;
         round++;
         countDownUids.clear();
+        updateRemainingCount();
 
         return true;
     }
@@ -110,8 +115,18 @@ public class CountDownLatch extends BlockingResource<AwaitInvocationKey> impleme
         return round;
     }
 
+    public int getCount() {
+        return countDownFrom;
+    }
+
+    int updateRemainingCount() {
+        int rem = max(0, countDownFrom - countDownUids.size());
+        remaining = rem;
+        return rem;
+    }
+
     int getRemainingCount() {
-        return max(0, countDownFrom - countDownUids.size());
+        return remaining;
     }
 
     CountDownLatch cloneForSnapshot() {
@@ -165,6 +180,7 @@ public class CountDownLatch extends BlockingResource<AwaitInvocationKey> impleme
         for (int i = 0; i < count; i++) {
             countDownUids.add(readUUID(in));
         }
+        updateRemainingCount();
     }
 
     @Override

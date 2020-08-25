@@ -26,6 +26,7 @@ import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.extract.GenericQueryTargetDescriptor;
 import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.schema.TableField;
+import com.hazelcast.sql.impl.schema.map.JetMapMetadataResolver;
 import com.hazelcast.sql.impl.schema.map.MapTableField;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.sql.impl.type.QueryDataTypeUtils;
@@ -34,6 +35,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.TreeMap;
 
 /**
@@ -61,6 +63,7 @@ public final class MapSampleMetadataResolver {
      */
     public static MapSampleMetadata resolve(
         InternalSerializationService ss,
+        JetMapMetadataResolver jetMapMetadataResolver,
         Object target,
         boolean key
     ) {
@@ -74,14 +77,14 @@ public final class MapSampleMetadataResolver {
                 Data data = (Data) target;
 
                 if (data.isPortable()) {
-                    return resolvePortable(ss.getPortableContext().lookupClassDefinition(data), key);
+                    return resolvePortable(ss.getPortableContext().lookupClassDefinition(data), key, jetMapMetadataResolver);
                 } else if (data.isJson()) {
                     throw new UnsupportedOperationException("JSON objects are not supported.");
                 } else {
-                    return resolveClass(ss.toObject(data).getClass(), key);
+                    return resolveClass(ss.toObject(data).getClass(), key, jetMapMetadataResolver);
                 }
             } else {
-                return resolveClass(target.getClass(), key);
+                return resolveClass(target.getClass(), key, jetMapMetadataResolver);
             }
         } catch (Exception e) {
             throw QueryException.error("Failed to resolve " + (key ? "key" : "value") + " metadata: " + e.getMessage(), e);
@@ -95,8 +98,12 @@ public final class MapSampleMetadataResolver {
      * @param isKey Whether this is a key.
      * @return Metadata.
      */
-    private static MapSampleMetadata resolvePortable(ClassDefinition clazz, boolean isKey) {
-        TreeMap<String, TableField> fields = new TreeMap<>();
+    private static MapSampleMetadata resolvePortable(
+        ClassDefinition clazz,
+        boolean isKey,
+        JetMapMetadataResolver jetMapMetadataResolver
+    ) {
+        Map<String, TableField> fields = new TreeMap<>();
 
         // Add regular fields.
         for (String name : clazz.getFieldNames()) {
@@ -112,7 +119,11 @@ public final class MapSampleMetadataResolver {
         QueryPath topPath = isKey ? QueryPath.KEY_PATH : QueryPath.VALUE_PATH;
         fields.put(topName, new MapTableField(topName, QueryDataType.OBJECT, !fields.isEmpty(), topPath));
 
-        return new MapSampleMetadata(GenericQueryTargetDescriptor.DEFAULT, new LinkedHashMap<>(fields));
+        return new MapSampleMetadata(
+            GenericQueryTargetDescriptor.DEFAULT,
+            jetMapMetadataResolver.resolvePortable(clazz, isKey),
+            new LinkedHashMap<>(fields)
+        );
     }
 
     @SuppressWarnings("checkstyle:ReturnCount")
@@ -150,8 +161,12 @@ public final class MapSampleMetadataResolver {
         }
     }
 
-    private static MapSampleMetadata resolveClass(Class<?> clazz, boolean isKey) {
-        TreeMap<String, TableField> fields = new TreeMap<>();
+    private static MapSampleMetadata resolveClass(
+        Class<?> clazz,
+        boolean isKey,
+        JetMapMetadataResolver jetMapMetadataResolver
+    ) {
+        Map<String, TableField> fields = new TreeMap<>();
 
         // Extract fields from non-primitive type.
         QueryDataType topType = QueryDataTypeUtils.resolveTypeForClass(clazz);
@@ -200,7 +215,11 @@ public final class MapSampleMetadataResolver {
         QueryPath topPath = isKey ? QueryPath.KEY_PATH : QueryPath.VALUE_PATH;
         fields.put(topName, new MapTableField(topName, topType, !fields.isEmpty(), topPath));
 
-        return new MapSampleMetadata(GenericQueryTargetDescriptor.DEFAULT, new LinkedHashMap<>(fields));
+        return new MapSampleMetadata(
+            GenericQueryTargetDescriptor.DEFAULT,
+            jetMapMetadataResolver.resolveClass(clazz, isKey),
+            new LinkedHashMap<>(fields)
+        );
     }
 
     private static String extractAttributeNameFromMethod(Class<?> clazz, Method method) {
