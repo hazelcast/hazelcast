@@ -237,7 +237,7 @@
                             <finalName>${project.build.finalName}</finalName>
                             <createSourcesJar>true</createSourcesJar>
                             <shadeSourcesContent>true</shadeSourcesContent>
-                            <shadeTestJar>false</shadeTestJar>
+                            <shadeTestJar>true</shadeTestJar>
                             <artifactSet>
                                 <includes>
                                     <include>com.fasterxml.jackson.core:jackson-core</include>
