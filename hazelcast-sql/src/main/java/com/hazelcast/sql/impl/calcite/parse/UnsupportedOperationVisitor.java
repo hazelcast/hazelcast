@@ -211,7 +211,6 @@ public final class UnsupportedOperationVisitor implements SqlVisitor<Void> {
             case DATE:
             case TIME:
             case TIMESTAMP:
-            case TIMESTAMP_WITH_LOCAL_TIME_ZONE:
             case NULL:
                 return null;
 
