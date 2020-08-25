@@ -44,6 +44,13 @@ public final class DomConfigHelper {
     private DomConfigHelper() {
     }
 
+    public static Node getNamedItemNode(final Node node, String attrName) {
+        Node attrNode = node.getAttributes().getNamedItem(attrName);
+        return attrNode != null
+          ? attrNode
+          : node.getAttributes().getNamedItem(attrName.replace("-", ""));
+    }
+
     public static void fillProperties(final Node node, Map<String, Comparable> properties, boolean domLevel3) {
         if (properties == null) {
             return;
@@ -190,18 +197,14 @@ public final class DomConfigHelper {
     }
 
     public static double getDoubleValue(final String parameterName, final String value, double defaultValue) {
-        if (isNullOrEmpty(value)) {
-            return defaultValue;
-        }
-        return getDoubleValue(parameterName, value);
+        return isNullOrEmpty(value) ? defaultValue : getDoubleValue(parameterName, value);
     }
 
     public static String getAttribute(Node node, String attName, boolean domLevel3) {
         final Node attNode = node.getAttributes().getNamedItem(attName);
-        if (attNode == null) {
-            return null;
-        }
-        return getTextContent(attNode, domLevel3);
+        return attNode == null
+          ? null
+          : getTextContent(attNode, domLevel3);
     }
 
     private static class IterableNodeList implements Iterable<Node> {
@@ -233,7 +236,9 @@ public final class DomConfigHelper {
                     for (; index < maximum; index++) {
                         final Node item = wrapped.item(index);
                         if ((nodeType == 0 || item.getNodeType() == nodeType)
-                                && (nodeName == null || nodeName.equals(cleanNodeName(item)))) {
+                                && (nodeName == null
+                          || nodeName.equals(cleanNodeName(item))
+                          || nodeName.equals(cleanNodeName(item).replace("-", "")))) {
                             next = item;
                             return true;
                         }
@@ -256,5 +261,4 @@ public final class DomConfigHelper {
             };
         }
     }
-
 }
