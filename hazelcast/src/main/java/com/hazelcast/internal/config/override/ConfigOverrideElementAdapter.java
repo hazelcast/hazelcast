@@ -248,7 +248,10 @@ class ConfigOverrideElementAdapter implements Element {
 
     @Override
     public String getAttribute(String name) {
-        return "";
+        ConfigNode configNode = this.configNode.getChildren().get(name);
+        return configNode != null && configNode.getValue().isPresent()
+          ? configNode.getValue().get()
+          : "";
     }
 
     @Override
