@@ -17,6 +17,7 @@
 package com.hazelcast.nio.serialization;
 
 import com.hazelcast.internal.serialization.impl.portable.PortableGenericRecordBuilder;
+import com.hazelcast.spi.annotation.Beta;
 
 import javax.annotation.Nullable;
 
@@ -48,6 +49,7 @@ import javax.annotation.Nullable;
  *
  * @since 4.1
  */
+@Beta
 public interface GenericRecord {
 
     /**
@@ -249,6 +251,7 @@ public interface GenericRecord {
     /**
      * Interface for creating {@link GenericRecord} instances.
      */
+    @Beta
     interface Builder {
 
         /**
