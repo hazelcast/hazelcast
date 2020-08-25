@@ -16,7 +16,6 @@
 
 package com.hazelcast.sql.impl.calcite.validate.types;
 
-import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeComparability;
 import org.apache.calcite.sql.SqlCallBinding;
 import org.apache.calcite.sql.SqlNode;
@@ -66,11 +65,11 @@ public final class HazelcastOperandTypes {
         return new NotAllNull(base);
     }
 
-    private abstract static class DisallowedTypeOperandTypeChecker implements SqlSingleOperandTypeChecker {
+    private static final class NotAny implements SqlSingleOperandTypeChecker {
 
         private final SqlOperandTypeChecker base;
 
-        private DisallowedTypeOperandTypeChecker(SqlOperandTypeChecker base) {
+        NotAny(SqlOperandTypeChecker base) {
             this.base = base;
         }
 
@@ -111,7 +110,7 @@ public final class HazelcastOperandTypes {
 
         @Override
         public boolean checkSingleOperandType(SqlCallBinding binding, SqlNode operand, int index, boolean throwOnFailure) {
-            if (isNotAllowed(binding.getOperandType(index))) {
+            if (typeName(binding.getOperandType(index)) == ANY) {
                 if (throwOnFailure) {
                     throw binding.newValidationSignatureError();
                 }
@@ -121,19 +120,6 @@ public final class HazelcastOperandTypes {
             return true;
         }
 
-        protected abstract boolean isNotAllowed(RelDataType operandType);
-    }
-
-    private static final class NotAny extends DisallowedTypeOperandTypeChecker {
-
-        NotAny(SqlOperandTypeChecker base) {
-            super(base);
-        }
-
-        @Override
-        protected boolean isNotAllowed(RelDataType operandtype) {
-            return typeName(operandtype) == ANY;
-        }
     }
 
     private static final class NotAllNull implements SqlOperandTypeChecker {
