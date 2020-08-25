@@ -63,6 +63,13 @@
                         </manifest>
                     </archive>
                 </configuration>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>test-jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
 
             <plugin>
@@ -146,7 +153,7 @@
                             <finalName>${project.build.finalName}</finalName>
                             <createSourcesJar>true</createSourcesJar>
                             <shadeSourcesContent>true</shadeSourcesContent>
-                            <shadeTestJar>true</shadeTestJar>
+                            <shadeTestJar>false</shadeTestJar>
                             <artifactSet>
                                 <includes>
                                     <include>com.fasterxml.jackson.core:jackson-core</include>
