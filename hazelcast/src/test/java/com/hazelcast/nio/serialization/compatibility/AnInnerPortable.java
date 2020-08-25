@@ -24,6 +24,7 @@ import java.io.IOException;
 
 public class AnInnerPortable implements Portable {
 
+    public static final int classId = ReferenceObjects.INNER_PORTABLE_CLASS_ID;
     private int anInt;
     private float aFloat;
 
@@ -83,5 +84,13 @@ public class AnInnerPortable implements Portable {
     @Override
     public String toString() {
         return "AnInnerPortable";
+    }
+
+    public int getAnInt() {
+        return anInt;
+    }
+
+    public float getaFloat() {
+        return aFloat;
     }
 }

@@ -15,7 +15,7 @@
  */
 
 /**
- * Contains interfaces/classes related to serialization;
+ * Contains interfaces/classes related to serialization,
  * such as serializer interfaces, input/output streams.
  */
 package com.hazelcast.nio.serialization;

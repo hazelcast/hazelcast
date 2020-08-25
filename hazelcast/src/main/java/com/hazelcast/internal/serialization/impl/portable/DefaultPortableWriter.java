@@ -21,6 +21,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.FieldDefinition;
 import com.hazelcast.nio.serialization.FieldType;
+import com.hazelcast.nio.serialization.GenericRecord;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableWriter;
@@ -134,6 +135,21 @@ public class DefaultPortableWriter implements PortableWriter {
         }
     }
 
+    public void writeGenericRecord(String fieldName, GenericRecord portable) throws IOException {
+        FieldDefinition fd = setPosition(fieldName, FieldType.PORTABLE);
+        final boolean isNull = portable == null;
+        out.writeBoolean(isNull);
+
+        out.writeInt(fd.getFactoryId());
+        out.writeInt(fd.getClassId());
+
+        if (!isNull) {
+            PortableGenericRecord  record = (PortableGenericRecord) portable;
+            checkPortableAttributes(fd, record.getClassDefinition());
+            serializer.writePortableGenericRecordInternal(out, record);
+        }
+    }
+
     private void checkPortableAttributes(FieldDefinition fd, Portable portable) {
         if (fd.getFactoryId() != portable.getFactoryId()) {
             throw new HazelcastSerializationException("Wrong Portable type! Generic portable types are not supported! "
@@ -142,6 +158,17 @@ public class DefaultPortableWriter implements PortableWriter {
         if (fd.getClassId() != portable.getClassId()) {
             throw new HazelcastSerializationException("Wrong Portable type! Generic portable types are not supported! "
                     + "Expected class-id: " + fd.getClassId() + ", Actual class-id: " + portable.getClassId());
+        }
+    }
+
+    private void checkPortableAttributes(FieldDefinition fd, ClassDefinition classDefinition) {
+        if (fd.getFactoryId() != classDefinition.getFactoryId()) {
+            throw new HazelcastSerializationException("Wrong Portable type! Generic portable types are not supported! "
+                    + " Expected factory-id: " + fd.getFactoryId() + ", Actual factory-id: " + classDefinition.getFactoryId());
+        }
+        if (fd.getClassId() != classDefinition.getClassId()) {
+            throw new HazelcastSerializationException("Wrong Portable type! Generic portable types are not supported! "
+                    + "Expected class-id: " + fd.getClassId() + ", Actual class-id: " + classDefinition.getClassId());
         }
     }
 
@@ -226,6 +253,27 @@ public class DefaultPortableWriter implements PortableWriter {
                 int position = out.position();
                 out.writeInt(offset + i * INT_SIZE_IN_BYTES, position);
                 serializer.writeInternal(out, portable);
+            }
+        }
+    }
+
+    void writeGenericRecordArray(String fieldName, GenericRecord[] portables) throws IOException {
+        FieldDefinition fd = setPosition(fieldName, FieldType.PORTABLE_ARRAY);
+        final int len = portables == null ? NULL_ARRAY_LENGTH : portables.length;
+        out.writeInt(len);
+
+        out.writeInt(fd.getFactoryId());
+        out.writeInt(fd.getClassId());
+
+        if (len > 0) {
+            final int offset = out.position();
+            out.writeZeroBytes(len * 4);
+            for (int i = 0; i < len; i++) {
+                PortableGenericRecord portable = (PortableGenericRecord) portables[i];
+                checkPortableAttributes(fd, portable.getClassDefinition());
+                int position = out.position();
+                out.writeInt(offset + i * INT_SIZE_IN_BYTES, position);
+                serializer.writePortableGenericRecordInternal(out, portable);
             }
         }
     }

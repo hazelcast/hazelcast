@@ -21,8 +21,8 @@ import com.hazelcast.nio.ObjectDataOutput;
 import java.io.IOException;
 
 /**
- * Provides a mean of writing portable fields to a binary in form of java primitives
- * arrays of java primitives, nested portable fields and array of portable fields.
+ * Provides means for writing portable fields to binary data in the form of java primitives,
+ * arrays of java primitives, nested portable fields and arrays of portable fields.
  */
 public interface PortableWriter {
 
@@ -139,7 +139,7 @@ public interface PortableWriter {
      * Writes a primitive boolean-array.
      *
      * @param fieldName name of the field
-     * @param booleans     boolean array to be written
+     * @param booleans  boolean array to be written
      * @throws IOException in case of any exceptional case
      */
     void writeBooleanArray(String fieldName, boolean[] booleans) throws IOException;
@@ -217,9 +217,9 @@ public interface PortableWriter {
     void writePortableArray(String fieldName, Portable[] portables) throws IOException;
 
     /**
-     * After writing portable fields, one can write remaining fields in old fashioned way consecutively at the end
-     * of stream. User should not that after getting raw dataoutput trying to write portable fields will result
-     * in IOException
+     * After writing portable fields one can subsequently write remaining fields in the old-fashioned way.
+     * Users should note that after calling this method, trying to write portable fields will result
+     * in an IOException.
      *
      * @return ObjectDataOutput
      * @throws IOException in case of any exceptional case

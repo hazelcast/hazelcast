@@ -26,7 +26,8 @@ package com.hazelcast.nio.serialization;
 public interface PortableFactory {
 
     /**
-     * Creates a Portable instance using given class ID
+     * Creates a Portable instance using the given class ID
+     *
      * @param classId portable class ID
      * @return portable instance or null if class ID is not known by this factory
      */

@@ -17,16 +17,16 @@
 package com.hazelcast.test.compatibility;
 
 import com.hazelcast.core.ManagedContext;
-import com.hazelcast.partition.PartitioningStrategy;
-import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.internal.serialization.impl.portable.PortableContext;
 import com.hazelcast.internal.nio.BufferObjectDataInput;
 import com.hazelcast.internal.nio.BufferObjectDataOutput;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.DataType;
-import com.hazelcast.nio.serialization.PortableReader;
+import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.serialization.impl.InternalGenericRecord;
+import com.hazelcast.internal.serialization.impl.portable.PortableContext;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.partition.PartitioningStrategy;
 import com.hazelcast.test.TestEnvironment;
 
 import java.io.IOException;
@@ -164,9 +164,8 @@ public class SamplingSerializationService implements InternalSerializationServic
     }
 
     @Override
-    public PortableReader createPortableReader(Data data)
-            throws IOException {
-        return delegate.createPortableReader(data);
+    public InternalGenericRecord readAsInternalGenericRecord(Data data) throws IOException {
+        return delegate.readAsInternalGenericRecord(data);
     }
 
     @Override

@@ -242,10 +242,14 @@
     <suppress checks="MethodCount"
               files="com[\\/]hazelcast[\\/]internal[\\/]serialization[\\/]impl[\\/]ByteBufferObjectDataOutput"/>
     <suppress checks="MagicNumber" files="com[\\/]hazelcast[\\/]nio[\\/]CipherHelper"/>
-    <suppress checks="MagicNumber|MethodCount"
+    <suppress checks="MethodCount"
               files="com[\\/]hazelcast[\\/]internal[\\/]serialization[\\/]impl[\\/]portable[\\/]DefaultPortableReader"/>
+    <suppress checks="MethodCount"
+              files="com[\\/]hazelcast[\\/]internal[\\/]serialization[\\/]impl[\\/]portable[\\/]PortableInternalGenericRecord"/>
     <suppress checks="MagicNumber"
               files="com[\\/]hazelcast[\\/]internal[\\/]serialization[\\/]impl[\\/]portable[\\/]DefaultPortableWriter"/>
+    <suppress checks=""
+              files="com[\\/]hazelcast[\\/]internal[\\/]serialization[\\/]impl[\\/]GenericRecordQueryReader"/>
     <suppress checks="NPathComplexity" files="com[\\/]hazelcast[\\/]nio[\\/]tcp[\\/]nonblocking[\\/]NonBlockingSocketReader"/>
     <suppress checks="ClassFanOutComplexity|ClassDataAbstractionCoupling|MethodCount|ParameterNumber"
               files="com[\\/]hazelcast[\\/]internal[\\/]serialization[\\/]impl[\\/]AbstractSerializationService"/>

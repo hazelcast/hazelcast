@@ -16,16 +16,11 @@
 
 package com.hazelcast.query.impl.getters;
 
-import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.internal.serialization.impl.portable.PortableContext;
-import com.hazelcast.internal.serialization.impl.portable.DefaultPortableReader;
-import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.internal.serialization.Data;
-import com.hazelcast.nio.serialization.FieldDefinition;
-import com.hazelcast.nio.serialization.PortableReader;
+import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.serialization.impl.GenericRecordQueryReader;
 
 final class PortableGetter extends Getter {
-
     private final InternalSerializationService serializationService;
 
     PortableGetter(InternalSerializationService serializationService) {
@@ -36,16 +31,8 @@ final class PortableGetter extends Getter {
     @Override
     Object getValue(Object target, String fieldPath) throws Exception {
         Data data = (Data) target;
-        PortableContext context = serializationService.getPortableContext();
-        PortableReader reader = serializationService.createPortableReader(data);
-        ClassDefinition classDefinition = context.lookupClassDefinition(data);
-        FieldDefinition fieldDefinition = context.getFieldDefinition(classDefinition, fieldPath);
-
-        if (fieldDefinition != null) {
-            return ((DefaultPortableReader) reader).read(fieldPath);
-        } else {
-            return null;
-        }
+        GenericRecordQueryReader reader = new GenericRecordQueryReader(serializationService.readAsInternalGenericRecord(data));
+        return reader.read(fieldPath);
     }
 
     @Override

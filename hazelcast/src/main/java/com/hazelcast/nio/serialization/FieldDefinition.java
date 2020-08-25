@@ -17,7 +17,7 @@
 package com.hazelcast.nio.serialization;
 
 /**
- * FieldDefinition defines name, type, index of a field
+ * Defines the name, type and index of a field.
  */
 public interface FieldDefinition {
 

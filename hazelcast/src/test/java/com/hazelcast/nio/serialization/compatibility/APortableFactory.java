@@ -21,6 +21,8 @@ import com.hazelcast.nio.serialization.PortableFactory;
 
 public class APortableFactory implements PortableFactory {
 
+    public static int FACTORY_ID = ReferenceObjects.PORTABLE_FACTORY_ID;
+
     @Override
     public Portable create(int classId) {
         if (classId == ReferenceObjects.PORTABLE_CLASS_ID) {

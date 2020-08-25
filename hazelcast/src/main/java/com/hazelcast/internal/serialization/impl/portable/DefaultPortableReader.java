@@ -20,36 +20,19 @@ import com.hazelcast.internal.nio.Bits;
 import com.hazelcast.internal.nio.BufferObjectDataInput;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.serialization.ClassDefinition;
+import com.hazelcast.nio.serialization.FieldDefinition;
 import com.hazelcast.nio.serialization.FieldType;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
-import com.hazelcast.query.extractor.ValueCallback;
-import com.hazelcast.query.extractor.ValueCollector;
-import com.hazelcast.query.extractor.ValueReader;
-import com.hazelcast.query.extractor.ValueReadingException;
-import com.hazelcast.query.impl.getters.ImmutableMultiResult;
-import com.hazelcast.query.impl.getters.MultiResult;
 
 import java.io.IOException;
-import java.util.List;
 import java.util.Set;
-
-import static com.hazelcast.internal.serialization.impl.portable.PortableUtils.getPortableArrayCellPosition;
-
 
 /**
  * Can't be accessed concurrently.
  */
-public class DefaultPortableReader implements ValueReader, PortableReader {
-
-    private static final MultiResult NULL_EMPTY_TARGET_MULTIRESULT;
-
-    static {
-        MultiResult<Object> result = new MultiResult<Object>();
-        result.addNullOrEmptyTarget();
-        NULL_EMPTY_TARGET_MULTIRESULT = new ImmutableMultiResult<Object>(result);
-    }
+public class DefaultPortableReader implements PortableReader {
 
     protected final ClassDefinition cd;
     protected final PortableSerializer serializer;
@@ -57,22 +40,29 @@ public class DefaultPortableReader implements ValueReader, PortableReader {
     private final BufferObjectDataInput in;
     private final int finalPosition;
     private final int offset;
-
-    private final PortableNavigatorContext ctx;
-    private final PortablePathCursor pathCursor;
-
     private boolean raw;
 
     DefaultPortableReader(PortableSerializer serializer, BufferObjectDataInput in, ClassDefinition cd) {
         this.in = in;
         this.serializer = serializer;
         this.cd = cd;
+        int fieldCount;
+        try {
+            // final position after portable is read
+            finalPosition = in.readInt();
+            // field count
+            fieldCount = in.readInt();
+        } catch (IOException e) {
+            throw new HazelcastSerializationException(e);
+        }
+        if (fieldCount != cd.getFieldCount()) {
+            throw new IllegalStateException("Field count[" + fieldCount + "] in stream does not match " + cd);
+        }
+        this.offset = in.position();
+    }
 
-        this.ctx = new PortableNavigatorContext(in, cd, serializer);
-        this.pathCursor = new PortablePathCursor();
-
-        this.finalPosition = ctx.getCurrentFinalPosition();
-        this.offset = ctx.getCurrentOffset();
+    public ClassDefinition getClassDefinition() {
+        return cd;
     }
 
     @Override
@@ -115,72 +105,51 @@ public class DefaultPortableReader implements ValueReader, PortableReader {
     }
 
     @Override
-    public byte readByte(String path) throws IOException {
-        PortablePosition pos = findPositionForReading(path);
-        validatePrimitive(pos, FieldType.BYTE);
-        return in.readByte(pos.getStreamPosition());
+    public byte readByte(String fieldName) throws IOException {
+        return in.readByte(readPosition(fieldName, FieldType.BYTE));
     }
 
     @Override
-    public short readShort(String path) throws IOException {
-        PortablePosition pos = findPositionForReading(path);
-        validatePrimitive(pos, FieldType.SHORT);
-        return in.readShort(pos.getStreamPosition());
+    public short readShort(String fieldName) throws IOException {
+        return in.readShort(readPosition(fieldName, FieldType.SHORT));
     }
 
     @Override
-    public int readInt(String path) throws IOException {
-        PortablePosition pos = findPositionForReading(path);
-        validatePrimitive(pos, FieldType.INT);
-        return in.readInt(pos.getStreamPosition());
+    public int readInt(String fieldName) throws IOException {
+        return in.readInt(readPosition(fieldName, FieldType.INT));
     }
 
     @Override
-    public long readLong(String path) throws IOException {
-        PortablePosition pos = findPositionForReading(path);
-        validatePrimitive(pos, FieldType.LONG);
-        return in.readLong(pos.getStreamPosition());
+    public long readLong(String fieldName) throws IOException {
+        return in.readLong(readPosition(fieldName, FieldType.LONG));
     }
 
     @Override
-    public float readFloat(String path) throws IOException {
-        PortablePosition pos = findPositionForReading(path);
-        validatePrimitive(pos, FieldType.FLOAT);
-        return in.readFloat(pos.getStreamPosition());
+    public float readFloat(String fieldName) throws IOException {
+        return in.readFloat(readPosition(fieldName, FieldType.FLOAT));
     }
 
     @Override
-    public double readDouble(String path) throws IOException {
-        PortablePosition pos = findPositionForReading(path);
-        validatePrimitive(pos, FieldType.DOUBLE);
-        return in.readDouble(pos.getStreamPosition());
+    public double readDouble(String fieldName) throws IOException {
+        return in.readDouble(readPosition(fieldName, FieldType.DOUBLE));
     }
 
     @Override
-    public boolean readBoolean(String path) throws IOException {
-        PortablePosition pos = findPositionForReading(path);
-        validatePrimitive(pos, FieldType.BOOLEAN);
-        return in.readBoolean(pos.getStreamPosition());
+    public boolean readBoolean(String fieldName) throws IOException {
+        return in.readBoolean(readPosition(fieldName, FieldType.BOOLEAN));
     }
 
     @Override
-    public char readChar(String path) throws IOException {
-        PortablePosition pos = findPositionForReading(path);
-        validatePrimitive(pos, FieldType.CHAR);
-        return in.readChar(pos.getStreamPosition());
+    public char readChar(String fieldName) throws IOException {
+        return in.readChar(readPosition(fieldName, FieldType.CHAR));
     }
 
     @Override
-    public String readUTF(String path) throws IOException {
-        final int currentPos = in.position();
+    public String readUTF(String fieldName) throws IOException {
+        int currentPos = in.position();
         try {
-            PortablePosition position = findPositionForReading(path);
-            if (position.isNullOrEmpty()) {
-                return null;
-            }
-            validateNotMultiPosition(position);
-            validateType(position, FieldType.UTF);
-            in.position(position.getStreamPosition());
+            int pos = readPosition(fieldName, FieldType.UTF);
+            in.position(pos);
             return in.readUTF();
         } finally {
             in.position(currentPos);
@@ -189,598 +158,253 @@ public class DefaultPortableReader implements ValueReader, PortableReader {
 
     @Override
     @SuppressWarnings("unchecked")
-    public Portable readPortable(String path) throws IOException {
-        final int currentPos = in.position();
+    public Portable readPortable(String fieldName) throws IOException {
+        int currentPos = in.position();
         try {
-            PortablePosition position = findPositionForReading(path);
-            if (position.isNullOrEmpty()) {
+            FieldDefinition fd = cd.getField(fieldName);
+            if (fd == null) {
+                throw throwUnknownFieldException(fieldName);
+            }
+            if (fd.getType() != FieldType.PORTABLE) {
+                throw new HazelcastSerializationException("Not a Portable field: " + fieldName);
+            }
+
+            int pos = readPosition(fd);
+            in.position(pos);
+
+            boolean isNull = in.readBoolean();
+            int factoryId = in.readInt();
+            int classId = in.readInt();
+
+            checkFactoryAndClass(fd, factoryId, classId);
+
+            if (!isNull) {
+                return serializer.readAsObject(in, factoryId, classId);
+            }
+            return null;
+        } finally {
+            in.position(currentPos);
+        }
+    }
+
+    private boolean isNullOrEmpty(int pos) {
+        return pos == -1;
+    }
+
+    @Override
+    public byte[] readByteArray(String fieldName) throws IOException {
+        int currentPos = in.position();
+        try {
+            int position = readPosition(fieldName, FieldType.BYTE_ARRAY);
+            if (isNullOrEmpty(position)) {
                 return null;
             }
-            validateNotMultiPosition(position);
-            validateType(position, FieldType.PORTABLE);
-            in.position(position.getStreamPosition());
-            return serializer.readAndInitialize(in, position.getFactoryId(), position.getClassId());
+            in.position(position);
+            return in.readByteArray();
+        } finally {
+            in.position(currentPos);
+        }
+
+    }
+
+    @Override
+    public boolean[] readBooleanArray(String fieldName) throws IOException {
+        int currentPos = in.position();
+        try {
+            int position = readPosition(fieldName, FieldType.BOOLEAN_ARRAY);
+            if (isNullOrEmpty(position)) {
+                return null;
+            }
+            in.position(position);
+            return in.readBooleanArray();
         } finally {
             in.position(currentPos);
         }
     }
 
     @Override
-    public byte[] readByteArray(String path) throws IOException {
-        final int currentPos = in.position();
+    public char[] readCharArray(String fieldName) throws IOException {
+        int currentPos = in.position();
         try {
-            PortablePosition position = findPositionForReading(path);
-            if (position.isNullOrEmpty()) {
+            int position = readPosition(fieldName, FieldType.CHAR_ARRAY);
+            if (isNullOrEmpty(position)) {
                 return null;
-            } else if (position.isMultiPosition()) {
-                return readMultiByteArray(position.asMultiPosition());
-            } else {
-                return readSingleByteArray(position);
             }
+            in.position(position);
+            return in.readCharArray();
         } finally {
             in.position(currentPos);
         }
-    }
-
-    private byte[] readMultiByteArray(List<PortablePosition> positions) throws IOException {
-        byte[] result = new byte[positions.size()];
-        for (int i = 0; i < result.length; i++) {
-            PortablePosition position = positions.get(i);
-            validateNonNullOrEmptyPosition(position);
-            validateType(position, FieldType.BYTE);
-            result[i] = in.readByte(position.getStreamPosition());
-        }
-        return result;
-    }
-
-    private byte[] readSingleByteArray(PortablePosition position) throws IOException {
-        validateType(position, FieldType.BYTE_ARRAY);
-        in.position(position.getStreamPosition());
-        return in.readByteArray();
     }
 
     @Override
-    public boolean[] readBooleanArray(String path) throws IOException {
-        final int currentPos = in.position();
+    public int[] readIntArray(String fieldName) throws IOException {
+        int currentPos = in.position();
         try {
-            PortablePosition position = findPositionForReading(path);
-            if (position.isNullOrEmpty()) {
+            int position = readPosition(fieldName, FieldType.INT_ARRAY);
+            if (isNullOrEmpty(position)) {
                 return null;
-            } else if (position.isMultiPosition()) {
-                return readMultiBooleanArray(position.asMultiPosition());
-            } else {
-                return readSingleBooleanArray(position);
             }
+            in.position(position);
+            return in.readIntArray();
         } finally {
             in.position(currentPos);
         }
-    }
-
-    private boolean[] readMultiBooleanArray(List<PortablePosition> positions) throws IOException {
-        boolean[] result = new boolean[positions.size()];
-        for (int i = 0; i < result.length; i++) {
-            PortablePosition position = positions.get(i);
-            validateNonNullOrEmptyPosition(position);
-            validateType(position, FieldType.BOOLEAN);
-            result[i] = in.readBoolean(position.getStreamPosition());
-        }
-        return result;
-    }
-
-    private boolean[] readSingleBooleanArray(PortablePosition position) throws IOException {
-        validateType(position, FieldType.BOOLEAN_ARRAY);
-        in.position(position.getStreamPosition());
-        return in.readBooleanArray();
     }
 
     @Override
-    public char[] readCharArray(String path) throws IOException {
-        final int currentPos = in.position();
+    public long[] readLongArray(String fieldName) throws IOException {
+        int currentPos = in.position();
         try {
-            PortablePosition position = findPositionForReading(path);
-            if (position.isNullOrEmpty()) {
+            int position = readPosition(fieldName, FieldType.LONG_ARRAY);
+            if (isNullOrEmpty(position)) {
                 return null;
-            } else if (position.isMultiPosition()) {
-                return readMultiCharArray(position.asMultiPosition());
-            } else {
-                return readSingleCharArray(position);
             }
+            in.position(position);
+            return in.readLongArray();
         } finally {
             in.position(currentPos);
         }
-    }
-
-    private char[] readMultiCharArray(List<PortablePosition> positions) throws IOException {
-        char[] result = new char[positions.size()];
-        for (int i = 0; i < result.length; i++) {
-            PortablePosition position = positions.get(i);
-            validateNonNullOrEmptyPosition(position);
-            validateType(position, FieldType.CHAR);
-            result[i] = in.readChar(position.getStreamPosition());
-        }
-        return result;
-    }
-
-    private char[] readSingleCharArray(PortablePosition position) throws IOException {
-        validateType(position, FieldType.CHAR_ARRAY);
-        in.position(position.getStreamPosition());
-        return in.readCharArray();
     }
 
     @Override
-    public int[] readIntArray(String path) throws IOException {
-        final int currentPos = in.position();
+    public double[] readDoubleArray(String fieldName) throws IOException {
+        int currentPos = in.position();
         try {
-            PortablePosition position = findPositionForReading(path);
-            if (position.isNullOrEmpty()) {
+            int position = readPosition(fieldName, FieldType.DOUBLE_ARRAY);
+            if (isNullOrEmpty(position)) {
                 return null;
-            } else if (position.isMultiPosition()) {
-                return readMultiIntArray(position.asMultiPosition());
-            } else {
-                return readSingleIntArray(position);
             }
+            in.position(position);
+            return in.readDoubleArray();
         } finally {
             in.position(currentPos);
         }
-    }
-
-    private int[] readMultiIntArray(List<PortablePosition> positions) throws IOException {
-        int[] result = new int[positions.size()];
-        for (int i = 0; i < result.length; i++) {
-            PortablePosition position = positions.get(i);
-            validateNonNullOrEmptyPosition(position);
-            validateType(position, FieldType.INT);
-            result[i] = in.readInt(position.getStreamPosition());
-        }
-        return result;
-    }
-
-    private int[] readSingleIntArray(PortablePosition position) throws IOException {
-        validateType(position, FieldType.INT_ARRAY);
-        in.position(position.getStreamPosition());
-        return in.readIntArray();
     }
 
     @Override
-    public long[] readLongArray(String path) throws IOException {
-        final int currentPos = in.position();
+    public float[] readFloatArray(String fieldName) throws IOException {
+        int currentPos = in.position();
         try {
-            PortablePosition position = findPositionForReading(path);
-            if (position.isNullOrEmpty()) {
+            int position = readPosition(fieldName, FieldType.FLOAT_ARRAY);
+            if (isNullOrEmpty(position)) {
                 return null;
-            } else if (position.isMultiPosition()) {
-                return readMultiLongArray(position.asMultiPosition());
-            } else {
-                return readSingleLongArray(position);
             }
+            in.position(position);
+            return in.readFloatArray();
         } finally {
             in.position(currentPos);
         }
-    }
-
-    private long[] readMultiLongArray(List<PortablePosition> positions) throws IOException {
-        long[] result = new long[positions.size()];
-        for (int i = 0; i < result.length; i++) {
-            PortablePosition position = positions.get(i);
-            validateNonNullOrEmptyPosition(position);
-            validateType(position, FieldType.LONG);
-            result[i] = in.readLong(position.getStreamPosition());
-        }
-        return result;
-    }
-
-    private long[] readSingleLongArray(PortablePosition position) throws IOException {
-        validateType(position, FieldType.LONG_ARRAY);
-        in.position(position.getStreamPosition());
-        return in.readLongArray();
     }
 
     @Override
-    public double[] readDoubleArray(String path) throws IOException {
-        final int currentPos = in.position();
+    public short[] readShortArray(String fieldName) throws IOException {
+        int currentPos = in.position();
         try {
-            PortablePosition position = findPositionForReading(path);
-            if (position.isNullOrEmpty()) {
+            int position = readPosition(fieldName, FieldType.SHORT_ARRAY);
+            if (isNullOrEmpty(position)) {
                 return null;
-            } else if (position.isMultiPosition()) {
-                return readMultiDoubleArray(position.asMultiPosition());
-            } else {
-                return readSingleDoubleArray(position);
             }
+            in.position(position);
+            return in.readShortArray();
         } finally {
             in.position(currentPos);
         }
-    }
-
-    private double[] readMultiDoubleArray(List<PortablePosition> positions) throws IOException {
-        double[] result = new double[positions.size()];
-        for (int i = 0; i < result.length; i++) {
-            PortablePosition position = positions.get(i);
-            validateNonNullOrEmptyPosition(position);
-            validateType(position, FieldType.DOUBLE);
-            result[i] = in.readDouble(position.getStreamPosition());
-        }
-        return result;
-    }
-
-    private double[] readSingleDoubleArray(PortablePosition position) throws IOException {
-        validateType(position, FieldType.DOUBLE_ARRAY);
-        in.position(position.getStreamPosition());
-        return in.readDoubleArray();
     }
 
     @Override
-    public float[] readFloatArray(String path) throws IOException {
-        final int currentPos = in.position();
+    public String[] readUTFArray(String fieldName) throws IOException {
+        int currentPos = in.position();
         try {
-            PortablePosition position = findPositionForReading(path);
-            if (position.isNullOrEmpty()) {
+            int position = readPosition(fieldName, FieldType.UTF_ARRAY);
+            if (isNullOrEmpty(position)) {
                 return null;
-            } else if (position.isMultiPosition()) {
-                return readMultiFloatArray(position.asMultiPosition());
-            } else {
-                return readSingleFloatArray(position);
             }
+            in.position(position);
+            return in.readUTFArray();
         } finally {
             in.position(currentPos);
         }
-    }
-
-    private float[] readMultiFloatArray(List<PortablePosition> positions) throws IOException {
-        float[] result = new float[positions.size()];
-        for (int i = 0; i < result.length; i++) {
-            PortablePosition position = positions.get(i);
-            validateNonNullOrEmptyPosition(position);
-            validateType(position, FieldType.FLOAT);
-            result[i] = in.readFloat(position.getStreamPosition());
-        }
-        return result;
-    }
-
-    private float[] readSingleFloatArray(PortablePosition position) throws IOException {
-        validateType(position, FieldType.FLOAT_ARRAY);
-        in.position(position.getStreamPosition());
-        return in.readFloatArray();
-    }
-
-    @Override
-    public short[] readShortArray(String path) throws IOException {
-        final int currentPos = in.position();
-        try {
-            PortablePosition position = findPositionForReading(path);
-            if (position.isNullOrEmpty()) {
-                return null;
-            } else if (position.isMultiPosition()) {
-                return readMultiShortArray(position.asMultiPosition());
-            } else {
-                return readSingleShortArray(position);
-            }
-        } finally {
-            in.position(currentPos);
-        }
-    }
-
-    private short[] readMultiShortArray(List<PortablePosition> positions) throws IOException {
-        short[] result = new short[positions.size()];
-        for (int i = 0; i < result.length; i++) {
-            PortablePosition position = positions.get(i);
-            validateNonNullOrEmptyPosition(position);
-            validateType(position, FieldType.SHORT);
-            result[i] = in.readShort(position.getStreamPosition());
-        }
-        return result;
-    }
-
-    private short[] readSingleShortArray(PortablePosition position) throws IOException {
-        validateType(position, FieldType.SHORT_ARRAY);
-        in.position(position.getStreamPosition());
-        return in.readShortArray();
-    }
-
-    @Override
-    public String[] readUTFArray(String path) throws IOException {
-        final int currentPos = in.position();
-        try {
-            PortablePosition position = findPositionForReading(path);
-            if (position.isNullOrEmpty()) {
-                return null;
-            } else if (position.isMultiPosition()) {
-                return readMultiUTFArray(position.asMultiPosition());
-            } else {
-                return readSingleUTFArray(position);
-            }
-        } finally {
-            in.position(currentPos);
-        }
-    }
-
-    private String[] readMultiUTFArray(List<PortablePosition> positions) throws IOException {
-        String[] result = new String[positions.size()];
-        for (int i = 0; i < result.length; i++) {
-            PortablePosition position = positions.get(i);
-            if (!position.isNullOrEmpty()) {
-                validateType(position, FieldType.UTF);
-                in.position(position.getStreamPosition());
-                result[i] = in.readUTF();
-            }
-        }
-        return result;
-    }
-
-    private String[] readSingleUTFArray(PortablePosition position) throws IOException {
-        validateType(position, FieldType.UTF_ARRAY);
-        in.position(position.getStreamPosition());
-        return in.readUTFArray();
     }
 
     @Override
     public Portable[] readPortableArray(String fieldName) throws IOException {
-        final int currentPos = in.position();
+        int currentPos = in.position();
         try {
-            PortablePosition position = findPositionForReading(fieldName);
-            if (position.isMultiPosition()) {
-                return readMultiPortableArray(position.asMultiPosition());
-            } else if (position.isNull()) {
-                return null;
-            } else if (position.isEmpty() && position.isAny()) {
-                return null;
-            } else {
-                return readSinglePortableArray(position);
+            FieldDefinition fd = cd.getField(fieldName);
+            if (fd == null) {
+                throw throwUnknownFieldException(fieldName);
             }
+            if (fd.getType() != FieldType.PORTABLE_ARRAY) {
+                throw new HazelcastSerializationException("Not a Portable array field: " + fieldName);
+            }
+
+            int position = readPosition(fd);
+            if (isNullOrEmpty(position)) {
+                return null;
+            }
+            in.position(position);
+            int len = in.readInt();
+            int factoryId = in.readInt();
+            int classId = in.readInt();
+
+            if (len == Bits.NULL_ARRAY_LENGTH) {
+                return null;
+            }
+
+            checkFactoryAndClass(fd, factoryId, classId);
+
+            Portable[] portables = new Portable[len];
+            if (len > 0) {
+                int offset = in.position();
+                for (int i = 0; i < len; i++) {
+                    int start = in.readInt(offset + i * Bits.INT_SIZE_IN_BYTES);
+                    in.position(start);
+                    portables[i] = serializer.readAsObject(in, factoryId, classId);
+                }
+            }
+            return portables;
         } finally {
             in.position(currentPos);
         }
     }
 
-    private Portable[] readSinglePortableArray(PortablePosition position) throws IOException {
-        in.position(position.getStreamPosition());
-        if (position.getLen() == Bits.NULL_ARRAY_LENGTH) {
-            return null;
+    private void checkFactoryAndClass(FieldDefinition fd, int factoryId, int classId) {
+        if (factoryId != fd.getFactoryId()) {
+            throw new IllegalArgumentException("Invalid factoryId! Expected: "
+                    + fd.getFactoryId() + ", Current: " + factoryId);
         }
-
-        validateType(position, FieldType.PORTABLE_ARRAY);
-        final Portable[] portables = new Portable[position.getLen()];
-        for (int index = 0; index < position.getLen(); index++) {
-            in.position(getPortableArrayCellPosition(in, position.getStreamPosition(), index));
-            portables[index] = serializer.readAndInitialize(in, position.getFactoryId(), position.getClassId());
-        }
-        return portables;
-    }
-
-    private Portable[] readMultiPortableArray(List<PortablePosition> positions) throws IOException {
-        final Portable[] portables = new Portable[positions.size()];
-        for (int i = 0; i < portables.length; i++) {
-            PortablePosition position = positions.get(i);
-            if (!position.isNullOrEmpty()) {
-                validateType(position, FieldType.PORTABLE);
-                in.position(position.getStreamPosition());
-                portables[i] = serializer.readAndInitialize(in, position.getFactoryId(), position.getClassId());
-            }
-        }
-        return portables;
-    }
-
-    @Override
-    @SuppressWarnings("unchecked")
-    public void read(String path, ValueCallback callback) {
-        try {
-            Object result = read(path);
-            if (result instanceof MultiResult) {
-                MultiResult multiResult = (MultiResult) result;
-                for (Object singleResult : multiResult.getResults()) {
-                    callback.onResult(singleResult);
-                }
-            } else {
-                callback.onResult(result);
-            }
-        } catch (IOException e) {
-            throw new ValueReadingException(e.getMessage(), e);
-        } catch (RuntimeException e) {
-            throw new ValueReadingException(e.getMessage(), e);
+        if (classId != fd.getClassId()) {
+            throw new IllegalArgumentException("Invalid classId! Expected: "
+                    + fd.getClassId() + ", Current: " + classId);
         }
     }
 
-    @Override
-    @SuppressWarnings("unchecked")
-    public void read(String path, ValueCollector collector) {
-        try {
-            Object result = read(path);
-            if (result instanceof MultiResult) {
-                MultiResult multiResult = (MultiResult) result;
-                for (Object singleResult : multiResult.getResults()) {
-                    collector.addObject(singleResult);
-                }
-            } else {
-                collector.addObject(result);
-            }
-        } catch (IOException e) {
-            throw new ValueReadingException(e.getMessage(), e);
-        } catch (RuntimeException e) {
-            throw new ValueReadingException(e.getMessage(), e);
-        }
-    }
 
-    public Object read(String path) throws IOException {
-        final int currentPos = in.position();
-        try {
-            PortablePosition position = findPositionForReading(path);
-            if (position.isMultiPosition()) {
-                return readMultiPosition(position.asMultiPosition());
-            } else if (position.isNull()) {
-                if (position.isAny()) {
-                    return NULL_EMPTY_TARGET_MULTIRESULT;
-                }
-                return null;
-            } else if (position.isEmpty()) {
-                if (position.isLeaf() && position.getType() != null) {
-                    return readSinglePosition(position);
-                } else {
-                    if (position.isAny()) {
-                        return NULL_EMPTY_TARGET_MULTIRESULT;
-                    }
-                    return null;
-                }
-            } else {
-                return readSinglePosition(position);
-            }
-        } finally {
-            in.position(currentPos);
-        }
-    }
-
-    private <T> MultiResult<T> readMultiPosition(List<PortablePosition> positions) throws IOException {
-        MultiResult<T> result = new MultiResult<T>();
-        for (PortablePosition position : positions) {
-            if (!position.isNullOrEmpty()) {
-                T read = readSinglePosition(position);
-                result.add(read);
-            } else {
-                result.addNullOrEmptyTarget();
-            }
-        }
-        return result;
-    }
-
-    @SuppressWarnings("unchecked")
-    private <T> T readSinglePosition(PortablePosition position) throws IOException {
-        if (position.getIndex() >= 0) {
-            return readSinglePositionFromArray(position);
-        }
-        return readSinglePositionFromNonArray(position);
-    }
-
-    private PortablePosition findPositionForReading(String path) throws IOException {
+    private int readPosition(String fieldName, FieldType fieldType) throws IOException {
         if (raw) {
             throw new HazelcastSerializationException("Cannot read Portable fields after getRawDataInput() is called!");
         }
-        try {
-            return PortablePositionNavigator.findPositionForReading(ctx, path, pathCursor);
-        } finally {
-            // The context is reset each time to enable its reuse in consecutive calls and avoid allocation
-            ctx.reset();
+        FieldDefinition fd = cd.getField(fieldName);
+        if (fd == null) {
+            throw throwUnknownFieldException(fieldName);
         }
+        if (fd.getType() != fieldType) {
+            throw new HazelcastSerializationException("Not a '" + fieldType + "' field: " + fieldName);
+        }
+        return readPosition(fd);
     }
 
-    @SuppressWarnings({"checkstyle:cyclomaticcomplexity", "checkstyle:returncount", "unchecked"})
-    private <T> T readSinglePositionFromArray(PortablePosition position) throws IOException {
-        assert position.getType() != null : "Unsupported type read: null";
-        switch (position.getType()) {
-            case BYTE:
-            case BYTE_ARRAY:
-                return (T) Byte.valueOf(in.readByte(position.getStreamPosition()));
-            case SHORT:
-            case SHORT_ARRAY:
-                return (T) Short.valueOf(in.readShort(position.getStreamPosition()));
-            case INT:
-            case INT_ARRAY:
-                return (T) Integer.valueOf(in.readInt(position.getStreamPosition()));
-            case LONG:
-            case LONG_ARRAY:
-                return (T) Long.valueOf(in.readLong(position.getStreamPosition()));
-            case FLOAT:
-            case FLOAT_ARRAY:
-                return (T) Float.valueOf(in.readFloat(position.getStreamPosition()));
-            case DOUBLE:
-            case DOUBLE_ARRAY:
-                return (T) Double.valueOf(in.readDouble(position.getStreamPosition()));
-            case BOOLEAN:
-            case BOOLEAN_ARRAY:
-                return (T) Boolean.valueOf(in.readBoolean(position.getStreamPosition()));
-            case CHAR:
-            case CHAR_ARRAY:
-                return (T) Character.valueOf(in.readChar(position.getStreamPosition()));
-            case UTF:
-            case UTF_ARRAY:
-                in.position(position.getStreamPosition());
-                return (T) in.readUTF();
-            case PORTABLE:
-            case PORTABLE_ARRAY:
-                in.position(position.getStreamPosition());
-                return (T) serializer.readAndInitialize(in, position.getFactoryId(), position.getClassId());
-            default:
-                throw new IllegalArgumentException("Unsupported type: " + position.getType());
-        }
+    private HazelcastSerializationException throwUnknownFieldException(String fieldName) {
+        return new HazelcastSerializationException("Unknown field name: '" + fieldName
+                + "' for ClassDefinition {id: " + cd.getClassId() + ", version: " + cd.getVersion() + "}");
     }
 
-    @SuppressWarnings({"checkstyle:cyclomaticcomplexity", "checkstyle:returncount", "unchecked"})
-    private <T> T readSinglePositionFromNonArray(PortablePosition position) throws IOException {
-        assert position.getType() != null : "Unsupported type read: null";
-        switch (position.getType()) {
-            case BYTE:
-                return (T) Byte.valueOf(in.readByte(position.getStreamPosition()));
-            case BYTE_ARRAY:
-                return (T) readSingleByteArray(position);
-            case SHORT:
-                return (T) Short.valueOf(in.readShort(position.getStreamPosition()));
-            case SHORT_ARRAY:
-                return (T) readSingleShortArray(position);
-            case INT:
-                return (T) Integer.valueOf(in.readInt(position.getStreamPosition()));
-            case INT_ARRAY:
-                return (T) readSingleIntArray(position);
-            case LONG:
-                return (T) Long.valueOf(in.readLong(position.getStreamPosition()));
-            case LONG_ARRAY:
-                return (T) readSingleLongArray(position);
-            case FLOAT:
-                return (T) Float.valueOf(in.readFloat(position.getStreamPosition()));
-            case FLOAT_ARRAY:
-                return (T) readSingleFloatArray(position);
-            case DOUBLE:
-                return (T) Double.valueOf(in.readDouble(position.getStreamPosition()));
-            case DOUBLE_ARRAY:
-                return (T) readSingleDoubleArray(position);
-            case BOOLEAN:
-                return (T) Boolean.valueOf(in.readBoolean(position.getStreamPosition()));
-            case BOOLEAN_ARRAY:
-                return (T) readSingleBooleanArray(position);
-            case CHAR:
-                return (T) Character.valueOf(in.readChar(position.getStreamPosition()));
-            case CHAR_ARRAY:
-                return (T) readSingleCharArray(position);
-            case UTF:
-                in.position(position.getStreamPosition());
-                return (T) in.readUTF();
-            case UTF_ARRAY:
-                return (T) readSingleUTFArray(position);
-            case PORTABLE:
-                in.position(position.getStreamPosition());
-                return (T) serializer.readAndInitialize(in, position.getFactoryId(), position.getClassId());
-            case PORTABLE_ARRAY:
-                return (T) readSinglePortableArray(position);
-            default:
-                throw new IllegalArgumentException("Unsupported type " + position.getType());
-        }
+    private int readPosition(FieldDefinition fd) throws IOException {
+        int pos = in.readInt(offset + fd.getIndex() * Bits.INT_SIZE_IN_BYTES);
+        short len = in.readShort(pos);
+        // name + len + type
+        return pos + Bits.SHORT_SIZE_IN_BYTES + len + 1;
     }
 
-    private void validatePrimitive(PortablePosition position, FieldType expectedType) {
-        validateNonNullOrEmptyPosition(position);
-        validateNotMultiPosition(position);
-        validateType(position, expectedType);
-    }
-
-    private void validateNonNullOrEmptyPosition(PortablePosition position) {
-        if (position.isNullOrEmpty()) {
-            throw new IllegalArgumentException("Primitive type cannot be returned since the result is/contains null.");
-        }
-    }
-
-    private void validateNotMultiPosition(PortablePosition position) {
-        if (position.isMultiPosition()) {
-            throw new IllegalArgumentException("The method expected a single result but multiple results have been returned."
-                    + " Did you use the [any] quantifier? If so, use the readArray method family.");
-        }
-    }
-
-    private void validateType(PortablePosition position, FieldType expectedType) {
-        FieldType returnedType = position.getType();
-        if (position.getIndex() >= 0) {
-            returnedType = returnedType != null ? returnedType.getSingleType() : null;
-        }
-        if (expectedType != returnedType) {
-            String name = returnedType != null ? returnedType.name() : null;
-            throw new IllegalArgumentException("Wrong type read! Actual: " + name + " Expected: " + expectedType.name()
-                    + ". Did you use a correct read method? E.g. readInt() for int.");
-        }
-    }
 }

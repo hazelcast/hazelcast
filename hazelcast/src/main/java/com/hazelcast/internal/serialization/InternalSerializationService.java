@@ -20,10 +20,10 @@ import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.internal.nio.BufferObjectDataInput;
 import com.hazelcast.internal.nio.BufferObjectDataOutput;
 import com.hazelcast.internal.nio.Disposable;
+import com.hazelcast.internal.serialization.impl.InternalGenericRecord;
 import com.hazelcast.internal.serialization.impl.portable.PortableContext;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.partition.PartitioningStrategy;
 
 import java.io.IOException;
@@ -44,24 +44,24 @@ public interface InternalSerializationService extends SerializationService, Disp
 
     /**
      * Writes an object to a byte-array.
-     *
+     * <p>
      * It allows for configurable padding on the left.
-     *
+     * <p>
      * The padded bytes are not zero'd out since they will be written by the caller. Zero'ing them out would be waste of
      * time.
      * <p>
      * If you want to convert an object to a Data (or its byte representation) then you want to have the partition hash, because
      * that is part of the Data-definition.
-     *
+     * <p>
      * But if you want to serialize an object to a byte-array and don't care for the Data partition-hash, the hash can be
      * disabled.
      * <p>
      * <b>IMPORTANT:</b> The byte order used to serialize {@code obj}'s serializer type ID is the byte order
      * configured in {@link SerializationConfig#getByteOrder()}.
      *
-     * @param obj                       object to write to byte array
-     * @param leftPadding               offset from beginning of byte array to start writing the object's bytes
-     * @param insertPartitionHash       {@code true} to include the partition hash in the byte array, otherwise {@code false}
+     * @param obj                 object to write to byte array
+     * @param leftPadding         offset from beginning of byte array to start writing the object's bytes
+     * @param insertPartitionHash {@code true} to include the partition hash in the byte array, otherwise {@code false}
      */
     byte[] toBytes(Object obj, int leftPadding, boolean insertPartitionHash);
 
@@ -89,7 +89,7 @@ public interface InternalSerializationService extends SerializationService, Disp
 
     BufferObjectDataOutput createObjectDataOutput();
 
-    PortableReader createPortableReader(Data data) throws IOException;
+    InternalGenericRecord readAsInternalGenericRecord(Data data) throws IOException;
 
     PortableContext getPortableContext();
 
