@@ -73,7 +73,10 @@ public abstract class AbstractDomConfigProcessor implements DomConfigProcessor {
     }
 
     protected String getAttribute(Node node, String attName) {
-        return DomConfigHelper.getAttribute(node, attName, domLevel3);
+        String value = DomConfigHelper.getAttribute(node, attName, domLevel3);
+        return value != null
+          ? value
+          : DomConfigHelper.getAttribute(node, attName.replace("-", ""), domLevel3);
     }
 
     protected void fillProperties(Node node, Map<String, Comparable> properties) {
