@@ -24,6 +24,7 @@ import com.hazelcast.query.Predicate;
 
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Set;
 
 /**
@@ -71,6 +72,7 @@ public class GlobalQueryContextWithStats extends QueryContext {
         return trackingIndex;
     }
 
+    @SuppressWarnings("rawtypes")
     private static class QueryTrackingIndex implements InternalIndex {
 
         private InternalIndex delegate;
@@ -139,6 +141,39 @@ public class GlobalQueryContextWithStats extends QueryContext {
         @Override
         public Set<QueryableEntry> evaluate(Predicate predicate) {
             Set<QueryableEntry> result = delegate.evaluate(predicate);
+            hasQueries = true;
+            return result;
+        }
+
+        @Override
+        public Iterator<QueryableEntry> getSqlRecordIterator() {
+            Iterator<QueryableEntry> result = delegate.getSqlRecordIterator();
+            hasQueries = true;
+            return result;
+        }
+
+        @Override
+        public Iterator<QueryableEntry> getSqlRecordIterator(Comparable value) {
+            Iterator<QueryableEntry> result = delegate.getSqlRecordIterator(value);
+            hasQueries = true;
+            return result;
+        }
+
+        @Override
+        public Iterator<QueryableEntry> getSqlRecordIterator(Comparison comparison, Comparable value) {
+            Iterator<QueryableEntry> result = delegate.getSqlRecordIterator(comparison, value);
+            hasQueries = true;
+            return result;
+        }
+
+        @Override
+        public Iterator<QueryableEntry> getSqlRecordIterator(
+            Comparable from,
+            boolean fromInclusive,
+            Comparable to,
+            boolean toInclusive
+        ) {
+            Iterator<QueryableEntry> result = delegate.getSqlRecordIterator(from, fromInclusive, to, toInclusive);
             hasQueries = true;
             return result;
         }

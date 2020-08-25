@@ -16,6 +16,7 @@
 
 package com.hazelcast.sql.impl.calcite.opt.cost;
 
+import com.hazelcast.config.IndexType;
 import com.hazelcast.sql.impl.calcite.SqlToQueryType;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.type.RelDataTypeField;
@@ -30,6 +31,12 @@ public final class CostUtils {
     /** CPU multiplier applied to normal scan. */
     public static final double TABLE_SCAN_CPU_MULTIPLIER = 1.0d;
 
+    /** CPU multiplier applied to index scan (sorted). */
+    public static final double INDEX_SCAN_CPU_MULTIPLIER_SORTED = 1.2d;
+
+    /** CPU multiplier applied to index scan (hash). */
+    public static final double INDEX_SCAN_CPU_MULTIPLIER_HASH = 1.1d;
+
     /** Multiplier for the CPU part of the cost. Assumes 1ns per item. */
     public static final double CPU_COST_MULTIPLIER = 1.0d;
 
@@ -41,6 +48,29 @@ public final class CostUtils {
 
     private CostUtils() {
         // No-op.
+    }
+
+    /**
+     * Get CPU multiplier for index scan. It ensures that normal scans are preferred over index scans when there are no
+     * conditions and collation provided by the index is not important for the specific query.
+     * <p>
+     * We assume that index scan is more expensive than normal scan due to additional level of indirection. This is not the
+     * case for covering index scans, but we do not support them yet.
+     * <p>
+     * We assume that HASH index lookup is cheaper than SORTED index lookup in general case, because the former has O(1)
+     * complexity, while the latter has O(N) complexity.
+     *
+     * @param type Index type.
+     * @return CPU multiplier.
+     */
+    public static double indexScanCpuMultiplier(IndexType type) {
+        if (type == IndexType.HASH) {
+            return INDEX_SCAN_CPU_MULTIPLIER_HASH;
+        } else {
+            assert type == IndexType.SORTED;
+
+            return INDEX_SCAN_CPU_MULTIPLIER_SORTED;
+        }
     }
 
     /**

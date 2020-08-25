@@ -24,7 +24,6 @@ import com.hazelcast.sql.impl.extract.QueryTargetDescriptor;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
 import java.util.List;
-import java.util.Objects;
 
 /**
  * Node to scan a partitioned map.
@@ -50,33 +49,6 @@ public class MapScanPlanNode extends AbstractMapScanPlanNode implements Identifi
     @Override
     public void visit(PlanNodeVisitor visitor) {
         visitor.onMapScanNode(this);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(id, mapName, fieldPaths, fieldTypes, projects, filter, keyDescriptor, valueDescriptor);
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
-
-        MapScanPlanNode that = (MapScanPlanNode) o;
-
-        return id == that.id
-            && mapName.equals(that.mapName)
-            && fieldPaths.equals(that.fieldPaths)
-            && fieldTypes.equals(that.fieldTypes)
-            && projects.equals(that.projects)
-            && Objects.equals(filter, that.filter)
-            && keyDescriptor.equals(that.keyDescriptor)
-            && valueDescriptor.equals(that.valueDescriptor);
     }
 
     @Override

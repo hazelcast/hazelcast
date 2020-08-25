@@ -21,12 +21,14 @@ import com.hazelcast.internal.monitor.impl.IndexOperationStats;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.query.Predicate;
 
+import java.util.Iterator;
 import java.util.Set;
 
 /**
  * Defines a contract for index stores, so different index stores may be used
  * interchangeably with the same {@link Index} implementation.
  */
+@SuppressWarnings("rawtypes")
 public interface IndexStore {
 
     /**
@@ -125,6 +127,33 @@ public interface IndexStore {
     Set<QueryableEntry> evaluate(Predicate predicate, TypeConverter converter);
 
     /**
+     * @return iterator over all index entries
+     */
+    Iterator<QueryableEntry> getSqlRecordIterator();
+
+    /**
+     * @param value value
+     * @return iterator over index entries that are equal to the given value
+     */
+    Iterator<QueryableEntry> getSqlRecordIterator(Comparable value);
+
+    /**
+     * @param comparison comparison type
+     * @param value value
+     * @return iterator over index entries that are matching the given comparions type and value
+     */
+    Iterator<QueryableEntry> getSqlRecordIterator(Comparison comparison, Comparable value);
+
+    /**
+     * @param from lower bound
+     * @param fromInclusive lower bound inclusive flag
+     * @param to upper bound
+     * @param toInclusive upper bound inclusive flag
+     * @return iterator over index entries matching the given range
+     */
+    Iterator<QueryableEntry> getSqlRecordIterator(Comparable from, boolean fromInclusive, Comparable to, boolean toInclusive);
+
+    /**
      * Obtains entries that have indexed attribute value equal to the given
      * value.
      *
@@ -169,5 +198,4 @@ public interface IndexStore {
      * @see Index#getRecords(Comparable, boolean, Comparable, boolean)
      */
     Set<QueryableEntry> getRecords(Comparable from, boolean fromInclusive, Comparable to, boolean toInclusive);
-
 }

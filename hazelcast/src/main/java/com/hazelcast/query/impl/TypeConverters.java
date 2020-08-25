@@ -56,7 +56,7 @@ public final class TypeConverters {
         abstract Comparable convertInternal(Comparable value);
 
         public final Comparable convert(Comparable value) {
-            if (value == null) {
+            if (value == null || value == NULL) {
                 return NULL;
             }
             return convertInternal(value);

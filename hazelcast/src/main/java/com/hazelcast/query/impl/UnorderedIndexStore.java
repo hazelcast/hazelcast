@@ -18,10 +18,13 @@ package com.hazelcast.query.impl;
 
 import com.hazelcast.core.TypeConverter;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.util.FlatCompositeIterator;
 import com.hazelcast.query.Predicate;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -32,6 +35,7 @@ import static com.hazelcast.query.impl.AbstractIndex.NULL;
 /**
  * Store indexes out of turn.
  */
+@SuppressWarnings("rawtypes")
 public class UnorderedIndexStore extends BaseSingleValueIndexStore {
 
     private final ConcurrentMap<Comparable, Map<Data, QueryableEntry>> recordMap = new ConcurrentHashMap<>();
@@ -133,6 +137,44 @@ public class UnorderedIndexStore extends BaseSingleValueIndexStore {
 
     @Override
     public Set<QueryableEntry> evaluate(Predicate predicate, TypeConverter converter) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public Iterator<QueryableEntry> getSqlRecordIterator() {
+        Iterator<QueryableEntry> iterator = new IndexEntryFlatteningIterator(recordMap.values().iterator());
+        Iterator<QueryableEntry> nullIterator = recordsWithNullValue.values().iterator();
+
+        return new FlatCompositeIterator<>(Arrays.asList(nullIterator, iterator).iterator());
+    }
+
+    @Override
+    public Iterator<QueryableEntry> getSqlRecordIterator(Comparable value) {
+        if (value == NULL) {
+            return recordsWithNullValue.values().iterator();
+        } else {
+            Map<Data, QueryableEntry> res = recordMap.get(canonicalize(value));
+
+            if (res == null) {
+                return Collections.emptyIterator();
+            }
+
+            return res.values().iterator();
+        }
+    }
+
+    @Override
+    public Iterator<QueryableEntry> getSqlRecordIterator(Comparison comparison, Comparable value) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public Iterator<QueryableEntry> getSqlRecordIterator(
+        Comparable from,
+        boolean fromInclusive,
+        Comparable to,
+        boolean toInclusive
+    ) {
         throw new UnsupportedOperationException();
     }
 

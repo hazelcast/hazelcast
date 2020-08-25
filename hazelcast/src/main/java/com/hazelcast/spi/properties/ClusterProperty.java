@@ -1193,6 +1193,9 @@ public final class ClusterProperty {
     public static final HazelcastProperty WAN_CONSUMER_ACK_DELAY_BACKOFF_MULTIPLIER
             = new HazelcastProperty("hazelcast.wan.consumer.ack.delay.backoff.multiplier", 1.5D);
 
+    public static final HazelcastProperty GLOBAL_HD_INDEX_ENABLED
+        = new HazelcastProperty("hazelcast.hd.global.index.enabled", true);
+
     private ClusterProperty() {
     }
 }

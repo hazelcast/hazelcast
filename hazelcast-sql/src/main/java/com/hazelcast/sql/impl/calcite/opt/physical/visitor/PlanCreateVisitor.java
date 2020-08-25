@@ -17,6 +17,7 @@
 package com.hazelcast.sql.impl.calcite.opt.physical.visitor;
 
 import com.hazelcast.internal.util.collection.PartitionIdSet;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.sql.SqlColumnMetadata;
 import com.hazelcast.sql.SqlRowMetadata;
 import com.hazelcast.sql.impl.QueryException;
@@ -24,6 +25,7 @@ import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.QueryUtils;
 import com.hazelcast.sql.impl.calcite.SqlToQueryType;
 import com.hazelcast.sql.impl.calcite.opt.physical.FilterPhysicalRel;
+import com.hazelcast.sql.impl.calcite.opt.physical.MapIndexScanPhysicalRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.MapScanPhysicalRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.PhysicalRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.ProjectPhysicalRel;
@@ -40,6 +42,7 @@ import com.hazelcast.sql.impl.plan.cache.PlanCacheKey;
 import com.hazelcast.sql.impl.plan.cache.PlanObjectKey;
 import com.hazelcast.sql.impl.plan.node.EmptyPlanNode;
 import com.hazelcast.sql.impl.plan.node.FilterPlanNode;
+import com.hazelcast.sql.impl.plan.node.MapIndexScanPlanNode;
 import com.hazelcast.sql.impl.plan.node.MapScanPlanNode;
 import com.hazelcast.sql.impl.plan.node.PlanNode;
 import com.hazelcast.sql.impl.plan.node.PlanNodeFieldTypeProvider;
@@ -50,6 +53,7 @@ import com.hazelcast.sql.impl.plan.node.io.ReceivePlanNode;
 import com.hazelcast.sql.impl.plan.node.io.RootSendPlanNode;
 import com.hazelcast.sql.impl.schema.map.AbstractMapTable;
 import com.hazelcast.sql.impl.schema.map.MapTableField;
+import com.hazelcast.sql.impl.schema.map.PartitionedMapTable;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.calcite.rex.RexNode;
 
@@ -216,8 +220,17 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
 
     @Override
     public void onMapScan(MapScanPhysicalRel rel) {
-        HazelcastTable hazelcastTable = rel.getTableUnwrapped();
         AbstractMapTable table = rel.getMap();
+
+        if (((PartitionedMapTable) table).isHd()) {
+            throw QueryException.error("Cannot query the IMap \"" + table.getName()
+                + "\" with InMemoryFormat.NATIVE because it does not have global indexes "
+                + "(please make sure that the IMap has at least one index, "
+                + "and the property \"" + ClusterProperty.GLOBAL_HD_INDEX_ENABLED.getName()
+                + "\" is set to \"true\")");
+        }
+
+        HazelcastTable hazelcastTable = rel.getTableUnwrapped();
 
         PlanNodeSchema schemaBefore = getScanSchemaBeforeProject(table);
 
@@ -230,6 +243,33 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
             schemaBefore.getTypes(),
             hazelcastTable.getProjects(),
             convertFilter(schemaBefore, hazelcastTable.getFilter())
+        );
+
+        pushUpstream(scanNode);
+
+        objectIds.add(table.getObjectKey());
+    }
+
+    @Override
+    public void onMapIndexScan(MapIndexScanPhysicalRel rel) {
+        HazelcastTable hazelcastTable = rel.getTableUnwrapped();
+        AbstractMapTable table = rel.getMap();
+
+        PlanNodeSchema schemaBefore = getScanSchemaBeforeProject(table);
+
+        MapIndexScanPlanNode scanNode = new MapIndexScanPlanNode(
+            pollId(rel),
+            table.getName(),
+            table.getKeyDescriptor(),
+            table.getValueDescriptor(),
+            getScanFieldPaths(table),
+            schemaBefore.getTypes(),
+            hazelcastTable.getProjects(),
+            rel.getIndex().getName(),
+            rel.getIndex().getComponentsCount(),
+            rel.getIndexFilter(),
+            rel.getConverterTypes(),
+            convertFilter(schemaBefore, rel.getRemainderExp())
         );
 
         pushUpstream(scanNode);

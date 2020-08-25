@@ -100,6 +100,7 @@ import static com.hazelcast.sql.impl.calcite.SqlToQueryType.map;
 import static com.hazelcast.sql.impl.calcite.SqlToQueryType.mapRowType;
 import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeSystem.narrowestTypeFor;
 import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeSystem.withHigherPrecedence;
+import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonMap;
 import static org.apache.calcite.sql.type.SqlTypeName.ANY;
 import static org.apache.calcite.sql.type.SqlTypeName.BIGINT;
@@ -1041,7 +1042,18 @@ public abstract class ExpressionTestBase extends SqlTestSupport {
             fields.add(new TableField(entry.getKey(), entry.getValue(), false));
         }
 
-        PartitionedMapTable table = new PartitionedMapTable("", "t", "t", fields, new ConstantTableStatistics(100), null, null, null, null);
+        PartitionedMapTable table = new PartitionedMapTable(
+            QueryUtils.SCHEMA_NAME_PARTITIONED,
+            "t",
+            "t",
+            fields,
+            new ConstantTableStatistics(100),
+            null,
+            null,
+            null,
+            null,
+            emptyList(),
+            false);
 
         HazelcastTable hazelcastTable = new HazelcastTable(table, new HazelcastTableStatistic(100));
         return OptimizerContext.create(new HazelcastSchema(singletonMap("t", hazelcastTable)),

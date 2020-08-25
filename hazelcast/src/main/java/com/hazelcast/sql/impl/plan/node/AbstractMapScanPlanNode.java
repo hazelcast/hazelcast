@@ -27,6 +27,7 @@ import com.hazelcast.sql.impl.type.QueryDataType;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * Base class to scan a map.
@@ -125,5 +126,40 @@ public abstract class AbstractMapScanPlanNode extends ZeroInputPlanNode {
         fieldTypes = SerializationUtil.readList(in);
         projects = SerializationUtil.readList(in);
         filter = in.readObject();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        AbstractMapScanPlanNode that = (AbstractMapScanPlanNode) o;
+
+        return id == that.id
+            && mapName.equals(that.mapName)
+            && keyDescriptor.equals(that.keyDescriptor)
+            && valueDescriptor.equals(that.valueDescriptor)
+            && fieldPaths.equals(that.fieldPaths)
+            && fieldTypes.equals(that.fieldTypes)
+            && projects.equals(that.projects)
+            && Objects.equals(filter, that.filter);
+    }
+
+    @Override
+    public int hashCode() {
+        int result = Integer.hashCode(id);
+        result = 31 * result + mapName.hashCode();
+        result = 31 * result + keyDescriptor.hashCode();
+        result = 31 * result + valueDescriptor.hashCode();
+        result = 31 * result + fieldPaths.hashCode();
+        result = 31 * result + fieldTypes.hashCode();
+        result = 31 * result + projects.hashCode();
+        result = 31 * result + (filter != null ? filter.hashCode() : 0);
+        return result;
     }
 }

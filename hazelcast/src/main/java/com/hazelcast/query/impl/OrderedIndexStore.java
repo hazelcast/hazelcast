@@ -18,10 +18,13 @@ package com.hazelcast.query.impl;
 
 import com.hazelcast.core.TypeConverter;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.util.FlatCompositeIterator;
 import com.hazelcast.query.Predicate;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.SortedMap;
@@ -29,11 +32,13 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListMap;
 
 import static com.hazelcast.query.impl.AbstractIndex.NULL;
+import static java.util.Collections.emptyIterator;
 import static java.util.Collections.emptySet;
 
 /**
  * Store indexes rankly.
  */
+@SuppressWarnings("rawtypes")
 public class OrderedIndexStore extends BaseSingleValueIndexStore {
 
     private final ConcurrentSkipListMap<Comparable, Map<Data, QueryableEntry>> recordMap =
@@ -108,6 +113,81 @@ public class OrderedIndexStore extends BaseSingleValueIndexStore {
     @Override
     public Set<QueryableEntry> evaluate(Predicate predicate, TypeConverter converter) {
         throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public Iterator<QueryableEntry> getSqlRecordIterator() {
+        Iterator<QueryableEntry> iterator = new IndexEntryFlatteningIterator(recordMap.values().iterator());
+        Iterator<QueryableEntry> nullIterator = recordsWithNullValue.values().iterator();
+
+        return new FlatCompositeIterator<>(Arrays.asList(nullIterator, iterator).iterator());
+    }
+
+    @Override
+    public Iterator<QueryableEntry> getSqlRecordIterator(Comparable value) {
+        if (value == NULL) {
+            return recordsWithNullValue.values().iterator();
+        } else {
+            Map<Data, QueryableEntry> entries = recordMap.get(value);
+
+            if (entries == null) {
+                return Collections.emptyIterator();
+            } else {
+                return entries.values().iterator();
+            }
+        }
+    }
+
+    @Override
+    public Iterator<QueryableEntry> getSqlRecordIterator(Comparison comparison, Comparable searchedValue) {
+        Iterator<Map<Data, QueryableEntry>> iterator;
+
+        switch (comparison) {
+            case LESS:
+                iterator = recordMap.headMap(searchedValue, false).values().iterator();
+                break;
+            case LESS_OR_EQUAL:
+                iterator = recordMap.headMap(searchedValue, true).values().iterator();
+                break;
+            case GREATER:
+                iterator = recordMap.tailMap(searchedValue, false).values().iterator();
+                break;
+            case GREATER_OR_EQUAL:
+                iterator = recordMap.tailMap(searchedValue, true).values().iterator();
+                break;
+            default:
+                throw new IllegalArgumentException("Unrecognized comparison: " + comparison);
+        }
+
+        return new IndexEntryFlatteningIterator(iterator);
+    }
+
+    @Override
+    public Iterator<QueryableEntry> getSqlRecordIterator(
+        Comparable from,
+        boolean fromInclusive,
+        Comparable to,
+        boolean toInclusive
+    ) {
+        int order = Comparables.compare(from, to);
+
+        if (order == 0) {
+            if (!fromInclusive || !toInclusive) {
+                return emptyIterator();
+            }
+
+            Map<Data, QueryableEntry> res = recordMap.get(from);
+
+            if (res == null) {
+                return emptyIterator();
+            }
+
+            return res.values().iterator();
+        } else if (order > 0) {
+            return emptyIterator();
+        }
+
+        return new IndexEntryFlatteningIterator(recordMap.subMap(from, fromInclusive, to, toInclusive).values().iterator());
     }
 
     @Override

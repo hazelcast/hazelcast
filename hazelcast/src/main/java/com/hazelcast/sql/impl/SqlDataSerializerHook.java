@@ -22,6 +22,10 @@ import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
 import com.hazelcast.internal.util.ConstructorFunction;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.sql.impl.exec.scan.index.IndexEqualsFilter;
+import com.hazelcast.sql.impl.exec.scan.index.IndexFilterValue;
+import com.hazelcast.sql.impl.exec.scan.index.IndexInFilter;
+import com.hazelcast.sql.impl.exec.scan.index.IndexRangeFilter;
 import com.hazelcast.sql.impl.expression.CastExpression;
 import com.hazelcast.sql.impl.expression.ColumnExpression;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
@@ -66,6 +70,7 @@ import com.hazelcast.sql.impl.operation.QueryExecuteOperationFragment;
 import com.hazelcast.sql.impl.operation.QueryFlowControlExchangeOperation;
 import com.hazelcast.sql.impl.plan.node.EmptyPlanNode;
 import com.hazelcast.sql.impl.plan.node.FilterPlanNode;
+import com.hazelcast.sql.impl.plan.node.MapIndexScanPlanNode;
 import com.hazelcast.sql.impl.plan.node.MapScanPlanNode;
 import com.hazelcast.sql.impl.plan.node.ProjectPlanNode;
 import com.hazelcast.sql.impl.plan.node.RootPlanNode;
@@ -147,6 +152,13 @@ public class SqlDataSerializerHook implements DataSerializerHook {
 
     public static final int NODE_EMPTY = 47;
 
+    public static final int INDEX_FILTER_VALUE = 48;
+    public static final int INDEX_FILTER_EQUALS = 49;
+    public static final int INDEX_FILTER_RANGE = 50;
+    public static final int INDEX_FILTER_IN = 51;
+
+    public static final int NODE_MAP_INDEX_SCAN = 52;
+
     public static final int EXPRESSION_ASCII = 53;
     public static final int EXPRESSION_CHAR_LENGTH = 54;
     public static final int EXPRESSION_INITCAP = 55;
@@ -226,6 +238,13 @@ public class SqlDataSerializerHook implements DataSerializerHook {
         constructors[EXPRESSION_ROUND_TRUNCATE] = arg -> new RoundTruncateFunction<>();
 
         constructors[NODE_EMPTY] = arg -> new EmptyPlanNode();
+
+        constructors[INDEX_FILTER_VALUE] = arg -> new IndexFilterValue();
+        constructors[INDEX_FILTER_EQUALS] = arg -> new IndexEqualsFilter();
+        constructors[INDEX_FILTER_RANGE] = arg -> new IndexRangeFilter();
+        constructors[INDEX_FILTER_IN] = arg -> new IndexInFilter();
+
+        constructors[NODE_MAP_INDEX_SCAN] = arg -> new MapIndexScanPlanNode();
 
         constructors[EXPRESSION_ASCII] = arg -> new AsciiFunction();
         constructors[EXPRESSION_CHAR_LENGTH] = arg -> new CharLengthFunction();
