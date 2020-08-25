@@ -103,7 +103,7 @@ public final class HazelcastTypeSystem extends RelDataTypeSystemImpl {
     }
 
     /**
-     * Determines is it possible to represent the given literal as a value of
+     * Determines if it is possible to represent the given literal as a value of
      * the given target type.
      *
      * @param literal the literal in question.
@@ -113,6 +113,10 @@ public final class HazelcastTypeSystem extends RelDataTypeSystemImpl {
      * the given target type, {@code false} otherwise.
      */
     public static boolean canRepresent(SqlLiteral literal, RelDataType target) {
+        if (literal.getTypeName() == target.getSqlTypeName()) {
+            return true;
+        }
+
         return canConvert(literalValue(literal), literalType(literal), target);
     }
 
@@ -356,6 +360,9 @@ public final class HazelcastTypeSystem extends RelDataTypeSystemImpl {
 
             case NULL:
                 return null;
+
+            case SYMBOL:
+                return literal.getValue();
 
             default:
                 throw new IllegalArgumentException("unexpected literal type: " + literal.getTypeName());
