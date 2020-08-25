@@ -24,6 +24,7 @@ import com.hazelcast.map.IMap;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.impl.plan.node.MapIndexScanPlanNode;
 import com.hazelcast.sql.impl.schema.Table;
+import com.hazelcast.sql.impl.schema.map.JetMapMetadataResolver;
 import com.hazelcast.sql.impl.schema.map.MapTableField;
 import com.hazelcast.sql.impl.schema.map.MapTableIndex;
 import com.hazelcast.sql.impl.schema.map.PartitionedMapTable;
@@ -182,7 +183,7 @@ public class SqlIndexResolutionTest extends SqlIndexTestSupport {
     private void checkIndex(IMap<?, ?> map, QueryDataType... expectedFieldConverterTypes) {
         String mapName = map.getName();
 
-        PartitionedMapTableResolver resolver = new PartitionedMapTableResolver(nodeEngine(member));
+        PartitionedMapTableResolver resolver = new PartitionedMapTableResolver(nodeEngine(member), JetMapMetadataResolver.NO_OP);
 
         for (Table table : resolver.getTables()) {
             if (table.getName().equals(mapName)) {

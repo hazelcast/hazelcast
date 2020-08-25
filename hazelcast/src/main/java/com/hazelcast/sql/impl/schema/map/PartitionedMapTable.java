@@ -33,6 +33,7 @@ public class PartitionedMapTable extends AbstractMapTable {
     private final List<MapTableIndex> indexes;
     private final boolean hd;
 
+    @SuppressWarnings("checkstyle:ParameterNumber")
     public PartitionedMapTable(
             String schemaName,
             String tableName,
@@ -42,7 +43,9 @@ public class PartitionedMapTable extends AbstractMapTable {
             QueryTargetDescriptor keyDescriptor,
             QueryTargetDescriptor valueDescriptor,
             Object keyJetMetadata,
-            Object valueJetMetadata
+            Object valueJetMetadata,
+            List<MapTableIndex> indexes,
+            boolean hd
     ) {
         super(
             schemaName,
