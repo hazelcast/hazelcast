@@ -65,11 +65,16 @@ public final class ExecutorStats {
     }
 
     public LocalExecutorStatsImpl getLocalExecutorStats(String executorName, boolean createIfAbsent) {
+        LocalExecutorStatsImpl localExecutorStats = statsMap.get(executorName);
+        if (localExecutorStats != null) {
+            return localExecutorStats;
+        }
+
         if (createIfAbsent) {
             return ConcurrencyUtil.getOrPutIfAbsent(statsMap, executorName, executorStatsConstructor);
-        } else {
-            return EMPTY_LOCAL_EXECUTOR_STATS;
         }
+
+        return EMPTY_LOCAL_EXECUTOR_STATS;
     }
 
     public void clear() {
