@@ -42,16 +42,6 @@ import static org.junit.Assert.assertTrue;
 public class IsNullTest extends ExpressionTestBase {
 
     @Test
-    public void testEndToEnd() {
-        SqlService sql = createEndToEndRecords();
-        assertRows(query(sql, "select __key from records where string1 is null"), keys(5000, 6000));
-        assertRows(query(sql, "select __key from records where (decimal1 + 1) is null"), keys(6000));
-        assertRows(query(sql, "select __key, string1 is null from records"), keyRange(0, 1000, 5000, 6000),
-                k -> k == 5000 || k == 6000);
-        assertQueryThrows(sql, "select __key, cast(string1 is null as int) from records", "cast function cannot convert");
-    }
-
-    @Test
     public void verify() {
         verify(IS_NULL, IsNullTest::expectedTypes, IsNullTest::expectedValues, "%s IS NULL", ALL);
     }
