@@ -16,7 +16,6 @@
 
 package com.hazelcast.sql.impl.expression.predicate;
 
-import com.hazelcast.sql.SqlService;
 import com.hazelcast.sql.impl.SqlDataSerializerHook;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastObjectType;
 import com.hazelcast.sql.impl.expression.ColumnExpression;

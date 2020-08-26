@@ -16,11 +16,8 @@
 
 package com.hazelcast.sql.impl.expression;
 
-import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.util.BiTuple;
 import com.hazelcast.internal.util.RuntimeAvailableProcessors;
-import com.hazelcast.map.IMap;
-import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlRow;
@@ -28,6 +25,7 @@ import com.hazelcast.sql.SqlService;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.QueryUtils;
+import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.SqlTestSupport;
 import com.hazelcast.sql.impl.calcite.HazelcastSqlBackend;
 import com.hazelcast.sql.impl.calcite.OptimizerContext;
@@ -48,7 +46,6 @@ import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.sql.impl.type.converter.Converter;
 import com.hazelcast.sql.impl.type.converter.Converters;
 import com.hazelcast.sql.impl.type.converter.StringConverter;
-import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.TestStringUtils;
 import org.apache.calcite.avatica.util.TimeUnit;
 import org.apache.calcite.rel.RelNode;

@@ -16,7 +16,6 @@
 
 package com.hazelcast.sql.impl.expression.math;
 
-import com.hazelcast.sql.SqlService;
 import com.hazelcast.sql.impl.SqlDataSerializerHook;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastReturnTypes;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
