@@ -77,6 +77,18 @@ public interface GenericRecord {
     /**
      * Returned {@link Builder} can be used to have exact copy and also just to update a couple of fields. By default,
      * it will copy all the fields.
+     * So instead of following where only the `id` field is updated,
+     * <pre>
+     *     GenericRecord modifiedGenericRecord = genericRecord.createGenericRecordBuilder()
+     *                         .writeUTF("name", genericRecord.readUTF("name"))
+     *                         .writeLong("id", 4)
+     *                         .writeUTF("surname", genericRecord.readUTF("surname"))
+     *                         .writeInt("age", genericRecord.readInt("age")).build();
+     * </pre>
+     * `cloneWithBuilder` used as follows:
+     * <pre>
+     *     GenericRecord modifiedGenericRecord = genericRecord.cloneWithBuilder().writeInt("id", 4).build();
+     * </pre>
      *
      * @return a generic record builder with same class definition as this one and populated with same values.
      */

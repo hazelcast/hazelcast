@@ -375,11 +375,13 @@ public class PortableInternalGenericRecord implements InternalGenericRecord {
         }
     }
 
+    @NotNull
     @Override
     public Builder newBuilder() {
         throw new UnsupportedOperationException();
     }
 
+    @NotNull
     @Override
     public Builder cloneWithBuilder() {
         throw new UnsupportedOperationException();
