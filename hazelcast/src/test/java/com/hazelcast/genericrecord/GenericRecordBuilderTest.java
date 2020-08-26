@@ -101,4 +101,20 @@ public class GenericRecordBuilderTest {
             }
         });
     }
+
+    @Test
+    public void testUnwrittenFieldsThrowException() {
+        ClassDefinition classDefinition =
+                new ClassDefinitionBuilder(TestSerializationConstants.PORTABLE_FACTORY_ID, TestSerializationConstants.NAMED_PORTABLE)
+                        .addUTFField("name").addIntField("myint").build();
+
+        GenericRecord.Builder builder = GenericRecord.Builder.portable(classDefinition);
+        builder.writeInt("myint", 1);
+        assertThrows(HazelcastSerializationException.class, new Runnable() {
+            @Override
+            public void run() {
+                builder.build();
+            }
+        });
+    }
 }
