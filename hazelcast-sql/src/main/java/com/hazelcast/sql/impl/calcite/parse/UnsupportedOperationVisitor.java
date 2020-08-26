@@ -190,8 +190,12 @@ public final class UnsupportedOperationVisitor implements SqlVisitor<Void> {
     @SuppressWarnings("checkstyle:CyclomaticComplexity")
     @Override
     public Void visit(SqlDataTypeSpec type) {
-        if (type.getTypeNameSpec() instanceof SqlUserDefinedTypeNameSpec && HazelcastTypeSystem.isObject(type.getTypeName())) {
-            return null;
+        if (type.getTypeNameSpec() instanceof SqlUserDefinedTypeNameSpec) {
+            SqlIdentifier typeName = type.getTypeName();
+
+            if (HazelcastTypeSystem.isObject(typeName) || HazelcastTypeSystem.isTimestampWithTimeZone(typeName)) {
+                return null;
+            }
         }
 
         if (!(type.getTypeNameSpec() instanceof SqlBasicTypeNameSpec)) {
@@ -209,6 +213,9 @@ public final class UnsupportedOperationVisitor implements SqlVisitor<Void> {
             case REAL:
             case DOUBLE:
             case VARCHAR:
+            case DATE:
+            case TIME:
+            case TIMESTAMP:
             case NULL:
                 return null;
 

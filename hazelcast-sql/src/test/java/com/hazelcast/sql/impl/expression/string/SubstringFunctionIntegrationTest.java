@@ -115,6 +115,10 @@ public class SubstringFunctionIntegrationTest extends SqlExpressionIntegrationTe
         checkFailureInternal(sql("?", "1"), SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from REAL to VARCHAR", 1f);
         checkFailureInternal(sql("?", "1"), SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from DOUBLE to VARCHAR", 1d);
         checkFailureInternal(sql("?", "1"), SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from OBJECT to VARCHAR", new ExpressionValue.ObjectVal());
+        checkFailureInternal(sql("?", "1"), SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from DATE to VARCHAR", LOCAL_DATE_VAL);
+        checkFailureInternal(sql("?", "1"), SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from TIME to VARCHAR", LOCAL_TIME_VAL);
+        checkFailureInternal(sql("?", "1"), SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from TIMESTAMP to VARCHAR", LOCAL_DATE_TIME_VAL);
+        checkFailureInternal(sql("?", "1"), SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from TIMESTAMP_WITH_TIME_ZONE to VARCHAR", OFFSET_DATE_TIME_VAL);
 
         // Literal
         checkValueInternal(sql("'abc'", "1"), SqlColumnType.VARCHAR, "abc");
@@ -177,6 +181,10 @@ public class SubstringFunctionIntegrationTest extends SqlExpressionIntegrationTe
         checkFailureInternal(sql("this", "?"), SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from DECIMAL to INTEGER", BigDecimal.ONE);
         checkFailureInternal(sql("this", "?"), SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from REAL to INTEGER", 2f);
         checkFailureInternal(sql("this", "?"), SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from DOUBLE to INTEGER", 2d);
+        checkFailureInternal(sql("this", "?"), SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from DATE to INTEGER", LOCAL_DATE_VAL);
+        checkFailureInternal(sql("this", "?"), SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from TIME to INTEGER", LOCAL_TIME_VAL);
+        checkFailureInternal(sql("this", "?"), SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from TIMESTAMP to INTEGER", LOCAL_DATE_TIME_VAL);
+        checkFailureInternal(sql("this", "?"), SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from TIMESTAMP_WITH_TIME_ZONE to INTEGER", OFFSET_DATE_TIME_VAL);
 
         // Literals
         put("abcde");
@@ -233,6 +241,10 @@ public class SubstringFunctionIntegrationTest extends SqlExpressionIntegrationTe
         checkFailureInternal(sql("'abcde'", "2", "?"), SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from DECIMAL to INTEGER", new BigDecimal("2"));
         checkFailureInternal(sql("'abcde'", "2", "?"), SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from REAL to INTEGER", 2f);
         checkFailureInternal(sql("'abcde'", "2", "?"), SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from DOUBLE to INTEGER", 2d);
+        checkFailureInternal(sql("'abcde'", "2", "?"), SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from DATE to INTEGER", LOCAL_DATE_VAL);
+        checkFailureInternal(sql("'abcde'", "2", "?"), SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from TIME to INTEGER", LOCAL_TIME_VAL);
+        checkFailureInternal(sql("'abcde'", "2", "?"), SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from TIMESTAMP to INTEGER", LOCAL_DATE_TIME_VAL);
+        checkFailureInternal(sql("'abcde'", "2", "?"), SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from TIMESTAMP_WITH_TIME_ZONE to INTEGER", OFFSET_DATE_TIME_VAL);
 
         // Literals
         put(1);

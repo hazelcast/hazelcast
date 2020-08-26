@@ -17,8 +17,8 @@
 package com.hazelcast.sql.impl.type.converter;
 
 import com.hazelcast.sql.impl.QueryException;
-import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.SqlCustomClass;
+import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.expression.math.ExpressionMath;
 import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -36,7 +36,6 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
-import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -450,7 +449,7 @@ public class ConvertersTest {
 
         String dateTimeString = "2020-02-02T11:22:33.444";
         LocalDateTime dateTime = LocalDateTime.parse(dateTimeString);
-        OffsetDateTime globalDateTime = OffsetDateTime.ofInstant(dateTime.toInstant(ZoneOffset.UTC), ZoneId.systemDefault());
+        OffsetDateTime globalDateTime = ZonedDateTime.of(dateTime, ZoneId.systemDefault()).toOffsetDateTime();
 
         assertEquals(dateTimeString, converter.asVarchar(dateTime));
         assertEquals(dateTime.toLocalDate(), converter.asDate(dateTime));

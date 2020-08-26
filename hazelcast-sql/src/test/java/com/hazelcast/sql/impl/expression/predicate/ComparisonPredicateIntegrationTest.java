@@ -400,6 +400,22 @@ public class ComparisonPredicateIntegrationTest extends SqlExpressionIntegration
         // OBJECT/OBJECT
         clazz = createBiClass(ExpressionTypes.OBJECT, ExpressionTypes.OBJECT);
         checkColumnColumnFailure(clazz, 1, 2, SqlErrorCode.PARSING, "to arguments of type '<OBJECT>");
+
+        // Handle special case for temporal types
+        clazz = createBiClass(ExpressionTypes.INTEGER, ExpressionTypes.LOCAL_DATE);
+        checkColumnColumnFailure(clazz, 0, LOCAL_DATE_VAL, SqlErrorCode.PARSING, "Cannot apply comparison operation to DATE");
+
+        clazz = createBiClass(ExpressionTypes.INTEGER, ExpressionTypes.LOCAL_TIME);
+        checkColumnColumnFailure(clazz, 0, LOCAL_TIME_VAL, SqlErrorCode.PARSING, "Cannot apply comparison operation to TIME");
+
+        clazz = createBiClass(ExpressionTypes.INTEGER, ExpressionTypes.LOCAL_DATE_TIME);
+        checkColumnColumnFailure(clazz, 0, LOCAL_DATE_TIME_VAL, SqlErrorCode.PARSING, "Cannot apply comparison operation to TIMESTAMP");
+
+        clazz = createBiClass(ExpressionTypes.INTEGER, ExpressionTypes.OFFSET_DATE_TIME);
+        checkColumnColumnFailure(clazz, 0, OFFSET_DATE_TIME_VAL, SqlErrorCode.PARSING, "Cannot apply comparison operation to TIMESTAMP_WITH_TIME_ZONE");
+
+        clazz = createBiClass(ExpressionTypes.LOCAL_DATE, ExpressionTypes.OFFSET_DATE_TIME);
+        checkColumnColumnFailure(clazz, LOCAL_DATE_VAL, OFFSET_DATE_TIME_VAL, SqlErrorCode.PARSING, "Cannot apply comparison operation to DATE");
     }
 
     @Test
