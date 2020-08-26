@@ -145,6 +145,14 @@ public final class MetricDescriptorConstants {
     public static final String EXECUTOR_METRIC_MANAGED_EXECUTOR_SERVICE_REMAINING_QUEUE_CAPACITY = "remainingQueueCapacity";
     // ===[/EXECUTOR]===================================================
 
+    // ===[SCHEDULED-EXECUTOR]====================================================
+    public static final String SCHEDULED_EXECUTOR_PREFIX = "scheduledExecutor";
+    // ===[/SCHEDULED-EXECUTOR]===================================================
+
+    // ===[DURABLE-EXECUTOR]====================================================
+    public static final String DURABLE_EXECUTOR_PREFIX = "durableExecutor";
+    // ===[/DURABLE-EXECUTOR]===================================================
+
     // ===[FILE]========================================================
     public static final String FILE_PREFIX = "file.partition";
     public static final String FILE_DISCRIMINATOR_DIR = "dir";
@@ -199,6 +207,7 @@ public final class MetricDescriptorConstants {
     public static final String MAP_PREFIX = "map";
     public static final String MAP_PREFIX_INDEX = "map.index";
     public static final String MAP_PREFIX_NEARCACHE = "map.nearcache";
+    public static final String MAP_PREFIX_ENTRY_PROCESSOR_OFFLOADABLE_EXECUTOR = "map.entry.processor.offloadable.executor";
     public static final String MAP_DISCRIMINATOR_NAME = "name";
     public static final String MAP_TAG_INDEX = "index";
     public static final String MAP_METRIC_LAST_ACCESS_TIME = "lastAccessTime";

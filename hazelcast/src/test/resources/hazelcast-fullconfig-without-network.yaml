@@ -144,6 +144,7 @@ hazelcast:
 
   durable-executor-service:
     dummy:
+      statistics-enabled: false
       pool-size: 10
       durability: 2
       capacity: 10
@@ -151,6 +152,7 @@ hazelcast:
 
   scheduled-executor-service:
     dummy:
+      statistics-enabled: false
       pool-size: 10
       durability: 2
       capacity: 50

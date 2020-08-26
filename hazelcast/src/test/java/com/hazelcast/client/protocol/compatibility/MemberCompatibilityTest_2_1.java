@@ -6466,6 +6466,8 @@ public class MemberCompatibilityTest_2_1 {
         assertTrue(isEqual(anInt, parameters.durability));
         assertTrue(isEqual(anInt, parameters.capacity));
         assertTrue(isEqual(aString, parameters.splitBrainProtectionName));
+        assertTrue(parameters.isStatisticsEnabledExists);
+        assertTrue(isEqual(aBoolean, parameters.statisticsEnabled));
     }
 
     @Test
@@ -6488,6 +6490,8 @@ public class MemberCompatibilityTest_2_1 {
         assertTrue(isEqual(aString, parameters.splitBrainProtectionName));
         assertTrue(isEqual(aString, parameters.mergePolicy));
         assertTrue(isEqual(anInt, parameters.mergeBatchSize));
+        assertTrue(parameters.isStatisticsEnabledExists);
+        assertTrue(isEqual(aBoolean, parameters.statisticsEnabled));
     }
 
     @Test

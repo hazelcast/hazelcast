@@ -726,6 +726,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertEquals(10, testExecConfig.getPoolSize());
         assertEquals(5, testExecConfig.getDurability());
         assertEquals(200, testExecConfig.getCapacity());
+        assertFalse(testExecConfig.isStatisticsEnabled());
     }
 
     @Test
@@ -741,6 +742,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertNotNull(mergePolicyConfig);
         assertEquals("PassThroughMergePolicy", mergePolicyConfig.getPolicy());
         assertEquals(101, mergePolicyConfig.getBatchSize());
+        assertFalse(testExecConfig.isStatisticsEnabled());
     }
 
     @Test

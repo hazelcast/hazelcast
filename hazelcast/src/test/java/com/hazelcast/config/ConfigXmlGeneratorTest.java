@@ -171,7 +171,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
 
     private MemberAddressProviderConfig getMemberAddressProviderConfig(Config cfg) {
         MemberAddressProviderConfig expected = cfg.getNetworkConfig().getMemberAddressProviderConfig()
-            .setEnabled(true);
+                .setEnabled(true);
         Properties props = expected.getProperties();
         props.setProperty("p1", "v1");
         props.setProperty("p2", "v2");
@@ -183,7 +183,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
     public void testMemberAddressProvider() {
         Config cfg = new Config();
         MemberAddressProviderConfig expected = getMemberAddressProviderConfig(cfg)
-            .setClassName("ClassName");
+                .setClassName("ClassName");
 
         Config newConfigViaXMLGenerator = getNewConfigViaXMLGenerator(cfg);
         MemberAddressProviderConfig actual = newConfigViaXMLGenerator.getNetworkConfig().getMemberAddressProviderConfig();
@@ -195,7 +195,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
     public void testMemberAddressProvider_withImplementation() {
         Config cfg = new Config();
         MemberAddressProviderConfig expected = getMemberAddressProviderConfig(cfg)
-            .setImplementation(new TestMemberAddressProvider());
+                .setImplementation(new TestMemberAddressProvider());
 
         Config newConfigViaXMLGenerator = getNewConfigViaXMLGenerator(cfg);
         MemberAddressProviderConfig actual = newConfigViaXMLGenerator.getNetworkConfig().getMemberAddressProviderConfig();
@@ -311,8 +311,8 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
 
     private SocketInterceptorConfig createSocketInterceptorConfig() {
         return new SocketInterceptorConfig()
-            .setEnabled(true)
-            .setProperty("key", "value");
+                .setEnabled(true)
+                .setProperty("key", "value");
     }
 
     @Test
@@ -320,7 +320,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         Config cfg = new Config();
 
         SocketInterceptorConfig expectedConfig = createSocketInterceptorConfig()
-            .setClassName("socketInterceptor");
+                .setClassName("socketInterceptor");
 
         cfg.getNetworkConfig().setSocketInterceptorConfig(expectedConfig);
 
@@ -334,7 +334,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         Config cfg = new Config();
 
         SocketInterceptorConfig expectedConfig = createSocketInterceptorConfig()
-            .setImplementation(new TestSocketInterceptor());
+                .setImplementation(new TestSocketInterceptor());
 
         cfg.getNetworkConfig().setSocketInterceptorConfig(expectedConfig);
 
@@ -345,10 +345,12 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
 
     private static class TestSocketInterceptor implements SocketInterceptor {
         @Override
-        public void init(Properties properties) { }
+        public void init(Properties properties) {
+        }
 
         @Override
-        public void onConnect(Socket connectedSocket) throws IOException { }
+        public void onConnect(Socket connectedSocket) throws IOException {
+        }
     }
 
     @Test
@@ -373,7 +375,8 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         ConfigCompatibilityChecker.checkListenerConfigs(expectedConfig.getListenerConfigs(), actualConfig.getListenerConfigs());
     }
 
-    private static class TestEventListener implements EventListener { }
+    private static class TestEventListener implements EventListener {
+    }
 
     @Test
     public void testHotRestartPersistenceConfig() {
@@ -395,18 +398,18 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
 
     private void configureHotRestartPersistence(Config cfg) {
         cfg.getHotRestartPersistenceConfig()
-            .setEnabled(true)
-            .setBaseDir(new File("nonExisting-base").getAbsoluteFile())
-            .setEncryptionAtRestConfig(
-                new EncryptionAtRestConfig()
-                    .setEnabled(true)
-                    .setAlgorithm("AES")
-                    .setSalt("salt")
-                    .setSecureStoreConfig(
-                        new JavaKeyStoreSecureStoreConfig(new File("path").getAbsoluteFile())
-                            .setPassword("keyStorePassword")
-                            .setType("JCEKS")
-                            .setPollingInterval(60)));
+                .setEnabled(true)
+                .setBaseDir(new File("nonExisting-base").getAbsoluteFile())
+                .setEncryptionAtRestConfig(
+                        new EncryptionAtRestConfig()
+                                .setEnabled(true)
+                                .setAlgorithm("AES")
+                                .setSalt("salt")
+                                .setSecureStoreConfig(
+                                        new JavaKeyStoreSecureStoreConfig(new File("path").getAbsoluteFile())
+                                                .setPassword("keyStorePassword")
+                                                .setType("JCEKS")
+                                                .setPollingInterval(60)));
     }
 
     @Test
@@ -590,21 +593,21 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         Config cfg = new Config();
 
         RealmConfig realmConfig = new RealmConfig()
-            .setKerberosAuthenticationConfig(new KerberosAuthenticationConfig()
-                .setSkipIdentity(TRUE)
-                .setSkipEndpoint(FALSE)
-                .setSkipRole(TRUE)
-                .setRelaxFlagsCheck(TRUE)
-                .setUseNameWithoutRealm(TRUE)
-                .setSecurityRealm("jaasRealm")
-                .setLdapAuthenticationConfig(new LdapAuthenticationConfig()
-                        .setUrl("url")))
-            .setKerberosIdentityConfig(new KerberosIdentityConfig()
-                .setRealm("HAZELCAST.COM")
-                .setSecurityRealm("krb5Init")
-                .setServiceNamePrefix("hz/")
-                .setUseCanonicalHostname(TRUE)
-                .setSpn("spn@HAZELCAST.COM"));
+                .setKerberosAuthenticationConfig(new KerberosAuthenticationConfig()
+                        .setSkipIdentity(TRUE)
+                        .setSkipEndpoint(FALSE)
+                        .setSkipRole(TRUE)
+                        .setRelaxFlagsCheck(TRUE)
+                        .setUseNameWithoutRealm(TRUE)
+                        .setSecurityRealm("jaasRealm")
+                        .setLdapAuthenticationConfig(new LdapAuthenticationConfig()
+                                .setUrl("url")))
+                .setKerberosIdentityConfig(new KerberosIdentityConfig()
+                        .setRealm("HAZELCAST.COM")
+                        .setSecurityRealm("krb5Init")
+                        .setServiceNamePrefix("hz/")
+                        .setUseCanonicalHostname(TRUE)
+                        .setSpn("spn@HAZELCAST.COM"));
         SecurityConfig expectedConfig = new SecurityConfig().setMemberRealmConfig("kerberosRealm", realmConfig);
         cfg.setSecurityConfig(expectedConfig);
 
@@ -740,11 +743,13 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         assertEquals(expectedConfig.getJavaSerializationFilterConfig(), actualConfig.getJavaSerializationFilterConfig());
     }
 
-    private static class TypeClass { }
+    private static class TypeClass {
+    }
 
     private static class SerializerClass implements StreamSerializer {
         @Override
-        public void write(ObjectDataOutput out, Object object) throws IOException { }
+        public void write(ObjectDataOutput out, Object object) throws IOException {
+        }
 
         @Override
         public Object read(ObjectDataInput in) throws IOException {
@@ -757,7 +762,8 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         }
 
         @Override
-        public void destroy() { }
+        public void destroy() {
+        }
     }
 
     @Test
@@ -950,21 +956,23 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
     @Test
     public void testRingbufferWithStoreImplementation() {
         RingbufferStoreConfig ringbufferStoreConfig = new RingbufferStoreConfig()
-            .setEnabled(true)
-            .setStoreImplementation(new TestRingbufferStore())
-            .setProperty("p1", "v1")
-            .setProperty("p2", "v2")
-            .setProperty("p3", "v3");
+                .setEnabled(true)
+                .setStoreImplementation(new TestRingbufferStore())
+                .setProperty("p1", "v1")
+                .setProperty("p2", "v2")
+                .setProperty("p3", "v3");
 
         testRingbuffer(ringbufferStoreConfig);
     }
 
     private static class TestRingbufferStore implements RingbufferStore {
         @Override
-        public void store(long sequence, Object data) { }
+        public void store(long sequence, Object data) {
+        }
 
         @Override
-        public void storeAll(long firstItemSequence, Object[] items) { }
+        public void storeAll(long firstItemSequence, Object[] items) {
+        }
 
         @Override
         public Object load(long sequence) {
@@ -1055,6 +1063,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
                 .setPoolSize(10)
                 .setCapacity(100)
                 .setDurability(2)
+                .setStatisticsEnabled(false)
                 .setSplitBrainProtectionName("splitBrainProtection");
 
         Config config = new Config()
@@ -1065,6 +1074,40 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         DurableExecutorConfig actualConfig = xmlConfig.getDurableExecutorConfig(expectedConfig.getName());
         assertEquals(expectedConfig, actualConfig);
     }
+
+    @Test
+    public void testScheduledExecutor() {
+        Config cfg = new Config();
+
+        ScheduledExecutorConfig scheduledExecutorConfig =
+                new ScheduledExecutorConfig()
+                        .setCapacity(1)
+                        .setCapacityPolicy(ScheduledExecutorConfig.CapacityPolicy.PER_PARTITION)
+                        .setDurability(2)
+                        .setName("Existing")
+                        .setPoolSize(3)
+                        .setSplitBrainProtectionName("splitBrainProtection")
+                        .setMergePolicyConfig(new MergePolicyConfig("JediPolicy", 23))
+                        .setStatisticsEnabled(false);
+
+        cfg.addScheduledExecutorConfig(scheduledExecutorConfig);
+
+        ScheduledExecutorConfig defaultSchedExecConfig = new ScheduledExecutorConfig();
+        cfg.addScheduledExecutorConfig(defaultSchedExecConfig);
+
+        ScheduledExecutorConfig existing = getNewConfigViaXMLGenerator(cfg).getScheduledExecutorConfig("Existing");
+        assertEquals(scheduledExecutorConfig, existing);
+
+        ScheduledExecutorConfig fallsbackToDefault = getNewConfigViaXMLGenerator(cfg)
+                .getScheduledExecutorConfig("NotExisting/Default");
+        assertEquals(defaultSchedExecConfig.getMergePolicyConfig(), fallsbackToDefault.getMergePolicyConfig());
+        assertEquals(defaultSchedExecConfig.getCapacity(), fallsbackToDefault.getCapacity());
+        assertEquals(defaultSchedExecConfig.getCapacityPolicy(), fallsbackToDefault.getCapacityPolicy());
+        assertEquals(defaultSchedExecConfig.getPoolSize(), fallsbackToDefault.getPoolSize());
+        assertEquals(defaultSchedExecConfig.getDurability(), fallsbackToDefault.getDurability());
+        assertEquals(defaultSchedExecConfig.isStatisticsEnabled(), fallsbackToDefault.isStatisticsEnabled());
+    }
+
 
     @Test
     public void testPNCounter() {
@@ -1172,16 +1215,20 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
 
     private static class TestQueueStore implements QueueStore {
         @Override
-        public void store(Long key, Object value) { }
+        public void store(Long key, Object value) {
+        }
 
         @Override
-        public void storeAll(Map map) { }
+        public void storeAll(Map map) {
+        }
 
         @Override
-        public void delete(Long key) { }
+        public void delete(Long key) {
+        }
 
         @Override
-        public void deleteAll(Collection keys) { }
+        public void deleteAll(Collection keys) {
+        }
 
         @Override
         public Object load(Long key) {
@@ -1329,29 +1376,33 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
     @Test
     public void testAttributesConfigWithStoreImplementation() {
         MapStoreConfig mapStoreConfig = new MapStoreConfig()
-            .setEnabled(true)
-            .setInitialLoadMode(MapStoreConfig.InitialLoadMode.EAGER)
-            .setWriteDelaySeconds(10)
-            .setImplementation(new TestMapStore())
-            .setWriteCoalescing(true)
-            .setWriteBatchSize(500)
-            .setProperty("key", "value");
+                .setEnabled(true)
+                .setInitialLoadMode(MapStoreConfig.InitialLoadMode.EAGER)
+                .setWriteDelaySeconds(10)
+                .setImplementation(new TestMapStore())
+                .setWriteCoalescing(true)
+                .setWriteBatchSize(500)
+                .setProperty("key", "value");
 
         testMap(mapStoreConfig);
     }
 
     private static class TestMapStore implements MapStore {
         @Override
-        public void store(Object key, Object value) { }
+        public void store(Object key, Object value) {
+        }
 
         @Override
-        public void storeAll(Map map) { }
+        public void storeAll(Map map) {
+        }
 
         @Override
-        public void delete(Object key) { }
+        public void delete(Object key) {
+        }
 
         @Override
-        public void deleteAll(Collection keys) { }
+        public void deleteAll(Collection keys) {
+        }
 
         @Override
         public Object load(Object key) {
@@ -1400,13 +1451,13 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
     @Test
     public void testAttributesConfigWithStoreFactoryImplementation() {
         MapStoreConfig mapStoreConfig = new MapStoreConfig()
-            .setEnabled(true)
-            .setInitialLoadMode(MapStoreConfig.InitialLoadMode.EAGER)
-            .setWriteDelaySeconds(10)
-            .setWriteCoalescing(true)
-            .setWriteBatchSize(500)
-            .setFactoryImplementation((MapStoreFactory) (mapName, properties) -> null)
-            .setProperty("key", "value");
+                .setEnabled(true)
+                .setInitialLoadMode(MapStoreConfig.InitialLoadMode.EAGER)
+                .setWriteDelaySeconds(10)
+                .setWriteCoalescing(true)
+                .setWriteBatchSize(500)
+                .setFactoryImplementation((MapStoreFactory) (mapName, properties) -> null)
+                .setProperty("key", "value");
 
         testMap(mapStoreConfig);
     }
@@ -1616,8 +1667,8 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
                 .setPersistWanReplicatedData(false);
 
         wanReplicationConfig.setConsumerConfig(wanConsumerConfig)
-                            .addBatchReplicationPublisherConfig(batchPublisher)
-                            .addCustomPublisherConfig(customPublisher);
+                .addBatchReplicationPublisherConfig(batchPublisher)
+                .addCustomPublisherConfig(customPublisher);
 
         Config config = new Config().addWanReplicationConfig(wanReplicationConfig);
         Config xmlConfig = getNewConfigViaXMLGenerator(config);
@@ -1702,35 +1753,6 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         ReliableTopicConfig actualConfig = getNewConfigViaXMLGenerator(cfg).getReliableTopicConfig(testTopic);
 
         assertEquals(expectedConfig, actualConfig);
-    }
-
-    @Test
-    public void testScheduledExecutor() {
-        Config cfg = new Config();
-        ScheduledExecutorConfig scheduledExecutorConfig =
-                new ScheduledExecutorConfig()
-                        .setCapacity(1)
-                        .setCapacityPolicy(ScheduledExecutorConfig.CapacityPolicy.PER_PARTITION)
-                        .setDurability(2)
-                        .setName("Existing")
-                        .setPoolSize(3)
-                        .setSplitBrainProtectionName("splitBrainProtection")
-                        .setMergePolicyConfig(new MergePolicyConfig("JediPolicy", 23));
-        cfg.addScheduledExecutorConfig(scheduledExecutorConfig);
-
-        ScheduledExecutorConfig defaultSchedExecConfig = new ScheduledExecutorConfig();
-        cfg.addScheduledExecutorConfig(defaultSchedExecConfig);
-
-        ScheduledExecutorConfig existing = getNewConfigViaXMLGenerator(cfg).getScheduledExecutorConfig("Existing");
-        assertEquals(scheduledExecutorConfig, existing);
-
-        ScheduledExecutorConfig fallsbackToDefault = getNewConfigViaXMLGenerator(cfg)
-                .getScheduledExecutorConfig("NotExisting/Default");
-        assertEquals(defaultSchedExecConfig.getMergePolicyConfig(), fallsbackToDefault.getMergePolicyConfig());
-        assertEquals(defaultSchedExecConfig.getCapacity(), fallsbackToDefault.getCapacity());
-        assertEquals(defaultSchedExecConfig.getCapacityPolicy(), fallsbackToDefault.getCapacityPolicy());
-        assertEquals(defaultSchedExecConfig.getPoolSize(), fallsbackToDefault.getPoolSize());
-        assertEquals(defaultSchedExecConfig.getDurability(), fallsbackToDefault.getDurability());
     }
 
     @Test
@@ -1823,15 +1845,15 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         Config config = new Config();
 
         config.getMetricsConfig()
-              .setEnabled(false)
-              .setCollectionFrequencySeconds(10);
+                .setEnabled(false)
+                .setCollectionFrequencySeconds(10);
 
         config.getMetricsConfig().getManagementCenterConfig()
-              .setEnabled(false)
-              .setRetentionSeconds(11);
+                .setEnabled(false)
+                .setRetentionSeconds(11);
 
         config.getMetricsConfig().getJmxConfig()
-              .setEnabled(false);
+                .setEnabled(false);
 
         MetricsConfig generatedConfig = getNewConfigViaXMLGenerator(config).getMetricsConfig();
         assertTrue(generatedConfig + " should be compatible with " + config.getMetricsConfig(),
@@ -1843,9 +1865,9 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         Config config = new Config();
 
         config.getInstanceTrackingConfig()
-              .setEnabled(true)
-              .setFileName("/dummy/file")
-              .setFormatPattern("dummy-pattern with $HZ_INSTANCE_TRACKING{placeholder} and $RND{placeholder}");
+                .setEnabled(true)
+                .setFileName("/dummy/file")
+                .setFormatPattern("dummy-pattern with $HZ_INSTANCE_TRACKING{placeholder} and $RND{placeholder}");
 
         InstanceTrackingConfig generatedConfig = getNewConfigViaXMLGenerator(config).getInstanceTrackingConfig();
         assertTrue(generatedConfig + " should be compatible with " + config.getInstanceTrackingConfig(),
@@ -2048,10 +2070,10 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         Config config = new Config();
 
         config.getAuditlogConfig()
-              .setEnabled(true)
-              .setFactoryClassName("com.acme.AuditlogToSyslog")
-              .setProperty("host", "syslogserver.acme.com")
-              .setProperty("port", "514");
+                .setEnabled(true)
+                .setFactoryClassName("com.acme.AuditlogToSyslog")
+                .setProperty("host", "syslogserver.acme.com")
+                .setProperty("port", "514");
         AuditlogConfig generatedConfig = getNewConfigViaXMLGenerator(config).getAuditlogConfig();
         assertTrue(generatedConfig + " should be compatible with " + config.getAuditlogConfig(),
                 new ConfigCompatibilityChecker.AuditlogConfigChecker().check(config.getAuditlogConfig(), generatedConfig));

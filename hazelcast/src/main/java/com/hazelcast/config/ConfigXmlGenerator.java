@@ -133,7 +133,7 @@ public class ConfigXmlGenerator {
         gen.node("license-key", getOrMaskValue(config.getLicenseKey()))
                 .node("instance-name", config.getInstanceName())
                 .node("cluster-name", config.getClusterName())
-                ;
+        ;
 
         managementCenterXmlGenerator(gen, config);
         gen.appendProperties(config.getProperties());
@@ -327,7 +327,7 @@ public class ConfigXmlGenerator {
         }
         XmlGenerator tlsGen = gen.open("tls", "roleAttribute", c.getRoleAttribute());
         addClusterLoginElements(tlsGen, c)
-            .close();
+                .close();
     }
 
     private static void ldapAuthenticationGenerator(XmlGenerator gen, LdapAuthenticationConfig c) {
@@ -335,27 +335,27 @@ public class ConfigXmlGenerator {
             return;
         }
         addClusterLoginElements(gen.open("ldap"), c)
-            .node("url", c.getUrl())
-            .nodeIfContents("socket-factory-class-name", c.getSocketFactoryClassName())
-            .nodeIfContents("parse-dn", c.isParseDn())
-            .nodeIfContents("role-context", c.getRoleContext())
-            .nodeIfContents("role-filter", c.getRoleFilter())
-            .nodeIfContents("role-mapping-attribute", c.getRoleMappingAttribute())
-            .nodeIfContents("role-mapping-mode", c.getRoleMappingMode())
-            .nodeIfContents("role-name-attribute", c.getRoleNameAttribute())
-            .nodeIfContents("role-recursion-max-depth", c.getRoleRecursionMaxDepth())
-            .nodeIfContents("role-search-scope", c.getRoleSearchScope())
-            .nodeIfContents("user-name-attribute", c.getUserNameAttribute())
-            .nodeIfContents("system-user-dn", c.getSystemUserDn())
-            .nodeIfContents("system-user-password", c.getSystemUserPassword())
-            .nodeIfContents("system-authentication", c.getSystemAuthentication())
-            .nodeIfContents("security-realm", c.getSecurityRealm())
-            .nodeIfContents("password-attribute", c.getPasswordAttribute())
-            .nodeIfContents("user-context", c.getUserContext())
-            .nodeIfContents("user-filter", c.getUserFilter())
-            .nodeIfContents("user-search-scope", c.getUserSearchScope())
-            .nodeIfContents("skip-authentication", c.getSkipAuthentication())
-            .close();
+                .node("url", c.getUrl())
+                .nodeIfContents("socket-factory-class-name", c.getSocketFactoryClassName())
+                .nodeIfContents("parse-dn", c.isParseDn())
+                .nodeIfContents("role-context", c.getRoleContext())
+                .nodeIfContents("role-filter", c.getRoleFilter())
+                .nodeIfContents("role-mapping-attribute", c.getRoleMappingAttribute())
+                .nodeIfContents("role-mapping-mode", c.getRoleMappingMode())
+                .nodeIfContents("role-name-attribute", c.getRoleNameAttribute())
+                .nodeIfContents("role-recursion-max-depth", c.getRoleRecursionMaxDepth())
+                .nodeIfContents("role-search-scope", c.getRoleSearchScope())
+                .nodeIfContents("user-name-attribute", c.getUserNameAttribute())
+                .nodeIfContents("system-user-dn", c.getSystemUserDn())
+                .nodeIfContents("system-user-password", c.getSystemUserPassword())
+                .nodeIfContents("system-authentication", c.getSystemAuthentication())
+                .nodeIfContents("security-realm", c.getSecurityRealm())
+                .nodeIfContents("password-attribute", c.getPasswordAttribute())
+                .nodeIfContents("user-context", c.getUserContext())
+                .nodeIfContents("user-filter", c.getUserFilter())
+                .nodeIfContents("user-search-scope", c.getUserSearchScope())
+                .nodeIfContents("skip-authentication", c.getSkipAuthentication())
+                .close();
     }
 
     private static void kerberosAuthenticationGenerator(XmlGenerator gen, KerberosAuthenticationConfig c) {
@@ -364,9 +364,9 @@ public class ConfigXmlGenerator {
         }
         XmlGenerator kerberosGen = gen.open("kerberos");
         addClusterLoginElements(kerberosGen, c)
-            .nodeIfContents("relax-flags-check", c.getRelaxFlagsCheck())
-            .nodeIfContents("use-name-without-realm", c.getUseNameWithoutRealm())
-            .nodeIfContents("security-realm", c.getSecurityRealm());
+                .nodeIfContents("relax-flags-check", c.getRelaxFlagsCheck())
+                .nodeIfContents("use-name-without-realm", c.getUseNameWithoutRealm())
+                .nodeIfContents("security-realm", c.getSecurityRealm());
         ldapAuthenticationGenerator(kerberosGen, c.getLdapAuthenticationConfig());
         kerberosGen.close();
     }
@@ -376,12 +376,12 @@ public class ConfigXmlGenerator {
             return;
         }
         gen.open("kerberos")
-            .nodeIfContents("realm", c.getRealm())
-            .nodeIfContents("security-realm", c.getSecurityRealm())
-            .nodeIfContents("service-name-prefix", c.getServiceNamePrefix())
-            .nodeIfContents("spn", c.getSpn())
-            .nodeIfContents("use-canonical-hostname", c.getUseCanonicalHostname())
-            .close();
+                .nodeIfContents("realm", c.getRealm())
+                .nodeIfContents("security-realm", c.getSecurityRealm())
+                .nodeIfContents("service-name-prefix", c.getServiceNamePrefix())
+                .nodeIfContents("spn", c.getSpn())
+                .nodeIfContents("use-canonical-hostname", c.getUseCanonicalHostname())
+                .close();
     }
 
     private static XmlGenerator addClusterLoginElements(XmlGenerator gen, AbstractClusterLoginConfig<?> c) {
@@ -563,6 +563,7 @@ public class ConfigXmlGenerator {
                     .node("durability", ex.getDurability())
                     .node("capacity", ex.getCapacity())
                     .node("split-brain-protection-ref", ex.getSplitBrainProtectionName())
+                    .node("statistics-enabled", ex.isStatisticsEnabled())
                     .close();
         }
     }
@@ -578,6 +579,7 @@ public class ConfigXmlGenerator {
                     .node("capacity-policy", ex.getCapacityPolicy().name())
                     .node("split-brain-protection-ref", ex.getSplitBrainProtectionName())
                     .node("merge-policy", mergePolicyConfig.getPolicy(), "batch-size", mergePolicyConfig.getBatchSize())
+                    .node("statistics-enabled", ex.isStatisticsEnabled())
                     .close();
         }
     }
@@ -672,9 +674,9 @@ public class ConfigXmlGenerator {
             if (storeConfig != null) {
                 gen.open("queue-store", "enabled", storeConfig.isEnabled())
                         .node("class-name",
-                            classNameOrImplClass(storeConfig.getClassName(), storeConfig.getStoreImplementation()))
+                                classNameOrImplClass(storeConfig.getClassName(), storeConfig.getStoreImplementation()))
                         .node("factory-class-name",
-                            classNameOrImplClass(storeConfig.getFactoryClassName(), storeConfig.getFactoryImplementation()))
+                                classNameOrImplClass(storeConfig.getFactoryClassName(), storeConfig.getFactoryImplementation()))
                         .appendProperties(storeConfig.getProperties())
                         .close();
             }
@@ -700,9 +702,9 @@ public class ConfigXmlGenerator {
             if (storeConfig != null) {
                 gen.open("ringbuffer-store", "enabled", storeConfig.isEnabled())
                         .node("class-name",
-                            classNameOrImplClass(storeConfig.getClassName(), storeConfig.getStoreImplementation()))
+                                classNameOrImplClass(storeConfig.getClassName(), storeConfig.getStoreImplementation()))
                         .node("factory-class-name",
-                            classNameOrImplClass(storeConfig.getFactoryClassName(), storeConfig.getFactoryImplementation()))
+                                classNameOrImplClass(storeConfig.getFactoryClassName(), storeConfig.getFactoryImplementation()))
                         .appendProperties(storeConfig.getProperties());
                 gen.close();
             }
@@ -1365,7 +1367,7 @@ public class ConfigXmlGenerator {
     }
 
     protected void factoryWithPropertiesXmlGenerator(XmlGenerator gen, String elementName,
-            AbstractFactoryWithPropertiesConfig<?> factoryWithProps) {
+                                                     AbstractFactoryWithPropertiesConfig<?> factoryWithProps) {
         gen.open(elementName, "enabled", factoryWithProps != null && factoryWithProps.isEnabled());
         if (factoryWithProps != null) {
             gen.node("factory-class-name", factoryWithProps.getFactoryClassName())
@@ -1389,7 +1391,7 @@ public class ConfigXmlGenerator {
             return;
         }
         gen.node("algorithm", sec.getAlgorithm())
-           .node("salt", getOrMaskValue(sec.getSalt()));
+                .node("salt", getOrMaskValue(sec.getSalt()));
     }
 
     private void symmetricEncInterceptorConfigXmlGenerator(XmlGenerator gen, SymmetricEncryptionConfig sec) {
@@ -1399,7 +1401,7 @@ public class ConfigXmlGenerator {
         gen.open("symmetric-encryption", "enabled", sec.isEnabled());
         commonSymmetricEncInterceptorConfigXmlBodyGenerator(gen, sec);
         gen.node("password", getOrMaskValue(sec.getPassword()))
-           .node("iteration-count", sec.getIterationCount());
+                .node("iteration-count", sec.getIterationCount());
         gen.close();
     }
 
@@ -1464,7 +1466,7 @@ public class ConfigXmlGenerator {
             return;
         }
         gen.open("encryption-at-rest", "enabled", encryptionAtRestConfig.isEnabled())
-           .node("key-size", encryptionAtRestConfig.getKeySize());
+                .node("key-size", encryptionAtRestConfig.getKeySize());
         commonSymmetricEncInterceptorConfigXmlBodyGenerator(gen, encryptionAtRestConfig);
         secureStoreXmlGenerator(gen, encryptionAtRestConfig.getSecureStoreConfig());
         gen.close();
@@ -1484,20 +1486,20 @@ public class ConfigXmlGenerator {
 
     private void javaKeyStoreSecureStoreXmlGenerator(XmlGenerator gen, JavaKeyStoreSecureStoreConfig secureStoreConfig) {
         gen.open("keystore")
-           .node("path", secureStoreConfig.getPath().getAbsolutePath())
-           .node("type", secureStoreConfig.getType())
-           .node("password", getOrMaskValue(secureStoreConfig.getPassword()))
-           .node("polling-interval", secureStoreConfig.getPollingInterval())
-           .node("current-key-alias", secureStoreConfig.getCurrentKeyAlias());
+                .node("path", secureStoreConfig.getPath().getAbsolutePath())
+                .node("type", secureStoreConfig.getType())
+                .node("password", getOrMaskValue(secureStoreConfig.getPassword()))
+                .node("polling-interval", secureStoreConfig.getPollingInterval())
+                .node("current-key-alias", secureStoreConfig.getCurrentKeyAlias());
         gen.close();
     }
 
     private void vaultSecureStoreXmlGenerator(XmlGenerator gen, VaultSecureStoreConfig secureStoreConfig) {
         gen.open("vault")
-           .node("address", secureStoreConfig.getAddress())
-           .node("secret-path", secureStoreConfig.getSecretPath())
-           .node("token", getOrMaskValue(secureStoreConfig.getToken()))
-           .node("polling-interval", secureStoreConfig.getPollingInterval());
+                .node("address", secureStoreConfig.getAddress())
+                .node("secret-path", secureStoreConfig.getSecretPath())
+                .node("token", getOrMaskValue(secureStoreConfig.getToken()))
+                .node("polling-interval", secureStoreConfig.getPollingInterval());
         sslConfigXmlGenerator(gen, secureStoreConfig.getSSLConfig());
         gen.close();
     }
@@ -1549,15 +1551,15 @@ public class ConfigXmlGenerator {
     private static void cpSubsystemConfig(XmlGenerator gen, Config config) {
         CPSubsystemConfig cpSubsystemConfig = config.getCPSubsystemConfig();
         gen.open("cp-subsystem")
-           .node("cp-member-count", cpSubsystemConfig.getCPMemberCount())
-           .node("group-size", cpSubsystemConfig.getGroupSize())
-           .node("session-time-to-live-seconds", cpSubsystemConfig.getSessionTimeToLiveSeconds())
-           .node("session-heartbeat-interval-seconds", cpSubsystemConfig.getSessionHeartbeatIntervalSeconds())
-           .node("missing-cp-member-auto-removal-seconds", cpSubsystemConfig.getMissingCPMemberAutoRemovalSeconds())
-           .node("fail-on-indeterminate-operation-state", cpSubsystemConfig.isFailOnIndeterminateOperationState())
-           .node("persistence-enabled", cpSubsystemConfig.isPersistenceEnabled())
-           .node("base-dir", cpSubsystemConfig.getBaseDir().getAbsolutePath())
-           .node("data-load-timeout-seconds", cpSubsystemConfig.getDataLoadTimeoutSeconds());
+                .node("cp-member-count", cpSubsystemConfig.getCPMemberCount())
+                .node("group-size", cpSubsystemConfig.getGroupSize())
+                .node("session-time-to-live-seconds", cpSubsystemConfig.getSessionTimeToLiveSeconds())
+                .node("session-heartbeat-interval-seconds", cpSubsystemConfig.getSessionHeartbeatIntervalSeconds())
+                .node("missing-cp-member-auto-removal-seconds", cpSubsystemConfig.getMissingCPMemberAutoRemovalSeconds())
+                .node("fail-on-indeterminate-operation-state", cpSubsystemConfig.isFailOnIndeterminateOperationState())
+                .node("persistence-enabled", cpSubsystemConfig.isPersistenceEnabled())
+                .node("base-dir", cpSubsystemConfig.getBaseDir().getAbsolutePath())
+                .node("data-load-timeout-seconds", cpSubsystemConfig.getDataLoadTimeoutSeconds());
 
         RaftAlgorithmConfig raftAlgorithmConfig = cpSubsystemConfig.getRaftAlgorithmConfig();
         gen.open("raft-algorithm")
@@ -1596,30 +1598,30 @@ public class ConfigXmlGenerator {
     private static void instanceTrackingConfig(XmlGenerator gen, Config config) {
         InstanceTrackingConfig trackingConfig = config.getInstanceTrackingConfig();
         gen.open("instance-tracking", "enabled", trackingConfig.isEnabled())
-           .node("file-name", trackingConfig.getFileName())
-           .node("format-pattern", trackingConfig.getFormatPattern())
-           .close();
+                .node("file-name", trackingConfig.getFileName())
+                .node("format-pattern", trackingConfig.getFormatPattern())
+                .close();
     }
 
     private static void metricsConfig(XmlGenerator gen, Config config) {
         MetricsConfig metricsConfig = config.getMetricsConfig();
         gen.open("metrics", "enabled", metricsConfig.isEnabled())
-           .open("management-center", "enabled", metricsConfig.getManagementCenterConfig().isEnabled())
-           .node("retention-seconds", metricsConfig.getManagementCenterConfig().getRetentionSeconds())
-           .close()
-           .open("jmx", "enabled", metricsConfig.getJmxConfig().isEnabled())
-           .close()
-           .node("collection-frequency-seconds", metricsConfig.getCollectionFrequencySeconds())
-           .close();
+                .open("management-center", "enabled", metricsConfig.getManagementCenterConfig().isEnabled())
+                .node("retention-seconds", metricsConfig.getManagementCenterConfig().getRetentionSeconds())
+                .close()
+                .open("jmx", "enabled", metricsConfig.getJmxConfig().isEnabled())
+                .close()
+                .node("collection-frequency-seconds", metricsConfig.getCollectionFrequencySeconds())
+                .close();
     }
 
     private static void sqlConfig(XmlGenerator gen, Config config) {
         SqlConfig sqlConfig = config.getSqlConfig();
         gen.open("sql")
-            .node("executor-pool-size", sqlConfig.getExecutorPoolSize())
-            .node("operation-pool-size", sqlConfig.getOperationPoolSize())
-            .node("statement-timeout-millis", sqlConfig.getStatementTimeoutMillis())
-            .close();
+                .node("executor-pool-size", sqlConfig.getExecutorPoolSize())
+                .node("operation-pool-size", sqlConfig.getOperationPoolSize())
+                .node("statement-timeout-millis", sqlConfig.getStatementTimeoutMillis())
+                .close();
     }
 
     private static void userCodeDeploymentConfig(XmlGenerator gen, Config config) {
@@ -1675,18 +1677,18 @@ public class ConfigXmlGenerator {
         gen.open("native-memory",
                 "enabled", nativeMemoryConfig.isEnabled(),
                 "allocator-type", nativeMemoryConfig.getAllocatorType())
-           .node("size", null,
-                   "unit", nativeMemoryConfig.getSize().getUnit(),
-                   "value", nativeMemoryConfig.getSize().getValue())
-           .node("min-block-size", nativeMemoryConfig.getMinBlockSize())
-           .node("page-size", nativeMemoryConfig.getPageSize())
-           .node("metadata-space-percentage", nativeMemoryConfig.getMetadataSpacePercentage());
+                .node("size", null,
+                        "unit", nativeMemoryConfig.getSize().getUnit(),
+                        "value", nativeMemoryConfig.getSize().getValue())
+                .node("min-block-size", nativeMemoryConfig.getMinBlockSize())
+                .node("page-size", nativeMemoryConfig.getPageSize())
+                .node("metadata-space-percentage", nativeMemoryConfig.getMetadataSpacePercentage());
 
         List<PersistentMemoryDirectoryConfig> directoryConfigs = nativeMemoryConfig.getPersistentMemoryConfig()
-                                                                                   .getDirectoryConfigs();
+                .getDirectoryConfigs();
         if (!directoryConfigs.isEmpty()) {
             gen.open("persistent-memory")
-               .open("directories");
+                    .open("directories");
             for (PersistentMemoryDirectoryConfig dirConfig : directoryConfigs) {
                 if (dirConfig.isNumaNodeSet()) {
                     gen.node("directory", dirConfig.getDirectory(),
@@ -1696,7 +1698,7 @@ public class ConfigXmlGenerator {
                 }
             }
             gen.close()
-               .close();
+                    .close();
         }
 
         gen.close();

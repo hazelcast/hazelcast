@@ -113,6 +113,14 @@
                                         </xs:documentation>
                                     </xs:annotation>
                                 </xs:attribute>
+                                <xs:attribute name="statistics-enabled" type="parameterized-boolean"
+                                              use="optional" default="true">
+                                    <xs:annotation>
+                                        <xs:documentation>
+                                            Enable/disable statistics
+                                        </xs:documentation>
+                                    </xs:annotation>
+                                </xs:attribute>
                             </xs:complexType>
                         </xs:element>
                         <xs:element name="scheduled-executor-service" minOccurs="0" maxOccurs="unbounded">
@@ -169,6 +177,14 @@
                                             Avoid using this attribute with a small cluster: if the cluster is small it will
                                             be hosting more partitions, and therefore tasks, than that of a larger
                                             cluster.
+                                        </xs:documentation>
+                                    </xs:annotation>
+                                </xs:attribute>
+                                <xs:attribute name="statistics-enabled" type="parameterized-boolean"
+                                              use="optional" default="true">
+                                    <xs:annotation>
+                                        <xs:documentation>
+                                            Enable/disable statistics
                                         </xs:documentation>
                                     </xs:annotation>
                                 </xs:attribute>
