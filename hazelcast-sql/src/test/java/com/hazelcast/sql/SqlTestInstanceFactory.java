@@ -115,6 +115,9 @@ public abstract class SqlTestInstanceFactory {
         @Override
         public HazelcastInstance newHazelcastClient(ClientConfig clientConfig) {
             try {
+                if (clientConfig != null) {
+                    clientConfig.setClusterName("jet");
+                }
                 Object jetInstance = jetFactory.getClass().getMethod("newClient", clientConfig.getClass())
                                                .invoke(jetFactory, clientConfig);
                 return (HazelcastInstance) jetInstance.getClass().getMethod("getHazelcastInstance").invoke(jetInstance);
