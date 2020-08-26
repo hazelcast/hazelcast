@@ -11,6 +11,39 @@ The user will be able to track what kind of instances were started on a particul
 
 The file name and the file contents are configurable and may contain placeholders. The placeholders have a prefix to be able to distinguish between a placeholder for the instance tracking feature as opposed to some other placeholder like XML placeholders. We use the same style as the `EncryptionReplacer` by adding a "namespace" to the placeholder prefix. For example, `$HZ_INSTANCE_TRACKING{start_timestamp}` (the namespace here being `HZ_INSTANCE_TRACKING`).
 
+Here is an example of programmatic Java configuration:
+```java
+Config config = new Config();
+config.getInstanceTrackingConfig()
+      .setEnabled(true)
+      .setFileName("/tmp/hz-tracking.txt")
+      .setFormatPattern("$HZ_INSTANCE_TRACKING{product}:$HZ_INSTANCE_TRACKING{version}");
+```
+
+The equivalent XML configuration:
+```xml
+<hazelcast xmlns="http://www.hazelcast.com/schema/config"
+           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+           xsi:schemaLocation="http://www.hazelcast.com/schema/config
+           http://www.hazelcast.com/schema/config/hazelcast-config-4.1.xsd">
+    
+    <instance-tracking enabled="true">
+        <file-name>/tmp/hz-tracking.txt</file-name>
+        <format-pattern>$HZ_INSTANCE_TRACKING{product}:$HZ_INSTANCE_TRACKING{version}</format-pattern>
+    </instance-tracking>
+
+</hazelcast>
+```
+
+The equivalent YAML configuration:
+```yaml
+hazelcast:
+  instance-tracking:
+    enabled: true
+    file-name: /tmp/hz-tracking.txt
+    format-pattern: $HZ_INSTANCE_TRACKING{product}:$HZ_INSTANCE_TRACKING{version}
+```
+
 The feature supports both OS and EE members and clients, is disabled by default and uses a JVM argument to distinguish if the instance was started using `start.sh/bat` or inside another application by invoking `Hazelcast.newHazelcastInstance()`.
 
 The file overwrites any existing file with the same name. Placeholders in the file name can be used to create a new file each time. Failing to write the file will only generate a warning and the instance is allowed to start.
