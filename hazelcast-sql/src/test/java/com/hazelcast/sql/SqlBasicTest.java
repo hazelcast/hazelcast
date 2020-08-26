@@ -203,63 +203,68 @@ public class SqlBasicTest extends SqlTestSupport {
                 AbstractPojoKey key = key(key0);
                 AbstractPojo val = map.get(key);
 
-                checkRowValue(key.getKey(), row, "key");
-                checkRowValue(val.isBooleanVal(), row, "booleanVal");
-                checkRowValue(val.getTinyIntVal(), row, "tinyIntVal");
-                checkRowValue(val.getSmallIntVal(), row, "smallIntVal");
-                checkRowValue(val.getIntVal(), row, "intVal");
-                checkRowValue(val.getBigIntVal(), row, "bigIntVal");
-                checkRowValue(val.getRealVal(), row, "realVal");
-                checkRowValue(val.getDoubleVal(), row, "doubleVal");
+                checkRowValue(SqlColumnType.BIGINT, key.getKey(), row, "key");
+                checkRowValue(SqlColumnType.BOOLEAN, val.isBooleanVal(), row, "booleanVal");
+                checkRowValue(SqlColumnType.TINYINT, val.getTinyIntVal(), row, "tinyIntVal");
+                checkRowValue(SqlColumnType.SMALLINT, val.getSmallIntVal(), row, "smallIntVal");
+                checkRowValue(SqlColumnType.INTEGER, val.getIntVal(), row, "intVal");
+                checkRowValue(SqlColumnType.BIGINT, val.getBigIntVal(), row, "bigIntVal");
+                checkRowValue(SqlColumnType.REAL, val.getRealVal(), row, "realVal");
+                checkRowValue(SqlColumnType.DOUBLE, val.getDoubleVal(), row, "doubleVal");
 
                 if (!portable) {
-                    checkRowValue(new BigDecimal(val.getDecimalBigIntegerVal()), row, "decimalBigIntegerVal");
-                    checkRowValue(val.getDecimalVal(), row, "decimalVal");
+                    checkRowValue(SqlColumnType.DECIMAL, new BigDecimal(val.getDecimalBigIntegerVal()), row, "decimalBigIntegerVal");
+                    checkRowValue(SqlColumnType.DECIMAL, val.getDecimalVal(), row, "decimalVal");
                 }
 
-                checkRowValue(Character.toString(val.getCharVal()), row, "charVal");
-                checkRowValue(val.getVarcharVal(), row, "varcharVal");
+                checkRowValue(SqlColumnType.VARCHAR, Character.toString(val.getCharVal()), row, "charVal");
+                checkRowValue(SqlColumnType.VARCHAR, val.getVarcharVal(), row, "varcharVal");
 
                 if (!portable) {
-                    checkRowValue(val.getDateVal(), row, "dateVal");
-                    checkRowValue(val.getTimeVal(), row, "timeVal");
-                    checkRowValue(val.getTimestampVal(), row, "timestampVal");
+                    checkRowValue(SqlColumnType.DATE, val.getDateVal(), row, "dateVal");
+                    checkRowValue(SqlColumnType.TIME, val.getTimeVal(), row, "timeVal");
+                    checkRowValue(SqlColumnType.TIMESTAMP, val.getTimestampVal(), row, "timestampVal");
 
                     checkRowValue(
+                        SqlColumnType.TIMESTAMP_WITH_TIME_ZONE,
                         OffsetDateTime.ofInstant(val.getTsTzDateVal().toInstant(), ZoneId.systemDefault()),
                         row,
                         "tsTzDateVal"
                     );
 
                     checkRowValue(
+                        SqlColumnType.TIMESTAMP_WITH_TIME_ZONE,
                         val.getTsTzCalendarVal().toZonedDateTime().toOffsetDateTime(),
                         row,
                         "tsTzCalendarVal"
                     );
 
                     checkRowValue(
+                        SqlColumnType.TIMESTAMP_WITH_TIME_ZONE,
                         OffsetDateTime.ofInstant(val.getTsTzInstantVal(), ZoneId.systemDefault()),
                         row,
                         "tsTzInstantVal"
                     );
 
                     checkRowValue(
+                        SqlColumnType.TIMESTAMP_WITH_TIME_ZONE,
                         val.getTsTzOffsetDateTimeVal(),
                         row,
                         "tsTzOffsetDateTimeVal"
                     );
 
                     checkRowValue(
+                        SqlColumnType.TIMESTAMP_WITH_TIME_ZONE,
                         val.getTsTzZonedDateTimeVal().toOffsetDateTime(),
                         row,
                         "tsTzZonedDateTimeVal"
                     );
 
-                    checkRowValue(val.getObjectVal(), row, "objectVal");
+                    checkRowValue(SqlColumnType.OBJECT, val.getObjectVal(), row, "objectVal");
                 }
 
                 if (portable) {
-                    checkRowValue(((PortablePojo) val).getPortableVal(), row, "portableVal");
+                    checkRowValue(SqlColumnType.OBJECT, ((PortablePojo) val).getPortableVal(), row, "portableVal");
                 }
 
                 uniqueKeys.add(key0);
@@ -298,11 +303,14 @@ public class SqlBasicTest extends SqlTestSupport {
             + sqlInternalService(member2).getClientStateRegistry().getCursorCount();
     }
 
-    private void checkRowValue(Object expectedValue, SqlRow row, String columnName) {
+    private void checkRowValue(SqlColumnType expectedType, Object expectedValue, SqlRow row, String columnName) {
         columnName = adjustFieldName(columnName);
 
         int columnIndex = row.getMetadata().findColumn(columnName);
         assertNotEquals(SqlRowMetadata.COLUMN_NOT_FOUND, columnIndex);
+
+        assertEquals(expectedType, row.getMetadata().getColumn(columnIndex).getType());
+
         Object valueByIndex = row.getObject(columnIndex);
         assertEquals(expectedValue, valueByIndex);
 

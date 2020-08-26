@@ -30,6 +30,10 @@ public final class ExpressionTypes {
     public static final ExpressionType<?> STRING = new ExpressionType.StringType();
     public static final ExpressionType<?> CHARACTER = new ExpressionType.CharacterType();
     public static final ExpressionType<?> OBJECT = new ExpressionType.ObjectType();
+    public static final ExpressionType<?> LOCAL_DATE = new ExpressionType.LocalDateType();
+    public static final ExpressionType<?> LOCAL_TIME = new ExpressionType.LocalTimeType();
+    public static final ExpressionType<?> LOCAL_DATE_TIME = new ExpressionType.LocalDateTimeType();
+    public static final ExpressionType<?> OFFSET_DATE_TIME = new ExpressionType.OffsetDateTimeType();
 
     private ExpressionTypes() {
         // No-op.

@@ -70,6 +70,8 @@ public class HazelcastCalciteCatalogReader extends CalciteCatalogReader {
     public RelDataType getNamedType(SqlIdentifier typeName) {
         if (HazelcastTypeSystem.isObject(typeName)) {
             return typeFactory.createSqlType(SqlTypeName.ANY);
+        } else if (HazelcastTypeSystem.isTimestampWithTimeZone(typeName)) {
+            return typeFactory.createSqlType(SqlTypeName.TIMESTAMP_WITH_LOCAL_TIME_ZONE);
         }
 
         return super.getNamedType(typeName);

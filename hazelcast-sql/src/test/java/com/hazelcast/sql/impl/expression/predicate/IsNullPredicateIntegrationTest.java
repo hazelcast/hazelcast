@@ -44,8 +44,12 @@ import static com.hazelcast.sql.support.expressions.ExpressionTypes.CHARACTER;
 import static com.hazelcast.sql.support.expressions.ExpressionTypes.DOUBLE;
 import static com.hazelcast.sql.support.expressions.ExpressionTypes.FLOAT;
 import static com.hazelcast.sql.support.expressions.ExpressionTypes.INTEGER;
+import static com.hazelcast.sql.support.expressions.ExpressionTypes.LOCAL_DATE;
+import static com.hazelcast.sql.support.expressions.ExpressionTypes.LOCAL_DATE_TIME;
+import static com.hazelcast.sql.support.expressions.ExpressionTypes.LOCAL_TIME;
 import static com.hazelcast.sql.support.expressions.ExpressionTypes.LONG;
 import static com.hazelcast.sql.support.expressions.ExpressionTypes.OBJECT;
+import static com.hazelcast.sql.support.expressions.ExpressionTypes.OFFSET_DATE_TIME;
 import static com.hazelcast.sql.support.expressions.ExpressionTypes.SHORT;
 import static com.hazelcast.sql.support.expressions.ExpressionTypes.STRING;
 import static org.junit.Assert.assertEquals;
@@ -127,6 +131,11 @@ public class IsNullPredicateIntegrationTest extends SqlExpressionIntegrationTest
         checkColumn(STRING);
         checkColumn(CHARACTER);
 
+        checkColumn(LOCAL_DATE);
+        checkColumn(LOCAL_TIME);
+        checkColumn(LOCAL_DATE_TIME);
+        checkColumn(OFFSET_DATE_TIME);
+
         checkColumn(OBJECT);
     }
 
@@ -189,6 +198,11 @@ public class IsNullPredicateIntegrationTest extends SqlExpressionIntegrationTest
 
         checkNotNullParameter(key, STRING);
         checkNotNullParameter(key, CHARACTER);
+
+        checkNotNullParameter(key, LOCAL_DATE);
+        checkNotNullParameter(key, LOCAL_TIME);
+        checkNotNullParameter(key, LOCAL_DATE_TIME);
+        checkNotNullParameter(key, OFFSET_DATE_TIME);
 
         checkNotNullParameter(key, OBJECT);
     }

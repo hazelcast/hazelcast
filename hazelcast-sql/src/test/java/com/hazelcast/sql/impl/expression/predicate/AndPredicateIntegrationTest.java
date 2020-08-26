@@ -25,8 +25,12 @@ import com.hazelcast.sql.support.expressions.ExpressionBiValue.BooleanBigInteger
 import com.hazelcast.sql.support.expressions.ExpressionBiValue.BooleanBooleanVal;
 import com.hazelcast.sql.support.expressions.ExpressionBiValue.BooleanByteVal;
 import com.hazelcast.sql.support.expressions.ExpressionBiValue.BooleanDoubleVal;
+import com.hazelcast.sql.support.expressions.ExpressionBiValue.BooleanLocalDateTimeVal;
+import com.hazelcast.sql.support.expressions.ExpressionBiValue.BooleanLocalDateVal;
+import com.hazelcast.sql.support.expressions.ExpressionBiValue.BooleanLocalTimeVal;
 import com.hazelcast.sql.support.expressions.ExpressionBiValue.BooleanLongVal;
 import com.hazelcast.sql.support.expressions.ExpressionBiValue.BooleanObjectVal;
+import com.hazelcast.sql.support.expressions.ExpressionBiValue.BooleanOffsetDateTimeVal;
 import com.hazelcast.sql.support.expressions.ExpressionBiValue.BooleanShortVal;
 import com.hazelcast.sql.support.expressions.ExpressionBiValue.CharacterBooleanVal;
 import com.hazelcast.sql.support.expressions.ExpressionBiValue.StringBigDecimalVal;
@@ -36,8 +40,12 @@ import com.hazelcast.sql.support.expressions.ExpressionBiValue.StringByteVal;
 import com.hazelcast.sql.support.expressions.ExpressionBiValue.StringDoubleVal;
 import com.hazelcast.sql.support.expressions.ExpressionBiValue.StringFloatVal;
 import com.hazelcast.sql.support.expressions.ExpressionBiValue.StringIntegerVal;
+import com.hazelcast.sql.support.expressions.ExpressionBiValue.StringLocalDateTimeVal;
+import com.hazelcast.sql.support.expressions.ExpressionBiValue.StringLocalDateVal;
+import com.hazelcast.sql.support.expressions.ExpressionBiValue.StringLocalTimeVal;
 import com.hazelcast.sql.support.expressions.ExpressionBiValue.StringLongVal;
 import com.hazelcast.sql.support.expressions.ExpressionBiValue.StringObjectVal;
+import com.hazelcast.sql.support.expressions.ExpressionBiValue.StringOffsetDateTimeVal;
 import com.hazelcast.sql.support.expressions.ExpressionBiValue.StringShortVal;
 import com.hazelcast.sql.support.expressions.ExpressionBiValue.StringStringVal;
 import com.hazelcast.sql.support.expressions.ExpressionValue;
@@ -103,6 +111,10 @@ public class AndPredicateIntegrationTest extends SqlExpressionIntegrationTestSup
         checkColumnColumnFailure(new BooleanBigDecimalVal().fields(true, null), SqlErrorCode.PARSING, "Cannot apply 'AND' to arguments of type '<BOOLEAN> AND <DECIMAL(38, 38)>'");
         checkColumnColumnFailure(new BooleanFloatVal().fields(true, null), SqlErrorCode.PARSING, "Cannot apply 'AND' to arguments of type '<BOOLEAN> AND <REAL>'");
         checkColumnColumnFailure(new BooleanDoubleVal().fields(true, null), SqlErrorCode.PARSING, "Cannot apply 'AND' to arguments of type '<BOOLEAN> AND <DOUBLE>'");
+        checkColumnColumnFailure(new BooleanLocalDateVal().fields(true, null), SqlErrorCode.PARSING, "Cannot apply 'AND' to arguments of type '<BOOLEAN> AND <DATE>'");
+        checkColumnColumnFailure(new BooleanLocalTimeVal().fields(true, null), SqlErrorCode.PARSING, "Cannot apply 'AND' to arguments of type '<BOOLEAN> AND <TIME>'");
+        checkColumnColumnFailure(new BooleanLocalDateTimeVal().fields(true, null), SqlErrorCode.PARSING, "Cannot apply 'AND' to arguments of type '<BOOLEAN> AND <TIMESTAMP>'");
+        checkColumnColumnFailure(new BooleanOffsetDateTimeVal().fields(true, null), SqlErrorCode.PARSING, "Cannot apply 'AND' to arguments of type '<BOOLEAN> AND <TIMESTAMP_WITH_TIME_ZONE>'");
         checkColumnColumnFailure(new BooleanObjectVal().fields(true, null), SqlErrorCode.PARSING, "Cannot apply 'AND' to arguments of type '<BOOLEAN> AND <OBJECT>'");
 
         // VARCHAR/unsupported
@@ -114,6 +126,10 @@ public class AndPredicateIntegrationTest extends SqlExpressionIntegrationTestSup
         checkColumnColumnFailure(new StringBigDecimalVal().fields("true", null), SqlErrorCode.PARSING, "Cannot apply 'AND' to arguments of type '<VARCHAR> AND <DECIMAL(38, 38)>'");
         checkColumnColumnFailure(new StringFloatVal().fields("true", null), SqlErrorCode.PARSING, "Cannot apply 'AND' to arguments of type '<VARCHAR> AND <REAL>'");
         checkColumnColumnFailure(new StringDoubleVal().fields("true", null), SqlErrorCode.PARSING, "Cannot apply 'AND' to arguments of type '<VARCHAR> AND <DOUBLE>'");
+        checkColumnColumnFailure(new StringLocalDateVal().fields("true", null), SqlErrorCode.PARSING, "Cannot apply 'AND' to arguments of type '<VARCHAR> AND <DATE>'");
+        checkColumnColumnFailure(new StringLocalTimeVal().fields("true", null), SqlErrorCode.PARSING, "Cannot apply 'AND' to arguments of type '<VARCHAR> AND <TIME>'");
+        checkColumnColumnFailure(new StringLocalDateTimeVal().fields("true", null), SqlErrorCode.PARSING, "Cannot apply 'AND' to arguments of type '<VARCHAR> AND <TIMESTAMP>'");
+        checkColumnColumnFailure(new StringOffsetDateTimeVal().fields("true", null), SqlErrorCode.PARSING, "Cannot apply 'AND' to arguments of type '<VARCHAR> AND <TIMESTAMP_WITH_TIME_ZONE>'");
         checkColumnColumnFailure(new StringObjectVal().fields("true", null), SqlErrorCode.PARSING, "Cannot apply 'AND' to arguments of type '<VARCHAR> AND <OBJECT>'");
 
         // COLUMN/PARAMETER
@@ -160,6 +176,10 @@ public class AndPredicateIntegrationTest extends SqlExpressionIntegrationTestSup
         checkFailure("?", "?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 1 from DECIMAL to BOOLEAN", true, BigDecimal.ONE);
         checkFailure("?", "?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 1 from REAL to BOOLEAN", true, 1f);
         checkFailure("?", "?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 1 from DOUBLE to BOOLEAN", true, 1d);
+        checkFailure("?", "?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 1 from DATE to BOOLEAN", true, LOCAL_DATE_VAL);
+        checkFailure("?", "?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 1 from TIME to BOOLEAN", true, LOCAL_TIME_VAL);
+        checkFailure("?", "?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 1 from TIMESTAMP to BOOLEAN", true, LOCAL_DATE_TIME_VAL);
+        checkFailure("?", "?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 1 from TIMESTAMP_WITH_TIME_ZONE to BOOLEAN", true, OFFSET_DATE_TIME_VAL);
         checkFailure("?", "?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 1 from OBJECT to BOOLEAN", true, new ExpressionValue.ObjectVal());
 
         checkValue("?", "true", RES_TRUE, true);
