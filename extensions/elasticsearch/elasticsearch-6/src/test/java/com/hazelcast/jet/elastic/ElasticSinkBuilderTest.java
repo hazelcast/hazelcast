@@ -33,6 +33,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
+import static java.util.Collections.emptyMap;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -55,7 +56,8 @@ public class ElasticSinkBuilderTest extends PipelineTestSupport {
                     return builder;
                 })
                 .bulkRequestFn(() -> new BulkRequest().setRefreshPolicy(RefreshPolicy.IMMEDIATE))
-                .mapToRequestFn((String item) -> new IndexRequest("my-index"))
+                .mapToRequestFn((String item) -> new IndexRequest("my-index").source(emptyMap()))
+                .retries(0)
                 .build();
 
         p.readFrom(TestSources.items("a", "b", "c"))

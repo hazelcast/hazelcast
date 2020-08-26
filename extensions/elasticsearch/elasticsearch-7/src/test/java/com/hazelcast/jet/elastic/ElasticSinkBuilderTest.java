@@ -55,7 +55,8 @@ public class ElasticSinkBuilderTest extends PipelineTestSupport {
                     return builder;
                 })
                 .bulkRequestFn(() -> new BulkRequest().setRefreshPolicy(RefreshPolicy.IMMEDIATE))
-                .mapToRequestFn((String item) -> new IndexRequest("my-index"))
+                .mapToRequestFn((String item) -> new IndexRequest("my-index").source(Collections.emptyMap()))
+                .retries(0)
                 .build();
 
         p.readFrom(TestSources.items("a", "b", "c"))
