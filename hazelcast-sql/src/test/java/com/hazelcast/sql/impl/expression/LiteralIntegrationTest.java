@@ -37,7 +37,7 @@ import static com.hazelcast.sql.SqlColumnType.VARCHAR;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class LiteralEndToEndTest extends ExpressionEndToEndTestBase {
+public class LiteralIntegrationTest extends ExpressionIntegrationTestBase {
 
     @Test
     public void testValid() {

@@ -46,7 +46,7 @@ import static com.hazelcast.sql.SqlColumnType.VARCHAR;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class CastEndToEndTest extends ExpressionEndToEndTestBase {
+public class CastIntegrationTest extends ExpressionIntegrationTestBase {
 
     @Test
     public void testBoolean() {
@@ -81,7 +81,7 @@ public class CastEndToEndTest extends ExpressionEndToEndTestBase {
         assertDataError("cast(objectString1 as boolean)", "Cannot convert VARCHAR to BOOLEAN");
         assertDataError("cast(objectChar1 as boolean)", "Cannot convert VARCHAR to BOOLEAN");
         assertDataError("cast(object as boolean)", "Cannot convert OBJECT to BOOLEAN: com.hazelcast.sql.impl.expression"
-                + ".ExpressionEndToEndTestBase$SerializableObject");
+                + ".ExpressionIntegrationTestBase$SerializableObject");
 
         assertParsingError("cast(dateCol as boolean)", "Cast function cannot convert value of type DATE to type BOOLEAN");
         assertParsingError("cast(timeCol as boolean)", "Cast function cannot convert value of type TIME to type BOOLEAN");
@@ -130,7 +130,7 @@ public class CastEndToEndTest extends ExpressionEndToEndTestBase {
         assertRow("cast(objectString1 as tinyint)", EXPR0, TINYINT, (byte) 1);
         assertRow("cast(objectChar1 as tinyint)", EXPR0, TINYINT, (byte) 1);
         assertDataError("cast(object as tinyint)", "Cannot convert OBJECT to TINYINT: com.hazelcast.sql.impl.expression"
-                + ".ExpressionEndToEndTestBase$SerializableObject");
+                + ".ExpressionIntegrationTestBase$SerializableObject");
 
         assertParsingError("cast(dateCol as tinyint)", "Cast function cannot convert value of type DATE to type TINYINT");
         assertParsingError("cast(timeCol as tinyint)", "Cast function cannot convert value of type TIME to type TINYINT");
@@ -180,7 +180,7 @@ public class CastEndToEndTest extends ExpressionEndToEndTestBase {
         assertRow("cast(objectString1 as smallint)", EXPR0, SMALLINT, (short) 1);
         assertRow("cast(objectChar1 as smallint)", EXPR0, SMALLINT, (short) 1);
         assertDataError("cast(object as smallint)", "Cannot convert OBJECT to SMALLINT: com.hazelcast.sql.impl.expression"
-                + ".ExpressionEndToEndTestBase$SerializableObject");
+                + ".ExpressionIntegrationTestBase$SerializableObject");
 
         assertParsingError("cast(dateCol as smallint)", "Cast function cannot convert value of type DATE to type SMALLINT");
         assertParsingError("cast(timeCol as smallint)", "Cast function cannot convert value of type TIME to type SMALLINT");
@@ -229,7 +229,7 @@ public class CastEndToEndTest extends ExpressionEndToEndTestBase {
         assertRow("cast(objectString1 as integer)", EXPR0, INTEGER, 1);
         assertRow("cast(objectChar1 as integer)", EXPR0, INTEGER, 1);
         assertDataError("cast(object as integer)", "Cannot convert OBJECT to INTEGER: com.hazelcast.sql.impl.expression"
-                + ".ExpressionEndToEndTestBase$SerializableObject");
+                + ".ExpressionIntegrationTestBase$SerializableObject");
 
         assertParsingError("cast(dateCol as integer)", "Cast function cannot convert value of type DATE to type INTEGER");
         assertParsingError("cast(timeCol as integer)", "Cast function cannot convert value of type TIME to type INTEGER");
@@ -278,7 +278,7 @@ public class CastEndToEndTest extends ExpressionEndToEndTestBase {
         assertRow("cast(objectString1 as bigint)", EXPR0, BIGINT, 1L);
         assertRow("cast(objectChar1 as bigint)", EXPR0, BIGINT, 1L);
         assertDataError("cast(object as bigint)", "Cannot convert OBJECT to BIGINT: com.hazelcast.sql.impl.expression"
-                + ".ExpressionEndToEndTestBase$SerializableObject");
+                + ".ExpressionIntegrationTestBase$SerializableObject");
 
         assertParsingError("cast(dateCol as bigint)", "Cast function cannot convert value of type DATE to type BIGINT");
         assertParsingError("cast(timeCol as bigint)", "Cast function cannot convert value of type TIME to type BIGINT");
@@ -327,7 +327,7 @@ public class CastEndToEndTest extends ExpressionEndToEndTestBase {
         assertRow("cast(objectString1 as real)", EXPR0, REAL, 1.0f);
         assertRow("cast(objectChar1 as real)", EXPR0, REAL, 1.0f);
         assertDataError("cast(object as real)", "Cannot convert OBJECT to REAL: com.hazelcast.sql.impl.expression"
-                + ".ExpressionEndToEndTestBase$SerializableObject");
+                + ".ExpressionIntegrationTestBase$SerializableObject");
 
         assertParsingError("cast(dateCol as real)", "Cast function cannot convert value of type DATE to type REAL");
         assertParsingError("cast(timeCol as real)", "Cast function cannot convert value of type TIME to type REAL");
@@ -376,7 +376,7 @@ public class CastEndToEndTest extends ExpressionEndToEndTestBase {
         assertRow("cast(objectString1 as double)", EXPR0, DOUBLE, 1.0);
         assertRow("cast(objectChar1 as double)", EXPR0, DOUBLE, 1.0);
         assertDataError("cast(object as double)", "Cannot convert OBJECT to DOUBLE: com.hazelcast.sql.impl.expression"
-                + ".ExpressionEndToEndTestBase$SerializableObject");
+                + ".ExpressionIntegrationTestBase$SerializableObject");
 
         assertParsingError("cast(dateCol as double)", "Cast function cannot convert value of type DATE to type DOUBLE");
         assertParsingError("cast(timeCol as double)", "Cast function cannot convert value of type TIME to type DOUBLE");
@@ -427,7 +427,7 @@ public class CastEndToEndTest extends ExpressionEndToEndTestBase {
         assertRow("cast(objectString1 as decimal)", EXPR0, DECIMAL, BigDecimal.valueOf(1));
         assertRow("cast(objectChar1 as decimal)", EXPR0, DECIMAL, BigDecimal.valueOf(1));
         assertDataError("cast(object as decimal)", "Cannot convert OBJECT to DECIMAL: com.hazelcast.sql.impl.expression"
-                + ".ExpressionEndToEndTestBase$SerializableObject");
+                + ".ExpressionIntegrationTestBase$SerializableObject");
 
         assertParsingError("cast(dateCol as decimal)", "Cast function cannot convert value of type DATE to type DECIMAL");
         assertParsingError("cast(timeCol as decimal)", "Cast function cannot convert value of type TIME to type DECIMAL");

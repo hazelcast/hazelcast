@@ -16,7 +16,7 @@
 
 package com.hazelcast.sql.impl.expression.math;
 
-import com.hazelcast.sql.impl.expression.ExpressionEndToEndTestBase;
+import com.hazelcast.sql.impl.expression.ExpressionIntegrationTestBase;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -36,7 +36,7 @@ import static com.hazelcast.sql.SqlColumnType.TINYINT;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class UnaryPlusEndToEndTest extends ExpressionEndToEndTestBase {
+public class UnaryPlusIntegrationTest extends ExpressionIntegrationTestBase {
 
     @Test
     public void testBoolean() {
