@@ -41,13 +41,7 @@ public interface RecordPart {
      * href="https://github.com/FasterXML/jackson-jr/tree/master/jr-annotation-support">
      * annotation support</a>, so the supplied class can be annotated accordingly.
      * <p>
-     * Note: there is a bug in jackson-jr's object mapping, where it doesn't
-     * handle fields of type {@code Date} properly, if they are nullable.
-     * The null values trigger exceptions and failure in the object mapping code.
-     * <p>
-     * This can be overcome via following trick, which in fact could come
-     * in handy in many other situations.
-     * <p>
+     * Note: there is a neat trick for converting types during object mapping.
      * Let's say we have a {@code birth_date} column in a table of type
      * {@code DATE} and we want to map it to a field named {@code birthDate}
      * in our row object, of type {@code LocalDate}. We would write

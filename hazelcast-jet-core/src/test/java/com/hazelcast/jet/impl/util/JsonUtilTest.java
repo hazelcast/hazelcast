@@ -30,6 +30,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -201,6 +202,16 @@ public class JsonUtilTest extends JetTestSupport {
         assertIteratorObject(iterator, 20);
     }
 
+    @Test
+    public void when_mappingToObject_then_nullFieldsHandledProperly() throws IOException {
+        long currentTimeMillis = System.currentTimeMillis();
+        Birthdate birthdate1 = JsonUtil.beanFrom("{ \"date\" : " + currentTimeMillis + "  }", Birthdate.class);
+        assertEquals(new Date(currentTimeMillis), birthdate1.date);
+
+        Birthdate birthdate2 = JsonUtil.beanFrom("{ \"date\" : null }", Birthdate.class);
+        assertNull(birthdate2.date);
+    }
+
     private void assertIteratorObject(Iterator<TestJsonObject> iterator, int expectedCount) {
         int count = 0;
         while (iterator.hasNext()) {
@@ -300,7 +311,6 @@ public class JsonUtilTest extends JetTestSupport {
         }
     }
 
-
     public static class InnerTestJsonObject {
 
         public String val;
@@ -364,6 +374,10 @@ public class JsonUtilTest extends JetTestSupport {
             return Objects.hash(username, userage);
         }
 
+    }
+
+    public static class Birthdate {
+        public Date date;
     }
 
 }
