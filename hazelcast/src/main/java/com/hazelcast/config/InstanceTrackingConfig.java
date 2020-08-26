@@ -256,7 +256,15 @@ public class InstanceTrackingConfig {
         /**
          * Hazelcast java enterprise client
          */
-        HAZELCAST_CLIENT_EE("Hazelcast Client Enterprise");
+        HAZELCAST_CLIENT_EE("Hazelcast Client Enterprise"),
+        /**
+         * Hazelcast Jet open-source
+         */
+        HAZELCAST_JET("Hazelcast Jet"),
+        /**
+         * Hazelcast Jet enterprise
+         */
+        HAZELCAST_JET_EE("Hazelcast Jet Enterprise");
 
         private final String productName;
 

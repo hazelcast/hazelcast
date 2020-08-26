@@ -50,6 +50,8 @@ public class InstanceTrackingInfoTest extends HazelcastTestSupport {
     public void testJsonFormat() throws IOException {
         assertTrackingFileContents(null, content -> {
             JsonObject json = Json.parse(content).asObject();
+            // since we didn't start with HazelcastMemberStarter
+            // the mode will be "embedded"
             assertEquals("embedded", json.getString("mode", ""));
             assertEquals("Hazelcast", json.getString("product", ""));
             assertEquals(0, json.getInt("licensed", -1));
@@ -96,8 +98,6 @@ public class InstanceTrackingInfoTest extends HazelcastTestSupport {
         assertEquals(1, files.length);
         assertEquals("dummy", bytesToString(Files.readAllBytes(files[0].toPath())));
     }
-
-    // test hazelcast.tracking.server
 
     private void assertTrackingFileContents(String pattern, Consumer<String> contentAssertion) throws IOException {
         Config config = new Config();
