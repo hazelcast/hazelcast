@@ -21,7 +21,6 @@ import com.hazelcast.nio.serialization.FieldDefinition;
 import com.hazelcast.nio.serialization.FieldType;
 import com.hazelcast.nio.serialization.GenericRecord;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
-import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -53,7 +52,7 @@ public class PortableGenericRecordBuilder implements GenericRecord.Builder {
      *                                         {@link GenericRecord.Builder#portable(ClassDefinition)} and
      *                                         {@link GenericRecord#newBuilder()}
      */
-    @NotNull
+    @Nonnull
     @Override
     public GenericRecord build() {
         if (!isClone) {

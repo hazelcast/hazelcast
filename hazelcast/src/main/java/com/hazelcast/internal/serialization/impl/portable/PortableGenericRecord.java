@@ -22,7 +22,6 @@ import com.hazelcast.nio.serialization.FieldType;
 import com.hazelcast.nio.serialization.GenericRecord;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nonnull;
 import java.util.Arrays;
@@ -42,125 +41,125 @@ public class PortableGenericRecord implements GenericRecord {
         return classDefinition;
     }
 
-    @NotNull
+    @Nonnull
     @Override
     public Builder newBuilder() {
         return Builder.portable(classDefinition);
     }
 
-    @NotNull
+    @Nonnull
     @Override
     public Builder cloneWithBuilder() {
         return new PortableGenericRecordBuilder(classDefinition, Arrays.copyOf(objects, objects.length));
     }
 
     @Override
-    public GenericRecord[] readGenericRecordArray(@NotNull String fieldName) {
+    public GenericRecord[] readGenericRecordArray(@Nonnull String fieldName) {
         return read(fieldName, FieldType.PORTABLE_ARRAY);
     }
 
     @Override
-    public GenericRecord readGenericRecord(@NotNull String fieldName) {
+    public GenericRecord readGenericRecord(@Nonnull String fieldName) {
         return read(fieldName, FieldType.PORTABLE);
     }
 
     @Override
-    public boolean hasField(@NotNull String fieldName) {
+    public boolean hasField(@Nonnull String fieldName) {
         return classDefinition.hasField(fieldName);
     }
 
     @Override
-    public FieldType getFieldType(@NotNull String fieldName) {
+    public FieldType getFieldType(@Nonnull String fieldName) {
         return classDefinition.getFieldType(fieldName);
     }
 
     @Override
-    public boolean readBoolean(@NotNull String fieldName) {
+    public boolean readBoolean(@Nonnull String fieldName) {
         return read(fieldName, FieldType.BOOLEAN);
     }
 
     @Override
-    public byte readByte(@NotNull String fieldName) {
+    public byte readByte(@Nonnull String fieldName) {
         return read(fieldName, FieldType.BYTE);
     }
 
     @Override
-    public char readChar(@NotNull String fieldName) {
+    public char readChar(@Nonnull String fieldName) {
         return read(fieldName, FieldType.CHAR);
     }
 
     @Override
-    public double readDouble(@NotNull String fieldName) {
+    public double readDouble(@Nonnull String fieldName) {
         return read(fieldName, FieldType.DOUBLE);
     }
 
     @Override
-    public float readFloat(@NotNull String fieldName) {
+    public float readFloat(@Nonnull String fieldName) {
         return read(fieldName, FieldType.FLOAT);
     }
 
     @Override
-    public int readInt(@NotNull String fieldName) {
+    public int readInt(@Nonnull String fieldName) {
         return read(fieldName, FieldType.INT);
     }
 
     @Override
-    public long readLong(@NotNull String fieldName) {
+    public long readLong(@Nonnull String fieldName) {
         return read(fieldName, FieldType.LONG);
     }
 
     @Override
-    public short readShort(@NotNull String fieldName) {
+    public short readShort(@Nonnull String fieldName) {
         return read(fieldName, FieldType.SHORT);
     }
 
     @Override
-    public String readUTF(@NotNull String fieldName) {
+    public String readUTF(@Nonnull String fieldName) {
         return read(fieldName, FieldType.UTF);
     }
 
     @Override
-    public boolean[] readBooleanArray(@NotNull String fieldName) {
+    public boolean[] readBooleanArray(@Nonnull String fieldName) {
         return read(fieldName, FieldType.BOOLEAN_ARRAY);
     }
 
     @Override
-    public byte[] readByteArray(@NotNull String fieldName) {
+    public byte[] readByteArray(@Nonnull String fieldName) {
         return read(fieldName, FieldType.BYTE_ARRAY);
     }
 
     @Override
-    public char[] readCharArray(@NotNull String fieldName) {
+    public char[] readCharArray(@Nonnull String fieldName) {
         return read(fieldName, FieldType.CHAR_ARRAY);
     }
 
     @Override
-    public double[] readDoubleArray(@NotNull String fieldName) {
+    public double[] readDoubleArray(@Nonnull String fieldName) {
         return read(fieldName, FieldType.DOUBLE_ARRAY);
     }
 
     @Override
-    public float[] readFloatArray(@NotNull String fieldName) {
+    public float[] readFloatArray(@Nonnull String fieldName) {
         return read(fieldName, FieldType.FLOAT_ARRAY);
     }
 
     @Override
-    public int[] readIntArray(@NotNull String fieldName) {
+    public int[] readIntArray(@Nonnull String fieldName) {
         return read(fieldName, FieldType.INT_ARRAY);
     }
 
     @Override
-    public long[] readLongArray(@NotNull String fieldName) {
+    public long[] readLongArray(@Nonnull String fieldName) {
         return read(fieldName, FieldType.LONG_ARRAY);
     }
 
     @Override
-    public short[] readShortArray(@NotNull String fieldName) {
+    public short[] readShortArray(@Nonnull String fieldName) {
         return read(fieldName, FieldType.SHORT_ARRAY);
     }
 
     @Override
-    public String[] readUTFArray(@NotNull String fieldName) {
+    public String[] readUTFArray(@Nonnull String fieldName) {
         return read(fieldName, FieldType.UTF_ARRAY);
     }
 
