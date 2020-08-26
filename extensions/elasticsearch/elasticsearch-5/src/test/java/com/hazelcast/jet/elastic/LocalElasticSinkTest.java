@@ -30,6 +30,7 @@ import org.elasticsearch.action.support.WriteRequest.RefreshPolicy;
 import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestClientBuilder;
 import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -89,4 +90,8 @@ public class LocalElasticSinkTest extends CommonElasticSinksTest {
         }
     }
 
+    @AfterClass
+    public static void afterClass() throws Exception {
+        ClientHolder.elasticClients.clear();
+    }
 }

@@ -40,6 +40,7 @@ import org.elasticsearch.client.RestClientBuilder;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.search.SearchHit;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -87,6 +88,17 @@ public abstract class BaseElasticTest {
         }
         results = jet.getList("results");
         results.clear();
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        if (elasticClient != null) {
+            try {
+                elasticClient.close();
+            } finally {
+                elasticClient = null;
+            }
+        }
     }
 
     /**

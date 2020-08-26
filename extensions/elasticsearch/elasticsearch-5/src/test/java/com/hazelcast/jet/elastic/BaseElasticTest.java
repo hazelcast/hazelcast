@@ -36,6 +36,7 @@ import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.support.WriteRequest.RefreshPolicy;
+import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestClientBuilder;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.client.transport.TransportClient;
@@ -43,6 +44,7 @@ import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.InetSocketTransportAddress;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.transport.client.PreBuiltTransportClient;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -73,6 +75,7 @@ public abstract class BaseElasticTest {
 
     protected static final int BATCH_SIZE = 42;
 
+    protected RestClient lowLevelClient;
     protected RestHighLevelClient elasticClient;
     protected TransportClient transportClient;
 
@@ -81,8 +84,14 @@ public abstract class BaseElasticTest {
 
     @Before
     public void setUpBase() {
+        // The transport client is not friendly to creating a lot of instances and closing them due to netty pooling
+        // See https://github.com/elastic/elasticsearch/issues/26048
+        System.setProperty("io.netty.allocator.type", "unpooled");
+
         if (elasticClient == null) {
-            elasticClient = new RestHighLevelClient(elasticClientSupplier().get().build());
+            // Need the lowLevelClient instance to close it at the end
+            lowLevelClient = elasticClientSupplier().get().build();
+            elasticClient = new RestHighLevelClient(lowLevelClient);
             transportClient = new PreBuiltTransportClient(Settings.EMPTY)
                     .addTransportAddress(new InetSocketTransportAddress(ElasticSupport.elastic.get().getTcpHost()));
 
@@ -96,6 +105,26 @@ public abstract class BaseElasticTest {
         results.clear();
     }
 
+    @After
+    public void tearDown() throws Exception {
+        // We can't close the RestHighLevelClient as it doesn't have any close()/destroy() method
+        // Close the underlying lowLevelClient instead
+        if (lowLevelClient != null) {
+            try {
+                lowLevelClient.close();
+            } finally {
+                lowLevelClient = null;
+            }
+        }
+        if (transportClient != null) {
+            try {
+                transportClient.close();
+            } finally {
+                transportClient = null;
+            }
+        }
+    }
+
     /**
      * RestHighLevelClient supplier, it is used to
      * - create a client before each test for use by all methods from this class interacting with elastic
@@ -103,7 +132,7 @@ public abstract class BaseElasticTest {
      */
     protected SupplierEx<RestClientBuilder> elasticClientSupplier() {
         return ElasticSupport.elasticClientSupplier();
-    };
+    }
 
     protected abstract JetInstance createJetInstance();
 
