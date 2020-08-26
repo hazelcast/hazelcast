@@ -77,8 +77,12 @@ public class SqlErrorAbstractTest extends SqlTestSupport {
         });
 
         // Execute query on the instance1.
-        HazelcastSqlException error = assertSqlException(useClient ? client : instance1, query().setTimeoutMillis(100L));
-        assertEquals(SqlErrorCode.TIMEOUT, error.getCode());
+        try {
+            HazelcastSqlException error = assertSqlException(useClient ? client : instance1, query().setTimeoutMillis(100L));
+            assertEquals(SqlErrorCode.TIMEOUT, error.getCode());
+        } finally {
+            blocker.unblock();
+        }
     }
 
     protected void checkExecutionError(boolean useClient, boolean fromFirstMember) {
