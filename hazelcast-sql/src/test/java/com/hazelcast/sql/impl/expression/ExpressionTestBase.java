@@ -16,11 +16,8 @@
 
 package com.hazelcast.sql.impl.expression;
 
-import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.util.BiTuple;
 import com.hazelcast.internal.util.RuntimeAvailableProcessors;
-import com.hazelcast.map.IMap;
-import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlRow;
@@ -28,6 +25,7 @@ import com.hazelcast.sql.SqlService;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.QueryUtils;
+import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.SqlTestSupport;
 import com.hazelcast.sql.impl.calcite.HazelcastSqlBackend;
 import com.hazelcast.sql.impl.calcite.OptimizerContext;
@@ -48,7 +46,6 @@ import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.sql.impl.type.converter.Converter;
 import com.hazelcast.sql.impl.type.converter.Converters;
 import com.hazelcast.sql.impl.type.converter.StringConverter;
-import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.TestStringUtils;
 import org.apache.calcite.avatica.util.TimeUnit;
 import org.apache.calcite.rel.RelNode;
@@ -1154,23 +1151,6 @@ public abstract class ExpressionTestBase extends SqlTestSupport {
             args[i] = operandTransform.apply(operands[i]);
         }
         return String.format(format, args);
-    }
-
-    protected SqlService createEndToEndRecords() {
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
-        HazelcastInstance instance = factory.newHazelcastInstance(smallInstanceConfig());
-
-        Map<Integer, Record> recordsTmp = new HashMap<>();
-        for (int i = 0; i < 1000; ++i) {
-            recordsTmp.put(i, new Record("str" + i, 1000 + i, 2000.1 + i, new BigDecimal((3000 + i) + ".5"), i >= 500));
-        }
-        recordsTmp.put(5000, new Record(null, -100, -100500, new BigDecimal(9001), null));
-        recordsTmp.put(6000, new Record(null, -200, -200500, null, null));
-
-        IMap<Integer, Record> records = factory.newHazelcastInstance(smallInstanceConfig()).getMap("records");
-        records.putAll(recordsTmp);
-
-        return instance.getSql();
     }
 
     protected SqlResult query(SqlService sql, String query, Object... args) {
