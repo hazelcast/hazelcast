@@ -44,12 +44,7 @@ public class GenericRecordBuilderTest {
         GenericRecord.Builder builder = GenericRecord.Builder.portable(namedPortableClassDefinition);
         builder.writeUTF("name", "foo");
         builder.writeInt("myint", 123);
-        assertThrows(HazelcastSerializationException.class, new Runnable() {
-            @Override
-            public void run() {
-                builder.writeUTF("name", "foo2");
-            }
-        });
+        assertThrows(HazelcastSerializationException.class, () -> builder.writeUTF("name", "foo2"));
     }
 
     @Test
@@ -64,12 +59,7 @@ public class GenericRecordBuilderTest {
                 .writeInt("myint", 123).build();
 
         GenericRecord.Builder builder = record.cloneWithBuilder().writeUTF("name", "foo2");
-        assertThrows(HazelcastSerializationException.class, new Runnable() {
-            @Override
-            public void run() {
-                builder.writeUTF("name", "foo3");
-            }
-        });
+        assertThrows(HazelcastSerializationException.class, () -> builder.writeUTF("name", "foo3"));
     }
 
     @Test
@@ -79,12 +69,7 @@ public class GenericRecordBuilderTest {
                         .addUTFField("name").addIntField("myint").build();
 
         GenericRecord.Builder builder = GenericRecord.Builder.portable(classDefinition);
-        assertThrows(HazelcastSerializationException.class, new Runnable() {
-            @Override
-            public void run() {
-                builder.writeUTF("nonExistingField", "foo3");
-            }
-        });
+        assertThrows(HazelcastSerializationException.class, () -> builder.writeUTF("nonExistingField", "foo3"));
     }
 
     @Test
@@ -94,12 +79,7 @@ public class GenericRecordBuilderTest {
                         .addUTFField("name").addIntField("myint").build();
 
         GenericRecord.Builder builder = GenericRecord.Builder.portable(classDefinition);
-        assertThrows(HazelcastSerializationException.class, new Runnable() {
-            @Override
-            public void run() {
-                builder.writeInt("name", 1);
-            }
-        });
+        assertThrows(HazelcastSerializationException.class, () -> builder.writeInt("name", 1));
     }
 
     @Test
@@ -110,11 +90,6 @@ public class GenericRecordBuilderTest {
 
         GenericRecord.Builder builder = GenericRecord.Builder.portable(classDefinition);
         builder.writeInt("myint", 1);
-        assertThrows(HazelcastSerializationException.class, new Runnable() {
-            @Override
-            public void run() {
-                builder.build();
-            }
-        });
+        assertThrows(HazelcastSerializationException.class, builder::build);
     }
 }
