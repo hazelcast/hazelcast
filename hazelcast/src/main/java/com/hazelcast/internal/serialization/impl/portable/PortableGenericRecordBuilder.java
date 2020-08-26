@@ -21,6 +21,7 @@ import com.hazelcast.nio.serialization.FieldDefinition;
 import com.hazelcast.nio.serialization.FieldType;
 import com.hazelcast.nio.serialization.GenericRecord;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
+import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -52,6 +53,7 @@ public class PortableGenericRecordBuilder implements GenericRecord.Builder {
      *                                         {@link GenericRecord.Builder#portable(ClassDefinition)} and
      *                                         {@link GenericRecord#newBuilder()}
      */
+    @NotNull
     @Override
     public GenericRecord build() {
         if (!isClone) {
@@ -66,106 +68,106 @@ public class PortableGenericRecordBuilder implements GenericRecord.Builder {
     }
 
     @Override
-    public GenericRecord.Builder writeInt(String fieldName, int value) {
+    public GenericRecord.Builder writeInt(@Nonnull String fieldName, int value) {
         return write(fieldName, value, FieldType.INT);
     }
 
     @Override
-    public GenericRecord.Builder writeLong(String fieldName, long value) {
+    public GenericRecord.Builder writeLong(@Nonnull String fieldName, long value) {
         return write(fieldName, value, FieldType.LONG);
     }
 
     @Override
-    public GenericRecord.Builder writeUTF(String fieldName, String value) {
+    public GenericRecord.Builder writeUTF(@Nonnull String fieldName, String value) {
         return write(fieldName, value, FieldType.UTF);
     }
 
     @Override
-    public GenericRecord.Builder writeBoolean(String fieldName, boolean value) {
+    public GenericRecord.Builder writeBoolean(@Nonnull String fieldName, boolean value) {
         return write(fieldName, value, FieldType.BOOLEAN);
     }
 
     @Override
-    public GenericRecord.Builder writeByte(String fieldName, byte value) {
+    public GenericRecord.Builder writeByte(@Nonnull String fieldName, byte value) {
         return write(fieldName, value, FieldType.BYTE);
     }
 
     @Override
-    public GenericRecord.Builder writeChar(String fieldName, char value) {
+    public GenericRecord.Builder writeChar(@Nonnull String fieldName, char value) {
         return write(fieldName, value, FieldType.CHAR);
     }
 
     @Override
-    public GenericRecord.Builder writeDouble(String fieldName, double value) {
+    public GenericRecord.Builder writeDouble(@Nonnull String fieldName, double value) {
         return write(fieldName, value, FieldType.DOUBLE);
     }
 
     @Override
-    public GenericRecord.Builder writeFloat(String fieldName, float value) {
+    public GenericRecord.Builder writeFloat(@Nonnull String fieldName, float value) {
         return write(fieldName, value, FieldType.FLOAT);
     }
 
     @Override
-    public GenericRecord.Builder writeShort(String fieldName, short value) {
+    public GenericRecord.Builder writeShort(@Nonnull String fieldName, short value) {
         return write(fieldName, value, FieldType.SHORT);
     }
 
     @Override
-    public GenericRecord.Builder writeGenericRecord(String fieldName, @Nullable GenericRecord value) {
+    public GenericRecord.Builder writeGenericRecord(@Nonnull String fieldName, @Nullable GenericRecord value) {
         return write(fieldName, value, FieldType.PORTABLE);
     }
 
     @Override
-    public GenericRecord.Builder writeGenericRecordArray(String fieldName, GenericRecord[] value) {
+    public GenericRecord.Builder writeGenericRecordArray(@Nonnull String fieldName, GenericRecord[] value) {
         return write(fieldName, value, FieldType.PORTABLE_ARRAY);
     }
 
     @Override
-    public GenericRecord.Builder writeByteArray(String fieldName, byte[] value) {
+    public GenericRecord.Builder writeByteArray(@Nonnull String fieldName, byte[] value) {
         return write(fieldName, value, FieldType.BYTE_ARRAY);
     }
 
     @Override
-    public GenericRecord.Builder writeBooleanArray(String fieldName, boolean[] value) {
+    public GenericRecord.Builder writeBooleanArray(@Nonnull String fieldName, boolean[] value) {
         return write(fieldName, value, FieldType.BOOLEAN_ARRAY);
     }
 
     @Override
-    public GenericRecord.Builder writeCharArray(String fieldName, char[] value) {
+    public GenericRecord.Builder writeCharArray(@Nonnull String fieldName, char[] value) {
         return write(fieldName, value, FieldType.CHAR_ARRAY);
     }
 
     @Override
-    public GenericRecord.Builder writeIntArray(String fieldName, int[] value) {
+    public GenericRecord.Builder writeIntArray(@Nonnull String fieldName, int[] value) {
         return write(fieldName, value, FieldType.INT_ARRAY);
     }
 
     @Override
-    public GenericRecord.Builder writeLongArray(String fieldName, long[] value) {
+    public GenericRecord.Builder writeLongArray(@Nonnull String fieldName, long[] value) {
         return write(fieldName, value, FieldType.LONG_ARRAY);
     }
 
     @Override
-    public GenericRecord.Builder writeDoubleArray(String fieldName, double[] value) {
+    public GenericRecord.Builder writeDoubleArray(@Nonnull String fieldName, double[] value) {
         return write(fieldName, value, FieldType.DOUBLE_ARRAY);
     }
 
     @Override
-    public GenericRecord.Builder writeFloatArray(String fieldName, float[] value) {
+    public GenericRecord.Builder writeFloatArray(@Nonnull String fieldName, float[] value) {
         return write(fieldName, value, FieldType.FLOAT_ARRAY);
     }
 
     @Override
-    public GenericRecord.Builder writeShortArray(String fieldName, short[] value) {
+    public GenericRecord.Builder writeShortArray(@Nonnull String fieldName, short[] value) {
         return write(fieldName, value, FieldType.SHORT_ARRAY);
     }
 
     @Override
-    public GenericRecord.Builder writeUTFArray(String fieldName, String[] value) {
+    public GenericRecord.Builder writeUTFArray(@Nonnull String fieldName, String[] value) {
         return write(fieldName, value, FieldType.UTF_ARRAY);
     }
 
-    private GenericRecord.Builder write(String fieldName, Object value, FieldType fieldType) {
+    private GenericRecord.Builder write(@Nonnull String fieldName, Object value, FieldType fieldType) {
         FieldDefinition fd = check(fieldName, fieldType);
         int index = fd.getIndex();
         if (isWritten[index]) {
@@ -181,7 +183,7 @@ public class PortableGenericRecordBuilder implements GenericRecord.Builder {
     }
 
     @Nonnull
-    private FieldDefinition check(String fieldName, FieldType fieldType) {
+    private FieldDefinition check(@Nonnull String fieldName, FieldType fieldType) {
         FieldDefinition fd = classDefinition.getField(fieldName);
         if (fd == null) {
             throw new HazelcastSerializationException("Invalid field name: '" + fieldName
