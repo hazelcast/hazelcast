@@ -26,13 +26,13 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
-import com.hazelcast.sql.SqlColumnType;
-import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.HazelcastSqlException;
+import com.hazelcast.sql.SqlColumnType;
 import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.SqlService;
+import com.hazelcast.sql.SqlTestInstanceFactory;
+import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.SqlTestSupport;
-import com.hazelcast.test.TestHazelcastInstanceFactory;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 
@@ -51,7 +51,7 @@ public abstract class ExpressionEndToEndTestBase extends SqlTestSupport {
 
     protected static SqlService sql;
 
-    private static TestHazelcastInstanceFactory factory;
+    private static SqlTestInstanceFactory factory;
 
     private static HazelcastInstance instance;
 
@@ -67,7 +67,7 @@ public abstract class ExpressionEndToEndTestBase extends SqlTestSupport {
             return new PortableRecord();
         });
 
-        factory = new TestHazelcastInstanceFactory(2);
+        factory = SqlTestInstanceFactory.create();
         sql = factory.newHazelcastInstance(config).getSql();
         instance = factory.newHazelcastInstance(config);
 

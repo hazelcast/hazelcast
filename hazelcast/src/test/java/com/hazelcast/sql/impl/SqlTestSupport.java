@@ -17,7 +17,6 @@
 package com.hazelcast.sql.impl;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.instance.impl.HazelcastInstanceProxy;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
@@ -28,9 +27,9 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.partition.Partition;
 import com.hazelcast.partition.PartitionService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.sql.SqlStatement;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlRow;
+import com.hazelcast.sql.SqlStatement;
 import com.hazelcast.sql.impl.exec.CreateExecPlanNodeVisitorHook;
 import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.operation.QueryOperationHandlerImpl;
@@ -44,6 +43,7 @@ import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.row.RowBatch;
 import com.hazelcast.sql.impl.state.QueryStateCallback;
 import com.hazelcast.sql.impl.worker.QueryFragmentContext;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastTestSupport;
 
 import java.util.ArrayList;
@@ -187,7 +187,7 @@ public class SqlTestSupport extends HazelcastTestSupport {
     }
 
     public static NodeEngineImpl nodeEngine(HazelcastInstance instance) {
-        return ((HazelcastInstanceProxy) instance).getOriginal().node.nodeEngine;
+        return Accessors.getNodeEngineImpl(instance);
     }
 
     public static Row row(Object... values) {

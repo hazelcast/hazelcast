@@ -18,11 +18,11 @@ package com.hazelcast.sql.impl.expression;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
-import com.hazelcast.sql.SqlColumnType;
 import com.hazelcast.sql.HazelcastSqlException;
+import com.hazelcast.sql.SqlColumnType;
 import com.hazelcast.sql.SqlRow;
+import com.hazelcast.sql.SqlTestInstanceFactory;
 import com.hazelcast.sql.impl.SqlTestSupport;
-import com.hazelcast.test.TestHazelcastInstanceFactory;
 import org.junit.After;
 import org.junit.Before;
 
@@ -41,7 +41,7 @@ public abstract class SqlExpressionIntegrationTestSupport extends SqlTestSupport
     protected static final Object SKIP_VALUE_CHECK = new Object();
     protected HazelcastInstance member;
 
-    private final TestHazelcastInstanceFactory factory = new TestHazelcastInstanceFactory(1);
+    private final SqlTestInstanceFactory factory = SqlTestInstanceFactory.create();
     private IMap map;
 
     @Before
