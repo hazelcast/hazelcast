@@ -47,7 +47,7 @@ import static java.util.Arrays.asList;
 @RunWith(Parameterized.class)
 @UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class ColumnEndToEndTest extends ExpressionEndToEndTestBase {
+public class ColumnIntegrationTest extends ExpressionIntegrationTestBase {
 
     @Parameter
     public String mapName;

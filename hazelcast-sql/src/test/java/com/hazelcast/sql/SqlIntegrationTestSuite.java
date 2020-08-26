@@ -24,6 +24,6 @@ import org.junit.runner.RunWith;
  * where the HazelcastInstance is one from a Jet cluster.
  */
 @RunWith(WildcardPatternSuite.class)
-@com.googlecode.junittoolbox.SuiteClasses({"**/*IntegrationTest.class", "**/*EndToEndTest.class"})
+@com.googlecode.junittoolbox.SuiteClasses("**/*IntegrationTest.class")
 public class SqlIntegrationTestSuite {
 }

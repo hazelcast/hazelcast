@@ -35,7 +35,7 @@ import static com.hazelcast.sql.SqlColumnType.REAL;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class ParameterEndToEndTest extends ExpressionEndToEndTestBase {
+public class ParameterIntegrationTest extends ExpressionIntegrationTestBase {
 
     @Test
     public void testBoolean() {
