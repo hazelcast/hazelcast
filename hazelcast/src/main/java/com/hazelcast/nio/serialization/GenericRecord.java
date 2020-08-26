@@ -39,6 +39,16 @@ import javax.annotation.Nullable;
  *             return null;
  *         });
  * </pre>
+ * Another example with EntryProcessor to demonstrate how to read, modify and set back to the map:
+ * <pre>
+ * map.executeOnKey("key", (EntryProcessor<Object, Object, Object>) entry -> {
+ *             GenericRecord genericRecord = (GenericRecord) entry.getValue();
+ *             GenericRecord modifiedGenericRecord = genericRecord.cloneWithBuilder()
+ *                     .writeInt("age",22).build();
+ *             entry.setValue(modifiedGenericRecord);
+ *             return null;
+ *         });
+ * </pre>
  * <p>
  * GenericRecord also allows to read from a cluster without having the classes on the client side.
  * For {@link Portable}, when {@link PortableFactory} is not provided in the config at the start,
@@ -79,7 +89,7 @@ public interface GenericRecord {
      * it will copy all the fields.
      * So instead of following where only the `id` field is updated,
      * <pre>
-     *     GenericRecord modifiedGenericRecord = genericRecord.createGenericRecordBuilder()
+     *     GenericRecord modifiedGenericRecord = genericRecord.newBuilder()
      *                         .writeUTF("name", genericRecord.readUTF("name"))
      *                         .writeLong("id", 4)
      *                         .writeUTF("surname", genericRecord.readUTF("surname"))
