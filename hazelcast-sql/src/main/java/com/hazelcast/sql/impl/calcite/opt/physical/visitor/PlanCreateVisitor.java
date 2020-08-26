@@ -17,7 +17,6 @@
 package com.hazelcast.sql.impl.calcite.opt.physical.visitor;
 
 import com.hazelcast.internal.util.collection.PartitionIdSet;
-import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.sql.SqlColumnMetadata;
 import com.hazelcast.sql.SqlRowMetadata;
 import com.hazelcast.sql.impl.QueryException;
@@ -53,7 +52,6 @@ import com.hazelcast.sql.impl.plan.node.io.ReceivePlanNode;
 import com.hazelcast.sql.impl.plan.node.io.RootSendPlanNode;
 import com.hazelcast.sql.impl.schema.map.AbstractMapTable;
 import com.hazelcast.sql.impl.schema.map.MapTableField;
-import com.hazelcast.sql.impl.schema.map.PartitionedMapTable;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.calcite.rex.RexNode;
 
@@ -221,14 +219,6 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
     @Override
     public void onMapScan(MapScanPhysicalRel rel) {
         AbstractMapTable table = rel.getMap();
-
-        if (((PartitionedMapTable) table).isHd()) {
-            throw QueryException.error("Cannot query the IMap \"" + table.getMapName()
-                + "\" with InMemoryFormat.NATIVE because it does not have global indexes "
-                + "(please make sure that the IMap has at least one index "
-                + "and the property \"" + ClusterProperty.GLOBAL_HD_INDEX_ENABLED.getName()
-                + "\" is set to \"true\")");
-        }
 
         HazelcastTable hazelcastTable = rel.getTableUnwrapped();
 
