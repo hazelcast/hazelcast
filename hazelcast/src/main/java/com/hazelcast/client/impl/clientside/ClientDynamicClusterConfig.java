@@ -74,17 +74,17 @@ import com.hazelcast.config.RingbufferStoreConfig;
 import com.hazelcast.config.ScheduledExecutorConfig;
 import com.hazelcast.config.SecurityConfig;
 import com.hazelcast.config.SerializationConfig;
-import com.hazelcast.config.SqlConfig;
-import com.hazelcast.config.WanReplicationConfig;
-import com.hazelcast.internal.config.ServicesConfig;
 import com.hazelcast.config.SetConfig;
 import com.hazelcast.config.SplitBrainProtectionConfig;
+import com.hazelcast.config.SqlConfig;
 import com.hazelcast.config.TopicConfig;
 import com.hazelcast.config.UserCodeDeploymentConfig;
+import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.core.ManagedContext;
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.config.ServicesConfig;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.serialization.SerializationService;
 
 import javax.annotation.Nonnull;
 import java.io.File;
@@ -293,7 +293,7 @@ public class ClientDynamicClusterConfig extends Config {
         ClientMessage request = DynamicConfigAddDurableExecutorConfigCodec.encodeRequest(
                 durableExecutorConfig.getName(), durableExecutorConfig.getPoolSize(),
                 durableExecutorConfig.getDurability(), durableExecutorConfig.getCapacity(),
-                durableExecutorConfig.getSplitBrainProtectionName());
+                durableExecutorConfig.getSplitBrainProtectionName(), durableExecutorConfig.isStatisticsEnabled());
         invoke(request);
         return this;
     }
@@ -304,7 +304,7 @@ public class ClientDynamicClusterConfig extends Config {
                 scheduledExecutorConfig.getName(), scheduledExecutorConfig.getPoolSize(),
                 scheduledExecutorConfig.getDurability(), scheduledExecutorConfig.getCapacity(),
                 scheduledExecutorConfig.getSplitBrainProtectionName(), scheduledExecutorConfig.getMergePolicyConfig().getPolicy(),
-                scheduledExecutorConfig.getMergePolicyConfig().getBatchSize());
+                scheduledExecutorConfig.getMergePolicyConfig().getBatchSize(), scheduledExecutorConfig.isStatisticsEnabled());
         invoke(request);
         return this;
     }

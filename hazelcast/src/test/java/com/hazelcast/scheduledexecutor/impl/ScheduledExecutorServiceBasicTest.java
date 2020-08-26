@@ -23,6 +23,8 @@ import com.hazelcast.config.ScheduledExecutorConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.cp.IAtomicLong;
 import com.hazelcast.cp.ICountDownLatch;
+import com.hazelcast.internal.metrics.MetricDescriptor;
+import com.hazelcast.internal.metrics.collectors.MetricsCollector;
 import com.hazelcast.internal.partition.IPartitionLostEvent;
 import com.hazelcast.internal.partition.PartitionLostEventImpl;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
@@ -38,6 +40,7 @@ import com.hazelcast.scheduledexecutor.ScheduledTaskStatistics;
 import com.hazelcast.scheduledexecutor.StaleTaskException;
 import com.hazelcast.scheduledexecutor.TaskUtils;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -49,6 +52,7 @@ import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -59,6 +63,14 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.EXECUTOR_METRIC_CANCELLED;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.EXECUTOR_METRIC_COMPLETED;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.EXECUTOR_METRIC_CREATION_TIME;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.EXECUTOR_METRIC_PENDING;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.EXECUTOR_METRIC_STARTED;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.EXECUTOR_METRIC_TOTAL_EXECUTION_TIME;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.EXECUTOR_METRIC_TOTAL_START_LATENCY;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.SCHEDULED_EXECUTOR_PREFIX;
 import static com.hazelcast.internal.partition.IPartition.MAX_BACKUP_COUNT;
 import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.scheduledexecutor.TaskUtils.autoDisposable;
@@ -97,7 +109,7 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
 
         HazelcastInstance[] instances = createClusterWithCount(1, config);
         IScheduledFuture future = instances[0].getScheduledExecutorService(schedulerName)
-                                              .schedule(new PlainCallableTask(), 0, SECONDS);
+                .schedule(new PlainCallableTask(), 0, SECONDS);
 
         NodeEngineImpl nodeEngine = getNodeEngineImpl(instances[0]);
         ManagedExecutorService mes = (ManagedExecutorService) nodeEngine.getExecutionService()
@@ -518,7 +530,7 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
         // Scheduling on different partition on Node A should be rejected
         key = generateKeyOwnedBy(instances[0]);
         assertCapacityReached(serviceA, key, "Maximum capacity (3) of tasks reached "
-                        + "for this member and scheduled executor (" + schedulerName + ").");
+                + "for this member and scheduled executor (" + schedulerName + ").");
 
         instances[0].getLifecycleService().shutdown();
         waitAllForSafeState(instances[1]);
@@ -1558,5 +1570,132 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
         HazelcastInstance instance = createHazelcastInstance();
         IScheduledExecutorService s = instance.getScheduledExecutorService(ANY_EXECUTOR_NAME);
         s.schedule(new PlainCallableTask(), 0, SECONDS);
+    }
+
+    @Test
+    public void scheduled_executor_collects_statistics_when_stats_enabled() throws Exception {
+        // run task
+        Config config = smallInstanceConfig();
+        config.getScheduledExecutorConfig(ANY_EXECUTOR_NAME)
+                .setStatisticsEnabled(true);
+
+        HazelcastInstance[] instances = createClusterWithCount(2, config);
+        IScheduledExecutorService s = getScheduledExecutor(instances, ANY_EXECUTOR_NAME);
+        Map<Member, IScheduledFuture<Double>> futureMap = s.scheduleOnAllMembers(new OneSecondSleepingTask(), 0, SECONDS);
+        Set<Map.Entry<Member, IScheduledFuture<Double>>> entries = futureMap.entrySet();
+        for (Map.Entry<Member, IScheduledFuture<Double>> entry : entries) {
+            entry.getValue().get();
+        }
+
+        // collect metrics
+        Map<String, List<Long>> metrics = collectMetrics(SCHEDULED_EXECUTOR_PREFIX, instances);
+
+        // check results
+        assertMetricsCollected(metrics, 1000, 0,
+                1, 1, 0, 1, 0);
+    }
+
+    @Test
+    public void scheduled_executor_does_not_collect_statistics_when_stats_disabled() throws Exception {
+        // run task
+        Config config = smallInstanceConfig();
+        config.getScheduledExecutorConfig(ANY_EXECUTOR_NAME)
+                .setStatisticsEnabled(false);
+
+        HazelcastInstance[] instances = createClusterWithCount(2, config);
+        IScheduledExecutorService s = getScheduledExecutor(instances, ANY_EXECUTOR_NAME);
+        Map<Member, IScheduledFuture<Double>> futureMap = s.scheduleOnAllMembers(new OneSecondSleepingTask(), 0, SECONDS);
+        Set<Map.Entry<Member, IScheduledFuture<Double>>> entries = futureMap.entrySet();
+        for (Map.Entry<Member, IScheduledFuture<Double>> entry : entries) {
+            entry.getValue().get();
+        }
+
+        // collect metrics
+        Map<String, List<Long>> metrics = collectMetrics(SCHEDULED_EXECUTOR_PREFIX, instances);
+
+        // check results
+        assertTrue("No metrics collection expected but " + metrics, metrics.isEmpty());
+    }
+
+    public static Map<String, List<Long>> collectMetrics(String prefix, HazelcastInstance... instances) {
+        Map<String, List<Long>> metricsMap = new HashMap<>();
+
+        for (HazelcastInstance instance : instances) {
+            Accessors.getMetricsRegistry(instance).collect(new MetricsCollector() {
+                @Override
+                public void collectLong(MetricDescriptor descriptor, long value) {
+                    if (prefix.equals(descriptor.prefix())) {
+                        metricsMap.compute(descriptor.metric(), (metricName, values) -> {
+                            if (values == null) {
+                                values = new ArrayList<>();
+                            }
+                            values.add(value);
+                            return values;
+                        });
+                    }
+                }
+
+                @Override
+                public void collectDouble(MetricDescriptor descriptor, double value) {
+                }
+
+                @Override
+                public void collectException(MetricDescriptor descriptor, Exception e) {
+                }
+
+                @Override
+                public void collectNoValue(MetricDescriptor descriptor) {
+                }
+            });
+        }
+        return metricsMap;
+    }
+
+    public static void assertMetricsCollected(Map<String, List<Long>> metricsMap,
+                                              long expectedTotalExecutionTime,
+                                              long expectedPending,
+                                              long expectedStarted,
+                                              long expectedCompleted,
+                                              long expectedCancelled,
+                                              long expectedCreationTime,
+                                              long expectedTotalStartLatency) {
+
+        List<Long> totalExecutionTimes = metricsMap.get(EXECUTOR_METRIC_TOTAL_EXECUTION_TIME);
+        for (long totalExecutionTime : totalExecutionTimes) {
+            assertGreaterOrEquals(EXECUTOR_METRIC_TOTAL_EXECUTION_TIME + "::" + metricsMap,
+                    totalExecutionTime, expectedTotalExecutionTime);
+        }
+
+        List<Long> pendingCount = metricsMap.get(EXECUTOR_METRIC_PENDING);
+        for (long pending : pendingCount) {
+            assertEquals(EXECUTOR_METRIC_PENDING, expectedPending, pending);
+        }
+
+        List<Long> startedCount = metricsMap.get(EXECUTOR_METRIC_STARTED);
+        for (long started : startedCount) {
+            assertEquals(EXECUTOR_METRIC_STARTED, expectedStarted, started);
+        }
+
+        List<Long> completedCount = metricsMap.get(EXECUTOR_METRIC_COMPLETED);
+        for (long completed : completedCount) {
+            assertEquals(EXECUTOR_METRIC_COMPLETED, expectedCompleted, completed);
+        }
+
+        List<Long> cancelledCount = metricsMap.get(EXECUTOR_METRIC_CANCELLED);
+        for (long cancelled : cancelledCount) {
+            assertEquals(EXECUTOR_METRIC_CANCELLED, expectedCancelled, cancelled);
+        }
+
+        List<Long> creationTimes = metricsMap.get(EXECUTOR_METRIC_CREATION_TIME);
+        for (long creationTime : creationTimes) {
+            assertGreaterOrEquals(EXECUTOR_METRIC_CREATION_TIME,
+                    creationTime, expectedCreationTime);
+        }
+
+        List<Long> totalStartLatencies = metricsMap.get(EXECUTOR_METRIC_TOTAL_START_LATENCY);
+        for (long totalStartLatency : totalStartLatencies) {
+            assertGreaterOrEquals(EXECUTOR_METRIC_TOTAL_START_LATENCY,
+                    totalStartLatency, expectedTotalStartLatency);
+        }
     }
 }

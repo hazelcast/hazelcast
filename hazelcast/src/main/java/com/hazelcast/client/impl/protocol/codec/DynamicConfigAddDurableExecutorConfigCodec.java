@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * If a durable executor configuration with the given {@code name} already exists, then
  * the new configuration is ignored and the existing one is preserved.
  */
-@Generated("ffc78ee41a2ae9940f201d77b4b62c83")
+@Generated("26df3ccb0152053eda1d8d384a8699e8")
 public final class DynamicConfigAddDurableExecutorConfigCodec {
     //hex: 0x1B0900
     public static final int REQUEST_MESSAGE_TYPE = 1771776;
@@ -47,7 +47,8 @@ public final class DynamicConfigAddDurableExecutorConfigCodec {
     private static final int REQUEST_POOL_SIZE_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_DURABILITY_FIELD_OFFSET = REQUEST_POOL_SIZE_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_CAPACITY_FIELD_OFFSET = REQUEST_DURABILITY_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_CAPACITY_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int REQUEST_STATISTICS_ENABLED_FIELD_OFFSET = REQUEST_CAPACITY_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_STATISTICS_ENABLED_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
 
     private DynamicConfigAddDurableExecutorConfigCodec() {
@@ -82,9 +83,20 @@ public final class DynamicConfigAddDurableExecutorConfigCodec {
          * apply to this lock configuration's operations.
          */
         public @Nullable java.lang.String splitBrainProtectionName;
+
+        /**
+         * {@code true} to enable gathering of statistics, otherwise {@code false}
+         */
+        public boolean statisticsEnabled;
+
+        /**
+         * True if the statisticsEnabled is received from the client, false otherwise.
+         * If this is false, statisticsEnabled has the default value for its type.
+        */
+        public boolean isStatisticsEnabledExists;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String name, int poolSize, int durability, int capacity, @Nullable java.lang.String splitBrainProtectionName) {
+    public static ClientMessage encodeRequest(java.lang.String name, int poolSize, int durability, int capacity, @Nullable java.lang.String splitBrainProtectionName, boolean statisticsEnabled) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
         clientMessage.setOperationName("DynamicConfig.AddDurableExecutorConfig");
@@ -94,6 +106,7 @@ public final class DynamicConfigAddDurableExecutorConfigCodec {
         encodeInt(initialFrame.content, REQUEST_POOL_SIZE_FIELD_OFFSET, poolSize);
         encodeInt(initialFrame.content, REQUEST_DURABILITY_FIELD_OFFSET, durability);
         encodeInt(initialFrame.content, REQUEST_CAPACITY_FIELD_OFFSET, capacity);
+        encodeBoolean(initialFrame.content, REQUEST_STATISTICS_ENABLED_FIELD_OFFSET, statisticsEnabled);
         clientMessage.add(initialFrame);
         StringCodec.encode(clientMessage, name);
         CodecUtil.encodeNullable(clientMessage, splitBrainProtectionName, StringCodec::encode);
@@ -107,6 +120,12 @@ public final class DynamicConfigAddDurableExecutorConfigCodec {
         request.poolSize = decodeInt(initialFrame.content, REQUEST_POOL_SIZE_FIELD_OFFSET);
         request.durability = decodeInt(initialFrame.content, REQUEST_DURABILITY_FIELD_OFFSET);
         request.capacity = decodeInt(initialFrame.content, REQUEST_CAPACITY_FIELD_OFFSET);
+        if (initialFrame.content.length >= REQUEST_STATISTICS_ENABLED_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES) {
+            request.statisticsEnabled = decodeBoolean(initialFrame.content, REQUEST_STATISTICS_ENABLED_FIELD_OFFSET);
+            request.isStatisticsEnabledExists = true;
+        } else {
+            request.isStatisticsEnabledExists = false;
+        }
         request.name = StringCodec.decode(iterator);
         request.splitBrainProtectionName = CodecUtil.decodeNullable(iterator, StringCodec::decode);
         return request;

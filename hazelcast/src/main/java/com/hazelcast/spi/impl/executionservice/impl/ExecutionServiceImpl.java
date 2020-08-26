@@ -73,19 +73,15 @@ public final class ExecutionServiceImpl implements ExecutionService {
     private static final int ASYNC_QUEUE_CAPACITY = 100000;
     private static final int OFFLOADABLE_QUEUE_CAPACITY = 100000;
 
+    private final ILogger logger;
     private final NodeEngineImpl nodeEngine;
+    private final TaskScheduler globalTaskScheduler;
     private final ExecutorService cachedExecutorService;
     private final LoggingScheduledExecutor scheduledExecutorService;
-    private final TaskScheduler globalTaskScheduler;
-    private final ILogger logger;
     private final CompletableFutureTask completableFutureTask;
-
     private final ConcurrentMap<String, ManagedExecutorService> executors = new ConcurrentHashMap<>();
-
     private final ConcurrentMap<String, ManagedExecutorService> durableExecutors = new ConcurrentHashMap<>();
-
     private final ConcurrentMap<String, ManagedExecutorService> scheduleDurableExecutors = new ConcurrentHashMap<>();
-
     private final ConstructorFunction<String, ManagedExecutorService> constructor =
             new ConstructorFunction<String, ManagedExecutorService>() {
                 @Override
@@ -95,7 +91,6 @@ public final class ExecutionServiceImpl implements ExecutionService {
                     return createExecutor(name, config.getPoolSize(), queueCapacity, ExecutorType.CACHED, null);
                 }
             };
-
     private final ConstructorFunction<String, ManagedExecutorService> durableConstructor =
             new ConstructorFunction<String, ManagedExecutorService>() {
                 @Override
@@ -104,7 +99,6 @@ public final class ExecutionServiceImpl implements ExecutionService {
                     return createExecutor(name, cfg.getPoolSize(), Integer.MAX_VALUE, ExecutorType.CACHED, null);
                 }
             };
-
     private final ConstructorFunction<String, ManagedExecutorService> scheduledDurableConstructor =
             new ConstructorFunction<String, ManagedExecutorService>() {
                 @Override
@@ -127,10 +121,10 @@ public final class ExecutionServiceImpl implements ExecutionService {
         this.cachedExecutorService = new ThreadPoolExecutor(
                 CORE_POOL_SIZE, Integer.MAX_VALUE, KEEP_ALIVE_TIME, TimeUnit.SECONDS, new SynchronousQueue<>(),
                 threadFactory, (r, executor) -> {
-                    if (logger.isFinestEnabled()) {
-                        logger.finest("Node is shutting down; discarding the task: " + r);
-                    }
-                });
+            if (logger.isFinestEnabled()) {
+                logger.finest("Node is shutting down; discarding the task: " + r);
+            }
+        });
 
         ThreadFactory singleExecutorThreadFactory = new SingleExecutorThreadFactory(configClassLoader,
                 createThreadPoolName(hzName, "scheduled"));

@@ -112,10 +112,24 @@
     </network>
     <partition-group enabled="false"/>
     <executor-service name="default">
-        <pool-size>16</pool-size>
         <!--Queue capacity. 0 means Integer.MAX_VALUE.-->
         <queue-capacity>0</queue-capacity>
+        <pool-size>16</pool-size>
+        <statistics-enabled>true</statistics-enabled>
     </executor-service>
+    <durable-executor-service>
+        <capacity>100</capacity>
+        <durability>1</durability>
+        <pool-size>16</pool-size>
+        <statistics-enabled>true</statistics-enabled>
+    </durable-executor-service>
+    <scheduled-executor-service name="default">
+        <capacity>100</capacity>
+        <durability>1</durability>
+        <pool-size>16</pool-size>
+        <merge-policy batch-size="100">com.hazelcast.spi.merge.PutIfAbsentMergePolicy</merge-policy>
+        <statistics-enabled>true</statistics-enabled>
+    </scheduled-executor-service>
     <security>
         <client-block-unmapped-actions>true</client-block-unmapped-actions>
     </security>
@@ -278,13 +292,6 @@
         <async-backup-count>0</async-backup-count>
         <merge-policy batch-size="100">HyperLogLogMergePolicy</merge-policy>
     </cardinality-estimator>
-
-    <scheduled-executor-service name="default">
-        <capacity>100</capacity>
-        <durability>1</durability>
-        <pool-size>16</pool-size>
-        <merge-policy batch-size="100">com.hazelcast.spi.merge.PutIfAbsentMergePolicy</merge-policy>
-    </scheduled-executor-service>
 
     <crdt-replication>
         <replication-period-millis>1000</replication-period-millis>

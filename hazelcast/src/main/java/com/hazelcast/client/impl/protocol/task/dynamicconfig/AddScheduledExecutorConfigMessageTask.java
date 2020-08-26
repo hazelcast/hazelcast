@@ -44,11 +44,18 @@ public class AddScheduledExecutorConfigMessageTask
 
     @Override
     protected IdentifiedDataSerializable getConfig() {
+        // This is to handle 4.0 client versions. Those
+        // versions don't aware of `statisticsEnabled` parameter.
+        // The parameter was added at version 4.1 and its default value is  true.
+        boolean statsEnabled = !parameters.isStatisticsEnabledExists
+                || parameters.statisticsEnabled;
+
         ScheduledExecutorConfig config = new ScheduledExecutorConfig();
         config.setPoolSize(parameters.poolSize);
         config.setDurability(parameters.durability);
         config.setCapacity(parameters.capacity);
         config.setName(parameters.name);
+        config.setStatisticsEnabled(statsEnabled);
         MergePolicyConfig mergePolicyConfig = mergePolicyConfig(parameters.mergePolicy, parameters.mergeBatchSize);
         config.setMergePolicyConfig(mergePolicyConfig);
         return config;

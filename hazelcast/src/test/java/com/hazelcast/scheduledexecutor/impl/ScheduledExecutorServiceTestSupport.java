@@ -274,6 +274,18 @@ public class ScheduledExecutorServiceTestSupport extends HazelcastTestSupport {
 
     }
 
+    static class OneSecondSleepingTask implements Runnable, Serializable {
+
+        OneSecondSleepingTask() {
+        }
+
+        @Override
+        public void run() {
+           sleepSeconds(1);
+        }
+
+    }
+
     static class ErroneousCallableTask implements Callable<Double>, Serializable, HazelcastInstanceAware {
 
         private String completionLatchName;

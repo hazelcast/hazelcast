@@ -48,4 +48,9 @@ public class DurableExecutorConfigReadOnly extends DurableExecutorConfig {
     public DurableExecutorConfig setSplitBrainProtectionName(String splitBrainProtectionName) {
         throw new UnsupportedOperationException("This config is read-only durable executor: " + getName());
     }
+
+    @Override
+    public DurableExecutorConfig setStatisticsEnabled(boolean statisticsEnabled) {
+        throw new UnsupportedOperationException("This config is read-only durable executor: " + getName());
+    }
 }
