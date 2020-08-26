@@ -121,6 +121,8 @@ The possible values for the `mode` placeholder are:
  - `server` - this value is used when the instance was started using the `start.sh` or `start.bat` scripts. If the JVM argument `hazelcast.tracking.server` is set to `true`, we conclude that the instance was started in server mode.
  - `client` - this instance is a Hazelcast client instance
  - `embedded` - this instance is embedded in another Java program. This will be the case when the JVM argument `hazelcast.tracking.server` is not set to `true`.
+ 
+In addition to the above, the hazelcast instance will overwrite any existing file in the configured location. To prevent this, the user can configure the file location using the placeholders in the same way they can be used when defining the file contents. For example, if the file name is configured as `Hazelcast-$HZ_INSTANCE_TRACKING{pid}-$HZ_INSTANCE_TRACKING{start_timestamp}.process`, the file name will contain the process ID and the creation time, making it unique every time the instance is started. The created file is not deleted on node shutdown. As such, it leaves a trace of instances started on a particular machine. The file creation process also is fail-safe meaning that the instance will proceed with starting even though it is unable to write the tracking file and the instance will only log a warning.
 
 ### Testing criteria
 
