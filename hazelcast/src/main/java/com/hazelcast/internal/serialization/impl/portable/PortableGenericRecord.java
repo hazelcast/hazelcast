@@ -69,6 +69,7 @@ public class PortableGenericRecord implements GenericRecord {
     }
 
     @Override
+    @Nonnull
     public FieldType getFieldType(@Nonnull String fieldName) {
         return classDefinition.getFieldType(fieldName);
     }

@@ -95,6 +95,12 @@ public interface GenericRecord {
     @Nonnull
     Builder cloneWithBuilder();
 
+    /**
+     * @param fieldName the name of the field
+     * @return field type for the given field name
+     * @throws IllegalArgumentException if the field name does not exist in the class definition
+     */
+    @Nonnull
     FieldType getFieldType(@Nonnull String fieldName);
 
     /**
@@ -296,6 +302,7 @@ public interface GenericRecord {
          * @param classDefinition of the portable that we will create
          * @return GenericRecordBuilder for Portable format
          */
+        @Nonnull
         static Builder portable(@Nonnull ClassDefinition classDefinition) {
             return new PortableGenericRecordBuilder(classDefinition);
         }

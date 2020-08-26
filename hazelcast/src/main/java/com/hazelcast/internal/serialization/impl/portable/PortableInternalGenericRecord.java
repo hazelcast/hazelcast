@@ -84,6 +84,7 @@ public class PortableInternalGenericRecord implements InternalGenericRecord {
     }
 
     @Override
+    @Nonnull
     public FieldType getFieldType(@Nonnull String fieldName) {
         return cd.getFieldType(fieldName);
     }
