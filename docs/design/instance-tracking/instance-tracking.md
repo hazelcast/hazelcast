@@ -149,7 +149,7 @@ public enum InstanceTrackingProperties {
 }
 ```
 
-The possible values for the `product` placeholder are: `Hazelcast`, `Hazelcast Enterprise`, `Hazelcast Client` and `Hazelcast Client Enterprise`. 
+The possible values for the `product` placeholder are: `Hazelcast`, `Hazelcast Enterprise`, `Hazelcast Client`, `Hazelcast Client Enterprise`, `Hazelcast Jet`, `Hazelcast Jet Enterprise`. 
 The possible values for the `mode` placeholder are:
  - `server` - this value is used when the instance was started using the `start.sh` or `start.bat` scripts. If the JVM argument `hazelcast.tracking.server` is set to `true`, we conclude that the instance was started in server mode.
  - `client` - this instance is a Hazelcast client instance
