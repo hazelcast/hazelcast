@@ -74,7 +74,7 @@ public abstract class SqlTestInstanceFactory {
 
         private final Object jetFactory;
 
-        public JetInstanceFactory() {
+        JetInstanceFactory() {
             try {
                 Class<?> jetFactoryClass = Class.forName("com.hazelcast.jet.JetTestInstanceFactory");
                 jetFactory = jetFactoryClass.getConstructor().newInstance();
