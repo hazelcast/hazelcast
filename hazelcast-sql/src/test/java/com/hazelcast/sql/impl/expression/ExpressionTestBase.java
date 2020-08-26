@@ -1159,13 +1159,16 @@ public abstract class ExpressionTestBase extends SqlTestSupport {
     protected SqlService createEndToEndRecords() {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         HazelcastInstance instance = factory.newHazelcastInstance(smallInstanceConfig());
-        IMap<Integer, Record> records = factory.newHazelcastInstance(smallInstanceConfig()).getMap("records");
 
+        Map<Integer, Record> recordsTmp = new HashMap<>();
         for (int i = 0; i < 1000; ++i) {
-            records.put(i, new Record("str" + i, 1000 + i, 2000.1 + i, new BigDecimal((3000 + i) + ".5"), i >= 500));
+            recordsTmp.put(i, new Record("str" + i, 1000 + i, 2000.1 + i, new BigDecimal((3000 + i) + ".5"), i >= 500));
         }
-        records.put(5000, new Record(null, -100, -100500, new BigDecimal(9001), null));
-        records.put(6000, new Record(null, -200, -200500, null, null));
+        recordsTmp.put(5000, new Record(null, -100, -100500, new BigDecimal(9001), null));
+        recordsTmp.put(6000, new Record(null, -200, -200500, null, null));
+
+        IMap<Integer, Record> records = factory.newHazelcastInstance(smallInstanceConfig()).getMap("records");
+        records.putAll(recordsTmp);
 
         return instance.getSql();
     }
