@@ -41,123 +41,126 @@ public class PortableGenericRecord implements GenericRecord {
         return classDefinition;
     }
 
+    @Nonnull
     @Override
     public Builder newBuilder() {
         return Builder.portable(classDefinition);
     }
 
+    @Nonnull
     @Override
     public Builder cloneWithBuilder() {
         return new PortableGenericRecordBuilder(classDefinition, Arrays.copyOf(objects, objects.length));
     }
 
     @Override
-    public GenericRecord[] readGenericRecordArray(String fieldName) {
+    public GenericRecord[] readGenericRecordArray(@Nonnull String fieldName) {
         return read(fieldName, FieldType.PORTABLE_ARRAY);
     }
 
     @Override
-    public GenericRecord readGenericRecord(String fieldName) {
+    public GenericRecord readGenericRecord(@Nonnull String fieldName) {
         return read(fieldName, FieldType.PORTABLE);
     }
 
     @Override
-    public boolean hasField(String fieldName) {
+    public boolean hasField(@Nonnull String fieldName) {
         return classDefinition.hasField(fieldName);
     }
 
     @Override
-    public FieldType getFieldType(String fieldName) {
+    @Nonnull
+    public FieldType getFieldType(@Nonnull String fieldName) {
         return classDefinition.getFieldType(fieldName);
     }
 
     @Override
-    public boolean readBoolean(String fieldName) {
+    public boolean readBoolean(@Nonnull String fieldName) {
         return read(fieldName, FieldType.BOOLEAN);
     }
 
     @Override
-    public byte readByte(String fieldName) {
+    public byte readByte(@Nonnull String fieldName) {
         return read(fieldName, FieldType.BYTE);
     }
 
     @Override
-    public char readChar(String fieldName) {
+    public char readChar(@Nonnull String fieldName) {
         return read(fieldName, FieldType.CHAR);
     }
 
     @Override
-    public double readDouble(String fieldName) {
+    public double readDouble(@Nonnull String fieldName) {
         return read(fieldName, FieldType.DOUBLE);
     }
 
     @Override
-    public float readFloat(String fieldName) {
+    public float readFloat(@Nonnull String fieldName) {
         return read(fieldName, FieldType.FLOAT);
     }
 
     @Override
-    public int readInt(String fieldName) {
+    public int readInt(@Nonnull String fieldName) {
         return read(fieldName, FieldType.INT);
     }
 
     @Override
-    public long readLong(String fieldName) {
+    public long readLong(@Nonnull String fieldName) {
         return read(fieldName, FieldType.LONG);
     }
 
     @Override
-    public short readShort(String fieldName) {
+    public short readShort(@Nonnull String fieldName) {
         return read(fieldName, FieldType.SHORT);
     }
 
     @Override
-    public String readUTF(String fieldName) {
+    public String readUTF(@Nonnull String fieldName) {
         return read(fieldName, FieldType.UTF);
     }
 
     @Override
-    public boolean[] readBooleanArray(String fieldName) {
+    public boolean[] readBooleanArray(@Nonnull String fieldName) {
         return read(fieldName, FieldType.BOOLEAN_ARRAY);
     }
 
     @Override
-    public byte[] readByteArray(String fieldName) {
+    public byte[] readByteArray(@Nonnull String fieldName) {
         return read(fieldName, FieldType.BYTE_ARRAY);
     }
 
     @Override
-    public char[] readCharArray(String fieldName) {
+    public char[] readCharArray(@Nonnull String fieldName) {
         return read(fieldName, FieldType.CHAR_ARRAY);
     }
 
     @Override
-    public double[] readDoubleArray(String fieldName) {
+    public double[] readDoubleArray(@Nonnull String fieldName) {
         return read(fieldName, FieldType.DOUBLE_ARRAY);
     }
 
     @Override
-    public float[] readFloatArray(String fieldName) {
+    public float[] readFloatArray(@Nonnull String fieldName) {
         return read(fieldName, FieldType.FLOAT_ARRAY);
     }
 
     @Override
-    public int[] readIntArray(String fieldName) {
+    public int[] readIntArray(@Nonnull String fieldName) {
         return read(fieldName, FieldType.INT_ARRAY);
     }
 
     @Override
-    public long[] readLongArray(String fieldName) {
+    public long[] readLongArray(@Nonnull String fieldName) {
         return read(fieldName, FieldType.LONG_ARRAY);
     }
 
     @Override
-    public short[] readShortArray(String fieldName) {
+    public short[] readShortArray(@Nonnull String fieldName) {
         return read(fieldName, FieldType.SHORT_ARRAY);
     }
 
     @Override
-    public String[] readUTFArray(String fieldName) {
+    public String[] readUTFArray(@Nonnull String fieldName) {
         return read(fieldName, FieldType.UTF_ARRAY);
     }
 

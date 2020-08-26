@@ -27,6 +27,7 @@ import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.nio.serialization.Portable;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
+import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.util.function.Function;
 
@@ -78,17 +79,18 @@ public class PortableInternalGenericRecord implements InternalGenericRecord {
     }
 
     @Override
-    public boolean hasField(String fieldName) {
+    public boolean hasField(@Nonnull String fieldName) {
         return cd.hasField(fieldName);
     }
 
     @Override
-    public FieldType getFieldType(String fieldName) {
+    @Nonnull
+    public FieldType getFieldType(@Nonnull String fieldName) {
         return cd.getFieldType(fieldName);
     }
 
     @Override
-    public boolean readBoolean(String fieldName) {
+    public boolean readBoolean(@Nonnull String fieldName) {
         try {
             return in.readBoolean(readPosition(fieldName, FieldType.BOOLEAN));
         } catch (IOException e) {
@@ -97,7 +99,7 @@ public class PortableInternalGenericRecord implements InternalGenericRecord {
     }
 
     @Override
-    public byte readByte(String fieldName) {
+    public byte readByte(@Nonnull String fieldName) {
         try {
             return in.readByte(readPosition(fieldName, FieldType.BYTE));
         } catch (IOException e) {
@@ -106,7 +108,7 @@ public class PortableInternalGenericRecord implements InternalGenericRecord {
     }
 
     @Override
-    public char readChar(String fieldName) {
+    public char readChar(@Nonnull String fieldName) {
         try {
             return in.readChar(readPosition(fieldName, FieldType.CHAR));
         } catch (IOException e) {
@@ -115,7 +117,7 @@ public class PortableInternalGenericRecord implements InternalGenericRecord {
     }
 
     @Override
-    public double readDouble(String fieldName) {
+    public double readDouble(@Nonnull String fieldName) {
         try {
             return in.readDouble(readPosition(fieldName, FieldType.DOUBLE));
         } catch (IOException e) {
@@ -124,7 +126,7 @@ public class PortableInternalGenericRecord implements InternalGenericRecord {
     }
 
     @Override
-    public float readFloat(String fieldName) {
+    public float readFloat(@Nonnull String fieldName) {
         try {
             return in.readFloat(readPosition(fieldName, FieldType.FLOAT));
         } catch (IOException e) {
@@ -133,7 +135,7 @@ public class PortableInternalGenericRecord implements InternalGenericRecord {
     }
 
     @Override
-    public int readInt(String fieldName) {
+    public int readInt(@Nonnull String fieldName) {
         try {
             return in.readInt(readPosition(fieldName, FieldType.INT));
         } catch (IOException e) {
@@ -142,7 +144,7 @@ public class PortableInternalGenericRecord implements InternalGenericRecord {
     }
 
     @Override
-    public long readLong(String fieldName) {
+    public long readLong(@Nonnull String fieldName) {
         try {
             return in.readLong(readPosition(fieldName, FieldType.LONG));
         } catch (IOException e) {
@@ -151,7 +153,7 @@ public class PortableInternalGenericRecord implements InternalGenericRecord {
     }
 
     @Override
-    public short readShort(String fieldName) {
+    public short readShort(@Nonnull String fieldName) {
         try {
             return in.readShort(readPosition(fieldName, FieldType.SHORT));
         } catch (IOException e) {
@@ -160,7 +162,7 @@ public class PortableInternalGenericRecord implements InternalGenericRecord {
     }
 
     @Override
-    public String readUTF(String fieldName) {
+    public String readUTF(@Nonnull String fieldName) {
         int currentPos = in.position();
         try {
             int pos = readPosition(fieldName, FieldType.UTF);
@@ -178,7 +180,7 @@ public class PortableInternalGenericRecord implements InternalGenericRecord {
     }
 
     @Override
-    public boolean[] readBooleanArray(String fieldName) {
+    public boolean[] readBooleanArray(@Nonnull String fieldName) {
         int currentPos = in.position();
         try {
             int position = readPosition(fieldName, FieldType.BOOLEAN_ARRAY);
@@ -195,7 +197,7 @@ public class PortableInternalGenericRecord implements InternalGenericRecord {
     }
 
     @Override
-    public byte[] readByteArray(String fieldName) {
+    public byte[] readByteArray(@Nonnull String fieldName) {
         int currentPos = in.position();
         try {
             int position = readPosition(fieldName, FieldType.BYTE_ARRAY);
@@ -213,7 +215,7 @@ public class PortableInternalGenericRecord implements InternalGenericRecord {
     }
 
     @Override
-    public char[] readCharArray(String fieldName) {
+    public char[] readCharArray(@Nonnull String fieldName) {
         int currentPos = in.position();
         try {
             int position = readPosition(fieldName, FieldType.CHAR_ARRAY);
@@ -230,7 +232,7 @@ public class PortableInternalGenericRecord implements InternalGenericRecord {
     }
 
     @Override
-    public double[] readDoubleArray(String fieldName) {
+    public double[] readDoubleArray(@Nonnull String fieldName) {
         int currentPos = in.position();
         try {
             int position = readPosition(fieldName, FieldType.DOUBLE_ARRAY);
@@ -247,7 +249,7 @@ public class PortableInternalGenericRecord implements InternalGenericRecord {
     }
 
     @Override
-    public float[] readFloatArray(String fieldName) {
+    public float[] readFloatArray(@Nonnull String fieldName) {
         int currentPos = in.position();
         try {
             int position = readPosition(fieldName, FieldType.FLOAT_ARRAY);
@@ -264,7 +266,7 @@ public class PortableInternalGenericRecord implements InternalGenericRecord {
     }
 
     @Override
-    public int[] readIntArray(String fieldName) {
+    public int[] readIntArray(@Nonnull String fieldName) {
         int currentPos = in.position();
         try {
             int position = readPosition(fieldName, FieldType.INT_ARRAY);
@@ -281,7 +283,7 @@ public class PortableInternalGenericRecord implements InternalGenericRecord {
     }
 
     @Override
-    public long[] readLongArray(String fieldName) {
+    public long[] readLongArray(@Nonnull String fieldName) {
         int currentPos = in.position();
         try {
             int position = readPosition(fieldName, FieldType.LONG_ARRAY);
@@ -298,7 +300,7 @@ public class PortableInternalGenericRecord implements InternalGenericRecord {
     }
 
     @Override
-    public short[] readShortArray(String fieldName) {
+    public short[] readShortArray(@Nonnull String fieldName) {
         int currentPos = in.position();
         try {
             int position = readPosition(fieldName, FieldType.SHORT_ARRAY);
@@ -315,7 +317,7 @@ public class PortableInternalGenericRecord implements InternalGenericRecord {
     }
 
     @Override
-    public String[] readUTFArray(String fieldName) {
+    public String[] readUTFArray(@Nonnull String fieldName) {
         int currentPos = in.position();
         try {
             int position = readPosition(fieldName, FieldType.UTF_ARRAY);
@@ -374,18 +376,20 @@ public class PortableInternalGenericRecord implements InternalGenericRecord {
         }
     }
 
+    @Nonnull
     @Override
     public Builder newBuilder() {
         throw new UnsupportedOperationException();
     }
 
+    @Nonnull
     @Override
     public Builder cloneWithBuilder() {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public GenericRecord[] readGenericRecordArray(String fieldName) {
+    public GenericRecord[] readGenericRecordArray(@Nonnull String fieldName) {
         return readNestedArray(fieldName, GenericRecord[]::new, false);
     }
 
@@ -437,7 +441,7 @@ public class PortableInternalGenericRecord implements InternalGenericRecord {
     }
 
     @Override
-    public GenericRecord readGenericRecord(String fieldName) {
+    public GenericRecord readGenericRecord(@Nonnull String fieldName) {
         return readNested(fieldName, false);
     }
 

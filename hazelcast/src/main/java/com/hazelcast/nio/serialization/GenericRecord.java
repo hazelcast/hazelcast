@@ -19,6 +19,7 @@ package com.hazelcast.nio.serialization;
 import com.hazelcast.internal.serialization.impl.portable.PortableGenericRecordBuilder;
 import com.hazelcast.spi.annotation.Beta;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 /**
@@ -35,6 +36,16 @@ import javax.annotation.Nullable;
  *
  *             int id = genericRecord.readInt("id");
  *
+ *             return null;
+ *         });
+ * </pre>
+ * Another example with EntryProcessor to demonstrate how to read, modify and set back to the map:
+ * <pre>
+ * map.executeOnKey("key", (EntryProcessor<Object, Object, Object>) entry -> {
+ *             GenericRecord genericRecord = (GenericRecord) entry.getValue();
+ *             GenericRecord modifiedGenericRecord = genericRecord.cloneWithBuilder()
+ *                     .writeInt("age",22).build();
+ *             entry.setValue(modifiedGenericRecord);
  *             return null;
  *         });
  * </pre>
@@ -70,23 +81,43 @@ public interface GenericRecord {
      *
      * @return an empty generic record builder with same class definition as this one
      */
+    @Nonnull
     Builder newBuilder();
 
     /**
      * Returned {@link Builder} can be used to have exact copy and also just to update a couple of fields. By default,
      * it will copy all the fields.
+     * So instead of following where only the `id` field is updated,
+     * <pre>
+     *     GenericRecord modifiedGenericRecord = genericRecord.newBuilder()
+     *                         .writeUTF("name", genericRecord.readUTF("name"))
+     *                         .writeLong("id", 4)
+     *                         .writeUTF("surname", genericRecord.readUTF("surname"))
+     *                         .writeInt("age", genericRecord.readInt("age")).build();
+     * </pre>
+     * `cloneWithBuilder` used as follows:
+     * <pre>
+     *     GenericRecord modifiedGenericRecord = genericRecord.cloneWithBuilder().writeInt("id", 4).build();
+     * </pre>
      *
      * @return a generic record builder with same class definition as this one and populated with same values.
      */
+    @Nonnull
     Builder cloneWithBuilder();
 
-    FieldType getFieldType(String fieldName);
+    /**
+     * @param fieldName the name of the field
+     * @return field type for the given field name
+     * @throws IllegalArgumentException if the field name does not exist in the class definition
+     */
+    @Nonnull
+    FieldType getFieldType(@Nonnull String fieldName);
 
     /**
      * @param fieldName the name of the field
      * @return true if field exists in the definition of the class. Note that returns true even if the field is null.
      */
-    boolean hasField(String fieldName);
+    boolean hasField(@Nonnull String fieldName);
 
     /**
      * @param fieldName the name of the field
@@ -94,7 +125,7 @@ public interface GenericRecord {
      * @throws HazelcastSerializationException if the field name does not exist in the class definition or
      *                                         the type of the field does not match the one in the class definition.
      */
-    boolean readBoolean(String fieldName);
+    boolean readBoolean(@Nonnull String fieldName);
 
     /**
      * @param fieldName the name of the field
@@ -102,7 +133,7 @@ public interface GenericRecord {
      * @throws HazelcastSerializationException if the field name does not exist in the class definition or
      *                                         the type of the field does not match the one in the class definition.
      */
-    byte readByte(String fieldName);
+    byte readByte(@Nonnull String fieldName);
 
     /**
      * @param fieldName the name of the field
@@ -110,7 +141,7 @@ public interface GenericRecord {
      * @throws HazelcastSerializationException if the field name does not exist in the class definition or
      *                                         the type of the field does not match the one in the class definition.
      */
-    char readChar(String fieldName);
+    char readChar(@Nonnull String fieldName);
 
     /**
      * @param fieldName the name of the field
@@ -118,7 +149,7 @@ public interface GenericRecord {
      * @throws HazelcastSerializationException if the field name does not exist in the class definition or
      *                                         the type of the field does not match the one in the class definition.
      */
-    double readDouble(String fieldName);
+    double readDouble(@Nonnull String fieldName);
 
     /**
      * @param fieldName the name of the field
@@ -126,7 +157,7 @@ public interface GenericRecord {
      * @throws HazelcastSerializationException if the field name does not exist in the class definition or
      *                                         the type of the field does not match the one in the class definition.
      */
-    float readFloat(String fieldName);
+    float readFloat(@Nonnull String fieldName);
 
     /**
      * @param fieldName the name of the field
@@ -134,7 +165,7 @@ public interface GenericRecord {
      * @throws HazelcastSerializationException if the field name does not exist in the class definition or
      *                                         the type of the field does not match the one in the class definition.
      */
-    int readInt(String fieldName);
+    int readInt(@Nonnull String fieldName);
 
     /**
      * @param fieldName the name of the field
@@ -142,7 +173,7 @@ public interface GenericRecord {
      * @throws HazelcastSerializationException if the field name does not exist in the class definition or
      *                                         the type of the field does not match the one in the class definition.
      */
-    long readLong(String fieldName);
+    long readLong(@Nonnull String fieldName);
 
     /**
      * @param fieldName the name of the field
@@ -150,7 +181,7 @@ public interface GenericRecord {
      * @throws HazelcastSerializationException if the field name does not exist in the class definition or
      *                                         the type of the field does not match the one in the class definition.
      */
-    short readShort(String fieldName);
+    short readShort(@Nonnull String fieldName);
 
     /**
      * @param fieldName the name of the field
@@ -158,7 +189,8 @@ public interface GenericRecord {
      * @throws HazelcastSerializationException if the field name does not exist in the class definition or
      *                                         the type of the field does not match the one in the class definition.
      */
-    String readUTF(String fieldName);
+    @Nullable
+    String readUTF(@Nonnull String fieldName);
 
     /**
      * @param fieldName the name of the field
@@ -166,7 +198,8 @@ public interface GenericRecord {
      * @throws HazelcastSerializationException if the field name does not exist in the class definition or
      *                                         the type of the field does not match the one in the class definition.
      */
-    GenericRecord readGenericRecord(String fieldName);
+    @Nullable
+    GenericRecord readGenericRecord(@Nonnull String fieldName);
 
     /**
      * @param fieldName the name of the field
@@ -174,7 +207,8 @@ public interface GenericRecord {
      * @throws HazelcastSerializationException if the field name does not exist in the class definition or
      *                                         the type of the field does not match the one in the class definition.
      */
-    boolean[] readBooleanArray(String fieldName);
+    @Nullable
+    boolean[] readBooleanArray(@Nonnull String fieldName);
 
     /**
      * @param fieldName the name of the field
@@ -182,7 +216,8 @@ public interface GenericRecord {
      * @throws HazelcastSerializationException if the field name does not exist in the class definition or
      *                                         the type of the field does not match the one in the class definition.
      */
-    byte[] readByteArray(String fieldName);
+    @Nullable
+    byte[] readByteArray(@Nonnull String fieldName);
 
     /**
      * @param fieldName the name of the field
@@ -190,7 +225,8 @@ public interface GenericRecord {
      * @throws HazelcastSerializationException if the field name does not exist in the class definition or
      *                                         the type of the field does not match the one in the class definition.
      */
-    char[] readCharArray(String fieldName);
+    @Nullable
+    char[] readCharArray(@Nonnull String fieldName);
 
     /**
      * @param fieldName the name of the field
@@ -198,7 +234,8 @@ public interface GenericRecord {
      * @throws HazelcastSerializationException if the field name does not exist in the class definition or
      *                                         the type of the field does not match the one in the class definition.
      */
-    double[] readDoubleArray(String fieldName);
+    @Nullable
+    double[] readDoubleArray(@Nonnull String fieldName);
 
     /**
      * @param fieldName the name of the field
@@ -206,7 +243,8 @@ public interface GenericRecord {
      * @throws HazelcastSerializationException if the field name does not exist in the class definition or
      *                                         the type of the field does not match the one in the class definition.
      */
-    float[] readFloatArray(String fieldName);
+    @Nullable
+    float[] readFloatArray(@Nonnull String fieldName);
 
     /**
      * @param fieldName the name of the field
@@ -214,7 +252,8 @@ public interface GenericRecord {
      * @throws HazelcastSerializationException if the field name does not exist in the class definition or
      *                                         the type of the field does not match the one in the class definition.
      */
-    int[] readIntArray(String fieldName);
+    @Nullable
+    int[] readIntArray(@Nonnull String fieldName);
 
     /**
      * @param fieldName the name of the field
@@ -222,7 +261,8 @@ public interface GenericRecord {
      * @throws HazelcastSerializationException if the field name does not exist in the class definition or
      *                                         the type of the field does not match the one in the class definition.
      */
-    long[] readLongArray(String fieldName);
+    @Nullable
+    long[] readLongArray(@Nonnull String fieldName);
 
     /**
      * @param fieldName the name of the field
@@ -230,7 +270,8 @@ public interface GenericRecord {
      * @throws HazelcastSerializationException if the field name does not exist in the class definition or
      *                                         the type of the field does not match the one in the class definition.
      */
-    short[] readShortArray(String fieldName);
+    @Nullable
+    short[] readShortArray(@Nonnull String fieldName);
 
     /**
      * @param fieldName the name of the field
@@ -238,7 +279,8 @@ public interface GenericRecord {
      * @throws HazelcastSerializationException if the field name does not exist in the class definition or
      *                                         the type of the field does not match the one in the class definition.
      */
-    String[] readUTFArray(String fieldName);
+    @Nullable
+    String[] readUTFArray(@Nonnull String fieldName);
 
     /**
      * @param fieldName the name of the field
@@ -246,7 +288,8 @@ public interface GenericRecord {
      * @throws HazelcastSerializationException if the field name does not exist in the class definition or
      *                                         the type of the field does not match the one in the class definition.
      */
-    GenericRecord[] readGenericRecordArray(String fieldName);
+    @Nullable
+    GenericRecord[] readGenericRecordArray(@Nonnull String fieldName);
 
     /**
      * Interface for creating {@link GenericRecord} instances.
@@ -269,7 +312,8 @@ public interface GenericRecord {
          * @param classDefinition of the portable that we will create
          * @return GenericRecordBuilder for Portable format
          */
-        static Builder portable(ClassDefinition classDefinition) {
+        @Nonnull
+        static Builder portable(@Nonnull ClassDefinition classDefinition) {
             return new PortableGenericRecordBuilder(classDefinition);
         }
 
@@ -277,6 +321,7 @@ public interface GenericRecord {
          * @return a new constructed GenericRecord
          * @throws HazelcastSerializationException when the GenericRecord cannot be build.
          */
+        @Nonnull
         GenericRecord build();
 
         /**
@@ -293,7 +338,7 @@ public interface GenericRecord {
          *                                         Same field is trying to be overwritten without using
          *                                         {@link GenericRecord#cloneWithBuilder()}.
          */
-        Builder writeBoolean(String fieldName, boolean value);
+        Builder writeBoolean(@Nonnull String fieldName, boolean value);
 
         /**
          * It is illegal to write to the same field twice.
@@ -307,7 +352,7 @@ public interface GenericRecord {
          *                                         Same field is trying to be overwritten without using
          *                                         {@link GenericRecord#cloneWithBuilder()}.
          */
-        Builder writeByte(String fieldName, byte value);
+        Builder writeByte(@Nonnull String fieldName, byte value);
 
         /**
          * It is illegal to write to the same field twice.
@@ -320,7 +365,7 @@ public interface GenericRecord {
          *                                         Same field is trying to be overwritten without using
          *                                         {@link GenericRecord#cloneWithBuilder()}.
          */
-        Builder writeChar(String fieldName, char value);
+        Builder writeChar(@Nonnull String fieldName, char value);
 
         /**
          * It is illegal to write to the same field twice.
@@ -333,7 +378,7 @@ public interface GenericRecord {
          *                                         Same field is trying to be overwritten without using
          *                                         {@link GenericRecord#cloneWithBuilder()}.
          */
-        Builder writeDouble(String fieldName, double value);
+        Builder writeDouble(@Nonnull String fieldName, double value);
 
         /**
          * It is illegal to write to the same field twice.
@@ -346,7 +391,7 @@ public interface GenericRecord {
          *                                         Same field is trying to be overwritten without using
          *                                         {@link GenericRecord#cloneWithBuilder()}.
          */
-        Builder writeFloat(String fieldName, float value);
+        Builder writeFloat(@Nonnull String fieldName, float value);
 
         /**
          * It is illegal to write to the same field twice.
@@ -359,7 +404,7 @@ public interface GenericRecord {
          *                                         Same field is trying to be overwritten without using
          *                                         {@link GenericRecord#cloneWithBuilder()}.
          */
-        Builder writeInt(String fieldName, int value);
+        Builder writeInt(@Nonnull String fieldName, int value);
 
         /**
          * It is illegal to write to the same field twice.
@@ -372,7 +417,7 @@ public interface GenericRecord {
          *                                         Same field is trying to be overwritten without using
          *                                         {@link GenericRecord#cloneWithBuilder()}.
          */
-        Builder writeLong(String fieldName, long value);
+        Builder writeLong(@Nonnull String fieldName, long value);
 
         /**
          * It is illegal to write to the same field twice.
@@ -385,7 +430,7 @@ public interface GenericRecord {
          *                                         Same field is trying to be overwritten without using
          *                                         {@link GenericRecord#cloneWithBuilder()}.
          */
-        Builder writeShort(String fieldName, short value);
+        Builder writeShort(@Nonnull String fieldName, short value);
 
         /**
          * It is illegal to write to the same field twice.
@@ -398,7 +443,7 @@ public interface GenericRecord {
          *                                         Same field is trying to be overwritten without using
          *                                         {@link GenericRecord#cloneWithBuilder()}.
          */
-        Builder writeUTF(String fieldName, @Nullable String value);
+        Builder writeUTF(@Nonnull String fieldName, @Nullable String value);
 
         /**
          * It is illegal to write to the same field twice.
@@ -412,7 +457,7 @@ public interface GenericRecord {
          *                                         Same field is trying to be overwritten without using
          *                                         {@link GenericRecord#cloneWithBuilder()}.
          */
-        Builder writeGenericRecord(String fieldName, @Nullable GenericRecord value);
+        Builder writeGenericRecord(@Nonnull String fieldName, @Nullable GenericRecord value);
 
         /**
          * It is illegal to write to the same field twice.
@@ -425,7 +470,7 @@ public interface GenericRecord {
          *                                         Same field is trying to be overwritten without using
          *                                         {@link GenericRecord#cloneWithBuilder()}.
          */
-        Builder writeBooleanArray(String fieldName, @Nullable boolean[] value);
+        Builder writeBooleanArray(@Nonnull String fieldName, @Nullable boolean[] value);
 
         /**
          * It is illegal to write to the same field twice.
@@ -438,7 +483,7 @@ public interface GenericRecord {
          *                                         Same field is trying to be overwritten without using
          *                                         {@link GenericRecord#cloneWithBuilder()}.
          */
-        Builder writeByteArray(String fieldName, @Nullable byte[] value);
+        Builder writeByteArray(@Nonnull String fieldName, @Nullable byte[] value);
 
         /**
          * It is illegal to write to the same field twice.
@@ -451,7 +496,7 @@ public interface GenericRecord {
          *                                         Same field is trying to be overwritten without using
          *                                         {@link GenericRecord#cloneWithBuilder()}.
          */
-        Builder writeCharArray(String fieldName, @Nullable char[] value);
+        Builder writeCharArray(@Nonnull String fieldName, @Nullable char[] value);
 
         /**
          * It is illegal to write to the same field twice.
@@ -464,7 +509,7 @@ public interface GenericRecord {
          *                                         Same field is trying to be overwritten without using
          *                                         {@link GenericRecord#cloneWithBuilder()}.
          */
-        Builder writeFloatArray(String fieldName, @Nullable float[] value);
+        Builder writeFloatArray(@Nonnull String fieldName, @Nullable float[] value);
 
         /**
          * It is illegal to write to the same field twice.
@@ -477,7 +522,7 @@ public interface GenericRecord {
          *                                         Same field is trying to be overwritten without using
          *                                         {@link GenericRecord#cloneWithBuilder()}.
          */
-        Builder writeIntArray(String fieldName, @Nullable int[] value);
+        Builder writeIntArray(@Nonnull String fieldName, @Nullable int[] value);
 
         /**
          * It is illegal to write to the same field twice.
@@ -490,7 +535,7 @@ public interface GenericRecord {
          *                                         Same field is trying to be overwritten without using
          *                                         {@link GenericRecord#cloneWithBuilder()}.
          */
-        Builder writeDoubleArray(String fieldName, @Nullable double[] value);
+        Builder writeDoubleArray(@Nonnull String fieldName, @Nullable double[] value);
 
         /**
          * It is illegal to write to the same field twice.
@@ -503,7 +548,7 @@ public interface GenericRecord {
          *                                         Same field is trying to be overwritten without using
          *                                         {@link GenericRecord#cloneWithBuilder()}.
          */
-        Builder writeLongArray(String fieldName, @Nullable long[] value);
+        Builder writeLongArray(@Nonnull String fieldName, @Nullable long[] value);
 
         /**
          * It is illegal to write to the same field twice.
@@ -516,7 +561,7 @@ public interface GenericRecord {
          *                                         Same field is trying to be overwritten without using
          *                                         {@link GenericRecord#cloneWithBuilder()}.
          */
-        Builder writeShortArray(String fieldName, @Nullable short[] value);
+        Builder writeShortArray(@Nonnull String fieldName, @Nullable short[] value);
 
         /**
          * It is illegal to write to the same field twice.
@@ -531,7 +576,7 @@ public interface GenericRecord {
          *                                         Same field is trying to be overwritten without using
          *                                         {@link GenericRecord#cloneWithBuilder()}.
          */
-        Builder writeUTFArray(String fieldName, @Nullable String[] value);
+        Builder writeUTFArray(@Nonnull String fieldName, @Nullable String[] value);
 
         /**
          * It is illegal to write to the same field twice.
@@ -547,6 +592,6 @@ public interface GenericRecord {
          *                                         Same field is trying to be overwritten without using
          *                                         {@link GenericRecord#cloneWithBuilder()}.
          */
-        Builder writeGenericRecordArray(String fieldName, @Nullable GenericRecord[] value);
+        Builder writeGenericRecordArray(@Nonnull String fieldName, @Nullable GenericRecord[] value);
     }
 }
