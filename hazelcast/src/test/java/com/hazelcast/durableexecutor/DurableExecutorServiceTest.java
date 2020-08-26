@@ -42,6 +42,7 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 import java.util.UUID;
 import java.util.concurrent.Callable;
@@ -56,6 +57,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
 import static com.hazelcast.durableexecutor.impl.DurableExecutorServiceHelper.getDurableExecutorContainer;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.DURABLE_EXECUTOR_PREFIX;
+import static com.hazelcast.scheduledexecutor.impl.ScheduledExecutorServiceBasicTest.assertMetricsCollected;
+import static com.hazelcast.scheduledexecutor.impl.ScheduledExecutorServiceBasicTest.collectMetrics;
 import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.junit.Assert.assertEquals;
@@ -582,6 +586,53 @@ public class DurableExecutorServiceTest extends ExecutorServiceTestSupport {
         assertTrue(result);
     }
 
+    @Test
+    public void durable_executor_collects_statistics_when_stats_enabled()
+            throws ExecutionException, InterruptedException {
+
+        // run task
+        String executorName = "durable_executor";
+
+        Config config = smallInstanceConfig();
+        config.getDurableExecutorConfig(executorName)
+                .setStatisticsEnabled(true);
+
+        HazelcastInstance instance = createHazelcastInstance(config);
+
+        DurableExecutorService executor = instance.getDurableExecutorService(executorName);
+        executor.submit(new OneSecondSleepingTask()).get();
+
+        // collect metrics
+        Map<String, List<Long>> metrics = collectMetrics(DURABLE_EXECUTOR_PREFIX, instance);
+
+        // check results
+        assertMetricsCollected(metrics, 1000, 0,
+                1, 1, 0, 1, 0);
+    }
+
+    @Test
+    public void durable_executor_does_not_collect_statistics_when_stats_disabled()
+            throws ExecutionException, InterruptedException {
+
+        // run task
+        String executorName = "durable_executor";
+
+        Config config = smallInstanceConfig();
+        config.getDurableExecutorConfig(executorName)
+                .setStatisticsEnabled(false);
+
+        HazelcastInstance instance = createHazelcastInstance(config);
+
+        DurableExecutorService executor = instance.getDurableExecutorService(executorName);
+        executor.submit(new OneSecondSleepingTask()).get();
+
+        // collect metrics
+        Map<String, List<Long>> metrics = collectMetrics(DURABLE_EXECUTOR_PREFIX, instance);
+
+        // check results
+        assertTrue("No metrics collection expected but " + metrics, metrics.isEmpty());
+    }
+
     private static class InstanceAsserterRunnable implements Runnable, HazelcastInstanceAware, Serializable {
 
         transient HazelcastInstance instance;
@@ -682,5 +733,18 @@ public class DurableExecutorServiceTest extends ExecutorServiceTestSupport {
         public String getPartitionKey() {
             return "key";
         }
+    }
+
+
+    static class OneSecondSleepingTask implements Runnable, Serializable {
+
+        OneSecondSleepingTask() {
+        }
+
+        @Override
+        public void run() {
+            sleepSeconds(1);
+        }
+
     }
 }

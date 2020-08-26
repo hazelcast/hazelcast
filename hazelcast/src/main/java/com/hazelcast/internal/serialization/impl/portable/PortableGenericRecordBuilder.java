@@ -29,25 +29,39 @@ public class PortableGenericRecordBuilder implements GenericRecord.Builder {
 
     private final ClassDefinition classDefinition;
     private final Object[] objects;
-    private final boolean[] isOverWritten;
+    private final boolean[] isWritten;
     private final boolean isClone;
 
     public PortableGenericRecordBuilder(ClassDefinition classDefinition) {
         this.classDefinition = classDefinition;
         this.objects = new Object[classDefinition.getFieldCount()];
         this.isClone = false;
-        this.isOverWritten = null;
+        this.isWritten = new boolean[objects.length];
     }
 
     PortableGenericRecordBuilder(ClassDefinition classDefinition, Object[] objects) {
         this.classDefinition = classDefinition;
         this.objects = objects;
         this.isClone = true;
-        this.isOverWritten = new boolean[objects.length];
+        this.isWritten = new boolean[objects.length];
     }
 
+    /**
+     * @return newly created GenericRecord
+     * @throws HazelcastSerializationException if a field is not written when building with builder from
+     *                                         {@link GenericRecord.Builder#portable(ClassDefinition)} and
+     *                                         {@link GenericRecord#newBuilder()}
+     */
     @Override
     public GenericRecord build() {
+        if (!isClone) {
+            for (int i = 0; i < isWritten.length; i++) {
+                if (!isWritten[i]) {
+                    throw new HazelcastSerializationException("All fields must be written when building"
+                            + " a GenericRecord for portable, unwritten field :" + classDefinition.getField(i));
+                }
+            }
+        }
         return new PortableGenericRecord(classDefinition, objects);
     }
 
@@ -154,17 +168,15 @@ public class PortableGenericRecordBuilder implements GenericRecord.Builder {
     private GenericRecord.Builder write(String fieldName, Object value, FieldType fieldType) {
         FieldDefinition fd = check(fieldName, fieldType);
         int index = fd.getIndex();
-        if (objects[index] != null) {
+        if (isWritten[index]) {
             if (!isClone) {
                 throw new HazelcastSerializationException("It is illegal to the overwrite the field");
-            } else if (isOverWritten[index]) {
+            } else {
                 throw new HazelcastSerializationException("Field can only overwritten once with `cloneWithBuilder`");
             }
         }
         objects[index] = value;
-        if (isClone) {
-            isOverWritten[index] = true;
-        }
+        isWritten[index] = true;
         return this;
     }
 

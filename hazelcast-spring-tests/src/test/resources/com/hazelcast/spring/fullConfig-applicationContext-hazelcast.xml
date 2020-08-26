@@ -238,13 +238,16 @@
             <hz:durable-executor-service name="durableExec"
                                          pool-size="10"
                                          durability="5"
-                                         capacity="200">
+                                         capacity="200"
+                                         statistics-enabled="false">
                 <hz:split-brain-protection-ref>my-split-brain-protection</hz:split-brain-protection-ref>
             </hz:durable-executor-service>
 
             <hz:scheduled-executor-service name="scheduledExec"
                                            pool-size="10"
-                                           durability="5" capacity-policy="PER_PARTITION">
+                                           durability="5"
+                                           capacity-policy="PER_PARTITION"
+                                           statistics-enabled="false">
                 <hz:split-brain-protection-ref>my-split-brain-protection</hz:split-brain-protection-ref>
                 <hz:merge-policy batch-size="101">PassThroughMergePolicy</hz:merge-policy>
             </hz:scheduled-executor-service>

@@ -16,7 +16,6 @@
 
 package com.hazelcast.sql.impl.expression.math;
 
-import com.hazelcast.sql.SqlService;
 import com.hazelcast.sql.impl.SqlDataSerializerHook;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastReturnTypes;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
@@ -45,15 +44,6 @@ import static org.junit.Assert.assertTrue;
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class MultiplyTest extends ExpressionTestBase {
-
-    @Test
-    public void testEndToEnd() {
-        SqlService sql = createEndToEndRecords();
-        assertRows(query(sql, "select __key from records where int1 * 100 < 0"), keys(5000, 6000));
-        assertRows(query(sql, "select __key, decimal1 * 2.1 from records where __key < 1000"), keyRange(0, 1000),
-                k -> BigDecimal.valueOf(k).add(BigDecimal.valueOf(3000.5)).multiply(BigDecimal.valueOf(2.1)));
-        assertQueryThrows(sql, "select int1 * ? from records", "bigint overflow", Long.MAX_VALUE);
-    }
 
     @Test
     public void verify() {

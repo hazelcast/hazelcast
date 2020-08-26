@@ -38,7 +38,11 @@ import static com.hazelcast.sql.support.expressions.ExpressionTypes.BYTE;
 import static com.hazelcast.sql.support.expressions.ExpressionTypes.DOUBLE;
 import static com.hazelcast.sql.support.expressions.ExpressionTypes.FLOAT;
 import static com.hazelcast.sql.support.expressions.ExpressionTypes.INTEGER;
+import static com.hazelcast.sql.support.expressions.ExpressionTypes.LOCAL_DATE;
+import static com.hazelcast.sql.support.expressions.ExpressionTypes.LOCAL_DATE_TIME;
+import static com.hazelcast.sql.support.expressions.ExpressionTypes.LOCAL_TIME;
 import static com.hazelcast.sql.support.expressions.ExpressionTypes.LONG;
+import static com.hazelcast.sql.support.expressions.ExpressionTypes.OFFSET_DATE_TIME;
 import static com.hazelcast.sql.support.expressions.ExpressionTypes.SHORT;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -67,11 +71,11 @@ public class ConcatFunctionIntegrationTest extends SqlExpressionIntegrationTestS
 
         check("this || ?", "12", "2");
         check("this || ?", "12", '2');
-        check("this || ?", null, new Object[] { null });
+        check("this || ?", null, new Object[]{null});
 
         check("? || this", "21", "2");
         check("? || this", "21", '2');
-        check("? || this", null, new Object[] { null });
+        check("? || this", null, new Object[]{null});
 
         check("? || ?", "12", "1", "2");
         check("? || ?", null, "1", null);
@@ -82,6 +86,10 @@ public class ConcatFunctionIntegrationTest extends SqlExpressionIntegrationTestS
         check("null || ?", null, "1");
 
         checkFailure("this || ?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from INTEGER to VARCHAR ", 2);
+        checkFailure("this || ?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from DATE to VARCHAR ", LOCAL_DATE_VAL);
+        checkFailure("this || ?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from TIME to VARCHAR ", LOCAL_TIME_VAL);
+        checkFailure("this || ?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from TIMESTAMP to VARCHAR ", LOCAL_DATE_TIME_VAL);
+        checkFailure("this || ?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from TIMESTAMP_WITH_TIME_ZONE to VARCHAR ", OFFSET_DATE_TIME_VAL);
     }
 
     @Test
@@ -154,7 +162,11 @@ public class ConcatFunctionIntegrationTest extends SqlExpressionIntegrationTestS
             BIG_DECIMAL,
             BIG_INTEGER,
             FLOAT,
-            DOUBLE
+            DOUBLE,
+            LOCAL_DATE,
+            LOCAL_TIME,
+            LOCAL_DATE_TIME,
+            OFFSET_DATE_TIME
         );
     }
 }

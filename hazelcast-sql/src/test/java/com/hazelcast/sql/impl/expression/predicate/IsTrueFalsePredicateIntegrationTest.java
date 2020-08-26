@@ -47,8 +47,12 @@ import static com.hazelcast.sql.support.expressions.ExpressionTypes.CHARACTER;
 import static com.hazelcast.sql.support.expressions.ExpressionTypes.DOUBLE;
 import static com.hazelcast.sql.support.expressions.ExpressionTypes.FLOAT;
 import static com.hazelcast.sql.support.expressions.ExpressionTypes.INTEGER;
+import static com.hazelcast.sql.support.expressions.ExpressionTypes.LOCAL_DATE;
+import static com.hazelcast.sql.support.expressions.ExpressionTypes.LOCAL_DATE_TIME;
+import static com.hazelcast.sql.support.expressions.ExpressionTypes.LOCAL_TIME;
 import static com.hazelcast.sql.support.expressions.ExpressionTypes.LONG;
 import static com.hazelcast.sql.support.expressions.ExpressionTypes.OBJECT;
+import static com.hazelcast.sql.support.expressions.ExpressionTypes.OFFSET_DATE_TIME;
 import static com.hazelcast.sql.support.expressions.ExpressionTypes.STRING;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -234,6 +238,10 @@ public class IsTrueFalsePredicateIntegrationTest extends SqlExpressionIntegratio
         checkUnsupportedColumn(FLOAT, "REAL");
         checkUnsupportedColumn(DOUBLE, "DOUBLE");
         checkUnsupportedColumn(OBJECT, "OBJECT");
+        checkUnsupportedColumn(LOCAL_DATE, "DATE");
+        checkUnsupportedColumn(LOCAL_TIME, "TIME");
+        checkUnsupportedColumn(LOCAL_DATE_TIME, "TIMESTAMP");
+        checkUnsupportedColumn(OFFSET_DATE_TIME, "TIMESTAMP_WITH_TIME_ZONE");
     }
 
     private void checkUnsupportedColumn(ExpressionType<?> type, String expectedTypeNameInErrorMessage) {
@@ -302,6 +310,11 @@ public class IsTrueFalsePredicateIntegrationTest extends SqlExpressionIntegratio
         checkUnsupportedParameter(BigDecimal.ONE, "DECIMAL");
         checkUnsupportedParameter(1f, "REAL");
         checkUnsupportedParameter(1d, "DOUBLE");
+
+        checkUnsupportedParameter(LOCAL_DATE_VAL, "DATE");
+        checkUnsupportedParameter(LOCAL_TIME_VAL, "TIME");
+        checkUnsupportedParameter(LOCAL_DATE_TIME_VAL, "TIMESTAMP");
+        checkUnsupportedParameter(OFFSET_DATE_TIME_VAL, "TIMESTAMP_WITH_TIME_ZONE");
     }
 
     private void checkUnsupportedParameter(Object param, String expectedTypeInErrorMessage) {

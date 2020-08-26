@@ -17,7 +17,9 @@
 package com.hazelcast.durableexecutor.impl;
 
 import com.hazelcast.durableexecutor.impl.operations.PutResultOperation;
+import com.hazelcast.internal.util.Clock;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.map.impl.ExecutorStats;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.executionservice.ExecutionService;
 import com.hazelcast.spi.impl.operationservice.Operation;
@@ -25,27 +27,25 @@ import com.hazelcast.spi.impl.operationservice.OperationService;
 
 import java.util.concurrent.Callable;
 import java.util.concurrent.FutureTask;
+import java.util.concurrent.RejectedExecutionException;
 
 import static com.hazelcast.durableexecutor.impl.DistributedDurableExecutorService.SERVICE_NAME;
 
 public class DurableExecutorContainer {
 
+    private final int durability;
+    private final int partitionId;
+    private final boolean statisticsEnabled;
+
     private final String name;
-
+    private final ILogger logger;
+    private final TaskRingBuffer ringBuffer;
     private final NodeEngineImpl nodeEngine;
-
+    private final ExecutorStats executorStats;
     private final ExecutionService executionService;
 
-    private final ILogger logger;
-
-    private final int partitionId;
-
-    private final int durability;
-
-    private final TaskRingBuffer ringBuffer;
-
     public DurableExecutorContainer(NodeEngineImpl nodeEngine, String name, int partitionId,
-                                    int durability, TaskRingBuffer ringBuffer) {
+                                    int durability, boolean statisticsEnabled, TaskRingBuffer ringBuffer) {
         this.name = name;
         this.nodeEngine = nodeEngine;
         this.executionService = nodeEngine.getExecutionService();
@@ -53,13 +53,44 @@ public class DurableExecutorContainer {
         this.logger = nodeEngine.getLogger(DurableExecutorContainer.class);
         this.durability = durability;
         this.ringBuffer = ringBuffer;
+        this.statisticsEnabled = statisticsEnabled;
+        this.executorStats = ((DistributedDurableExecutorService) nodeEngine.getService(SERVICE_NAME)).getExecutorStats();
     }
 
     public int execute(Callable callable) {
-        int sequence = ringBuffer.add(callable);
-        TaskProcessor processor = new TaskProcessor(sequence, callable);
-        executionService.executeDurable(name, processor);
-        return sequence;
+        try {
+            int sequence = ringBuffer.add(callable);
+            TaskProcessor processor = new TaskProcessor(sequence, callable);
+            executionService.executeDurable(name, processor);
+            return sequence;
+        } catch (RejectedExecutionException e) {
+            if (statisticsEnabled) {
+                executorStats.rejectExecution(name);
+            }
+            throw e;
+        }
+    }
+
+    void executeAll() {
+        try {
+            TaskRingBuffer.DurableIterator iterator = ringBuffer.iterator();
+            while (iterator.hasNext()) {
+                Object item = iterator.next();
+                boolean isCallable = iterator.isTask();
+                if (!isCallable) {
+                    continue;
+                }
+                Callable callable = (Callable) item;
+                int sequence = iterator.getSequence();
+                TaskProcessor processor = new TaskProcessor(sequence, callable);
+                executionService.executeDurable(name, processor);
+            }
+        } catch (RejectedExecutionException e) {
+            if (statisticsEnabled) {
+                executorStats.rejectExecution(name);
+            }
+            throw e;
+        }
     }
 
     public void putBackup(int sequence, Callable callable) {
@@ -86,21 +117,6 @@ public class DurableExecutorContainer {
         return ringBuffer.isTask(sequence);
     }
 
-    void executeAll() {
-        TaskRingBuffer.DurableIterator iterator = ringBuffer.iterator();
-        while (iterator.hasNext()) {
-            Object item = iterator.next();
-            boolean isCallable = iterator.isTask();
-            if (!isCallable) {
-                continue;
-            }
-            Callable callable = (Callable) item;
-            int sequence = iterator.getSequence();
-            TaskProcessor processor = new TaskProcessor(sequence, callable);
-            executionService.executeDurable(name, processor);
-        }
-    }
-
     public TaskRingBuffer getRingBuffer() {
         return ringBuffer;
     }
@@ -114,18 +130,29 @@ public class DurableExecutorContainer {
     }
 
     public final class TaskProcessor extends FutureTask implements Runnable {
-        private final String callableString;
+
         private final int sequence;
+        private final long creationTime = Clock.currentTimeMillis();
+        private final String callableString;
 
         private TaskProcessor(int sequence, Callable callable) {
             //noinspection unchecked
             super(callable);
             this.callableString = String.valueOf(callable);
             this.sequence = sequence;
+
+            if (statisticsEnabled) {
+                executorStats.startPending(name);
+            }
         }
 
         @Override
         public void run() {
+            long start = Clock.currentTimeMillis();
+            if (statisticsEnabled) {
+                executorStats.startExecution(name, start - creationTime);
+            }
+
             Object response = null;
             try {
                 super.run();
@@ -138,6 +165,9 @@ public class DurableExecutorContainer {
             } finally {
                 if (!isCancelled()) {
                     setResponse(response);
+                    if (statisticsEnabled) {
+                        executorStats.finishExecution(name, Clock.currentTimeMillis() - start);
+                    }
                 }
             }
         }

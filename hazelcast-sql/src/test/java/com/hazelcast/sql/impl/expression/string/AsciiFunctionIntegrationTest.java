@@ -20,11 +20,19 @@ import com.hazelcast.sql.SqlColumnType;
 import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.expression.SqlExpressionIntegrationTestSupport;
 import com.hazelcast.sql.support.expressions.ExpressionValue;
+import com.hazelcast.sql.support.expressions.ExpressionValue.BigDecimalVal;
+import com.hazelcast.sql.support.expressions.ExpressionValue.BigIntegerVal;
 import com.hazelcast.sql.support.expressions.ExpressionValue.ByteVal;
 import com.hazelcast.sql.support.expressions.ExpressionValue.CharacterVal;
+import com.hazelcast.sql.support.expressions.ExpressionValue.DoubleVal;
+import com.hazelcast.sql.support.expressions.ExpressionValue.FloatVal;
 import com.hazelcast.sql.support.expressions.ExpressionValue.IntegerVal;
+import com.hazelcast.sql.support.expressions.ExpressionValue.LocalDateTimeVal;
+import com.hazelcast.sql.support.expressions.ExpressionValue.LocalDateVal;
+import com.hazelcast.sql.support.expressions.ExpressionValue.LocalTimeVal;
 import com.hazelcast.sql.support.expressions.ExpressionValue.LongVal;
 import com.hazelcast.sql.support.expressions.ExpressionValue.ObjectVal;
+import com.hazelcast.sql.support.expressions.ExpressionValue.OffsetDateTimeVal;
 import com.hazelcast.sql.support.expressions.ExpressionValue.ShortVal;
 import com.hazelcast.sql.support.expressions.ExpressionValue.StringVal;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -51,10 +59,14 @@ public class AsciiFunctionIntegrationTest extends SqlExpressionIntegrationTestSu
         checkColumn(new ShortVal().field1((short) 100), codePoint('1'));
         checkColumn(new IntegerVal().field1(100), codePoint('1'));
         checkColumn(new LongVal().field1((long) 100), codePoint('1'));
-        checkColumn(new ExpressionValue.BigIntegerVal().field1(new BigInteger("100")), codePoint('1'));
-        checkColumn(new ExpressionValue.BigDecimalVal().field1(new BigDecimal("100.5")), codePoint('1'));
-        checkColumn(new ExpressionValue.FloatVal().field1(100.5f), codePoint('1'));
-        checkColumn(new ExpressionValue.DoubleVal().field1(100.5d), codePoint('1'));
+        checkColumn(new BigIntegerVal().field1(new BigInteger("100")), codePoint('1'));
+        checkColumn(new BigDecimalVal().field1(new BigDecimal("100.5")), codePoint('1'));
+        checkColumn(new FloatVal().field1(100.5f), codePoint('1'));
+        checkColumn(new DoubleVal().field1(100.5d), codePoint('1'));
+        checkColumn(new LocalDateVal().field1(LOCAL_DATE_VAL), codePoint('2'));
+        checkColumn(new LocalTimeVal().field1(LOCAL_TIME_VAL), codePoint('0'));
+        checkColumn(new LocalDateTimeVal().field1(LOCAL_DATE_TIME_VAL), codePoint('2'));
+        checkColumn(new OffsetDateTimeVal().field1(OFFSET_DATE_TIME_VAL), codePoint('2'));
 
         put(new ObjectVal());
         checkFailure("field1", SqlErrorCode.PARSING, "Cannot apply 'ASCII' to arguments of type 'ASCII(<OBJECT>)'");
@@ -103,6 +115,10 @@ public class AsciiFunctionIntegrationTest extends SqlExpressionIntegrationTestSu
         checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from REAL to VARCHAR", 100f);
         checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from DOUBLE to VARCHAR", 100d);
         checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from OBJECT to VARCHAR", new ObjectVal());
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from DATE to VARCHAR", LOCAL_DATE_VAL);
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from TIME to VARCHAR", LOCAL_TIME_VAL);
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from TIMESTAMP to VARCHAR", LOCAL_DATE_TIME_VAL);
+        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, "Cannot implicitly convert parameter at position 0 from TIMESTAMP_WITH_TIME_ZONE to VARCHAR", OFFSET_DATE_TIME_VAL);
     }
 
     private void check(Object operand, Integer expectedResult, Object... params) {

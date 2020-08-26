@@ -118,8 +118,11 @@ public class UnaryPlusIntegrationTest extends ExpressionIntegrationTestBase {
     }
 
     @Test
-    public void testObject() {
+    public void testUnsupported() {
+        assertParsingError("+dateCol", "Cannot apply '+' to arguments of type '+<DATE>'");
+        assertParsingError("+timeCol", "Cannot apply '+' to arguments of type '+<TIME>'");
+        assertParsingError("+dateTimeCol", "Cannot apply '+' to arguments of type '+<TIMESTAMP>'");
+        assertParsingError("+offsetDateTimeCol", "Cannot apply '+' to arguments of type '+<TIMESTAMP_WITH_TIME_ZONE>'");
         assertParsingError("+object", "Cannot apply '+' to arguments of type '+<OBJECT>'");
     }
-
 }

@@ -40,6 +40,10 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.OffsetDateTime;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -231,6 +235,22 @@ public abstract class ExpressionIntegrationTestBase extends SqlTestSupport {
         public Object objectString1 = "1";
         public Object objectChar1 = '1';
         public Object object = new SerializableObject();
+
+        public LocalDate dateCol = LocalDate.parse("2020-01-01");
+        public String dateCol_string = dateCol.toString();
+        public Object dateCol_object = dateCol;
+
+        public LocalTime timeCol = LocalTime.parse("10:15");
+        public String timeCol_string = timeCol.toString();
+        public Object timeCol_object = timeCol;
+
+        public LocalDateTime dateTimeCol = LocalDateTime.parse("2020-01-01T10:15");
+        public String dateTimeCol_string = dateTimeCol.toString();
+        public Object dateTimeCol_object = dateTimeCol;
+
+        public OffsetDateTime offsetDateTimeCol = OffsetDateTime.parse("2020-01-01T10:15+01:00");
+        public String offsetDateTimeCol_string = offsetDateTimeCol.toString();
+        public Object offsetDateTimeCol_object = offsetDateTimeCol;
 
         @Override
         public boolean equals(Object o) {

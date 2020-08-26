@@ -55,6 +55,11 @@ public class DivideIntegrationTest extends ExpressionIntegrationTestBase {
         assertParsingError("booleanTrue / string1", "Cannot apply '/' to arguments of type '<BOOLEAN> / <BOOLEAN>'");
         assertParsingError("booleanTrue / char1", "Cannot apply '/' to arguments of type '<BOOLEAN> / <BOOLEAN>'");
 
+        assertParsingError("booleanTrue / dateCol", "Cannot apply '/' to arguments of type '<BOOLEAN> / <DATE>'");
+        assertParsingError("booleanTrue / timeCol", "Cannot apply '/' to arguments of type '<BOOLEAN> / <TIME>'");
+        assertParsingError("booleanTrue / dateTimeCol", "Cannot apply '/' to arguments of type '<BOOLEAN> / <TIMESTAMP>'");
+        assertParsingError("booleanTrue / offsetDateTimeCol", "Cannot apply '/' to arguments of type '<BOOLEAN> / <TIMESTAMP_WITH_TIME_ZONE>'");
+
         assertParsingError("booleanTrue / object", "Cannot apply '/' to arguments of type '<BOOLEAN> / <OBJECT>'");
     }
 
@@ -108,6 +113,11 @@ public class DivideIntegrationTest extends ExpressionIntegrationTestBase {
         assertRow("byteMax / char2", EXPR0, SMALLINT, (short) (Byte.MAX_VALUE / 2));
         assertDataError("byte1 / char0", "division by zero");
         assertDataError("byte1 / charF", "Cannot convert VARCHAR to BIGINT");
+
+        assertParsingError("byte1 / dateCol", "Cannot apply '/' to arguments of type '<TINYINT> / <DATE>'");
+        assertParsingError("byte1 / timeCol", "Cannot apply '/' to arguments of type '<TINYINT> / <TIME>'");
+        assertParsingError("byte1 / dateTimeCol", "Cannot apply '/' to arguments of type '<TINYINT> / <TIMESTAMP>'");
+        assertParsingError("byte1 / offsetDateTimeCol", "Cannot apply '/' to arguments of type '<TINYINT> / <TIMESTAMP_WITH_TIME_ZONE>'");
 
         assertParsingError("byte1 / object", "Cannot apply '/' to arguments of type '<TINYINT> / <OBJECT>'");
     }
@@ -163,6 +173,11 @@ public class DivideIntegrationTest extends ExpressionIntegrationTestBase {
         assertDataError("short1 / char0", "division by zero");
         assertDataError("short1 / charF", "Cannot convert VARCHAR to BIGINT");
 
+        assertParsingError("short1 / dateCol", "Cannot apply '/' to arguments of type '<SMALLINT> / <DATE>'");
+        assertParsingError("short1 / timeCol", "Cannot apply '/' to arguments of type '<SMALLINT> / <TIME>'");
+        assertParsingError("short1 / dateTimeCol", "Cannot apply '/' to arguments of type '<SMALLINT> / <TIMESTAMP>'");
+        assertParsingError("short1 / offsetDateTimeCol", "Cannot apply '/' to arguments of type '<SMALLINT> / <TIMESTAMP_WITH_TIME_ZONE>'");
+
         assertParsingError("short1 / object", "Cannot apply '/' to arguments of type '<SMALLINT> / <OBJECT>'");
     }
 
@@ -216,6 +231,11 @@ public class DivideIntegrationTest extends ExpressionIntegrationTestBase {
         assertRow("intMax / char2", EXPR0, BIGINT, Integer.MAX_VALUE / 2L);
         assertDataError("int1 / char0", "division by zero");
         assertDataError("int1 / charF", "Cannot convert VARCHAR to BIGINT");
+
+        assertParsingError("int1 / dateCol", "Cannot apply '/' to arguments of type '<INTEGER> / <DATE>'");
+        assertParsingError("int1 / timeCol", "Cannot apply '/' to arguments of type '<INTEGER> / <TIME>'");
+        assertParsingError("int1 / dateTimeCol", "Cannot apply '/' to arguments of type '<INTEGER> / <TIMESTAMP>'");
+        assertParsingError("int1 / offsetDateTimeCol", "Cannot apply '/' to arguments of type '<INTEGER> / <TIMESTAMP_WITH_TIME_ZONE>'");
 
         assertParsingError("int1 / object", "Cannot apply '/' to arguments of type '<INTEGER> / <OBJECT>'");
     }
@@ -271,6 +291,11 @@ public class DivideIntegrationTest extends ExpressionIntegrationTestBase {
         assertDataError("long1 / char0", "division by zero");
         assertDataError("long1 / charF", "Cannot convert VARCHAR to BIGINT");
 
+        assertParsingError("long1 / dateCol", "Cannot apply '/' to arguments of type '<BIGINT> / <DATE>'");
+        assertParsingError("long1 / timeCol", "Cannot apply '/' to arguments of type '<BIGINT> / <TIME>'");
+        assertParsingError("long1 / dateTimeCol", "Cannot apply '/' to arguments of type '<BIGINT> / <TIMESTAMP>'");
+        assertParsingError("long1 / offsetDateTimeCol", "Cannot apply '/' to arguments of type '<BIGINT> / <TIMESTAMP_WITH_TIME_ZONE>'");
+
         assertParsingError("long1 / object", "Cannot apply '/' to arguments of type '<BIGINT> / <OBJECT>'");
     }
 
@@ -321,6 +346,11 @@ public class DivideIntegrationTest extends ExpressionIntegrationTestBase {
         assertDataError("float1 / char0", "division by zero");
         assertDataError("float1 / charF", "Cannot convert VARCHAR to REAL");
 
+        assertParsingError("float1 / dateCol", "Cannot apply '/' to arguments of type '<REAL> / <DATE>'");
+        assertParsingError("float1 / timeCol", "Cannot apply '/' to arguments of type '<REAL> / <TIME>'");
+        assertParsingError("float1 / dateTimeCol", "Cannot apply '/' to arguments of type '<REAL> / <TIMESTAMP>'");
+        assertParsingError("float1 / offsetDateTimeCol", "Cannot apply '/' to arguments of type '<REAL> / <TIMESTAMP_WITH_TIME_ZONE>'");
+
         assertParsingError("float1 / object", "Cannot apply '/' to arguments of type '<REAL> / <OBJECT>'");
     }
 
@@ -370,6 +400,11 @@ public class DivideIntegrationTest extends ExpressionIntegrationTestBase {
         assertRow("doubleMax / char2", EXPR0, DOUBLE, Double.MAX_VALUE / 2);
         assertDataError("double1 / char0", "division by zero");
         assertDataError("double1 / charF", "Cannot convert VARCHAR to DOUBLE");
+
+        assertParsingError("double1 / dateCol", "Cannot apply '/' to arguments of type '<DOUBLE> / <DATE>'");
+        assertParsingError("double1 / timeCol", "Cannot apply '/' to arguments of type '<DOUBLE> / <TIME>'");
+        assertParsingError("double1 / dateTimeCol", "Cannot apply '/' to arguments of type '<DOUBLE> / <TIMESTAMP>'");
+        assertParsingError("double1 / offsetDateTimeCol", "Cannot apply '/' to arguments of type '<DOUBLE> / <TIMESTAMP_WITH_TIME_ZONE>'");
 
         assertParsingError("double1 / object", "Cannot apply '/' to arguments of type '<DOUBLE> / <OBJECT>'");
     }
@@ -430,6 +465,11 @@ public class DivideIntegrationTest extends ExpressionIntegrationTestBase {
         assertDataError("decimal1 / char0", "division by zero");
         assertDataError("decimal1 / charF", "Cannot convert VARCHAR to DECIMAL");
 
+        assertParsingError("decimal1 / dateCol", "Cannot apply '/' to arguments of type '<DECIMAL(38, 38)> / <DATE>'");
+        assertParsingError("decimal1 / timeCol", "Cannot apply '/' to arguments of type '<DECIMAL(38, 38)> / <TIME>'");
+        assertParsingError("decimal1 / dateTimeCol", "Cannot apply '/' to arguments of type '<DECIMAL(38, 38)> / <TIMESTAMP>'");
+        assertParsingError("decimal1 / offsetDateTimeCol", "Cannot apply '/' to arguments of type '<DECIMAL(38, 38)> / <TIMESTAMP_WITH_TIME_ZONE>'");
+
         assertParsingError("decimal1 / object", "Cannot apply '/' to arguments of type '<DECIMAL(38, 38)> / <OBJECT>'");
     }
 
@@ -480,7 +520,116 @@ public class DivideIntegrationTest extends ExpressionIntegrationTestBase {
 
         assertDataError("stringBig / int1", "Cannot convert VARCHAR to BIGINT");
 
+        assertParsingError("string1 / dateCol", "Cannot apply '/' to arguments of type '<DATE> / <DATE>'");
+        assertParsingError("string1 / timeCol", "Cannot apply '/' to arguments of type '<TIME> / <TIME>'");
+        assertParsingError("string1 / dateTimeCol", "Cannot apply '/' to arguments of type '<TIMESTAMP> / <TIMESTAMP>'");
+        assertParsingError("string1 / offsetDateTimeCol", "Cannot apply '/' to arguments of type '<TIMESTAMP_WITH_TIME_ZONE> / <TIMESTAMP_WITH_TIME_ZONE>'");
+
         assertParsingError("string1 / object", "Cannot apply '/' to arguments of type '<VARCHAR> / <OBJECT>'");
+    }
+
+    @Test
+    public void testDate() {
+        assertParsingError("dateCol / booleanTrue", "Cannot apply '/' to arguments of type '<DATE> / <BOOLEAN>'");
+
+        assertParsingError("dateCol / byte1", "Cannot apply '/' to arguments of type '<DATE> / <TINYINT>'");
+        assertParsingError("dateCol / short1", "Cannot apply '/' to arguments of type '<DATE> / <SMALLINT>'");
+        assertParsingError("dateCol / int1", "Cannot apply '/' to arguments of type '<DATE> / <INTEGER>'");
+        assertParsingError("dateCol / long1", "Cannot apply '/' to arguments of type '<DATE> / <BIGINT>'");
+
+        assertParsingError("dateCol / float1", "Cannot apply '/' to arguments of type '<DATE> / <REAL>'");
+        assertParsingError("dateCol / double1", "Cannot apply '/' to arguments of type '<DATE> / <DOUBLE>'");
+
+        assertParsingError("dateCol / decimal1", "Cannot apply '/' to arguments of type '<DATE> / <DECIMAL(38, 38)>'");
+        assertParsingError("dateCol / bigInteger1", "Cannot apply '/' to arguments of type '<DATE> / <DECIMAL(38, 38)>'");
+
+        assertParsingError("dateCol / string1", "Cannot apply '/' to arguments of type '<DATE> / <DATE>'");
+        assertParsingError("dateCol / char1", "Cannot apply '/' to arguments of type '<DATE> / <DATE>'");
+
+        assertParsingError("dateCol / dateCol", "Cannot apply '/' to arguments of type '<DATE> / <DATE>'");
+        assertParsingError("dateCol / timeCol", "Cannot apply '/' to arguments of type '<DATE> / <TIME>'");
+        assertParsingError("dateCol / dateTimeCol", "Cannot apply '/' to arguments of type '<DATE> / <TIMESTAMP>'");
+        assertParsingError("dateCol / offsetDateTimeCol", "Cannot apply '/' to arguments of type '<DATE> / <TIMESTAMP_WITH_TIME_ZONE>'");
+
+        assertParsingError("dateCol / object", "Cannot apply '/' to arguments of type '<DATE> / <OBJECT>'");
+    }
+
+    @Test
+    public void testTime() {
+        assertParsingError("timeCol / booleanTrue", "Cannot apply '/' to arguments of type '<TIME> / <BOOLEAN>'");
+
+        assertParsingError("timeCol / byte1", "Cannot apply '/' to arguments of type '<TIME> / <TINYINT>'");
+        assertParsingError("timeCol / short1", "Cannot apply '/' to arguments of type '<TIME> / <SMALLINT>'");
+        assertParsingError("timeCol / int1", "Cannot apply '/' to arguments of type '<TIME> / <INTEGER>'");
+        assertParsingError("timeCol / long1", "Cannot apply '/' to arguments of type '<TIME> / <BIGINT>'");
+
+        assertParsingError("timeCol / float1", "Cannot apply '/' to arguments of type '<TIME> / <REAL>'");
+        assertParsingError("timeCol / double1", "Cannot apply '/' to arguments of type '<TIME> / <DOUBLE>'");
+
+        assertParsingError("timeCol / decimal1", "Cannot apply '/' to arguments of type '<TIME> / <DECIMAL(38, 38)>'");
+        assertParsingError("timeCol / bigInteger1", "Cannot apply '/' to arguments of type '<TIME> / <DECIMAL(38, 38)>'");
+
+        assertParsingError("timeCol / string1", "Cannot apply '/' to arguments of type '<TIME> / <TIME>'");
+        assertParsingError("timeCol / char1", "Cannot apply '/' to arguments of type '<TIME> / <TIME>'");
+
+        assertParsingError("timeCol / dateCol", "Cannot apply '/' to arguments of type '<TIME> / <DATE>'");
+        assertParsingError("timeCol / timeCol", "Cannot apply '/' to arguments of type '<TIME> / <TIME>'");
+        assertParsingError("timeCol / dateTimeCol", "Cannot apply '/' to arguments of type '<TIME> / <TIMESTAMP>'");
+        assertParsingError("timeCol / offsetDateTimeCol", "Cannot apply '/' to arguments of type '<TIME> / <TIMESTAMP_WITH_TIME_ZONE>'");
+
+        assertParsingError("timeCol / object", "Cannot apply '/' to arguments of type '<TIME> / <OBJECT>'");
+    }
+
+    @Test
+    public void testTimestamp() {
+        assertParsingError("dateTimeCol / booleanTrue", "Cannot apply '/' to arguments of type '<TIMESTAMP> / <BOOLEAN>'");
+
+        assertParsingError("dateTimeCol / byte1", "Cannot apply '/' to arguments of type '<TIMESTAMP> / <TINYINT>'");
+        assertParsingError("dateTimeCol / short1", "Cannot apply '/' to arguments of type '<TIMESTAMP> / <SMALLINT>'");
+        assertParsingError("dateTimeCol / int1", "Cannot apply '/' to arguments of type '<TIMESTAMP> / <INTEGER>'");
+        assertParsingError("dateTimeCol / long1", "Cannot apply '/' to arguments of type '<TIMESTAMP> / <BIGINT>'");
+
+        assertParsingError("dateTimeCol / float1", "Cannot apply '/' to arguments of type '<TIMESTAMP> / <REAL>'");
+        assertParsingError("dateTimeCol / double1", "Cannot apply '/' to arguments of type '<TIMESTAMP> / <DOUBLE>'");
+
+        assertParsingError("dateTimeCol / decimal1", "Cannot apply '/' to arguments of type '<TIMESTAMP> / <DECIMAL(38, 38)>'");
+        assertParsingError("dateTimeCol / bigInteger1", "Cannot apply '/' to arguments of type '<TIMESTAMP> / <DECIMAL(38, 38)>'");
+
+        assertParsingError("dateTimeCol / string1", "Cannot apply '/' to arguments of type '<TIMESTAMP> / <TIMESTAMP>'");
+        assertParsingError("dateTimeCol / char1", "Cannot apply '/' to arguments of type '<TIMESTAMP> / <TIMESTAMP>'");
+
+        assertParsingError("dateTimeCol / dateCol", "Cannot apply '/' to arguments of type '<TIMESTAMP> / <DATE>'");
+        assertParsingError("dateTimeCol / timeCol", "Cannot apply '/' to arguments of type '<TIMESTAMP> / <TIME>'");
+        assertParsingError("dateTimeCol / dateTimeCol", "Cannot apply '/' to arguments of type '<TIMESTAMP> / <TIMESTAMP>'");
+        assertParsingError("dateTimeCol / offsetDateTimeCol", "Cannot apply '/' to arguments of type '<TIMESTAMP> / <TIMESTAMP_WITH_TIME_ZONE>'");
+
+        assertParsingError("dateTimeCol / object", "Cannot apply '/' to arguments of type '<TIMESTAMP> / <OBJECT>'");
+    }
+
+    @Test
+    public void testTimestampWithTimeZone() {
+        assertParsingError("offsetDateTimeCol / booleanTrue", "Cannot apply '/' to arguments of type '<TIMESTAMP_WITH_TIME_ZONE> / <BOOLEAN>'");
+
+        assertParsingError("offsetDateTimeCol / byte1", "Cannot apply '/' to arguments of type '<TIMESTAMP_WITH_TIME_ZONE> / <TINYINT>'");
+        assertParsingError("offsetDateTimeCol / short1", "Cannot apply '/' to arguments of type '<TIMESTAMP_WITH_TIME_ZONE> / <SMALLINT>'");
+        assertParsingError("offsetDateTimeCol / int1", "Cannot apply '/' to arguments of type '<TIMESTAMP_WITH_TIME_ZONE> / <INTEGER>'");
+        assertParsingError("offsetDateTimeCol / long1", "Cannot apply '/' to arguments of type '<TIMESTAMP_WITH_TIME_ZONE> / <BIGINT>'");
+
+        assertParsingError("offsetDateTimeCol / float1", "Cannot apply '/' to arguments of type '<TIMESTAMP_WITH_TIME_ZONE> / <REAL>'");
+        assertParsingError("offsetDateTimeCol / double1", "Cannot apply '/' to arguments of type '<TIMESTAMP_WITH_TIME_ZONE> / <DOUBLE>'");
+
+        assertParsingError("offsetDateTimeCol / decimal1", "Cannot apply '/' to arguments of type '<TIMESTAMP_WITH_TIME_ZONE> / <DECIMAL(38, 38)>'");
+        assertParsingError("offsetDateTimeCol / bigInteger1", "Cannot apply '/' to arguments of type '<TIMESTAMP_WITH_TIME_ZONE> / <DECIMAL(38, 38)>'");
+
+        assertParsingError("offsetDateTimeCol / string1", "Cannot apply '/' to arguments of type '<TIMESTAMP_WITH_TIME_ZONE> / <TIMESTAMP_WITH_TIME_ZONE>'");
+        assertParsingError("offsetDateTimeCol / char1", "Cannot apply '/' to arguments of type '<TIMESTAMP_WITH_TIME_ZONE> / <TIMESTAMP_WITH_TIME_ZONE>'");
+
+        assertParsingError("offsetDateTimeCol / dateCol", "Cannot apply '/' to arguments of type '<TIMESTAMP_WITH_TIME_ZONE> / <DATE>'");
+        assertParsingError("offsetDateTimeCol / timeCol", "Cannot apply '/' to arguments of type '<TIMESTAMP_WITH_TIME_ZONE> / <TIME>'");
+        assertParsingError("offsetDateTimeCol / dateTimeCol", "Cannot apply '/' to arguments of type '<TIMESTAMP_WITH_TIME_ZONE> / <TIMESTAMP>'");
+        assertParsingError("offsetDateTimeCol / offsetDateTimeCol", "Cannot apply '/' to arguments of type '<TIMESTAMP_WITH_TIME_ZONE> / <TIMESTAMP_WITH_TIME_ZONE>'");
+
+        assertParsingError("offsetDateTimeCol / object", "Cannot apply '/' to arguments of type '<TIMESTAMP_WITH_TIME_ZONE> / <OBJECT>'");
     }
 
     @Test
@@ -500,6 +649,11 @@ public class DivideIntegrationTest extends ExpressionIntegrationTestBase {
 
         assertParsingError("object / string1", "Cannot apply '/' to arguments of type '<OBJECT> / <VARCHAR>'");
         assertParsingError("object / char1", "Cannot apply '/' to arguments of type '<OBJECT> / <VARCHAR>'");
+
+        assertParsingError("object / dateCol", "Cannot apply '/' to arguments of type '<OBJECT> / <DATE>'");
+        assertParsingError("object / timeCol", "Cannot apply '/' to arguments of type '<OBJECT> / <TIME>'");
+        assertParsingError("object / dateTimeCol", "Cannot apply '/' to arguments of type '<OBJECT> / <TIMESTAMP>'");
+        assertParsingError("object / offsetDateTimeCol", "Cannot apply '/' to arguments of type '<OBJECT> / <TIMESTAMP_WITH_TIME_ZONE>'");
 
         assertParsingError("object / object", "Cannot apply '/' to arguments of type '<OBJECT> / <OBJECT>'");
     }

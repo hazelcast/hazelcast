@@ -275,6 +275,7 @@ public interface GenericRecord {
 
         /**
          * @return a new constructed GenericRecord
+         * @throws HazelcastSerializationException when the GenericRecord cannot be build.
          */
         GenericRecord build();
 

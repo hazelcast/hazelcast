@@ -16,6 +16,7 @@
 
 package com.hazelcast.sql.impl.calcite.validate.types;
 
+import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.sql.type.BasicSqlType;
 import org.apache.calcite.sql.type.SqlTypeName;
@@ -48,7 +49,6 @@ public final class HazelcastObjectType extends BasicSqlType {
 
     @Override
     protected void generateTypeString(StringBuilder sb, boolean withDetail) {
-        sb.append(HazelcastTypeSystem.OBJECT_TYPE_NAME);
+        sb.append(QueryDataTypeFamily.OBJECT.name());
     }
-
 }
