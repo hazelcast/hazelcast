@@ -16,9 +16,10 @@
 
 package com.hazelcast.sql;
 
+import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.test.TestHazelcastInstanceFactory;
 
 import javax.annotation.Nonnull;
 
@@ -42,6 +43,7 @@ public abstract class SqlTestInstanceFactory {
 
     public abstract HazelcastInstance newHazelcastInstance();
     public abstract HazelcastInstance newHazelcastInstance(Config config);
+    public abstract HazelcastInstance newHazelcastClient(ClientConfig clientConfig);
     public abstract void shutdownAll();
 
     /**
@@ -49,7 +51,7 @@ public abstract class SqlTestInstanceFactory {
      */
     private static class ImdgInstanceFactory extends SqlTestInstanceFactory {
 
-        private final TestHazelcastInstanceFactory factory = new TestHazelcastInstanceFactory();
+        private final TestHazelcastFactory factory = new TestHazelcastFactory();
 
         @Override
         public HazelcastInstance newHazelcastInstance() {
@@ -59,6 +61,11 @@ public abstract class SqlTestInstanceFactory {
         @Override
         public HazelcastInstance newHazelcastInstance(Config config) {
             return factory.newHazelcastInstance(config);
+        }
+
+        @Override
+        public HazelcastInstance newHazelcastClient(ClientConfig clientConfig) {
+            return factory.newHazelcastClient(clientConfig);
         }
 
         @Override
@@ -99,6 +106,17 @@ public abstract class SqlTestInstanceFactory {
             try {
                 Object jetInstance = jetFactory.getClass().getMethod("newMember", config.getClass())
                                                .invoke(jetFactory, config);
+                return (HazelcastInstance) jetInstance.getClass().getMethod("getHazelcastInstance").invoke(jetInstance);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        @Override
+        public HazelcastInstance newHazelcastClient(ClientConfig clientConfig) {
+            try {
+                Object jetInstance = jetFactory.getClass().getMethod("newClient", clientConfig.getClass())
+                                               .invoke(jetFactory, clientConfig);
                 return (HazelcastInstance) jetInstance.getClass().getMethod("getHazelcastInstance").invoke(jetInstance);
             } catch (Exception e) {
                 throw new RuntimeException(e);

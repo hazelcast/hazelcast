@@ -74,7 +74,7 @@ public class CastIntegrationTest extends ExpressionIntegrationTestBase {
         assertDataError("cast(objectString1 as boolean)", "Cannot convert VARCHAR to BOOLEAN");
         assertDataError("cast(objectChar1 as boolean)", "Cannot convert VARCHAR to BOOLEAN");
         assertDataError("cast(object as boolean)", "Cannot convert OBJECT to BOOLEAN: com.hazelcast.sql.impl.expression"
-                + ".ExpressionEndToEndTestBase$SerializableObject");
+                + ".ExpressionIntegrationTestBase$SerializableObject");
     }
 
     @Test
@@ -118,7 +118,7 @@ public class CastIntegrationTest extends ExpressionIntegrationTestBase {
         assertRow("cast(objectString1 as tinyint)", EXPR0, TINYINT, (byte) 1);
         assertRow("cast(objectChar1 as tinyint)", EXPR0, TINYINT, (byte) 1);
         assertDataError("cast(object as tinyint)", "Cannot convert OBJECT to TINYINT: com.hazelcast.sql.impl.expression"
-                + ".ExpressionEndToEndTestBase$SerializableObject");
+                + ".ExpressionIntegrationTestBase$SerializableObject");
     }
 
     @Test
@@ -163,7 +163,7 @@ public class CastIntegrationTest extends ExpressionIntegrationTestBase {
         assertRow("cast(objectString1 as smallint)", EXPR0, SMALLINT, (short) 1);
         assertRow("cast(objectChar1 as smallint)", EXPR0, SMALLINT, (short) 1);
         assertDataError("cast(object as smallint)", "Cannot convert OBJECT to SMALLINT: com.hazelcast.sql.impl.expression"
-                + ".ExpressionEndToEndTestBase$SerializableObject");
+                + ".ExpressionIntegrationTestBase$SerializableObject");
     }
 
     @Test
@@ -207,7 +207,7 @@ public class CastIntegrationTest extends ExpressionIntegrationTestBase {
         assertRow("cast(objectString1 as integer)", EXPR0, INTEGER, 1);
         assertRow("cast(objectChar1 as integer)", EXPR0, INTEGER, 1);
         assertDataError("cast(object as integer)", "Cannot convert OBJECT to INTEGER: com.hazelcast.sql.impl.expression"
-                + ".ExpressionEndToEndTestBase$SerializableObject");
+                + ".ExpressionIntegrationTestBase$SerializableObject");
     }
 
     @Test
@@ -251,7 +251,7 @@ public class CastIntegrationTest extends ExpressionIntegrationTestBase {
         assertRow("cast(objectString1 as bigint)", EXPR0, BIGINT, 1L);
         assertRow("cast(objectChar1 as bigint)", EXPR0, BIGINT, 1L);
         assertDataError("cast(object as bigint)", "Cannot convert OBJECT to BIGINT: com.hazelcast.sql.impl.expression"
-                + ".ExpressionEndToEndTestBase$SerializableObject");
+                + ".ExpressionIntegrationTestBase$SerializableObject");
     }
 
     @Test
@@ -295,7 +295,7 @@ public class CastIntegrationTest extends ExpressionIntegrationTestBase {
         assertRow("cast(objectString1 as real)", EXPR0, REAL, 1.0f);
         assertRow("cast(objectChar1 as real)", EXPR0, REAL, 1.0f);
         assertDataError("cast(object as real)", "Cannot convert OBJECT to REAL: com.hazelcast.sql.impl.expression"
-                + ".ExpressionEndToEndTestBase$SerializableObject");
+                + ".ExpressionIntegrationTestBase$SerializableObject");
     }
 
     @Test
@@ -339,7 +339,7 @@ public class CastIntegrationTest extends ExpressionIntegrationTestBase {
         assertRow("cast(objectString1 as double)", EXPR0, DOUBLE, 1.0);
         assertRow("cast(objectChar1 as double)", EXPR0, DOUBLE, 1.0);
         assertDataError("cast(object as double)", "Cannot convert OBJECT to DOUBLE: com.hazelcast.sql.impl.expression"
-                + ".ExpressionEndToEndTestBase$SerializableObject");
+                + ".ExpressionIntegrationTestBase$SerializableObject");
     }
 
     @Test
@@ -385,7 +385,7 @@ public class CastIntegrationTest extends ExpressionIntegrationTestBase {
         assertRow("cast(objectString1 as decimal)", EXPR0, DECIMAL, BigDecimal.valueOf(1));
         assertRow("cast(objectChar1 as decimal)", EXPR0, DECIMAL, BigDecimal.valueOf(1));
         assertDataError("cast(object as decimal)", "Cannot convert OBJECT to DECIMAL: com.hazelcast.sql.impl.expression"
-                + ".ExpressionEndToEndTestBase$SerializableObject");
+                + ".ExpressionIntegrationTestBase$SerializableObject");
     }
 
     @Test

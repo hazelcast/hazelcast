@@ -17,7 +17,6 @@
 package com.hazelcast.sql;
 
 import com.hazelcast.client.config.ClientConfig;
-import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
 import com.hazelcast.sql.impl.SqlErrorCode;
@@ -39,7 +38,7 @@ public class SqlErrorAbstractTest extends SqlTestSupport {
     protected static final String MAP_NAME = "map";
     private static final int DATA_SET_SIZE = 100;
 
-    protected final TestHazelcastFactory factory = new TestHazelcastFactory(3);
+    protected final SqlTestInstanceFactory factory = SqlTestInstanceFactory.create();
 
     protected HazelcastInstance instance1;
     protected HazelcastInstance instance2;
@@ -76,8 +75,6 @@ public class SqlErrorAbstractTest extends SqlTestSupport {
                 return exec;
             }
         });
-
-        blocker.unblockAfter(5000L);
 
         // Execute query on the instance1.
         HazelcastSqlException error = assertSqlException(useClient ? client : instance1, query().setTimeoutMillis(100L));
