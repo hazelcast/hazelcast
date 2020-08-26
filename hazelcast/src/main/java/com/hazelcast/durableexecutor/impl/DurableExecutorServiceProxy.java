@@ -27,16 +27,15 @@ import com.hazelcast.durableexecutor.impl.operations.ShutdownOperation;
 import com.hazelcast.durableexecutor.impl.operations.TaskOperation;
 import com.hazelcast.executor.impl.RunnableAdapter;
 import com.hazelcast.internal.nio.Bits;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.util.FutureUtil;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.partition.PartitionAware;
 import com.hazelcast.spi.impl.AbstractDistributedObject;
 import com.hazelcast.spi.impl.DelegatingCompletableFuture;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.NodeEngine;
-import com.hazelcast.spi.impl.executionservice.ExecutionService;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.splitbrainprotection.SplitBrainProtectionException;
@@ -50,7 +49,6 @@ import java.util.Random;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletionException;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -65,6 +63,10 @@ import static com.hazelcast.spi.impl.InternalCompletableFuture.completedExceptio
 public class DurableExecutorServiceProxy extends AbstractDistributedObject<DistributedDurableExecutorService>
         implements DurableExecutorService {
 
+    private final int partitionCount;
+    private final String name;
+    private final ILogger logger;
+    private final Random random = new Random();
     private final FutureUtil.ExceptionHandler shutdownExceptionHandler = new FutureUtil.ExceptionHandler() {
         @Override
         public void handleException(Throwable throwable) {
@@ -81,14 +83,6 @@ public class DurableExecutorServiceProxy extends AbstractDistributedObject<Distr
             }
         }
     };
-
-    private final ILogger logger;
-
-    private final Random random = new Random();
-
-    private final int partitionCount;
-
-    private final String name;
 
     DurableExecutorServiceProxy(NodeEngine nodeEngine, DistributedDurableExecutorService service, String name) {
         super(nodeEngine, service);
@@ -284,10 +278,6 @@ public class DurableExecutorServiceProxy extends AbstractDistributedObject<Distr
 
         long taskId = Bits.combineToLong(partitionId, sequence);
         return new DurableExecutorServiceDelegateFuture<>(internalCompletableFuture, serializationService, defaultValue, taskId);
-    }
-
-    private ExecutorService getAsyncExecutor() {
-        return getNodeEngine().getExecutionService().getExecutor(ExecutionService.ASYNC_EXECUTOR);
     }
 
     private <T> RunnableAdapter<T> createRunnableAdapter(Runnable command) {

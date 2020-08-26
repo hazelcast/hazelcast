@@ -30,7 +30,7 @@ import com.hazelcast.config.ManagementCenterConfig;
 import com.hazelcast.config.SSLConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.cp.CPMember;
-import com.hazelcast.executor.LocalExecutorStats;
+import com.hazelcast.durableexecutor.impl.DistributedDurableExecutorService;
 import com.hazelcast.executor.impl.DistributedExecutorService;
 import com.hazelcast.flakeidgen.impl.FlakeIdGeneratorService;
 import com.hazelcast.hotrestart.HotRestartService;
@@ -46,6 +46,7 @@ import com.hazelcast.internal.monitor.LocalOperationStats;
 import com.hazelcast.internal.monitor.LocalPNCounterStats;
 import com.hazelcast.internal.monitor.LocalWanStats;
 import com.hazelcast.internal.monitor.impl.HotRestartStateImpl;
+import com.hazelcast.internal.monitor.impl.LocalExecutorStatsImpl;
 import com.hazelcast.internal.monitor.impl.LocalOperationStatsImpl;
 import com.hazelcast.internal.monitor.impl.MemberPartitionStateImpl;
 import com.hazelcast.internal.monitor.impl.MemberStateImpl;
@@ -59,6 +60,7 @@ import com.hazelcast.multimap.LocalMultiMapStats;
 import com.hazelcast.multimap.impl.MultiMapService;
 import com.hazelcast.replicatedmap.LocalReplicatedMapStats;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
+import com.hazelcast.scheduledexecutor.impl.DistributedScheduledExecutorService;
 import com.hazelcast.topic.LocalTopicStats;
 import com.hazelcast.topic.impl.TopicService;
 import com.hazelcast.topic.impl.reliable.ReliableTopicService;
@@ -238,6 +240,11 @@ public class TimedMemberStateFactory {
                 handleReliableTopic(memberState, config, ((ReliableTopicService) service).getStats());
             } else if (service instanceof DistributedExecutorService) {
                 handleExecutorService(memberState, config, ((DistributedExecutorService) service).getStats());
+            } else if (service instanceof DistributedScheduledExecutorService) {
+                handleScheduledExecutorService(memberState, config,
+                        ((DistributedScheduledExecutorService) service).getStats());
+            } else if (service instanceof DistributedDurableExecutorService) {
+                handleDurableExecutorService(memberState, config, ((DistributedDurableExecutorService) service).getStats());
             } else if (service instanceof ReplicatedMapService) {
                 handleReplicatedMap(memberState, config, ((ReplicatedMapService) service).getStats());
             } else if (service instanceof PNCounterService) {
@@ -268,7 +275,7 @@ public class TimedMemberStateFactory {
     }
 
     private void handleExecutorService(MemberStateImpl memberState, Config config,
-                                       Map<String, LocalExecutorStats> executorServices) {
+                                       Map<String, LocalExecutorStatsImpl> executorServices) {
         Set<String> executorsWithStats = createHashSet(executorServices.size());
         for (String name : executorServices.keySet()) {
             if (config.findExecutorConfig(name).isStatisticsEnabled()) {
@@ -276,6 +283,30 @@ public class TimedMemberStateFactory {
             }
         }
         memberState.setExecutorsWithStats(executorsWithStats);
+    }
+
+    private void handleScheduledExecutorService(MemberStateImpl memberState,
+                                                Config config,
+                                                Map<String, LocalExecutorStatsImpl> executorServices) {
+        Set<String> executorsWithStats = createHashSet(executorServices.size());
+        for (String name : executorServices.keySet()) {
+            if (config.findScheduledExecutorConfig(name).isStatisticsEnabled()) {
+                executorsWithStats.add(name);
+            }
+        }
+        memberState.setScheduledExecutorsWithStats(executorsWithStats);
+    }
+
+    private void handleDurableExecutorService(MemberStateImpl memberState,
+                                              Config config,
+                                              Map<String, LocalExecutorStatsImpl> executorServices) {
+        Set<String> executorsWithStats = createHashSet(executorServices.size());
+        for (String name : executorServices.keySet()) {
+            if (config.findDurableExecutorConfig(name).isStatisticsEnabled()) {
+                executorsWithStats.add(name);
+            }
+        }
+        memberState.setDurableExecutorsWithStats(executorsWithStats);
     }
 
     private void handleMultiMap(MemberStateImpl memberState, Config config,

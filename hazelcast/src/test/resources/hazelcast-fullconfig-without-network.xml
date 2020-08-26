@@ -152,12 +152,14 @@
         <split-brain-protection-ref>splitBrainProtectionRuleWithThreeMembers</split-brain-protection-ref>
     </executor-service>
     <durable-executor-service name="dummy">
+        <statistics-enabled>false</statistics-enabled>
         <pool-size>10</pool-size>
         <durability>2</durability>
         <capacity>10</capacity>
         <split-brain-protection-ref>splitBrainProtectionRuleWithThreeMembers</split-brain-protection-ref>
     </durable-executor-service>
     <scheduled-executor-service name="dummy">
+        <statistics-enabled>false</statistics-enabled>
         <pool-size>10</pool-size>
         <durability>2</durability>
         <capacity>50</capacity>

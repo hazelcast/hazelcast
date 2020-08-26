@@ -20,6 +20,10 @@ import com.hazelcast.config.MergePolicyConfig;
 import com.hazelcast.config.ScheduledExecutorConfig;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
+import com.hazelcast.internal.metrics.DynamicMetricsProvider;
+import com.hazelcast.internal.metrics.MetricDescriptor;
+import com.hazelcast.internal.metrics.MetricsCollectionContext;
+import com.hazelcast.internal.monitor.impl.LocalExecutorStatsImpl;
 import com.hazelcast.internal.partition.MigrationAwareService;
 import com.hazelcast.internal.partition.MigrationEndpoint;
 import com.hazelcast.internal.partition.PartitionMigrationEvent;
@@ -31,14 +35,18 @@ import com.hazelcast.internal.services.MembershipServiceEvent;
 import com.hazelcast.internal.services.RemoteService;
 import com.hazelcast.internal.services.SplitBrainHandlerService;
 import com.hazelcast.internal.services.SplitBrainProtectionAwareService;
+import com.hazelcast.internal.services.StatisticsAwareService;
 import com.hazelcast.internal.util.ConstructorFunction;
 import com.hazelcast.internal.util.ContextMutexFactory;
+import com.hazelcast.map.impl.ExecutorStats;
 import com.hazelcast.scheduledexecutor.impl.operations.MergeOperation;
 import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.merge.AbstractContainerMerger;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes.ScheduledExecutorMergeTypes;
+import com.hazelcast.spi.properties.ClusterProperty;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -53,6 +61,8 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hazelcast.internal.config.ConfigValidator.checkScheduledExecutorConfig;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.SCHEDULED_EXECUTOR_PREFIX;
+import static com.hazelcast.internal.metrics.impl.ProviderHelper.provide;
 import static com.hazelcast.internal.util.ConcurrencyUtil.getOrPutSynchronized;
 import static com.hazelcast.internal.util.ExceptionUtil.peel;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
@@ -65,10 +75,11 @@ import static java.util.Collections.synchronizedSet;
  */
 public class DistributedScheduledExecutorService
         implements ManagedService, RemoteService, MigrationAwareService, SplitBrainProtectionAwareService,
-        SplitBrainHandlerService, MembershipAwareService {
+        SplitBrainHandlerService, MembershipAwareService, StatisticsAwareService<LocalExecutorStatsImpl>,
+        DynamicMetricsProvider {
 
-    public static final String SERVICE_NAME = "hz:impl:scheduledExecutorService";
     public static final int MEMBER_BIN = -1;
+    public static final String SERVICE_NAME = "hz:impl:scheduledExecutorService";
     public static final CapacityPermit NOOP_PERMIT = new NoopCapacityPermit();
 
     //Testing only
@@ -76,10 +87,10 @@ public class DistributedScheduledExecutorService
 
     private static final Object NULL_OBJECT = new Object();
 
+    private final ExecutorStats executorStats = new ExecutorStats();
     private final ConcurrentMap<String, Boolean> shutdownExecutors = new ConcurrentHashMap<>();
     private final ConcurrentMap<String, CapacityPermit> permits = new ConcurrentHashMap<>();
     private final Set<ScheduledFutureProxy> lossListeners = synchronizedSet(newSetFromMap(new WeakHashMap<>()));
-
     private final ConcurrentMap<String, Object> splitBrainProtectionConfigCache = new ConcurrentHashMap<>();
     private final ContextMutexFactory splitBrainProtectionConfigCacheMutexFactory = new ContextMutexFactory();
     private final ConstructorFunction<String, Object> splitBrainProtectionConfigConstructor =
@@ -105,6 +116,10 @@ public class DistributedScheduledExecutorService
         int partitionCount = nodeEngine.getPartitionService().getPartitionCount();
         this.nodeEngine = nodeEngine;
         this.partitions = new ScheduledExecutorPartition[partitionCount];
+        boolean dsMetricsEnabled = nodeEngine.getProperties().getBoolean(ClusterProperty.METRICS_DATASTRUCTURES);
+        if (dsMetricsEnabled) {
+            ((NodeEngineImpl) nodeEngine).getMetricsRegistry().registerDynamicMetricsProvider(this);
+        }
         reset();
     }
 
@@ -122,6 +137,10 @@ public class DistributedScheduledExecutorService
 
     public NodeEngine getNodeEngine() {
         return nodeEngine;
+    }
+
+    public ExecutorStats getExecutorStats() {
+        return executorStats;
     }
 
     @Override
@@ -145,6 +164,7 @@ public class DistributedScheduledExecutorService
 
     @Override
     public void shutdown(boolean terminate) {
+        executorStats.clear();
         shutdownExecutors.clear();
         permits.clear();
 
@@ -312,6 +332,16 @@ public class DistributedScheduledExecutorService
         Object splitBrainProtectionName = getOrPutSynchronized(splitBrainProtectionConfigCache, name,
                 splitBrainProtectionConfigCacheMutexFactory, splitBrainProtectionConfigConstructor);
         return splitBrainProtectionName == NULL_OBJECT ? null : (String) splitBrainProtectionName;
+    }
+
+    @Override
+    public Map<String, LocalExecutorStatsImpl> getStats() {
+        return executorStats.getStatsMap();
+    }
+
+    @Override
+    public void provideDynamicMetrics(MetricDescriptor descriptor, MetricsCollectionContext context) {
+        provide(descriptor, context, SCHEDULED_EXECUTOR_PREFIX, getStats());
     }
 
     private class Merger extends AbstractContainerMerger<ScheduledExecutorContainer,

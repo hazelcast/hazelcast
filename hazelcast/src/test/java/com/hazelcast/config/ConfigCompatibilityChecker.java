@@ -528,7 +528,8 @@ public class ConfigCompatibilityChecker {
                     && nullSafeEqual(c1.getPoolSize(), c2.getPoolSize())
                     && nullSafeEqual(c1.getDurability(), c2.getDurability())
                     && nullSafeEqual(c1.getSplitBrainProtectionName(), c2.getSplitBrainProtectionName())
-                    && nullSafeEqual(c1.getCapacity(), c2.getCapacity());
+                    && nullSafeEqual(c1.getCapacity(), c2.getCapacity())
+                    && nullSafeEqual(c1.isStatisticsEnabled(), c2.isStatisticsEnabled());
         }
 
         @Override
@@ -545,7 +546,8 @@ public class ConfigCompatibilityChecker {
                     && nullSafeEqual(c1.getDurability(), c2.getDurability())
                     && nullSafeEqual(c1.getSplitBrainProtectionName(), c2.getSplitBrainProtectionName())
                     && isCompatible(c1.getMergePolicyConfig(), c2.getMergePolicyConfig())
-                    && nullSafeEqual(c1.getPoolSize(), c2.getPoolSize());
+                    && nullSafeEqual(c1.getPoolSize(), c2.getPoolSize())
+                    && nullSafeEqual(c1.isStatisticsEnabled(), c2.isStatisticsEnabled());
         }
 
         @Override

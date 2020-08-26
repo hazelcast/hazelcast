@@ -50,7 +50,13 @@ public class ScheduledExecutorConfigReadOnly extends ScheduledExecutorConfig {
         throw new UnsupportedOperationException("This config is read-only scheduled executor: " + getName());
     }
 
+    @Override
     public ScheduledExecutorConfig setMergePolicyConfig(MergePolicyConfig mergePolicyConfig) {
+        throw new UnsupportedOperationException("This config is read-only scheduled executor: " + getName());
+    }
+
+    @Override
+    public ScheduledExecutorConfig setStatisticsEnabled(boolean statisticsEnabled) {
         throw new UnsupportedOperationException("This config is read-only scheduled executor: " + getName());
     }
 }

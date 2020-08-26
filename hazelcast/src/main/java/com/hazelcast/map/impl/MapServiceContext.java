@@ -197,4 +197,6 @@ public interface MapServiceContext extends MapServiceContextInterceptorSupport,
     ValueComparator getValueComparatorOf(InMemoryFormat inMemoryFormat);
 
     NodeWideUsedCapacityCounter getNodeWideUsedCapacityCounter();
+
+    ExecutorStats getOffloadedEntryProcessorExecutorStats();
 }
