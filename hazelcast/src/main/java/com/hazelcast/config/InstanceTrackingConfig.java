@@ -258,11 +258,11 @@ public class InstanceTrackingConfig {
          */
         HAZELCAST_CLIENT_EE("Hazelcast Client Enterprise"),
         /**
-         * Hazelcast jet open-source
+         * Hazelcast Jet open-source
          */
         HAZELCAST_JET("Hazelcast Jet"),
         /**
-         * Hazelcast jet enterprise
+         * Hazelcast Jet enterprise
          */
         HAZELCAST_JET_EE("Hazelcast Jet Enterprise");
 
