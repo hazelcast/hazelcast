@@ -267,7 +267,7 @@ public abstract class JetTestSupport extends HazelcastTestSupport {
             JobExecutionRecord record = jr.getJobExecutionRecord(jobId);
             assertNotNull("jobExecutionRecord is null", record);
             snapshotId[0] = record.snapshotId();
-            assertTrue("No more snapshots produced after restart in " + timeoutSeconds + " seconds",
+            assertTrue("No more snapshots produced in " + timeoutSeconds + " seconds",
                     snapshotId[0] > originalSnapshotId);
             assertTrue("stats are 0", allowEmptySnapshot || record.snapshotStats().numBytes() > 0);
         }, timeoutSeconds);
