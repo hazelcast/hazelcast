@@ -1025,8 +1025,8 @@ public class QueueContainer implements IdentifiedDataSerializable {
         this.store = QueueStoreWrapper.create(name, storeConfig, serializationService, classLoader);
 
         if (isPriorityQueue && store.isEnabled() && store.getMemoryLimit() < Integer.MAX_VALUE) {
-            logger.warning("The queue '" + name + "' has both a comparator class and a store memory limit set. " +
-                    "The memory limit will be ignored.");
+            logger.warning("The queue '" + name + "' has both a comparator class and a store memory limit set. "
+                    + "The memory limit will be ignored.");
         }
     }
 
