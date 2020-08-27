@@ -60,10 +60,7 @@ public class PublishAllOperation extends AbstractNamedOperation
      * @throws Exception
      */
     @Override
-    public void beforeRun() throws Exception {
-        TopicService service = getService();
-        service.incrementPublishes(name);
-    }
+    public void beforeRun() throws Exception { }
 
     @Override
     public void run() throws Exception {
@@ -76,6 +73,7 @@ public class PublishAllOperation extends AbstractNamedOperation
         try {
             for (Data item : messages) {
                 TopicEvent topicEvent = new TopicEvent(name, item, getCallerAddress());
+                service.incrementPublishes(name);
                 eventService.publishEvent(TopicService.SERVICE_NAME, registrations, topicEvent, name.hashCode());
             }
         } finally {

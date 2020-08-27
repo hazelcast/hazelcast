@@ -16,24 +16,21 @@
 
 package com.hazelcast.topic.impl;
 
+import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.monitor.impl.LocalTopicStatsImpl;
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationService;
-import com.hazelcast.spi.impl.operationservice.impl.InvocationFuture;
+import com.hazelcast.version.Version;
 
 import javax.annotation.Nonnull;
-
 import java.util.Collection;
-import java.util.concurrent.CompletionStage;
 
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.internal.util.Preconditions.checkNoNullInside;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
-import static com.hazelcast.spi.impl.InternalCompletableFuture.newDelegatingFuture;
 
 /**
  * Topic proxy used when global ordering is enabled (all nodes listening to
@@ -67,39 +64,51 @@ public class TotalOrderedTopicProxy<E> extends TopicProxy<E> {
     }
 
     @Override
-    public CompletionStage<Void> publishAsync(@Nonnull E message) {
+    public InternalCompletableFuture<Void> publishAsync(@Nonnull E message) {
         checkNotNull(message, NULL_MESSAGE_IS_NOT_ALLOWED);
-        Operation op = new PublishOperation(getName(), toData(message))
-                .setPartitionId(partitionId);
-        return newDelegatingFuture(serializationService, publishInternalAsync(op));
+        Operation op = new PublishOperation(getName(), toData(message)).setPartitionId(partitionId);
+        return publishInternalAsync(op);
     }
 
     @Override
     public void publishAll(@Nonnull Collection<? extends E> messages) {
         checkNotNull(messages, NULL_MESSAGE_IS_NOT_ALLOWED);
         checkNoNullInside(messages, NULL_MESSAGE_IS_NOT_ALLOWED);
+        // RU_COMPAT_4_0
+        checkClusterVersion(Versions.V4_1);
 
         Operation op = new PublishAllOperation(getName(), toDataArray(messages));
         publishInternalAsync(op).joinInternal();
     }
 
     @Override
-    public CompletionStage<Void> publishAllAsync(@Nonnull Collection<? extends E> messages) {
+    public InternalCompletableFuture<Void> publishAllAsync(@Nonnull Collection<? extends E> messages) {
         checkNotNull(messages, NULL_MESSAGE_IS_NOT_ALLOWED);
         checkNoNullInside(messages, NULL_MESSAGE_IS_NOT_ALLOWED);
+        // RU_COMPAT_4_0
+        checkClusterVersion(Versions.V4_1);
 
         Operation op = new PublishAllOperation(getName(), toDataArray(messages));
-        return newDelegatingFuture(serializationService, publishInternalAsync(op));
+        return publishInternalAsync(op);
     }
 
-    private InternalCompletableFuture<Data> publishInternalAsync(Operation operation) {
+    private InternalCompletableFuture<Void> publishInternalAsync(Operation operation) {
         topicStats.incrementPublishes();
         try {
-            InvocationFuture<Data> future = operationService.invokeOnPartition(OperationService.SERVICE_NAME,
-                    operation, partitionId);
-            return future;
+            return operationService.invokeOnPartition(OperationService.SERVICE_NAME, operation, partitionId);
         } catch (Throwable t) {
             throw rethrow(t);
+        }
+    }
+
+    private void checkClusterVersion(Version version) {
+        // RU_COMPAT_4_0
+        Version clusterVersion = getNodeEngine().getClusterService().getClusterVersion();
+        if (!clusterVersion.isGreaterOrEqual(version)) {
+            throw new UnsupportedOperationException(
+                    String.format(
+                            "Publish all is not available on cluster version %s. Please upgrade the cluster version to %s.",
+                            clusterVersion, version));
         }
     }
 }

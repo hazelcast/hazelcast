@@ -21,6 +21,7 @@ import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.ReliableTopicConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstanceAware;
+import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.monitor.impl.LocalTopicStatsImpl;
 import com.hazelcast.internal.nio.ClassLoaderUtil;
 import com.hazelcast.internal.serialization.Data;
@@ -40,6 +41,7 @@ import com.hazelcast.topic.TopicOverloadException;
 import com.hazelcast.topic.TopicOverloadPolicy;
 import com.hazelcast.topic.impl.PublishAllOperation;
 import com.hazelcast.topic.impl.PublishOperation;
+import com.hazelcast.version.Version;
 
 import javax.annotation.Nonnull;
 import java.util.Collection;
@@ -288,6 +290,9 @@ public class ReliableTopicProxy<E> extends AbstractDistributedObject<ReliableTop
         checkNotNull(messages, NULL_MESSAGE_IS_NOT_ALLOWED);
         checkNoNullInside(messages, NULL_MESSAGE_IS_NOT_ALLOWED);
 
+        // RU_COMPAT_4_0
+        checkClusterVersion(Versions.V4_1);
+
         Operation op = new PublishAllOperation(name, toDataArray(messages));
         try {
             invokeOnPartition(op).get();
@@ -300,6 +305,10 @@ public class ReliableTopicProxy<E> extends AbstractDistributedObject<ReliableTop
     public CompletionStage<Void> publishAllAsync(@Nonnull Collection<? extends E> messages) {
         checkNotNull(messages, NULL_MESSAGE_IS_NOT_ALLOWED);
         checkNoNullInside(messages, NULL_MESSAGE_IS_NOT_ALLOWED);
+
+        // RU_COMPAT_4_0
+        checkClusterVersion(Versions.V4_1);
+
         Data[] data = toDataArray(messages);
         InternalCompletableFuture<Void> returnFuture = new InternalCompletableFuture<>();
         invokeOnPartition(new PublishAllOperation(name, data))
@@ -322,5 +331,16 @@ public class ReliableTopicProxy<E> extends AbstractDistributedObject<ReliableTop
             k++;
         }
         return items;
+    }
+
+    private void checkClusterVersion(Version version) {
+        // RU_COMPAT_4_0
+        Version clusterVersion = getNodeEngine().getClusterService().getClusterVersion();
+        if (!clusterVersion.isGreaterOrEqual(version)) {
+            throw new UnsupportedOperationException(
+                String.format(
+                        "Publish all is not available on cluster version %s. Please upgrade the cluster version to %s.",
+                        clusterVersion, version));
+        }
     }
 }

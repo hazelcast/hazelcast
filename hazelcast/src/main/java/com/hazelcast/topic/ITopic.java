@@ -67,12 +67,10 @@ public interface ITopic<E> extends DistributedObject {
     void publish(@Nonnull E message);
 
     /**
-     * Publishes the message to all subscribers of this topic.
+     * Publishes the message asynchronously to all subscribers of this topic.
      *
-     * @param message the message to publish to all subscribers of this topic
+     * @param message the message to publish asynchronously to all subscribers of this topic
      * @return the CompletionStage to synchronize on completion.
-     * @throws TopicOverloadException if the consumer is too slow
-     *                                (only works in combination with reliable topic)
      */
     CompletionStage<Void> publishAsync(@Nonnull E message);
 
@@ -119,12 +117,10 @@ public interface ITopic<E> extends DistributedObject {
     void publishAll(@Nonnull Collection<? extends E> messages) throws ExecutionException, InterruptedException;
 
     /**
-     * Publishes all messages to all subscribers of this topic.
+     * Publishes all messages asynchronously to all subscribers of this topic.
      *
-     * @param messages the messages to publish to all subscribers of this topic
+     * @param messages the messages to publish asynchronously to all subscribers of this topic
      * @return the CompletionStage to synchronize on completion.
-     * @throws TopicOverloadException if the consumer is too slow
-     *                                (only works in combination with reliable topic)
      */
     CompletionStage<Void> publishAllAsync(@Nonnull Collection<? extends E> messages);
 }

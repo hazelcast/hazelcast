@@ -42,6 +42,7 @@ public class TopicPublishAllMessageTask
 
     @Override
     protected Operation prepareOperation() {
+        // RU_COMPAT_4_0
         Version clusterVersion = nodeEngine.getClusterService().getClusterVersion();
         if (!clusterVersion.isGreaterOrEqual(Versions.V4_1)) {
             throw new UnsupportedOperationException(

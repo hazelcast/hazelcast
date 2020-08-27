@@ -97,14 +97,10 @@ public class TopicProxy<E> extends TopicProxySupport implements ITopic<E> {
 
 
     protected Data[] toDataArray(Collection<? extends E> collection) {
-        Data[] items = new Data[collection.size()];
-        int k = 0;
-        for (E item : collection) {
-            checkNotNull(item, "collection mustn't contains null items");
-            items[k] = toData(item);
-            k++;
-        }
-        return items;
+        return collection.stream().map(item -> {
+            checkNotNull(item, "collection can't contains null items");
+            return toData(item);
+        }).toArray(Data[]::new);
     }
 }
 

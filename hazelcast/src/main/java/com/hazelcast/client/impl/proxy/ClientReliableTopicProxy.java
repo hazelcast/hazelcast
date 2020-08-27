@@ -38,8 +38,8 @@ import com.hazelcast.topic.impl.reliable.ReliableMessageListenerAdapter;
 import com.hazelcast.topic.impl.reliable.ReliableTopicMessage;
 
 import javax.annotation.Nonnull;
-import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CompletionStage;
@@ -129,8 +129,7 @@ public class ClientReliableTopicProxy<E> extends ClientProxy implements ITopic<E
     @Override
     public CompletionStage<Void> publishAsync(@Nonnull E payload) {
         checkNotNull(payload, NULL_MESSAGE_IS_NOT_ALLOWED);
-        Collection<E> messages = new ArrayList<>();
-        messages.add(payload);
+        Collection<E> messages = Collections.singleton(payload);
         return publishAllAsync(messages);
     }
 
