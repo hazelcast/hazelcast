@@ -1186,20 +1186,22 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
     }
 
     private V mergeLocally(K key, V value, BiFunction<? super V, ? super V, ? extends V> remappingFunction) {
+        Data keyAsData = toDataWithStrategy(key);
+
         while (true) {
-            Data oldValueAsData = toData(getInternal(key));
+            Data oldValueAsData = toData(getInternal(keyAsData));
             if (oldValueAsData != null) {
                 V oldValueClone = toObject(oldValueAsData);
                 V newValue = remappingFunction.apply(oldValueClone, value);
                 if (newValue != null) {
-                    if (replaceInternal(key, oldValueAsData, toData(newValue))) {
+                    if (replaceInternal(keyAsData, oldValueAsData, toData(newValue))) {
                         return newValue;
                     }
-                } else if (removeInternal(key, oldValueAsData)) {
+                } else if (removeInternal(keyAsData, oldValueAsData)) {
                     return null;
                 }
             } else {
-                Data result =  putIfAbsentInternal(key, toData(value), UNSET, TimeUnit.MILLISECONDS, UNSET,
+                Data result =  putIfAbsentInternal(keyAsData, toData(value), UNSET, TimeUnit.MILLISECONDS, UNSET,
                         TimeUnit.MILLISECONDS);
                 if (result == null) {
                     return value;

@@ -2066,20 +2066,22 @@ public class ClientMapProxy<K, V> extends ClientProxy
     }
 
     private V mergeLocally(K key, V value, BiFunction<? super V, ? super V, ? extends V> remappingFunction) {
+        Data keyAsData = toData(key);
+
         while (true) {
-            Data oldValueAsData = toData(getInternal(key));
+            Data oldValueAsData = toData(getInternal(keyAsData));
             if (oldValueAsData != null) {
                 V oldValueClone = toObject(oldValueAsData);
                 V newValue = remappingFunction.apply(oldValueClone, value);
                 if (newValue != null) {
-                    if (replaceIfSameInternal(key, oldValueAsData, toData(newValue))) {
+                    if (replaceIfSameInternal(keyAsData, oldValueAsData, toData(newValue))) {
                         return newValue;
                     }
-                } else if (removeInternal(key, oldValueAsData)) {
+                } else if (removeInternal(keyAsData, oldValueAsData)) {
                     return null;
                 }
             } else {
-                V result =  putIfAbsentInternal(UNSET, MILLISECONDS, null, null, key, toData(value));
+                V result =  putIfAbsentInternal(UNSET, MILLISECONDS, null, null, keyAsData, toData(value));
                 if (result == null) {
                     return value;
                 }
