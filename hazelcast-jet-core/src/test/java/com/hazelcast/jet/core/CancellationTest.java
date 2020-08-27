@@ -54,6 +54,8 @@ import static org.junit.Assert.assertTrue;
 @RunWith(HazelcastSerialClassRunner.class)
 public class CancellationTest extends JetTestSupport {
 
+    private static final int ASSERTION_TIMEOUT_SECONDS = 15;
+
     @Rule
     public ExpectedException expectedException = ExpectedException.none();
 
@@ -127,7 +129,7 @@ public class CancellationTest extends JetTestSupport {
         job.cancel();
 
         // Then
-        assertJobStatusEventually(job, JobStatus.FAILED, 3);
+        assertJobStatusEventually(job, JobStatus.FAILED, ASSERTION_TIMEOUT_SECONDS);
     }
 
     @Test
@@ -169,7 +171,7 @@ public class CancellationTest extends JetTestSupport {
         job.cancel();
 
         // Then
-        assertJobStatusEventually(job, JobStatus.FAILED, 3);
+        assertJobStatusEventually(job, JobStatus.FAILED, ASSERTION_TIMEOUT_SECONDS);
     }
 
     @Test
@@ -212,11 +214,11 @@ public class CancellationTest extends JetTestSupport {
         job.cancel();
 
         // Then
-        assertJobStatusEventually(job, JobStatus.COMPLETING, 3);
+        assertJobStatusEventually(job, JobStatus.COMPLETING, ASSERTION_TIMEOUT_SECONDS);
 
         resetPacketFiltersFrom(instance1.getHazelcastInstance());
 
-        assertJobStatusEventually(job, JobStatus.FAILED, 3);
+        assertJobStatusEventually(job, JobStatus.FAILED, ASSERTION_TIMEOUT_SECONDS);
     }
 
     @Test
@@ -289,7 +291,7 @@ public class CancellationTest extends JetTestSupport {
         DAG dag = new DAG();
         dag.newVertex("blocking", BlockingProcessor::new).localParallelism(1);
         jet.newJob(dag);
-        assertTrueEventually(() -> assertTrue(BlockingProcessor.hasStarted), 3);
+        assertTrueEventually(() -> assertTrue(BlockingProcessor.hasStarted), ASSERTION_TIMEOUT_SECONDS);
         if (graceful) {
             jet.shutdown();
         } else {
@@ -304,7 +306,7 @@ public class CancellationTest extends JetTestSupport {
         DAG dag = new DAG();
         dag.newVertex("blocking", BlockingProcessor::new).localParallelism(1);
         Job job = jet.newJob(dag);
-        assertTrueEventually(() -> assertTrue(BlockingProcessor.hasStarted), 3);
+        assertTrueEventually(() -> assertTrue(BlockingProcessor.hasStarted), ASSERTION_TIMEOUT_SECONDS);
         job.cancel();
         assertBlockingProcessorEventuallyNotRunning();
     }
@@ -373,7 +375,7 @@ public class CancellationTest extends JetTestSupport {
     private static void assertExecutionStarted() {
         final long first = StuckSource.callCounter.get();
         assertTrueEventually(() -> assertTrue("Call counter should eventually start being incremented.",
-                first != StuckSource.callCounter.get()), 3);
+                first != StuckSource.callCounter.get()), ASSERTION_TIMEOUT_SECONDS);
     }
 
     private static void assertExecutionTerminated() {
@@ -384,14 +386,14 @@ public class CancellationTest extends JetTestSupport {
             previous[0] = current;
             assertTrue("Call counter should eventually stop being incremented.", current == last);
             sleepMillis(200);
-        }, 3);
+        }, ASSERTION_TIMEOUT_SECONDS);
     }
 
     private static void assertBlockingProcessorEventuallyNotRunning() {
         assertTrueEventually(() -> assertTrue(
                 String.format("BlockingProcessor should be started and done; hasStarted=%b, isDone=%b",
                         BlockingProcessor.hasStarted, BlockingProcessor.isDone),
-                BlockingProcessor.hasStarted && BlockingProcessor.isDone), 3);
+                BlockingProcessor.hasStarted && BlockingProcessor.isDone), ASSERTION_TIMEOUT_SECONDS);
     }
 
     private static class StuckSource extends AbstractProcessor {
