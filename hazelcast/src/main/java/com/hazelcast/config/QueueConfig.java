@@ -348,6 +348,9 @@ public class QueueConfig implements IdentifiedDataSerializable, NamedConfig, Ver
      * Returns the class name that will be used to compare queue items.
      * If the returned class name is non-empty, the queue will behave as a priority
      * queue, otherwise it behaves as a FIFO queue.
+     * <p>
+     * If this value is non-null, then Hazelcast will ignore the queue store
+     * {@link QueueStoreConfig#STORE_MEMORY_LIMIT} configuration value.
      */
     public @Nullable String getPriorityComparatorClassName() {
         return priorityComparatorClassName;
@@ -357,6 +360,9 @@ public class QueueConfig implements IdentifiedDataSerializable, NamedConfig, Ver
      * Sets the class name that will be used to compare queue items.
      * If the provided class name is non-empty, the queue will behave as a priority
      * queue, otherwise it behaves as a FIFO queue.
+     *
+     * Setting the comparator to a non-null value also makes the queue store ignore
+     * the {@link QueueStoreConfig#STORE_MEMORY_LIMIT} configuration value.
      *
      * @param priorityComparatorClassName the class name that will be used to compare queue items
      * @return this QueueConfig instance

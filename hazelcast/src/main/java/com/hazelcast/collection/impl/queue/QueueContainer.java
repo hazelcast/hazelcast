@@ -78,6 +78,7 @@ public class QueueContainer implements IdentifiedDataSerializable {
     private Queue<QueueItem> itemQueue;
     private Map<Long, QueueItem> backupMap;
     private QueueConfig config;
+    private boolean isPriorityQueue;
     private QueueStoreWrapper store;
     private NodeEngine nodeEngine;
     private QueueService service;
@@ -123,7 +124,7 @@ public class QueueContainer implements IdentifiedDataSerializable {
             Set<Long> keys = store.loadAllKeys();
             // for the items to be properly ordered in the priority
             // queue, we need to prefetch all values
-            Map<Long, Data> values = config.isPriorityQueue()
+            Map<Long, Data> values = isPriorityQueue
                     ? store.loadAll(keys)
                     : Collections.emptyMap();
             if (keys != null) {
@@ -289,7 +290,7 @@ public class QueueContainer implements IdentifiedDataSerializable {
     }
 
     private void addTxItemOrdered(TxQueueItem txQueueItem) {
-        if (config.isPriorityQueue()) {
+        if (isPriorityQueue) {
             getItemQueue().add(txQueueItem);
         } else {
             ListIterator<QueueItem> iterator = ((List<QueueItem>) getItemQueue()).listIterator();
@@ -467,8 +468,7 @@ public class QueueContainer implements IdentifiedDataSerializable {
      * queue items.
      */
     private boolean shouldKeepItemData() {
-        return !store.isEnabled() || store.getMemoryLimit() > getItemQueue().size()
-                || config.isPriorityQueue();
+        return !store.isEnabled() || store.getMemoryLimit() > getItemQueue().size() || isPriorityQueue;
     }
 
 
@@ -910,7 +910,7 @@ public class QueueContainer implements IdentifiedDataSerializable {
      */
     public Queue<QueueItem> getItemQueue() {
         if (itemQueue == null) {
-            itemQueue = config.isPriorityQueue() ? createPriorityQueue() : createLinkedList();
+            itemQueue = isPriorityQueue ? createPriorityQueue() : createLinkedList();
             if (!txMap.isEmpty()) {
                 long maxItemId = Long.MIN_VALUE;
                 for (TxQueueItem item : txMap.values()) {
@@ -1007,6 +1007,7 @@ public class QueueContainer implements IdentifiedDataSerializable {
         this.service = service;
         this.logger = nodeEngine.getLogger(QueueContainer.class);
         this.config = new QueueConfig(config);
+        this.isPriorityQueue = config.isPriorityQueue();
         // init QueueStore
         QueueStoreConfig storeConfig = config.getQueueStoreConfig();
         SerializationService serializationService = nodeEngine.getSerializationService();
@@ -1015,13 +1016,18 @@ public class QueueContainer implements IdentifiedDataSerializable {
         // in case we need to create a priority queue
         // we recreate the queue using the items that are currently a LinkedList
         // otherwise, no change is needed
-        if (itemQueue != null && config.isPriorityQueue()) {
+        if (itemQueue != null && isPriorityQueue) {
             Queue<QueueItem> copy = createPriorityQueue();
             copy.addAll(itemQueue);
             itemQueue = copy;
         }
 
         this.store = QueueStoreWrapper.create(name, storeConfig, serializationService, classLoader);
+
+        if (isPriorityQueue && store.isEnabled() && store.getMemoryLimit() < Integer.MAX_VALUE) {
+            logger.warning("The queue '" + name + "' has both a comparator class and a store memory limit set. " +
+                    "The memory limit will be ignored.");
+        }
     }
 
     /**
@@ -1106,7 +1112,7 @@ public class QueueContainer implements IdentifiedDataSerializable {
             if (transactionId.equals(item.getTransactionId())) {
                 iterator.remove();
                 if (item.isPollOperation()) {
-                    if (config.isPriorityQueue()) {
+                    if (isPriorityQueue) {
                         getItemQueue().offer(item);
                     } else {
                         ((LinkedList) getItemQueue()).offerFirst(item);

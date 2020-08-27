@@ -952,6 +952,9 @@ hazelcast:
   #     Fully-qualified comparator's class name to be used for the priority queue.
   #     If nothing is provided, then queue behaves as a FIFO queue.
   #
+  #     If this value is non-null, then Hazelcast will ignore the queue store
+  #     "memory-limit" configuration value.
+  #
   queue:
     default:
       statistics-enabled: true

@@ -32,9 +32,9 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.concurrent.ConcurrentSkipListSet;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.assertEquals;
@@ -144,7 +144,7 @@ public class QueuePriorityTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void queueConsistency() throws InterruptedException {
+    public void queueConsistency() {
         int count = 0;
         for (int i = 0; i < 500; i++) {
             queue.offer(new PriorityElement(false, count));
@@ -153,29 +153,29 @@ public class QueuePriorityTest extends HazelcastTestSupport {
         }
         ExecutorService threadPool = Executors.newCachedThreadPool();
         ConcurrentSkipListSet<PriorityElement> tasks = new ConcurrentSkipListSet<>(new PriorityElementComparator());
-        Semaphore sem = new Semaphore(-99);
+        CountDownLatch latch = new CountDownLatch(100);
         for (int i = 0; i < 100; i++) {
             threadPool.execute(() -> {
                 PriorityElement task;
                 while ((task = queue.poll()) != null) {
                     tasks.add(task);
                 }
-                sem.release();
+                latch.countDown();
             });
         }
-        sem.acquire();
+        assertOpenEventually(latch);
         assertEquals(500 * 2, tasks.size());
         assertNull(queue.poll());
     }
 
     @Test
-    public void queueParallel() throws InterruptedException {
+    public void queueParallel() {
         AtomicInteger enqueued = new AtomicInteger();
         AtomicInteger dequeued = new AtomicInteger();
         ExecutorService threadPool = Executors.newCachedThreadPool();
-        Semaphore sem = new Semaphore(-200);
+        CountDownLatch latch = new CountDownLatch(200);
         int size = 1000;
-        for (int i = 0; i <= 100; i++) {
+        for (int i = 0; i < 100; i++) {
             threadPool.execute(() -> {
                 while (enqueued.get() < size) {
                     int j = enqueued.incrementAndGet();
@@ -183,7 +183,7 @@ public class QueuePriorityTest extends HazelcastTestSupport {
                     PriorityElement task = new PriorityElement(priority, j);
                     queue.offer(task);
                 }
-                sem.release();
+                latch.countDown();
             });
             threadPool.execute(() -> {
                 while (enqueued.get() > dequeued.get() || enqueued.get() < size) {
@@ -192,10 +192,10 @@ public class QueuePriorityTest extends HazelcastTestSupport {
                         dequeued.incrementAndGet();
                     }
                 }
-                sem.release();
+                latch.countDown();
             });
         }
-        sem.acquire();
+        assertOpenEventually(latch);
         assertEquals(enqueued.get(), dequeued.get());
         assertNull(queue.poll());
     }
