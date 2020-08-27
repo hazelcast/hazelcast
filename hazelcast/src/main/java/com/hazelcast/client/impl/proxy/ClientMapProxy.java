@@ -2056,4 +2056,35 @@ public class ClientMapProxy<K, V> extends ClientProxy
         }
     }
 
+    public V merge(@Nonnull K key, @Nonnull V value,
+                   @Nonnull BiFunction<? super V, ? super V, ? extends V> remappingFunction) {
+        checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
+        checkNotNull(value, NULL_VALUE_IS_NOT_ALLOWED);
+        checkNotNull(key, NULL_BIFUNCTION_IS_NOT_ALLOWED);
+
+        return mergeLocally(key, value, remappingFunction);
+    }
+
+    private V mergeLocally(K key, V value, BiFunction<? super V, ? super V, ? extends V> remappingFunction) {
+        while (true) {
+            Data oldValueAsData = toData(getInternal(key));
+            if (oldValueAsData != null) {
+                V oldValueClone = toObject(oldValueAsData);
+                V newValue = remappingFunction.apply(oldValueClone, value);
+                if (newValue != null) {
+                    if (replaceIfSameInternal(key, oldValueAsData, toData(newValue))) {
+                        return newValue;
+                    }
+                } else if (removeInternal(key, oldValueAsData)) {
+                    return null;
+                }
+            } else {
+                V result =  putIfAbsentInternal(UNSET, MILLISECONDS, null, null, key, toData(value));
+                if (result == null) {
+                    return value;
+                }
+            }
+        }
+    }
+
 }
