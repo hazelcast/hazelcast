@@ -276,4 +276,59 @@ public class ComputeConditionallyTests extends HazelcastTestSupport {
         assertEquals(null, mapSecondNode.get("absent_remote_key"));
     }
 
+    @Test
+    public void testMergeShouldReplaceValueWhenBothOldAndNewValuesArePresent() {
+        IMap<Object, Object> map = firstNode.getMap("testMerge");
+
+        //Test local execution
+        map.put("present_key", "present_value");
+        Object newValue = map.merge("present_key", "new_value", (ov, nv) -> ov + "_" + nv);
+        assertEquals("present_value_new_value", newValue);
+        assertEquals("present_value_new_value", map.get("present_key"));
+
+        //Test remote execution
+        map.put("present_remote_key", "present_remote_value");
+        final IMap<String, String> mapSecondNode = secondNode.getMap("testMerge");
+        StaticSerializableBiFunction biFunction = new StaticSerializableBiFunction("new_remote_value");
+        String newRemoteValue = mapSecondNode.merge("present_remote_key", "new_value", biFunction);
+        assertEquals("new_remote_value", newRemoteValue);
+        assertEquals("new_remote_value", mapSecondNode.get("present_remote_key"));
+    }
+
+    @Test
+    public void testMergeShouldRemoveValueWhenOldValuePresentButNewValuesIsNotPresent() {
+        final IMap<String, String> map = firstNode.getMap("testMerge");
+
+        //Test local execution
+        map.put("present_key", "present_value");
+        String newValue = map.merge("present_key", "some_value", (ov, nv) -> null);
+        assertEquals(null, newValue);
+        assertEquals(null, map.get("present_key"));
+
+        //Test remote execution
+        map.put("present_remote_key", "present_remote_value");
+        final IMap<String, String> mapSecondNode = secondNode.getMap("testMerge");
+        StaticSerializableBiFunction biFunction = new StaticSerializableBiFunction(null);
+        String newRemoteValue = mapSecondNode.merge("present_remote_key", "some_value", biFunction);
+        assertEquals(null, newRemoteValue);
+        assertEquals(null, mapSecondNode.get("present_remote_key"));
+    }
+
+    @Test
+    public void testMergeShouldPutValueWhenOldValueNotPresent() {
+        final IMap<String, String> map = firstNode.getMap("testMerge");
+
+        //Test local execution
+        String newValue = map.merge("absent_key", "new_value", (ov, nv) -> null);
+        assertEquals("new_value", newValue);
+        assertEquals("new_value", map.get("absent_key"));
+
+        //Test remote execution
+        final IMap<String, String> mapSecondNode = secondNode.getMap("testMerge");
+        StaticSerializableBiFunction biFunction = new StaticSerializableBiFunction(null);
+        String newRemoteValue = map.merge("absent_remote_key", "new_remote_value", biFunction);
+        assertEquals("new_remote_value", newRemoteValue);
+        assertEquals("new_remote_value", mapSecondNode.get("absent_remote_key"));
+    }
+
 }
