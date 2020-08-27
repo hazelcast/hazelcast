@@ -37,6 +37,8 @@ import com.hazelcast.core.DistributedObjectListener;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.LifecycleEvent.LifecycleState;
 import com.hazelcast.core.LifecycleListener;
+import com.hazelcast.cp.event.CPGroupAvailabilityListener;
+import com.hazelcast.cp.event.CPMembershipListener;
 import com.hazelcast.instance.AddressPicker;
 import com.hazelcast.instance.BuildInfo;
 import com.hazelcast.instance.BuildInfoProvider;
@@ -339,7 +341,7 @@ public class Node {
         return factory.newDiscoveryService(settings);
     }
 
-    @SuppressWarnings({"checkstyle:npathcomplexity", "checkstyle:cyclomaticcomplexity"})
+    @SuppressWarnings({"checkstyle:npathcomplexity", "checkstyle:cyclomaticcomplexity", "checkstyle:methodlength"})
     private void initializeListeners(Config config) {
         for (final ListenerConfig listenerCfg : config.getListenerConfigs()) {
             Object listener = listenerCfg.getImplementation();
@@ -380,18 +382,21 @@ public class Node {
                 nodeEngine.getEventService().registerLocalListener(serviceName, serviceName, listener);
                 known = true;
             }
-
             if (listener instanceof MigrationInterceptor) {
-                final InternalPartitionServiceImpl partitionService =
-                        (InternalPartitionServiceImpl) nodeEngine.getPartitionService();
                 partitionService.setMigrationInterceptor((MigrationInterceptor) listener);
                 known = true;
             }
-
+            if (listener instanceof CPMembershipListener) {
+                hazelcastInstance.cpSubsystem.addMembershipListener((CPMembershipListener) listener);
+                known = true;
+            }
+            if (listener instanceof CPGroupAvailabilityListener) {
+                hazelcastInstance.cpSubsystem.addGroupAvailabilityListener((CPGroupAvailabilityListener) listener);
+                known = true;
+            }
             if (nodeExtension.registerListener(listener)) {
                 known = true;
             }
-
             if (listener != null && !known) {
                 final String error = "Unknown listener type: " + listener.getClass();
                 Throwable t = new IllegalArgumentException(error);
