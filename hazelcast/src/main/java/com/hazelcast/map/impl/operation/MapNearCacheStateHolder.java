@@ -30,8 +30,8 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collection;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.UUID;
 
@@ -70,7 +70,7 @@ public class MapNearCacheStateHolder implements IdentifiedDataSerializable {
 
         for (ServiceNamespace namespace : namespaces) {
             if (mapNameSequencePairs == emptyList()) {
-                mapNameSequencePairs = new LinkedList<>();
+                mapNameSequencePairs = new ArrayList(namespaces.size());
             }
 
             ObjectNamespace mapNamespace = (ObjectNamespace) namespace;
@@ -127,7 +127,7 @@ public class MapNearCacheStateHolder implements IdentifiedDataSerializable {
         partitionUuid = nullUuid ? null : new UUID(in.readLong(), in.readLong());
 
         int size = in.readInt();
-        mapNameSequencePairs = new LinkedList<>();
+        mapNameSequencePairs = new ArrayList(size);
         for (int i = 0; i < size; i++) {
             mapNameSequencePairs.add(in.readObject());
         }

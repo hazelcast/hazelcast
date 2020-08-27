@@ -146,9 +146,7 @@ class CyclicWriteBehindQueue implements WriteBehindQueue<DelayedEntry> {
     @Override
     public void forEach(WriteBehindQueueConsumer<DelayedEntry> consumer) {
         consumer.size(deque.size());
-        for (DelayedEntry delayedEntry : deque) {
-            consumer.accept(delayedEntry);
-        }
+        deque.forEach(consumer);
     }
 
     @Override

@@ -43,9 +43,9 @@ import com.hazelcast.query.impl.InternalIndex;
 import com.hazelcast.query.impl.MapIndexInfo;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -93,7 +93,7 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable {
         storesByMapName = createHashMap(namespaces.size());
 
         loaded = createHashMap(namespaces.size());
-        mapIndexInfos = new LinkedList<>();
+        mapIndexInfos = new ArrayList<>(namespaces.size());
         for (ServiceNamespace namespace : namespaces) {
             ObjectNamespace mapNamespace = (ObjectNamespace) namespace;
             String mapName = mapNamespace.getObjectName();
@@ -274,7 +274,7 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable {
         for (int i = 0; i < size; i++) {
             String name = in.readUTF();
             int numOfRecords = in.readInt();
-            List keyRecord = new LinkedList();
+            List keyRecord = new ArrayList<>(numOfRecords * 2);
             for (int j = 0; j < numOfRecords; j++) {
                 Data dataKey = IOUtil.readData(in);
                 Record record = Records.readRecord(in);
@@ -292,7 +292,7 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable {
         }
 
         int mapIndexInfoSize = in.readInt();
-        mapIndexInfos = new LinkedList<>();
+        mapIndexInfos = new ArrayList<>(mapIndexInfoSize);
         for (int i = 0; i < mapIndexInfoSize; i++) {
             MapIndexInfo mapIndexInfo = in.readObject();
             mapIndexInfos.add(mapIndexInfo);
