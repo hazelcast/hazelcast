@@ -400,7 +400,9 @@ public class ClientDomConfigProcessor extends AbstractDomConfigProcessor {
                 LoadBalancer loadBalancer = newInstance(null, loadBalancerClassName);
                 clientConfig.setLoadBalancer(loadBalancer);
             } catch (Exception e) {
-                throw new InvalidConfigurationException("Unable to instantiate load balancer class '" + loadBalancerClassName + "' found in the configuration", e);
+                throw new InvalidConfigurationException(
+                        "Unable to instantiate load balancer class '" + loadBalancerClassName
+                        + "' found in the configuration", e);
             }
         }
     }
