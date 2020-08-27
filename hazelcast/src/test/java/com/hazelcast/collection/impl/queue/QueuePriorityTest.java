@@ -26,6 +26,7 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -35,17 +36,20 @@ import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class QueuePriorityTest extends HazelcastTestSupport {
     private IQueue<PriorityElement> queue;
+    private ExecutorService threadPool;
 
     @Before
     public void before() {
@@ -55,6 +59,21 @@ public class QueuePriorityTest extends HazelcastTestSupport {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(3);
         HazelcastInstance[] instances = factory.newInstances(config);
         queue = instances[0].getQueue(generateKeyOwnedBy(instances[1]));
+        threadPool = Executors.newCachedThreadPool();
+    }
+
+    @After
+    public void cleanup() {
+        if (threadPool != null) {
+            threadPool.shutdown();
+            try {
+                threadPool.awaitTermination(100, TimeUnit.SECONDS);
+            } catch (InterruptedException e) {
+                fail("InterruptedException");
+            } finally {
+                threadPool.shutdownNow();
+            }
+        }
     }
 
     @Test
@@ -151,7 +170,7 @@ public class QueuePriorityTest extends HazelcastTestSupport {
             queue.offer(new PriorityElement(true, count));
             count++;
         }
-        ExecutorService threadPool = Executors.newCachedThreadPool();
+
         ConcurrentSkipListSet<PriorityElement> tasks = new ConcurrentSkipListSet<>(new PriorityElementComparator());
         CountDownLatch latch = new CountDownLatch(100);
         for (int i = 0; i < 100; i++) {
@@ -172,7 +191,6 @@ public class QueuePriorityTest extends HazelcastTestSupport {
     public void queueParallel() {
         AtomicInteger enqueued = new AtomicInteger();
         AtomicInteger dequeued = new AtomicInteger();
-        ExecutorService threadPool = Executors.newCachedThreadPool();
         CountDownLatch latch = new CountDownLatch(200);
         int size = 1000;
         for (int i = 0; i < 100; i++) {
