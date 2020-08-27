@@ -18,7 +18,6 @@ package com.hazelcast.spi.impl.merge;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.RequireAssertEnabled;
@@ -141,18 +140,5 @@ public class AbstractContainerMergerTest extends HazelcastTestSupport {
 
         assertFalse("Expected the merge operation not to be invoked", operation.hasBeenInvoked);
         assertFalse("Expected collected containers not to be destroyed", collector.onDestroyHasBeenCalled);
-    }
-
-    /**
-     * Tests that an assertion is triggered, if the merger implementation doesn't call
-     * {@link AbstractContainerMerger#invoke(String, Operation, int)}, when there are
-     * collected containers.
-     */
-    @Test(expected = AssertionError.class)
-    @RequireAssertEnabled
-    public void testMergerRun_whenMissingOperationInvocation_thenMergerThrowsAssertion() {
-        TestContainerMerger merger = new TestContainerMerger(collector, nodeEngine, null);
-
-        merger.run();
     }
 }

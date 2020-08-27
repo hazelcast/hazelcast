@@ -19,13 +19,13 @@ package com.hazelcast.spi.impl.merge;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.internal.partition.IPartitionService;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.DataType;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.services.SplitBrainHandlerService;
 import com.hazelcast.internal.util.MutableLong;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.IMap;
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.replicatedmap.ReplicatedMap;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.OperationFactory;
@@ -105,10 +105,7 @@ public abstract class AbstractMergeRunnable<K, V, Store, MergingItem extends Mer
     @Override
     public final void run() {
         onRunStart();
-        int mergedCount = 0;
-
-        mergedCount += mergeWithSplitBrainMergePolicy();
-
+        int mergedCount = merge();
         waitMergeEnd(mergedCount);
     }
 
@@ -116,7 +113,7 @@ public abstract class AbstractMergeRunnable<K, V, Store, MergingItem extends Mer
         // Implementers can override this method.
     }
 
-    private int mergeWithSplitBrainMergePolicy() {
+    private int merge() {
         int mergedCount = 0;
         Iterator<Map.Entry<String, Collection<Store>>> iterator = mergingStoresByName.entrySet().iterator();
         while (iterator.hasNext()) {

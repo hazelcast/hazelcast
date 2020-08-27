@@ -45,25 +45,24 @@ public abstract class AbstractContainerMerger<C, V, T extends MergingValue<V>> i
 
     protected final AbstractContainerCollector<C> collector;
 
-    private final Semaphore semaphore = new Semaphore(0);
     private final BiConsumer<Object, Throwable> mergeCallback;
 
     private final ILogger logger;
     private final OperationService operationService;
     private final SplitBrainMergePolicyProvider splitBrainMergePolicyProvider;
 
-    private int operationCount;
+    private final Semaphore semaphore;
+    private final int concurrencyLevel = 100;
 
     protected AbstractContainerMerger(AbstractContainerCollector<C> collector, NodeEngine nodeEngine) {
         this.collector = collector;
         this.logger = nodeEngine.getLogger(AbstractContainerMerger.class);
+        this.semaphore = new Semaphore(concurrencyLevel);
         this.mergeCallback = (response, t) -> {
-            if (t == null) {
-                semaphore.release(1);
-            } else {
+            if (t != null) {
                 logger.warning("Error while running " + getLabel() + " merge operation: " + t.getMessage());
-                semaphore.release(1);
             }
+            releasePermit(1);
         };
         this.operationService = nodeEngine.getOperationService();
         this.splitBrainMergePolicyProvider = nodeEngine.getSplitBrainMergePolicyProvider();
@@ -71,23 +70,17 @@ public abstract class AbstractContainerMerger<C, V, T extends MergingValue<V>> i
 
     @Override
     public final void run() {
-        int valueCount = collector.getMergingValueCount();
-        if (valueCount == 0) {
+        if (collector.getCollectedContainers().isEmpty()) {
             return;
         }
 
         runInternal();
 
-        assert operationCount > 0 : "No merge operations have been invoked in AbstractContainerMerger";
-
         try {
-            long timeoutMillis = Math.max(valueCount * TIMEOUT_FACTOR, MINIMAL_TIMEOUT_MILLIS);
-            if (!semaphore.tryAcquire(operationCount, timeoutMillis, TimeUnit.MILLISECONDS)) {
-                logger.warning("Split-brain healing for " + getLabel() + " didn't finish within the timeout...");
-            }
-        } catch (InterruptedException e) {
-            logger.finest("Interrupted while waiting for split-brain healing of " + getLabel() + "...");
-            Thread.currentThread().interrupt();
+            long timeoutMillis = Math.max(concurrencyLevel * TIMEOUT_FACTOR, MINIMAL_TIMEOUT_MILLIS);
+            acquirePermit(concurrencyLevel, timeoutMillis, TimeUnit.MILLISECONDS);
+        } catch (IllegalStateException e) {
+            logger.warning("Split-brain healing for " + getLabel() + " didn't finish within the timeout...");
         } finally {
             collector.destroy();
         }
@@ -122,13 +115,30 @@ public abstract class AbstractContainerMerger<C, V, T extends MergingValue<V>> i
      * @param partitionId the partition ID of the operation
      */
     protected void invoke(String serviceName, Operation operation, int partitionId) {
+        acquirePermit(1, 2, TimeUnit.MINUTES);
         try {
-            operationCount++;
             operationService
                     .invokeOnPartition(serviceName, operation, partitionId)
                     .whenCompleteAsync(mergeCallback);
         } catch (Throwable t) {
+            releasePermit(1);
             throw rethrow(t);
+        }
+    }
+
+    private void releasePermit(int count) {
+        semaphore.release(count);
+    }
+
+    private void acquirePermit(int count, long timeout, TimeUnit unit) {
+        try {
+            if (!semaphore.tryAcquire(count, timeout, unit)) {
+                throw new IllegalStateException("Timeout when trying to acquire permit! Requested: "
+                        + count + ", Available: " + semaphore.availablePermits());
+            }
+        } catch (InterruptedException e) {
+            logger.finest("Interrupted while waiting for split-brain healing of " + getLabel() + "...");
+            Thread.currentThread().interrupt();
         }
     }
 }

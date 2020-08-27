@@ -35,7 +35,7 @@ class TestContainerMerger extends AbstractContainerMerger<Object, Object, Mergin
 
     @Override
     protected String getLabel() {
-        return null;
+        return "TestContainerMerger";
     }
 
     @Override

@@ -20,22 +20,22 @@ import com.hazelcast.cardinality.impl.hyperloglog.HyperLogLog;
 import com.hazelcast.cardinality.impl.operations.MergeOperation;
 import com.hazelcast.cardinality.impl.operations.ReplicationOperation;
 import com.hazelcast.config.CardinalityEstimatorConfig;
-import com.hazelcast.internal.services.ManagedService;
-import com.hazelcast.internal.services.RemoteService;
-import com.hazelcast.internal.services.SplitBrainHandlerService;
-import com.hazelcast.internal.services.SplitBrainProtectionAwareService;
-import com.hazelcast.spi.impl.NodeEngine;
-import com.hazelcast.spi.impl.merge.AbstractContainerMerger;
-import com.hazelcast.spi.impl.operationservice.Operation;
-import com.hazelcast.spi.merge.SplitBrainMergePolicy;
-import com.hazelcast.spi.merge.SplitBrainMergeTypes.CardinalityEstimatorMergeTypes;
 import com.hazelcast.internal.partition.IPartitionService;
 import com.hazelcast.internal.partition.MigrationAwareService;
 import com.hazelcast.internal.partition.MigrationEndpoint;
 import com.hazelcast.internal.partition.PartitionMigrationEvent;
 import com.hazelcast.internal.partition.PartitionReplicationEvent;
+import com.hazelcast.internal.services.ManagedService;
+import com.hazelcast.internal.services.RemoteService;
+import com.hazelcast.internal.services.SplitBrainHandlerService;
+import com.hazelcast.internal.services.SplitBrainProtectionAwareService;
 import com.hazelcast.internal.util.ConstructorFunction;
 import com.hazelcast.internal.util.ContextMutexFactory;
+import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.spi.impl.merge.AbstractContainerMerger;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.merge.SplitBrainMergePolicy;
+import com.hazelcast.spi.merge.SplitBrainMergeTypes.CardinalityEstimatorMergeTypes;
 
 import java.util.Collection;
 import java.util.Iterator;
@@ -45,11 +45,11 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-import static com.hazelcast.partition.strategy.StringPartitioningStrategy.getPartitionKey;
 import static com.hazelcast.internal.util.ConcurrencyUtil.getOrPutIfAbsent;
 import static com.hazelcast.internal.util.ConcurrencyUtil.getOrPutSynchronized;
 import static com.hazelcast.internal.util.MapUtil.createHashMap;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
+import static com.hazelcast.partition.strategy.StringPartitioningStrategy.getPartitionKey;
 
 public class CardinalityEstimatorService
         implements ManagedService, RemoteService, MigrationAwareService, SplitBrainProtectionAwareService,
@@ -81,13 +81,13 @@ public class CardinalityEstimatorService
     private final ContextMutexFactory splitBrainProtectionConfigCacheMutexFactory = new ContextMutexFactory();
     private final ConstructorFunction<String, Object> splitBrainProtectionConfigConstructor =
             new ConstructorFunction<String, Object>() {
-        @Override
-        public Object createNew(String name) {
-            CardinalityEstimatorConfig config = nodeEngine.getConfig().findCardinalityEstimatorConfig(name);
-            String splitBrainProtectionName = config.getSplitBrainProtectionName();
-            return splitBrainProtectionName == null ? NULL_OBJECT : splitBrainProtectionName;
-        }
-    };
+                @Override
+                public Object createNew(String name) {
+                    CardinalityEstimatorConfig config = nodeEngine.getConfig().findCardinalityEstimatorConfig(name);
+                    String splitBrainProtectionName = config.getSplitBrainProtectionName();
+                    return splitBrainProtectionName == null ? NULL_OBJECT : splitBrainProtectionName;
+                }
+            };
 
     public void addCardinalityEstimator(String name, CardinalityEstimatorContainer container) {
         checkNotNull(name, "Name can't be null");
