@@ -16,22 +16,19 @@
 
 package com.hazelcast.jet.pipeline.test;
 
-import com.hazelcast.jet.aggregate.AggregateOperations;
 import com.hazelcast.jet.pipeline.PipelineTestSupport;
-import com.hazelcast.jet.pipeline.WindowDefinition;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
 import java.util.Arrays;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 import java.util.stream.IntStream;
-import java.util.stream.LongStream;
 
+import static com.hazelcast.jet.aggregate.AggregateOperations.counting;
+import static com.hazelcast.jet.pipeline.WindowDefinition.tumbling;
 import static com.hazelcast.jet.pipeline.test.Assertions.assertCollectedEventually;
-import static java.util.stream.Collectors.toSet;
+import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -54,17 +51,19 @@ public class TestSourcesTest extends PipelineTestSupport {
 
     @Test
     public void test_longStream() throws Throwable {
-        int itemsPerSecond = 10;
+        int itemsPerSecond = 1_000;
         int timeoutSeconds = 10;
-        // we give a 4-second grace period, the runner on Jenkins is sometimes surprisingly slow
-        int numberOfExpectedValues = (timeoutSeconds - 4) * itemsPerSecond;
-        Set<Long> expected = LongStream.range(0, numberOfExpectedValues).boxed().collect(toSet());
+        int numWindowResultsToWaitFor = 3;
 
         p.readFrom(TestSources.longStream(itemsPerSecond, 0))
-                .withNativeTimestamps(0)
-                .apply(assertCollectedEventually(timeoutSeconds,
-                        items -> assertTrue("some items not received. Expected: " + expected + ", actual: " + items,
-                                new HashSet<>(items).containsAll(expected))));
+         .withNativeTimestamps(0)
+         .window(tumbling(SECONDS.toMillis(1)))
+         .aggregate(counting())
+         .apply(assertCollectedEventually(timeoutSeconds, windowResults -> {
+             assertTrue("Didn't receive at least three results", windowResults.size() >= numWindowResultsToWaitFor);
+             assertTrue("Invalid items per second",
+                     windowResults.stream().skip(1).allMatch(wr -> wr.result() == itemsPerSecond));
+         }));
 
         expectedException.expectMessage(AssertionCompletedException.class.getName());
         executeAndPeel();
@@ -93,8 +92,8 @@ public class TestSourcesTest extends PipelineTestSupport {
 
         p.readFrom(TestSources.itemStream(itemsPerSecond))
          .withNativeTimestamps(0)
-         .window(WindowDefinition.tumbling(1000))
-         .aggregate(AggregateOperations.counting())
+         .window(tumbling(1000))
+         .aggregate(counting())
          .apply(assertCollectedEventually(60, windowResults -> {
              //look at last 5 windows at most, always ignore first
              int windowsToConsider = Math.min(5, Math.max(windowResults.size() - 1, 0));
@@ -130,8 +129,8 @@ public class TestSourcesTest extends PipelineTestSupport {
 
         p.readFrom(TestSources.itemStream(itemsPerSecond))
                 .withNativeTimestamps(0)
-                .window(WindowDefinition.tumbling(1000))
-                .aggregate(AggregateOperations.counting())
+                .window(tumbling(1000))
+                .aggregate(counting())
                 .apply(assertCollectedEventually(10, windowResults -> {
                     // first window may be incomplete
                     assertTrue("sink list should contain some items", windowResults.size() > 1);
