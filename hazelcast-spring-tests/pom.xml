@@ -34,7 +34,7 @@
         <main.basedir>${project.parent.basedir}</main.basedir>
 
         <maven-artifact.version>3.6.3</maven-artifact.version>
-        <hazelcast-hibernate5.version>2.0.0</hazelcast-hibernate5.version>
+        <hazelcast-hibernate53.version>2.1.1</hazelcast-hibernate53.version>
     </properties>
 
     <dependencies>
@@ -90,14 +90,14 @@
         </dependency>
         <dependency>
             <groupId>com.hazelcast</groupId>
-            <artifactId>hazelcast-hibernate5</artifactId>
-            <version>${hazelcast-hibernate5.version}</version>
+            <artifactId>hazelcast-hibernate53</artifactId>
+            <version>${hazelcast-hibernate53.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.hibernate</groupId>
             <artifactId>hibernate-core</artifactId>
-            <version>5.0.9.Final</version>
+            <version>5.4.21.Final</version>
             <scope>test</scope>
         </dependency>
         <dependency>
